@@ -140,6 +140,12 @@ class InternetDraft(models.Model):
     def save(self):
         self.id_document_key = self.id_document_name.upper()
         super(InternetDraft, self).save()
+    def displayname(self):
+	return "%s-%s.txt" % ( self.filename, self.revision )
+    def doclink(self):
+	return "http://www.ietf.org/internet-drafts/%s" % ( self.displayname() )
+    def group_acronym(self):
+	return self.group.acronym
     def __str__(self):
         return self.filename
     def idstate(self):
@@ -233,12 +239,114 @@ class AreaDirectors(models.Model):
     class Meta:
         db_table = 'area_directors'
 
+###
+# RFC tables
+
+class RfcIntendedStatus(models.Model):
+    intended_status_id = models.AutoField(primary_key=True)
+    status = models.CharField(maxlength=25, db_column='status_value')
+    def __str__(self):
+        return self.status
+    class Meta:
+        db_table = 'rfc_intend_status'
+	verbose_name = 'RFC Intended Status Field'
+    class Admin:
+	pass
+
+class RfcStatus(models.Model):
+    status_id = models.AutoField(primary_key=True)
+    status = models.CharField(maxlength=25, db_column='status_value')
+    def __str__(self):
+        return self.status
+    class Meta:
+        db_table = 'rfc_status'
+	verbose_name = 'RFC Status'
+	verbose_name_plural = 'RFC Statuses'
+    class Admin:
+	pass
+
+class Rfc(models.Model):
+    rfc_number = models.IntegerField(primary_key=True)
+    rfc_name = models.CharField(maxlength=200)
+    rfc_name_key = models.CharField(maxlength=200, editable=False)
+    group_acronym = models.CharField(blank=True, maxlength=8)
+    area_acronym = models.CharField(blank=True, maxlength=8)
+    status = models.ForeignKey(RfcStatus, db_column="status_id")
+    intended_status = models.ForeignKey(RfcIntendedStatus, db_column="intended_status_id")
+    fyi_number = models.CharField(blank=True, maxlength=20)
+    std_number = models.CharField(blank=True, maxlength=20)
+    txt_page_count = models.IntegerField(null=True, blank=True)
+    online_version = models.CharField(blank=True, maxlength=3)
+    rfc_published_date = models.DateField(null=True, blank=True)
+    proposed_date = models.DateField(null=True, blank=True)
+    draft_date = models.DateField(null=True, blank=True)
+    standard_date = models.DateField(null=True, blank=True)
+    historic_date = models.DateField(null=True, blank=True)
+    lc_sent_date = models.DateField(null=True, blank=True)
+    lc_expiration_date = models.DateField(null=True, blank=True)
+    b_sent_date = models.DateField(null=True, blank=True)
+    b_approve_date = models.DateField(null=True, blank=True)
+    comments = models.TextField(blank=True)
+    last_modified_date = models.DateField()
+    def __str__(self):
+	return "RFC%04d" % ( self.rfc_number )        
+    def save(self):
+	self.rfc_name_key = self.rfc_name.upper()
+	super(Rfc, self).save()
+    def displayname(self):
+	return "rfc%d.txt" % ( self.rfc_number )
+    def doclink(self):
+	return "http://www.ietf.org/rfc/%s" % ( self.displayname() )
+    class Meta:
+        db_table = 'rfcs'
+	verbose_name = 'RFC'
+	verbose_name_plural = 'RFCs'
+    class Admin:
+	search_fields = ['rfc_name', 'group', 'area']
+	list_display = ['rfc_number', 'rfc_name']
+	pass
+
+class RfcAuthor(models.Model):
+    rfc = models.ForeignKey(Rfc, unique=True, db_column='rfc_number', related_name='authors', edit_inline=models.TABULAR)
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, core=True)
+    def __str__(self):
+        return "%s, %s" % ( self.person.last_name, self.person.first_name)
+    class Meta:
+        db_table = 'rfc_authors'
+	verbose_name = 'RFC Author'
+
+class RfcObsolete(models.Model):
+    rfc = models.ForeignKey(Rfc, db_column='rfc_number', raw_id_admin=True, related_name='updates_or_obsoletes')
+    action = models.CharField(maxlength=20, core=True)
+    rfc_acted_on = models.ForeignKey(Rfc, db_column='rfc_acted_on', raw_id_admin=True, related_name='updated_or_obsoleted_by')
+    def __str__(self):
+        return "RFC%04d %s RFC%04d" % (self.rfc_id, self.action, self.rfc_acted_on_id)
+    class Meta:
+        db_table = 'rfcs_obsolete'
+	verbose_name = 'RFC updates or obsoletes'
+	verbose_name_plural = verbose_name
+    class Admin:
+	pass
+
+## End RFC Tables
+
 class IDInternal(models.Model):
+    """
+    An IDInternal represents a document that has been added to the
+    I-D tracker.  It can be either an Internet Draft or an RFC.
+    The table has only a single primary key field, meaning that
+    there is the danger of RFC number collision with low-numbered
+    Internet Drafts.
+
+    Since it's most common to be an Internet Draft, the draft
+    field is defined as a FK to InternetDrafts.  One side effect
+    of this is that select_related() will only work with
+    rfc_flag=0.
+    """
     draft = models.ForeignKey(InternetDraft, primary_key=True, unique=True, db_column='id_document_tag')
-    # the above ignores the possibility that it's an RFC.
     rfc_flag = models.IntegerField(null=True)
     ballot_id = models.IntegerField()
-    primary_flag = models.IntegerField(null=True, blank=True)
+    primary_flag = models.IntegerField()
     group_flag = models.IntegerField(blank=True)
     token_name = models.CharField(blank=True, maxlength=25)
     token_email = models.CharField(blank=True, maxlength=255)
@@ -266,9 +374,27 @@ class IDInternal(models.Model):
     approved_in_minute = models.IntegerField(null=True, blank=True)
     def __str__(self):
         if self.rfc_flag:
-	    return "RFC%04d" % ( self.id_document_tag )
+	    return "RFC%04d" % ( self.draft_id )
 	else:
-	    return self.id_document_tag.filename
+	    return self.draft.filename
+    def get_absolute_url(self):
+	if self.rfc_flag:
+	    return "/idtracker/rfc%d/" % ( self.draft_id )
+	else:
+	    return "/idtracker/%s/" % ( self.draft.filename )
+    _cached_rfc = None
+    def document(self):
+	if self.rfc_flag:
+	    if self._cached_rfc is None:
+		self._cached_rfc = Rfc.objects.get(rfc_number=self.draft_id)
+	    return self._cached_rfc
+	else:
+	    return self.draft
+    def comments(self):
+	return self.documentcomment_set.all().filter(rfc_flag=self.rfc_flag).order_by('-comment_date','-comment_time')
+    def ballot_set(self):
+	# can't access manager via self; use the class name
+	return IDInternal.objects.filter(ballot_id=self.ballot_id)
     class Meta:
         db_table = 'id_internal'
 	verbose_name = 'IDTracker Draft'
@@ -299,6 +425,11 @@ class DocumentComment(models.Model):
     def get_author(self):
 	if self.created_by:
 	    return self.created_by.__str__()
+	else:
+	    return "system"
+    def get_username(self):
+	if self.created_by:
+	    return self.created_by.login_name
 	else:
 	    return "system"
     class Meta:

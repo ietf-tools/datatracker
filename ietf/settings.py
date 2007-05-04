@@ -94,7 +94,6 @@ INSTALLED_APPS = (
     'ietf.my',
     'ietf.proceedings',
     'ietf.redirects',
-    'ietf.rfcs',
 )
 
 INTERNAL_IPS = (

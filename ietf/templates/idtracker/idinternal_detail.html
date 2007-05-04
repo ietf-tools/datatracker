@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+{% load ietf_filters %}     
+
+<html>
+  <head>
+    <title>IETF I-D Tracker v1.0 -- WCF</title>
+<style type="text/css">
+<!--
+
+      TD {text-decoration: none; color: #000000; font: 9pt arial;} 
+      A:Link {color: #0000ff; text-decoration:underline}
+      A:Hover {color: #ff0000; text-decoration:underline}
+      A:visited {color: #0000ff; text-decoration:underline}
+      .largefont {font-weight: bold; color: #000000; font: 18pt arial}
+      .largefont2 {color: #000000; font: 14pt verdana}
+      .largefont3 {color: #000000; font: 13pt verdana}
+      .largefont_red {font-weight: bold; color: #ff0000; font: 16pt arial}
+-->
+</style>
+  </head>
+
+  <body link="blue" vlink="blue">
+
+    <table width="90%" cellpading="1" cellspacing="0">
+      <tr>
+        <td bgcolor="000000">
+          <table width="100%" cellspacing="0" cellpading="5">
+            <tr bgcolor="BEBEBE" align="center">
+              <th colspan="2">
+                <div class="largefont">
+                  Detail Info
+                </div>
+		{% if object.ballot_set|length_is:"1" %}
+		{% else %}
+		<div align="right">
+		  <a href="#action">Action List</a>
+		</div>
+		{% endif %}
+              </th>
+            </tr>
+
+            <tr bgcolor="white">
+              <td>
+                <div class="largefont3">
+                  Draft Name:
+                </div>
+              </td>
+
+              <td>
+                <div class="largefont3">
+                  <a href="{{ object.document.doclink }}">
+                  {{ object.document.displayname }}</a>
+		  <font color="red">
+		  {% if object.via_rfc_editor %}
+		    Independent submission via RFC Editor
+		  {% else %}
+		    {% ifequal object.document.group_acronym "none" %}
+		      Individual submission
+		    {% else %}
+		      WG &lt;{{ object.document.group_acronym }}&gt; submission
+		    {% endifequal %}
+		  {% endif %}
+                  </font>
+                </div>
+              </td>
+            </tr>
+
+            <tr bgcolor="white">
+              <td>
+                <div class="largefont3">
+                  IESG Discussion:
+                </div>
+              </td>
+
+              <td>
+		{# what's the "if" here #}
+                <div class="largefont3">
+                  <a href="ballot/">IESG evaluation record</a>
+                  [<a href="/idtracker/view_evaluation_desc/">What
+                  they mean</a>]
+                  [<a href="/idtracker/view_key/">How they are
+                  recorded</a>]
+                </div>
+              </td>
+            </tr>
+
+            <tr bgcolor="white">
+              <td>
+                <div class="largefont3">
+                  Version:
+                </div>
+              </td>
+
+              <td>
+                <div class="largefont3">
+                  {{ object.document.revision }}
+                </div>
+              </td>
+            </tr>
+
+            <tr bgcolor="white">
+              <td>
+                <div class="largefont3">
+                  Intended Status:
+                </div>
+              </td>
+
+              <td>
+                <div class="largefont3">
+                  {{ object.document.intended_status }}
+                </div>
+              </td>
+            </tr>
+
+            <tr bgcolor="white">
+              <td>
+                <div class="largefont3">
+                  On Next Agenda?
+                </div>
+              </td>
+
+              <td>
+                <div class="largefont3">
+                  {{ object.agenda|yesno:"Yes,No" }}
+                </div>
+              </td>
+            </tr>
+
+            <tr bgcolor="white">
+              <td>
+                <div class="largefont3">
+                  Current State:
+                </div>
+              </td>
+
+              <td>
+                <div class="largefont3">
+                  <a href="/idtracker/states/{{ object.cur_state.document_state_id }}/">
+                  {{ object.cur_state }}</a>
+		  {% if object.cur_sub_state %}
+		  ::
+		  <a href="/idtracker/states/sub_state/{{ object.cur_substate.sub_state_id }}/">
+		  {{ object.cur_sub_state }}
+		  </a>
+		  {% endif %}
+		  {% if object.rfc_flag %}
+		  {% else %}
+		  {% ifequal object.cur_state.state "RFC Ed Queue" %}
+		  <a href="http://www.rfc-editor.org/queue.html#{{ object.draft.filename }}">
+                  [RFC Editor State]</a>
+		  {% endifequal %}
+		  {% endif %}
+                </div>
+                <a href="/idtracker/states/">
+                [Show States Table]</a> 
+              </td>
+            </tr>
+
+            <tr bgcolor="white">
+              <td>
+                <div class="largefont3">
+                  Responsible AD:
+                </div>
+              </td>
+
+              <td>
+                <div class="largefont3">
+                  {{ object.job_owner }}
+                </div>
+              </td>
+            </tr>
+
+            <tr bgcolor="white">
+              <td>
+                <div class="largefont3">
+                  Status Date:
+                </div>
+              </td>
+
+              <td bgcolor="white">
+                <div class="largefont3">
+                  {% firstof object.status_date "&nbsp;" %}
+                </div>
+              </td>
+            </tr>
+
+            <tr bgcolor="white">
+              <td>
+                <div class="largefont3">
+                  Note:
+                </div>
+              </td>
+
+              <td>
+                <div class="largefont3">
+                  {% firstof object.note|unformat_textarea &nbsp; %}
+                </div>
+              </td>
+            </tr>
+
+            <tr bgcolor="white">
+              <td width="20%">&nbsp;</td>
+
+              <td>
+                <table cellpadding="1" cellspacing="1" border="0">
+                  <tr>
+                    <td>
+                      <form action="/idtracker/" method="GET">
+			<input type="submit" value=
+			"Main Menu">
+                      </form>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+	</td>
+      </tr>
+    </table>
+
+    {% if object.ballot_set|length_is:"1" %}
+    {% else %}
+    <a name="action"></a>
+    <table border="1" bgcolor="black">
+    <tr><td><font color="white"><h3>Actions</h3></font>
+    </td>
+    </tr>
+    </table>
+    {% endif %}
+
+
+    <h3>Comment Log</h3>
+
+    <table cellpadding="1" cellspacing="1" border="0">
+      <tr bgcolor="#7DC189">
+	<th>Date</th>
+
+	<th>Version</th>
+
+	<th>Comment</th>
+      </tr>
+
+{% for comment in object.comments %}
+      <tr bgcolor="{% cycle #CFE1CC,#7DC189 %}">
+	<td>{{ comment.date }}</td>
+
+	<td align="center">{{ comment.version }}</td>
+
+	<td><font color="blue">[{{ comment.get_username }}]</font>
+{% if comment.ballot %}
+	  <font color="red">[IN IESG DISCUSSION
+	    <b>*{{ comment.get_ballot_display }}*</b>]</font>
+{% endif %} {{ comment.comment_text|format_textarea|truncatewords_html:"25" }}</td>
+
+	<td>
+	  <form action="comment/{{ comment.id }}" method="GET">
+	    <input type="submit" value="View Detail">
+	  </form>
+	</td>
+      </tr>
+{% endfor %} 
+    </table>
+    <br>
+     
+
+    <form action="/idtracker/" method="GET">
+      <input type="submit" value="Main Menu">
+      <input type="button" name="back_button" value="BACK"
+        onclick="history.go(-1);return true">
+    </form>
+    <!-- begin new footer -->
+    <hr>
+
+    <p>Did you find a bug? <a href=
+    "pidtracker.cgi?command=send_email&amp;cat=bugs">Let us
+    know</a>.</p>
+
+    <p><a href=
+    "pidtracker.cgi?command=send_email&amp;cat=discuss">Any
+    question or suggestion</a>?</p>
+
+    <p><i>This page produced by the <a href=
+    "mailto:iesg-secretary@ietf.org">IETF Secretariat</a> for
+    the <a href="mailto:iesg@ietf.org">IESG</a></i></p>
+
+    {% include "debug.html" %}
+  </body>
+</html>
+
