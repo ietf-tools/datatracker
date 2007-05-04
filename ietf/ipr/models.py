@@ -1,6 +1,6 @@
 from django.db import models
 from ietf.idtracker.views import InternetDraft
-from ietf.rfcs.models import Rfc
+from ietf.idtracker.models import Rfc
 
 LICENSE_CHOICES = (
     (1, 'No License Required for Implementers.'),
