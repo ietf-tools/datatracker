@@ -1,0 +1,41 @@
+{% extends "idindex/base.html" %}
+
+{% block title %}Internet Draft Database Index - Search{% endblock %}
+
+{% block iddbcontent %}
+{% if didsearch %}
+  {# existing page just displays header and no results. #}
+  {% if object_list %}
+    {% include "idindex/doclist.html" %}
+  {% else %}
+    <h2>No results to your search.</h2>
+  {% endif %}
+{% else %}
+<center>
+<h2>I-D Search</h2>
+<form action="" method="POST">
+<table cellpadding="1" cellspacing="1" border="0" bgcolor="#9999ff">
+<tr><td>
+<table cellpadding="2" cellspacing="1" border="0" bgcolor="#ffffff">
+<tr>
+  <td><b>{{ form.filename.label_tag }}</b> </td>
+  <td>{{ form.filename }} &nbsp; <b>{{ form.id_tracker_state_id.label_tag }}</b> {{ form.id_tracker_state_id }}</td>
+</tr>
+<tr>
+  <td><b>{{ form.wg_id.label_tag }}</b> </td>
+  <td>{{ form.wg_id }}&nbsp;
+      <b>{{ form.other_group.label_tag }}</b> {{ form.other_group }}&nbsp;
+      <b>{{ form.status_id.label_tag }}</b> {{ form.status_id }}</td>
+</tr>
+<tr>
+  <td><b>Author:</b></td>
+  <td>{{ form.last_name.label_tag }} {{ form.last_name }} &nbsp;
+      {{ form.first_name.label_tag }} {{ form.first_name }}</td>
+</tr>
+<tr><td colspan="2" align="center"><br><input type="submit" value=" Search "></td></tr>
+</table>
+</td></tr></table>
+</center>
+{% endif %}
+
+{% endblock %}

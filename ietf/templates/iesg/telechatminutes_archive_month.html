@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}IESG Telechat Minutes{% endblock %}
+
+{% block content %}
+<h2>IESG Telechat Minutes - {{ month|date:"F Y" }}</h2>
+
+<a href="../">up to {{ month|date:"Y" }}</a> | <a href="../../{{previous_month|date:"Y"}}/{{ previous_month|date:"b"}}/">&lt;&lt; {{ previous_month|date:"F Y" }}</a>
+{% if next_month %}
+| <a href="../../{{next_month|date:"Y"}}/{{ next_month|date:"b"}}/">{{ next_month|date:"F Y" }} &gt;&gt;</a>
+{% endif %}
+
+{% if object_list %}
+<ul>
+{% for object in object_list %}
+<li><a href="../../detail/{{ object.id }}/">{{ object.telechat_date|date:"F j" }}
+{% endfor %}
+</ul>
+{% else %}
+<p>
+<i>No minutes for {{ month|date:"F Y "}}</i>
+{% endif %}
+
+{% endblock %}

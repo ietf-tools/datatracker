@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}IESG Telechat Minutes{% endblock %}
+
+{% block content %}
+<h2>IESG Telechat Minutes - {{ year }}</h2>
+
+<ul>
+{% for month in date_list %}
+<li><a href="{{month|date:"b" }}/">{{ month|date:"F" }}
+{% endfor %}
+</ul>
+
+{% endblock %}

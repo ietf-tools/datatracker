@@ -1,0 +1,43 @@
+{% load ietf_filters %}
+<html>
+<HEAD><TITLE>IETF I-D Tracker v1.0 -- WCF</title>
+<STYLE TYPE="text/css">
+<!--
+
+	  TD {text-decoration: none; color: #000000; font: 9pt arial;} 
+	  A:Link {color: #0000ff; text-decoration:underline}
+	  A:Hover {color: #ff0000; text-decoration:underline}
+      A:visited {color: #0000ff; text-decoration:underline}
+	  #largefont {font-weight: bold; color: #000000; font: 18pt arial}
+	  #largefont2 {color: #000000; font: 14pt verdana}
+	  #largefont3 {color: #000000; font: 13pt verdana}
+	  #largefont_red {font-weight: bold; color: #ff0000; font: 16pt arial}
+-->
+</STYLE>
+
+</head>
+<body link="blue" vlink="blue">
+
+{% if object.ballot %}
+<h3><font color="red">[IN IESG DISCUSSION <b>*{{ object.get_ballot_display }}*</b>]</font></h3>
+{% endif %}
+   <table cellpadding="1" cellspacing="1" border="0">
+
+   <tr><td><b>Date and Time:</td><td>{{ object.date }}, {{ object.time }}</td></tr>
+   <tr><td><b>Version:</td><td>{{ object.version }}</td></tr>
+   <tr><td><b>Commented by:</td><td>{{ object.created_by.first_name }} {{ object.created_by.last_name }}</td></tr>
+{% if object.origin_state %}
+   <tr><td><b>State before Comment:</td><td>{{ object.origin_state }}</td></tr>
+{% endif %}
+{% if object.result_state %}
+   <tr><td><b>State after Comment:</td><td>{{ object.result_state }}</td></tr>
+{% endif %}
+   <Tr><td><b>Comment:</td><td>{{ object.comment_text|format_textarea }}</td></tr>
+   </table>
+   <center><form>
+   <input type="button" value="close" onClick="history.go(-1);return true">
+   </form></center>
+   
+{% include "debug.html" %}
+</body>
+</html>

@@ -1,0 +1,8 @@
+<p>
+{{ me.person_or_org_tag }}
+<h1>Internet Drafts</h1>
+<ul>
+{% for doc in me.idauthors_set.all %}
+  <li>{{ doc.document.filename }}: {{ doc.document.status }} / {{ doc.document.idstate }}
+{% endfor %}
+</ul>

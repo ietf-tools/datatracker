@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}IESG Data Tracker - search{% endblock %}
+
+{% block content %}
+<h1 style="text-align: center; color: red;">IESG Data Tracker</h1>
+
+<form method="post">
+
+<table cellpadding="1" cellspacing="0" border="0">
+<tr bgcolor="silver">
+<th colspan="2">I-D - Search Criteria</th>
+</tr>
+
+<tr>
+<td align="right"><label for="id_job_owner"><b>Responsible
+AD:</b></label></td>
+<td>{{ form.job_owner }}&nbsp;&nbsp;&nbsp;<label for="id_group">
+<b>WG Acronym:</b></label>{{ idform.group }}&nbsp;&nbsp;&nbsp;<label
+for="id_status"><b>Status:</b></label>
+{{ idform.status }}</td>
+</tr>
+
+<tr>
+<td align="right"><label for="id_cur_state"><b>Document
+State:</b></label></td>
+<td>{{ form.cur_state }} <label for="id_cur_sub_state"><b>sub
+state</b>: {{ form.cur_sub_state }}</label> </td>
+</tr>
+
+<tr>
+<td align="right"><label for=
+"id_filename"><b>Filename:</b></label></td>
+<td>{{ idform.filename }} &nbsp;&nbsp;&nbsp; <label for=
+"id_rfc_number"><b>RFC Number:</b></label> {{ idform.rfc_number }}
+&nbsp;&nbsp;&nbsp; <label for="id_area_acronym"><b>Area:</b></label>
+{{ form.area_acronym }}</td>
+</tr>
+
+<tr>
+<td align="right"><label for="id_note"><b>Note:</b></label> </td>
+<td>{{ form.note }}</td>
+</tr>
+
+<tr>
+<td colspan="2"><input type="submit"> </td>
+</tr>
+</table>
+</form>
+
+<hr>
+{% if matches %} 
+    {% regroup matches by draft.idstate as grouped %}
+    {% for group in grouped %}
+    <h2>{{ group.grouper }}</h2>
+	<table bgcolor="#DFDFDF" cellspacing="0" cellpadding="0" border="0" width="800">
+	<tr bgcolor="#A3A3A3"><th>&nbsp;</th><th width="250">Name (Intended Status)</th><th>Ver</th><th>Responsible AD</th><th>Status Date</th><th>Modified</th></tr>
+	{% for match in group.list %}
+	<tr bgcolor="#{% cycle F8D6F8,E2AFE2 %}">
+        <td><a href="{{ match.draft.id_document_tag }}/edit/">[VIEW]</a></td>
+	<td><a href="http://www.ietf.org/internet-drafts/{{match.draft.filename}}-{{match.draft.revision}}.txt">{{ match.draft.filename }}</a> ({{ match.draft.intended_status }})</td>
+	<td>{{ match.draft.revision }}</td>
+	<td>{{ match.job_owner }}</td>
+	<td>{{ match.status_date }}</td>
+	<td>{{ match.event_date }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+    {% endfor %}
+{% else %} 
+<p>No matches to your query.</p>
+{% endif %}
+
+{% if debug %}
+<div id="debug">
+  <h2>Queries</h2>
+  <p>
+    {{ sql_queries|length }} Queries
+    {% ifnotequal sql_queries|length 0 %}
+    (<span style="cursor: pointer;" onclick="document.getElementById('debugQueryTable').style.display='';">Show</span>)
+    {% endifnotequal %}
+  </p>
+  <table id="debugQueryTable" style="display: none;">
+    <col width="1"></col>
+    <col></col>
+    <col width="1"></col>
+    <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">SQL</th>
+      <th scope="col">Time</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for query in sql_queries %}<tr class="{% cycle odd,even %}">
+      <td>{{ forloop.counter }}</td>
+      <td>{{ query.sql|escape }}</td>
+      <td>{{ query.time }}</td>
+    </tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

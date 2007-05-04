@@ -1,0 +1,26 @@
+{% extends "ipr/details.html" %}
+{% block legacy_sections %}I and II{% endblock %}
+
+<!-- unchanged: section1, Patent Holder-->
+
+<!-- unchanged: section2, Patent Holder's Contact -->
+
+<!-- not present: section3, IETF Participant -->
+{% block section3 %}{% endblock %}
+
+<!-- not present: section4, IETF Document -->
+{% block section4 %}{% endblock %}
+
+<!-- modified: section5, Patent Information -->
+{% block clause5c %}
+	       <tr>
+		  <td colspan="2"><i>C. Does this disclosure apply to all IPR owned by
+		     the submitter?:</i> <b>{{ ipr.selectownedtext }}</b></td>
+	       </tr>
+{% endblock %}
+
+<!-- unchanged: section6, Licensing Declaration -->
+
+<!-- unchanged: section7, Form Submitter -->
+
+<!-- unchanged: section8, Other Notes -->

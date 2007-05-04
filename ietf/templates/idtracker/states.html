@@ -1,0 +1,57 @@
+<html>
+<HEAD><TITLE>IESG ID Tracker -- State List</title>
+<STYLE TYPE="text/css">
+<!--
+                                                                                                               
+          TD {text-decoration: none; color: #000000; font: 10pt arial;}
+          A:Link {color: #0000ff; text-decoration:underline}
+          A:Hover {color: #ff0000; text-decoration:underline}
+      A:visited {color: #0000ff; text-decoration:underline}
+          #largefont {font-weight: bold; color: #000000; font: 16pt arial}
+          #largefont_red {font-weight: bold; color: #ff0000; font: 16pt arial}
+-->
+</STYLE>
+                                                                                                               
+</head>
+<body link="blue" vlink="blue">
+
+
+   <h2>Main States</h2>
+   <a href="https://datatracker.ietf.org/state_diagram.gif">[View States Diagram]</a><br>
+   <table cellpadding="1" cellspacing="0" border="1" width="750">
+
+   <tr>
+   <th>State Name</th><th>Description</th><th>Next State(s)</th>
+   </tr>
+<tr><td>I-D Exists</td>
+<td width="700">Initial (default) state for all internet drafts. Such documents are<br>
+not being tracked by the IESG as no request has been made of the
+IESG to do anything with the document.</td>
+<td><ul><li> AD is watching<li> Publication Requested</ul></td></tr>
+                                                                                                               
+{% for state in states %}   
+          <tr>
+          <td width="200">{{ state.state }}</td><td width="350">{{ state.description }}</td><td width="200">
+  <ul>
+  {% for next in state.nextstate.all %}
+  <li>{{ next.next_state.state }}
+  {% endfor %}
+  </ul>
+</td>
+          </tr>
+{% endfor %}
+   </table>
+   <h2>Sub States</h2>
+<table cellpadding="1" cellspacing="0" border="1" width="750">
+
+<tr><th width="250">Sub State Name</th><th>Description</th></tr>
+
+{% for substate in substates %}
+<tr><td>{{ substate.sub_state }}</td>
+<td>{{ substate.description }}</td></tr>
+{% endfor %}
+</table>
+
+{% include "debug.html" %}
+</body>
+</html>

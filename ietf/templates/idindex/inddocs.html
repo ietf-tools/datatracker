@@ -1,0 +1,6 @@
+{% extends "idindex/base.html" %}
+
+{% block iddbcontent %}
+<h2>I-Ds List, Author identifier starts with <i>draft-{{ filter }}</i></h2>
+{% include "idindex/doclist.html" %}
+{% endblock %}

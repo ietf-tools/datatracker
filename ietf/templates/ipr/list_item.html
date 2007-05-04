@@ -1,0 +1,43 @@
+   <tr>
+      <td align="center">{{ ipr.submitted_date }}</td>
+      <td align="right">{{ ipr.ipr_id }}</td>
+      <td>
+	 {% ifequal ipr.status 1 %}
+	    <a href="{% url ietf.ipr.views.show ipr.ipr_id %}">{{ ipr.document_title }}</a>
+	 {% else %}
+	    {{ ipr.document_title }}
+	    <br>This IPR disclosure was removed at the request of the submitter.
+	 {% endifequal %}
+	 <br />
+	 {% for item in ipr.updates.all %}
+	    Updates ID <a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">#{{ item.updated.ipr_id }}</a>.<br>
+	 {% endfor %}
+	 {% for item in ipr.updated_by.all %}
+	       {% ifequal item.processed 1 %}
+	    Updated by ID <a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">#{{ item.ipr.ipr_id }}</a>.<br> 
+	       {% endifequal %}
+	 {% endfor %}
+      </td>
+   </tr>
+   {% ifequal ipr.status 1 %}
+      {% if ipr.additional_old_title1 %}
+	 <tr>
+	    <td></td>
+	    <td></td>
+	    <td>
+	       <b>*</b>
+	       <a href="{{ ipr.additional_old_url1 }}">{{ ipr.additional_old_title1 }}</a>
+	    </td>
+	 </tr>
+      {% endif %}
+      {% if ipr.additional_old_title2 %}
+	 <tr>
+	    <td></td>
+	    <td></td>
+	    <td>
+	       <b>*</b>
+	       <a href="{{ ipr.additional_old_url2 }}">{{ ipr.additional_old_title2 }}</a>
+	    </td>
+	 </tr>
+      {% endif %}
+   {% endifequal %}

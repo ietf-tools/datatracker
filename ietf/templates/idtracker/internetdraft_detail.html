@@ -1,0 +1,19 @@
+<h1>I-D Detail</h1>
+<h2>{{ object.filename }}-{{ object.revision }}</h2>
+{{ object.status }}
+||
+{{ object.idstate }}
+||
+{{ object.idinternal.cur_state }} ::
+{{ object.idinternal.cur_sub_state }}
+||
+{{ object.idinternal.prev_state }} ::
+{{ object.idinternal.prev_sub_state }}
+<br>
+Authors:
+<ul>
+{% for author in object.authors.all %}
+<li>{{ author.person }} - {{ author.email }}
+{% endfor %}
+</ul>
+

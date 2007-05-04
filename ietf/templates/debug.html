@@ -1,0 +1,33 @@
+{% if debug %}
+{% load ietf_filters %}
+<div id="debug">
+  <h2>Queries</h2>
+  <p>
+    {{ sql_queries|length }} Queries ({{ sql_queries|timesum }}s)
+    {% ifnotequal sql_queries|length 0 %}
+    (<span style="cursor: pointer;" onclick="document.getElementById('debugQueryTable').style.display='';">Show</span>)
+    {% endifnotequal %}
+  </p>
+  <table id="debugQueryTable" style="display: none;">
+    <col width="1"></col>
+    <col></col>
+    <col width="1"></col>
+    <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">SQL</th>
+      <th scope="col">Time</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for query in sql_queries %}
+    <tr class="{% cycle odd,even %}">
+      <td>{{ forloop.counter }}</td>
+      <td>{{ query.sql|expand_comma|escape }}</td>
+      <td>{{ query.time }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}

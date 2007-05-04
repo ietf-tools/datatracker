@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+{% block title %}IPR Details{% endblock %}
+{% block content %}
+
+   <style type="text/css">
+   .ipr	  { width: 101ex; }
+   .even  { }
+   .odd   { }
+   .even th { background: #aaa; color: #336; font-family: Arial, sans-serif; font-size: small; text-align: left; font-weight: bold; }
+   .odd  th { background: #cca; color: #336; font-family: Arial, sans-serif; font-size: small; text-align: left; font-weight: bold; }
+   .even td { background: #eee; color: #000; font-family: Arial, sans-serif; font-size: small; text-align: left; vertical-align: top; }
+   .odd  td { background: #eed; color: #000; font-family: Arial, sans-serif; font-size: small; text-align: left; vertical-align: top; }
+   table.ipr {
+	   padding:2px;
+	   border-width:1px;
+	   border-style:solid;
+	   border-color:305076;
+   }
+   .ipr th { border: 0px; margin: 0px; padding: 4px; }
+   .ipr td { border: 0px; margin: 0px; padding: 4px; }
+   td.fixwidth { width: 14ex; }
+   .ipr ul { margin-left: -6ex; list-style-type: none; }
+   h4.ipr	{ text-align: center; }
+   input	{ width: 72ex; font-family: sans-serif; font-size: 11pt; font-weight: normal; }
+   input[type="radio"] { width: auto; }
+   input[type="checkbox"] { width: auto; }
+   textarea	{ width: 72ex; height: 5em; font-family: sans-serif; font-size: 11pt; font-weight: normal; }
+   .required	{ color: red; }
+   </style>
+
+   {% block top_info %}
+   <blockquote style="margin-bottom: 0px;">
+      <table cellpadding=0 cellspacing=0 border=0>
+	 <tr>
+	    <td width="720" align="center">
+	       <h3>{{ ipr.document_title }}</h3>
+	    </td>
+	 </tr>
+      </table>
+      <hr />
+      {% if ipr.old_ipr_url %}
+      <font size="3">
+	 This IPR disclosure was submitted by e-mail.<br>
+	 {% if not ipr.comply %}
+	 <font color="red">
+	    This IPR disclosure does not comply with the formal requirements of Section 6,
+	    "IPR Disclosures," of RFC 3979, "Intellectual Property Rights in IETF Technology."
+	 </font><br>
+	 {% endif %}
+	 Sections {% block legacy_sections %}I, II, and IV{% endblock %} of "The Patent Disclosure and Licensing Declaration Template 
+	 for {{ ipr.disclosure_type }} IPR Disclosures" have been completed for this IPR disclosure.
+	 Additional information may be available in the original submission.<br>
+	 See the <a href="{{ ipr.old_ipr_url }}">content of the original IPR disclosure</a>.<br>
+      </font>
+      {% else %}
+      <font size="3"> Only those sections of the "Patent Disclosure and Licensing Declaration
+	 Template for {{ ipr.disclosure_type }} IPR Disclosures" where the submitter provided
+	 information are displayed.</font><br>
+      {% endif %}
+
+      {% if ipr.additional_old_title1 %}
+	<font size="3"><a href="{{ ipr.additional_old_url1 }}">{{ ipr.additional_old_title1 }}</a></font><br>
+      {% endif %}
+
+      {% if ipr.additional_old_title2 %}
+	<font size="3"><a href="{{ ipr.additional_old_url2 }}">{{ ipr.additional_old_title2 }}</a></font><br>
+      {% endif %}
+
+      {% for item in ipr.updates.all %}
+       <font size="3">
+	  <br>
+	  This IPR disclosure updates IPR disclosure ID #{{ item.updated.ipr_id }},
+	  {% ifequal item.status_to_be 1 %}
+	     "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.document_title }}</a>".
+	  {% else %}
+	     "{{ item.updated.document_title }}", which was removed at the request of the submitter.
+	  {% endifequal %}
+	  <br>
+       </font>
+      {% endfor %}
+
+      {% for item in ipr.updated_by.all %}
+      {% ifequal item.processed 1 %}
+       <font size="3">
+	  <br>
+	  This IPR disclosure has been updated by IPR disclosure ID #{{ item.ipr.ipr_id }},
+	  {% ifequal item.status_to_be 1 %}
+	     "<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.document_title }}</a>".
+	  {% else %}
+	     "{{ item.ipr.document_title }}", which was removed at the request of the submitter.
+	  {% endifequal %}
+	  <br>
+       </font>
+      {% endifequal %}
+      {% endfor %}
+
+      <br>
+      Click <a href="{% url ietf.ipr.views.update ipr.ipr_id %}">here</a> to update this IPR disclosure<br>
+      <!-- tag 1 -->
+      <br>
+      <font size="3"><strong>Submitted Date: {{ ipr.submitted_date|date:"F j, Y" }}</strong></font>
+   </blockquote>
+   {% endblock %}
+
+   {% block section1 %}
+   <blockquote class="{% cycle odd,even as parity %}" style="margin-top: 0px; ">
+      <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+	 <tr>
+	    <th colspan=2>
+	       {% cycle I,II,III,IV,V,VI,VII,VIII as section %}.
+	       {% ifequal ipr.disclosure_type "Third Party" %}Possible{% endifequal %}
+	       Patent Holder/Applicant ("Patent Holder")
+	    </th>
+	 </tr>
+	 <tr>
+	    <td class="fixwidth">Legal Name:</td>	<td><b> {{ ipr.p_h_legal_name }} </b></td>
+	 </tr>
+      </table>
+   </blockquote>
+   {% endblock %}
+
+
+   {% block section2 %}
+   <blockquote class="{% cycle parity %}">
+      <table border="0" cellpadding="0" cellspacing="0" class="ipr person">
+	 <tr><th colspan="2" >
+	    {% cycle section %}.
+	    Patent Holder's Contact for License Application
+	    </th>
+	 </tr>
+	 <tr><td class="fixwidth">Name:</td>		<td><b>{{ ipr.holder_contact.name }}</b></td></tr>
+	 <tr><td class="fixwidth">Title:</td>		<td><b>{{ ipr.holder_contact.title }}</b></td></tr>
+	 <tr><td class="fixwidth">Department:</td>	<td><b>{{ ipr.holder_contact.department }}</b></td></tr>
+	 <tr><td class="fixwidth">Address1:</td>		<td><b>{{ ipr.holder_contact.address1 }}</b></td></tr>
+	 <tr><td class="fixwidth">Address2:</td>		<td><b>{{ ipr.holder_contact.address2 }}</b></td></tr>
+	 <tr><td class="fixwidth">Telephone:</td>	<td><b>{{ ipr.holder_contact.telephone }}</b></td></tr>
+	 <tr><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.holder_contact.fax }}</b></td></tr>
+	 <tr><td class="fixwidth">Email:</td>		<td><b>{{ ipr.holder_contact.email }}</b></td></tr>
+      </table>
+   </blockquote>
+   {% endblock %}
+
+
+   {% block section3 %}
+   {% if ipr.unbound_form or not ipr.old_ipr_url %}
+   <blockquote class="{% cycle parity %}">
+      <table border="0" cellpadding="0" cellspacing="0" class="ipr person">
+	 <tr>
+	    <th colspan="2" >
+	    {% cycle section %}.
+	    Contact Information for the IETF Participant Whose Personal Belief Triggered this Disclosure:	    
+	    </th>
+	 </tr>
+	 {% if ipr.unbond_form or ipr.ietf_contact.name %}
+	 <tr><td class="fixwidth">Name:</td>		<td><b>{{ ipr.ietf_contact.name }}</b></td></tr>
+	 <tr><td class="fixwidth">Title:</td>		<td><b>{{ ipr.ietf_contact.title }}</b></td></tr>
+	 <tr><td class="fixwidth">Department:</td>	<td><b>{{ ipr.ietf_contact.department }}</b></td></tr>
+	 <tr><td class="fixwidth">Address1:</td>		<td><b>{{ ipr.ietf_contact.address1 }}</b></td></tr>
+	 <tr><td class="fixwidth">Address2:</td>		<td><b>{{ ipr.ietf_contact.address2 }}</b></td></tr>
+	 <tr><td class="fixwidth">Telephone:</td>	<td><b>{{ ipr.ietf_contact.telephone }}</b></td></tr>
+	 <tr><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.ietf_contact.fax }}</b></td></tr>
+	 <tr><td class="fixwidth">Email:</td>		<td><b>{{ ipr.ietf_contact.email }}</b></td></tr>
+	 {% else %}
+	 <tr><td colspan="2"><i>No information submitted</td></tr>
+	 {% endif %}
+      </table>
+   </blockquote>
+   {% else %}
+   <!-- Not showing section {% cycle section %} -->
+   {% endif %}
+   {% endblock %}
+
+
+   {% block section4 %}
+   <blockquote class="{% cycle parity %}">
+      <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+	 <tr>
+	    <th colspan="2" >
+	    {% cycle section %}.
+	    IETF Document or Other Contribution to Which this IPR Disclosure Relates:
+	    </th>
+	 </tr>
+	 {% if ipr.unbound_form %}
+	    <tr><td class="fixwidth">RFC Number(s) (Numeric value only):</td><td>{{ ipr.rfclist }}</td></tr>
+	 {% else %}
+	    {% for rfc in ipr.rfcs.all %}
+	    <tr><td class="fixwidth"><b>RFC {{ rfc.rfc_number.rfc_number }}:</b></td><td><b>"{{ rfc.rfc_number.rfc_name }}"</b></td></tr>
+	    {% endfor %}
+	 {% endif %}
+	 <!-- XXX: Omitting code to display information from the rfc_number field of ipr here, as it's always NULL in the database today. -->
+	 {% if ipr.unbound_form %}
+	    <tr><td class="fixwidth">I-D filename(s) (draft-...):</td><td><b>{{ ipr.draftlist }}</b></td></tr>
+	 {% else %}
+	    {% for draft in ipr.drafts.all %}
+	    <tr><td class="fixwidth">Internet-Draft:</td><td><b>"{{ draft.document.id_document_name }}"<br />(<tt><big>{{ draft.document.filename }}-{{ draft.document.revision }}</big></tt>)</b></td></tr>
+	    {% endfor %}
+	 {% endif %}
+	 {% if ipr.unbound_form or ipr.other_designations %}
+	    <tr><td class="fixwidth">Designations for Other Contributions:</td><td><b>{{ ipr.other_designations }}</b></td></tr>
+	 {% endif %}
+      </table>
+   </blockquote>
+   {% endblock %}
+
+   {% if ipr.unbound_form or not ipr.old_ipr_url %}
+
+      {% block section5 %}
+      <blockquote class="{% cycle parity %}">
+	 <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+	    <tr>
+	       <th colspan="2" >
+	       {% cycle section %}.
+	       Disclosure of Patent Information (i.e., patents or patent
+	       applications required to be disclosed by Section 6 of RFC 3979)	    
+	       </th>
+	    </tr>
+	    {% if ipr.unbound_form or ipr.p_applications or ipr.p_notes %}
+	    <tr>
+	       <td colspan="2"><i>
+	       A. For granted patents or published pending patent applications,
+	       please provide the following information:</i></td>
+	    </tr>
+	    <tr><td>Patent, Serial, Publication, Registration,
+		      or Application/File number(s):</td><td><b>{{ ipr.p_applications }}</b></td></tr>
+	    <tr><td>Date(s) granted or applied for: </td><td><b>{{ ipr.date_applied }}</b></td></tr>
+	    <tr><td>Country:			     </td><td><b>{{ ipr.country }}</b></td></tr>
+	    {% if ipr.unbound_form %}
+	    <tr><td>Additional Notes:		     </td><td><b>{{ ipr.p_notes }}</b></td></tr>
+	    {% else %}
+	    <tr><td>Additional Notes:		     </td><td><b>{{ ipr.p_notes|escape|linebreaks }}</b></td></tr>
+	    {% endif %}
+	    <tr>
+	       <td colspan="2"><i>
+	       B. Does this disclosure relate to an unpublished pending patent
+	       application?: </i>
+	       <b>{{ ipr.get_selecttype_display }}</b>
+	    </tr>
+	    {% if ipr.unbound_form %}
+	    <tr><td></td>
+	       <td>
+	       {{ ipr.selecttype }}
+	       </td>
+	    </tr>
+	    {% endif %}
+	       {% block clause5c %}
+		  <tr>
+		     <td colspan="2"><i>
+			C. If an Internet-Draft or RFC includes multiple parts and it is not
+			reasonably apparent which part of such Internet-Draft or RFC is alleged
+			to be covered by the patent information disclosed in Section
+			V(A) or V(B), it is helpful if the discloser identifies here the sections of
+			the Internet-Draft or RFC that are alleged to be so
+			covered:</i>
+		     </td>
+		  </tr>
+		  {% if ipr.unbound_form %}
+		  <tr><td class="fixwidth"> </td><td><b>{{ ipr.discloser_identify }}</b></td></tr>
+		  {% else %}
+		     {% if ipr.discloser_identify %}
+		     <tr><td class="fixwidth"> </td><td><b>{{ ipr.discloser_identify|escape|linebreaks }}</b></td></tr>
+		     {% else %}
+		     <tr><td class="fixwidth"> </td><td><i>No information submitted</i></td></tr>
+		     {% endif %}
+		  {% endif %}
+	       {% endblock %}
+	    {% else %}
+	    <tr><td class="fixwidth"></td><td><b>This disclosure relates to an unpublished pending patent application.</b></td></tr>
+	    {% endif %}
+	 </table>
+      </blockquote>
+      {% endblock %}
+
+
+      {% block section6 %}
+      <!-- Not to be shown for third-party disclosures -->
+      <blockquote class="{% cycle parity %}">
+	 <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+	    <tr>
+	       <th colspan="2" >
+	       {% cycle section %}.
+	       Licensing Declaration
+	       </th>
+	    </tr>
+	    <tr>
+	       <td colspan="2"><i> The Patent Holder states that its position with respect
+	       to licensing any patent claims contained in the patent(s) or patent
+	       application(s) disclosed above that would necessarily be infringed by
+	       implementation of the technology required by the relevant IETF specification
+	       ("Necessary Patent Claims"), for the purpose of implementing such
+	       specification, is as follows(select one licensing declaration option only):</i>
+	       </td>
+	    </tr>
+	    <tr>
+	       <td> </td><td>
+		  {% if ipr.unbound_form %}
+		  {{ ipr.licensing_option }}
+		  {{ ipr.stdonly_license }}
+		  This licensing declaration is limited solely to standards-track IETF documents.
+		  {% else %}
+		  <b>{{ ipr.get_licensing_option_display }}<br/>
+		  {{ ipr.get_lic_opt_a_sub_display }}
+		  {{ ipr.get_lic_opt_b_sub_display }}
+		  {{ ipr.get_lic_opt_c_sub_display }}</b>
+		  {% endif %}
+	       </td>
+	    </tr>
+	    <tr>
+	       <td colspan="2">
+		  <i>Licensing information, comments, notes, or URL for further information:</i>
+	       </td>
+	    </tr>
+	    {% if ipr.unbound_form %}
+	    <tr><td class="fixwidth"> </td><td><b>{{ ipr.comments }}</b></td></tr>
+	    {% else %}
+	       {% if ipr.comments %}
+	       <tr><td class="fixwidth"> </td><td><b>{{ ipr.comments|escape|linebreaks }}</b></td></tr>
+	       {% else %}
+	       <tr><td class="fixwidth"> </td><td><i>No information submitted</td></tr>
+	       {% endif %}
+	    {% endif %}
+
+	    {% if ipr.unbound_form or ipr.lic_checkbox %}
+	    <tr>
+	       <td colspan="2">
+		  {% if ipr.unbound_form %} {{ ipr.lic_checkbox }} {% endif %}
+		  The individual submitting this template represents and warrants that all
+		  terms and conditions that must be satisfied for implementers of any
+		  covered IETF specification to obtain a license have been disclosed in this
+		  IPR disclosure statement.
+	       </td>
+	    </tr>
+	    {% endif %}
+	    <tr>
+	       <td colspan="2">
+		  <b><i>Note: The individual submitting this template represents and warrants
+		  that he or she is authorized by the Patent Holder to agree to the
+		  above-selected licensing declaration.</i></b>
+	       </td>
+	    </tr>
+	 </table>
+      </blockquote>
+      {% endblock %}
+
+
+      {% block section7 %}
+      <blockquote class="{% cycle parity %}">
+	 <table border="0" cellpadding="0" cellspacing="0" class="ipr person">
+	    <tr>
+	       <th colspan="2" >
+	       {% cycle section %}.
+	       Contact Information of Submitter of this Form (if different from
+	       IETF Participant in Section III above)
+	       </th>
+	    </tr>
+	    {% if ipr.unbound_form or ipr.submitter.name %}
+	    <tr><td class="fixwidth">Name:</td>		<td><b>{{ ipr.submitter.name }}</b></td></tr>
+	    <tr><td class="fixwidth">Title:</td>		<td><b>{{ ipr.submitter.title }}</b></td></tr>
+	    <tr><td class="fixwidth">Department:</td>	<td><b>{{ ipr.submitter.department }}</b></td></tr>
+	    <tr><td class="fixwidth">Address1:</td>	<td><b>{{ ipr.submitter.address1 }}</b></td></tr>
+	    <tr><td class="fixwidth">Address2:</td>	<td><b>{{ ipr.submitter.address2 }}</b></td></tr>
+	    <tr><td class="fixwidth">Telephone:</td>	<td><b>{{ ipr.submitter.telephone }}</b></td></tr>
+	    <tr><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.submitter.fax }}</b></td></tr>
+	    <tr><td class="fixwidth">Email:</td>		<td><b>{{ ipr.submitter.email }}</b></td></tr>
+	    {% else %}
+	    <tr><td colspan="2"><i>No information submitted</td></tr>
+	    {% endif %}
+	 </table>
+      </blockquote>
+      {% endblock %}
+
+
+      {% block section8 %}
+      <blockquote class="{% cycle parity %}">
+	 <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+	    <tr>
+	       <th colspan="2" >
+	       {% cycle section %}.
+	       Other Notes:
+	       </th>
+	    </tr>
+	    {% if ipr.unbound_form %}
+	    <tr><td class="fixwidth"> </td><td><b>{{ ipr.other_notes }}</b></td></tr>
+	    {% else %}
+	       {% if ipr.other_notes %}
+	       <tr><td> </td><td><b>{{ ipr.other_notes|escape|linebreaks }}</b></td></tr>
+	       {% else %}
+	       <tr><td colspan="2"><i>No information submitted</i></td></tr>
+	       {% endif %}
+	    {% endif %}
+	 </table>
+      </blockquote>
+      {% endblock %}
+
+   {% endif %}
+   {{ debug }}
+{% endblock %}

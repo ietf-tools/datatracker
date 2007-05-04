@@ -1,0 +1,2 @@
+#!/bin/sh
+python manage.py dumpdata --format=xml redirects | xmllint --format -

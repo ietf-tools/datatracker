@@ -1,0 +1,27 @@
+{% ifequal ipr.licensing_option 1 %}
+   No License Required for Implementers.
+{% endifequal%}
+
+{% ifequal ipr.licensing_option 2 %}
+   Royalty-Free, Reasonable and Non-Discriminatory License to All Implementers.
+{% endifequal%}
+
+{% ifequal ipr.licensing_option 3 %}
+   Reasonable and Non-Discriminatory License to All Implementers with Possible Royalty/Fee.
+{% endifequal%}
+
+{% ifequal ipr.licensing_option 4 %}
+   Licensing Declaration to be Provided Later.
+{% endifequal%}
+
+{% ifequal ipr.licensing_option 5 %}
+   Unwilling to Commit to the Provisions.
+{% endifequal%}
+
+{% ifequal ipr.licensing_option 6 %}
+   See Text Below for Licensing Declaration.
+{% endifequal%}
+
+{% if ipr.lic_opt_a_sub or ipr.lic_opt_b_sub or ipr.lic_opt_c_sub %}
+   The licensing declaration is limited solely to standards-track IETF documents.
+{% endif%}

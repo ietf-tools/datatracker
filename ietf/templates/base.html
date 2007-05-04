@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html
+	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US"><head><title>{% block title %}IETF Data{% endblock %} - WCF</title>
+</head><body><center>
+<table border=0 cellpadding=0 cellspacing=0>
+<tr>
+<td><a href="http://www.ietf.org/home.html"><img src="https://www1.ietf.org/images/header/ietflogo_sm.gif" border="0"></a></td>
+<td><a href="http://www.ietf.org/home.html"><img src="https://www1.ietf.org/images/header/home11.gif" border="0"></a></td>
+<td><img src="https://www1.ietf.org/images/header/separator.gif" border="0"></td>
+<td><a href="http://www.ietf.org/html.charters/wg-dir.html"><img src="https://www1.ietf.org/images/header/wg11.gif" border="0"></a></td>
+<td><img src="https://www1.ietf.org/images/header/separator.gif" border="0"></td>
+<td><a href="http://www.ietf.org/meetings/meetings.html"><img src="https://www1.ietf.org/images/header/meetings11.gif" border="0"></a></td>
+
+<td><img src="https://www1.ietf.org/images/header/separator.gif" border="0"></td>
+<td><a href="http://www.ietf.org/proceedings_directory.html"><img src="https://www1.ietf.org/images/header/proceed11.gif"  border="0"></a></td>
+<td><img src="https://www1.ietf.org/images/header/separator.gif" border="0"></td>
+<td><a href="https://datatracker.ietf.org/public/idindex.cgi"><img src="https://www1.ietf.org/images/header/id-index11.gif" border="0"></a></td>
+<td><img src="https://www1.ietf.org/images/header/separator.gif" border="0"></td>
+<td><a href="http://www.ietf.org/rfc.html"><img src="https://www1.ietf.org/images/header/rfc11.gif" border="0"></a></td>
+</tr>
+</table>
+</center>
+<hr>
+<!-- end new headers and layout -->
+    <div id="content">
+        {% block content %}{% endblock %}
+        {% block main_content %}{% endblock %}
+    </div>
+<hr/>
+<address>
+This page provided by Bill Fenner's proof-of-concept IETF web page front
+ends.
+</address>
+<a href="http://www.djangoproject.com/"><img src="http://media.djangoproject.com/img/badges/djangomade124x25.gif" border="0" alt="Made with Django." title="Made with Django." /></a>
+{% include "debug.html" %}
+</body>
+</html>

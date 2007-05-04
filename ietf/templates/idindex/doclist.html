@@ -1,0 +1,42 @@
+{{ object_list|length }} result{{ object_list|length|pluralize }}.<br>
+<b>Please click a document below to view detail information</b><br>
+<table cellpadding="1" cellspacing="0" border="0">
+<tr bgcolor="#dfdfff">
+<td width="280"><b>I-D Filename and Version Number</td>
+<td width="120"><b>Submission Date</td>
+
+<td width="70"><b>Status</td>
+{% if norfc %}
+{% else %}
+<td width="70"><b>RFC #</td>
+{% endif %}
+<td width="150"><a href="https://datatracker.ietf.org/"><b>I-D Tracker</a> State</td>
+</tr>
+
+{% for draft in object_list %}
+<tr bgcolor="{% cycle #efefff,#dfdfff %}">
+{# use url here! #}
+{# todo: check out decrease revision logic #}
+<td><a href="/idindex/{{ draft.filename }}/">{{ draft.filename }}-{{ draft.revision }}</a></td>
+<td>{{ draft.revision_date }}</td>
+<td>{{ draft.status }}</td>
+{% if norfc %}
+{% else %}
+<td>
+{% if draft.rfc_number %}
+<a href="http://www.ietf.org/rfc/rfc{{ draft.rfc_number|stringformat:"04d" }}.txt">{{ draft.rfc_number }}</a>
+{% else %}
+&nbsp;
+{% endif %}
+</td>
+{% endif %}
+<td>
+{% ifequal draft.idstate "I-D Exists" %}
+{{ draft.idstate }}
+{% else %}
+<a href="/idtracker/{{ draft.filename }}/">{{ draft.idstate }}</a>
+{% endifequal %}
+</td>
+</tr>
+{% endfor %}
+</table>

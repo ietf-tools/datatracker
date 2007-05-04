@@ -1,0 +1,6 @@
+{% extends "idindex/base.html" %}
+
+{% block iddbcontent %}
+<hr><h3>{{ header }} I-Ds sorted by {{ sort_header }}</h3>
+{% include "idindex/doclist.html" %}
+{% endblock %}

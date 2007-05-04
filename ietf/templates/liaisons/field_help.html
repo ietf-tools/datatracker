@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Liaison Statement Management Tool Field Help{% endblock %}
+
+{% block content %}
+<center><font size=+2>Liaison Statement Management Tool<br>Field Help</font></center>
+<br>
+The table below provides descriptions of the fields included in the 
+liaison statement submission form, and suggestions for completing them,
+where appropriate.  Additional materials that may be useful in 
+completing this form can be found in the following documents:
+<br><br>
+<ul>
+<li><a href="/liaisons/help/to_ietf/">Liaison Statements to the IETF: Guidelines for Completing the "To:" and "Cc:" Fields </a>
+<li><a href="/liaisons/help/from_ietf/">Liaison Statements from the IETF: Guidelines for Completing the "Cc:" Field</a>
+<li><a href="http://www.ietf.org/html.charters/wg-dir.html">Active IETF Working Groups</a>
+<li><a href="/liaisons/managers/">IETF Liaison Managers</a>
+</ul>
+For definitive information on generating liaison statements, please see RFC 4053 (BCP 103) 
+<a href="http://www.ietf.org/rfc/rfc4053.txt?number=4053">"Procedures for Handling Liaison Statements to and from the IETF."</a><br><br>
+<table cellpadding="3" cellspacing="0" border="1">
+  <tr align="center">
+    <td><b>Field</b></td>
+    <td><b>Sub-field</b></td>
+    <td><b>Description</b></td>
+    <td><b>Comments</b></td></tr>
+  <tr>
+    <td rowspan="2">From:</td>
+    <td>Organization:</td>
+    <td>The organization submitting the liaison statement.</td>
+    <td>The field is filled in automatically.</td></tr>
+  <tr>
+    <td>Submitter:</td>
+    <td>The name and e-mail address of the person submitting the liaison statement.</td>  
+    <td>The field is filled in automatically.</td></tr>
+  <tr>
+    <td>Reply-To:</td>
+    <td>&nbsp</td>
+    <td>The e-mail address(es) that will be inserted in the "To:" field when a recipient hits the "Reply" button on the message.
+</td>
+    <td>Mandatory<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr
+  <tr>
+    <td rowspan="2">To:</td>
+    <td>Organization:</td>
+    <td>The name of the organization (and sub-group, if applicable) to which the liaison statement is being sent.</td>
+    <td>Mandatory <br>Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp;SDO/Sub-group</td></tr>
+  <tr>
+    <td>POC(s):</td>
+    <td>The e-mail address(es) of the recipient(s) of the liaison statement, separated by commas.</td>  
+    <td>Mandatory<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr>
+  <tr>
+    <td>Cc:</td>
+    <td>&nbsp</td>
+    <td>The e-mail address(es) of the copy recipient(s) of the liaison statement, separated by commas.</td>
+    <td>Optional<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr>
+  <tr>
+    <td>Title:</td>
+    <td>&nbsp</td>
+    <td>The title of the liaison statement.</td>
+    <td>Mandatory</td></tr>
+  <tr>
+    <td>Response Contact:</td>
+    <td>&nbsp</td>
+    <td>The e-mail address(es) to which any response should be sent, separated by commas.</td>
+    <td>Optional<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr>
+  <tr>
+    <td>Technical Contact:</td>
+    <td>&nbsp</td>
+    <td>The e-mail address(es) of individuals or lists that may be contacted for clarification of the liaison statement, separated by commas.</td>
+    <td>Optional<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr>
+  <tr>
+    <td>Purpose:</td>
+    <td>&nbsp</td>
+    <td>The intent of the liaison statement.  Normally, one of four choices: (a) For action, (b) For comment, (c) For information, (d) Response.</td>
+    <td>Optional<br>The submitter selects one of the four choices, or selects "Other," and indicates the intent.</td></tr>  <tr>
+    <td>Deadline:</td>
+    <td>&nbsp</td>
+    <td>The date by which a comment or action is required.</td>
+    <td>Mandatory if the purpose is "For comment" or "For action." Otherwise, optional. </td></tr>
+ <tr>
+    <td>Body:</td>
+    <td>&nbsp</td>
+    <td>The text of the liaison statement.</td>
+    <td>Mandatory if there are no attachments.
+<br>Optional if the text of the liaison statement is provided in an attachment.</td></tr>
+
+</table>
+{% endblock %}

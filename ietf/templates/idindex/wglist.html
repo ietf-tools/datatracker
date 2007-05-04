@@ -1,0 +1,21 @@
+{% extends "idindex/base.html" %}
+
+{% block iddbcontent %}
+<h3>Please select a Working Group from the list below</h3>
+<blockquote>
+{% regroup object_list by status as grouped %}
+{% for status in grouped %}
+<h4>{{ status.grouper }} Working Groups</h4>
+<ul>
+{% for wg in status.list %}
+<li><a href="{% url ietf.idindex.views.wgdocs wg.group_acronym.acronym %}">{{ wg.group_acronym.name }}
+<b>({{ wg.group_acronym.acronym }})</b></a>
+{% ifequal wg.status.status "Active" %}
+{# would like to use with: {% with wg.active_drafts.count as drafts %} #}
+-- {{ wg.active_drafts.count }} Active Internet-Draft{{ wg.active_drafts.count|pluralize }}
+{% endifequal %}
+{% endfor %}
+</ul>
+{% endfor %}
+
+{% endblock %}

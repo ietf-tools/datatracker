@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}IPR Declarations{% endblock %}
+
+{% block content %}
+<h2>IPR Declarations - {{ year }}</h2>
+
+<a href="../">All dates</a>
+
+<ul>
+{% for month in date_list %}
+<li><a href="{{month|date:"b" }}/">{{ month|date:"F" }}
+{% endfor %}
+</ul>
+
+{% endblock %}

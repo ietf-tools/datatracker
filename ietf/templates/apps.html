@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+<blockquote>
+   <h3>Currently available applications:</h3>
+
+   <ul>
+   {% for app in apps %}
+      <li><a href="/{{ app }}">{{ app }}</li>
+   {% endfor %}
+   </ul>
+
+   </blockquote>
+{% endblock %}

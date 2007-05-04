@@ -1,0 +1,2161 @@
+-- MySQL dump 10.9
+--
+-- Host: localhost    Database: idtracker
+-- ------------------------------------------------------
+-- Server version	4.1.18
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `acronym`
+--
+
+DROP TABLE IF EXISTS `acronym`;
+CREATE TABLE `acronym` (
+  `acronym_id` int(11) NOT NULL auto_increment,
+  `acronym` char(12) default NULL,
+  `name` char(100) NOT NULL default '',
+  `name_key` char(50) NOT NULL default '',
+  PRIMARY KEY  (`acronym_id`),
+  UNIQUE KEY `acronym` (`acronym`,`name`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `agenda_cat`
+--
+
+DROP TABLE IF EXISTS `agenda_cat`;
+CREATE TABLE `agenda_cat` (
+  `agenda_cat_id` int(2) NOT NULL auto_increment,
+  `agenda_cat_value` varchar(100) default NULL,
+  PRIMARY KEY  (`agenda_cat_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `agenda_items`
+--
+
+DROP TABLE IF EXISTS `agenda_items`;
+CREATE TABLE `agenda_items` (
+  `agenda_item_id` int(11) NOT NULL auto_increment,
+  `telechat_id` int(4) NOT NULL default '0',
+  `agenda_cat_id` int(2) default NULL,
+  `ballot_id` int(11) NOT NULL default '0',
+  `group_acronym_id` int(11) NOT NULL default '0',
+  `agenda_item_status_id` int(1) default '0',
+  `iana_note` text,
+  `other_note` text,
+  `agenda_note_cat_id` int(1) default NULL,
+  `note_draft_by` int(2) default '0',
+  `item_num` int(2) default NULL,
+  `total_num` int(2) default NULL,
+  `agenda_item_gr_status_id` int(1) default NULL,
+  `wg_action_status` int(1) default '0',
+  `wg_action_status_sub` int(1) default '0',
+  PRIMARY KEY  (`agenda_item_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `all_id`
+--
+
+DROP TABLE IF EXISTS `all_id`;
+CREATE TABLE `all_id` (
+  `id_document_tag` int(11) NOT NULL default '0',
+  `filename` varchar(100) default NULL,
+  `last_active_revision` char(2) default NULL,
+  PRIMARY KEY  (`id_document_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `announced_from`
+--
+
+DROP TABLE IF EXISTS `announced_from`;
+CREATE TABLE `announced_from` (
+  `announced_from_id` int(2) NOT NULL auto_increment,
+  `announced_from_value` varchar(255) default NULL,
+  `announced_from_email` varchar(255) default NULL,
+  PRIMARY KEY  (`announced_from_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `announced_to`
+--
+
+DROP TABLE IF EXISTS `announced_to`;
+CREATE TABLE `announced_to` (
+  `announced_to_id` int(2) NOT NULL auto_increment,
+  `announced_to_value` varchar(255) default NULL,
+  `announced_to_email` varchar(255) default NULL,
+  PRIMARY KEY  (`announced_to_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `announcements`
+--
+
+DROP TABLE IF EXISTS `announcements`;
+CREATE TABLE `announcements` (
+  `announcement_id` int(12) NOT NULL auto_increment,
+  `announced_by` int(2) NOT NULL default '0',
+  `announced_date` date default NULL,
+  `announced_time` varchar(20) default NULL,
+  `announcement_text` text,
+  `announced_from_id` int(1) default '1',
+  `cc` varchar(255) default NULL,
+  `subject` varchar(255) default NULL,
+  `extra` text,
+  `announced_to_id` int(2) default NULL,
+  `nomcom` int(1) default NULL,
+  `nomcom_chair_id` int(4) default NULL,
+  `manualy_added` int(1) default '0',
+  `other_val` varchar(255) default NULL,
+  PRIMARY KEY  (`announcement_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `area_directors`
+--
+
+DROP TABLE IF EXISTS `area_directors`;
+CREATE TABLE `area_directors` (
+  `id` int(11) NOT NULL auto_increment,
+  `area_acronym_id` int(11) NOT NULL default '0',
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `area_acronym_id` (`area_acronym_id`,`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `area_group`
+--
+
+DROP TABLE IF EXISTS `area_group`;
+CREATE TABLE `area_group` (
+  `id` int(11) NOT NULL auto_increment,
+  `area_acronym_id` int(11) NOT NULL default '0',
+  `group_acronym_id` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `area_acronym_id` (`area_acronym_id`,`group_acronym_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `area_status`
+--
+
+DROP TABLE IF EXISTS `area_status`;
+CREATE TABLE `area_status` (
+  `status_id` int(11) NOT NULL auto_increment,
+  `status_value` char(25) NOT NULL default '',
+  PRIMARY KEY  (`status_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `areas`
+--
+
+DROP TABLE IF EXISTS `areas`;
+CREATE TABLE `areas` (
+  `area_acronym_id` int(11) NOT NULL default '0',
+  `start_date` date NOT NULL default '0000-00-00',
+  `concluded_date` date default NULL,
+  `status_id` int(11) NOT NULL default '0',
+  `comments` text,
+  `last_modified_date` date NOT NULL default '0000-00-00',
+  `extra_email_addresses` text,
+  PRIMARY KEY  (`area_acronym_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ballot_info`
+--
+
+DROP TABLE IF EXISTS `ballot_info`;
+CREATE TABLE `ballot_info` (
+  `ballot_id` int(8) NOT NULL default '0',
+  `active` int(1) NOT NULL default '0',
+  `an_sent` int(1) NOT NULL default '0',
+  `an_sent_date` date default NULL,
+  `an_sent_by` int(1) default NULL,
+  `defer` int(1) default '0',
+  `defer_by` int(2) default NULL,
+  `defer_date` date default NULL,
+  `approval_text` text,
+  `last_call_text` text,
+  `ballot_writeup` text,
+  `ballot_issued` int(1) default '0',
+  PRIMARY KEY  (`ballot_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ballots`
+--
+
+DROP TABLE IF EXISTS `ballots`;
+CREATE TABLE `ballots` (
+  `ballot_id` int(8) NOT NULL default '0',
+  `ad_id` int(8) NOT NULL default '0',
+  `yes_col` int(1) NOT NULL default '0',
+  `no_col` int(1) NOT NULL default '0',
+  `abstain` int(1) NOT NULL default '0',
+  `approve` int(1) NOT NULL default '0',
+  `discuss` int(1) NOT NULL default '0',
+  `recuse` int(1) default '0',
+  PRIMARY KEY  (`ballot_id`,`ad_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ballots_comment`
+--
+
+DROP TABLE IF EXISTS `ballots_comment`;
+CREATE TABLE `ballots_comment` (
+  `ballot_id` int(8) NOT NULL default '0',
+  `ad_id` int(8) NOT NULL default '0',
+  `comment_date` date NOT NULL default '0000-00-00',
+  `revision` char(2) NOT NULL default '',
+  `active` int(1) NOT NULL default '1',
+  `comment_text` text,
+  PRIMARY KEY  (`ballot_id`,`ad_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ballots_discuss`
+--
+
+DROP TABLE IF EXISTS `ballots_discuss`;
+CREATE TABLE `ballots_discuss` (
+  `ballot_id` int(8) NOT NULL default '0',
+  `ad_id` int(8) NOT NULL default '0',
+  `discuss_date` date NOT NULL default '0000-00-00',
+  `revision` char(2) NOT NULL default '',
+  `active` int(1) NOT NULL default '1',
+  `discuss_text` text,
+  PRIMARY KEY  (`ballot_id`,`ad_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `bash_agenda`
+--
+
+DROP TABLE IF EXISTS `bash_agenda`;
+CREATE TABLE `bash_agenda` (
+  `telechat_id` int(11) NOT NULL default '0',
+  `bash_agenda_txt` text,
+  `change_agenda` int(1) default '0',
+  `change_agenda_note` text,
+  PRIMARY KEY  (`telechat_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `chairs`
+--
+
+DROP TABLE IF EXISTS `chairs`;
+CREATE TABLE `chairs` (
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  `chair_name` varchar(25) default NULL,
+  PRIMARY KEY  (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `chairs_history`
+--
+
+DROP TABLE IF EXISTS `chairs_history`;
+CREATE TABLE `chairs_history` (
+  `id` int(4) NOT NULL auto_increment,
+  `chair_type_id` int(1) default NULL,
+  `present_chair` int(1) default NULL,
+  `person_or_org_tag` int(9) default NULL,
+  `start_year` int(4) default NULL,
+  `end_year` int(4) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `document_comments`
+--
+
+DROP TABLE IF EXISTS `document_comments`;
+CREATE TABLE `document_comments` (
+  `id` int(11) NOT NULL auto_increment,
+  `document_id` int(11) NOT NULL default '0',
+  `rfc_flag` smallint(6) default NULL,
+  `public_flag` smallint(6) default NULL,
+  `comment_date` date NOT NULL default '0000-00-00',
+  `comment_time` varchar(20) NOT NULL default '',
+  `version` char(3) default NULL,
+  `comment_text` text,
+  `created_by` int(11) default NULL,
+  `result_state` smallint(6) default NULL,
+  `origin_state` smallint(6) default NULL,
+  `ballot` int(1) default '0',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `dt_request`
+--
+
+DROP TABLE IF EXISTS `dt_request`;
+CREATE TABLE `dt_request` (
+  `id` int(11) NOT NULL auto_increment,
+  `description` varchar(255) NOT NULL default '',
+  `request_by` smallint(6) NOT NULL default '0',
+  `request_date` date default NULL,
+  `cur_version` varchar(5) default NULL,
+  `status` text,
+  `done_flag` smallint(6) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `email_addresses`
+--
+
+DROP TABLE IF EXISTS `email_addresses`;
+CREATE TABLE `email_addresses` (
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  `email_type` varchar(4) NOT NULL default '',
+  `email_priority` smallint(6) NOT NULL default '0',
+  `email_address` varchar(255) default NULL,
+  `email_comment` varchar(255) default NULL,
+  KEY `email_index` (`person_or_org_tag`,`email_priority`),
+  KEY `etag_type` (`person_or_org_tag`,`email_type`),
+  KEY `ix101_4` (`email_address`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `from_bodies`
+--
+
+DROP TABLE IF EXISTS `from_bodies`;
+CREATE TABLE `from_bodies` (
+  `from_id` int(2) NOT NULL default '0',
+  `body_name` varchar(35) default NULL,
+  `poc` int(11) default NULL,
+  `is_liaison_manager` int(1) default '0',
+  `other_sdo` int(1) default '1',
+  `email_priority` int(1) default '1',
+  PRIMARY KEY  (`from_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `g_chairs`
+--
+
+DROP TABLE IF EXISTS `g_chairs`;
+CREATE TABLE `g_chairs` (
+  `id` int(11) NOT NULL auto_increment,
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  `group_acronym_id` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `group_acronym_id` (`group_acronym_id`,`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `g_editors`
+--
+
+DROP TABLE IF EXISTS `g_editors`;
+CREATE TABLE `g_editors` (
+  `id` int(11) NOT NULL auto_increment,
+  `group_acronym_id` int(11) NOT NULL default '0',
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `group_acronym_id` (`group_acronym_id`,`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `g_secretaries`
+--
+
+DROP TABLE IF EXISTS `g_secretaries`;
+CREATE TABLE `g_secretaries` (
+  `id` int(9) NOT NULL auto_increment,
+  `group_acronym_id` int(11) default NULL,
+  `person_or_org_tag` int(11) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `g_secretary`
+--
+
+DROP TABLE IF EXISTS `g_secretary`;
+CREATE TABLE `g_secretary` (
+  `id` int(9) NOT NULL auto_increment,
+  `group_acronym_id` int(9) NOT NULL default '0',
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `g_status`
+--
+
+DROP TABLE IF EXISTS `g_status`;
+CREATE TABLE `g_status` (
+  `status_id` int(11) NOT NULL auto_increment,
+  `status_value` char(25) NOT NULL default '',
+  PRIMARY KEY  (`status_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `g_tech_advisors`
+--
+
+DROP TABLE IF EXISTS `g_tech_advisors`;
+CREATE TABLE `g_tech_advisors` (
+  `id` int(11) NOT NULL auto_increment,
+  `group_acronym_id` int(11) NOT NULL default '0',
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `group_acronym_id` (`group_acronym_id`,`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `g_type`
+--
+
+DROP TABLE IF EXISTS `g_type`;
+CREATE TABLE `g_type` (
+  `group_type_id` int(11) NOT NULL auto_increment,
+  `group_type` char(25) NOT NULL default '',
+  PRIMARY KEY  (`group_type_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `general_info`
+--
+
+DROP TABLE IF EXISTS `general_info`;
+CREATE TABLE `general_info` (
+  `id` int(2) NOT NULL auto_increment,
+  `info_name` varchar(50) default NULL,
+  `info_text` text,
+  `info_header` varchar(255) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `goals_milestones`
+--
+
+DROP TABLE IF EXISTS `goals_milestones`;
+CREATE TABLE `goals_milestones` (
+  `gm_id` int(11) NOT NULL auto_increment,
+  `group_acronym_id` int(11) NOT NULL default '0',
+  `description` text,
+  `expected_due_date` date default NULL,
+  `done_date` date default NULL,
+  `done` varchar(4) default NULL,
+  `last_modified_date` date NOT NULL default '0000-00-00',
+  PRIMARY KEY  (`gm_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `group_flag`
+--
+
+DROP TABLE IF EXISTS `group_flag`;
+CREATE TABLE `group_flag` (
+  `group_flag` int(11) NOT NULL auto_increment,
+  `group_flag_val` char(30) default NULL,
+  `equiv_doc_state_id` smallint(6) default NULL,
+  PRIMARY KEY  (`group_flag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `group_internal`
+--
+
+DROP TABLE IF EXISTS `group_internal`;
+CREATE TABLE `group_internal` (
+  `group_acronym_id` int(11) NOT NULL default '0',
+  `note` text,
+  `status_date` date default NULL,
+  `agenda` smallint(1) default '1',
+  `token_name` varchar(25) default NULL,
+  `pwg_cat_id` int(1) default NULL,
+  `telechat_date` date default NULL,
+  PRIMARY KEY  (`group_acronym_id`),
+  UNIQUE KEY `group_internal_idx` (`group_acronym_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `groups_ietf`
+--
+
+DROP TABLE IF EXISTS `groups_ietf`;
+CREATE TABLE `groups_ietf` (
+  `group_acronym_id` int(11) NOT NULL default '0',
+  `group_type_id` int(11) NOT NULL default '0',
+  `proposed_date` date default NULL,
+  `start_date` date default NULL,
+  `dormant_date` date default NULL,
+  `concluded_date` date default NULL,
+  `status_id` int(11) NOT NULL default '0',
+  `area_director_id` int(11) NOT NULL default '0',
+  `meeting_scheduled` char(3) default NULL,
+  `email_address` varchar(60) default NULL,
+  `email_subscribe` varchar(120) default NULL,
+  `email_keyword` varchar(50) default NULL,
+  `email_archive` varchar(95) default NULL,
+  `comments` text,
+  `last_modified_date` date NOT NULL default '0000-00-00',
+  `meeting_scheduled_old` char(3) default NULL,
+  PRIMARY KEY  (`group_acronym_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `hit_counter`
+--
+
+DROP TABLE IF EXISTS `hit_counter`;
+CREATE TABLE `hit_counter` (
+  `id` int(2) NOT NULL auto_increment,
+  `page_name` varchar(255) default NULL,
+  `hit_count` int(8) default NULL,
+  `last_visitor` varchar(255) default NULL,
+  `last_visited_date` date default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `id_authors`
+--
+
+DROP TABLE IF EXISTS `id_authors`;
+CREATE TABLE `id_authors` (
+  `id` int(11) NOT NULL auto_increment,
+  `id_document_tag` int(11) NOT NULL default '0',
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  `author_order` int(11) default NULL,
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `id_document_tag` (`id_document_tag`,`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `id_dates`
+--
+
+DROP TABLE IF EXISTS `id_dates`;
+CREATE TABLE `id_dates` (
+  `id` int(1) NOT NULL auto_increment,
+  `id_date` date default NULL,
+  `date_name` varchar(255) default NULL,
+  `f_name` varchar(255) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `id_intended_status`
+--
+
+DROP TABLE IF EXISTS `id_intended_status`;
+CREATE TABLE `id_intended_status` (
+  `intended_status_id` int(11) NOT NULL auto_increment,
+  `status_value` char(25) NOT NULL default '',
+  PRIMARY KEY  (`intended_status_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `id_internal`
+--
+
+DROP TABLE IF EXISTS `id_internal`;
+CREATE TABLE `id_internal` (
+  `id_document_tag` int(11) NOT NULL default '0',
+  `rfc_flag` smallint(6) default NULL,
+  `ballot_id` int(11) NOT NULL default '0',
+  `primary_flag` smallint(6) default NULL,
+  `group_flag` smallint(6) NOT NULL default '0',
+  `token_name` varchar(25) default NULL,
+  `token_email` varchar(255) default NULL,
+  `note` text,
+  `status_date` date default NULL,
+  `email_display` varchar(50) default NULL,
+  `agenda` smallint(6) default NULL,
+  `cur_state` smallint(6) NOT NULL default '0',
+  `prev_state` smallint(6) NOT NULL default '0',
+  `assigned_to` varchar(25) default NULL,
+  `mark_by` smallint(6) NOT NULL default '0',
+  `job_owner` smallint(6) NOT NULL default '0',
+  `event_date` date default NULL,
+  `area_acronym_id` int(11) NOT NULL default '0',
+  `cur_sub_state_id` int(11) NOT NULL default '0',
+  `prev_sub_state_id` int(11) NOT NULL default '0',
+  `returning_item` int(1) default '0',
+  `telechat_date` date default NULL,
+  `via_rfc_editor` int(1) default '0',
+  `state_change_notice_to` varchar(255) default NULL,
+  `dnp` int(1) default '0',
+  `dnp_date` date default NULL,
+  `noproblem` int(1) default '0',
+  `resurrect_requested_by` int(9) default '0',
+  `approved_in_minute` int(1) default '1',
+  PRIMARY KEY  (`id_document_tag`),
+  UNIQUE KEY `id_internal_idx` (`id_document_tag`),
+  KEY `id_internal_idx2` (`group_flag`),
+  KEY `id_internal_idx3` (`cur_state`),
+  KEY `id_internal_idx4` (`job_owner`),
+  KEY `id_internal_idx5` (`area_acronym_id`),
+  KEY `id_internal_idx6` (`ballot_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `id_restricted_word`
+--
+
+DROP TABLE IF EXISTS `id_restricted_word`;
+CREATE TABLE `id_restricted_word` (
+  `id` int(11) NOT NULL auto_increment,
+  `restricted_word` char(25) NOT NULL default '',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `id_status`
+--
+
+DROP TABLE IF EXISTS `id_status`;
+CREATE TABLE `id_status` (
+  `status_id` int(11) NOT NULL auto_increment,
+  `status_value` char(25) NOT NULL default '',
+  PRIMARY KEY  (`status_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `id_submission_env`
+--
+
+DROP TABLE IF EXISTS `id_submission_env`;
+CREATE TABLE `id_submission_env` (
+  `max_live` int(4) default NULL,
+  `staging_path` varchar(255) default NULL,
+  `max_interval` int(4) default NULL,
+  `current_manual_proc_date` int(4) default NULL,
+  `init_rev_approved_msg` text,
+  `submitter_auth_msg` text,
+  `id_action_announcement` text,
+  `target_path_web` varchar(255) default NULL,
+  `target_path_ftp` varchar(255) default NULL,
+  `side_bar_html` text,
+  `staging_url` varchar(255) default NULL,
+  `top_bar_html` text,
+  `bottom_bar_html` text,
+  `id_approval_request_msg` text,
+  `emerg_auto_response` int(2) default NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `iesg_history`
+--
+
+DROP TABLE IF EXISTS `iesg_history`;
+CREATE TABLE `iesg_history` (
+  `meeting_num` int(4) NOT NULL default '0',
+  `area_acronym_id` int(8) NOT NULL default '0',
+  `person_or_org_tag` int(9) NOT NULL default '0',
+  PRIMARY KEY  (`meeting_num`,`area_acronym_id`,`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `iesg_login`
+--
+
+DROP TABLE IF EXISTS `iesg_login`;
+CREATE TABLE `iesg_login` (
+  `id` int(11) NOT NULL auto_increment,
+  `login_name` varchar(255) default NULL,
+  `password` varchar(25) NOT NULL default '',
+  `user_level` smallint(6) NOT NULL default '0',
+  `first_name` varchar(25) default NULL,
+  `last_name` varchar(25) default NULL,
+  `person_or_org_tag` int(11) default NULL,
+  `pgp_id` varchar(20) default NULL,
+  `default_search` int(1) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `iesg_password`
+--
+
+DROP TABLE IF EXISTS `iesg_password`;
+CREATE TABLE `iesg_password` (
+  `person_or_org_tag` int(8) NOT NULL default '0',
+  `login_name` varchar(255) default NULL,
+  `password` varchar(255) default NULL,
+  PRIMARY KEY  (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `imported_mailing_list`
+--
+
+DROP TABLE IF EXISTS `imported_mailing_list`;
+CREATE TABLE `imported_mailing_list` (
+  `id` int(4) NOT NULL auto_increment,
+  `group_acronym_id` int(8) default '0',
+  `list_acronym` varchar(255) default NULL,
+  `list_name` varchar(255) default NULL,
+  `list_domain` varchar(25) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `interim_info`
+--
+
+DROP TABLE IF EXISTS `interim_info`;
+CREATE TABLE `interim_info` (
+  `id` int(4) NOT NULL auto_increment,
+  `group_acronym_id` int(8) default NULL,
+  `meeting_num` int(4) default NULL,
+  `meeting_date` varchar(255) default NULL,
+  `message_body` text,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `internet_drafts`
+--
+
+DROP TABLE IF EXISTS `internet_drafts`;
+CREATE TABLE `internet_drafts` (
+  `id_document_tag` int(11) NOT NULL auto_increment,
+  `id_document_name` varchar(255) default NULL,
+  `id_document_key` varchar(255) default NULL,
+  `group_acronym_id` int(11) default NULL,
+  `filename` varchar(255) default NULL,
+  `revision` char(2) NOT NULL default '',
+  `revision_date` date default NULL,
+  `file_type` varchar(20) default NULL,
+  `txt_page_count` int(11) default NULL,
+  `local_path` varchar(255) default NULL,
+  `start_date` date default NULL,
+  `expiration_date` date default NULL,
+  `abstract` text,
+  `dunn_sent_date` date default NULL,
+  `extension_date` date default NULL,
+  `status_id` int(11) NOT NULL default '0',
+  `intended_status_id` int(11) NOT NULL default '0',
+  `lc_sent_date` date default NULL,
+  `lc_changes` char(3) default NULL,
+  `lc_expiration_date` date default NULL,
+  `b_sent_date` date default NULL,
+  `b_discussion_date` date default NULL,
+  `b_approve_date` date default NULL,
+  `wgreturn_date` date default NULL,
+  `rfc_number` int(11) default NULL,
+  `comments` text,
+  `last_modified_date` date NOT NULL default '0000-00-00',
+  `replaced_by` int(11) default '0',
+  `review_by_rfc_editor` int(1) default '0',
+  `expired_tombstone` int(1) default '0',
+  PRIMARY KEY  (`id_document_tag`),
+  KEY `ix223_5` (`filename`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ipr_contacts`
+--
+
+DROP TABLE IF EXISTS `ipr_contacts`;
+CREATE TABLE `ipr_contacts` (
+  `contact_id` int(9) NOT NULL auto_increment,
+  `ipr_id` int(9) default NULL,
+  `contact_type` int(1) default NULL,
+  `name` varchar(255) default NULL,
+  `title` varchar(255) default NULL,
+  `department` varchar(255) default NULL,
+  `telephone` varchar(25) default NULL,
+  `fax` varchar(25) default NULL,
+  `email` varchar(255) default NULL,
+  `address1` varchar(255) default NULL,
+  `address2` varchar(255) default NULL,
+  PRIMARY KEY  (`contact_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ipr_detail`
+--
+
+DROP TABLE IF EXISTS `ipr_detail`;
+CREATE TABLE `ipr_detail` (
+  `ipr_id` int(9) NOT NULL auto_increment,
+  `p_h_legal_name` varchar(255) default NULL,
+  `document_title` varchar(255) default NULL,
+  `rfc_number` int(9) default NULL,
+  `id_document_tag` int(10) default NULL,
+  `other_designations` varchar(255) default NULL,
+  `p_applications` varchar(255) default NULL,
+  `date_applied` varchar(255) default NULL,
+  `selecttype` char(3) default NULL,
+  `disclouser_identify` varchar(255) default NULL,
+  `licensing_option` int(1) default NULL,
+  `other_notes` text,
+  `submitted_date` date default NULL,
+  `status` int(1) default NULL,
+  `comments` text,
+  `old_ipr_url` varchar(255) default NULL,
+  `additional_old_title1` varchar(255) default NULL,
+  `additional_old_url1` varchar(255) default NULL,
+  `additional_old_title2` varchar(255) default NULL,
+  `additional_old_url2` varchar(255) default NULL,
+  `country` varchar(100) default NULL,
+  `p_notes` text,
+  `third_party` int(1) default '0',
+  `lic_opt_a_sub` int(1) default NULL,
+  `lic_opt_b_sub` int(1) default NULL,
+  `lic_opt_c_sub` int(1) default NULL,
+  `generic` int(1) default '0',
+  `selectowned` char(3) default NULL,
+  `comply` int(1) default '1',
+  `lic_checkbox` int(1) default '0',
+  `update_notified_date` date default NULL,
+  PRIMARY KEY  (`ipr_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ipr_ids`
+--
+
+DROP TABLE IF EXISTS `ipr_ids`;
+CREATE TABLE `ipr_ids` (
+  `id` int(9) NOT NULL auto_increment,
+  `id_document_tag` int(9) default NULL,
+  `ipr_id` int(9) default NULL,
+  `revision` char(2) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ipr_licensing`
+--
+
+DROP TABLE IF EXISTS `ipr_licensing`;
+CREATE TABLE `ipr_licensing` (
+  `licensing_option` int(1) NOT NULL default '0',
+  `licensing_option_value` varchar(255) default NULL,
+  PRIMARY KEY  (`licensing_option`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ipr_notifications`
+--
+
+DROP TABLE IF EXISTS `ipr_notifications`;
+CREATE TABLE `ipr_notifications` (
+  `id` int(8) NOT NULL auto_increment,
+  `ipr_id` int(8) default NULL,
+  `notification` text,
+  `date_sent` date default NULL,
+  `time_sent` varchar(25) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ipr_rfcs`
+--
+
+DROP TABLE IF EXISTS `ipr_rfcs`;
+CREATE TABLE `ipr_rfcs` (
+  `id` int(9) NOT NULL auto_increment,
+  `ipr_id` int(9) default NULL,
+  `rfc_number` int(9) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ipr_selecttype`
+--
+
+DROP TABLE IF EXISTS `ipr_selecttype`;
+CREATE TABLE `ipr_selecttype` (
+  `type_id` int(9) NOT NULL auto_increment,
+  `selecttype` int(1) default NULL,
+  `type_display` varchar(15) default NULL,
+  PRIMARY KEY  (`type_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ipr_updates`
+--
+
+DROP TABLE IF EXISTS `ipr_updates`;
+CREATE TABLE `ipr_updates` (
+  `id` int(8) NOT NULL auto_increment,
+  `ipr_id` int(8) default NULL,
+  `updated` int(8) default NULL,
+  `status_to_be` int(1) default NULL,
+  `processed` int(1) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `irtf`
+--
+
+DROP TABLE IF EXISTS `irtf`;
+CREATE TABLE `irtf` (
+  `irtf_id` int(2) NOT NULL auto_increment,
+  `irtf_acronym` varchar(25) default NULL,
+  `irtf_name` varchar(255) default NULL,
+  `charter_text` text,
+  `meeting_scheduled` int(1) default NULL,
+  PRIMARY KEY  (`irtf_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `irtf_chairs`
+--
+
+DROP TABLE IF EXISTS `irtf_chairs`;
+CREATE TABLE `irtf_chairs` (
+  `id` int(4) NOT NULL auto_increment,
+  `irtf_id` int(2) default NULL,
+  `person_or_org_tag` int(8) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `liaison_detail`
+--
+
+DROP TABLE IF EXISTS `liaison_detail`;
+CREATE TABLE `liaison_detail` (
+  `detail_id` int(9) NOT NULL default '0',
+  `person_or_org_tag` int(11) default NULL,
+  `submitted_date` date default NULL,
+  `last_modified_date` date default NULL,
+  `from_id` int(2) default NULL,
+  `to_body` varchar(255) default NULL,
+  `title` varchar(255) default NULL,
+  `response_contact` varchar(255) default NULL,
+  `technical_contact` varchar(255) default NULL,
+  `purpose` text,
+  `body` text,
+  `deadline_date` date default NULL,
+  `cc1` text,
+  `cc2` varchar(50) default NULL,
+  `submitter_name` varchar(255) default NULL,
+  `submitter_email` varchar(255) default NULL,
+  `by_secretariat` int(1) default '0',
+  `to_poc` varchar(255) default NULL,
+  `to_email` varchar(255) default NULL,
+  `purpose_id` int(1) default NULL,
+  `replyto` varchar(255) default NULL,
+  PRIMARY KEY  (`detail_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `liaison_detail_temp`
+--
+
+DROP TABLE IF EXISTS `liaison_detail_temp`;
+CREATE TABLE `liaison_detail_temp` (
+  `detail_id` int(9) NOT NULL auto_increment,
+  `person_or_org_tag` int(11) default NULL,
+  `submitted_date` date default NULL,
+  `last_modified_date` date default NULL,
+  `from_id` int(2) default NULL,
+  `to_body` varchar(255) default NULL,
+  `title` varchar(255) default NULL,
+  `response_contact` varchar(255) default NULL,
+  `technical_contact` varchar(255) default NULL,
+  `purpose` text,
+  `body` text,
+  `deadline_date` date default NULL,
+  `cc1` text,
+  `cc2` varchar(50) default NULL,
+  `to_poc` varchar(255) default NULL,
+  `to_email` varchar(255) default NULL,
+  `purpose_id` int(1) default NULL,
+  `replyto` varchar(255) default NULL,
+  PRIMARY KEY  (`detail_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `liaison_managers`
+--
+
+DROP TABLE IF EXISTS `liaison_managers`;
+CREATE TABLE `liaison_managers` (
+  `id` int(4) NOT NULL auto_increment,
+  `person_or_org_tag` int(8) default NULL,
+  `email_priority` int(1) default NULL,
+  `sdo_id` int(4) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `liaison_purpose`
+--
+
+DROP TABLE IF EXISTS `liaison_purpose`;
+CREATE TABLE `liaison_purpose` (
+  `purpose_id` int(1) NOT NULL default '0',
+  `purpose_text` varchar(50) default NULL,
+  PRIMARY KEY  (`purpose_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `liaisons_interim`
+--
+
+DROP TABLE IF EXISTS `liaisons_interim`;
+CREATE TABLE `liaisons_interim` (
+  `id` int(4) NOT NULL auto_increment,
+  `title` varchar(255) default NULL,
+  `submitter_name` varchar(255) default NULL,
+  `submitter_email` varchar(255) default NULL,
+  `submitted_date` date default NULL,
+  `from_id` int(2) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `liaisons_members`
+--
+
+DROP TABLE IF EXISTS `liaisons_members`;
+CREATE TABLE `liaisons_members` (
+  `id` int(4) NOT NULL auto_increment,
+  `person_or_org_tag` int(9) default NULL,
+  `affiliation` varchar(255) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `mailing_list`
+--
+
+DROP TABLE IF EXISTS `mailing_list`;
+CREATE TABLE `mailing_list` (
+  `mailing_list_id` varchar(25) NOT NULL default '',
+  `request_date` date default NULL,
+  `mlist_name` varchar(250) default NULL,
+  `short_desc` varchar(250) default NULL,
+  `long_desc` text,
+  `requestor` varchar(250) default NULL,
+  `requestor_email` varchar(250) default NULL,
+  `admins` varchar(250) default NULL,
+  `archive_remote` text,
+  `archive_private` int(1) default NULL,
+  `initial` text,
+  `welcome_message` text,
+  `subscription` int(1) default NULL,
+  `post_who` int(1) default NULL,
+  `post_admin` int(1) default NULL,
+  `add_comment` text,
+  `mail_type` int(1) default NULL,
+  `mail_cat` int(1) default NULL,
+  `auth_person_or_org_tag` int(11) default NULL,
+  `welcome_new` text,
+  `approved` int(1) default '0',
+  `approved_date` date default NULL,
+  `reason_to_delete` text,
+  `domain_name` varchar(10) default NULL,
+  PRIMARY KEY  (`mailing_list_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `management_issues`
+--
+
+DROP TABLE IF EXISTS `management_issues`;
+CREATE TABLE `management_issues` (
+  `id` int(11) NOT NULL auto_increment,
+  `telechat_id` int(4) default NULL,
+  `title` varchar(255) default NULL,
+  `issue` text,
+  `discussed_status_id` int(1) default '0',
+  `note` text,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `meeting_agenda_count`
+--
+
+DROP TABLE IF EXISTS `meeting_agenda_count`;
+CREATE TABLE `meeting_agenda_count` (
+  `hit_count` int(12) default NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `meeting_attendees`
+--
+
+DROP TABLE IF EXISTS `meeting_attendees`;
+CREATE TABLE `meeting_attendees` (
+  `id` int(12) NOT NULL auto_increment,
+  `first_name` varchar(255) default NULL,
+  `last_name` varchar(255) default NULL,
+  `affiliated_company` varchar(255) default NULL,
+  `email_address` varchar(255) default NULL,
+  `meeting_num` int(4) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `meeting_hours`
+--
+
+DROP TABLE IF EXISTS `meeting_hours`;
+CREATE TABLE `meeting_hours` (
+  `hour_id` int(4) NOT NULL auto_increment,
+  `hour_desc` varchar(20) default NULL,
+  PRIMARY KEY  (`hour_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `meeting_rooms`
+--
+
+DROP TABLE IF EXISTS `meeting_rooms`;
+CREATE TABLE `meeting_rooms` (
+  `room_id` int(4) NOT NULL auto_increment,
+  `meeting_num` int(4) default NULL,
+  `room_name` varchar(255) default NULL,
+  PRIMARY KEY  (`room_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `meeting_times`
+--
+
+DROP TABLE IF EXISTS `meeting_times`;
+CREATE TABLE `meeting_times` (
+  `time_id` int(4) NOT NULL auto_increment,
+  `time_desc` varchar(100) default NULL,
+  `meeting_num` int(4) default NULL,
+  `day_id` int(1) default NULL,
+  `session_name_id` int(1) default NULL,
+  PRIMARY KEY  (`time_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `meeting_venues`
+--
+
+DROP TABLE IF EXISTS `meeting_venues`;
+CREATE TABLE `meeting_venues` (
+  `id` int(2) NOT NULL auto_increment,
+  `meeting_num` int(4) default NULL,
+  `break_area_name` varchar(255) default NULL,
+  `reg_area_name` varchar(255) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `meetings`
+--
+
+DROP TABLE IF EXISTS `meetings`;
+CREATE TABLE `meetings` (
+  `meeting_num` int(3) NOT NULL default '0',
+  `start_date` date default NULL,
+  `end_date` date default NULL,
+  `city` varchar(255) default NULL,
+  `state` varchar(255) default NULL,
+  `country` varchar(255) default NULL,
+  `ack` text,
+  `agenda_html` text,
+  `agenda_text` text,
+  `future_meeting` text,
+  `overview1` text,
+  `overview2` text,
+  PRIMARY KEY  (`meeting_num`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `messages`
+--
+
+DROP TABLE IF EXISTS `messages`;
+CREATE TABLE `messages` (
+  `id` int(11) NOT NULL auto_increment,
+  `message_name` varchar(25) NOT NULL default '',
+  `message_content` text NOT NULL,
+  `recipient` varchar(100) NOT NULL default '',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `migrate_stat`
+--
+
+DROP TABLE IF EXISTS `migrate_stat`;
+CREATE TABLE `migrate_stat` (
+  `id` int(11) NOT NULL auto_increment,
+  `new_script` char(40) NOT NULL default '',
+  `old_script` char(40) default NULL,
+  `need_done` char(50) default NULL,
+  `how_to_test` char(100) default NULL,
+  `status` char(100) default NULL,
+  `done_flag` smallint(6) default NULL,
+  `group_id` smallint(6) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `minutes`
+--
+
+DROP TABLE IF EXISTS `minutes`;
+CREATE TABLE `minutes` (
+  `id` int(8) NOT NULL auto_increment,
+  `meeting_num` int(3) default NULL,
+  `group_acronym_id` int(8) default NULL,
+  `filename` varchar(255) default NULL,
+  `irtf` int(1) default '0',
+  `interim` int(1) default '0',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `nomcom`
+--
+
+DROP TABLE IF EXISTS `nomcom`;
+CREATE TABLE `nomcom` (
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `nomcom_members`
+--
+
+DROP TABLE IF EXISTS `nomcom_members`;
+CREATE TABLE `nomcom_members` (
+  `chair_id` int(4) NOT NULL default '0',
+  `voting_members` text,
+  `non_voting_members` text,
+  PRIMARY KEY  (`chair_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `non_session`
+--
+
+DROP TABLE IF EXISTS `non_session`;
+CREATE TABLE `non_session` (
+  `non_session_id` int(4) NOT NULL auto_increment,
+  `day_id` int(1) default NULL,
+  `non_session_ref_id` int(1) default NULL,
+  `meeting_num` int(4) default NULL,
+  `time_desc` varchar(75) default NULL,
+  PRIMARY KEY  (`non_session_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `non_session_ref`
+--
+
+DROP TABLE IF EXISTS `non_session_ref`;
+CREATE TABLE `non_session_ref` (
+  `id` int(1) NOT NULL default '0',
+  `name` varchar(255) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `none_wg_mailing_list`
+--
+
+DROP TABLE IF EXISTS `none_wg_mailing_list`;
+CREATE TABLE `none_wg_mailing_list` (
+  `id` varchar(35) NOT NULL default '',
+  `purpose` text,
+  `area_acronym_id` int(4) default NULL,
+  `admin` text,
+  `list_url` varchar(255) NOT NULL default '',
+  `s_name` varchar(255) default NULL,
+  `s_email` varchar(255) default NULL,
+  `status` int(1) default NULL,
+  `list_name` varchar(255) default NULL,
+  `subscribe_url` varchar(255) default NULL,
+  `subscribe_other` text,
+  `ds_name` varchar(255) default NULL,
+  `ds_email` varchar(255) default NULL,
+  `msg_to_ad` text,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `not_meeting_groups`
+--
+
+DROP TABLE IF EXISTS `not_meeting_groups`;
+CREATE TABLE `not_meeting_groups` (
+  `group_acronym_id` int(8) default NULL,
+  `meeting_num` int(4) default NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `old_document_comments`
+--
+
+DROP TABLE IF EXISTS `old_document_comments`;
+CREATE TABLE `old_document_comments` (
+  `id` int(8) NOT NULL default '0',
+  `comment_text` text,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `outstanding_tasks`
+--
+
+DROP TABLE IF EXISTS `outstanding_tasks`;
+CREATE TABLE `outstanding_tasks` (
+  `id` int(11) NOT NULL auto_increment,
+  `item_txt` varchar(255) default NULL,
+  `task_status_id` int(2) default '4',
+  `last_updated_date` date default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `person_or_org_info`
+--
+
+DROP TABLE IF EXISTS `person_or_org_info`;
+CREATE TABLE `person_or_org_info` (
+  `person_or_org_tag` int(11) NOT NULL auto_increment,
+  `record_type` char(8) default NULL,
+  `name_prefix` char(10) default NULL,
+  `first_name` char(20) default NULL,
+  `first_name_key` char(20) default NULL,
+  `middle_initial` char(4) default NULL,
+  `middle_initial_key` char(4) default NULL,
+  `last_name` char(50) default NULL,
+  `last_name_key` char(50) default NULL,
+  `name_suffix` char(10) default NULL,
+  `date_modified` date default NULL,
+  `modified_by` char(8) default NULL,
+  `date_created` date default NULL,
+  `created_by` char(8) default NULL,
+  `address_type` char(4) default NULL,
+  PRIMARY KEY  (`person_or_org_tag`),
+  UNIQUE KEY `ix100_1` (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `phone_numbers`
+--
+
+DROP TABLE IF EXISTS `phone_numbers`;
+CREATE TABLE `phone_numbers` (
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  `phone_type` char(3) NOT NULL default '',
+  `phone_priority` int(11) NOT NULL default '0',
+  `phone_number` varchar(255) default NULL,
+  `phone_comment` varchar(255) default NULL,
+  KEY `phnumbers` (`person_or_org_tag`,`phone_priority`),
+  KEY `ttag_type` (`person_or_org_tag`,`phone_type`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `postal_addresses`
+--
+
+DROP TABLE IF EXISTS `postal_addresses`;
+CREATE TABLE `postal_addresses` (
+  `address_type` char(4) NOT NULL default '',
+  `address_priority` int(11) default NULL,
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  `person_title` char(50) default NULL,
+  `affiliated_company` char(70) default NULL,
+  `aff_company_key` char(70) default NULL,
+  `department` char(100) default NULL,
+  `staddr1` char(40) default NULL,
+  `staddr2` char(40) default NULL,
+  `mail_stop` char(20) default NULL,
+  `city` char(20) default NULL,
+  `state_or_prov` char(20) default NULL,
+  `postal_code` char(20) default NULL,
+  `country` char(20) default NULL,
+  KEY `ix161_1` (`address_type`),
+  KEY `ix161_3` (`person_or_org_tag`),
+  KEY `ptag_type` (`person_or_org_tag`,`address_type`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `print_name`
+--
+
+DROP TABLE IF EXISTS `print_name`;
+CREATE TABLE `print_name` (
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  `firstname` char(50) default NULL,
+  `lastname` char(50) NOT NULL default '',
+  PRIMARY KEY  (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `prior_address`
+--
+
+DROP TABLE IF EXISTS `prior_address`;
+CREATE TABLE `prior_address` (
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  `address_type` char(4) default NULL,
+  PRIMARY KEY  (`person_or_org_tag`),
+  UNIQUE KEY `prior_address_idx` (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `proceedings`
+--
+
+DROP TABLE IF EXISTS `proceedings`;
+CREATE TABLE `proceedings` (
+  `meeting_num` int(3) NOT NULL default '0',
+  `dir_name` varchar(25) default NULL,
+  `sub_begin_date` date default NULL,
+  `sub_cut_off_date` date default NULL,
+  `frozen` int(1) default '0',
+  `c_sub_cut_off_date` date default NULL,
+  `pr_from_date` date default NULL,
+  `pr_to_date` date default NULL,
+  PRIMARY KEY  (`meeting_num`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `pwg_cat`
+--
+
+DROP TABLE IF EXISTS `pwg_cat`;
+CREATE TABLE `pwg_cat` (
+  `id` int(1) NOT NULL default '0',
+  `pwg_status_val` varchar(255) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ref_doc_states_new`
+--
+
+DROP TABLE IF EXISTS `ref_doc_states_new`;
+CREATE TABLE `ref_doc_states_new` (
+  `document_state_id` int(11) NOT NULL auto_increment,
+  `document_state_val` varchar(50) default NULL,
+  `equiv_group_flag` smallint(6) default NULL,
+  `document_desc` text,
+  PRIMARY KEY  (`document_state_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ref_next_states_new`
+--
+
+DROP TABLE IF EXISTS `ref_next_states_new`;
+CREATE TABLE `ref_next_states_new` (
+  `id` int(11) NOT NULL auto_increment,
+  `cur_state_id` int(11) NOT NULL default '0',
+  `next_state_id` int(11) NOT NULL default '0',
+  `condition` char(255) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ref_resp`
+--
+
+DROP TABLE IF EXISTS `ref_resp`;
+CREATE TABLE `ref_resp` (
+  `ref_resp_id` int(11) NOT NULL auto_increment,
+  `ref_resp_val` char(50) default NULL,
+  PRIMARY KEY  (`ref_resp_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `replaced_ids`
+--
+
+DROP TABLE IF EXISTS `replaced_ids`;
+CREATE TABLE `replaced_ids` (
+  `id_document_tag` int(11) default NULL,
+  `replaced_by` int(11) default NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `request`
+--
+
+DROP TABLE IF EXISTS `request`;
+CREATE TABLE `request` (
+  `id_document_tag` int(11) NOT NULL default '0',
+  `status_date` date default NULL,
+  `rfc_flag` smallint(6) default NULL,
+  `intended_status_id` char(20) default NULL,
+  `area_acronym` char(3) default NULL,
+  PRIMARY KEY  (`id_document_tag`),
+  UNIQUE KEY `request_idx` (`id_document_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `rfc_authors`
+--
+
+DROP TABLE IF EXISTS `rfc_authors`;
+CREATE TABLE `rfc_authors` (
+  `id` int(11) NOT NULL auto_increment,
+  `rfc_number` int(11) NOT NULL default '0',
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `person_or_org_tag` (`person_or_org_tag`,`rfc_number`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `rfc_intend_status`
+--
+
+DROP TABLE IF EXISTS `rfc_intend_status`;
+CREATE TABLE `rfc_intend_status` (
+  `intended_status_id` int(11) NOT NULL auto_increment,
+  `status_value` char(25) NOT NULL default '',
+  PRIMARY KEY  (`intended_status_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `rfc_status`
+--
+
+DROP TABLE IF EXISTS `rfc_status`;
+CREATE TABLE `rfc_status` (
+  `status_id` int(11) NOT NULL auto_increment,
+  `status_value` char(25) NOT NULL default '',
+  PRIMARY KEY  (`status_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `rfcs`
+--
+
+DROP TABLE IF EXISTS `rfcs`;
+CREATE TABLE `rfcs` (
+  `rfc_number` int(11) NOT NULL default '0',
+  `rfc_name` varchar(200) NOT NULL default '',
+  `rfc_name_key` varchar(200) NOT NULL default '',
+  `group_acronym` varchar(8) default NULL,
+  `area_acronym` varchar(8) default NULL,
+  `status_id` int(11) NOT NULL default '0',
+  `intended_status_id` int(11) NOT NULL default '0',
+  `fyi_number` varchar(20) default NULL,
+  `std_number` varchar(20) default NULL,
+  `txt_page_count` int(11) default NULL,
+  `online_version` char(3) default NULL,
+  `rfc_published_date` date default NULL,
+  `proposed_date` date default NULL,
+  `draft_date` date default NULL,
+  `standard_date` date default NULL,
+  `historic_date` date default NULL,
+  `lc_sent_date` date default NULL,
+  `lc_expiration_date` date default NULL,
+  `b_sent_date` date default NULL,
+  `b_approve_date` date default NULL,
+  `comments` text,
+  `last_modified_date` date NOT NULL default '0000-00-00',
+  PRIMARY KEY  (`rfc_number`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `rfcs_obsolete`
+--
+
+DROP TABLE IF EXISTS `rfcs_obsolete`;
+CREATE TABLE `rfcs_obsolete` (
+  `id` int(11) NOT NULL auto_increment,
+  `rfc_number` int(11) NOT NULL default '0',
+  `action` char(20) NOT NULL default '',
+  `rfc_acted_on` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `action` (`action`,`rfc_acted_on`,`rfc_number`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `roll_call`
+--
+
+DROP TABLE IF EXISTS `roll_call`;
+CREATE TABLE `roll_call` (
+  `telechat_id` int(4) NOT NULL default '0',
+  `person_or_org_tag` int(9) NOT NULL default '0',
+  `attended` int(1) default NULL,
+  `wg_spoken` int(1) default '0',
+  PRIMARY KEY  (`telechat_id`,`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `scheduled_announcements`
+--
+
+DROP TABLE IF EXISTS `scheduled_announcements`;
+CREATE TABLE `scheduled_announcements` (
+  `id` int(12) NOT NULL auto_increment,
+  `mail_sent` int(1) default '0',
+  `to_be_sent_date` date default NULL,
+  `to_be_sent_time` varchar(50) default NULL,
+  `scheduled_by` varchar(100) default NULL,
+  `scheduled_date` date default NULL,
+  `scheduled_time` varchar(50) default NULL,
+  `subject` varchar(255) default NULL,
+  `to_val` varchar(255) default NULL,
+  `from_val` varchar(255) default NULL,
+  `cc_val` text,
+  `body` text,
+  `actual_sent_date` date default NULL,
+  `actual_sent_time` varchar(50) default NULL,
+  `first_q` int(1) default '0',
+  `second_q` int(1) default '0',
+  `note` text,
+  `content_type` varchar(255) default '',
+  `replyto` varchar(255) default NULL,
+  `bcc_val` varchar(255) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `scheduled_announcements_temp`
+--
+
+DROP TABLE IF EXISTS `scheduled_announcements_temp`;
+CREATE TABLE `scheduled_announcements_temp` (
+  `id` int(12) NOT NULL auto_increment,
+  `mail_sent` int(1) default '0',
+  `to_be_sent_date` date default NULL,
+  `to_be_sent_time` varchar(50) default NULL,
+  `scheduled_by` varchar(100) default NULL,
+  `scheduled_date` date default NULL,
+  `scheduled_time` varchar(50) default NULL,
+  `subject` varchar(255) default NULL,
+  `to_val` varchar(255) default NULL,
+  `from_val` varchar(255) default NULL,
+  `cc_val` varchar(255) default NULL,
+  `body` text,
+  `replyto` varchar(255) default NULL,
+  `bcc_val` varchar(255) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `sdo_chairs`
+--
+
+DROP TABLE IF EXISTS `sdo_chairs`;
+CREATE TABLE `sdo_chairs` (
+  `id` int(4) NOT NULL auto_increment,
+  `sdo_id` int(4) default NULL,
+  `person_or_org_tag` int(8) default NULL,
+  `email_priority` int(1) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `sdos`
+--
+
+DROP TABLE IF EXISTS `sdos`;
+CREATE TABLE `sdos` (
+  `sdo_id` int(4) NOT NULL auto_increment,
+  `sdo_name` varchar(255) default NULL,
+  PRIMARY KEY  (`sdo_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `secretariat_staff`
+--
+
+DROP TABLE IF EXISTS `secretariat_staff`;
+CREATE TABLE `secretariat_staff` (
+  `person_or_org_tag` int(9) NOT NULL default '0',
+  `title` varchar(255) default NULL,
+  PRIMARY KEY  (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `session_conflicts`
+--
+
+DROP TABLE IF EXISTS `session_conflicts`;
+CREATE TABLE `session_conflicts` (
+  `id` int(12) NOT NULL auto_increment,
+  `group_acronym_id` int(8) default NULL,
+  `conflict_gid` int(8) default NULL,
+  `meeting_num` int(4) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `session_names`
+--
+
+DROP TABLE IF EXISTS `session_names`;
+CREATE TABLE `session_names` (
+  `session_name_id` int(1) NOT NULL auto_increment,
+  `session_name` varchar(255) default NULL,
+  PRIMARY KEY  (`session_name_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `session_request_activities`
+--
+
+DROP TABLE IF EXISTS `session_request_activities`;
+CREATE TABLE `session_request_activities` (
+  `id` int(12) NOT NULL auto_increment,
+  `group_acronym_id` int(12) default NULL,
+  `meeting_num` int(4) default NULL,
+  `activity` text,
+  `act_date` date default NULL,
+  `act_time` varchar(100) default NULL,
+  `act_by` int(8) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `session_status`
+--
+
+DROP TABLE IF EXISTS `session_status`;
+CREATE TABLE `session_status` (
+  `status_id` int(1) NOT NULL default '0',
+  `status` varchar(100) default NULL,
+  PRIMARY KEY  (`status_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `slide_types`
+--
+
+DROP TABLE IF EXISTS `slide_types`;
+CREATE TABLE `slide_types` (
+  `type_id` int(1) NOT NULL auto_increment,
+  `type_name` varchar(255) default NULL,
+  PRIMARY KEY  (`type_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `slides`
+--
+
+DROP TABLE IF EXISTS `slides`;
+CREATE TABLE `slides` (
+  `id` int(8) NOT NULL auto_increment,
+  `meeting_num` int(3) default NULL,
+  `group_acronym_id` int(8) default NULL,
+  `slide_num` int(2) default '0',
+  `slide_type_id` int(1) default NULL,
+  `slide_name` varchar(255) default NULL,
+  `irtf` int(1) default '0',
+  `interim` int(1) default '0',
+  `order_num` int(2) default NULL,
+  `in_q` int(1) default '0',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `staff_work_detail`
+--
+
+DROP TABLE IF EXISTS `staff_work_detail`;
+CREATE TABLE `staff_work_detail` (
+  `id` int(4) NOT NULL auto_increment,
+  `name` varchar(255) default NULL,
+  `start_date` date default NULL,
+  `finish_date` date default NULL,
+  `actual_finish_date` date default NULL,
+  `duration` varchar(255) default NULL,
+  `percent_complete` varchar(255) default NULL,
+  `person_or_org_tag` int(9) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `staff_work_history`
+--
+
+DROP TABLE IF EXISTS `staff_work_history`;
+CREATE TABLE `staff_work_history` (
+  `person_or_org_tag` int(9) NOT NULL default '0',
+  `history_text` text,
+  PRIMARY KEY  (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `sub_state`
+--
+
+DROP TABLE IF EXISTS `sub_state`;
+CREATE TABLE `sub_state` (
+  `sub_state_id` int(11) NOT NULL auto_increment,
+  `sub_state_val` varchar(55) default NULL,
+  `sub_state_desc` text,
+  PRIMARY KEY  (`sub_state_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `switches`
+--
+
+DROP TABLE IF EXISTS `switches`;
+CREATE TABLE `switches` (
+  `id` int(4) NOT NULL auto_increment,
+  `name` varchar(100) default NULL,
+  `val` int(1) default '0',
+  `updated_date` date default NULL,
+  `updated_time` time default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `task_status`
+--
+
+DROP TABLE IF EXISTS `task_status`;
+CREATE TABLE `task_status` (
+  `task_status_id` int(2) NOT NULL auto_increment,
+  `task_status_value` varchar(75) default NULL,
+  PRIMARY KEY  (`task_status_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `telechat`
+--
+
+DROP TABLE IF EXISTS `telechat`;
+CREATE TABLE `telechat` (
+  `telechat_id` int(4) NOT NULL auto_increment,
+  `telechat_date` date default NULL,
+  `minute_approved` int(1) default '0',
+  `wg_news_txt` text,
+  `iab_news_txt` text,
+  `management_issue` text,
+  `frozen` int(1) default '0',
+  `mi_frozen` int(1) default '0',
+  PRIMARY KEY  (`telechat_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `telechat_dates`
+--
+
+DROP TABLE IF EXISTS `telechat_dates`;
+CREATE TABLE `telechat_dates` (
+  `date1` date default NULL,
+  `date2` date default NULL,
+  `date3` date default NULL,
+  `date4` date default NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `telechat_minutes`
+--
+
+DROP TABLE IF EXISTS `telechat_minutes`;
+CREATE TABLE `telechat_minutes` (
+  `id` int(4) NOT NULL auto_increment,
+  `telechat_date` date default NULL,
+  `telechat_minute` text,
+  `exported` int(1) default '0',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `telechat_users`
+--
+
+DROP TABLE IF EXISTS `telechat_users`;
+CREATE TABLE `telechat_users` (
+  `person_or_org_tag` int(9) NOT NULL default '0',
+  `is_iesg` int(1) default NULL,
+  `affiliated_org` varchar(25) default NULL,
+  PRIMARY KEY  (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `temp_admins`
+--
+
+DROP TABLE IF EXISTS `temp_admins`;
+CREATE TABLE `temp_admins` (
+  `name` varchar(255) default NULL,
+  `list_url` text
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `temp_telechat_attendees`
+--
+
+DROP TABLE IF EXISTS `temp_telechat_attendees`;
+CREATE TABLE `temp_telechat_attendees` (
+  `id` int(8) NOT NULL auto_increment,
+  `telechat_id` int(4) default NULL,
+  `last_name` varchar(255) default NULL,
+  `first_name` varchar(255) default NULL,
+  `affiliation` varchar(255) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `temp_txt`
+--
+
+DROP TABLE IF EXISTS `temp_txt`;
+CREATE TABLE `temp_txt` (
+  `id` int(1) NOT NULL default '0',
+  `temp_txt` text,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `templates`
+--
+
+DROP TABLE IF EXISTS `templates`;
+CREATE TABLE `templates` (
+  `template_id` int(2) NOT NULL auto_increment,
+  `template_text` text,
+  `template_type` int(1) default NULL,
+  `template_title` varchar(255) default NULL,
+  `note` text,
+  `discussed_status_id` int(1) default '0',
+  `decision` text,
+  PRIMARY KEY  (`template_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `updated_ipr`
+--
+
+DROP TABLE IF EXISTS `updated_ipr`;
+CREATE TABLE `updated_ipr` (
+  `id` int(8) NOT NULL auto_increment,
+  `ipr_id` int(8) default NULL,
+  `status_to_be` int(1) default NULL,
+  `updated` int(8) default '0',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `uploads`
+--
+
+DROP TABLE IF EXISTS `uploads`;
+CREATE TABLE `uploads` (
+  `file_id` int(9) NOT NULL auto_increment,
+  `file_title` varchar(255) default NULL,
+  `person_or_org_tag` int(11) default NULL,
+  `file_extension` varchar(10) default NULL,
+  `detail_id` int(9) default NULL,
+  PRIMARY KEY  (`file_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `uploads_temp`
+--
+
+DROP TABLE IF EXISTS `uploads_temp`;
+CREATE TABLE `uploads_temp` (
+  `file_id` int(9) NOT NULL auto_increment,
+  `file_title` varchar(255) default NULL,
+  `file_extension` varchar(10) default NULL,
+  `detail_id` int(9) default NULL,
+  `person_or_org_tag` int(9) default NULL,
+  PRIMARY KEY  (`file_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users` (
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  `login_name` varchar(255) default NULL,
+  `password` varchar(25) default NULL,
+  `user_level` int(1) default NULL,
+  `comment` text,
+  PRIMARY KEY  (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `web_gm_chairs`
+--
+
+DROP TABLE IF EXISTS `web_gm_chairs`;
+CREATE TABLE `web_gm_chairs` (
+  `id` int(11) NOT NULL auto_increment,
+  `username` char(20) NOT NULL default '',
+  `ip_address` char(15) NOT NULL default '',
+  `gm_id` int(11) NOT NULL default '0',
+  `date` date NOT NULL default '0000-00-00',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `web_login_info`
+--
+
+DROP TABLE IF EXISTS `web_login_info`;
+CREATE TABLE `web_login_info` (
+  `id` int(11) NOT NULL auto_increment,
+  `username` char(20) NOT NULL default '',
+  `user_type` char(25) NOT NULL default '',
+  `ip_address` char(15) NOT NULL default '',
+  `date` date NOT NULL default '0000-00-00',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `web_user_info`
+--
+
+DROP TABLE IF EXISTS `web_user_info`;
+CREATE TABLE `web_user_info` (
+  `id` int(11) NOT NULL auto_increment,
+  `user_type` char(25) NOT NULL default '',
+  `password` char(20) NOT NULL default '',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `wg_agenda`
+--
+
+DROP TABLE IF EXISTS `wg_agenda`;
+CREATE TABLE `wg_agenda` (
+  `id` int(8) NOT NULL auto_increment,
+  `meeting_num` int(3) default NULL,
+  `group_acronym_id` int(8) default NULL,
+  `filename` varchar(255) default NULL,
+  `irtf` int(1) default '0',
+  `interim` int(1) default '0',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `wg_meeting_sessions`
+--
+
+DROP TABLE IF EXISTS `wg_meeting_sessions`;
+CREATE TABLE `wg_meeting_sessions` (
+  `session_id` int(8) NOT NULL auto_increment,
+  `meeting_num` int(4) default NULL,
+  `group_acronym_id` int(8) default NULL,
+  `irtf` int(1) default NULL,
+  `num_session` int(1) default NULL,
+  `length_session1` varchar(100) default NULL,
+  `length_session2` varchar(100) default NULL,
+  `length_session3` varchar(100) default NULL,
+  `conflict1` varchar(255) default NULL,
+  `conflict2` varchar(255) default NULL,
+  `conflict3` varchar(255) default NULL,
+  `conflict_other` text,
+  `special_req` text,
+  `number_attendee` int(4) default NULL,
+  `approval_ad` int(8) default NULL,
+  `status_id` int(1) default '0',
+  `ts_status_id` int(1) default '0',
+  `requested_date` date default NULL,
+  `approved_date` date default NULL,
+  `requested_by` int(8) default NULL,
+  `scheduled_date` date default NULL,
+  `last_modified_date` date default NULL,
+  `ad_comments` text,
+  `sched_room_id1` int(4) default NULL,
+  `sched_time_id1` int(4) default NULL,
+  `sched_date1` date default NULL,
+  `sched_room_id2` int(4) default NULL,
+  `sched_time_id2` int(4) default NULL,
+  `sched_date2` date default NULL,
+  `sched_room_id3` int(4) default NULL,
+  `sched_time_id3` int(4) default NULL,
+  `sched_date3` date default NULL,
+  `special_agenda_note` varchar(255) default NULL,
+  `combined_room_id1` int(4) default NULL,
+  `combined_time_id1` int(4) default NULL,
+  `combined_room_id2` int(4) default NULL,
+  `combined_time_id2` int(4) default NULL,
+  PRIMARY KEY  (`session_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `wg_meeting_sessions_temp`
+--
+
+DROP TABLE IF EXISTS `wg_meeting_sessions_temp`;
+CREATE TABLE `wg_meeting_sessions_temp` (
+  `temp_id` int(8) NOT NULL auto_increment,
+  `group_acronym_id` int(8) default NULL,
+  `irtf` int(1) default NULL,
+  `num_session` int(1) default NULL,
+  `length_session1` varchar(100) default NULL,
+  `length_session2` varchar(100) default NULL,
+  `length_session3` varchar(100) default NULL,
+  `conflict1` varchar(255) default NULL,
+  `conflict2` varchar(255) default NULL,
+  `conflict3` varchar(255) default NULL,
+  `conflict_other` text,
+  `special_req` text,
+  `number_attendee` int(4) default NULL,
+  PRIMARY KEY  (`temp_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `wg_password`
+--
+
+DROP TABLE IF EXISTS `wg_password`;
+CREATE TABLE `wg_password` (
+  `person_or_org_tag` int(11) NOT NULL default '0',
+  `password` varchar(255) default NULL,
+  `secrete_question_id` int(1) default NULL,
+  `secrete_answer` varchar(255) default NULL,
+  `is_tut_resp` int(1) default '0',
+  `irtf_id` int(4) default '0',
+  `comment` text,
+  `login_name` varchar(100) default NULL,
+  PRIMARY KEY  (`person_or_org_tag`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `wg_proceedings_activities`
+--
+
+DROP TABLE IF EXISTS `wg_proceedings_activities`;
+CREATE TABLE `wg_proceedings_activities` (
+  `id` int(8) NOT NULL auto_increment,
+  `group_acronym_id` int(8) default NULL,
+  `meeting_num` int(4) default NULL,
+  `activity` varchar(255) default NULL,
+  `act_date` date default NULL,
+  `act_time` varchar(100) default NULL,
+  `act_by` int(4) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+

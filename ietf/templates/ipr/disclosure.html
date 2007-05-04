@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}IPR Disclosure Page{% endblock %}
+{% block content %}
+<center>
+   <img src="http://www.ietf.org/images/ietflogo2e.gif" height="160" width="280">
+</center>
+<div>
+   <center>
+      <img src="http://www.ietf.org/images/ipr_header.gif" >
+   </center>
+   <p>
+   This page provides a mechanism for filing Disclosures about intellectual property rights (IPR) and for finding out what IPR Disclosures have been filed.  The IETF intellectual property rights rules are defined in RFC 3979, <a HREF="http://www.ietf.org/rfc/rfc3979.txt">"Intellectual Property Rights in IETF Technology."</a>
+   </p>
+   <p>
+   The IETF takes no position regarding the validity or scope of any
+   intellectual property rights or other rights that might be claimed to
+   pertain to the implementation or use of the technology described in any IETF documents or the extent to
+   which any license under such rights might or might not be available; nor does it represent that it has made any independent effort to identify any such rights.
+   </p>
+   <p />
+   <hr>
+   <p>
+   <a href="./ipr.cgi"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">File a disclosure about your IPR related to a specific IETF contribution</a>
+   </p>
+   <p><a href="./ipr_generic.cgi"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">File an IPR disclosure that is not related to a specific IETF contribution</a>
+   </p>
+   <p><a href="./ipr_notify.cgi"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Notify the IETF of IPR other than your own</a>
+   </p>
+   <p><a href="{% url ietf.ipr.views.updatelist %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Update an existing IPR disclosure</a>
+   </p>
+   <p><a href="./ipr_search.cgi"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Search the IPR disclosures</a>
+   </p>
+   <p><a href="{% url ietf.ipr.views.showlist %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">List of IPR disclosures</a><p>
+   </p>
+   <hr>
+   <p>To remove an IPR disclosure from the list, please contact the IETF Secretariat at <a href="mailto:ietf-ipr\@ietf.org">ietf-ipr\@ietf.org</a>.
+   </p>
+   <hr>
+   <p><font color="333366"><strong>IETF Contribution:</strong></font>
+   any submission to the IETF intended by the Contributor for publication as all or part of an Internet-Draft or RFC (except for RFC Editor Contributions described below) and any statement made within the context of an IETF activity.  Such statements include oral statements in IETF sessions, as well as written and electronic communications made at any time or place, which are addressed to: <br>
+   </p>
+   <p>-  the IETF plenary session,<br>
+   -  any IETF working group or portion thereof,<br>
+   -  the IESG, or any member thereof on behalf or the IESG,<br>
+   -  the IAB or any member thereof on behalf of the IAB,<br>
+   -  any IETF mailing list, including the IETF list itself, any working group or design team list, or any other list functioning under IETF auspices,<br>
+   -  the RFC Editor or the Internet-Drafts function (except for RFC Editor Contributions described below).<br>
+
+   </p>
+   <p>Statements made outside of an IETF session, mailing list or other function, that are clearly not intended to be input to an IETF activity, group or function, are not IETF Contributions in the context of this document.</p>
+<p>A participant in any IETF activity is deemed to accept all IETF rules of process, as documented in Best Current Practices RFCs and IESG Statements.      
+</p>
+
+<br>
+<br>
+A participant in any IETF activity acknowledges that written, audio and video records of meetings may be made and may be available to the public.
+   </p>
+   <p>
+   <font color="333366"><strong>RFC Editor Contribution:</strong></font>
+   An Internet-Draft intended by the Contributor to be submitted to the
+   RFC Editor for publication as an Informational or Experimental RFC but not intended to be part of the IETF Standards Process.<br> 
+   </p>
+   <hr>
+   <p>Please report any problems to <a href="mailto:ietf-action\@ietf.org">ietf-action\@ietf.org</a>
+   </p>
+
+{% endblock %}

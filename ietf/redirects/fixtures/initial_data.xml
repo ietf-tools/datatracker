@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<django-objects version="1.0">
+  <object pk="1" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaisons.cgi</field>
+    <field type="CharField" name="url">/liaisons</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="2" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaison_detail.cgi</field>
+    <field type="CharField" name="url">/liaisons</field>
+    <field type="CharField" name="rest">%(detail_id)s/</field>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="3" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaison_managers_list.cgi</field>
+    <field type="CharField" name="url">/liaisons/managers</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="4" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaison_guide_to_ietf.cgi</field>
+    <field type="CharField" name="url">/liaisons/help/to_ietf</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="5" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaison_guide_from_ietf.cgi</field>
+    <field type="CharField" name="url">/liaisons/help/from_ietf</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="6" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/liaison_field_help.cgi</field>
+    <field type="CharField" name="url">/liaisons/help/field_help</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="7" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/idindex.cgi</field>
+    <field type="CharField" name="url">/idindex</field>
+    <field type="CharField" name="rest">%(id)s/%(command)s</field>
+    <field type="CharField" name="remove">id_detail</field>
+  </object>
+  <object pk="4" model="redirects.command">
+    <field type="CharField" name="command">show_ind_id</field>
+    <field type="CharField" name="url">inddocs</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">2</field>
+  </object>
+  <object pk="3" model="redirects.command">
+    <field type="CharField" name="command">show_wg</field>
+    <field type="CharField" name="url">wglist</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">2</field>
+  </object>
+  <object pk="5" model="redirects.command">
+    <field type="CharField" name="command">show_list</field>
+    <field type="CharField" name="url">showdocs</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">3</field>
+  </object>
+  <object pk="2" model="redirects.suffix">
+    <field type="CharField" name="rest">%(fl)s</field>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="3" model="redirects.suffix">
+    <field type="CharField" name="rest">%(cat)s/%(sort)s</field>
+    <field type="CharField" name="remove"/>
+  </object>
+</django-objects>

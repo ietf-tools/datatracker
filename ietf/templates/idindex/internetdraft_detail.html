@@ -1,0 +1,49 @@
+{% extends "idindex/base.html" %}
+
+{% block title %}Internet Draft Database Index - {{ object.filename }}{% endblock %}
+
+{% block iddbcontent %}
+<h2>{{ object.filename }}-{{ object.revision_display }}</h2>
+<blockquote>
+{% ifequal object.status.status "Active" %}
+<li> <b><a href="http://www.ietf.org/internet-drafts/{{ object.filename }}-{{ object.revision }}.txt">View Document</a></b></li>
+{% endifequal %}
+<li> <b><a href="view_related_docs/">View Related Documents</a></b> (e.g., documents that replaced or were replaced by the subject I-D, and their derivatives and precursors.)</li>
+{% ifequal object.group.acronym "none" %}
+{% else %}
+<li> <b>IETF Working Group: <a href="http://www.ietf.org/html.charters/{{ object.group.acronym }}-charter.html">{{ object.group.name }}</a></li>
+{% endifequal %}
+<li> <b>I-D Title:</b> {{ object.id_document_name }}</li>
+<li> <b>I-D Status:</b> {{ object.status }}
+{% ifequal object.status.status "Replaced" %}
+(by <a href="/idindex/{{object.replaced_by.filename}}/">{{ object.replaced_by.filename }}</a>)
+{% endifequal %}
+{% if object.replaces %}
+(replaced <a href="/idindex/{{object.replaces.filename}}/">{{ object.replaces.filename }}</a>)
+{% endif %}
+</li>
+<li> <b>I-D Intended Status at Publication:</b> {{ object.intended_status }}</li>
+<li> <b>RFC Number:</b> {% if object.rfc_number %}<a href="http://www.ietf.org/rfc/rfc{{ object.rfc_number }}.txt">{{ object.rfc_number }}</a>{% endif %}</li>
+<li> <b><a href="https://datatracker.ietf.org/">I-D Tracker</a> State:</b>
+{% if object.idtracker %}
+<a href="/idtracker/{{ object.filename }}/">{{ object.idstate }}</a>
+{% else %}
+{{ object.idstate }}
+{% endif %}
+</li>
+<li> <b>Abstract: </b><br>   {{ object.abstract|escape }}
+</li>
+<li> <b>Author(s):</b><br>The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid.  If you are an author of this Internet-Draft, and if your e-mail address is not correct, then please send your current e-mail address to <a href="mailto:ietf-action@ietf.org">ietf-action@ietf.org</a>.
+<blockquote>
+{% for author in object.authors.all %}
+{% if author.email %}
+<a href="mailto:{{ author.email }}">{{ author.person }}</a>
+{% else %}
+{{ author.person }}
+{% endif %}
+<br>
+{% endfor %}
+</blockquote></li>
+</blockquote>
+
+{% endblock %}

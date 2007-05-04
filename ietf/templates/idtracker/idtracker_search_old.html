@@ -1,0 +1,54 @@
+<h1 style="text-align: center; color: red;">IESG Data Tracker</h1>
+
+<table cellpadding="1" cellspacing="0" border="0">
+<form method="post">
+
+<input type="hidden" name="command" value="search_list">
+<TR BGCOLOR="silver"><Th colspan="2">I-D - Search Criteria</Th></TR>
+<TR><TD colspan="2">
+<table cellpadding="1" cellspacing="0" border="0">
+
+  <TR><td align="right">
+    <label for="id_job_owner"><B>Responsible AD:</B></label></td>
+      <td>{{ form.job_owner }}
+      &nbsp;&nbsp;&nbsp;<label for="id_group_acronym"><B>WG Acronym:</B></label>
+      [TBD<!-- - model needs to fix group_acronym in idform-->]
+	&nbsp;&nbsp;&nbsp;<label for="id_status"><B>Status:</B></label>
+	{{ idform.status }}</td>
+      </tr>
+      <tr><td align="right">
+      <label for="id_cur_state"><b>Document State:</b></label></td>
+      <td>{{ form.cur_state }}
+      <label for="id_cur_sub_state"><b>sub state</b>:
+      {{ form.cur_sub_state }}</label>
+      </td></tr>
+      <tr><td align="right">
+      <label for="id_filename"><b>Filename:</b></label></td>
+      <td>{{ idform.filename }}
+      &nbsp;&nbsp;&nbsp;
+      <label for="id_rfc_number"><b>RFC Number:<b></label>
+      {{ idform.rfc_number }}
+      &nbsp;&nbsp;&nbsp;
+      <label for="id_area_acronym"><b>Area:</b></label>
+      {{ form.area_acronym }}</td></tr>
+<tr><td align="right">
+<label for="id_note"><b>Note:</b></label>
+</td><td>
+{{ form.note }} (have to fix this in view)
+</td></tr>
+<tr><td colspan="2">
+<input type="submit">
+</td></tr>
+</form>
+</table>
+
+<hr>
+{% if matches %}
+<ul>
+{% for match in matches %}
+<li>{{ match.filename }}</li>
+{% endfor %}
+</ul>
+{% else %}
+<p>No matches to your query.</p>
+{% endif %}

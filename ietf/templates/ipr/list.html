@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}IPR Update{% endblock %}
+{% block content %}
+
+<H1><center>IETF Page of Intellectual Property Rights Disclosures.</H1></center></h1>
+<p>
+This page provides a mechanism for filing disclosures about intellectual property rights (IPR) and for finding out what IPR disclosures have been filed.  The IETF intellectual property rights rules are defined in RFC 3979, <a HREF="http://www.ietf.org/rfc/rfc3979.txt">"Intellectual Property Rights in IETF Technology."</a>
+<p><p>
+
+
+The IETF takes no position regarding the validity or scope of any
+intellectual property rights or other rights that might be claimed to
+pertain to the implementation or use of the technology described in any IETF documents or the extent to
+which any license under such rights might or might not be available; nor does it represent that it has made any independent effort to identify any such rights.
+<p><p><p>
+<a href="https://datatracker.ietf.org/public/ipr_disclosure.cgi">Click here to submit an IPR disclosure</a> 
+
+<hr><p>
+<P><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"><a href="http://datatracker.ietf.org/public/ipr_search.cgi">Search the IPR Disclosures</a><p>
+<P><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"><a href="#generic">Generic IPR Disclosures</a><p>
+<P><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"><a href="#specific">Specific IPR Disclosures</a><p>
+<P><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"><a href="#notify">Specific Third Party IPR Disclosures</a><p>
+<hr>
+
+
+<b>The IPR disclosures within each category are listed by date in descending 
+   order.
+
+   <br></b>
+<a name="generic"></a>
+<h2>Generic IPR Disclosures</h2><br>
+<table border="1" cellpadding="2" cellspacing="2" width="820">
+   {% for ipr in generic_disclosures %}
+   {% include "ipr/list_item.html" %}
+   {% endfor %}
+</table>
+
+<P><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"><a href="#top">Back to Top</a><p>
+<a name="specific"></a>
+<h2>Specific IPR Disclosures</h2><br>
+
+<table border="1" cellpadding="2" cellspacing="2" width="820">
+   <tr><th>Date Submitted</th><th width="70">ID #</th><th align="center">Title of IPR Disclosure</th></tr>
+   {% for ipr in specific_disclosures %}
+   {% include "ipr/list_item.html" %}
+   {% endfor %}
+</table>
+<br>
+
+<P><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"><a href="#top">Back to Top</a><p>
+<a name="notify"></a>
+<h2>Specific Third Party IPR Disclosures</h2><br>
+<table border="1" cellpadding="2" cellspacing="2" width="820">
+   <tr><th>Date Submitted</th><th width="70">ID #</th><th align="center">Title of IPR Disclosure</th></tr>
+   {% for ipr in thirdpty_disclosures %}
+   {% include "ipr/list_item.html" %}
+   {% endfor %}
+</table>
+
+<hr>
+<p>Please report any problems to <a href="mailto:ietf-action@ietf.org">ietf-act
+   ion@ietf.org</a>
+<br><br><br><br>
+{% endblock %}
+
+  

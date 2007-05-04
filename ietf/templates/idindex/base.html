@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Internet Draft Database Index{% endblock %}
+
+{% block content %}
+{% block heading %}
+<center><font size=+2>Internet-Drafts Database Interface</font></center>
+<br>
+<a href="ftp://ftp.ietf.org/internet-drafts/all_id.txt">TAB Delimited Format</a><br><br>
+
+<img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"> All I-Ds &nbsp; <a href="/idindex/showdocs/all/date/">(sorted by submission date)</a> &nbsp; <a href="/idindex/showdocs/all/name/">(sorted by filename)</a><br>
+
+<img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"> Active I-Ds &nbsp; <a href="/idindex/showdocs/current/date/">(sorted by submission date)</a> &nbsp; <a href="/idindex/showdocs/current/name/">(sorted by filename)</a><br>
+
+<img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"> I-Ds Published as RFCs &nbsp; <a href="/idindex/showdocs/rfc/date/">(sorted by submission date)</a> &nbsp; <a href="/idindex/showdocs/rfc/name/">(sorted by filename)</a><br>
+
+<img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"> Expired/Withdrawn/Replaced I-Ds &nbsp; <a href="/idindex/showdocs/dead/date/">(sorted by submission date)</a> &nbsp; <a href="/idindex/showdocs/dead/name/">(sorted by filename)</a><br><br>
+
+<img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"> IETF Working Group Drafts 
+{% for letter in alphabet %}
+<a href="/idindex/wglist/{{ letter }}/">{{ letter.upper }}</a>
+{% endfor %}
+<a href="/idindex/wglist/other/">other</a><br>
+<img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"> Individual Drafts by Author Identifier
+{% for letter in alphabet %}
+<a href="/idindex/inddocs/{{ letter }}/">{{ letter.upper }}</a>
+{% endfor %}
+<a href="/idindex/inddocs/other/">other</a><br>
+
+<img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"> Other Drafts
+{% for org in orgs %}
+<a href="/idindex/otherdocs/{{ org.key }}/">{{ org.name.upper }}</a>
+{% endfor %}
+<br><br>
+
+<img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0"> <a href="/idindex/">I-D Search</a>
+<hr>
+{% endblock %}
+
+{% block iddbcontent %}
+Please select one of the above items.
+{% endblock %}
+{% endblock %}

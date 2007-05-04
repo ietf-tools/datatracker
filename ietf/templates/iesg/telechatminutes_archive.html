@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}IESG Telechat Minutes{% endblock %}
+
+{% block content %}
+<h2>IESG Telechat Minutes</h2>
+
+<h3>Recent Telechats</h3>
+{% regroup latest by telechat_date|date:"Y" as years %}
+{% for year in years %}
+{% ifnotequal latest|length "1" %}
+<h4>{{ year.grouper }}</h4>
+{% endifnotequal %}
+<ul>
+{% for minute in year.list %}
+<li><a href="detail/{{ minute.id }}/">{{ minute.telechat_date|date:"F j" }}</a>
+{% endfor %}
+</ul>
+{% endfor %}
+
+<h3>Archives by Year</h3>
+<ul>
+{% for year in date_list %}
+<li><a href="{{ year|date:"Y" }}/">{{ year|date:"Y" }}</a>
+{% endfor %}
+</ul>
+
+{% endblock %}

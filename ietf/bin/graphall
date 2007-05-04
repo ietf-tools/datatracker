@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# Requires modelviz.py from
+#  http://code.djangoproject.com/wiki/DjangoGraphviz
+#
+PYTHONPATH=`dirname $PWD`
+export PYTHONPATH
+DJANGO_SETTINGS_MODULE=ietf/settings
+export DJANGO_SETTINGS_MODULE
+for d in *
+do
+	if grep models.Model $d/models.py > /dev/null 2>&1
+	then
+		python modelviz.py $d
+	fi
+done > models.dot
+unflatten -f -l 10 models.dot | dot -Tps -Gsize=10.5,8.0 -Gmargin=0.25 -Gratio=auto -Grotate=90 | sed -e 's/ Bold/-Bold/' > models.ps

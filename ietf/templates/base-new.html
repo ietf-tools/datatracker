@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+
+<head>
+<title>{% block title %}IETF Data{% endblock %} - WCF</title>
+
+<style type="text/css">
+    @import "http://www1.tools.ietf.org/demo/www.ietf.org/v1.css";
+</style> 
+</head><body>
+
+<div id="leftmenu">
+<div class="menulogo">
+<img class="menulogo" src="http://www1.tools.ietf.org/images/ietflogo2i.png" alt="IETF logo" />
+</div>
+<ul>
+  <li><a title="About the Internet Engineering Task Force">About the IETF</a>
+  <ul> <!--sublist for about-->
+    <li><a title="What is the IETF?">Overview</a></li>
+    <li><a title="History of the IETF, from the Education Team">IETF history</a></li>
+    <!-- note: this link should be changed to reflect the new struct -->
+    <li><a title="How an IETF standard is adopted">IETF standards process</a></li>
+    <!-- same as "process? -->
+    <!--  <li><a href="#">IETF rules</a></li> -->
+    
+    <!-- I don't know of a "who's who" -->
+    <!--    <li><a href="#">People</a></li> -->
+    
+  </ul></li><!--end about sublist-->
+  <li><a title="What the IETF is doing">IETF activities</a>
+  <ul> <!--sublist for activities-->
+    <li><a title="Internet Engineering Steering Group">IESG</a></li>
+    <li><a title="Liasons with other standards bodies">IETF Liaison Activities</a></li>
+    <li><a title="The Secretariat, provided by NeuStar Secretariat Services">IETF administration</a>    </li>
+    <li><a title="IESG and IAB Nominations Committee">The NomCom</a></li>
+    <li><a title="IETF Working Groups">Working Groups</a></li>
+    <li><a title="Meetings past, present, and future">Meetings</a></li>
+    <li><a href="http://tools.ietf.org" >More Tools</a></li>
+  </ul> </li><!--end activities sublist-->
+  
+  <li><a title="Documents of the IETF">Documents</a>
+  <ul><!--sublist for documents-->
+    <li><a href="/demo/www.ietf.org/documents/rfc" title="Repository of RFC documents">RFCs</a></li>
+    <li><a title="Internet Draft pages">Internet-Drafts</a></li>
+    <li><a title="Proceedings of past meetings">Proceedings</a></li>
+    <li><a href="/demo/www.ietf.org/submit/" title="Submit Internet Drafts">Submission</a></li>
+  </ul> <!--end documents sublist-->
+  <li><a title="Other sites having to do with the IETF">Related sites</a>
+  <ul> <!--begin othersites sublist-->
+   <li><a href="http://www.iab.org">IAB</a></li>
+   <li><a href="http://koi.uoregon.edu/~iaoc/">IASA</a></li>
+   <li><a href="http://www.rfc-editor.org/">RFC Editor</a></li>
+   <li><a href="http://www.iana.org/">IANA</a></li>
+   <li><a href="http://www.irtf.org/">IRTF</a></li>
+  </ul> </li><!--end the othersites sublist-->
+  <li>Site search:</li>
+  <li><form method="get" action="http://www.google.com/u/ietf">
+  <input name="q" size="16" maxlength="255" value="" type="text" /><br />
+  <input name="sa" value="Go" type="submit" />
+  </form>
+  </li>
+</ul>
+
+</div>
+
+<div id="maincontent">
+        {% block content %}{% endblock %}
+        {% block main_content %}{% endblock %}
+{% if debug %}
+<div id="debug">
+  <h2>Queries</h2>
+  <p>
+    {{ sql_queries|length }} Queries
+    {% ifnotequal sql_queries|length 0 %}
+    (<span style="cursor: pointer;" onclick="document.getElementById('debugQueryTable').style.display='';">Show</span>)
+    {% endifnotequal %}
+  </p>
+  <table id="debugQueryTable" style="display: none;">
+    <col width="1"></col>
+    <col></col>
+    <col width="1"></col>
+    <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">SQL</th>
+      <th scope="col">Time</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for query in sql_queries %}<tr class="{% cycle odd,even %}">
+      <td>{{ forloop.counter }}</td>
+      <td>{{ query.sql|escape }}</td>
+      <td>{{ query.time }}</td>
+    </tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+</div>
+
+<div id="footer">
+  
+   The IETF is an organized activity of the <a href="http://www.isoc.org">Internet Society</a>
+   <!-- <img src="http://tools.ietf.org/demo/www.ietf.org/images/isoc-small.gif" alt="Internet Society"> -->
+<br>Please send problem reports to <a href="mailto:ietf-web@ietf.org">ietf-web@ietf.org</a>.
+<br>
+<a href="http://www.djangoproject.com/"><img src="http://media.djangoproject.com/img/badges/djangomade124x25.gif" border="0" alt="Made with Django." title="Made with Django." /></a>
+
+</div>
+  
+
+</body>
+</html>

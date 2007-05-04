@@ -1,0 +1,56 @@
+{% extends "ipr/details.html" %}
+{% block title %}IPR Disclosure Page{% endblock %}
+{% block top_info %}
+{% if not ipr %}
+<div>
+   <p>
+   The IETF takes no position regarding the validity or scope of any
+   intellectual property rights or other rights that might be claimed to
+   pertain to the implementation or use of the technology described in any IETF documents or the extent to
+   which any license under such rights might or might not be available; nor does it represent that it has made any independent effort to identify any such rights.
+   </p>
+   <p>
+      There are 3 different IPR disclosures that can be made:
+   </p>
+   <p>
+      <img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0" />
+      "Specific": <a href="{% url ietf.ipr.views.new_specific %}">A disclosure about your IPR related to a specific IETF contribution</a>
+   </p>
+   <p>
+      <img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0" />
+      "Generic": <a href="{% url ietf.ipr.views.new_generic %}">An IPR disclosure about your IPR that is not related to a specific IETF contribution</a>
+   </p>
+   <p>
+      <img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0" />
+      "Third-Party": <a href="{% url ietf.ipr.views.new_thirdpty %}">Notify the IETF of IPR other than your own which you believe may be related to a specific IETF contribution</a>
+   </p>
+</div>
+{% else %}
+<blockquote>
+   <h4 class="ipr">The Patent Disclosure and Licensing Declaration Template for {{ ipr.disclosure_type }} IPR Disclosures</h4>
+   <p class="ipr">
+
+      This document is an IETF IPR Disclosure and Licensing Declaration
+      Template and is submitted to inform the IETF of a) patent or patent
+      application information regarding the IETF document or contribution
+      listed in Section IV, and b) an IPR Holder's intention with respect to
+      the licensing of its necessary patent claims.  No actual license is
+      implied by submission of this template.  Please complete and submit a
+      separate template for each IETF document or contribution to which the
+      disclosed patent information relates.
+
+   </p>
+   <p class="ipr">
+
+      If you wish to submit your IPR disclosure by e-mail, then please send
+      it to <a href="mailto:ietf-ipr@ietf.org">ietf-ipr@ietf.org</a>.
+      Submissions made by e-mail that do not comply with the formal
+      requirements of Section 6, "IPR Disclosures," of <a
+      href="http://www.ietf.org/rfc/rfc3979.txt?number=3979">RFC 3979</a>,
+      "Intellectual Property Rights in IETF Technology," will be posted, but
+      will be marked as "non-compliant."
+
+   </p>
+</blockquote>
+{% endif %}
+{% endblock %}
