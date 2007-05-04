@@ -131,3 +131,48 @@ def flattenl(list):
 	[ 'a', 'b', 'c', 'd' ]
     """
     return reduce(operator.__concat__, list)
+
+
+def split_form(html, blocks):
+    """Split the rendering of a form into a dictionary of named blocks.
+
+    Takes the html of the rendered form as the first argument.
+
+    Expects a dictionary as the second argument, with desired block
+    name and a field specification as key:value pairs.
+
+    The field specification can be either a list of field names, or
+    a string with the field names separated by whitespace.
+
+    The return value is a new dictionary, with the same keys as the
+    block specification dictionary, and the form rendering matching
+    the specified keys as the value.
+
+    Any line in the rendered form which doesn't match any block's
+    field list will cause an exception to be raised.
+    """
+    import re
+    output = dict([(block,[]) for block in blocks])
+    # handle field lists in string form
+    for block in blocks:
+        if type(blocks[block]) == type(""):
+            blocks[block] = blocks[block].split()
+
+    # collapse radio button html to one line
+    html = re.sub('\n(.*type="radio".*\n)', "\g<1>", html)
+    html = re.sub('(?m)^(.*type="radio".*)\n', "\g<1>", html)
+
+    for line in html.split('\n'):
+        found = False
+        for block in blocks:
+            for field in blocks[block]:
+                if ('name="%s"' % field) in line:
+                    output[block].append(line)
+                    found = True
+        if not found:
+            raise LookupError("Could not place line in any section: '%s'" % line)
+
+    for block in output:
+        output[block] = "\n".join(output[block])
+
+    return output

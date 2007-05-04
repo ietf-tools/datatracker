@@ -53,4 +53,18 @@
    </p>
 </blockquote>
 {% endif %}
+<form>
+{% endblock %}
+
+{% block section1_data %}{{ form.section1 }}{% endblock %}
+{% block section2_data %}{{ form.section2 }}{% endblock %}
+{% block section3_data %}{{ form.section3 }}{% endblock %}
+{% block section4_data %}{{ form.section4 }}{% endblock %}
+{% block section5_data %}{{ form.section5 }}{% endblock %}
+{% block section6_data %}{{ form.section6 }}{% endblock %}
+{% block section7_data %}{{ form.section7 }}{% endblock %}
+{% block section8_data %}{{ form.section8 }}{% endblock %}
+{% block bot_info %}
+   <center><input type="submit" name="submit" value="Submit"></center>
+</form>
 {% endblock %}

@@ -24,6 +24,7 @@
    input	{ width: 72ex; font-family: sans-serif; font-size: 11pt; font-weight: normal; }
    input[type="radio"] { width: auto; }
    input[type="checkbox"] { width: auto; }
+   input[type="submit"] { width: auto; }
    textarea	{ width: 72ex; height: 5em; font-family: sans-serif; font-size: 11pt; font-weight: normal; }
    .required	{ color: red; }
    </style>
@@ -113,7 +114,9 @@
 	    </th>
 	 </tr>
 	 <tr>
+	    {% block section1_data %}
 	    <td class="fixwidth">Legal Name:</td>	<td><b> {{ ipr.p_h_legal_name }} </b></td>
+	    {% endblock %}
 	 </tr>
       </table>
    </blockquote>
@@ -128,6 +131,7 @@
 	    Patent Holder's Contact for License Application
 	    </th>
 	 </tr>
+	 {% block section2_data %}
 	 <tr><td class="fixwidth">Name:</td>		<td><b>{{ ipr.holder_contact.name }}</b></td></tr>
 	 <tr><td class="fixwidth">Title:</td>		<td><b>{{ ipr.holder_contact.title }}</b></td></tr>
 	 <tr><td class="fixwidth">Department:</td>	<td><b>{{ ipr.holder_contact.department }}</b></td></tr>
@@ -136,13 +140,14 @@
 	 <tr><td class="fixwidth">Telephone:</td>	<td><b>{{ ipr.holder_contact.telephone }}</b></td></tr>
 	 <tr><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.holder_contact.fax }}</b></td></tr>
 	 <tr><td class="fixwidth">Email:</td>		<td><b>{{ ipr.holder_contact.email }}</b></td></tr>
+	 {% endblock %}
       </table>
    </blockquote>
    {% endblock %}
 
 
    {% block section3 %}
-   {% if ipr.unbound_form or not ipr.old_ipr_url %}
+   {% if not ipr.is_bound or not ipr.old_ipr_url %}
    <blockquote class="{% cycle parity %}">
       <table border="0" cellpadding="0" cellspacing="0" class="ipr person">
 	 <tr>
@@ -151,6 +156,7 @@
 	    Contact Information for the IETF Participant Whose Personal Belief Triggered this Disclosure:	    
 	    </th>
 	 </tr>
+	 {% block section3_data %}
 	 {% if ipr.unbond_form or ipr.ietf_contact.name %}
 	 <tr><td class="fixwidth">Name:</td>		<td><b>{{ ipr.ietf_contact.name }}</b></td></tr>
 	 <tr><td class="fixwidth">Title:</td>		<td><b>{{ ipr.ietf_contact.title }}</b></td></tr>
@@ -163,6 +169,7 @@
 	 {% else %}
 	 <tr><td colspan="2"><i>No information submitted</td></tr>
 	 {% endif %}
+	 {% endblock %}
       </table>
    </blockquote>
    {% else %}
@@ -180,29 +187,23 @@
 	    IETF Document or Other Contribution to Which this IPR Disclosure Relates:
 	    </th>
 	 </tr>
-	 {% if ipr.unbound_form %}
-	    <tr><td class="fixwidth">RFC Number(s) (Numeric value only):</td><td>{{ ipr.rfclist }}</td></tr>
-	 {% else %}
+	 {% block section4_data %}
 	    {% for rfc in ipr.rfcs.all %}
 	    <tr><td class="fixwidth"><b>RFC {{ rfc.rfc_number.rfc_number }}:</b></td><td><b>"{{ rfc.rfc_number.rfc_name }}"</b></td></tr>
 	    {% endfor %}
-	 {% endif %}
-	 <!-- XXX: Omitting code to display information from the rfc_number field of ipr here, as it's always NULL in the database today. -->
-	 {% if ipr.unbound_form %}
-	    <tr><td class="fixwidth">I-D filename(s) (draft-...):</td><td><b>{{ ipr.draftlist }}</b></td></tr>
-	 {% else %}
+	    <!-- XXX: Omitting code to display information from the rfc_number field of ipr here, as it's always NULL in the database today. -->
 	    {% for draft in ipr.drafts.all %}
 	    <tr><td class="fixwidth">Internet-Draft:</td><td><b>"{{ draft.document.id_document_name }}"<br />(<tt><big>{{ draft.document.filename }}-{{ draft.document.revision }}</big></tt>)</b></td></tr>
 	    {% endfor %}
-	 {% endif %}
-	 {% if ipr.unbound_form or ipr.other_designations %}
+	    {% if ipr.other_designations %}
 	    <tr><td class="fixwidth">Designations for Other Contributions:</td><td><b>{{ ipr.other_designations }}</b></td></tr>
-	 {% endif %}
+	    {% endif %}
+	 {% endblock %}
       </table>
    </blockquote>
    {% endblock %}
 
-   {% if ipr.unbound_form or not ipr.old_ipr_url %}
+   {% if not ipr.is_bound or not ipr.old_ipr_url %}
 
       {% block section5 %}
       <blockquote class="{% cycle parity %}">
@@ -214,34 +215,24 @@
 	       applications required to be disclosed by Section 6 of RFC 3979)	    
 	       </th>
 	    </tr>
-	    {% if ipr.unbound_form or ipr.p_applications or ipr.p_notes %}
-	    <tr>
-	       <td colspan="2"><i>
-	       A. For granted patents or published pending patent applications,
-	       please provide the following information:</i></td>
-	    </tr>
-	    <tr><td>Patent, Serial, Publication, Registration,
-		      or Application/File number(s):</td><td><b>{{ ipr.p_applications }}</b></td></tr>
-	    <tr><td>Date(s) granted or applied for: </td><td><b>{{ ipr.date_applied }}</b></td></tr>
-	    <tr><td>Country:			     </td><td><b>{{ ipr.country }}</b></td></tr>
-	    {% if ipr.unbound_form %}
-	    <tr><td>Additional Notes:		     </td><td><b>{{ ipr.p_notes }}</b></td></tr>
-	    {% else %}
-	    <tr><td>Additional Notes:		     </td><td><b>{{ ipr.p_notes|escape|linebreaks }}</b></td></tr>
-	    {% endif %}
-	    <tr>
-	       <td colspan="2"><i>
-	       B. Does this disclosure relate to an unpublished pending patent
-	       application?: </i>
-	       <b>{{ ipr.get_selecttype_display }}</b>
-	    </tr>
-	    {% if ipr.unbound_form %}
-	    <tr><td></td>
-	       <td>
-	       {{ ipr.selecttype }}
-	       </td>
-	    </tr>
-	    {% endif %}
+	    {% block section5_data %}
+	    {% if ipr.p_applications or ipr.p_notes %}
+	       <tr>
+		  <td colspan="2"><i>
+		  A. For granted patents or published pending patent applications,
+		  please provide the following information:</i></td>
+	       </tr>
+	       <tr><td>Patent, Serial, Publication, Registration,
+			 or Application/File number(s):</td><td><b>{{ ipr.p_applications }}</b></td></tr>
+	       <tr><td>Date(s) granted or applied for: </td><td><b>{{ ipr.date_applied }}</b></td></tr>
+	       <tr><td>Country:			     </td><td><b>{{ ipr.country }}</b></td></tr>
+	       <tr><td>Additional Notes:		     </td><td><b>{{ ipr.p_notes|escape|linebreaks }}</b></td></tr>
+	       <tr>
+		  <td colspan="2"><i>
+		  B. Does this disclosure relate to an unpublished pending patent
+		  application?: </i>
+		  <b>{{ ipr.get_selecttype_display }}</b>
+	       </tr>
 	       {% block clause5c %}
 		  <tr>
 		     <td colspan="2"><i>
@@ -253,19 +244,16 @@
 			covered:</i>
 		     </td>
 		  </tr>
-		  {% if ipr.unbound_form %}
-		  <tr><td class="fixwidth"> </td><td><b>{{ ipr.discloser_identify }}</b></td></tr>
+		  {% if ipr.discloser_identify %}
+		  <tr><td class="fixwidth"> </td><td><b>{{ ipr.discloser_identify|escape|linebreaks }}</b></td></tr>
 		  {% else %}
-		     {% if ipr.discloser_identify %}
-		     <tr><td class="fixwidth"> </td><td><b>{{ ipr.discloser_identify|escape|linebreaks }}</b></td></tr>
-		     {% else %}
-		     <tr><td class="fixwidth"> </td><td><i>No information submitted</i></td></tr>
-		     {% endif %}
+		  <tr><td class="fixwidth"> </td><td><i>No information submitted</i></td></tr>
 		  {% endif %}
 	       {% endblock %}
 	    {% else %}
 	    <tr><td class="fixwidth"></td><td><b>This disclosure relates to an unpublished pending patent application.</b></td></tr>
 	    {% endif %}
+	 {% endblock %}	    
 	 </table>
       </blockquote>
       {% endblock %}
@@ -290,18 +278,13 @@
 	       specification, is as follows(select one licensing declaration option only):</i>
 	       </td>
 	    </tr>
+	    {% block section6_data %}
 	    <tr>
 	       <td> </td><td>
-		  {% if ipr.unbound_form %}
-		  {{ ipr.licensing_option }}
-		  {{ ipr.stdonly_license }}
-		  This licensing declaration is limited solely to standards-track IETF documents.
-		  {% else %}
 		  <b>{{ ipr.get_licensing_option_display }}<br/>
 		  {{ ipr.get_lic_opt_a_sub_display }}
 		  {{ ipr.get_lic_opt_b_sub_display }}
 		  {{ ipr.get_lic_opt_c_sub_display }}</b>
-		  {% endif %}
 	       </td>
 	    </tr>
 	    <tr>
@@ -309,20 +292,15 @@
 		  <i>Licensing information, comments, notes, or URL for further information:</i>
 	       </td>
 	    </tr>
-	    {% if ipr.unbound_form %}
-	    <tr><td class="fixwidth"> </td><td><b>{{ ipr.comments }}</b></td></tr>
+	    {% if ipr.comments %}
+	    <tr><td class="fixwidth"> </td><td><b>{{ ipr.comments|escape|linebreaks }}</b></td></tr>
 	    {% else %}
-	       {% if ipr.comments %}
-	       <tr><td class="fixwidth"> </td><td><b>{{ ipr.comments|escape|linebreaks }}</b></td></tr>
-	       {% else %}
-	       <tr><td class="fixwidth"> </td><td><i>No information submitted</td></tr>
-	       {% endif %}
+	    <tr><td class="fixwidth"> </td><td><i>No information submitted</i></td></tr>
 	    {% endif %}
 
-	    {% if ipr.unbound_form or ipr.lic_checkbox %}
+	    {% if ipr.lic_checkbox %}
 	    <tr>
 	       <td colspan="2">
-		  {% if ipr.unbound_form %} {{ ipr.lic_checkbox }} {% endif %}
 		  The individual submitting this template represents and warrants that all
 		  terms and conditions that must be satisfied for implementers of any
 		  covered IETF specification to obtain a license have been disclosed in this
@@ -330,6 +308,7 @@
 	       </td>
 	    </tr>
 	    {% endif %}
+	    {% endblock %}
 	    <tr>
 	       <td colspan="2">
 		  <b><i>Note: The individual submitting this template represents and warrants
@@ -352,7 +331,8 @@
 	       IETF Participant in Section III above)
 	       </th>
 	    </tr>
-	    {% if ipr.unbound_form or ipr.submitter.name %}
+	    {% block section7_data %}
+	    {% if ipr.submitter.name %}
 	    <tr><td class="fixwidth">Name:</td>		<td><b>{{ ipr.submitter.name }}</b></td></tr>
 	    <tr><td class="fixwidth">Title:</td>		<td><b>{{ ipr.submitter.title }}</b></td></tr>
 	    <tr><td class="fixwidth">Department:</td>	<td><b>{{ ipr.submitter.department }}</b></td></tr>
@@ -364,6 +344,7 @@
 	    {% else %}
 	    <tr><td colspan="2"><i>No information submitted</td></tr>
 	    {% endif %}
+	    {% endblock %}
 	 </table>
       </blockquote>
       {% endblock %}
@@ -378,19 +359,20 @@
 	       Other Notes:
 	       </th>
 	    </tr>
-	    {% if ipr.unbound_form %}
-	    <tr><td class="fixwidth"> </td><td><b>{{ ipr.other_notes }}</b></td></tr>
-	    {% else %}
+	    {% block section8_data %}
 	       {% if ipr.other_notes %}
 	       <tr><td> </td><td><b>{{ ipr.other_notes|escape|linebreaks }}</b></td></tr>
 	       {% else %}
 	       <tr><td colspan="2"><i>No information submitted</i></td></tr>
 	       {% endif %}
-	    {% endif %}
+	    {% endblock %}
 	 </table>
       </blockquote>
       {% endblock %}
 
    {% endif %}
    {{ debug }}
+   
+   {% block bot_info %}
+   {% endblock %}
 {% endblock %}

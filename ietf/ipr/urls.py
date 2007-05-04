@@ -14,6 +14,7 @@ queryset = models.IprDetail.objects.all()
 archive = {'queryset':queryset, 'date_field': 'submitted_date', 'allow_empty':True }
 
 urlpatterns += patterns('django.views.generic.date_based',
+	(r'^by-date/$', 'archive_index', archive),
 	(r'^(?P<year>\d{4})/$', 'archive_year', archive),
 	(r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/$', 'archive_month', archive),
 )

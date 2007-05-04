@@ -46,10 +46,10 @@ class IprLicensing(models.Model):
 
 class IprDetail(models.Model):
     ipr_id = models.AutoField(primary_key=True)
-    p_h_legal_name = models.CharField("Patent Holder's Legal Name", blank=True, maxlength=255)
+    p_h_legal_name = models.CharField("Legal Name", blank=True, maxlength=255)
     document_title = models.CharField(blank=True, maxlength=255)
-    rfc_number = models.IntegerField(null=True, blank=True)	# always NULL
-    id_document_tag = models.IntegerField(null=True, blank=True)	# always NULL
+    rfc_number = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
+    id_document_tag = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
     other_designations = models.CharField(blank=True, maxlength=255)
     p_applications = models.TextField(blank=True, maxlength=255)
     date_applied = models.CharField(blank=True, maxlength=255)
@@ -69,14 +69,13 @@ class IprDetail(models.Model):
     additional_old_url2 = models.CharField(blank=True, maxlength=255)
     country = models.CharField(blank=True, maxlength=100)
     p_notes = models.TextField(blank=True)
-    third_party = models.BooleanField()
-    lic_opt_a_sub = models.IntegerField(choices=STDONLY_CHOICES)
-    lic_opt_b_sub = models.IntegerField(choices=STDONLY_CHOICES)
-    lic_opt_c_sub = models.IntegerField(choices=STDONLY_CHOICES)
-    generic = models.BooleanField()
-    # I don't understand selectowned, it looks like it should be a boolean field.
+    third_party = models.BooleanField(editable=False)
+    lic_opt_a_sub = models.IntegerField(editable=False, choices=STDONLY_CHOICES)
+    lic_opt_b_sub = models.IntegerField(editable=False, choices=STDONLY_CHOICES)
+    lic_opt_c_sub = models.IntegerField(editable=False, choices=STDONLY_CHOICES)
+    generic = models.BooleanField(editable=False)
     selectowned = models.IntegerField(null=True, blank=True, choices=SELECT_CHOICES)
-    comply = models.BooleanField()
+    comply = models.BooleanField(editable=False)
     lic_checkbox = models.BooleanField()
     update_notified_date = models.DateField(null=True, blank=True)
     def __str__(self):
@@ -103,16 +102,16 @@ class IprContact(models.Model):
 	('3', 'Submitter Contact'),
     )
     contact_id = models.AutoField(primary_key=True)
-    ipr = models.ForeignKey(IprDetail, raw_id_admin=True, related_name="contact")
-    contact_type = models.IntegerField(choices=TYPE_CHOICES)
+    ipr = models.ForeignKey(IprDetail, raw_id_admin=True, editable=False, related_name="contact")
+    contact_type = models.IntegerField(editable=False, choices=TYPE_CHOICES)
     name = models.CharField(maxlength=255)
     title = models.CharField(blank=True, maxlength=255)
     department = models.CharField(blank=True, maxlength=255)
+    address1 = models.CharField(blank=True, maxlength=255)
+    address2 = models.CharField(blank=True, maxlength=255)
     telephone = models.CharField(maxlength=25)
     fax = models.CharField(blank=True, maxlength=25)
     email = models.CharField(maxlength=255)
-    address1 = models.CharField(blank=True, maxlength=255)
-    address2 = models.CharField(blank=True, maxlength=255)
     def __str__(self):
 	return self.name
     class Meta:
