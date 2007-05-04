@@ -7,6 +7,7 @@ class IESGMinutes(Feed):
     link = "/iesg/telechat/"
     subtitle = "Minutes from IESG Telechats."
     feed_type = Atom1Feed
+    author_name = 'IESG Secretary'
 
     def items(self):
 	return TelechatMinutes.objects.order_by('-telechat_date')[:10]

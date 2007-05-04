@@ -1,10 +1,12 @@
 from django.conf.urls.defaults import *
 
 from ietf.iesg.feeds import IESGMinutes
+from ietf.idtracker.feeds import DocumentComments
 import ietf.views
 
 feeds = {
     'iesg_minutes': IESGMinutes,
+    'comments': DocumentComments,
 }
 
 urlpatterns = patterns('',
