@@ -90,6 +90,23 @@ class IprDetail(models.Model):
             return "YES"
         else:
             return "NO"
+    def get_patent_holder_contact(self):
+        try:
+            return self.contact.filter(contact_type=1)[0]
+        except:
+            return None
+    def get_ietf_contact(self):
+        try:
+            return self.contact.filter(contact_type=2)[0]
+        except:
+            return None
+    def get_submitter(self):
+        try:
+            return self.contact.filter(contact_type=3)[0]
+        except:
+            return None
+    def get_absolute_url(self, item):
+        return "http://merlot.tools.ietf.org:31415/ipr/ipr-%s" % ipr_id
     class Meta:
         db_table = 'ipr_detail'
     class Admin:

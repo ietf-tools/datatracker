@@ -101,6 +101,9 @@ INTERNAL_IPS = (
 	'135.207.33.119',
 # fenestro
 	'67.188.114.134',
+# shiraz and marsanne
+        '81.232.110.214',
+        '2001:16d8:ff54::1',
 )
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
