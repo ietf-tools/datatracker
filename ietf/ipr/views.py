@@ -83,7 +83,11 @@ def show(request, ipr_id=None):
     ipr.discloser_identify = linebreaks(escape(ipr.discloser_identify))
     ipr.comments = linebreaks(escape(ipr.comments))
     ipr.other_notes = linebreaks(escape(ipr.other_notes))
-
+    opt = ipr.licensing_option
+    ipr.licensing_option = dict(models.LICENSE_CHOICES)[ipr.licensing_option]
+    ipr.selecttype = dict(models.SELECT_CHOICES)[ipr.selecttype]
+    if ipr.selectowned:
+        ipr.selectowned = dict(models.SELECT_CHOICES)[ipr.selectowned]
     return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list})
 
 def update(request, ipr_id=None):
