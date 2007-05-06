@@ -128,7 +128,7 @@ class IprContact(models.Model):
     address2 = models.CharField(blank=True, maxlength=255)
     telephone = models.CharField(maxlength=25)
     fax = models.CharField(blank=True, maxlength=25)
-    email = models.CharField(maxlength=255)
+    email = models.EmailField(maxlength=255)
     def __str__(self):
 	return self.name
     class Meta:

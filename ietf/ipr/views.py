@@ -2,6 +2,7 @@ import models
 from django.shortcuts import render_to_response as render
 import django.newforms as forms
 import ietf.utils
+import syslog
 
 def default(request):
     """Default page, with links to sub-pages"""
@@ -61,35 +62,27 @@ def update(request, ipr_id=None):
     return show(request, ipr_id)
 
 def new(request, type):
-    """Form to make a new IPR disclosure"""
+    """Make a new IPR disclosure"""
     debug = ""
-    sections = {
-           "section1": "p_h_legal_name ",
-           "section2": "ph_name ph_title ph_department ph_address1 ph_address2 ph_telephone ph_fax ph_email",
-           "section3": "ietf_name ietf_title ietf_department ietf_address1 ietf_address2 ietf_telephone ietf_fax ietf_email",
-           "section4": "rfclist draftlist other_designations",
-           "section5": "p_applications date_applied country selecttype p_notes discloser_identify",
-           "section6": "licensing_option stdonly_license comments lic_checkbox selectowned",
-           "section7": "sub_name sub_title sub_department sub_address1 sub_address2 sub_telephone sub_fax sub_email",
-           "section8": "other_notes",
-           "ignore"  : "document_title rfc_number id_document_tag submitted_date status " +
-                       "old_ipr_url additional_old_title1 additional_old_title2 " + 
-                       "additional_old_url1 additional_old_url2 update_notified_date",
-       }
-    IprForm = forms.form_for_model(models.IprDetail, formfield_callback=detail_field_fixup)
-    ContactForm = forms.form_for_model(models.IprContact)
 
-    # It would be nicer if we could use mixin subclassing, but that won't
-    # work with multiple classes with the same elements.
-    for prefix in ["ph", "ietf", "sub"]:
-        for field in ContactForm.base_fields:
-                IprForm.base_fields[prefix + "_" + field] = ContactForm.base_fields[field]
+#    CustomForm = mk_formatting_form(format="%(errors)s%(field)s%(help_text)s")
+    CustomForm = ietf.utils.makeFormattingForm(template="ipr/formfield.html")
+    BaseIprForm = forms.form_for_model(models.IprDetail, form=CustomForm, formfield_callback=detail_field_fixup)
+    ContactForm = forms.form_for_model(models.IprContact, form=CustomForm)
 
-    # Some extra fields which will get post-processing to generate the IprRfcs
-    # and IprDrafts entries which go into the database:
-    IprForm.base_fields["rfclist"] = forms.CharField(required=False)
-    IprForm.base_fields["draftlist"] = forms.CharField(required=False)
-    IprForm.base_fields["stdonly_license"] = forms.BooleanField(required=False)
+    # Some subclassing:
+    class IprForm(BaseIprForm):
+        holder_contact = None
+        rfclist = forms.CharField(required=False)
+        draftlist = forms.CharField(required=False)
+        stdonly_license = forms.BooleanField(required=False)
+        def __init__(self, *args, **kw):
+            self.base_fields["holder_contact"] = ContactForm(prefix="ph", *args, **kw)
+            # syslog.syslog("IprForm.__init__: holder_contact: %s" % repr(self.base_fields["holder_contact"]))
+            
+            self.base_fields["ietf_contact"] = ContactForm(prefix="ietf", *args, **kw)
+            self.base_fields["submitter"] = ContactForm(prefix="sub", *args, **kw)
+            BaseIprForm.__init__(self, *args, **kw)
 
     if request.method == 'POST':
         form = IprForm(request.POST)
@@ -99,9 +92,7 @@ def new(request, type):
     else:
         form = IprForm()
 
-    blocks = ietf.utils.split_form(form.as_table(), sections )
-
-    return render("ipr/new_%s.html" % type, {"ipr": form, "form": blocks})
+    return render("ipr/new_%s.html" % type, {"ipr": form, "debug": ""})
 
 def detail_field_fixup(field):
     if field.name == "licensing_option":

@@ -176,3 +176,91 @@ def split_form(html, blocks):
         output[block] = "\n".join(output[block])
 
     return output
+
+def mk_formatting_form(format="<span>%(label)s</span><span><ul>%(errors)s</ul>%(field)s%(help_text)s</span>",
+                  labelfmt="%s:", fieldfmt="%s", errfmt="<li>%s</li>", error_wrap="<ul>%s</ul>", helpfmt="%s"):
+    """Create a form class which formats its fields using the provided format string(s).
+
+    The format string may use these format specifications:
+        %(label)s
+        %(errors)s
+        %(field)s
+        %(help_text)s
+
+    The individual sub-formats must contain "%s" if defined.
+    """
+    class FormattingForm(forms.BaseForm):
+        _format = format
+        _labelfmt = labelfmt
+        _fieldfmt = fieldfmt
+        _errfmt   = errfmt
+        _errwrap  = error_wrap
+        _helpfmt = helpfmt
+        def __getitem__(self, name):
+            "Returns a BoundField with the given name."
+            # syslog.syslog("FormattingForm.__getitem__(%s)" % (name))
+            try:
+                field = self.fields[name]
+            except KeyError:
+                # syslog.syslog("Exception: FormattingForm.__getitem__: Key %r not found" % (name))
+                raise KeyError('Key %r not found in Form' % name)
+
+            if not isinstance(field, forms.fields.Field):
+                return field
+
+            try:
+                bf = forms.forms.BoundField(self, field, name)
+            except Exception, e:
+                # syslog.syslog("Exception: FormattingForm.__getitem__: %s" % (e))
+                raise Exception(e)
+
+            try:
+                error_txt = "".join([self._errfmt % escape(error) for error in bf.errors])
+                error_txt = error_txt and self._errwrap % error_txt
+                label_txt = bf.label and self._labelfmt % bf.label_tag(escape(bf.label)) or ''
+                field_txt = self._fieldfmt % unicode(bf)
+                help_txt  = field.help_text and self._helpfmt % field.help_text or u''
+
+            except Exception, e:
+                # syslog.syslog("Exception: FormattingForm.__getitem__: %s" % (e))
+                raise Exception(e)
+                
+            return self._format % {"label":label_txt, "errors":error_txt, "field":field_txt, "help_text":help_txt}
+
+        def add_prefix(self, field_name):
+            return self.prefix and ('%s_%s' % (self.prefix, field_name)) or field_name
+        
+
+    # syslog.syslog("Created new FormattingForm class: %s" % FormattingForm)
+
+    return FormattingForm
+
+
+def makeFormattingForm(template=None):
+    """Create a form class which formats its fields using the provided template
+
+    The template is provided with a dictionary containing the following keys, value
+    pairs:
+
+        "label":        field label, if any,
+        "errors":       list of errors, if any,
+        "field":        widget rendering for an unbound form / field value for a bound form,
+        "help_text":    field help text, if any
+
+    """
+    from django.template import loader
+    import django.newforms as forms
+
+    class FormattingForm(forms.BaseForm):
+        _template = template
+        def __getitem__(self, name):
+            "Returns a BoundField with the given name."
+            try:
+                field = self.fields[name]
+            except KeyError:
+                raise KeyError('Key %r not found in Form' % name)
+            if not isinstance(field, forms.fields.Field):
+                return field
+            bf = forms.forms.BoundField(self, field, name)
+            return loader.render_to_string(self._template, { "errors": bf.errors, "label": bf.label, "field": unicode(bf), "help_text": field.help_text })
+    return FormattingForm

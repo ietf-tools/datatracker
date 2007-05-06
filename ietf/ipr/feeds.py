@@ -5,11 +5,11 @@ import datetime
 
 class LatestIprDisclosures(Feed):
     feed_type = Atom1Feed
-    feed_url = "/feeds/ipr/"
     title = "IPR Disclosures to the IETF"
     link = "/ipr/"
     description = "Updates on new IPR Disclosures made to the IETF."
     language = "en"
+    feed_url = "/feeds/ipr/"
 
     def items(self):
         return IprDetail.objects.order_by('-submitted_date')[:5]
