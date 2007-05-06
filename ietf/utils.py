@@ -1,4 +1,6 @@
 import operator
+import syslog
+from django.utils.html import escape
 # look at snippets 59, 148, 99 for newforms helpers
 
 # http://www.djangosnippets.org/snippets/59/
@@ -255,6 +257,7 @@ def makeFormattingForm(template=None):
         _template = template
         def __getitem__(self, name):
             "Returns a BoundField with the given name."
+            #syslog.syslog("FormattingForm.__getitem__(%s)" % (name, ))
             try:
                 field = self.fields[name]
             except KeyError:
@@ -262,5 +265,7 @@ def makeFormattingForm(template=None):
             if not isinstance(field, forms.fields.Field):
                 return field
             bf = forms.forms.BoundField(self, field, name)
-            return loader.render_to_string(self._template, { "errors": bf.errors, "label": bf.label, "field": unicode(bf), "help_text": field.help_text })
+            errors = [escape(error) for error in bf.errors]
+            rendering = loader.render_to_string(self._template, { "errors": errors, "label": bf.label, "field": unicode(bf), "help_text": field.help_text })
+            return rendering
     return FormattingForm

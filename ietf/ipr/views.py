@@ -1,6 +1,7 @@
 import models
 from django.shortcuts import render_to_response as render
 import django.newforms as forms
+from django.utils.html import escape, linebreaks
 import ietf.utils
 import syslog
 
@@ -30,31 +31,60 @@ def list(request, template):
             'thirdpty_disclosures': thirdpty_disclosures.order_by(* ['-submitted_date', ] ),
         } )
 
+# Details views
+
+section_table = {
+                "index":    {   "index": True   },
+                "specific": {   "index": False, "title": True,
+                                "legacy_intro": False, "new_intro": True,  "form_intro": False,
+                                "holder": True, "holder_contact": True, "ietf_contact": True,
+                                "ietf_doc": True, "patent_info": True, "licensing": True,
+                                "submitter": True, "notes": True, "form_submit": False,
+                            },
+                "generic": {   "index": False, "title": True,
+                                "legacy_intro": False, "new_intro": True,  "form_intro": False,
+                                "holder": True, "holder_contact": True, "ietf_contact": False,
+                                "ietf_doc": False, "patent_info": True, "licensing": True,
+                                "submitter": True, "notes": True, "form_submit": False,
+                            },
+                "third_party": {"index": False, "title": True,
+                                "legacy_intro": False, "new_intro": True,  "form_intro": False,
+                                "holder": True, "holder_contact": False, "ietf_contact": True,
+                                "ietf_doc": True, "patent_info": True, "licensing": False,
+                                "submitter": False, "notes": False, "form_submit": False,
+                            },
+                "legacy":   {   "index": False, "title": True,
+                                "legacy_intro": True, "new_intro": False,  "form_intro": False,
+                                "holder": True, "holder_contact": True, "ietf_contact": False,
+                                "ietf_doc": True, "patent_info": False, "licensing": False,
+                                "submitter": False, "notes": False, "form_submit": False,
+                            },
+            }
+
 def show(request, ipr_id=None):
     """Show a specific IPR disclosure"""
     assert ipr_id != None
     ipr = models.IprDetail.objects.filter(ipr_id=ipr_id)[0]
     ipr.disclosure_type = get_disclosure_type(ipr)
-    try:
-        ipr.holder_contact = ipr.contact.filter(contact_type=1)[0]    
-    except IndexError:
-        ipr.holder_contact = ""
-    try:
-        ipr.ietf_contact = ipr.contact.filter(contact_type=2)[0]
-    except IndexError:
-        ipr.ietf_contact = ""
-    try:
-        ipr.submitter = ipr.contact.filter(contact_type=3)[0]
-    except IndexError:
-        ipr.submitter = ""
+    section_list = get_section_list(ipr)
+    contacts = ipr.contact.all()
+    for contact in contacts:
+        if   contact.contact_type == 1:
+            ipr.holder_contact = contact
+        elif contact.contact_type == 2:
+            ipr.ietf_contact = contact
+        elif contact.contact_type == 3:
+            ipr.submitter = contact
+        else:
+            raise KeyError("Unexpected contact_type in ipr_contacts: ipr_id=%s" % ipr.ipr_id)
+    # do escaping and line-breaking here instead of in the template,
+    # so that we can use the template for the form display, too.
+    ipr.p_notes = linebreaks(escape(ipr.p_notes))
+    ipr.discloser_identify = linebreaks(escape(ipr.discloser_identify))
+    ipr.comments = linebreaks(escape(ipr.comments))
+    ipr.other_notes = linebreaks(escape(ipr.other_notes))
 
-    if   ipr.generic:
-        return render("ipr/details_generic.html",  {"ipr": ipr})
-    if ipr.third_party:
-        return render("ipr/details_thirdpty.html", {"ipr": ipr})
-    else:
-        return render("ipr/details_specific.html", {"ipr": ipr})
-        
+    return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list})
 
 def update(request, ipr_id=None):
     """Update a specific IPR disclosure"""
@@ -65,34 +95,55 @@ def new(request, type):
     """Make a new IPR disclosure"""
     debug = ""
 
-#    CustomForm = mk_formatting_form(format="%(errors)s%(field)s%(help_text)s")
     CustomForm = ietf.utils.makeFormattingForm(template="ipr/formfield.html")
     BaseIprForm = forms.form_for_model(models.IprDetail, form=CustomForm, formfield_callback=detail_field_fixup)
-    ContactForm = forms.form_for_model(models.IprContact, form=CustomForm)
+    BaseContactForm = forms.form_for_model(models.IprContact, form=CustomForm)
+
+    section_list = section_table[type]
+    section_list.update({"title":False, "new_intro":False, "form_intro":True, "form_submit":True, })
 
     # Some subclassing:
+    class MultiformWidget(forms.Widget):
+        def value_from_datadict(self, data, name):
+            return data
+        
+    class ContactForm(BaseContactForm):
+        widget = MultiformWidget()
+        
+        def add_prefix(self, field_name):
+            return self.prefix and ('%s_%s' % (self.prefix, field_name)) or field_name
+        def clean(self, *value):
+            if value:
+                return self.full_clean()
+            else:
+                return self.clean_data
+                
     class IprForm(BaseIprForm):
         holder_contact = None
         rfclist = forms.CharField(required=False)
         draftlist = forms.CharField(required=False)
         stdonly_license = forms.BooleanField(required=False)
         def __init__(self, *args, **kw):
-            self.base_fields["holder_contact"] = ContactForm(prefix="ph", *args, **kw)
-            # syslog.syslog("IprForm.__init__: holder_contact: %s" % repr(self.base_fields["holder_contact"]))
-            
-            self.base_fields["ietf_contact"] = ContactForm(prefix="ietf", *args, **kw)
-            self.base_fields["submitter"] = ContactForm(prefix="sub", *args, **kw)
+            for contact in ["holder_contact", "ietf_contact", "submitter"]:
+                if contact in section_list:
+                    self.base_fields[contact] = ContactForm(prefix=contact[:4], *args, **kw)
             BaseIprForm.__init__(self, *args, **kw)
 
     if request.method == 'POST':
         form = IprForm(request.POST)
         if form.is_valid():
-            form.save()
+            #instance = form.save()
+            #return HttpResponseRedirect("/ipr/ipr-%s" % instance.ipr_id)
             return HttpResponseRedirect("/ipr/")
+        else:
+            # Fall through, and let the partially bound form, with error
+            # indications, be rendered again.
+            pass
     else:
         form = IprForm()
+        form.unbound_form = True
 
-    return render("ipr/new_%s.html" % type, {"ipr": form, "debug": ""})
+    return render("ipr/details.html", {"ipr": form, "section_list":section_list, "debug": ""})
 
 def detail_field_fixup(field):
     if field.name == "licensing_option":
@@ -108,7 +159,18 @@ def get_disclosure_type(ipr):
     if   ipr.generic:
         assert not ipr.third_party
         return "Generic"
-    if ipr.third_party:
+    elif ipr.third_party:
         return "Third Party"
     else:
         return "Specific"
+    
+def get_section_list(ipr):
+    if   ipr.old_ipr_url:
+        return section_table["legacy"]
+    elif ipr.generic:
+        assert not ipr.third_party
+        return section_table["generic"]
+    elif ipr.third_party:
+        return section_table["third_party"]
+    else:
+        return section_table["specific"]

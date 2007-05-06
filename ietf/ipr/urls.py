@@ -7,7 +7,7 @@ urlpatterns = patterns('',
      (r'^ipr-(?P<ipr_id>\d+)/$', views.show),
      (r'^update/$', views.updatelist),
      (r'^update/(?P<ipr_id>\d+)/$', views.update),
-     (r'^new-(?P<type>(specific|generic|thirdpty))/$', views.new),
+     (r'^new-(?P<type>(specific|generic|third_party))/$', views.new),
 )
 
 queryset = models.IprDetail.objects.all()
