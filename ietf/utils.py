@@ -266,6 +266,6 @@ def makeFormattingForm(template=None):
                 return field
             bf = forms.forms.BoundField(self, field, name)
             errors = [escape(error) for error in bf.errors]
-            rendering = loader.render_to_string(self._template, { "errors": errors, "label": bf.label, "field": unicode(bf), "help_text": field.help_text })
+            rendering = loader.render_to_string(self._template, { "errors": errors, "label": bf.label, "text": unicode(bf), "help_text": field.help_text, "field":field })
             return rendering
     return FormattingForm

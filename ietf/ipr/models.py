@@ -77,7 +77,7 @@ class IprLicensing(models.Model):
 
 class IprDetail(models.Model):
     ipr_id = models.AutoField(primary_key=True)
-    p_h_legal_name = models.CharField("Legal Name", blank=True, maxlength=255)
+    p_h_legal_name = models.CharField("Legal Name", maxlength=255)
     document_title = models.CharField(blank=True, maxlength=255)
     rfc_number = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
     id_document_tag = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
