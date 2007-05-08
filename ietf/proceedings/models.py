@@ -112,6 +112,22 @@ class MeetingTime(models.Model):
     session_name = models.ForeignKey(SessionName)
     def __str__(self):
 	return "[%d] |%s| %s" % (self.meeting_id, (self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc)
+    def sessions(self):
+	"""
+	Get all sessions that are scheduled at this time.
+	"""
+	return WgMeetingSession.objects.filter(
+	    models.Q(sched_time_id1=self.time_id) |
+	    models.Q(sched_time_id2=self.time_id) |
+	    models.Q(sched_time_id3=self.time_id))
+    def combined_sessions(self):
+	"""
+	Get all sessions that have a combined_time at this
+	time.
+	"""
+	return WgMeetingSession.objects.filter(
+	    models.Q(combined_time_id1=self.time_id) |
+	    models.Q(combined_time_id2=self.time_id))
     class Meta:
         db_table = 'meeting_times'
     class Admin:
