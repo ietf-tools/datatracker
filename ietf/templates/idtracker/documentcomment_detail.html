@@ -1,22 +1,8 @@
+{% extends "idtracker/base.html" %}
+
 {% load ietf_filters %}
-<html>
-<HEAD><TITLE>IETF I-D Tracker v1.0 -- WCF</title>
-<STYLE TYPE="text/css">
-<!--
 
-	  TD {text-decoration: none; color: #000000; font: 9pt arial;} 
-	  A:Link {color: #0000ff; text-decoration:underline}
-	  A:Hover {color: #ff0000; text-decoration:underline}
-      A:visited {color: #0000ff; text-decoration:underline}
-	  #largefont {font-weight: bold; color: #000000; font: 18pt arial}
-	  #largefont2 {color: #000000; font: 14pt verdana}
-	  #largefont3 {color: #000000; font: 13pt verdana}
-	  #largefont_red {font-weight: bold; color: #ff0000; font: 16pt arial}
--->
-</STYLE>
-
-</head>
-<body link="blue" vlink="blue">
+{% block idcontent %}
 
 {% if object.ballot %}
 <h3><font color="red">[IN IESG DISCUSSION <b>*{{ object.get_ballot_display }}*</b>]</font></h3>
@@ -38,6 +24,4 @@
    <input type="button" value="close" onClick="history.go(-1);return true">
    </form></center>
    
-{% include "debug.html" %}
-</body>
-</html>
+{% endblock %}

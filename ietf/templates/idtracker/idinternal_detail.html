@@ -1,26 +1,8 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+{% extends "idtracker/base.html" %}
+
 {% load ietf_filters %}     
 
-<html>
-  <head>
-    <title>IETF I-D Tracker v1.0 -- WCF</title>
-<style type="text/css">
-<!--
-
-      TD {text-decoration: none; color: #000000; font: 9pt arial;} 
-      A:Link {color: #0000ff; text-decoration:underline}
-      A:Hover {color: #ff0000; text-decoration:underline}
-      A:visited {color: #0000ff; text-decoration:underline}
-      .largefont {font-weight: bold; color: #000000; font: 18pt arial}
-      .largefont2 {color: #000000; font: 14pt verdana}
-      .largefont3 {color: #000000; font: 13pt verdana}
-      .largefont_red {font-weight: bold; color: #ff0000; font: 16pt arial}
--->
-</style>
-  </head>
-
-  <body link="blue" vlink="blue">
-
+{% block idcontent %}
     <table width="90%" cellpading="1" cellspacing="0">
       <tr>
         <td bgcolor="000000">
@@ -76,9 +58,9 @@
 		{# what's the "if" here #}
                 <div class="largefont3">
                   <a href="ballot/">IESG evaluation record</a>
-                  [<a href="/idtracker/view_evaluation_desc/">What
+                  [<a href="/idtracker/evaluation_process/">What
                   they mean</a>]
-                  [<a href="/idtracker/view_key/">How they are
+                  [<a href="/idtracker/ballot_key/">How they are
                   recorded</a>]
                 </div>
               </td>
@@ -284,7 +266,4 @@
     "mailto:iesg-secretary@ietf.org">IETF Secretariat</a> for
     the <a href="mailto:iesg@ietf.org">IESG</a></i></p>
 
-    {% include "debug.html" %}
-  </body>
-</html>
-
+{% endblock %}

@@ -14,6 +14,8 @@ comment_dict = {
 
 urlpatterns = patterns('django.views.generic.simple',
      (r'^states/$', 'direct_to_template', { 'template': 'idtracker/states.html', 'extra_context': { 'states': IDState.objects.all(), 'substates': IDSubState.objects.all() } }),
+     (r'^ballot_key/$', 'direct_to_template', { 'template': 'idtracker/view_key.html' }),
+     (r'^evaluation_process/$', 'direct_to_template', { 'template': 'idtracker/view_evaluation_desc.html' }),
 )
 urlpatterns += patterns('django.views.generic.list_detail',
      (r'^rfc(?P<object_id>\d+)/$', 'object_detail', rfc_dict),

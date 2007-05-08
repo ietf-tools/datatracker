@@ -1,23 +1,9 @@
-<html>
-<HEAD><TITLE>IESG ID Tracker -- State List</title>
-<STYLE TYPE="text/css">
-<!--
-                                                                                                               
-          TD {text-decoration: none; color: #000000; font: 10pt arial;}
-          A:Link {color: #0000ff; text-decoration:underline}
-          A:Hover {color: #ff0000; text-decoration:underline}
-      A:visited {color: #0000ff; text-decoration:underline}
-          #largefont {font-weight: bold; color: #000000; font: 16pt arial}
-          #largefont_red {font-weight: bold; color: #ff0000; font: 16pt arial}
--->
-</STYLE>
-                                                                                                               
-</head>
-<body link="blue" vlink="blue">
+{% extends "idtracker/base.html" %}
 
+{% block idcontent %}
 
    <h2>Main States</h2>
-   <a href="https://datatracker.ietf.org/state_diagram.gif">[View States Diagram]</a><br>
+   <a href="/images/state_diagram.gif">[View States Diagram]</a><br>
    <table cellpadding="1" cellspacing="0" border="1" width="750">
 
    <tr>
@@ -52,6 +38,4 @@ IESG to do anything with the document.</td>
 {% endfor %}
 </table>
 
-{% include "debug.html" %}
-</body>
-</html>
+{% endblock %}
