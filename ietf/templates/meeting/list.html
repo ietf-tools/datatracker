@@ -5,7 +5,7 @@
 <h3> The following meeting are in chronological order </h3>
 <table border="1" cellpadding="2" cellspacing="2" width="820">
     <tr>
-         <th> Meeting City </th> <th> Agenda </th> <th> Minutes </th>
+         <th> Meeting City </th> <th> Agenda </th> <th> Minutes </th><th> Materials </th> 
     </tr>
 {% for meeting in meetings %}
 <tr>
@@ -16,6 +16,9 @@
 <a href="/meeting/{{meeting.meeting_num}}/minutes.html"> HTML</a> &middot;
 <a href="/meeting/{{meeting.meeting_num}}/minutes.txt"> Text  </a>
 </td>
+<td>
+<a href="/meeting/{{meeting.meeting_num}}/materials.html"> Materials </a> 
+</td> 
 </tr>
 {% endfor %}
 
