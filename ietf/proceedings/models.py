@@ -59,12 +59,13 @@ class NonSessionRef(models.Model):
         db_table = 'non_session_ref'
 
 class NonSession(models.Model):
-    day_id = models.IntegerField()
-    non_session_ref = models.ForeignKey(NonSessionRef)
-    meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
-    time_desc = models.CharField(blank=True, maxlength=75)
-    class Meta:
-        db_table = 'non_session'
+	non_session_id = models.IntegerField(primary_key=True)
+	day_id = models.IntegerField()
+	non_session_ref = models.ForeignKey(NonSessionRef)
+	meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
+	time_desc = models.CharField(blank=True, maxlength=75)
+	class Meta:
+		db_table = 'non_session'
 
 class Proceeding(models.Model):
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True, primary_key=True)

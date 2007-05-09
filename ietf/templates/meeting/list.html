@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %} Meetings {% endblock %}
+{% block content %}
+
+<h3> The following meeting are in chronological order </h3>
+<table border="1" cellpadding="2" cellspacing="2" width="820">
+    <tr>
+         <th> Meeting City </th> <th> Agenda </th> <th> Minutes </th>
+    </tr>
+{% for meeting in meetings %}
+<tr>
+ <td>  {{ meeting.city}} ({{ meeting.meeting_num }}) </td>
+ <td> <a href="/meeting/{{meeting.meeting_num}}/agenda.html"> HTML</a> &middot;
+<a href="/meeting/{{meeting.meeting_num}}/agenda.txt"> Text  </a>
+</td> <td>
+<a href="/meeting/{{meeting.meeting_num}}/minutes.html"> HTML</a> &middot;
+<a href="/meeting/{{meeting.meeting_num}}/minutes.txt"> Text  </a>
+</td>
+</tr>
+{% endfor %}
+
+{% endblock %}

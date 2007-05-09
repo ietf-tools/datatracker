@@ -23,6 +23,8 @@ urlpatterns = patterns('',
       (r'^mailinglists/', include('ietf.mailinglists.urls')),
       (r'^(?P<path>public|cgi-bin)/', include('ietf.redirects.urls')),
       (r'^ipr/', include('ietf.ipr.urls')),
+      (r'^meeting/', include('ietf.meeting.urls')),
+
       (r'^$', ietf.views.apps),
 
     # Uncomment this for admin:

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %} Meeting Agenda  {% endblock %}
+{% block content %}
+
+<center> 
+<strong> Agenda of the {{ meeting_num }}th IETF Meeting </strong> <br/> 
+<strong> Date of Meeting  {{ meeting.start_date }} - {{ meeting.end_date }} </strong><br />
+Updated As of : <br />
+</center> 
+
+<a href="/meeting/{{meeting_num}}/agenda.txt"> Text Format of the Agenda </a> <br />
+<P>
+*** Click on an acronym of the group to get a charter page *** <br />
+*** Click on a name of the group to get a meeting agenda *** <br />
+</P>
+
+
+{{ cbreak_time.time_desc }}
+ <br />
+{% for session in all_sessions %}
+
+The sessions are: 
+{{ session.num_session }}
+
+
+<br />
+{% endfor %}
+
+
+{% endblock %}
