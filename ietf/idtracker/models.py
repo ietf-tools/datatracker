@@ -355,14 +355,14 @@ class IDInternal(models.Model):
     email_display = models.CharField(blank=True, maxlength=50)
     agenda = models.IntegerField(null=True, blank=True)
     cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')
-    prev_state = models.ForeignKey(IDState, db_column='prev_state', related_name=None)
+    prev_state = models.ForeignKey(IDState, db_column='prev_state', related_name='docs_prev')
     assigned_to = models.CharField(blank=True, maxlength=25)
     mark_by = models.ForeignKey(IESGLogin, db_column='mark_by', related_name='marked')
     job_owner = models.ForeignKey(IESGLogin, db_column='job_owner', related_name='documents')
     event_date = models.DateField(null=True)
     area_acronym = models.ForeignKey(Areas)
     cur_sub_state = models.ForeignKey(IDSubState, related_name='docs', null=True, blank=True)
-    prev_sub_state = models.ForeignKey(IDSubState, related_name=None, null=True, blank=True)
+    prev_sub_state = models.ForeignKey(IDSubState, related_name='docs_prev', null=True, blank=True)
     returning_item = models.IntegerField(null=True, blank=True)
     telechat_date = models.DateField(null=True, blank=True)
     via_rfc_editor = models.IntegerField(null=True, blank=True)
@@ -393,7 +393,6 @@ class IDInternal(models.Model):
     def comments(self):
 	return self.documentcomment_set.all().filter(rfc_flag=self.rfc_flag).order_by('-comment_date','-comment_time')
     def ballot_set(self):
-	# can't access manager via self; use the class name
 	return IDInternal.objects.filter(ballot_id=self.ballot_id)
     class Meta:
         db_table = 'id_internal'
