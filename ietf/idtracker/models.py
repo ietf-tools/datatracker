@@ -414,8 +414,8 @@ class DocumentComment(models.Model):
     version = models.CharField(blank=True, maxlength=3)
     comment_text = models.TextField(blank=True)
     created_by = models.ForeignKey(IESGLogin, db_column='created_by', null=True)
-    result_state = models.ForeignKey(IDState, db_column='result_state', null=True, related_name=None)
-    origin_state = models.ForeignKey(IDState, db_column='origin_state', null=True, related_name=None)
+    result_state = models.ForeignKey(IDState, db_column='result_state', null=True, related_name="comments_leading_to_state")
+    origin_state = models.ForeignKey(IDState, db_column='origin_state', null=True, related_name="comments_coming_from_state")
     ballot = models.IntegerField(null=True, choices=BALLOT_CHOICES)
     def get_absolute_url(self):
 	if self.rfc_flag:

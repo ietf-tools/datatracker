@@ -132,6 +132,13 @@ def new(request, type):
                 if contact in section_list:
                     self.base_fields[contact] = ContactForm(prefix=contact[:4], *args, **kw)
             BaseIprForm.__init__(self, *args, **kw)
+        # Special validation code
+        def clean(self):
+            # Required:
+            # Submitter form filled in or 'same-as-ietf-contact' marked
+            # Only one of rfc, draft, and other info fields filled in
+            # RFC exists or draft exists and has right rev. or ...
+            pass
 
     if request.method == 'POST':
         form = IprForm(request.POST)

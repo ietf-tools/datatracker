@@ -10,7 +10,7 @@ from ietf.idtracker.models import Rfc
 # New field classes
 
 phone_re = re.compile(r'^\+?[0-9 ]*(\([0-9]+\))?[0-9 -]+$')
-class InternationalPhoneNumberField(models.PhoneNumberField):
+class InternationalPhoneNumberField(models.CharField):
     error_message = 'Phone numbers may have a leading "+", and otherwise only contain numbers [0-9], dash, space, and parentheses. '
     def validate(self, field_data, all_data):
         if not phone_re.search(field_data):
@@ -77,38 +77,59 @@ class IprLicensing(models.Model):
 
 class IprDetail(models.Model):
     ipr_id = models.AutoField(primary_key=True)
-    p_h_legal_name = models.CharField("Legal Name", maxlength=255)
     document_title = models.CharField(blank=True, maxlength=255)
-    rfc_number = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
-    id_document_tag = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
-    other_designations = models.CharField(blank=True, maxlength=255)
-    p_applications = models.TextField(blank=True, maxlength=255)
-    date_applied = models.CharField(blank=True, maxlength=255)
-    #selecttype = models.ForeignKey(IprSelecttype, to_field='selecttype', db_column='selecttype')
-    selecttype = models.IntegerField(null=True, choices=SELECT_CHOICES)
-    discloser_identify = models.TextField(blank=True, maxlength=255, db_column='disclouser_identify')
-    #licensing_option = models.ForeignKey(IprLicensing, db_column='licensing_option')
-    licensing_option = models.IntegerField(null=True, blank=True, choices=LICENSE_CHOICES)
-    other_notes = models.TextField(blank=True)
-    submitted_date = models.DateField(null=True, blank=True)
-    status = models.IntegerField(null=True, blank=True)
-    comments = models.TextField(blank=True)
+
+    # Legacy information fieldset
     old_ipr_url = models.CharField(blank=True, maxlength=255)
     additional_old_title1 = models.CharField(blank=True, maxlength=255)
     additional_old_url1 = models.CharField(blank=True, maxlength=255)
     additional_old_title2 = models.CharField(blank=True, maxlength=255)
     additional_old_url2 = models.CharField(blank=True, maxlength=255)
+
+    # Patent holder fieldset
+    p_h_legal_name = models.CharField("Legal Name", maxlength=255)
+
+    # Patent Holder Contact fieldset
+    # self.contacts.filter(contact_type=1)
+
+    # IETF Contact fieldset
+    # self.contacts.filter(contact_type=1)
+    
+    # Related IETF Documents fieldset
+    rfc_number = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
+    id_document_tag = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
+    other_designations = models.CharField(blank=True, maxlength=255)
+    discloser_identify = models.TextField("Specific document sections covered", blank=True, maxlength=255, db_column='disclouser_identify')
+
+    # Patent Information fieldset
+    p_applications = models.TextField("Patent Applications", blank=True, maxlength=255)
+    date_applied = models.CharField(blank=True, maxlength=255)
     country = models.CharField(blank=True, maxlength=100)
-    p_notes = models.TextField(blank=True)
-    third_party = models.BooleanField(editable=False)
+    p_notes = models.TextField("Additional notes", blank=True)
+    selecttype = models.IntegerField("Unpublished Pending Patent Application", null=True, choices=SELECT_CHOICES)
+    selectowned = models.IntegerField("Applies to all IPR owned by Submitter", null=True, blank=True, choices=SELECT_CHOICES)
+
+    # Licensing Declaration fieldset
+    #licensing_option = models.ForeignKey(IprLicensing, db_column='licensing_option')
+    licensing_option = models.IntegerField(null=True, blank=True, choices=LICENSE_CHOICES)
     lic_opt_a_sub = models.IntegerField(editable=False, choices=STDONLY_CHOICES)
     lic_opt_b_sub = models.IntegerField(editable=False, choices=STDONLY_CHOICES)
     lic_opt_c_sub = models.IntegerField(editable=False, choices=STDONLY_CHOICES)
-    generic = models.BooleanField(editable=False)
-    selectowned = models.IntegerField(null=True, blank=True, choices=SELECT_CHOICES)
+    comments = models.TextField("Licensing Comments", blank=True)
+    lic_checkbox = models.BooleanField("All terms and conditions has been disclosed")
+
+    third_party = models.BooleanField(editable=False)
+
+    # Other notes fieldset
+    other_notes = models.TextField(blank=True)
+
+    # Generated fields, not part of the submission form
+    status = models.IntegerField(null=True, blank=True)
     comply = models.BooleanField(editable=False)
-    lic_checkbox = models.BooleanField()
+    generic = models.BooleanField(editable=False)
+    submitted_date = models.DateField(null=True, blank=True)
     update_notified_date = models.DateField(null=True, blank=True)
+
     def __str__(self):
 	return self.document_title
     def selecttypetext(self):
@@ -136,8 +157,8 @@ class IprDetail(models.Model):
             return self.contact.filter(contact_type=3)[0]
         except:
             return None
-    def get_absolute_url(self, item):
-        return "http://merlot.tools.ietf.org:31415/ipr/ipr-%s" % ipr_id
+    def get_absolute_url(self):
+        return "/ipr/ipr-%s" % self.ipr_id
     class Meta:
         db_table = 'ipr_detail'
     class Admin:
@@ -150,16 +171,16 @@ class IprContact(models.Model):
 	('3', 'Submitter Contact'),
     )
     contact_id = models.AutoField(primary_key=True)
-    ipr = models.ForeignKey(IprDetail, raw_id_admin=True, editable=False, related_name="contact")
-    contact_type = models.IntegerField(editable=False, choices=TYPE_CHOICES)
-    name = models.CharField(maxlength=255)
+    ipr = models.ForeignKey(IprDetail, raw_id_admin=True, edit_inline=True, related_name="contact")
+    contact_type = models.IntegerField(choices=TYPE_CHOICES)
+    name = models.CharField(maxlength=255, core=True)
     title = models.CharField(blank=True, maxlength=255)
     department = models.CharField(blank=True, maxlength=255)
     address1 = models.CharField(blank=True, maxlength=255)
     address2 = models.CharField(blank=True, maxlength=255)
-    telephone = InternationalPhoneNumberField(maxlength=25)
+    telephone = InternationalPhoneNumberField(maxlength=25, core=True)
     fax = InternationalPhoneNumberField(blank=True, maxlength=25)
-    email = models.EmailField(maxlength=255)
+    email = models.EmailField(maxlength=255, core=True)
     def __str__(self):
 	return self.name
     class Meta:
@@ -170,8 +191,8 @@ class IprContact(models.Model):
 
 
 class IprDraft(models.Model):
-    document = models.ForeignKey(InternetDraft, db_column='id_document_tag', raw_id_admin=True)
-    ipr = models.ForeignKey(IprDetail, raw_id_admin=True, related_name='drafts')
+    document = models.ForeignKey(InternetDraft, db_column='id_document_tag', raw_id_admin=True, core=True)
+    ipr = models.ForeignKey(IprDetail, raw_id_admin=True, edit_inline=True, related_name='drafts')
     revision = models.CharField(maxlength=2)
     def __str__(self):
 	return "%s applies to %s-%s" % ( self.ipr, self.document, self.revision )
@@ -193,8 +214,8 @@ class IprNotification(models.Model):
 	pass
 
 class IprRfc(models.Model):
-    ipr = models.ForeignKey(IprDetail, raw_id_admin=True, related_name='rfcs')
-    rfc_number = models.ForeignKey(Rfc, db_column='rfc_number', raw_id_admin=True)
+    ipr = models.ForeignKey(IprDetail, edit_inline=True, related_name='rfcs')
+    rfc_number = models.ForeignKey(Rfc, db_column='rfc_number', raw_id_admin=True, core=True)
     def __str__(self):
 	return "%s applies to RFC%04d" % ( self.ipr, self.rfc_number )
     class Meta:
