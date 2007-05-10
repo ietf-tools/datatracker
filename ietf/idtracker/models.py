@@ -452,10 +452,65 @@ class BallotInfo(models.Model):   # Added by Michael Lee
     ballot_writeup = models.TextField(blank=True)
     ballot_issued = models.IntegerField(null=True, blank=True)
     def __str__(self):
-        return self.approval_text 
+	try:
+	    return "Ballot for %s" % (IDInternal.objects.get(ballot_id=self.ballot, primary_flag=1).draft.filename)
+	except IDInternal.DoesNotExist:
+	    return "Ballot ID %d (no I-D?)" % (self.ballot_id)
     class Meta:
         db_table = 'ballot_info'
+    class Admin:
+	pass
 
+class Position(models.Model):
+    ballot = models.ForeignKey(BallotInfo, raw_id_admin=True, related_name='positions')
+    ad = models.ForeignKey(IESGLogin, raw_id_admin=True)
+    yes = models.IntegerField(db_column='yes_col')
+    noobj = models.IntegerField(db_column='no_col')
+    abstain = models.IntegerField()
+    approve = models.IntegerField()
+    discuss = models.IntegerField()
+    recuse = models.IntegerField()
+    def __str__(self):
+	return "Position for %s on %s" % ( self.ad, self.ballot )
+    class Meta:
+        db_table = 'ballots'
+	unique_together = (('ballot', 'ad'), )
+    class Admin:
+	pass
+
+class IESGComment(models.Model):
+    ballot = models.ForeignKey(BallotInfo, raw_id_admin=True)
+    ad = models.ForeignKey(IESGLogin, raw_id_admin=True)
+    comment_date = models.DateField()
+    revision = models.CharField(maxlength=2)
+    active = models.IntegerField()
+    comment_text = models.TextField(blank=True)
+    def __str__(self):
+	return "Comment text by %s on %s" % ( self.ad, self.ballot )
+    class Meta:
+        db_table = 'ballots_comment'
+	unique_together = (('ballot', 'ad'), )
+	verbose_name = 'IESG Comment Text'
+	verbose_name_plural = 'IESG Comments'
+    class Admin:
+	pass
+
+class IESGDiscuss(models.Model):
+    ballot = models.ForeignKey(BallotInfo, raw_id_admin=True)
+    ad = models.ForeignKey(IESGLogin, raw_id_admin=True)
+    discuss_date = models.DateField()
+    revision = models.CharField(maxlength=2)
+    active = models.IntegerField()
+    discuss_text = models.TextField(blank=True)
+    def __str__(self):
+	return "Discuss text by %s on %s" % ( self.ad, self.ballot )
+    class Meta:
+        db_table = 'ballots_discuss'
+	unique_together = (('ballot', 'ad'), )
+	verbose_name = 'IESG Discuss Text'
+	verbose_name_plural = 'IESG Discusses'
+    class Admin:
+	pass
 
 class IDAuthors(models.Model):
     document = models.ForeignKey(InternetDraft, db_column='id_document_tag', related_name='authors', edit_inline=models.TABULAR)
