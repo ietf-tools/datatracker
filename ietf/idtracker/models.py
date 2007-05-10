@@ -162,12 +162,6 @@ class InternetDraft(models.Model):
 	if self.status.status != 'Active' and not self.expired_tombstone:
 	   r = max(r - 1, 0)
 	return "%02d" % r
-    def idballot(self):   # Added by Sunny Lee to return ballot_id from id_internal
-        idinternal = self.idinternal
-        if idinternal:
-            return idinternal.ballot_id
-        else:
-            return 0
 
     class Meta:
         db_table = "internet_drafts"
