@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}IESG Statements on Independent Submissions{% endblock %}
+{% block content %}
+<link rel="stylesheet" type="text/css" href="https://www1.ietf.org/css/base.css" />
+<center><h2>IESG Statements on Independent Submissions</center>
+The RFC Editor receives requests to publish non-IETF Working Group documents as independent Informational or Experimental RFCs. Following the process defined in RFC 3932, the RFC Editor requests that the IESG review these documents and provide input. This page contains copies of those messages that were sent by the IESG to the RFC Editor following such reviews.
+<hr>
+
+<h3>Positive IESG Response</h3>
+
+{% regroup object_list by draft.b_approve_date|date:"F j, Y" as dates %}
+{% for date in dates %}
+<b>Date Sent: {{ date.grouper }}</b>
+<ul>
+{% for item in date.list %}
+<li><a href="/iesg/ann/detail/{{ item.ballot_id }}/">{{ item.draft.id_document_name }}</a>
+{% endfor %}
+</ul>
+{% endfor %}
+
+
+<B><a href="http://www.ietf.org/IESG/RFCED-YES.html">OLD LIST</a></B><hr>
+<h3>Negative IESG Responses</h3>
+{% regroup object_list_dnp by dnp_date|date:"F j, Y" as dates %}
+{% for date in dates %}
+<b>Date Sent: {{ date.grouper }}</b>
+<ul>
+{% for item in date.list %}
+<li><a href="/iesg/ann/detail/{{ item.ballot_id }}/">{{ item.draft.id_document_name }}</a>
+{% endfor %}
+</ul>
+{% endfor %}
+
+<br>
+
+<B><a href="http://www.ietf.org/IESG/RFCED-NO.html">OLD LIST</a></B><br><br><br><br>
+{% endblock %}

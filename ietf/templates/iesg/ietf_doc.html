@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ title_prefix }} IESG Announcements{% endblock %}
+{% block content %}
+<link rel="stylesheet" type="text/css" href="https://www1.ietf.org/css/base.css" />
+{% if is_recent %}
+<center><h2>Recent IESG Announcements</center>
+This page contains links to all IESG Protocol, Document, and Working Group Action announcements that have been sent within the past six months. Announcements that were sent prior to six month ago can be found in <a href="previous/">Previous Announcements</a>.<br>
+<br>
+<b>
+                                                                                 
+1. <a href="#protocol">Protocol Action Announcements</a><br>
+2. <a href="#document">Document Action Announcements</a><br>
+3. <a href="#wg">Working Group Action Announcements</a><br>
+4. <a href="/iesg/ann/ietf-doc/previous/">Previous Announcements</a><br>
+</b>
+{% else %}
+<center><h2>Previous IESG Announcements</center>
+This page contains links to all IESG Protocol, Document, and Working Group Action announcements that were sent prior to six months ago.  Announcements that have been sent within the past six months can be found in <a href="../">Recent Announcements</a>.
+<br><br>
+<b>
+1. <a href="#protocol">Protocol Action Announcements</a><br>
+2. <a href="#document">Document Action Announcements</a><br>
+3. <a href="#wg">Working Group Action Announcements</a><br>
+4. <a href="/iesg/ann/ietf-doc/recent/">Recent IESG Announcements</a><br>
+</b>
+{% endif %}
+<hr>
+<h3><a name="protocol">1. <u>Protocol Action Announcements</u></a></h3>
+{% regroup object_list by b_approve_date|date:"F j, Y" as dates %}
+{% for date in dates %}
+<b>Date Sent: {{ date.grouper }} </b>
+<ul>
+{% for item in date.list %}
+<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.id_document_name }}</a>
+{% endfor %}
+</ul>
+{% endfor %}
+
+<h3><a name="document">2. <u>Document Action Announcements</u></a></h3>
+{% regroup object_list_doc by b_approve_date|date:"F j, Y" as dates %}
+{% for date in dates %}
+<b>Date Sent: {{ date.grouper }} </b>
+<ul>
+{% for item in date.list %}
+<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.id_document_name }}</a>
+{% endfor %}
+</ul>
+{% endfor %}
+
+<h3><a name="wg">3. <u>Working Group Action Announcements</u></a></h3>
+<font color="red"><i>Coming Soon ...</i></font>
+
+{% endblock %}

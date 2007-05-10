@@ -162,6 +162,13 @@ class InternetDraft(models.Model):
 	if self.status.status != 'Active' and not self.expired_tombstone:
 	   r = max(r - 1, 0)
 	return "%02d" % r
+    def idballot(self):   # Added by Sunny Lee to return ballot_id from id_internal
+        idinternal = self.idinternal
+        if idinternal:
+            return idinternal.ballot_id
+        else:
+            return 0
+
     class Meta:
         db_table = "internet_drafts"
     class Admin:
@@ -433,6 +440,24 @@ class DocumentComment(models.Model):
 	    return "system"
     class Meta:
         db_table = 'document_comments'
+
+class BallotInfo(models.Model):   # Added by Michael Lee
+    ballot = models.IntegerField(primary_key=True, db_column='ballot_id')
+    active = models.BooleanField()
+    an_sent = models.BooleanField()
+    an_sent_date = models.DateField(null=True, blank=True)
+    an_sent_by = models.ForeignKey(IESGLogin, db_column='an_sent_by', related_name='ansent') 
+    defer = models.BooleanField(null=True, blank=True)
+    defer_by = models.ForeignKey(IESGLogin, db_column='defer_by', related_name='deferred')
+    defer_date = models.DateField(null=True, blank=True)
+    approval_text = models.TextField(blank=True)
+    last_call_text = models.TextField(blank=True)
+    ballot_writeup = models.TextField(blank=True)
+    ballot_issued = models.IntegerField(null=True, blank=True)
+    def __str__(self):
+        return self.approval_text 
+    class Meta:
+        db_table = 'ballot_info'
 
 
 class IDAuthors(models.Model):
