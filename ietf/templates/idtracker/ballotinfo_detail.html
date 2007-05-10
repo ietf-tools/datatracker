@@ -4,7 +4,7 @@
 {% block title %}IESG Announcement{% endblock %}
                                                                                                                 
 {% block content %}
-{{ object.approval_text|escape|linebreaks|urlize }}
-{{ object.ballot_writeup|escape|linebreaks|urlize }}
+{{ object.approval_text|escape|keep_spacing|linebreaks|urlize }}
+{{ object.ballot_writeup|escape|keep_spacing|linebreaks|urlize }}
 {% endblock %}
 
