@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block css %}
+ul.errorlist { color: red; border: 1px solid red; }
+{% endblock %} 
+
+{% block content %}
+        <form action="." method="POST">
+        FORM( {{ step }} ):<table> {{ form }} </table>
+
+        step_info : <input type="hidden" name="{{ step_field }}" value="{{ step }}" />  
+
+        previous_fields: {{ previous_fields }}
+
+        <input type="submit">
+        </form>
+
+{% endblock %}
