@@ -35,6 +35,9 @@ class IDState(models.Model):
     description = models.TextField(blank=True, db_column='document_desc')
     def __str__(self):
         return self.state
+    def choices():
+	return [(state.document_state_id, state.state) for state in IDState.objects.all()]
+    choices = staticmethod(choices)
     class Meta:
         db_table = 'ref_doc_states_new'
     class Admin:
@@ -436,7 +439,7 @@ class DocumentComment(models.Model):
         db_table = 'document_comments'
 
 class BallotInfo(models.Model):   # Added by Michael Lee
-    ballot = models.IntegerField(primary_key=True, db_column='ballot_id')
+    ballot = models.AutoField(primary_key=True, db_column='ballot_id')
     active = models.BooleanField()
     an_sent = models.BooleanField()
     an_sent_date = models.DateField(null=True, blank=True)
@@ -571,6 +574,9 @@ class GroupIETF(models.Model):
 	return self.group_acronym.acronym
     def active_drafts(self):
 	return self.group_acronym.internetdraft_set.all().filter(status__status="Active")
+    def choices():
+	return [(wg.group_acronym_id, wg.group_acronym.acronym) for wg in GroupIETF.objects.all().select_related().order_by('acronym.acronym')]
+    choices = staticmethod(choices)
     class Meta:
         db_table = 'groups_ietf'
 	ordering = ['?']	# workaround django wanting to sort by acronym but not joining with it
