@@ -55,17 +55,24 @@ class MeetingVenue(models.Model):
 
 class NonSessionRef(models.Model):
     name = models.CharField(maxlength=255)
+    def __str__(self):
+	return self.name
     class Meta:
         db_table = 'non_session_ref'
 
 class NonSession(models.Model):
-	non_session_id = models.IntegerField(primary_key=True)
-	day_id = models.IntegerField()
-	non_session_ref = models.ForeignKey(NonSessionRef)
-	meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
-	time_desc = models.CharField(blank=True, maxlength=75)
-	class Meta:
-		db_table = 'non_session'
+    non_session_id = models.AutoField(primary_key=True)
+    day_id = models.IntegerField()
+    non_session_ref = models.ForeignKey(NonSessionRef)
+    meeting = models.ForeignKey(Meeting, db_column='meeting_num')
+    time_desc = models.CharField(blank=True, maxlength=75)
+    def __str__(self):
+	if self.day_id:
+	    return "%s %s %s @%d" % ((self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc, self.non_session_ref, self.meeting_id)
+	else:
+	    return "** %s %s @%d" % (self.time_desc, self.non_session_ref, self.meeting_id)
+    class Meta:
+	db_table = 'non_session'
 
 class Proceeding(models.Model):
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True, primary_key=True)
