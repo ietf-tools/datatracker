@@ -1,5 +1,6 @@
-import operator
-import syslog
+from listop import orl, flattenl
+from log import log
+
 from django.utils.html import escape
 # look at snippets 59, 148, 99 for newforms helpers
 
@@ -51,17 +52,6 @@ class FKAsOneToOne(object):
             setattr(instance, self.field, value)
 
 
-def orl(list):
-    """ Return the "or" of every element in a list.
-    Used to generate "or" queries with a list of Q objects. """
-    return reduce(operator.__or__, list)
-
-def flattenl(list):
-    """ Flatten a list one level, e.g., turn
-	[ ['a'], ['b'], ['c', 'd'] ] into
-	[ 'a', 'b', 'c', 'd' ]
-    """
-    return reduce(operator.__concat__, list)
 
 
 def split_form(html, blocks):
