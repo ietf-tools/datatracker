@@ -4,7 +4,7 @@
 
 <center> 
 <strong> Agenda of the {{ meeting_num }}th IETF Meeting </strong> <br/> 
-<strong> Date of Meeting  {{ meeting.start_date }} - {{ meeting.end_date }} </strong><br />
+<strong> {{ meeting_info.start_date|date:"F j, Y" }} - {{ meeting_info.end_date|date:"F j, Y" }} </strong><br />
 Updated As of : <br />
 </center> 
 
@@ -14,16 +14,10 @@ Updated As of : <br />
 *** Click on a name of the group to get a meeting agenda *** <br />
 </P>
 
+<p><b>SUNDAY, {{ meeting_info.start_date|date:"F j, Y" }}</b><br>
 
-{{ cbreak_time.time_desc }}
- <br />
-{% for session in all_sessions %}
-
-The sessions are: 
-{{ session.num_session }}
-
-
-<br />
+{% for item in qs_sun %}
+{{ item.sched_time_id1.time_desc }} {{ item.group_acronym.name }} - {{ item.sched_room_id1.room_name }}<br>
 {% endfor %}
 
 

@@ -155,7 +155,7 @@ class MeetingRoom(models.Model):
 class WgMeetingSession(models.Model, ResolveAcronym):
     session_id = models.AutoField(primary_key=True)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
-    group_acronym_id = models.IntegerField()
+    group_acronym = models.ForeignKey(Acronym, primary_key=True, unique=True, editable=False)
     irtf = models.BooleanField()
     num_session = models.IntegerField()
     length_session1 = models.CharField(blank=True, maxlength=100)
