@@ -5,6 +5,7 @@ import django.newforms as forms
 from django.utils.html import escape, linebreaks
 import ietf.utils
 from ietf.proceedings import models
+#from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, SessionName
 from django.views.generic.list_detail import object_list
 
 def default(request):
@@ -33,20 +34,9 @@ def show_html_materials(request, meeting_num=None):
 def show_html_agenda(request, meeting_num=None):
     meeting_info=models.Meeting.objects.filter(meeting_num=meeting_num)[0]
     queryset_list=models.WgMeetingSession.objects.filter(meeting_num=meeting_num)
-    queryset_list_sun=models.WgMeetingSession.objects.filter(meeting=meeting_num, sched_time_id1__day_id=0).select_related().order_by("meeting_times.time_id")
+    queryset_list_sun=models.WgMeetingSession.objects.filter(meeting=meeting_num, sched_time_id1__day_id=0).order_by('sched_time_id1__time_desc')
     return object_list(request,queryset=queryset_list, template_name='meeting/agenda.html',allow_empty=True, extra_context={'qs_sun':queryset_list_sun, 'meeting_info':meeting_info, 'meeting_num':meeting_num})
 
-def show(request, meeting_num=None):
-    """Show a specific IPR disclosure"""
-    assert meeting_num != None
-    meeting = models.Meeting.objects.filter(meeting_num=meeting_num)[0]
-    meeting.p_notes = linebreaks(escape(meeting.p_notes))
-    meeting.discloser_identify = linebreaks(escape(meeting.discloser_identify))
-    meeting.comments = linebreaks(escape(meeting.comments))
-    meeting.other_notes = linebreaks(escape(meeting.other_notes))
-    opt = meeting.licensing_option
-    meeting.licensing_option = dict(models.LICENSE_CHOICES)[meeting.licensing_option]
-    meeting.selecttype = dict(models.SELECT_CHOICES)[meeting.selecttype]
-    if meeting.selectowned:
-        meeting.selectowned = dict(models.SELECT_CHOICES)[meeting.selectowned]
-    return render("meeting/details.html",  {"meeting": meeting, "section_list": section_list})
+def show(request):
+    return 0
+
