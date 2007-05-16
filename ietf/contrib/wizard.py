@@ -137,7 +137,8 @@ class Wizard( object ):
         data = [(bf.name, bf.data) for bf in form] + [settings.SECRET_KEY]
         # Use HIGHEST_PROTOCOL because it's the most efficient. It requires
         # Python 2.3, but Django requires 2.3 anyway, so that's OK.
-        pickled = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
+        #pickled = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
+        pickled = str(data)     #XXX
         return md5.new(pickled).hexdigest()
 
     def parse_params( self, request, *args, **kwargs ):
