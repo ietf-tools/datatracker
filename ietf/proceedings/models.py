@@ -21,6 +21,18 @@ class ResolveAcronym(object):
 	if interim:
 	    return "i" + acronym
 	return acronym
+    def acronym_name(self):
+        try:
+            interim = self.interim
+        except AttributeError:
+            interim = False
+        if self.irtf:
+            acronym_name = IRTF.objects.get(pk=self.group_acronym_id).irtf_name
+        else:
+            acronym_name = Acronym.objects.get(pk=self.group_acronym_id).name
+        if interim:
+            return "i" + acronym
+        return acronym_name
 
 class Meeting(models.Model):
     meeting_num = models.IntegerField(primary_key=True)
@@ -155,7 +167,7 @@ class MeetingRoom(models.Model):
 class WgMeetingSession(models.Model, ResolveAcronym):
     session_id = models.AutoField(primary_key=True)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
-    group_acronym = models.ForeignKey(Acronym, primary_key=True, unique=True, editable=False)
+    group_acronym_id = models.IntegerField()
     irtf = models.BooleanField()
     num_session = models.IntegerField()
     length_session1 = models.CharField(blank=True, maxlength=100)

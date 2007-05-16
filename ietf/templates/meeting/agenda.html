@@ -5,7 +5,7 @@
 <center> 
 <strong> Agenda of the {{ meeting_num }}th IETF Meeting </strong> <br/> 
 <strong> {{ meeting_info.start_date|date:"F j, Y" }} - {{ meeting_info.end_date|date:"F j, Y" }} </strong><br />
-Updated As of : <br />
+Updated As of : {% now "F j, Y" %}<br />
 </center> 
 
 <a href="/meeting/{{meeting_num}}/agenda.txt"> Text Format of the Agenda </a> <br />
@@ -15,10 +15,16 @@ Updated As of : <br />
 </P>
 
 <p><b>SUNDAY, {{ meeting_info.start_date|date:"F j, Y" }}</b><br>
-
+{% filter escape %} {{ nonsession_info.time_desc }} {{ nonsession_info.non_session_ref }} - {{ meetingvenue_info.reg_area_name }} {% endfilter %}
+<br>
 {% for item in qs_sun %}
-{{ item.sched_time_id1.time_desc }} {{ item.group_acronym.name }} - {{ item.sched_room_id1.room_name }}<br>
+{{ item.sched_time_id1.time_desc }} {{ item.acronym_name }} - {{ item.sched_room_id1.room_name }}<br>
 {% endfor %}
-
-
+{% regroup object_list by day_id as days %}
+{% for day in days %}
+<b>Day: {{ meeting_info.start_date }} {{ day.grouper }}</b><br>
+{% for item in day.list %}
+<b>{{ item.time_desc }} </b><br>
+{% endfor %}
+{% endfor %}
 {% endblock %}
