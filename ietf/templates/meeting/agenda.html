@@ -24,7 +24,11 @@ Updated As of : {% now "F j, Y" %}<br />
 {% for day in days %}
 <b>Day: {{ meeting_info.start_date }} {{ day.grouper }}</b><br>
 {% for item in day.list %}
-<b>{{ item.time_desc }} </b><br>
+<b>{{ item.time_desc }} {{ item.session_name }} </b><br>
+
+{% for session in item.sessions %}
+{{ session.sched_room_id1.room_name }} {{ session.area }} {{ session.acronym }} {{ session.acronym_name }} <br>
+{% endfor %}
 {% endfor %}
 {% endfor %}
 {% endblock %}
