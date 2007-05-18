@@ -7,30 +7,6 @@ from ietf.idtracker.views import InternetDraft
 from ietf.idtracker.models import Rfc
 
 # ------------------------------------------------------------------------
-# New field classes
-
-phone_re = re.compile(r'^\+?[0-9 ]*(\([0-9]+\))?[0-9 -]+$')
-class InternationalPhoneNumberField(models.CharField):
-    error_message = 'Phone numbers may have a leading "+", and otherwise only contain numbers [0-9], dash, space, and parentheses. '
-    def validate(self, field_data, all_data):
-        if not phone_re.search(field_data):
-            raise ValidationError, self.error_message + ' "%s" is invalid.' % field_data
-
-    def clean(self, value):
-        if value in EMPTY_VALUES:
-            return u''
-        self.validate(value, {})
-        return smart_unicode(value)
-
-    def formfield(self, **kwargs):
-        defaults = {'required': not self.blank, 'label': capfirst(self.verbose_name),
-                    'help_text': self.help_text,
-                    'error_message': self.error_message + "Enter a valid phone number."}
-        defaults.update(kwargs)
-        return forms.RegexField(phone_re, **defaults)
-
-
-# ------------------------------------------------------------------------
 # Models
 
 LICENSE_CHOICES = (
@@ -178,8 +154,8 @@ class IprContact(models.Model):
     department = models.CharField(blank=True, maxlength=255)
     address1 = models.CharField(blank=True, maxlength=255)
     address2 = models.CharField(blank=True, maxlength=255)
-    telephone = InternationalPhoneNumberField(maxlength=25, core=True)
-    fax = InternationalPhoneNumberField(blank=True, maxlength=25)
+    telephone = models.CharField(maxlength=25, core=True)
+    fax = models.CharField(blank=True, maxlength=25)
     email = models.EmailField(maxlength=255, core=True)
     def __str__(self):
 	return self.name

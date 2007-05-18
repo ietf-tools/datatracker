@@ -129,7 +129,7 @@
 
 	 </p>
 	 <hr />
-	 <form method="post">
+	 <form name="form1" method="post">
       {% endif %}
 
 
@@ -348,6 +348,14 @@
 	       </th>
 	    </tr>
 	    {% if ipr.submitter.name %}
+	    {% if ipr.ietf_contact_is_submitter %}
+	    <tr>
+	       <td colspan="2">
+		  Same as in Section III above:
+		  <input type="checkbox" name="ietf_contact_is_submitter" onChange="toggle_submitter_info(this.checked);" {{ ipr.ietf_contact_is_submitter_checked }}></td>
+	       </td>
+	    </tr>
+	    {% endif %}
 	    <tr><td class="fixwidth">Name:</td>		<td><b>{{ ipr.submitter.name }}</b></td></tr>
 	    <tr><td class="fixwidth">Title:</td>		<td><b>{{ ipr.submitter.title }}</b></td></tr>
 	    <tr><td class="fixwidth">Department:</td>	<td><b>{{ ipr.submitter.department }}</b></td></tr>

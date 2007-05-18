@@ -10,12 +10,12 @@
 	   padding:2px;
 	   border-width:1px;
 	   border-style:solid;
-	   border-color:305076;
+	   border-color:#305076;
    }
    .ipr th { border: 0px; margin: 0px; padding: 4px; }
    .ipr td { border: 0px; margin: 0px; padding: 4px; }
    td.fixwidth { width: 14ex; }
-   .ipr ul { padding-left: -2ex; list-style-type: none; }
+   .ipr ul { list-style-type: none; }
    h4.ipr	{ text-align: center; }
    input	{ width: 72ex; font-family: sans-serif; font-size: 11pt; font-weight: normal; }
    input[type="radio"] { width: auto; }
@@ -25,3 +25,38 @@
    .required	{ color: red; float: right; padding-top: 0.7ex; font-size: 130%; }
    .errorlist	{ background: red; padding: 0 0 0 2px; border: 0px; margin: 0px; }
    </style>
+
+   <script type="text/javascript">
+      function toggle_submitter_info (checked) {
+	if (checked) {
+	  document.form1.subm_name.value = document.form1.ietf_name.value;
+	  document.form1.subm_title.value = document.form1.ietf_title.value;
+	  document.form1.subm_department.value = document.form1.ietf_department.value;
+	  document.form1.subm_telephone.value = document.form1.ietf_telephone.value;
+	  document.form1.subm_fax.value = document.form1.ietf_fax.value;
+	  document.form1.subm_email.value = document.form1.ietf_email.value;
+	  document.form1.subm_address1.value = document.form1.ietf_address1.value;
+	  document.form1.subm_address2.value = document.form1.ietf_address2.value;
+	} else {
+	  document.form1.subm_name.value = "";
+	  document.form1.subm_title.value = "";
+	  document.form1.subm_department.value = "";
+	  document.form1.subm_telephone.value = "";
+	  document.form1.subm_fax.value = "";
+	  document.form1.subm_email.value = "";
+	  document.form1.subm_address1.value = "";
+	  document.form1.subm_address2.value = "";	    
+	}
+	document.form1.subm_name.disabled = checked;
+	document.form1.subm_title.disabled = checked;
+	document.form1.subm_department.disabled = checked;
+	document.form1.subm_telephone.disabled = checked;
+	document.form1.subm_fax.disabled = checked;
+	document.form1.subm_email.disabled = checked;
+	document.form1.subm_address1.disabled = checked;
+	document.form1.subm_address2.disabled = checked;
+
+	return true;
+      }
+   </script>
+	  
