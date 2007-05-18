@@ -27,7 +27,8 @@
    </style>
 
    <script type="text/javascript">
-      function toggle_submitter_info (checked) {
+      function toggle_submitter_info () {
+	checked = document.form1.ietf_contact_is_submitter.checked;
 	if (checked) {
 	  document.form1.subm_name.value = document.form1.ietf_name.value;
 	  document.form1.subm_title.value = document.form1.ietf_title.value;

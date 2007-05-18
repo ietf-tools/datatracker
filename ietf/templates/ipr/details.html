@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}IPR Details{% endblock %}
+{% block body_attributes %}onload="toggle_submitter_info()"{% endblock %}
 {% block content %}
 
 {% include "ipr/style.html" %}
@@ -133,7 +134,19 @@
       {% endif %}
 
 
-
+      {% if ipr.errors %}
+      <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+	 {% for error in ipr.errors %}
+	 <tr>
+	    <td colspan="2">
+	       <ul class="errorlist">
+		  <li>{{ error }}</li>
+	       </ul>
+	    </td>
+	 </tr>
+	 {% endfor %}
+      </table>
+      {% endif %}
    </blockquote>
 
    {% if section_list.holder %}
@@ -255,6 +268,12 @@
 		  application?: </i>
 		  <b>{{ ipr.selecttype }}</b>
 	       </tr>
+	       {% if section_list.generic %}
+		  <tr>
+		     <td colspan="2"><i>C. Does this disclosure apply to all IPR owned by
+			the submitter?:</i> <b>{{ ipr.selectowned }}</b></td>
+		  </tr>
+	       {% else %}
 		  <tr>
 		     <td colspan="2"><i>
 			C. If an Internet-Draft or RFC includes multiple parts and it is not
@@ -270,6 +289,7 @@
 		  {% else %}
 		  <tr><td class="fixwidth"></td><td></span><i>No information submitted</i></td></tr>
 		  {% endif %}
+	       {% endif %}
 	    {% else %}
 	    <tr><td class="fixwidth"></td><td><b>This disclosure relates to an unpublished pending patent application.</b></td></tr>
 	    {% endif %}
@@ -318,6 +338,7 @@
 	    {% if ipr.lic_checkbox %}
 	    <tr>
 	       <td colspan="2">
+		  {% ifnotequal ipr.lic_checkbox 1 %}{{ ipr.lic_checkbox }}{% endifnotequal %}
 		  The individual submitting this template represents and warrants that all
 		  terms and conditions that must be satisfied for implementers of any
 		  covered IETF specification to obtain a license have been disclosed in this
@@ -352,7 +373,7 @@
 	    <tr>
 	       <td colspan="2">
 		  Same as in Section III above:
-		  <input type="checkbox" name="ietf_contact_is_submitter" onChange="toggle_submitter_info(this.checked);" {{ ipr.ietf_contact_is_submitter_checked }}></td>
+		  <input type="checkbox" name="ietf_contact_is_submitter" onChange="toggle_submitter_info();" {{ ipr.ietf_contact_is_submitter_checked }}></td>
 	       </td>
 	    </tr>
 	    {% endif %}

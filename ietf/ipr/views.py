@@ -1,11 +1,18 @@
 import re
 import models
 import ietf.utils
+import django.utils.html
 import django.newforms as forms
 from django.shortcuts import render_to_response as render
-from django.utils.html import escape, linebreaks
+from django.utils.html import escape
 from ietf.contrib.form_decorator import form_decorator
 from ietf.utils import log as log
+
+def linebreaks(value):
+    if value:
+        return django.utils.html.linebreaks(value)
+    else:
+        return value
 
 def default(request):
     """Default page, with links to sub-pages"""
@@ -37,25 +44,25 @@ def list(request, template):
 
 section_table = {
                 "index":    {   "index": True   },
-                "specific": {   "index": False, "title": True,
+                "specific": {   "index": False, "title": True, "specific": True,
                                 "legacy_intro": False, "new_intro": True,  "form_intro": False,
                                 "holder": True, "holder_contact": True, "ietf_contact": True,
                                 "ietf_doc": True, "patent_info": True, "licensing": True,
                                 "submitter": True, "notes": True, "form_submit": False,
                             },
-                "generic": {   "index": False, "title": True,
+                "generic": {   "index": False, "title": True, "generic": True,
                                 "legacy_intro": False, "new_intro": True,  "form_intro": False,
                                 "holder": True, "holder_contact": True, "ietf_contact": False,
                                 "ietf_doc": False, "patent_info": True, "licensing": True,
                                 "submitter": True, "notes": True, "form_submit": False,
                             },
-                "third_party": {"index": False, "title": True,
+                "third_party": {"index": False, "title": True, "third_party": True, 
                                 "legacy_intro": False, "new_intro": True,  "form_intro": False,
                                 "holder": True, "holder_contact": False, "ietf_contact": True,
                                 "ietf_doc": True, "patent_info": True, "licensing": False,
                                 "submitter": False, "notes": False, "form_submit": False,
                             },
-                "legacy":   {   "index": False, "title": True,
+                "legacy":   {   "index": False, "title": True, "legacy": True,
                                 "legacy_intro": True, "new_intro": False,  "form_intro": False,
                                 "holder": True, "holder_contact": True, "ietf_contact": False,
                                 "ietf_doc": True, "patent_info": False, "licensing": False,
@@ -85,8 +92,10 @@ def show(request, ipr_id=None):
     ipr.discloser_identify = linebreaks(escape(ipr.discloser_identify))
     ipr.comments = linebreaks(escape(ipr.comments))
     ipr.other_notes = linebreaks(escape(ipr.other_notes))
+
     ipr.licensing_option = dict(models.LICENSE_CHOICES)[ipr.licensing_option]
     ipr.selecttype = dict(models.SELECT_CHOICES)[ipr.selecttype]
+
     if ipr.selectowned:
         ipr.selectowned = dict(models.SELECT_CHOICES)[ipr.selectowned]
     return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list})
@@ -103,9 +112,9 @@ def new(request, type):
     # define callback methods for special field cases.
     def ipr_detail_form_callback(field, **kwargs):
         if field.name == "licensing_option":
-            return forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES))
+            return forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES), required=False)
         if field.name in ["selecttype", "selectowned"]:
-            return forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))))
+            return forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
         return field.formfield(**kwargs)
 
     def ipr_contact_form_callback(field, **kwargs):
@@ -181,12 +190,10 @@ def new(request, type):
         data = request.POST.copy()
         if "ietf_contact_is_submitter" in data:
             for subfield in ["name", "title", "department", "address1", "address2", "telephone", "fax", "email"]:
-                log("Fixing subfield subm_%s ..."%subfield)
                 try:
                     data["subm_%s"%subfield] = data["ietf_%s"%subfield]
-                    log("Set to %s"%data["ietf_%s"%subfield])
                 except Exception, e:
-                    log("Caught exception: %s"%e)
+                    #log("Caught exception: %s"%e)
                     pass
         form = IprForm(data)
         if form.ietf_contact_is_submitter:
@@ -194,8 +201,11 @@ def new(request, type):
         if form.is_valid():
             #instance = form.save()
             #return HttpResponseRedirect("/ipr/ipr-%s" % instance.ipr_id)
-            return HttpResponseRedirect("/ipr/")
+            #return HttpResponseRedirect("/ipr/")
+            pass
         else:
+            for error in form.errors:
+                log("Form error: %s"%error)
             # Fall through, and let the partially bound form, with error
             # indications, be rendered again.
             pass
