@@ -78,9 +78,9 @@ class IprDetail(models.Model):
     discloser_identify = models.TextField("Specific document sections covered", blank=True, maxlength=255, db_column='disclouser_identify')
 
     # Patent Information fieldset
-    p_applications = models.TextField("Patent Applications", blank=True, maxlength=255)
-    date_applied = models.CharField(blank=True, maxlength=255)
-    country = models.CharField(blank=True, maxlength=100)
+    p_applications = models.TextField("Patent Applications", maxlength=255)
+    date_applied = models.DateField(maxlength=255)
+    country = models.CharField(maxlength=100)
     p_notes = models.TextField("Additional notes", blank=True)
     selecttype = models.IntegerField("Unpublished Pending Patent Application", null=True, choices=SELECT_CHOICES)
     selectowned = models.IntegerField("Applies to all IPR owned by Submitter", null=True, blank=True, choices=SELECT_CHOICES)

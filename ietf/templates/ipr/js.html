@@ -1,0 +1,34 @@
+   <script type="text/javascript">
+      function toggle_submitter_info () {
+	var checked = document.form1.ietf_contact_is_submitter.checked;
+	if (checked) {
+	  document.form1.subm_name.value = document.form1.ietf_name.value;
+	  document.form1.subm_title.value = document.form1.ietf_title.value;
+	  document.form1.subm_department.value = document.form1.ietf_department.value;
+	  document.form1.subm_telephone.value = document.form1.ietf_telephone.value;
+	  document.form1.subm_fax.value = document.form1.ietf_fax.value;
+	  document.form1.subm_email.value = document.form1.ietf_email.value;
+	  document.form1.subm_address1.value = document.form1.ietf_address1.value;
+	  document.form1.subm_address2.value = document.form1.ietf_address2.value;
+	} else {
+	  document.form1.subm_name.value = "";
+	  document.form1.subm_title.value = "";
+	  document.form1.subm_department.value = "";
+	  document.form1.subm_telephone.value = "";
+	  document.form1.subm_fax.value = "";
+	  document.form1.subm_email.value = "";
+	  document.form1.subm_address1.value = "";
+	  document.form1.subm_address2.value = "";	    
+	}
+	document.form1.subm_name.disabled = checked;
+	document.form1.subm_title.disabled = checked;
+	document.form1.subm_department.disabled = checked;
+	document.form1.subm_telephone.disabled = checked;
+	document.form1.subm_fax.disabled = checked;
+	document.form1.subm_email.disabled = checked;
+	document.form1.subm_address1.disabled = checked;
+	document.form1.subm_address2.disabled = checked;
+
+	return true;
+      }
+   </script>

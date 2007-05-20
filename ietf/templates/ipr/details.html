@@ -4,6 +4,7 @@
 {% block content %}
 
 {% include "ipr/style.html" %}
+{% include "ipr/js.html" %}
 
    <blockquote style="margin-bottom: 0px;">
       {% if section_list.title %}
@@ -26,14 +27,14 @@
 	 </font><br>
 	 {% endif %}
 	 Sections {% block legacy_sections %}I, II, and IV{% endblock %} of "The Patent Disclosure and Licensing Declaration Template 
-	 for {{ ipr.disclosure_type }} IPR Disclosures" have been completed for this IPR disclosure.
+	 for {{ section_list.disclosure_type }} IPR Disclosures" have been completed for this IPR disclosure.
 	 Additional information may be available in the original submission.<br>
 	 See the <a href="{{ ipr.old_ipr_url }}">content of the original IPR disclosure</a>.<br>
       </font>
       {% endif %}
       {% if section_list.new_intro %}
       <font size="3"> Only those sections of the "Patent Disclosure and Licensing Declaration
-	 Template for {{ ipr.disclosure_type }} IPR Disclosures" where the submitter provided
+	 Template for {{ section_list.disclosure_type }} IPR Disclosures" where the submitter provided
 	 information are displayed.</font><br>
       {% endif %}
       {% if section_list.new_intro or section_list.legacy_intro %}
@@ -105,7 +106,7 @@
       {% endif %}
 
       {% if section_list.form_intro %}
-	 <h4 class="ipr">The Patent Disclosure and Licensing Declaration Template for {{ ipr.disclosure_type }} IPR Disclosures</h4>
+	 <h4 class="ipr">The Patent Disclosure and Licensing Declaration Template for {{ section_list.disclosure_type }} IPR Disclosures</h4>
 	 <p class="ipr">
 
 	    This document is an IETF IPR Disclosure and Licensing Declaration
@@ -113,11 +114,30 @@
 	    application information regarding the IETF document or contribution
 	    listed in Section IV, and b) an IPR Holder's intention with respect to
 	    the licensing of its necessary patent claims.  No actual license is
-	    implied by submission of this template.  Please complete and submit a
-	    separate template for each IETF document or contribution to which the
-	    disclosed patent information relates.
+	    implied by submission of this template.
 
 	 </p>
+
+	 {% if section_list.also_specific %}
+	 <p class="ipr">
+
+	    Note: According to Section 6.4.3 of<a
+	    href="http://www.ietf.org/rfc/rfc3979.txt?number=3979"> RFC
+	    3979</a>, "Intellectual Property Rights in IETF Technology," you
+	    are still required to file specific disclosures on IPR unless your
+	    generic disclosure satisfies certain conditions. Please see the
+	    RFC for details.
+	 </p>
+	 {% endif %}
+
+	 {% if section_list.per_rfc_disclosure %}
+	 <p class="ipr">
+	    Please complete and submit a
+	    separate template for each IETF document or contribution to which the
+	    disclosed patent information relates.
+	 </p>
+	 {% endif %}
+
 	 <p class="ipr">
 
 	    If you wish to submit your IPR disclosure by e-mail, then please send
@@ -126,7 +146,7 @@
 	    requirements of Section 6, "IPR Disclosures," of <a
 	    href="http://www.ietf.org/rfc/rfc3979.txt?number=3979">RFC 3979</a>,
 	    "Intellectual Property Rights in IETF Technology," will be posted, but
-	    will be marked as "non-compliant."
+	    will be marked as "non-compliant".
 
 	 </p>
 	 <hr />
@@ -135,17 +155,15 @@
 
 
       {% if ipr.errors %}
-      <table border="0" cellpadding="0" cellspacing="0" class="ipr">
-	 {% for error in ipr.errors %}
-	 <tr>
-	    <td colspan="2">
-	       <ul class="errorlist">
-		  <li>{{ error }}</li>
-	       </ul>
-	    </td>
-	 </tr>
-	 {% endfor %}
-      </table>
+      <p class="errorlist">
+	 There were errors in the submitted form -- see below.  Please correct these and resubmit.
+      </p>
+      {% endif %}
+
+      {% if section_list.form_legend %}
+      <p class="formlegend">
+	 Fields marked with <span class="required">*</span> are required.
+      </p>
       {% endif %}
    </blockquote>
 
@@ -155,7 +173,7 @@
 	 <tr>
 	    <th colspan=2>
 	       {% cycle I,II,III,IV,V,VI,VII,VIII as section %}.
-	       {% ifequal ipr.disclosure_type "Third Party" %}Possible{% endifequal %}
+	       {% ifequal section_list.disclosure_type "Third Party" %}Possible{% endifequal %}
 	       Patent Holder/Applicant ("Patent Holder")
 	    </th>
 	 </tr>
@@ -221,11 +239,11 @@
       <table border="0" cellpadding="0" cellspacing="0" class="ipr">
 	 <tr>
 	    <th colspan="2" >
+	    {% if section_list.form_legend %}<span class="required">*</span>{% endif %}
 	    {% cycle section %}.
 	    IETF Document or Other Contribution to Which this IPR Disclosure Relates:
 	    </th>
 	 </tr>
-	 {% block section4_data %}
 	    {% for rfc in ipr.rfcs.all %}
 	    <tr><td class="fixwidth"><b>RFC {{ rfc.rfc_number.rfc_number }}:</b></td><td><b>"{{ rfc.rfc_number.rfc_name }}"</b></td></tr>
 	    {% endfor %}
@@ -236,7 +254,6 @@
 	    {% if ipr.other_designations %}
 	    <tr><td class="fixwidth">Designations for Other Contributions:</td><td><b>{{ ipr.other_designations }}</b></td></tr>
 	    {% endif %}
-	 {% endblock %}
       </table>
    </blockquote>
    {% endif %}
@@ -257,7 +274,7 @@
 		  A. For granted patents or published pending patent applications,
 		  please provide the following information:</i></td>
 	       </tr>
-	       <tr><td width="28%">Patent, Serial, Publication, Registration,
+	       <tr><td >Patent, Serial, Publication, Registration,
 			 or Application/File number(s):	</td><td><b>{{ ipr.p_applications }}</b></td></tr>
 	       <tr><td>Date(s) granted or applied for:	</td><td><b>{{ ipr.date_applied }}</b></td></tr>
 	       <tr><td>Country:				</td><td><b>{{ ipr.country }}</b></td></tr>
