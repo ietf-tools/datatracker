@@ -6,6 +6,7 @@ import django.newforms as forms
 from django.shortcuts import render_to_response as render
 from ietf.utils import log
 from ietf.ipr.view_sections import section_table
+from ietf.idtracker.models import Rfc, InternetDraft
 
 # ----------------------------------------------------------------
 # Callback methods for special field cases.
@@ -111,11 +112,48 @@ def new(request, type):
 
             BaseIprForm.__init__(self, *args, **kw)
         # Special validation code
-        def clean(self):
-            # Required:
-            # Submitter form filled in or 'same-as-ietf-contact' marked
-            # Only one of rfc, draft, and other info fields filled in
-            # RFC exists or draft exists and has right rev. or ...
+        def clean_rfclist(self):
+            rfclist = self.clean_data.get("rfclist", None)
+            if rfclist:
+                rfclist = re.sub("(?i) *[,;]? *rfc[- ]?", " ", rfclist)
+                rfclist = rfclist.strip().split()
+                for rfc in rfclist:
+                    try:
+                        Rfc.objects.get(rfc_number=int(rfc))
+                    except:
+                        raise forms.ValidationError("Unknown RFC number: %s - please correct this." % rfc)
+                rfclist = " ".join(rfclist)
+            else:
+                # Check that not all three fields are empty.  We only need to
+                # do this for one of the fields.
+                draftlist = self.clean_data.get("draftlist", None)
+                other = self.clean_data.get("other_designations", None)
+                if not draftlist and not other:
+                    raise forms.ValidationError("One of the Document fields below must be filled in")
+            return rfclist
+        def clean_draftlist(self):
+            draftlist = self.clean_data.get("draftlist", None)
+            if draftlist:
+                draftlist = re.sub(" *[,;] *", " ", draftlist)
+                draftlist = draftlist.strip().split()
+                for draft in draftlist:
+                    if draft.endswith(".txt"):
+                        draft = draft[:-4]
+                    if re.search("-[0-9][0-9]$", draft):
+                        filename = draft[:-3]
+                        rev = draft[-2:]
+                    else:
+                        filename = draft
+                        rev = None
+                    #log("ID: %s, rev %s" % (filename, rev))
+                    try:
+                        id = InternetDraft.objects.get(filename=filename)
+                        #log("ID Lookup result: %s, %s" % (id.filename, id.revision))
+                    except Exception, e:
+                        log("Exception: %s" % e)
+                        raise forms.ValidationError("Unknown Internet-Draft: %s - please correct this." % filename)
+                    if rev and id.revision != rev:
+                        raise forms.ValidationError("Unexpected revision '%s' for draft %s - the current revision is %s.  Please check this." % (rev, filename, id.revision))
             pass
 
     if request.method == 'POST':
