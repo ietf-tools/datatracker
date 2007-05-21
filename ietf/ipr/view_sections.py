@@ -17,7 +17,7 @@ section_table = {
                                 "disclosure_type": "Generic", "form_legend": False, 
                                 "per_rfc_disclosure": False, "also_specific": True,
                             },
-                "third_party": {"index": False, "title": True, "third_party": True, 
+                "third-party": {"index": False, "title": True, "third_party": True, 
                                 "legacy_intro": False, "new_intro": True,  "form_intro": False,
                                 "holder": True, "holder_contact": False, "ietf_contact": True,
                                 "ietf_doc": True, "patent_info": True, "licensing": False,

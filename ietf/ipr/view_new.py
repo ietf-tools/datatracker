@@ -89,6 +89,7 @@ def new(request, type):
         rfclist = forms.CharField(required=False)
         draftlist = forms.CharField(required=False)
         stdonly_license = forms.BooleanField(required=False)
+        hold_contact_is_submitter = forms.BooleanField(required=False)
         ietf_contact_is_submitter = forms.BooleanField(required=False)
         if "holder_contact" in section_list:
             holder_contact = ContactForm(prefix="hold")
@@ -102,7 +103,12 @@ def new(request, type):
                     self.base_fields[contact] = ContactForm(prefix=contact[:4], *args, **kw)
             self.base_fields["rfclist"] = forms.CharField(required=False)
             self.base_fields["draftlist"] = forms.CharField(required=False)
-            self.base_fields["ietf_contact_is_submitter"] = forms.BooleanField(required=False)
+            if "holder_contact" in section_list:
+                self.base_fields["hold_contact_is_submitter"] = forms.BooleanField(required=False)
+            if "ietf_contact" in section_list:
+                self.base_fields["ietf_contact_is_submitter"] = forms.BooleanField(required=False)
+            self.base_fields["stdonly_license"] = forms.BooleanField(required=False)
+
             BaseIprForm.__init__(self, *args, **kw)
         # Special validation code
         def clean(self):
@@ -110,19 +116,18 @@ def new(request, type):
             # Submitter form filled in or 'same-as-ietf-contact' marked
             # Only one of rfc, draft, and other info fields filled in
             # RFC exists or draft exists and has right rev. or ...
-
-            if self.ietf_contact_is_submitter:
-                self.submitter = self.ietf_contact
             pass
+
     if request.method == 'POST':
         data = request.POST.copy()
-        if "ietf_contact_is_submitter" in data:
-            for subfield in ["name", "title", "department", "address1", "address2", "telephone", "fax", "email"]:
-                try:
-                    data["subm_%s"%subfield] = data["ietf_%s"%subfield]
-                except Exception, e:
-                    #log("Caught exception: %s"%e)
-                    pass
+        for src in ["hold", "ietf"]:
+            if "%s_contact_is_submitter" % src in data:
+                for subfield in ["name", "title", "department", "address1", "address2", "telephone", "fax", "email"]:
+                    try:
+                        data[ "subm_%s" % subfield ] = data[ "%s_%s" % (src,subfield) ]
+                    except Exception, e:
+                        #log("Caught exception: %s"%e)
+                        pass
         form = IprForm(data)
         if form.ietf_contact_is_submitter:
             form.ietf_contact_is_submitter_checked = "checked"
