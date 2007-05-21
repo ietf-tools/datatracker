@@ -16,6 +16,9 @@ def ipr_detail_form_callback(field, **kwargs):
         return forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES), required=True)
     if field.name in ["selecttype", "selectowned"]:
         return forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
+    if field.name in ["rfc_number", "id_document_tag"]:
+        log(field.name)
+        return forms.CharFieldField(required=False)
     return field.formfield(**kwargs)
 
 def ipr_contact_form_callback(field, **kwargs):
@@ -97,6 +100,8 @@ def new(request, type):
             for contact in ["holder_contact", "ietf_contact", "submitter"]:
                 if contact in section_list:
                     self.base_fields[contact] = ContactForm(prefix=contact[:4], *args, **kw)
+            self.base_fields["rfclist"] = forms.CharField(required=False)
+            self.base_fields["draftlist"] = forms.CharField(required=False)
             self.base_fields["ietf_contact_is_submitter"] = forms.BooleanField(required=False)
             BaseIprForm.__init__(self, *args, **kw)
         # Special validation code

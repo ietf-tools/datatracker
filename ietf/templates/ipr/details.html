@@ -244,13 +244,20 @@
 	    IETF Document or Other Contribution to Which this IPR Disclosure Relates:
 	    </th>
 	 </tr>
-	    {% for rfc in ipr.rfcs.all %}
-	    <tr><td class="fixwidth"><b>RFC {{ rfc.rfc_number.rfc_number }}:</b></td><td><b>"{{ rfc.rfc_number.rfc_name }}"</b></td></tr>
-	    {% endfor %}
-	    <!-- XXX: Omitting code to display information from the rfc_number field of ipr here, as it's always NULL in the database today. -->
-	    {% for draft in ipr.drafts.all %}
-	    <tr><td class="fixwidth">Internet-Draft:</td><td><b>"{{ draft.document.id_document_name }}"<br />(<tt><big>{{ draft.document.filename }}-{{ draft.document.revision }}</big></tt>)</b></td></tr>
-	    {% endfor %}
+	    {% if ipr.rfclist %}
+	       <tr><td class="fixwidth">RFC Numbers:</td><td><b>{{ ipr.rfclist }}</b></td></tr>
+	    {% else %}
+	       {% for rfc in ipr.rfcs.all %}
+	       <tr><td class="fixwidth"><b>RFC {{ rfc.rfc_number.rfc_number }}:</b></td><td><b>"{{ rfc.rfc_number.rfc_name }}"</b></td></tr>
+	       {% endfor %}
+	    {% endif %}
+	    {% if ipr.draftlist %}
+	       <tr><td class="fixwidth">I-D Filenames (draft-...):</td><td><b>{{ ipr.draftlist }}</b></td></tr>
+	    {% else %}
+	       {% for draft in ipr.drafts.all %}
+	       <tr><td class="fixwidth">Internet-Draft:</td><td><b>"{{ draft.document.id_document_name }}"<br />(<tt><big>{{ draft.document.filename }}-{{ draft.document.revision }}</big></tt>)</b></td></tr>
+	       {% endfor %}
+	    {% endif %}
 	    {% if ipr.other_designations %}
 	    <tr><td class="fixwidth">Designations for Other Contributions:</td><td><b>{{ ipr.other_designations }}</b></td></tr>
 	    {% endif %}
@@ -335,7 +342,7 @@
 	       </td>
 	    </tr>
 	    <tr>
-	       <td> </td><td>
+	       <td colspan="2">
 		  <b>{{ ipr.licensing_option }}<br/>
 		  {{ ipr.get_lic_opt_a_sub_display }}
 		  {{ ipr.get_lic_opt_b_sub_display }}
