@@ -13,19 +13,17 @@ Updated As of : {% now "F j, Y" %}<br />
 *** Click on an acronym of the group to get a charter page *** <br />
 *** Click on a name of the group to get a meeting agenda *** <br />
 </P>
-
-<p><b>SUNDAY, {{ meeting_info.start_date|date:"F j, Y" }}</b><br>
-{% filter escape %} {{ nonsession_info.time_desc }} {{ nonsession_info.non_session_ref }} - {{ meetingvenue_info.reg_area_name }} {% endfilter %}
+<p><b>{{ meeting_info.start_date|date:"l, F j, Y" }}</b><br>
+{{ nonsession_info.time_desc }} {{ nonsession_info.non_session_ref }} - {{ meetingvenue_info.reg_area_name }
 <br>
 {% for item in qs_sun %}
 {{ item.sched_time_id1.time_desc }} {{ item.acronym_name }} - {{ item.sched_room_id1.room_name }}<br>
 {% endfor %}
 {% regroup object_list by day_id as days %}
 {% for day in days %}
-<b>Day: {{ meeting_info.start_date }} {{ day.grouper }}</b><br>
+<b>Day: {{ day.list.1.meeting_date|date:"l, F j, Y" }} </b><br>
 {% for item in day.list %}
 <b>{{ item.time_desc }} {{ item.session_name }} </b><br>
-
 {% for session in item.sessions %}
 {{ session.sched_room_id1.room_name }} {{ session.area }} {{ session.acronym }} {{ session.acronym_name }} <br>
 {% endfor %}

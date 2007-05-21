@@ -50,4 +50,3 @@ def show_html_agenda(request, meeting_num=None):
 
 def show(request):
     return 0
-

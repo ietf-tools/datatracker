@@ -59,6 +59,8 @@ class Meeting(models.Model):
     overview2 = models.TextField(blank=True)
     def __str__(self):
 	return "IETF %d" % (self.meeting_num)
+    def get_meeting_date (self,offset):
+        return self.start_date + datetime.timedelta(days=offset) 
     class Meta:
         db_table = 'meetings'
     class Admin:
@@ -135,10 +137,18 @@ class SessionName(models.Model):
 	pass
 
 class MeetingTime(models.Model):
+    DAY_CHOICES=(
+        ('0', 'SUNDAY'), 
+        ('1', 'MONDAY'),
+        ('2', 'TUESDAY'),
+        ('3', 'WEDNESDAY'),
+        ('4', 'THURSDAY'),
+        ('5', 'FRIDAY'),
+    )
     time_id = models.AutoField(primary_key=True)
     time_desc = models.CharField(maxlength=100)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
-    day_id = models.IntegerField()
+    day_id = models.IntegerField(choices=DAY_CHOICES)
     session_name = models.ForeignKey(SessionName)
     def __str__(self):
 	return "[%d] |%s| %s" % (self.meeting_id, (self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc)
@@ -158,6 +168,8 @@ class MeetingTime(models.Model):
 	return WgMeetingSession.objects.filter(
 	    models.Q(combined_time_id1=self.time_id) |
 	    models.Q(combined_time_id2=self.time_id))
+    def meeting_date(self):
+        return self.meeting.get_meeting_date(self.day_id)
     class Meta:
         db_table = 'meeting_times'
     class Admin:
