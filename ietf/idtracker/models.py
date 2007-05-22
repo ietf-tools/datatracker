@@ -75,6 +75,9 @@ class Areas(models.Model):
     extra_email_addresses = models.TextField(blank=True)
     def __str__(self):
 	return self.area_acronym.acronym
+    def active_area_choices():
+	return [(area.area_acronym_id, area.area_acronym.acronym) for area in Areas.objects.filter(status=1).select_related().order_by('acronym.acronym')]
+    active_area_choices = staticmethod(active_area_choices)
     class Meta:
         db_table = 'areas'
         #ordering = ['area_acronym_id']
@@ -197,6 +200,14 @@ class PersonOrOrgInfo(models.Model):
         self.last_name_key = self.last_name.upper()
         super(PersonOrOrgInfo, self).save()
     def __str__(self):
+	if self.first_name == '' and self.last_name == '':
+	    try:
+		postal = self.postaladdress_set.get(address_priority=1)
+	    except PostalAddress.DoesNotExist:
+		return "PersonOrOrgInfo with no name, no postal address!"
+	    except AssertionError:
+		return "PersonOrOrgInfo with multiple priority-1 addresses!"
+	    return "%s" % ( postal.affiliated_company or postal.department or "???" )
         return "%s %s" % ( self.first_name or "<nofirst>", self.last_name or "<nolast>")
     class Meta:
         db_table = 'person_or_org_info'
