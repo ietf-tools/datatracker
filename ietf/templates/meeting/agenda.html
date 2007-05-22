@@ -22,32 +22,32 @@ Updated As of : {% now "F j, Y" %}<br />
 <br>
 {% regroup object_list by day_id as days %}
 {% for day in days %}
-<b>Day: {{ day.list.1.meeting_date|date:"l, F j, Y" }} </b><br>
-{{ day.list.1.reg_info }} - {{ meetingvenue_info.reg_area_name }} <br>
-{{ day.list.1.morning_br_info }} - {{ meetingvenue_info.break_area_name }} <br>
-<br>
-{% for item in day.list %}
-{% ifequal item.session_name_id 3 %}
-{{ day.list.1.lunch_br_info }} Break<br>
-{% endifequal %}
-{% ifequal item.session_name_id 4 %}
-{{ day.list.1.an_br1_info }}<br>
-{% endifequal %}
-{% ifequal item.session_name_id 5 %}
-{{ day.list.1.an_br2_info }}<br>
-{% endifequal %}
-<b>{{ item.time_desc }} {{ item.session_name }} </b><br>
-<table border="0" cellspacing="0" cellpadding="0" width="800">
-{% for session in item.sessions|dictsort:"area" %}
-{% ifequal session.acronym "plenaryw" %}
-<tr><td>{{ op_ad_plenary_agenda|linebreaksbr }}</td></tr>
-{% else %}
-<tr><td width="200">{{ session.sched_room_id1.room_name }}</td><td width="50">{{ session.area|upper }}</td><td width="100">{{ session.acronym }}</td><td>{{ session.acronym_name }}</td></tr>
-{% endifequal %}
-{% endfor %}
-</table>
-<br>
-{% endfor %}
-<br>
+   <b>Day: {{ day.list.1.meeting_date|date:"l, F j, Y" }} </b><br>
+   {{ day.list.1.reg_info }} - {{ meetingvenue_info.reg_area_name }} <br>
+   {{ day.list.1.morning_br_info }} - {{ meetingvenue_info.break_area_name }} <br>
+   <br>
+   {% for item in day.list %}
+      {% ifequal item.session_name_id 3 %}
+	 {{ day.list.1.lunch_br_info }} Break<br>
+      {% endifequal %}
+      {% ifequal item.session_name_id 4 %}
+	 {{ day.list.1.an_br1_info }}<br>
+      {% endifequal %}
+      {% ifequal item.session_name_id 5 %}
+	 {{ day.list.1.an_br2_info }}<br>
+      {% endifequal %}
+      <b>{{ item.time_desc }} {{ item.session_name }} </b><br>
+      <table border="0" cellspacing="0" cellpadding="0" width="800">
+      {% for session in item.sessions|dictsort:"area" %}
+	 {% ifequal session.acronym "plenaryw" %}
+	    <tr><td>{{ op_ad_plenary_agenda|linebreaksbr }}</td></tr>
+	 {% else %}
+	    <tr><td width="200">{{ session.sched_room_id1.room_name }}</td><td width="50">{{ session.area|upper }}</td><td width="100">{{ session.acronym }}</td><td>{{ session.acronym_name }}</td></tr>
+	 {% endifequal %}
+      {% endfor %}
+      </table>
+      <br>
+   {% endfor %}
+   <br>
 {% endfor %}
 {% endblock %}
