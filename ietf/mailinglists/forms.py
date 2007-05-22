@@ -67,7 +67,6 @@ class ListReqStep1(forms.Form):
 	return self.clean_data['list_to_close']
 
 # multiwidget for separate scheme and rest for urls
-# todo: can the clean return the "smart" value?
 class UrlMultiWidget(forms.MultiWidget):
     def decompress(self, value):
 	if value:
@@ -88,6 +87,17 @@ class UrlMultiWidget(forms.MultiWidget):
     def format_output(self, rendered_widgets):
 	return u'%s\n%s\n<br/>' % ( u'<br/>\n'.join(["%s" % w for w in rendered_widgets[0]]), rendered_widgets[1] )
 
+    # If we have two widgets, return the concatenation of the values
+    #  (Except, if _0 is "n/a" then return an empty string)
+    # Otherwise, just return the value.
+    def value_from_datadict(self, data, name):
+	try:
+	    scheme = data[name + '_0']
+	    if scheme == 'n/a':
+		return ''
+	    return scheme + data[name + '_1']
+	except KeyError:
+	    return data[name]
 
 class PickApprover(forms.Form):
     """

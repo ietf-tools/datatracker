@@ -77,20 +77,20 @@ class MailingList(models.Model):
 
 class NonWgMailingList(models.Model):
     id = models.CharField(primary_key=True, maxlength=35)
+    s_name = models.CharField("Submitter's Name", blank=True, maxlength=255)
+    s_email = models.EmailField("Submitter's Email Address", blank=True, maxlength=255)
+    list_name = models.CharField("Mailing List Name", unique=True, maxlength=255)
+    list_url = models.CharField("List URL", maxlength=255)
+    admin = models.TextField("Administrator(s)' Email Address(es)", blank=True)
     purpose = models.TextField(blank=True)
     area = models.ForeignKey(Areas, db_column='area_acronym_id')
-    admin = models.TextField("Administrator(s)' Email Address(es)", blank=True)
-    list_url = models.CharField("List URL", maxlength=255)
-    s_name = models.CharField("Submitter's Name", blank=True, maxlength=255)
-    s_email = models.CharField("Submitter's Email Address", blank=True, maxlength=255)
+    subscribe_url = models.CharField("Subscribe URL", blank=True, maxlength=255)
+    subscribe_other = models.TextField("Subscribe Other", blank=True)
     # Can be 0, 1, -1, or what looks like a person_or_org_tag, positive or neg.
     # The values less than 1 don't get displayed on the list of lists.
     status = models.IntegerField()
-    list_name = models.CharField("Mailing List Name", unique=True, maxlength=255)
-    subscribe_url = models.CharField("Subscribe URL", blank=True, maxlength=255)
-    subscribe_other = models.TextField("Subscribe Other", blank=True)
     ds_name = models.CharField(blank=True, maxlength=255)
-    ds_email = models.CharField(blank=True, maxlength=255)
+    ds_email = models.EmailField(blank=True, maxlength=255)
     msg_to_ad = models.TextField(blank=True)
     def __str__(self):
 	return self.list_name 

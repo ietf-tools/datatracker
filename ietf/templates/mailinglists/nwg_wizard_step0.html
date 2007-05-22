@@ -1,0 +1,19 @@
+{% extends "mailinglists/nwg_wizard_base.html" %}
+
+{% block nwgcontent %}
+<h4>Please use this Web tool to add a new entry to the <a href="/mailinglists/nonwg_lists/">IETF Non-WG Mailing Lists</a> Web page, to update the information on an existing entry, or to delete an existing entry.</h4>
+<a href="/mailinglists/nonwg_lists/"><b>View Current list</b></a><br>
+
+</p><p>
+<h2>Step 1</h2>
+<h3>Please select one:</h3>
+<form action="." method="POST">
+{{ form.add_edit_fields.0 }}<br>
+{{ form.add_edit_fields.1 }}{{ form.list_id }}<br>
+{{ form.add_edit_fields.2 }}{{ form.list_id_delete }}<br>
+<input type="submit" value="     Proceed     ">
+<!--
+ onClick="if (document.form_get.add_edit[0].checked == false && document.form_get.add_edit[1].checked == false && document.form_get.add_edit[2].checked == false) {alert('Please select one of three options');return false;}">
+-->
+</form>
+{% endblock %}
