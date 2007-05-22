@@ -643,6 +643,8 @@ class GroupIETF(models.Model):
     def choices():
 	return [(wg.group_acronym_id, wg.group_acronym.acronym) for wg in GroupIETF.objects.all().select_related().order_by('acronym.acronym')]
     choices = staticmethod(choices)
+    def area_acronym(self):
+        return AreaGroup.objects.filter(group_acronym_id=self.group_acronym_id).area 
     class Meta:
         db_table = 'groups_ietf'
 	ordering = ['?']	# workaround django wanting to sort by acronym but not joining with it

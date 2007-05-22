@@ -1,5 +1,5 @@
 from django.db import models
-from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup
+from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup, GroupIETF
 import datetime
 
 # group_acronym is either an IETF Acronym
@@ -137,18 +137,10 @@ class SessionName(models.Model):
 	pass
 
 class MeetingTime(models.Model):
-    DAY_CHOICES=(
-        ('0', 'SUNDAY'), 
-        ('1', 'MONDAY'),
-        ('2', 'TUESDAY'),
-        ('3', 'WEDNESDAY'),
-        ('4', 'THURSDAY'),
-        ('5', 'FRIDAY'),
-    )
     time_id = models.AutoField(primary_key=True)
     time_desc = models.CharField(maxlength=100)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
-    day_id = models.IntegerField(choices=DAY_CHOICES)
+    day_id = models.IntegerField()
     session_name = models.ForeignKey(SessionName)
     def __str__(self):
 	return "[%d] |%s| %s" % (self.meeting_id, (self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc)
@@ -170,6 +162,16 @@ class MeetingTime(models.Model):
 	    models.Q(combined_time_id2=self.time_id))
     def meeting_date(self):
         return self.meeting.get_meeting_date(self.day_id)
+    def reg_info(self):
+        return "%s %s" % (NonSession.objects.filter(meeting=self.meeting, day_id=self.day_id,non_session_ref=1)[0].time_desc, NonSession.objects.filter(meeting=self.meeting, day_id=self.day_id,non_session_ref=1)[0].non_session_ref)
+    def morning_br_info(self):
+        return "%s %s" % (NonSession.objects.filter(meeting=self.meeting, non_session_ref=2)[0].time_desc, NonSession.objects.filter(meeting=self.meeting, non_session_ref=2)[0].non_session_ref)
+    def lunch_br_info(self):
+        return NonSession.objects.filter(meeting=self.meeting, non_session_ref=3)[0].time_desc
+    def an_br1_info(self):
+        return "%s %s" % (NonSession.objects.filter(meeting=self.meeting, non_session_ref=4)[0].time_desc, NonSession.objects.filter(meeting=self.meeting, non_session_ref=4)[0].non_session_ref)
+    def an_br2_info(self):
+        return "%s %s" % (NonSession.objects.filter(meeting=self.meeting, non_session_ref=5)[0].time_desc, NonSession.objects.filter(meeting=self.meeting, non_session_ref=5)[0].non_session_ref)
     class Meta:
         db_table = 'meeting_times'
     class Admin:
