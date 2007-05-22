@@ -1,7 +1,7 @@
 ## formfield_callback generator
 ## http://www.djangosnippets.org/snippets/59/
 def form_decorator(fields = {}, attrs = {}, widgets = {}, 
-    labels = {}, choices = {}):
+    labels = {}, choices = {}, querysets = {}):
     
     """
     This function helps to add overrides when creating forms from models/instances.
@@ -64,6 +64,10 @@ def form_decorator(fields = {}, attrs = {}, widgets = {},
             choice_set = choices[f.name]
             if callable(choice_set) : choice_set = choice_set()
             kw["choices"] = choice_set
+
+        if f.name in querysets:
+        
+            kw["queryset"] = querysets[f.name]
             
                 
         return f.formfield(**kw)
