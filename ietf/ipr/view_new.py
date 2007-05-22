@@ -7,7 +7,6 @@ from django.shortcuts import render_to_response as render
 from ietf.utils import log
 from ietf.ipr.view_sections import section_table
 from ietf.idtracker.models import Rfc, InternetDraft
-from django.http import HttpResponseRedirect
 
 # ----------------------------------------------------------------
 # Callback methods for special field cases.
@@ -21,8 +20,6 @@ def ipr_detail_form_callback(field, **kwargs):
     if field.name in ["rfc_number", "id_document_tag"]:
         log(field.name)
         return forms.CharFieldField(required=False)
-    if field.name in ["date_applied"]:
-        return forms.DateField()
     return field.formfield(**kwargs)
 
 def ipr_contact_form_callback(field, **kwargs):
@@ -157,15 +154,7 @@ def new(request, type):
                         raise forms.ValidationError("Unknown Internet-Draft: %s - please correct this." % filename)
                     if rev and id.revision != rev:
                         raise forms.ValidationError("Unexpected revision '%s' for draft %s - the current revision is %s.  Please check this." % (rev, filename, id.revision))
-        def clean_document_title(self):
-            log("clean_data: %s" % self.data)
-            if type == "general":
-                return """%(p_h_legal_name)s's license statement""" % self.data
-            if type == "specific":
-                return """%(p_h_legal_name)s's Statement about IPR related to ...""" % self.data
-            if type == "third-party":
-                return """%(submitter)s's Statement about IPR related to ... belonging to %(p_h_legal_name)s""" % self.data
-            raise KeyError("Unexpected IPR disclosure type '%s'" % type)
+            pass
 
     if request.method == 'POST':
         data = request.POST.copy()
@@ -181,8 +170,8 @@ def new(request, type):
         if form.ietf_contact_is_submitter:
             form.ietf_contact_is_submitter_checked = "checked"
         if form.is_valid():
-            instance = form.save()
-            return HttpResponseRedirect("/ipr/ipr-%s" % instance.ipr_id)
+            #instance = form.save()
+            #return HttpResponseRedirect("/ipr/ipr-%s" % instance.ipr_id)
             #return HttpResponseRedirect("/ipr/")
         
             pass

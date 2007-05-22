@@ -79,11 +79,11 @@ class IprDetail(models.Model):
 
     # Patent Information fieldset
     p_applications = models.TextField("Patent Applications", maxlength=255)
-    date_applied = models.CharField(maxlength=255)
+    date_applied = models.DateField(maxlength=255)
     country = models.CharField(maxlength=100)
     p_notes = models.TextField("Additional notes", blank=True)
-    selecttype = models.IntegerField("Unpublished Pending Patent Application", choices=SELECT_CHOICES)
-    selectowned = models.IntegerField("Applies to all IPR owned by Submitter", choices=SELECT_CHOICES)
+    selecttype = models.IntegerField("Unpublished Pending Patent Application", null=True, choices=SELECT_CHOICES)
+    selectowned = models.IntegerField("Applies to all IPR owned by Submitter", null=True, blank=True, choices=SELECT_CHOICES)
 
     # Licensing Declaration fieldset
     #licensing_option = models.ForeignKey(IprLicensing, db_column='licensing_option')
@@ -94,18 +94,16 @@ class IprDetail(models.Model):
     comments = models.TextField("Licensing Comments", blank=True)
     lic_checkbox = models.BooleanField("All terms and conditions has been disclosed")
 
+    third_party = models.BooleanField(editable=False)
 
     # Other notes fieldset
     other_notes = models.TextField(blank=True)
 
     # Generated fields, not part of the submission form
-    # Hidden fields
-    third_party = models.BooleanField()
-    generic = models.BooleanField()
-    comply = models.BooleanField()
-
     status = models.IntegerField(null=True, blank=True)
-    submitted_date = models.DateField(blank=True)
+    comply = models.BooleanField(editable=False)
+    generic = models.BooleanField(editable=False)
+    submitted_date = models.DateField(null=True, blank=True)
     update_notified_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
