@@ -1,6 +1,7 @@
 from django.db import models
 from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup, GroupIETF
 import datetime
+from ietf.utils import log
 
 # group_acronym is either an IETF Acronym
 #  or an IRTF one, depending on the value of irtf.
@@ -35,14 +36,17 @@ class ResolveAcronym(object):
         return acronym_name
     def area(self):
         try:
-            interim = self.interim
+            irtf = self.irtf
         except AttributeError:
-            interim = False
-        if self.irtf:
+            irtf = False
+        if irtf:
             area = "IRTF"
         else:
-            area = AreaGroup.objects.get(group=self.group_acronym_id).area
-        return area 
+            try:
+                area = AreaGroup.objects.get(group=self.group_acronym_id).area.area_acronym.acronym
+            except:
+                area = "???"
+        return area
 
 class Meeting(models.Model):
     meeting_num = models.IntegerField(primary_key=True)
