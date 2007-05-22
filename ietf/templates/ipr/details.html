@@ -475,6 +475,9 @@
       {% endif %}
 
       {% if section_list.form_submit %}
+      <input type="hidden" name="third_party" value="{{ section_list.third_party }}">
+      <input type="hidden" name="generic" value="{{ section_list.generic }}">
+      <input type="hidden" name="comply" value="1">
       <center><input type="submit" name="submit" value="Submit"></center>
       </form>
       <blockquote>

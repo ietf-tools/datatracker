@@ -5,6 +5,7 @@ from django.shortcuts import render_to_response as render
 from django.utils.html import escape
 from ietf.ipr.view_new import new
 from ietf.ipr.view_sections import section_table
+from ietf.utils import log
 
 def linebreaks(value):
     if value:
@@ -62,9 +63,10 @@ def show(request, ipr_id=None):
     ipr.comments = linebreaks(escape(ipr.comments))
     ipr.other_notes = linebreaks(escape(ipr.other_notes))
 
-    ipr.licensing_option = dict(models.LICENSE_CHOICES)[ipr.licensing_option]
-    ipr.selecttype = dict(models.SELECT_CHOICES)[ipr.selecttype]
-
+    if ipr.licensing_option:
+        ipr.licensing_option = dict(models.LICENSE_CHOICES)[ipr.licensing_option]
+    if ipr.selecttype:
+        ipr.selecttype = dict(models.SELECT_CHOICES)[ipr.selecttype]
     if ipr.selectowned:
         ipr.selectowned = dict(models.SELECT_CHOICES)[ipr.selectowned]
     return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list})
@@ -82,9 +84,9 @@ def get_section_list(ipr):
     if   ipr.old_ipr_url:
         return section_table["legacy"]
     elif ipr.generic:
-        assert not ipr.third_party
+        #assert not ipr.third_party
         return section_table["generic"]
     elif ipr.third_party:
-        return section_table["third_party"]
+        return section_table["third-party"]
     else:
         return section_table["specific"]
