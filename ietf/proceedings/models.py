@@ -90,7 +90,7 @@ class NonSessionRef(models.Model):
 
 class NonSession(models.Model):
     non_session_id = models.AutoField(primary_key=True)
-    day_id = models.IntegerField()
+    day_id = models.IntegerField(blank=True, null=True)
     non_session_ref = models.ForeignKey(NonSessionRef)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     time_desc = models.CharField(blank=True, maxlength=75)
@@ -152,10 +152,20 @@ class MeetingTime(models.Model):
 	"""
 	Get all sessions that are scheduled at this time.
 	"""
-	return WgMeetingSession.objects.filter(
+	sessions = WgMeetingSession.objects.filter(
 	    models.Q(sched_time_id1=self.time_id) |
 	    models.Q(sched_time_id2=self.time_id) |
 	    models.Q(sched_time_id3=self.time_id))
+	for s in sessions:
+	    if s.sched_time_id1_id == self.time_id:
+		s.room_id = s.sched_room_id1
+	    elif s.sched_time_id2_id == self.time_id:
+		s.room_id = s.sched_room_id2
+	    elif s.sched_time_id3_id == self.time_id:
+		s.room_id = s.sched_room_id3
+	    else:
+		s.room_id = 0
+	return sessions
     def combined_sessions(self):
 	"""
 	Get all sessions that have a combined_time at this
