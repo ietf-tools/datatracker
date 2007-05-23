@@ -57,6 +57,15 @@ MEDIA_URL = ''
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/media/'
 
+# Link django user to IETF user
+AUTH_PROFILE_MODULE = 'ietfauth.UserMap'
+
+# Allow specification of email address as username,
+# and handle htpasswd crypt() format passwords.
+AUTHENTICATION_BACKENDS = (
+    "ietf.ietfauth.auth.EmailBackend",
+)
+
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.load_template_source',
@@ -92,6 +101,7 @@ INSTALLED_APPS = (
     'ietf.announcements',
     'ietf.idindex',
     'ietf.idtracker',
+    'ietf.ietfauth',
     'ietf.iesg',
     'ietf.ipr',
     'ietf.liaisons',
