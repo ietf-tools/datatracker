@@ -32,9 +32,9 @@ def show_html_materials(request, meeting_num=None):
 	return render("meeting/list.html",{})
 
 def show_html_agenda(request, meeting_num=None):
-    meeting_info=Meeting.objects.filter(meeting_num=meeting_num)[0]
+    meeting_info=Meeting.objects.get(meeting_num=meeting_num)
     nonsession_info=NonSession.objects.filter(meeting=meeting_num,day_id__gte='0').order_by("day_id")
-    meetingvenue_info=MeetingVenue.objects.filter(meeting_num=meeting_num)[0]
+    meetingvenue_info=MeetingVenue.objects.get(meeting_num=meeting_num)
     queryset_list=MeetingTime.objects.filter(meeting=meeting_num).exclude(day_id=0).order_by("day_id","time_desc") 
     op_ad_plenary_agenda = "17:00 Welcome\n17:05 NOC report (Wieslaw Blysz, Siemens Networks))\n Host presentation (Georg Haubs, CTO Innovations of Siemens Networks)\n 17:20 IETF Chair and IAD short reports\n 17:30 Jonathan B. Postel award\n 17:40 NomCom Chair (Andrew Lange)\n 17:45 Open Microphone\n 19:30 (latest) end" #only for testing. In production, this text will be pulled from actualy agenda file
     #queryset_list=WgMeetingSession.objects.filter(meeting_num=meeting_num, group_acronym_id > -3) 

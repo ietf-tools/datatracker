@@ -44,7 +44,7 @@ class ResolveAcronym(object):
         else:
             try:
                 area = AreaGroup.objects.get(group=self.group_acronym_id).area.area_acronym.acronym
-            except:
+            except AreaGroup.DoesNotExist:
                 area = "???"
         return area
 
@@ -167,15 +167,19 @@ class MeetingTime(models.Model):
     def meeting_date(self):
         return self.meeting.get_meeting_date(self.day_id)
     def reg_info(self):
-        return "%s %s" % (NonSession.objects.filter(meeting=self.meeting, day_id=self.day_id,non_session_ref=1)[0].time_desc, NonSession.objects.filter(meeting=self.meeting, day_id=self.day_id,non_session_ref=1)[0].non_session_ref)
+	reg_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=1)
+        return "%s %s" % (reg_info.time_desc, reg_info.non_session_ref)
     def morning_br_info(self):
-        return "%s %s" % (NonSession.objects.filter(meeting=self.meeting, non_session_ref=2)[0].time_desc, NonSession.objects.filter(meeting=self.meeting, non_session_ref=2)[0].non_session_ref)
+	br_info = NonSession.objects.get(models.Q(day_id=self.day_id) | models.Q(day_id__isnull=True), meeting=self.meeting, non_session_ref=2)
+        return "%s %s" % (br_info.time_desc, br_info.non_session_ref)
     def lunch_br_info(self):
-        return NonSession.objects.filter(meeting=self.meeting, non_session_ref=3)[0].time_desc
+        return NonSession.objects.get(meeting=self.meeting, non_session_ref=3).time_desc
     def an_br1_info(self):
-        return "%s %s" % (NonSession.objects.filter(meeting=self.meeting, non_session_ref=4)[0].time_desc, NonSession.objects.filter(meeting=self.meeting, non_session_ref=4)[0].non_session_ref)
+	an_br1_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=4)
+        return "%s %s" % (an_br1_info.time_desc, an_br1_info.non_session_ref)
     def an_br2_info(self):
-        return "%s %s" % (NonSession.objects.filter(meeting=self.meeting, non_session_ref=5)[0].time_desc, NonSession.objects.filter(meeting=self.meeting, non_session_ref=5)[0].non_session_ref)
+	an_br2_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=5)
+        return "%s %s" % (an_br2_info.time_desc, an_br2_info.non_session_ref)
     class Meta:
         db_table = 'meeting_times'
     class Admin:
