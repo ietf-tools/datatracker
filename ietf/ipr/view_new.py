@@ -3,10 +3,13 @@ import models
 import ietf.utils
 import django.utils.html
 import django.newforms as forms
+
+from datetime import datetime
 from django.shortcuts import render_to_response as render
 from ietf.utils import log
 from ietf.ipr.view_sections import section_table
 from ietf.idtracker.models import Rfc, InternetDraft
+from django.http import HttpResponseRedirect
 
 # ----------------------------------------------------------------
 # Callback methods for special field cases.
@@ -20,6 +23,8 @@ def ipr_detail_form_callback(field, **kwargs):
     if field.name in ["rfc_number", "id_document_tag"]:
         log(field.name)
         return forms.CharFieldField(required=False)
+    if field.name in ["date_applied"]:
+        return forms.DateField()
     return field.formfield(**kwargs)
 
 def ipr_contact_form_callback(field, **kwargs):
@@ -136,6 +141,7 @@ def new(request, type):
             if draftlist:
                 draftlist = re.sub(" *[,;] *", " ", draftlist)
                 draftlist = draftlist.strip().split()
+                drafts = []
                 for draft in draftlist:
                     if draft.endswith(".txt"):
                         draft = draft[:-4]
@@ -145,19 +151,41 @@ def new(request, type):
                     else:
                         filename = draft
                         rev = None
-                    #log("ID: %s, rev %s" % (filename, rev))
                     try:
                         id = InternetDraft.objects.get(filename=filename)
-                        #log("ID Lookup result: %s, %s" % (id.filename, id.revision))
                     except Exception, e:
                         log("Exception: %s" % e)
                         raise forms.ValidationError("Unknown Internet-Draft: %s - please correct this." % filename)
                     if rev and id.revision != rev:
                         raise forms.ValidationError("Unexpected revision '%s' for draft %s - the current revision is %s.  Please check this." % (rev, filename, id.revision))
-            pass
+                    drafts.append("%s-%s" % (filename, id.revision))
+                return " ".join(drafts)
+            return ""
+        def clean_holder_contact(self):
+            return self.holder_contact.full_clean()
+        def clean_ietf_contact(self):
+            return self.ietf_contact.full_clean()
+        def clean_submitter(self):
+            return self.submitter.full_clean()
+
 
     if request.method == 'POST':
         data = request.POST.copy()
+        data["submitted_date"] = datetime.now().strftime("%Y-%m-%d")
+        data["third_party"] = section_list["third_party"]
+        data["generic"] = section_list["generic"]
+        data["status"] = "0"
+        data["comply"] = "1"
+
+        if type == "general":
+            data["document_title"] = """%(p_h_legal_name)s's General License Statement""" % data
+        if type == "specific":
+            data["ipr_summary"] = get_ipr_summary(data)
+            data["document_title"] = """%(p_h_legal_name)s's Statement about IPR related to %(ipr_summary)s""" % data
+        if type == "third-party":
+            data["ipr_summary"] = get_ipr_summary(data)
+            data["document_title"] = """%(submitter)s's Statement about IPR related to %(ipr_summary)s belonging to %(p_h_legal_name)s""" % data
+        
         for src in ["hold", "ietf"]:
             if "%s_contact_is_submitter" % src in data:
                 for subfield in ["name", "title", "department", "address1", "address2", "telephone", "fax", "email"]:
@@ -167,15 +195,53 @@ def new(request, type):
                         #log("Caught exception: %s"%e)
                         pass
         form = IprForm(data)
-        if form.ietf_contact_is_submitter:
-            form.ietf_contact_is_submitter_checked = "checked"
         if form.is_valid():
-            #instance = form.save()
-            #return HttpResponseRedirect("/ipr/ipr-%s" % instance.ipr_id)
+            # Save data :
+            #   IprDetail, IprContact+, IprDraft+, IprRfc+, IprNotification
+
+            # Save IprDetail
+            instance = form.save()
+            contact_type = {"hold":1, "ietf":2, "subm": 3}
+
+            # Save IprContact(s)
+            for prefix in ["hold", "ietf", "subm"]:
+#                cdata = {"ipr": instance.ipr_id, "contact_type":contact_type[prefix]}
+                cdata = {"ipr": instance, "contact_type":contact_type[prefix]}
+                for item in data:
+                    if item.startswith(prefix+"_"):
+                        cdata[item[5:]] = data[item]
+                try:
+                    del cdata["contact_is_submitter"]
+                except KeyError:
+                    pass
+                contact = models.IprContact(**cdata)
+                contact.save()
+#                contact = ContactForm(cdata)
+#                if contact.is_valid():
+#                    contact.save()
+#                else:
+#                    log("Invalid contact: %s" % contact)
+
+            # Save IprDraft(s)
+            for draft in form.clean_data["draftlist"].split():
+                id = InternetDraft.objects.get(filename=draft[:-3])
+                iprdraft = models.IprDraft(document=id, ipr=instance, revision=draft[-2:])
+                iprdraft.save()
+
+            # Save IprRfc(s)
+            for rfcnum in form.clean_data["rfclist"].split():
+                rfc = Rfc.objects.get(rfc_number=int(rfcnum))
+                iprrfc = models.IprRfc(rfc_number=rfc, ipr=instance)
+                iprrfc.save()
+
+            return HttpResponseRedirect("/ipr/ipr-%s" % instance.ipr_id)
             #return HttpResponseRedirect("/ipr/")
         
             pass
         else:
+            if form.ietf_contact_is_submitter:
+                form.ietf_contact_is_submitter_checked = "checked"
+
             for error in form.errors:
                 log("Form error for field: %s"%error)
             # Fall through, and let the partially bound form, with error
@@ -187,3 +253,21 @@ def new(request, type):
 
     # ietf.utils.log(dir(form.ietf_contact_is_submitter))
     return render("ipr/details.html", {"ipr": form, "section_list":section_list, "debug": debug})
+
+
+def get_ipr_summary(data):
+
+    rfc_ipr = [ "RFC %s" % item for item in data["rfclist"].split() ]
+    draft_ipr = data["draftlist"].split()
+    ipr = rfc_ipr + draft_ipr
+    if data["other_designations"]:
+        ipr += [ data["other_designations"] ]
+
+    if len(ipr) == 1:
+        ipr = ipr[0]
+    elif len(ipr) == 2:
+        ipr = " and ".join(ipr)
+    else:
+        ipr = ", ".join(ipr[:-1] + ", and " + ipr[-1])
+
+    return ipr
