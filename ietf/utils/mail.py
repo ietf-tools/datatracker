@@ -6,6 +6,7 @@ import smtplib
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.template import RequestContext
+from ietf.utils import log
 
 def add_headers(msg):
     if not(msg.has_key('Message-ID')):
@@ -34,6 +35,7 @@ def send_smtp(msg):
 	server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
     server.sendmail(frm, to, msg.as_string())
     server.quit()
+    log("sent email from '%s' to '%s' subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
 
 def copy_email(msg, to):
     '''
@@ -62,7 +64,7 @@ def send_mail_subj(request, to, frm, stemplate, template, context, cc=None, extr
     Send an email message, exactly as send_mail(), but the
     subject field is a template.
     '''
-    subject = render_to_string(template, context, context_instance=RequestContext(request))
+    subject = render_to_string(stemplate, context, context_instance=RequestContext(request))
     return send_mail(request, to, frm, subject, template, context, cc, extra)
 
 def send_mail(request, to, frm, subject, template, context, cc=None, extra=None):
