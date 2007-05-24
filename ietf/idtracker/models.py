@@ -209,6 +209,13 @@ class PersonOrOrgInfo(models.Model):
 		return "PersonOrOrgInfo with multiple priority-1 addresses!"
 	    return "%s" % ( postal.affiliated_company or postal.department or "???" )
         return "%s %s" % ( self.first_name or "<nofirst>", self.last_name or "<nolast>")
+    def email(self, priority=1, type='INET'):
+	name = str(self)
+	try:
+	    email = self.emailaddress_set.get(priority=priority, type=type).address
+	except EmailAddress.DoesNotExist:
+	    email = ''
+	return (name, email)
     class Meta:
         db_table = 'person_or_org_info'
 	ordering = ['last_name']
