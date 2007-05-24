@@ -1,4 +1,0 @@
-This is a request to delete a non-wg list.
-
-I got {{ forms }}
-
