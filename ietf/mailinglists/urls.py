@@ -11,5 +11,4 @@ urlpatterns = patterns('django.views.generic.list_detail',
 urlpatterns += patterns('',
      (r'^nonwg_lists/submit/$', views.non_wg_wizard),
      (r'^request/$', views.list_req_wizard),
-     (r'^nonwg_lists/s2/$', views.non_wg_submit),
 )

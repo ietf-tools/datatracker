@@ -5,7 +5,7 @@ from django import newforms as forms
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from ietf.contrib import wizard, form_decorator
-from ietf.utils.mail import send_mail
+from ietf.utils.mail import send_mail_subj
 
 def formchoice(form, field):
     if not(form.is_valid()):
@@ -107,15 +107,26 @@ class NonWgWizard(wizard.Wizard):
         super(NonWgWizard, self).process_step(request, form, step)
     def done(self, request, form_list):
 	add_edit = self.clean_forms[0].clean_data['add_edit']
-	# save row to database properly
+	list = None
+	old = None
 	if add_edit == 'add' or add_edit == 'edit':
 	    template = 'mailinglists/nwg_addedit_email.txt'
 	    approver = self.clean_forms[2].clean_data['approver']
+	    list = NonWgMailingList(**self.clean_forms[1].clean_data)
+	    list.__dict__.update(self.clean_forms[2].clean_data)
+	    list.id = None	# create a new row no matter what
+	    list.status = 0
+	    if add_edit == 'edit':
+		old = NonWgMailingList.objects.get(pk=self.clean_forms[0].clean_data['list_id'])
 	else:
 	    template = 'mailinglists/nwg_delete_email.txt'
 	    approver = self.clean_forms[1].clean_data['approver']
+	    list = NonWgMailingList.objects.get(pk=self.clean_forms[0].clean_data['list_id_delete'])
+	    list.__dict__.update(self.clean_forms[1].clean_data)
+	    list.status = 1
+	list.save()
 	approver_email = PersonOrOrgInfo.objects.get(pk=approver).email()
-	send_mail(request, [ approver_email ], None, 'Request to %s on the Non-WG Mailing List Web Page' % add_edit, template, {'forms': self.clean_forms})
+	send_mail_subj(request, [ approver_email ], None, 'mailinglists/nwg_wizard_subject.txt', 'mailinglists/nwg_wizard_done_email.txt', {'add_edit': add_edit, 'old': old, 'list': list, 'forms': self.clean_forms})
         return render_to_response( 'mailinglists/nwg_wizard_done.html', {'forms': self.clean_forms}, context_instance=RequestContext(request) )
 
 def non_wg_wizard(request):
