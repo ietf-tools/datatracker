@@ -9,7 +9,8 @@
 {% block css %}{% endblock %}
 -->
 </style>
-</head><body {% block body_attributes %}{% endblock %}><center>
+</head><body {% block body_attributes %}{% endblock %}>
+<center>
 <table border=0 cellpadding=0 cellspacing=0>
 <tr>
 <td><a href="http://www.ietf.org/home.html"><img src="https://www1.ietf.org/images/header/ietflogo_sm.gif" border="0"></a></td>
@@ -28,6 +29,11 @@
 </tr>
 </table>
 </center>
+{% if user.is_authenticated %}
+<span style="float: right; font-size: 80%;">Logged in as {{ user }}
+|
+<a href="/accounts/logout/">Log Out</a></span>
+{% endif %}
 <hr>
 <!-- end new headers and layout -->
     <div id="content">
@@ -35,10 +41,6 @@
         {% block main_content %}{% endblock %}
     </div>
 <hr/>
-<address>
-This page provided by Bill Fenner's proof-of-concept IETF web page front
-ends.
-</address>
 <a href="http://www.djangoproject.com/"><img src="http://media.djangoproject.com/img/badges/djangomade124x25.gif" border="0" alt="Made with Django." title="Made with Django." /></a>
 {% include "debug.html" %}
 </body>

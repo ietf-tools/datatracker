@@ -24,6 +24,7 @@ urlpatterns = patterns('',
       (r'^(?P<path>public|cgi-bin)/', include('ietf.redirects.urls')),
       (r'^ipr/', include('ietf.ipr.urls')),
       (r'^meeting/', include('ietf.meeting.urls')),
+      (r'^accounts/', include('ietf.ietfauth.urls')),
 
       (r'^$', ietf.views.apps),
 
