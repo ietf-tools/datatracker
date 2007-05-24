@@ -14,8 +14,10 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    ('Bill Fenner', 'fenner@research.att.com'),
+    ('IETF Django Developers', 'django-project@ietf.org'),
+    ('GMail Tracker Archive', 'ietf.tracker.archive+errors@gmail.com'),
 )
+DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@ietf.org>'
 
 MANAGERS = ADMINS
 
@@ -120,6 +122,11 @@ INTERNAL_IPS = (
         '81.232.110.214',
         '2001:16d8:ff54::1',
 )
+
+# Valid values:
+# 'production', 'test', 'development'
+# Override this in settings_local.py if it's not true
+SERVER_MODE = 'development'
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
