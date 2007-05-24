@@ -89,6 +89,8 @@ class UrlMultiWidget(forms.MultiWidget):
 
     # If we have two widgets, return the concatenation of the values
     #  (Except, if _0 is "n/a" then return an empty string)
+    # _0 might not exist if no radio button is selected (i.e., an
+    #  empty form), so return empty string.
     # Otherwise, just return the value.
     def value_from_datadict(self, data, name):
 	try:
@@ -97,7 +99,10 @@ class UrlMultiWidget(forms.MultiWidget):
 		return ''
 	    return scheme + data[name + '_1']
 	except KeyError:
-	    return data[name]
+	    try:
+		return data[name]
+	    except KeyError:
+		return ''
 
 class PickApprover(forms.Form):
     """
@@ -114,3 +119,7 @@ class DeletionPickApprover(PickApprover):
     ds_name = forms.CharField(label = 'Enter your name', widget = forms.TextInput(attrs = {'size': 45}))
     ds_email = forms.EmailField(label = 'Enter your email', widget = forms.TextInput(attrs = {'size': 45}))
     msg_to_ad = forms.CharField(label = 'Message to the Area Director', widget = forms.Textarea(attrs = {'rows': 5, 'cols': 50}))
+
+# A form with no required fields, to allow a preview action
+class Preview(forms.Form):
+    preview = forms.BooleanField(required=False)
