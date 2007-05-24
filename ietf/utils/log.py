@@ -2,7 +2,7 @@ import syslog
 import inspect
 import os.path
 import ietf
-from settings import BASE_DIR
+from django.conf import settings
 
 syslog.openlog("django", syslog.LOG_PID, syslog.LOG_USER)
 
@@ -23,7 +23,7 @@ def getcaller():
 def log(msg):
     mod, cls, func, file, line = getcaller()
     file = os.path.abspath(file)
-    file = file.replace(BASE_DIR, "")
+    file = file.replace(settings.BASE_DIR, "")
     if func == "<module>":
         where = ""
     else:
