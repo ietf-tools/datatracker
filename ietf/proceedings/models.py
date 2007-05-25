@@ -28,25 +28,33 @@ class ResolveAcronym(object):
         except AttributeError:
             interim = False
         if self.irtf:
-            acronym_name = IRTF.objects.get(pk=self.group_acronym_id).irtf_name
+            acronym_name = IRTF.objects.get(pk=self.group_acronym_id).name
         else:
             acronym_name = Acronym.objects.get(pk=self.group_acronym_id).name
         if interim:
             return "i" + acronym
         return acronym_name
     def area(self):
-        try:
-            irtf = self.irtf
-        except AttributeError:
-            irtf = False
-        if irtf:
-            area = "IRTF"
+        if self.irtf:
+            area = "irtf"
         else:
             try:
                 area = AreaGroup.objects.get(group=self.group_acronym_id).area.area_acronym.acronym
             except AreaGroup.DoesNotExist:
-                area = "???"
+                area = ""
         return area
+    def isWG(self):
+        if self.irtf:
+              return False
+        else:
+            try:
+                g_type_id = GroupIETF.objects.get(pk=self.group_acronym_id).group_type_id == 1
+                if g_type_id == 1:
+                    return True
+                else:
+                    return False
+            except GroupIETF.DoesNotExist:
+                return False
 
 class Meeting(models.Model):
     meeting_num = models.IntegerField(primary_key=True)
@@ -246,6 +254,17 @@ class WgMeetingSession(models.Model, ResolveAcronym):
     combined_time_id2 = models.ForeignKey(MeetingTime, db_column='combined_time_id2', null=True, blank=True, related_name='now5')
     def __str__(self):
 	return "%s at %s" % (self.acronym(), self.meeting)
+    def agenda_file(self):
+        irtfvar = 0
+        if self.irtf:
+            irtfvar = self.irtf
+        try:
+            filename = WgAgenda.objects.get(meeting=self.meeting, group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=0).filename
+            dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
+            retvar = "%s/%s" % (dir,filename) 
+        except WgAgenda.DoesNotExist:
+            retvar = ""
+        return retvar
     class Meta:
         db_table = 'wg_meeting_sessions'
     class Admin:

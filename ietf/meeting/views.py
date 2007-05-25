@@ -32,11 +32,12 @@ def show_html_materials(request, meeting_num=None):
 	return render("meeting/list.html",{})
 
 def show_html_agenda(request, meeting_num=None):
-    meeting_info=Meeting.objects.get(meeting_num=meeting_num)
+    meeting_info=Meeting.objects.filter(meeting_num=meeting_num)[0]
     nonsession_info=NonSession.objects.filter(meeting=meeting_num,day_id__gte='0').order_by("day_id")
-    meetingvenue_info=MeetingVenue.objects.get(meeting_num=meeting_num)
+    meetingvenue_info=MeetingVenue.objects.filter(meeting_num=meeting_num)[0]
     queryset_list=MeetingTime.objects.filter(meeting=meeting_num).exclude(day_id=0).order_by("day_id","time_desc") 
-    op_ad_plenary_agenda = "17:00 Welcome\n17:05 NOC report (Wieslaw Blysz, Siemens Networks))\n Host presentation (Georg Haubs, CTO Innovations of Siemens Networks)\n 17:20 IETF Chair and IAD short reports\n 17:30 Jonathan B. Postel award\n 17:40 NomCom Chair (Andrew Lange)\n 17:45 Open Microphone\n 19:30 (latest) end" #only for testing. In production, this text will be pulled from actualy agenda file
+    plenaryw_agenda = "17:00 Welcome\n17:05 NOC report (Wieslaw Blysz, Siemens Networks))\n   Host presentation (Georg Haubs, CTO Innovations of Siemens Networks)\n17:20 IETF Chair and IAD short reports\n17:30 Jonathan B. Postel award\n17:40 NomCom Chair (Andrew Lange)\n17:45 Open Microphone\n19:30 (latest) end <end of text>" #only for testing. In production, this text will be pulled from actualy agenda file
+    plenaryt_agenda = "-17h00  Welcome and introduction (Leslie Daigle)\n-17h05  IAB update (Leslie Daigle)\nTH17h15  IRTF Report (Aaron Falk)\nTH17h25  Technical Presentations\n    Highlights from draft-iab-net-transparent\n    (Bernard Aboba)\n    Readout from Unwanted Traffic Workshop\n    (Danny McPherson & Loa Andersson)\n    Readout from the Routing & Addressing Workshop\n    (Dave Meyer, Chris Morrow)\n    Next steps from RAWS (Leslie Daigle)\nTH19h00   IAB open Mic\n-19h30  End. " #only for testing. In production, this text will be pulled from actualy agenda file
     #queryset_list=WgMeetingSession.objects.filter(meeting_num=meeting_num, group_acronym_id > -3) 
 
     # Due to a bug in Django@0.96 we can't use foreign key lookup in
@@ -47,7 +48,7 @@ def show_html_agenda(request, meeting_num=None):
     ## queryset_list_sun=WgMeetingSession.objects.filter(meeting=meeting_num, sched_time_id1__day_id=0).order_by('sched_time_id1__time_desc')
     queryset_list_sun=list(WgMeetingSession.objects.filter(meeting=meeting_num, sched_time_id1__day_id=0))
     queryset_list_sun.sort(key=(lambda item: item.sched_time_id1.time_desc))
-    return object_list(request,queryset=queryset_list, template_name='meeting/agenda.html',allow_empty=True, extra_context={'qs_sun':queryset_list_sun, 'meeting_info':meeting_info, 'meeting_num':meeting_num, 'nonsession_info':nonsession_info, 'meetingvenue_info':meetingvenue_info, 'op_ad_plenary_agenda':op_ad_plenary_agenda})
+    return object_list(request,queryset=queryset_list, template_name='meeting/agenda.html',allow_empty=True, extra_context={'qs_sun':queryset_list_sun, 'meeting_info':meeting_info, 'meeting_num':meeting_num, 'nonsession_info':nonsession_info, 'meetingvenue_info':meetingvenue_info, 'plenaryw_agenda':plenaryw_agenda, 'plenaryt_agenda':plenaryt_agenda})
 
 def show(request):
     return 0
