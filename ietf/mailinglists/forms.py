@@ -1,6 +1,6 @@
 from django import newforms as forms
 from models import NonWgMailingList, ImportedMailingList
-from ietf.idtracker.models import PersonOrOrgInfo, GroupIETF
+from ietf.idtracker.models import PersonOrOrgInfo, GroupIETF, Acronym
 
 class NonWgStep1(forms.Form):
     add_edit = forms.ChoiceField(choices=(
@@ -56,9 +56,20 @@ class ListReqStep1(forms.Form):
 	self.fields['list_to_close'].choices = [('', '-- Select List To Close')] + ImportedMailingList.choices(dname)
 	self.fields['domain_name'].initial = dname
     def clean_group(self):
-	if self.clean_data.get('mail_type', '').endswith('wg'):
+	group = self.clean_data['group']
+	action = self.clean_data.get('mail_type', '')
+	if action.endswith('wg'):
 	    if not self.clean_data.get('group'):
 		raise forms.ValidationError, 'Please pick a working group'
+	    group_name = Acronym.objects.get(pk=group).acronym
+	    #group_list_exists = ImportedMailingList.objects.filter(acronym=group_name).count()
+	    group_list_exists = ImportedMailingList.objects.filter(group_acronym=group).count()
+	    if action.startswith('close'):
+	        if group_list_exists == 0:
+		    raise forms.ValidationError, 'The %s mailing list does not exist.' % group_name
+	    else:
+	        if group_list_exists:
+		    raise forms.ValidationError, 'The %s mailing list already exists.' % group_name
 	return self.clean_data['group']
     def clean_list_to_close(self):
 	if self.clean_data.get('mail_type', '') == 'closenon':
@@ -122,4 +133,16 @@ class DeletionPickApprover(PickApprover):
 
 # A form with no required fields, to allow a preview action
 class Preview(forms.Form):
-    preview = forms.BooleanField(required=False)
+    #preview = forms.BooleanField(required=False)
+    pass
+
+class ListReqAuthorized(forms.Form):
+    authorized = forms.BooleanField()
+    def clean_authorized(self):
+	if not(self.clean_data.get('authorized', 0)):
+	    raise forms.ValidationError, 'You must assert that you are authorized to perform this action.'
+	return self.clean_data['authorized']
+
+# subclass pickapprover here too?
+class ListReqClose(forms.Form):
+    pass

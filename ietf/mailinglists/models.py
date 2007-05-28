@@ -1,5 +1,5 @@
 from django.db import models
-from ietf.idtracker.models import Acronym, Areas, PersonOrOrgInfo
+from ietf.idtracker.models import Acronym, Area, PersonOrOrgInfo
 import random
 
 class ImportedMailingList(models.Model):
@@ -44,7 +44,7 @@ class MailingList(models.Model):
 	('2', 'Non-WG Mailing List'),
 	('3', 'Close Non-WG Mailing List'),
     )
-    mailing_list_id = models.CharField('Unique ID', primary_key=True, maxlength=25)
+    mailing_list_id = models.CharField('Unique ID', primary_key=True, maxlength=25, editable=False)
     request_date = models.DateField()
     mlist_name = models.CharField('Mailing list name', maxlength=250)
     short_desc = models.CharField(maxlength=250)
@@ -68,7 +68,7 @@ class MailingList(models.Model):
     approved = models.BooleanField()
     approved_date = models.DateField(null=True, blank=True)
     reason_to_delete = models.TextField(blank=True)
-    domain_name = models.CharField(blank=True, maxlength=10)
+    domain_name = models.CharField(maxlength=10)
     def __str__(self):
 	return self.mlist_name
     def save(self, *args, **kwargs):
@@ -94,7 +94,7 @@ class NonWgMailingList(models.Model):
     list_url = models.CharField("List URL", maxlength=255)
     admin = models.TextField("Administrator(s)' Email Address(es)", blank=True)
     purpose = models.TextField(blank=True)
-    area = models.ForeignKey(Areas, db_column='area_acronym_id')
+    area = models.ForeignKey(Area, db_column='area_acronym_id')
     subscribe_url = models.CharField("Subscribe URL", blank=True, maxlength=255)
     subscribe_other = models.TextField("Subscribe Other", blank=True)
     # Can be 0, 1, -1, or what looks like a person_or_org_tag, positive or neg.

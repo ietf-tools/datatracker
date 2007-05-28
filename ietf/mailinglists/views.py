@@ -1,6 +1,6 @@
-from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview
-from models import NonWgMailingList
-from ietf.idtracker.models import Areas, PersonOrOrgInfo
+from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose
+from models import NonWgMailingList, MailingList
+from ietf.idtracker.models import Area, PersonOrOrgInfo
 from django import newforms as forms
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -46,7 +46,7 @@ nonwg_widgets = {
 }
 
 nonwg_querysets = {
-    'area': Areas.objects.filter(status=1)
+    'area': Area.objects.filter(status=1)
 }
 
 nonwg_callback = form_decorator(fields=nonwg_fields, widgets=nonwg_widgets, attrs=nonwg_attrs, querysets=nonwg_querysets)
@@ -102,7 +102,7 @@ class NonWgWizard(wizard.Wizard):
 	    form0 = self.clean_forms[0]
 	    add_edit = form0.clean_data['add_edit']
 	    if add_edit == 'add' or add_edit == 'edit':
-		self.form_list.append(gen_approval([ad.person_id for ad in Areas.objects.get(area_acronym=form.clean_data['area']).areadirectors_set.all()], PickApprover))
+		self.form_list.append(gen_approval([ad.person_id for ad in Area.objects.get(area_acronym=form.clean_data['area']).areadirectors_set.all()], PickApprover))
 		self.form_list.append(Preview)
         super(NonWgWizard, self).process_step(request, form, step)
     def done(self, request, form_list):
@@ -133,18 +133,52 @@ def non_wg_wizard(request):
     wiz = NonWgWizard([ NonWgStep1 ])
     return wiz(request)
 
+list_fields = {
+    'mailing_list_id': None,
+    'request_date': None,
+    'auth_person': None,
+    'approved': None,
+    'approved_date': None,
+    'reason_to_delete': None,
+}
+
+list_widgets = {
+}
+
+list_attrs = {
+}
+
+list_callback = form_decorator(fields=list_fields, widgets=list_widgets, attrs=list_attrs)
+
 class ListReqWizard(wizard.Wizard):
     def get_template(self):
-	return "mailinglists/nwg_wizard.html"
+	templates = []
+	#if self.step > 0:
+	#    action = {'add': 'addedit', 'edit': 'addedit', 'delete': 'delete'}[self.clean_forms[0].clean_data['add_edit']]
+	#    templates.append("mailinglists/nwg_wizard_%s_step%d.html" % (action, self.step))
+	#    templates.append("mailinglists/nwg_wizard_%s.html" % (action))
+	c = self.form_list[self.step].__name__
+	templates.append("mailinglists/list_wizard_%s.html" % (c))
+	templates.append("mailinglists/list_wizard_step%d.html" % (self.step))
+	templates.append("mailinglists/list_wizard.html")
+	return templates
     # want to implement parse_params to get domain for list
     def process_step(self, request, form, step):
 	form.full_clean()
+	if step == 0:
+	    self.clean_forms = [ form ]
+	else:
+	    self.clean_forms.append(form)
+	if step == 0:
+	    if form.clean_data['mail_type'].endswith('non') and form.clean_data['domain_name'] != 'ietf.org':
+		self.form_list.append(ListReqAuthorized)
+	    if form.clean_data['mail_type'].startswith('close'):
+		self.form_list.append(ListReqClose)
+	    else:
+		self.form_list.append(forms.form_for_model(MailingList))
+		#XXX not quite
         super(ListReqWizard, self).process_step(request, form, step)
 
 def list_req_wizard(request):
     wiz = ListReqWizard([ ListReqStep1 ])
     return wiz(request)
-
-def non_wg_submit(request):
-    form = NonWgStep1()
-    return render_to_response('mailinglists/step1.html', { 'form': form })
