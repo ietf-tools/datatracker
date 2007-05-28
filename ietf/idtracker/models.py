@@ -368,11 +368,9 @@ class BallotInfo(models.Model):   # Added by Michael Lee
     ballot_issued = models.IntegerField(null=True, blank=True)
     def __str__(self):
 	try:
-	    return "Ballot for %s" % IDInternal.objects.get(ballot=self.ballot, primary_flag=1).draft.filename
+	    return "Ballot for %s" % self.drafts.filter(primary_flag=1)
 	except IDInternal.DoesNotExist:
-	    return "Ballot ID %d (no I-D?)" % (self.ballot_id)
-#    def drafts(self):
-#        return ", ".join([ "%s-%s.txt" % (item.draft.filename, item.draft.revision) for item in IDInternal.objects.filter(ballot_id=self.ballot, primary_flag=1)])
+	    return "Ballot ID %d (no I-D?)" % (self.ballot)
     class Meta:
         db_table = 'ballot_info'
     class Admin:
@@ -394,7 +392,7 @@ class IDInternal(models.Model):
     draft = models.ForeignKey(InternetDraft, primary_key=True, unique=True, db_column='id_document_tag')
     rfc_flag = models.IntegerField(null=True)
     #ballot_id = models.IntegerField()
-    ballot = models.ForeignKey(BallotInfo, related_name='drafts')
+    ballot = models.ForeignKey(BallotInfo, related_name='drafts', db_column="ballot_id")
     primary_flag = models.IntegerField()
     group_flag = models.IntegerField(blank=True)
     token_name = models.CharField(blank=True, maxlength=25)
@@ -442,7 +440,7 @@ class IDInternal(models.Model):
     def comments(self):
 	return self.documentcomment_set.all().filter(rfc_flag=self.rfc_flag).order_by('-comment_date','-comment_time')
     def ballot_set(self):
-	return IDInternal.objects.filter(ballot_id=self.ballot_id)
+	return IDInternal.objects.filter(ballot=self.ballot)
     class Meta:
         db_table = 'id_internal'
 	verbose_name = 'IDTracker Draft'
@@ -510,7 +508,6 @@ class Position(models.Model):
     class Admin:
 	pass
 
-
 class IESGComment(models.Model):
     ballot = models.ForeignKey(BallotInfo, raw_id_admin=True, related_name="comments")
     ad = models.ForeignKey(IESGLogin, raw_id_admin=True)
@@ -519,7 +516,7 @@ class IESGComment(models.Model):
     active = models.IntegerField()
     comment_text = models.TextField(blank=True)
     def __str__(self):
-	return "Comment text by %s on %s" % ( self.ad, str(self.ballot) )
+	return "Comment text by %s on %s" % ( self.ad, self.ballot )
     class Meta:
         db_table = 'ballots_comment'
 	unique_together = (('ballot', 'ad'), )
@@ -529,7 +526,7 @@ class IESGComment(models.Model):
 	pass
 
 class IESGDiscuss(models.Model):
-    ballot = models.ForeignKey(BallotInfo, db_column="ballot_id", raw_id_admin=True, related_name="discusses")
+    ballot = models.ForeignKey(BallotInfo, raw_id_admin=True, related_name="discusses")
     ad = models.ForeignKey(IESGLogin, raw_id_admin=True)
     discuss_date = models.DateField()
     revision = models.CharField(maxlength=2)
