@@ -65,7 +65,7 @@ class IDSubState(models.Model):
     class Admin:
 	pass
 
-class Areas(models.Model):
+class Area(models.Model):
     area_acronym = models.ForeignKey(Acronym, primary_key=True, unique=True)
     start_date = models.DateField(auto_now_add=True)
     concluded_date = models.DateField(null=True, blank=True)
@@ -76,7 +76,7 @@ class Areas(models.Model):
     def __str__(self):
 	return self.area_acronym.acronym
     def active_area_choices():
-	return [(area.area_acronym_id, area.area_acronym.acronym) for area in Areas.objects.filter(status=1).select_related().order_by('acronym.acronym')]
+	return [(area.area_acronym_id, area.area_acronym.acronym) for area in Area.objects.filter(status=1).select_related().order_by('acronym.acronym')]
     active_area_choices = staticmethod(active_area_choices)
     class Meta:
         db_table = 'areas'
@@ -253,14 +253,20 @@ class IESGLogin(models.Model):
         ordering = ['user_level','last_name']
 	pass
 
-# No admin panel needed; this is edited in Areas.
-class AreaDirectors(models.Model):
-    area = models.ForeignKey(Areas, db_column='area_acronym_id', edit_inline=models.STACKED, num_in_admin=2)
+class AreaDirector(models.Model):
+    area = models.ForeignKey(Area, db_column='area_acronym_id', edit_inline=models.STACKED, num_in_admin=2)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, core=True)
     def __str__(self):
-        return "(%s) %s" % ( self.area, self.person )
+        return "%s (%s)" % ( self.person, self.role() )
+    def role(self):
+	try:
+	    return "%s AD" % self.area
+	except Area.DoesNotExist:
+	    return "?%d? AD" % self.area_id
     class Meta:
         db_table = 'area_directors'
+    class Admin:
+	pass
 
 ###
 # RFC tables
@@ -407,7 +413,7 @@ class IDInternal(models.Model):
     mark_by = models.ForeignKey(IESGLogin, db_column='mark_by', related_name='marked')
     job_owner = models.ForeignKey(IESGLogin, db_column='job_owner', related_name='documents')
     event_date = models.DateField(null=True)
-    area_acronym = models.ForeignKey(Areas)
+    area_acronym = models.ForeignKey(Area)
     cur_sub_state = models.ForeignKey(IDSubState, related_name='docs', null=True, blank=True)
     prev_sub_state = models.ForeignKey(IDSubState, related_name='docs_prev', null=True, blank=True)
     returning_item = models.IntegerField(null=True, blank=True)
@@ -542,7 +548,7 @@ class IESGDiscuss(models.Model):
     class Admin:
 	pass
 
-class IDAuthors(models.Model):
+class IDAuthor(models.Model):
     document = models.ForeignKey(InternetDraft, db_column='id_document_tag', related_name='authors', edit_inline=models.TABULAR)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, core=True)
     author_order = models.IntegerField(null=True, blank=True)
@@ -618,7 +624,7 @@ class PhoneNumber(models.Model):
 
 ### Working Groups
 
-class GType(models.Model):
+class WGType(models.Model):
     group_type_id = models.AutoField(primary_key=True)
     type = models.CharField(maxlength=25, db_column='group_type')
     def __str__(self):
@@ -628,7 +634,7 @@ class GType(models.Model):
     class Admin:
 	pass
 
-class GStatus(models.Model):
+class WGStatus(models.Model):
     status_id = models.AutoField(primary_key=True)
     status = models.CharField(maxlength=25, db_column='status_value')
     def __str__(self):
@@ -638,15 +644,15 @@ class GStatus(models.Model):
     class Admin:
 	pass
 
-class GroupIETF(models.Model):
+class IETFWG(models.Model):
     group_acronym = models.ForeignKey(Acronym, primary_key=True, unique=True, editable=False)
-    group_type = models.ForeignKey(GType)
+    group_type = models.ForeignKey(WGType)
     proposed_date = models.DateField(null=True, blank=True)
     start_date = models.DateField(null=True, blank=True)
     dormant_date = models.DateField(null=True, blank=True)
     concluded_date = models.DateField(null=True, blank=True)
-    status = models.ForeignKey(GStatus)
-    area_director = models.ForeignKey(AreaDirectors, raw_id_admin=True)
+    status = models.ForeignKey(WGStatus)
+    area_director = models.ForeignKey(AreaDirector)
     meeting_scheduled = models.CharField(blank=True, maxlength=3)
     email_address = models.CharField(blank=True, maxlength=60)
     email_subscribe = models.CharField(blank=True, maxlength=120)
@@ -655,61 +661,80 @@ class GroupIETF(models.Model):
     comments = models.TextField(blank=True)
     last_modified_date = models.DateField()
     meeting_scheduled_old = models.CharField(blank=True, maxlength=3)
+    area = FKAsOneToOne('areagroup', reverse=True)
     def __str__(self):
 	return self.group_acronym.acronym
     def active_drafts(self):
 	return self.group_acronym.internetdraft_set.all().filter(status__status="Active")
     def choices():
-	return [(wg.group_acronym_id, wg.group_acronym.acronym) for wg in GroupIETF.objects.all().select_related().order_by('acronym.acronym')]
+	return [(wg.group_acronym_id, wg.group_acronym.acronym) for wg in IETFWG.objects.all().select_related().order_by('acronym.acronym')]
     choices = staticmethod(choices)
     def area_acronym(self):
         return AreaGroup.objects.filter(group_acronym_id=self.group_acronym_id).area 
     class Meta:
         db_table = 'groups_ietf'
 	ordering = ['?']	# workaround django wanting to sort by acronym but not joining with it
+	verbose_name = 'IETF Working Group'
     class Admin:
 	pass
 
-class GChairs(models.Model):
+class WGChair(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, unique=True, core=True)
-    group_acronym = models.ForeignKey(GroupIETF, edit_inline=models.TABULAR)
+    group_acronym = models.ForeignKey(IETFWG, edit_inline=models.TABULAR)
+    def __str__(self):
+	return "%s (%s)" % ( self.person, self.role() )
+    def role(self):
+	return "%s WG Chair" % self.group_acronym
     class Meta:
         db_table = 'g_chairs'
+	verbose_name = "WG Chair"
 
-class GEditors(models.Model):
-    group_acronym = models.ForeignKey(GroupIETF, edit_inline=models.TABULAR)
+class WGEditor(models.Model):
+    group_acronym = models.ForeignKey(IETFWG, edit_inline=models.TABULAR)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, unique=True, core=True)
     class Meta:
         db_table = 'g_editors'
+	verbose_name = "WG Editor"
 
-# Which is right? Secretaries or Secretary?
-class GSecretaries(models.Model):
-    group_acronym = models.ForeignKey(GroupIETF, edit_inline=models.TABULAR)
+# Note: there is an empty table 'g_secretary'.
+# This uses the 'g_secretaries' table but is called 'GSecretary' to
+# match the model naming scheme.
+class WGSecretary(models.Model):
+    group_acronym = models.ForeignKey(IETFWG, edit_inline=models.TABULAR)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, unique=True, core=True)
+    def __str__(self):
+	return "%s (%s)" % ( self.person, self.role() )
+    def role(self):
+	return "%s WG Secretary" % self.group_acronym
     class Meta:
         db_table = 'g_secretaries'
+	verbose_name = "WG Secretary"
+	verbose_name_plural = "WG Secretaries"
 
-#class GSecretary(models.Model):
-#    group_acronym = models.ForeignKey(GroupIETF, edit_inline=models.TABULAR)
-#    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, unique=True, core=True)
-#    class Meta:
-#        db_table = 'g_secretary'
-
-class GTechAdvisors(models.Model):
-    group_acronym = models.ForeignKey(GroupIETF, edit_inline=models.TABULAR)
+class WGTechAdvisor(models.Model):
+    group_acronym = models.ForeignKey(IETFWG, edit_inline=models.TABULAR)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, core=True)
+    def __str__(self):
+	return "%s (%s)" % ( self.person, self.role() )
+    def role(self):
+	return "%s Technical Advisor" % self.group_acronym
     class Meta:
         db_table = 'g_tech_advisors'
+	verbose_name = "WG Technical Advisor"
 
 class AreaGroup(models.Model):
-    area = models.ForeignKey(Areas, db_column='area_acronym_id', related_name='areagroup', core=True)
-    group = models.ForeignKey(GroupIETF, db_column='group_acronym_id', edit_inline=models.TABULAR, num_in_admin=1, unique=True)
+    area = models.ForeignKey(Area, db_column='area_acronym_id', related_name='areagroup', core=True)
+    group = models.ForeignKey(IETFWG, db_column='group_acronym_id', edit_inline=models.TABULAR, num_in_admin=1, max_num_in_admin=1, unique=True)
+    def __str__(self):
+	return "%s is in %s" % ( self.group, self.area )
     class Meta:
         db_table = 'area_group'
+	verbose_name = 'Area this group is in'
+	verbose_name_plural = 'Area to Group mappings'
 
-class GoalsMilestones(models.Model):
+class GoalMilestone(models.Model):
     gm_id = models.AutoField(primary_key=True)
-    group_acronym = models.ForeignKey(GroupIETF, raw_id_admin=True)
+    group_acronym = models.ForeignKey(IETFWG, raw_id_admin=True)
     description = models.TextField()
     expected_due_date = models.DateField()
     done_date = models.DateField(null=True, blank=True)
@@ -719,6 +744,8 @@ class GoalsMilestones(models.Model):
 	return self.description
     class Meta:
         db_table = 'goals_milestones'
+	verbose_name = 'IETF WG Goal or Milestone'
+	verbose_name_plural = 'IETF WG Goals or Milestones'
     class Admin:
 	pass
 
@@ -751,7 +778,7 @@ class IRTF(models.Model):
     class Admin:
 	pass
 
-class IRTFChairs(models.Model):
+class IRTFChair(models.Model):
     irtf = models.ForeignKey(IRTF)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
     class Meta:
