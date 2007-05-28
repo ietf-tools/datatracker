@@ -74,7 +74,7 @@ def edit_idinternal(request, id=None):
     IDEntryForm = forms.models.form_for_instance(draft)
     # todo: POST handling for idform
     idform = IDEntryForm()
-    idinternal = draft.idinternal()
+    idinternal = draft.idinternal
     if idinternal:
 	EntryForm = forms.models.form_for_instance(idinternal)
 	if request.method == 'POST':
