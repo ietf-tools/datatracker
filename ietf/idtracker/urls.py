@@ -1,5 +1,5 @@
 from django.conf.urls.defaults import *
-from ietf.idtracker.models import IDInternal, IDState, IDSubState, DocumentComment
+from ietf.idtracker.models import IDInternal, IDState, IDSubState, DocumentComment, BallotInfo
 from ietf.idtracker import views
 
 id_dict = {
@@ -12,6 +12,10 @@ comment_dict = {
     'queryset': DocumentComment.objects.all().filter(public_flag=1),
 }
 
+ballot_dict = {
+    'queryset': BallotInfo.objects.all()
+}
+
 urlpatterns = patterns('django.views.generic.simple',
      (r'^states/$', 'direct_to_template', { 'template': 'idtracker/states.html', 'extra_context': { 'states': IDState.objects.all(), 'substates': IDSubState.objects.all() } }),
      (r'^ballot_key/$', 'direct_to_template', { 'template': 'idtracker/view_key.html' }),
@@ -22,6 +26,7 @@ urlpatterns += patterns('django.views.generic.list_detail',
      (r'^(?P<object_id>\d+)/$', 'object_detail', id_dict),
      (r'^(?P<slug>[^/]+)/$', 'object_detail', dict(id_dict, slug_field='draft__filename')),
      (r'^comment/(?P<object_id>\d+)/$', 'object_detail', comment_dict),
+     (r'^ballot/(?P<object_id>\d+)/$', 'object_detail', ballot_dict),
 )
 urlpatterns += patterns('',
      (r'^(?P<slug>[^/]+)/comment/(?P<object_id>\d+)/$', views.comment, comment_dict),

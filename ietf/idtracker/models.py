@@ -1,5 +1,5 @@
 from django.db import models
-from ietf.utils import FKAsOneToOne
+from ietf.utils import FKAsOneToOne, log
 
 class Acronym(models.Model):
     acronym_id = models.AutoField(primary_key=True)
@@ -244,7 +244,8 @@ class IESGLogin(models.Model):
     pgp_id = models.CharField(blank=True, maxlength=20)
     default_search = models.IntegerField(null=True)
     def __str__(self):
-        return "%s, %s" % ( self.last_name, self.first_name)
+        #return "%s, %s" % ( self.last_name, self.first_name)
+        return "%s %s" % ( self.first_name, self.last_name)
     class Meta:
         db_table = 'iesg_login'
     class Admin:
@@ -352,6 +353,31 @@ class RfcObsolete(models.Model):
 
 ## End RFC Tables
 
+class BallotInfo(models.Model):   # Added by Michael Lee
+    ballot = models.AutoField(primary_key=True, db_column='ballot_id')
+    active = models.BooleanField()
+    an_sent = models.BooleanField()
+    an_sent_date = models.DateField(null=True, blank=True)
+    an_sent_by = models.ForeignKey(IESGLogin, db_column='an_sent_by', related_name='ansent') 
+    defer = models.BooleanField(null=True, blank=True)
+    defer_by = models.ForeignKey(IESGLogin, db_column='defer_by', related_name='deferred')
+    defer_date = models.DateField(null=True, blank=True)
+    approval_text = models.TextField(blank=True)
+    last_call_text = models.TextField(blank=True)
+    ballot_writeup = models.TextField(blank=True)
+    ballot_issued = models.IntegerField(null=True, blank=True)
+    def __str__(self):
+	try:
+	    return "Ballot for %s" % IDInternal.objects.get(ballot=self.ballot, primary_flag=1).draft.filename
+	except IDInternal.DoesNotExist:
+	    return "Ballot ID %d (no I-D?)" % (self.ballot_id)
+#    def drafts(self):
+#        return ", ".join([ "%s-%s.txt" % (item.draft.filename, item.draft.revision) for item in IDInternal.objects.filter(ballot_id=self.ballot, primary_flag=1)])
+    class Meta:
+        db_table = 'ballot_info'
+    class Admin:
+	pass
+
 class IDInternal(models.Model):
     """
     An IDInternal represents a document that has been added to the
@@ -367,7 +393,8 @@ class IDInternal(models.Model):
     """
     draft = models.ForeignKey(InternetDraft, primary_key=True, unique=True, db_column='id_document_tag')
     rfc_flag = models.IntegerField(null=True)
-    ballot_id = models.IntegerField()
+    #ballot_id = models.IntegerField()
+    ballot = models.ForeignKey(BallotInfo, related_name='drafts')
     primary_flag = models.IntegerField()
     group_flag = models.IntegerField(blank=True)
     token_name = models.CharField(blank=True, maxlength=25)
@@ -456,29 +483,6 @@ class DocumentComment(models.Model):
     class Meta:
         db_table = 'document_comments'
 
-class BallotInfo(models.Model):   # Added by Michael Lee
-    ballot = models.AutoField(primary_key=True, db_column='ballot_id')
-    active = models.BooleanField()
-    an_sent = models.BooleanField()
-    an_sent_date = models.DateField(null=True, blank=True)
-    an_sent_by = models.ForeignKey(IESGLogin, db_column='an_sent_by', related_name='ansent') 
-    defer = models.BooleanField(null=True, blank=True)
-    defer_by = models.ForeignKey(IESGLogin, db_column='defer_by', related_name='deferred')
-    defer_date = models.DateField(null=True, blank=True)
-    approval_text = models.TextField(blank=True)
-    last_call_text = models.TextField(blank=True)
-    ballot_writeup = models.TextField(blank=True)
-    ballot_issued = models.IntegerField(null=True, blank=True)
-    def __str__(self):
-	try:
-	    return "Ballot for %s" % (IDInternal.objects.get(ballot_id=self.ballot, primary_flag=1).draft.filename)
-	except IDInternal.DoesNotExist:
-	    return "Ballot ID %d (no I-D?)" % (self.ballot_id)
-    class Meta:
-        db_table = 'ballot_info'
-    class Admin:
-	pass
-
 class Position(models.Model):
     ballot = models.ForeignKey(BallotInfo, raw_id_admin=True, related_name='positions')
     ad = models.ForeignKey(IESGLogin, raw_id_admin=True)
@@ -490,21 +494,32 @@ class Position(models.Model):
     recuse = models.IntegerField()
     def __str__(self):
 	return "Position for %s on %s" % ( self.ad, self.ballot )
+    def abstain_ind(self):
+        if self.recuse:
+            log('R: %s' % self.ad)
+            return 'R'
+        if self.abstain:
+            log('X: %s' % self.ad)
+            return 'X'
+        else:
+            log('_: %s' % self.ad)
+            return ' '
     class Meta:
         db_table = 'ballots'
 	unique_together = (('ballot', 'ad'), )
     class Admin:
 	pass
 
+
 class IESGComment(models.Model):
-    ballot = models.ForeignKey(BallotInfo, raw_id_admin=True)
+    ballot = models.ForeignKey(BallotInfo, raw_id_admin=True, related_name="comments")
     ad = models.ForeignKey(IESGLogin, raw_id_admin=True)
     comment_date = models.DateField()
     revision = models.CharField(maxlength=2)
     active = models.IntegerField()
     comment_text = models.TextField(blank=True)
     def __str__(self):
-	return "Comment text by %s on %s" % ( self.ad, self.ballot )
+	return "Comment text by %s on %s" % ( self.ad, str(self.ballot) )
     class Meta:
         db_table = 'ballots_comment'
 	unique_together = (('ballot', 'ad'), )
@@ -514,7 +529,7 @@ class IESGComment(models.Model):
 	pass
 
 class IESGDiscuss(models.Model):
-    ballot = models.ForeignKey(BallotInfo, raw_id_admin=True)
+    ballot = models.ForeignKey(BallotInfo, db_column="ballot_id", raw_id_admin=True, related_name="discusses")
     ad = models.ForeignKey(IESGLogin, raw_id_admin=True)
     discuss_date = models.DateField()
     revision = models.CharField(maxlength=2)

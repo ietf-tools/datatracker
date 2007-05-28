@@ -1,10 +1,45 @@
-{% extends "base.html" %}
+{% extends "idtracker/base.html" %}
 {% load ietf_filters %}
                                                                                                                 
 {% block title %}IESG Announcement{% endblock %}
                                                                                                                 
-{% block content %}
-{{ object.approval_text|escape|keep_spacing|urlize|linebreaks }}
-{{ object.ballot_writeup|escape|keep_spacing|urlize|linebreaks }}
+{% block idcontent %}
+<pre>
+To: Internet Engineering Steering Group &lt;iesg@ietf.org&gt;
+From: IESG Secretary &lt;iesg-secretary@ietf.org&gt;
+Reply-To: IESG Secretary &lt;iesg-secretary@ietf.org&gt;
+Subject: Evaluation:{% for id in object.drafts.all %} {{ id.draft.filename }}-{{ id.draft.revision }}.txt to {{ id.draft.intended_status }} {% endfor %}
+--------
+
+Evaluation for:{% for id in object.drafts.all %}  {{ id.draft.filename }}-{{ id.draft.revision }}.txt
+{% endfor %}can be found at http://datatracker.ietf.org/idtracker/ballot/{{ object.ballot }}/ <!-- FIXME: hardcoded URL -->
+{% if object.drafts.all.0.draft.lc_expiration_date %}
+Last Call to expire on: {{ object.drafts.all.0.draft.lc_expiration_date|escape }}
+{% endif %}
+        Please return the full line with your position.
+
+                      Yes  No-Objection  Discuss  Abstain
+{% for position in object.positions.all|dictsort:"ad.last_name" %}{{ position.ad|ljust:"20" }} {{ position.yes|bracket }}     {{ position.noobj|bracket }}     {{ position.discuss|bracket }}     {{ position.abstain_ind|bracket }}
+{% endfor %}
+
+"Yes" or "No-Objection" positions from 2/3 of non-recused ADs, 
+with no "Discuss" positions, are needed for approval.
+
+DISCUSSES AND COMMENTS:
+======================
+{% for item in object.discusses.all %}{{ item.ad }}:
+{{ item }}
+
+{% endfor %}
+{% for item in object.comments.all %}{{ item.ad }}:
+{{ item }}
+
+{% endfor %}
+
+---- following is a DRAFT of message to be sent AFTER approval ---
+{{ object.approval_text|escape|urlize }}
+
+{{ object.ballot_writeup|escape|urlize }}
+</pre>
 {% endblock %}
 
