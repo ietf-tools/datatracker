@@ -87,3 +87,14 @@ def format_textarea(value):
 
     Also calls keep_spacing."""
     return keep_spacing(linebreaksbr(escape(value).replace('&lt;b&gt;','<b>').replace('&lt;/b&gt;','</b>').replace('&lt;br&gt;','<br>')))
+
+# For use with ballot view
+@register.filter(name='bracket')
+def square_brackets(value):
+    """Adds square brackets around text."""
+    if   type(value) == type(""):
+        return "[ %s ]" % value
+    elif value:
+        return "[ X ]"
+    else:
+        return "[   ]"
