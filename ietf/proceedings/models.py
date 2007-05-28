@@ -1,5 +1,5 @@
 from django.db import models
-from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup, GroupIETF
+from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup
 import datetime
 from ietf.utils import log
 
