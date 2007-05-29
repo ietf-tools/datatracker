@@ -1,6 +1,6 @@
 from django import newforms as forms
 from models import NonWgMailingList, ImportedMailingList
-from ietf.idtracker.models import PersonOrOrgInfo, GroupIETF, Acronym
+from ietf.idtracker.models import PersonOrOrgInfo, IETFWG, Acronym
 
 class NonWgStep1(forms.Form):
     add_edit = forms.ChoiceField(choices=(
@@ -52,7 +52,7 @@ class ListReqStep1(forms.Form):
     def __init__(self, *args, **kwargs):
 	dname = kwargs.get('dname', 'ietf.org')
 	super(ListReqStep1, self).__init__(*args, **kwargs)
-	self.fields['group'].choices = [('', '-- Select Working Group')] + GroupIETF.choices()
+	self.fields['group'].choices = [('', '-- Select Working Group')] + IETFWG.choices()
 	self.fields['list_to_close'].choices = [('', '-- Select List To Close')] + ImportedMailingList.choices(dname)
 	self.fields['domain_name'].initial = dname
     def clean_group(self):

@@ -1,5 +1,5 @@
 from django import newforms as forms
-from ietf.idtracker.models import IDState, IDStatus, GroupIETF
+from ietf.idtracker.models import IDState, IDStatus, IETFWG
 from ietf.idindex.models import orgs
 
 class IDIndexSearchForm(forms.Form):
@@ -13,5 +13,5 @@ class IDIndexSearchForm(forms.Form):
     def __init__(self, *args, **kwargs):
 	super(IDIndexSearchForm, self).__init__(*args, **kwargs)
 	self.fields['id_tracker_state_id'].choices = [('', 'All/Any')] + IDState.choices()
-	self.fields['wg_id'].choices = [('', 'All/Any')] + GroupIETF.choices()
+	self.fields['wg_id'].choices = [('', 'All/Any')] + IETFWG.choices()
 	self.fields['status_id'].choices = [('', 'All/Any')] + [(status.status_id, status.status) for status in IDStatus.objects.all()]

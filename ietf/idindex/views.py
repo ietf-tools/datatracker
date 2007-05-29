@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.http import Http404
 from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response
-from ietf.idtracker.models import Acronym, GroupIETF, InternetDraft
+from ietf.idtracker.models import Acronym, IETFWG, InternetDraft
 from ietf.idindex.forms import IDIndexSearchForm
 from ietf.idindex.models import alphabet, orgs, orgs_dict
 from ietf.utils import orl, flattenl
@@ -13,11 +13,11 @@ base_extra = { 'alphabet': alphabet, 'orgs': orgs }
 
 def wglist(request, wg=None):
     if wg == 'other':
-        queryset = GroupIETF.objects.filter(
+        queryset = IETFWG.objects.filter(
 	    orl([Q(group_acronym__acronym__istartswith="%d" % i) for i in range(0,10)])
 	    )
     else:
-	queryset = GroupIETF.objects.filter(group_acronym__acronym__istartswith=wg)
+	queryset = IETFWG.objects.filter(group_acronym__acronym__istartswith=wg)
     queryset = queryset.filter(group_type__type='WG').select_related().order_by('g_status.status', 'acronym.acronym')
     return object_list(request, queryset=queryset, template_name='idindex/wglist.html', allow_empty=True, extra_context=base_extra)
 

@@ -1,5 +1,5 @@
 from django.db import models
-from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup
+from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup, IETFWG
 import datetime
 from ietf.utils import log
 
@@ -48,12 +48,12 @@ class ResolveAcronym(object):
               return False
         else:
             try:
-                g_type_id = GroupIETF.objects.get(pk=self.group_acronym_id).group_type_id == 1
+                g_type_id = IETFWG.objects.get(pk=self.group_acronym_id).group_type_id == 1
                 if g_type_id == 1:
                     return True
                 else:
                     return False
-            except GroupIETF.DoesNotExist:
+            except IETFWG.DoesNotExist:
                 return False
 
 class Meeting(models.Model):
