@@ -8,11 +8,12 @@
 To: Internet Engineering Steering Group &lt;iesg@ietf.org&gt;
 From: IESG Secretary &lt;iesg-secretary@ietf.org&gt;
 Reply-To: IESG Secretary &lt;iesg-secretary@ietf.org&gt;
-Subject: Evaluation:{% for id in object.drafts.all %} {{ id.draft.filename }}-{{ id.draft.revision }}.txt to {{ id.draft.intended_status }} {% endfor %}
+Subject: Evaluation: {% for id in object.drafts.all %}{{ id.draft.filename }}-{{ id.draft.revision }}.txt to {{ id.draft.intended_status }}
+         {% endfor %}
 --------
 
-Evaluation for:{% for id in object.drafts.all %}  {{ id.draft.filename }}-{{ id.draft.revision }}.txt
-{% endfor %}can be found at http://datatracker.ietf.org/idtracker/ballot/{{ object.ballot }}/ <!-- FIXME: hardcoded URL -->
+Evaluation for{% for id in object.drafts.all %} {{ id.draft.filename }}-{{ id.draft.revision }}.txt {% endfor %}can be found at
+http://datatracker.ietf.org/idtracker/ballot/{{ object.ballot }}/ <!-- FIXME: hardcoded URL -->
 {% if object.drafts.all.0.draft.lc_expiration_date %}
 Last Call to expire on: {{ object.drafts.all.0.draft.lc_expiration_date|escape }}
 {% endif %}
@@ -27,15 +28,20 @@ with no "Discuss" positions, are needed for approval.
 
 DISCUSSES AND COMMENTS:
 ======================
-{% for item in object.discusses.all %}{{ item.ad }}:
-{{ item }}
+{% for position in object.positions.all|dictsort:"ad.last_name" %}{% ifequal position.discuss 1 %}{{ position.ad }}:{% for item in object.discusses.all %}{% ifequal position.ad item.ad %}
 
-{% endfor %}
-{% for item in object.comments.all %}{{ item.ad }}:
-{{ item }}
+Discuss [{{ item.date }}]:
+{{ item.text|fill:"80"|escape }}
 
-{% endfor %}
+{% endifequal %}{% endfor %}{% endifequal %}{% for item in object.comments.all %}{% ifequal position.ad item.ad %}{% ifnotequal position.discuss 1 %}{{ position.ad }}:
 
+{% endifnotequal %}Comment [{{ item.date }}]:
+{{ item.text|fill:"80"|escape }}
+
+{% endifequal %}{% endfor %}{% endfor %}
+
+
+^L
 ---- following is a DRAFT of message to be sent AFTER approval ---
 {{ object.approval_text|escape|urlize }}
 

@@ -1,3 +1,4 @@
+import textwrap
 from django import template
 from django.utils.html import escape, fix_ampersands, linebreaks
 from django.template.defaultfilters import linebreaksbr
@@ -6,6 +7,7 @@ try:
 except ImportError:
     from email import Utils as emailutils
 import re
+from ietf.utils import log
 
 register = template.Library()
 
@@ -94,7 +96,27 @@ def square_brackets(value):
     """Adds square brackets around text."""
     if   type(value) == type(""):
         return "[ %s ]" % value
-    elif value:
+    elif value > 0:
         return "[ X ]"
+    elif value < 0:
+        return "[ . ]"
     else:
         return "[   ]"
+
+@register.filter(name='fill')
+def fill(text, width):
+    """Wraps the single paragraph in text (a string) so every line
+    is at most width characters long, and returns a single string
+    containing the wrapped paragraph.
+    """
+    width = int(width)
+    paras = text.replace("\r\n","\n").replace("\r","\n").split("\n\n")
+    wrapped = []
+    for para in paras:
+        if para:
+            lines = para.split("\n")
+            maxlen = max([len(line) for line in lines])
+            if maxlen > width:
+                para = textwrap.fill(para, width, replace_whitespace=False)
+            wrapped.append(para)
+    return "\n\n".join(wrapped)

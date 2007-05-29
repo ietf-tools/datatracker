@@ -377,6 +377,9 @@ class BallotInfo(models.Model):   # Added by Michael Lee
 	    return "Ballot for %s" % self.drafts.filter(primary_flag=1)
 	except IDInternal.DoesNotExist:
 	    return "Ballot ID %d (no I-D?)" % (self.ballot)
+    def remarks(self):
+        remarks = list(self.discusses.all()) + list(self.comments.all())
+        return remarks
     class Meta:
         db_table = 'ballot_info'
     class Admin:
@@ -500,13 +503,10 @@ class Position(models.Model):
 	return "Position for %s on %s" % ( self.ad, self.ballot )
     def abstain_ind(self):
         if self.recuse:
-            log('R: %s' % self.ad)
             return 'R'
         if self.abstain:
-            log('X: %s' % self.ad)
             return 'X'
         else:
-            log('_: %s' % self.ad)
             return ' '
     class Meta:
         db_table = 'ballots'
@@ -517,12 +517,14 @@ class Position(models.Model):
 class IESGComment(models.Model):
     ballot = models.ForeignKey(BallotInfo, raw_id_admin=True, related_name="comments")
     ad = models.ForeignKey(IESGLogin, raw_id_admin=True)
-    comment_date = models.DateField()
+    date = models.DateField(db_column="comment_date")
     revision = models.CharField(maxlength=2)
     active = models.IntegerField()
-    comment_text = models.TextField(blank=True)
+    text = models.TextField(blank=True, db_column="comment_text")
     def __str__(self):
 	return "Comment text by %s on %s" % ( self.ad, self.ballot )
+    def is_comment(self):
+        return True
     class Meta:
         db_table = 'ballots_comment'
 	unique_together = (('ballot', 'ad'), )
@@ -534,12 +536,14 @@ class IESGComment(models.Model):
 class IESGDiscuss(models.Model):
     ballot = models.ForeignKey(BallotInfo, raw_id_admin=True, related_name="discusses")
     ad = models.ForeignKey(IESGLogin, raw_id_admin=True)
-    discuss_date = models.DateField()
+    date = models.DateField(db_column="discuss_date")
     revision = models.CharField(maxlength=2)
     active = models.IntegerField()
-    discuss_text = models.TextField(blank=True)
+    text = models.TextField(blank=True, db_column="discuss_text")
     def __str__(self):
 	return "Discuss text by %s on %s" % ( self.ad, self.ballot )
+    def is_discuss(self):
+        return True
     class Meta:
         db_table = 'ballots_discuss'
 	unique_together = (('ballot', 'ad'), )
