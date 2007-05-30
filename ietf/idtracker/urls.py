@@ -21,6 +21,9 @@ urlpatterns = patterns('django.views.generic.simple',
      (r'^ballot_key/$', 'direct_to_template', { 'template': 'idtracker/view_key.html' }),
      (r'^evaluation_process/$', 'direct_to_template', { 'template': 'idtracker/view_evaluation_desc.html' }),
 )
+urlpatterns += patterns('',
+     (r'^send_email/$', views.send_email),
+)
 urlpatterns += patterns('django.views.generic.list_detail',
      (r'^rfc(?P<object_id>\d+)/$', 'object_detail', rfc_dict),
      (r'^(?P<object_id>\d+)/$', 'object_detail', id_dict),
