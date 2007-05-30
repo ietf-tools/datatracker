@@ -29,8 +29,6 @@ class LiaisonUser(models.Model):
     class Meta:
         db_table = 'users'
 	ordering = ['login_name']
-    class Admin:
-	pass
 
 class WgPassword(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', primary_key=True, raw_id_admin=True)
@@ -46,5 +44,3 @@ class WgPassword(models.Model):
     class Meta:
         db_table = 'wg_password'
 	ordering = ['login_name']
-    class Admin:
-	pass
