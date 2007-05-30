@@ -1,0 +1,24 @@
+{% load ietf_filters %}
+<tr>{% if doc.primary_flag %}
+  <td>{{ doc.area_acronym.area_acronym.acronym.upper }}</td>
+  <td nowrap>
+  {% ifequal doc.cur_state.state "In Last Call" %}
+    {% if doc.document.lc_expiration_date %}
+      {{ doc.document.lc_expiration_date }}
+    {% endif %}
+  {% else %}
+    {% if doc.status_date %}
+      {{ doc.status_date|date:"M j" }}
+    {% endif %}
+  {% endifequal %}</td>
+{% else %}
+  <td></td><td></td>
+{% endif %}
+<td>{{ doc.document.title }} ({{ doc.document.intended_status }})</td></tr>
+<tr><td></td><td></td><td><a href="{{ doc.document.doclink }}">{{ doc.document.displayname }}</a></td></tr>
+{% if doc.primary_flag %}
+<tr><td></td><td>Token:</td><td><a href="mailto:{{ doc.token_email|urlencode }}">{{ doc.token_name }}</a></td></tr>
+{% if doc.note %}
+<tr><td></td><td>Note:</td><td>{{ doc.note|urlize }}</td></tr>
+{% endif %}
+{% endif %}

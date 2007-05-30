@@ -111,7 +111,7 @@ class IDIntendedStatus(models.Model):
 
 class InternetDraft(models.Model):
     id_document_tag = models.AutoField(primary_key=True)
-    id_document_name = models.CharField(maxlength=255)
+    title = models.CharField(maxlength=255, db_column='id_document_name')
     id_document_key = models.CharField(maxlength=255, editable=False)
     group = models.ForeignKey(Acronym, db_column='group_acronym_id')
     filename = models.CharField(maxlength=255, unique=True)
@@ -143,7 +143,7 @@ class InternetDraft(models.Model):
     expired_tombstone = models.BooleanField()
     idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
     def save(self):
-        self.id_document_key = self.id_document_name.upper()
+        self.id_document_key = self.title.upper()
         super(InternetDraft, self).save()
     def displayname(self):
 	return "%s-%s.txt" % ( self.filename, self.revision )
@@ -304,7 +304,7 @@ class RfcStatus(models.Model):
 
 class Rfc(models.Model):
     rfc_number = models.IntegerField(primary_key=True)
-    rfc_name = models.CharField(maxlength=200)
+    title = models.CharField(maxlength=200, db_column='rfc_name')
     rfc_name_key = models.CharField(maxlength=200, editable=False)
     group_acronym = models.CharField(blank=True, maxlength=8)
     area_acronym = models.CharField(blank=True, maxlength=8)
@@ -328,7 +328,7 @@ class Rfc(models.Model):
     def __str__(self):
 	return "RFC%04d" % ( self.rfc_number )        
     def save(self):
-	self.rfc_name_key = self.rfc_name.upper()
+	self.rfc_name_key = self.title.upper()
 	super(Rfc, self).save()
     def displayname(self):
 	return "rfc%d.txt" % ( self.rfc_number )
@@ -339,8 +339,8 @@ class Rfc(models.Model):
 	verbose_name = 'RFC'
 	verbose_name_plural = 'RFCs'
     class Admin:
-	search_fields = ['rfc_name', 'group', 'area']
-	list_display = ['rfc_number', 'rfc_name']
+	search_fields = ['title', 'group', 'area']
+	list_display = ['rfc_number', 'title']
 	pass
 
 class RfcAuthor(models.Model):
@@ -408,9 +408,8 @@ class IDInternal(models.Model):
     """
     draft = models.ForeignKey(InternetDraft, primary_key=True, unique=True, db_column='id_document_tag')
     rfc_flag = models.IntegerField(null=True)
-    #ballot_id = models.IntegerField()
     ballot = models.ForeignKey(BallotInfo, related_name='drafts', db_column="ballot_id")
-    primary_flag = models.IntegerField()
+    primary_flag = models.IntegerField(blank=True, null=True)
     group_flag = models.IntegerField(blank=True)
     token_name = models.CharField(blank=True, maxlength=25)
     token_email = models.CharField(blank=True, maxlength=255)
@@ -457,7 +456,9 @@ class IDInternal(models.Model):
     def comments(self):
 	return self.documentcomment_set.all().filter(rfc_flag=self.rfc_flag).order_by('-comment_date','-comment_time')
     def ballot_set(self):
-	return IDInternal.objects.filter(ballot=self.ballot)
+	return IDInternal.objects.filter(ballot=self.ballot_id)
+    def ballot_others(self):
+	return IDInternal.objects.filter(models.Q(primary_flag=0)|models.Q(primary_flag__isnull=True), ballot=self.ballot_id)
     class Meta:
         db_table = 'id_internal'
 	verbose_name = 'IDTracker Draft'

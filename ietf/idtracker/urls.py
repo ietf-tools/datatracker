@@ -23,6 +23,8 @@ urlpatterns = patterns('django.views.generic.simple',
 )
 urlpatterns += patterns('',
      (r'^send_email/$', views.send_email),
+     (r'^status/$', views.status),
+     (r'^last_call/$', views.last_call),
 )
 urlpatterns += patterns('django.views.generic.list_detail',
      (r'^rfc(?P<object_id>\d+)/$', 'object_detail', rfc_dict),

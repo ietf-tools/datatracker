@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<center><h1>{{ title }}</h1></center>
+<i>Generated {% now "M j, Y" %}<br>
+{# no hit counter #}
+</i>
+
+{% regroup object_list by cur_state_id as grouped %}
+{% for state in grouped %}
+<a name="grp{{ state.list.0.cur_state }}"><h2>{{ state.list.0.cur_state }}</h2></a>
+<table>
+<tr><th>Area</th><th>{% ifequal state.list.0.cur_state.state "In Last Call" %}Expires at{% else %}Date{% endifequal %}</th></tr>
+{% for doc in state.list %}
+{% include "idtracker/document_entry.html" %}
+{% if doc.ballot_others %}
+{% for doc in doc.ballot_others %}
+{% include "idtracker/document_entry.html" %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+</table>
+{% endfor %}
+
+<HR>
+<b><A href="http://www.rfc-editor.org/queue.html">RFC Editor Queue</a></b>
+<p>
+
+
+<!-- begin new footer -->
+<HR>
+
+<i>This page produced by the <A HREF="mailto:iesg-secretary@ietf.org">IETF Secretariat</a> 
+for the <A HREF="mailto:iesg@ietf.org">IESG</A></i>
+<p>
+
+{% endblock %}
