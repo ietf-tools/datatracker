@@ -80,7 +80,6 @@ class Area(models.Model):
     active_area_choices = staticmethod(active_area_choices)
     class Meta:
         db_table = 'areas'
-        #ordering = ['area_acronym_id']
 	verbose_name="area"
     class Admin:
         list_display = ('area_acronym', 'status')
@@ -173,8 +172,8 @@ class InternetDraft(models.Model):
         db_table = "internet_drafts"
     class Admin:
         search_fields = ['filename']
+        list_display = ('filename', 'revision', 'status')
         pass
-        #list_display = ('filename', 'revision', 'status')
         #date_hierarchy = 'revision_date'
         #list_filter = ['revision_date']
 
@@ -520,6 +519,7 @@ class Position(models.Model):
     class Meta:
         db_table = 'ballots'
 	unique_together = (('ballot', 'ad'), )
+	verbose_name = "IESG Ballot Position"
     class Admin:
 	pass
 
@@ -562,7 +562,7 @@ class IESGDiscuss(models.Model):
 	pass
 
 class IDAuthor(models.Model):
-    document = models.ForeignKey(InternetDraft, db_column='id_document_tag', related_name='authors', edit_inline=models.TABULAR)
+    document = models.ForeignKey(InternetDraft, db_column='id_document_tag', related_name='authors', edit_inline=models.TABULAR, raw_id_admin=True)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, core=True)
     author_order = models.IntegerField(null=True, blank=True)
     def __str__(self):
@@ -576,8 +576,6 @@ class IDAuthor(models.Model):
         db_table = 'id_authors'
 	verbose_name = "I-D Author"
         ordering = ['document','author_order']
-    class Admin:
-	pass
 
 # PostalAddress, EmailAddress and PhoneNumber are edited in
 #  the admin for the Rolodex.
@@ -594,7 +592,6 @@ class PostalAddress(models.Model):
     person_or_org = models.ForeignKey(PersonOrOrgInfo, primary_key=True, db_column='person_or_org_tag', edit_inline=models.STACKED)
     person_title = models.CharField(maxlength=50, blank=True)
     affiliated_company = models.CharField(maxlength=70, blank=True)
-    # always uppercase(affiliated_company)
     aff_company_key = models.CharField(maxlength=70, blank=True, editable=False)
     department = models.CharField(maxlength=100, blank=True)
     staddr1 = models.CharField(maxlength=40, core=True)
@@ -689,6 +686,9 @@ class IETFWG(models.Model):
 	ordering = ['?']	# workaround django wanting to sort by acronym but not joining with it
 	verbose_name = 'IETF Working Group'
     class Admin:
+	search_fields = ['group_acronym__acronym', 'group_acronym__name']
+	list_display = ('group_acronym', 'status', 'area_director')
+	list_filter = ['status', 'area_director']
 	pass
 
 class WGChair(models.Model):
@@ -760,6 +760,9 @@ class GoalMilestone(models.Model):
 	verbose_name = 'IETF WG Goal or Milestone'
 	verbose_name_plural = 'IETF WG Goals or Milestones'
     class Admin:
+	list_display = ('group_acronym', 'description', 'expected_due_date')
+	date_hierarchy = 'expected_due_date'
+	list_filter = ['done']
 	pass
 
 #### end wg stuff
