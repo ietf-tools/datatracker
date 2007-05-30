@@ -13,5 +13,15 @@ do
 	then
 		python modelviz.py $d
 	fi
-done > models.dot
-unflatten -f -l 10 models.dot | dot -Tps -Gsize=10.5,8.0 -Gmargin=0.25 -Gratio=auto -Grotate=90 | sed -e 's/ Bold/-Bold/' > models.ps
+done | unflatten -f -l 10 | gvpr -c '
+BEG_G {
+	node_t title = node($G, "title");
+	title.shape="parallelogram";
+	string model = $G.name;
+	model = sub(model, "^ietf.");
+	model = sub(model, ".models$");
+	title.label = model;
+	title.fontsize = 24;
+}
+' > models.dot
+dot -Tps -Gsize=10.5,8.0 -Gmargin=0.25 -Gratio=auto -Grotate=90 models.dot | sed -e 's/ Bold/-Bold/' > models.ps
