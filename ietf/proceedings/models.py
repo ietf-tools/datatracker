@@ -1,5 +1,5 @@
 from django.db import models
-from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup, IETFWG
+from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup, Area, IETFWG
 import datetime
 from ietf.utils import log
 
@@ -147,7 +147,17 @@ class SessionName(models.Model):
         db_table = 'session_names'
     class Admin:
 	pass
-
+class IESGHistory(models.Model):
+    meeting = models.ForeignKey(Meeting, db_column='meeting_num', primary_key=True, core=True)
+    area = models.ForeignKey(Area, db_column='area_acronym_id', primary_key=True,  core=True)
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, core=True)
+    def __str__(self):
+        return "%s (%s)" % (self.person,self.area)
+    class Meta:
+        db_table = 'iesg_history'
+    class Admin:
+        pass
+    
 class MeetingTime(models.Model):
     time_id = models.AutoField(primary_key=True)
     time_desc = models.CharField(maxlength=100)
@@ -163,7 +173,9 @@ class MeetingTime(models.Model):
 	sessions = WgMeetingSession.objects.filter(
 	    models.Q(sched_time_id1=self.time_id) |
 	    models.Q(sched_time_id2=self.time_id) |
-	    models.Q(sched_time_id3=self.time_id))
+	    models.Q(sched_time_id3=self.time_id) |
+            models.Q(combined_time_id1=self.time_id) |
+            models.Q(combined_time_id2=self.time_id))
 	for s in sessions:
 	    if s.sched_time_id1_id == self.time_id:
 		s.room_id = s.sched_room_id1
@@ -171,22 +183,21 @@ class MeetingTime(models.Model):
 		s.room_id = s.sched_room_id2
 	    elif s.sched_time_id3_id == self.time_id:
 		s.room_id = s.sched_room_id3
+            elif s.combined_time_id1_id == self.time_id:
+                s.room_id = s.combined_room_id1
+            elif s.combined_time_id2_id == self.time_id:
+                s.room_id = s.combined_room_id2
 	    else:
 		s.room_id = 0
 	return sessions
-    def combined_sessions(self):
-	"""
-	Get all sessions that have a combined_time at this
-	time.
-	"""
-	return WgMeetingSession.objects.filter(
-	    models.Q(combined_time_id1=self.time_id) |
-	    models.Q(combined_time_id2=self.time_id))
     def meeting_date(self):
         return self.meeting.get_meeting_date(self.day_id)
     def reg_info(self):
 	reg_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=1)
-        return "%s %s" % (reg_info.time_desc, reg_info.non_session_ref)
+        if reg_info.time_desc:
+            return "%s %s" % (reg_info.time_desc, reg_info.non_session_ref)
+        else:
+            return ""
     def morning_br_info(self):
 	br_info = NonSession.objects.get(models.Q(day_id=self.day_id) | models.Q(day_id__isnull=True), meeting=self.meeting, non_session_ref=2)
         return "%s %s" % (br_info.time_desc, br_info.non_session_ref)
@@ -198,6 +209,9 @@ class MeetingTime(models.Model):
     def an_br2_info(self):
 	an_br2_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=5)
         return "%s %s" % (an_br2_info.time_desc, an_br2_info.non_session_ref)
+    def fbreak_info(self):
+        fbreak_info = NonSession.objects.get(meeting-self.meeting, day_id=5, non_session_ref=6)
+        return "%s %s" % (fbreak_info.time_desc, fbreak_info.non_session_ref)
     class Meta:
         db_table = 'meeting_times'
     class Admin:
@@ -261,7 +275,7 @@ class WgMeetingSession(models.Model, ResolveAcronym):
         try:
             filename = WgAgenda.objects.get(meeting=self.meeting, group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=0).filename
             dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
-            retvar = "%s/%s" % (dir,filename) 
+            retvar = "%s/agenda/%s" % (dir,filename) 
         except WgAgenda.DoesNotExist:
             retvar = ""
         return retvar

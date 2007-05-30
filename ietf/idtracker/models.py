@@ -216,6 +216,15 @@ class PersonOrOrgInfo(models.Model):
 	except EmailAddress.DoesNotExist:
 	    email = ''
 	return (name, email)
+    # Added by Sunny Lee to display person's affiliation - 5/26/2007
+    def affiliation(self, priority=1, type='INET'):
+        try:
+            postal = self.postaladdress_set.get(address_priority=1)
+        except PostalAddress.DoesNotExist:
+            return "PersonOrOrgInfo with no name, no postal address!"
+        except AssertionError:
+            return "PersonOrOrgInfo with multiple priority-1 addresses!"
+        return "%s" % ( postal.affiliated_company or postal.department or "???" )
     class Meta:
         db_table = 'person_or_org_info'
 	ordering = ['last_name']

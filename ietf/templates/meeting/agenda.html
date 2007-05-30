@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %} Meeting Agenda  {% endblock %}
+{% block title %} Meeting Agenda of IETF {{ meeting_num }}  {% endblock %}
+{% block body_attributes %}background="http://www.ietf.org/meetings/peachbkg.gif"{% endblock %}
 {% block content %}
 
 <center> 
@@ -8,7 +9,7 @@
 Updated As of : {% now "F j, Y" %}<br />
 </center> 
 
-<a href="/meeting/{{meeting_num}}/agenda.txt"> Text Format of the Agenda </a> <br />
+<a href="http://www3.ietf.org//meetings/agenda_{{meeting_num}}.txt"> Text Format of the Agenda </a> <br />
 <P>
 *** Click on an acronym of the group to get a charter page *** <br />
 *** Click on a name of the group to get a meeting agenda *** <br />
@@ -22,19 +23,23 @@ Updated As of : {% now "F j, Y" %}<br />
 <br>
 {% regroup object_list by day_id as days %}
 {% for day in days %}
-   <b>Day: {{ day.list.1.meeting_date|date:"l, F j, Y" }} </b><br>
-   {{ day.list.1.reg_info }} - {{ meetingvenue_info.reg_area_name }} <br>
-   {{ day.list.1.morning_br_info }} - {{ meetingvenue_info.break_area_name }} <br>
+   <b>{{ day.list.0.meeting_date|date:"l, F j, Y" }} </b><br>
+   {% if day.list.0.reg_info %}{{ day.list.0.reg_info }} - {{ meetingvenue_info.reg_area_name }} <br>{% endif %}
+   {% ifequal day.list.0.day_id "5" %}
+   {{ day.list.0.fbreak_info }} - {{ meetingvenue_info.break_area_name }} <br>
+   {% else %}
+   {{ day.list.0.morning_br_info }} - {{ meetingvenue_info.break_area_name }} <br>
+   {% endifequal %}
    <br>
    {% for item in day.list %}
       {% ifequal item.session_name_id 3 %}
-	 {{ day.list.1.lunch_br_info }} Break<br>
+	 {{ day.list.0.lunch_br_info }} Break<br>
       {% endifequal %}
       {% ifequal item.session_name_id 4 %}
-	 {{ day.list.1.an_br1_info }}<br>
+	 {{ day.list.0.an_br1_info }}<br>
       {% endifequal %}
       {% ifequal item.session_name_id 5 %}
-	 {{ day.list.1.an_br2_info }}<br>
+	 {{ day.list.0.an_br2_info }}<br>
       {% endifequal %}
       <b>{{ item.time_desc }} {{ item.session_name }} </b>
       {% ifequal item.sessions.0.acronym "plenaryw" %}
@@ -56,4 +61,21 @@ Updated As of : {% now "F j, Y" %}<br />
    {% endfor %}
    <br>
 {% endfor %}
+<hr>
+<center><b>AREA DIRECTORS</b></center><br>
+<table border="0" width="800">
+{% regroup qs_ads by area as ads %}
+{% for ad in ads %}
+<tr valign="top">
+  <td width="65">{{ ad.grouper|upper }}</td>
+  <td width="140">{{ ad.list.0.area.area_acronym.name }}</td>
+  <td>
+  {% for ad_person in ad.list %}
+    {% ifequal forloop.counter 2 %} & {% endifequal %}
+    {{ ad_person.person }}/{{ ad_person.person.affiliation }} 
+  {% endfor %}
+  </td>
+</tr>
+{% endfor %}
+</table>
 {% endblock %}

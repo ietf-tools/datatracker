@@ -4,8 +4,9 @@ from django.shortcuts import render_to_response as render
 import django.newforms as forms
 from django.utils.html import escape, linebreaks
 import ietf.utils
-from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, SessionName, NonSession, MeetingVenue
+from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, SessionName, NonSession, MeetingVenue, IESGHistory
 from django.views.generic.list_detail import object_list
+from django.http import Http404
 
 def default(request):
     """Default page, with links to sub-pages"""
@@ -31,15 +32,37 @@ def meeting_list(request, template):
 def show_html_materials(request, meeting_num=None):
 	return render("meeting/list.html",{})
 
-def show_html_agenda(request, meeting_num=None):
-    meeting_info=Meeting.objects.filter(meeting_num=meeting_num)[0]
+def show_html_agenda(request, meeting_num=None, html_or_txt=None):
+    try:
+        queryset_list=MeetingTime.objects.filter(meeting=meeting_num).exclude(day_id=0).order_by("day_id","time_desc")
+    except MeetingTime.DoesNotExist:
+        raise Http404
+    meeting_info=Meeting.objects.get(meeting_num=meeting_num)
     nonsession_info=NonSession.objects.filter(meeting=meeting_num,day_id__gte='0').order_by("day_id")
-    meetingvenue_info=MeetingVenue.objects.filter(meeting_num=meeting_num)[0]
-    queryset_list=MeetingTime.objects.filter(meeting=meeting_num).exclude(day_id=0).order_by("day_id","time_desc") 
-    plenaryw_agenda = "17:00 Welcome\n17:05 NOC report (Wieslaw Blysz, Siemens Networks))\n   Host presentation (Georg Haubs, CTO Innovations of Siemens Networks)\n17:20 IETF Chair and IAD short reports\n17:30 Jonathan B. Postel award\n17:40 NomCom Chair (Andrew Lange)\n17:45 Open Microphone\n19:30 (latest) end <end of text>" #only for testing. In production, this text will be pulled from actualy agenda file
-    plenaryt_agenda = "-17h00  Welcome and introduction (Leslie Daigle)\n-17h05  IAB update (Leslie Daigle)\nTH17h15  IRTF Report (Aaron Falk)\nTH17h25  Technical Presentations\n    Highlights from draft-iab-net-transparent\n    (Bernard Aboba)\n    Readout from Unwanted Traffic Workshop\n    (Danny McPherson & Loa Andersson)\n    Readout from the Routing & Addressing Workshop\n    (Dave Meyer, Chris Morrow)\n    Next steps from RAWS (Leslie Daigle)\nTH19h00   IAB open Mic\n-19h30  End. " #only for testing. In production, this text will be pulled from actualy agenda file
-    #queryset_list=WgMeetingSession.objects.filter(meeting_num=meeting_num, group_acronym_id > -3) 
-
+    try:
+        meetingvenue_info=MeetingVenue.objects.get(meeting_num=meeting_num)
+    except MeetingVenue.DoesNotExist:
+        raise Http404
+    plenaryt_agenda_file = "/home/master-site/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-2).agenda_file()
+    try:
+        f = open(plenaryt_agenda_file)
+        plenaryt_agenda = f.read()
+        f.close()
+    except IOError:
+        plenaryt_agenda = "THE AGENDA HAS NOT BEEN UPLOADED YET"
+    if html_or_txt == "html":
+        template_file="meeting/agenda.html"
+    elif html_or_txt == "txt":
+        template_file="meeting/agenda.txt"
+    else:
+        raise Http404
+    plenaryw_agenda_file = "/home/master-site/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-1).agenda_file()
+    try:
+        f = open(plenaryw_agenda_file)
+        plenaryw_agenda = f.read()
+        f.close()
+    except IOError:
+        plenaryw_agenda = "THE AGENDA HAS NOT BEEN UPLOADED YET"
     # Due to a bug in Django@0.96 we can't use foreign key lookup in
     # order_by(), see http://code.djangoproject.com/ticket/2076.  Changeset
     # [133] is broken because it requires a patched Django to run.  Work
@@ -48,7 +71,9 @@ def show_html_agenda(request, meeting_num=None):
     ## queryset_list_sun=WgMeetingSession.objects.filter(meeting=meeting_num, sched_time_id1__day_id=0).order_by('sched_time_id1__time_desc')
     queryset_list_sun=list(WgMeetingSession.objects.filter(meeting=meeting_num, sched_time_id1__day_id=0))
     queryset_list_sun.sort(key=(lambda item: item.sched_time_id1.time_desc))
-    return object_list(request,queryset=queryset_list, template_name='meeting/agenda.html',allow_empty=True, extra_context={'qs_sun':queryset_list_sun, 'meeting_info':meeting_info, 'meeting_num':meeting_num, 'nonsession_info':nonsession_info, 'meetingvenue_info':meetingvenue_info, 'plenaryw_agenda':plenaryw_agenda, 'plenaryt_agenda':plenaryt_agenda})
+    queryset_list_ads = list(IESGHistory.objects.filter(meeting=meeting_num))
+    queryset_list_ads.sort(key=(lambda item: item.area.area_acronym.acronym))
+    return object_list(request,queryset=queryset_list, template_name=template_file,allow_empty=True, extra_context={'qs_sun':queryset_list_sun, 'meeting_info':meeting_info, 'meeting_num':meeting_num, 'nonsession_info':nonsession_info, 'meetingvenue_info':meetingvenue_info, 'plenaryw_agenda':plenaryw_agenda, 'plenaryt_agenda':plenaryt_agenda, 'qs_ads':queryset_list_ads})
 
 def show(request):
     return 0
