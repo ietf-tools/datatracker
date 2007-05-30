@@ -1,4 +1,4 @@
-from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose
+from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor
 from models import NonWgMailingList, MailingList
 from ietf.idtracker.models import Area, PersonOrOrgInfo
 from django import newforms as forms
@@ -140,12 +140,38 @@ list_fields = {
     'approved': None,
     'approved_date': None,
     'reason_to_delete': None,
+    'add_comment': None,
+    'mail_type': None,
+    'mail_cat': None,
+    'domain_name': None,
+    'admins': MultiEmailField(label='List Administrator(s)', widget=AdminRequestor(attrs={'cols': 41, 'rows': 4})),
+    'initial': MultiEmailField(label='Initial list member(s)', widget=forms.Textarea(attrs={'cols': 41, 'rows': 4}), required=False),
 }
 
+list_labels = {
+    'post_who': 'Who is allowed to post to this list?',
+}
+
+# can I do a multiwidget for the mailing list admins?
+# and something to display @domain after the email list name?
 list_widgets = {
+    'subscription': forms.Select(choices=MailingList.SUBSCRIPTION_CHOICES),
+    'post_who': forms.Select(choices=(('1', 'List members only'), ('0', 'Open'))),
+    'post_admin': forms.Select(choices=(('0', 'No'), ('1', 'Yes'))),
+    'archive_private': forms.Select(choices=(('0', 'No'), ('1', 'Yes'))),
 }
 
 list_attrs = {
+    'requestor': { 'size': 55 },
+    'requestor_email': { 'size': 55 },
+    'mlist_name': { 'size': 10 },
+    'short_desc': { 'size': 55 },
+    'long_desc': { 'cols': 41, 'rows': 4, 'wrap': 'virtual' },
+    'admins': { 'cols': 41, 'rows': 4 },
+    'initial': { 'cols': 41, 'rows': 4 },
+    'welcome_message': { 'cols': 41, 'rows': 4 },
+    'welcome_new': { 'cols': 41, 'rows': 4 },
+    'archive_remote': { 'cols': 41, 'rows': 4 },
 }
 
 list_callback = form_decorator(fields=list_fields, widgets=list_widgets, attrs=list_attrs)
@@ -175,7 +201,7 @@ class ListReqWizard(wizard.Wizard):
 	    if form.clean_data['mail_type'].startswith('close'):
 		self.form_list.append(ListReqClose)
 	    else:
-		self.form_list.append(forms.form_for_model(MailingList))
+		self.form_list.append(forms.form_for_model(MailingList, formfield_callback=list_callback))
 		#XXX not quite
         super(ListReqWizard, self).process_step(request, form, step)
 

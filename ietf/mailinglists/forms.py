@@ -146,3 +146,51 @@ class ListReqAuthorized(forms.Form):
 # subclass pickapprover here too?
 class ListReqClose(forms.Form):
     pass
+
+class AdminRequestor(forms.MultiWidget):
+    def decompress(self, value):
+	# This implementation moves the requestor to the listbox
+	# if there are any validation errors.
+	# If we could find the requestor, we could instead
+	# check the checkbox, but for now let's try this.
+	return ['', '', value]
+    def __init__(self, attrs=None):
+	widgets = (forms.CheckboxInput(), forms.TextInput(attrs={'size': 55, 'disabled': True}), forms.Textarea(attrs=attrs))
+	super(AdminRequestor, self).__init__(widgets, attrs)
+    def format_output(self, rendered_widgets):
+	return u'<br/>\n'.join(["<label>%s Same as requestor</label>" % rendered_widgets[0]] + rendered_widgets[1:])
+    def value_from_datadict(self, data, name):
+	try:
+	    radio = data.get(name + '_0', "off")
+	    rest = data[name + '_2']
+	    print "radio is %s, rest is %s" % (radio, rest)
+	    if radio == 'on':
+		# This has some deep assumptions about how
+		# this is used.
+		key = name.replace('admins', 'requestor_email')
+		try:
+		    return data[key] + "\n" + rest
+		except KeyError:
+		    return rest
+	    else:
+		return rest
+	except KeyError:
+	    try:
+		return data[name]
+	    except KeyError:
+		return ''
+
+class MultiEmailField(forms.CharField):
+    '''Ensure that each of a carraige-return-separated
+    list of e-mail addresses is valid.'''
+    def clean(self, value):
+	value = super(MultiEmailField, self).clean(value)
+	bad = list()
+	for addr in value.split("\n"):
+	    addr = addr.strip()
+	    if addr != '' and not(forms.fields.email_re.search(addr)):
+		bad.append(addr)
+	if len(bad) > 0:
+	    raise forms.ValidationError, "The following email addresses seem to be invalid: %s" % ", ".join(["'" + addr + "'" for addr in bad])
+	return value
+

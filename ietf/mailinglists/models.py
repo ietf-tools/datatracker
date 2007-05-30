@@ -1,6 +1,7 @@
 from django.db import models
 from ietf.idtracker.models import Acronym, Area, PersonOrOrgInfo
 import random
+from datetime import datetime
 
 class ImportedMailingList(models.Model):
     group_acronym = models.ForeignKey(Acronym, null=True)
@@ -45,26 +46,26 @@ class MailingList(models.Model):
 	('3', 'Close Non-WG Mailing List'),
     )
     mailing_list_id = models.CharField('Unique ID', primary_key=True, maxlength=25, editable=False)
-    request_date = models.DateField()
-    mlist_name = models.CharField('Mailing list name', maxlength=250)
-    short_desc = models.CharField(maxlength=250)
-    long_desc = models.TextField(blank=True)
-    requestor = models.CharField(maxlength=250)
-    requestor_email = models.CharField(maxlength=250)
-    # admins is a VARCHAR but can have multiple lines
-    admins = models.TextField(blank=True, maxlength=250)
-    archive_remote = models.TextField(blank=True)
-    archive_private = models.BooleanField()
-    initial = models.TextField('Initial members',blank=True)
-    welcome_message = models.TextField(blank=True)
-    subscription = models.IntegerField(choices=SUBSCRIPTION_CHOICES)
+    request_date = models.DateField(default=datetime.now, editable=False)
+    requestor = models.CharField("Requestor's full name", maxlength=250)
+    requestor_email = models.EmailField("Requestor's email address", maxlength=250)
+    mlist_name = models.CharField('Email list name', maxlength=250)
+    short_desc = models.CharField('Short description of the email list', maxlength=250)
+    long_desc = models.TextField('Long description of the email list')
+    # admins is a VARCHAR but can have multiple lines.
+    admins = models.TextField('Mailing list administrators (one address per line)', maxlength=250)
+    initial = models.TextField('Enter email address(es) of initial subscriber(s) (one address per line) (optional)', blank=True)
+    welcome_message = models.TextField('Provide a welcome message for initial subscriber(s)(optional)', blank=True)
+    welcome_new = models.TextField('Provide a welcome message for new subscriber(s)(optional)', blank=True)
+    subscription = models.IntegerField('What steps are required for subscription?', choices=SUBSCRIPTION_CHOICES)
     post_who = models.BooleanField('Only members can post')
-    post_admin = models.BooleanField('Administrator approval required for posts')
+    post_admin = models.BooleanField('Do postings need to be approved by an administrator?')
+    archive_private = models.BooleanField('Are the archives private?')
+    archive_remote = models.TextField('Provide specific information about how to access and move the existing archive (optional)', blank=True)
     add_comment = models.TextField(blank=True)
     mail_type = models.IntegerField(choices=MAILTYPE_CHOICES)
     mail_cat = models.IntegerField(choices=MAILCAT_CHOICES)
     auth_person = models.ForeignKey(PersonOrOrgInfo, db_column='auth_person_or_org_tag', raw_id_admin=True)
-    welcome_new = models.TextField(blank=True)
     approved = models.BooleanField()
     approved_date = models.DateField(null=True, blank=True)
     reason_to_delete = models.TextField(blank=True)
