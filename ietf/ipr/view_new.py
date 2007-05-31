@@ -1,7 +1,6 @@
 import re
 import models
 import ietf.utils
-import django.utils.html
 import django.newforms as forms
 
 from datetime import datetime

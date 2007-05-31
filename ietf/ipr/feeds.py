@@ -1,7 +1,6 @@
 from django.contrib.syndication.feeds import Feed
 from django.utils.feedgenerator import Atom1Feed
 from ietf.ipr.models import IprDetail
-import datetime
 
 class LatestIprDisclosures(Feed):
     feed_type = Atom1Feed

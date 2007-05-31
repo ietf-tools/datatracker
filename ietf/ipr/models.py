@@ -1,7 +1,4 @@
-import re
 from django.db import models
-from django.template.defaultfilters import capfirst
-from django import oldforms
 from django import newforms as forms
 from ietf.idtracker.views import InternetDraft
 from ietf.idtracker.models import Rfc
