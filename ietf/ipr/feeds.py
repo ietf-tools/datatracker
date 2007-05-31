@@ -22,5 +22,3 @@ class LatestIprDisclosures(Feed):
         return item.get_submitter().name or None
     def item_author_email(self, item):
         return item.get_submitter().email or None
-    
-        
