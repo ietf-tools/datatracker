@@ -12,4 +12,4 @@ django=$(python -c "import django; import os.path; print os.path.realpath(django
 
 rsync -Cav $django $build/test/lib/
 cd $build/test/lib
-patch -p 3 < $build/test/r5106.patch
+patch -p 3 -s -t < $build/test/r5106.patch
