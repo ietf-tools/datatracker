@@ -156,10 +156,7 @@ class InternetDraft(models.Model):
     def idstate(self):
 	idinternal = self.idinternal
 	if idinternal:
-	    if idinternal.cur_sub_state:
-		return "%s :: %s" % ( idinternal.cur_state, idinternal.cur_sub_state )
-	    else:
-		return idinternal.cur_state
+	    return idinternal.docstate()
 	else:
 	    return "I-D Exists"
     def revision_display(self):
@@ -200,13 +197,7 @@ class PersonOrOrgInfo(models.Model):
         super(PersonOrOrgInfo, self).save()
     def __str__(self):
 	if self.first_name == '' and self.last_name == '':
-	    try:
-		postal = self.postaladdress_set.get(address_priority=1)
-	    except PostalAddress.DoesNotExist:
-		return "PersonOrOrgInfo with no name, no postal address!"
-	    except AssertionError:
-		return "PersonOrOrgInfo with multiple priority-1 addresses!"
-	    return "%s" % ( postal.affiliated_company or postal.department or "???" )
+	    return self.affiliation()
         return "%s %s" % ( self.first_name or "<nofirst>", self.last_name or "<nolast>")
     def email(self, priority=1, type='INET'):
 	name = str(self)
@@ -216,13 +207,13 @@ class PersonOrOrgInfo(models.Model):
 	    email = ''
 	return (name, email)
     # Added by Sunny Lee to display person's affiliation - 5/26/2007
-    def affiliation(self, priority=1, type='INET'):
+    def affiliation(self, priority=1):
         try:
-            postal = self.postaladdress_set.get(address_priority=1)
+            postal = self.postaladdress_set.get(address_priority=priority)
         except PostalAddress.DoesNotExist:
-            return "PersonOrOrgInfo with no name, no postal address!"
+            return "PersonOrOrgInfo with no postal address!"
         except AssertionError:
-            return "PersonOrOrgInfo with multiple priority-1 addresses!"
+            return "PersonOrOrgInfo with multiple priority-%d addresses!" % priority
         return "%s" % ( postal.affiliated_company or postal.department or "???" )
     class Meta:
         db_table = 'person_or_org_info'
@@ -331,7 +322,11 @@ class Rfc(models.Model):
 	self.rfc_name_key = self.title.upper()
 	super(Rfc, self).save()
     def displayname(self):
-	return "rfc%d.txt" % ( self.rfc_number )
+        return "%s.txt" % ( self.filename() )
+    def filename(self):
+	return "rfc%d" % ( self.rfc_number )
+    def revision(self):
+	return "RFC"
     def doclink(self):
 	return "http://www.ietf.org/rfc/%s" % ( self.displayname() )
     class Meta:
@@ -405,6 +400,10 @@ class IDInternal(models.Model):
     field is defined as a FK to InternetDrafts.  One side effect
     of this is that select_related() will only work with
     rfc_flag=0.
+
+    When searching where matches may be either I-Ds or RFCs,
+    you cannot use draft__ as that will cause an INNER JOIN
+    which will limit the responses to I-Ds.
     """
     draft = models.ForeignKey(InternetDraft, primary_key=True, unique=True, db_column='id_document_tag')
     rfc_flag = models.IntegerField(null=True)
@@ -457,8 +456,15 @@ class IDInternal(models.Model):
 	return self.documentcomment_set.all().filter(rfc_flag=self.rfc_flag).order_by('-comment_date','-comment_time')
     def ballot_set(self):
 	return IDInternal.objects.filter(ballot=self.ballot_id)
+    def ballot_primary(self):
+	return IDInternal.objects.filter(ballot=self.ballot_id,primary_flag=1)
     def ballot_others(self):
 	return IDInternal.objects.filter(models.Q(primary_flag=0)|models.Q(primary_flag__isnull=True), ballot=self.ballot_id)
+    def docstate(self):
+	if self.cur_sub_state_id > 0:
+	    return "%s :: %s" % ( self.cur_state, self.cur_sub_state )
+	else:
+	    return self.cur_state
     class Meta:
         db_table = 'id_internal'
 	verbose_name = 'IDTracker Draft'

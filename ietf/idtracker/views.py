@@ -5,7 +5,7 @@ from django.template import RequestContext, Context, loader
 from django.shortcuts import get_object_or_404, render_to_response
 from django.db.models import Q
 from django.views.generic.list_detail import object_detail, object_list
-from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState
+from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState, Rfc
 from ietf.idtracker.forms import EmailFeedback
 from ietf.utils.mail import send_mail_text
 
@@ -22,54 +22,56 @@ def myfields(f):
     return f.formfield()
 
 def search(request):
+    # todo: check if these field names work for backwards
+    #  compatability
     InternetDraftForm = forms.models.form_for_model(InternetDraft, formfield_callback=myfields)
-    idform = InternetDraftForm(request.POST)
+    idform = InternetDraftForm(request.REQUEST)
     InternalForm = forms.models.form_for_model(IDInternal, formfield_callback=myfields)
-    form = InternalForm(request.POST)
-    t = loader.get_template('idtracker/idtracker_search.html')
+    form = InternalForm(request.REQUEST)
     # if there's a post, do the search and supply results to the template
-    if request.method == 'POST':
-	qdict = { 'filename': 'draft__filename__contains',
-		  'job_owner': 'job_owner',
-		  'group': 'draft__group__acronym',
-		  'cur_state': 'cur_state',
-		  'cur_sub_state': 'cur_sub_state',
-		  'rfc_number': 'draft__rfc_number',
-		  'area_acronym': 'area_acronym',
-		  'note': 'note__contains',
-		}
-	q_objs = [Q(**{qdict[k]: request.POST[k]})
-		for k in qdict.keys()
-		if request.POST[k] != '']
-	matches = IDInternal.objects.all().filter(*q_objs)
-#	matches = IDInternal.objects.all()
-#	if request.POST['filename']:
-#	    matches = matches.filter(draft__filename__contains=request.POST["filename"])
-#	if request.POST['job_owner']:
-#	    matches = matches.filter(job_owner=request.POST['job_owner'])
-#	if request.POST['group']:
-#	    matches = matches.filter(draft__group__acronym=request.POST['group_acronym'])
-#	if request.POST['cur_state']:
-#	    matches = matches.filter(cur_state=request.POST['cur_state'])
-#	if request.POST['cur_sub_state']:
-#	    matches = matches.filter(cur_sub_state=request.POST['cur_sub_state'])
-#	if request.POST['rfc_number']:
-#	    matches = matches.filter(draft__rfc_number=request.POST['rfc_number'])
-#	if request.POST['area_acronym']:
-#	    matches = matches.filter(area_acronym=request.POST['area_acronym'])
-#	if request.POST['note']:
-#	    matches = matches.filter(note__contains=request.POST['note'])
+    searching = False
+    # filename, rfc_number, group searches are seperate because
+    # they can't be represented as simple searches in the data model.
+    qdict = { 
+	      'job_owner': 'job_owner',
+	      'cur_state': 'cur_state',
+	      'cur_sub_state': 'cur_sub_state',
+	      'area_acronym': 'area_acronym',
+	      'note': 'note__icontains',
+	    }
+    q_objs = []
+    for k in qdict.keys() + ['group', 'rfc_number', 'filename']:
+	if request.REQUEST.has_key(k):
+	    searching = True
+	    if request.REQUEST[k] != '' and qdict.has_key(k):
+		q_objs.append(Q(**{qdict[k]: request.REQUEST[k]}))
+    if searching:
+        group = request.REQUEST.get('group', '')
+	if group != '':
+	    rfclist = [rfc.rfc_number for rfc in Rfc.objects.all().filter(group_acronym=group)]
+	    draftlist = [draft.id_document_tag for draft in InternetDraft.objects.all().filter(group__acronym=group)]
+	    q_objs.append(Q(draft__in=draftlist)&Q(rfc_flag=0)|Q(draft__in=rfclist)&Q(rfc_flag=1))
+        rfc_number = request.REQUEST.get('rfc_number', '')
+	if rfc_number != '':
+	    draftlist = [draft.id_document_tag for draft in InternetDraft.objects.all().filter(rfc_number=rfc_number)]
+	    q_objs.append(Q(draft__in=draftlist)&Q(rfc_flag=0)|Q(draft=rfc_number)&Q(rfc_flag=1))
+        filename = request.REQUEST.get('filename', '')
+	if filename != '':
+	    draftlist = [draft.id_document_tag for draft in InternetDraft.objects.all().filter(filename__icontains=filename)]
+	    q_objs.append(Q(draft__in=draftlist,rfc_flag=0))
+	matches = IDInternal.objects.all().filter(*q_objs).filter(primary_flag=1)
 	matches = matches.order_by('cur_state', 'cur_sub_state_id')
     else:
 	matches = None
 
-    c = RequestContext(request, {
+    return render_to_response('idtracker/idtracker_search.html', {
 	'form': form,
 	'idform': idform,
 	'matches': matches,
-    })
-    return HttpResponse(t.render(c))
+	'searching': searching,
+      }, context_instance=RequestContext(request))
 
+# proof of concept, orphaned for now
 def edit_idinternal(request, id=None):
     #draft = InternetDraft.objects.get(pk=id)
     draft = get_object_or_404(InternetDraft.objects, pk=id)
@@ -89,14 +91,11 @@ def edit_idinternal(request, id=None):
     else:
 	form = None
 
-    t = loader.get_template('idtracker/idtracker_edit.html')
-
-    c = RequestContext(request, {
+    return render_to_response('idtracker/idtracker_edit.html', {
 	'form': form,
 	'idform': idform,
 	'draft': draft,
-    })
-    return HttpResponse(t.render(c))
+      }, context_instance=RequestContext(request))
 
 def state_desc(request, state, is_substate=0):
     if int(state) == 100:
@@ -142,3 +141,15 @@ def status(request):
 def last_call(request):
     queryset = IDInternal.objects.filter(primary_flag=1).filter(cur_state__state__in=('In Last Call', 'Waiting for Writeup', 'Waiting for AD Go-Ahead')).order_by('cur_state', 'status_date', 'ballot_id')
     return object_list(request, template_name="idtracker/status_of_items.html", queryset=queryset, extra_context={'title': 'Documents in Last Call'})
+
+# Wrappers around object_detail to give permalink a handle.
+# The named-URLs feature in django 0.97 will eliminate the
+# need for these.
+def view_id(*args, **kwargs):
+    return object_detail(*args, **kwargs)
+
+def view_comment(*args, **kwargs):
+    return object_detail(*args, **kwargs)
+
+def view_ballot(*args, **kwargs):
+    return object_detail(*args, **kwargs)

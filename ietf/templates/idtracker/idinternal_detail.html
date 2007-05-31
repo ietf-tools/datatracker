@@ -12,8 +12,7 @@
                 <div class="largefont">
                   Detail Info
                 </div>
-		{% if object.ballot_set|length_is:"1" %}
-		{% else %}
+		{% if object.ballot_others %}
 		<div align="right">
 		  <a href="#action">Action List</a>
 		</div>
@@ -55,13 +54,16 @@
               </td>
 
               <td>
-		{# what's the "if" here #}
                 <div class="largefont3">
-                  <a href="../ballot/{{ object.ballot_id }}">IESG evaluation record</a>
+		  {% if object.ballot.ballot_issued %}
+                  <a href="{% url ietf.idtracker.views.view_ballot object.ballot_id %}">IESG evaluation record</a>
                   [<a href="/idtracker/evaluation_process/">What
                   they mean</a>]
                   [<a href="/idtracker/ballot_key/">How they are
                   recorded</a>]
+		  {% else %}
+		  No IESG evaluation record
+		  {% endif %}
                 </div>
               </td>
             </tr>
@@ -187,7 +189,7 @@
                 <table cellpadding="1" cellspacing="1" border="0">
                   <tr>
                     <td>
-                      <form action="/idtracker/" method="GET">
+                      <form action="{% url ietf.idtracker.views.search %}" method="GET">
 			<input type="submit" value=
 			"Main Menu">
                       </form>
@@ -201,16 +203,18 @@
       </tr>
     </table>
 
-    {% if object.ballot_set|length_is:"1" %}
-    {% else %}
+    {% if object.ballot_others %}
     <a name="action"></a>
     <table border="1" bgcolor="black">
     <tr><td><font color="white"><h3>Actions</h3></font>
+    {# this "regroup" is to get the data structure into the shape
+     # that search_result_table wants - it doesn't do anything real.  #}
+    {% regroup object.ballot_primary by docstate as grouped %}
+    {% include "idtracker/search_result_table.html" %}
     </td>
     </tr>
     </table>
     {% endif %}
-
 
     <h3>Comment Log</h3>
 
@@ -235,18 +239,22 @@
 	    <b>*{{ comment.get_ballot_display }}*</b>]</font>
 {% endif %} {{ comment.comment_text|format_textarea|truncatewords_html:"25" }}</td>
 
-	<td>
-	  <form action="comment/{{ comment.id }}" method="GET">
+        <!-- this form element technically belongs inside the <td>
+             but that actually changes the visible spacing in most
+             browsers, so we let layout concerns make us write
+             invalid HTML. -->
+	<form action="comment/{{ comment.id }}" method="GET">
+	  <td>
 	    <input type="submit" value="View Detail">
-	  </form>
-	</td>
+	  </td>
+	</form>
       </tr>
 {% endfor %} 
     </table>
     <br>
      
 
-    <form action="/idtracker/" method="GET">
+    <form action="{% url ietf.idtracker.views.search %}" method="GET">
       <input type="submit" value="Main Menu">
       <input type="button" name="back_button" value="BACK"
         onclick="history.go(-1);return true">
