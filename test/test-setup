@@ -1,0 +1,6 @@
+#!/bin/bash
+#
+# put in place a suitable settings_local.py for our application to find
+
+cp test/settings_local_test.py ietf/settings_local.py
+
