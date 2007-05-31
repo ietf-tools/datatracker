@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# This script expects to be started by a Buildbot slave with PWD set to the build 
+# directory.  Assuming we check out trunk or branch-XXX with the command
+#	'svn co URL/BRANCH/'
+# then this script will at $PWD/test/patch-django and we will place our patched
+# django in $PWD/test/lib/django
+#
+
+build=$PWD
+django=$(python -c "import django; print django.__path__[0]")
+
+rsync -Cav $django $build/test/lib/
+cd $build/test/lib/
+patch -p 2 < $build/test/r5105.patch
+
+exit 0
