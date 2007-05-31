@@ -8,10 +8,8 @@
 #
 
 build=$PWD
-django=$(python -c "import django; print django.__path__[0]")
+django=$(python -c "import django; import os.path; print os.path.realpath(django.__path__[0])")
 
 rsync -Cav $django $build/test/lib/
-cd $build/test/lib/
-patch -p 2 < $build/test/r5105.patch
-
-exit 0
+cd $build/test/lib
+patch -p 3 < $build/test/r5106.patch

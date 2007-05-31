@@ -9,13 +9,3 @@ Index: /django/trunk/django/core/management.py
 +                rel_field = rel_field.rel.get_related_field()
              data_type = get_rel_data_type(rel_field)
          else:
-Index: /django/trunk/AUTHORS
-===================================================================
---- /django/trunk/AUTHORS (revision 5102)
-+++ /django/trunk/AUTHORS (revision 5106)
-@@ -165,4 +165,5 @@
-     Robert Myers <myer0052@gmail.com>
-     Nebojša Dorđević
-+    Gopal Narayanan <gopastro@gmail.com>
-     Fraser Nevett <mail@nevett.org>
-     Sam Newman <http://www.magpiebrain.com/>
