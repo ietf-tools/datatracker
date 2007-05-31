@@ -12,7 +12,7 @@
                 <div class="largefont">
                   Detail Info
                 </div>
-		{% if object.ballot_others %}
+		{% if object.ballot_others.count %}
 		<div align="right">
 		  <a href="#action">Action List</a>
 		</div>
@@ -203,12 +203,14 @@
       </tr>
     </table>
 
-    {% if object.ballot_others %}
+    {% if object.ballot_others.count %}
     <a name="action"></a>
     <table border="1" bgcolor="black">
     <tr><td><font color="white"><h3>Actions</h3></font>
-    {# this "regroup" is to get the data structure into the shape
-     # that search_result_table wants - it doesn't do anything real.  #}
+    {% comment %}
+    # this "regroup" is to get the data structure into the shape
+    # that search_result_table wants - it doesn't do anything real.
+    {% endcomment %}
     {% regroup object.ballot_primary by docstate as grouped %}
     {% include "idtracker/search_result_table.html" %}
     </td>
