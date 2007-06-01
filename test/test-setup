@@ -1,6 +1,55 @@
 #!/bin/bash
 #
-# put in place a suitable settings_local.py for our application to find
+# This script expects to be started by a Buildbot slave with PWD set to the build 
+# directory.
 
-cp test/settings_local_test.py ietf/settings_local.py
+# Script Setup
+# ============
 
+program=${0##*/}
+progdir=${0%/*}
+build=$PWD
+
+. $progdir/shell-utils
+
+# Patch Django
+# ============
+#
+# Assuming we check out trunk or branch-XXX with the command
+#	'svn co URL/BRANCH/'
+# then this script will be $PWD/test/patch-django and we will place our patched
+# django in $PWD/test/lib/django
+#
+
+say "Setting up a local Django for the test suite"
+cd $build
+
+django=$(py_module_path "django")
+rsync -av $django $build/test/lib/
+cd $build/test/lib
+for patch in $build/test/*.patch; do
+    patch -p 3 -t -N < $patch
+done
+
+# Database setup
+# ==============
+
+#say "Setting up a database for the test suite"
+
+# Project Setup
+# =============
+# put in place a suitable settings_local.py for our application to find.  This should
+# be based on the local settings_local.py, but should add test-specific settings, and
+# should set things up so that we use the patched Django, not the system's default
+# Django.
+
+say "Setting up the Django settings for the test suite"
+cd $build
+
+settings_local=$(py_module_file "settings_local")
+[ "$settings_local" ] || err
+
+cat $settings_local test/settings_local_test.py - > ietf/settings_local.py
+
+
+exit $warnings

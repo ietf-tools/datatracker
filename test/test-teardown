@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# This script expects to be started by a Buildbot slave with PWD set to the build 
+# directory.
+
+# Script Setup
+# ============
+
+program=${0##*/}
+progdir=${0%/*}
+build=$PWD
+
+. $progdir/shell-utils
+
+# Database Cleanup
+# Make sure the test database has been removed
+python ietf/manage.py dbshell <<-EOT
+	drop database test_ietf;
+	exit;
+	EOT
+
+exit $warnings
