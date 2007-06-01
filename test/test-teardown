@@ -14,9 +14,9 @@ build=$PWD
 
 # Database Cleanup
 # Make sure the test database has been removed
-python ietf/manage.py dbshell <<-EOT
-	drop database test_ietf;
-	exit;
-	EOT
+if echo "show databases;" | python ietf/manage.py dbshell | grep test_ietf; then
+    echo "drop database test_ietf;" | python ietf/manage.py dbshell
+    echo "test database removed."
+fi
 
 exit $warnings

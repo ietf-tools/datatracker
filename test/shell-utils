@@ -43,5 +43,5 @@ function py_module_file() {
 }
 
 
-trap 'echo "$program($LINENO): Command failed with error code $? ($0 $*)"; exit 1' ERR
+#trap 'echo "$program($LINENO): Command failed with error code $? ($0 $*)"; exit 1' ERR
 

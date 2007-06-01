@@ -49,7 +49,7 @@ cd $build
 settings_local=$(py_module_file "settings_local")
 [ "$settings_local" ] || err
 
-cat $settings_local test/settings_local_test.py - > ietf/settings_local.py
+cat $settings_local test/settings_local_test.py > ietf/settings_local.py
 
 
 exit $warnings
