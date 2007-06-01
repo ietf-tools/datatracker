@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.db.models import Q
 from django.views.generic.list_detail import object_detail, object_list
 from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState, Rfc
-from ietf.idtracker.forms import EmailFeedback
+from ietf.idtracker.forms import IDSearch, EmailFeedback
 from ietf.utils.mail import send_mail_text
 
 # Override default form field mappings
@@ -22,43 +22,44 @@ def myfields(f):
     return f.formfield()
 
 def search(request):
-    # todo: check if these field names work for backwards
-    #  compatability
-    InternetDraftForm = forms.models.form_for_model(InternetDraft, formfield_callback=myfields)
-    idform = InternetDraftForm(request.REQUEST)
-    InternalForm = forms.models.form_for_model(IDInternal, formfield_callback=myfields)
-    form = InternalForm(request.REQUEST)
+    # for compatability with old tracker form, which has
+    #  "all substates" = 6.
+    args = request.REQUEST
+    if args.get('sub_state_id', '') == '6':
+	args['sub_state_id'] = '0'
+    form = IDSearch(args)
     # if there's a post, do the search and supply results to the template
     searching = False
     # filename, rfc_number, group searches are seperate because
     # they can't be represented as simple searches in the data model.
     qdict = { 
-	      'job_owner': 'job_owner',
-	      'cur_state': 'cur_state',
-	      'cur_sub_state': 'cur_sub_state',
-	      'area_acronym': 'area_acronym',
-	      'note': 'note__icontains',
+	      'search_job_owner': 'job_owner',
+	      'search_cur_state': 'cur_state',
+	      'sub_state_id': 'cur_sub_state',
+	      'search_area_acronym': 'area_acronym',
 	    }
     q_objs = []
-    for k in qdict.keys() + ['group', 'rfc_number', 'filename']:
-	if request.REQUEST.has_key(k):
+    for k in qdict.keys() + ['search_group_acronym', 'search_rfcnumber', 'search_filename', 'search_status_id']:
+	if args.has_key(k):
 	    searching = True
-	    if request.REQUEST[k] != '' and qdict.has_key(k):
-		q_objs.append(Q(**{qdict[k]: request.REQUEST[k]}))
+	    if args[k] != '' and qdict.has_key(k):
+		q_objs.append(Q(**{qdict[k]: args[k]}))
     if searching:
-        group = request.REQUEST.get('group', '')
+        group = args.get('search_group_acronym', '')
 	if group != '':
 	    rfclist = [rfc.rfc_number for rfc in Rfc.objects.all().filter(group_acronym=group)]
 	    draftlist = [draft.id_document_tag for draft in InternetDraft.objects.all().filter(group__acronym=group)]
 	    q_objs.append(Q(draft__in=draftlist)&Q(rfc_flag=0)|Q(draft__in=rfclist)&Q(rfc_flag=1))
-        rfc_number = request.REQUEST.get('rfc_number', '')
+        rfc_number = args.get('search_rfcnumber', '')
 	if rfc_number != '':
 	    draftlist = [draft.id_document_tag for draft in InternetDraft.objects.all().filter(rfc_number=rfc_number)]
 	    q_objs.append(Q(draft__in=draftlist)&Q(rfc_flag=0)|Q(draft=rfc_number)&Q(rfc_flag=1))
-        filename = request.REQUEST.get('filename', '')
+        filename = args.get('search_filename', '')
 	if filename != '':
-	    draftlist = [draft.id_document_tag for draft in InternetDraft.objects.all().filter(filename__icontains=filename)]
-	    q_objs.append(Q(draft__in=draftlist,rfc_flag=0))
+	    q_objs.append(Q(draft__filename__icontains=filename,rfc_flag=0))
+	status = args.get('search_status_id', '')
+	if status != '':
+	    q_objs.append(Q(draft__status=status,rfc_flag=0))
 	matches = IDInternal.objects.all().filter(*q_objs).filter(primary_flag=1)
 	matches = matches.order_by('cur_state', 'cur_sub_state_id')
     else:
@@ -66,7 +67,6 @@ def search(request):
 
     return render_to_response('idtracker/idtracker_search.html', {
 	'form': form,
-	'idform': idform,
 	'matches': matches,
 	'searching': searching,
       }, context_instance=RequestContext(request))

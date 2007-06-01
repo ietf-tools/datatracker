@@ -66,6 +66,7 @@ class IDSubState(models.Model):
 	pass
 
 class Area(models.Model):
+    ACTIVE=1
     area_acronym = models.ForeignKey(Acronym, primary_key=True, unique=True)
     start_date = models.DateField(auto_now_add=True)
     concluded_date = models.DateField(null=True, blank=True)

@@ -4,37 +4,58 @@
 
 {% block idcontent %}
 
-<form method="post">
+   {# does this belong here or is it better in the head? #}
+   <script language="javascript">
+   function clear_fields() {
+      document.search_form.search_job_owner.selectedIndex=0;
+      document.search_form.search_status_id.selectedIndex=0;
+      document.search_form.search_area_acronym.selectedIndex=0;
+      document.search_form.search_cur_state.selectedIndex=0;
+      document.search_form.sub_state_id.selectedIndex=0;
+      document.search_form.search_group_acronym.value = "";
+      document.search_form.search_filename.value = "";
+      document.search_form.search_rfcnumber.value = "";
+      return true;
+   }
+   </script>
+
+<form action="." method="GET" name="search_form">
 
 <center>
+{% if searching %}
+{% else %}
+   <img src="https://www.ietf.org/images/ietflogo2e.gif" border=0><br>
+   <h1>IETF I-D TRACKER</h1>
+{% endif %}
+
 <table cellpadding="1" cellspacing="0" border="0">
 <tr bgcolor="silver">
 <th colspan="2">I-D - Search Criteria</th>
 </tr>
 
 <tr>
-<td align="right"><label for="id_job_owner"><b>Responsible
+<td align="right"><label for="id_search_job_owner"><b>Responsible
 AD:</b></label></td>
-<td>{{ form.job_owner }}&nbsp;&nbsp;&nbsp;<label for="id_group">
-<b>WG Acronym:</b></label>{{ idform.group }}&nbsp;&nbsp;&nbsp;<label
-for="id_status"><b>Status:</b></label>
-{{ idform.status }}</td>
+<td>{{ form.search_job_owner }}&nbsp;&nbsp;&nbsp;<label for="id_search_group_acronym">
+<b>WG Acronym:</b></label>{{ form.search_group_acronym }}&nbsp;&nbsp;&nbsp;<label
+for="id_search_status_id"><b>Status:</b></label>
+{{ form.search_status_id }}</td>
 </tr>
 
 <tr>
-<td align="right"><label for="id_cur_state"><b>Document
+<td align="right"><label for="id_search_cur_state"><b>Document
 State:</b></label></td>
-<td>{{ form.cur_state }} <label for="id_cur_sub_state"><b>sub
-state</b>: {{ form.cur_sub_state }}</label> </td>
+<td>{{ form.search_cur_state }} <label for="id_sub_state_id"><b>sub
+state</b>: {{ form.sub_state_id }}</label> </td>
 </tr>
 
 <tr>
 <td align="right"><label for=
-"id_filename"><b>Filename:</b></label></td>
-<td>{{ idform.filename }} &nbsp;&nbsp;&nbsp; <label for=
-"id_rfc_number"><b>RFC Number:</b></label> {{ idform.rfc_number }}
-&nbsp;&nbsp;&nbsp; <label for="id_area_acronym"><b>Area:</b></label>
-{{ form.area_acronym }}</td>
+"id_search_filename"><b>Filename:</b></label></td>
+<td>{{ form.search_filename }} &nbsp;&nbsp;&nbsp; <label for=
+"id_search_rfcnumber"><b>RFC Number:</b></label> {{ form.search_rfcnumber }}
+&nbsp;&nbsp;&nbsp; <label for="id_search_area_acronym"><b>Area:</b></label>
+{{ form.search_area_acronym }}</td>
 </tr>
 
 <TR BGCOLOR="silver">
