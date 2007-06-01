@@ -72,7 +72,7 @@ def send_mail_subj(request, to, frm, stemplate, template, context, cc=None, extr
     Send an email message, exactly as send_mail(), but the
     subject field is a template.
     '''
-    subject = render_to_string(stemplate, context, context_instance=RequestContext(request))
+    subject = render_to_string(stemplate, context, context_instance=RequestContext(request)).replace("\n"," ").strip()
     return send_mail(request, to, frm, subject, template, context, cc, extra)
 
 def send_mail(request, to, frm, subject, template, context, cc=None, extra=None):
