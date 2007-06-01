@@ -7,6 +7,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from ietf.utils import log
+import sys
 
 def add_headers(msg):
     if not(msg.has_key('Message-ID')):
@@ -27,15 +28,22 @@ def send_smtp(msg):
     add_headers(msg)
     (fname, frm) = parseaddr(msg.get('From'))
     to = [addr for name, addr in getaddresses(msg.get_all('To') + msg.get_all('Cc', []))]
-    # todo: exception handling
-    server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
-    if settings.DEBUG:
-	server.set_debuglevel(1)
-    if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
-	server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
-    server.sendmail(frm, to, msg.as_string())
+    try:
+	server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
+	if settings.DEBUG:
+	    server.set_debuglevel(1)
+	if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
+	    server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+	server.sendmail(frm, to, msg.as_string())
+	# note: should pay attention to the return code, as it may
+	# indicate that someone didn't get the email.
+    except smtplib.SMTPException:
+        server.quit()
+	# need to improve log message
+	log("got exception '%s' (%s) trying to send email from '%s' to %s subject '%s'" % (sys.exc_info()[0], sys.exc_info()[1], frm, to, msg.get('Subject', '[no subject]')))
+	raise
     server.quit()
-    log("sent email from '%s' to '%s' subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
+    log("sent email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
 
 def copy_email(msg, to):
     '''
