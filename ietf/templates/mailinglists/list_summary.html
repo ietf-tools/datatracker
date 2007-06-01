@@ -1,8 +1,10 @@
-<tr><td colspan="2">Request to {{ list.get_mail_type_display }}</td></tr>
+<tr><td colspan="2">Request to {% filter escape %}{% include "mailinglists/list_type_message2.txt" %}{% endfilter %}</td></tr>
 <tr><td> Requestor: </td><td>{{ list.requestor|escape }}</td></tr>
 <tr><td> Requestor's email address: </td><td>{{ list.requestor_email|urlize }}</td></tr>
 <tr><td> Email list name: </td><td>{{ list.mlist_name }}@{{ list.domain_name }}</td></tr>
-{# probably here is where add/move vs. delete comes in? #}
+{% ifequal req "delete" %}
+<tr><td> Reason for closing list: </td><td>{{ list.reason_to_delete|escape|linebreaksbr }}</td></tr>
+{% else %}
 <tr><td> Short description of the email list: </td><td>{{ list.short_desc|escape }}</td></tr>
 <tr><td> Long description of the email list: </td><td>{{ list.long_desc|escape }}</td></tr>
 <tr><td> Administrator(s): </td><td><pre>{{ list.admins|escape }}</pre></td></tr>
@@ -14,3 +16,4 @@
 <tr><td> Administrator approval required for posts: </td><td>{{ list.post_admin|yesno:"YES,NO" }}</td></tr>
 <tr><td> Private Archive: </td><td>{{ list.archive_private|yesno:"YES,NO" }}</td></tr>
 <tr><td> Specific information about how to access and move the exiting archive from a remote location (optional): </td><td>{{ list.archive_remote }}</td></tr>
+{% endifequal %}

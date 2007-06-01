@@ -213,6 +213,10 @@ def list_req_wizard(request):
 
 def list_approve(request, object_id):
     list = get_object_or_404(MailingList, mailing_list_id=object_id)
+    if list.mail_type == 5 or list.mail_type == 6:
+	req = 'delete'
+    else:
+        req = 'add'
     action = 'toapprove'
     email_to = None
     if request.method == 'POST':
@@ -222,7 +226,7 @@ def list_approve(request, object_id):
 	    list.add_comment = request.POST['add_comment']
 	    list.save()
 	    if list.mail_type == 6:	# deletion of non-wg list
-		for nonwg in NonWgMailingList.objects.filter(Q(list_url__iendswith=list.list_name) | Q(list_url__iendswith='%s@%s' % (list.list_name, list.list_domain))):
+		for nonwg in NonWgMailingList.objects.filter(Q(list_url__iendswith=list.mlist_name) | Q(list_url__iendswith='%s@%s' % (list.mlist_name, list.domain_name))):
 		    nonwg.status = -1
 		    nonwg.save()
 	    email_to = 'ietf-action@ietf.org'
@@ -237,8 +241,8 @@ def list_approve(request, object_id):
 	    email_cc = None
 	    action = 'denied'
 	if email_to is not None:
-	    send_mail_subj(request, email_to, ('Mailing List Request Tool', 'ietf-secretariat-reply@ietf.org'), 'mailinglists/list_subject.txt', 'mailinglists/list_email.txt', {'list': list, 'action': action}, email_cc)
+	    send_mail_subj(request, email_to, ('Mailing List Request Tool', 'ietf-secretariat-reply@ietf.org'), 'mailinglists/list_subject.txt', 'mailinglists/list_email.txt', {'list': list, 'action': action, 'req': req}, email_cc)
 	# fall through
     form = ApprovalComment()
-    return render_to_response('mailinglists/list_%s.html' % action, {'list': list, 'form': form},
+    return render_to_response('mailinglists/list_%s.html' % action, {'list': list, 'form': form, 'req': req},
 	context_instance=RequestContext(request) )

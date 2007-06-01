@@ -1,9 +1,10 @@
-{% spaceless %}
-{# wish to not repeat myself here #}
-{% ifequal list.mail_type 5 %}
-Reason for closing list: {{ list.reason_to_delete }}
-{% else %}
-{% ifequal list.mail_type 6 %}
+Requestor: {{ list.requestor }}
+
+Requestor's email address: {{ list.requestor_email }}
+
+Email list name: {{ list.mlist_name }}@{{ list.domain_name }}
+
+{% ifequal req "delete" %}
 Reason for closing list: {{ list.reason_to_delete }}
 {% else %}
 Short description of the email list: {{ list.short_desc }}
@@ -33,5 +34,3 @@ Specific information about how to access and move the existing archive from a re
 {{ list.archive_remote }}
 
 {% endifequal %}
-{% endifequal %}
-{% endspaceless %}
