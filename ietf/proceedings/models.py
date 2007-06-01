@@ -164,14 +164,16 @@ class SessionName(models.Model):
         db_table = 'session_names'
     class Admin:
 	pass
+
 class IESGHistory(models.Model):
-    meeting = models.ForeignKey(Meeting, db_column='meeting_num', primary_key=True, core=True)
-    area = models.ForeignKey(Area, db_column='area_acronym_id', primary_key=True,  core=True)
+    meeting = models.ForeignKey(Meeting, db_column='meeting_num', core=True)
+    area = models.ForeignKey(Area, db_column='area_acronym_id', core=True)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, core=True)
     def __str__(self):
         return "%s (%s)" % (self.person,self.area)
     class Meta:
         db_table = 'iesg_history'
+	unique_together = (('meeting', 'area'), )
     class Admin:
         pass
     
