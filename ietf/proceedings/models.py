@@ -173,7 +173,6 @@ class IESGHistory(models.Model):
         return "%s (%s)" % (self.person,self.area)
     class Meta:
         db_table = 'iesg_history'
-	unique_together = (('meeting', 'area'), )
     class Admin:
         pass
     
