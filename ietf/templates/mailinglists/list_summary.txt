@@ -2,16 +2,19 @@ Requestor: {{ list.requestor }}
 
 Requestor's email address: {{ list.requestor_email }}
 
-Email list name: {{ list.mlist_name }}@{{ list.domain_name }}
+Email list name: {{ list.mlist_name }}@{{ list.domain }}
 
 {% ifequal req "delete" %}
 Reason for closing list: {{ list.reason_to_delete }}
 {% else %}
-Short description of the email list: {{ list.short_desc }}
+Short description of the email list:
+{{ list.short_desc }}
 
-Long description of the email list: {{ list.long_desc }}
+Long description of the email list:
+{{ list.long_desc }}
 
-Administrator(s): {{ list.admins }}{# formatting? #}
+Administrator(s):
+{{ list.admins }}
 
 Email address(es) of the initial subscriber(s) (optional):
 {{ list.initial }}
@@ -24,7 +27,7 @@ Welcome message for new subscriber(s) (optional):
 
 Required steps for subscription: {{ list.get_subscription_display }}
 
-Messages to this list can be posted by: {{ list.post_who|yesno:"List members only,Open" }}
+Messages to this list can be posted by: {{ list.get_post_who_display }}
 
 Administrator approval required for posts: {{ list.post_admin|yesno:"YES,NO" }}
 

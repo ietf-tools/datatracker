@@ -45,6 +45,10 @@ class MailingList(models.Model):
 	(2, 'Non-WG Mailing List'),
 	(3, 'Close Non-WG Mailing List'),
     )
+    POSTWHO_CHOICES = (
+        (1, 'List members only'),
+	(2, 'Open'),
+    )
     mailing_list_id = models.CharField('Unique ID', primary_key=True, maxlength=25, editable=False)
     request_date = models.DateField(default=datetime.now, editable=False)
     requestor = models.CharField("Requestor's full name", maxlength=250)
@@ -58,7 +62,7 @@ class MailingList(models.Model):
     welcome_message = models.TextField('Provide a welcome message for initial subscriber(s)(optional)', blank=True)
     welcome_new = models.TextField('Provide a welcome message for new subscriber(s)(optional)', blank=True)
     subscription = models.IntegerField('What steps are required for subscription?', choices=SUBSCRIPTION_CHOICES)
-    post_who = models.BooleanField('Only members can post')
+    post_who = models.IntegerField('Messages to this list can be posted by', choices=POSTWHO_CHOICES)
     post_admin = models.BooleanField('Do postings need to be approved by an administrator?')
     archive_private = models.BooleanField('Are the archives private?')
     archive_remote = models.TextField('Provide specific information about how to access and move the existing archive (optional)', blank=True)
@@ -82,6 +86,10 @@ class MailingList(models.Model):
 		except MailingList.DoesNotExist:
 		    generate = False
 	super(MailingList, self).save(*args, **kwargs)
+    def domain(self):
+        if self.domain_name:
+	    return self.domain_name
+	return 'ietf.org'
     class Meta:
         db_table = 'mailing_list'
     class Admin:

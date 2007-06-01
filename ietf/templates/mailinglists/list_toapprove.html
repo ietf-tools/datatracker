@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Confirmation of Request to {{ list.get_mail_type_display }}{% endblock %}
+{% block title %}Confirmation of request to {% filter escape %}{% include "mailinglists/list_type_message2.txt" %}{% endfilter %}{% endblock %}
 
 {% block css %}
 table {
