@@ -19,8 +19,8 @@ def wgdocs(request,cat):
       queryset_list = InternetDraft.objects.filter(b_approve_date__gte = date_threshold, intended_status__in=[1,2,6,7],idinternal__via_rfc_editor=0).order_by("-b_approve_date")
       queryset_list_doc = InternetDraft.objects.filter(b_approve_date__gte = date_threshold, intended_status__in=[3,5],idinternal__via_rfc_editor=0).order_by("-b_approve_date")
    elif cat == 'previous':
-      queryset_list = InternetDraft.objects.filter(b_approve_date__lt = date_threshold, b_approve_date__gte = '1995-1-1', intended_status__in=[1,2,6,7]).order_by("-b_approve_date")
-      queryset_list_doc = InternetDraft.objects.filter(b_approve_date__lt = date_threshold, b_approve_date__gte = '1995-1-1', intended_status__in=[3,5]).order_by("-b_approve_date")
+      queryset_list = InternetDraft.objects.filter(b_approve_date__lt = date_threshold, b_approve_date__gte = '1998-10-15', intended_status__in=[1,2,6,7]).order_by("-b_approve_date")
+      queryset_list_doc = InternetDraft.objects.filter(b_approve_date__lt = date_threshold, b_approve_date__gte = '1998-10-15', intended_status__in=[3,5]).order_by("-b_approve_date")
    else:
      raise Http404
    return object_list(request, queryset=queryset_list, template_name='iesg/ietf_doc.html', allow_empty=True, extra_context={'object_list_doc':queryset_list_doc, 'is_recent':is_recent })

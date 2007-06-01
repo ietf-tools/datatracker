@@ -31,7 +31,7 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 <b>Date Sent: {{ date.grouper }} </b>
 <ul>
 {% for item in date.list %}
-<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.id_document_name }}</a>
+<li>{% if item.idinternal.ballot_id %}<a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{% else %}<a href="http://www.ietf.org/IESG/Announcements/{{ item.filename }}.ann">{% endif %}{{ item.id_document_name }}</a>
 {% endfor %}
 </ul>
 {% endfor %}

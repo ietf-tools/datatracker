@@ -37,12 +37,29 @@ class ResolveAcronym(object):
     def area(self):
         if self.irtf:
             area = "irtf"
+        elif self.group_acronym_id < 0  and self.group_acronym_id > -3:
+            area = "1plenary"
+        elif self.group_acronym_id < -2:
+            area = "ztrain"
         else:
             try:
                 area = AreaGroup.objects.get(group=self.group_acronym_id).area.area_acronym.acronym
             except AreaGroup.DoesNotExist:
                 area = ""
         return area
+    def area_name(self):
+        if self.irtf:
+            area_name = "IRTF"
+        elif self.group_acronym_id < 0  and self.group_acronym_id > -3:
+            area_name = "Plenary Sessions"
+        elif self.group_acronym_id < -2:
+            area_name = "Training"
+        else:
+            try:
+                area_name = AreaGroup.objects.get(group=self.group_acronym_id).area.area_acronym.name
+            except AreaGroup.DoesNotExist:
+                area_name = ""
+        return area_name
     def isWG(self):
         if self.irtf:
               return False
@@ -268,17 +285,37 @@ class WgMeetingSession(models.Model, ResolveAcronym):
     combined_time_id2 = models.ForeignKey(MeetingTime, db_column='combined_time_id2', null=True, blank=True, related_name='now5')
     def __str__(self):
 	return "%s at %s" % (self.acronym(), self.meeting)
-    def agenda_file(self):
+    def agenda_file(self,interimvar=0):
         irtfvar = 0
         if self.irtf:
             irtfvar = self.irtf
         try:
-            filename = WgAgenda.objects.get(meeting=self.meeting, group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=0).filename
+            filename = WgAgenda.objects.get(meeting=self.meeting, group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=interimvar).filename
             dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
             retvar = "%s/agenda/%s" % (dir,filename) 
         except WgAgenda.DoesNotExist:
             retvar = ""
         return retvar
+    def minute_file(self,interimvar=0):
+        irtfvar = 0
+        if self.irtf:
+            irtfvar = self.irtf
+        try:
+            filename = Minute.objects.get(meeting=self.meeting, group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=interimvar).filename
+            dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
+            retvar = "%s/minutes/%s" % (dir,filename)
+        except WgAgenda.DoesNotExist:
+            retvar = ""
+        return retvar
+    def slides(self,interimvar=0):
+        """
+        Get all slides of this session.
+        """
+        irtfvar = 0
+        if self.irtf:
+            irtfvar = self.irtf
+        slides = Slide.objects.filter(meeting=self.meeting,group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=interimvar).order_by("order_num")
+        return slides
     class Meta:
         db_table = 'wg_meeting_sessions'
     class Admin:
@@ -299,7 +336,7 @@ class WgAgenda(models.Model, ResolveAcronym):
 
 class Minute(models.Model, ResolveAcronym):
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
-    group_acronym = models.ForeignKey(Acronym, raw_id_admin=True)
+    group_acronym_id = models.IntegerField()
     filename = models.CharField(blank=True, maxlength=255)
     irtf = models.BooleanField()
     interim = models.BooleanField()
@@ -355,6 +392,22 @@ class Slide(models.Model, ResolveAcronym):
     in_q = models.IntegerField(null=True, blank=True)
     def __str__(self):
 	return "IETF%d: %s slides (%s)" % (self.meeting_id, self.acronym(), self.slide_name)
+    def file_loc(self):
+        dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
+        if self.slide_type_id==1:
+            return "%s/slides/%s-%s/sld1.htm" % (dir,self.acronym(),self.order_num)
+        else:
+            if self.slide_type_id == 2:
+                ext = ".pdf"
+            elif self.slide_type_id == 3:
+                ext = ".txt"
+            elif self.slide_type_id == 4:
+                ext = ".ppt"
+            elif self.slide_type_id == 5:
+                ext = ".doc"
+            else:
+                ext = ""
+            return "%s/slides/%s-%s%s" % (dir,self.acronym(),self.order_num,ext)
     class Meta:
         db_table = 'slides'
     class Admin:

@@ -7,6 +7,7 @@ import ietf.utils
 from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, SessionName, NonSession, MeetingVenue, IESGHistory
 from django.views.generic.list_detail import object_list
 from django.http import Http404
+from  django.db.models import Q
 
 def default(request):
     """Default page, with links to sub-pages"""
@@ -30,7 +31,9 @@ def meeting_list(request, template):
 # Details views
 
 def show_html_materials(request, meeting_num=None):
-	return render("meeting/list.html",{})
+    # List of WG sessions and Plenary sessions
+    queryset_list = WgMeetingSession.objects.filter(Q(meeting=meeting_num, group_acronym_id__gte = -2, status_id=4), Q(irtf__isnull=True) | Q(irtf=0))
+    return object_list(request,queryset=queryset_list, template_name="meeting/list.html",allow_empty=True, extra_context={'meeting_num':meeting_num})
 
 def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     try:
