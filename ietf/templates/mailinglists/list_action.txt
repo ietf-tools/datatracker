@@ -1,0 +1,25 @@
+{% ifequal list.mail_type 1 %}
+create this new
+{% else %}
+{% ifequal list.mail_type 2 %}
+move the
+{% else %}
+{% ifequal list.mail_type 3 %}
+move the
+{% else %}
+{% ifequal list.mail_type 4 %}
+create this new
+{% else %}
+{% ifequal list.mail_type 5 %}
+close the
+{% else %}
+{% ifequal list.mail_type 6 %}
+close the
+{% else %}
+** programming error **
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}

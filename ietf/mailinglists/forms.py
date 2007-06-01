@@ -194,3 +194,5 @@ class MultiEmailField(forms.CharField):
 	    raise forms.ValidationError, "The following email addresses seem to be invalid: %s" % ", ".join(["'" + addr + "'" for addr in bad])
 	return value
 
+class ApprovalComment(forms.Form):
+    add_comment = forms.CharField(label="Approver's comments to the requestor (will be emailed to the requestor)", widget=forms.Textarea(attrs={'cols':41, 'rows': 4}))

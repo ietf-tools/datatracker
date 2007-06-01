@@ -1,0 +1,37 @@
+{% spaceless %}
+{# wish to not repeat myself here #}
+{% ifequal list.mail_type 5 %}
+Reason for closing list: {{ list.reason_to_delete }}
+{% else %}
+{% ifequal list.mail_type 6 %}
+Reason for closing list: {{ list.reason_to_delete }}
+{% else %}
+Short description of the email list: {{ list.short_desc }}
+
+Long description of the email list: {{ list.long_desc }}
+
+Administrator(s): {{ list.admins }}{# formatting? #}
+
+Email address(es) of the initial subscriber(s) (optional):
+{{ list.initial }}
+
+Welcome message for initial subscriber(s) (optional):
+{{ list.welcome_message }}
+
+Welcome message for new subscriber(s) (optional):
+{{ list.welcome_new }}
+
+Required steps for subscription: {{ list.get_subscription_display }}
+
+Messages to this list can be posted by: {{ list.post_who|yesno:"List members only,Open" }}
+
+Administrator approval required for posts: {{ list.post_admin|yesno:"YES,NO" }}
+
+Private Archive: {{ list.archive_private|yesno:"YES,NO" }}
+
+Specific information about how to access and move the existing archive from a remote location (optional):
+{{ list.archive_remote }}
+
+{% endifequal %}
+{% endifequal %}
+{% endspaceless %}

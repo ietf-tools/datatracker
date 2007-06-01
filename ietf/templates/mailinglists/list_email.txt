@@ -1,0 +1,37 @@
+Dear list requestor,
+
+{% filter wordwrap:"72" %}
+Your request to {% spaceless %}{% include "mailinglists/list_type_message2.txt" %}{% endspaceless %}
+has been {{ action }} by {{ list.auth_person }}, {{ list.auth_person.email }}.
+{% endfilter %}
+
+{% spaceless %}
+{# wish to not repeat myself here #}
+{% ifequal list.mail_type 5 %}
+The mailing list will be closed within two business days.
+{% else %}
+{% ifequal list.mail_type 6 %}
+The mailing list will be closed within two business days.
+{% else %}
+Your list will be created and the archives will be tested.
+You will receive a welcome E-mail containing your administrator's
+password within two business days.
+For security reasons we suggest that you change this password.
+Please remember to forward this changed password to any other list
+admins. 
+{% endifequal %}
+{% endifequal %}
+{% endspaceless %}
+
+Requestor: {{ list.requestor }}
+
+Requestor's email address: {{ list.requestor_email }}
+
+Email list name: {{ list.mlist_name }}@{{ list.domain_name }}
+
+{% include "mailinglists/list_summary.txt" %}
+
+{% if list.add_comments %}
+Comments by {{ list.auth_person }}, {{ list.auth_person.email }}:
+{{ list.add_comments }}
+{% endif %}

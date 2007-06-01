@@ -23,17 +23,17 @@ class ImportedMailingList(models.Model):
 
 class MailingList(models.Model):
     SUBSCRIPTION_CHOICES = (
-	('1', 'Confirm'),
-	('2', 'Approval'),
-	('3', 'Confirm+Approval'),
+	(1, 'Confirm'),
+	(2, 'Approval'),
+	(3, 'Confirm+Approval'),
     )
     MAILTYPE_CHOICES = (
-	('1', 'Create new WG email list at ietf.org'),
-	('2', 'Move existing WG email list to ietf.org'),
-	('3', 'Move existing non-WG email list to selected domain'),
-	('4', 'Create new non-WG email list at selected domain'),
-	('5', 'Close existing WG email list at ietf.org'),
-	('6', 'Close existing non-WG email list at selected domain'),
+	(1, 'Create new WG email list at ietf.org'),
+	(2, 'Move existing WG email list to ietf.org'),
+	(3, 'Move existing non-WG email list to selected domain'),
+	(4, 'Create new non-WG email list at selected domain'),
+	(5, 'Close existing WG email list at ietf.org'),
+	(6, 'Close existing non-WG email list at selected domain'),
     )
     # I don't understand the reasoning behind 2 vs 3.
     # this is set in the javascript and not editable,
@@ -41,9 +41,9 @@ class MailingList(models.Model):
     # The existing database doesn't help much since many
     # mail_cat values are NULL.
     MAILCAT_CHOICES = (
-	('1', 'WG Mailing List'),
-	('2', 'Non-WG Mailing List'),
-	('3', 'Close Non-WG Mailing List'),
+	(1, 'WG Mailing List'),
+	(2, 'Non-WG Mailing List'),
+	(3, 'Close Non-WG Mailing List'),
     )
     mailing_list_id = models.CharField('Unique ID', primary_key=True, maxlength=25, editable=False)
     request_date = models.DateField(default=datetime.now, editable=False)

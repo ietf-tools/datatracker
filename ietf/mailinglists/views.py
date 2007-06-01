@@ -1,11 +1,13 @@
-from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor
+from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor, ApprovalComment
 from models import NonWgMailingList, MailingList
 from ietf.idtracker.models import Area, PersonOrOrgInfo
 from django import newforms as forms
-from django.shortcuts import render_to_response
+from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.db.models import Q
 from ietf.contrib import wizard, form_decorator
 from ietf.utils.mail import send_mail_subj
+from datetime import datetime
 
 def formchoice(form, field):
     if not(form.is_valid()):
@@ -152,8 +154,7 @@ list_labels = {
     'post_who': 'Who is allowed to post to this list?',
 }
 
-# can I do a multiwidget for the mailing list admins?
-# and something to display @domain after the email list name?
+# would like something to display @domain after the email list name?
 list_widgets = {
     'subscription': forms.Select(choices=MailingList.SUBSCRIPTION_CHOICES),
     'post_who': forms.Select(choices=(('1', 'List members only'), ('0', 'Open'))),
@@ -187,6 +188,7 @@ class ListReqWizard(wizard.Wizard):
 	templates.append("mailinglists/list_wizard_%s.html" % (c))
 	templates.append("mailinglists/list_wizard_step%d.html" % (self.step))
 	templates.append("mailinglists/list_wizard.html")
+	print templates
 	return templates
     # want to implement parse_params to get domain for list
     def process_step(self, request, form, step):
@@ -208,3 +210,35 @@ class ListReqWizard(wizard.Wizard):
 def list_req_wizard(request):
     wiz = ListReqWizard([ ListReqStep1 ])
     return wiz(request)
+
+def list_approve(request, object_id):
+    list = get_object_or_404(MailingList, mailing_list_id=object_id)
+    action = 'toapprove'
+    email_to = None
+    if request.method == 'POST':
+	if request.POST.has_key('approved'):
+	    list.approved=1
+	    list.approved_date = datetime.now()
+	    list.add_comment = request.POST['add_comment']
+	    list.save()
+	    if list.mail_type == 6:	# deletion of non-wg list
+		for nonwg in NonWgMailingList.objects.filter(Q(list_url__iendswith=list.list_name) | Q(list_url__iendswith='%s@%s' % (list.list_name, list.list_domain))):
+		    nonwg.status = -1
+		    nonwg.save()
+	    email_to = 'ietf-action@ietf.org'
+	    email_cc = [(list.requestor, list.requestor_email)]
+	    action = 'approved'
+	elif request.POST.has_key('disapprove'):
+	    list.approved = -1
+	    list.approved_date = datetime.now()
+	    list.add_comment = request.POST['add_comment']
+	    list.save()
+	    email_to = [(list.requestor, list.requestor_email)]
+	    email_cc = None
+	    action = 'denied'
+	if email_to is not None:
+	    send_mail_subj(request, email_to, ('Mailing List Request Tool', 'ietf-secretariat-reply@ietf.org'), 'mailinglists/list_subject.txt', 'mailinglists/list_email.txt', {'list': list, 'action': action}, email_cc)
+	# fall through
+    form = ApprovalComment()
+    return render_to_response('mailinglists/list_%s.html' % action, {'list': list, 'form': form},
+	context_instance=RequestContext(request) )
