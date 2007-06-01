@@ -1,5 +1,6 @@
 from django.db import models
 from ietf.idtracker.models import PersonOrOrgInfo, ChairsHistory
+from django.contrib.auth.models import Permission
 
 # I don't know why the IETF database mostly stores times
 # as char(N) instead of TIME.  Until it's important, let's
@@ -7,21 +8,29 @@ from ietf.idtracker.models import PersonOrOrgInfo, ChairsHistory
 
 class AnnouncedFrom(models.Model):
     announced_from_id = models.AutoField(primary_key=True)
-    announced_from_value = models.CharField(blank=True, maxlength=255)
-    announced_from_email = models.CharField(blank=True, maxlength=255)
+    announced_from = models.CharField(blank=True, maxlength=255, db_column='announced_from_value')
+    email = models.CharField(blank=True, maxlength=255, db_column='announced_from_email')
+    permission = models.ManyToManyField(Permission, limit_choices_to={'codename__endswith':'announcedfromperm'}, filter_interface=models.VERTICAL, verbose_name='Permission Required', blank=True)
     def __str__(self):
-	return self.announced_from_value
+	return self.announced_from
     class Meta:
         db_table = 'announced_from'
+	permissions = (
+	    ("ietf_chair_announcedfromperm", "Can send messages from IETF Chair"),
+	    ("iab_chair_announcedfromperm", "Can send messages from IAB Chair"),
+	    ("iad_announcedfromperm", "Can send messages from IAD"),
+	    ("ietf_execdir_announcedfromperm", "Can send messages from IETF Executive Director"),
+	    ("other_announcedfromperm", "Can send announcements from others"),
+	)
     class Admin:
 	pass
 
 class AnnouncedTo(models.Model):
     announced_to_id = models.AutoField(primary_key=True)
-    announced_to_value = models.CharField(blank=True, maxlength=255)
-    announced_to_email = models.CharField(blank=True, maxlength=255)
+    announced_to = models.CharField(blank=True, maxlength=255)
+    email = models.CharField(blank=True, maxlength=255)
     def __str__(self):
-	return self.announced_to_value
+	return self.announced_to
     class Meta:
         db_table = 'announced_to'
     class Admin:
@@ -53,6 +62,9 @@ class Announcement(models.Model):
     class Meta:
         db_table = 'announcements'
     class Admin:
+	list_display = ('announced_from', 'announced_to', 'announced_date', 'subject')
+	date_hierarchy = 'announced_date'
+	list_filter = ['nomcom', 'manually_added']
 	pass
 
 class ScheduledAnnouncement(models.Model):
