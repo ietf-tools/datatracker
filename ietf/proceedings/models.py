@@ -32,7 +32,7 @@ class ResolveAcronym(object):
         else:
             acronym_name = Acronym.objects.get(pk=self.group_acronym_id).name
         if interim:
-            return "i" + acronym
+            return acronym_name + " (interim)"
         return acronym_name
     def area(self):
         if self.irtf:
@@ -228,7 +228,7 @@ class MeetingTime(models.Model):
 	an_br2_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=5)
         return "%s %s" % (an_br2_info.time_desc, an_br2_info.non_session_ref)
     def fbreak_info(self):
-        fbreak_info = NonSession.objects.get(meeting-self.meeting, day_id=5, non_session_ref=6)
+        fbreak_info = NonSession.objects.get(meeting=self.meeting, day_id=5, non_session_ref=6)
         return "%s %s" % (fbreak_info.time_desc, fbreak_info.non_session_ref)
     class Meta:
         db_table = 'meeting_times'
