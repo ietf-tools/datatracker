@@ -7,7 +7,7 @@ class DocumentComments(Feed):
     feed_type = Atom1Feed
     def get_object(self, bits):
 	if len(bits) != 1:
-	    raise ObjectDoesNotExist
+	    raise InternetDraft.DoesNotExist
 	return InternetDraft.objects.get(filename=bits[0])
 
     def title(self, obj):
