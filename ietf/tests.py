@@ -42,11 +42,11 @@ class UrlTestCase(TestCase):
                     self.covered.append(pattern)
         # We should have at least one test case for each url pattern declared
         # in our Django application:
-        self.assertEqual(set(patterns), set(covered), "Not all the application URLs has test cases.")
+        self.assertEqual(set(patterns), set(covered), "Not all the application URLs has test cases.  The missing are: %s" % (list(set(patterns) - set(covered))))
 
     def testUrls(self):
         for code, testurl, goodurl in self.testurls:
             response = self.client.get(testurl)
-            print "%s %s" % (response.status_code, testurl)
-            self.assertEqual(response.status_code, code, "Unexpected response code from URL '%s'" % (testurl))
+            print "Got code %s for %s" % (response.status_code, testurl)
+            self.assertEqual(response.status_code, code, "Unexpected response code (%s) for URL '%s'" % (response.status_code, testurl))
             # TODO: Add comparison with goodurl
