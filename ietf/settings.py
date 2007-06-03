@@ -128,6 +128,9 @@ INTERNAL_IPS = (
 # Override this in settings_local.py if it's not true
 SERVER_MODE = 'development'
 
+# The name of the method to use to invoke the test suite
+TEST_RUNNER = 'ietf.tests.run_tests'
+
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *
