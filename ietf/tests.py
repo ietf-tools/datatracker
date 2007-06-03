@@ -47,5 +47,6 @@ class UrlTestCase(TestCase):
     def testUrls(self):
         for code, testurl, goodurl in self.testurls:
             response = self.client.get(testurl)
+            print "%s %s" % (response.status_code, testurl)
             self.assertEqual(response.status_code, code, "Unexpected response code from URL '%s'" % (testurl))
             # TODO: Add comparison with goodurl

@@ -3,6 +3,7 @@ import django.utils.html
 from django.shortcuts import render_to_response as render
 from django.utils.html import escape
 from ietf.ipr.view_sections import section_table
+from ietf.ipr.view_new import new
 
 def linebreaks(value):
     if value:
