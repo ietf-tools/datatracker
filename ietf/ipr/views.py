@@ -42,7 +42,7 @@ def list(request, template):
 def show(request, ipr_id=None):
     """Show a specific IPR disclosure"""
     assert ipr_id != None
-    ipr = models.IprDetail.objects.filter(ipr_id=ipr_id)[0]
+    ipr = models.IprDetail.objects.get(ipr_id=ipr_id)
     section_list = get_section_list(ipr)
     contacts = ipr.contact.all()
     for contact in contacts:
