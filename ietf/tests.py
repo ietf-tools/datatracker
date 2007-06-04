@@ -3,12 +3,32 @@ import re
 
 import django.test.simple
 from django.test import TestCase
-from ietf.urls import urlpatterns
 import ietf.settings
+import ietf.urls
 
 def run_tests(module_list, verbosity=1, extra_tests=[]):
     module_list.append(ietf.tests)
     return django.test.simple.run_tests(module_list, verbosity, extra_tests)
+
+def get_patterns(module):
+    all = []
+    try:
+        patterns = module.urlpatterns
+    except AttributeError:
+        patterns = []
+    for item in patterns:
+        try:
+            subpatterns = get_patterns(item.urlconf_module)
+        except:
+            subpatterns = [""]
+        for sub in subpatterns:
+            if not sub:
+                all.append(item.regex.pattern)
+            elif sub.startswith("^"):
+                all.append(item.regex.pattern + sub[1:])
+            else:
+                all.append(item.regex.pattern + ".*" + sub)
+    return all
 
 class UrlTestCase(TestCase):
     def setUp(self):
@@ -38,7 +58,7 @@ class UrlTestCase(TestCase):
         
     def testCoverage(self):
         covered = []
-        patterns = [pattern.regex.pattern for pattern in urlpatterns]
+        patterns = get_patterns(ietf.urls)
         for code, testurl, goodurl in self.testurls:
             for pattern in patterns:
                 if re.match(pattern, testurl[1:]):
@@ -48,7 +68,7 @@ class UrlTestCase(TestCase):
         #self.assertEqual(set(patterns), set(covered), "Not all the
         #application URLs has test cases.  The missing are: %s" % (list(set(patterns) - set(covered))))        
         if not set(patterns) == set(covered):
-            print "Not all the application URLs has test cases.  The missing are: %s" % (list(set(patterns) - set(covered)))
+            print "Not all the application URLs has test cases.  The missing are: %s" % ("\n  ".join(list(set(patterns) - set(covered))))
 
     def testUrls(self):
         for code, testurl, goodurl in self.testurls:

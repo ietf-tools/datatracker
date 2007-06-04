@@ -3,14 +3,13 @@ from django.utils.html import escape
 def makeTemplatedForm(template=None):
     """Create a form class which formats its fields using the provided template
 
-    The template is provided with a dictionary containing the following keys, value
+    The template is provided with a dictionary containing the following key-value
     pairs:
 
         "label":        field label, if any,
         "errors":       list of errors, if any,
-        "field":        widget rendering for an unbound form / field value for a bound form,
+        "text":         widget rendering for an unbound form / field value for a bound form,
         "help_text":    field help text, if any
-
     """
     from django.template import loader
     import django.newforms as forms
@@ -18,7 +17,7 @@ def makeTemplatedForm(template=None):
     class TemplatedForm(forms.BaseForm):
         _template = template
         def __getitem__(self, name):
-            "Returns a BoundField with the given name."
+            "Returns a rendered field with the given name."
             #syslog.syslog("FormattingForm.__getitem__(%s)" % (name, ))
             try:
                 field = self.fields[name]
