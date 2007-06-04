@@ -5,7 +5,6 @@ import django.test.simple
 from django.test import TestCase
 from ietf.urls import urlpatterns
 import ietf.settings
-import ietf.tests
 
 def run_tests(module_list, verbosity=1, extra_tests=[]):
     module_list.append(ietf.tests)
