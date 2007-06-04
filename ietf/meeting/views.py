@@ -1,39 +1,32 @@
 # Create your views here.
 import models
 from django.shortcuts import render_to_response as render
-import django.newforms as forms
-from django.utils.html import escape, linebreaks
-import ietf.utils
-from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, SessionName, NonSession, MeetingVenue, IESGHistory
+from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, SessionName, NonSession, MeetingVenue, IESGHistory, WgAgenda, Minute, Proceeding
 from django.views.generic.list_detail import object_list
 from django.http import Http404
 from  django.db.models import Q
-
-def default(request):
-    """Default page, with links to sub-pages"""
-    return render("meeting/list.html", {})
-
-def showlist(request):
-    """Display a list of existing disclosures"""
-    return meeting_list(request, 'meeting/list.html')
-
-
-# don't hide Python's builtin list creation -- call this something else than 'list()'
-def meeting_list(request, template):
-    """ Get A List of All Meetings That are in the system """  
-    meetings  = Meeting.objects.all()
-    
-    return render(template,
-        {
-            'meetings' : meetings.order_by(* ['-start_date', ] ),
-        } )
-
-# Details views
+import datetime
 
 def show_html_materials(request, meeting_num=None):
+    begin_date = Proceeding.objects.get(meeting_num=meeting_num).sub_begin_date
+    cut_off_date = Proceeding.objects.get(meeting_num=meeting_num).sub_cut_off_date
+    cor_cut_off_date = Proceeding.objects.get(meeting_num=meeting_num).c_sub_cut_off_date
+    now = datetime.date.today()
+    if now > cor_cut_off_date:
+        return render("meeting/list_closed.html",{'meeting_num':meeting_num,'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date})
     # List of WG sessions and Plenary sessions
     queryset_list = WgMeetingSession.objects.filter(Q(meeting=meeting_num, group_acronym_id__gte = -2, status_id=4), Q(irtf__isnull=True) | Q(irtf=0))
-    return object_list(request,queryset=queryset_list, template_name="meeting/list.html",allow_empty=True, extra_context={'meeting_num':meeting_num})
+    queryset_irtf = WgMeetingSession.objects.filter(meeting=meeting_num, group_acronym_id__gte = -2, status_id=4, irtf__gt=0)
+    queryset_interim = []
+    queryset_training = []
+    for item in list(WgMeetingSession.objects.filter(meeting=meeting_num)):
+        if item.interim_meeting():
+            item.interim=1
+            queryset_interim.append(item)
+        if item.group_acronym_id < -2:
+            if item.slides():
+                queryset_training.append(item)
+    return object_list(request,queryset=queryset_list, template_name="meeting/list.html",allow_empty=True, extra_context={'meeting_num':meeting_num,'irtf_list':queryset_irtf, 'interim_list':queryset_interim, 'training_list':queryset_training, 'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date})
 
 def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     try:
@@ -78,5 +71,3 @@ def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     queryset_list_ads.sort(key=(lambda item: item.area.area_acronym.acronym))
     return object_list(request,queryset=queryset_list, template_name=template_file,allow_empty=True, extra_context={'qs_sun':queryset_list_sun, 'meeting_info':meeting_info, 'meeting_num':meeting_num, 'nonsession_info':nonsession_info, 'meetingvenue_info':meetingvenue_info, 'plenaryw_agenda':plenaryw_agenda, 'plenaryt_agenda':plenaryt_agenda, 'qs_ads':queryset_list_ads})
 
-def show(request):
-    return 0

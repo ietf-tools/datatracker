@@ -4,9 +4,9 @@
 <link rel="stylesheet" type="text/css" href="https://www.ietf.org/css/base.css" />
 <center>
 <h2>IETF {{ meeting_num }} Preliminary & Interim Materials</h2>
-<h4>Submission begin </h4>
-<h4>Submission cutoff odate: </h4>
-<h4>Corrections to submissions cutoff date: </h4>
+<h4>Submission began {{ begin_date|date:"F j, Y" }} </h4>
+<h4>Submission cutoff odate: {{ cut_off_date|date:"F j, Y" }}</h4>
+<h4>Corrections to submissions cutoff date:{{ cor_cut_off_date|date:"F j, Y" }} </h4>
 <br>
 Updated as of {% now "r" %}
 <br><br>
@@ -15,7 +15,7 @@ Updated as of {% now "r" %}
   {% for wgs in areas %}
     <table cellpadding="0" cellspacing="0" border="2" width="80%">
       <tr>
-        <td colspan=2 bgcolor="#0911DC" valign="center"><font color="#FFFFFF"><center><br><h3><img src="https://www1.ietf.org/images/ib2.gif" width="100%" height=21><br>{{ wgs.grouper }}</h3></center></font>
+        <td colspan=2 bgcolor="#0911DC" valign="center"><font color="#FFFFFF"><center><br><h3><img src="https://www.ietf.org/images/ib2.gif" width="100%" height=21><br>{{ wgs.grouper }}</h3></center></font>
         </td>
       </tr>
     </table>
@@ -37,6 +37,69 @@ Updated as of {% now "r" %}
 
     {% endfor %}
   {% endfor %}
-
+<!--- Training Sessions --->
+  <table cellpadding="0" cellspacing="0" border="2" width="80%">
+    <tr>
+      <td colspan=2 bgcolor="#0911DC" valign="center"><font color="#FFFFFF"><center><br><h3><img src="https://www.ietf.org/images/ib2.gif" width="100%" height=21><br>Training</h3></center></font>
+      </td>     </tr>  </table>
+{% for wg in training_list|dictsort:"acronym" %}
+    <table cellpadding="0" cellspacing="0" border="2" width="80%">      <tr><a name="wg-{{ wg.acronym }}"></a>
+        <td align="center" bgcolor="#DDFFDD" width="20%"><b>{{ wg.acronym|upper }}</b></td>
+        <td><table border="1" width="100%">
+{% include "meeting/submission_status_snippet.html" %}
+              {% for slide in wg.slides %}
+              <tr><td><a href="http://www3.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name }}</a></td>              </tr>
+              {% endfor %}
+            </table>
+        </td> 
+      </tr>
+    </table>
+{% endfor %}  
+<!--- End of Training Sessions --->
+<!--- IRTF Sessions --->
+  <table cellpadding="0" cellspacing="0" border="2" width="80%">
+    <tr>
+      <td colspan=2 bgcolor="#0911DC" valign="center"><font color="#FFFFFF"><center><br><h3><img src="https://www.ietf.org/images/ib2.gif" width="100%" height=21><br>IRTF</h3></center></font>
+      </td>
+    </tr>
+  </table>
+{% for wg in irtf_list|dictsort:"acronym" %}
+    <table cellpadding="0" cellspacing="0" border="2" width="80%">
+      <tr><a name="wg-{{ wg.acronym }}"></a>
+        <td align="center" bgcolor="#DDFFDD" width="20%"><b>{{ wg.acronym|upper }}</b><br>
+        {% if wg.agenda_file %}<a href="http://www3..ietf.org/proceedings/{{ wg.agenda_file }}">[Agenda]</a>{% endif %}{% if wg.minute_file %} <a href="http://www3.ietf.org/proceedings/{{ wg.minute_file }}">[Minutes]</a>{% endif %}</td>
+        <td><table border="1" width="100%">
+{% include "meeting/submission_status_snippet.html" %}
+              {% for slide in wg.slides %}
+              <tr><td><a href="http://www3.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name }}</a></td>
+              </tr>
+              {% endfor %}
+            </table>
+        </td>
+      </tr>
+    </table>
+{% endfor %}
+<!--- End of IRTF Sessions --->
+<!--- Interim Meetings --->
+  <table cellpadding="0" cellspacing="0" border="2" width="80%">
+    <tr>
+      <td colspan=2 bgcolor="#0911DC" valign="center"><font color="#FFFFFF"><center><br><h3><img src="https://www.ietf.org/images/ib2.gif" width="100%" height=21><br>Interim Meetings</h3></center></font>
+      </td>
+    </tr>
+  </table>
+{% for wg in interim_list|dictsort:"acronym" %}
+    <table cellpadding="0" cellspacing="0" border="2" width="80%">      <tr><a name="wg-{{ wg.acronym }}"></a>
+        <td align="center" bgcolor="#DDFFDD" width="20%"><b>{{ wg.acronym|upper }}</b><br>        {% if wg.agenda_file %}<a href="http://www3..ietf.org/proceedings/{{ wg.agenda_file }}">[Agenda]</a>{% endif %}{% if wg.minute_file %} <a href="http://www3.ietf.org/proceedings/{{ wg.minute_file }}">[Minutes]</a>{% endif %}</td>
+        <td><table border="1" width="100%">
+{% include "meeting/submission_status_snippet.html" %}
+              {% for slide in wg.slides %}
+              <tr><td><a href="http://www3.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name }}</a></td>              </tr>
+              {% endfor %}
+            </table>
+        </td> 
+      </tr>
+    </table>
+{% endfor %}
+<!--- End of Imterim Meetings --->
 </center>
 {% endblock %}
