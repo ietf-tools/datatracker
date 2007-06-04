@@ -28,6 +28,7 @@ def send_smtp(msg):
     add_headers(msg)
     (fname, frm) = parseaddr(msg.get('From'))
     to = [addr for name, addr in getaddresses(msg.get_all('To') + msg.get_all('Cc', []))]
+    server = None
     try:
 	server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
 	if settings.DEBUG:
@@ -37,11 +38,15 @@ def send_smtp(msg):
 	server.sendmail(frm, to, msg.as_string())
 	# note: should pay attention to the return code, as it may
 	# indicate that someone didn't get the email.
-    except smtplib.SMTPException:
-        server.quit()
+    except:
+	if server:
+	    server.quit()
 	# need to improve log message
 	log("got exception '%s' (%s) trying to send email from '%s' to %s subject '%s'" % (sys.exc_info()[0], sys.exc_info()[1], frm, to, msg.get('Subject', '[no subject]')))
-	raise
+	if isinstance(sys.exc_info()[0], smtplib.SMTPException):
+	    raise
+	else:
+	    raise smtplib.SMTPException({'really': sys.exc_info()[0], 'value': sys.exc_info()[1], 'tb': sys.exc_info()[2]})
     server.quit()
     log("sent email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
 

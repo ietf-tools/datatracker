@@ -81,6 +81,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.doc.XViewMiddleware',
 #    'ietf.middleware.PrettifyMiddleware',
+    'ietf.middleware.SQLLogMiddleware',
+    'ietf.middleware.SMTPExceptionMiddleware',
     'django.middleware.transaction.TransactionMiddleware',
 )
 
