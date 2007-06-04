@@ -5,7 +5,7 @@
 #
 PYTHONPATH=`dirname $PWD`
 export PYTHONPATH
-DJANGO_SETTINGS_MODULE=ietf/settings
+DJANGO_SETTINGS_MODULE=ietf.settings
 export DJANGO_SETTINGS_MODULE
 for d in *
 do
@@ -13,7 +13,8 @@ do
 	then
 		python modelviz.py $d
 	fi
-done | unflatten -f -l 10 | gvpr -c '
+done > models-base.dot
+unflatten -f -l 10 models-base.dot | gvpr -c '
 BEG_G {
 	node_t title = node($G, "title");
 	title.shape="parallelogram";
