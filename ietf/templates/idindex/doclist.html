@@ -16,8 +16,7 @@
 {% for draft in object_list %}
 <tr bgcolor="{% cycle #efefff,#dfdfff %}">
 {# use url here! #}
-{# todo: check out decrease revision logic #}
-<td><a href="/idindex/{{ draft.filename }}/">{{ draft.filename }}-{{ draft.revision }}</a></td>
+<td><a href="/idindex/{{ draft.filename }}/">{{ draft.filename }}-{{ draft.revision_display }}</a></td>
 <td>{{ draft.revision_date }}</td>
 <td>{{ draft.status }}</td>
 {% if norfc %}
