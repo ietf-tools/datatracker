@@ -34,7 +34,6 @@ def get_patterns(module):
     return all
 
 class UrlTestCase(TestCase):
-    fixtures = ['/www/tools.ietf.org/events/raw/sqldump/ietf_db_dump.xml', ]
     def setUp(self):
         from django.test.client import Client
         self.client = Client()
