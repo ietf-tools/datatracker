@@ -116,5 +116,6 @@ class UrlTestCase(TestCase):
         print "testUrlsFallback() response count:\n   code count"
         for code in response_count:
             print "   %s: %s " % (code, response_count[code])
+        for code in response_count:
             if str(code) != "200":
                 self.assertEqual(response_count[code], 0)
