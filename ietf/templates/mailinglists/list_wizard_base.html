@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}IETF Mailing List Form{% endblock %}
+
+{% block css %}
+ul.errorlist { color: red; border: 1px solid red; }
+{% block mlcss %}{% endblock %}
+{% endblock %} 
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="http://www.ietf.org/css/base.css" />
+{% endblock %}
+
+{% block content %}
+<blockquote>
+<img src="/images/nwg/mail_title_submission.gif" border="0"><br>
+<img src="/images/nwg/t_un1.gif" border="0">
+<!-- form step {{ step }} -->
+<br>
+{% block mlcontent %}
+form goes here
+{% endblock %}
+</blockquote>
+
+{% endblock %}
