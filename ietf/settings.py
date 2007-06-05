@@ -123,6 +123,12 @@ INTERNAL_IPS = (
 # shiraz and marsanne
         '81.232.110.214',
         '2001:16d8:ff54::1',
+# merlot
+        '194.146.105.14',
+        '2001:698:9:31:214:22ff:fe21:bb',
+# local
+        '127.0.0.1',
+        '::1',
 )
 
 # Valid values:
