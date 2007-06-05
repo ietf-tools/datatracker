@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import patterns
+from django.conf.urls.defaults import patterns, handler404, handler500
 from ietf.liaisons.models import LiaisonDetail, LiaisonManagers
 
 info_dict = {
