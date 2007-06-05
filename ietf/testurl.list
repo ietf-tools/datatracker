@@ -1,7 +1,9 @@
 # Broken URLs have been commented out
 
 200	/
-#200	/accounts/
+200	/accounts/
+200,404	/accounts/password_change/
+200,404	/accounts/profile/
 #200	/admin
 #200	/announcements/
 200	/idindex/
@@ -20,6 +22,8 @@
 200	/idindex/inddocs/B/
 200	/idindex/inddocs/Y/
 200	/idindex/otherdocs/iab/
+200,404	/idtracker/status/
+200,404	/idtracker/last_call/
 200	/iesg/telechat/
 200	/iesg/telechat/2006/
 200	/iesg/telechat/2006/feb/
@@ -36,10 +40,11 @@
 200	/ipr/new-specific/
 200	/ipr/new-third-party/
 skip	/my/
-#200	/liaisons/
+200,404	/liaisons/
+200,404	/liaisons/managers/
 #200	/liaisons/329/
-#200	/mailing-lists/area-lists/
-#200	/mailing-lists/nonwg-lists/
+200,404	/mailing-lists/area-lists/
+200,404	/mailing-lists/nonwg-lists/
 #200	/mailing-lists/nonwg-lists/submit/
 #200	/mailing-lists/request/
 #200	/mailing-lists/area-lists/

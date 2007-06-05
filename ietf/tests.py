@@ -50,13 +50,14 @@ class UrlTestCase(TestCase):
                     if line and not line.startswith('#'):
                         urlspec = line.split()
                         if len(urlspec) == 2:
-                            code, testurl = urlspec
+                            codes, testurl = urlspec
                             goodurl = None
                         elif len(urlspec) == 3:
-                            code, testurl, goodurl = urlspec
+                            codes, testurl, goodurl = urlspec
                         else:
                             raise ValueError("Expected 'HTTP_CODE TESTURL [GOODURL]' in %s line, found '%s'." % (filename, line))
-                        self.testtuples += [ (code, testurl, goodurl) ]
+                        codes = codes.split(",")
+                        self.testtuples += [ (codes, testurl, goodurl) ]
                         self.testurls += [ testurl ]
                     #print "(%s, %s, %s)" % (code, testurl, goodurl)
         #print self.testtuples
@@ -64,7 +65,7 @@ class UrlTestCase(TestCase):
     def testCoverage(self):
         covered = []
         patterns = get_patterns(ietf.urls)
-        for code, testurl, goodurl in self.testtuples:
+        for codes, testurl, goodurl in self.testtuples:
             for pattern in patterns:
                 if re.match(pattern, testurl[1:]):
                     covered.append(pattern)
@@ -77,14 +78,16 @@ class UrlTestCase(TestCase):
             print "Not all the application URLs has test cases."
 
     def testUrls(self):
-        for code, testurl, goodurl in self.testtuples:
-            if code in ["skip", "Skip"]:
+        for codes, testurl, goodurl in self.testtuples:
+            if codes[0] in ["skip", "Skip"]:
                 print "Skipping %s" % (testurl)
             else:
                 try:
                     response = self.client.get(testurl)
-                    print "Got code %s for %s" % (response.status_code, testurl)
-                    #self.assertEqual(response.status_code, code, "Unexpected response code (%s) for URL '%s'" % (response.status_code, testurl))
+                    code = response.status_code
+                    print "Got code %s for %s" % (code, testurl)
+                    if not code in codes:
+                        self.fail("Unexpected response code (%s) for URL '%s'" % (code, testurl))
                     # TODO: Add comparison with goodurl
                 except:
                     print "Exception for URL '%s'" % testurl
