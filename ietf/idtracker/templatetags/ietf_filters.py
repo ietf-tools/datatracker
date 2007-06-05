@@ -7,7 +7,7 @@ try:
 except ImportError:
     from email import Utils as emailutils
 import re
-from ietf.utils import log
+#from ietf.utils import log
 
 register = template.Library()
 

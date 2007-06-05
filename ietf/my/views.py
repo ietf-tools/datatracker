@@ -1,6 +1,6 @@
 from django.template import RequestContext
 from django.shortcuts import render_to_response
-from ietf.idtracker.models import PersonOrOrgInfo
+#from ietf.idtracker.models import PersonOrOrgInfo
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 

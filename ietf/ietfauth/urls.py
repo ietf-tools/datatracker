@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns
 from ietf.my.views import my
 
 urlpatterns = patterns('django.contrib.auth.views',

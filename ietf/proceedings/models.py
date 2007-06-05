@@ -1,7 +1,7 @@
 from django.db import models
 from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup, Area, IETFWG
 import datetime
-from ietf.utils import log
+#from ietf.utils import log
 
 # group_acronym is either an IETF Acronym
 #  or an IRTF one, depending on the value of irtf.

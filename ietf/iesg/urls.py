@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns
 from ietf.iesg import views
 from ietf.iesg.models import TelechatMinutes
 from ietf.idtracker.models import BallotInfo

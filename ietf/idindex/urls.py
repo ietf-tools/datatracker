@@ -1,7 +1,6 @@
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns
 from ietf.idtracker.models import InternetDraft
 from ietf.idindex import views
-from ietf.idindex import forms
 from ietf.idindex.views import alphabet, orgs
 
 info_dict = {

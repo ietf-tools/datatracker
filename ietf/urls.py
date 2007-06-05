@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns, include
 
 from ietf.iesg.feeds import IESGMinutes
 from ietf.idtracker.feeds import DocumentComments

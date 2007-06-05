@@ -1,6 +1,6 @@
 # Create your views here.
-from django.views.generic.date_based import archive_index
-from ietf.idtracker.models import BallotInfo, IDInternal, InternetDraft
+#from django.views.generic.date_based import archive_index
+from ietf.idtracker.models import IDInternal, InternetDraft
 from django.views.generic.list_detail import object_list
 from django.http import Http404
 import datetime 

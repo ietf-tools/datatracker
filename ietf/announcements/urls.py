@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns
 from ietf.announcements.models import Announcement
 
 nomcom_dict = {

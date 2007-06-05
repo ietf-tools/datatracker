@@ -1,7 +1,7 @@
 # Create your views here.
-import models
+#import models
 from django.shortcuts import render_to_response as render
-from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, SessionName, NonSession, MeetingVenue, IESGHistory, WgAgenda, Minute, Proceeding
+from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, NonSession, MeetingVenue, IESGHistory, Proceeding
 from django.views.generic.list_detail import object_list
 from django.http import Http404
 from  django.db.models import Q

@@ -1,1 +1,1 @@
-from form_decorator import *
+from form_decorator import form_decorator

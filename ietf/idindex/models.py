@@ -1,4 +1,4 @@
-from django.db import models
+#from django.db import models
 
 alphabet = [chr(65 + i) for i in range(0, 26)]
 orgs_dict = {

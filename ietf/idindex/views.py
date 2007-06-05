@@ -1,8 +1,8 @@
-from django.http import HttpResponse,HttpResponseRedirect
+from django.http import HttpResponse
 from django.views.generic.list_detail import object_list
 from django.db.models import Q
 from django.http import Http404
-from django.template import RequestContext, Context, loader
+from django.template import RequestContext, loader
 from django.shortcuts import render_to_response
 from ietf.idtracker.models import Acronym, IETFWG, InternetDraft
 from ietf.idindex.forms import IDIndexSearchForm

@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns
 from ietf.liaisons.models import LiaisonDetail, LiaisonManagers
 
 info_dict = {

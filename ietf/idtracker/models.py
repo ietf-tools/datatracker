@@ -1,5 +1,5 @@
 from django.db import models
-from ietf.utils import FKAsOneToOne, log
+from ietf.utils import FKAsOneToOne
 
 class Acronym(models.Model):
     acronym_id = models.AutoField(primary_key=True)

@@ -1,4 +1,4 @@
-from email.Utils import *
+from email.Utils import make_msgid, formatdate, formataddr, parseaddr, getaddresses
 from email.MIMEText import MIMEText
 from email.MIMEMessage import MIMEMessage
 from email.MIMEMultipart import MIMEMultipart
@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 from django.template import RequestContext
 from ietf.utils import log
 import sys
+import time
 
 def add_headers(msg):
     if not(msg.has_key('Message-ID')):

@@ -1,7 +1,7 @@
 # Create your views here.
-from django.http import HttpResponse,HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django import newforms as forms
-from django.template import RequestContext, Context, loader
+from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 from django.db.models import Q
 from django.views.generic.list_detail import object_detail, object_list

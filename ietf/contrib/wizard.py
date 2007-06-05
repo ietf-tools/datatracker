@@ -29,7 +29,7 @@ from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 
 from django import newforms as forms
-import cPickle as pickle
+#import cPickle as pickle
 import md5
 
 class Wizard( object ):
