@@ -1,5 +1,6 @@
 import os
 import re
+import traceback
 
 import django.test.simple
 from django.test import TestCase
@@ -7,7 +8,9 @@ import ietf.settings
 import ietf.urls
 
 def run_tests(module_list, verbosity=1, extra_tests=[]):
-    module_list.append(ietf.tests)
+    module_list.append(ietf.urls)
+    # If we append 'ietf.tests', we get it twice, first as itself, then
+    # during the search for a 'tests' module ...
     return django.test.simple.run_tests(module_list, verbosity, extra_tests)
 
 def get_patterns(module):
@@ -36,6 +39,7 @@ class UrlTestCase(TestCase):
         self.client = Client()
 
         # find test urls
+        self.testtuples = []
         self.testurls = []
         for root, dirs, files in os.walk(ietf.settings.BASE_DIR):
             if "testurl.list" in files:
@@ -52,14 +56,15 @@ class UrlTestCase(TestCase):
                             code, testurl, goodurl = urlspec
                         else:
                             raise ValueError("Expected 'HTTP_CODE TESTURL [GOODURL]' in %s line, found '%s'." % (filename, line))
-                        self.testurls += [ (code, testurl, goodurl) ]
+                        self.testtuples += [ (code, testurl, goodurl) ]
+                        self.testurls += [ testurl ]
                     #print "(%s, %s, %s)" % (code, testurl, goodurl)
-        #print self.testurls
+        #print self.testtuples
         
     def testCoverage(self):
         covered = []
         patterns = get_patterns(ietf.urls)
-        for code, testurl, goodurl in self.testurls:
+        for code, testurl, goodurl in self.testtuples:
             for pattern in patterns:
                 if re.match(pattern, testurl[1:]):
                     covered.append(pattern)
@@ -68,15 +73,46 @@ class UrlTestCase(TestCase):
         #self.assertEqual(set(patterns), set(covered), "Not all the
         #application URLs has test cases.  The missing are: %s" % (list(set(patterns) - set(covered))))        
         if not set(patterns) == set(covered):
-            print "Not all the application URLs has test cases.  The missing are: %s" % ("\n  ".join(list(set(patterns) - set(covered))))
+            #print "Not all the application URLs has test cases.  The missing are: \n   %s" % ("\n   ".join(list(set(patterns) - set(covered))))
+            print "Not all the application URLs has test cases."
 
     def testUrls(self):
-        for code, testurl, goodurl in self.testurls:
-            try:
-                response = self.client.get(testurl)
-                print "Got code %s for %s" % (response.status_code, testurl)
-                #self.assertEqual(response.status_code, code, "Unexpected response code (%s) for URL '%s'" % (response.status_code, testurl))
-                # TODO: Add comparison with goodurl
-            except:
-                print "Got exception for URL '%s'" % testurl
-                raise
+        for code, testurl, goodurl in self.testtuples:
+            if code in ["skip", "Skip"]:
+                print "Skipping %s" % (testurl)
+            else:
+                try:
+                    response = self.client.get(testurl)
+                    print "Got code %s for %s" % (response.status_code, testurl)
+                    #self.assertEqual(response.status_code, code, "Unexpected response code (%s) for URL '%s'" % (response.status_code, testurl))
+                    # TODO: Add comparison with goodurl
+                except:
+                    print "Exception for URL '%s'" % testurl
+                    traceback.print_exc()
+
+    def testUrlsFallback(self):
+        patterns = get_patterns(ietf.urls)
+        response_count = {}
+        for pattern in patterns:
+            if pattern.startswith("^") and pattern.endswith("$"):
+                url = "/"+pattern[1:-1]
+                # if there is no variable parts in the url, test it
+                if re.search("^[-a-z0-9./_]*$", url) and not url in self.testurls and not url.startswith("/admin/"):
+                    try:
+                        response = self.client.get(url)
+                        if not response.status_code in response_count:
+                            response_count[response.status_code] = 0
+                        response_count[response.status_code] += 1
+                        if response.status_code != 200:
+                            print "Bad code %s for %s" % (response.status_code, url)
+                    except:
+                        if not "Exc" in response_count:
+                            response_count["Exc"] = 0
+                        response_count["Exc"] += 1
+                        print "Exception for URL '%s'" % url
+                        traceback.print_exc()
+                else:
+                    print "Skipping %s" % (url)
+        print "testUrlsFallback() response count:\n   code count"
+        for code in response_count:
+            print "   %s: %s " % (code, response_count[code])

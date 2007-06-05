@@ -35,6 +35,7 @@
 200	/ipr/new-generic/
 200	/ipr/new-specific/
 200	/ipr/new-third-party/
+skip	/my/
 #200	/liaisons/
 #200	/liaisons/329/
 #200	/mailing-lists/area-lists/
