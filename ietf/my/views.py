@@ -1,14 +1,16 @@
-from django.http import HttpResponse,HttpResponseRedirect
-from django import newforms as forms
 from django.template import RequestContext
 from django.shortcuts import render_to_response
 from ietf.idtracker.models import PersonOrOrgInfo
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
 
+@login_required
 def my(request, addr=None):
-    if request.user:
-	person = request.user.get_profile().person
-    else:
-	person = PersonOrOrgInfo.objects.distinct().get(emailaddresses__email_address=addr)
+    try:
+	profile = request.user.get_profile()
+	person = profile.person
+    except ObjectDoesNotExist:
+	person = None
     return render_to_response('my/my.html', {
 	'me': person,
 	}, context_instance=RequestContext(request))
