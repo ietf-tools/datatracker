@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import patterns, handler404, handler500
+from django.conf.urls.defaults import patterns
 from ietf.idtracker.models import Area
 from ietf.mailinglists import views
 from ietf.mailinglists.models import NonWgMailingList
