@@ -1,9 +1,9 @@
 # Broken URLs have been commented out
 
 200	/
-200	/accounts/
-200,404	/accounts/password_change/
-200,404	/accounts/profile/
+200,404	/accounts/
+200,302	/accounts/password_change/
+200,302	/accounts/profile/
 #200	/admin
 #200	/announcements/
 200	/idindex/
