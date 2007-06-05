@@ -84,7 +84,7 @@ class UrlTestCase(TestCase):
             else:
                 try:
                     response = self.client.get(testurl)
-                    code = response.status_code
+                    code = str(response.status_code)
                     print "Got code %s for %s" % (code, testurl)
                     if not code in codes:
                         self.fail("Unexpected response code (%s) for URL '%s'" % (code, testurl))
