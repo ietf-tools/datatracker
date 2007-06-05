@@ -31,6 +31,8 @@ class ResolveAcronym(object):
             acronym_name = IRTF.objects.get(pk=self.group_acronym_id).name
         else:
             acronym_name = Acronym.objects.get(pk=self.group_acronym_id).name
+        if interim:
+            return acronym_name + " (interim)"
         return acronym_name
     def area(self):
         if self.irtf:
