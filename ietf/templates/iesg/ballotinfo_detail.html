@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}IESG Announcement{% endblock %}
+                                                                                                                
+{% block content %}
+<pre>
+{{ object.approval_text|escape|urlize }}
+
+{{ object.ballot_writeup|escape|urlize }}
+</pre>
+{% endblock %}
+

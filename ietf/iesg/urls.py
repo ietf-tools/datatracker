@@ -25,7 +25,7 @@ urlpatterns = patterns('django.views.generic.date_based',
 
 urlpatterns += patterns('django.views.generic.list_detail',
 	(r'^telechat/detail/(?P<object_id>\d+)/$', 'object_detail', { 'queryset': queryset }),
-	(r'^ann/detail/(?P<object_id>\d+)/$', 'object_detail', { 'queryset': queryset_ann }),
+	(r'^ann/detail/(?P<object_id>\d+)/$', 'object_detail', { 'queryset': queryset_ann, 'template_name':"iesg/ballotinfo_detail.html" }),
 )
 
 urlpatterns += patterns('',
