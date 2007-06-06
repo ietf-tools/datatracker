@@ -1,0 +1,11 @@
+ietf/settings.py:144: 'from settings_local import *' used; unable to detect undefined names
+ietf/tests.py:8: redefinition of unused 'ietf' from line 7
+ietf/urls.py:1: 'handler500' imported but unused
+ietf/urls.py:1: 'handler404' imported but unused
+ietf/ipr/views.py:6: 'new' imported but unused
+ietf/contrib/__init__.py:1: 'form_decorator' imported but unused
+ietf/utils/__init__.py:1: 'flattenl' imported but unused
+ietf/utils/__init__.py:1: 'orl' imported but unused
+ietf/utils/__init__.py:2: 'log' imported but unused
+ietf/utils/__init__.py:3: 'FKAsOneToOne' imported but unused
+ietf/idtracker/templatetags/ietf_filters.py:8: redefinition of unused 'emailutils' from line 6
