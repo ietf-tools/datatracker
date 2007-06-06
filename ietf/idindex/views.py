@@ -3,8 +3,8 @@ from django.views.generic.list_detail import object_list
 from django.db.models import Q
 from django.http import Http404
 from django.template import RequestContext, loader
-from django.shortcuts import render_to_response
-from ietf.idtracker.models import Acronym, IETFWG, InternetDraft
+from django.shortcuts import render_to_response, get_object_or_404
+from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, Rfc
 from ietf.idindex.forms import IDIndexSearchForm
 from ietf.idindex.models import alphabet, orgs, orgs_dict
 from ietf.utils import orl, flattenl
@@ -149,4 +149,62 @@ def all_id(request, template_name):
     for o in notracker_list:
 	object_list.append({'tracker': False, 'id': o})
     return render_to_response(template_name, {'object_list': object_list},
+		context_instance=RequestContext(request))
+
+def related_docs(startdoc):
+    related = []
+    processed = []
+
+    def handle(otherdoc,status,doc,skip=(0,0,0)):
+        new = (otherdoc, status, doc)
+    	if otherdoc in processed:
+	    print "skipping (%s,%s,%s) because otherdoc has been processed" % (new)
+	    return
+	#if new not in related:
+	if True: #otherdoc not in processed:
+	    related.append(new)
+	if otherdoc not in processed: # now simply redundant
+	    process(otherdoc,skip)
+
+    def process(doc, skip=(0,0,0)):
+	#XXX
+	skip = (0,0,0)
+	print "doc = %s skip = %s" % (doc,skip)
+	processed.append(doc)
+	if type(doc) == InternetDraft:
+	    if doc.replaced_by_id != 0 and not(skip[0]):
+		handle(doc.replaced_by, "that replaces", doc, (0,1,0))
+	    if not(skip[1]):
+		for replaces in doc.replaces_set.all():
+		    handle(replaces, "that was replaced by", doc, (1,0,0))
+	    if doc.rfc_number != 0 and not(skip[0]):
+		# should rfc be an FK in the model?
+		handle(Rfc.objects.get(rfc_number=doc.rfc_number), "which came from", doc, (1,0,0))
+	if type(doc) == Rfc:
+	    if not(skip[0]):
+		try:
+		    draft = InternetDraft.objects.get(rfc_number=doc.rfc_number)
+		    #handle(doc, "which came from", draft, backwards=True)
+		    handle(draft, "that was published as", doc, (0,0,1))
+		except InternetDraft.DoesNotExist:
+		    pass
+	    if not(skip[1]):
+		for obsoleted_by in doc.updated_or_obsoleted_by.all():
+		    handle(obsoleted_by.rfc, "that %s" % obsoleted_by.action.lower(), doc, (0,0,1))
+	    if not(skip[2]):
+		for obsoletes in doc.updates_or_obsoletes.all():
+		    handle(obsoletes.rfc_acted_on, "that was %s by" % obsoletes.action.lower().replace("tes", "ted"), doc, (0,1,0))
+
+    process(startdoc, (0,0,0))
+    return related
+
+def view_related_docs(request, **kwargs):
+    if kwargs.has_key('id'):
+	startdoc = get_object_or_404(InternetDraft, id_document_tag=kwargs['id'])
+    else:
+        startdoc = get_object_or_404(InternetDraft, filename=kwargs['slug'])
+    related = related_docs(startdoc)
+    context = {'related': related, 'numdocs': len(related)}
+    context.update(base_extra)
+    return render_to_response("idindex/view_related_docs.html", context,
 		context_instance=RequestContext(request))
