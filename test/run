@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -x
+
+program=${0##*/}
+progdir=${0%/*}
+
+cd $progdir/..				# now at trunk/
+
+$progdir/test-setup			# create a patched django for test purposes, and more
+
+$progdir/run-pyflakes ietf
+
+PYTHONPATH=$progdir/lib python ietf/manage.py test # run tests with our patched django
+
+$progdir/test-teardown
+
