@@ -92,48 +92,49 @@ class UrlTestCase(TestCase):
             #print "Not all the application URLs has test cases.  The missing are: \n   %s" % ("\n   ".join(list(set(patterns) - set(covered))))
             print "Not all the application URLs has test cases."
 
-    def testUrls(self):
-        for codes, testurl, goodurl in self.testtuples:
-            if codes[0] in ["skip", "Skip"]:
-                print "Skipping %s" % (testurl)
-            else:
+    def doUrlsTest(self, lst):
+        response_count = {"Exc": 0, 200: 0, }
+        for code, url in lst:
+            if code in ["Skip", "skip"]:
+                print "Skipping %s" % (url)
+            elif url:
+                print "Trying code, url: (<%s>, '%s')" % (code, url)
                 try:
-                    response = self.client.get(testurl)
-                    code = str(response.status_code)
-                    print "Got code %s for %s" % (code, testurl)
-                    if not code in codes:
-                        self.fail("Unexpected response code (%s) for URL '%s'" % (code, testurl))
-                    # TODO: Add comparison with goodurl
+                    response = self.client.get(url)
+                    res = response.status_code
+                    if not res in response_count:
+                        response_count[res] = 0
+                    response_count[res] += 1
+                    if str(res) in code.split(","):
+                        print "OK   %s %s" % (res, url)
+                    else:
+                        print "Fail %s %s" % (res, url)
                 except:
-                    print "Exception for URL '%s'" % testurl
+                    if not "Exc" in response_count:
+                        response_count["Exc"] = 0
+                    response_count["Exc"] += 1
+                    print "Exception for URL '%s'" % url
                     traceback.print_exc()
+            else:
+                pass
+        for code in response_count:
+            print "   %s: %s " % (res, response_count[code])
+        for code in response_count:
+            if str(code) != "200":
+                self.assertEqual(response_count[code], 0)
+
+    def testUrlsList(self):
+        lst = [(tuple[0], tuple[1]) for tuple in self.testtuples]
+        self.doUrlsTest(lst)
 
     def testUrlsFallback(self):
         patterns = get_patterns(ietf.urls)
-        response_count = {}
+        response_count = {"Exc": 0, "200": 0, }
+        lst = []
         for pattern in patterns:
             if pattern.startswith("^") and pattern.endswith("$"):
                 url = "/"+pattern[1:-1]
                 # if there is no variable parts in the url, test it
                 if re.search("^[-a-z0-9./_]*$", url) and not url in self.testurls and not url.startswith("/admin/"):
-                    try:
-                        response = self.client.get(url)
-                        if not response.status_code in response_count:
-                            response_count[response.status_code] = 0
-                        response_count[response.status_code] += 1
-                        if response.status_code != 200:
-                            print "Bad code %s for %s" % (response.status_code, url)
-                    except:
-                        if not "Exc" in response_count:
-                            response_count["Exc"] = 0
-                        response_count["Exc"] += 1
-                        print "Exception for URL '%s'" % url
-                        traceback.print_exc()
-                else:
-                    print "Skipping %s" % (url)
-        print "testUrlsFallback() response count:\n   code count"
-        for code in response_count:
-            print "   %s: %s " % (code, response_count[code])
-        for code in response_count:
-            if str(code) != "200":
-                self.assertEqual(response_count[code], 0)
+                    lst.append(("200", url))
+        self.doUrlsTest(lst)

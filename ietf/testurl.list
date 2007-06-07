@@ -6,6 +6,9 @@
 200,404	/idtracker/status/
 200,404	/idtracker/last_call/
 skip	/my/
+skip    /idindex/
+skip    /idindex/showdocs/all/date/
+skip    /idindex/showdocs/all/name/
 200,404	/liaisons/
 200,404	/liaisons/managers/
 200,404	/mailinglists/area_lists/
