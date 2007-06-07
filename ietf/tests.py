@@ -93,19 +93,19 @@ class UrlTestCase(TestCase):
             print "Not all the application URLs has test cases."
 
     def doUrlsTest(self, lst):
-        response_count = {"Exc": 0, 200: 0, }
+        response_count = {"Exc": 0, "200": 0, }
         for code, url in lst:
-            if code in ["Skip", "skip"]:
+            if "skip" in code or "Skip" in code:
                 print "Skipping %s" % (url)
             elif url:
-                print "Trying code, url: (<%s>, '%s')" % (code, url)
+                #print "Trying code, url: (<%s>, '%s')" % (code, url)
                 try:
                     response = self.client.get(url)
-                    res = response.status_code
+                    res = str(response.status_code)
                     if not res in response_count:
                         response_count[res] = 0
                     response_count[res] += 1
-                    if str(res) in code.split(","):
+                    if str(res) in code:
                         print "OK   %s %s" % (res, url)
                     else:
                         print "Fail %s %s" % (res, url)
@@ -118,7 +118,7 @@ class UrlTestCase(TestCase):
             else:
                 pass
         for code in response_count:
-            print "   %s: %s " % (res, response_count[code])
+            print "   %s: %s " % (code, response_count[code])
         for code in response_count:
             if str(code) != "200":
                 self.assertEqual(response_count[code], 0)
@@ -129,12 +129,11 @@ class UrlTestCase(TestCase):
 
     def testUrlsFallback(self):
         patterns = get_patterns(ietf.urls)
-        response_count = {"Exc": 0, "200": 0, }
         lst = []
         for pattern in patterns:
             if pattern.startswith("^") and pattern.endswith("$"):
                 url = "/"+pattern[1:-1]
                 # if there is no variable parts in the url, test it
                 if re.search("^[-a-z0-9./_]*$", url) and not url in self.testurls and not url.startswith("/admin/"):
-                    lst.append(("200", url))
+                    lst.append((["200"], url))
         self.doUrlsTest(lst)
