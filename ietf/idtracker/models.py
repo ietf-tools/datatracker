@@ -775,6 +775,26 @@ class GoalMilestone(models.Model):
 
 #### end wg stuff
 
+class Role(models.Model):
+    '''This table is named 'chairs' in the database, as its original
+    role was to store "who are IETF, IAB and IRTF chairs?".  It has
+    since expanded to store roles, such as "IAB Exec Dir" and "IAD",
+    so the model is renamed.
+    '''
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
+    role_name = models.CharField(maxlength=25, db_column='chair_name')
+    def __str__(self):
+	return "%s (%s)" % (self.person, self.role())
+    def role(self):
+	if self.role_name in ('IETF', 'IAB', 'IRTF', 'NomCom'):
+	    return "%s Chair" % self.role_name
+	else:
+	    return self.role_name
+    class Meta:
+        db_table = 'chairs'
+    class Admin:
+	pass
+
 class ChairsHistory(models.Model):
     CHAIR_CHOICES = (
 	( '1', 'IETF' ),

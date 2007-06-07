@@ -1,5 +1,6 @@
 from django.db import models
 from ietf.idtracker.models import Acronym, Area, PersonOrOrgInfo
+from ietf.idtracker.models import Role
 import random
 from datetime import datetime
 
@@ -20,6 +21,12 @@ class ImportedMailingList(models.Model):
         db_table = 'imported_mailing_list'
     class Admin:
 	pass
+
+class Domain(models.Model):
+    domain = models.CharField("Mailing List Domain Name", maxlength=100)
+    approvers = models.ManyToManyField(Role)
+    class Admin:
+        pass
 
 class MailingList(models.Model):
     SUBSCRIPTION_CHOICES = (
@@ -103,7 +110,7 @@ class NonWgMailingList(models.Model):
     list_url = models.CharField("List URL", maxlength=255)
     admin = models.TextField("Administrator(s)' Email Address(es)", blank=True)
     purpose = models.TextField(blank=True)
-    area = models.ForeignKey(Area, db_column='area_acronym_id')
+    area = models.ForeignKey(Area, db_column='area_acronym_id', null=True)
     subscribe_url = models.CharField("Subscribe URL", blank=True, maxlength=255)
     subscribe_other = models.TextField("Subscribe Other", blank=True)
     # Can be 0, 1, -1, or what looks like a person_or_org_tag, positive or neg.
