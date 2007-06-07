@@ -1,45 +1,13 @@
 # Broken URLs have been commented out
 
-200	/
 200,404	/accounts/
 200,302	/accounts/password_change/
 200,302	/accounts/profile/
-200	/idindex/
-200	/idindex/showdocs/all/date/
-200	/idindex/showdocs/all/name/
-200	/idindex/showdocs/current/date/
-200	/idindex/showdocs/current/name/
-200	/idindex/showdocs/rfc/date/
-200	/idindex/showdocs/rfc/name/
-200	/idindex/showdocs/dead/date/
-200	/idindex/showdocs/dead/name/
-200	/idindex/wglist/A/
-#200	/idindex/wglist/adslmib/
-#200	/idindex/wglist/pwe3/
-200	/idindex/wglist/Z/
-200	/idindex/inddocs/B/
-200	/idindex/inddocs/Y/
-200	/idindex/otherdocs/iab/
 200,404	/idtracker/status/
 200,404	/idtracker/last_call/
-200	/iesg/telechat/
-200	/iesg/telechat/2006/
-200	/iesg/telechat/2006/feb/
-#200	/iesg/telechat/detail/365/
-200	/iesg/ann/independent/
-200	/iesg/ann/ietf-doc/recent/
-200	/iesg/ann/ietf-doc/previous/
-200	/ipr/
-#200	/ipr/ipr-657/
-#200	/ipr/ipr-787/
-#200	/ipr/ipr-795/
-200	/ipr/new-generic/
-200	/ipr/new-specific/
-200	/ipr/new-third-party/
 skip	/my/
 200,404	/liaisons/
 200,404	/liaisons/managers/
-#200	/liaisons/329/
 200,404	/mailinglists/area_lists/
 200,404	/mailinglists/nonwg_lists/
 
