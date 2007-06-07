@@ -4,8 +4,13 @@ import traceback
 
 import django.test.simple
 from django.test import TestCase
+from django.conf import settings
+from django.db import connection
 import ietf.settings
 import ietf.urls
+
+
+startup_database = settings.DATABASE_NAME  # The startup database name, before changing to test_...
 
 def run_tests(module_list, verbosity=1, extra_tests=[]):
     module_list.append(ietf.urls)
@@ -60,7 +65,17 @@ class UrlTestCase(TestCase):
                         self.testtuples += [ (codes, testurl, goodurl) ]
                         self.testurls += [ testurl ]
                     #print "(%s, %s, %s)" % (code, testurl, goodurl)
-        #print self.testtuples
+        # Use the default database for the url tests, instead of the test database
+        self.testdb = settings.DATABASE_NAME
+        connection.close()
+        settings.DATABASE_NAME = startup_database
+        connection.cursor()
+        
+    def tearDown(self):
+        # Revert to using the test database
+        connection.close()
+        settings.DATABASE_NAME = self.testdb
+        connection.cursor()
         
     def testCoverage(self):
         covered = []
