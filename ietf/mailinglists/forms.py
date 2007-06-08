@@ -52,7 +52,7 @@ class ListReqStep1(forms.Form):
 	return field.as_widget(field.field.widget)
     def __init__(self, *args, **kwargs):
 	dname = 'ietf.org'
-        if args:
+        if args and args[0]:
 	    dn = 'domain_name'
 	    if kwargs.has_key('prefix'):
 		dn = kwargs['prefix'] + '-' + dn
