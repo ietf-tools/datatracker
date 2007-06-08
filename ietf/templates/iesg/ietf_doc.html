@@ -28,10 +28,12 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 <h3><a name="protocol">1. <u>Protocol Action Announcements</u></a></h3>
 {% regroup object_list by b_approve_date|date:"F j, Y" as dates %}
 {% for date in dates %}
-<b>Date Sent: {{ date.grouper }} </b>
+{% if date.list.0.idinternal.ballot_id %}<b>Date Sent: {{ date.grouper }} </b>{% endif %}
 <ul>
 {% for item in date.list %}
-<li>{% if item.idinternal.ballot_id %}<a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{% else %}<a href="http://www.ietf.org/IESG/Announcements/{{ item.filename }}.ann">{% endif %}{{ item.title }}</a>
+{% if item.idinternal.ballot_id %}
+<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.title }}</a>
+{% endif %}
 {% endfor %}
 </ul>
 {% endfor %}
@@ -39,10 +41,12 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 <h3><a name="document">2. <u>Document Action Announcements</u></a></h3>
 {% regroup object_list_doc by b_approve_date|date:"F j, Y" as dates %}
 {% for date in dates %}
-<b>Date Sent: {{ date.grouper }} </b>
+{% if date.list.0.idinternal.ballot_id %}<b>Date Sent: {{ date.grouper }} </b>{% endif %}
 <ul>
 {% for item in date.list %}
+{% if item.idinternal.ballot_id %}
 <li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.title }}</a>
+{% endif %}
 {% endfor %}
 </ul>
 {% endfor %}
