@@ -147,7 +147,7 @@ list_fields = {
     'mail_type': None,
     'mail_cat': None,
     'admins': MultiEmailField(label='List Administrator(s)', widget=AdminRequestor(attrs={'cols': 41, 'rows': 4})),
-    'initial': MultiEmailField(label='Initial list member(s)', widget=forms.Textarea(attrs={'cols': 41, 'rows': 4}), required=False),
+    'initial_members': MultiEmailField(label='Initial list member(s)', widget=forms.Textarea(attrs={'cols': 41, 'rows': 4}), required=False),
 }
 
 list_labels = {
@@ -170,7 +170,7 @@ list_attrs = {
     'short_desc': { 'size': 55 },
     'long_desc': { 'cols': 41, 'rows': 4, 'wrap': 'virtual' },
     'admins': { 'cols': 41, 'rows': 4 },
-    'initial': { 'cols': 41, 'rows': 4 },
+    'initial_members': { 'cols': 41, 'rows': 4 },
     'welcome_message': { 'cols': 41, 'rows': 4 },
     'welcome_new': { 'cols': 41, 'rows': 4 },
     'archive_remote': { 'cols': 41, 'rows': 4 },
@@ -190,6 +190,7 @@ class ListReqWizard(wizard.Wizard):
     clean_forms = []
     main_step = 1
     requestor_is_approver = False
+    mlist_known = True
     def get_template(self):
 	templates = []
 	#if self.step > 0:
@@ -204,6 +205,7 @@ class ListReqWizard(wizard.Wizard):
 	return templates
     def render_template(self, *args, **kwargs):
 	#self.extra_context['clean_forms'] = self.clean_forms
+	self.extra_context['mlist_known'] = self.mlist_known
 	if self.step > self.main_step:
 	    self.extra_context['main_form'] = self.clean_forms[self.main_step]
 	    self.extra_context['requestor_is_approver'] = self.requestor_is_approver
@@ -234,6 +236,7 @@ class ListReqWizard(wizard.Wizard):
 		    self.initial[self.main_step] = {'mlist_name': form.clean_data['group']}
 		else:
 		    self.initial[self.main_step] = {}
+		    self.mlist_known = False
 	    if form.clean_data['mail_type'].endswith('wg'):
 		self.initial[self.main_step].update({'domain_name': 'ietf.org'})
 	    else:

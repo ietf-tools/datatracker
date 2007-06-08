@@ -8,7 +8,7 @@
 <tr><td> Short description of the email list: </td><td>{{ list.short_desc|escape }}</td></tr>
 <tr><td> Long description of the email list: </td><td>{{ list.long_desc|escape }}</td></tr>
 <tr><td> Administrator(s): </td><td><pre>{{ list.admins|escape }}</pre></td></tr>
-<tr><td> Email address(es) of initial subscriber(s) (optional): </td><td><pre>{{ list.initial|escape }}</pre></td></tr>
+<tr><td> Email address(es) of initial subscriber(s) (optional): </td><td><pre>{{ list.initial_members|escape }}</pre></td></tr>
 <tr><td> Welcome message for initial subscriber(s) (optional): </td><td>{{ list.welcome_message|linebreaksbr }}</td></tr>
 <tr><td> Welcome message for new subscriber(s) (optional): </td><td>{{ list.welcome_new|linebreaksbr }}</td></tr>
 <tr><td> Required steps for subscription: </td><td>{{ list.get_subscription_display }}</td></tr>

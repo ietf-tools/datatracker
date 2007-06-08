@@ -17,7 +17,7 @@ Administrator(s):
 {{ list.admins }}
 
 Email address(es) of the initial subscriber(s) (optional):
-{{ list.initial }}
+{{ list.initial_members }}
 
 Welcome message for initial subscriber(s) (optional):
 {{ list.welcome_message }}

@@ -1,0 +1,29 @@
+{% extends "mailinglists/list_wizard_base.html" %}
+
+{% block mlform %}
+{% for field in form %}
+{% if field.is_hidden %}
+{# we assume that the only hidden form is the domain name #}
+{# so don't render anything #}
+{% else %}
+<tr>
+<th>{{ field.label_tag }}:</th>
+<td>
+{% if field.errors %}
+<ul class="errorlist">{% for error in field.errors %}<li>{{ error|escape }}</li>{% endfor %}</ul>
+{% endif %}
+{% ifequal field.name "mlist_name" %}
+{% if mlist_known %}{# if we know the mailing list name already #}
+{{ form.initial.mlist_name }}@{{ form.initial.domain_name }}{{ field.as_hidden }}
+{% else %}
+{{ field }}@{{ form.initial.domain_name }}
+{% endif %}
+{{ form.domain_name.as_hidden }}
+{% else %}
+{{ field }}
+{% endifequal %}
+</td>
+</tr>
+{% endif %}
+{% endfor %}
+{% endblock %}

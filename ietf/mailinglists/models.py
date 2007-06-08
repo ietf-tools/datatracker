@@ -80,7 +80,7 @@ class MailingList(models.Model):
     long_desc = models.TextField('Long description of the email list')
     # admins is a VARCHAR but can have multiple lines.
     admins = models.TextField('Mailing list administrators (one address per line)', maxlength=250)
-    initial = models.TextField('Enter email address(es) of initial subscriber(s) (one address per line) (optional)', blank=True)
+    initial_members = models.TextField('Enter email address(es) of initial subscriber(s) (one address per line) (optional)', blank=True, db_column='initial')
     welcome_message = models.TextField('Provide a welcome message for initial subscriber(s)(optional)', blank=True)
     welcome_new = models.TextField('Provide a welcome message for new subscriber(s)(optional)', blank=True)
     subscription = models.IntegerField('What steps are required for subscription?', choices=SUBSCRIPTION_CHOICES)
