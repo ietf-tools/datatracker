@@ -1,4 +1,4 @@
-ietf/settings.py:144: 'from settings_local import *' used; unable to detect undefined names
+ietf/settings.py:149: 'from settings_local import *' used; unable to detect undefined names
 ietf/tests.py:8: redefinition of unused 'ietf' from line 7
 ietf/tests.py:10: redefinition of unused 'ietf' from line 9
 ietf/urls.py:1: 'handler500' imported but unused
