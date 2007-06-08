@@ -117,15 +117,18 @@ class UrlTestCase(TestCase):
                 response_count[res] += 1
             else:
                 pass
+        if response_count:
+            print "Response count:"
         for res in response_count:
             ind, code = res
-            print "%4s %s: %s " % (ind, code, response_count[res])
+            print "%-4s %s: %s " % (ind, code, response_count[res])
         for res in response_count:
             ind, code = res
             self.assertEqual(ind, "OK", "Found %s cases of result code: %s" % (response_count[res], code))
 
     def testUrlsList(self):
         lst = [(tuple[0], tuple[1]) for tuple in self.testtuples]
+        print "\nTest listed URLs:"
         self.doUrlsTest(lst)
 
     def testUrlsFallback(self):
@@ -137,4 +140,5 @@ class UrlTestCase(TestCase):
                 # if there is no variable parts in the url, test it
                 if re.search("^[-a-z0-9./_]*$", url) and not url in self.testurls and not url.startswith("/admin/"):
                     lst.append((["200"], url))
+        print "\nTest non-listed URLs:"
         self.doUrlsTest(lst)
