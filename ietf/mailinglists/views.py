@@ -242,9 +242,8 @@ class ListReqWizard(wizard.Wizard):
 	    else:
 		self.initial[self.main_step].update({'domain_name': form.clean_data['domain_name']})
 	if step == self.main_step:
-	    approvers = mlist_approvers(form0.clean_data['mail_type'], form0.clean_data['domain_name'], form0.clean_data['group'])
-	    main_form = self.clean_forms[self.main_step]
-	    requestor_email = main_form.clean_data['requestor_email']
+	    approvers = mlist_approvers(form0.clean_data['mail_type'], form.clean_data['domain_name'], form0.clean_data['group'])
+	    requestor_email = form.clean_data['requestor_email']
 	    requestor_person = None
 	    for a in approvers:
 		if requestor_email == a.person.email()[1]:
