@@ -67,6 +67,10 @@ class MailingList(models.Model):
         (1, 'List members only'),
 	(2, 'Open'),
     )
+    YESNO_CHOICES = (
+        (0, 'NO'),
+        (1, 'YES'),
+    ) # for integer "boolean" fields
     mailing_list_id = models.CharField('Unique ID', primary_key=True, maxlength=25, editable=False)
     request_date = models.DateField(default=datetime.now, editable=False)
     requestor = models.CharField("Requestor's full name", maxlength=250)
@@ -81,8 +85,8 @@ class MailingList(models.Model):
     welcome_new = models.TextField('Provide a welcome message for new subscriber(s)(optional)', blank=True)
     subscription = models.IntegerField('What steps are required for subscription?', choices=SUBSCRIPTION_CHOICES)
     post_who = models.IntegerField('Messages to this list can be posted by', choices=POSTWHO_CHOICES)
-    post_admin = models.BooleanField('Do postings need to be approved by an administrator?')
-    archive_private = models.BooleanField('Are the archives private?')
+    post_admin = models.IntegerField('Do postings need to be approved by an administrator?', default=0, choices=YESNO_CHOICES)
+    archive_private = models.IntegerField('Are the archives private?', default=0, choices=YESNO_CHOICES)
     archive_remote = models.TextField('Provide specific information about how to access and move the existing archive (optional)', blank=True)
     add_comment = models.TextField(blank=True)
     mail_type = models.IntegerField(choices=MAILTYPE_CHOICES)
