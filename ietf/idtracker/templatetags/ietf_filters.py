@@ -120,3 +120,8 @@ def fill(text, width):
                 para = textwrap.fill(para, width, replace_whitespace=False)
             wrapped.append(para)
     return "\n\n".join(wrapped)
+
+@register.filter(name='allononeline')
+def allononeline(text):
+    """Simply removes CRs, LFs, leading and trailing whitespace from the given string."""
+    return text.replace("\r", "").replace("\n", "").strip()

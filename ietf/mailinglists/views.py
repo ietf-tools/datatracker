@@ -5,6 +5,7 @@ from django import newforms as forms
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.db.models import Q
+from django.contrib.sites.models import Site
 from ietf.contrib import wizard, form_decorator
 from ietf.utils.mail import send_mail_subj
 from datetime import datetime
@@ -256,17 +257,23 @@ class ListReqWizard(wizard.Wizard):
 	list.approved = 0
 	list.save()
 	approver_email = list.auth_person.email()
-	send_mail_subj(request, [ approver_email ], None, 'mailinglists/list_wizard_subject.txt', 'mailinglists/list_wizard_done_email.txt', {'list': list, 'forms': self.clean_forms, 'requestor_is_approver': self.requestor_is_approver})
-        return render_to_response('mailinglists/list_wizard_done.html', {'list': list, 'forms': self.clean_forms, 'requestor_is_approver': self.requestor_is_approver}, context_instance=RequestContext(request) )
+	site = Site.objects.get_current()
+	if list.mail_type == 5 or list.mail_type == 6:
+	    req = 'delete'
+	else:
+	    req = 'add'
+	send_mail_subj(request, [ approver_email ], None, 'mailinglists/list_wizard_subject.txt', 'mailinglists/list_wizard_done_email.txt', {'list': list, 'forms': self.clean_forms, 'requestor_is_approver': self.requestor_is_approver, 'site': site, 'req': req})
+        return render_to_response('mailinglists/list_wizard_done.html', {'list': list, 'forms': self.clean_forms, 'requestor_is_approver': self.requestor_is_approver, 'req': req}, context_instance=RequestContext(request) )
 
 def mlist_approvers(mail_type, domain_name, group):
     approvers = []
     if domain_name == 'ietf.org':
 	approvers += AreaDirector.objects.filter(area__status=Area.ACTIVE)
-	if mail_type.endswith('wg'):
+	if mail_type == 'movewg':
 	    approvers += WGChair.objects.filter(group_acronym=group)
-    domain = Domain.objects.get(domain=domain_name)
-    approvers += domain.approvers.all()
+    if mail_type.endswith('non'):
+	domain = Domain.objects.get(domain=domain_name)
+	approvers += domain.approvers.all()
     return approvers
 
 def list_req_wizard(request):

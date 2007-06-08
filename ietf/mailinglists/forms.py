@@ -169,7 +169,9 @@ class ListReqAuthorized(forms.Form):
 class ListReqClose(forms.Form):
     requestor = forms.CharField(label = "Requestor's full name", widget = forms.TextInput(attrs = {'size': 55}))
     requestor_email = forms.EmailField(label = "Requestor's email address", widget = forms.TextInput(attrs = {'size': 55}))
-    #mlist_name: with a widget that just displays the value as text
+    # todo: right widgets for these
+    mlist_name = forms.CharField(widget = forms.HiddenInput())
+    domain_name = forms.CharField(widget = forms.HiddenInput())
     reason_to_delete = forms.CharField(label = 'Reason for closing list', widget = forms.Textarea(attrs = {'rows': 4, 'cols': 60}))
 
 class AdminRequestor(forms.MultiWidget):
