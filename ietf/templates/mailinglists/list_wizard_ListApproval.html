@@ -2,31 +2,12 @@
 
 {% block mlform %}
 <tr>
-<th colspan=2>Preview</th>
+<td colspan=2><h3>Preview your Request</h3></th>
 </tr>
-<tr>
-<th>{{ main_form.requestor.label }}</th>
-<td>{{ main_form.requestor.field.data|escape }}</td>
-</tr>
-<tr>
-<th>{{ main_form.requestor_email.label }}</th>
-<td>{{ main_form.requestor_email.field.data|escape }}</td>
-</tr>
-<tr>
-<th>{{ main_form.mlist_name.label }}</th>
-<td>{{ main_form.mlist_name.field.data|escape }}@{{ main_form.domain_name }}</td>
-</tr>
-<tr>
-<th>{{ main_form.requestor_email.label }}</th>
-<td>{{ main_form.requestor_email.field.data|escape }}</td>
-</tr>
-<!-- make sure we have all the fields -->
-{% for field in main_form %}
-<tr>
-<th>{{ field.label }}</th>
-<td>{{ field.data|escape|linebreaksbr }}</td>
-</tr>
-{% endfor %}
-<!-- must figure out whether this is an approver or a hidden field -->
+{% include "mailinglists/list_summary.html" %}
+{% if form.approver.is_hidden %}
+<tr><td colspan=2><hr>You will be the approver for this request.{{ form.approver }}</td></tr>
+{% else %}
 {{ form }}
+{% endif %}
 {% endblock %}

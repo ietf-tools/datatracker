@@ -209,6 +209,8 @@ class ListReqWizard(wizard.Wizard):
 	if self.step > self.main_step:
 	    self.extra_context['main_form'] = self.clean_forms[self.main_step]
 	    self.extra_context['requestor_is_approver'] = self.requestor_is_approver
+	if self.step == self.main_step + 1:
+	    self.extra_context['list'] = self.getlist()
 	return super(ListReqWizard, self).render_template(*args, **kwargs)
     # want to implement parse_params to get domain for list
     def process_step(self, request, form, step):
@@ -251,12 +253,15 @@ class ListReqWizard(wizard.Wizard):
 		    self.requestor_is_approver = True
 	    self.form_list.append(gen_list_approval(approvers, requestor_person, ListApprover))
         super(ListReqWizard, self).process_step(request, form, step)
-    def done(self, request, form_list):
+    def getlist(self):
 	list = MailingList(**self.clean_forms[self.main_step].clean_data)
 	list.mailing_list_id = None		# make sure that we create a new row
-	list.auth_person_id = int(self.clean_forms[self.main_step + 1].clean_data['approver'])
 	list.mail_type = MailingList.MAILTYPE_MAP[self.clean_forms[0].clean_data['mail_type']]
 	list.approved = 0
+	return list
+    def done(self, request, form_list):
+	list = self.getlist()
+	list.auth_person_id = int(self.clean_forms[self.main_step + 1].clean_data['approver'])
 	list.save()
 	approver_email = list.auth_person.email()
 	site = Site.objects.get_current()
