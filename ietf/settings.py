@@ -17,6 +17,11 @@ ADMINS = (
     ('IETF Django Developers', 'django-project@ietf.org'),
     ('GMail Tracker Archive', 'ietf.tracker.archive+errors@gmail.com'),
 )
+
+# Override this in the settings_local.py file:
+SERVER_EMAIL = 'Django Server<django@tools.ietf.org>'
+
+
 DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@ietf.org>'
 
 MANAGERS = ADMINS

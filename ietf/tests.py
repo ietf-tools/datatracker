@@ -53,6 +53,7 @@ class UrlTestCase(TestCase):
                 for line in file:
                     line = line.strip()
                     if line and not line.startswith('#'):
+                        line = line.split("#", 1)[0]
                         urlspec = line.split()
                         if len(urlspec) == 2:
                             codes, testurl = urlspec
@@ -94,7 +95,7 @@ class UrlTestCase(TestCase):
 
     def doUrlsTest(self, lst):
         response_count = {}
-        for codes, url in lst:
+        for codes, url, master in lst:
             if "skip" in codes or "Skip" in codes:
                 print "Skipping %s" % (url)
             elif url:
@@ -127,9 +128,8 @@ class UrlTestCase(TestCase):
             self.assertEqual(ind, "OK", "Found %s cases of result code: %s" % (response_count[res], code))
 
     def testUrlsList(self):
-        lst = [(tuple[0], tuple[1]) for tuple in self.testtuples]
-        print "\nTest listed URLs:"
-        self.doUrlsTest(lst)
+        print "\nTesting specified URLs:"
+        self.doUrlsTest(self.testtuples)
 
     def testUrlsFallback(self):
         patterns = get_patterns(ietf.urls)
@@ -139,6 +139,11 @@ class UrlTestCase(TestCase):
                 url = "/"+pattern[1:-1]
                 # if there is no variable parts in the url, test it
                 if re.search("^[-a-z0-9./_]*$", url) and not url in self.testurls and not url.startswith("/admin/"):
-                    lst.append((["200"], url))
-        print "\nTest non-listed URLs:"
+                    lst.append((["200"], url, None))
+                else:
+                    lst.append((["skip"], url, None))
+            else:
+                lst.append((["Skip"], url, None))
+            
+        print "\nTesting non-listed URLs:"
         self.doUrlsTest(lst)
