@@ -93,35 +93,36 @@ class UrlTestCase(TestCase):
             print "Not all the application URLs has test cases."
 
     def doUrlsTest(self, lst):
-        response_count = {"Exc": 0, "200": 0, }
-        for code, url in lst:
-            if "skip" in code or "Skip" in code:
+        response_count = {}
+        for codes, url in lst:
+            if "skip" in codes or "Skip" in codes:
                 print "Skipping %s" % (url)
             elif url:
-                #print "Trying code, url: (<%s>, '%s')" % (code, url)
+                #print "Trying codes, url: (%s, '%s')" % (codes, url)
                 try:
                     response = self.client.get(url)
-                    res = str(response.status_code)
-                    if not res in response_count:
-                        response_count[res] = 0
-                    response_count[res] += 1
-                    if str(res) in code:
-                        print "OK   %s %s" % (res, url)
+                    code = str(response.status_code)
+                    if code in codes:
+                        print "OK   %s %s" % (code, url)
+                        res = ("OK", code)
                     else:
-                        print "Fail %s %s" % (res, url)
+                        print "Fail %s %s" % (code, url)
+                        res = ("Fail", code)
                 except:
-                    if not "Exc" in response_count:
-                        response_count["Exc"] = 0
-                    response_count["Exc"] += 1
+                    res = ("Fail", "Exc")
                     print "Exception for URL '%s'" % url
                     traceback.print_exc()
+                if not res in response_count:
+                    response_count[res] = 0
+                response_count[res] += 1
             else:
                 pass
-        for code in response_count:
-            print "   %s: %s " % (code, response_count[code])
-        for code in response_count:
-            if str(code) != "200":
-                self.assertEqual(response_count[code], 0)
+        for res in response_count:
+            ind, code = res
+            print "%4s %s: %s " % (ind, code, response_count[res])
+        for res in response_count:
+            ind, code = res
+            self.assertEqual(ind, "OK", "Found %s cases of result code: %s" % (response_count[res], code))
 
     def testUrlsList(self):
         lst = [(tuple[0], tuple[1]) for tuple in self.testtuples]

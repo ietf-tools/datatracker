@@ -26,3 +26,5 @@ INSERT INTO announced_from VALUES (98, 'IETF Executive Director <exec-director@i
 INSERT INTO announced_to VALUES (9, 'Unknown', NULL);
 INSERT INTO area_status VALUES (3, 'Unknown');
 
+UPDATE ipr_detail SET submitted_date=2000-09-15 WHERE ipr_id=170;
+UPDATE ipr_detail SET submitted_date=2004-08-30 WHERE ipr_id=418;
