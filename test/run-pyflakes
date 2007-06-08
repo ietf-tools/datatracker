@@ -3,10 +3,14 @@
 function filter() {
 python -c '
 import sys
+import re
+
+def fixnum(str):
+    return re.sub(":[0-9]+:", ":", str)
 file = open(sys.argv[1])
-excludes = [line.strip() for line in file.readlines()]
+excludes = [fixnum(line.strip()) for line in file.readlines()]
 for line in sys.stdin:
-    if not line.strip() in excludes:
+    if not fixnum(line.strip()) in excludes:
 	sys.stdout.write(line)
 ' "$@"
 }
