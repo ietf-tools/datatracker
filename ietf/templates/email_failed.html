@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}E-Mail Sending Failed{% endblock %}
+
+{% block content %}
+<h1>E-Mail Sending Failed</h1>
+
+<p>Sorry, the site needed to send an E-Mail message to complete this
+action, and that attempt failed.  Please reload this page later
+to try again, or, if this condition persists, please send an
+E-Mail to &lt;<a href="mailto:webmaster@ietf.org">webmaster@ietf.org</a>&gt;
+
+{% if debug %}
+<ul>
+<li>Exception: {{ exception|escape }}
+<li>Detail: {{ args|escape }}
+<li>Traceback:
+<pre>
+{{ traceback|escape }}
+</pre>
+</ul>
+{% endif %}
+
+{% include "debug.html" %}
+{% endblock %}
