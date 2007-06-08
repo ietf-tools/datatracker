@@ -10,12 +10,13 @@ class ImportedMailingList(models.Model):
     name = models.CharField(blank=True, maxlength=255, db_column='list_name')
     domain = models.CharField(blank=True, maxlength=25, db_column='list_domain')
     def __str__(self):
-	return self.name or self.group_acronym
+	return self.acronym or self.group_acronym.acronym
     def choices(dname):
 	objects = ImportedMailingList.objects.all().filter(domain__icontains=dname).exclude(acronym__iendswith='announce')
 	if dname == "ietf.org":
 	    objects = objects.exclude(acronym__istartswith='ietf').exclude(acronym__icontains='iesg')
-	return [(list.acronym, list.acronym) for list in objects]
+	return objects
+	#return [(list.acronym, list.acronym) for list in objects]
     choices = staticmethod(choices)
     class Meta:
         db_table = 'imported_mailing_list'
@@ -24,7 +25,9 @@ class ImportedMailingList(models.Model):
 
 class Domain(models.Model):
     domain = models.CharField("Mailing List Domain Name", maxlength=100)
-    approvers = models.ManyToManyField(Role)
+    approvers = models.ManyToManyField(Role, filter_interface=models.HORIZONTAL)
+    def __str__(self):
+	return self.domain
     class Admin:
         pass
 
@@ -34,6 +37,14 @@ class MailingList(models.Model):
 	(2, 'Approval'),
 	(3, 'Confirm+Approval'),
     )
+    MAILTYPE_MAP = {
+        'newwg': 1,
+	'movewg': 2,
+	'closewg': 5,
+	'newnon': 4,
+	'movenon': 3,
+	'closenon': 6,
+    }
     MAILTYPE_CHOICES = (
 	(1, 'Create new WG email list at ietf.org'),
 	(2, 'Move existing WG email list to ietf.org'),
@@ -87,7 +98,7 @@ class MailingList(models.Model):
 	if self.mailing_list_id is None:
 	    generate = True
 	    while generate:
-		self.mailing_list_id = ''.join([random.choice('0123456789abcdefghijklmnopqrstuvwxyz') for i in range(35)])
+		self.mailing_list_id = ''.join([random.choice('0123456789abcdefghijklmnopqrstuvwxyz') for i in range(25)])
 		try:
 		    MailingList.objects.get(pk=self.mailing_list_id)
 		except MailingList.DoesNotExist:
@@ -110,7 +121,7 @@ class NonWgMailingList(models.Model):
     list_url = models.CharField("List URL", maxlength=255)
     admin = models.TextField("Administrator(s)' Email Address(es)", blank=True)
     purpose = models.TextField(blank=True)
-    area = models.ForeignKey(Area, db_column='area_acronym_id', null=True)
+    area = models.ForeignKey(Area, db_column='area_acronym_id')
     subscribe_url = models.CharField("Subscribe URL", blank=True, maxlength=255)
     subscribe_other = models.TextField("Subscribe Other", blank=True)
     # Can be 0, 1, -1, or what looks like a person_or_org_tag, positive or neg.

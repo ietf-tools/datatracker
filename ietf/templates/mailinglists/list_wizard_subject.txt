@@ -1,0 +1,1 @@
+{% filter title %}Request to {% include "mailinglists/list_type_message2.txt %}{% endfilter %}

@@ -43,17 +43,27 @@ class ListReqStep1(forms.Form):
 	('movenon', 'Move existing non-WG email list to selected domain above'),
 	('closenon', 'Close existing non-WG email list at selected domain above'),
 	), widget=forms.RadioSelect)
-    group = forms.ChoiceField(required=False)
+    #group = forms.ChoiceField(required=False)
+    group = forms.ModelChoiceField(queryset=IETFWG.objects.all().select_related().order_by('acronym.acronym'), required=False, empty_label="-- Select Working Group")
     domain_name = forms.ChoiceField(choices=DOMAIN_CHOICES, required=False)
-    list_to_close = forms.ChoiceField(required=False)
+    list_to_close = forms.ModelChoiceField(queryset=ImportedMailingList.objects.all(), required=False, empty_label="-- Select List To Close")
     def mail_type_fields(self):
 	field = self['mail_type']
 	return field.as_widget(field.field.widget)
     def __init__(self, *args, **kwargs):
-	dname = kwargs.get('dname', 'ietf.org')
+	dname = 'ietf.org'
+        if args:
+	    dn = 'domain_name'
+	    if kwargs.has_key('prefix'):
+		dn = kwargs['prefix'] + '-' + dn
+	    dname = args[0][dn]
+	dname = kwargs.get('dname', dname)
 	super(ListReqStep1, self).__init__(*args, **kwargs)
-	self.fields['group'].choices = [('', '-- Select Working Group')] + IETFWG.choices()
-	self.fields['list_to_close'].choices = [('', '-- Select List To Close')] + ImportedMailingList.choices(dname)
+	#self.fields['group'].choices = [('', '-- Select Working Group')] + IETFWG.choices()
+	#self.fields['list_to_close'].choices = [('', '-- Select List To Close')] + ImportedMailingList.choices(dname)
+	#XXX This doesn't work yet.  Maybe switch back to choices.
+	self.fields['list_to_close'].queryset = ImportedMailingList.choices(dname)
+	print "dname %s list_to_close values: %s" % (dname, self.fields['list_to_close'].queryset)
 	self.fields['domain_name'].initial = dname
     def clean_group(self):
 	group = self.clean_data['group']
@@ -61,15 +71,13 @@ class ListReqStep1(forms.Form):
 	if action.endswith('wg'):
 	    if not self.clean_data.get('group'):
 		raise forms.ValidationError, 'Please pick a working group'
-	    group_name = Acronym.objects.get(pk=group).acronym
-	    #group_list_exists = ImportedMailingList.objects.filter(acronym=group_name).count()
 	    group_list_exists = ImportedMailingList.objects.filter(group_acronym=group).count()
 	    if action.startswith('close'):
 	        if group_list_exists == 0:
-		    raise forms.ValidationError, 'The %s mailing list does not exist.' % group_name
+		    raise forms.ValidationError, 'The %s mailing list does not exist.' % group
 	    else:
 	        if group_list_exists:
-		    raise forms.ValidationError, 'The %s mailing list already exists.' % group_name
+		    raise forms.ValidationError, 'The %s mailing list already exists.' % group
 	return self.clean_data['group']
     def clean_list_to_close(self):
 	if self.clean_data.get('mail_type', '') == 'closenon':
@@ -126,6 +134,21 @@ class PickApprover(forms.Form):
 	super(PickApprover, self).__init__(*args, **kwargs)
 	self.fields['approver'].choices = [('', '-- Pick an approver from the list below')] + [(person.person_or_org_tag, str(person)) for person in PersonOrOrgInfo.objects.filter(pk__in=approvers)]
 
+class ListApprover(forms.Form):
+    """
+    When instantiating, supply a list of AreaDirector, WGChair and/or Role
+    objects (or other objects with a person_id and appropriate str value).
+    """
+    approver = forms.ChoiceField(choices=(
+	('', '-- Pick an approver from the list below'),
+    ))
+    def __init__(self, approvers, requestor=None, *args, **kwargs):
+	super(ListApprover, self).__init__(*args, **kwargs)
+	self.fields['approver'].choices = [('', '-- Pick an approver from the list below')] + [(item.person_id, str(item)) for item in approvers]
+	if requestor:
+	    self.fields['approver'].initial = requestor.person_id
+	    self.fields['approver'].widget = forms.widgets.HiddenInput()
+
 class DeletionPickApprover(PickApprover):
     ds_name = forms.CharField(label = 'Enter your name', widget = forms.TextInput(attrs = {'size': 45}))
     ds_email = forms.EmailField(label = 'Enter your email', widget = forms.TextInput(attrs = {'size': 45}))
@@ -143,9 +166,11 @@ class ListReqAuthorized(forms.Form):
 	    raise forms.ValidationError, 'You must assert that you are authorized to perform this action.'
 	return self.clean_data['authorized']
 
-# subclass pickapprover here too?
 class ListReqClose(forms.Form):
-    pass
+    requestor = forms.CharField(label = "Requestor's full name", widget = forms.TextInput(attrs = {'size': 55}))
+    requestor_email = forms.EmailField(label = "Requestor's email address", widget = forms.TextInput(attrs = {'size': 55}))
+    #mlist_name: with a widget that just displays the value as text
+    reason_to_delete = forms.CharField(label = 'Reason for closing list', widget = forms.Textarea(attrs = {'rows': 4, 'cols': 60}))
 
 class AdminRequestor(forms.MultiWidget):
     def decompress(self, value):
@@ -169,7 +194,8 @@ class AdminRequestor(forms.MultiWidget):
 		# this is used.
 		key = name.replace('admins', 'requestor_email')
 		try:
-		    return data[key] + "\n" + rest
+		    ret = data[key] + "\r\n" + rest
+		    return ret.strip()
 		except KeyError:
 		    return rest
 	    else:

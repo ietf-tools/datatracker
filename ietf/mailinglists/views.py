@@ -1,6 +1,6 @@
-from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor, ApprovalComment
-from models import NonWgMailingList, MailingList
-from ietf.idtracker.models import Area, PersonOrOrgInfo
+from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor, ApprovalComment, ListApprover
+from models import NonWgMailingList, MailingList, Domain
+from ietf.idtracker.models import Area, PersonOrOrgInfo, AreaDirector, WGChair
 from django import newforms as forms
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
@@ -145,7 +145,6 @@ list_fields = {
     'add_comment': None,
     'mail_type': None,
     'mail_cat': None,
-    'domain_name': None,
     'admins': MultiEmailField(label='List Administrator(s)', widget=AdminRequestor(attrs={'cols': 41, 'rows': 4})),
     'initial': MultiEmailField(label='Initial list member(s)', widget=forms.Textarea(attrs={'cols': 41, 'rows': 4}), required=False),
 }
@@ -160,6 +159,7 @@ list_widgets = {
     'post_who': forms.Select(choices=(('1', 'List members only'), ('0', 'Open'))),
     'post_admin': forms.Select(choices=(('0', 'No'), ('1', 'Yes'))),
     'archive_private': forms.Select(choices=(('0', 'No'), ('1', 'Yes'))),
+    'domain_name': forms.HiddenInput(),
 }
 
 list_attrs = {
@@ -177,7 +177,18 @@ list_attrs = {
 
 list_callback = form_decorator(fields=list_fields, widgets=list_widgets, attrs=list_attrs)
 
+def gen_list_approval(approvers, requestor, parent):
+    class ListApproval(parent):
+	_approvers = approvers
+	_requestor = requestor
+	def __init__(self, *args, **kwargs):
+	    super(ListApproval, self).__init__(self._approvers, self._requestor, *args, **kwargs)
+    return ListApproval
+
 class ListReqWizard(wizard.Wizard):
+    clean_forms = []
+    main_step = 1
+    requestor_is_approver = False
     def get_template(self):
 	templates = []
 	#if self.step > 0:
@@ -190,6 +201,12 @@ class ListReqWizard(wizard.Wizard):
 	templates.append("mailinglists/list_wizard.html")
 	print templates
 	return templates
+    def render_template(self, *args, **kwargs):
+	#self.extra_context['clean_forms'] = self.clean_forms
+	if self.step > self.main_step:
+	    self.extra_context['main_form'] = self.clean_forms[self.main_step]
+	    self.extra_context['requestor_is_approver'] = self.requestor_is_approver
+	return super(ListReqWizard, self).render_template(*args, **kwargs)
     # want to implement parse_params to get domain for list
     def process_step(self, request, form, step):
 	form.full_clean()
@@ -197,15 +214,60 @@ class ListReqWizard(wizard.Wizard):
 	    self.clean_forms = [ form ]
 	else:
 	    self.clean_forms.append(form)
+	form0 = self.clean_forms[0]
+	needs_auth = form0.clean_data['mail_type'].endswith('non') and form0.clean_data['domain_name'] != 'ietf.org'
 	if step == 0:
-	    if form.clean_data['mail_type'].endswith('non') and form.clean_data['domain_name'] != 'ietf.org':
+	    self.main_step = 1
+	    if needs_auth:
 		self.form_list.append(ListReqAuthorized)
+		self.main_step = 2
 	    if form.clean_data['mail_type'].startswith('close'):
 		self.form_list.append(ListReqClose)
+		if form.clean_data['mail_type'] == 'closewg':
+		    self.initial[self.main_step] = {'mlist_name': form.clean_data['group']}
+		else:
+		    self.initial[self.main_step] = {'mlist_name': form.clean_data['list_to_close']}
 	    else:
 		self.form_list.append(forms.form_for_model(MailingList, formfield_callback=list_callback))
-		#XXX not quite
+		if form.clean_data['mail_type'].endswith('wg'):
+		    self.initial[self.main_step] = {'mlist_name': form.clean_data['group']}
+		else:
+		    self.initial[self.main_step] = {}
+	    if form.clean_data['mail_type'].endswith('wg'):
+		self.initial[self.main_step].update({'domain_name': 'ietf.org'})
+	    else:
+		self.initial[self.main_step].update({'domain_name': form.clean_data['domain_name']})
+	if step == self.main_step:
+	    approvers = mlist_approvers(form0.clean_data['mail_type'], form0.clean_data['domain_name'], form0.clean_data['group'])
+	    main_form = self.clean_forms[self.main_step]
+	    requestor_email = main_form.clean_data['requestor_email']
+	    requestor_person = None
+	    for a in approvers:
+		if requestor_email == a.person.email()[1]:
+		    requestor_person = a
+		    self.requestor_is_approver = True
+	    self.form_list.append(gen_list_approval(approvers, requestor_person, ListApprover))
         super(ListReqWizard, self).process_step(request, form, step)
+    def done(self, request, form_list):
+	list = MailingList(**self.clean_forms[self.main_step].clean_data)
+	list.mailing_list_id = None		# make sure that we create a new row
+	list.auth_person_id = int(self.clean_forms[self.main_step + 1].clean_data['approver'])
+	list.mail_type = MailingList.MAILTYPE_MAP[self.clean_forms[0].clean_data['mail_type']]
+	list.approved = 0
+	list.save()
+	approver_email = list.auth_person.email()
+	send_mail_subj(request, [ approver_email ], None, 'mailinglists/list_wizard_subject.txt', 'mailinglists/list_wizard_done_email.txt', {'list': list, 'forms': self.clean_forms, 'requestor_is_approver': self.requestor_is_approver})
+        return render_to_response('mailinglists/list_wizard_done.html', {'list': list, 'forms': self.clean_forms, 'requestor_is_approver': self.requestor_is_approver}, context_instance=RequestContext(request) )
+
+def mlist_approvers(mail_type, domain_name, group):
+    approvers = []
+    if domain_name == 'ietf.org':
+	approvers += AreaDirector.objects.filter(area__status=Area.ACTIVE)
+	if mail_type.endswith('wg'):
+	    approvers += WGChair.objects.filter(group_acronym=group)
+    domain = Domain.objects.get(domain=domain_name)
+    approvers += domain.approvers.all()
+    return approvers
 
 def list_req_wizard(request):
     wiz = ListReqWizard([ ListReqStep1 ])

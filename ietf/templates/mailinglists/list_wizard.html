@@ -1,39 +1,5 @@
 {% extends "mailinglists/list_wizard_base.html" %}
 
-{% block mlcontent %}
-<table bgcolor="#88AED2" cellspacing="1" border="0" width="594">
-<tr><td> 
-<table bgcolor="#f3f8fd" cellpadding="3" cellspacing="0" border="0" width="100%">
-
-<tr>
-<td colspan="2"><img src="/images/ietf_topleft.gif" border="0"><img src="/images/blue_title.gif" border="0"></td>
-</tr>
-<tr><td colspan="2">
-<img src="/images/mail_title.gif" border="0">
-</td></tr>
-<tr><td colspan="2" valign="top">
-<img src="/images/t_un.gif" border="0">
-</td></tr>
-</table>
-        <form action="." method="POST">
-
-        <h2>Step {{ step|add:"1" }}:</h2>
-<table bgcolor="f3f8fd" cellpadding="3" cellspacing="0" border="0" width="100%">
+{% block mlform %}
 {{ form }}
-</table>
-
-
-        <input type="hidden" name="{{ step_field }}" value="{{ step }}" />  
-
-        {{ previous_fields }}
-
-        <input type="submit" value="Next">
-        </form>
-
-<!--
-clean_forms: {{ clean_forms|escape }}
--->
-</td></tr>
-</table>
-
 {% endblock %}

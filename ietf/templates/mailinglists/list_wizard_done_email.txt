@@ -1,0 +1,9 @@
+{% filter wordwrap:"72" %}
+The Secretariat has received a request from {{ list.requestor }}
+to {% include "mailinglists/list_type_message2.txt" %}
+Please use the following URL to review and approve or deny this request:
+https://datatracker.ietf.org{% url ietf.mailinglists.views.list_approve list.mailing_list_id %}
+{% endfilter %}
+
+{# gotta set req for list_summary to work #}
+{% include "mailinglists/list_summary.txt" %}
