@@ -1,5 +1,22 @@
 {% extends "mailinglists/list_wizard_base.html" %}
 
+{# javascript to go with the list administrators multi-form #}
+{% if form.admins %}
+{% block head %}
+<script language="javascript">
+
+function checkthis () {
+  if (document.form_post["{{ step }}-admins_0"].checked == true) {
+    document.form_post["{{ step }}-admins_1"].value=document.form_post["{{ step }}-requestor_email"].value;
+  } else {
+    document.form_post["{{ step }}-admins_1"].value = "";
+  }
+}
+
+</script>
+{% endblock %}
+{% endif %}
+
 {% block mlform %}
 {% for field in form %}
 {% if field.is_hidden %}
