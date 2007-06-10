@@ -45,11 +45,11 @@ class DjangoTest(ShellCommand):
                 m = "skipped"
                 typelist["skipped"].add(m)
                 count(m)
-            if re.search("^Diff: .*", line):
+            if re.search("^Diff: +.*", line):
                 m = "diff_%s" % line.split()[1]
                 typelist["diffs"].add(m)                
                 count(m)
-            if re.search("^OK   \d+ ", line):
+            if re.search("^OK +.* ", line):
                 m = "pass_%s" % line.split()[1]
                 typelist["pass"].add(m)
                 count(m)
