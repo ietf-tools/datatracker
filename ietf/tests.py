@@ -128,7 +128,7 @@ class UrlTestCase(TestCase):
                     traceback.print_exc()
                 if master:
                     try:
-                        print "Fetching", master, "...",
+                        #print "Fetching", master, "...",
                         mfile = urllib.urlopen(master)
                         goodhtml = mfile.read()
                         mfile.close()
@@ -141,7 +141,7 @@ class UrlTestCase(TestCase):
                                 dfile = "%s/../test/diff/%s" % (settings.BASE_DIR, url.replace("/", "_"))
                                 if os.path.exists(dfile):
                                     dfile = open(dfile)
-                                    print "Reading OK diff file:", dfile.name
+                                    #print "Reading OK diff file:", dfile.name
                                     okdiff = dfile.read()
                                     dfile.close()
                                 else:
@@ -163,7 +163,7 @@ class UrlTestCase(TestCase):
             print "Response count:"
         for res in response_count:
             ind, code = res
-            print "%-4s %s: %s " % (ind, code, response_count[res])
+            print "  %-4s %s: %s " % (ind, code, response_count[res])
         for res in response_count:
             ind, code = res
             self.assertEqual(ind, "OK", "Found %s cases of result code: %s" % (response_count[res], code))
