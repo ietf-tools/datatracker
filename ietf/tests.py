@@ -138,6 +138,7 @@ class UrlTestCase(TestCase):
                             testtext = reduce(response.content)
                             goodtext = reduce(goodhtml)
                             if not testtext == goodtext:
+                                print "Diff: %s" % (url)
                                 for line in unified_diff(goodtext, testtext, url, master, lineterm=False):
                                     print line
                     except urllib.URLError, e:
