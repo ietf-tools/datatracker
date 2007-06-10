@@ -9,4 +9,6 @@ ietf/utils/__init__.py:1: 'flattenl' imported but unused
 ietf/utils/__init__.py:1: 'orl' imported but unused
 ietf/utils/__init__.py:2: 'log' imported but unused
 ietf/utils/__init__.py:3: 'FKAsOneToOne' imported but unused
+ietf/utils/__init__.py:5: 'TextSoup' imported but unused
+ietf/utils/__init__.py:5: 'soup2text' imported but unused
 ietf/idtracker/templatetags/ietf_filters.py:8: redefinition of unused 'emailutils' from line 6

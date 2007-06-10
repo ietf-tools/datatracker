@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 program=${0##*/}
 progdir=${0%/*}
 
