@@ -10,7 +10,6 @@ import django.test.simple
 from django.test import TestCase
 from django.conf import settings
 from django.db import connection
-import ietf.settings
 import ietf.urls
 
 
@@ -60,7 +59,7 @@ class UrlTestCase(TestCase):
         # find test urls
         self.testtuples = []
         self.testurls = []
-        for root, dirs, files in os.walk(ietf.settings.BASE_DIR):
+        for root, dirs, files in os.walk(settings.BASE_DIR):
             if "testurl.list" in files:
                 filename = root+"/testurl.list" # yes, this is non-portable
                 file = open(filename) 
@@ -138,9 +137,20 @@ class UrlTestCase(TestCase):
                             testtext = reduce(response.content)
                             goodtext = reduce(goodhtml)
                             if not testtext == goodtext:
-                                print "Diff: %s" % (url)
-                                for line in unified_diff(goodtext, testtext, url, master, lineterm=False):
-                                    print line
+                                diff = "\n".join(unified_diff(goodtext, testtext, url, master, lineterm=False))
+                                dfile = "%s/../test/diff/%s" % (settings.BASE_DIR, url.replace("/", "_"))
+                                if os.path.exists(dfile):
+                                    dfile = open(dfile)
+                                    print "Reading OK diff file:", dfile.name
+                                    okdiff = dfile.read()
+                                    dfile.close()
+                                else:
+                                    okdiff = ""
+                                if diff.strip() == okdiff.strip():
+                                    print "OK  diff %s" % (url)
+                                else:
+                                    print "Diff:    %s" % (url)
+                                    print diff
                     except urllib.URLError, e:
                         print "Failed retrieving master text for comparison: %s" % e
 

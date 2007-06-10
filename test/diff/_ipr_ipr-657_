@@ -1,0 +1,44 @@
+--- /ipr/ipr-657/ False
++++ https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657 False
+@@ -6,6 +6,7 @@False
+ disclosure ID #590, " France Telecom SA's general license statement
+ (1) ". Click here to update this IPR disclosure Submitted Date:
+ November 8, 2005
++
+ I. Patent Holder/Applicant ("Patent Holder")
+ 
+ Legal Name: France Telecom SA
+@@ -43,7 +44,6 @@False
+ Country: to be confirmed by individual patent declarations
+ 
+ Additional Notes:
+-
+ to be confirmed by individual patent declarations
+ 
+ B. Does this disclosure relate to an unpublished pending patent
+@@ -67,12 +67,14 @@False
+ Licensing information, comments, notes, or URL for further
+ information:
+ 
+-NOTE: The individual submitting this template represents and warrants
++No information submitted
++
++Note: The individual submitting this template represents and warrants
+ that he or she is authorized by the Patent Holder to agree to the
+ above-selected licensing declaration.
+ 
+ V. Contact Information of Submitter of this Form (if different from
+-IETF Participant in Section III above)
++the Contact Information above)
+ 
+ Name: Serge RAES
+ 
+@@ -90,4 +92,8 @@False
+ 
+ Email: serge.raes@francetelecom.com
+ 
++VI. Other Notes:
+ 
++No information submitted
++
++
