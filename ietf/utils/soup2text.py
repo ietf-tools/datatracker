@@ -2,7 +2,7 @@
 
 import re
 import textwrap
-from BeautifulSoup import Tag, BeautifulSoup, NavigableString
+from ietf.contrib.BeautifulSoup import Tag, BeautifulSoup, NavigableString
 
 block_tags = ["[document]", "html", "body", "div", "blockquote", "table", "tr", "p", "pre", "h1", "h2", "h3", "h4", "h5", "h6", ]
 ignore_tags = ["head", "script", "style"]
