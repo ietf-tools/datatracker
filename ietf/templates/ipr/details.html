@@ -297,7 +297,7 @@
 		     B. Does this disclosure relate to an unpublished pending patent
 		     application?:
 		  </i>
-		  <div class="inline">Select one: {{ ipr.selecttype }}</div>
+		  <b>{{ ipr.selecttype }}</b>
 	       </td>
 	    </tr>
 	    <tbody class="{% cycle row_parity %}">	    
@@ -307,7 +307,7 @@
 			<i>C. Does this disclosure apply to all IPR owned by
 			the submitter?:
 			</i>
-			<div class="inline">Select one: {{ ipr.selectowned }}</div>
+			<b>{{ ipr.selectowned }}</b>
 		     </td>
 		  </tr>
 	       {% else %}
@@ -412,7 +412,7 @@
 	    <tr class="{% cycle dark,light as row_parity %}">
 	       <th colspan="2" >
 	       {% cycle section %}.
-	       Contact Information of Submitter of this Form (if different from
+	       Contact Information of Submitter of this Form (if different from the
 	       Contact Information above)
 	       </th>
 	    </tr>
