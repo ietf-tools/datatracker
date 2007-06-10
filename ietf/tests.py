@@ -1,12 +1,10 @@
 import os
 import re
-import sys
 import traceback
 import urllib2 as urllib
 
 from ietf.utils import soup2text as html2text
 from difflib import unified_diff
-import textwrap
 
 import django.test.simple
 from django.test import TestCase

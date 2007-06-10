@@ -48,7 +48,7 @@ def render(node, encoding='latin-1', pre=False):
                     else:
                         words.append(child.text)
         else:
-            raise ValueException("Unexpected node type: '%s'" % child)
+            raise ValueError("Unexpected node type: '%s'" % child)
     if words:
         blocks.append(para(words, node.pre))
 
