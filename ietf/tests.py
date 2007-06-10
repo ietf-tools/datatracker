@@ -1,6 +1,12 @@
 import os
 import re
+import sys
 import traceback
+import urllib2 as urllib
+
+from ietf.utils import soup2text as html2text
+from difflib import unified_diff
+import textwrap
 
 import django.test.simple
 from django.test import TestCase
@@ -17,6 +23,16 @@ def run_tests(module_list, verbosity=1, extra_tests=[]):
     # If we append 'ietf.tests', we get it twice, first as itself, then
     # during the search for a 'tests' module ...
     return django.test.simple.run_tests(module_list, verbosity, extra_tests)
+
+def reduce(html):
+    html = re.sub(" :", ":", html)
+    text = html2text(html)
+    text = re.sub('\."', '".', text)
+    #text = re.sub("\n\n+", "\n\n", text)
+    #text = "\n\n".join([textwrap.fill(para, 80) for para in text.split("\n\n")])
+    #text = re.sub(" +", " ", text)
+    text = [ line.strip() for line in text.split("\n") ]
+    return text
 
 def get_patterns(module):
     all = []
@@ -113,6 +129,22 @@ class UrlTestCase(TestCase):
                     res = ("Fail", "Exc")
                     print "Exception for URL '%s'" % url
                     traceback.print_exc()
+                if master:
+                    try:
+                        print "Fetching", master, "...",
+                        mfile = urllib.urlopen(master)
+                        goodhtml = mfile.read()
+                        mfile.close()
+                        print ""
+                        if goodhtml and response.content:
+                            testtext = reduce(response.content)
+                            goodtext = reduce(goodhtml)
+                            if not testtext == goodtext:
+                                for line in unified_diff(goodtext, testtext, url, master, lineterm=False):
+                                    print line
+                    except urllib.URLError, e:
+                        print "Failed retrieving master text for comparison: %s" % e
+
                 if not res in response_count:
                     response_count[res] = 0
                 response_count[res] += 1
@@ -131,7 +163,7 @@ class UrlTestCase(TestCase):
         print "\nTesting specified URLs:"
         self.doUrlsTest(self.testtuples)
 
-    def testUrlsFallback(self):
+    def XtestUrlsFallback(self):
         patterns = get_patterns(ietf.urls)
         lst = []
         for pattern in patterns:
