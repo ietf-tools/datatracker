@@ -172,7 +172,7 @@ class UrlTestCase(TestCase):
         print "\nTesting specified URLs:"
         self.doUrlsTest(self.testtuples)
 
-    def XtestUrlsFallback(self):
+    def testUrlsFallback(self):
         patterns = get_patterns(ietf.urls)
         lst = []
         for pattern in patterns:
