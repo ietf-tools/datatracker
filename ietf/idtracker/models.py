@@ -171,6 +171,7 @@ class InternetDraft(models.Model):
     class Admin:
         search_fields = ['filename']
         list_display = ('filename', 'revision', 'status')
+	list_filter = ['status']
         pass
         #date_hierarchy = 'revision_date'
         #list_filter = ['revision_date']
@@ -254,7 +255,7 @@ class IESGLogin(models.Model):
 	pass
 
 class AreaDirector(models.Model):
-    area = models.ForeignKey(Area, db_column='area_acronym_id', edit_inline=models.STACKED, num_in_admin=2)
+    area = models.ForeignKey(Area, db_column='area_acronym_id', edit_inline=models.STACKED, num_in_admin=2, null=True)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, core=True)
     def __str__(self):
         return "%s (%s)" % ( self.person, self.role() )
@@ -663,6 +664,7 @@ class WGStatus(models.Model):
 	pass
 
 class IETFWG(models.Model):
+    ACTIVE = 1
     group_acronym = models.ForeignKey(Acronym, primary_key=True, unique=True, editable=False)
     group_type = models.ForeignKey(WGType)
     proposed_date = models.DateField(null=True, blank=True)
@@ -670,7 +672,7 @@ class IETFWG(models.Model):
     dormant_date = models.DateField(null=True, blank=True)
     concluded_date = models.DateField(null=True, blank=True)
     status = models.ForeignKey(WGStatus)
-    area_director = models.ForeignKey(AreaDirector)
+    area_director = models.ForeignKey(AreaDirector, null=True)
     meeting_scheduled = models.CharField(blank=True, maxlength=3)
     email_address = models.CharField(blank=True, maxlength=60)
     email_subscribe = models.CharField(blank=True, maxlength=120)
@@ -695,8 +697,8 @@ class IETFWG(models.Model):
 	verbose_name = 'IETF Working Group'
     class Admin:
 	search_fields = ['group_acronym__acronym', 'group_acronym__name']
-	list_display = ('group_acronym', 'status', 'area_director')
-	list_filter = ['status', 'area_director']
+	list_display = ('group_acronym', 'group_type', 'status', 'area_director')
+	list_filter = ['status', 'group_type', 'area_director']
 	pass
 
 class WGChair(models.Model):
@@ -705,7 +707,7 @@ class WGChair(models.Model):
     def __str__(self):
 	return "%s (%s)" % ( self.person, self.role() )
     def role(self):
-	return "%s WG Chair" % self.group_acronym
+	return "%s %s Chair" % ( self.group_acronym.acronym, self.group_acronym.group_type )
     class Meta:
         db_table = 'g_chairs'
 	verbose_name = "WG Chair"
@@ -726,7 +728,7 @@ class WGSecretary(models.Model):
     def __str__(self):
 	return "%s (%s)" % ( self.person, self.role() )
     def role(self):
-	return "%s WG Secretary" % self.group_acronym
+	return "%s %s Secretary" % ( self.group_acronym.acronym, self.group_acronym.group_type )
     class Meta:
         db_table = 'g_secretaries'
 	verbose_name = "WG Secretary"
@@ -738,7 +740,7 @@ class WGTechAdvisor(models.Model):
     def __str__(self):
 	return "%s (%s)" % ( self.person, self.role() )
     def role(self):
-	return "%s Technical Advisor" % self.group_acronym
+	return "%s Technical Advisor" % self.group_acronym.acronym
     class Meta:
         db_table = 'g_tech_advisors'
 	verbose_name = "WG Technical Advisor"
@@ -754,12 +756,16 @@ class AreaGroup(models.Model):
 	verbose_name_plural = 'Area to Group mappings'
 
 class GoalMilestone(models.Model):
+    DONE_CHOICES = (
+        ('Done', 'Done'),
+        ('No', 'Not Done'),
+    )
     gm_id = models.AutoField(primary_key=True)
     group_acronym = models.ForeignKey(IETFWG, raw_id_admin=True)
     description = models.TextField()
     expected_due_date = models.DateField()
     done_date = models.DateField(null=True, blank=True)
-    done = models.CharField(blank=True, maxlength=4)
+    done = models.CharField(blank=True, choices=DONE_CHOICES, maxlength=4)
     last_modified_date = models.DateField()
     def __str__(self):
 	return self.description
@@ -767,8 +773,9 @@ class GoalMilestone(models.Model):
         db_table = 'goals_milestones'
 	verbose_name = 'IETF WG Goal or Milestone'
 	verbose_name_plural = 'IETF WG Goals or Milestones'
+	ordering = ['expected_due_date']
     class Admin:
-	list_display = ('group_acronym', 'description', 'expected_due_date')
+	list_display = ('group', 'description', 'expected_due_date', 'done')
 	date_hierarchy = 'expected_due_date'
 	list_filter = ['done']
 	pass
