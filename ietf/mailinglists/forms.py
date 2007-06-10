@@ -1,6 +1,6 @@
 from django import newforms as forms
 from models import NonWgMailingList, ImportedMailingList
-from ietf.idtracker.models import PersonOrOrgInfo, IETFWG, Acronym
+from ietf.idtracker.models import PersonOrOrgInfo, IETFWG
 import re
 
 class NonWgStep1(forms.Form):
@@ -44,8 +44,7 @@ class ListReqStep1(forms.Form):
 	('movenon', 'Move existing non-WG email list to selected domain above'),
 	('closenon', 'Close existing non-WG email list at selected domain above'),
 	), widget=forms.RadioSelect())
-    #group = forms.ChoiceField(required=False)
-    group = forms.ModelChoiceField(queryset=IETFWG.objects.all().select_related().order_by('acronym.acronym'), required=False, empty_label="-- Select Working Group")
+    group = forms.ModelChoiceField(queryset=IETFWG.objects.all().filter(status=IETFWG.ACTIVE).select_related(depth=1).order_by('acronym.acronym'), required=False, empty_label="-- Select Working Group")
     domain_name = forms.ChoiceField(choices=DOMAIN_CHOICES, required=False, widget = forms.Select(attrs={'onChange': 'set_domain(this)'}))
     list_to_close = forms.ModelChoiceField(queryset=ImportedMailingList.objects.all(), required=False, empty_label="-- Select List To Close")
     def mail_type_fields(self):
