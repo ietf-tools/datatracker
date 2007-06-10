@@ -11,5 +11,6 @@ urlpatterns = patterns('django.views.generic.list_detail',
 urlpatterns += patterns('',
      (r'^nonwg_lists/submit/$', views.non_wg_wizard),
      (r'^request/$', views.list_req_wizard),
+     (r'^request/help/(?P<field>[^/]+)/$', views.list_req_help),
      (r'^approve/(?P<object_id>[^/]+)/$', views.list_approve),
 )

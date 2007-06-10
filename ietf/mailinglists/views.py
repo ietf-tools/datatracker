@@ -286,6 +286,10 @@ def list_req_wizard(request):
     wiz = ListReqWizard([ ListReqStep1 ])
     return wiz(request)
 
+def list_req_help(request, field):
+    return render_to_response('mailinglists/list_help_%s.html' % field, {},
+	context_instance=RequestContext(request) )
+
 def list_approve(request, object_id):
     list = get_object_or_404(MailingList, mailing_list_id=object_id)
     if list.mail_type == 5 or list.mail_type == 6:
