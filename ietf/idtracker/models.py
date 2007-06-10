@@ -775,7 +775,7 @@ class GoalMilestone(models.Model):
 	verbose_name_plural = 'IETF WG Goals or Milestones'
 	ordering = ['expected_due_date']
     class Admin:
-	list_display = ('group', 'description', 'expected_due_date', 'done')
+	list_display = ('group_acronym', 'description', 'expected_due_date', 'done')
 	date_hierarchy = 'expected_due_date'
 	list_filter = ['done']
 	pass
