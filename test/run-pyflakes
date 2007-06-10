@@ -6,7 +6,9 @@ import sys
 import re
 
 def fixnum(str):
-    return re.sub(":[0-9]+:", ":", str)
+    str = re.sub(":[0-9]+:", ":", str)
+    str = re.sub("line [0-9]+$", "earlier line", str)
+    return str
 file = open(sys.argv[1])
 excludes = [fixnum(line.strip()) for line in file.readlines()]
 for line in sys.stdin:
