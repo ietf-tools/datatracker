@@ -1,6 +1,7 @@
 from django import newforms as forms
 from models import NonWgMailingList, ImportedMailingList
 from ietf.idtracker.models import PersonOrOrgInfo, IETFWG, Acronym
+import re
 
 class NonWgStep1(forms.Form):
     add_edit = forms.ChoiceField(choices=(
@@ -42,28 +43,27 @@ class ListReqStep1(forms.Form):
 	('newnon', 'Create new non-WG email list at selected domain above'),
 	('movenon', 'Move existing non-WG email list to selected domain above'),
 	('closenon', 'Close existing non-WG email list at selected domain above'),
-	), widget=forms.RadioSelect)
+	), widget=forms.RadioSelect())
     #group = forms.ChoiceField(required=False)
     group = forms.ModelChoiceField(queryset=IETFWG.objects.all().select_related().order_by('acronym.acronym'), required=False, empty_label="-- Select Working Group")
-    domain_name = forms.ChoiceField(choices=DOMAIN_CHOICES, required=False)
+    domain_name = forms.ChoiceField(choices=DOMAIN_CHOICES, required=False, widget = forms.Select(attrs={'onChange': 'set_domain(this)'}))
     list_to_close = forms.ModelChoiceField(queryset=ImportedMailingList.objects.all(), required=False, empty_label="-- Select List To Close")
     def mail_type_fields(self):
 	field = self['mail_type']
-	return field.as_widget(field.field.widget)
+	# RadioSelect() doesn't pass its attributes through to the <input>
+	# elements, so in order to get the javascript onClick we add it here.
+	return [re.sub(r'input ','input onClick="activate_widgets()" ',str(i)) for i in field.as_widget(field.field.widget)]
     def __init__(self, *args, **kwargs):
-	dname = 'ietf.org'
-        if args and args[0]:
-	    dn = 'domain_name'
-	    if kwargs.has_key('prefix'):
-		dn = kwargs['prefix'] + '-' + dn
-	    dname = args[0][dn]
-	dname = kwargs.get('dname', dname)
+	initial = kwargs.get('initial', None)
+	# could pass initial = None, so can't use a trick on the
+	# above get.
+	if initial:
+	    dname = initial.get('domain_name', 'ietf.org')
+	else:
+	    dname = 'ietf.org'
 	super(ListReqStep1, self).__init__(*args, **kwargs)
-	#self.fields['group'].choices = [('', '-- Select Working Group')] + IETFWG.choices()
-	#self.fields['list_to_close'].choices = [('', '-- Select List To Close')] + ImportedMailingList.choices(dname)
-	#XXX This doesn't work yet.  Maybe switch back to choices.
 	self.fields['list_to_close'].queryset = ImportedMailingList.choices(dname)
-	print "dname %s list_to_close values: %s" % (dname, self.fields['list_to_close'].queryset)
+	self.fields['list_to_close'].widget.choices = self.fields['list_to_close'].choices
 	self.fields['domain_name'].initial = dname
     def clean_group(self):
 	group = self.clean_data['group']
@@ -181,7 +181,7 @@ class AdminRequestor(forms.MultiWidget):
 	# check the checkbox, but for now let's try this.
 	return ['', '', value]
     def __init__(self, attrs=None):
-	widgets = (forms.CheckboxInput(), forms.TextInput(attrs={'size': 55, 'disabled': True}), forms.Textarea(attrs=attrs))
+	widgets = (forms.CheckboxInput(attrs={'onClick': 'checkthis()'}), forms.TextInput(attrs={'size': 55, 'disabled': True}), forms.Textarea(attrs=attrs))
 	super(AdminRequestor, self).__init__(widgets, attrs)
     def format_output(self, rendered_widgets):
 	return u'<br/>\n'.join(["<label>%s Same as requestor</label>" % rendered_widgets[0]] + rendered_widgets[1:])

@@ -192,19 +192,14 @@ class ListReqWizard(wizard.Wizard):
     requestor_is_approver = False
     mlist_known = True
     def get_template(self):
+	'''Start with form class, then step number, then the base form.'''
 	templates = []
-	#if self.step > 0:
-	#    action = {'add': 'addedit', 'edit': 'addedit', 'delete': 'delete'}[self.clean_forms[0].clean_data['add_edit']]
-	#    templates.append("mailinglists/nwg_wizard_%s_step%d.html" % (action, self.step))
-	#    templates.append("mailinglists/nwg_wizard_%s.html" % (action))
 	c = self.form_list[self.step].__name__
 	templates.append("mailinglists/list_wizard_%s.html" % (c))
 	templates.append("mailinglists/list_wizard_step%d.html" % (self.step))
 	templates.append("mailinglists/list_wizard.html")
-	print templates
 	return templates
     def render_template(self, *args, **kwargs):
-	#self.extra_context['clean_forms'] = self.clean_forms
 	self.extra_context['mlist_known'] = self.mlist_known
 	if self.step > self.main_step:
 	    self.extra_context['main_form'] = self.clean_forms[self.main_step]
@@ -212,7 +207,11 @@ class ListReqWizard(wizard.Wizard):
 	if self.step == self.main_step + 1:
 	    self.extra_context['list'] = self.getlist()
 	return super(ListReqWizard, self).render_template(*args, **kwargs)
-    # want to implement parse_params to get domain for list
+    def parse_params(self, request, *args, **kwargs):
+	super(ListReqWizard, self).parse_params(request, *args, **kwargs)
+	if self.step == 0:
+	    # allow javascript "redirects" to set initial values
+	    self.initial[0] = request.GET
     def process_step(self, request, form, step):
 	form.full_clean()
 	if step == 0:
