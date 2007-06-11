@@ -29,7 +29,7 @@
 
               <td>
                 <div class="largefont3">
-		  {{ object.document.filename_with_link }}
+		  {{ object.document.displayname_with_link }}
 		  {% ifnotequal object.document.status.status "Active" %}
 		    ({{ object.document.status.status }})
 		  {% endifnotequal %}
@@ -44,6 +44,25 @@
 		    {% endifequal %}
 		  {% endif %}
                   </font>
+		  {% ifequal object.document.status.status "Replaced" %}
+		    <br>Replaced by
+		    {% if object.document.replaced_by.idinternal %}
+		      <a href="{{ object.document.replaced_by.idinternal.get_absolute_url }}">
+		    {% endif %}
+		    {{ object.document.replaced_by.filename }}
+		    {% if object.document.replaced_by.idinternal %}
+		      </a>
+		    {% endif %}
+		  {% endifequal %}
+		  {% if object.document.replaces_set.count %}
+		    <br>Replaces
+		    {% for replaces in object.document.replaces_set.all %}
+		      {% if replaces.idinternal %}
+		        <a href="{{ replaces.idinternal.get_absolute_url }}">
+		      {% endif %}
+		      {{ replaces.filename }}{% if replaces.idinternal %}</a>{% endif %}{% if not forloop.last %},{% endif %}
+		    {% endfor %}
+		  {% endif %}
                 </div>
               </td>
             </tr>
@@ -179,7 +198,8 @@
 
               <td>
                 <div class="largefont3">
-                  {% firstof object.note|unformat_textarea &nbsp; %}
+		  {# |unformat_textarea #}
+                  {% firstof object.note &nbsp; %}
                 </div>
               </td>
             </tr>

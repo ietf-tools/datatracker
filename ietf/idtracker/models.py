@@ -167,11 +167,15 @@ class InternetDraft(models.Model):
 	return "%02d" % r
     def doctype(self):
 	return "Draft"
-    def filename_with_link(self):
+    def filename_with_link(self, text=None):
+	if text is None:
+	    text=self.filename
 	if self.status.status != 'Active':
-	    return self.filename
+	    return text
 	else:
-	    return '<a href="%s">%s</a>' % ( self.doclink(), self.filename )
+	    return '<a href="%s">%s</a>' % ( self.doclink(), text )
+    def displayname_with_link(self):
+	return self.filename_with_link(self.displayname())
     class Meta:
         db_table = "internet_drafts"
     class Admin:
@@ -341,6 +345,19 @@ class Rfc(models.Model):
 	return "RFC"
     def filename_with_link(self):
 	return '<a href="%s">%s</a>' % ( self.doclink(), self.displayname() )
+    def displayname_with_link(self):
+        return self.filename_with_link()
+    _idinternal_cache = None
+    _idinternal_cached = False
+    def idinternal(self):
+	if self._idinternal_cached:
+	    return self._idinternal_cache
+	try:
+	    self._idinternal_cache = IDInternal.objects.get(draft=self.rfc_number, rfc_flag=1)
+	except IDInternal.DoesNotExist:
+	    self._idinternal_cache = None
+	self._idinternal_cached = True
+	return self._idinternal_cache
     class Meta:
         db_table = 'rfcs'
 	verbose_name = 'RFC'

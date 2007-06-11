@@ -5,7 +5,27 @@
              invalid HTML. -->
         <form method="GET" action="{% url ietf.idtracker.views.view_id match.document.filename %}"><td><input type="submit" value="DETAIL"></td></form>
 	{# todo: conditionalize doclink properly #}
-	<td>{% if match.primary_flag %}<li>{% else %}<dd>{% endif %}{{ match.document.filename_with_link }} ({{ match.document.intended_status }})</td>
+	<td>{% if match.primary_flag %}<li>{% else %}<dd>{% endif %}{{ match.document.filename_with_link }} ({{ match.document.intended_status }})
+	    {% ifequal match.document.status.status "Replaced" %}
+	      <br>&nbsp;&nbsp;&nbsp;&nbsp;Replaced by
+	      {% if match.document.replaced_by.idinternal %}
+		<a href="{% url ietf.idtracker.views.search %}?search_filename={{ match.document.replaced_by.filename }}">
+	      {% endif %}
+	      {{ match.document.replaced_by.filename }}
+	      {% if match.document.replaced_by.idinternal %}
+		</a>
+	      {% endif %}
+	    {% endifequal %}
+	    {% if match.document.replaces_set.count %}
+	      <br>&nbsp;&nbsp;&nbsp;&nbsp;Replaces
+	      {% for replaces in match.document.replaces_set.all %}
+		{% if replaces.idinternal %}
+		  <a href="{% url ietf.idtracker.views.search %}?search_filename={{ replaces.filename }}">
+		{% endif %}
+		{{ replaces.filename }}{% if replaces.idinternal %}</a>{% endif %}{% if not forloop.last %},{% endif %}
+	      {% endfor %}
+	    {% endif %}
+        </td>
 	<td>{{ match.document.revision }}</td>
 	<td>{{ match.job_owner }}</td>
 	<td>{% firstof match.status_date "" %}</td>
