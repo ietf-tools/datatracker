@@ -66,6 +66,8 @@ class TextSoup(BeautifulSoup):
         return str
 
 def soup2text(html):
+    # some preprocessing to handle common pathological cases
+    html = re.sub("<br */?>[ \t\r\n]*(<br */?>)+", "<p/>", html)
     soup = TextSoup(html)
     return str(soup)
 
