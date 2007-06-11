@@ -2,7 +2,10 @@
 
 import re
 import textwrap
-from ietf.contrib.BeautifulSoup import Tag, BeautifulSoup, NavigableString
+try:
+    from ietf.contrib.BeautifulSoup import Tag, BeautifulSoup, NavigableString
+except:
+    from BeautifulSoup import Tag, BeautifulSoup, NavigableString
 
 block_tags = ["[document]", "html", "body", "div", "blockquote", "table", "tr", "p", "pre", "h1", "h2", "h3", "h4", "h5", "h6", ]
 ignore_tags = ["head", "script", "style"]
@@ -12,8 +15,14 @@ entities = [("&lt;", "<"),   ("&gt;", ">"),
             ("&nbsp;", " "),
             ("&amp;", "&"), ]
 
-def para(words, pre):
+def para(words, pre):    
     text = " ".join(words)
+    # Fix occasional bad sentence end merges
+    for i in range(1,len(words)):
+        if words[i].startswith(". "):
+            now = words[i-1]+" "+words[i]
+            fix = words[i-1]+words[i]
+            text = text.replace(now, fix)
     for entity, char in entities:
         text = text.replace(entity, char)
     if not pre:
@@ -80,6 +89,5 @@ if __name__ == "__main__":
         else:
             file = open(arg)
         html = file.read()
-        file.close
-        soup = TextSoup(html)
-        print str(soup)
+        file.close()
+        print soup2text(html)
