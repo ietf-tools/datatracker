@@ -27,7 +27,10 @@ def para(words, pre):
         text = text.replace(entity, char)
     if not pre:
         text = re.sub("[\r\n\t ]+", " ", text)
-        text = textwrap.fill(text)
+        try:    # On OS-X / Python 2.5 textwrap can throw a runtime error
+            text = textwrap.fill(text)  
+        except RuntimeError:
+            pass
     return text
 
 def render(node, encoding='latin-1', pre=False):

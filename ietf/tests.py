@@ -51,6 +51,25 @@ def get_patterns(module):
                 all.append(item.regex.pattern + ".*" + sub)
     return all
 
+def read_testurls(filename):
+    tuples = []
+    file = open(filename)
+    for line in file:
+        line = line.strip()
+        if line and not line.startswith('#'):
+            line = line.split("#", 1)[0]
+            urlspec = line.split()
+            if len(urlspec) == 2:
+                codes, testurl = urlspec
+                goodurl = None
+            elif len(urlspec) == 3:
+                codes, testurl, goodurl = urlspec
+            else:
+                raise ValueError("Expected 'HTTP_CODE TESTURL [GOODURL]' in %s line, found '%s'." % (filename, line))
+            codes = codes.split(",")
+            tuples += [ (codes, testurl, goodurl) ]
+    return tuples
+
 class UrlTestCase(TestCase):
     def setUp(self):
         from django.test.client import Client
@@ -61,24 +80,10 @@ class UrlTestCase(TestCase):
         self.testurls = []
         for root, dirs, files in os.walk(settings.BASE_DIR):
             if "testurl.list" in files:
-                filename = root+"/testurl.list" # yes, this is non-portable
-                file = open(filename) 
-                for line in file:
-                    line = line.strip()
-                    if line and not line.startswith('#'):
-                        line = line.split("#", 1)[0]
-                        urlspec = line.split()
-                        if len(urlspec) == 2:
-                            codes, testurl = urlspec
-                            goodurl = None
-                        elif len(urlspec) == 3:
-                            codes, testurl, goodurl = urlspec
-                        else:
-                            raise ValueError("Expected 'HTTP_CODE TESTURL [GOODURL]' in %s line, found '%s'." % (filename, line))
-                        codes = codes.split(",")
-                        self.testtuples += [ (codes, testurl, goodurl) ]
-                        self.testurls += [ testurl ]
-                    #print "(%s, %s, %s)" % (code, testurl, goodurl)
+                self.testtuples += read_testurls(root+"/testurl.list")
+            if "testurls.list" in files:
+                self.testtuples += read_testurls(root+"/testurls.list")
+        self.testurls = [ tuple[0] for tuple in self.testtuples ]
         # Use the default database for the url tests, instead of the test database
         self.testdb = settings.DATABASE_NAME
         connection.close()
@@ -136,7 +141,9 @@ class UrlTestCase(TestCase):
                         if goodhtml and response.content:
                             testtext = reduce(response.content)
                             goodtext = reduce(goodhtml)
-                            if not testtext == goodtext:
+                            if testtext == goodtext:
+                                print "OK   cmp %s" % (url)
+                            else:
                                 diff = "\n".join(unified_diff(goodtext, testtext, url, master, lineterm=False))
                                 dfile = "%s/../test/diff/%s" % (settings.BASE_DIR, url.replace("/", "_"))
                                 if os.path.exists(dfile):
