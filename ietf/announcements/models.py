@@ -27,8 +27,8 @@ class AnnouncedFrom(models.Model):
 
 class AnnouncedTo(models.Model):
     announced_to_id = models.AutoField(primary_key=True)
-    announced_to = models.CharField(blank=True, maxlength=255)
-    email = models.CharField(blank=True, maxlength=255)
+    announced_to = models.CharField(blank=True, maxlength=255, db_column='announced_to_value')
+    email = models.CharField(blank=True, maxlength=255, db_column='announced_to_email')
     def __str__(self):
 	return self.announced_to
     class Meta:
