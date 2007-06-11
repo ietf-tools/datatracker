@@ -39,19 +39,22 @@ def unescape(text):
         text = text.replace(entity, char) # replace ampersand last
     return text
 
-def para(words, pre):    
-    text = " ".join(words)
-    # Fix occasional bad sentence end merges
-    for i in range(1,len(words)):
-        if words[i].startswith(". "):
-            now = words[i-1]+" "+words[i]
-            fix = words[i-1]+words[i]
-            text = text.replace(now, fix)
+def para(words, pre):
+    text = "".join(words)
     text = unescape(text)
     if not pre:
         text = re.sub("[\r\n\t ]+", " ", text)
         text = textwrap.fill(text)  
     return text
+
+def normalize(str):
+    # Normalize whitespace at the beginning and end of the string
+    str = re.sub("^[ \t\n]+", " ", str)
+    str = re.sub("[ \t\n]+$", " ", str)
+    # remove xml PIs and metainformation
+    str = re.sub("<![^>]*>", "", str)
+    str = re.sub("<\?[^>]*\?>", "", str)
+    return str
 
 def render(node, encoding='latin-1', pre=False):
     blocks = []
@@ -62,8 +65,8 @@ def render(node, encoding='latin-1', pre=False):
         if isinstance(child, NavigableString):
             str = child.__str__(encoding)
             if str and not node.pre:
-                str = str.strip()
-            if str and not str.startswith("<!") and not str.startswith("<?"):
+                str = normalize(str)
+            if str:
                 words.append(str)
         elif isinstance(child, Tag):
             if child.name in ignore_tags:
