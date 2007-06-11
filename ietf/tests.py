@@ -70,6 +70,18 @@ def read_testurls(filename):
     file.close()
     return tuples
 
+def filetext(filename):
+    file = open(filename)
+    chunk = file.read()
+    file.close()
+    return chunk
+
+def filetime(name):
+    if os.path.exists(name):
+        return os.stat(name)[stat.ST_MTIME]
+    else:
+        return 0
+
 class UrlTestCase(TestCase):
     def setUp(self):
         from django.test.client import Client
@@ -78,12 +90,20 @@ class UrlTestCase(TestCase):
         # find test urls
         self.testtuples = []
         self.testurls = []
+        self.diffchunks = []
         for root, dirs, files in os.walk(settings.BASE_DIR):
             if "testurl.list" in files:
                 self.testtuples += read_testurls(root+"/testurl.list")
             if "testurls.list" in files:
                 self.testtuples += read_testurls(root+"/testurls.list")
         self.testurls = [ tuple[1] for tuple in self.testtuples ]
+
+        # find diff chunks
+        testdir = os.path.abspath(settings.BASE_DIR+"/../test/diff/")
+        for item in os.listdir(testdir):
+            path = testdir + "/" + item
+            if item.startswith("generic-") and os.path.isfile(path):
+                self.diffchunks.append(filetext(path))
 
         # extract application urls:
         self.patterns = get_patterns(ietf.urls)
@@ -148,7 +168,11 @@ class UrlTestCase(TestCase):
                             if testtext == goodtext:
                                 print "OK   cmp %s" % (url)
                             else:
-                                diff = "\n".join(unified_diff(goodtext, testtext, url, master, lineterm=False))
+                                contextlines = 0
+                                diff = "\n".join(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
+                                for chunk in self.diffchunks:
+                                    if chunk in diff:
+                                        diff = diff.replace(chunk, "")
                                 dfile = "%s/../test/diff/%s" % (settings.BASE_DIR, url.replace("/", "_"))
                                 if os.path.exists(dfile):
                                     dfile = open(dfile)
