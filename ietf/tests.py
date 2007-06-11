@@ -84,6 +84,9 @@ class UrlTestCase(TestCase):
             if "testurls.list" in files:
                 self.testtuples += read_testurls(root+"/testurls.list")
         self.testurls = [ tuple[1] for tuple in self.testtuples ]
+
+        # extract application urls:
+        self.patterns = get_patterns(ietf.urls)
         # Use the default database for the url tests, instead of the test database
         self.testdb = settings.DATABASE_NAME
         connection.close()
@@ -98,16 +101,15 @@ class UrlTestCase(TestCase):
         
     def testCoverage(self):
         covered = []
-        patterns = get_patterns(ietf.urls)
         for codes, testurl, goodurl in self.testtuples:
-            for pattern in patterns:
+            for pattern in self.patterns:
                 if re.match(pattern, testurl[1:]):
                     covered.append(pattern)
         # We should have at least one test case for each url pattern declared
         # in our Django application:
         #self.assertEqual(set(patterns), set(covered), "Not all the
         #application URLs has test cases.  The missing are: %s" % (list(set(patterns) - set(covered))))        
-        if not set(patterns) == set(covered):
+        if not set(self.patterns) == set(covered):
             #print "Not all the application URLs has test cases.  The missing are: \n   %s" % ("\n   ".join(list(set(patterns) - set(covered))))
             print "Not all the application URLs has test cases."
 
@@ -183,18 +185,17 @@ class UrlTestCase(TestCase):
         self.doUrlsTest(self.testtuples)
 
     def testUrlsFallback(self):
-        patterns = get_patterns(ietf.urls)
+        print "\nFallback: Test access to URLs which don't have an explicit test entry:"
         lst = []
-        for pattern in patterns:
+        for pattern in self.patterns:
             if pattern.startswith("^") and pattern.endswith("$"):
                 url = "/"+pattern[1:-1]
                 # if there is no variable parts in the url, test it
                 if re.search("^[-a-z0-9./_]*$", url) and not url in self.testurls and not url.startswith("/admin/"):
                     lst.append((["200"], url, None))
                 else:
-                    lst.append((["skip"], url, None))
+                    print "Test exists for %s" % (url)
             else:
                 lst.append((["Skip"], url, None))
             
-        print "\nTesting non-listed URLs:"
         self.doUrlsTest(lst)
