@@ -76,12 +76,6 @@ def filetext(filename):
     file.close()
     return chunk
 
-def filetime(name):
-    if os.path.exists(name):
-        return os.stat(name)[stat.ST_MTIME]
-    else:
-        return 0
-
 class UrlTestCase(TestCase):
     def setUp(self):
         from django.test.client import Client

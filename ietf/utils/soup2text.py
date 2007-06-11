@@ -98,8 +98,10 @@ class TextSoup(BeautifulSoup):
         return str
 
 def soup2text(html):
+    # Line ending normalization
+    html = html.replace("\r\n", "\n").replace("\r", "\n")
     # some preprocessing to handle common pathological cases
-    html = re.sub("<br */?>[ \t\r\n]*(<br */?>)+", "<p/>", html)
+    html = re.sub("<br */?>[ \t\n]*(<br */?>)+", "<p/>", html)
     soup = TextSoup(html)
     return str(soup)
 
