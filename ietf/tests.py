@@ -175,7 +175,7 @@ class UrlTestCase(TestCase):
                                     while re.search(chunk, diff):
                                         #print "*** Removing chunk of %s lines" % (len(chunk.split("\n")))
                                         diff = re.sub(chunk, "", diff)
-                                if len(diff.strip().split()) == 2:
+                                if len(diff.strip().splitlines()) == 2:
                                     # only the initial 2 lines of the diff remains --
                                     # discard them too
                                     diff = ""
