@@ -1,0 +1,16 @@
+200	/idtracker/states/	https://datatracker.ietf.org/public/states_table.cgi
+200	/idtracker/states/12/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_state_desc&id=12
+200	/idtracker/states/substate/1/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_state_desc&id=1&sub_state=1
+200	/idtracker/ballot_key/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_key
+200	/idtracker/evaluation_process/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_evaluation_desc
+200	/idtracker/send_email/	https://datatracker.ietf.org/public/pidtracker.cgi?command=send_email&cat=bugs
+200	/idtracker/status/	https://datatracker.ietf.org/public/status_of_item.cgi
+200	/idtracker/last_call/	https://datatracker.ietf.org/public/lastcall.cgi
+200	/idtracker/rfc3847/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_id&dTag=3847&rfc_flag=1
+200	/idtracker/12689/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_id&dTag=12689&rfc_flag=0
+200	/idtracker/draft-ietf-isis-link-attr/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_id&dTag=12689&rfc_flag=0
+200	/idtracker/draft-ietf-isis-link-attr/comment/65232/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_comment&id=65232
+200	/idtracker/comment/65232/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_comment&id=65232
+200	/idtracker/ballot/1760/	https://datatracker.ietf.org/public/pidtracker.cgi?command=print_ballot&ballot_id=1760&filename=draft-ietf-isis-link-attr
+200	/idtracker/		https://datatracker.ietf.org/public/pidtracker.cgi
+200	/feeds/comments/draft-ietf-isis-link-attr/
