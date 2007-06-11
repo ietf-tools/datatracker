@@ -97,7 +97,7 @@ class TextSoup(BeautifulSoup):
         node = render(self, encoding)
         str = node.text
         str = re.sub("[ \t]+", " ", str)
-        str = re.sub("\n\n+", "\n\n", str)
+        str = re.sub("\n\n+ *", "\n\n", str)
         return str
 
 def soup2text(html):
@@ -105,6 +105,7 @@ def soup2text(html):
     html = html.replace("\r\n", "\n").replace("\r", "\n")
     # some preprocessing to handle common pathological cases
     html = re.sub("<br */?>[ \t\n]*(<br */?>)+", "<p/>", html)
+    html = re.sub("<br */?>([^\n])", r"<br />\n\1", html)
     soup = TextSoup(html)
     return str(soup)
 
