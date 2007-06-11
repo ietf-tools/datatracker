@@ -13,7 +13,31 @@ pre_tags = ["pre"]
 entities = [("&lt;", "<"),   ("&gt;", ">"),
             ("&quot;", '"'), ("&apos;", "'"),
             ("&nbsp;", " "),
-            ("&amp;", "&"), ]
+            ("&amp;", "&"), ]           # ampersand last
+
+def unescape(text):
+    # Unescape character codes (if possible)
+    start = 0
+    while True:
+        try:
+            pos = text.index("&#", start)
+        except ValueError:
+            break
+        match = re.match("&#\d+;", text[pos:])
+        if match:
+            str = match.group()
+            num = int(str[2:-1])
+            if num < 256:
+                text = text[:pos] + chr(num) + text[pos+len(str):]
+                start = pos + 1
+            else:
+                start = pos + len(str)
+        else:
+            start = pos + 2
+    # unescape character entities
+    for entity, char in entities:
+        text = text.replace(entity, char) # replace ampersand last
+    return text
 
 def para(words, pre):    
     text = " ".join(words)
@@ -23,8 +47,7 @@ def para(words, pre):
             now = words[i-1]+" "+words[i]
             fix = words[i-1]+words[i]
             text = text.replace(now, fix)
-    for entity, char in entities:
-        text = text.replace(entity, char)
+    text = unescape(text)
     if not pre:
         text = re.sub("[\r\n\t ]+", " ", text)
         text = textwrap.fill(text)  
