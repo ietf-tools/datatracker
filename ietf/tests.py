@@ -193,6 +193,9 @@ class UrlTestCase(TestCase):
                                     else:
                                         print "Diff:    %s" % (url)
                                         print diff
+                                else:
+                                    print "OK  diff %s" % (url)
+                                    
                     except:
                         print "Exception occurred for url %s" % (url)
                         raise
