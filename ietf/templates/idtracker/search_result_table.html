@@ -4,11 +4,6 @@
 	<tr bgcolor="#A3A3A3"><th>&nbsp;</th><th width="250">Name (Intended Status)</th><th>Ver</th><th>Responsible AD</th><th>Status Date</th><th>Modified</th></tr>
 	{% for match in group.list %}
 	    {% include "idtracker/search_result_row.html" %}
-	    {% if match.primary_flag %}
-		{% for match in match.ballot_others %}
-		    {% include "idtracker/search_result_row.html" %}
-		{% endfor %}
-	    {% endif %}
 	{% endfor %}
 	</table>
     {% endfor %}

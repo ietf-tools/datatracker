@@ -14,3 +14,4 @@
 200	/idtracker/ballot/1760/	https://datatracker.ietf.org/public/pidtracker.cgi?command=print_ballot&ballot_id=1760&filename=draft-ietf-isis-link-attr
 200	/idtracker/		https://datatracker.ietf.org/public/pidtracker.cgi
 200	/feeds/comments/draft-ietf-isis-link-attr/
+200	/idtracker/?search_filename=bgp-m	https://datatracker.ietf.org/public/pidtracker.cgi?command=search_list&search_job_owner=0&search_group_acronym=&search_status_id=&search_cur_state=&sub_state_id=6&search_filename=bgp-m&search_rfcnumber=&search_area_acronym=&search_button=SEARCH

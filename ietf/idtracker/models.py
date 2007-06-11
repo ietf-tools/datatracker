@@ -165,6 +165,8 @@ class InternetDraft(models.Model):
 	if self.status.status != 'Active' and not self.expired_tombstone:
 	   r = max(r - 1, 0)
 	return "%02d" % r
+    def doctype(self):
+	return "Draft"
 
     class Meta:
         db_table = "internet_drafts"
@@ -331,6 +333,8 @@ class Rfc(models.Model):
 	return "RFC"
     def doclink(self):
 	return "http://www.ietf.org/rfc/%s" % ( self.displayname() )
+    def doctype(self):
+	return "RFC"
     class Meta:
         db_table = 'rfcs'
 	verbose_name = 'RFC'
@@ -454,14 +458,14 @@ class IDInternal(models.Model):
 	    return self._cached_rfc
 	else:
 	    return self.draft
+    def public_comments(self):
+	return self.comments().filter(public_flag=1)
     def comments(self):
-	if self.rfc_flag == 0:
-	    filter = models.Q(rfc_flag=0)|models.Q(rfc_flag__isnull=True)
-	else:
-	    filter = models.Q(rfc_flag=1)
-	return self.documentcomment_set.all().filter(filter).order_by('-comment_date','-comment_time')
+	# would filter by rfc_flag but the database is broken. (see
+	# trac ticket #96) so this risks collisions.
+	return self.documentcomment_set.all().order_by('-comment_date','-comment_time','-id')
     def ballot_set(self):
-	return IDInternal.objects.filter(ballot=self.ballot_id)
+	return IDInternal.objects.filter(ballot=self.ballot_id).order_by('-primary_flag')
     def ballot_primary(self):
 	return IDInternal.objects.filter(ballot=self.ballot_id,primary_flag=1)
     def ballot_others(self):

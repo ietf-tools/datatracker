@@ -60,8 +60,8 @@ def search(request):
 	status = args.get('search_status_id', '')
 	if status != '':
 	    q_objs.append(Q(draft__status=status,rfc_flag=0))
-	matches = IDInternal.objects.all().filter(*q_objs).filter(primary_flag=1)
-	matches = matches.order_by('cur_state', 'cur_sub_state_id')
+	matches = IDInternal.objects.all().filter(*q_objs)
+	matches = matches.order_by('cur_state', 'cur_sub_state', 'ballot')
     else:
 	matches = None
 

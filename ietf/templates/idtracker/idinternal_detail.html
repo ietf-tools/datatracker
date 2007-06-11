@@ -23,7 +23,7 @@
             <tr bgcolor="white">
               <td>
                 <div class="largefont3">
-                  Draft Name:
+                  {{ object.document.doctype }} Name:
                 </div>
               </td>
 
@@ -33,12 +33,12 @@
                   {{ object.document.displayname }}</a>
 		  <font color="red">
 		  {% if object.via_rfc_editor %}
-		    Independent submission via RFC Editor
+		    (Independent submission via RFC Editor)
 		  {% else %}
 		    {% ifequal object.document.group_acronym "none" %}
-		      Individual submission
+		      (Individual submission)
 		    {% else %}
-		      WG &lt;{{ object.document.group_acronym }}&gt; submission
+		      (WG &lt;{{ object.document.group_acronym }}&gt; submission)
 		    {% endifequal %}
 		  {% endif %}
                   </font>
@@ -207,11 +207,7 @@
     <a name="action"></a>
     <table border="1" bgcolor="black">
     <tr><td><font color="white"><h3>Actions</h3></font>
-    {% comment %}
-    # this "regroup" is to get the data structure into the shape
-    # that search_result_table wants - it doesn't do anything real.
-    {% endcomment %}
-    {% regroup object.ballot_primary by docstate as grouped %}
+    {% regroup object.ballot_set by docstate as grouped %}
     {% include "idtracker/search_result_table.html" %}
     </td>
     </tr>
@@ -229,7 +225,7 @@
 	<th>Comment</th>
       </tr>
 
-{% for comment in object.comments %}
+{% for comment in object.public_comments %}
       <tr bgcolor="{% cycle #CFE1CC,#7DC189 %}">
 	<td>{{ comment.date }}</td>
 
@@ -245,7 +241,7 @@
              but that actually changes the visible spacing in most
              browsers, so we let layout concerns make us write
              invalid HTML. -->
-	<form action="comment/{{ comment.id }}" method="GET">
+	<form action="{{ comment.get_absolute_url }}" method="GET">
 	  <td>
 	    <input type="submit" value="View Detail">
 	  </td>
