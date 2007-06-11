@@ -23,11 +23,10 @@ def run_tests(module_list, verbosity=1, extra_tests=[]):
 
 def reduce(html):
     html = re.sub(" :", ":", html)
+    if html.count("<li>") > 5*html.count("</li>"):
+        html = html.replace("<li>", "</li><li>")
     text = html2text(html)
     text = re.sub('\."', '".', text)
-    #text = re.sub("\n\n+", "\n\n", text)
-    #text = "\n\n".join([textwrap.fill(para, 80) for para in text.split("\n\n")])
-    #text = re.sub(" +", " ", text)
     text = [ line.strip() for line in text.split("\n") ]
     return text
 
@@ -68,6 +67,7 @@ def read_testurls(filename):
                 raise ValueError("Expected 'HTTP_CODE TESTURL [GOODURL]' in %s line, found '%s'." % (filename, line))
             codes = codes.split(",")
             tuples += [ (codes, testurl, goodurl) ]
+    file.close()
     return tuples
 
 class UrlTestCase(TestCase):
@@ -83,7 +83,7 @@ class UrlTestCase(TestCase):
                 self.testtuples += read_testurls(root+"/testurl.list")
             if "testurls.list" in files:
                 self.testtuples += read_testurls(root+"/testurls.list")
-        self.testurls = [ tuple[0] for tuple in self.testtuples ]
+        self.testurls = [ tuple[1] for tuple in self.testtuples ]
         # Use the default database for the url tests, instead of the test database
         self.testdb = settings.DATABASE_NAME
         connection.close()
@@ -136,8 +136,10 @@ class UrlTestCase(TestCase):
                         #print "Fetching", master, "...",
                         mfile = urllib.urlopen(master)
                         goodhtml = mfile.read()
+                    except urllib.URLError, e:
+                        print "Failed retrieving master text for comparison: %s" % e
+                    try:
                         mfile.close()
-                        print ""
                         if goodhtml and response.content:
                             testtext = reduce(response.content)
                             goodtext = reduce(goodhtml)
@@ -158,8 +160,9 @@ class UrlTestCase(TestCase):
                                 else:
                                     print "Diff:    %s" % (url)
                                     print diff
-                    except urllib.URLError, e:
-                        print "Failed retrieving master text for comparison: %s" % e
+                    except:
+                        print "Exception occurred for url %s" % (url)
+                        raise
 
                 if not res in response_count:
                     response_count[res] = 0
