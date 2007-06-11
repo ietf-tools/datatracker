@@ -18,3 +18,6 @@ ietf/contrib/BeautifulSoup.py:59: redefinition of unused 'name2codepoint' from l
 ietf/contrib/BeautifulSoup.py:1497: redefinition of unused 'chardet' from line 1493
 ietf/contrib/BeautifulSoup.py:1504: 'cjkcodecs' imported but unused
 ietf/contrib/BeautifulSoup.py:1508: 'iconv_codec' imported but unused
+ietf/utils/soup2text.py:8: redefinition of unused 'Tag' from line 6
+ietf/utils/soup2text.py:8: redefinition of unused 'BeautifulSoup' from line 6
+ietf/utils/soup2text.py:8: redefinition of unused 'NavigableString' from line 6
