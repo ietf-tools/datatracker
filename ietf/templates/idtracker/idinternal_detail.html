@@ -29,8 +29,10 @@
 
               <td>
                 <div class="largefont3">
-                  <a href="{{ object.document.doclink }}">
-                  {{ object.document.displayname }}</a>
+		  {{ object.document.filename_with_link }}
+		  {% ifnotequal object.document.status.status "Active" %}
+		    ({{ object.document.status.status }})
+		  {% endifnotequal %}
 		  <font color="red">
 		  {% if object.via_rfc_editor %}
 		    (Independent submission via RFC Editor)

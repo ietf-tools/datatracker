@@ -5,7 +5,7 @@
              invalid HTML. -->
         <form method="GET" action="{% url ietf.idtracker.views.view_id match.document.filename %}"><td><input type="submit" value="DETAIL"></td></form>
 	{# todo: conditionalize doclink properly #}
-	<td>{% if match.primary_flag %}<li>{% else %}<dd>{% endif %}<a href="{{ match.document.doclink }}">{{ match.document.filename }}</a> ({{ match.document.intended_status }})</td>
+	<td>{% if match.primary_flag %}<li>{% else %}<dd>{% endif %}{{ match.document.filename_with_link }} ({{ match.document.intended_status }})</td>
 	<td>{{ match.document.revision }}</td>
 	<td>{{ match.job_owner }}</td>
 	<td>{% firstof match.status_date "" %}</td>

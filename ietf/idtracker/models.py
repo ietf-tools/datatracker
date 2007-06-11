@@ -147,7 +147,7 @@ class InternetDraft(models.Model):
         self.id_document_key = self.title.upper()
         super(InternetDraft, self).save()
     def displayname(self):
-	return "%s-%s.txt" % ( self.filename, self.revision )
+	return "%s-%s.txt" % ( self.filename, self.revision_display() )
     def doclink(self):
 	return "http://www.ietf.org/internet-drafts/%s" % ( self.displayname() )
     def group_acronym(self):
@@ -167,7 +167,11 @@ class InternetDraft(models.Model):
 	return "%02d" % r
     def doctype(self):
 	return "Draft"
-
+    def filename_with_link(self):
+	if self.status.status != 'Active':
+	    return self.filename
+	else:
+	    return '<a href="%s">%s</a>' % ( self.doclink(), self.filename )
     class Meta:
         db_table = "internet_drafts"
     class Admin:
@@ -335,6 +339,8 @@ class Rfc(models.Model):
 	return "http://www.ietf.org/rfc/%s" % ( self.displayname() )
     def doctype(self):
 	return "RFC"
+    def filename_with_link(self):
+	return '<a href="%s">%s</a>' % ( self.doclink(), self.displayname() )
     class Meta:
         db_table = 'rfcs'
 	verbose_name = 'RFC'
@@ -503,12 +509,12 @@ class DocumentComment(models.Model):
 	else:
 	    return "/idtracker/%s/comment/%d/" % (self.document.draft.filename, self.id)
     def get_author(self):
-	if self.created_by:
+	if self.created_by_id and self.created_by_id != 999:
 	    return self.created_by.__str__()
 	else:
 	    return "system"
     def get_username(self):
-	if self.created_by:
+	if self.created_by_id and self.created_by_id != 999:
 	    return self.created_by.login_name
 	else:
 	    return "system"
