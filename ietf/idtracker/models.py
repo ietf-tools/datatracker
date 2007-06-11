@@ -455,7 +455,11 @@ class IDInternal(models.Model):
 	else:
 	    return self.draft
     def comments(self):
-	return self.documentcomment_set.all().filter(rfc_flag=self.rfc_flag).order_by('-comment_date','-comment_time')
+	if self.rfc_flag == 0:
+	    filter = models.Q(rfc_flag=0)|models.Q(rfc_flag__isnull=True)
+	else:
+	    filter = models.Q(rfc_flag=1)
+	return self.documentcomment_set.all().filter(filter).order_by('-comment_date','-comment_time')
     def ballot_set(self):
 	return IDInternal.objects.filter(ballot=self.ballot_id)
     def ballot_primary(self):
