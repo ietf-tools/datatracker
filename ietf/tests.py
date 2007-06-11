@@ -50,6 +50,14 @@ def get_patterns(module):
                 all.append(item.regex.pattern + ".*" + sub)
     return all
 
+def split_url(url):
+    if "?" in url:
+        url, args = url.split("?", 1)
+        args = dict([ arg.split("=", 1) for arg in args.split("&") ])
+    else:
+        args = {}
+    return url, args
+
 def read_testurls(filename):
     tuples = []
     file = open(filename)
@@ -139,9 +147,10 @@ class UrlTestCase(TestCase):
             if "skip" in codes or "Skip" in codes:
                 print "Skipping %s" % (url)
             elif url:
+                url, args = split_url(url)
                 #print "Trying codes, url: (%s, '%s')" % (codes, url)
                 try:
-                    response = self.client.get(url)
+                    response = self.client.get(url, args)
                     code = str(response.status_code)
                     if code in codes:
                         print "OK   %s %s" % (code, url)
