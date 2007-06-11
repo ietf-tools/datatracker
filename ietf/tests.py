@@ -97,7 +97,13 @@ class UrlTestCase(TestCase):
         for item in os.listdir(testdir):
             path = testdir + "/" + item
             if item.startswith("generic-") and os.path.isfile(path):
-                self.diffchunks.append(filetext(path))
+                chunk = filetext(path)
+                chunk = re.sub(r"([\[\]().|+*?])", r"\\\1", chunk)
+                # @@ -27,0 \+23,1 @@
+                chunk = re.sub(r"(?m)^@@ -\d+,(\d+) \\\+\d+,(\d+) @@$", r"@@ -\d+,\1 \+\d+,\2 @@", chunk)
+                #print "*** Installing diff chunk:"
+                #print chunk
+                self.diffchunks.append(chunk)
 
         # extract application urls:
         self.patterns = get_patterns(ietf.urls)
@@ -165,21 +171,28 @@ class UrlTestCase(TestCase):
                                 contextlines = 0
                                 diff = "\n".join(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
                                 for chunk in self.diffchunks:
-                                    if chunk in diff:
-                                        diff = diff.replace(chunk, "")
-                                dfile = "%s/../test/diff/%s" % (settings.BASE_DIR, url.replace("/", "_"))
-                                if os.path.exists(dfile):
-                                    dfile = open(dfile)
-                                    #print "Reading OK diff file:", dfile.name
-                                    okdiff = dfile.read()
-                                    dfile.close()
-                                else:
-                                    okdiff = ""
-                                if diff.strip() == okdiff.strip():
-                                    print "OK  diff %s" % (url)
-                                else:
-                                    print "Diff:    %s" % (url)
-                                    print diff
+                                    #print "*** Checking for chunk:", chunk[:24]
+                                    while re.search(chunk, diff):
+                                        #print "*** Removing chunk of %s lines" % (len(chunk.split("\n")))
+                                        diff = re.sub(chunk, "", diff)
+                                if len(diff.strip().split()) == 2:
+                                    # only the initial 2 lines of the diff remains --
+                                    # discard them too
+                                    diff = ""
+                                if diff:
+                                    dfile = "%s/../test/diff/%s" % (settings.BASE_DIR, url.replace("/", "_"))
+                                    if os.path.exists(dfile):
+                                        dfile = open(dfile)
+                                        #print "Reading OK diff file:", dfile.name
+                                        okdiff = dfile.read()
+                                        dfile.close()
+                                    else:
+                                        okdiff = ""
+                                    if diff.strip() == okdiff.strip():
+                                        print "OK  diff %s" % (url)
+                                    else:
+                                        print "Diff:    %s" % (url)
+                                        print diff
                     except:
                         print "Exception occurred for url %s" % (url)
                         raise
