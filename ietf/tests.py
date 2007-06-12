@@ -242,6 +242,6 @@ class UrlTestCase(TestCase):
                 else:
                     print "Test exists for %s" % (url)
             else:
-                lst.append((["Skip"], url, None))
+                lst.append((["Skip"], pattern, None))
             
         self.doUrlsTest(lst)
