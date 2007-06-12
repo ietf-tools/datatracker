@@ -12,7 +12,7 @@ class IDSearch(forms.Form):
     search_rfcnumber = forms.CharField(widget=forms.TextInput(attrs={'size': 5, 'maxlength': 60}))
     def __init__(self, *args, **kwargs):
         super(IDSearch, self).__init__(*args, **kwargs)
-	self.fields['search_job_owner'].choices = [('', '--All/Any')] + [(ad.id, str(ad)) for ad in IESGLogin.objects.filter(user_level=1).order_by('last_name')] + [('-99', '----------')] + [(ad.id, str(ad)) for ad in IESGLogin.objects.filter(user_level=2).order_by('last_name')]
+	self.fields['search_job_owner'].choices = [('', '--All/Any')] + [(ad.id, "%s, %s" % (ad.last_name, ad.first_name)) for ad in IESGLogin.objects.filter(user_level=1).order_by('last_name')] + [('-99', '----------')] + [(ad.id, "%s, %s" % (ad.last_name, ad.first_name)) for ad in IESGLogin.objects.filter(user_level=2).order_by('last_name')]
 
 class EmailFeedback(forms.Form):
     category = forms.CharField(widget=forms.HiddenInput())
