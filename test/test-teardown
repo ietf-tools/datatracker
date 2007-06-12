@@ -19,4 +19,9 @@ if echo "show databases;" | python ietf/manage.py dbshell | grep test_ietf; then
     echo "test database removed."
 fi
 
+# Release database update lock
+
+LOCKDIR=$build/test/update-db.lock
+rm -rf $LOCKDIR
+
 exit $warnings

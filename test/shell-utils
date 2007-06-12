@@ -10,6 +10,7 @@ function err() {
 	echo "$program: Error: $*" 1>&2; 
 	exit 2
 }
+alias die='err'
 
 function warn() { 
 	echo "$program: Warning: $*" 1>&2; 
