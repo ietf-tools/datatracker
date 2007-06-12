@@ -55,8 +55,6 @@ def normalize(str):
     # Normalize whitespace at the beginning and end of the string
     str = re.sub("^[ \t]+", " ", str)
     str = re.sub("[ \t]+$", " ", str)
-    # remove comments
-    str = re.sub("(?s)<!--.*?-->", "", str)    
     # remove xml PIs and metainformation
     str = re.sub("<![^>]*>", "", str)
     str = re.sub("<\?[^>]*\?>", "", str)
@@ -87,9 +85,9 @@ def render(node, encoding='latin-1', pre=False):
                         blocks.append(child.text+"\n\n")
                         node.is_block = True
                     else:
+                        words.append(child.text)
                         if child.name in space_tags and not (words and words[-1] and words[-1][-1] in [" ", "\t", "\n"]):
                             words.append(" ")
-                        words.append(child.text)
         else:
             raise ValueError("Unexpected node type: '%s'" % child)
     if words:
@@ -111,6 +109,8 @@ class TextSoup(BeautifulSoup):
 def soup2text(html):
     # Line ending normalization
     html = html.replace("\r\n", "\n").replace("\r", "\n")
+    # remove comments
+    html = re.sub("(?s)<!--.*?-->", "", html)    
     # some preprocessing to handle common pathological cases
     html = re.sub("<br */?>[ \t\n]*(<br */?>)+", "<p/>", html)
     html = re.sub("<br */?>([^\n])", r"<br />\n\1", html)
