@@ -44,11 +44,9 @@ def para(words, pre):
     text = "".join(words)
     text = unescape(text)
     if not pre:
-        #print "*** Text to be wrapped:"
-        #print "["+text+"]"
-        text = re.sub("[\t ]+", " ", text)
         text = text.strip("\n")
         text = text.lstrip()
+        text = re.sub("[\t\n ]+", " ", text)
         text = textwrap.fill(text)  
     return text
 
