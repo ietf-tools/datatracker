@@ -198,7 +198,7 @@ class UrlTestCase(TestCase):
                                     else:
                                         okdiff = ""
                                     if diff.strip() == okdiff.strip():
-                                        print "OK  diff %s" % (url)
+                                        print "OK   cmp %s" % (url)
                                     else:
                                         print "Diff:    %s" % (url)
                                         print diff
