@@ -1,13 +1,17 @@
 --- https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657 
 +++ /ipr/ipr-657/ 
-@@ -9,2 +9,2 @@
--(1)". Click here to update this IPR disclosure
--Submitted Date: November 8, 2005
-+(1)". Click here to update this IPR disclosure Submitted Date:
-+November 8, 2005
+@@ -14,1 +14,1 @@
+-Legal Name:France Telecom SA
++Legal Name: France Telecom SA
+@@ -41,1 +41,1 @@
+-number(s):to be confirmed by individual patent declarations
++number(s): to be confirmed by individual patent declarations
+@@ -43,1 +43,1 @@
+-Date(s) granted or applied for:to be confirmed by individual patent
++Date(s) granted or applied for: to be confirmed by individual patent
 @@ -46,1 +46,1 @@
--Country: to be confirmed by individual patent declarations
-+Country:to be confirmed by individual patent declarations
+-Country:to be confirmed by individual patent declarations
++Country: to be confirmed by individual patent declarations
 @@ -49,1 +49,0 @@
 -
 @@ -73,1 +72,3 @@
@@ -18,13 +22,9 @@
 @@ -78,1 +79,1 @@
 -IETF Participant in Section III above)
 +the Contact Information above)
-@@ -92,1 +93,1 @@
--Fax:+33 1 4529 6560
-+Fax: +33 1 4529 6560
-@@ -94,1 +95,5 @@
--Email:serge.raes@francetelecom.com
-+Email: serge.raes@francetelecom.com
-+
+@@ -96,0 +97,1 @@
 +VI. Other Notes:
-+
+@@ -97,0 +99,3 @@
 +No information submitted
++
++
