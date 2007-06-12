@@ -48,6 +48,7 @@ def para(words, pre):
         #print "["+text+"]"
         text = re.sub("[\t ]+", " ", text)
         text = text.strip("\n")
+        text = text.lstrip()
         text = textwrap.fill(text)  
     return text
 
