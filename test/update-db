@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# push in a new copy of the database from a dump of the master database, and
+# do the fixups needed to run the django apps.
+
+#set -x
+
+program=${0##*/}
+progdir=${0%/*}
+
+cd $progdir/..
+build=$PWD
+
+function log() { logger -i -t $program -s "$*"; }
+function die() { log "$*; terminating."; echo "$program: Error: $*" 1>&2; exit 1; }
+
+
+[ $DBDUMP ] || DBDUMP=/www/tools.ietf.org/events/raw/sqldump/sqldump.raw
+[ $DBFIX  ] || DBFIX=$build/test/sql_fixup.sql
+
+LOCKDIR=/var/lock/ietfdb
+PIDFILE=$LOCKDIR/pid
+
+while true; do
+    if mkdir $LOCKDIR; then
+	echo "$$" > $PIDFILE
+	log "Updating local database from $DBDUMP ..."
+	python ietf/manage.py dbshell <  $DBDUMP
+	log "Updating local database from $DBFIX ..."
+	python ietf/manage.py dbshell <  $DBFIX
+	log "Running Django syncdb ..."
+	python ietf/manage.py syncdb
+	log "Done."
+	rm -rf $LOCKDIR
+	exit 0
+    else
+	pid=$(< $PIDFILE ) || die "Couldn't read pidfile '$PIDFILE'"
+	if kill -0 $pid; then
+	    log "Pidfile for process $pid exists, and process is running. Sleeping."
+	    sleep 10
+	else
+	    log "Pidfile for process $pid exists, but process isn't running."
+	    log "Removing lock and old pid file $pidfile."
+	    rm -rf $LOCKDIR
+	fi
+    fi
+done
