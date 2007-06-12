@@ -61,7 +61,8 @@ while true; do
 	echo "$$" > $PIDFILE
 	break
     else
-	pid=$(< $PIDFILE ) || die "Couldn't read pidfile '$PIDFILE'"
+	pid=$(< $PIDFILE )
+	[ "$pid" ] || die "Couldn't read pidfile '$PIDFILE'"
 	if kill -0 $pid; then
 	    echo "Pidfile for process $pid exists, and process is running. Sleeping."
 	    sleep 10
