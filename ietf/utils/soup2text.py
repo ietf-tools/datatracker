@@ -106,6 +106,7 @@ def soup2text(html):
     # some preprocessing to handle common pathological cases
     html = re.sub("<br */?>[ \t\n]*(<br */?>)+", "<p/>", html)
     html = re.sub("<br */?>([^\n])", r"<br />\n\1", html)
+    html = re.sub("(<t[hd][^>]*>)([^ \t\n])", r"\1 \2", html)
     soup = TextSoup(html)
     return str(soup)
 
