@@ -10,7 +10,7 @@ def redirect(request, path="", script=""):
 	redir = Redirect.objects.get(cgi=script)
     except Redirect.DoesNotExist:
 	raise Http404
-    url = redir.url + "/"
+    url = "/" + redir.url + "/"
     (rest, remove) = (redir.rest, redir.remove)
     try:
 	cmd = redir.commands.all().get(command=request.REQUEST['command'])
@@ -21,7 +21,7 @@ def redirect(request, path="", script=""):
 	remove = cmd.suffix.remove
     except Command.DoesNotExist:
 	pass	# it's ok, there's no more-specific request.
-    except IndexError:
+    except KeyError:
 	pass	# it's ok, request didn't have 'command'.
     try:
 	url += rest % request.REQUEST
@@ -29,6 +29,8 @@ def redirect(request, path="", script=""):
 	# rest had something in it that request didn't have, so just
 	# redirect to the root of the tool.
 	pass
+    # Be generous in what you accept: collapse multiple slashes
+    url = re.sub(r'/+', '/', url)
     if remove:
 	url = re.sub(re.escape(remove) + "/?$", "", url)
     return HttpResponseRedirect(url)
