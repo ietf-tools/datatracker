@@ -1,1 +1,9 @@
-200	/ipr/ipr-657/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657
+200	/ipr/				https://datatracker.ietf.org/public/ipr_list.cgi
+200	/ipr/ipr-657/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657 # Generic disclosure
+200	/ipr/ipr-834/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=834 # Specific disclosure
+200	/ipr/ipr-795/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=795 # Third-party disclosure
+#200	/ipr/search/			https://datatracker.ietf.org/public/ipr_search.cgi
+200	/ipr/new-generic/		https://datatracker.ietf.org/public/ipr_generic.cgi
+200	/ipr/new-specific/		https://datatracker.ietf.org/public/ipr_notify.cgi
+200	/ipr/update/			https://datatracker.ietf.org/public/ipr_update_list.cgi
+#	/ipr/update
