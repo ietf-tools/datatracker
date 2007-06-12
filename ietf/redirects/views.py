@@ -1,4 +1,4 @@
-from django.http import HttpResponseRedirect,Http404
+from django.http import HttpResponsePermanentRedirect,Http404
 import re
 
 from ietf.redirects.models import Redirect, Command
@@ -25,6 +25,7 @@ def redirect(request, path="", script=""):
 	pass	# it's ok, request didn't have 'command'.
     try:
 	url += rest % request.REQUEST
+	url += "/"
     except:
 	# rest had something in it that request didn't have, so just
 	# redirect to the root of the tool.
@@ -40,4 +41,4 @@ def redirect(request, path="", script=""):
 	get.pop(arg)
     if get:
 	url += '?' + get.urlencode()
-    return HttpResponseRedirect(url)
+    return HttpResponsePermanentRedirect(url)
