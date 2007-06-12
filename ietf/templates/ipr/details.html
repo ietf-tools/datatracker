@@ -112,13 +112,21 @@
 	 <h4 class="ipr">The Patent Disclosure and Licensing Declaration Template for {{ section_list.disclosure_type }} IPR Disclosures</h4>
 	 <p class="ipr">
 
+	    {% if section_list.generic %}
+	    This document is an IETF IPR Disclosure and Licensing Declaration
+	    Template and is submitted to inform the IETF of a) patent or patent
+	    application information regarding the IETF document or contribution
+	    listed in Section IV, and b) an IPR Holder's intention with respect to
+	    the licensing of its necessary patent claims. No actual license is
+	    implied by submission of this template.
+	    {% else %}
 	    This document is an IETF IPR Disclosure and Licensing Declaration
 	    Template and is submitted to inform the IETF of a) patent or patent
 	    application information regarding the IETF document or contribution
 	    listed in Section IV, and b) an IPR Holder's intention with respect to
 	    the licensing of its necessary patent claims.  No actual license is
 	    implied by submission of this template.
-
+	    {% endif %}
 	 </p>
 
 	 {% if section_list.also_specific %}

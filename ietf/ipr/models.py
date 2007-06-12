@@ -11,7 +11,7 @@ LICENSE_CHOICES = (
     (2, 'Royalty-Free, Reasonable and Non-Discriminatory License to All Implementers.'),
     (3, 'Reasonable and Non-Discriminatory License to All Implementers with Possible Royalty/Fee.'),
     (4, 'Licensing Declaration to be Provided Later.'),
-    (5, 'Unwilling to Commit to the Provisions.'),
+    (5, 'Unwilling to Commit to the Provisions of a), b), or c) Above..'),
     (6, 'See Text Below for Licensing Declaration.'),
 )
 STDONLY_CHOICES = (
