@@ -43,14 +43,17 @@ def para(words, pre):
     text = "".join(words)
     text = unescape(text)
     if not pre:
-        text = re.sub("[\r\n\t ]+", " ", text.strip())
+        #print "*** Text to be wrapped:"
+        #print "["+text+"]"
+        text = re.sub("[\t ]+", " ", text)
+        text = text.strip("\n")
         text = textwrap.fill(text)  
     return text
 
 def normalize(str):
     # Normalize whitespace at the beginning and end of the string
-    str = re.sub("^[ \t\n]+", " ", str)
-    str = re.sub("[ \t\n]+$", " ", str)
+    str = re.sub("^[ \t]+", " ", str)
+    str = re.sub("[ \t]+$", " ", str)
     # remove comments
     str = re.sub("(?s)<!--.*?-->", "", str)    
     # remove xml PIs and metainformation
@@ -108,7 +111,7 @@ def soup2text(html):
     # some preprocessing to handle common pathological cases
     html = re.sub("<br */?>[ \t\n]*(<br */?>)+", "<p/>", html)
     html = re.sub("<br */?>([^\n])", r"<br />\n\1", html)
-    html = re.sub("(<t[hd][^>]*>)([^ \t\n])", r"\1 \2", html)
+    html = re.sub("([^ \t\n])(</t[hd].*?>)", r"\1 \2", html)
     soup = TextSoup(html)
     return str(soup)
 
