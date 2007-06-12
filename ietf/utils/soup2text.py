@@ -87,10 +87,9 @@ def render(node, encoding='latin-1', pre=False):
                         blocks.append(child.text+"\n\n")
                         node.is_block = True
                     else:
-                        if child.text:
-                            if child.name in space_tags and not words[-1][-1] in [" ", "\t", "\n"]:
-                                words.append(" ")
-                            words.append(child.text)
+                        if child.name in space_tags and not (words[-1] and words[-1][-1] in [" ", "\t", "\n"]):
+                            words.append(" ")
+                        words.append(child.text)
         else:
             raise ValueError("Unexpected node type: '%s'" % child)
     if words:
