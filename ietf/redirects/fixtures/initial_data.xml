@@ -48,6 +48,60 @@
     <field type="CharField" name="rest">%(id)s</field>
     <field type="CharField" name="remove"/>
   </object>
+  <object pk="9" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/states_table.cgi</field>
+    <field type="CharField" name="url">idtracker/states</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="10" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/pidtracker.cgi</field>
+    <field type="CharField" name="url">idtracker</field>
+    <field type="CharField" name="rest">%(dTag)s/%(command)s</field>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="11" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/status_of_item.cgi</field>
+    <field type="CharField" name="url">idtracker/status</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="12" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/lastcall.cgi</field>
+    <field type="CharField" name="url">idtracker/last_call</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="13" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/rfc_editor_announcement.cgi</field>
+    <field type="CharField" name="url">iesg/ann/independent</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="14" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/recent_announcement.cgi</field>
+    <field type="CharField" name="url">iesg/ann/ietf-doc/recent</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="15" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/previous_announcement.cgi</field>
+    <field type="CharField" name="url">iesg/ann/ietf-doc/previous</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="16" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/view_telechat_minute.cgi</field>
+    <field type="CharField" name="url">iesg/telechat</field>
+    <field type="CharField" name="rest"/>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="17" model="redirects.redirect">
+    <field type="CharField" name="cgi">public/ipr_detail_show.cgi</field>
+    <field type="CharField" name="url">ipr</field>
+    <field type="CharField" name="rest">ipr-%(ipr_id)s</field>
+    <field type="CharField" name="remove"/>
+  </object>
   <object pk="4" model="redirects.command">
     <field type="CharField" name="command">show_ind_id</field>
     <field type="CharField" name="url">inddocs</field>
@@ -66,6 +120,42 @@
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">3</field>
   </object>
+  <object pk="6" model="redirects.command">
+    <field type="CharField" name="command">view_state_desc</field>
+    <field type="CharField" name="url">states</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
+  </object>
+  <object pk="9" model="redirects.command">
+    <field type="CharField" name="command">view_evaluation_desc</field>
+    <field type="CharField" name="url">evaluation_process</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">5</field>
+  </object>
+  <object pk="8" model="redirects.command">
+    <field type="CharField" name="command">view_key</field>
+    <field type="CharField" name="url">ballot_key</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">5</field>
+  </object>
+  <object pk="10" model="redirects.command">
+    <field type="CharField" name="command">send_email</field>
+    <field type="CharField" name="url">send_email</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">5</field>
+  </object>
+  <object pk="11" model="redirects.command">
+    <field type="CharField" name="command">view_comment</field>
+    <field type="CharField" name="url">comment</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
+  </object>
+  <object pk="12" model="redirects.command">
+    <field type="CharField" name="command">view_minute</field>
+    <field type="CharField" name="url">detail</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">16</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
+  </object>
   <object pk="2" model="redirects.suffix">
     <field type="CharField" name="rest">%(fl)s</field>
     <field type="CharField" name="remove"/>
@@ -73,5 +163,13 @@
   <object pk="3" model="redirects.suffix">
     <field type="CharField" name="rest">%(cat)s/%(sort)s</field>
     <field type="CharField" name="remove"/>
+  </object>
+  <object pk="4" model="redirects.suffix">
+    <field type="CharField" name="rest">%(id)s</field>
+    <field type="CharField" name="remove"/>
+  </object>
+  <object pk="5" model="redirects.suffix">
+    <field type="CharField" name="rest">%(n/a)s</field>
+    <field type="CharField" name="remove">(Use this hack when there are no arguments)</field>
   </object>
 </django-objects>
