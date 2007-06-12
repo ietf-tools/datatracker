@@ -12,6 +12,7 @@ def redirect(request, path="", script=""):
 	raise Http404
     url = "/" + redir.url + "/"
     (rest, remove) = (redir.rest, redir.remove)
+    cmd = None
     try:
 	cmd = redir.commands.all().get(command=request.REQUEST['command'])
 	if cmd.url:
@@ -38,7 +39,11 @@ def redirect(request, path="", script=""):
     # expecting and if there are any left, add them to the URL.
     get = request.GET.copy()
     for arg in re.findall(r'%\(([^)]+)\)', rest):
-	get.pop(arg)
+	if get.has_key(arg):
+	    get.pop(arg)
+    # If we found a command in the database, there's no need to pass it along.
+    if cmd and get.has_key('command'):
+	get.pop('command')
     if get:
 	url += '?' + get.urlencode()
     return HttpResponsePermanentRedirect(url)
