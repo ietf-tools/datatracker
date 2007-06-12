@@ -43,7 +43,7 @@ def para(words, pre):
     text = "".join(words)
     text = unescape(text)
     if not pre:
-        text = re.sub("[\r\n\t ]+", " ", text)
+        text = re.sub("[\r\n\t ]+", " ", text.strip())
         text = textwrap.fill(text)  
     return text
 
@@ -99,7 +99,7 @@ class TextSoup(BeautifulSoup):
         node = render(self, encoding)
         str = node.text
         str = re.sub("[ \t]+", " ", str)
-        str = re.sub("\n\n+ *", "\n\n", str)
+        str = re.sub("\n\n+", "\n\n", str)
         return str
 
 def soup2text(html):
