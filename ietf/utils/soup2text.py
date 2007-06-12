@@ -51,6 +51,8 @@ def normalize(str):
     # Normalize whitespace at the beginning and end of the string
     str = re.sub("^[ \t\n]+", " ", str)
     str = re.sub("[ \t\n]+$", " ", str)
+    # remove comments
+    str = re.sub("(?s)<!--.*?-->", "", str)    
     # remove xml PIs and metainformation
     str = re.sub("<![^>]*>", "", str)
     str = re.sub("<\?[^>]*\?>", "", str)
