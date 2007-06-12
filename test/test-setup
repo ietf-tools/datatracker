@@ -53,8 +53,8 @@ cat $settings_local test/settings_local_test.py > ietf/settings_local.py
 
 # Acquire lock, to prevent running test and database update at the same time
 
-LOCKDIR=$build/test/update-db.lock
-PIDFILE=$build/test/update-db.lock/pid
+LOCKDIR=/var/lock/ietfdb
+PIDFILE=$LOCKDIR/pid
 
 while true; do
     if mkdir $build/test/update-db.lock; then

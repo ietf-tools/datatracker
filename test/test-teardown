@@ -21,7 +21,7 @@ fi
 
 # Release database update lock
 
-LOCKDIR=$build/test/update-db.lock
+LOCKDIR=/var/lock/ietfdb
 rm -rf $LOCKDIR
 
 exit $warnings
