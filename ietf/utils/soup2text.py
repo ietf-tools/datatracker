@@ -7,7 +7,8 @@ try:
 except:
     from BeautifulSoup import Tag, BeautifulSoup, NavigableString
 
-block_tags = ["[document]", "html", "body", "div", "blockquote", "table", "tr", "p", "pre", "h1", "h2", "h3", "h4", "h5", "h6", ]
+block_tags = ["[document]", "html", "body", "div", "blockquote", "table", "tr", "p", "pre", "h1", "h2", "h3", "h4", "h5", "h6", "li"]
+space_tags = ["th", "td", "br"]
 ignore_tags = ["head", "script", "style"]
 pre_tags = ["pre"]
 entities = [("&lt;", "<"),   ("&gt;", ">"),
@@ -86,7 +87,10 @@ def render(node, encoding='latin-1', pre=False):
                         blocks.append(child.text+"\n\n")
                         node.is_block = True
                     else:
-                        words.append(child.text)
+                        if child.text:
+                            if child.name in space_tags and not words[-1][-1] in [" ", "\t", "\n"]:
+                                words.append(" ")
+                            words.append(child.text)
         else:
             raise ValueError("Unexpected node type: '%s'" % child)
     if words:
@@ -111,7 +115,6 @@ def soup2text(html):
     # some preprocessing to handle common pathological cases
     html = re.sub("<br */?>[ \t\n]*(<br */?>)+", "<p/>", html)
     html = re.sub("<br */?>([^\n])", r"<br />\n\1", html)
-    html = re.sub("([^ \t\n])(</t[hd].*?>)", r"\1 \2", html)
     soup = TextSoup(html)
     return str(soup)
 

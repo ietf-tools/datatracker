@@ -178,7 +178,8 @@ class UrlTestCase(TestCase):
                                 print "OK   cmp %s" % (url)
                             else:
                                 contextlines = 0
-                                diff = "\n".join(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
+                                difflist = list(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
+                                diff = "\n".join(difflist)
                                 for chunk in self.diffchunks:
                                     #print "*** Checking for chunk:", chunk[:24]
                                     while re.search(chunk, diff):
@@ -201,7 +202,9 @@ class UrlTestCase(TestCase):
                                         print "OK   cmp %s" % (url)
                                     else:
                                         print "Diff:    %s" % (url)
-                                        print diff
+                                        print "\n".join(difflist[:100])
+                                        if len(difflist) > 100:
+                                            print "... (skipping %s lines of diff)" % (len(difflist)-100)
                                 else:
                                     print "OK   cmp %s" % (url)
                                     
