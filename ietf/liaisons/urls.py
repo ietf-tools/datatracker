@@ -14,7 +14,7 @@ urlpatterns = patterns('django.views.generic.list_detail',
 
 urlpatterns += patterns('django.views.generic.simple',
      (r'^help/$', 'direct_to_template', {'template': 'liaisons/help.html'}),
-     (r'^help/fields/', 'direct_to_template', {'template': 'liaisons/field_help.html'}),
-     (r'^help/from_ietf/', 'direct_to_template', {'template': 'liaisons/guide_from_ietf.html'}),
-     (r'^help/to_ietf/', 'direct_to_template', {'template': 'liaisons/guide_to_ietf.html'}),
+     (r'^help/fields/$', 'direct_to_template', {'template': 'liaisons/field_help.html'}),
+     (r'^help/from_ietf/$', 'direct_to_template', {'template': 'liaisons/guide_from_ietf.html'}),
+     (r'^help/to_ietf/$', 'direct_to_template', {'template': 'liaisons/guide_to_ietf.html'}),
 )
