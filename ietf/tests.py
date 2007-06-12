@@ -147,10 +147,10 @@ class UrlTestCase(TestCase):
             if "skip" in codes or "Skip" in codes:
                 print "Skipping %s" % (url)
             elif url:
-                url, args = split_url(url)
+                baseurl, args = split_url(url)
                 #print "Trying codes, url: (%s, '%s')" % (codes, url)
                 try:
-                    response = self.client.get(url, args)
+                    response = self.client.get(baseurl, args)
                     code = str(response.status_code)
                     if code in codes:
                         print "OK   %s %s" % (code, url)
