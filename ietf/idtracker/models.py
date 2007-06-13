@@ -40,6 +40,7 @@ class IDState(models.Model):
     choices = staticmethod(choices)
     class Meta:
         db_table = 'ref_doc_states_new'
+	ordering = ['document_state_id']
     class Admin:
 	pass
 
@@ -62,6 +63,7 @@ class IDSubState(models.Model):
         return self.sub_state
     class Meta:
         db_table = 'sub_state'
+	ordering = ['sub_state_id']
     class Admin:
 	pass
 
