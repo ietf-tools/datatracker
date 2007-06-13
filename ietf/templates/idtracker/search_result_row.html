@@ -1,4 +1,5 @@
-	<tr bgcolor="#{% if match.primary_flag %}{% cycle F8D6F8,E2AFE2 as ballotcolor %}{% else %}{{ ballotcolor }}{% endif %}">
+{% load myifchanged %}
+	<tr bgcolor="#{% myifchanged match.ballot_id %}{% cycle F8D6F8,E2AFE2 as ballotcolor %}{% else %}{% if match.synthetic %}{% cycle ballotcolor %}{% else %}{{ ballotcolor }}{% endif %}{% endmyifchanged %}">
 	{% if match.synthetic %}
 	<td>&nbsp;</td>
 	{% else %}
@@ -30,7 +31,7 @@
 	    {% endif %}
         </td>
 	<td>{{ match.document.revision }}</td>
-	<td>{% firstof match.job_owner "Not Assigned Yet" %}</td>
+	<td>{{ match.job_owner }}</td>
 	<td>{% firstof match.status_date "" %}</td>
 	<td>{{ match.event_date }}</td>
 	</tr>
