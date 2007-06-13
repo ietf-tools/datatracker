@@ -867,3 +867,18 @@ class IRTFChair(models.Model):
         db_table = 'irtf_chairs'
     class Admin:
 	pass
+
+# Not a model, but it's related.
+# This is used in the view to represent documents
+# in "I-D Exists".
+#
+class DocumentWrapper(object):
+    '''A wrapper for a document, used to synthesize I-D Exists.'''
+    document = None
+    synthetic = True
+    job_owner = "Not Assigned Yet"
+    docstate = "I-D Exists"
+    cur_state = "I-D Exists"
+    cur_state_id = 100
+    def __init__(self, document):
+	self.document = document

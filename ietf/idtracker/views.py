@@ -5,7 +5,7 @@ from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 from django.db.models import Q
 from django.views.generic.list_detail import object_detail, object_list
-from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState, Rfc
+from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState, Rfc, DocumentWrapper
 from ietf.idtracker.forms import IDSearch, EmailFeedback
 from ietf.utils.mail import send_mail_text
 
@@ -47,12 +47,12 @@ def search(request):
     if searching:
         group = args.get('search_group_acronym', '')
 	if group != '':
-	    rfclist = [rfc.rfc_number for rfc in Rfc.objects.all().filter(group_acronym=group)]
-	    draftlist = [draft.id_document_tag for draft in InternetDraft.objects.all().filter(group__acronym=group)]
+	    rfclist = [rfc['rfc_number'] for rfc in Rfc.objects.all().filter(group_acronym=group).values('rfc_number')]
+	    draftlist = [draft['id_document_tag'] for draft in InternetDraft.objects.all().filter(group__acronym=group).values('id_document_tag')]
 	    q_objs.append(Q(draft__in=draftlist)&Q(rfc_flag=0)|Q(draft__in=rfclist)&Q(rfc_flag=1))
         rfc_number = args.get('search_rfcnumber', '')
 	if rfc_number != '':
-	    draftlist = [draft.id_document_tag for draft in InternetDraft.objects.all().filter(rfc_number=rfc_number)]
+	    draftlist = [draft['id_document_tag'] for draft in InternetDraft.objects.all().filter(rfc_number=rfc_number).values('id_document_tag')]
 	    q_objs.append(Q(draft__in=draftlist)&Q(rfc_flag=0)|Q(draft=rfc_number)&Q(rfc_flag=1))
         filename = args.get('search_filename', '')
 	if filename != '':
@@ -62,6 +62,42 @@ def search(request):
 	    q_objs.append(Q(draft__status=status,rfc_flag=0))
 	matches = IDInternal.objects.all().filter(*q_objs)
 	matches = matches.order_by('cur_state', 'cur_sub_state', 'ballot')
+	#
+	# Now search by I-D exists, if there could be any results.
+	# If searching by job owner, current state or substate, there
+	# can't be any "I-D exists" matches.
+	if not(args.get('search_job_owner', 0) or args.get('search_cur_state', 0) or args.get('sub_state_id', 0)):
+	    if not(args.get('search_rfcnumber', 0)):
+		in_tracker=[i['draft'] for i in IDInternal.objects.filter(rfc_flag=0).values('draft')]
+		qdict = {
+		    'search_area_acronym': 'group__ietfwg__areagroup__area',
+		    'search_group_acronym': 'group__acronym',
+		    'search_filename': 'filename__icontains',
+		    'search_status_id': 'status',
+		}
+		q_objs = [Q(**{qdict[k]: args[k]}) for k in qdict.keys() if args.get(k, '') != '']
+		idmatches = InternetDraft.objects.filter(*q_objs).exclude(id_document_tag__in=in_tracker)
+		print "queryset is %s, idmatches is %s" % (matches, idmatches)
+		# resolve the queryset, append wrapper objects.
+		matches = list(matches) + [DocumentWrapper(id) for id in idmatches]
+	    if not(args.get('search_filename', '') or args.get('search_status_id', 0)) and args.get('search_rfcnumber', 0):
+		# the existing area acronym support in this function
+		# in pidtracker.cgi is broken, since it compares an
+		# area acronym string in the database against an
+		# area acronym number in the form.  We just ignore
+		# the area (resulting in a different search, but
+		# given that this search is only performed when there's
+		# an explicit rfc number, it seems more or less silly
+		# to filter it further anyway.)
+		in_tracker=[i['draft'] for i in IDInternal.objects.filter(rfc_flag=1).values('draft')]
+		qdict = {
+		    'search_group_acronym': 'group_acronym',
+		    'search_rfcnumber': 'rfc_number',
+		    'search_status_id': 'status',
+		}
+		q_objs = [Q(**{qdict[k]: args[k]}) for k in qdict.keys() if args.get(k, '') != '']
+		rfcmatches = Rfc.objects.filter(*q_objs).exclude(rfc_number__in=in_tracker)
+		matches = list(matches) + [DocumentWrapper(rfc) for rfc in rfcmatches]
     else:
 	matches = None
 

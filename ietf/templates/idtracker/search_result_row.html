@@ -1,10 +1,13 @@
 	<tr bgcolor="#{% if match.primary_flag %}{% cycle F8D6F8,E2AFE2 as ballotcolor %}{% else %}{{ ballotcolor }}{% endif %}">
+	{% if match.synthetic %}
+	<td>&nbsp;</td>
+	{% else %}
         <!-- this form element technically belongs inside the <td>
              but that actually changes the visible spacing in most
              browsers, so we let layout concerns make us write
              invalid HTML. -->
         <form method="GET" action="{% url ietf.idtracker.views.view_id match.document.filename %}"><td><input type="submit" value="DETAIL"></td></form>
-	{# todo: conditionalize doclink properly #}
+	{% endif %}
 	<td>{% if match.primary_flag %}<li>{% else %}<dd>{% endif %}{{ match.document.filename_with_link }} ({{ match.document.intended_status }})
 	    {% ifequal match.document.status.status "Replaced" %}
 	      <br>&nbsp;&nbsp;&nbsp;&nbsp;Replaced by
@@ -27,7 +30,7 @@
 	    {% endif %}
         </td>
 	<td>{{ match.document.revision }}</td>
-	<td>{{ match.job_owner }}</td>
+	<td>{% firstof match.job_owner "Not Assigned Yet" %}</td>
 	<td>{% firstof match.status_date "" %}</td>
 	<td>{{ match.event_date }}</td>
 	</tr>
