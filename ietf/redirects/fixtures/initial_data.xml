@@ -130,19 +130,25 @@
     <field type="CharField" name="command">view_evaluation_desc</field>
     <field type="CharField" name="url">evaluation_process</field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
-    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">5</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">
+      <None/>
+    </field>
   </object>
   <object pk="8" model="redirects.command">
     <field type="CharField" name="command">view_key</field>
     <field type="CharField" name="url">ballot_key</field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
-    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">5</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">
+      <None/>
+    </field>
   </object>
   <object pk="10" model="redirects.command">
     <field type="CharField" name="command">send_email</field>
     <field type="CharField" name="url">send_email</field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
-    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">5</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">
+      <None/>
+    </field>
   </object>
   <object pk="11" model="redirects.command">
     <field type="CharField" name="command">view_comment</field>
@@ -167,9 +173,5 @@
   <object pk="4" model="redirects.suffix">
     <field type="CharField" name="rest">%(id)s</field>
     <field type="CharField" name="remove"/>
-  </object>
-  <object pk="5" model="redirects.suffix">
-    <field type="CharField" name="rest">%(n/a)s</field>
-    <field type="CharField" name="remove">(Use this hack when there are no arguments)</field>
   </object>
 </django-objects>
