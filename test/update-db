@@ -15,22 +15,29 @@ function log() { logger -i -t $program -s "$*"; }
 function die() { log "$*; terminating."; echo "$program: Error: $*" 1>&2; exit 1; }
 
 
+[ $DBDUMP ] || DBDUMP="$1"
 [ $DBDUMP ] || DBDUMP=/www/tools.ietf.org/events/raw/sqldump/sqldump.raw
 [ $DBFIX  ] || DBFIX=$build/test/sql_fixup.sql
+[ $DBTIME ] || DBTIME=$build/update-db.time
 
 LOCKDIR=/var/lock/ietfdb
 PIDFILE=$LOCKDIR/pid
 
 while true; do
     if mkdir $LOCKDIR; then
-	echo "$$" > $PIDFILE
-	log "Updating local database from $DBDUMP ..."
-	python ietf/manage.py dbshell <  $DBDUMP
-	log "Updating local database from $DBFIX ..."
-	python ietf/manage.py dbshell <  $DBFIX
-	log "Running Django syncdb ..."
-	python ietf/manage.py syncdb
-	log "Done."
+	if [ $DBDUMP -nt $DBTIME ]; then
+	    echo "$$" > $PIDFILE
+	    log "Updating local database from $DBDUMP ..."
+	    python ietf/manage.py dbshell <  $DBDUMP
+	    log "Updating local database from $DBFIX ..."
+	    python ietf/manage.py dbshell <  $DBFIX
+	    log "Running Django syncdb ..."
+	    python ietf/manage.py syncdb
+	    touch -r $DBDUMP $DBTIME
+	    log "Done."
+	else
+	    log "Database dump not newer than at previous update.  Quitting."
+	fi
 	rm -rf $LOCKDIR
 	exit 0
     else
