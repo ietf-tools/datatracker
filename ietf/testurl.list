@@ -1,11 +1,6 @@
-# Broken URLs have been commented out
+# Top-level test URL list.  Should probably be empty; all test URls should be
+# specified in the application level testurl.list
 
-200,404	/accounts/
-200,302	/accounts/password_change/
-200,302	/accounts/profile/
-skip	/my/
-skip    /idindex/
-skip    /idindex/showdocs/all/date/
-skip    /idindex/showdocs/all/name/
+
 
 
