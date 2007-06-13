@@ -77,7 +77,6 @@ def search(request):
 		}
 		q_objs = [Q(**{qdict[k]: args[k]}) for k in qdict.keys() if args.get(k, '') != '']
 		idmatches = InternetDraft.objects.filter(*q_objs).exclude(id_document_tag__in=in_tracker)
-		print "queryset is %s, idmatches is %s" % (matches, idmatches)
 		# resolve the queryset, append wrapper objects.
 		matches = list(matches) + [DocumentWrapper(id) for id in idmatches]
 	    if not(args.get('search_filename', '') or args.get('search_status_id', 0)) and args.get('search_rfcnumber', 0):
