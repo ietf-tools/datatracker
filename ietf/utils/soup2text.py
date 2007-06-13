@@ -7,10 +7,11 @@ try:
 except:
     from BeautifulSoup import Tag, BeautifulSoup, NavigableString
 
-block_tags = ["[document]", "html", "body", "div", "blockquote", "table", "tr", "p", "pre", "h1", "h2", "h3", "h4", "h5", "h6", "li"]
-space_tags = ["th", "td", "br"]
+block_tags = ["[document]", "html", "body", "div", "blockquote", "table", "tr", "p", "pre", "h1", "h2", "h3", "h4", "h5", "h6", "li", "option"]
+space_tags = ["th", "td"]
+break_tags = ["br"]
 ignore_tags = ["head", "script", "style"]
-pre_tags = ["pre"]
+pre_tags = ["pre", "option"]
 entities = [("&lt;", "<"),   ("&gt;", ">"),
             ("&quot;", '"'), ("&apos;", "'"),
             ("&nbsp;", " "),
@@ -85,8 +86,11 @@ def render(node, encoding='latin-1', pre=False):
                         node.is_block = True
                     else:
                         words.append(child.text)
-                        if child.name in space_tags and not (words and words[-1] and words[-1][-1] in [" ", "\t", "\n"]):
-                            words.append(" ")
+                        if child.text[-1] not in [" ", "\t", "\n"]:
+                            if child.name in space_tags:
+                                words.append(" ")
+                            if child.name in break_tags:
+                                words.append("\n")
         else:
             raise ValueError("Unexpected node type: '%s'" % child)
     if words:
