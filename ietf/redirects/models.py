@@ -44,12 +44,14 @@ class Command(models.Model):
     """
     command = models.CharField(maxlength=50, core=True)
     url = models.CharField(maxlength=50, blank=True)
-    script = models.ForeignKey(Redirect, edit_inline=models.TABULAR, related_name='commands')
+    script = models.ForeignKey(Redirect, edit_inline=models.TABULAR, related_name='commands', editable=False)
     suffix = models.ForeignKey(Suffix, null=True, blank=True)
     def __str__(self):
 	ret = "%s?command=%s" % (self.script.cgi, self.command)
 	if self.suffix_id:
 	    ret += " %s" % (self.suffix)
 	return ret
+    class Meta:
+	unique_together = (("script", "command"), )
     class Admin:
 	pass
