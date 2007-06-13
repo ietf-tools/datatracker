@@ -30,6 +30,8 @@ class Suffix(models.Model):
     remove = models.CharField(maxlength=50, blank=True)
     def __str__(self):
 	return "-> %s - %s" % (self.rest, self.remove)
+    class Meta:
+        verbose_name_plural="Suffixes"
     class Admin:
         pass
 
@@ -43,8 +45,11 @@ class Command(models.Model):
     command = models.CharField(maxlength=50, core=True)
     url = models.CharField(maxlength=50, blank=True)
     script = models.ForeignKey(Redirect, edit_inline=models.TABULAR, related_name='commands')
-    suffix = models.ForeignKey(Suffix)
+    suffix = models.ForeignKey(Suffix, null=True, blank=True)
     def __str__(self):
-	return "%s?command=%s %s" % (self.script.cgi, self.command, self.suffix)
+	ret = "%s?command=%s" % (self.script.cgi, self.command)
+	if self.suffix_id:
+	    ret += " %s" % (self.suffix)
+	return ret
     class Admin:
 	pass
