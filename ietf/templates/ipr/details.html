@@ -258,15 +258,15 @@
 	    {% if ipr.rfclist %}
 	       <tr class="{% cycle row_parity %}"><td class="fixwidth">RFC Numbers:</td><td><b>{{ ipr.rfclist }}</b></td></tr>
 	    {% else %}
-	       {% for rfc in ipr.rfcs.all %}
-	       <tr class="{% cycle row_parity %}"><td class="fixwidth"><b>RFC {{ rfc.rfc_number.rfc_number }}:</b></td><td><b>"{{ rfc.rfc_number.rfc_name }}"</b></td></tr>
+	       {% for doc in ipr.rfcs.all %}
+	       <tr class="{% cycle row_parity %}"><td class="fixwidth"><b>RFC {{ doc.document.rfc_number }}:</b></td><td><b>"{{ doc.document.title }}"</b></td></tr>
 	       {% endfor %}
 	    {% endif %}
 	    {% if ipr.draftlist %}
 	       <tr class="{% cycle row_parity %}"><td class="fixwidth">I-D Filenames (draft-...):</td><td><b>{{ ipr.draftlist }}</b></td></tr>
 	    {% else %}
-	       {% for draft in ipr.drafts.all %}
-	       <tr class="{% cycle row_parity %}"><td class="fixwidth">Internet-Draft:</td><td><b>"{{ draft.document.id_document_name }}"<br />(<tt><big>{{ draft.document.filename }}-{{ draft.document.revision }}</big></tt>)</b></td></tr>
+	       {% for doc in ipr.drafts.all %}
+	       <tr class="{% cycle row_parity %}"><td class="fixwidth">Internet-Draft:</td><td><b>"{{ doc.document.title }}"<br />(<tt><big>{{ doc.document.filename }}-{{ doc.document.revision }}</big></tt>)</b></td></tr>
 	       {% endfor %}
 	    {% endif %}
 	    {% if ipr.other_designations %}

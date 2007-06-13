@@ -190,7 +190,7 @@ class IprNotification(models.Model):
 
 class IprRfc(models.Model):
     ipr = models.ForeignKey(IprDetail, edit_inline=True, related_name='rfcs')
-    rfc_number = models.ForeignKey(Rfc, db_column='rfc_number', raw_id_admin=True, core=True)
+    document = models.ForeignKey(Rfc, db_column='rfc_number', raw_id_admin=True, core=True)
     def __str__(self):
 	return "%s applies to RFC%04d" % ( self.ipr, self.rfc_number )
     class Meta:

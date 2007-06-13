@@ -13,7 +13,7 @@
 {% else %}
 <li> <b>IETF Working Group: <a href="http://www.ietf.org/html.charters/{{ object.group.acronym }}-charter.html">{{ object.group.name }}</a></li>
 {% endifequal %}
-<li> <b>I-D Title:</b> {{ object.id_document_name }}</li>
+<li> <b>I-D Title:</b> {{ object.title }}</li>
 <li> <b>I-D Status:</b> {{ object.status }}
 {% ifequal object.status.status "Replaced" %}
 (by <a href="/idindex/{{object.replaced_by.filename}}/">{{ object.replaced_by.filename }}</a>)
