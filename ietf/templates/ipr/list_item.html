@@ -10,7 +10,9 @@
 	 {% endifequal %}
 	 <br />
 	 {% for item in ipr.updates.all %}
+	 {% ifequal item.status 1 %}
 	    Updates ID <a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">#{{ item.updated.ipr_id }}</a>.<br>
+	 {% endifequal %}
 	 {% endfor %}
 	 {% for item in ipr.updated_by.all %}
 	       {% ifequal item.processed 1 %}
