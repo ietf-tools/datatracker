@@ -61,7 +61,7 @@ def search(request):
 	if status != '':
 	    q_objs.append(Q(draft__status=status,rfc_flag=0))
 	matches = IDInternal.objects.all().filter(*q_objs)
-	matches = matches.order_by('cur_state', 'cur_sub_state', 'ballot')
+	matches = matches.order_by('cur_state', 'cur_sub_state', 'ballot', '-primary_flag')
 	#
 	# Now search by I-D exists, if there could be any results.
 	# If searching by job owner, current state or substate, there
