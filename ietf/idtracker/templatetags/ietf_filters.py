@@ -105,7 +105,7 @@ def square_brackets(value):
 
 @register.filter(name='fill')
 def fill(text, width):
-    """Wraps the single paragraph in text (a string) so every line
+    """Wraps each paragraph in text (a string) so every line
     is at most width characters long, and returns a single string
     containing the wrapped paragraph.
     """
@@ -125,3 +125,17 @@ def fill(text, width):
 def allononeline(text):
     """Simply removes CRs, LFs, leading and trailing whitespace from the given string."""
     return text.replace("\r", "").replace("\n", "").strip()
+
+@register.filter(name='rfcspace')
+def rfcspace(string):
+    """
+    If the string is an RFC designation, and doesn't have
+    a space between 'RFC' and the rfc-number, a space is
+    added
+    """
+    string = str(string)
+    if string[:3].lower() == "rfc" and string[3] != " ":
+        return string[:3] + " " + string[3:]
+    else:
+        return string
+

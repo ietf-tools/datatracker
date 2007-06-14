@@ -22,11 +22,12 @@ def run_tests(module_list, verbosity=1, extra_tests=[]):
     return django.test.simple.run_tests(module_list, verbosity, extra_tests)
 
 def reduce(html):
-    html = re.sub(" :", ":", html)
+    html = re.sub(" :", ": ", html)
     if html.count("<li>") > 5*html.count("</li>"):
         html = html.replace("<li>", "</li><li>")
     text = html2text(html)
     text = re.sub('\."', '".', text)
+    text = re.sub(',"', '",', text)
     text = [ line.strip() for line in text.split("\n") ]
     return text
 
