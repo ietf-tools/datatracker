@@ -41,7 +41,10 @@ for url in sys.argv[1:]:
         text1 = html2text(fetch(url1)).split("\n")
         print "Fetching %s ..." % url2
         text2 = html2text(fetch(url2)).split("\n")
-        print "\n".join(unified_diff(text1, text2, url1, url2, "", "", 3, lineterm=""))
-
+        diff = "\n".join(unified_diff(text1, text2, url1, url2, "", "", 3, lineterm=""))
+        if diff:
+            print diff
+        else:
+            print "\nNo difference found"
 
         
