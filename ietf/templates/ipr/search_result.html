@@ -1,0 +1,58 @@
+{% load ietf_filters %}
+<html>
+<head><title>IPR Search Engine </title></head>
+<body>
+
+<center>
+   <h2>IPR Disclosures</h2></center>
+<hr width="100%">
+<blockquote>
+   <table cellpadding="1" cellspacing="0" border="0">
+
+
+
+      <tr><td colspan="3">Total number of IPR disclosures found: {{ iprs|length }} </td></tr>
+      {% for ipr in iprs|dictsort:"submitted_date" %}
+      <tr valign="top" bgcolor="#dadada">
+	 <td width="100">{{ ipr.submitted_date }}</td>
+	 <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
+	 <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.document_title }}"</a></td>
+      </tr>
+      {% endfor %}
+
+      <tr><td colspan="3"><hr>Total number of documents searched: {{ docs|length}}</td></tr>
+      {% for doc in docs %}
+      <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
+	 <tr >
+	    <td colspan="3">
+	       Search result on {{ doc }}, "{{ doc.title }}"{% ifnotequal doc first %}{% if doc.related %}, {{ doc.relation }} {{ doc.related }}, "{{ doc.related.title }}"{% endif %}
+	       {% endifnotequal %}
+	    </td>
+	 </tr>
+	 {% if doc.iprs %}
+	    {% for ipr in doc.iprs %}
+	       <tr valign="top">
+		  <td width="100">{{ ipr.submitted_date }}</td>
+		  <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
+		  <td><a href="{% url ietf.ipr.views.show %}{{ ipr.ipr_id }}">"{{ ipr.document_title }}"</a></td>
+	       </tr>
+	    {% endfor %}
+	 {% else %}
+	 <tr>
+	    <td></td>
+	    <td colspan="2"><b>No IPR disclosures related to <i>{{ doc|rfcspace }}</i> have been submitted</b></td>
+	 </tr>
+	 {% endif %}
+      </tbody>
+      {% endfor %}
+
+   </table>
+
+   <hr><br>
+
+   <a href="{% url ietf.ipr.views.search %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">IPR Search Main Page</a><br>
+   <a href="{% url ietf.ipr.views.list %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">IPR Disclosure Page</a>
+   <br>
+
+
+</body></html>
