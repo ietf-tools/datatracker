@@ -10,6 +10,7 @@ progdir=${0%/*}
 
 cd $progdir/..
 build=$PWD
+state=/var/local/$program
 
 function log() { logger -i -t $program -s "$*"; }
 function die() { log "$*; terminating."; echo "$program: Error: $*" 1>&2; exit 1; }
@@ -18,13 +19,18 @@ function die() { log "$*; terminating."; echo "$program: Error: $*" 1>&2; exit 1
 [ $DBDUMP ] || DBDUMP="$1"
 [ $DBDUMP ] || DBDUMP=/www/tools.ietf.org/events/raw/sqldump/sqldump.raw
 [ $DBFIX  ] || DBFIX=$build/test/sql_fixup.sql
-[ $DBTIME ] || DBTIME=$build/update-db.time
+[ $DBTIME ] || DBTIME=$state/update-db.time
+[ $DBDONE ] || DBDONE=$state/update-db.done
 
 LOCKDIR=/var/lock/ietfdb
 PIDFILE=$LOCKDIR/pid
 
 while true; do
     if mkdir $LOCKDIR; then
+	echo ""
+	date +"Time: %Y-%m-%d %H:%M"
+	log "Database dump file is from $(date -r $DBDUMP +'%Y-%m-%d %H:%M')."
+	log "Last update done $(date -r $DBDONE +'%Y-%m-%d %H:%M')."
 	if [ $DBDUMP -nt $DBTIME ]; then
 	    echo "$$" > $PIDFILE
 	    log "Updating local database from $DBDUMP ..."
@@ -34,9 +40,10 @@ while true; do
 	    log "Running Django syncdb ..."
 	    python ietf/manage.py syncdb
 	    touch -r $DBDUMP $DBTIME
+	    touch $DBDONE
 	    log "Done."
 	else
-	    log "Database dump not newer than at previous update.  Quitting."
+	    log "No new database dump available."
 	fi
 	rm -rf $LOCKDIR
 	exit 0
