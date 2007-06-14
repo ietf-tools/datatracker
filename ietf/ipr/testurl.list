@@ -1,4 +1,3 @@
-# -*- conf-mode -*-
 200	/ipr/				https://datatracker.ietf.org/public/ipr_list.cgi
 200	/ipr/ipr-657/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657 # Generic disclosure
 200	/ipr/ipr-834/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=834 # Specific disclosure
@@ -8,6 +7,4 @@
 200	/ipr/new-specific/		https://datatracker.ietf.org/public/ipr_notify.cgi
 200	/ipr/update/			https://datatracker.ietf.org/public/ipr_update_list.cgi
 200	/ipr/search/			https://datatracker.ietf.org/public/ipr_search.cgi
-302	/ipr/search/?option=document_search # incomplete argument set gives redirect
-200	/ipr/search/?option=document_search&document_search=mod https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&document_search=mod
-200	/ipr/search/?option=document_search&id_document_tag=2220 https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&id_document_tag=2220
+#	/ipr/update
