@@ -4,6 +4,7 @@ from django.shortcuts import render_to_response as render
 from django.utils.html import escape
 from ietf.ipr.view_sections import section_table
 from ietf.ipr.view_new import new
+from ietf.idtracker.models import IETFWG
 
 def linebreaks(value):
     if value:
@@ -73,6 +74,11 @@ def update(request, ipr_id=None):
     """Update a specific IPR disclosure"""
     # TODO: replace the placeholder code with the appropriate update code
     return show(request, ipr_id)
+
+
+def search(request, option="", search="", submit=""):
+    wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
+    return render("ipr/search.html", {"wgs": wgs})
 
 
 

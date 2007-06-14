@@ -6,4 +6,5 @@
 200	/ipr/new-generic/		https://datatracker.ietf.org/public/ipr_generic.cgi
 200	/ipr/new-specific/		https://datatracker.ietf.org/public/ipr_notify.cgi
 200	/ipr/update/			https://datatracker.ietf.org/public/ipr_update_list.cgi
+200	/ipr/search/			https://datatracker.ietf.org/public/ipr_search.cgi
 #	/ipr/update
