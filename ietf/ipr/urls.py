@@ -9,7 +9,6 @@ urlpatterns = patterns('',
      (r'^update/(?P<ipr_id>\d+)/$', views.update),
      (r'^new-(?P<type>(specific|generic|third-party))/$', views.new),
      (r'^search/$', views.search),     
-     (r'^search/\?((option=(?P<option>[^&]*)|.*search=(?P<search>[^&]*)|submit=(?P<submit>[^&]*))&?)+/$', views.search),
 )
 
 queryset = models.IprDetail.objects.all()

@@ -1,10 +1,12 @@
-import models
+import re
 import django.utils.html
 from django.shortcuts import render_to_response as render
 from django.utils.html import escape
+from ietf.idtracker.models import IETFWG, InternetDraft, Rfc
+from ietf.ipr.models import IprRfc, IprDraft, IprDetail, SELECT_CHOICES, LICENSE_CHOICES
 from ietf.ipr.view_sections import section_table
 from ietf.ipr.view_new import new
-from ietf.idtracker.models import IETFWG
+from ietf.utils import log
 
 def linebreaks(value):
     if value:
@@ -18,15 +20,15 @@ def default(request):
 
 def showlist(request):
     """Display a list of existing disclosures"""
-    return list(request, 'ipr/list.html')
+    return list_all(request, 'ipr/list.html')
 
 def updatelist(request):
     """Display a list of existing disclosures, with links to update forms"""
-    return list(request, 'ipr/update_list.html')
+    return list_all(request, 'ipr/update_list.html')
 
-def list(request, template):
+def list_all(request, template):
     """Display a list of existing disclosures, using the provided template"""    
-    disclosures = models.IprDetail.objects.all()
+    disclosures = ietf.ipr.models.IprDetail.objects.all()
     generic_disclosures  = disclosures.filter(status__in=[1,3], generic=1)    
     specific_disclosures = disclosures.filter(status__in=[1,3], generic=0, third_party=0)
     thirdpty_disclosures = disclosures.filter(status__in=[1,3], generic=0, third_party=1)
@@ -43,7 +45,7 @@ def list(request, template):
 def show(request, ipr_id=None):
     """Show a specific IPR disclosure"""
     assert ipr_id != None
-    ipr = models.IprDetail.objects.get(ipr_id=ipr_id)
+    ipr = IprDetail.objects.get(ipr_id=ipr_id)
     section_list = get_section_list(ipr)
     contacts = ipr.contact.all()
     for contact in contacts:
@@ -63,11 +65,11 @@ def show(request, ipr_id=None):
     ipr.other_notes = linebreaks(escape(ipr.other_notes))
 
     if ipr.licensing_option:
-        ipr.licensing_option = dict(models.LICENSE_CHOICES)[ipr.licensing_option]
+        ipr.licensing_option = dict(LICENSE_CHOICES)[ipr.licensing_option]
     if ipr.selecttype:
-        ipr.selecttype = dict(models.SELECT_CHOICES)[ipr.selecttype]
+        ipr.selecttype = dict(SELECT_CHOICES)[ipr.selecttype]
     if ipr.selectowned:
-        ipr.selectowned = dict(models.SELECT_CHOICES)[ipr.selectowned]
+        ipr.selectowned = dict(SELECT_CHOICES)[ipr.selectowned]
     return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list})
 
 def update(request, ipr_id=None):
@@ -76,10 +78,127 @@ def update(request, ipr_id=None):
     return show(request, ipr_id)
 
 
-def search(request, option="", search="", submit=""):
+inverse = {
+            'updates': 'is_updated_by',
+            'is_updated_by': 'updates',
+            'obsoletes': 'is_obsoleted_by',
+            'is_obsoleted_by': 'obsoletes',
+            'replaces': 'is_replaced_by',
+            'is_replaced_by': 'replaces',            
+            'is_rfc_of': 'is_draft_of',
+            'is_draft_of': 'is_rfc_of',
+        }
+
+display_relation = {
+            'updates':          'that updates',
+            'is_updated_by':    'that was updated by',
+            'obsoletes':        'that obsoleted',
+            'is_obsoleted_by':  'that was obsoleted by',
+            'replaces':         'that replaced',
+            'is_replaced_by':   'that was replaced by',
+            'is_rfc_of':        'which came from',
+            'is_draft_of':      'that was published as',
+        }
+
+def set_related(obj, rel, target):
+    print obj, rel, target
+    # remember only the first relationship we find.
+    if not hasattr(obj, "related"):
+        obj.related = target
+        obj.relation = display_relation[rel]
+
+def set_relation(first, rel, second):
+    set_related(first, rel, second)
+    set_related(second, inverse[rel], first)
+
+def related_docs(doc, found = []):    
+    print "\nrelated_docs(%s, %s)" % (doc, found) 
+    found.append(doc)
+    if isinstance(doc, Rfc):
+        try:
+            item = InternetDraft.objects.get(rfc_number=doc.rfc_number)
+            if not item in found:
+                set_relation(doc, 'is_rfc_of', item)
+                found = related_docs(item, found)
+        except InternetDraft.DoesNotExist:
+            pass
+        for entry in doc.updated_or_obsoleted_by.all():
+            item = entry.rfc
+            if not item in found:
+                action = inverse[entry.action.lower()]
+                set_relation(doc, action, item)
+                found = related_docs(item, found)
+        for entry in doc.updates_or_obsoletes.all():
+            item = entry.rfc_acted_on
+            if not item in found:
+                action = entry.action.lower()
+                set_relation(doc, action, item)
+                found = related_docs(item, found)
+    if isinstance(doc, InternetDraft):
+        if doc.replaced_by_id:
+            item = doc.replaced_by_id
+            if not item in found:
+                set_relation(doc, 'replaced_by', item)
+                found = related_docs(item, found)
+        for item in doc.replaces_set.all():
+            if not item in found:
+                set_relation(doc, 'replaces', item)
+                found = related_docs(item, found)
+        if doc.rfc_number:
+            item = Rfc.objects.get(rfc_number=doc.rfc_number)
+            if not item in found:
+                set_relation(doc, 'is_draft_of', item)
+                found = related_docs(item, found)
+    return found
+
+def search(request, type="", q="", id=""):
     wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
+    args = request.REQUEST.items()
+    if args:
+        for key, value in args:
+            if key == "option":
+                type = value
+            if re.match(".*search", key):
+                q = value
+            if re.match(".*id", key):
+                id = value
+        if type and q or id:
+            log("Got query: type=%s, q=%s, id=%s" % (type, q, id))
+            if type == "document_search":
+                log("Got document_search")
+                if q:
+                    start = InternetDraft.objects.filter(filename__contains=q)
+                    log("Found %s drafts containing %s" % (start.count(), q))
+                if id:
+                    start = InternetDraft.objects.filter(id_document_tag=id)
+                    log("Found %s drafts with id %s" % (start.count(), id))
+                if start.count() == 1:
+                    first = start[0]
+                    # get all related drafts, then search for IPRs on all
+                    docs = related_docs(first, [])
+                    iprs = []
+                    for doc in docs:
+                        if isinstance(doc, InternetDraft):
+                            disclosures = [ item.ipr for item in IprDraft.objects.filter(document=doc) ]
+                        elif isinstance(doc, Rfc):
+                            disclosures = [ item.ipr for item in IprRfc.objects.filter(document=doc) ]
+                        else:
+                            raise ValueError("Neither draft nor rfc: %s" % doc)
+                        if disclosures:
+                            doc.iprs = disclosures
+                            iprs += disclosures
+                    iprs = list(set(iprs))
+                    return render("ipr/search_result.html", {"first": first, "iprs": iprs, "docs": docs})
+                elif start.count():
+                    return render("ipr/search_list.html", {"docs": start })
+        return django.http.HttpResponseRedirect(request.path)
     return render("ipr/search.html", {"wgs": wgs})
 
+def form(request):
+    wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
+    log("Search form")
+    return render("ipr/search.html", {"wgs": wgs})
+        
 
 
 # ---- Helper functions ------------------------------------------------------
