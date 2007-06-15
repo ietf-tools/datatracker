@@ -41,14 +41,15 @@ def unescape(text):
         text = text.replace(entity, char) # replace ampersand last
     return text
 
-def para(words, pre):
+def para(words, pre, fill):
     text = "".join(words)
     text = unescape(text)
     if not pre:
         text = text.strip("\n")
         text = text.lstrip()
         text = re.sub("[\t\n ]+", " ", text)
-        text = textwrap.fill(text)  
+        if fill:
+            text = textwrap.fill(text)  
     return text
 
 def normalize(str):
@@ -60,7 +61,7 @@ def normalize(str):
     str = re.sub("<\?[^>]*\?>", "", str)
     return str
 
-def render(node, encoding='latin-1', pre=False):
+def render(node, encoding='latin-1', pre=False, fill=True, clean=True):
     blocks = []
     words = []
     node.pre = pre or node.name in pre_tags
@@ -76,11 +77,11 @@ def render(node, encoding='latin-1', pre=False):
             if child.name in ignore_tags:
                 pass
             else:
-                child = render(child, encoding, node.pre)
+                child = render(child, encoding, node.pre, fill, clean)
                 if child.text:
                     if child.is_block:
                         if words :
-                            blocks.append(para(words, node.pre)+"\n")
+                            blocks.append(para(words, node.pre, fill)+"\n")
                             words = []
                         blocks.append(child.text+"\n\n")
                         node.is_block = True
@@ -94,22 +95,31 @@ def render(node, encoding='latin-1', pre=False):
         else:
             raise ValueError("Unexpected node type: '%s'" % child)
     if words:
-        blocks.append(para(words, node.pre))
+        blocks.append(para(words, node.pre, fill))
 
     node.text = ''.join(blocks)
     return node
 
 class TextSoup(BeautifulSoup):
 
+    def as_text(self, encoding='latin-1', pre=False, fill=True, clean=True):
+        node = render(self, encoding, pre, fill, clean)
+        str = node.text
+        if clean:
+            str = re.sub("[ \t]+", " ", str)
+            str = re.sub("\n\n+", "\n\n", str)
+        return str
+        
+
     def __str__(self, encoding='latin-1',
                 prettyPrint=False, indentLevel=0):
-        node = render(self, encoding)
+        node = render(self, encoding, fill=False)
         str = node.text
         str = re.sub("[ \t]+", " ", str)
         str = re.sub("\n\n+", "\n\n", str)
         return str
 
-def soup2text(html):
+def soup2text(html, encoding='latin-1', pre=False, fill=True):
     # Line ending normalization
     html = html.replace("\r\n", "\n").replace("\r", "\n")
     # remove comments
@@ -118,7 +128,7 @@ def soup2text(html):
     html = re.sub("<br */?>[ \t\n]*(<br */?>)+", "<p/>", html)
     html = re.sub("<br */?>([^\n])", r"<br />\n\1", html)
     soup = TextSoup(html)
-    return str(soup)
+    return soup.as_text(encoding, pre, fill)
 
 if __name__ == "__main__":
     import sys
