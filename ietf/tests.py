@@ -139,8 +139,10 @@ class UrlTestCase(TestCase):
         #self.assertEqual(set(patterns), set(covered), "Not all the
         #application URLs has test cases.  The missing are: %s" % (list(set(patterns) - set(covered))))        
         if not set(self.patterns) == set(covered):
-            #print "Not all the application URLs has test cases.  The missing are: \n   %s" % ("\n   ".join(list(set(patterns) - set(covered))))
-            print "Not all the application URLs has test cases."
+            print "Not all the application URLs has test cases.  The missing are: \n   %s" % ("\n   ".join(list(set(patterns) - set(covered))))
+        else:
+            print "All the application URL patterns seem to have test cases."
+            #print "Not all the application URLs has test cases."
 
     def doUrlsTest(self, lst):
         response_count = {}
@@ -175,6 +177,16 @@ class UrlTestCase(TestCase):
                         if goodhtml and response.content:
                             testtext = reduce(response.content)
                             goodtext = reduce(goodhtml)
+                            if "sort" in codes:
+                                try:
+                                    def sorted(l):
+                                        l.sort()
+                                        return l
+                                    testtext = sorted(testtext)
+                                    goodtext = sorted(goodtext)
+                                except:
+                                    print "Exception occurred when trying to do sorted comparison"
+                                    traceback.print_exc()
                             if testtext == goodtext:
                                 print "OK   cmp %s" % (url)
                             else:
@@ -211,7 +223,8 @@ class UrlTestCase(TestCase):
                                     
                     except:
                         print "Exception occurred for url %s" % (url)
-                        raise
+                        traceback.print_exc()
+                        #raise
 
                 if not res in response_count:
                     response_count[res] = 0
@@ -241,7 +254,8 @@ class UrlTestCase(TestCase):
                 if re.search("^[-a-z0-9./_]*$", url) and not url in self.testurls and not url.startswith("/admin/"):
                     lst.append((["200"], url, None))
                 else:
-                    print "Test exists for %s" % (url)
+                    #print "No fallback test for %s" % (url)
+                    pass
             else:
                 lst.append((["Skip"], pattern, None))
             
