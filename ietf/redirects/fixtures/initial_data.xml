@@ -127,7 +127,7 @@
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="22" model="redirects.redirect">
-    <field type="CharField" name="cgi">public/ipr_specific.cgi</field>
+    <field type="CharField" name="cgi">public/ipr.cgi</field>
     <field type="CharField" name="url">ipr/new-specific</field>
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
