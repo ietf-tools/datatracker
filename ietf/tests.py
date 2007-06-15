@@ -151,6 +151,43 @@ class UrlTestCase(TestCase):
             print "All the application URL patterns seem to have test cases."
             #print "Not all the application URLs has test cases."
 
+    def doRedirectsTest(self, lst):
+        response_count = {}
+        for codes, url, master in lst:
+            if "skipredir" in codes or "Skipredir" in codes:
+                print "Skipping %s" % (url)
+	    elif url and master:
+		testurl = master.replace('https://datatracker.ietf.org','')
+		baseurl, args = split_url(testurl)
+                try:
+                    response = self.client.get(baseurl, args)
+                    code = str(response.status_code)
+                    if code == "301":
+			if response['Location'] == url:
+			    print "OK   %s %s -> %s" % (code, testurl, url)
+			    res = ("OK", code)
+			else:
+			    print "Fail %s %s -> %s (wanted %s)" % (code, testurl, response['Location'], url)
+			    res = ("Fail", "wrong-reponse")
+                    else:
+                        print "Fail %s %s" % (code, testurl)
+                        res = ("Fail", code)
+                except:
+                    res = ("Fail", "Exc")
+                    print "Exception for URL '%s'" % testurl
+                    traceback.print_exc()
+                if not res in response_count:
+                    response_count[res] = 0
+                response_count[res] += 1
+        if response_count:
+            print "Response count:"
+        for res in response_count:
+            ind, code = res
+            print "  %-4s %s: %s " % (ind, code, response_count[res])
+        for res in response_count:
+            ind, code = res
+            self.assertEqual(ind, "OK", "Found %s cases of result code: %s" % (response_count[res], code))
+
     def doUrlsTest(self, lst):
         response_count = {}
         for codes, url, master in lst:
@@ -251,6 +288,10 @@ class UrlTestCase(TestCase):
     def testUrlsList(self):
         print "\nTesting specified URLs:"
         self.doUrlsTest(self.testtuples)
+
+    def testRedirectsList(self):
+	print "\nTesting specified Redirects:"
+	self.doRedirectsTest(self.testtuples)
 
     def testUrlsFallback(self):
         print "\nFallback: Test access to URLs which don't have an explicit test entry:"
