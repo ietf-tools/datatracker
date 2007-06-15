@@ -42,8 +42,8 @@ while true; do
 	    touch -r $DBDUMP $DBTIME
 	    touch $DBDONE
 	    log "Done."
-	else
-	    #echo "No new database dump available."
+#	else
+#	    echo "No new database dump available."
 	fi
 	rm -rf $LOCKDIR
 	exit 0
