@@ -335,10 +335,10 @@ class PageElement:
         ."""
         if isinstance(s, unicode):
             if encoding:
-                s = s.encode(encoding)
+                s = s.encode(encoding, 'xmlcharrefreplace')
         elif isinstance(s, str):
             if encoding:
-                s = s.encode(encoding)
+                s = s.encode(encoding, 'xmlcharrefreplace')
             else:
                 s = unicode(s)
         else:
@@ -364,7 +364,7 @@ class NavigableString(unicode, PageElement):
 
     def __str__(self, encoding=DEFAULT_OUTPUT_ENCODING):
         if encoding:
-            return self.encode(encoding)
+            return self.encode(encoding, 'xmlcharrefreplace')
         else:
             return self
         
