@@ -28,7 +28,7 @@ def updatelist(request):
 
 def list_all(request, template):
     """Display a list of existing disclosures, using the provided template"""    
-    disclosures = ietf.ipr.models.IprDetail.objects.all()
+    disclosures = IprDetail.objects.all()
     generic_disclosures  = disclosures.filter(status__in=[1,3], generic=1)    
     specific_disclosures = disclosures.filter(status__in=[1,3], generic=0, third_party=0)
     thirdpty_disclosures = disclosures.filter(status__in=[1,3], generic=0, third_party=1)
