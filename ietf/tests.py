@@ -26,7 +26,8 @@ def reduce(html):
     if html.count("<li>") > 5*html.count("</li>"):
         html = html.replace("<li>", "</li><li>")
     text = html2text(html)
-    text = re.sub('\."', '".', text)
+    text = text.replace('."', '".')
+    text = text.replace(',"', '",')
     text = [ line.strip() for line in text.split("\n") ]
     return text
 
