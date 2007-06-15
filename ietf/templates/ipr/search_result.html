@@ -25,7 +25,7 @@
       <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
 	 <tr >
 	    <td colspan="3">
-	       Search result on {{ doc }}, "{{ doc.title }}"{% ifnotequal doc first %}{% if doc.related %}, {{ doc.relation }} {{ doc.related }}, "{{ doc.related.title }}"{% endif %}
+	       Search result on {{ doc|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.title }}"{% ifnotequal doc first %}{% if doc.related %}, {{ doc.relation }} {{ doc.related }}, "{{ doc.related.title }}"{% endif %}
 	       {% endifnotequal %}
 	    </td>
 	 </tr>
@@ -40,7 +40,7 @@
 	 {% else %}
 	 <tr>
 	    <td></td>
-	    <td colspan="2"><b>No IPR disclosures related to <i>{{ doc|rfcspace }}</i> have been submitted</b></td>
+	    <td colspan="2"><b>No IPR disclosures related to <i>{{ doc|rfcspace|lstrip:"0" }}</i> have been submitted</b></td>
 	 </tr>
 	 {% endif %}
       </tbody>

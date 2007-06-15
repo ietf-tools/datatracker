@@ -90,7 +90,7 @@ inverse = {
         }
 
 display_relation = {
-            'updates':          'that updates',
+            'updates':          'that updated',
             'is_updated_by':    'that was updated by',
             'obsoletes':        'that obsoleted',
             'is_obsoleted_by':  'that was obsoleted by',
@@ -101,7 +101,7 @@ display_relation = {
         }
 
 def set_related(obj, rel, target):
-    print obj, rel, target
+    #print obj, rel, target
     # remember only the first relationship we find.
     if not hasattr(obj, "related"):
         obj.related = target
@@ -112,7 +112,7 @@ def set_relation(first, rel, second):
     set_related(second, inverse[rel], first)
 
 def related_docs(doc, found = []):    
-    print "\nrelated_docs(%s, %s)" % (doc, found) 
+    #print "\nrelated_docs(%s, %s)" % (doc, found) 
     found.append(doc)
     if isinstance(doc, Rfc):
         try:
@@ -136,9 +136,9 @@ def related_docs(doc, found = []):
                 found = related_docs(item, found)
     if isinstance(doc, InternetDraft):
         if doc.replaced_by_id:
-            item = doc.replaced_by_id
+            item = doc.replaced_by
             if not item in found:
-                set_relation(doc, 'replaced_by', item)
+                set_relation(doc, 'is_replaced_by', item)
                 found = related_docs(item, found)
         for item in doc.replaces_set.all():
             if not item in found:
@@ -165,32 +165,46 @@ def search(request, type="", q="", id=""):
         if type and q or id:
             log("Got query: type=%s, q=%s, id=%s" % (type, q, id))
             if type == "document_search":
-                log("Got document_search")
                 if q:
                     start = InternetDraft.objects.filter(filename__contains=q)
-                    log("Found %s drafts containing %s" % (start.count(), q))
                 if id:
                     start = InternetDraft.objects.filter(id_document_tag=id)
-                    log("Found %s drafts with id %s" % (start.count(), id))
-                if start.count() == 1:
-                    first = start[0]
-                    # get all related drafts, then search for IPRs on all
-                    docs = related_docs(first, [])
-                    iprs = []
-                    for doc in docs:
-                        if isinstance(doc, InternetDraft):
-                            disclosures = [ item.ipr for item in IprDraft.objects.filter(document=doc) ]
-                        elif isinstance(doc, Rfc):
-                            disclosures = [ item.ipr for item in IprRfc.objects.filter(document=doc) ]
-                        else:
-                            raise ValueError("Neither draft nor rfc: %s" % doc)
-                        if disclosures:
-                            doc.iprs = disclosures
-                            iprs += disclosures
-                    iprs = list(set(iprs))
-                    return render("ipr/search_result.html", {"first": first, "iprs": iprs, "docs": docs})
-                elif start.count():
-                    return render("ipr/search_list.html", {"docs": start })
+            elif type == "rfc_search":
+                if q:
+                    start = Rfc.objects.filter(rfc_number=q)
+            elif type == "patent_search":
+                pass
+            elif type == "patent_info_search":
+                pass
+            elif type == "wg_search":
+                pass
+            elif type == "title_search":
+                pass
+            elif type == "ip_title_search":
+                pass
+            else:
+                raise ValueError("Unexpected search type in IPR query: %s" % type)
+            if start.count() == 1:
+                first = start[0]
+                # get all related drafts, then search for IPRs on all
+                docs = related_docs(first, [])
+                iprs = []
+                for doc in docs:
+                    if isinstance(doc, InternetDraft):
+                        disclosures = [ item.ipr for item in IprDraft.objects.filter(document=doc) ]
+                    elif isinstance(doc, Rfc):
+                        disclosures = [ item.ipr for item in IprRfc.objects.filter(document=doc) ]
+                    else:
+                        raise ValueError("Doc type is neither draft nor rfc: %s" % doc)
+                    if disclosures:
+                        doc.iprs = disclosures
+                        iprs += disclosures
+                iprs = list(set(iprs))
+                return render("ipr/search_result.html", {"first": first, "iprs": iprs, "docs": docs})
+            elif start.count():
+                return render("ipr/search_list.html", {"docs": start })
+            else:
+                raise ValueError("Missing or malformed search parameters, or internal error")
         return django.http.HttpResponseRedirect(request.path)
     return render("ipr/search.html", {"wgs": wgs})
 
