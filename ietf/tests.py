@@ -21,14 +21,17 @@ def run_tests(module_list, verbosity=1, extra_tests=[]):
     # during the search for a 'tests' module ...
     return django.test.simple.run_tests(module_list, verbosity, extra_tests)
 
-def reduce(html):
+def reduce(html, pre=False, fill=True):
     html = re.sub(" :", ":", html)
     if html.count("<li>") > 5*html.count("</li>"):
         html = html.replace("<li>", "</li><li>")
-    text = html2text(html)
+    text = html2text(html, pre=pre, fill=fill)
     text = text.replace('."', '".')
     text = text.replace(',"', '",')
-    text = [ line.strip() for line in text.split("\n") ]
+    if pre:
+        text = text.split("\n")
+    else:
+        text = [ line.strip() for line in text.split("\n") ]
     return text
 
 def get_patterns(module):
@@ -139,7 +142,11 @@ class UrlTestCase(TestCase):
         #self.assertEqual(set(patterns), set(covered), "Not all the
         #application URLs has test cases.  The missing are: %s" % (list(set(patterns) - set(covered))))        
         if not set(self.patterns) == set(covered):
-            print "Not all the application URLs has test cases.  The missing are: \n   %s" % ("\n   ".join(list(set(self.patterns) - set(covered))))
+            missing = list(set(self.patterns) - set(covered))
+            print "Not all the application URLs has test cases, there are %d missing." % (len(missing))
+            print "The ones missing are: "
+            for pattern in missing:
+                print "Miss", pattern
         else:
             print "All the application URL patterns seem to have test cases."
             #print "Not all the application URLs has test cases."
@@ -175,18 +182,19 @@ class UrlTestCase(TestCase):
                     try:
                         mfile.close()
                         if goodhtml and response.content:
-                            testtext = reduce(response.content)
-                            goodtext = reduce(goodhtml)
                             if "sort" in codes:
-                                try:
-                                    def sorted(l):
-                                        l.sort()
-                                        return l
-                                    testtext = sorted(testtext)
-                                    goodtext = sorted(goodtext)
-                                except:
-                                    print "Exception occurred when trying to do sorted comparison"
-                                    traceback.print_exc()
+                                def sorted(l):
+                                    l.sort()
+                                    return l
+                                testtext = sorted(reduce(response.content, fill=False))
+                                while testtext and not testtext[0]:
+                                    del testtext[0]
+                                goodtext = sorted(reduce(goodhtml, fill=False))
+                                while goodtext and not goodtext[0]:
+                                    del goodtext[0]
+                            else:
+                                testtext = reduce(response.content)
+                                goodtext = reduce(goodhtml)
                             if testtext == goodtext:
                                 print "OK   cmp %s" % (url)
                             else:
