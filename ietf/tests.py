@@ -139,7 +139,7 @@ class UrlTestCase(TestCase):
         #self.assertEqual(set(patterns), set(covered), "Not all the
         #application URLs has test cases.  The missing are: %s" % (list(set(patterns) - set(covered))))        
         if not set(self.patterns) == set(covered):
-            print "Not all the application URLs has test cases.  The missing are: \n   %s" % ("\n   ".join(list(set(patterns) - set(covered))))
+            print "Not all the application URLs has test cases.  The missing are: \n   %s" % ("\n   ".join(list(set(self.patterns) - set(covered))))
         else:
             print "All the application URL patterns seem to have test cases."
             #print "Not all the application URLs has test cases."
