@@ -96,7 +96,6 @@
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>
----
   <object pk="17" model="redirects.redirect">
     <field type="CharField" name="cgi">public/ipr_detail_show.cgi</field>
     <field type="CharField" name="url">ipr</field>
@@ -133,7 +132,6 @@
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>
----
   <object pk="4" model="redirects.command">
     <field type="CharField" name="command">show_ind_id</field>
     <field type="CharField" name="url">inddocs</field>
