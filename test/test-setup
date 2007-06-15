@@ -57,7 +57,7 @@ LOCKDIR=/var/lock/ietfdb
 PIDFILE=$LOCKDIR/pid
 
 while true; do
-    if mkdir $build/test/update-db.lock; then
+    if mkdir $LOCKDIR; then
 	echo "$$" > $PIDFILE
 	break
     else
