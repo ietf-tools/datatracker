@@ -28,9 +28,9 @@ PIDFILE=$LOCKDIR/pid
 while true; do
     if mkdir $LOCKDIR; then
 	echo ""
-	date +"Time: %Y-%m-%d %H:%M"
-	log "Database dump file is from $(date -r $DBDUMP +'%Y-%m-%d %H:%M')."
-	log "Last update done $(date -r $DBDONE +'%Y-%m-%d %H:%M')."
+	#date +"Time: %Y-%m-%d %H:%M"
+	#echo "Database dump file is from $(date -r $DBDUMP +'%Y-%m-%d %H:%M')."
+	#echo "Last update done $(date -r $DBDONE +'%Y-%m-%d %H:%M')."
 	if [ $DBDUMP -nt $DBTIME ]; then
 	    echo "$$" > $PIDFILE
 	    log "Updating local database from $DBDUMP ..."
@@ -43,7 +43,7 @@ while true; do
 	    touch $DBDONE
 	    log "Done."
 	else
-	    log "No new database dump available."
+	    #echo "No new database dump available."
 	fi
 	rm -rf $LOCKDIR
 	exit 0
