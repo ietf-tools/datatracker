@@ -139,3 +139,19 @@ def rfcspace(string):
     else:
         return string
 
+@register.filter(name='rfcnospace')
+def rfcspace(string):
+    """
+    If the string is an RFC designation, and does have
+    a space between 'RFC' and the rfc-number, remove it.
+    """
+    string = str(string)
+    if string[:3].lower() == "rfc" and string[3] == " ":
+        return string[:3] + string[4:]
+    else:
+        return string
+
+@register.filter(name='lstrip')
+def lstripw(string, chars):
+    """Strip matching leading characters from words in string"""
+    return " ".join([word.lstrip(chars) for word in string.split()])
