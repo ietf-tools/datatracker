@@ -16,10 +16,14 @@ def redirect(request, path="", script=""):
     try:
 	cmd = redir.commands.all().get(command=request.REQUEST['command'])
 	if cmd.url:
-	    rest = cmd.url + "/" + cmd.suffix.rest
+	    rest = cmd.url + "/"
 	else:
-	    rest = cmd.suffix.rest
-	remove = cmd.suffix.remove
+	    rest = ""
+	if cmd.suffix:
+	    rest = rest + cmd.suffix.rest
+	    remove = cmd.suffix.remove
+	else:
+	    remove = ""
     except Command.DoesNotExist:
 	pass	# it's ok, there's no more-specific request.
     except KeyError:
