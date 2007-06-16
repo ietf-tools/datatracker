@@ -151,6 +151,7 @@ class UrlTestCase(TestCase):
             for pattern in missing:
                 if not pattern[1:].split("/")[0] in [ "admin", "accounts" ]:
                     print "NoTest", pattern
+            print ""
         else:
             print "All the application URL patterns seem to have test cases."
             #print "Not all the application URLs has test cases."
