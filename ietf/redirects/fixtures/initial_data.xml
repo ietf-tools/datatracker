@@ -138,7 +138,6 @@
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>
-
   <object pk="24" model="redirects.redirect">
     <field type="CharField" name="cgi">public/all_id.cgi</field>
     <field type="CharField" name="url">idindex/all_id_txt.html</field>
@@ -176,30 +175,29 @@
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="30" model="redirects.redirect">
-    <field type="CharField" name="cgi">public/desc.cgi?id=1</field>
-    <field type="CharField" name="url">/mailinglists/request/help/short_desc/</field>
-    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="cgi">public/desc.cgi</field>
+    <field type="CharField" name="url">mailinglists/request/help/</field>
+    <field type="CharField" name="rest">%(id)s</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="31" model="redirects.redirect">
-    <field type="CharField" name="cgi">public/desc.cgi?id=2</field>
-    <field type="CharField" name="url">/mailinglists/request/help/long_desc/</field>
+    <field type="CharField" name="cgi">dummy/1</field>
+    <field type="CharField" name="url"></field>
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="32" model="redirects.redirect">
+    <field type="CharField" name="cgi">dummy/2</field>
+    <field type="CharField" name="url"></field>
+    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="33" model="redirects.redirect">
     <field type="CharField" name="cgi">public/request_area_confirm.cgi</field>
     <field type="CharField" name="url">approve/%(mailing_list_id)s</field>
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>
-  <object pk="33" model="redirects.redirect">
-    <field type="CharField" name="cgi">public/</field>
-    <field type="CharField" name="url"></field>
-    <field type="CharField" name="rest"></field>
-    <field type="CharField" name="remove"></field>
-  </object>
-
   <object pk="4" model="redirects.command">
     <field type="CharField" name="command">show_ind_id</field>
     <field type="CharField" name="url">inddocs</field>
