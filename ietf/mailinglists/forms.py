@@ -16,7 +16,7 @@ class NonWgStep1(forms.Form):
 	return field.as_widget(field.field.widget)
     def __init__(self, *args, **kwargs):
 	super(NonWgStep1, self).__init__(*args, **kwargs)
-	choices=[('', '-- Select an item from the list below')] + NonWgMailingList.choices()
+	choices=[('', '--Select a list here')] + NonWgMailingList.choices()
 	self.fields['list_id'].choices = choices
 	self.fields['list_id_delete'].choices = choices
     def clean_list_id(self):
@@ -45,7 +45,7 @@ class ListReqStep1(forms.Form):
 	('closenon', 'Close existing non-WG email list at selected domain above'),
 	), widget=forms.RadioSelect())
     group = forms.ModelChoiceField(queryset=IETFWG.objects.all().filter(status=IETFWG.ACTIVE).select_related(depth=1).order_by('acronym.acronym'), required=False, empty_label="-- Select Working Group")
-    domain_name = forms.ChoiceField(choices=DOMAIN_CHOICES, required=False, widget = forms.Select(attrs={'onChange': 'set_domain(this)'}))
+    domain_name = forms.ChoiceField(choices=DOMAIN_CHOICES, required=False, widget = forms.Select(attrs={'onChange': 'set_domain(this)'}), initial='ietf.org')
     list_to_close = forms.ModelChoiceField(queryset=ImportedMailingList.objects.all(), required=False, empty_label="-- Select List To Close")
     def mail_type_fields(self):
 	field = self['mail_type']
@@ -53,17 +53,13 @@ class ListReqStep1(forms.Form):
 	# elements, so in order to get the javascript onClick we add it here.
 	return [re.sub(r'input ','input onClick="activate_widgets()" ',str(i)) for i in field.as_widget(field.field.widget)]
     def __init__(self, *args, **kwargs):
-	initial = kwargs.get('initial', None)
-	# could pass initial = None, so can't use a trick on the
-	# above get.
-	if initial:
-	    dname = initial.get('domain_name', 'ietf.org')
-	else:
-	    dname = 'ietf.org'
 	super(ListReqStep1, self).__init__(*args, **kwargs)
-	self.fields['list_to_close'].queryset = ImportedMailingList.choices(dname)
+	# Base the queryset for list_to_close on the initial value
+	# for the domain_name field.
+	self.fields['list_to_close'].queryset = ImportedMailingList.choices(self.initial.get('domain_name', 'ietf.org'))
+	# This is necessary after changing a ModelChoiceField's
+	# queryset.
 	self.fields['list_to_close'].widget.choices = self.fields['list_to_close'].choices
-	self.fields['domain_name'].initial = dname
     def clean_group(self):
 	group = self.clean_data['group']
 	action = self.clean_data.get('mail_type', '')
