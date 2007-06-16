@@ -23,10 +23,12 @@ def run_tests(module_list, verbosity=1, extra_tests=[]):
     return django.test.simple.run_tests(module_list, verbosity, extra_tests)
 
 def reduce(html, pre=False, fill=True):
-    html = re.sub(" :", ":", html)
     if html.count("<li>") > 5*html.count("</li>"):
         html = html.replace("<li>", "</li><li>")
-    text = html2text(html, pre=pre, fill=fill)
+    html = re.sub(r"(?i)(RFC) (\d+)", r"\1\2", html) # ignore "RFC 1234" vs. "RFC1234" diffs
+    html = re.sub(r"\bID\b", r"I-D", html)           # idnore " ID " vs. " I-D " diffs
+    text = html2text(html, pre=pre, fill=fill).strip()
+    text = text.replace(" :", ": ")
     text = text.replace('."', '".')
     text = text.replace(',"', '",')
     if pre:
