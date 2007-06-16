@@ -1,6 +1,6 @@
 # Create your views here.
 #import models
-from django.shortcuts import render_to_response as render
+from django.shortcuts import render_to_response as render, get_object_or_404
 from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, NonSession, MeetingVenue, IESGHistory, Proceeding
 from django.views.generic.list_detail import object_list
 from django.http import Http404
@@ -8,9 +8,10 @@ from  django.db.models import Q
 import datetime
 
 def show_html_materials(request, meeting_num=None):
-    begin_date = Proceeding.objects.get(meeting_num=meeting_num).sub_begin_date
-    cut_off_date = Proceeding.objects.get(meeting_num=meeting_num).sub_cut_off_date
-    cor_cut_off_date = Proceeding.objects.get(meeting_num=meeting_num).c_sub_cut_off_date
+    proceeding = get_object_or_404(Proceeding, meeting_num=meeting_num)
+    begin_date = proceeding.sub_begin_date
+    cut_off_date = proceeding.sub_cut_off_date
+    cor_cut_off_date = proceeding.c_sub_cut_off_date
     now = datetime.date.today()
     if now > cor_cut_off_date:
         return render("meeting/list_closed.html",{'meeting_num':meeting_num,'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date})
@@ -29,16 +30,10 @@ def show_html_materials(request, meeting_num=None):
     return object_list(request,queryset=queryset_list, template_name="meeting/list.html",allow_empty=True, extra_context={'meeting_num':meeting_num,'irtf_list':queryset_irtf, 'interim_list':queryset_interim, 'training_list':queryset_training, 'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date})
 
 def show_html_agenda(request, meeting_num=None, html_or_txt=None):
-    try:
-        queryset_list=MeetingTime.objects.filter(meeting=meeting_num).exclude(day_id=0).order_by("day_id","time_desc")
-    except MeetingTime.DoesNotExist:
-        raise Http404
-    meeting_info=Meeting.objects.get(meeting_num=meeting_num)
+    queryset_list=MeetingTime.objects.filter(meeting=meeting_num).exclude(day_id=0).order_by("day_id","time_desc")
+    meeting_info=get_object_or_404(Meeting, meeting_num=meeting_num)
     nonsession_info=NonSession.objects.filter(meeting=meeting_num,day_id__gte='0').order_by("day_id")
-    try:
-        meetingvenue_info=MeetingVenue.objects.get(meeting_num=meeting_num)
-    except MeetingVenue.DoesNotExist:
-        raise Http404
+    meetingvenue_info=get_object_or_404(MeetingVenue, meeting_num=meeting_num)
     plenaryt_agenda_file = "/home/master-site/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-2).agenda_file()
     try:
         f = open(plenaryt_agenda_file)
