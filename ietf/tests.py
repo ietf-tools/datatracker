@@ -112,7 +112,7 @@ class UrlTestCase(TestCase):
         for item in os.listdir(testdir):
             path = testdir + "/" + item
             if item.startswith("generic-") and os.path.isfile(path):
-                chunk = filetext(path)
+                chunk = filetext(path).strip()
                 chunk = re.sub(r"([\[\]().|+*?])", r"\\\1", chunk)
                 # @@ -27,0 \+23,1 @@
                 chunk = re.sub(r"(?m)^@@ -\d+,(\d+) \\\+\d+,(\d+) @@$", r"@@ -\d+,\1 \+\d+,\2 @@", chunk)
