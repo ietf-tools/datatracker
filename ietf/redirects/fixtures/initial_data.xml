@@ -170,7 +170,7 @@
   </object>
   <object pk="29" model="redirects.redirect">
     <field type="CharField" name="cgi">public/request_list.cgi</field>
-    <field type="CharField" name="url">mailinglist/request</field>
+    <field type="CharField" name="url">mailinglists/request</field>
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>
