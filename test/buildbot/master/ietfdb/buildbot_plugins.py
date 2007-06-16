@@ -14,9 +14,10 @@ class DjangoTest(ShellCommand):
     description = ["running django-test"]
     descriptionDone = ["django-test"]
     flunkOnFailure = False
+    warnOnFailure = True
     flunkingIssues = ["exception", "failure"] # any pyflakes lines like this cause FAILURE
 
-    msgtypes = ("exceptions", "failures", "skipped", "diffs", "pass")
+    msgtypes = ("exceptions", "failures", "missing", "skipped", "pass", "diffs", "diff")
 
     def createSummary(self, log):
         summaries = {}
@@ -31,9 +32,8 @@ class DjangoTest(ShellCommand):
         for type in self.msgtypes:
             typelist[type] = set([])
 
-        first = True
         for line in StringIO(log.getText()).readlines():
-            if re.search("^Traceback: ", line):
+            if re.search("^Traceback ", line):
                 m = "exception"
                 typelist["exceptions"].add(m)
                 count(m)
@@ -46,8 +46,12 @@ class DjangoTest(ShellCommand):
                 typelist["skipped"].add(m)
                 count(m)
             if re.search("^Diff: +.*", line):
-                m = "diff_%s" % line.split()[1]
+                m = "diffs"
+                count(m)
+                summaries[m] = []
                 typelist["diffs"].add(m)                
+                m = "diff_%s" % line.split()[1]
+                typelist["diff"].add(m)                
                 count(m)
             if re.search("^OK +.* ", line):
                 m = "pass_%s" % line.split()[1]
@@ -57,6 +61,12 @@ class DjangoTest(ShellCommand):
                 m = "pass_%s" % line.split()[1]
                 typelist["pass"].add(m)
                 count(m)
+            if re.search("^Miss .*", line):
+                m = "missing"
+                typelist["missing"].add(m)
+                count(m)
+            if re.search("^Response count:", line):
+                m = None
             if m:
                 if not m in summaries:
                     summaries[m] = []
@@ -66,7 +76,14 @@ class DjangoTest(ShellCommand):
         for type in self.msgtypes:
             for msg in typelist[type]:
                 if counts[msg]:
-                    self.descriptionDone.append("%s=%d" % (msg, counts[msg]))
+                    if counts[msg] == 1 and msg.startswith("diff"):
+                        difflen = len(summaries[msg])
+                        if difflen >= 102:
+                            self.descriptionDone.append("%s&nbsp;(long)" % (msg))
+                        else:
+                            self.descriptionDone.append("%s&nbsp;(%s<i>l</i>)" % (msg, difflen))
+                    else:
+                        self.descriptionDone.append("%s=%d" % (msg, counts[msg]))
                     self.addCompleteLog(msg, "".join(summaries[msg]))
             self.setProperty("urltest-%s" % type, sum([counts[msg] for msg in typelist[type]]))
         self.setProperty("urltest-total", sum([counts[msg] for msg in counts if msg not in typelist["pass"]]))
