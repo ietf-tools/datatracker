@@ -9,7 +9,14 @@ test/test-setup			# create a patched django for test purposes, and more
 
 test/run-pyflakes ietf
 
-PYTHONPATH=test/lib python ietf/manage.py test # run tests with our patched django
+# Trap keyboard interrupt to ensure the test/teardown is run if we interrupt the tests
+trap 'echo "$program($LINENO): Caught Interrupt"' INT 
+
+# run tests with our patched django
+PYTHONPATH=test/lib python ietf/manage.py test 
+
+# reset keyboard interrupt trap
+trap INT
 
 test/test-teardown
 
