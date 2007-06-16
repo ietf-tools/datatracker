@@ -2,6 +2,7 @@ import os
 import re
 import traceback
 import urllib2 as urllib
+from datetime import datetime
 
 from ietf.utils import soup2text as html2text
 from difflib import unified_diff
@@ -91,6 +92,16 @@ def filetext(filename):
     file.close()
     return chunk
 
+
+prev_note_time = datetime.utcnow()
+def note(string):
+    global prev_note_time
+    """Like a print function, but adds a leading timestamp line"""
+    now = datetime.utcnow()
+    print "Time", now.strftime("%Y-%m-%d_%H:%M"), "+%ds" % (now-prev_note_time).seconds
+    print string
+    prev_note_time = datetime.utcnow()
+
 class UrlTestCase(TestCase):
     def setUp(self):
         from django.test.client import Client
@@ -171,26 +182,26 @@ class UrlTestCase(TestCase):
                     code = str(response.status_code)
                     if code == "301":
 			if response['Location'] == url:
-			    print "OK   %s %s -> %s" % (code, testurl, url)
+			    note("OK   %s %s -> %s" % (code, testurl, url))
 			    res = ("OK", code)
 			else:
-			    print "Miss %3s %s ->" % (code, testurl)
+			    note("Miss %3s %s ->" % (code, testurl))
                             print "         %s" % (response['Location']) 
                             print " (wanted %s)" % (url)
                             print ""
                             #res = ("Fail", "wrong-reponse")
                     else:
-                        print "Fail %s %s" % (code, testurl)
+                        note("Fail %s %s" % (code, testurl))
                         res = ("Fail", code)
                 except:
                     res = ("Fail", "Exc")
-                    print "Exception for URL '%s'" % testurl
+                    note("Exception for URL '%s'" % testurl)
                     traceback.print_exc()
                 if not res in response_count:
                     response_count[res] = 0
                 response_count[res] += 1
         if response_count:
-            print "Response count:"
+            note("Response count:")
         for res in response_count:
             ind, code = res
             print "  %-4s %s: %s " % (ind, code, response_count[res])
@@ -210,14 +221,14 @@ class UrlTestCase(TestCase):
                     response = self.client.get(baseurl, args)
                     code = str(response.status_code)
                     if code in codes:
-                        print "OK   %s %s" % (code, url)
+                        note("OK   %s %s" % (code, url))
                         res = ("OK", code)
                     else:
-                        print "Fail %s %s" % (code, url)
+                        note("Fail %s %s" % (code, url))
                         res = ("Fail", code)
                 except:
                     res = ("Fail", "Exc")
-                    print "Exception for URL '%s'" % url
+                    note("Exception for URL '%s'" % url)
                     traceback.print_exc()
                 if master:
                     try:
@@ -225,7 +236,7 @@ class UrlTestCase(TestCase):
                         mfile = urllib.urlopen(master)
                         goodhtml = mfile.read()
                     except urllib.URLError, e:
-                        print "Failed retrieving master text for comparison: %s" % e
+                        note("Failed retrieving master text for comparison: %s" % e)
                     try:
                         mfile.close()
                         if goodhtml and response.content:
@@ -243,7 +254,7 @@ class UrlTestCase(TestCase):
                                 testtext = reduce(response.content)
                                 goodtext = reduce(goodhtml)
                             if testtext == goodtext:
-                                print "OK   cmp %s" % (url)
+                                note("OK   cmp %s" % (url))
                             else:
                                 contextlines = 0
                                 difflist = list(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
@@ -267,17 +278,17 @@ class UrlTestCase(TestCase):
                                     else:
                                         okdiff = ""
                                     if diff.strip() == okdiff.strip():
-                                        print "OK   cmp %s" % (url)
+                                        note("OK   cmp %s" % (url))
                                     else:
-                                        print "Diff:    %s" % (url)
+                                        note("Diff:    %s" % (url))
                                         print "\n".join(difflist[:100])
                                         if len(difflist) > 100:
                                             print "... (skipping %s lines of diff)" % (len(difflist)-100)
                                 else:
-                                    print "OK   cmp %s" % (url)
+                                    note("OK   cmp %s" % (url))
                                     
                     except:
-                        print "Exception occurred for url %s" % (url)
+                        note("Exception occurred for url %s" % (url))
                         traceback.print_exc()
                         #raise
 
@@ -287,7 +298,7 @@ class UrlTestCase(TestCase):
             else:
                 pass
         if response_count:
-            print "Response count:"
+            note("Response count:")
         for res in response_count:
             ind, code = res
             print "  %-4s %s: %s " % (ind, code, response_count[res])
@@ -296,15 +307,15 @@ class UrlTestCase(TestCase):
             self.assertEqual(ind, "OK", "Found %s cases of result code: %s" % (response_count[res], code))
 
     def testUrlsList(self):
-        print "\nTesting specified URLs:"
+        note("\nTesting specified URLs:")
         self.doUrlsTest(self.testtuples)
 
     def testRedirectsList(self):
-	print "\nTesting specified Redirects:"
+	note("\nTesting specified Redirects:")
 	self.doRedirectsTest(self.testtuples)
 
     def testUrlsFallback(self):
-        print "\nFallback: Test access to URLs which don't have an explicit test entry:"
+        note("\nFallback: Test access to URLs which don't have an explicit test entry:")
         lst = []
         for pattern in self.patterns:
             if pattern.startswith("^") and pattern.endswith("$"):
