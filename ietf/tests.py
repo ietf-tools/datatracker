@@ -174,7 +174,7 @@ class UrlTestCase(TestCase):
 			else:
 			    print "Miss %3s %s ->" % (code, testurl)
                             print "         %s" % (response['Location']) 
-                            print "         (wanted %s)" % (url)
+                            print " (wanted %s)" % (url)
                             #res = ("Fail", "wrong-reponse")
                     else:
                         print "Fail %s %s" % (code, testurl)
