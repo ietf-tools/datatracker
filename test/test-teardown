@@ -12,6 +12,11 @@ build=$PWD
 
 . $progdir/shell-utils
 
+# Project teardown
+# Remove the temporary settings_local.py we created for the tests
+
+rm -v test/settings_local.py
+
 # Database Cleanup
 # Make sure the test database has been removed
 if echo "show databases;" | python ietf/manage.py dbshell | grep test_ietf; then

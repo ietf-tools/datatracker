@@ -49,7 +49,7 @@ cd $build
 settings_local=$(py_module_file "settings_local")
 [ "$settings_local" ] || die "No setting_local file available"
 
-cat $settings_local test/settings_local_test.py > ietf/settings_local.py
+cat $settings_local test/settings_local_test.py > test/settings_local.py
 
 # Acquire lock, to prevent running test and database update at the same time
 
@@ -59,8 +59,8 @@ PIDFILE=$LOCKDIR/pid
 while true; do
     if mkdir $LOCKDIR; then
 	echo "$$" > $PIDFILE
-	chmod a+xr $LOCKDIR
-	chmod a+r $PIDFILE
+	chmod a+rwx $LOCKDIR
+	chmod a+rw $PIDFILE
 	break
     else
 	pid=$(< $PIDFILE )

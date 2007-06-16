@@ -13,7 +13,7 @@ test/run-pyflakes ietf
 trap 'echo "$program($LINENO): Caught Interrupt"' INT 
 
 # run tests with our patched django
-PYTHONPATH=test/lib python ietf/manage.py test 
+PYTHONPATH=test:test/lib python ietf/manage.py test 
 
 # reset keyboard interrupt trap
 trap INT
