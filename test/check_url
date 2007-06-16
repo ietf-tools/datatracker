@@ -38,10 +38,14 @@ for url in sys.argv[1:]:
         url1 = tuple[2]
         url2 = django_server + tuple[1]
         print "Fetching %s ..." % url1
-        text1 = html2text(fetch(url1)).split("\n")
+        text1 = html2text(fetch(url1), fill=False)
+        text1 = text1.replace('."', '".').replace(',"', '",')
+        list1 = text1.split("\n")
         print "Fetching %s ..." % url2
-        text2 = html2text(fetch(url2)).split("\n")
-        diff = "\n".join(unified_diff(text1, text2, url1, url2, "", "", 3, lineterm=""))
+        text2 = html2text(fetch(url2), fill=False)
+        text2 = text2.replace('."', '".').replace(',"', '",')
+        list2 = text2.split("\n")
+        diff = "\n".join(unified_diff(list1, list2, url1, url2, "", "", 0, lineterm=""))
         if diff:
             print diff
         else:
