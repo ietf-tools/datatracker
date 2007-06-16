@@ -10,6 +10,7 @@ import django.test.simple
 from django.test import TestCase
 from django.conf import settings
 from django.db import connection
+from django.core import management
 import ietf.urls
 
 
@@ -123,7 +124,9 @@ class UrlTestCase(TestCase):
         self.testdb = settings.DATABASE_NAME
         connection.close()
         settings.DATABASE_NAME = startup_database
-        connection.cursor()
+        # Install updated fixtures:
+        # Also has the side effect of creating the database connection.
+        management.syncdb(verbosity=1, interactive=False)
         
     def tearDown(self):
         # Revert to using the test database
