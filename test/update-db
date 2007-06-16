@@ -27,12 +27,15 @@ PIDFILE=$LOCKDIR/pid
 
 while true; do
     if mkdir $LOCKDIR; then
+	chmod a+rwx $LOCKDIR
 	#echo ""
 	#date +"Time: %Y-%m-%d %H:%M"
 	#echo "Database dump file is from $(date -r $DBDUMP +'%Y-%m-%d %H:%M')."
 	#echo "Last update done $(date -r $DBDONE +'%Y-%m-%d %H:%M')."
 	if [ $DBDUMP -nt $DBTIME ]; then
 	    echo "$$" > $PIDFILE
+	    chmod a+rw $PIDFILE
+
 	    log "Updating local database from $DBDUMP ..."
 	    python ietf/manage.py dbshell <  $DBDUMP
 	    log "Updating local database from $DBFIX ..."
