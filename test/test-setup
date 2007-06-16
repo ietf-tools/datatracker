@@ -59,6 +59,8 @@ PIDFILE=$LOCKDIR/pid
 while true; do
     if mkdir $LOCKDIR; then
 	echo "$$" > $PIDFILE
+	chmod a+xr $LOCKDIR
+	chmod a+r $PIDFILE
 	break
     else
 	pid=$(< $PIDFILE )
