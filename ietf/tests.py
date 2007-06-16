@@ -149,7 +149,8 @@ class UrlTestCase(TestCase):
             print "Not all the application URLs has test cases, there are %d missing." % (len(missing))
             print "The ones missing are: "
             for pattern in missing:
-                print "Miss", pattern
+                if not pattern[1:].split("/")[0] in [ "admin", "accounts" ]:
+                    print "Miss", pattern
         else:
             print "All the application URL patterns seem to have test cases."
             #print "Not all the application URLs has test cases."
