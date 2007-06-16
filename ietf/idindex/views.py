@@ -158,7 +158,7 @@ def related_docs(startdoc):
     def handle(otherdoc,status,doc,skip=(0,0,0)):
         new = (otherdoc, status, doc)
     	if otherdoc in processed:
-	    print "skipping (%s,%s,%s) because otherdoc has been processed" % (new)
+            #print "skipping (%s,%s,%s) because otherdoc has been processed" % (new)
 	    return
 	#if new not in related:
 	if True: #otherdoc not in processed:
@@ -169,7 +169,7 @@ def related_docs(startdoc):
     def process(doc, skip=(0,0,0)):
 	#XXX
 	skip = (0,0,0)
-	print "doc = %s skip = %s" % (doc,skip)
+        #print "doc = %s skip = %s" % (doc,skip)
 	processed.append(doc)
 	if type(doc) == InternetDraft:
 	    if doc.replaced_by_id != 0 and not(skip[0]):
