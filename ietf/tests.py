@@ -150,7 +150,7 @@ class UrlTestCase(TestCase):
             print "The ones missing are: "
             for pattern in missing:
                 if not pattern[1:].split("/")[0] in [ "admin", "accounts" ]:
-                    print "Miss", pattern
+                    print "NoTest", pattern
         else:
             print "All the application URL patterns seem to have test cases."
             #print "Not all the application URLs has test cases."
@@ -171,8 +171,8 @@ class UrlTestCase(TestCase):
 			    print "OK   %s %s -> %s" % (code, testurl, url)
 			    res = ("OK", code)
 			else:
-			    print "Fail %s %s -> %s (wanted %s)" % (code, testurl, response['Location'], url)
-			    res = ("Fail", "wrong-reponse")
+			    print "Miss %s %s ->\n         %s (wanted %s)" % (code, testurl, response['Location'], url)
+                            #res = ("Fail", "wrong-reponse")
                     else:
                         print "Fail %s %s" % (code, testurl)
                         res = ("Fail", code)
