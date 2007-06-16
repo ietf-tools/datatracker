@@ -13,3 +13,7 @@
 200,sort /ipr/search/?option=document_search&id_document_tag=2220 https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&id_document_tag=2220
 200,sort /ipr/search/?option=rfc_search&rfc_search=1034		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=1034			# Loong result, RFC search
 200	/ipr/search/?option=rfc_search&rfc_search=4444		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=4444			# Empty result, RFC search
+200	/ipr/about/			https://datatracker.ietf.org/public/ipr_disclosure.cgi
+200	/ipr/2006/
+200	/ipr/2006/feb/
+200	/ipr/by-date/

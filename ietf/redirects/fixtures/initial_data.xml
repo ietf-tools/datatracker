@@ -181,8 +181,8 @@
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="31" model="redirects.redirect">
-    <field type="CharField" name="cgi">dummy/1</field>
-    <field type="CharField" name="url"></field>
+    <field type="CharField" name="cgi">public/ipr_disclosure.cgi</field>
+    <field type="CharField" name="url">ipr/about</field>
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>
