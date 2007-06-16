@@ -1,46 +1,25 @@
 --- https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=795 
 +++ /ipr/ipr-795/ 
-@@ -8,2 +8,2 @@
+@@ -5,2 +5,2 @@
 -Declaration Template for Notification" where the submitter provided
 -information are displayed.
 +Declaration Template for Third Party IPR Disclosures" where the
 +submitter provided information are displayed.
-@@ -16,2 +16,2 @@
--Legal Name:The United States of America as represented by the National
--Security Agency
-+Legal Name: The United States of America as represented by the
-+National Security Agency
-@@ -39,1 +39,1 @@
+@@ -23,4 +23,2 @@
 -Relates
-+Relates:
-@@ -41,4 +41,1 @@
 -Title:
 -US Secure Hash Algorithms (SHA and HMAC-SHA)
--
 -RFC Number: 4634
-+RFC 4634: "US Secure Hash Algorithms (SHA and HMAC-SHA)"
-@@ -53,1 +50,1 @@
--number(s):US patent 6,829,355
-+number(s): US patent 6,829,355
-@@ -55,1 +52,1 @@
--Date(s) granted or applied for:December 7, 2004
-+Date(s) granted or applied for: December 7, 2004
-@@ -57,1 +54,1 @@
--Country:USA
-+Country: USA
-@@ -60,0 +57,2 @@
-+The relevance of this patent to the RFC is based on the comments in
-+the section "After the panel" from:
-@@ -61,3 +60,4 @@
--The relevance of this patent to the RFC is based on the comments in
++Relates:
++RFC4634: "US Secure Hash Algorithms (SHA and HMAC-SHA)"
+@@ -37,2 +35,3 @@
 -the section "After the panel" from: http://www.proper.com/lookit/hash-
 -futures-panel-notes.html The patent itself is available from:
++the section "After the panel" from:
 +http://www.proper.com/lookit/hash-futures-panel-notes.html
-+
 +The patent itself is available from:
-+
-@@ -76,1 +76,3 @@
+@@ -49,1 +48,2 @@
 -covered.
 +covered:
-+
 +No information submitted
+,

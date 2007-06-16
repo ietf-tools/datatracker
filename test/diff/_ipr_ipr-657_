@@ -1,30 +1,17 @@
 --- https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657 
 +++ /ipr/ipr-657/ 
-@@ -14,1 +14,1 @@
--Legal Name:France Telecom SA
-+Legal Name: France Telecom SA
-@@ -41,1 +41,1 @@
--number(s):to be confirmed by individual patent declarations
-+number(s): to be confirmed by individual patent declarations
-@@ -43,1 +43,1 @@
--Date(s) granted or applied for:to be confirmed by individual patent
-+Date(s) granted or applied for: to be confirmed by individual patent
-@@ -46,1 +46,1 @@
--Country:to be confirmed by individual patent declarations
-+Country: to be confirmed by individual patent declarations
-@@ -49,1 +49,0 @@
--
-@@ -73,1 +72,3 @@
+@@ -43,3 +43,4 @@
+-Licensing information, comments, notes, or URL for further information
+-:
 -NOTE: The individual submitting this template represents and warrants
++Licensing information, comments, notes, or URL for further
++information:
 +No information submitted
-+
 +Note: The individual submitting this template represents and warrants
-@@ -78,1 +79,1 @@
+@@ -49,1 +50,1 @@
 -IETF Participant in Section III above)
 +the Contact Information above)
-@@ -96,0 +97,1 @@
+@@ -58,0 +59,2 @@
 +VI. Other Notes:
-@@ -97,0 +99,3 @@
 +No information submitted
-+
-+
+,
