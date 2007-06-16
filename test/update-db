@@ -27,7 +27,7 @@ PIDFILE=$LOCKDIR/pid
 
 while true; do
     if mkdir $LOCKDIR; then
-	echo ""
+	#echo ""
 	#date +"Time: %Y-%m-%d %H:%M"
 	#echo "Database dump file is from $(date -r $DBDUMP +'%Y-%m-%d %H:%M')."
 	#echo "Last update done $(date -r $DBDONE +'%Y-%m-%d %H:%M')."
