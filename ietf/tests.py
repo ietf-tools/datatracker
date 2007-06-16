@@ -28,13 +28,13 @@ def reduce(html, pre=False, fill=True):
     html = re.sub(r"(?i)(RFC) (\d+)", r"\1\2", html) # ignore "RFC 1234" vs. "RFC1234" diffs
     html = re.sub(r"\bID\b", r"I-D", html)           # idnore " ID " vs. " I-D " diffs
     text = html2text(html, pre=pre, fill=fill).strip()
-    text = text.replace(" :", ": ")
+    text = text.replace(" : ", ": ").replace(" :", ": ")
     text = text.replace('."', '".')
     text = text.replace(',"', '",')
     if pre:
         text = text.split("\n")
     else:
-        text = [ line.strip() for line in text.split("\n") ]
+        text = [ line.strip() for line in text.split("\n") if line.strip()]
     return text
 
 def get_patterns(module):
