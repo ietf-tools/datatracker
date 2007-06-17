@@ -1,0 +1,6 @@
+--- https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=rfc&sort=name 
++++ /idindex/showdocs/rfc/name/ 
+@@ -1121,0 +1121,1 @@
++draft-ietf-hubmib-etherif-MIB-06 1998-08-06 RFC 2358 I-D Exists
+@@ -1122,1 +1123,0 @@
+-draft-ietf-hubmib-etherif-MIB-06 1998-08-06 RFC 2358 I-D Exists
