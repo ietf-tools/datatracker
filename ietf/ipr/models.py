@@ -7,12 +7,15 @@ from ietf.idtracker.models import Rfc
 # Models
 
 LICENSE_CHOICES = (
-    (1, 'No License Required for Implementers.'),
-    (2, 'Royalty-Free, Reasonable and Non-Discriminatory License to All Implementers.'),
-    (3, 'Reasonable and Non-Discriminatory License to All Implementers with Possible Royalty/Fee.'),
-    (4, 'Licensing Declaration to be Provided Later.'),
-    (5, 'Unwilling to Commit to the Provisions of a), b), or c) Above..'),
-    (6, 'See Text Below for Licensing Declaration.'),
+    (1, 'a) No License Required for Implementers.'),
+    (2, 'b) Royalty-Free, Reasonable and Non-Discriminatory License to All Implementers.'),
+    (3, 'c) Reasonable and Non-Discriminatory License to All Implementers with Possible Royalty/Fee.'),
+    (4, 'd) Licensing Declaration to be Provided Later (implies a willingness'
+        ' to commit to the provisions of a), b), or c) above to all implementers;'
+        ' otherwise, the next option "Unwilling to Commit to the Provisions of'
+        ' a), b), or c) Above". - must be selected).'),
+    (5, 'e) Unwilling to Commit to the Provisions of a), b), or c) Above.'),
+    (6, 'f) See Text Below for Licensing Declaration.'),
 )
 STDONLY_CHOICES = (
     (0, ""),

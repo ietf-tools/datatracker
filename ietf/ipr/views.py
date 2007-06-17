@@ -63,7 +63,13 @@ def show(request, ipr_id=None):
     ipr.other_notes = linebreaks(escape(ipr.other_notes))
 
     if ipr.licensing_option:
-        ipr.licensing_option = dict(LICENSE_CHOICES)[ipr.licensing_option]
+        text = dict(LICENSE_CHOICES)[ipr.licensing_option]
+        # Very hacky way to get rid of the last part of option 'd':
+        cut = text.find(" (")
+        if cut > 0:
+            text = text[cut:] + "."
+        # get rid of the "a) ", "b) ", etc. 
+        ipr.licensing_option = text[3:]
     if ipr.is_pending:
         ipr.is_pending = dict(SELECT_CHOICES)[ipr.is_pending]
     if ipr.applies_to_all:

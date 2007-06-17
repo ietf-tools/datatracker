@@ -20,19 +20,18 @@
 +Disclosure Relates:
 +RFC Numbers:
 +I-D Filenames (draft-...):
-@@ -36,7 +37,8 @@
+@@ -36,4 +37,4 @@
 -number(s):
 -Date(s) granted or applied for:
 -Country:
 -Additional Note(s):
--B. Does your disclosure relate to an unpublished pending patent
--application?
--Select one: Yes No
 +number(s): *
 +Date(s) granted or applied for: *
 +Country: *
 +Additional Notes:
-+B. Does this disclosure relate to an unpublished pending patent
+@@ -41,2 +42,3 @@
+-application?
+-Select one: Yes No
 +application?:
 +YES
 +NO
