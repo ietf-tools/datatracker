@@ -107,6 +107,9 @@ class UrlTestCase(TestCase):
         from django.test.client import Client
         self.client = Client()
 
+        # get selected prefixes, if any
+        self.prefixes = os.environ.get("URLPREFIX", "").split()
+
         # find test urls
         self.testtuples = []
         self.testurls = []
@@ -133,6 +136,11 @@ class UrlTestCase(TestCase):
 
         # extract application urls:
         self.patterns = get_patterns(ietf.urls)
+
+        # apply prefix filters
+        self.patterns = [ pattern for pattern in self.patterns for prefix in self.prefixes if re.match(prefix, pattern) ]
+        self.testtuples = [ tuple for tuple in self.testtuples for prefix in self.prefixes if re.match(prefix, tuple[1][1:]) ]
+
         # Use the default database for the url tests, instead of the test database
         self.testdb = settings.DATABASE_NAME
         connection.close()
