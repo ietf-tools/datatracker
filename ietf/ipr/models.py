@@ -111,7 +111,7 @@ class IprDetail(models.Model):
     update_notified_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
-	return self.document_title
+	return self.title
     def get_absolute_url(self):
         return "/ipr/ipr-%s" % self.ipr_id
     class Meta:

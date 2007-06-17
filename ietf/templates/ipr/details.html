@@ -14,7 +14,7 @@
       <table cellpadding=0 cellspacing=0 border=0>
 	 <tr>
 	    <td width="720" align="center">
-	       <h3>{{ ipr.document_title }}</h3>
+	       <h3>{{ ipr.title }}</h3>
 	    </td>
 	 </tr>
       </table>
@@ -54,9 +54,9 @@
 	     <br>
 	     This IPR disclosure updates IPR disclosure ID #{{ item.updated.ipr_id }},
 	     {% ifequal item.status_to_be 1 %}
-		"<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.document_title }}</a>".
+		"<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
 	     {% else %}
-		"{{ item.updated.document_title }}", which was removed at the request of the submitter.
+		"{{ item.updated.title }}", which was removed at the request of the submitter.
 	     {% endifequal %}
 	     <br>
 	  </font>
@@ -68,9 +68,9 @@
 	     <br>
 	     This IPR disclosure has been updated by IPR disclosure ID #{{ item.ipr.ipr_id }},
 	     {% ifequal item.status_to_be 1 %}
-		"<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.document_title }}</a>".
+		"<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>".
 	     {% else %}
-		"{{ item.ipr.document_title }}", which was removed at the request of the submitter.
+		"{{ item.ipr.title }}", which was removed at the request of the submitter.
 	     {% endifequal %}
 	     <br>
 	  </font>
