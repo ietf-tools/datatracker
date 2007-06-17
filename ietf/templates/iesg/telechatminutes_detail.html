@@ -3,7 +3,12 @@
 
 {% block title %}IESG Telechat Minutes{% endblock %}
 
+
+
 {% block content %}
+
+<center><h2>Minutes of the IESG Teleconferences</h2></center>
+
 <blockquote>
 {{ object.telechat_minute|escape|linebreaks|urlize }}
 </blockquote>
