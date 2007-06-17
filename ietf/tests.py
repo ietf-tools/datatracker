@@ -134,8 +134,9 @@ def module_setup(module):
     module.patterns = get_patterns(ietf.urls)
 
     # apply prefix filters
-    module.patterns = [ pattern for pattern in module.patterns for prefix in module.prefixes if re.match(prefix, pattern) ]
-    module.testtuples = [ tuple for tuple in module.testtuples for prefix in module.prefixes if re.match(prefix, tuple[1][1:]) ]
+    if module.prefixes:
+        module.patterns = [ pattern for pattern in module.patterns for prefix in module.prefixes if re.match(prefix, pattern) ]
+        module.testtuples = [ tuple for tuple in module.testtuples for prefix in module.prefixes if re.match(prefix, tuple[1][1:]) ]
 
     # Use the default database for the url tests, instead of the test database
     module.testdb = settings.DATABASE_NAME
