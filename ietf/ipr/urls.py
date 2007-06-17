@@ -1,5 +1,5 @@
 from django.conf.urls.defaults import patterns
-from ietf.ipr import models, views
+from ietf.ipr import models, views, new, search
 
 urlpatterns = patterns('',
      (r'^$', views.showlist),
@@ -7,8 +7,8 @@ urlpatterns = patterns('',
      (r'^ipr-(?P<ipr_id>\d+)/$', views.show),
      (r'^update/$', views.updatelist),
      (r'^update/(?P<ipr_id>\d+)/$', views.update),
-     (r'^new-(?P<type>(specific|generic|third-party))/$', views.new),
-     (r'^search/$', views.search),     
+     (r'^new-(?P<type>(specific|generic|third-party))/$', new.new),
+     (r'^search/$', search.search),     
 )
 
 queryset = models.IprDetail.objects.all()

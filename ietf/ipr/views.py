@@ -1,13 +1,10 @@
-import re
 import django.utils.html
 from django.shortcuts import render_to_response as render
 from django.utils.html import escape
-from ietf.idtracker.models import IETFWG, InternetDraft, Rfc
-from ietf.ipr.models import IprRfc, IprDraft, IprDetail, SELECT_CHOICES, LICENSE_CHOICES
+from ietf.idtracker.models import IETFWG
+from ietf.ipr.models import IprDetail, SELECT_CHOICES, LICENSE_CHOICES
 from ietf.ipr.view_sections import section_table
-from ietf.ipr.view_new import new
 from ietf.utils import log
-
 
 def linebreaks(value):
     if value:
@@ -79,140 +76,6 @@ def update(request, ipr_id=None):
     return show(request, ipr_id)
 
 
-inverse = {
-            'updates': 'is_updated_by',
-            'is_updated_by': 'updates',
-            'obsoletes': 'is_obsoleted_by',
-            'is_obsoleted_by': 'obsoletes',
-            'replaces': 'is_replaced_by',
-            'is_replaced_by': 'replaces',            
-            'is_rfc_of': 'is_draft_of',
-            'is_draft_of': 'is_rfc_of',
-        }
-
-display_relation = {
-            'updates':          'that updated',
-            'is_updated_by':    'that was updated by',
-            'obsoletes':        'that obsoleted',
-            'is_obsoleted_by':  'that was obsoleted by',
-            'replaces':         'that replaced',
-            'is_replaced_by':   'that was replaced by',
-            'is_rfc_of':        'which came from',
-            'is_draft_of':      'that was published as',
-        }
-
-def set_related(obj, rel, target):
-    #print obj, rel, target
-    # remember only the first relationship we find.
-    if not hasattr(obj, "related"):
-        obj.related = target
-        obj.relation = display_relation[rel]
-
-def set_relation(first, rel, second):
-    set_related(first, rel, second)
-    set_related(second, inverse[rel], first)
-
-def related_docs(doc, found = []):    
-    """Get a list of document related to the given document.
-    """
-    #print "\nrelated_docs(%s, %s)" % (doc, found) 
-    found.append(doc)
-    if isinstance(doc, Rfc):
-        try:
-            item = InternetDraft.objects.get(rfc_number=doc.rfc_number)
-            if not item in found:
-                set_relation(doc, 'is_rfc_of', item)
-                found = related_docs(item, found)
-        except InternetDraft.DoesNotExist:
-            pass
-        for entry in doc.updated_or_obsoleted_by.all():
-            item = entry.rfc
-            if not item in found:
-                action = inverse[entry.action.lower()]
-                set_relation(doc, action, item)
-                found = related_docs(item, found)
-        for entry in doc.updates_or_obsoletes.all():
-            item = entry.rfc_acted_on
-            if not item in found:
-                action = entry.action.lower()
-                set_relation(doc, action, item)
-                found = related_docs(item, found)
-    if isinstance(doc, InternetDraft):
-        if doc.replaced_by_id:
-            item = doc.replaced_by
-            if not item in found:
-                set_relation(doc, 'is_replaced_by', item)
-                found = related_docs(item, found)
-        for item in doc.replaces_set.all():
-            if not item in found:
-                set_relation(doc, 'replaces', item)
-                found = related_docs(item, found)
-        if doc.rfc_number:
-            item = Rfc.objects.get(rfc_number=doc.rfc_number)
-            if not item in found:
-                set_relation(doc, 'is_draft_of', item)
-                found = related_docs(item, found)
-    return found
-
-def search(request, type="", q="", id=""):
-    wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
-    args = request.REQUEST.items()
-    if args:
-        for key, value in args:
-            if key == "option":
-                type = value
-            if re.match(".*search", key):
-                q = value
-            if re.match(".*id", key):
-                id = value
-        if type and q or id:
-            log("Got query: type=%s, q=%s, id=%s" % (type, q, id))
-            if type in ["document_search", "rfc_search"]:
-                if type == "document_search":
-                    if q:
-                        start = InternetDraft.objects.filter(filename__contains=q)
-                    if id:
-                        start = InternetDraft.objects.filter(id_document_tag=id)
-                if type == "rfc_search":
-                    if q:
-                        start = Rfc.objects.filter(rfc_number=q)
-                if start.count() == 1:
-                    first = start[0]
-                    # get all related drafts, then search for IPRs on all
-
-                    docs = related_docs(first, [])
-                    #docs = get_doclist.get_doclist(first)
-                    iprs = []
-                    for doc in docs:
-                        if isinstance(doc, InternetDraft):
-                            disclosures = [ item.ipr for item in IprDraft.objects.filter(document=doc, ipr__status__in=[1,3]) ]
-                        elif isinstance(doc, Rfc):
-                            disclosures = [ item.ipr for item in IprRfc.objects.filter(document=doc, ipr__status__in=[1,3]) ]
-                        else:
-                            raise ValueError("Doc type is neither draft nor rfc: %s" % doc)
-                        if disclosures:
-                            doc.iprs = disclosures
-                            iprs += disclosures
-                    iprs = list(set(iprs))
-                    return render("ipr/search_doc_result.html", {"first": first, "iprs": iprs, "docs": docs})
-                elif start.count():
-                    return render("ipr/search_doc_list.html", {"docs": start })
-                else:
-                    raise ValueError("Missing or malformed search parameters, or internal error")
-            elif type == "patent_search":
-                pass
-            elif type == "patent_info_search":
-                pass
-            elif type == "wg_search":
-                pass
-            elif type == "title_search":
-                pass
-            elif type == "ip_title_search":
-                pass
-            else:
-                raise ValueError("Unexpected search type in IPR query: %s" % type)
-        return django.http.HttpResponseRedirect(request.path)
-    return render("ipr/search.html", {"wgs": wgs})
 
 def form(request):
     wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
