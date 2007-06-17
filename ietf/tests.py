@@ -185,9 +185,9 @@ class UrlTestCase(TestCase):
 			    note("OK   %s %s -> %s" % (code, testurl, url))
 			    res = ("OK", code)
 			else:
-			    note("Miss %3s %s ->" % (code, testurl))
+			    print "Miss %3s %s ->" % (code, testurl)
                             print "         %s" % (response['Location']) 
-                            print " (wanted %s)" % (url)
+                            note( " (wanted %s)" % (url))
                             print ""
                             #res = ("Fail", "wrong-reponse")
                     else:
@@ -208,6 +208,8 @@ class UrlTestCase(TestCase):
         for res in response_count:
             ind, code = res
             self.assertEqual(ind, "OK", "Found %s cases of result code: %s" % (response_count[res], code))
+        if response_count:
+            print ""
 
     def doUrlsTest(self, lst):
         response_count = {}
@@ -306,6 +308,8 @@ class UrlTestCase(TestCase):
         for res in response_count:
             ind, code = res
             self.assertEqual(ind, "OK", "Found %s cases of result code: %s" % (response_count[res], code))
+        if response_count:
+            print ""
 
     def testUrlsList(self):
         note("\nTesting specified URLs:")
