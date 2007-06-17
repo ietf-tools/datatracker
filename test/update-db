@@ -3,31 +3,45 @@
 # push in a new copy of the database from a dump of the master database, and
 # do the fixups needed to run the django apps.
 
-#set -x
-
 program=${0##*/}
 progdir=${0%/*}
 
 cd $progdir/..
 build=$PWD
-state=/var/local/$program
 
 function log() { logger -i -t $program -s "$*"; }
 function die() { log "$*; terminating."; echo "$program: Error: $*" 1>&2; exit 1; }
 
 
-[ $DBDUMP ] || DBDUMP="$1"
-[ $DBDUMP ] || DBDUMP=/www/tools.ietf.org/events/raw/sqldump/sqldump.raw
-[ $DBFIX  ] || DBFIX=$build/test/sql_fixup.sql
-[ $DBTIME ] || DBTIME=$state/update-db.time
-[ $DBDONE ] || DBDONE=$state/update-db.done
+for dir in /var/local /var/state /var/run /var/tmp; do
+    [ -d $dir -a -w $dir ] && state=$dir/$program
+done
+[ "$state" ] || die "Couldn't find a directory to keep state in."
+[ -d "$state" ] || mkdir $state
+[ "$state" ] || die "Couldn't create state dir."
 
-LOCKDIR=/var/lock/ietfdb
-PIDFILE=$LOCKDIR/pid
+
+for dir in $DBLOCK /var/local /var/state /var/run /var/tmp; do
+    [ -d $dir -a -w $dir ] && lock=$dir/$program
+done
+[ "$lock" ] || die "Couldn't find a directory to keep lock in."
+[ -d "$lock" ] || mkdir $lock
+[ "$lock" ] || die "Couldn't create lock dir."
+
+
+[ "$DBDUMP" ] || DBDUMP="$1"
+[ "$DBDUMP" ] || DBDUMP=/www/tools.ietf.org/events/raw/sqldump/sqldump.raw
+[ "$DBFIX"  ] || DBFIX=$build/test/sql_fixup.sql
+[ "$DBTIME" ] || DBTIME=$state/update-db.time
+[ "$DBDONE" ] || DBDONE=$state/update-db.done
+[ "$DBLOCK" ] || DBLOCK=$lock
+
+
+PIDFILE=$DBLOCK/pid
 
 while true; do
-    if mkdir $LOCKDIR; then
-	chmod a+rwx $LOCKDIR
+    if mkdir $DBLOCK; then
+	chmod a+rwx $DBLOCK
 	#echo ""
 	#date +"Time: %Y-%m-%d %H:%M"
 	#echo "Database dump file is from $(date -r $DBDUMP +'%Y-%m-%d %H:%M')."
@@ -48,7 +62,7 @@ while true; do
 #	else
 #	    echo "No new database dump available."
 	fi
-	rm -rf $LOCKDIR
+	rm -rf $DBLOCK
 	exit 0
     else
 	pid=$(< $PIDFILE ) || die "Couldn't read pidfile '$PIDFILE'"
@@ -58,7 +72,7 @@ while true; do
 	else
 	    log "Pidfile for process $pid exists, but process isn't running."
 	    log "Removing lock and old pid file $pidfile."
-	    rm -rf $LOCKDIR
+	    rm -rf $DBLOCK
 	fi
     fi
 done
