@@ -291,9 +291,11 @@
 	    <tr class="{% cycle dark,light as row_parity %}">
 	       <th colspan="2" >
 	       {% cycle section %}.
-	       {% if section_list.third_party %}
-	       Disclosure of Patent Information, if known (i.e., patents or
-	       patent applications required to be disclosed by Section 6 of RFC3979)
+	       {% if section_list.form_legend %}	       
+		   {% if section_list.third_party %}
+		   Disclosure of Patent Information, if known (i.e., patents or
+		   patent applications required to be disclosed by Section 6 of RFC3979)
+		   {% endif %}
 	       {% else %}
 	       Disclosure of Patent Information (i.e., patents or patent
 	       applications required to be disclosed by Section 6 of RFC 3979)	    

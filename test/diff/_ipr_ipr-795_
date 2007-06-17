@@ -1,10 +1,5 @@
 --- https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=795 
 +++ /ipr/ipr-795/ 
-@@ -5,2 +5,2 @@
--Declaration Template for Notification" where the submitter provided
--information are displayed.
-+Declaration Template for Third Party IPR Disclosures" where the
-+submitter provided information are displayed.
 @@ -23,4 +23,2 @@
 -Relates
 -Title:
