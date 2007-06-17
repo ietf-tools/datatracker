@@ -30,14 +30,14 @@
 	 </font><br>
 	 {% endif %}
 	 Sections {% block legacy_sections %}I, II, and IV{% endblock %} of "The Patent Disclosure and Licensing Declaration Template 
-	 for {{ section_list.disclosure_type }} IPR Disclosures" have been completed for this IPR disclosure.
+	 for {{ section_list.disclosure_type }}" have been completed for this IPR disclosure.
 	 Additional information may be available in the original submission.<br>
 	 See the <a href="{{ ipr.legacy_url_0 }}">content of the original IPR disclosure</a>.<br>
       </font>
       {% endif %}
       {% if section_list.new_intro %}
       <font size="3"> Only those sections of the "Patent Disclosure and Licensing Declaration
-	 Template for {{ section_list.disclosure_type }} IPR Disclosures" where the submitter provided
+	 Template for {{ section_list.disclosure_type }}" where the submitter provided
 	 information are displayed.</font><br>
       {% endif %}
       {% if section_list.new_intro or section_list.legacy_intro %}
@@ -109,7 +109,7 @@
       {% endif %}
 
       {% if section_list.form_intro %}
-	 <h4 class="ipr">The Patent Disclosure and Licensing Declaration Template for {{ section_list.disclosure_type }} IPR Disclosures</h4>
+	 <h4 class="ipr">The Patent Disclosure and Licensing Declaration Template for {{ section_list.disclosure_type }}</h4>
 	 <p class="ipr">
 
 	    {% if section_list.generic %}
@@ -119,13 +119,22 @@
 	    listed in Section IV, and b) an IPR Holder's intention with respect to
 	    the licensing of its necessary patent claims. No actual license is
 	    implied by submission of this template.
-	    {% else %}
+	    {% endif %}
+	    {% if section_list.specific %}
 	    This document is an IETF IPR Disclosure and Licensing Declaration
 	    Template and is submitted to inform the IETF of a) patent or patent
 	    application information regarding the IETF document or contribution
 	    listed in Section IV, and b) an IPR Holder's intention with respect to
 	    the licensing of its necessary patent claims.  No actual license is
 	    implied by submission of this template.
+	    {% endif %}
+	    {% if section_list.third_party %}
+	    This form is used to let the IETF know about patent information
+	    regarding an IETF document or contribution when the person letting the
+	    IETF know about the patent has no relationship with the patent owners.
+	    Click here if you want to disclose information about patents or patent
+	    applications where you do have a relationship to the patent owners or
+	    patent applicants.
 	    {% endif %}
 	 </p>
 
@@ -184,7 +193,7 @@
 	 <tr class="{% cycle dark,light as row_parity %}">
 	    <th colspan=2>
 	       {% cycle I,II,III,IV,V,VI,VII,VIII as section %}.
-	       {% ifequal section_list.disclosure_type "Third Party" %}Possible{% endifequal %}
+	       {% if section_list.third_party %}Possible{% endif %}
 	       Patent Holder/Applicant ("Patent Holder")
 	    </th>
 	 </tr>
@@ -282,8 +291,13 @@
 	    <tr class="{% cycle dark,light as row_parity %}">
 	       <th colspan="2" >
 	       {% cycle section %}.
+	       {% if section_list.third_party %}
+	       Disclosure of Patent Information, if known (i.e., patents or
+	       patent applications required to be disclosed by Section 6 of RFC3979)
+	       {% else %}
 	       Disclosure of Patent Information (i.e., patents or patent
 	       applications required to be disclosed by Section 6 of RFC 3979)	    
+	       {% endif %}
 	       </th>
 	    </tr>
 	    {% if ipr.patents or ipr.notes %}
