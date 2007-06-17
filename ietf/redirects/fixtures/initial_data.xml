@@ -80,8 +80,8 @@
   </object>
   <object pk="14" model="redirects.redirect">
     <field type="CharField" name="cgi">public/recent_announcement.cgi</field>
-    <field type="CharField" name="url">iesg/ann/ietf-doc/recent</field>
-    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="url">iesg/ann</field>
+    <field type="CharField" name="rest">ietf-doc/recent</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="15" model="redirects.redirect">
@@ -194,8 +194,8 @@
   </object>
   <object pk="33" model="redirects.redirect">
     <field type="CharField" name="cgi">public/request_area_confirm.cgi</field>
-    <field type="CharField" name="url">approve/%(mailing_list_id)s</field>
-    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="url">approve</field>
+    <field type="CharField" name="rest">%(mailing_list_id)s</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="34" model="redirects.redirect">
@@ -270,6 +270,30 @@
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">16</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
   </object>
+  <object pk="13" model="redirects.command">
+    <field type="CharField" name="command">show_wg_docs</field>
+    <field type="CharField" name="url">wgdocs</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
+  </object>
+  <object pk="14" model="redirects.command">
+    <field type="CharField" name="command">show_other</field>
+    <field type="CharField" name="url">otherdocs</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">5</field>
+  </object>
+  <object pk="15" model="redirects.command">
+    <field type="CharField" name="command">show_detail</field>
+    <field type="CharField" name="url">detail</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">14</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">6</field>
+  </object>
+  <object pk="16" model="redirects.command">
+    <field type="CharField" name="command">print_ballot</field>
+    <field type="CharField" name="url">ballot</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">6</field>
+  </object>
   <object pk="2" model="redirects.suffix">
     <field type="CharField" name="rest">%(fl)s</field>
     <field type="CharField" name="remove"></field>
@@ -280,6 +304,14 @@
   </object>
   <object pk="4" model="redirects.suffix">
     <field type="CharField" name="rest">%(id)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="5" model="redirects.suffix">
+    <field type="CharField" name="rest">%(cat)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="6" model="redirects.suffix">
+    <field type="CharField" name="rest">%(ballot_id)s</field>
     <field type="CharField" name="remove"></field>
   </object>
 </django-objects>
