@@ -1,44 +1,27 @@
 --- https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=834 
 +++ /ipr/ipr-834/ 
-@@ -15,1 +15,1 @@
--Legal Name:QUALCOMM Incorporated
-+Legal Name: QUALCOMM Incorporated
-@@ -55,1 +55,1 @@
+@@ -30,4 +30,2 @@
 -Relates
-+Relates:
-@@ -57,4 +57,1 @@
 -Title:
 -Proxy Mobile IPv6
--
--ID Filename: draft-sgundave-mip6-proxymip6-02.txt
+-I-D Filename: draft-sgundave-mip6-proxymip6-02.txt
++Relates:
 +Internet-Draft: "Proxy Mobile IPv6" (draft-sgundave-mip6-proxymip6-02)
-@@ -69,1 +66,1 @@
--number(s):USSN 10/425,151 claims priority to 60/372,655, publication
-+number(s): USSN 10/425,151 claims priority to 60/372,655, publication
-@@ -72,1 +69,1 @@
--Date(s) granted or applied for:April 29, 2003
-+Date(s) granted or applied for: April 29, 2003
-@@ -74,1 +71,1 @@
--Country:USA
-+Country: USA
-@@ -77,1 +74,0 @@
--
-@@ -89,1 +85,3 @@
+@@ -53,1 +51,2 @@
 -covered.
 +covered:
-+
 +No information submitted
-@@ -107,1 +105,3 @@
+@@ -64,3 +63,4 @@
+-Licensing information, comments, notes, or URL for further information
+-:
 -NOTE: The individual submitting this template represents and warrants
++Licensing information, comments, notes, or URL for further
++information:
 +No information submitted
-+
 +Note: The individual submitting this template represents and warrants
-@@ -112,1 +112,1 @@
+@@ -70,1 +70,1 @@
 -IETF Participant in Section III above)
 +the Contact Information above)
-@@ -130,0 +130,1 @@
+@@ -79,0 +79,2 @@
 +VIII. Other Notes:
-@@ -131,0 +132,3 @@
 +No information submitted
-+
-+
