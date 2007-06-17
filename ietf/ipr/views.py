@@ -60,17 +60,17 @@ def show(request, ipr_id=None):
             raise KeyError("Unexpected contact_type (%s) in ipr_contacts for ipr_id=%s" % (contact.contact_type, ipr.ipr_id))
     # do escaping and line-breaking here instead of in the template,
     # so that we can use the template for the form display, too.
-    ipr.p_notes = linebreaks(escape(ipr.p_notes))
-    ipr.discloser_identify = linebreaks(escape(ipr.discloser_identify))
+    ipr.notes = linebreaks(escape(ipr.notes))
+    ipr.document_sections = linebreaks(escape(ipr.document_sections))
     ipr.comments = linebreaks(escape(ipr.comments))
     ipr.other_notes = linebreaks(escape(ipr.other_notes))
 
     if ipr.licensing_option:
         ipr.licensing_option = dict(LICENSE_CHOICES)[ipr.licensing_option]
-    if ipr.selecttype:
-        ipr.selecttype = dict(SELECT_CHOICES)[ipr.selecttype]
-    if ipr.selectowned:
-        ipr.selectowned = dict(SELECT_CHOICES)[ipr.selectowned]
+    if ipr.is_pending:
+        ipr.is_pending = dict(SELECT_CHOICES)[ipr.is_pending]
+    if ipr.applies_to_all:
+        ipr.applies_to_all = dict(SELECT_CHOICES)[ipr.applies_to_all]
     return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list})
 
 def update(request, ipr_id=None):
@@ -224,7 +224,7 @@ def form(request):
 # ---- Helper functions ------------------------------------------------------
 
 def get_section_list(ipr):
-    if   ipr.old_ipr_url:
+    if   ipr.legacy_url_0:
         return section_table["legacy"]
     elif ipr.generic:
         #assert not ipr.third_party

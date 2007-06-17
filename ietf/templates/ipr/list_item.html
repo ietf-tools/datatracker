@@ -22,23 +22,23 @@
       </td>
    </tr>
    {% ifequal ipr.status 1 %}
-      {% if ipr.additional_old_title1 %}
+      {% if ipr.legacy_title_1 %}
 	 <tr>
 	    <td></td>
 	    <td></td>
 	    <td>
 	       <b>*</b>
-	       <a href="{{ ipr.additional_old_url1 }}">{{ ipr.additional_old_title1 }}</a>
+	       <a href="{{ ipr.legacy_url_1 }}">{{ ipr.legacy_title_1 }}</a>
 	    </td>
 	 </tr>
       {% endif %}
-      {% if ipr.additional_old_title2 %}
+      {% if ipr.legacy_title_2 %}
 	 <tr>
 	    <td></td>
 	    <td></td>
 	    <td>
 	       <b>*</b>
-	       <a href="{{ ipr.additional_old_url2 }}">{{ ipr.additional_old_title2 }}</a>
+	       <a href="{{ ipr.legacy_url_2 }}">{{ ipr.legacy_title_2 }}</a>
 	    </td>
 	 </tr>
       {% endif %}

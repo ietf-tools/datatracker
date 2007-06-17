@@ -23,12 +23,17 @@ SELECT_CHOICES = (
     ("1", 'YES'),
     ("2", 'NO'),
 )
-
+STATUS_CHOICES = (
+    ( 0, "Waiting for approval" ), 
+    ( 1, "Approved and Posted" ), 
+    ( 2, "Rejected by Administrator" ), 
+    ( 3, "Removed by Request" ), 
+)
 # not clear why this has both an ID and selecttype
 # Also not clear why a table for "YES" and "NO".
 class IprSelecttype(models.Model):
     type_id = models.AutoField(primary_key=True)
-    selecttype = models.IntegerField(unique=True)
+    is_pending = models.IntegerField(unique=True, db_column="selecttype")
     type_display = models.CharField(blank=True, maxlength=15)
     def __str__(self):
 	return self.type_display
@@ -50,14 +55,14 @@ class IprLicensing(models.Model):
 
 class IprDetail(models.Model):
     ipr_id = models.AutoField(primary_key=True)
-    document_title = models.CharField(blank=True, maxlength=255)
+    title = models.CharField(blank=True, db_column="document_title", maxlength=255)
 
     # Legacy information fieldset
-    old_ipr_url = models.CharField(blank=True, maxlength=255)
-    additional_old_title1 = models.CharField(blank=True, maxlength=255)
-    additional_old_url1 = models.CharField(blank=True, maxlength=255)
-    additional_old_title2 = models.CharField(blank=True, maxlength=255)
-    additional_old_url2 = models.CharField(blank=True, maxlength=255)
+    legacy_url_0 = models.CharField(blank=True, db_column="old_ipr_url", maxlength=255)
+    legacy_url_1 = models.CharField(blank=True, db_column="additional_old_url1", maxlength=255)
+    legacy_title_1 = models.CharField(blank=True, db_column="additional_old_title1", maxlength=255)
+    legacy_url_2 = models.CharField(blank=True, db_column="additional_old_url2", maxlength=255)
+    legacy_title_2 = models.CharField(blank=True, db_column="additional_old_title2", maxlength=255)
 
     # Patent holder fieldset
     legal_name = models.CharField("Legal Name", db_column="p_h_legal_name", maxlength=255)
@@ -72,15 +77,15 @@ class IprDetail(models.Model):
     rfc_number = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
     id_document_tag = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
     other_designations = models.CharField(blank=True, maxlength=255)
-    discloser_identify = models.TextField("Specific document sections covered", blank=True, maxlength=255, db_column='disclouser_identify')
+    document_sections = models.TextField("Specific document sections covered", blank=True, maxlength=255, db_column='disclouser_identify')
 
     # Patent Information fieldset
-    p_applications = models.TextField("Patent Applications", maxlength=255)
+    patents = models.TextField("Patent Applications", db_column="p_applications", maxlength=255)
     date_applied = models.CharField(maxlength=255)
     country = models.CharField(maxlength=100)
-    p_notes = models.TextField("Additional notes", blank=True)
-    selecttype = models.IntegerField("Unpublished Pending Patent Application", blank=True, choices=SELECT_CHOICES)
-    selectowned = models.IntegerField("Applies to all IPR owned by Submitter", blank=True, choices=SELECT_CHOICES)
+    notes = models.TextField("Additional notes", db_column="p_notes", blank=True)
+    is_pending = models.IntegerField("Unpublished Pending Patent Application", blank=True, choices=SELECT_CHOICES, db_column="selecttype")
+    applies_to_all = models.IntegerField("Applies to all IPR owned by Submitter", blank=True, choices=SELECT_CHOICES, db_column="selectowned")
 
     # Licensing Declaration fieldset
     #licensing_option = models.ForeignKey(IprLicensing, db_column='licensing_option')
@@ -101,37 +106,12 @@ class IprDetail(models.Model):
     generic = models.BooleanField()
     comply = models.BooleanField()
 
-    status = models.IntegerField(null=True, blank=True)
+    status = models.IntegerField(null=True, blank=True, choices=STATUS_CHOICES)
     submitted_date = models.DateField(blank=True)
     update_notified_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
 	return self.document_title
-    def selecttypetext(self):
-        if self.selecttype == "1":
-            return "YES"
-        else:
-            return "NO"
-    def selectownedtext(self):
-        if self.selectowned == "1":
-            return "YES"
-        else:
-            return "NO"
-#     def get_patent_holder_contact(self):
-#         try:
-#             return self.contact.filter(contact_type=1)[0]
-#         except:
-#             return None
-#     def get_ietf_contact(self):
-#         try:
-#             return self.contact.filter(contact_type=2)[0]
-#         except:
-#             return None
-#     def get_submitter(self):
-#         try:
-#             return self.contact.filter(contact_type=3)[0]
-#         except:
-#             return None
     def get_absolute_url(self):
         return "/ipr/ipr-%s" % self.ipr_id
     class Meta:

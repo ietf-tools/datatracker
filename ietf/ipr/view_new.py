@@ -17,7 +17,7 @@ from django.http import HttpResponseRedirect
 def ipr_detail_form_callback(field, **kwargs):
     if field.name == "licensing_option":
         return forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES), required=True)
-    if field.name in ["selecttype", "selectowned"]:
+    if field.name in ["is_pending", "applies_to_all"]:
         return forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
     if field.name in ["rfc_number", "id_document_tag"]:
         log(field.name)

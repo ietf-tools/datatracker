@@ -32,7 +32,7 @@
 	 Sections {% block legacy_sections %}I, II, and IV{% endblock %} of "The Patent Disclosure and Licensing Declaration Template 
 	 for {{ section_list.disclosure_type }} IPR Disclosures" have been completed for this IPR disclosure.
 	 Additional information may be available in the original submission.<br>
-	 See the <a href="{{ ipr.old_ipr_url }}">content of the original IPR disclosure</a>.<br>
+	 See the <a href="{{ ipr.legacy_url_0 }}">content of the original IPR disclosure</a>.<br>
       </font>
       {% endif %}
       {% if section_list.new_intro %}
@@ -41,12 +41,12 @@
 	 information are displayed.</font><br>
       {% endif %}
       {% if section_list.new_intro or section_list.legacy_intro %}
-	 {% if ipr.additional_old_title1 %}
-	   <font size="3"><a href="{{ ipr.additional_old_url1 }}">{{ ipr.additional_old_title1 }}</a></font><br>
+	 {% if ipr.legacy_title_1 %}
+	   <font size="3"><a href="{{ ipr.legacy_url_1 }}">{{ ipr.legacy_title_1 }}</a></font><br>
 	 {% endif %}
 
-	 {% if ipr.additional_old_title2 %}
-	   <font size="3"><a href="{{ ipr.additional_old_url2 }}">{{ ipr.additional_old_title2 }}</a></font><br>
+	 {% if ipr.legacy_title_2 %}
+	   <font size="3"><a href="{{ ipr.legacy_url_2 }}">{{ ipr.legacy_title_2 }}</a></font><br>
 	 {% endif %}
 
 	 {% for item in ipr.updates.all %}
@@ -286,7 +286,7 @@
 	       applications required to be disclosed by Section 6 of RFC 3979)	    
 	       </th>
 	    </tr>
-	    {% if ipr.p_applications or ipr.p_notes %}
+	    {% if ipr.patents or ipr.notes %}
 	    <tbody class="{% cycle row_parity %}">
 	       <tr>
 		  <td colspan="2"><i>
@@ -294,18 +294,18 @@
 		  please provide the following information:</i></td>
 	       </tr>
 	       <tr><td class="fixwidth">Patent, Serial, Publication, Registration,
-			 or Application/File number(s):	</td><td><b>{{ ipr.p_applications }}</b></td></tr>
+			 or Application/File number(s):	</td><td><b>{{ ipr.patents }}</b></td></tr>
 	    </tbody>
 	    <tr class="{% cycle row_parity %}"><td>Date(s) granted or applied for:	</td><td><b>{{ ipr.date_applied }}</b></td></tr>
 	    <tr class="{% cycle row_parity %}"><td>Country:				</td><td><b>{{ ipr.country }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td>Additional Notes:		</td><td><b>{{ ipr.p_notes }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td>Additional Notes:		</td><td><b>{{ ipr.notes }}</b></td></tr>
 	    <tr class="{% cycle row_parity %}">
 	       <td colspan="2">
 		  <i>
 		     B. Does this disclosure relate to an unpublished pending patent
 		     application?:
 		  </i>
-		  <b>{{ ipr.selecttype }}</b>
+		  <b>{{ ipr.is_pending }}</b>
 	       </td>
 	    </tr>
 	    <tbody class="{% cycle row_parity %}">	    
@@ -315,7 +315,7 @@
 			<i>C. Does this disclosure apply to all IPR owned by
 			the submitter?:
 			</i>
-			<b>{{ ipr.selectowned }}</b>
+			<b>{{ ipr.applies_to_all }}</b>
 		     </td>
 		  </tr>
 	       {% else %}
@@ -329,8 +329,8 @@
 			covered:</i>
 		     </td>
 		  </tr>
-		  {% if ipr.discloser_identify %}
-		  <tr class="{% cycle row_parity %}"><td class="fixwidth"></td><td><b>{{ ipr.discloser_identify }}</b></td></tr>
+		  {% if ipr.document_sections %}
+		  <tr class="{% cycle row_parity %}"><td class="fixwidth"></td><td><b>{{ ipr.document_sections }}</b></td></tr>
 		  {% else %}
 		  <tr class="{% cycle row_parity %}"><td class="fixwidth"></td><td></span><i>No information submitted</i></td></tr>
 		  {% endif %}
