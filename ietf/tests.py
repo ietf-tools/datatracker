@@ -195,7 +195,7 @@ class UrlTestCase(TestCase):
     def doRedirectsTest(self, lst):
         response_count = {}
         for codes, url, master in lst:
-            if "skipredir" in codes or "Skipredir" in codes:
+            if "skipredir" in codes or "Skipredir" in codes or "skipredirect" in codes:
                 print "Skipping %s" % (url)
 	    elif url and master:
 		testurl = master.replace('https://datatracker.ietf.org','')
