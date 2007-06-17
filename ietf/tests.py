@@ -102,52 +102,68 @@ def note(string):
     print now.strftime("         %Y-%m-%d_%H:%M"), "+%ds" % (now-prev_note_time).seconds
     prev_note_time = datetime.utcnow()
 
+def module_setup(module):
+    # get selected prefixes, if any
+    module.prefixes = os.environ.get("URLPREFIX", "").split()
+
+    # find test urls
+    module.testtuples = []
+    module.testurls = []
+    module.diffchunks = []
+    for root, dirs, files in os.walk(settings.BASE_DIR):
+        if "testurl.list" in files:
+            module.testtuples += read_testurls(root+"/testurl.list")
+        if "testurls.list" in files:
+            module.testtuples += read_testurls(root+"/testurls.list")
+    module.testurls = [ tuple[1] for tuple in module.testtuples ]
+
+    # find diff chunks
+    testdir = os.path.abspath(settings.BASE_DIR+"/../test/diff/")
+    for item in os.listdir(testdir):
+        path = testdir + "/" + item
+        if item.startswith("generic-") and os.path.isfile(path):
+            chunk = filetext(path).strip()
+            chunk = re.sub(r"([\[\]().|+*?])", r"\\\1", chunk)
+            # @@ -27,0 \+23,1 @@
+            chunk = re.sub(r"(?m)^@@ -\d+,(\d+) \\\+\d+,(\d+) @@$", r"@@ -\d+,\1 \+\d+,\2 @@", chunk)
+            #print "*** Installing diff chunk:"
+            #print chunk
+            module.diffchunks.append(chunk)
+
+    # extract application urls:
+    module.patterns = get_patterns(ietf.urls)
+
+    # apply prefix filters
+    module.patterns = [ pattern for pattern in module.patterns for prefix in module.prefixes if re.match(prefix, pattern) ]
+    module.testtuples = [ tuple for tuple in module.testtuples for prefix in module.prefixes if re.match(prefix, tuple[1][1:]) ]
+
+    # Use the default database for the url tests, instead of the test database
+    module.testdb = settings.DATABASE_NAME
+    connection.close()
+    settings.DATABASE_NAME = startup_database
+    # Install updated fixtures:
+    # Also has the side effect of creating the database connection.
+    management.syncdb(verbosity=1, interactive=False)
+    connection.close()
+    settings.DATABASE_NAME = module.testdb
+    connection.cursor()
+
+
+
 class UrlTestCase(TestCase):
+
+    def __init__(self, *args, **kwargs):
+        TestCase.__init__(self, *args, **kwargs)
+
+        
     def setUp(self):
         from django.test.client import Client
         self.client = Client()
 
-        # get selected prefixes, if any
-        self.prefixes = os.environ.get("URLPREFIX", "").split()
-
-        # find test urls
-        self.testtuples = []
-        self.testurls = []
-        self.diffchunks = []
-        for root, dirs, files in os.walk(settings.BASE_DIR):
-            if "testurl.list" in files:
-                self.testtuples += read_testurls(root+"/testurl.list")
-            if "testurls.list" in files:
-                self.testtuples += read_testurls(root+"/testurls.list")
-        self.testurls = [ tuple[1] for tuple in self.testtuples ]
-
-        # find diff chunks
-        testdir = os.path.abspath(settings.BASE_DIR+"/../test/diff/")
-        for item in os.listdir(testdir):
-            path = testdir + "/" + item
-            if item.startswith("generic-") and os.path.isfile(path):
-                chunk = filetext(path).strip()
-                chunk = re.sub(r"([\[\]().|+*?])", r"\\\1", chunk)
-                # @@ -27,0 \+23,1 @@
-                chunk = re.sub(r"(?m)^@@ -\d+,(\d+) \\\+\d+,(\d+) @@$", r"@@ -\d+,\1 \+\d+,\2 @@", chunk)
-                #print "*** Installing diff chunk:"
-                #print chunk
-                self.diffchunks.append(chunk)
-
-        # extract application urls:
-        self.patterns = get_patterns(ietf.urls)
-
-        # apply prefix filters
-        self.patterns = [ pattern for pattern in self.patterns for prefix in self.prefixes if re.match(prefix, pattern) ]
-        self.testtuples = [ tuple for tuple in self.testtuples for prefix in self.prefixes if re.match(prefix, tuple[1][1:]) ]
-
-        # Use the default database for the url tests, instead of the test database
         self.testdb = settings.DATABASE_NAME
         connection.close()
         settings.DATABASE_NAME = startup_database
-        # Install updated fixtures:
-        # Also has the side effect of creating the database connection.
-        management.syncdb(verbosity=1, interactive=False)
+        connection.cursor()
         
     def tearDown(self):
         # Revert to using the test database
@@ -157,16 +173,16 @@ class UrlTestCase(TestCase):
         
     def testCoverage(self):
         covered = []
-        for codes, testurl, goodurl in self.testtuples:
-            for pattern in self.patterns:
+        for codes, testurl, goodurl in module.testtuples:
+            for pattern in module.patterns:
                 if re.match(pattern, testurl[1:]):
                     covered.append(pattern)
         # We should have at least one test case for each url pattern declared
         # in our Django application:
         #self.assertEqual(set(patterns), set(covered), "Not all the
         #application URLs has test cases.  The missing are: %s" % (list(set(patterns) - set(covered))))        
-        if not set(self.patterns) == set(covered):
-            missing = list(set(self.patterns) - set(covered))
+        if not set(module.patterns) == set(covered):
+            missing = list(set(module.patterns) - set(covered))
             print "Not all the application URLs has test cases, there are %d missing." % (len(missing))
             print "The ones missing are: "
             for pattern in missing:
@@ -270,7 +286,7 @@ class UrlTestCase(TestCase):
                                 contextlines = 0
                                 difflist = list(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
                                 diff = "\n".join(difflist)
-                                for chunk in self.diffchunks:
+                                for chunk in module.diffchunks:
                                     #print "*** Checking for chunk:", chunk[:24]
                                     while re.search(chunk, diff):
                                         #print "*** Removing chunk of %s lines" % (len(chunk.split("\n")))
@@ -321,20 +337,20 @@ class UrlTestCase(TestCase):
 
     def testUrlsList(self):
         note("\nTesting specified URLs:")
-        self.doUrlsTest(self.testtuples)
+        self.doUrlsTest(module.testtuples)
 
     def testRedirectsList(self):
 	note("\nTesting specified Redirects:")
-	self.doRedirectsTest(self.testtuples)
+	self.doRedirectsTest(module.testtuples)
 
     def testUrlsFallback(self):
         note("\nFallback: Test access to URLs which don't have an explicit test entry:")
         lst = []
-        for pattern in self.patterns:
+        for pattern in module.patterns:
             if pattern.startswith("^") and pattern.endswith("$"):
                 url = "/"+pattern[1:-1]
                 # if there is no variable parts in the url, test it
-                if re.search("^[-a-z0-9./_]*$", url) and not url in self.testurls and not url.startswith("/admin/"):
+                if re.search("^[-a-z0-9./_]*$", url) and not url in module.testurls and not url.startswith("/admin/"):
                     lst.append((["200"], url, None))
                 else:
                     #print "No fallback test for %s" % (url)
@@ -343,3 +359,9 @@ class UrlTestCase(TestCase):
                 lst.append((["Skip"], pattern, None))
             
         self.doUrlsTest(lst)
+
+
+class Module:
+    pass
+module = Module()
+module_setup(module)
