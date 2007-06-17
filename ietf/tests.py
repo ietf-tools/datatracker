@@ -98,8 +98,8 @@ def note(string):
     global prev_note_time
     """Like a print function, but adds a leading timestamp line"""
     now = datetime.utcnow()
-    print "Time", now.strftime("%Y-%m-%d_%H:%M"), "+%ds" % (now-prev_note_time).seconds
     print string
+    print now.strftime("         %Y-%m-%d_%H:%M"), "+%ds" % (now-prev_note_time).seconds
     prev_note_time = datetime.utcnow()
 
 class UrlTestCase(TestCase):
@@ -235,10 +235,11 @@ class UrlTestCase(TestCase):
                         #print "Fetching", master, "...",
                         mfile = urllib.urlopen(master)
                         goodhtml = mfile.read()
-                    except urllib.URLError, e:
-                        note("Failed retrieving master text for comparison: %s" % e)
-                    try:
                         mfile.close()
+                        note("     200 %s" % (master))
+                    except urllib.URLError, e:
+                        note("     %s %s" % (e.code, e.url))
+                    try:
                         if goodhtml and response.content:
                             if "sort" in codes:
                                 def sorted(l):
