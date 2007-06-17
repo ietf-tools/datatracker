@@ -177,13 +177,13 @@ def new(request, type):
         data["comply"] = "1"
 
         if type == "general":
-            data["document_title"] = """%(p_h_legal_name)s's General License Statement""" % data
+            data["document_title"] = """%(legal_name)s's General License Statement""" % data
         if type == "specific":
             data["ipr_summary"] = get_ipr_summary(data)
-            data["document_title"] = """%(p_h_legal_name)s's Statement about IPR related to %(ipr_summary)s""" % data
+            data["document_title"] = """%(legal_name)s's Statement about IPR related to %(ipr_summary)s""" % data
         if type == "third-party":
             data["ipr_summary"] = get_ipr_summary(data)
-            data["document_title"] = """%(submitter)s's Statement about IPR related to %(ipr_summary)s belonging to %(p_h_legal_name)s""" % data
+            data["document_title"] = """%(submitter)s's Statement about IPR related to %(ipr_summary)s belonging to %(legal_name)s""" % data
         
         for src in ["hold", "ietf"]:
             if "%s_contact_is_submitter" % src in data:

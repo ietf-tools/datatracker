@@ -60,7 +60,7 @@ class IprDetail(models.Model):
     additional_old_url2 = models.CharField(blank=True, maxlength=255)
 
     # Patent holder fieldset
-    p_h_legal_name = models.CharField("Legal Name", maxlength=255)
+    legal_name = models.CharField("Legal Name", db_column="p_h_legal_name", maxlength=255)
 
     # Patent Holder Contact fieldset
     # self.contacts.filter(contact_type=1)
