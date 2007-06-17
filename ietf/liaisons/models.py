@@ -68,7 +68,7 @@ class LiaisonDetail(models.Model):
 	    pass
 	try:
 	    acronym = Acronym.objects.get(pk=self.from_id)
-	    if acronym.areas_set.count():
+	    if acronym.area_set.count():
 		type = "AREA"
 	    else:
 		type = "WG"
