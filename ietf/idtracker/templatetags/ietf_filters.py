@@ -140,7 +140,7 @@ def rfcspace(string):
         return string
 
 @register.filter(name='rfcnospace')
-def rfcspace(string):
+def rfcnospace(string):
     """
     If the string is an RFC designation, and does have
     a space between 'RFC' and the rfc-number, remove it.
