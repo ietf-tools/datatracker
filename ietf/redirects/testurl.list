@@ -1,0 +1,4 @@
+skip	/cgi-bin/
+skip	/public/
+skip	/public/desc.cgi
+
