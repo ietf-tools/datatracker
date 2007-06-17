@@ -23,7 +23,7 @@ def run_tests(module_list, verbosity=1, extra_tests=[]):
     # during the search for a 'tests' module ...
     return django.test.simple.run_tests(module_list, verbosity, extra_tests)
 
-def reduce(html, pre=False, fill=True):
+def reduce_text(html, pre=False, fill=True):
     if html.count("<li>") > 5*html.count("</li>"):
         html = html.replace("<li>", "</li><li>")
     html = re.sub(r"(?i)(RFC) (\d+)", r"\1\2", html) # ignore "RFC 1234" vs. "RFC1234" diffs
@@ -149,8 +149,6 @@ def module_setup(module):
     settings.DATABASE_NAME = module.testdb
     connection.cursor()
 
-
-
 class UrlTestCase(TestCase):
 
     def __init__(self, *args, **kwargs):
@@ -226,6 +224,7 @@ class UrlTestCase(TestCase):
                     response_count[res] = 0
                 response_count[res] += 1
         if response_count:
+            print ""
             note("Response count:")
         for res in response_count:
             ind, code = res
@@ -272,15 +271,15 @@ class UrlTestCase(TestCase):
                                 def sorted(l):
                                     l.sort()
                                     return l
-                                testtext = sorted(reduce(response.content, fill=False))
+                                testtext = sorted(reduce_text(response.content, fill=False))
                                 while testtext and not testtext[0]:
                                     del testtext[0]
-                                goodtext = sorted(reduce(goodhtml, fill=False))
+                                goodtext = sorted(reduce_text(goodhtml, fill=False))
                                 while goodtext and not goodtext[0]:
                                     del goodtext[0]
                             else:
-                                testtext = reduce(response.content)
-                                goodtext = reduce(goodhtml)
+                                testtext = reduce_text(response.content)
+                                goodtext = reduce_text(goodhtml)
                             if testtext == goodtext:
                                 note("OK   cmp %s" % (url))
                             else:
@@ -326,6 +325,7 @@ class UrlTestCase(TestCase):
             else:
                 pass
         if response_count:
+            print ""
             note("Response count:")
         for res in response_count:
             ind, code = res
