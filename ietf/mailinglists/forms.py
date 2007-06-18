@@ -44,9 +44,9 @@ class ListReqStep1(forms.Form):
 	('movenon', 'Move existing non-WG email list to selected domain above'),
 	('closenon', 'Close existing non-WG email list at selected domain above'),
 	), widget=forms.RadioSelect())
-    group = forms.ModelChoiceField(queryset=IETFWG.objects.all().filter(status=IETFWG.ACTIVE).select_related(depth=1).order_by('acronym.acronym'), required=False, empty_label="-- Select Working Group")
+    group = forms.ModelChoiceField(queryset=IETFWG.objects.all().filter(status=IETFWG.ACTIVE).select_related(depth=1).order_by('acronym.acronym'), required=False, empty_label="--Select Working Group")
     domain_name = forms.ChoiceField(choices=DOMAIN_CHOICES, required=False, widget = forms.Select(attrs={'onChange': 'set_domain(this)'}), initial='ietf.org')
-    list_to_close = forms.ModelChoiceField(queryset=ImportedMailingList.objects.all(), required=False, empty_label="-- Select List To Close")
+    list_to_close = forms.ModelChoiceField(queryset=ImportedMailingList.objects.all(), required=False, empty_label="--Select Mailing List")
     def mail_type_fields(self):
 	field = self['mail_type']
 	# RadioSelect() doesn't pass its attributes through to the <input>
