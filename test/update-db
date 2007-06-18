@@ -14,19 +14,17 @@ function die() { log "$*; terminating."; echo "$program: Error: $*" 1>&2; exit 1
 
 
 for dir in /var/local /var/state /var/run /var/tmp; do
-    [ -d $dir -a -w $dir ] && state=$dir/$program
+    [ -d $dir -a -w $dir ] && state=$dir/$program && break
 done
 [ "$state" ] || die "Couldn't find a directory to keep state in."
 [ -d "$state" ] || mkdir $state
 [ "$state" ] || die "Couldn't create state dir."
 
 
-for dir in $DBLOCK /var/local /var/state /var/run /var/tmp; do
-    [ -d $dir -a -w $dir ] && lock=$dir/$program
+for dir in $DBLOCK /var/lock /var/state /var/run /var/tmp; do
+    [ -d $dir -a -w $dir ] && lock=$dir/$program && break
 done
 [ "$lock" ] || die "Couldn't find a directory to keep lock in."
-[ -d "$lock" ] || mkdir $lock
-[ "$lock" ] || die "Couldn't create lock dir."
 
 
 [ "$DBDUMP" ] || DBDUMP="$1"
