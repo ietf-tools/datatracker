@@ -2,13 +2,13 @@
                 <tr bgcolor="#BBFFBB"><td>Presentation files received, agenda received, minutes received</td></tr>
           {% else %}
             {% if not wg.agenda_file and not wg.minute_file and not wg.slides %}
-              <tr bgcolor="#ff8888"><td>No presendtatio files, no agenda, no minutes</td></tr>
+              <tr bgcolor="#ff8888"><td>No presentation files, no agenda, no minutes</td></tr>
             {% else %}
               {% if not wg.agenda_file and wg.minute_file and not wg.slides %}
                 <tr bgcolor="ffffbb"><td>No presentation files, no agenda, minutes received</td></tr>
               {% else %}
                 {% if wg.agenda_file and not wg.minute_file and not wg.slides %}
-                   <tr bgcolor="ffffbb"><td>No presentation files, no minute, agenda received</td></tr>
+                   <tr bgcolor="ffffbb"><td>No presentation files, agenda received, no minutes</td></tr>
                 {% else %}
                   {% if wg.agenda_file and wg.minute_file and not wg.slides %}
                     <tr bgcolor="ffffbb"><td>No presentation files, agenda received, minutes received</td></tr>
