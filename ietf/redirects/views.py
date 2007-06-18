@@ -12,9 +12,33 @@ def redirect(request, path="", script=""):
 	raise Http404
     url = "/" + redir.url + "/"
     (rest, remove) = (redir.rest, redir.remove)
+    remove_args = []
     cmd = None
-    try:
-	cmd = redir.commands.all().get(command=request.REQUEST['command'])
+    #
+    # First look for flag items, stored in the database
+    # as a command with a leading "^".
+    for flag in redir.commands.all().filter(command__startswith='^'):
+	fc = flag.command[1:].split("^")
+	if len(fc) > 1:
+	    if request.REQUEST.get('command') != fc[1]:
+		continue
+	if request.REQUEST.has_key(fc[0]):
+	    remove_args.append(fc[0])
+	    if int(request.REQUEST[fc[0]]):
+		cmd = flag
+	    break
+    #
+    # If that search didn't result in a match, then look
+    # for an exact match for the command= parameter.
+    if cmd is None:
+	try:
+	    cmd = redir.commands.all().get(command=request.REQUEST['command'])
+	except Command.DoesNotExist:
+	    pass	# it's ok, there's no more-specific request.
+	except KeyError:
+	    pass	# it's ok, request didn't have 'command'.
+    if cmd is not None:
+	remove_args.append('command')
 	if cmd.url:
 	    rest = cmd.url + "/"
 	else:
@@ -24,10 +48,6 @@ def redirect(request, path="", script=""):
 	    remove = cmd.suffix.remove
 	else:
 	    remove = ""
-    except Command.DoesNotExist:
-	pass	# it's ok, there's no more-specific request.
-    except KeyError:
-	pass	# it's ok, request didn't have 'command'.
     try:
 	url += rest % request.REQUEST
 	url += "/"
@@ -39,15 +59,18 @@ def redirect(request, path="", script=""):
     url = re.sub(r'/+', '/', url)
     if remove:
 	url = re.sub(re.escape(remove) + "/?$", "", url)
+    # If there is a dot in the last url segment, remove the
+    # trailing slash.  This is basically the inverse of the
+    # APPEND_SLASH middleware.
+    if '/' in url and '.' in url.split('/')[-2]:
+	url = url.rstrip('/')
     # Copy the GET arguments, remove all the ones we were
     # expecting and if there are any left, add them to the URL.
     get = request.GET.copy()
-    for arg in re.findall(r'%\(([^)]+)\)', rest):
+    remove_args += re.findall(r'%\(([^)]+)\)', rest)
+    for arg in remove_args:
 	if get.has_key(arg):
 	    get.pop(arg)
-    # If we found a command in the database, there's no need to pass it along.
-    if cmd and get.has_key('command'):
-	get.pop('command')
     if get:
 	url += '?' + get.urlencode()
     return HttpResponsePermanentRedirect(url)
