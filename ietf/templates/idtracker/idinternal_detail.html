@@ -30,9 +30,11 @@
               <td>
                 <div class="largefont3">
 		  {{ object.document.displayname_with_link }}
-		  {% ifnotequal object.document.status.status "Active" %}
-		    ({{ object.document.status.status }})
-		  {% endifnotequal %}
+		  {% ifequal object.document.doctype "Draft" %}
+		    {% ifnotequal object.document.status.status "Active" %}
+		      ({{ object.document.status.status }})
+		    {% endifnotequal %}
+		  {% endifequal %}
 		  <font color="red">
 		  {% if object.via_rfc_editor %}
 		    (Independent submission via RFC Editor)
