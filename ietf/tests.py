@@ -86,6 +86,15 @@ def read_testurls(filename):
     file.close()
     return tuples
 
+def get_testurls():
+    testtuples = []
+    for root, dirs, files in os.walk(settings.BASE_DIR):
+        if "testurl.list" in files:
+            testtuples += read_testurls(root+"/testurl.list")
+        if "testurls.list" in files:
+            testtuples += read_testurls(root+"/testurls.list")
+    return testtuples
+
 def filetext(filename):
     file = open(filename)
     chunk = file.read()
@@ -110,11 +119,7 @@ def module_setup(module):
     module.testtuples = []
     module.testurls = []
     module.diffchunks = []
-    for root, dirs, files in os.walk(settings.BASE_DIR):
-        if "testurl.list" in files:
-            module.testtuples += read_testurls(root+"/testurl.list")
-        if "testurls.list" in files:
-            module.testtuples += read_testurls(root+"/testurls.list")
+    module.testtuples = get_testurls()
     module.testurls = [ tuple[1] for tuple in module.testtuples ]
 
     # find diff chunks

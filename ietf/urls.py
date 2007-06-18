@@ -3,6 +3,7 @@ from django.conf.urls.defaults import patterns, include, handler404, handler500
 from ietf.iesg.feeds import IESGMinutes
 from ietf.idtracker.feeds import DocumentComments
 from ietf.ipr.feeds import LatestIprDisclosures
+import ietf.utils.views
 import ietf.views
 
 feeds = {
@@ -30,4 +31,10 @@ urlpatterns = patterns('',
 
     # Uncomment this for admin:
      (r'^admin/', include('django.contrib.admin.urls')),
+
+     # Uncomment this for review pages:
+     (r'^review/$', 'ietf.utils.views.review'),
+     (r'^review/(?P<page>[0-9]+)/$', 'ietf.utils.views.review'),
+     (r'^review/top/(?P<page>[0-9]+)/$', 'ietf.utils.views.top'),
+
 )
