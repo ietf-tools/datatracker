@@ -201,6 +201,8 @@ class ListReqWizard(wizard.Wizard):
 	return templates
     def render_template(self, *args, **kwargs):
 	self.extra_context['mlist_known'] = self.mlist_known
+	if self.step > 0:
+	    self.extra_context['form0'] = self.clean_forms[0]
 	if self.step > self.main_step:
 	    self.extra_context['main_form'] = self.clean_forms[self.main_step]
 	    self.extra_context['requestor_is_approver'] = self.requestor_is_approver
