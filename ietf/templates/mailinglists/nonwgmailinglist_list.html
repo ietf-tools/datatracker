@@ -64,7 +64,7 @@ page.</p>
 <td><a href="{{ list.list_url|add_scheme }}">{% firstof list.list_name list.list_url %}</a></td>
 <td>{{ list.admin|make_one_per_line }}</td>
 <td>{{ list.purpose|truncatewords:"20"|escape }}</td>
-<td>{{ list.area_acronym }}</td>
+<td>{{ list.area }}</td>
 <td>{% if list.subscribe_url %}
 {# There are lots of non-urls in the database #}
 {{ list.subscribe_url|link_if_url }}</a>
