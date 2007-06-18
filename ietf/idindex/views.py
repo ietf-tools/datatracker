@@ -96,21 +96,30 @@ def showdocs(request, cat=None, sortby=None):
 def search(request):
     form = IDIndexSearchForm()
     t = loader.get_template('idindex/search.html')
-    # if there's a post, do the search and supply results to the template
-    # XXX should handle GET too
-    if request.method == 'POST':
-	qdict = { 'filename': 'filename__icontains',
-		  'id_tracker_state_id': 'idinternal__cur_state',
-		  'wg_id': 'group',
-		  'status_id': 'status',
-		  'last_name': 'authors__person__last_name__icontains',
-		  'first_name': 'authors__person__first_name__icontains',
-		}
-	q_objs = [Q(**{qdict[k]: request.POST[k]})
+    # if there's a query, do the search and supply results to the template
+    searching = False
+    qdict = { 'filename': 'filename__icontains',
+	      'id_tracker_state_id': 'idinternal__cur_state',
+	      'wg_id': 'group',
+	      'status_id': 'status',
+	      'last_name': 'authors__person__last_name__icontains',
+	      'first_name': 'authors__person__first_name__icontains',
+	    }
+    for key in qdict.keys() + ['other_group']:
+	if key in request.REQUEST:
+	    searching = True
+    if searching:
+	# '0' and '-1' are flag values for "any"
+	# in the original .cgi search page.
+	# They are compared as strings because the
+	# query dict is always strings.
+	q_objs = [Q(**{qdict[k]: request.REQUEST[k]})
 		for k in qdict.keys()
-		if request.POST[k] != '']
+		if request.REQUEST.get(k, '') != '' and
+		   request.REQUEST[k] != '0' and
+		   request.REQUEST[k] != '-1']
 	try:
-	    other = orgs_dict[request.POST['other_group']]
+	    other = orgs_dict[request.REQUEST['other_group']]
 	    q_objs += [orl(
 		[Q(filename__istartswith="draft-%s-" % p)|
 		 Q(filename__istartswith="draft-ietf-%s-" % p)
