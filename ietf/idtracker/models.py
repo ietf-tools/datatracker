@@ -720,7 +720,7 @@ class IETFWG(models.Model):
     def active_drafts(self):
 	return self.group_acronym.internetdraft_set.all().filter(status__status="Active")
     def choices():
-	return [(wg.group_acronym_id, wg.group_acronym.acronym) for wg in IETFWG.objects.all().select_related().order_by('acronym.acronym')]
+	return [(wg.group_acronym_id, wg.group_acronym.acronym) for wg in IETFWG.objects.all().filter(group_type__type='WG').select_related().order_by('acronym.acronym')]
     choices = staticmethod(choices)
     def area_acronym(self):
         return AreaGroup.objects.filter(group_acronym_id=self.group_acronym_id).area 
