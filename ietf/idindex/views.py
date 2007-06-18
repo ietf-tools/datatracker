@@ -18,7 +18,7 @@ def wglist(request, wg=None):
 	    )
     else:
 	queryset = IETFWG.objects.filter(group_acronym__acronym__istartswith=wg)
-    queryset = queryset.filter(group_type__type='WG').select_related().order_by('g_status.status', 'acronym.acronym')
+    queryset = queryset.filter(group_type__type='WG').select_related().order_by('status_id', 'acronym.acronym')
     return object_list(request, queryset=queryset, template_name='idindex/wglist.html', allow_empty=True, extra_context=base_extra)
 
 def wgdocs(request, **kwargs):
@@ -57,7 +57,7 @@ def otherdocs(request, cat=None):
 	orl([Q(filename__istartswith="draft-%s-" % p)|
 	     Q(filename__istartswith="draft-ietf-%s-" % p)
 		for p in org.get('prefixes', [ org['key'] ])]))
-    queryset = queryset.order_by('filename')
+    queryset = queryset.order_by('status_id','filename')
     extra = base_extra
     extra['category'] = cat
     return object_list(request, queryset=queryset, template_name='idindex/otherdocs.html', allow_empty=True, extra_context=extra)
@@ -127,7 +127,7 @@ def search(request):
 	except KeyError:
 	    pass	# either no other_group arg or no orgs_dict entry
 	matches = InternetDraft.objects.all().filter(*q_objs)
-	matches = matches.order_by('filename')
+	matches = matches.order_by('status_id', 'filename')
 	searched = True
     else:
 	matches = None
@@ -167,18 +167,11 @@ def related_docs(startdoc):
     def handle(otherdoc,status,doc,skip=(0,0,0)):
         new = (otherdoc, status, doc)
     	if otherdoc in processed:
-            #print "skipping (%s,%s,%s) because otherdoc has been processed" % (new)
 	    return
-	#if new not in related:
-	if True: #otherdoc not in processed:
-	    related.append(new)
-	if otherdoc not in processed: # now simply redundant
-	    process(otherdoc,skip)
+	related.append(new)
+	process(otherdoc,skip)
 
     def process(doc, skip=(0,0,0)):
-	#XXX
-	skip = (0,0,0)
-        #print "doc = %s skip = %s" % (doc,skip)
 	processed.append(doc)
 	if type(doc) == InternetDraft:
 	    if doc.replaced_by_id != 0 and not(skip[0]):
@@ -188,21 +181,29 @@ def related_docs(startdoc):
 		    handle(replaces, "that was replaced by", doc, (1,0,0))
 	    if doc.rfc_number != 0 and not(skip[0]):
 		# should rfc be an FK in the model?
-		handle(Rfc.objects.get(rfc_number=doc.rfc_number), "which came from", doc, (1,0,0))
+		try:
+		    handle(Rfc.objects.get(rfc_number=doc.rfc_number), "which came from", doc, (1,0,0))
+		# In practice, there are missing rows in the RFC table.
+		except Rfc.DoesNotExist:
+		    pass
 	if type(doc) == Rfc:
 	    if not(skip[0]):
 		try:
 		    draft = InternetDraft.objects.get(rfc_number=doc.rfc_number)
-		    #handle(doc, "which came from", draft, backwards=True)
 		    handle(draft, "that was published as", doc, (0,0,1))
 		except InternetDraft.DoesNotExist:
 		    pass
+		# The table has multiple documents published as the same RFC.
+		# This raises an AssertionError because using get
+		# presumes there is exactly one.
+		except AssertionError:
+		    pass
 	    if not(skip[1]):
 		for obsoleted_by in doc.updated_or_obsoleted_by.all():
-		    handle(obsoleted_by.rfc, "that %s" % obsoleted_by.action.lower(), doc, (0,0,1))
+		    handle(obsoleted_by.rfc, "that %s" % obsoleted_by.action.lower(), doc)
 	    if not(skip[2]):
 		for obsoletes in doc.updates_or_obsoletes.all():
-		    handle(obsoletes.rfc_acted_on, "that was %s by" % obsoletes.action.lower().replace("tes", "ted"), doc, (0,1,0))
+		    handle(obsoletes.rfc_acted_on, "that was %s by" % obsoletes.action.lower().replace("tes", "ted"), doc)
 
     process(startdoc, (0,0,0))
     return related
