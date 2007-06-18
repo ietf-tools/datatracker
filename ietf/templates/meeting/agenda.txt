@@ -19,7 +19,7 @@ Updated As of : {% now "F j, Y" %}
 {% regroup object_list by day_id as days %}
 {% for day in days %}
 <pre>
-{{ day.list.0.meeting_date|date:"l, F j, Y" }}
+{{ day.list.0.meeting_date|date:"l"|upper }}, {{ day.list.0.meeting_date|date:"F j, Y" }}
 {% if day.list.0.reg_info %}{{ day.list.0.reg_info }} - {{ meetingvenue_info.reg_area_name }}{% endif %}
 {% ifequal day.list.0.day_id "5" %}{{ day.list.0.fbreak_info }} - {{ meetingvenue_info.break_area_name }}{% else %}{{ day.list.0.morning_br_info }} - {{ meetingvenue_info.break_area_name }}{% endifequal %}
 </pre>
