@@ -24,9 +24,12 @@ def myfields(f):
 def search(request):
     # for compatability with old tracker form, which has
     #  "all substates" = 6.
-    args = request.REQUEST
+    args = request.GET.copy()
     if args.get('sub_state_id', '') == '6':
-	args['sub_state_id'] = '0'
+	args['sub_state_id'] = ''
+    # "job_owner" of "0" means "All/Any"
+    if args.get('search_job_owner', '') == '0':
+	args['search_job_owner'] = ''
     form = IDSearch(args)
     # if there's a post, do the search and supply results to the template
     searching = False
