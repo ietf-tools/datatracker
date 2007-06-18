@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
+{% load humanize %}
 <!DOCTYPE html
 	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US"
-xml:lang="en-US"><head><title>Agenda of the IETF {{ meeting_num }}</title>
+xml:lang="en-US"><head><title>Agenda of the {{ meeting_num|ordinal }} IETF Meeting</title>
 </head><body><p>
 <pre>
-{% filter center:72 %}Agenda of the IETF {{ meeting_num }} Meeting{% endfilter %}
-{% filter center:72 %}{{ meeting_info.start_date|date:"F j, Y" }} - {{ meeting_info.end_date|date:"F j, Y" }}{% endfilter %}
+{% filter center:72 %}Agenda of the {{ meeting_num|ordinal }} IETF Meeting{% endfilter %}
+{% filter center:72 %}{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date|date:"F" meeting_info.end_date|date:"F" %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }}{% endfilter %}
 
 Updated As of : {% now "F j, Y" %}
 
-{{ meeting_info.start_date|date:"l, F j, Y" }}
+{{ meeting_info.start_date|date:"l"|upper }}, {{ meeting_info.start_date|date:"F j, Y" }}
 {{ nonsession_info.0.time_desc }} {{ nonsession_info.0.non_session_ref }} - {{ meetingvenue_info.reg_area_name }}
 {% for item in qs_sun %}{{ item.sched_time_id1.time_desc }} {{ item.acronym_name }} - {{ item.sched_room_id1.room_name }}
 {% endfor %}</pre>

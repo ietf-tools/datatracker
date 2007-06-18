@@ -1,12 +1,13 @@
 {% extends "base.html" %}
-{% block title %} Meeting Agenda of IETF {{ meeting_num }}  {% endblock %}
+{% load humanize %}
+{% block title %} Meeting Agenda of the {{ meeting_num|ordinal }} IETF Meeting{% endblock %}
 {% block body_attributes %}background="http://www.ietf.org/meetings/peachbkg.gif"{% endblock %}
 {% block content %}
 
 <center> 
-<strong> Agenda of the {{ meeting_num }}th IETF Meeting </strong> <br/> 
-<strong> {{ meeting_info.start_date|date:"F j, Y" }} - {{ meeting_info.end_date|date:"F j, Y" }} </strong><br />
-Updated As of : {% now "F j, Y" %}<br />
+<strong> Agenda of the {{ meeting_num|ordinal }} IETF Meeting </strong> <br/> 
+<strong>{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date|date:"F" meeting_info.end_date|date:"F" %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }} </strong><br />
+Updated As of {% now "F j, Y" %}<br />
 </center> 
 
 <a href="http://www3.ietf.org//meetings/agenda_{{meeting_num}}.txt"> Text Format of the Agenda </a> <br />
@@ -14,7 +15,7 @@ Updated As of : {% now "F j, Y" %}<br />
 *** Click on an acronym of the group to get a charter page *** <br />
 *** Click on a name of the group to get a meeting agenda *** <br />
 </P>
-<p><b>{{ meeting_info.start_date|date:"l, F j, Y" }}</b><br>
+<p><b>{{ meeting_info.start_date|date:"l"|upper }}, {{ meeting_info.start_date|date:"F j, Y" }}</b><br>
 {{ nonsession_info.0.time_desc }} {{ nonsession_info.0.non_session_ref }} - {{ meetingvenue_info.reg_area_name }}
 <br>
 {% for item in qs_sun %}
@@ -23,7 +24,7 @@ Updated As of : {% now "F j, Y" %}<br />
 <br>
 {% regroup object_list by day_id as days %}
 {% for day in days %}
-   <b>{{ day.list.0.meeting_date|date:"l, F j, Y" }} </b><br>
+   <b>{{ day.list.0.meeting_date|date:"l"|upper }}, {{ day.list.0.meeting_date|date:"F j, Y" }} </b><br>
    {% if day.list.0.reg_info %}{{ day.list.0.reg_info }} - {{ meetingvenue_info.reg_area_name }} <br>{% endif %}
    {% ifequal day.list.0.day_id "5" %}
    {{ day.list.0.fbreak_info }} - {{ meetingvenue_info.break_area_name }} <br>
