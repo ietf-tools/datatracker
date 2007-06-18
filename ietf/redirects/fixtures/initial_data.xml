@@ -213,7 +213,7 @@
   <object pk="36" model="redirects.redirect">
     <field type="CharField" name="cgi">public/meeting_materials.cgi</field>
     <field type="CharField" name="url">meeting</field>
-    <field type="CharField" name="rest">%(meeting_num)s/materials</field>
+    <field type="CharField" name="rest">%(meeting_num)s/materials.html</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="4" model="redirects.command">
