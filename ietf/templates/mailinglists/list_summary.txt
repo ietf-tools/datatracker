@@ -23,7 +23,7 @@ Welcome message for initial subscriber(s) (optional):
 {{ list.welcome_message }}
 
 Welcome message for new subscriber(s) (optional):
-{{ list.welcome_new }}
+{% firstof list.welcome_new "" %}
 
 Required steps for subscription: {{ list.get_subscription_display }}
 
