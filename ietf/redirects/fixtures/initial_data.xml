@@ -199,15 +199,15 @@
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="34" model="redirects.redirect">
-    <field type="CharField" name="cgi">public/view_meeting_agenda_html.cgi</field>
+    <field type="CharField" name="cgi">public/meeting_agenda_html.cgi</field>
     <field type="CharField" name="url">meeting</field>
-    <field type="CharField" name="rest">%(meeting_num)s/agenda-html</field>
+    <field type="CharField" name="rest">%(meeting_num)s/agenda.html</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="35" model="redirects.redirect">
-    <field type="CharField" name="cgi">public/view_meeting_agenda_text.cgi</field>
+    <field type="CharField" name="cgi">public/meeting_agenda_text.cgi</field>
     <field type="CharField" name="url">meeting</field>
-    <field type="CharField" name="rest">%(meeting_num)s/agenda-txt</field>
+    <field type="CharField" name="rest">%(meeting_num)s/agenda.txt</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="36" model="redirects.redirect">
