@@ -5,6 +5,7 @@
 200	/iesg/ann/independent/		https://datatracker.ietf.org/public/rfc_editor_announcement.cgi
 200	/iesg/ann/ietf-doc/recent/	https://datatracker.ietf.org/public/recent_announcement.cgi
 200	/iesg/ann/ietf-doc/previous/	https://datatracker.ietf.org/public/previous_announcement.cgi
-200	/iesg/ann/detail/456/		https://datatracker.ietf.org/public/recent_announcement.cgi?command=show_detail&ballot_id=456
+200	/iesg/ann/detail/2422/		https://datatracker.ietf.org/public/recent_announcement.cgi?command=show_detail&ballot_id=2422
+200	/iesg/ann/detail/1563/		https://datatracker.ietf.org/public/previous_announcement.cgi?command=show_detail&ballot_id=1563
 404	/iesg/ann/detail/567/		
 200	/feeds/iesg_minutes/
