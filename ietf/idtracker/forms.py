@@ -7,12 +7,13 @@ class IDSearch(forms.Form):
     search_status_id = forms.ModelChoiceField(IDStatus.objects.all(), empty_label="--All")
     search_area_acronym = forms.ModelChoiceField(Area.objects.filter(status=Area.ACTIVE), empty_label="--All/Any")
     search_cur_state = forms.ModelChoiceField(IDState.objects.all(), empty_label="--All/Any")
-    sub_state_id = forms.ModelChoiceField(IDSubState.objects.all(), empty_label="--All Substates")
+    sub_state_id = forms.ChoiceField(choices=())
     search_filename = forms.CharField(widget=forms.TextInput(attrs={'size': 15, 'maxlength': 60}))
     search_rfcnumber = forms.CharField(widget=forms.TextInput(attrs={'size': 5, 'maxlength': 60}))
     def __init__(self, *args, **kwargs):
         super(IDSearch, self).__init__(*args, **kwargs)
 	self.fields['search_job_owner'].choices = [('', '--All/Any')] + [(ad.id, "%s, %s" % (ad.last_name, ad.first_name)) for ad in IESGLogin.objects.filter(user_level=1).order_by('last_name')] + [('-99', '------------------')] + [(ad.id, "%s, %s" % (ad.last_name, ad.first_name)) for ad in IESGLogin.objects.filter(user_level=2).order_by('last_name')]
+	self.fields['sub_state_id'].choices = [('', '--All Substates'), ('0', 'None')] + [(state.sub_state_id, state.sub_state) for state in IDSubState.objects.all()]
 
 class EmailFeedback(forms.Form):
     category = forms.CharField(widget=forms.HiddenInput())
