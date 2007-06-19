@@ -29,9 +29,6 @@ PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	 </tr>
       </table>
    </center>
-   {% ifnotequal server_mode "production" %}
-   <span style="float: left; font-size: 80%;">Server mode: {{ server_mode }}</span>
-   {% endifnotequal %}
    {% if user.is_authenticated %}
    <span style="float: right; font-size: 80%;">Logged in as {{ user }}
       |
