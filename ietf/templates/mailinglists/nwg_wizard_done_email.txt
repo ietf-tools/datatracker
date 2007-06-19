@@ -1,5 +1,5 @@
 The Secretariat has received a request to {% ifequal add_edit "edit" %}edit an existing entry on{% else %}{% ifequal add_edit "add" %}add a new entry to{% else %}delete an existing entry from{% endifequal %}{% endifequal %}
-the "IETF Non-WG Mailing Lists" Web Page, https://datatracker.ietf.org/public/nwg_list.cgi 
+the "IETF Non-WG Mailing Lists" Web Page, https://datatracker.ietf.org/mailinglists/nonwg_lists/
 The details of the request are provided below.
 
 Please approve or deny this request via the "IETF Non-WG Mailing List Approval Page," 

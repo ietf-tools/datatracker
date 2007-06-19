@@ -13,7 +13,7 @@ Subject: Evaluation: {% for id in object.drafts.all %}{{ id.draft.filename }}-{{
 --------
 
 Evaluation for{% for id in object.drafts.all %} {{ id.draft.filename }}-{{ id.draft.revision }}.txt {% endfor %}can be found at
-http://datatracker.ietf.org/idtracker/ballot/{{ object.ballot }}/ <!-- FIXME: hardcoded URL -->
+https://datatracker.ietf.org/{% url ietf.idtracker.views.view_ballot object.ballot %}/ <!-- FIXME: hardcoded URL -->
 {% if object.drafts.all.0.draft.lc_expiration_date %}
 Last Call to expire on: {{ object.drafts.all.0.draft.lc_expiration_date|escape }}
 {% endif %}

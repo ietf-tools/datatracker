@@ -23,12 +23,15 @@ PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	    <td><img src="https://www1.ietf.org/images/header/separator.gif" border="0" /></td>
 	    <td><a href="http://www.ietf.org/proceedings_directory.html"><img src="https://www1.ietf.org/images/header/proceed11.gif"  border="0" /></a></td>
 	    <td><img src="https://www1.ietf.org/images/header/separator.gif" border="0" /></td>
-	    <td><a href="https://datatracker.ietf.org/public/idindex.cgi"><img src="https://www1.ietf.org/images/header/id-index11.gif" border="0" /></a></td>
+	    <td><a href="{% url ietf.idindex.views.search %}"><img src="https://www1.ietf.org/images/header/id-index11.gif" border="0" /></a></td>
 	    <td><img src="https://www1.ietf.org/images/header/separator.gif" border="0" /></td>
 	    <td><a href="http://www.ietf.org/rfc.html"><img src="https://www1.ietf.org/images/header/rfc11.gif" border="0" /></a></td>
 	 </tr>
       </table>
    </center>
+   {% ifnotequal server_mode "production" %}
+   <span style="float: left; font-size: 80%;">Server mode: {{ server_mode }}</span>
+   {% endifnotequal %}
    {% if user.is_authenticated %}
    <span style="float: right; font-size: 80%;">Logged in as {{ user }}
       |

@@ -10,7 +10,7 @@
 {% else %}
 <td width="70"><b>RFC #</td>
 {% endif %}
-<td width="150"><a href="https://datatracker.ietf.org/"><b>I-D Tracker</a> State</td>
+<td width="150"><a href="{% url ietf.idtracker.views.search %}"><b>I-D Tracker</a> State</td>
 </tr>
 
 {% for draft in object_list %}
