@@ -8,12 +8,12 @@ The RFC Editor receives requests to publish non-IETF Working Group documents as 
 
 <h3>Positive IESG Response</h3>
 
-{% regroup object_list by draft.b_approve_date|date:"F j, Y" as dates %}
+{% regroup object_list by b_approve_date|date:"F j, Y" as dates %}
 {% for date in dates %}
 <b>Date Sent: {{ date.grouper }}</b>
 <ul>
 {% for item in date.list %}
-<li><a href="/iesg/ann/detail/{{ item.ballot_id }}/">{{ item.draft.title }}</a>
+<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.title }} ({{ item.intended_status }})</a>
 {% endfor %}
 </ul>
 {% endfor %}
@@ -26,7 +26,7 @@ The RFC Editor receives requests to publish non-IETF Working Group documents as 
 <b>Date Sent: {{ date.grouper }}</b>
 <ul>
 {% for item in date.list %}
-<li><a href="/iesg/ann/detail/{{ item.ballot_id }}/">{{ item.draft.title }}</a>
+<li><a href="/iesg/ann/detail/{{ item.ballot_id }}/">{{ item.draft.title }} ({{item.draft.intended_status }})</a>
 {% endfor %}
 </ul>
 {% endfor %}

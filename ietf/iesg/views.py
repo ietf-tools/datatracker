@@ -8,7 +8,7 @@ import datetime
 date_threshold = datetime.datetime.now().date() - datetime.timedelta(days=185)
 
 def inddocs(request):
-   queryset_list_ind = IDInternal.objects.filter(via_rfc_editor = 1,rfc_flag=0,noproblem=1, dnp=0).select_related().order_by('-internet_drafts.b_approve_date')
+   queryset_list_ind = InternetDraft.objects.filter(idinternal__via_rfc_editor=1, idinternal__rfc_flag=0, idinternal__noproblem=1, idinternal__dnp=0).order_by('-b_approve_date')
    queryset_list_ind_dnp = IDInternal.objects.filter(via_rfc_editor = 1,rfc_flag=0,dnp=1).order_by('-dnp_date')
    return object_list(request, queryset=queryset_list_ind, template_name='iesg/independent_doc.html', allow_empty=True, extra_context={'object_list_dnp':queryset_list_ind_dnp })
 
