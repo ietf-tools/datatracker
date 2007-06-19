@@ -32,7 +32,7 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 <ul>
 {% for item in date.list %}
 {% if item.idinternal.ballot_id %}
-<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.title }}</a>
+<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.title }} ({{ item.intended_status }})</a>
 {% endif %}
 {% endfor %}
 </ul>
@@ -45,7 +45,7 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 <ul>
 {% for item in date.list %}
 {% if item.idinternal.ballot_id %}
-<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.title }}</a>
+<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.title }} ({{ item.intended_status }})</a>
 {% endif %}
 {% endfor %}
 </ul>
