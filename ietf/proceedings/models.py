@@ -72,6 +72,20 @@ class ResolveAcronym(object):
                     return False
             except IETFWG.DoesNotExist:
                 return False
+    def group_type_str(self):
+        if self.irtf:
+              return ""
+        else:
+            try:
+                g_type_id = IETFWG.objects.get(pk=self.group_acronym_id).group_type_id 
+                if g_type_id == 1:
+                    return "WG"
+                elif g_type_id == 3:
+                    return "BOF"
+                else:
+                    return ""
+            except IETFWG.DoesNotExist:
+                return ""
 
 class Meeting(models.Model):
     meeting_num = models.IntegerField(primary_key=True)

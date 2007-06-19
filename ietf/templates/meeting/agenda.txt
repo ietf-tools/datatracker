@@ -10,7 +10,7 @@ xml:lang="en-US"><head><title>Agenda of the {{ meeting_num|ordinal }} IETF Meeti
 {% filter center:72 %}Agenda of the {{ meeting_num|ordinal }} IETF Meeting{% endfilter %}
 {% filter center:72 %}{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date|date:"F" meeting_info.end_date|date:"F" %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }}{% endfilter %}
 
-Updated As of : {% now "F j, Y" %}
+Updated As of : {% now "F j, Y P (T)" %}
 
 {{ meeting_info.start_date|date:"l"|upper }}, {{ meeting_info.start_date|date:"F j, Y" }}
 {{ nonsession_info.0.time_desc }} {{ nonsession_info.0.non_session_ref }} - {{ meetingvenue_info.reg_area_name }}
@@ -48,7 +48,7 @@ Updated As of : {% now "F j, Y" %}
 </pre>
 {% else %}
 <pre>{% for session in item.sessions|dictsort:"area" %}
-{{ session.room_id.room_name|ljust:20 }} {{ session.area|upper|ljust:5 }} {{ session.acronym|lower|ljust:10 }} {{ session.acronym_name }}{% if session.special_agenda_note %} - {{ session.special_agenda_note|upper }}{% endif %}{% endfor %}</pre>
+{{ session.room_id.room_name|ljust:20 }} {{ session.area|upper|ljust:5 }} {{ session.acronym|lower|ljust:10 }} {{ session.acronym_name }} {{ session.group_type_str }}{% if session.special_agenda_note %} - {{ session.special_agenda_note|upper }}{% endif %}{% endfor %}</pre>
           {% endifequal %}
       {% endifequal %}
    {% endfor %}

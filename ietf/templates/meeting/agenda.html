@@ -7,10 +7,10 @@
 <center> 
 <strong> Agenda of the {{ meeting_num|ordinal }} IETF Meeting </strong> <br/> 
 <strong>{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date|date:"F" meeting_info.end_date|date:"F" %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }} </strong><br />
-Updated As of {% now "F j, Y" %}<br />
+Updated As of {% now "F j, Y, P (T)" %}<br />
 </center> 
 
-<a href="http://www3.ietf.org//meetings/agenda_{{meeting_num}}.txt"> Text Format of the Agenda </a> <br />
+(<a href="http://www3.ietf.org//meetings/agenda_{{meeting_num}}.txt"> Text Format of the Agenda </a>) <br />
 <P>
 *** Click on an acronym of the group to get a charter page *** <br />
 *** Click on a name of the group to get a meeting agenda *** <br />
@@ -53,7 +53,7 @@ Updated As of {% now "F j, Y" %}<br />
           {% else %}
              <table border="0" cellspacing="0" cellpadding="0" width="800">
              {% for session in item.sessions|dictsort:"area" %}
-	        <tr><td width="200">{{ session.room_id.room_name }}</td><td width="50">{{ session.area|upper }}</td><td width="100">{% if session.isWG %}<a href="http://www.ietf.org/html.charters/{{ session.acronym|lower }}-charter.html">{{ session.acronym|lower }}</a>{% else %}{{ session.acronym|lower }}{% endif %}</td><td>{% if session.agenda_file %}<a href="http://www3.ietf.org/proceedings/{{ session.agenda_file }}">{{ session.acronym_name }}</a>{% else %}{{ session.acronym_name }}{% endif %}{% if session.special_agenda_note %} <b>- {{ session.special_agenda_note|upper }}</b>{% endif %}</td></tr>
+	        <tr><td width="200">{{ session.room_id.room_name }}</td><td width="50">{{ session.area|upper }}</td><td width="100">{% if session.isWG %}<a href="http://www.ietf.org/html.charters/{{ session.acronym|lower }}-charter.html">{{ session.acronym|lower }}</a>{% else %}{{ session.acronym|lower }}{% endif %}</td><td>{% if session.agenda_file %}<a href="http://www3.ietf.org/proceedings/{{ session.agenda_file }}">{{ session.acronym_name }} {{ session.group_type_str }}</a>{% else %}{{ session.acronym_name }}{% endif %}{% if session.special_agenda_note %} <b>- {{ session.special_agenda_note|upper }}</b>{% endif %}</td></tr>
              {% endfor %}
              </table>
           {% endifequal %}

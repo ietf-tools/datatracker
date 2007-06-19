@@ -3,12 +3,13 @@
 {% block content %}
 <link rel="stylesheet" type="text/css" href="https://www.ietf.org/css/base.css" />
 <center>
-<h2>IETF {{ meeting_num }} Preliminary & Interim Materials</h2>
+<h2>IETF {{ meeting_num }} Meeting Materials</h2>
+{% if sub_began %}
 <h4>Submission began {{ begin_date|date:"F j, Y" }} </h4>
 <h4>Submission cutoff odate: {{ cut_off_date|date:"F j, Y" }}</h4>
 <h4>Corrections to submissions cutoff date:{{ cor_cut_off_date|date:"F j, Y" }} </h4>
-<br>
-Updated as of {% now "r" %}
+{% endif %}
+Updated as of {% now "F j, Y, P (T)" %}
 <br><br>
 
 {% regroup object_list|dictsort:"area" by area_name as areas %}
@@ -22,7 +23,7 @@ Updated as of {% now "r" %}
     {% for wg in wgs.list|dictsort:"acronym" %}
       <table cellpadding="0" cellspacing="0" border="2" width="80%">
         <tr><a name="wg-{{ wg.acronym }}"></a>
-          <td align="center" bgcolor="#DDFFDD" width="20%"><b>{{ wg.acronym|upper }}</b><br>
+          <td align="center" bgcolor="#DDFFDD" width="20%"><b>{{ wg.acronym|upper }}{% ifequal wg.group_type_str "BOF" %} <font color="red">({{ wg.group_type_str }})</font> {% endifequal %}</b><br>
           {% if wg.agenda_file %}<a href="http://www3..ietf.org/proceedings/{{ wg.agenda_file }}">[Agenda]</a>{% endif %}{% if wg.minute_file %} <a href="http://www3.ietf.org/proceedings/{{ wg.minute_file }}">[Minutes]</a>{% endif %}</td>
           <td><table border="1" width="100%">
 {% include "meeting/submission_status_snippet.html" %}
@@ -38,6 +39,7 @@ Updated as of {% now "r" %}
     {% endfor %}
   {% endfor %}
 <!--- Training Sessions --->
+{% if training_list %}
   <table cellpadding="0" cellspacing="0" border="2" width="80%">
     <tr>
       <td colspan=2 bgcolor="#0911DC" valign="center"><font color="#FFFFFF"><center><br><h3><img src="https://www.ietf.org/images/ib2.gif" width="100%" height=21><br>Training</h3></center></font>
@@ -55,8 +57,10 @@ Updated as of {% now "r" %}
       </tr>
     </table>
 {% endfor %}  
+{% endif %}
 <!--- End of Training Sessions --->
 <!--- IRTF Sessions --->
+{% if irtf_list %}
   <table cellpadding="0" cellspacing="0" border="2" width="80%">
     <tr>
       <td colspan=2 bgcolor="#0911DC" valign="center"><font color="#FFFFFF"><center><br><h3><img src="https://www.ietf.org/images/ib2.gif" width="100%" height=21><br>IRTF</h3></center></font>
@@ -79,8 +83,10 @@ Updated as of {% now "r" %}
       </tr>
     </table>
 {% endfor %}
+{% endif %}
 <!--- End of IRTF Sessions --->
 <!--- Interim Meetings --->
+{% if interim_list %}
   <table cellpadding="0" cellspacing="0" border="2" width="80%">
     <tr>
       <td colspan=2 bgcolor="#0911DC" valign="center"><font color="#FFFFFF"><center><br><h3><img src="https://www.ietf.org/images/ib2.gif" width="100%" height=21><br>Interim Meetings</h3></center></font>
@@ -100,6 +106,7 @@ Updated as of {% now "r" %}
       </tr>
     </table>
 {% endfor %}
+{% endif %}
 <!--- End of Imterim Meetings --->
 </center>
 {% endblock %}
