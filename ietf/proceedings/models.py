@@ -22,6 +22,8 @@ class ResolveAcronym(object):
 	if interim:
 	    return "i" + acronym
 	return acronym
+    def acronym_lower(self):
+        return self.acronym().lower()
     def acronym_name(self):
         try:
             interim = self.interim
