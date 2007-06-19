@@ -26,4 +26,16 @@ def review(request, page=0, panes=None):
         return render("utils/frame2.html", {"info": get_info(page) })
 
 def top(request, page=None):
-        return render("utils/review.html", {"info": get_info(page) })    
+    return render("utils/review.html", {"info": get_info(page) })
+
+def all(request):
+    get_info(0)                         # prime the list
+    info = []
+    for i in range(urlcount):
+        item = {}
+        item["num"] = i
+        item["new"] = testurls[i][1]
+        item["old"] = testurls[i][2]
+        info.append(item)
+        
+    return render("utils/all.html", {"info": info })

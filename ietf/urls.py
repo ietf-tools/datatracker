@@ -34,6 +34,7 @@ urlpatterns = patterns('',
 
      # Uncomment this for review pages:
      (r'^review/$', 'ietf.utils.views.review'),
+     (r'^review/all/$', 'ietf.utils.views.all'),
      (r'^review/(?P<page>[0-9]+)/$', 'ietf.utils.views.review'),
      (r'^review/top/(?P<page>[0-9]+)/$', 'ietf.utils.views.top'),
 
