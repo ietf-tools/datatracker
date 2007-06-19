@@ -9,7 +9,7 @@
 <h4>Submission cutoff odate: {{ cut_off_date|date:"F j, Y" }}</h4>
 <h4>Corrections to submissions cutoff date:{{ cor_cut_off_date|date:"F j, Y" }} </h4>
 {% endif %}
-Updated as of {% now "F j, Y, P (T)" %}
+Updated as of {% now "F j, Y, H:i:s (T)" %}
 <br><br>
 
 {% regroup object_list|dictsort:"area" by area_name as areas %}
