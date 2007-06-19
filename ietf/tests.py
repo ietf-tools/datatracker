@@ -32,11 +32,17 @@ def reduce_text(html, pre=False, fill=True):
     text = text.replace(" : ", ": ").replace(" :", ": ")
     text = text.replace('."', '".')
     text = text.replace(',"', '",')
+    return text
+
+def lines(text, pre=False):
     if pre:
         text = text.split("\n")
     else:
         text = [ line.strip() for line in text.split("\n") if line.strip()]
-    return text
+    
+def sorted(lst):
+    lst.sort()
+    return lst
 
 def get_patterns(module):
     all = []
@@ -81,7 +87,10 @@ def read_testurls(filename):
                 codes, testurl, goodurl = urlspec
             else:
                 raise ValueError("Expected 'HTTP_CODE TESTURL [GOODURL]' in %s line, found '%s'." % (filename, line))
-            codes = codes.split(",")
+
+
+            codes = dict([ (item, "") for item in codes.split(",") if not":" in item] +
+                         [ (item.split(":")[:2]) for item in codes.split(",") if ":" in item] )
             tuples += [ (codes, testurl, goodurl) ]
     file.close()
     return tuples
@@ -119,6 +128,7 @@ def module_setup(module):
     module.testtuples = []
     module.testurls = []
     module.diffchunks = []
+    module.ignores = {}
     module.testtuples = get_testurls()
     module.testurls = [ tuple[1] for tuple in module.testtuples ]
 
@@ -131,9 +141,18 @@ def module_setup(module):
             chunk = re.sub(r"([\[\]().|+*?])", r"\\\1", chunk)
             # @@ -27,0 \+23,1 @@
             chunk = re.sub(r"(?m)^@@ -\d+,(\d+) \\\+\d+,(\d+) @@$", r"@@ -\d+,\1 \+\d+,\2 @@", chunk)
-            #print "*** Installing diff chunk:"
-            #print chunk
             module.diffchunks.append(chunk)
+
+    # find ignore chunks
+    for root, dirs, files in os.walk(settings.BASE_DIR+"/../test/ignore/"):
+        # This only expects one directory level below test/ignore/:
+        for file in files:
+            path = root + "/" + file
+            dir = root.split("/")[-1]
+            chunk = filetext(path).strip()
+            if not dir in module.ignores:
+                module.ignores[dir] = []
+            module.ignores[dir].append(chunk)
 
     # extract application urls:
     module.patterns = get_patterns(ietf.urls)
@@ -273,18 +292,26 @@ class UrlTestCase(TestCase):
                     try:
                         if goodhtml and response.content:
                             if "sort" in codes:
-                                def sorted(l):
-                                    l.sort()
-                                    return l
-                                testtext = sorted(reduce_text(response.content, fill=False))
-                                while testtext and not testtext[0]:
-                                    del testtext[0]
-                                goodtext = sorted(reduce_text(goodhtml, fill=False))
-                                while goodtext and not goodtext[0]:
-                                    del goodtext[0]
+                                testtext = reduce_text(response.content, fill=False)
+                                goodtext = reduce_text(goodhtml, fill=False)
                             else:
                                 testtext = reduce_text(response.content)
                                 goodtext = reduce_text(goodhtml)
+                            if "ignore" in codes:
+                                ignores = codes["ignore"].split("/")
+                                for ignore in ignores:
+                                    for regex in module.ignores[ignore]:
+                                        testtext = re.sub(regex, "", testtext)
+                                        goodtext = re.sub(regex, "", goodtext)
+                            testtext = lines(testtext)
+                            goodtext = lines(goodtext)
+                            if "sort" in codes:
+                                testtext = sorted(testtext)
+                                while testtext and not testtext[0]:
+                                    del testtext[0]
+                                goodtext = sorted(goodtext)
+                                while goodtext and not goodtext[0]:
+                                    del goodtext[0]
                             if testtext == goodtext:
                                 note("OK   cmp %s" % (url))
                             else:
@@ -292,9 +319,7 @@ class UrlTestCase(TestCase):
                                 difflist = list(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
                                 diff = "\n".join(difflist)
                                 for chunk in module.diffchunks:
-                                    #print "*** Checking for chunk:", chunk[:24]
                                     while re.search(chunk, diff):
-                                        #print "*** Removing chunk of %s lines" % (len(chunk.split("\n")))
                                         diff = re.sub(chunk, "", diff)
                                 if len(diff.strip().splitlines()) == 2:
                                     # only the initial 2 lines of the diff remains --
