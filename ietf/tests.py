@@ -39,6 +39,7 @@ def lines(text, pre=False):
         text = text.split("\n")
     else:
         text = [ line.strip() for line in text.split("\n") if line.strip()]
+    return text
     
 def sorted(lst):
     lst.sort()
