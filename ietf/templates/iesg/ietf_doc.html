@@ -1,7 +1,39 @@
 {% extends "base.html" %}
 {% block title %}{{ title_prefix }} IESG Announcements{% endblock %}
+{% block css %}
+TD {text-decoration: none; color: #000000; font: 10pt verdana;}
+body {
+  margin:0;
+  padding:0;
+  font-family: Times, sans-serif;
+  font-size: 1.0em;
+  font-style: normal;
+  }
+th {
+  padding:6px 0px 10px 30px;
+  line-height:1em;
+  font-size: 12px;
+  color: #333;
+                                                                                                   
+ }
+/* Links
+----------------------------------------------- */
+a:link, a:visited {
+  border-bottom:1px dotted #69f;
+  color:#36c;
+  text-decoration:none;
+  }
+a:visited {
+  border-bottom-color:#969;
+  color:#36c;
+  }
+a:hover {
+  border-bottom:1px solid #f00;
+  color:#f00;
+  }
+a.noline:link, a.noline:visited, a.noline:hover {border-style:none;}
+{% endblock %}
 {% block content %}
-<link rel="stylesheet" type="text/css" href="https://www1.ietf.org/css/base.css" />
 {% if is_recent %}
 <center><h2>Recent IESG Announcements</center>
 This page contains links to all IESG Protocol, Document, and Working Group Action announcements that have been sent within the past six months. Announcements that were sent prior to six month ago can be found in <a href="previous/">Previous Announcements</a>.<br>

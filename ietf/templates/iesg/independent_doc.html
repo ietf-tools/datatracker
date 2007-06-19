@@ -1,12 +1,44 @@
 {% extends "base.html" %}
 {% block title %}IESG Statements on Independent Submissions{% endblock %}
+{% block css %}
+TD {text-decoration: none; color: #000000; font: 10pt verdana;}
+body {
+  margin:18;
+  padding:0;
+  font-family: Times, sans-serif;
+  font-size: 1.0em;
+  font-style: normal;
+  }
+th {
+  padding:6px 0px 10px 30px;
+  line-height:1em;
+  font-size: 12px;
+  color: #333;
+                                                                                                   
+ }
+/* Links
+----------------------------------------------- */
+a:link, a:visited {
+  border-bottom:1px dotted #69f;
+  color:#36c;
+  text-decoration:none;
+  }
+a:visited {
+  border-bottom-color:#969;
+  color:#36c;
+  }
+a:hover {
+  border-bottom:1px solid #f00;
+  color:#f00;
+  }
+a.noline:link, a.noline:visited, a.noline:hover {border-style:none;}
+{% endblock %}
 {% block content %}
-<link rel="stylesheet" type="text/css" href="https://www1.ietf.org/css/base.css" />
 <center><h2>IESG Statements on Independent Submissions</center>
 The RFC Editor receives requests to publish non-IETF Working Group documents as independent Informational or Experimental RFCs. Following the process defined in RFC 3932, the RFC Editor requests that the IESG review these documents and provide input. This page contains copies of those messages that were sent by the IESG to the RFC Editor following such reviews.
 <hr>
 
-<h3>Positive IESG Response</h3>
+<h3>Positive IESG Responses</h3>
 
 {% regroup object_list by b_approve_date|date:"F j, Y" as dates %}
 {% for date in dates %}
