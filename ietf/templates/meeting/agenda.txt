@@ -10,7 +10,7 @@ xml:lang="en-US"><head><title>Agenda of the {{ meeting_num|ordinal }} IETF Meeti
 {% filter center:72 %}Agenda of the {{ meeting_num|ordinal }} IETF Meeting{% endfilter %}
 {% filter center:72 %}{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date|date:"F" meeting_info.end_date|date:"F" %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }}{% endfilter %}
 
-Updated As of {% now "F j, Y, H:i:s (T)" %} 
+Updated as of {% now "F j, Y, H:i:s (T)" %} 
 
 {{ meeting_info.start_date|date:"l"|upper }}, {{ meeting_info.start_date|date:"F j, Y" }}
 {{ nonsession_info.0.time_desc }} {{ nonsession_info.0.non_session_ref }} - {{ meetingvenue_info.reg_area_name }}
@@ -22,12 +22,12 @@ Updated As of {% now "F j, Y, H:i:s (T)" %}
 {% if day.list.0.reg_info %}{{ day.list.0.reg_info }} - {{ meetingvenue_info.reg_area_name }}
 {% endif %}{% ifequal day.list.0.day_id "5" %}{{ day.list.0.fbreak_info }} - {{ meetingvenue_info.break_area_name }}{% else %}{{ day.list.0.morning_br_info }} - {{ meetingvenue_info.break_area_name }}
 {% endifequal %}{% for item in day.list %}{% ifequal item.session_name_id 3 %}{{ day.list.0.lunch_br_info }} Break
-{% endifequal %}{% ifequal item.session_name_id 4 %}{{ day.list.0.an_br1_info }}
-{% endifequal %}{% ifequal item.session_name_id 5 %}{{ day.list.0.an_br2_info }}
+{% endifequal %}{% ifequal item.session_name_id 4 %}{{ day.list.0.an_br1_info }} - {{ meetingvenue_info.break_area_name }}
+{% endifequal %}{% ifequal item.session_name_id 5 %}{{ day.list.0.an_br2_info }} - {{ meetingvenue_info.break_area_name }}
 {% endifequal %}{{ item.time_desc }} {{ item.session_name }}{% ifequal item.sessions.0.acronym "plenaryw" %}{{ item.sessions.0.room_id.room_name }}
 {{ plenaryw_agenda|escape }}{% else %}{% ifequal item.sessions.0.acronym "plenaryt" %}{{ item.sessions.0.room_id.room_name }}
 {{ plenaryt_agenda|escape }}{% else %}{% for session in item.sessions|dictsort:"area" %}
-{{ session.room_id.room_name|ljust:20 }} {{ session.area|upper|ljust:5 }} {{ session.acronym|lower|ljust:10 }} {{ session.acronym_name }} {{ session.group_type_str }}{% if session.special_agenda_note %} - {{ session.special_agenda_note|upper }}{% endif %}{% endfor %}
+{{ session.room_id.room_name|ljust:16 }}  {{ session.area|upper|ljust:4 }} {{ session.acronym|ljust:7 }} 	{{ session.acronym_name }} {{ session.group_type_str }}{% if session.special_agenda_note %} - {{ session.special_agenda_note }}{% endif %}{% endfor %}
 {% endifequal %}{% endifequal %}
 {% endfor %}
 {% endfor %}

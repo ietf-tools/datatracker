@@ -234,16 +234,18 @@ class MeetingTime(models.Model):
     def morning_br_info(self):
 	br_info = NonSession.objects.get(models.Q(day_id=self.day_id) | models.Q(day_id__isnull=True), meeting=self.meeting, non_session_ref=2)
         # Hack, hack.  Please update the database instead!
-        return "%s %s" % (br_info.time_desc, "Continental Breakfast")
         #return "%s %s" % (br_info.time_desc, br_info.non_session_ref)
+        return "%s %s" % (br_info.time_desc, "Continental Breakfast")
     def lunch_br_info(self):
         return NonSession.objects.get(meeting=self.meeting, non_session_ref=3).time_desc
     def an_br1_info(self):
 	an_br1_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=4)
-        return "%s %s" % (an_br1_info.time_desc, an_br1_info.non_session_ref)
+        #return "%s %s" % (an_br1_info.time_desc, an_br1_info.non_session_ref)
+        return "%s %s" % (an_br1_info.time_desc, "Afternoon Refreshment Break")
     def an_br2_info(self):
 	an_br2_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=5)
-        return "%s %s" % (an_br2_info.time_desc, an_br2_info.non_session_ref)
+        #return "%s %s" % (an_br2_info.time_desc, an_br2_info.non_session_ref)
+        return "%s %s" % (an_br2_info.time_desc, "Afternoon Refreshment Break")
     def fbreak_info(self):
         fbreak_info = NonSession.objects.get(meeting=self.meeting, day_id=5, non_session_ref=6)
         return "%s %s" % (fbreak_info.time_desc, fbreak_info.non_session_ref)
