@@ -185,7 +185,6 @@ class AdminRequestor(forms.MultiWidget):
 	try:
 	    radio = data.get(name + '_0', "off")
 	    rest = data[name + '_2']
-	    print "radio is %s, rest is %s" % (radio, rest)
 	    if radio == 'on':
 		# This has some deep assumptions about how
 		# this is used.
