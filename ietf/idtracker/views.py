@@ -8,6 +8,7 @@ from django.views.generic.list_detail import object_detail, object_list
 from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState, Rfc, DocumentWrapper
 from ietf.idtracker.forms import IDSearch, EmailFeedback
 from ietf.utils.mail import send_mail_text
+import re
 
 # Override default form field mappings
 # group_acronym: CharField(max_length=10)
@@ -154,8 +155,12 @@ IESG to do anything with the document.
 	context_instance=RequestContext(request))
 
 def comment(request, slug, object_id, queryset):
-    draft = get_object_or_404(InternetDraft, filename=slug)
-    queryset = queryset.filter(document=draft.id_document_tag)
+    rfcnum = re.match(r'^rfc(\d+)$', slug)
+    if rfcnum:
+	queryset = queryset.filter(document=rfcnum.groups()[0])
+    else:
+	draft = get_object_or_404(InternetDraft, filename=slug)
+	queryset = queryset.filter(document=draft.id_document_tag)
     return object_detail(request, queryset=queryset, object_id=object_id)
 
 def send_email(request):
