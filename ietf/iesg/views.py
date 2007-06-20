@@ -5,7 +5,11 @@ from django.views.generic.list_detail import object_list
 from django.http import Http404
 import datetime 
 
-date_threshold = datetime.datetime.now().date() - datetime.timedelta(days=185)
+def date_threshold():
+    """Return the first day of the month that is 185 days ago."""
+    ret = datetime.date.today() - datetime.timedelta(days=185)
+    ret = ret - datetime.timedelta(days=ret.day - 1)
+    return ret
 
 def inddocs(request):
    queryset_list_ind = InternetDraft.objects.filter(idinternal__via_rfc_editor=1, idinternal__rfc_flag=0, idinternal__noproblem=1, idinternal__dnp=0).order_by('-b_approve_date')
@@ -16,11 +20,11 @@ def wgdocs(request,cat):
    is_recent = 0
    if cat == 'recent':
       is_recent = 1
-      queryset_list = InternetDraft.objects.filter(b_approve_date__gte = date_threshold, intended_status__in=[1,2,6,7],idinternal__via_rfc_editor=0).order_by("-b_approve_date")
-      queryset_list_doc = InternetDraft.objects.filter(b_approve_date__gte = date_threshold, intended_status__in=[3,5],idinternal__via_rfc_editor=0).order_by("-b_approve_date")
+      queryset_list = InternetDraft.objects.filter(b_approve_date__gte = date_threshold(), intended_status__in=[1,2,6,7],idinternal__via_rfc_editor=0).order_by("-b_approve_date")
+      queryset_list_doc = InternetDraft.objects.filter(b_approve_date__gte = date_threshold(), intended_status__in=[3,5],idinternal__via_rfc_editor=0).order_by("-b_approve_date")
    elif cat == 'previous':
-      queryset_list = InternetDraft.objects.filter(b_approve_date__lt = date_threshold, b_approve_date__gte = '1998-10-15', intended_status__in=[1,2,6,7]).order_by("-b_approve_date")
-      queryset_list_doc = InternetDraft.objects.filter(b_approve_date__lt = date_threshold, b_approve_date__gte = '1998-10-15', intended_status__in=[3,5]).order_by("-b_approve_date")
+      queryset_list = InternetDraft.objects.filter(b_approve_date__lt = date_threshold(), b_approve_date__gte = '1998-10-15', intended_status__in=[1,2,6,7]).order_by("-b_approve_date")
+      queryset_list_doc = InternetDraft.objects.filter(b_approve_date__lt = date_threshold(), b_approve_date__gte = '1998-10-15', intended_status__in=[3,5]).order_by("-b_approve_date")
    else:
      raise Http404
    return object_list(request, queryset=queryset_list, template_name='iesg/ietf_doc.html', allow_empty=True, extra_context={'object_list_doc':queryset_list_doc, 'is_recent':is_recent })
