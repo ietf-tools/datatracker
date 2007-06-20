@@ -97,7 +97,7 @@ class NonWgWizard(wizard.Wizard):
 		self.form_list.append(forms.form_for_instance(NonWgMailingList.objects.get(pk=form.clean_data['list_id']), formfield_callback=nonwg_callback))
 	    elif form.clean_data['add_edit'] == 'delete':
 		list = NonWgMailingList.objects.get(pk=form.clean_data['list_id_delete'])
-		self.form_list.append(gen_approval([ad.person_id for ad in list.area.areadirectors_set()], DeletionPickApprover))
+		self.form_list.append(gen_approval([ad.person_id for ad in list.area.areadirector_set.all()], DeletionPickApprover))
 		self.form_list.append(Preview)
 	else:
 	    self.clean_forms.append(form)
@@ -105,7 +105,7 @@ class NonWgWizard(wizard.Wizard):
 	    form0 = self.clean_forms[0]
 	    add_edit = form0.clean_data['add_edit']
 	    if add_edit == 'add' or add_edit == 'edit':
-		self.form_list.append(gen_approval([ad.person_id for ad in Area.objects.get(area_acronym=form.clean_data['area']).areadirectors_set()], PickApprover))
+		self.form_list.append(gen_approval([ad.person_id for ad in Area.objects.get(area_acronym=form.clean_data['area']).areadirector_set.all()], PickApprover))
 		self.form_list.append(Preview)
         super(NonWgWizard, self).process_step(request, form, step)
     def done(self, request, form_list):

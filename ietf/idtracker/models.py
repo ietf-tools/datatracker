@@ -81,8 +81,6 @@ class Area(models.Model):
     def active_area_choices():
 	return [(area.area_acronym_id, area.area_acronym.acronym) for area in Area.objects.filter(status=1).select_related().order_by('acronym.acronym')]
     active_area_choices = staticmethod(active_area_choices)
-    def areadirectors_set(self):
-        return AreaDirector.objects.filter(area=self.area_acronym)
     class Meta:
         db_table = 'areas'
 	verbose_name="area"
