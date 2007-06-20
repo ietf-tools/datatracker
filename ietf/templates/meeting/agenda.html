@@ -7,7 +7,7 @@
 <center> 
 <strong> Agenda of the {{ meeting_num|ordinal }} IETF Meeting </strong> <br/> 
 <strong>{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date|date:"F" meeting_info.end_date|date:"F" %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }} </strong><br />
-Updated as of {% now "F j, Y, H:i:s (T)" %}
+Updated as of {{ last_update_info.updated_date }} {{ last_update_info.updated_time }} (ET)
 </center> 
 
 (<a href="http://www3.ietf.org//meetings/agenda_{{meeting_num}}.txt"> Text Format of the Agenda </a>) <br />

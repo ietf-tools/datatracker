@@ -10,7 +10,7 @@ xml:lang="en-US"><head><title>Agenda of the {{ meeting_num|ordinal }} IETF Meeti
 {% filter center:72 %}Agenda of the {{ meeting_num|ordinal }} IETF Meeting{% endfilter %}
 {% filter center:72 %}{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date|date:"F" meeting_info.end_date|date:"F" %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }}{% endfilter %}
 
-Updated as of {% now "F j, Y, H:i:s (T)" %} 
+Updated as of {{ last_update_info.updated_date }} {{ last_update_info.updated_time }} (ET) 
 
 {{ meeting_info.start_date|date:"l"|upper }}, {{ meeting_info.start_date|date:"F j, Y" }}
 {{ nonsession_info.0.time_desc }} {{ nonsession_info.0.non_session_ref }} - {{ meetingvenue_info.reg_area_name }}

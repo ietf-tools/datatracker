@@ -1,7 +1,7 @@
 # Create your views here.
 #import models
 from django.shortcuts import render_to_response as render, get_object_or_404
-from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, NonSession, MeetingVenue, IESGHistory, Proceeding
+from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, NonSession, MeetingVenue, IESGHistory, Proceeding, Switches
 from django.views.generic.list_detail import object_list
 from django.http import Http404
 from  django.db.models import Q
@@ -37,6 +37,7 @@ def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     meeting_info=get_object_or_404(Meeting, meeting_num=meeting_num)
     nonsession_info=NonSession.objects.filter(meeting=meeting_num,day_id__gte='0').order_by("day_id")
     meetingvenue_info=get_object_or_404(MeetingVenue, meeting_num=meeting_num)
+    last_update_info=get_object_or_404(Switches,id=1)
     plenaryt_agenda_file = "/home/master-site/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-2).agenda_file()
     try:
         f = open(plenaryt_agenda_file)
@@ -67,5 +68,5 @@ def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     queryset_list_sun.sort(key=(lambda item: item.sched_time_id1.time_desc))
     queryset_list_ads = list(IESGHistory.objects.filter(meeting=meeting_num))
     queryset_list_ads.sort(key=(lambda item: item.area.area_acronym.acronym))
-    return object_list(request,queryset=queryset_list, template_name=template_file,allow_empty=True, extra_context={'qs_sun':queryset_list_sun, 'meeting_info':meeting_info, 'meeting_num':meeting_num, 'nonsession_info':nonsession_info, 'meetingvenue_info':meetingvenue_info, 'plenaryw_agenda':plenaryw_agenda, 'plenaryt_agenda':plenaryt_agenda, 'qs_ads':queryset_list_ads})
+    return object_list(request,queryset=queryset_list, template_name=template_file,allow_empty=True, extra_context={'qs_sun':queryset_list_sun, 'meeting_info':meeting_info, 'meeting_num':meeting_num, 'nonsession_info':nonsession_info, 'meetingvenue_info':meetingvenue_info, 'plenaryw_agenda':plenaryw_agenda, 'plenaryt_agenda':plenaryt_agenda, 'qs_ads':queryset_list_ads,'last_update_info':last_update_info})
 
