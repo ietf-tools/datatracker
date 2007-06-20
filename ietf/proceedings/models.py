@@ -42,7 +42,7 @@ class ResolveAcronym(object):
         elif self.group_acronym_id < 0  and self.group_acronym_id > -3:
             area = "1plenary"
         elif self.group_acronym_id < -2:
-            area = "ztrain"
+            area = ""
         else:
             try:
                 area = AreaGroup.objects.get(group=self.group_acronym_id).area.area_acronym.acronym
