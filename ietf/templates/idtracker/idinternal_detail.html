@@ -142,11 +142,11 @@
 
               <td>
                 <div class="largefont3">
-                  <a href="/idtracker/states/{{ object.cur_state.document_state_id }}/">
+                  <a href="/idtracker/states/{{ object.cur_state_id }}/">
                   {{ object.cur_state }}</a>
 		  {% if object.cur_sub_state %}
 		  ::
-		  <a href="/idtracker/states/sub_state/{{ object.cur_substate.sub_state_id }}/">
+		  <a href="/idtracker/states/substate/{{ object.cur_sub_state_id }}/">
 		  {{ object.cur_sub_state }}
 		  </a>
 		  {% endif %}
