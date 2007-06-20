@@ -6,54 +6,32 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US"
 xml:lang="en-US"><head><title>Agenda of the {{ meeting_num|ordinal }} IETF Meeting</title>
 </head><body><p>
-<pre>
+<pre>{# From here on out, horizontal and vertical whitespace is significant... #}
 {% filter center:72 %}Agenda of the {{ meeting_num|ordinal }} IETF Meeting{% endfilter %}
 {% filter center:72 %}{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date|date:"F" meeting_info.end_date|date:"F" %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }}{% endfilter %}
 
-Updated As of : {% now "F j, Y P (T)" %}
+Updated As of {% now "F j, Y, H:i:s (T)" %} 
 
 {{ meeting_info.start_date|date:"l"|upper }}, {{ meeting_info.start_date|date:"F j, Y" }}
 {{ nonsession_info.0.time_desc }} {{ nonsession_info.0.non_session_ref }} - {{ meetingvenue_info.reg_area_name }}
 {% for item in qs_sun %}{{ item.sched_time_id1.time_desc }} {{ item.acronym_name }} - {{ item.sched_room_id1.room_name }}
-{% endfor %}</pre>
-{% regroup object_list by day_id as days %}
-{% for day in days %}
-<pre>
-{{ day.list.0.meeting_date|date:"l"|upper }}, {{ day.list.0.meeting_date|date:"F j, Y" }}
-{% if day.list.0.reg_info %}{{ day.list.0.reg_info }} - {{ meetingvenue_info.reg_area_name }}{% endif %}
-{% ifequal day.list.0.day_id "5" %}{{ day.list.0.fbreak_info }} - {{ meetingvenue_info.break_area_name }}{% else %}{{ day.list.0.morning_br_info }} - {{ meetingvenue_info.break_area_name }}{% endifequal %}
-</pre>
-{% for item in day.list %}
-{% ifequal item.session_name_id 3 %}
-<pre>{{ day.list.0.lunch_br_info }} Break
-</pre>
-{% endifequal %}
-{% ifequal item.session_name_id 4 %}
-<pre>{{ day.list.0.an_br1_info }}
-</pre>
-{% endifequal %}
-{% ifequal item.session_name_id 5 %}
-<pre>{{ day.list.0.an_br2_info }}
-</pre>
-{% endifequal %}
-<pre>{{ item.time_desc }} {{ item.session_name }}</pre>
-{% ifequal item.sessions.0.acronym "plenaryw" %}
-<pre>{{ item.sessions.0.room_id.room_name }}
-{{ plenaryw_agenda|escape }}
-</pre>
-{% else %}
-{% ifequal item.sessions.0.acronym "plenaryt" %}
-<pre>{{ item.sessions.0.room_id.room_name }}
-{{ plenaryt_agenda|escape }}
-</pre>
-{% else %}
-<pre>{% for session in item.sessions|dictsort:"area" %}
-{{ session.room_id.room_name|ljust:20 }} {{ session.area|upper|ljust:5 }} {{ session.acronym|lower|ljust:10 }} {{ session.acronym_name }} {{ session.group_type_str }}{% if session.special_agenda_note %} - {{ session.special_agenda_note|upper }}{% endif %}{% endfor %}</pre>
-          {% endifequal %}
-      {% endifequal %}
-   {% endfor %}
 {% endfor %}
-<pre>====================================================================
+
+{% regroup object_list by day_id as days %}{% for day in days %}
+{{ day.list.0.meeting_date|date:"l"|upper }}, {{ day.list.0.meeting_date|date:"F j, Y" }}
+{% if day.list.0.reg_info %}{{ day.list.0.reg_info }} - {{ meetingvenue_info.reg_area_name }}
+{% endif %}{% ifequal day.list.0.day_id "5" %}{{ day.list.0.fbreak_info }} - {{ meetingvenue_info.break_area_name }}{% else %}{{ day.list.0.morning_br_info }} - {{ meetingvenue_info.break_area_name }}
+{% endifequal %}{% for item in day.list %}{% ifequal item.session_name_id 3 %}{{ day.list.0.lunch_br_info }} Break
+{% endifequal %}{% ifequal item.session_name_id 4 %}{{ day.list.0.an_br1_info }}
+{% endifequal %}{% ifequal item.session_name_id 5 %}{{ day.list.0.an_br2_info }}
+{% endifequal %}{{ item.time_desc }} {{ item.session_name }}{% ifequal item.sessions.0.acronym "plenaryw" %}{{ item.sessions.0.room_id.room_name }}
+{{ plenaryw_agenda|escape }}{% else %}{% ifequal item.sessions.0.acronym "plenaryt" %}{{ item.sessions.0.room_id.room_name }}
+{{ plenaryt_agenda|escape }}{% else %}{% for session in item.sessions|dictsort:"area" %}
+{{ session.room_id.room_name|ljust:20 }} {{ session.area|upper|ljust:5 }} {{ session.acronym|lower|ljust:10 }} {{ session.acronym_name }} {{ session.group_type_str }}{% if session.special_agenda_note %} - {{ session.special_agenda_note|upper }}{% endif %}{% endfor %}
+{% endifequal %}{% endifequal %}
+{% endfor %}
+{% endfor %}
+====================================================================
 AREA DIRECTORS
 {% regroup qs_ads by area as ads %}{% for ad in ads %}
 {{ ad.grouper|upper|ljust:5 }}{{ ad.list.0.area.area_acronym.name|ljust:18 }}  {% for ad_person in ad.list %}{% ifequal forloop.counter 2 %} & {% endifequal %}{{ ad_person.person }}/{{ ad_person.person.affiliation }}{% endfor %}{% endfor %}
