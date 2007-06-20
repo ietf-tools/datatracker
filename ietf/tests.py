@@ -237,6 +237,7 @@ class UrlTestCase(TestCase):
                             print "         %s" % (response['Location']) 
                             note( " (wanted %s)" % (url))
                             print ""
+                            res = None
                             #res = ("Fail", "wrong-reponse")
                     else:
                         note("Fail %s %s" % (code, testurl))
@@ -245,9 +246,10 @@ class UrlTestCase(TestCase):
                     res = ("Fail", "Exc")
                     note("Exception for URL '%s'" % testurl)
                     traceback.print_exc()
-                if not res in response_count:
-                    response_count[res] = 0
-                response_count[res] += 1
+                if res:
+                    if not res in response_count:
+                        response_count[res] = 0
+                    response_count[res] += 1
         if response_count:
             print ""
             note("Response count:")
@@ -338,7 +340,10 @@ class UrlTestCase(TestCase):
                                     if diff.strip() == okdiff.strip():
                                         note("OK   cmp %s" % (url))
                                     else:
-                                        note("Diff:    %s" % (url))
+                                        if okdiff:
+                                            note("Failed diff: %s" % (url))
+                                        else:
+                                            note("Diff:    %s" % (url))
                                         print "\n".join(difflist[:100])
                                         if len(difflist) > 100:
                                             print "... (skipping %s lines of diff)" % (len(difflist)-100)
