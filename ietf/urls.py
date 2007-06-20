@@ -6,6 +6,8 @@ from ietf.ipr.feeds import LatestIprDisclosures
 import ietf.utils.views
 import ietf.views
 
+from django.conf import settings
+
 feeds = {
     'iesg_minutes': IESGMinutes,
     'comments': DocumentComments,
@@ -39,3 +41,8 @@ urlpatterns = patterns('',
      (r'^review/top/(?P<page>[0-9]+)/$', 'ietf.utils.views.top'),
 
 )
+
+if settings.SERVER_MODE in ('development', 'test'):
+    urlpatterns += patterns('',
+        (r'^(?P<path>(?:images|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
+	)
