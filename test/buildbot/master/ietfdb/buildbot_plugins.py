@@ -17,7 +17,7 @@ class DjangoTest(ShellCommand):
     warnOnFailure = True
     flunkingIssues = ["exception", "failure"] # any pyflakes lines like this cause FAILURE
 
-    msgtypes = ("exceptions", "failures", "missing", "skipped", "pass", "diffs", "diff")
+    msgtypes = ("exceptions", "failures", "no_test", "skipped", "pass", "misses", "diffs", "diff")
 
     def createSummary(self, log):
         summaries = {}
@@ -28,6 +28,11 @@ class DjangoTest(ShellCommand):
             if not m in counts:
                 counts[m] = 0
             counts[m] += 1
+
+        def remember(m, line):
+            if not m in summaries:
+                summaries[m] = []
+            summaries[m].append(line)
 
         for type in self.msgtypes:
             typelist[type] = set([])
@@ -48,9 +53,17 @@ class DjangoTest(ShellCommand):
             if re.search("^Diff: +.*", line):
                 m = "diffs"
                 count(m)
-                summaries[m] = []
+                remember(m, line)
                 typelist["diffs"].add(m)                
                 m = "diff_%s" % line.split()[1]
+                typelist["diff"].add(m)                
+                count(m)
+            if re.search("^Failed diff: +.*", line):
+                m = "diffs"
+                count(m)
+                remember(m, line)
+                typelist["diffs"].add(m)                
+                m = "fail_%s" % line.split()[1]
                 typelist["diff"].add(m)                
                 count(m)
             if re.search("^OK +.* ", line):
@@ -62,19 +75,24 @@ class DjangoTest(ShellCommand):
                 typelist["pass"].add(m)
                 count(m)
             if re.search("^Miss .*", line):
-                m = "missing"
-                typelist["missing"].add(m)
+                m = "bad_redirect"
+                typelist["misses"].add(m)
                 count(m)
-            if re.search("^Response count:", line):
+            if re.search("^NoTest .*", line):
+                m = "no_test"
+                typelist["no_test"].add(m)
+                count(m)
+            if re.search("^[ \t\r]*$", line):
+                remember(m, line)
                 m = None
             if m:
-                if not m in summaries:
-                    summaries[m] = []
-                summaries[m].append(line)
-
+                remember(m, line)
+                
         self.descriptionDone = self.descriptionDone[:]
         for type in self.msgtypes:
-            for msg in typelist[type]:
+            keys = list(typelist[type])
+            keys.sort()
+            for msg in keys:
                 if counts[msg]:
                     if counts[msg] == 1 and msg.startswith("diff"):
                         difflen = len(summaries[msg])
