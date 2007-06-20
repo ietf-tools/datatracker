@@ -1,4 +1,35 @@
 {% extends "mailinglists/nwg_wizard_base.html" %}
+{% block javascript %}
+<script language="javascript">
+function get_selected_val() {
+    buttons = document.form_post["0-add_edit"]
+    selected = ""
+    for (i = 0; i < buttons.length; i++)
+        if (buttons[i].checked)
+            selected = buttons[i].value
+    return selected
+}
+
+
+function activate_nwg_widgets() {
+    selected = get_selected_val()
+    if (selected == "") {
+        return
+    }
+    if (selected == "add") { 
+      document.form_post["0-list_id"].disabled=true
+      document.form_post["0-list_id_delete"].disabled=true
+    }
+    if (selected == "edit") { 
+      document.form_post["0-list_id"].disabled=false
+      document.form_post["0-list_id_delete"].disabled=true
+    }    if (selected == "delete") { 
+      document.form_post["0-list_id"].disabled=true
+      document.form_post["0-list_id_delete"].disabled=false
+    }
+}
+</script>
+{% endblock %}
 
 {% block nwgcontent %}
 <h4>Please use this Web tool to add a new entry to the <a href="/mailinglists/nonwg_lists/">IETF Non-WG Mailing Lists</a> Web page, to update the information on an existing entry, or to delete an existing entry.</h4>
@@ -7,7 +38,7 @@
 </p><p>
 <h2>Step 1</h2>
 <h3>Please select one:</h3>
-<form action="." method="POST" name="aform">
+<form action="." method="POST" name="form_post">
 {{ form.add_edit_fields.0 }}<br>
 {{ form.add_edit_fields.1 }}{{ form.list_id }}<br>
 {{ form.add_edit_fields.2 }}{{ form.list_id_delete }}<br>

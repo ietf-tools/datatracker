@@ -13,7 +13,8 @@ class NonWgStep1(forms.Form):
     list_id_delete = forms.ChoiceField(required=False)
     def add_edit_fields(self):
 	field = self['add_edit']
-	return field.as_widget(field.field.widget)
+	#return field.as_widget(field.field.widget)
+        return [re.sub(r'input ','input onClick="activate_nwg_widgets()" ',str(i)) for i in field.as_widget(field.field.widget)]
     def __init__(self, *args, **kwargs):
 	super(NonWgStep1, self).__init__(*args, **kwargs)
 	choices=[('', '--Select a list here')] + NonWgMailingList.choices()
