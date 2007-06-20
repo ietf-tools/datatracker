@@ -37,10 +37,10 @@ Updated as of {% now "F j, Y, H:i:s (T)" %}
 	 {{ day.list.0.lunch_br_info }} Break<br>
       {% endifequal %}
       {% ifequal item.session_name_id 4 %}
-	 {{ day.list.0.an_br1_info }}<br>
+	 {{ day.list.0.an_br1_info }} - {{ meetingvenue_info.break_area_name }}<br>
       {% endifequal %}
       {% ifequal item.session_name_id 5 %}
-	 {{ day.list.0.an_br2_info }}<br>
+	 {{ day.list.0.an_br2_info }} - {{ meetingvenue_info.break_area_name }}<br>
       {% endifequal %}
       <b>{{ item.time_desc }} {{ item.session_name }} </b>
       {% ifequal item.sessions.0.acronym "plenaryw" %}

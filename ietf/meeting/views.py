@@ -19,7 +19,7 @@ def show_html_materials(request, meeting_num=None):
     if now > begin_date:
         sub_began = 1
     # List of WG sessions and Plenary sessions
-    queryset_list = WgMeetingSession.objects.filter(Q(meeting=meeting_num, group_acronym_id__gte = -2, status_id=4), Q(irtf__isnull=True) | Q(irtf=0))
+    queryset_list = WgMeetingSession.objects.filter(Q(meeting=meeting_num, group_acronym_id__gte = -3, status_id=4), Q(irtf__isnull=True) | Q(irtf=0))
     queryset_irtf = WgMeetingSession.objects.filter(meeting=meeting_num, group_acronym_id__gte = -2, status_id=4, irtf__gt=0)
     queryset_interim = []
     queryset_training = []
