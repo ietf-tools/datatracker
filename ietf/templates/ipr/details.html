@@ -250,7 +250,7 @@
 	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.ietf_contact.fax }}</b></td></tr>
 	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Email:</td>		<td><b>{{ ipr.ietf_contact.email }}</b></td></tr>
 	 {% else %}
-	 <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</td></tr>
+	 <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</i></td></tr>
 	 {% endif %}
       </table>
    </blockquote>
@@ -316,9 +316,9 @@
 	    {% if ipr.patents or ipr.notes %}
 	    <tbody class="{% cycle row_parity %}">
 	       <tr>
-		  <td colspan="2"><i>
+		  <td colspan="2">
 		  A. For granted patents or published pending patent applications,
-		  please provide the following information:</i></td>
+		  please provide the following information:</td>
 	       </tr>
 	       <tr><td class="fixwidth">Patent, Serial, Publication, Registration,
 			 or Application/File number(s):	</td><td><b>{{ ipr.patents }}</b></td></tr>
@@ -328,13 +328,11 @@
 	    <tr class="{% cycle row_parity %}"><td>Additional Notes:		</td><td><b>{{ ipr.notes }}</b></td></tr>
 	    <tr class="{% cycle row_parity %}">
 	       <td colspan="2">
-		  <i>
 		     {% if section_list.form_legend %}
 		     B. Does your disclosure relate to an unpublished pending patent application?:
 		     {% else %}
 		     B. Does this disclosure relate to an unpublished pending patent application?:
 		     {% endif %}
-		  </i>
 		  <b>{{ ipr.is_pending }}</b>
 	       </td>
 	    </tr>
@@ -342,21 +340,20 @@
 	       {% if section_list.generic %}
 		  <tr class="{% cycle row_parity %}">
 		     <td colspan="2">
-			<i>C. Does this disclosure apply to all IPR owned by
+			C. Does this disclosure apply to all IPR owned by
 			the submitter?:
-			</i>
 			<b>{{ ipr.applies_to_all }}</b>
 		     </td>
 		  </tr>
 	       {% else %}
 		  <tr class="{% cycle row_parity %}">
-		     <td colspan="2"><i>
+		     <td colspan="2">
 			C. If an Internet-Draft or RFC includes multiple parts and it is not
 			reasonably apparent which part of such Internet-Draft or RFC is alleged
 			to be covered by the patent information disclosed in Section
 			V(A) or V(B), it is helpful if the discloser identifies here the sections of
 			the Internet-Draft or RFC that are alleged to be so
-			covered:</i>
+			covered:
 		     </td>
 		  </tr>
 		  {% if ipr.document_sections %}
@@ -387,7 +384,7 @@
 	    </tr>
 	    <tbody class="{% cycle row_parity %}">
 	    <tr>
-	       <td colspan="2"><i>
+	       <td colspan="2">
 	       {% if section_list.form_legend %}
 		   {% if section_list.generic %}
 		   The Patent Holder states that its position with respect
@@ -395,7 +392,7 @@
 		   application(s) disclosed above that would necessarily be infringed by
 		   implementation of a technology required by a relevant IETF specification
 		   ("Necessary Patent Claims"), for the purpose of implementing such
-		   specification, is as follows(select one licensing declaration option only):</i>
+		   specification, is as follows(select one licensing declaration option only):
 		   {% endif %}
 		   {% if section_list.specific %}
 		   The Patent Holder states that its position with respect
@@ -403,7 +400,7 @@
 		   application(s) disclosed above that would necessarily be infringed by
 		   implementation of the technology required by the relevant IETF specification
 		   ("Necessary Patent Claims"), for the purpose of implementing such
-		   specification, is as follows(select one licensing declaration option only):</i>
+		   specification, is as follows(select one licensing declaration option only):
 		   {% endif %}
 		   {% if section_list.third_party %}
 		   The Patent Holder states that its position with respect
@@ -411,7 +408,7 @@
 		   application(s) disclosed above that would necessarily be infringed by
 		   implementation of the technology required by the relevant IETF specification
 		   ("Necessary Patent Claims"), for the purpose of implementing such
-		   specification, is as follows(select one licensing declaration option only):</i>
+		   specification, is as follows(select one licensing declaration option only):
 		   {% endif %}
 	       {% else %}
 	       The Patent Holder states that its position with respect
@@ -419,9 +416,8 @@
 	       application(s) disclosed above that would necessarily be infringed by
 	       implementation of the technology required by the relevant IETF specification
 	       ("Necessary Patent Claims"), for the purpose of implementing such
-	       specification, is as follows(select one licensing declaration option only):</i>
+	       specification, is as follows(select one licensing declaration option only):
 	       {% endif %}
-		  
 	       </td>
 	    </tr>
 	    <tr>
@@ -441,7 +437,7 @@
 	    <tbody class="{% cycle row_parity %}">
 	       <tr>
 		  <td colspan="2">
-		     <i>Licensing information, comments, notes, or URL for further information:</i>
+		     Licensing information, comments, notes, or URL for further information:
 		  </td>
 	       </tr>
 	       {% if ipr.comments %}
@@ -476,9 +472,9 @@
 	    {% endif %}
 	    <tr class="{% cycle row_parity %}">
 	       <td colspan="2">
-		  <b><i>Note: The individual submitting this template represents and warrants
+		  <b>Note: The individual submitting this template represents and warrants
 		  that he or she is authorized by the Patent Holder to agree to the
-		  above-selected licensing declaration.</i></b>
+		  above-selected licensing declaration.</b>
 	       </td>
 	    </tr>
 	 </table>
@@ -526,7 +522,7 @@
 	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.submitter.fax }}</b></td></tr>
 	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Email:</td>		<td><b>{{ ipr.submitter.email }}</b></td></tr>
 	    {% else %}
-	    <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</td></tr>
+	    <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</i></td></tr>
 	    {% endif %}
 	 </table>
       </blockquote>
