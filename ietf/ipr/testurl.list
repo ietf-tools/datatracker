@@ -14,6 +14,8 @@
 200,sort /ipr/search/?rfc_search=1034&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=1034			# Loong result, RFC search
 200	 /ipr/search/?rfc_search=4444&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=4444			# Empty result, RFC search
 200	 /ipr/about/			https://datatracker.ietf.org/public/ipr_disclosure.cgi
+200	 /ipr/search/?option=patent_search&patent_search=nortel	https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_search&patent_search=nortel
+
 200	 /ipr/2006/
 200	 /ipr/2006/feb/
 200	 /ipr/by-date/

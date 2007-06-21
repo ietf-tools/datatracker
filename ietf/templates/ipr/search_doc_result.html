@@ -3,8 +3,6 @@
 {% block search_result %}
    <table cellpadding="1" cellspacing="0" border="0">
 
-
-
       <tr><td colspan="3">Total number of IPR disclosures found: {{ iprs|length }} </td></tr>
       {% for ipr in iprs|dictsort:"submitted_date" %}
       <tr valign="top" bgcolor="#dadada">

@@ -1,7 +1,7 @@
-<html>
-<head><title>IPR Search Engine </title></head>
-<body>
-
+{% extends "base.html" %}
+{% block doctype %}{% endblock %}
+{% block title %}IPR Search{% endblock %}
+{% block content %}
 <center><br><br>
    <font color="333366" size=4><b>Document Search</b></font>
    <hr width="600"><br>
@@ -108,9 +108,6 @@
 
    </table>
    <hr width="600"><br><br>
-   <center><a href="./ipr_disclosure.cgi"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">IPR Disclosure Page</a>
-   </center><br>
-
-</body></html>
-
-
+   <center><a href="{% url ietf.ipr.views.showlist %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">IPR Disclosure Page</a>
+   </center>
+{% endblock %}

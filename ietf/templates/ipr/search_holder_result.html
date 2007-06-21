@@ -1,0 +1,52 @@
+{% extends "ipr/search_result.html" %}
+{% load ietf_filters %}
+{% block search_result %}
+   <table cellpadding="1" cellspacing="0" border="0">
+
+      <tr><td colspan="3"><b>Patent Owner/Applicant Search Result</b></td></tr>
+      {% if not iprs %}
+	 <tr>
+	    <td></td>
+	    <td colspan="2"><b>No IPR disclosures have been submitted by <i>{{ q }}</i></b></td>
+	 </tr>
+      {% else %}
+	 <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
+
+	 {% for ipr in iprs %}
+	 <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
+	 <tr valign="top">
+	    <td colspan="3">IPR that was submitted by <b><i>{{ q }}</i></b>, and is related to
+	       {% for doc in ipr.drafts.all %}
+	       {% ifnotequal ipr.drafts.count 1 %}{% ifequal doc ipr.last_draft %}<b> and </b>{% endifequal %}{% endifnotequal %}
+	       <b><i>{{ doc.document }}, "{{ doc.document.title }},"</i></b>
+	       {% endfor %}
+	       {% for doc in ipr.rfcs.all %}
+	       {% ifnotequal ipr.rfcs.count 1 %}{% ifequal doc ipr.last_rfc %} and {% endifequal %}{% endifnotequal %}
+	       <b><i>{{ doc.document }}, "{{ doc.document.title }},"</i></b>
+	       {% endfor %}
+	    </td>
+	 </tr>
+	 <tr valign="top">
+	    <td width="100">{{ ipr.submitted_date }}</td>
+	    <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
+	    <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a></td>
+	 </tr>
+	 {% for upd in ipr.updates.all %}
+	    {% ifnotequal upd ipr %}
+	    <tr valign="top">
+	       <td width="100">{{ upd.updated.submitted_date }}</td>
+	       <td width="90"><li>ID # {{ upd.updated.ipr_id }}</li></td>
+	       <td>
+		  IPR disclosure ID# {{ ipr.ipr_id }} <a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a>
+		  Updates <a href="{% url ietf.ipr.views.show ipr_id=upd.ipr_id %}">{{ upd.updated.title }}</a>
+	       </td>
+	    </tr>
+	    {% endifnotequal %}
+	 {% endfor %}
+	 </tbody>
+	 {% endfor %}
+
+      {% endif %}
+
+   </table>
+{% endblock %}
