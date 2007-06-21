@@ -178,7 +178,7 @@ def send_email(request):
 	context_instance=RequestContext(request))
 
 def status(request):
-    queryset = IDInternal.objects.filter(primary_flag=1).exclude(cur_state__state__in=('AD is watching', 'Dead')).order_by('cur_state', 'status_date', 'ballot_id')
+    queryset = IDInternal.objects.filter(primary_flag=1).exclude(cur_state__state__in=('RFC Ed Queue', 'RFC Published', 'AD is watching', 'Dead')).order_by('cur_state', 'status_date', 'ballot_id')
     return object_list(request, template_name="idtracker/status_of_items.html", queryset=queryset, extra_context={'title': 'IESG Status of Items'})
 
 def last_call(request):
