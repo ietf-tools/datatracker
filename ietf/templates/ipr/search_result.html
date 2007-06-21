@@ -1,0 +1,18 @@
+{% extends "base.html"}
+{% block doctype %}{% endblock %}
+{% block content %}
+	 <center>
+	    <h2>IPR Disclosures</h2>
+	 </center>
+	 <hr>
+	 <blockquote>
+	    {% block search_result %}
+	    {% endblock %}
+	    <hr><br>
+
+	    <a href="{% url ietf.ipr.search.search %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">IPR Search Main Page</a><br>
+	    <a href="{% url ietf.ipr.views.showlist %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">IPR Disclosure Page</a>
+	    <br>
+	 </blockquote>
+{% endblock %}
+

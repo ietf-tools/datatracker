@@ -1,12 +1,6 @@
+{% extends "ipr/search_result.html" %}
 {% load ietf_filters %}
-<html>
-<head><title>IPR Search Engine </title></head>
-<body>
-
-<center>
-   <h2>IPR Disclosures</h2></center>
-<hr width="100%">
-<blockquote>
+{% block search_result %}
    <table cellpadding="1" cellspacing="0" border="0">
 
 
@@ -47,12 +41,4 @@
       {% endfor %}
 
    </table>
-
-   <hr><br>
-
-   <a href="{% url ietf.ipr.views.search %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">IPR Search Main Page</a><br>
-   <a href="{% url ietf.ipr.views.list %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">IPR Disclosure Page</a>
-   <br>
-
-
-</body></html>
+{% endblock %}
