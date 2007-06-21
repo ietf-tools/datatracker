@@ -15,11 +15,10 @@
 	 {% for ipr in iprs %}
 	 <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
 	 <tr valign="top">
-	    <td colspan="3">IPR that was submitted by <b><i>{{ q }}</i></b>
-	    {% if ipr.generic %}
-	       , and is not related to a specific IETF contribution.
-	    {% else %}
-	       , and is related to
+	    <td colspan="3">IPR that was submitted by <b><i>{{ q }}</i></b>{% if ipr.generic %},
+	       and is not related to a specific IETF contribution.
+	    {% else %},
+	       and is related to
 	       {% for doc in ipr.drafts.all %}
 	       {% ifnotequal ipr.drafts.count 1 %}{% ifequal doc ipr.last_draft %}<b> and </b>{% endifequal %}{% endifnotequal %}
 	       <b><i>{{ doc.document }}, "{{ doc.document.title }},"</i></b>
