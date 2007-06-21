@@ -81,9 +81,6 @@ class NonWgWizard(wizard.Wizard):
 		# Can't get the choice mapping directly from the form
 		self.extra_context['area'] = formchoice(self.clean_forms[1], 'area')
 		self.extra_context['approver'] = formchoice(self.clean_forms[2], 'approver')
-		print "formchoice for area = %s" % formchoice(self.clean_forms[1], 'area')
-	    else:
-	    	print "add_edit = %s" % add_edit
 	return super(NonWgWizard, self).render_template(*args, **kwargs)
     def failed_hash(self, step):
 	raise NotImplementedError("step %d hash failed" % step)
