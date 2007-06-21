@@ -77,10 +77,10 @@ def search(request):
 		    'search_area_acronym': 'group__ietfwg__areagroup__area',
 		    'search_group_acronym': 'group__acronym',
 		    'search_filename': 'filename__icontains',
-		    'search_status_id': 'status',
+		    #'search_status_id': 'status',
 		}
 		q_objs = [Q(**{qdict[k]: args[k]}) for k in qdict.keys() if args.get(k, '') != '']
-		idmatches = InternetDraft.objects.filter(*q_objs).exclude(id_document_tag__in=in_tracker)
+		idmatches = InternetDraft.objects.filter(*q_objs).exclude(id_document_tag__in=in_tracker).filter(status__status='Active')
 		# resolve the queryset, append wrapper objects.
 		matches = list(matches) + [DocumentWrapper(id) for id in idmatches]
 	    if not(args.get('search_filename', '') or args.get('search_status_id', 0)) and args.get('search_rfcnumber', 0):
