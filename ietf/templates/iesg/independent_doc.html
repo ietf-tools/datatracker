@@ -44,8 +44,15 @@ The RFC Editor receives requests to publish non-IETF Working Group documents as 
 {% for date in dates %}
 <b>Date Sent: {{ date.grouper }}</b>
 <ul>
-{% for item in date.list %}
-<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.title }} ({{ item.intended_status }})</a>
+{% regroup date.list by idinternal.ballot_id as ballots %}
+{% for each_ballot in ballots %}
+{% if each_ballot.grouper %}
+<li> <a href="/iesg/ann/detail/{{ each_ballot.grouper }}/">
+{% for item in each_ballot.list %}
+{{ item.title }} ({{ item.intended_status }})<br>
+{% endfor %}
+</a></li>
+{% endif %}
 {% endfor %}
 </ul>
 {% endfor %}

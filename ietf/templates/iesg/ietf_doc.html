@@ -66,9 +66,14 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 {% for date in dates %}
 {% if date.list.0.idinternal.ballot_id %}<b>Date Sent: {{ date.grouper }} </b>{% endif %}
 <ul>
-{% for item in date.list %}
-{% if item.idinternal.ballot_id %}
-<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.title }} ({{ item.intended_status }})</a>
+{% regroup date.list by idinternal.ballot_id as ballots %}
+{% for each_ballot in ballots %}
+{% if each_ballot.grouper %}
+<li> <a href="/iesg/ann/detail/{{ each_ballot.grouper }}/">
+{% for item in each_ballot.list %}
+{{ item.title }} ({{ item.intended_status }})<br>
+{% endfor %}
+</a></li>
 {% endif %}
 {% endfor %}
 </ul>
@@ -79,9 +84,14 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 {% for date in dates %}
 {% if date.list.0.idinternal.ballot_id %}<b>Date Sent: {{ date.grouper }} </b>{% endif %}
 <ul>
-{% for item in date.list %}
-{% if item.idinternal.ballot_id %}
-<li><a href="/iesg/ann/detail/{{ item.idinternal.ballot_id }}/">{{ item.title }} ({{ item.intended_status }})</a>
+{% regroup date.list by idinternal.ballot_id as ballots %}
+{% for each_ballot in ballots %}
+{% if each_ballot.grouper %}
+<li> <a href="/iesg/ann/detail/{{ each_ballot.grouper }}/">
+{% for item in each_ballot.list %}
+{{ item.title }} ({{ item.intended_status }})<br>
+{% endfor %}
+</a></li>
 {% endif %}
 {% endfor %}
 </ul>
