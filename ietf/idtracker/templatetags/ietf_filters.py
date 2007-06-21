@@ -7,6 +7,7 @@ try:
 except ImportError:
     from email import Utils as emailutils
 import re
+import datetime
 #from ietf.utils import log
 
 register = template.Library()
@@ -155,3 +156,17 @@ def rfcnospace(string):
 def lstripw(string, chars):
     """Strip matching leading characters from words in string"""
     return " ".join([word.lstrip(chars) for word in string.split()])
+
+@register.filter(name='thisyear')
+def thisyear(date):
+    """Returns a boolean of whether or not the argument is this year."""
+    if date:
+	return date.year == datetime.date.today().year
+    return True
+
+@register.filter(name='inpast')
+def inpast(date):
+    """Returns a boolean of whether or not the argument is in the past."""
+    if date:
+	return date < datetime.datetime.now()
+    return True

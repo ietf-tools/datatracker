@@ -4,11 +4,11 @@
   <td nowrap>
   {% ifequal doc.cur_state.state "In Last Call" %}
     {% if doc.document.lc_expiration_date %}
-      {{ doc.document.lc_expiration_date }}
+      {{ doc.document.lc_expiration_date|date:"M j" }}{% if not doc.lc_expiration_date|thisyear %}, {{ doc.lc_expiration_date|date:"Y" }}{% endif %}
     {% endif %}
   {% else %}
     {% if doc.status_date %}
-      {{ doc.status_date|date:"M j" }}
+      {{ doc.status_date|date:"M j" }}{% if not doc.status_date|thisyear %}, {{ doc.status_date|date:"Y" }}{% endif %}
     {% endif %}
   {% endifequal %}</td>
 {% else %}
