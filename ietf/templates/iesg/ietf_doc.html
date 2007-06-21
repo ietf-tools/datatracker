@@ -36,6 +36,7 @@ a.noline:link, a.noline:visited, a.noline:hover {border-style:none;}
 {% block content %}
 {% if is_recent %}
 <center><h2>Recent IESG Announcements</center>
+<blockquote>
 This page contains links to all IESG Protocol, Document, and Working Group Action announcements that have been sent within the past six months. Announcements that were sent prior to six month ago can be found in <a href="previous/">Previous Announcements</a>.<br>
 <br>
 <b>
@@ -45,8 +46,10 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 3. <a href="#wg">Working Group Action Announcements</a><br>
 4. <a href="/iesg/ann/ietf-doc/previous/">Previous Announcements</a><br>
 </b>
+</blockquote>
 {% else %}
 <center><h2>Previous IESG Announcements</center>
+<blockquote>
 This page contains links to all IESG Protocol, Document, and Working Group Action announcements that were sent prior to six months ago.  Announcements that have been sent within the past six months can be found in <a href="../">Recent Announcements</a>.
 <br><br>
 <b>
@@ -55,6 +58,7 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 3. <a href="#wg">Working Group Action Announcements</a><br>
 4. <a href="/iesg/ann/ietf-doc/recent/">Recent IESG Announcements</a><br>
 </b>
+</blockquote>
 {% endif %}
 <hr>
 <h3><a name="protocol">1. <u>Protocol Action Announcements</u></a></h3>

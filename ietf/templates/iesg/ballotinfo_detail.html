@@ -1,8 +1,24 @@
 {% extends "base.html" %}
 {% block title %}IESG Announcement{% endblock %}
-                                                                                                                
+
 {% block content %}
-<pre>
+   <center><h2>IESG Announcement</center>
+   <blockquote>
+
+      This page contains an IESG Protocol, Document, or Working Group Action
+      announcement.  Other announcements can be found using the links below.
+
+      <br><br>
+      <b>
+	 1. <a href="#protocol">Protocol Action Announcements</a><br>
+	 2. <a href="#document">Document Action Announcements</a><br>
+	 3. <a href="#wg">Working Group Action Announcements</a><br>
+	 4. <a href="/iesg/ann/ietf-doc/recent/">Recent IESG Announcements</a><br>
+	 4. <a href="/iesg/ann/ietf-doc/previous/">Previous IESG Announcements</a><br>
+      </b>
+   </blockquote>
+   <hr>
+   <pre>
 {{ object.approval_text|escape|urlize }}
 
 {{ object.ballot_writeup|escape|urlize }}
