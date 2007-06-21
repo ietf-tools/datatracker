@@ -17,7 +17,7 @@ the selected Area Director for approval.<br>
 </td>
 </tr>
 <tr valign="top"><td>Request Type:</td><td>
-{% ifequal clean_forms.0.add_edit "add" %}
+{% ifequal clean_forms.0.add_edit.data "add" %}
 Adding a new entry
 {% else %}
 Editing an existing entry
