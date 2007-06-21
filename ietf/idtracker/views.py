@@ -65,7 +65,7 @@ def search(request):
 	if status != '':
 	    q_objs.append(Q(draft__status=status,rfc_flag=0))
 	matches = IDInternal.objects.all().filter(*q_objs)
-	matches = matches.order_by('cur_state', 'cur_sub_state', 'ballot', '-primary_flag')
+	matches = matches.order_by('cur_state', 'cur_sub_state', '-primary_flag')
 	#
 	# Now search by I-D exists, if there could be any results.
 	# If searching by job owner, current state or substate, there
@@ -80,7 +80,7 @@ def search(request):
 		    #'search_status_id': 'status',
 		}
 		q_objs = [Q(**{qdict[k]: args[k]}) for k in qdict.keys() if args.get(k, '') != '']
-		idmatches = InternetDraft.objects.filter(*q_objs).exclude(id_document_tag__in=in_tracker).filter(status__status='Active')
+		idmatches = InternetDraft.objects.filter(*q_objs).exclude(id_document_tag__in=in_tracker).filter(status__status='Active').order_by('filename')
 		# resolve the queryset, append wrapper objects.
 		matches = list(matches) + [DocumentWrapper(id) for id in idmatches]
 	    if not(args.get('search_filename', '') or args.get('search_status_id', 0)) and args.get('search_rfcnumber', 0):

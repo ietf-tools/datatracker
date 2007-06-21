@@ -16,8 +16,8 @@ class MyIfChangedNode(Node):
         self._varlist = varlist
 
     def render(self, context):
-        if context.has_key('forloop') and context['forloop']['first']:
-            self._last_seen = None
+        #if context.has_key('forloop') and context['forloop']['first']:
+        #    self._last_seen = None
         try:
             if self._varlist:
                 # Consider multiple parameters.
@@ -81,3 +81,24 @@ def myifchanged(parser, token):
         nodelist_false = NodeList()
     return MyIfChangedNode(nodelist_true, nodelist_false, *bits[1:])
 myifchanged = register.tag(myifchanged)
+
+
+class CycleValueNode(Node):
+    def __init__(self, cyclenode):
+        self.cyclenode = cyclenode
+
+    def render(self, context):
+	return self.cyclenode.cyclevars[self.cyclenode.counter % self.cyclenode.cyclevars_len]
+
+def cyclevalue(parser, token):
+    args = token.contents.split()
+    if len(args) == 2:
+        name = args[1]
+        if not hasattr(parser, '_namedCycleNodes'):
+            raise TemplateSyntaxError("No named cycles in template: '%s' is not defined" % name)
+        if name not in parser._namedCycleNodes:
+            raise TemplateSyntaxError("Named cycle '%s' does not exist" % name)
+        return CycleValueNode(parser._namedCycleNodes[name])
+    else:
+	raise TemplateSyntaxError("Usage: cyclevalue cyclename")
+cyclevalue = register.tag(cyclevalue)

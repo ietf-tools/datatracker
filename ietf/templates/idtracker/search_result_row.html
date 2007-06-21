@@ -1,5 +1,5 @@
 {% load myifchanged %}
-	<tr bgcolor="#{% myifchanged match.ballot_id %}{% cycle F8D6F8,E2AFE2 as ballotcolor %}{% else %}{% if match.synthetic %}{% cycle ballotcolor %}{% else %}{{ ballotcolor }}{% endif %}{% endmyifchanged %}">
+	<tr bgcolor="#{% myifchanged match.ballot_id %}{% cycle F8D6F8,E2AFE2 as ballotcolor %}{% else %}{% if match.synthetic %}{% cycle ballotcolor %}{% else %}{% cyclevalue ballotcolor %}{% endif %}{% endmyifchanged %}">
 	{% if match.synthetic %}
 	<td>&nbsp;</td>
 	{% else %}
