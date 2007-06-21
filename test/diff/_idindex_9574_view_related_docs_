@@ -1,0 +1,101 @@
+--- https://datatracker.ietf.org/public/idindex.cgi?command=view_related_docs&id=9574 
++++ /idindex/9574/view_related_docs/ 
+@@ -13,1 +13,1 @@
+-RFC4035, "Protocol Modifications for the DNS Security Extensions",
++rfc4035, "Protocol Modifications for the DNS Security Extensions",
+@@ -16,330 +16,3 @@
+-RFC4470, "Minimally Covering NSEC Records and DNSSEC On-line Signing",
+-that updated RFC4035, "Protocol Modifications for the DNS Security
+-Extensions"
+-RFC4034, "Resource Records for the DNS Security Extensions", that was
+-updated by RFC4470, "Minimally Covering NSEC Records and DNSSEC On-
+-line Signing"
+-RFC2535, "Domain Name System Security Extensions", that was obsoleted
+-by RFC4034, "Resource Records for the DNS Security Extensions"
+-RFC2065, "Domain Name System Security Extensions", that was obsoleted
+-by RFC2535, "Domain Name System Security Extensions"
+-RFC1034, "Domain names - concepts and facilities", that was obsoleted
+-by RFC2065, "Domain Name System Security Extensions"
+-RFC882, "Domain names: Concepts and facilities", that was obsoleted by
+-RFC1034, "Domain names - concepts and facilities"
+-RFC973, "Domain system changes and observations", that updated RFC882,
+-"Domain names: Concepts and facilities"
+-RFC1035, "Domain names - implementation and specification", that
+-obsoleted RFC973, "Domain system changes and observations"
+-RFC2137, "Secure Domain Name System Dynamic Update", that obsoleted
+-RFC1035, "Domain names - implementation and specification"
+-RFC3007, "Secure Domain Name System (DNS) Dynamic Update", that
+-updated RFC2137, "Secure Domain Name System Dynamic Update"
+-RFC4033, "DNS Security Introduction and Requirements", that updated
+-RFC3007, "Secure Domain Name System (DNS) Dynamic Update"
+-RFC3008, "Domain Name System Security (DNSSEC) Signing Authority",
+-that was obsoleted by RFC4033, "DNS Security Introduction and
+-Requirements"
+-RFC3658, "Delegation Signer Resource Record", that updated RFC3008,
+-"Domain Name System Security (DNSSEC) Signing Authority"
+-RFC3755, "Legacy Resolver Compatibility for Delegation Signer", that
+-updated RFC3658, "Delegation Signer Resource Record"
+-RFC3757, "KEY RR Secure Entry Point Flag", that updated RFC3755,
+-"Legacy Resolver Compatibility for Delegation Signer"
+-draft-ietf-dnsext-keyrr-key-signing-flag, "KEY RR Secure Entry Point
+-Flag", that was published as RFC3757, "KEY RR Secure Entry Point Flag"
+-RFC3845, "DNS Security (DNSSEC) NextSECure (NSEC) RDATA Format", that
+-updated RFC3755, "Legacy Resolver Compatibility for Delegation Signer"
+-draft-ietf-dnsext-nsec-rdata, "DNSSEC NSEC RDATA Format", that was
+-published as RFC3845, "DNS Security (DNSSEC) NextSECure (NSEC) RDATA
+-Format"
+-draft-ietf-dnsext-dnssec-2535typecode-change, "Legacy Resolver
+-Compatibility for Delegation Signer", that was published as RFC3755,
+-"Legacy Resolver Compatibility for Delegation Signer"
+-RFC3090, "DNS Security Extension Clarification on Zone Status", that
+-was updated by RFC3658, "Delegation Signer Resource Record"
+-draft-ietf-dnsext-zone-status, "DNS Security Extension Clarification
+-on Zone Status", that was published as RFC3090, "DNS Security
+-Extension Clarification on Zone Status"
+-draft-ietf-dnsext-delegation-signer, "Delegation Signer Resource
+-Record", that was published as RFC3658, "Delegation Signer Resource
+-Record"
+-draft-ietf-dnsext-signing-auth, "Domain Name System Security (DNSSEC)
+-Signing Authority", that was published as RFC3008, "Domain Name System
+-Security (DNSSEC) Signing Authority"
+-RFC3445, "Limiting the Scope of the KEY Resource Record out", that was
+-obsoleted by RFC4033, "DNS Security Introduction and Requirements"
+-draft-ietf-dnsext-restrict-key-for-dnssec, "Limiting the Scope of the
+-KEY Resource Record out", that was published as RFC3445, "Limiting the
+-Scope of the KEY Resource Record out"
+-RFC3655, "Redefinition of DNS AD bit", that was obsoleted by RFC4033,
+-"DNS Security Introduction and Requirements"
+-draft-ietf-dnsext-ad-is-secure, "Redefinition of DNS AD bit", that was
+-published as RFC3655, "Redefinition of DNS AD bit"
+-RFC2136, "Dynamic Updates in the Domain Name System (DNS UPDATE)",
+-that was updated by RFC4033, "DNS Security Introduction and
+-Requirements"
+-draft-ietf-dnsind-dynDNS, "Dynamic Updates in the Domain Name System
+-(DNS UPDATE)", that was published as RFC2136, "Dynamic Updates in the
+-Domain Name System (DNS UPDATE)"
+-RFC2181, "Clarifications to the DNS Specification", that was updated
+-by RFC4033, "DNS Security Introduction and Requirements"
+-RFC1123, "Requirements for Internet hosts - application and support",
+-that was updated by RFC2181, "Clarifications to the DNS Specification"
+-RFC2474, "Definition of the Differentiated Services Field (DS Field)
+-in the IPv4 and IPv6 Headers", that updated RFC1123, "Requirements for
+-Internet hosts - application and support"
+-RFC3168, "The Addition of Explicit Congestion Notification (ECN) to
+-IP", that updated RFC2474, "Definition of the Differentiated Services
+-Field (DS Field) in the IPv4 and IPv6 Headers"
+-RFC2481, "A Proposal to add Explicit Congestion Notification (ECN) to
+-IP", that was obsoleted by RFC3168, "The Addition of Explicit
+-Congestion Notification (ECN) to IP"
+-draft-kksjf-ecn, "A Proposal to add Explicit Congestion Notification
+-(ECN) to IP", that was published as RFC2481, "A Proposal to add
+-Explicit Congestion Notification (ECN) to IP"
+-RFC793, "Transmission Control Protocol", that was updated by RFC3168,
+-"The Addition of Explicit Congestion Notification (ECN) to IP"
+-RFC761, "DOD Standard Transmission Control Protocol", that was
+-obsoleted by RFC793, "Transmission Control Protocol"
+-RFC2401, "Security Architecture for the Internet Protocol", that was
+-updated by RFC3168, "The Addition of Explicit Congestion Notification
+-(ECN) to IP"
+-RFC1825, "Security Archithe Internet Protocol", that was
+-obsoleted by RFC2401, "Securit Architecture for the Internet
+... (skipping 570 lines of diff)
