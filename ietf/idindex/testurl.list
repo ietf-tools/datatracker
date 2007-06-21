@@ -10,5 +10,5 @@ skipredirect,200	/idindex/draft-ietf-dnsext-dnssec-protocol/view_related_docs/	h
 skipredirect,200	/idindex/draft-ietf-dnsext-dnssec-protocol/	https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
 200	/idindex/all_id_txt.html
 200	/idindex/all_id.html
-200	/idindex/			https://datatracker.ietf.org/public/idindex.cgi?command=search_id
+200	/idindex/?			https://datatracker.ietf.org/public/idindex.cgi?command=search_id
 200	/idindex/			https://datatracker.ietf.org/public/idindex.cgi
