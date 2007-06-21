@@ -292,6 +292,7 @@ class UrlTestCase(TestCase):
                         note("     200 %s" % (master))
                     except urllib.URLError, e:
                         note("     %s %s" % (e.code, e.url))
+                        goodhtml = None                    
                     try:
                         if goodhtml and response.content:
                             if "sort" in codes:
