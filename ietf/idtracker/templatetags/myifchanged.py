@@ -4,7 +4,7 @@ and with the context push removed."""
 
 
 from django.template import Node, NodeList, resolve_variable
-from django.template import VariableDoesNotExist
+from django.template import VariableDoesNotExist, TemplateSyntaxError
 from django.template import Library
 
 register = Library()
