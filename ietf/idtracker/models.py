@@ -882,5 +882,6 @@ class DocumentWrapper(object):
     docstate = "I-D Exists"
     cur_state = "I-D Exists"
     cur_state_id = 100
+    primary_flag = 1
     def __init__(self, document):
 	self.document = document
