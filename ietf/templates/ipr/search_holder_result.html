@@ -15,7 +15,7 @@
 	 {% for ipr in iprs %}
 	 <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
 	 <tr valign="top">
-	    <td colspan="3">IPR that was submitted by <b><i>{{ q }}</i></b>{% if ipr.generic %},
+	    <td colspan="3">IPR that was submitted by <b><i>{{ q }}</i></b>{% if not ipr.drafts.count and not ipr.rfcs.count %},
 	       and is not related to a specific IETF contribution.
 	    {% else %},
 	       and is related to
