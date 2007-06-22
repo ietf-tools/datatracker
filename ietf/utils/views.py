@@ -1,5 +1,4 @@
 from django.shortcuts import render_to_response as render
-import time
 
 testurls = []
 urlcount = 0
