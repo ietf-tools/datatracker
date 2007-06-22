@@ -9,7 +9,7 @@
              invalid HTML. -->
         <form method="GET" action="{% url ietf.idtracker.views.view_id match.document.filename %}"><td><input type="submit" value="DETAIL"></td></form>
 	{% endif %}
-	<td>{% if match.primary_flag %}<li>{% else %}<dd>{% endif %}{{ match.document.filename_with_link }} ({{ match.document.intended_status }})
+	<td nowrap>{% if match.primary_flag %}<li>{% else %}<dd>{% endif %}{{ match.document.filename_with_link }} ({{ match.document.intended_status }})
 	    {% ifequal match.document.status.status "Replaced" %}
 	      <br>&nbsp;&nbsp;&nbsp;&nbsp;Replaced by
 	      {% if match.document.replaced_by.idinternal %}
@@ -30,7 +30,7 @@
 	      {% endfor %}
 	    {% endif %}
         </td>
-	<td>{{ match.document.revision }}</td>
+	<td>{{ match.document.revision_display }}</td>
 	<td>{{ match.job_owner }}</td>
 	<td>{% firstof match.status_date "" %}</td>
 	<td>{{ match.event_date }}</td>
