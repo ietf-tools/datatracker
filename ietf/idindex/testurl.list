@@ -4,8 +4,8 @@ skipredirect,200	/idindex/wgdocs/idr/	https://datatracker.ietf.org/public/idinde
 200	/idindex/inddocs/F/	https://datatracker.ietf.org/public/idindex.cgi?command=show_ind_id&fl=F
 200	/idindex/otherdocs/tools/	https://datatracker.ietf.org/public/idindex.cgi?command=show_other&cat=tools
 200	/idindex/showdocs/rfc/name/	https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=rfc&sort=name
-200	/idindex/9574/view_related_docs/	https://datatracker.ietf.org/public/idindex.cgi?command=view_related_docs&id=9574
-skipredirect,200	/idindex/draft-ietf-dnsext-dnssec-protocol/view_related_docs/	https://datatracker.ietf.org/public/idindex.cgi?command=view_related_docs&id=9574
+skip,200	/idindex/9574/view_related_docs/	https://datatracker.ietf.org/public/idindex.cgi?command=view_related_docs&id=9574
+200	/idindex/draft-ietf-dnsext-dnssec-protocol/view_related_docs/
 200	/idindex/9574/			https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
 skipredirect,200	/idindex/draft-ietf-dnsext-dnssec-protocol/	https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
 200	/idindex/all_id_txt.html
