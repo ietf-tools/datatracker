@@ -3,8 +3,8 @@
 200		/iesg/telechat/2007/apr/
 200		/iesg/telechat/detail/354/	https://datatracker.ietf.org/public/view_telechat_minute.cgi?command=view_minute&id=354
 200,sort	/iesg/ann/independent/		https://datatracker.ietf.org/public/rfc_editor_announcement.cgi
-200		/iesg/ann/ietf-doc/recent/	https://datatracker.ietf.org/public/recent_announcement.cgi
-200		/iesg/ann/ietf-doc/previous/	https://datatracker.ietf.org/public/previous_announcement.cgi
+200,sort	/iesg/ann/ietf-doc/recent/	https://datatracker.ietf.org/public/recent_announcement.cgi
+200,sort	/iesg/ann/ietf-doc/previous/	https://datatracker.ietf.org/public/previous_announcement.cgi
 200		/iesg/ann/detail/2422/		https://datatracker.ietf.org/public/recent_announcement.cgi?command=show_detail&ballot_id=2422
 200		/iesg/ann/detail/1563/		https://datatracker.ietf.org/public/previous_announcement.cgi?command=show_detail&ballot_id=1563
 404		/iesg/ann/detail/567/		

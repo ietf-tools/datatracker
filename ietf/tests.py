@@ -26,6 +26,8 @@ def run_tests(module_list, verbosity=1, extra_tests=[]):
 def reduce_text(html, pre=False, fill=True):
     if html.count("<li>") > 5*html.count("</li>"):
         html = html.replace("<li>", "</li><li>")
+    if not fill:
+        html = re.sub("<br ?/?>", "<br/><br/>", html)
     html = re.sub(r"(?i)(RFC) (\d+)", r"\1\2", html) # ignore "RFC 1234" vs. "RFC1234" diffs
     html = re.sub(r"\bID\b", r"I-D", html)           # idnore " ID " vs. " I-D " diffs
     text = html2text(html, pre=pre, fill=fill).strip()
