@@ -341,6 +341,8 @@ class Rfc(models.Model):
 	return "rfc%d" % ( self.rfc_number )
     def revision(self):
 	return "RFC"
+    def revision_display(self):
+	return "RFC"
     def doclink(self):
 	return "http://www.ietf.org/rfc/%s" % ( self.displayname() )
     def doctype(self):
