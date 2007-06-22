@@ -86,8 +86,8 @@
   </object>
   <object pk="15" model="redirects.redirect">
     <field type="CharField" name="cgi">public/previous_announcement.cgi</field>
-    <field type="CharField" name="url">iesg/ann/ietf-doc/previous</field>
-    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="url">iesg/ann</field>
+    <field type="CharField" name="rest">ietf-doc/previous</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="16" model="redirects.redirect">
@@ -305,6 +305,12 @@
     <field type="CharField" name="url"></field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">7</field>
+  </object>
+  <object pk="19" model="redirects.command">
+    <field type="CharField" name="command">show_detail</field>
+    <field type="CharField" name="url">detail</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">15</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">6</field>
   </object>
   <object pk="2" model="redirects.suffix">
     <field type="CharField" name="rest">%(fl)s</field>
