@@ -1,0 +1,19 @@
+--- https://datatracker.ietf.org/public/pidtracker.cgi?command=search_list&search_job_owner=0&search_group_acronym=&search_status_id=&search_cur_state=&sub_state_id=6&search_filename=bgp-m&search_rfcnumber=&search_area_acronym=&search_button=SEARCH 
++++ /idtracker/?search_group_acronym=&search_job_owner=0&search_rfcnumber=&search_status_id=&sub_state_id=6&search_cur_state=&search_button=SEARCH&search_filename=bgp-m&search_area_acronym= 
+@@ -67,0 +67,1 @@
++--All Substates
+@@ -72,1 +73,0 @@
+---All Substates
+@@ -84,2 +84,1 @@
+-Document States: State Diagram and State Explanations
+-Search Result
++Document States: State Diagram and State Explanations Search Result
+@@ -92,2 +91,2 @@
+-draft-ietf-idr-bgp-mibagent-survey (Informational)
+-02 Alex Zinin 2006-01-17
++draft-ietf-idr-bgp-mibagent-survey (Informational) 02 Alex Zinin
++2006-01-17
+@@ -100,3 +99,0 @@
+-Did you find a bug? Let us know.
+-Any question or suggestion?
+-This page produced by the IETF Secretariat for the IESG
