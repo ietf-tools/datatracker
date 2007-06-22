@@ -4,12 +4,13 @@ from ietf.idtracker.models import PersonOrOrgInfo
 
 class UserMap(models.Model):
     """
-    This is effectively a many:1 mapping of django-user -> IETF user.
-    It'd ideally be 1:1, but for testing some users have multiple
-    accounts with different privilege levels.
+    This is a 1:1 mapping of django-user -> IETF user.
+    This can't represent the users in the existing tool that
+    have multiple accounts with multiple privilege levels: they
+    need extra IETF users.
     """
     user = models.ForeignKey(User, raw_id_admin=True, core=True, unique=True)
-    person = models.ForeignKey(PersonOrOrgInfo, edit_inline=models.STACKED, max_num_in_admin=1)
+    person = models.ForeignKey(PersonOrOrgInfo, edit_inline=models.STACKED, max_num_in_admin=1, unique=True)
     def __str__(self):
 	return "Mapping django user %s to IETF person %s" % ( self.user, self.person )
 
