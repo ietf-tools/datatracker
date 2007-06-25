@@ -32,7 +32,7 @@ nonwg_fields = {
     'ds_name': None,
     'ds_email': None,
     'msg_to_ad': None,
-    'admin': MultiEmailField(label='List Administrator(s)', widget=forms.Textarea(attrs={'rows': 3, 'cols': 50})),
+    #'admin': MultiEmailField(label='List Administrator(s)', widget=forms.Textarea(attrs={'rows': 3, 'cols': 50})),
 }
 
 nonwg_attrs = {
@@ -43,6 +43,7 @@ nonwg_attrs = {
 
 nonwg_widgets = {
     'list_url': UrlMultiWidget(choices=(('http://', 'http://'), ('https://', 'https://'), ('mailto:', 'mailto:'))),
+    'admin': forms.Textarea(attrs = {'rows': 3, 'cols': 50}),
     'purpose': forms.Textarea(attrs = {'rows': 4, 'cols': 70}),
     'subscribe_url': UrlMultiWidget(choices=(('n/a', 'Not Applicable'), ('http://', 'http://'), ('https://', 'https://'))),
     'subscribe_other': forms.Textarea(attrs = {'rows': 3, 'cols': 50}),
@@ -81,11 +82,12 @@ class NonWgWizard(wizard.Wizard):
 		# Can't get the choice mapping directly from the form
 		self.extra_context['area'] = formchoice(self.clean_forms[1], 'area')
 		self.extra_context['approver'] = formchoice(self.clean_forms[2], 'approver')
-        if self.step == 2 and add_edit == 'delete':
+        if self.step == 2:
             form0 = self.clean_forms[0]
             add_edit = form0.clean_data['add_edit']
-            self.extra_context['list_q'] = NonWgMailingList.objects.get(pk=self.clean_forms[0].clean_data['list_id_delete'])
-            self.extra_context['approver'] =  formchoice(self.clean_forms[1], 'approver')
+            if add_edit == 'delete':
+                self.extra_context['list_q'] = NonWgMailingList.objects.get(pk=self.clean_forms[0].clean_data['list_id_delete'])
+                self.extra_context['approver'] =  formchoice(self.clean_forms[1], 'approver')
 	return super(NonWgWizard, self).render_template(*args, **kwargs)
     def failed_hash(self, step):
 	raise NotImplementedError("step %d hash failed" % step)
