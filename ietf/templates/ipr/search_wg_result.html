@@ -1,0 +1,54 @@
+{% extends "ipr/search_result.html" %}
+{% load ietf_filters %}
+	    {% block search_result %}
+	    <table cellpadding="1" cellspacing="0" border="0">
+	       <tr><td colspan="3"><b>{% block search_header %}Working Group Search Result{% endblock %}</b></td></tr>
+	       {% if not iprs %}
+		  <tr>
+		     <td></td>
+		     <td colspan="2"><b>No IPR disclosures have been submitted by <i>{{ q }}</i></b></td>
+		  </tr>
+	       {% else %}
+		  <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
+
+		  {% block iprlist %}
+		     {% for doc in docs %}
+		     <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
+			<tr >
+			   <td colspan="3">
+			      IPR that is related to <b><i>{{ doc|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.title }}"{% if doc.related %}, {{ doc.relation }} {{ doc.related|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.title }}"{% endif %}
+			      </i></b> which is a product of Working Group <b><i>{{ q }}</i></b>
+			   </td>
+			</tr>
+			{% if doc.iprs %}
+			   {% for ipr in doc.iprs %}
+			      <tr valign="top">
+				 <td width="100">{{ ipr.submitted_date }}</td>
+				 <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
+				 <td>
+				    {% for item in ipr.updates.all %}
+				       {% ifequal item.updated.status 1 %}
+					  IPR disclosure ID# {{ item.updated.ipr_id }}, "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>" Updated by
+				       {% endifequal %}
+				    {% endfor %}
+				    <a href="{% url ietf.ipr.views.show %}{{ ipr.ipr_id }}">"{{ ipr.title }}"</a>
+				    <!--{% for item in ipr.updated_by.all %}
+				       {% ifequal item.processed 1 %}
+					  Updated by "<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>"<br> 
+				       {% endifequal %}
+				    {% endfor %}-->
+				 </td>
+			      </tr>
+			   {% endfor %}
+			{% else %}
+			<tr>
+			   <td></td>
+			   <td colspan="2"><b>No IPR disclosures related to <i>{{ doc|rfcspace|lstrip:"0" }}</i> have been submitted</b></td>
+			</tr>
+			{% endif %}
+		     </tbody>
+		     {% endfor %}
+		  {% endblock %}
+	       {% endif %}
+	    </table>
+	    {% endblock %}

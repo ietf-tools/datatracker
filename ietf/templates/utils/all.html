@@ -6,6 +6,7 @@
 </head>
    <body>
       <h1>Review items</h1>
+      ( There are {{ count }} items in the list )
       <ul>
 	 {% for item in info %}
 	 <li><a href="/review/{{ item.num }}/">{{ item.old }}</a></li>
