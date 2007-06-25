@@ -56,4 +56,4 @@ def all(request):
         item["old"] = testurls[i][2]
         info.append(item)
         
-    return render("utils/all.html", {"info": info })
+    return render("utils/all.html", {"info": info, "count": len(info) })
