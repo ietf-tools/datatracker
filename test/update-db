@@ -9,8 +9,7 @@ progdir=${0%/*}
 cd $progdir/..
 build=$PWD
 
-function log() { logger -i -t $program -s "$*"; }
-function die() { log "$*; terminating."; echo "$program: Error: $*" 1>&2; exit 1; }
+function die() { echo "$*; terminating."; echo "$program: Error: $*" 1>&2; exit 1; }
 
 
 for dir in /var/local /var/state /var/run /var/tmp; do
@@ -45,31 +44,33 @@ while true; do
 	#echo "Database dump file is from $(date -r $DBDUMP +'%Y-%m-%d %H:%M')."
 	#echo "Last update done $(date -r $DBDONE +'%Y-%m-%d %H:%M')."
 	if [ $DBDUMP -nt $DBTIME ]; then
+	    echo "Updating database dated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')"
+
 	    echo "$$" > $PIDFILE
 	    chmod a+rw $PIDFILE
 
-	    log "Updating local database from $DBDUMP ..."
+	    echo "Updating local database from $DBDUMP ..."
 	    python ietf/manage.py dbshell <  $DBDUMP
-	    log "Updating local database from $DBFIX ..."
+	    echo "Updating local database from $DBFIX ..."
 	    python ietf/manage.py dbshell <  $DBFIX
-	    log "Running Django syncdb ..."
+	    echo "Running Django syncdb ..."
 	    python ietf/manage.py syncdb
 	    touch -r $DBDUMP $DBTIME
 	    touch $DBDONE
-	    log "Done."
-#	else
-#	    echo "No new database dump available."
+	    echo "Done."
+	else
+	    echo "Database is up-to-date (updated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M'))"
 	fi
 	rm -rf $DBLOCK
 	exit 0
     else
 	pid=$(< $PIDFILE ) || die "Couldn't read pidfile '$PIDFILE'"
 	if kill -0 $pid; then
-	    log "Pidfile for process $pid exists, and process is running. Sleeping."
+	    echo "Pidfile for process $pid exists, and process is running. Sleeping."
 	    sleep 10
 	else
-	    log "Pidfile for process $pid exists, but process isn't running."
-	    log "Removing lock and old pid file $pidfile."
+	    echo "Pidfile for process $pid exists, but process isn't running."
+	    echo "Removing lock and old pid file $pidfile."
 	    rm -rf $DBLOCK
 	fi
     fi
