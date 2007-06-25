@@ -32,7 +32,7 @@ nonwg_fields = {
     'ds_name': None,
     'ds_email': None,
     'msg_to_ad': None,
-    #'admin': MultiEmailField(label='List Administrator(s)', widget=forms.Textarea(attrs={'rows': 3, 'cols': 50})),
+    'admin': MultiEmailField(label='List Administrator(s)', widget=forms.Textarea(attrs={'rows': 3, 'cols': 50})),
 }
 
 nonwg_attrs = {
@@ -43,7 +43,7 @@ nonwg_attrs = {
 
 nonwg_widgets = {
     'list_url': UrlMultiWidget(choices=(('http://', 'http://'), ('https://', 'https://'), ('mailto:', 'mailto:'))),
-    'admin': forms.Textarea(attrs = {'rows': 3, 'cols': 50}),
+    #'admin': forms.Textarea(attrs = {'rows': 3, 'cols': 50}),
     'purpose': forms.Textarea(attrs = {'rows': 4, 'cols': 70}),
     'subscribe_url': UrlMultiWidget(choices=(('n/a', 'Not Applicable'), ('http://', 'http://'), ('https://', 'https://'))),
     'subscribe_other': forms.Textarea(attrs = {'rows': 3, 'cols': 50}),
