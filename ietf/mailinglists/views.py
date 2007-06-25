@@ -74,13 +74,16 @@ class NonWgWizard(wizard.Wizard):
 	return templates
     def render_template(self, *args, **kwargs):
 	self.extra_context['clean_forms'] = self.clean_forms
+        form0 = self.clean_forms[0]
+        add_edit = form0.clean_data['add_edit']
 	if self.step == 3:
-	    form0 = self.clean_forms[0]
-	    add_edit = form0.clean_data['add_edit']
 	    if add_edit == 'add' or add_edit == 'edit':
 		# Can't get the choice mapping directly from the form
 		self.extra_context['area'] = formchoice(self.clean_forms[1], 'area')
 		self.extra_context['approver'] = formchoice(self.clean_forms[2], 'approver')
+        if self.step == 2 and add_edit == 'delete':
+            self.extra_context['list_q'] = NonWgMailingList.objects.get(pk=self.clean_forms[0].clean_data['list_id_delete'])
+            self.extra_context['approver'] =  formchoice(self.clean_forms[1], 'approver')
 	return super(NonWgWizard, self).render_template(*args, **kwargs)
     def failed_hash(self, step):
 	raise NotImplementedError("step %d hash failed" % step)

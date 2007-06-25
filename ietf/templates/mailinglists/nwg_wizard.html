@@ -3,7 +3,7 @@
 {% block nwgcontent %}
 <a href="/mailinglists/nonwg_lists/"><b>View Current list</b></a><br>
 </p><p>
-<h2>Step 3</h2>
+<h2>Step {{ step|add:"1"  }}</h2>
         <form action="." method="POST">
 <input type="hidden" name="{{ step_field }}" value="{{ step }}" />
 {{ previous_fields }}
