@@ -4,8 +4,12 @@ PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 {% endblock %}
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
-   <head><title>{% block title %}IETF Data{% endblock %} - WCF</title>
-      <link rel="icon" href="http://tools.ietf.org/images/django-ietf.png" />
+   <head><title>{% block title %}IETF Data{% endblock %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}</title>
+      {% ifnotequal server_mode "production" %}
+      <link rel="icon" href="/images/ietf-dev-icon.bmp" />
+      {% else %}
+      <link rel="icon" href="/images/ietf-icon.bmp" />
+      {% endifnotequal %}
       {% block head %}{% endblock %}
       <style type="text/css"><!--
       {% block css %}{% endblock %}
