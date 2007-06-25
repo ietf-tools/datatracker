@@ -96,6 +96,8 @@ def format_textarea(value):
 def square_brackets(value):
     """Adds square brackets around text."""
     if   type(value) == type(""):
+	if value == "":
+	     value = " "
         return "[ %s ]" % value
     elif value > 0:
         return "[ X ]"
