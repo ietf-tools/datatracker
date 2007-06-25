@@ -42,10 +42,10 @@ nonwg_attrs = {
 }
 
 nonwg_widgets = {
-    'list_url': UrlMultiWidget(choices=(('http://', 'http://'), ('https://', 'https://'), ('mailto:', 'mailto:'))),
+    'list_url': UrlMultiWidget(choices=(('http://', 'http://'), ('https://', 'https://'), ('mailto:', 'mailto:')), attrs = {'size': 50}),
     'admin': forms.Textarea(attrs = {'rows': 3, 'cols': 50}),
     'purpose': forms.Textarea(attrs = {'rows': 4, 'cols': 70}),
-    'subscribe_url': UrlMultiWidget(choices=(('n/a', 'Not Applicable'), ('http://', 'http://'), ('https://', 'https://'))),
+    'subscribe_url': UrlMultiWidget(choices=(('n/a', 'Not Applicable'), ('http://', 'http://'), ('https://', 'https://')), attrs = {'size': 50}),
     'subscribe_other': forms.Textarea(attrs = {'rows': 3, 'cols': 50}),
 }
 
