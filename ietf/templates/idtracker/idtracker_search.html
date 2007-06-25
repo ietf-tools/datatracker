@@ -83,5 +83,11 @@ Document States: <a href="/images/state_diagram.gif">State Diagram</a> and
 	<p>No matches to your query.</p>
     {% endif %}
 {% endif %}
+{% if matches or searching %}
+   <form action="." method="POST">
+   <input type="submit" value="Main Menu">
+   <input type="button" name="back_button" value="BACK" onClick="history.go(-1);return true">
+   </form>
+{% endif %}
 
 {% endblock %}
