@@ -28,6 +28,7 @@ def set_related(obj, rel, target):
     if not hasattr(obj, "related"):
         obj.related = target
         obj.relation = display_relation[rel]
+    return obj
 
 def set_relation(first, rel, second):
     set_related(first, rel, second)

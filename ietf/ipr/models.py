@@ -149,11 +149,11 @@ class IprContact(models.Model):
 
 
 class IprDraft(models.Model):
-    document = models.ForeignKey(InternetDraft, db_column='id_document_tag', raw_id_admin=True, core=True)
     ipr = models.ForeignKey(IprDetail, raw_id_admin=True, edit_inline=True, related_name='drafts')
+    document = models.ForeignKey(InternetDraft, db_column='id_document_tag', raw_id_admin=True, core=True, related_name="ipr")
     revision = models.CharField(maxlength=2)
     def __str__(self):
-	return "%s applies to %s-%s" % ( self.ipr, self.document, self.revision )
+	return "%s which applies to %s-%s" % ( self.ipr, self.document, self.revision )
     class Meta:
         db_table = 'ipr_ids'
     class Admin:
@@ -173,9 +173,9 @@ class IprNotification(models.Model):
 
 class IprRfc(models.Model):
     ipr = models.ForeignKey(IprDetail, edit_inline=True, related_name='rfcs')
-    document = models.ForeignKey(Rfc, db_column='rfc_number', raw_id_admin=True, core=True)
+    document = models.ForeignKey(Rfc, db_column='rfc_number', raw_id_admin=True, core=True, related_name="ipr")
     def __str__(self):
-	return "%s applies to RFC%04d" % ( self.ipr, self.rfc_number )
+	return "%s applies to RFC%04d" % ( self.ipr, self.document_id )
     class Meta:
         db_table = 'ipr_rfcs'
     class Admin:

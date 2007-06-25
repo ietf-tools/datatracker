@@ -7,6 +7,53 @@ from ietf.ipr.related import related_docs
 from ietf.utils import log
 
 
+def mark_last_doc(iprs):
+    for item in iprs:
+        if item.drafts.count():
+            item.last_draft = item.drafts.all()[int(item.drafts.count())-1]
+        if item.rfcs.count():
+            item.last_rfc = item.rfcs.all()[int(item.rfcs.count())-1]
+
+def mark_related_doc(iprs):
+    for item in iprs:
+        print "*** Item:", item
+        for entry in item.drafts.all():
+            print " ** Entry:", entry
+            print "  * Doc:", entry.document
+            related_docs(entry.document, [])
+            print "    Doc relation:", entry.document.relation
+            print "    Doc related :", entry.document.related
+        for entry in item.rfcs.all():
+            print " ** Entry:", entry
+            print "  * Doc:", entry.document
+            related_docs(entry.document, [])
+            print "    Doc relation:", entry.document.relation
+            print "    Doc related :", entry.document.related
+
+def unique_iprs(iprs):
+    ids = []
+    unique = []
+    for ipr in iprs:
+        if not ipr.ipr_id in ids:
+            ids += [ ipr.ipr_id ]
+            unique += [ ipr ]
+    return unique
+
+def iprs_from_docs(docs):
+    iprs = []
+    for doc in docs:
+        if isinstance(doc, InternetDraft):
+            disclosures = [ item.ipr for item in IprDraft.objects.filter(document=doc, ipr__status__in=[1,3]) ]
+        elif isinstance(doc, Rfc):
+            disclosures = [ item.ipr for item in IprRfc.objects.filter(document=doc, ipr__status__in=[1,3]) ]
+        else:
+            raise ValueError("Doc type is neither draft nor rfc: %s" % doc)
+        if disclosures:
+            doc.iprs = disclosures
+            iprs += disclosures
+    iprs = list(set(iprs))
+    return iprs
+
 def search(request, type="", q="", id=""):
     wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
     args = request.REQUEST.items()
@@ -37,18 +84,7 @@ def search(request, type="", q="", id=""):
 
                     docs = related_docs(first, [])
                     #docs = get_doclist.get_doclist(first)
-                    iprs = []
-                    for doc in docs:
-                        if isinstance(doc, InternetDraft):
-                            disclosures = [ item.ipr for item in IprDraft.objects.filter(document=doc, ipr__status__in=[1,3]) ]
-                        elif isinstance(doc, Rfc):
-                            disclosures = [ item.ipr for item in IprRfc.objects.filter(document=doc, ipr__status__in=[1,3]) ]
-                        else:
-                            raise ValueError("Doc type is neither draft nor rfc: %s" % doc)
-                        if disclosures:
-                            doc.iprs = disclosures
-                            iprs += disclosures
-                    iprs = list(set(iprs))
+                    iprs = iprs_from_docs(docs)
                     return render("ipr/search_doc_result.html", {"q": q, "first": first, "iprs": iprs, "docs": docs})
                 elif start.count():
                     return render("ipr/search_doc_list.html", {"q": q, "docs": start })
@@ -62,11 +98,7 @@ def search(request, type="", q="", id=""):
                 iprs = [ ipr for ipr in iprs if not ipr.updated_by.all() ]
                 # Some extra information, to help us render 'and' between the
                 # last two documents in a sequence
-                for ipr in iprs:
-                    if ipr.drafts.count():
-                        ipr.last_draft = ipr.drafts.all()[int(ipr.drafts.count())-1]
-                    if ipr.rfcs.count():
-                        ipr.last_rfc = ipr.rfcs.all()[int(ipr.rfcs.count())-1]
+                mark_last_doc(iprs)
                 return render("ipr/search_holder_result.html", {"q": q, "iprs": iprs, "count": count } )
 
             # Search by content of email or pagent_info field
@@ -75,7 +107,18 @@ def search(request, type="", q="", id=""):
 
             # Search by wg acronym
             elif type == "wg_search":
-                pass
+                try:
+                    docs = list(InternetDraft.objects.filter(group__acronym=q))
+                except:
+                    docs = []
+                docs += [ draft.replaced_by for draft in docs if draft.replaced_by_id ]
+                docs += list(Rfc.objects.filter(group_acronym=q))
+
+                docs = [ doc for doc in docs if doc.ipr.count() ]
+                iprs = iprs_from_docs(docs)
+                count = len(iprs)
+                #mark_last_doc(iprs)
+                return render("ipr/search_wg_result.html", {"q": q, "docs": docs, "iprs": iprs, "count": count } )
 
             # Search by rfc and id title
             elif type == "title_search":
