@@ -133,8 +133,9 @@ class NonWgWizard(wizard.Wizard):
 	    list.status = 1
 	list.save()
 	approver_email = PersonOrOrgInfo.objects.get(pk=approver).email()
+	approver_name = PersonOrOrgInfo.objects.get(pk=approver)
 	send_mail_subj(request, [ approver_email ], None, 'mailinglists/nwg_wizard_subject.txt', 'mailinglists/nwg_wizard_done_email.txt', {'add_edit': add_edit, 'old': old, 'list': list, 'forms': self.clean_forms})
-        return render_to_response( 'mailinglists/nwg_wizard_done.html', {'forms': self.clean_forms}, context_instance=RequestContext(request) )
+        return render_to_response( 'mailinglists/nwg_wizard_done.html', {'approver': approver_name, 'add_edit': add_edit, 'old': old, 'list': list, 'forms': self.clean_forms}, context_instance=RequestContext(request) )
 
 def non_wg_wizard(request):
     wiz = NonWgWizard([ NonWgStep1 ])

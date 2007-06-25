@@ -1,5 +1,45 @@
 {% extends "mailinglists/nwg_wizard_base.html" %}
 
 {% block nwgcontent %}
-Your mail has been sent, blah blah blah.
+<a href="/mailinglists/nonwg_lists/"><b>View Current list</b></a><br>
+</p>
+<p>
+Your request to {% ifequal add_edit "edit" %}edit{% else %}{% ifequal add_edit "add" %}add{% else %}delete{% endifequal %}{% endifequal %} the entry for the Non-WG Mailing List that is described below has been sent to the following Area Director for approval:</p>
+<p>
+<b>{{ approver|escape }}</b>
+</p>
+<pre>
+{% if old %}
+Current Entry:
+
+Submitter's Name: {{ old.s_name }}
+Submitter's Email Address: {{ old.s_email }}
+List Name: {{ old.list_name }}
+URL or Email Address of Mailing List: {{ old.list_url }}
+URL to Subscribe: {{ old.subscribe_url }}
+Other Info. to Subscribe: {{ old.subscribe_other }}
+Administrator(s)'  Email Address(es): {{ old.admin }}
+Purpose: {{ old.purpose }}
+Area: {{ old.area }}
+
+Revised Entry:
+{% endif %}
+Submitter's Name: {% ifequal add_edit "delete" %}{{ list.ds_name }}{% else %}{{ list.s_name }}{% endifequal %}
+Submitter's Email Address: {% ifequal add_edit "delete" %}{{ list.ds_name }}{% else %}{{ list.s_email }}{% endifequal %}
+Mailing List Name: {{ list.list_name }}
+URL or Email Address of Mailing List: {{ list.list_url }}
+URL to Subscribe: {{ list.subscribe_url }}
+Other Info. to Subscribe: {{ list.subscribe_other }}
+Administrator(s)' Email Address(es): {{ list.admin }}
+Purpose: {{ list.purpose }}
+Area: {{ list.area }}
+{% ifequal add_edit "delete" %}
+Message from submitter:
+{{ list.msg_to_ad }}
+{% endifequal %}
+</pre>
+<p>
+Approving Area Director: {{ approver|escape }}
+</p>
+
 {% endblock %}
