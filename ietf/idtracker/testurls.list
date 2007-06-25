@@ -5,7 +5,7 @@
 200	/idtracker/evaluation_process/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_evaluation_desc
 200	/idtracker/send_email/?cat=bugs	https://datatracker.ietf.org/public/pidtracker.cgi?command=send_email&cat=bugs
 200	/idtracker/status/
-200	/idtracker/last_call/	https://datatracker.ietf.org/public/lastcall.cgi
+skipdiff,200	/idtracker/last_call/	https://datatracker.ietf.org/public/lastcall.cgi
 200	/idtracker/rfc3847/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_id&dTag=3847&rfc_flag=1
 200	/idtracker/12689/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_id&dTag=12689&rfc_flag=0
 skipredirect,200	/idtracker/draft-ietf-isis-link-attr/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_id&dTag=12689&rfc_flag=0
