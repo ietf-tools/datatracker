@@ -20,8 +20,10 @@ Last Call to expire on: {{ object.drafts.all.0.draft.lc_expiration_date|escape }
         Please return the full line with your position.
 
                       Yes  No-Objection  Discuss  Abstain
-{% for position in object.positions.all|dictsort:"ad.last_name" %}{{ position.ad|ljust:"20" }} {{ position.yes|bracket }}     {{ position.noobj|bracket }}     {{ position.discuss|bracket }}     {{ position.abstain_ind|bracket }}
+{% if not object.an_sent %}{% for curpos in object.active_positions %}{{ curpos.ad|ljust:"20" }} {{ curpos.pos.yes|bracket }}     {{ curpos.pos.noobj|bracket }}     {{ curpos.pos.discuss|bracket }}     {{ curpos.pos.abstain_ind|bracket }}
 {% endfor %}
+{% endif %}{% for position in object.positions.all|dictsort:"ad.last_name" %}{% if object.an_sent or not position.ad.is_current_ad %}{{ position.ad|ljust:"20" }} {{ position.yes|bracket }}     {{ position.noobj|bracket }}     {{ position.discuss|bracket }}     {{ position.abstain_ind|bracket }}
+{% endif %}{% endfor %}
 
 "Yes" or "No-Objection" positions from 2/3 of non-recused ADs, 
 with no "Discuss" positions, are needed for approval.

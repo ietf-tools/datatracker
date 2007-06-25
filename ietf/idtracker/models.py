@@ -259,6 +259,11 @@ class IESGLogin(models.Model):
     def __str__(self):
         #return "%s, %s" % ( self.last_name, self.first_name)
         return "%s %s" % ( self.first_name, self.last_name)
+    def is_current_ad(self):
+	return self.user_level == 1
+    def active_iesg():
+	return IESGLogin.objects.filter(user_level=1,id__gt=1).order_by('last_name')	#XXX hardcoded
+    active_iesg = staticmethod(active_iesg)
     class Meta:
         db_table = 'iesg_login'
     class Admin:
@@ -416,6 +421,17 @@ class BallotInfo(models.Model):   # Added by Michael Lee
     def remarks(self):
         remarks = list(self.discusses.all()) + list(self.comments.all())
         return remarks
+    def active_positions(self):
+        '''Returns a list of dicts, with AD and Position tuples'''
+	active_iesg = IESGLogin.active_iesg()
+	ads = [ad.id for ad in active_iesg]
+	positions = {}
+	for position in self.positions.filter(ad__in=ads):
+	    positions[position.ad_id] = position
+	ret = []
+	for ad in active_iesg:
+	    ret.append({'ad': ad, 'pos': positions.get(ad.id, None)})
+	return ret 
     class Meta:
         db_table = 'ballot_info'
     class Admin:
