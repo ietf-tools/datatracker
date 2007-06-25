@@ -5,7 +5,7 @@ tr > th { text-align: left; vertical-align: top; }
 {% endblock %}
 
 {% block nwgcontent %}
-<h2>Step 2</h2>
+<h2>Step {{ step|add:"1" }}</h2>
 <h4>Please provide the following information:</h4>
 
 <form action="." method="POST">
