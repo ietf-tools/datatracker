@@ -312,6 +312,12 @@
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">15</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">6</field>
   </object>
+  <object pk="20" model="redirects.command">
+    <field type="CharField" name="command">view_related_docs</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">8</field>
+  </object>
   <object pk="2" model="redirects.suffix">
     <field type="CharField" name="rest">%(fl)s</field>
     <field type="CharField" name="remove"></field>
@@ -331,5 +337,9 @@
   <object pk="7" model="redirects.suffix">
     <field type="CharField" name="rest">rfc%(dTag)s/%(command)s</field>
     <field type="CharField" name="remove">view_id</field>
+  </object>
+  <object pk="8" model="redirects.suffix">
+    <field type="CharField" name="rest">%(id)s/related</field>
+    <field type="CharField" name="remove"></field>
   </object>
 </django-objects>
