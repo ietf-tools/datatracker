@@ -1,6 +1,5 @@
 from django.conf import settings
 from ietf import __date__, __rev__, __version__, __id__
-from ietf.utils import log
 
 def server_mode(request):
     return {'server_mode': settings.SERVER_MODE}
