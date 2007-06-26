@@ -14,7 +14,6 @@ from django.db import connection
 from django.core import management
 import ietf.urls
 
-
 startup_database = settings.DATABASE_NAME  # The startup database name, before changing to test_...
 
 def run_tests(module_list, verbosity=1, extra_tests=[]):
@@ -164,6 +163,7 @@ def module_setup(module):
     if module.prefixes:
         module.patterns = [ pattern for pattern in module.patterns for prefix in module.prefixes if re.match(prefix, pattern) ]
         module.testtuples = [ tuple for tuple in module.testtuples for prefix in module.prefixes if re.match(prefix, tuple[1][1:]) ]
+
 
     # Use the default database for the url tests, instead of the test database
     module.testdb = settings.DATABASE_NAME
@@ -325,8 +325,9 @@ class UrlTestCase(TestCase):
                                 difflist = list(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
                                 diff = "\n".join(difflist)
                                 for chunk in module.diffchunks:
-                                    while re.search(chunk, diff):
-                                        diff = re.sub(chunk, "", diff)
+                                    if chunk:
+                                        while re.search(chunk, diff):
+                                            diff = re.sub(chunk, "", diff)
                                 if len(diff.strip().splitlines()) == 2:
                                     # only the initial 2 lines of the diff remains --
                                     # discard them too
