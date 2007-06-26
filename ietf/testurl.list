@@ -2,4 +2,6 @@
 # specified in the application level testurl.list
 
 200	/ # Top level url.  Has no comparable page today.
-
+200	/images/ietf-icon.bmp
+200	/css/base.css
+skip	/js/

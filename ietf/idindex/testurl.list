@@ -1,15 +1,19 @@
 200			/drafts/wg/1041/	https://datatracker.ietf.org/public/idindex.cgi?command=show_wg_id&id=1041
-skipredirect,200	/drafts/wg/idr/	https://datatracker.ietf.org/public/idindex.cgi?command=show_wg_id&id=1041
-200			/drafts/wg/I/	https://datatracker.ietf.org/public/idindex.cgi?command=show_wg&fl=I
-200			/drafts/ind/F/	https://datatracker.ietf.org/public/idindex.cgi?command=show_ind_id&fl=F
+200,skipredirect	/drafts/wg/idr/		https://datatracker.ietf.org/public/idindex.cgi?command=show_wg_id&id=1041
+200			/drafts/wg/I/		https://datatracker.ietf.org/public/idindex.cgi?command=show_wg&fl=I
+200			/drafts/ind/F/		https://datatracker.ietf.org/public/idindex.cgi?command=show_ind_id&fl=F
 200			/drafts/other/tools/	https://datatracker.ietf.org/public/idindex.cgi?command=show_other&cat=tools
+200,sort		/drafts/rfc/		https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=rfc
 200,sort		/drafts/rfc/?sort=name	https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=rfc&sort=name
-skipdiff,200		/drafts/9574/related/	https://datatracker.ietf.org/public/idindex.cgi?command=view_related_docs&id=9574
+200,skipdiff		/drafts/current/	https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=current
+200,skipdiff		/drafts/all/		https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=all
+200,sort		/drafts/dead/		https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=dead
+200,skipdiff		/drafts/9574/related/	https://datatracker.ietf.org/public/idindex.cgi?command=view_related_docs&id=9574
 200			/drafts/draft-ietf-dnsext-dnssec-protocol/related/
-200			/drafts/9574/			https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
-skipredirect,200	/drafts/draft-ietf-dnsext-dnssec-protocol/	https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
+200			/drafts/9574/		https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
+200,skipredirect	/drafts/draft-ietf-dnsext-dnssec-protocol/	https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
 200			/drafts/all_id_txt.html
 200			/drafts/all_id.html
-skipdiff,200		/drafts/			https://datatracker.ietf.org/public/idindex.cgi?command=search_id
-200			/drafts/			https://datatracker.ietf.org/public/idindex.cgi
+200,skipdiff		/drafts/		https://datatracker.ietf.org/public/idindex.cgi?command=search_id
+200			/drafts/		https://datatracker.ietf.org/public/idindex.cgi
 
