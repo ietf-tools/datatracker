@@ -5,12 +5,12 @@ from ietf.mailinglists.models import NonWgMailingList
 #from ietf.mailinglists.forms import NonWgStep1
 
 urlpatterns = patterns('django.views.generic.list_detail',
-     (r'^area_lists/$', 'object_list', { 'queryset': Area.objects.filter(status=1).select_related().order_by('acronym.acronym'), 'template_name': 'mailinglists/areas_list.html' }),
-     (r'^nonwg_lists/$', 'object_list', { 'queryset': NonWgMailingList.objects.filter(status__gt=0) }),
+     (r'^area/$', 'object_list', { 'queryset': Area.objects.filter(status=1).select_related().order_by('acronym.acronym'), 'template_name': 'mailinglists/areas_list.html' }),
+     (r'^nonwg/$', 'object_list', { 'queryset': NonWgMailingList.objects.filter(status__gt=0) }),
 )
 urlpatterns += patterns('',
-     (r'^nonwg_lists/submit/$', views.non_wg_wizard),
+     (r'^nonwg/update/$', views.non_wg_wizard),
      (r'^request/$', views.list_req_wizard),
-     (r'^request/help/(?P<field>[^/]+)/$', views.list_req_help),
+     (r'^help/(?P<field>[^/]+)/$', views.list_req_help),
      (r'^approve/(?P<object_id>[^/]+)/$', views.list_approve),
 )

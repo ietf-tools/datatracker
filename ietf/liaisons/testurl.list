@@ -1,7 +1,7 @@
-200	/liaisons/			https://datatracker.ietf.org/public/liaisons.cgi
-200	/liaisons/321/			https://datatracker.ietf.org/public/liaison_detail.cgi?detail_id=321
-200	/liaisons/managers/		https://datatracker.ietf.org/public/liaison_managers_list.cgi
-200	/liaisons/help/to_ietf/		https://datatracker.ietf.org/public/liaison_guide_to_ietf.cgi
-200	/liaisons/help/from_ietf/	https://datatracker.ietf.org/public/liaison_guide_from_ietf.cgi
-200	/liaisons/help/fields/		https://datatracker.ietf.org/public/liaison_field_help.cgi
-200	/liaisons/help/
+200	/liaison/			https://datatracker.ietf.org/public/liaisons.cgi
+200	/liaison/321/			https://datatracker.ietf.org/public/liaison_detail.cgi?detail_id=321
+200	/liaison/managers/		https://datatracker.ietf.org/public/liaison_managers_list.cgi
+200	/liaison/help/to_ietf/		https://datatracker.ietf.org/public/liaison_guide_to_ietf.cgi
+200	/liaison/help/from_ietf/	https://datatracker.ietf.org/public/liaison_guide_from_ietf.cgi
+200	/liaison/help/fields/		https://datatracker.ietf.org/public/liaison_field_help.cgi
+200	/liaison/help/

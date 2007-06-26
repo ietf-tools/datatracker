@@ -16,7 +16,7 @@
 {% for draft in object_list %}
 <tr bgcolor="{% cycle #efefff,#dfdfff %}">
 {# use url here! #}
-<td><a href="/idindex/{{ draft.filename }}/">{{ draft.filename }}-{{ draft.revision_display }}</a></td>
+<td><a href="/drafts/{{ draft.filename }}/">{{ draft.filename }}-{{ draft.revision_display }}</a></td>
 <td>{{ draft.revision_date }}</td>
 <td>{{ draft.status }}</td>
 {% if norfc %}

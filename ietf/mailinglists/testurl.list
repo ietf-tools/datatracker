@@ -1,8 +1,8 @@
-200	/mailinglists/area_lists/		https://datatracker.ietf.org/public/area_mailing_list.cgi
-200	/mailinglists/nonwg_lists/		https://datatracker.ietf.org/public/nwg_list.cgi
-200	/mailinglists/nonwg_lists/submit/	https://datatracker.ietf.org/public/nwg_list_submit.cgi
-200	/mailinglists/request/			https://datatracker.ietf.org/public/request_list.cgi
-skipredirect,200	/mailinglists/request/help/short_desc/	https://datatracker.ietf.org/public/desc.cgi?id=1
-skipredirect,200	/mailinglists/request/help/long_desc/	https://datatracker.ietf.org/public/desc.cgi?id=2
+200	/list/area/		https://datatracker.ietf.org/public/area_mailing_list.cgi
+200	/list/nonwg/		https://datatracker.ietf.org/public/nwg_list.cgi
+200	/list/nonwg/update/	https://datatracker.ietf.org/public/nwg_list_submit.cgi
+200	/list/request/			https://datatracker.ietf.org/public/request_list.cgi
+skipredirect,200	/list/help/short_desc/	https://datatracker.ietf.org/public/desc.cgi?id=1
+skipredirect,200	/list/help/long_desc/	https://datatracker.ietf.org/public/desc.cgi?id=2
 # This is an ancient testing entry
-200	/mailinglists/approve/20A0p492qbq04067/	https://datatracker.ietf.org/public/request_area_confirm.cgi?mailing_list_id=20A0p492qbq04067
+200	/list/approve/20A0p492qbq04067/	https://datatracker.ietf.org/public/request_area_confirm.cgi?mailing_list_id=20A0p492qbq04067
