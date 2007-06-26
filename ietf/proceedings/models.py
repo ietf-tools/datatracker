@@ -237,11 +237,17 @@ class MeetingTime(models.Model):
     def lunch_br_info(self):
         return NonSession.objects.get(meeting=self.meeting, non_session_ref=3).time_desc
     def an_br1_info(self):
-	an_br1_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=4)
-        return "%s %s" % (an_br1_info.time_desc, an_br1_info.non_session_ref)
+	an_br1_info = NonSession.objects.exclude(time_desc="").get(meeting=self.meeting, day_id=self.day_id, non_session_ref=4)
+        if an_br1_info:
+          return "%s %s" % (an_br1_info.time_desc, an_br1_info.non_session_ref)
+        else:
+          return ""
     def an_br2_info(self):
-	an_br2_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=5)
-        return "%s %s" % (an_br2_info.time_desc, an_br2_info.non_session_ref)
+	an_br2_info = NonSession.objects.exclude(time_desc="").get(meeting=self.meeting, day_id=self.day_id, non_session_ref=5)
+        if an_br2_info:
+          return "%s %s" % (an_br2_info.time_desc, an_br2_info.non_session_ref)
+        else:
+          return ""
     def fbreak_info(self):
         fbreak_info = NonSession.objects.get(meeting=self.meeting, day_id=5, non_session_ref=6)
         return "%s %s" % (fbreak_info.time_desc, fbreak_info.non_session_ref)

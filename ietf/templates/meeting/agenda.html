@@ -37,10 +37,24 @@ Updated as of {{ last_update_info.updated_date }} {{ last_update_info.updated_ti
 	 {{ day.list.0.lunch_br_info }} Break<br>
       {% endifequal %}
       {% ifequal item.session_name_id 4 %}
-	 {{ day.list.0.an_br1_info }} - {{ meetingvenue_info.break_area_name }}<br>
+         {% if day.list.0.an_br1_info %}
+	   {{ day.list.0.an_br1_info }} - {{ meetingvenue_info.break_area_name }}<br>
+         {% endif %}
       {% endifequal %}
       {% ifequal item.session_name_id 5 %}
-	 {{ day.list.0.an_br2_info }} - {{ meetingvenue_info.break_area_name }}<br>
+         {% if day.list.0.an_br2_info %}
+	   {{ day.list.0.an_br2_info }} - {{ meetingvenue_info.break_area_name }}<br>
+         {% endif %}
+      {% endifequal %}
+      {% ifequal item.session_name_id 8 %}
+         {% if day.list.0.an_br2_info %}
+           {{ day.list.0.an_br2_info }} - {{ meetingvenue_info.break_area_name }}<br>
+         {% endif %}
+      {% endifequal %}
+      {% ifequal item.session_name_id 10 %}
+         {% if day.list.0.an_br2_info %}
+           {{ day.list.0.an_br2_info }} - {{ meetingvenue_info.break_area_name }}<br>
+         {% endif %}
       {% endifequal %}
       <b>{{ item.time_desc }} {{ item.session_name }} </b>
       {% ifequal item.sessions.0.acronym "plenaryw" %}
