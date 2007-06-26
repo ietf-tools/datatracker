@@ -308,7 +308,7 @@
   </object>
   <object pk="19" model="redirects.command">
     <field type="CharField" name="command">show_detail</field>
-    <field type="CharField" name="url">detail</field>
+    <field type="CharField" name="url"></field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">15</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">6</field>
   </object>
