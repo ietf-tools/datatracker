@@ -105,6 +105,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'ietf.context_processors.server_mode',
+    'ietf.context_processors.revision_info',
 )
 
 INSTALLED_APPS = (

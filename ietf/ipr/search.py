@@ -1,6 +1,7 @@
 import re
 import django.utils.html
 from django.shortcuts import render_to_response as render
+from django.template import RequestContext
 from ietf.idtracker.models import IETFWG, InternetDraft, Rfc
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
 from ietf.ipr.related import related_docs
@@ -16,19 +17,10 @@ def mark_last_doc(iprs):
 
 def mark_related_doc(iprs):
     for item in iprs:
-        print "*** Item:", item
         for entry in item.drafts.all():
-            print " ** Entry:", entry
-            print "  * Doc:", entry.document
             related_docs(entry.document, [])
-            print "    Doc relation:", entry.document.relation
-            print "    Doc related :", entry.document.related
         for entry in item.rfcs.all():
-            print " ** Entry:", entry
-            print "  * Doc:", entry.document
             related_docs(entry.document, [])
-            print "    Doc relation:", entry.document.relation
-            print "    Doc related :", entry.document.related
 
 def unique_iprs(iprs):
     ids = []
@@ -85,9 +77,11 @@ def search(request, type="", q="", id=""):
                     docs = related_docs(first, [])
                     #docs = get_doclist.get_doclist(first)
                     iprs = iprs_from_docs(docs)
-                    return render("ipr/search_doc_result.html", {"q": q, "first": first, "iprs": iprs, "docs": docs})
+                    return render("ipr/search_doc_result.html", {"q": q, "first": first, "iprs": iprs, "docs": docs},
+                                  context_instance=RequestContext(request) )
                 elif start.count():
-                    return render("ipr/search_doc_list.html", {"q": q, "docs": start })
+                    return render("ipr/search_doc_list.html", {"q": q, "docs": start },
+                                  context_instance=RequestContext(request) )                        
                 else:
                     raise ValueError("Missing or malformed search parameters, or internal error")
 
@@ -99,7 +93,8 @@ def search(request, type="", q="", id=""):
                 # Some extra information, to help us render 'and' between the
                 # last two documents in a sequence
                 mark_last_doc(iprs)
-                return render("ipr/search_holder_result.html", {"q": q, "iprs": iprs, "count": count } )
+                return render("ipr/search_holder_result.html", {"q": q, "iprs": iprs, "count": count },
+                                  context_instance=RequestContext(request) )
 
             # Search by content of email or pagent_info field
             elif type == "patent_info_search":
@@ -118,7 +113,8 @@ def search(request, type="", q="", id=""):
                 iprs = iprs_from_docs(docs)
                 count = len(iprs)
                 #mark_last_doc(iprs)
-                return render("ipr/search_wg_result.html", {"q": q, "docs": docs, "iprs": iprs, "count": count } )
+                return render("ipr/search_wg_result.html", {"q": q, "docs": docs, "iprs": iprs, "count": count },
+                                  context_instance=RequestContext(request) )
 
             # Search by rfc and id title
             elif type == "title_search":
@@ -130,4 +126,4 @@ def search(request, type="", q="", id=""):
             else:
                 raise ValueError("Unexpected search type in IPR query: %s" % type)
         return django.http.HttpResponseRedirect(request.path)
-    return render("ipr/search.html", {"wgs": wgs})
+    return render("ipr/search.html", {"wgs": wgs}, context_instance=RequestContext(request))

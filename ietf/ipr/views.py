@@ -1,5 +1,6 @@
 import django.utils.html
 from django.shortcuts import render_to_response as render
+from django.template import RequestContext
 from django.utils.html import escape
 from ietf.idtracker.models import IETFWG
 from ietf.ipr.models import IprDetail, SELECT_CHOICES, LICENSE_CHOICES
@@ -14,7 +15,7 @@ def linebreaks(value):
 
 def default(request):
     """Default page, with links to sub-pages"""
-    return render("ipr/disclosure.html", {})
+    return render("ipr/disclosure.html", {}, context_instance=RequestContext(request))
 
 def showlist(request):
     """Display a list of existing disclosures"""
@@ -36,7 +37,7 @@ def list_all(request, template):
             'generic_disclosures' : generic_disclosures.order_by(* ['-submitted_date', ] ),
             'specific_disclosures': specific_disclosures.order_by(* ['-submitted_date', ] ),
             'thirdpty_disclosures': thirdpty_disclosures.order_by(* ['-submitted_date', ] ),
-        } )
+        }, context_instance=RequestContext(request) )
 
 # Details views
 
@@ -74,7 +75,8 @@ def show(request, ipr_id=None):
         ipr.is_pending = dict(SELECT_CHOICES)[ipr.is_pending]
     if ipr.applies_to_all:
         ipr.applies_to_all = dict(SELECT_CHOICES)[ipr.applies_to_all]
-    return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list})
+    return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list},
+                    context_instance=RequestContext(request))
 
 def update(request, ipr_id=None):
     """Update a specific IPR disclosure"""
@@ -86,7 +88,7 @@ def update(request, ipr_id=None):
 def form(request):
     wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
     log("Search form")
-    return render("ipr/search.html", {"wgs": wgs})
+    return render("ipr/search.html", {"wgs": wgs}, context_instance=RequestContext(request))
         
 
 

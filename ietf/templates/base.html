@@ -4,7 +4,9 @@ PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 {% endblock %}
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
-   <head><title>{% block title %}IETF Data{% endblock %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}</title>
+   <head>
+      <!-- Project Revision {{ revision_num }}, {{ revision_time }} -->
+      <title>{% block title %}IETF Data{% endblock %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}</title>
       {% ifnotequal server_mode "production" %}
       <link rel="icon" href="/images/ietf-dev-icon.bmp" />
       {% else %}
@@ -46,7 +48,8 @@ PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	 {% block content %}{% endblock %}
 	 {% block main_content %}{% endblock %}
       </div>
-      <hr/>
+      <hr/>      
+      <div style="width: 100%; height: 1em; font-size: 9pt; font-style: italic;"><span style="float: left;">Made with <a href="http://www.djangoproject.com/">django</a></span><span style="float: right;">v{{ version_num }}, {{ revision_date }} - <a href="mailto:webmaster@ietf.org">webmaster@ietf.org</a></span></div>
       <a href="http://www.djangoproject.com/"><img src="http://media.djangoproject.com/img/badges/djangomade124x25.gif" border="0" alt="Made with Django." title="Made with Django." /></a>
       {% include "debug.html" %}
    </body>
