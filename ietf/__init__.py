@@ -1,1 +1,7 @@
-__version__ = "0.01"
+__version__ = "0.98"
+
+__date__    = "$Date:"
+
+__rev__     = "$Rev:"
+
+__id__      = "$Id:"
