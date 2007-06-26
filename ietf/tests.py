@@ -13,6 +13,7 @@ from django.conf import settings
 from django.db import connection
 from django.core import management
 import ietf.urls
+from ietf.utils import log
 
 startup_database = settings.DATABASE_NAME  # The startup database name, before changing to test_...
 
@@ -326,7 +327,10 @@ class UrlTestCase(TestCase):
                                 diff = "\n".join(difflist)
                                 for chunk in module.diffchunks:
                                     if chunk:
+                                        if not re.search(chunk, diff):
+                                            log("No match: %s" % chunk[:32])
                                         while re.search(chunk, diff):
+                                            log("Found chunk: %s" % chunk[:32])
                                             diff = re.sub(chunk, "", diff)
                                 if len(diff.strip().splitlines()) == 2:
                                     # only the initial 2 lines of the diff remains --
