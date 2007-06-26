@@ -1,8 +1,0 @@
---- https://datatracker.ietf.org/public/states_table.cgi 
-+++ /idtracker/states/ 
-@@ -14,1 +14,1 @@
--request makes it into the I-D tracker.)  A document in this state has
-+request makes it into the I-D tracker.) A document in this state has
-@@ -17,1 +17,1 @@
--requested
-+requested.
