@@ -140,7 +140,7 @@ def module_setup(module):
     for item in os.listdir(testdir):
         path = testdir + "/" + item
         if item.startswith("generic-") and os.path.isfile(path):
-            chunk = filetext(path).strip()
+            chunk = filetext(path).rstrip()
             chunk = re.sub(r"([\[\]().|+*?])", r"\\\1", chunk)
             # @@ -27,0 \+23,1 @@
             chunk = re.sub(r"(?m)^@@ -\d+,(\d+) \\\+\d+,(\d+) @@$", r"@@ -\d+,\1 \+\d+,\2 @@", chunk)
@@ -310,30 +310,36 @@ class UrlTestCase(TestCase):
                                     for regex in module.ignores[ignore]:
                                         testtext = re.sub(regex, "", testtext)
                                         goodtext = re.sub(regex, "", goodtext)
-                            testtext = lines(testtext)
-                            goodtext = lines(goodtext)
+                            #log("Checking text: %s" % testtext[:96])
+                            testtext = lines(testtext.strip())
+                            goodtext = lines(goodtext.strip())
                             if "sort" in codes:
                                 testtext = sorted(testtext)
                                 while testtext and not testtext[0]:
                                     del testtext[0]
+                                while testtext and not testtext[-1]:
+                                    del testtext[-1]
                                 goodtext = sorted(goodtext)
                                 while goodtext and not goodtext[0]:
                                     del goodtext[0]
+                                while goodtext and not goodtext[-1]:
+                                    del goodtext[-1]
                             if testtext == goodtext:
                                 note("OK   cmp %s" % (url))
                             else:
                                 contextlines = 0
                                 difflist = list(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
                                 diff = "\n".join(difflist)
+                                log("Checking diff: %s" % diff[:96])
                                 keys = module.diffchunks.keys()
                                 keys.sort
                                 for key in keys:
                                     chunk = module.diffchunks[key]
                                     if chunk:
                                         if not re.search(chunk, diff):
-                                            log("No match: %s" % chunk[:32])
+                                            log("No match: %s" % chunk[:96])
                                         while re.search(chunk, diff):
-                                            log("Found chunk: %s" % chunk[:32])
+                                            log("Found chunk: %s" % chunk[:96])
                                             diff = re.sub(chunk, "", diff)
                                 if len(diff.strip().splitlines()) == 2:
                                     # only the initial 2 lines of the diff remains --
@@ -355,8 +361,8 @@ class UrlTestCase(TestCase):
                                             note("Failed diff: %s" % (url))
                                         else:
                                             note("Diff:    %s" % (url))
-                                        print "\n".join(difflist[:100])
-                                        if len(difflist) > 100:
+                                        print "\n".join(diff.split("\n")[:100])
+                                        if len(diff.split("\n")) > 100:
                                             print "... (skipping %s lines of diff)" % (len(difflist)-100)
                                 else:
                                     note("OK   cmp %s" % (url))
