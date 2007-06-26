@@ -1,0 +1,170 @@
+#!/bin/bash
+
+version=0.10
+program=${0##*/}
+progdir=${0%/*}
+if [ "$progdir" = "$program" ]; then progdir="."; fi
+
+# ----------------------------------------------------------------------
+function usage() {
+    cat <<EOF
+NAME
+	$program - Make a release
+
+SYNOPSIS
+	$program [OPTIONS] VERSION
+
+DESCRIPTION
+
+	Do the sequence of actions necesary to properly produce a release
+	branch. This includes updating the project version and committing that
+	to the repository, creating a release tag and a release branch if
+	needed, and updating the project version again to indicate that any
+	further commits are development work. Requires 1 argument: the VERSION
+	number (e.g., 1.23).
+
+	The script uses svn info to retrieve information about the repository
+	and path of the current directory, and inspects that to determine
+	exactly what to do. If the current path relative to the repository root
+	starts with 'trunk', then a new branch is created named
+	branch/\$VERSION. If the current path starts with something else 
+	than 'trunk', it is assumed to be a working branch, and no new branch is
+	created. In either case, a copy of the current working copy is created
+	in tags/\$VERSION.
+
+EOF
+    echo -e "OPTIONS"
+    if   [ "$(uname)" = "Linux" ]; then
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
+    else
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
+    fi
+    cat <<EOF
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@levkowetz.com>
+
+COPYRIGHT
+	Copyright 2007 The IETF Trust.
+
+EOF
+
+}
+
+# ----------------------------------------------------------------------
+function die() {
+    echo -e "\n$program: error: $*" > /dev/stderr
+    exit 1
+}
+
+function note() { 
+	if [ -n "$VERBOSE" ]; then echo -e "$*"; fi
+}
+
+# ----------------------------------------------------------------------
+function version() {
+	echo -e "$program $version"
+}
+
+# ----------------------------------------------------------------------
+trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
+
+
+# ----------------------------------------------------------------------
+# Option parsing
+
+# Options
+shortopts=hpvV
+longopts=help,repository,verbose,version
+
+# Default values
+MSG=""
+VERFILE=ietf/__init__.py
+
+if   [ "$(uname)" = "Linux" ]; then
+    args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    eval set -- "$args"
+    sed="sed -r"
+else
+    # Darwin, BSDs
+    args=$(getopt -o$shortopts $SV $*)
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    set -- $args
+    sed="sed -E"
+fi
+
+while true ; do
+    case "$1" in
+	-h| --help)		usage; exit;;	#	 Show this help, then exit
+	-m| --message)		MSG=$2; shift;;		# Specify a commit message
+	-v| --verbose)		VERBOSE=1;;	#	 Be more talkative
+	-V| --version)		version; exit;;	#	 Show program version, then exit
+	--)			shift; break;;
+	*) die "Internal error, inconsistent option specification: '$1'";;
+    esac
+    shift
+done
+
+# ----------------------------------------------------------------------
+# The program itself
+
+ARGMIN=1
+
+if [ $# -lt $ARGMIN ]; then
+    usage
+    die "$# arguments found, $ARGMIN required"
+fi
+
+VER=$1
+
+REPO=$(svn info | grep "^Repository Root:" | awk '{ print $3 }')
+RURL=$(svn info | grep "^URL:" | awk '{ print $2 }')
+RDIR=${RURL#$REPO}
+DIR=${RDIR#/}
+if   [ -z "$DIR" ]; then
+    die "Couldn't find anything to release here"
+elif [ "${DIR%%/*}" = "trunk" ]; then
+    SRC="trunk"
+elif [ "${DIR%%/*}" = "branch" ]; then
+    tmp=${DIR#*/}		# get rid of 'branch/'
+    SRC="branch/${tmp%%/*}"	# keep first subdir under branch/
+fi
+
+while [ "$RDIR" ]; do
+    [ "$RDIR" = "$prev" ] && die "Internal error"
+    cd ..
+    pwd
+    prev=$RDIR
+    RDIR=${RDIR%/*}
+done
+
+REPO=${REPO%/}				# remove trailing slash
+SRC=${SRC#/}				# remove leading slash
+
+MAJOR=${VER%.*}
+MINOR=${VER#*.}
+NEXT=$(( $MINOR + 1 ))
+DEV="$(printf %d.%02d-dev $MAJOR $NEXT)"
+
+# update the version and make sure "$Rev$" is Ok
+sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev)?\"/\"$VER\"/" \
+	-e "/^__rev__/s/\".*\"/\"\$Rev:\$\"/" \
+	$SRC/$VERFILE
+cat $SRC/$VERFILE
+svn commit $SRC/$VERFILE -m "Release version $VER. $MSG"
+
+# create a new tag.
+svn info $REPO/tags/$VER 2>&1 | grep -q "Not a valid URL" || die "The tag '$VER' already exists (or there was an error testing for it)."
+svn cp $REPO/$SRC $REPO/tags/$VER
+
+# update version and revision info to indicate that the source and branch aren't releases
+sed -i -r -e "/^__version__/s/\"[0-9.]*\"/\"$DEV\"/" \
+	  -e "/^__rev__/s/\"\\\$Rev: (.*) \\\$\"/\"\$Rev:\$ (dev) Latest release: Rev. \1 \"/" \
+	  $SRC/$VERFILE
+cat $SRC/$VERFILE
+svn commit $VERFILE -m "Development branch $DEV"
+
+# if SRC is 'trunk', then also create a new branch
+[ $SRC = "trunk" ] && svn info $REPO/branch/$VER 2>&1 | grep -q "Not a valid URL" && svn cp $REPO/$SRC $REPO/branch/$VER
+
