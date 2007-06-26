@@ -286,7 +286,7 @@ class UrlTestCase(TestCase):
                     res = ("Fail", "Exc")
                     note("Exception for URL '%s'" % url)
                     traceback.print_exc()
-                if master and not "skipdiff" in codes::
+                if master and not "skipdiff" in codes:
                     try:
                         #print "Fetching", master, "...",
                         mfile = urllib.urlopen(master)
