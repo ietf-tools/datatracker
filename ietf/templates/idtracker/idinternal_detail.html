@@ -80,9 +80,9 @@
                 <div class="largefont3">
 		  {% if object.ballot.ballot_issued %}
                   <a href="{% url ietf.idtracker.views.view_ballot object.ballot_id %}">IESG evaluation record</a>
-                  [<a href="/idtracker/evaluation_process/">What
+                  [<a href="/idtracker/help/evaluation/">What
                   they mean</a>]
-                  [<a href="/idtracker/ballot_key/">How they are
+                  [<a href="/idtracker/help/ballot/">How they are
                   recorded</a>]
 		  {% else %}
 		  No IESG evaluation record
@@ -142,11 +142,11 @@
 
               <td>
                 <div class="largefont3">
-                  <a href="/idtracker/states/{{ object.cur_state_id }}/">
+                  <a href="/idtracker/help/state/{{ object.cur_state_id }}/">
                   {{ object.cur_state }}</a>
 		  {% if object.cur_sub_state %}
 		  ::
-		  <a href="/idtracker/states/substate/{{ object.cur_sub_state_id }}/">
+		  <a href="/idtracker/help/substate/{{ object.cur_sub_state_id }}/">
 		  {{ object.cur_sub_state }}
 		  </a>
 		  {% endif %}
@@ -158,7 +158,7 @@
 		  {% endifequal %}
 		  {% endif %}
                 </div>
-                <a href="/idtracker/states/">
+                <a href="/idtracker/help/state/">
                 [Show States Table]</a> 
               </td>
             </tr>

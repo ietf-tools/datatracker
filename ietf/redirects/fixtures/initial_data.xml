@@ -50,7 +50,7 @@
   </object>
   <object pk="9" model="redirects.redirect">
     <field type="CharField" name="cgi">public/states_table.cgi</field>
-    <field type="CharField" name="url">idtracker/states</field>
+    <field type="CharField" name="url">idtracker/help/state</field>
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>
@@ -68,26 +68,26 @@
   </object>
   <object pk="12" model="redirects.redirect">
     <field type="CharField" name="cgi">public/lastcall.cgi</field>
-    <field type="CharField" name="url">idtracker/last_call</field>
+    <field type="CharField" name="url">idtracker/status/last-call</field>
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="13" model="redirects.redirect">
     <field type="CharField" name="cgi">public/rfc_editor_announcement.cgi</field>
-    <field type="CharField" name="url">iesg/ann/independent</field>
+    <field type="CharField" name="url">iesg/ann/ind</field>
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="14" model="redirects.redirect">
     <field type="CharField" name="cgi">public/recent_announcement.cgi</field>
     <field type="CharField" name="url">iesg/ann</field>
-    <field type="CharField" name="rest">ietf-doc/recent</field>
+    <field type="CharField" name="rest">new</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="15" model="redirects.redirect">
     <field type="CharField" name="cgi">public/previous_announcement.cgi</field>
     <field type="CharField" name="url">iesg/ann</field>
-    <field type="CharField" name="rest">ietf-doc/previous</field>
+    <field type="CharField" name="rest">prev</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="16" model="redirects.redirect">
@@ -236,25 +236,25 @@
   </object>
   <object pk="6" model="redirects.command">
     <field type="CharField" name="command">view_state_desc</field>
-    <field type="CharField" name="url">states</field>
+    <field type="CharField" name="url">help/state</field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
   </object>
   <object pk="9" model="redirects.command">
     <field type="CharField" name="command">view_evaluation_desc</field>
-    <field type="CharField" name="url">evaluation_process</field>
+    <field type="CharField" name="url">help/evaluation</field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel"><None></None></field>
   </object>
   <object pk="8" model="redirects.command">
     <field type="CharField" name="command">view_key</field>
-    <field type="CharField" name="url">ballot_key</field>
+    <field type="CharField" name="url">help/ballot</field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel"><None></None></field>
   </object>
   <object pk="10" model="redirects.command">
     <field type="CharField" name="command">send_email</field>
-    <field type="CharField" name="url">send_email</field>
+    <field type="CharField" name="url">feedback</field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel"><None></None></field>
   </object>
@@ -266,7 +266,7 @@
   </object>
   <object pk="12" model="redirects.command">
     <field type="CharField" name="command">view_minute</field>
-    <field type="CharField" name="url">detail</field>
+    <field type="CharField" name="url"></field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">16</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
   </object>
@@ -284,7 +284,7 @@
   </object>
   <object pk="15" model="redirects.command">
     <field type="CharField" name="command">show_detail</field>
-    <field type="CharField" name="url">detail</field>
+    <field type="CharField" name="url"></field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">14</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">6</field>
   </object>
@@ -296,7 +296,7 @@
   </object>
   <object pk="17" model="redirects.command">
     <field type="CharField" name="command">^sub_state^view_state_desc</field>
-    <field type="CharField" name="url">states/substate</field>
+    <field type="CharField" name="url">help/substate</field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
   </object>

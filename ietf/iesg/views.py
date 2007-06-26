@@ -22,11 +22,11 @@ def wgdocs(request,cat):
    is_recent = 0
    queryset_list=[]
    queryset_list_doc=[]
-   if cat == 'recent':
+   if cat == 'new':
       is_recent = 1
       queryset = InternetDraft.objects.filter(b_approve_date__gte = date_threshold(), intended_status__in=[1,2,6,7],idinternal__via_rfc_editor=0,idinternal__primary_flag=1).order_by("-b_approve_date")
       queryset_doc = InternetDraft.objects.filter(b_approve_date__gte = date_threshold(), intended_status__in=[3,5],idinternal__via_rfc_editor=0, idinternal__primary_flag=1).order_by("-b_approve_date")
-   elif cat == 'previous':
+   elif cat == 'prev':
       queryset = InternetDraft.objects.filter(b_approve_date__lt = date_threshold(), b_approve_date__gte = '1997-12-1', intended_status__in=[1,2,6,7],idinternal__via_rfc_editor=0,idinternal__primary_flag=1).order_by("-b_approve_date")
       queryset_doc = InternetDraft.objects.filter(b_approve_date__lt = date_threshold(), b_approve_date__gte = '1998-10-15', intended_status__in=[3,5],idinternal__via_rfc_editor=0,idinternal__primary_flag=1).order_by("-b_approve_date")
    else:

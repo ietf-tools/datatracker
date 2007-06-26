@@ -13,7 +13,7 @@
 {% endifnotequal %}
 <ul>
 {% for minute in year.list %}
-<li><a href="detail/{{ minute.id }}/">{{ minute.telechat_date|date:"F j" }}</a>
+<li><a href="{{ minute.id }}/">{{ minute.telechat_date|date:"F j" }}</a>
 {% endfor %}
 </ul>
 {% endfor %}
@@ -21,7 +21,7 @@
 <h3>Archives by Year</h3>
 <ul>
 {% for year in date_list %}
-<li><a href="{{ year|date:"Y" }}/">{{ year|date:"Y" }}</a>
+<li><a href="y/{{ year|date:"Y" }}/">{{ year|date:"Y" }}</a>
 {% endfor %}
 </ul>
 

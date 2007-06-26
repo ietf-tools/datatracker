@@ -19,17 +19,17 @@ queryset_ann = BallotInfo.objects.all()
 
 urlpatterns = patterns('django.views.generic.date_based',
 	(r'^telechat/$', 'archive_index', telechat_archive),
-	(r'^telechat/(?P<year>\d{4})/$', 'archive_year', telechat_archive),
-	(r'^telechat/(?P<year>\d{4})/(?P<month>[a-z]{3})/$', 'archive_month', telechat_archive),
+	(r'^telechat/y/(?P<year>\d{4})/$', 'archive_year', telechat_archive),
+	(r'^telechat/y/(?P<year>\d{4})/(?P<month>[a-z]{3})/$', 'archive_month', telechat_archive),
 )
 
 urlpatterns += patterns('django.views.generic.list_detail',
-	(r'^telechat/detail/(?P<object_id>\d+)/$', 'object_detail', { 'queryset': queryset }),
-	(r'^ann/detail/(?P<object_id>\d+)/$', 'object_detail', { 'queryset': queryset_ann, 'template_name':"iesg/ballotinfo_detail.html" }),
+	(r'^telechat/(?P<object_id>\d+)/$', 'object_detail', { 'queryset': queryset }),
+	(r'^ann/(?P<object_id>\d+)/$', 'object_detail', { 'queryset': queryset_ann, 'template_name':"iesg/ballotinfo_detail.html" }),
 )
 
 urlpatterns += patterns('',
-        (r'^ann/independent/$',views.inddocs),
-        (r'^ann/ietf-doc/(?P<cat>[^/]+)/$',views.wgdocs),
+        (r'^ann/ind/$',views.inddocs),
+        (r'^ann/(?P<cat>[^/]+)/$',views.wgdocs),
 )
 
