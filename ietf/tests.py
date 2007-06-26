@@ -130,7 +130,7 @@ def module_setup(module):
     # find test urls
     module.testtuples = []
     module.testurls = []
-    module.diffchunks = []
+    module.diffchunks = {}
     module.ignores = {}
     module.testtuples = get_testurls()
     module.testurls = [ tuple[1] for tuple in module.testtuples ]
@@ -144,7 +144,7 @@ def module_setup(module):
             chunk = re.sub(r"([\[\]().|+*?])", r"\\\1", chunk)
             # @@ -27,0 \+23,1 @@
             chunk = re.sub(r"(?m)^@@ -\d+,(\d+) \\\+\d+,(\d+) @@$", r"@@ -\d+,\1 \+\d+,\2 @@", chunk)
-            module.diffchunks.append(chunk)
+            module.diffchunks[item] = chunk
 
     # find ignore chunks
     for root, dirs, files in os.walk(settings.BASE_DIR+"/../test/ignore/"):
@@ -325,7 +325,10 @@ class UrlTestCase(TestCase):
                                 contextlines = 0
                                 difflist = list(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
                                 diff = "\n".join(difflist)
-                                for chunk in module.diffchunks:
+                                keys = module.diffchunks.keys()
+                                keys.sort
+                                for key in keys:
+                                    chunk = module.diffchunks[key]
                                     if chunk:
                                         if not re.search(chunk, diff):
                                             log("No match: %s" % chunk[:32])
