@@ -1,3 +1,4 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
     {% for group in grouped %}
     <h3>In State: <a href="/idtracker/help/state/{{ group.list.0.cur_state_id }}/">{{ group.list.0.cur_state }}</a>{% if group.list.0.cur_sub_state %} :: <a href="/idtracker/help/substate/{{ group.list.0.cur_sub_state_id }}/">{{ group.list.0.cur_sub_state }}</a>{% endif %}</h3>
 	<table bgcolor="#DFDFDF" cellspacing="0" cellpadding="0" border="0" width="800">
