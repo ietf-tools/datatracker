@@ -1,12 +1,6 @@
 --- https://datatracker.ietf.org/public/meeting_agenda_html.cgi?meeting_num=68 
 +++ /meeting/68/agenda.html 
-@@ -1,2 +1,3 @@
--Agenda of the 68th IETF Meeting March 18-23, 2007 Updated as of
--2007-06-15, 15:37:23 (ET) (Text Format of the Agenda)
-+Server mode:
-+Agenda of the 68th IETF Meeting March 18-23, 2007 Updated As of June
-+19, 2007, 8:34 p.m. (CEST) (Text Format of the Agenda)
-@@ -12,3 +13,4 @@
+@@ -12,3 +12,4 @@
 -Welcome Reception - Grand Ballroom MONDAY, March 19, 2007 0800-1800
 -IETF Registration - Congress Hall Foyer 0800-0900 Morning Beverages -
 -Congress Hall Foyer 0900-1130 Morning Session I
@@ -14,88 +8,93 @@
 +MONDAY, March 19, 2007 0800-1800 IETF Registration - Congress Hall
 +Foyer 0800-0900 Morning Beverages - Congress Hall Foyer
 +0900-1130 Morning Session I
-@@ -28,0 +30,1 @@
-+Congress III RAI enum Telephone Number Mapping WG
-@@ -29,1 +32,0 @@
--Congress III RAI enum Telephone Number Mapping WG
-@@ -31,2 +33,2 @@
+@@ -31,2 +32,2 @@
 -1500-1520 Afternoon Beverage Break I - Congress Hall Foyer 1520-1720
 -Afternoon Session II
-+1500-1520 Afternoon Beverage and Snack Break I 1520-1720 Afternoon
-+Session II
-@@ -35,0 +37,1 @@
-+Karlin II INT ntp Network Time Protocol WG
-@@ -36,1 +39,0 @@
--Karlin II INT ntp Network Time Protocol WG
-@@ -41,2 +43,2 @@
--1720-1740 Afternoon Beverage and Snack Break II - Congress Hall Foyer
--1740-1950 Afternoon Session III
-+1720-1740 Afternoon Beverage and Snack Break II 1740-1950 Afternoon
-+Session III
-@@ -45,0 +47,1 @@
-+Congress III INT softwire Softwires WG
-@@ -47,1 +50,0 @@
--Congress III INT softwire Softwires WG
-@@ -55,2 +57,4 @@
++1500-1520 Afternoon Beverage and Snack Break I - Congress Hall Foyer
++1520-1720 Afternoon Session II
+@@ -48,0 +49,1 @@
++Karlin I OPS netconf Network Configuration WG
+@@ -49,1 +51,0 @@
+-Karlin I OPS netconf Network Configuration WG
+@@ -55,4 +56,2 @@
 -Foyer 0800-0900 Morning Beverages - Congress Hall Foyer 0900-1130
 -Morning Session I
+-Grand Ballroom INT netlmm Network-based Localized Mobility Management
+-WG
 +Foyer 0800-0900 Morning Beverages - Congress Hall Foyer
 +0900-1130 Morning Session I
-+Congress III INT tictoc Timing over IP Connection and Transfer of
-+Clock BOF
-@@ -59,2 +63,0 @@
--Congress III INT tictoc Timing over IP Connection and Transfer of
--Clock BOF
-@@ -63,1 +65,1 @@
--WG - moved from Thursday at 0900
-+WG - MOVED FROM THURSDAY AT 0900
-@@ -68,1 +70,0 @@
+@@ -61,0 +60,2 @@
++Grand Ballroom INT netlmm Network-based Localized Mobility Management
++WG
+@@ -68,1 +69,0 @@
 -Roma/Vienna/Madrid INT ancp Access Node Control Protocol WG
-@@ -71,0 +72,1 @@
+@@ -71,0 +71,1 @@
 +Roma/Vienna/Madrid INT ancp Access Node Control Protocol WG
-@@ -78,2 +80,2 @@
+@@ -78,2 +79,2 @@
 -1500-1520 Afternoon Beverage Break I - Congress Hall Foyer 1520-1720
 -Afternoon Session II
-+1500-1520 Afternoon Beverage and Snack Break I 1520-1720 Afternoon
-+Session II
-@@ -85,0 +87,1 @@
-+Roma/Vienna/Madrid SEC msec Multicast Security - CANCELLED
-@@ -86,1 +89,0 @@
--Roma/Vienna/Madrid SEC msec Multicast Security WG - CANCELLED
-@@ -88,2 +90,2 @@
--1720-1740 Afternoon Beverage and Snack Break II - Congress Hall Foyer
--1740-1840 Afternoon Session III
-+1720-1740 Afternoon Beverage and Snack Break II 1740-1840 Afternoon
-+Session III
-@@ -98,1 +100,0 @@
--Grand Ballroom INT dna Detecting Network Attachment WG
-@@ -101,0 +102,1 @@
-+Grand Ballroom INT dna Detecting Network Attachment WG
-@@ -106,3 +108,2 @@
++1500-1520 Afternoon Beverage and Snack Break I - Congress Hall Foyer
++1520-1720 Afternoon Session II
+@@ -81,0 +82,1 @@
++Grand Ballroom INT pwe3 Pseudowire Emulation Edge to Edge WG
+@@ -82,1 +84,0 @@
+-Grand Ballroom INT pwe3 Pseudowire Emulation Edge to Edge WG
+@@ -98,0 +99,1 @@
++Karlin I INT ipdvb IP over DVB WG
+@@ -99,1 +101,0 @@
+-Karlin I INT ipdvb IP over DVB WG
+@@ -106,2 +107,2 @@
 -Foyer 0800-0900 Morning Beverages - Congress Hall Foyer 0900-1130
 -Morning Session I
--Karlin I INT dhc Dynamic Host Configuration WG
 +Foyer 0800-0900 Morning Beverages - Congress Hall Foyer
 +0900-1130 Morning Session I
-@@ -111,0 +112,1 @@
-+Karlin I INT dhc Dynamic Host Configuration WG
-@@ -121,0 +123,1 @@
-+Congress III RTG pce Path Computation Element WG
-@@ -122,1 +125,0 @@
--Congress III RTG pce Path Computation Element WG
-@@ -126,1 +128,1 @@
--1510-1610 Afternoon Session II
-+Afternoon Beverage and Snack Break I 1510-1610 Afternoon Session II
-@@ -133,1 +135,0 @@
--1610-1700 Afternoon Beverage and Snack Break II - Congress Hall Foyer
-@@ -135,1 +136,1 @@
--Roma/Vienna/Madrid pgp PGP Key Signing
-+Roma/Vienna/Madrid ZTRAIN pgp PGP Key Signing
-@@ -138,16 +139,1 @@
+@@ -124,0 +125,1 @@
++Grand Ballroom TSV rmt Reliable Multicast Transport WG
+@@ -125,1 +127,0 @@
+-Grand Ballroom TSV rmt Reliable Multicast Transport WG
+@@ -138,1 +139,0 @@
 -Part 1: IAOC/IESG plenary
--17:00 Welcome
--17:05 NOC report
--17:10 Host presentation (Mark Foster, CTO, Neustar)
--17:20 IETF Chair and IAD short reports
--17:30 NomCom Chair (Andrew Lange)
-... (skipping 71 lines of diff)
+@@ -145,2 +145,2 @@
+-17:45 IAOC Q&A;
+-18:00 IESG Q&A;
++17:45 IAOC Q&A
++18:00 IESG Q&A
+@@ -155,2 +155,2 @@
+-Foyer 0800-0900 Morning Beverages - Congress Hall Foyer 0900-1130
+-Morning Session I
++Foyer 0800-0900 Morning Beverages - Congress Hall Foyer
++0900-1130 Morning Session I
+@@ -167,1 +167,0 @@
+-Karlin I INT autoconf Ad-Hoc Network Autoconfiguration WG
+@@ -170,0 +169,1 @@
++Karlin I INT autoconf Ad-Hoc Network Autoconfiguration WG
+@@ -171,1 +171,0 @@
+-Karlin II RAI mediactrl Media Server Control WG
+@@ -174,0 +173,1 @@
++Karlin II RAI mediactrl Media Server Control WG
+@@ -184,0 +184,1 @@
++Karlin I SEC smime S/MIME Mail Security WG
+@@ -185,1 +186,0 @@
+-Karlin I SEC smime S/MIME Mail Security WG
+@@ -197,1 +197,2 @@
+-Foyer 0900-1130 Morning Session I
++Foyer
++0900-1130 Morning Session I
+@@ -204,3 +205,3 @@
+-APP Applications Area Chris Newman/Sun Microsystems, Inc. & Lisa
+-Dusseault/Open Source Applications Foundation
+-GEN General Area Russ Housley/Vigil Security, LLC
++APP Applications Area Ted Hardie/Qualcomm, Inc. & Lisa Dusseault/Open
++Source Applications Foundation
++GEN General Area Brian Carpenter/IBM Switzerland
+@@ -208,2 +209,2 @@
+-OPS Operations and Management Area Dan Romascanu/Avaya & Ronald
+-Bonica/Juniper Networks
++OPS Operations and Management Area Dan Romascanu/Avaya & David
++Kessens/Nokia
+@@ -212,4 +213,3 @@
+-RTG Routing Area Ross Callon/Juniper Networks & David Ward/Internet
+-Engineering Group (IEng)
+-SEC Security Area Tim Polk/National Institute of Standards and
+-Technology & Sam Hartman/MIT
