@@ -62,7 +62,7 @@
 	  <font size="3">
 	     <br>
 	     This IPR disclosure updates IPR disclosure ID #{{ item.updated.ipr_id }},
-	     {% ifequal item.status 1 %}
+	     {% ifequal item.updated.status_to_be 1 %}
 		"<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
 	     {% else %}
 		"{{ item.updated.title }}", which was removed at the request of the submitter.
