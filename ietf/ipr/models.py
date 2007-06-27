@@ -115,6 +115,8 @@ class IprDetail(models.Model):
 
     def __str__(self):
 	return self.title
+    def docs(self):
+        return list(self.drafts.all()) + list(self.rfcs.all())
     def get_absolute_url(self):
         return "/ipr/ipr-%s" % self.ipr_id
     class Meta:

@@ -1,9 +1,5 @@
 {% extends "ipr/search_result.html" %}
 {% load ietf_filters %}
-{% block search_header %}Patent Information Search Result{% endblock %}
-{% block into_prefix %}
-IPR that contains the string {{ q }} in the "Disclosure of Patent Information"
-section of the form, or in the body of the text (for disclosures submitted by
-e-mail), and
-{% endblock %}
-
+{% block search_header %}{% if not count %}Search result on {{ q }}{% else %}Patent Information Search Result{% endif %}{% endblock %}
+{% block search_failed %}No IPR disclosures with the word(s) "<i>{{ q }}</i>" in the Patent Information have been submitted{% endblock %}
+{% block intro_prefix %}IPR that contains the string <b><i>{{ q }}</i></b> in the "Disclosure of Patent Information" section of the form, or in the body of the text (for disclosures submitted by e-mail), and{% endblock %}

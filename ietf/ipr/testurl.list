@@ -21,6 +21,12 @@
 200,sort,ignore:quote /ipr/search/?wg_search=acct&option=wg_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=wg_search&wg_search=acct	# Empty result
 200,sort,ignore:quote /ipr/search/?option=title_search&title_search=AAA		https://datatracker.ietf.org/public/ipr_search.cgi?option=title_search&title_search=AAA
 200,sort,ignore:quote /ipr/search/?option=title_search&title_search=AAAxz	https://datatracker.ietf.org/public/ipr_search.cgi?option=title_search&title_search=AAAxz # Empty result
+200,sort /ipr/search/?patent_info_search=123&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=123
+200,sort /ipr/search/?patent_info_search=31415&option=patent_info_search	https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=31415 # Empty result
+200	/ipr/search/?patent_info_search=12&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=12 # Error: at least 3 characters
+200	/ipr/search/?patent_info_search=abc&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=abc # Error: at least 1 digit
+
+
 200	 /ipr/about/			https://datatracker.ietf.org/public/ipr_disclosure.cgi
 200	 /ipr/2006/
 200	 /ipr/2006/feb/

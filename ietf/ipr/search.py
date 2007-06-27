@@ -1,7 +1,9 @@
 import re
+import os.path
 import django.utils.html
 from django.shortcuts import render_to_response as render
 from django.template import RequestContext
+from django.conf import settings
 from ietf.idtracker.models import IETFWG, InternetDraft, Rfc
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
 from ietf.ipr.related import related_docs
@@ -10,10 +12,10 @@ from ietf.utils import log
 
 def mark_last_doc(iprs):
     for item in iprs:
-        if item.drafts.count():
-            item.last_draft = item.drafts.all()[int(item.drafts.count())-1]
-        if item.rfcs.count():
-            item.last_rfc = item.rfcs.all()[int(item.rfcs.count())-1]
+        docs = item.docs()
+        count = len(docs)
+        if count > 1:
+            item.last_draft = docs[count-1]
 
 def mark_related_doc(iprs):
     for item in iprs:
@@ -45,6 +47,19 @@ def iprs_from_docs(docs):
             iprs += disclosures
     iprs = list(set(iprs))
     return iprs, docs
+
+def patent_file_search(url, q):
+    if url:
+        fname = url.split("/")[-1]
+        fpath = os.path.join(settings.IPR_DOCUMENT_PATH, fname)
+        #print "*** Checking file", fpath
+        if os.path.exists(fpath):
+            #print "*** Found file", fpath            
+            file = open(fpath)
+            text = file.read()
+            file.close
+            return q in text
+    return False
 
 def search(request, type="", q="", id=""):
     wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
@@ -101,7 +116,28 @@ def search(request, type="", q="", id=""):
             # Search by content of email or pagent_info field
             # IPR list with documents
             elif type == "patent_info_search":
-                pass
+                if len(q) < 3:
+                    return render("ipr/search_error.html", {"q": q, "error": "The search string must contain at least three characters" },
+                                  context_instance=RequestContext(request) )
+                digits = re.search("[0-9]", q)
+                if not digits:
+                    return render("ipr/search_error.html", {"q": q, "error": "The search string must contain at least one digit" },
+                                  context_instance=RequestContext(request) )
+                iprs = []
+                for ipr in IprDetail.objects.filter(status__in=[1,3]):
+                    if ((q in ipr.patents) |
+                        patent_file_search(ipr.legacy_url_0, q) |
+                        patent_file_search(ipr.legacy_url_1, q) |
+                        patent_file_search(ipr.legacy_url_2, q) ):
+                        iprs.append(ipr)
+                count = len(iprs)
+                iprs = [ ipr for ipr in iprs if not ipr.updated_by.all() ]
+                # Some extra information, to help us render 'and' between the
+                # last two documents in a sequence
+                iprs.sort(key=lambda x: x.ipr_id, reverse=True) # Reverse sort                
+                mark_last_doc(iprs)
+                return render("ipr/search_patent_result.html", {"q": q, "iprs": iprs, "count": count },
+                                  context_instance=RequestContext(request) )
 
             # Search by wg acronym
             # Document list with IPRs

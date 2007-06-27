@@ -1,4 +1,4 @@
 {% extends "ipr/search_result.html" %}
 {% load ietf_filters %}
 {% block search_header %}{% if not count %}Search result on {{ q }}{% else %}Patent Owner/Applicant Search Result{% endif %}{% endblock %}</b></td></tr>
-{% block item_intro %}IPR that was submitted by <b><i>{{ q }}</i></b>,{% endblock %}
+{% block intro_prefix %}IPR that was submitted by <b><i>{{ q }}</i></b>, and{% endblock %}

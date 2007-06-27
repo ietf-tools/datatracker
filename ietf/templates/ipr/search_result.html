@@ -14,7 +14,7 @@
 	       {% if not iprs %}
 		  <tr>
 		     <td></td>
-		     <td colspan="2"><b>No IPR disclosures have been submitted by the <i>{{ q }}</i></b></td>
+		     <td colspan="2"><b>{% block search_failed %}No IPR disclosures have been submitted by the <i>{{ q }}</i>{% endblock %}</b></td>
 		  </tr>
 	       {% else %}
 		  <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
@@ -29,12 +29,8 @@
 				    is not related to a specific IETF contribution.
 				 {% else %}
 				    is related to
-				    {% for item in ipr.drafts.all %}
-				       {% ifnotequal ipr.drafts.count 1 %}{% ifequal item ipr.last_draft %}<b> and </b>{% endifequal %}{% endifnotequal %}
-				       <b><i>{{ item.document }}, "{{ item.document.title }},"</i></b>{% if item.document.related %}, {{ item.document.relation }} {{ item.document.related  }}, "{{ item.document.related.title }}"{% endif %}
-				    {% endfor %}
-				    {% for item in ipr.rfcs.all %}
-				       {% ifnotequal ipr.rfcs.count 1 %}{% ifequal item ipr.last_rfc %} and {% endifequal %}{% endifnotequal %}
+				    {% for item in ipr.docs %}
+				       {% ifequal item ipr.last_draft %}<b> and </b>{% endifequal %}
 				       <b><i>{{ item.document }}, "{{ item.document.title }},"</i></b>{% if item.document.related %}, {{ item.document.relation }} {{ item.document.related  }}, "{{ item.document.related.title }}"{% endif %}
 				    {% endfor %}
 				 {% endif %}

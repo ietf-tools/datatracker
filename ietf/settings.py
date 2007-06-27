@@ -153,6 +153,8 @@ SERVER_MODE = 'development'
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.tests.run_tests'
 
+IPR_DOCUMENT_PATH = '/home/master-site/ftp/data/ietf/IPR'
+
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *
