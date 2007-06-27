@@ -4,7 +4,8 @@ function toggle_submitter_info (src) {
     if (src == 'holder') {
 	checked = document.form1.hold_contact_is_submitter.checked;
 	if (checked) {
-	    document.form1.ietf_contact_is_submitter.checked = false;
+	    if (document.form1.ietf_contact_is_submitter)
+		document.form1.ietf_contact_is_submitter.checked = false;
 	    document.form1.subm_name.value = document.form1.hold_name.value;
 	    document.form1.subm_title.value = document.form1.hold_title.value;
 	    document.form1.subm_department.value = document.form1.hold_department.value;
@@ -26,7 +27,8 @@ function toggle_submitter_info (src) {
     } else if (src == 'ietf') {
 	checked = document.form1.ietf_contact_is_submitter.checked;
 	if (checked) {
-	    document.form1.hold_contact_is_submitter.checked = false;
+	    if (document.form1.hold_contact_is_submitter)
+		document.form1.hold_contact_is_submitter.checked = false;
 	    document.form1.subm_name.value = document.form1.ietf_name.value;
 	    document.form1.subm_title.value = document.form1.ietf_title.value;
 	    document.form1.subm_department.value = document.form1.ietf_department.value;
