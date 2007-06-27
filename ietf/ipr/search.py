@@ -44,7 +44,7 @@ def iprs_from_docs(docs):
             doc.iprs = disclosures
             iprs += disclosures
     iprs = list(set(iprs))
-    return iprs
+    return iprs, docs
 
 def search(request, type="", q="", id=""):
     wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
@@ -61,6 +61,7 @@ def search(request, type="", q="", id=""):
             log("Got query: type=%s, q=%s, id=%s" % (type, q, id))
 
             # Search by RFC number or draft-identifier
+            # Document list with IPRs
             if type in ["document_search", "rfc_search"]:
                 if type == "document_search":
                     if q:
@@ -76,7 +77,7 @@ def search(request, type="", q="", id=""):
 
                     docs = related_docs(first, [])
                     #docs = get_doclist.get_doclist(first)
-                    iprs = iprs_from_docs(docs)
+                    iprs, docs = iprs_from_docs(docs)
                     return render("ipr/search_doc_result.html", {"q": q, "first": first, "iprs": iprs, "docs": docs},
                                   context_instance=RequestContext(request) )
                 elif start.count():
@@ -86,6 +87,7 @@ def search(request, type="", q="", id=""):
                     raise ValueError("Missing or malformed search parameters, or internal error")
 
             # Search by legal name
+            # IPR list with documents
             elif type == "patent_search":
                 iprs = IprDetail.objects.filter(legal_name__icontains=q, status__in=[1,3]).order_by("-submitted_date", "-ipr_id")
                 count = iprs.count()
@@ -97,10 +99,12 @@ def search(request, type="", q="", id=""):
                                   context_instance=RequestContext(request) )
 
             # Search by content of email or pagent_info field
+            # IPR list with documents
             elif type == "patent_info_search":
                 pass
 
             # Search by wg acronym
+            # Document list with IPRs
             elif type == "wg_search":
                 try:
                     docs = list(InternetDraft.objects.filter(group__acronym=q))
@@ -110,17 +114,29 @@ def search(request, type="", q="", id=""):
                 docs += list(Rfc.objects.filter(group_acronym=q))
 
                 docs = [ doc for doc in docs if doc.ipr.count() ]
-                iprs = iprs_from_docs(docs)
+                iprs, docs = iprs_from_docs(docs)
                 count = len(iprs)
-                #mark_last_doc(iprs)
-                return render("ipr/search_wg_result.html", {"q": q, "docs": docs, "iprs": iprs, "count": count },
+                return render("ipr/search_wg_result.html", {"q": q, "docs": docs, "count": count },
                                   context_instance=RequestContext(request) )
 
             # Search by rfc and id title
+            # Document list with IPRs
             elif type == "title_search":
-                pass
+                try:
+                    docs = list(InternetDraft.objects.filter(title__icontains=q))
+                except:
+                    docs = []
+                docs += list(Rfc.objects.filter(title__icontains=q))
+
+                docs = [ doc for doc in docs if doc.ipr.count() ]
+                iprs, docs = iprs_from_docs(docs)
+                count = len(iprs)
+                return render("ipr/search_doctitle_result.html", {"q": q, "docs": docs, "count": count },
+                                  context_instance=RequestContext(request) )
+
 
             # Search by title of IPR disclosure
+            # IPR list with documents
             elif type == "ipr_title_search":
                 pass
             else:

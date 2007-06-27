@@ -2,15 +2,14 @@
 {% load ietf_filters %}
 	    {% block search_result %}
 	    <table cellpadding="1" cellspacing="0" border="0">
-	       <tr><td colspan="3"><b>{% block search_header %}Working Group Search Result{% endblock %}</b></td></tr>
+	       <tr><td colspan="3"><b>{% block search_header %}{% if not count %}Search result on {{ q }}{% else %}Document Title Search Result{% endif %}{% endblock %}</b></td></tr>
 	       {% if not count %}
 		  <tr>
 		     <td></td>
 		     <td colspan="2">
-			<b>No IPR disclosures related to the <i>{{ q }}</i> working group have been submitted.</b>
+			<b>No IPR disclosures related to a document with the word(s) <i>{{ q }}</i> in the title have been submitted.</b>
 		     </td>
 		  </tr>
-		  <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
 	       {% else %}
 		  <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
 
@@ -19,8 +18,8 @@
 		     <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
 			<tr >
 			   <td colspan="3">
-			      IPR that is related to <b><i>{{ doc|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.title }}"{% if doc.related %}, {{ doc.relation }} {{ doc.related|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.title }}"{% endif %}
-			      </i></b> which is a product of Working Group <b><i>{{ q }}</i></b>
+			      IPR that is related to <b><i>{{ doc|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.title }}"{% if doc.related %}, {{ doc.relation }} {{ doc.related|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.title }}"{% endif %},
+			      </i></b>which has the string <b>"<i>{{ q }}</i>"</b> within the document title.
 			   </td>
 			</tr>
 			{% if doc.iprs %}
@@ -29,17 +28,18 @@
 				 <td width="100">{{ ipr.submitted_date }}</td>
 				 <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
 				 <td>
+				    <!--
 				    {% for item in ipr.updates.all %}
 				       {% ifequal item.updated.status 1 %}
 					  IPR disclosure ID# {{ item.updated.ipr_id }}, "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>" Updated by
 				       {% endifequal %}
+				    {% endfor %}-->
+				    {% for item in ipr.updated_by.all %}
+				       {% ifequal item.processed 1 %}
+					  IPR disclosure ID# {{ item.ipr.ipr_id }} "<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>" Updates
+				       {% endifequal %}
 				    {% endfor %}
 				    <a href="{% url ietf.ipr.views.show %}{{ ipr.ipr_id }}">"{{ ipr.title }}"</a>
-				    <!--{% for item in ipr.updated_by.all %}
-				       {% ifequal item.processed 1 %}
-					  Updated by "<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>"<br> 
-				       {% endifequal %}
-				    {% endfor %}-->
 				 </td>
 			      </tr>
 			   {% endfor %}
