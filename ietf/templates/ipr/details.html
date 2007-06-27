@@ -180,6 +180,13 @@
       {% if ipr.errors %}
       <p class="errorlist">
 	 There were errors in the submitted form -- see below.  Please correct these and resubmit.
+	{% if ipr.non_field_errors %}
+	<ul class="errorlist">
+	  {% for error in ipr.non_field_errors %}
+	  <li>{{ error }}</li>
+	  {% endfor %}
+	</ul>
+	{% endif %}
       </p>
       {% endif %}
 

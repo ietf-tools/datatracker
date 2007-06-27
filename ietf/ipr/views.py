@@ -5,6 +5,7 @@ from django.utils.html import escape
 from ietf.idtracker.models import IETFWG
 from ietf.ipr.models import IprDetail, SELECT_CHOICES, LICENSE_CHOICES
 from ietf.ipr.view_sections import section_table
+from ietf.ipr.new import new
 from ietf.utils import log
 
 def linebreaks(value):
@@ -80,8 +81,13 @@ def show(request, ipr_id=None):
 
 def update(request, ipr_id=None):
     """Update a specific IPR disclosure"""
-    # TODO: replace the placeholder code with the appropriate update code
-    return show(request, ipr_id)
+    ipr = IprDetail.objects.get(ipr_id=ipr_id)
+    type = "specific"
+    if ipr.generic:
+	type = "generic"
+    if ipr.third_party:
+	type = "third-party"
+    return new(request, type, ipr)
 
 
 

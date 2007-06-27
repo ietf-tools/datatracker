@@ -16,14 +16,12 @@ from django.http import HttpResponseRedirect
 
 def ipr_detail_form_callback(field, **kwargs):
     if field.name == "licensing_option":
-        return forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES), required=True)
+        return forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES), required=False, **kwargs)
     if field.name in ["is_pending", "applies_to_all"]:
-        return forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
+        return forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False, **kwargs)
     if field.name in ["rfc_number", "id_document_tag"]:
         log(field.name)
-        return forms.CharFieldField(required=False)
-    if field.name in ["date_applied"]:
-        return forms.DateField()
+        return forms.CharFieldField(required=False, **kwargs)
     return field.formfield(**kwargs)
 
 def ipr_contact_form_callback(field, **kwargs):
@@ -76,7 +74,7 @@ class ContactForm(BaseContactForm):
 # Form processing
 # ----------------------------------------------------------------
 
-def new(request, type):
+def new(request, type, update=None):
     """Make a new IPR disclosure.
 
     This is a big function -- maybe too big.  Things would be easier if we didn't have
@@ -103,11 +101,24 @@ def new(request, type):
         if "submitter" in section_list:
             submitter = ContactForm(prefix="subm")
         def __init__(self, *args, **kw):
+            contact_type = {1:"holder_contact", 2:"ietf_contact", 3:"submitter"}
+            contact_initial = {}
+            if update:
+                for contact in update.contact.all():
+                    contact_initial[contact_type[contact.contact_type]] = contact.__dict__
+            kwnoinit = kw.copy()
+            kwnoinit.pop('initial', None)
             for contact in ["holder_contact", "ietf_contact", "submitter"]:
                 if contact in section_list:
-                    self.base_fields[contact] = ContactForm(prefix=contact[:4], *args, **kw)
-            self.base_fields["rfclist"] = forms.CharField(required=False)
-            self.base_fields["draftlist"] = forms.CharField(required=False)
+                    self.base_fields[contact] = ContactForm(prefix=contact[:4], initial=contact_initial.get(contact, {}), *args, **kwnoinit)
+            rfclist_initial = ""
+            if update:
+                rfclist_initial = " ".join(["RFC%d" % rfc.document_id for rfc in update.rfcs.all()])
+            self.base_fields["rfclist"] = forms.CharField(required=False, initial=rfclist_initial)
+            draftlist_initial = ""
+            if update:
+                draftlist_initial = " ".join([draft.document.filename + (draft.revision and "-%s" % draft.revision or "") for draft in update.drafts.all()])
+            self.base_fields["draftlist"] = forms.CharField(required=False, initial=draftlist_initial)
             if "holder_contact" in section_list:
                 self.base_fields["hold_contact_is_submitter"] = forms.BooleanField(required=False)
             if "ietf_contact" in section_list:
@@ -116,6 +127,19 @@ def new(request, type):
 
             BaseIprForm.__init__(self, *args, **kw)
         # Special validation code
+	def clean(self):
+	    print section_list.get("ietf_doc")
+	    if section_list.get("ietf_doc", False):
+		# would like to put this in rfclist to get the error
+		# closer to the fields, but clean_data["draftlist"]
+		# isn't set yet.
+ 		rfclist = self.clean_data.get("rfclist", None)
+ 		draftlist = self.clean_data.get("draftlist", None)
+		other = self.clean_data.get("other_designations", None)
+		print "rfclist %s draftlist %s other %s" % (rfclist, draftlist, other)
+		if not rfclist and not draftlist and not other:
+		    raise forms.ValidationError("One of the Document fields below must be filled in")
+	    return self.clean_data
         def clean_rfclist(self):
             rfclist = self.clean_data.get("rfclist", None)
             if rfclist:
@@ -127,13 +151,6 @@ def new(request, type):
                     except:
                         raise forms.ValidationError("Unknown RFC number: %s - please correct this." % rfc)
                 rfclist = " ".join(rfclist)
-            else:
-                # Check that not all three fields are empty.  We only need to
-                # do this for one of the fields.
-                draftlist = self.clean_data.get("draftlist", None)
-                other = self.clean_data.get("other_designations", None)
-                if not draftlist and not other:
-                    raise forms.ValidationError("One of the Document fields below must be filled in")
             return rfclist
         def clean_draftlist(self):
             draftlist = self.clean_data.get("draftlist", None)
@@ -166,6 +183,12 @@ def new(request, type):
             return self.ietf_contact.full_clean()
         def clean_submitter(self):
             return self.submitter.full_clean()
+        def clean_licensing_option(self):
+            licensing_option = self.clean_data['licensing_option']
+            if section_list.get('licensing', False):
+                if licensing_option in (None, ''):
+                    raise forms.ValidationError, 'This field is required.'
+            return licensing_option
 
 
     if request.method == 'POST':
@@ -175,15 +198,6 @@ def new(request, type):
         data["generic"] = section_list["generic"]
         data["status"] = "0"
         data["comply"] = "1"
-
-        if type == "general":
-            data["title"] = """%(legal_name)s's General License Statement""" % data
-        if type == "specific":
-            data["ipr_summary"] = get_ipr_summary(data)
-            data["title"] = """%(legal_name)s's Statement about IPR related to %(ipr_summary)s""" % data
-        if type == "third-party":
-            data["ipr_summary"] = get_ipr_summary(data)
-            data["title"] = """%(submitter)s's Statement about IPR related to %(ipr_summary)s belonging to %(legal_name)s""" % data
         
         for src in ["hold", "ietf"]:
             if "%s_contact_is_submitter" % src in data:
@@ -199,7 +213,22 @@ def new(request, type):
             #   IprDetail, IprContact+, IprDraft+, IprRfc+, IprNotification
 
             # Save IprDetail
-            instance = form.save()
+            instance = form.save(commit=False)
+
+	    if type == "generic":
+		instance.title = """%(legal_name)s's General License Statement""" % data
+	    if type == "specific":
+		data["ipr_summary"] = get_ipr_summary(form.clean_data)
+		instance.title = """%(legal_name)s's Statement about IPR related to %(ipr_summary)s""" % data
+	    if type == "third-party":
+		data["ipr_summary"] = get_ipr_summary(form.clean_data)
+		instance.title = """%(ietf_name)s's Statement about IPR related to %(ipr_summary)s belonging to %(legal_name)s""" % data
+
+	    instance.save()
+
+            if update:
+                updater = models.IprUpdate(ipr=instance, updated=update, status_to_be=1, processed=0)
+                updater.save()
             contact_type = {"hold":1, "ietf":2, "subm": 3}
 
             # Save IprContact(s)
@@ -230,7 +259,7 @@ def new(request, type):
             # Save IprRfc(s)
             for rfcnum in form.clean_data["rfclist"].split():
                 rfc = Rfc.objects.get(rfc_number=int(rfcnum))
-                iprrfc = models.IprRfc(rfc_number=rfc, ipr=instance)
+                iprrfc = models.IprRfc(document=rfc, ipr=instance)
                 iprrfc.save()
 
             return HttpResponseRedirect("/ipr/ipr-%s" % instance.ipr_id)
@@ -242,12 +271,15 @@ def new(request, type):
                 form.ietf_contact_is_submitter_checked = "checked"
 
             for error in form.errors:
-                log("Form error for field: %s"%error)
+                log("Form error for field: %s: %s"%(error, form.errors[error]))
             # Fall through, and let the partially bound form, with error
             # indications, be rendered again.
             pass
     else:
-        form = IprForm()
+        if update:
+            form = IprForm(initial=update.__dict__)
+        else:
+            form = IprForm()
         form.unbound_form = True
 
     # ietf.utils.log(dir(form.ietf_contact_is_submitter))
