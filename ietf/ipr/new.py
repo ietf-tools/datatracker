@@ -7,6 +7,7 @@ from datetime import datetime
 from django.shortcuts import render_to_response as render
 from django.template import RequestContext
 from ietf.utils import log
+from ietf.utils.mail import send_mail
 from ietf.ipr.view_sections import section_table
 from ietf.idtracker.models import Rfc, InternetDraft
 from django.http import HttpResponseRedirect
@@ -209,7 +210,7 @@ def new(request, type, update=None):
         form = IprForm(data)
         if form.is_valid():
             # Save data :
-            #   IprDetail, IprContact+, IprDraft+, IprRfc+, IprNotification
+            #   IprDetail, IprUpdate, IprContact+, IprDraft+, IprRfc+, IprNotification
 
             # Save IprDetail
             instance = form.save(commit=False)
@@ -250,6 +251,14 @@ def new(request, type, update=None):
                     pass
                 contact = models.IprContact(**cdata)
                 contact.save()
+                # store this contact in the instance for the email
+                # similar to what views.show() does
+                if   prefix == "hold":
+                    instance.holder_contact = contact
+                elif prefix == "ietf":
+                    instance.ietf_contact = contact
+                elif prefix == "subm":
+                    instance.submitter = contact
 #                contact = ContactForm(cdata)
 #                if contact.is_valid():
 #                    contact.save()
@@ -268,10 +277,8 @@ def new(request, type, update=None):
                 iprrfc = models.IprRfc(document=rfc, ipr=instance)
                 iprrfc.save()
 
-            return HttpResponseRedirect("/ipr/ipr-%s" % instance.ipr_id)
-            #return HttpResponseRedirect("/ipr/")
-        
-            pass
+            send_mail(request, ['ietf-ipr@ietf.org', 'sunny.lee@neustar.biz'], ('IPR Submitter App', 'ietf-ipr@ietf.org'), 'New IPR Submission Notification', "ipr/new_update_email.txt", {"ipr": instance, "update": update})
+            return render("ipr/submitted.html", {"update": update}, context_instance=RequestContext(request))
         else:
             if form.ietf_contact_is_submitter:
                 form.ietf_contact_is_submitter_checked = "checked"

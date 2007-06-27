@@ -1,0 +1,5 @@
+A new IPR disclosure has been submitted.
+Please check it and post it.
+https://datatracker.ietf.org/cgi-bin/ipr_admin/ipr_admin.cgi
+
+{% include "ipr/details.txt" %}

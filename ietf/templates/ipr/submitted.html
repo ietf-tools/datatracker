@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}IPR Submission{% endblock %}
+{% block content %}
+
+  <br>
+  <font size=4 >Your IPR disclosure has been submitted, and the IETF Secretariat has been notified.<br>                                                         
+                                              
+Please note that it may take one business day for your IPR disclosure to be posted<br>
+on the IETF Page of Intellectual Property Rights Notices.<br><br>
+<font color="red">
+</font>
+<br><hr>
+  <a href="{% url ietf.ipr.views.showlist %}"><font size=3>Back to IPR Disclosure Page</a></font><br>
+
+{% endblock %}
