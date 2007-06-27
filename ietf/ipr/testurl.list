@@ -10,21 +10,31 @@
 
 200	 /ipr/search/			https://datatracker.ietf.org/public/ipr_search.cgi
 302	 /ipr/search/?option=document_search # incomplete argument set gives redirect
+
 200	 /ipr/search/?document_search=mod&option=document_search https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&document_search=mod
 200,sort /ipr/search/?id_document_tag=2220&option=document_search https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&id_document_tag=2220
+
 200,sort /ipr/search/?rfc_search=1034&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=1034			# Loong result, RFC search
 200	 /ipr/search/?rfc_search=4444&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=4444			# Empty result, RFC search
+
 200	 /ipr/search/?patent_search=nortel&option=patent_search	https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_search&patent_search=nortel
 200	 /ipr/search/?patent_search=nortelxz&option=patent_search	https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_search&patent_search=nortelxz	# Empty result
+
 200,sort,ignore:quote /ipr/search/?wg_search=dnsext&option=wg_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=wg_search&wg_search=dnsext
 #200,sort,ignore:quote /ipr/search/?wg_search=aaa&option=wg_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=wg_search&wg_search=aaa	# FIXME This fails, needs revisiting
 200,sort,ignore:quote /ipr/search/?wg_search=acct&option=wg_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=wg_search&wg_search=acct	# Empty result
+
 200,sort,ignore:quote /ipr/search/?option=title_search&title_search=AAA		https://datatracker.ietf.org/public/ipr_search.cgi?option=title_search&title_search=AAA
 200,sort,ignore:quote /ipr/search/?option=title_search&title_search=AAAxz	https://datatracker.ietf.org/public/ipr_search.cgi?option=title_search&title_search=AAAxz # Empty result
+
 200,sort /ipr/search/?patent_info_search=123&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=123
 200,sort /ipr/search/?patent_info_search=31415&option=patent_info_search	https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=31415 # Empty result
+
 200	/ipr/search/?patent_info_search=12&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=12 # Error: at least 3 characters
 200	/ipr/search/?patent_info_search=abc&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=abc # Error: at least 1 digit
+
+200	 /ipr/search/?option=ipr_title_search&ipr_title_search=nortel	https://datatracker.ietf.org/public/ipr_search.cgi?option=ipr_title_search&ipr_title_search=nortel
+200	 /ipr/search/?option=ipr_title_search&ipr_title_search=nortelxz	https://datatracker.ietf.org/public/ipr_search.cgi?option=ipr_title_search&ipr_title_search=nortelxz	# Empty result
 
 
 200	 /ipr/about/			https://datatracker.ietf.org/public/ipr_disclosure.cgi

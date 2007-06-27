@@ -174,7 +174,15 @@ def search(request, type="", q="", id=""):
             # Search by title of IPR disclosure
             # IPR list with documents
             elif type == "ipr_title_search":
-                pass
+                iprs = IprDetail.objects.filter(title__icontains=q, status__in=[1,3]).order_by("-submitted_date", "-ipr_id")
+                count = iprs.count()
+                iprs = [ ipr for ipr in iprs if not ipr.updated_by.all() ]
+                # Some extra information, to help us render 'and' between the
+                # last two documents in a sequence
+                mark_last_doc(iprs)
+                return render("ipr/search_iprtitle_result.html", {"q": q, "iprs": iprs, "count": count },
+                                  context_instance=RequestContext(request) )
+
             else:
                 raise ValueError("Unexpected search type in IPR query: %s" % type)
         return django.http.HttpResponseRedirect(request.path)

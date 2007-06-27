@@ -1,0 +1,12 @@
+--- https://datatracker.ietf.org/public/ipr_search.cgi?option=ipr_title_search&ipr_title_search=nortel 
++++ /ipr/search/?option=ipr_title_search&ipr_title_search=nortel 
+@@ -211,2 +211,2 @@
+-IPR that has word(s) "nortel" in the title, and is not related to a
+-specific IETF contribution.
++IPR that is not related to a specific IETF contribution. and has the
++string "nortel" within the IPR disclosure title.
+@@ -217,2 +217,2 @@
+-IPR that has word(s) "nortel" in the title, and is not related to a
+-specific IETF contribution.
++IPR that is not related to a specific IETF contribution. and has the
++string "nortel" within the IPR disclosure title.
