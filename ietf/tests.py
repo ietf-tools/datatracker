@@ -361,9 +361,9 @@ class UrlTestCase(TestCase):
                                             note("Failed diff: %s" % (url))
                                         else:
                                             note("Diff:    %s" % (url))
-                                        print "\n".join(diff.split("\n")[:100])
-                                        if len(diff.split("\n")) > 100:
-                                            print "... (skipping %s lines of diff)" % (len(difflist)-100)
+                                        print "\n".join(diff.split("\n")[:120])
+                                        if len(diff.split("\n")) > 120:
+                                            print "... (skipping %s lines of diff)" % (len(difflist)-120)
                                 else:
                                     note("OK   cmp %s" % (url))
                                     
