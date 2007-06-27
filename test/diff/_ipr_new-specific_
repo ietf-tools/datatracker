@@ -37,20 +37,19 @@
 @@ -59,1 +61,1 @@
 -covered.
 +covered:
-@@ -68,2 +70,2 @@
+@@ -68,2 +70,1 @@
 -a) No License Required for Implementers. This licensing declaration is
 -limited solely to standards-track IETF documents.
-+*
 +a) No License Required for Implementers.
-@@ -71,2 +73,1 @@
+@@ -71,2 +72,1 @@
 -Implementers. This licensing declaration is limited solely to
 -standards-track IETF documents.
 +Implementers.
-@@ -74,2 +75,1 @@
+@@ -74,2 +74,1 @@
 -Possible Royalty/Fee. This licensing declaration is limited solely to
 -standards-track IETF documents.
 +Possible Royalty/Fee.
-@@ -81,3 +81,5 @@
+@@ -81,3 +80,5 @@
 -f ) See Text Box Below for Licensing Declaration.
 -Licensing information, comments, notes, or URL for further information
 -:
@@ -59,16 +58,15 @@
 +documents.
 +Licensing information, comments, notes, or URL for further
 +information:
-@@ -88,1 +90,1 @@
+@@ -88,1 +89,1 @@
 -NOTE: The individual submitting this template represents and warrants
 +Note: The individual submitting this template represents and warrants
-@@ -92,2 +94,3 @@
+@@ -92,2 +93,3 @@
 -IETF Participant in Section III above) (Required field* )
 -Same as Section III above
 +the Contact Information above)
 +Same as in Section II above:
 +Same as in Section III above:
-@@ -102,1 +105,1 @@
+@@ -102,1 +104,1 @@
 -VIII. Other Note(s):
 +VIII. Other Notes:
-@@ -104,0 +107,1 @@

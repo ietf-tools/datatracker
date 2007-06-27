@@ -36,20 +36,19 @@
 +C. Does this disclosure apply to all IPR owned by the submitter?:
 +YES
 +NO
-@@ -48,2 +53,2 @@
+@@ -48,2 +53,1 @@
 -a) No License Required for Implementers. This licensing declaration is
 -limited solely to standards-track IETF documents.
-+*
 +a) No License Required for Implementers.
-@@ -51,2 +56,1 @@
+@@ -51,2 +55,1 @@
 -Implementers. This licensing declaration is limited solely to
 -standards-track IETF documents.
 +Implementers.
-@@ -54,2 +58,1 @@
+@@ -54,2 +57,1 @@
 -Possible Royalty/Fee. This licensing declaration is limited solely to
 -standards-track IETF documents.
 +Possible Royalty/Fee.
-@@ -61,3 +64,5 @@
+@@ -61,3 +63,5 @@
 -f ) See Text Box Below for Licensing Declaration.
 -Licensing information, comments, notes, or URL for further information
 -:
@@ -58,19 +57,18 @@
 +documents.
 +Licensing information, comments, notes, or URL for further
 +information:
-@@ -68,1 +73,1 @@
+@@ -68,1 +72,1 @@
 -NOTE: According to RFC3979, Section 6.4.3, unless you check the box
 +Note: According to RFC3979, Section 6.4.3, unless you check the box
-@@ -71,1 +76,1 @@
+@@ -71,1 +75,1 @@
 -NOTE: The individual submitting this template represents and warrants
 +Note: The individual submitting this template represents and warrants
-@@ -75,3 +80,2 @@
+@@ -75,3 +79,2 @@
 -the Patent Holder's Contact for License Application in Section II
 -above) (Required field* )
 -Same as Section II above
 +the Contact Information above)
 +Same as in Section II above:
-@@ -86,1 +90,1 @@
+@@ -86,1 +89,1 @@
 -VI. Other Note(s):
 +VI. Other Notes:
-@@ -88,0 +92,1 @@
