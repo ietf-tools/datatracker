@@ -5,6 +5,7 @@ import django.newforms as forms
 
 from datetime import datetime
 from django.shortcuts import render_to_response as render
+from django.template import RequestContext
 from ietf.utils import log
 from ietf.ipr.view_sections import section_table
 from ietf.idtracker.models import Rfc, InternetDraft
@@ -127,19 +128,17 @@ def new(request, type, update=None):
 
             BaseIprForm.__init__(self, *args, **kw)
         # Special validation code
-	def clean(self):
-	    print section_list.get("ietf_doc")
-	    if section_list.get("ietf_doc", False):
-		# would like to put this in rfclist to get the error
-		# closer to the fields, but clean_data["draftlist"]
-		# isn't set yet.
- 		rfclist = self.clean_data.get("rfclist", None)
- 		draftlist = self.clean_data.get("draftlist", None)
-		other = self.clean_data.get("other_designations", None)
-		print "rfclist %s draftlist %s other %s" % (rfclist, draftlist, other)
-		if not rfclist and not draftlist and not other:
-		    raise forms.ValidationError("One of the Document fields below must be filled in")
-	    return self.clean_data
+        def clean(self):
+            if section_list.get("ietf_doc", False):
+                # would like to put this in rfclist to get the error
+                # closer to the fields, but clean_data["draftlist"]
+                # isn't set yet.
+                rfclist = self.clean_data.get("rfclist", None)
+                draftlist = self.clean_data.get("draftlist", None)
+                other = self.clean_data.get("other_designations", None)
+                if not rfclist and not draftlist and not other:
+                    raise forms.ValidationError("One of the Document fields below must be filled in")
+            return self.clean_data
         def clean_rfclist(self):
             rfclist = self.clean_data.get("rfclist", None)
             if rfclist:
@@ -215,16 +214,23 @@ def new(request, type, update=None):
             # Save IprDetail
             instance = form.save(commit=False)
 
-	    if type == "generic":
-		instance.title = """%(legal_name)s's General License Statement""" % data
-	    if type == "specific":
-		data["ipr_summary"] = get_ipr_summary(form.clean_data)
-		instance.title = """%(legal_name)s's Statement about IPR related to %(ipr_summary)s""" % data
-	    if type == "third-party":
-		data["ipr_summary"] = get_ipr_summary(form.clean_data)
-		instance.title = """%(ietf_name)s's Statement about IPR related to %(ipr_summary)s belonging to %(legal_name)s""" % data
+            if type == "generic":
+                instance.title = """%(legal_name)s's General License Statement""" % data
+            if type == "specific":
+                data["ipr_summary"] = get_ipr_summary(form.clean_data)
+                instance.title = """%(legal_name)s's Statement about IPR related to %(ipr_summary)s""" % data
+            if type == "third-party":
+                data["ipr_summary"] = get_ipr_summary(form.clean_data)
+                instance.title = """%(ietf_name)s's Statement about IPR related to %(ipr_summary)s belonging to %(legal_name)s""" % data
 
-	    instance.save()
+            # A long document list can create a too-long title;
+            # saving a too-long title raises an exception,
+            # so prevent truncation in the database layer by
+            # performing it explicitly.
+            if len(instance.title) > 255:
+                instance.title = instance.title[:252] + "..."
+
+            instance.save()
 
             if update:
                 updater = models.IprUpdate(ipr=instance, updated=update, status_to_be=1, processed=0)
@@ -283,7 +289,7 @@ def new(request, type, update=None):
         form.unbound_form = True
 
     # ietf.utils.log(dir(form.ietf_contact_is_submitter))
-    return render("ipr/details.html", {"ipr": form, "section_list":section_list, "debug": debug})
+    return render("ipr/details.html", {"ipr": form, "section_list":section_list, "debug": debug}, context_instance=RequestContext(request))
 
 
 def get_ipr_summary(data):
@@ -299,6 +305,6 @@ def get_ipr_summary(data):
     elif len(ipr) == 2:
         ipr = " and ".join(ipr)
     else:
-        ipr = ", ".join(ipr[:-1] + ", and " + ipr[-1])
+        ipr = ", ".join(ipr[:-1]) + ", and " + ipr[-1]
 
     return ipr
