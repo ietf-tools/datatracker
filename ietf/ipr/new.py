@@ -8,6 +8,7 @@ import django.newforms as forms
 from datetime import datetime
 from django.shortcuts import render_to_response as render
 from django.template import RequestContext
+from django.http import Http404
 from ietf.utils import log
 from ietf.utils.mail import send_mail
 from ietf.ipr.view_sections import section_table
@@ -337,6 +338,8 @@ def update(request, ipr_id=None):
 	    submitter = form.clean_data
 
     ipr = models.IprDetail.objects.get(ipr_id=ipr_id)
+    if not ipr.status in [1,3]:
+	raise Http404        
     type = "specific"
     if ipr.generic:
 	type = "generic"

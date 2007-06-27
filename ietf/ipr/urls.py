@@ -13,7 +13,7 @@ urlpatterns = patterns('',
      (r'^search/$', search.search),     
 )
 
-queryset = models.IprDetail.objects.all()
+queryset = models.IprDetail.objects.filter(status__in=[1,3])
 archive = {'queryset':queryset, 'date_field': 'submitted_date', 'allow_empty':True }
 
 urlpatterns += patterns('django.views.generic.date_based',

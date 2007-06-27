@@ -4,6 +4,7 @@ import django.utils.html
 from django.shortcuts import render_to_response as render
 from django.template import RequestContext
 from django.utils.html import escape
+from django.http import Http404
 from ietf.idtracker.models import IETFWG
 from ietf.ipr.models import IprDetail, SELECT_CHOICES, LICENSE_CHOICES
 from ietf.ipr.view_sections import section_table
@@ -47,6 +48,8 @@ def show(request, ipr_id=None):
     """Show a specific IPR disclosure"""
     assert ipr_id != None
     ipr = IprDetail.objects.get(ipr_id=ipr_id)
+    if not ipr.status == 1:
+	raise Http404        
     section_list = get_section_list(ipr)
     contacts = ipr.contact.all()
     for contact in contacts:

@@ -13,7 +13,7 @@ class LatestIprDisclosures(Feed):
     feed_url = "/feeds/ipr/"
 
     def items(self):
-        return IprDetail.objects.order_by('-submitted_date')[:5]
+        return IprDetail.objects.filter(status__in=[1,3]).order_by('-submitted_date')[:5]
         
     def item_link(self, item):
         return "/ipr/ipr-%s" % item.ipr_id
