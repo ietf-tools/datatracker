@@ -1,6 +1,5 @@
 --- https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=abc 
 +++ /ipr/search/?patent_info_search=abc&option=patent_info_search 
-@@ -3,2 +3,2 @@
+@@ -3,1 +3,1 @@
 -The search string must contain at lease one digit
--Please send problem reports to ietf-action@ietf.org.
 +The search string must contain at least one digit
