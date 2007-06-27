@@ -3,10 +3,10 @@ from ietf.ipr import models, views, new, search
 
 urlpatterns = patterns('',
      (r'^$', views.showlist),
-     (r'^about/?$', views.default),
+     (r'^about/$', views.default),
      (r'^ipr-(?P<ipr_id>\d+)/$', views.show),
      (r'^update/$', views.updatelist),
-     (r'^update/(?P<ipr_id>\d+)/$', views.update),
+     (r'^update/(?P<ipr_id>\d+)/$', new.update),
      (r'^new-(?P<type>(specific|generic|third-party))/$', new.new),
      (r'^search/$', search.search),     
 )

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}IPR Update{% endblock %}
+{% block content %}
+
+{% include "ipr/style.html" %}
+
+	 <form name="form1" method="post">
+      {% if form.errors %}
+      <p class="errorlist">
+	 There were errors in the submitted form -- see below.  Please correct these and resubmit.
+	{% if form.non_field_errors %}
+	<ul class="errorlist">
+	  {% for error in form.non_field_errors %}
+	  <li>{{ error }}</li>
+	  {% endfor %}
+	</ul>
+	{% endif %}
+      </p>
+      {% endif %}
+
+   <blockquote class="odd">
+      <table border="0" cellpadding="0" cellspacing="0" class="ipr person">
+	 <tr class="{% cycle dark,light as row_parity %}"><th colspan="2" >
+	    Contact Information for Submitter of this Update.
+	    </th>
+	 </tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Name:</td>		<td><b>{{ form.name }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Title:</td>		<td><b>{{ form.title }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Department:</td>	<td><b>{{ form.department }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address1:</td>	<td><b>{{ form.address1 }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address2:</td>	<td><b>{{ form.address2 }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Telephone:</td>	<td><b>{{ form.telephone }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Fax:</td>		<td><b>{{ form.fax }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Email:</td>		<td><b>{{ form.email }}</b></td></tr>
+      </table>
+   </blockquote>
+      <p>
+      {{ form.update_auth }}
+      <b>I am authorized to update this IPR disclosure, and I understand that notification of this update will be provided to the submitter of the original IPR disclosure and to the Patent Holder's Contact.</b>
+      </p>
+      <input type="submit" name="submit" value="Submit">
+      &nbsp; <input type="button" value="Cancel" onClick="history.go(-1);return true;"><br>
+      </form>
+
+{% endblock %}

@@ -32,6 +32,8 @@ def ipr_contact_form_callback(field, **kwargs):
                 numbers [0-9]; dash, period or space; parentheses, and an optional
                 extension number indicated by 'x'. """
 
+    if field.name in ['ipr', 'contact_type']:
+	return None
     if field.name == "telephone":
         return forms.RegexField(phone_re, error_message=error_message, **kwargs)
     if field.name == "fax":
@@ -76,7 +78,7 @@ class ContactForm(BaseContactForm):
 # Form processing
 # ----------------------------------------------------------------
 
-def new(request, type, update=None):
+def new(request, type, update=None, submitter=None):
     """Make a new IPR disclosure.
 
     This is a big function -- maybe too big.  Things would be easier if we didn't have
@@ -108,6 +110,8 @@ def new(request, type, update=None):
             if update:
                 for contact in update.contact.all():
                     contact_initial[contact_type[contact.contact_type]] = contact.__dict__
+		if submitter:
+		    contact_initial["submitter"] = submitter
             kwnoinit = kw.copy()
             kwnoinit.pop('initial', None)
             for contact in ["holder_contact", "ietf_contact", "submitter"]:
@@ -191,7 +195,11 @@ def new(request, type, update=None):
             return licensing_option
 
 
-    if request.method == 'POST':
+    # If we're POSTed, but we got passed a submitter, it was the
+    # POST of the "get updater" form, so we don't want to validate
+    # this one.  When we're posting *this* form, submitter is None,
+    # even when updating.
+    if request.method == 'POST' and not submitter:
         data = request.POST.copy()
         data["submitted_date"] = datetime.now().strftime("%Y-%m-%d")
         data["third_party"] = section_list["third_party"]
@@ -297,6 +305,39 @@ def new(request, type, update=None):
 
     # ietf.utils.log(dir(form.ietf_contact_is_submitter))
     return render("ipr/details.html", {"ipr": form, "section_list":section_list, "debug": debug}, context_instance=RequestContext(request))
+
+def update(request, ipr_id=None):
+    """Update a specific IPR disclosure"""
+    # We're either asking for initial permission or we're in
+    # the general ipr form.  If the POST argument has the first
+    # field of the ipr form, then we must be dealing with that,
+    # so just pass through - otherwise, collect the updater's
+    # info first.
+    submitter = None
+    if not(request.POST.has_key('legal_name')):
+	class UpdateForm(BaseContactForm):
+	    def __init__(self, *args, **kwargs):
+		self.base_fields["update_auth"] = forms.BooleanField("I am authorized to update this IPR disclosure, and I understand that notification of this update will be provided to the submitter of the original IPR disclosure and to the Patent Holder's Contact.")
+		super(UpdateForm, self).__init__(*args, **kwargs)
+	if request.method == 'POST':
+	    form = UpdateForm(request.POST)
+	else:
+	    form = UpdateForm()
+
+	if not(form.is_valid()):
+            for error in form.errors:
+                log("Form error for field: %s: %s"%(error, form.errors[error]))
+	    return render("ipr/update.html", {"form": form}, context_instance=RequestContext(request))
+	else:
+	    submitter = form.clean_data
+
+    ipr = models.IprDetail.objects.get(ipr_id=ipr_id)
+    type = "specific"
+    if ipr.generic:
+	type = "generic"
+    if ipr.third_party:
+	type = "third-party"
+    return new(request, type, ipr, submitter)
 
 
 def get_ipr_summary(data):
