@@ -80,6 +80,7 @@ longopts=help,repository,verbose,version
 # Default values
 MSG=""
 VERFILE=ietf/__init__.py
+SETTINGS=ietf/settings.py
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
@@ -131,10 +132,11 @@ elif [ "${DIR%%/*}" = "branch" ]; then
     SRC="branch/${tmp%%/*}"	# keep first subdir under branch/
 fi
 
+note "Locating the root of the working copy..."
 while [ "$RDIR" ]; do
     [ "$RDIR" = "$prev" ] && die "Internal error"
     cd ..
-    pwd
+    note "  now at $PWD"
     prev=$RDIR
     RDIR=${RDIR%/*}
 done
@@ -144,27 +146,54 @@ SRC=${SRC#/}				# remove leading slash
 
 MAJOR=${VER%.*}
 MINOR=${VER#*.}
+VER="$(printf %d.%02d $MAJOR $MINOR)"
 NEXT=$(( $MINOR + 1 ))
 DEV="$(printf %d.%02d-dev $MAJOR $NEXT)"
 
-# update the version and make sure "$Rev$" is Ok
-sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev)?\"/\"$VER\"/" \
-	-e "/^__rev__/s/\".*\"/\"\$Rev:\$\"/" \
-	$SRC/$VERFILE
-cat $SRC/$VERFILE
-svn commit $SRC/$VERFILE -m "Release version $VER. $MSG"
-
-# create a new tag.
+note "Verifying that the version doesn't already exist"
 svn info $REPO/tags/$VER 2>&1 | grep -q "Not a valid URL" || die "The tag '$VER' already exists (or there was an error testing for it)."
-svn cp $REPO/$SRC $REPO/tags/$VER
 
-# update version and revision info to indicate that the source and branch aren't releases
+note "Update the version info in $VERFILE and make sure'\$Rev\$' is Ok"
+sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev)?\"/\"$VER\"/" \
+	  -e "/^__rev__/s/\".*\"/\"\$Rev:\$\"/" \
+	$SRC/$VERFILE
+
+note "Update the deployment settings in settings.py"
+sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = False/' \
+	  -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'production'/" \
+	$SRC/$SETTINGS
+
+note "Committing version information for version $VER. $MSG"
+svn commit $SRC/$VERFILE $SRC/$SETTINGS -m "Set version info to release version $VER before branching. $MSG"
+
+note "Creating new tag 'tags/$VER' from $SRC"
+svn cp $REPO/$SRC $REPO/tags/$VER -m "Creating new tag 'tags/$VER' from $SRC"
+
+note "Updating version and revision info to indicate that the source and branch aren't releases"
 sed -i -r -e "/^__version__/s/\"[0-9.]*\"/\"$DEV\"/" \
 	  -e "/^__rev__/s/\"\\\$Rev: (.*) \\\$\"/\"\$Rev:\$ (dev) Latest release: Rev. \1 \"/" \
 	  $SRC/$VERFILE
-cat $SRC/$VERFILE
-svn commit $VERFILE -m "Development branch $DEV"
+
+note "Updating the deployment settings in settings.py to development mode"
+sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' \
+	  -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'development'/" \
+	$SRC/$SETTINGS
+
 
 # if SRC is 'trunk', then also create a new branch
-[ $SRC = "trunk" ] && svn info $REPO/branch/$VER 2>&1 | grep -q "Not a valid URL" && svn cp $REPO/$SRC $REPO/branch/$VER
+if [ $SRC = "trunk" ]; then
+    if svn info $REPO/branch/$VER 2>&1 | grep -q "Not a valid URL"; then
+	note "Creating new branch 'branch/$VER' from $SRC"
+	svn cp $REPO/$SRC $REPO/branch/$VER -m "Creating new branch 'branch/$VER' from $SRC"
+    fi
 
+    note "Updating version and revision info on trunk"
+    sed -i -r -e "/^__version__/s/\"[0-9.]*\"/\"$MAJOR.xx-trunk\"/" \
+	  -e "/^__rev__/s/\"\\\$Rev: (.*) \\\$\"/\"\$Rev:\$ (dev) Latest release: Rev. \1 \"/" \
+	  $SRC/$VERFILE
+
+    note "Commit version information '$MAJOR.xx-trunk'"
+    svn commit $SRC/$VERFILE $SRC/$SETTINGS -m "Set version of the trunk to $MAJOR.xx-trunk after branching off $VER"
+fi
+
+svn update
