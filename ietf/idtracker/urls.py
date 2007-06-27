@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.conf.urls.defaults import patterns
 from ietf.idtracker.models import IDInternal, IDState, IDSubState, DocumentComment, BallotInfo
 from ietf.idtracker import views

@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 # Django settings for ietf project.
 # BASE_DIR and "settings_local" are from
 # http://code.djangoproject.com/wiki/SplitSettings

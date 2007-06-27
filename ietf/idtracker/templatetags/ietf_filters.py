@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 import textwrap
 from django import template
 from django.utils.html import escape, fix_ampersands, linebreaks

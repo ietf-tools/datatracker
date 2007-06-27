@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Copyright The IETF Trust 2007, All Rights Reserved
 
 import re
 import textwrap

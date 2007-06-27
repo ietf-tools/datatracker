@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from ietf.idtracker.models import InternetDraft, Rfc
 
 inverse = {

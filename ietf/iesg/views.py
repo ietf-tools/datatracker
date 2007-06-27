@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 # Create your views here.
 #from django.views.generic.date_based import archive_index
 from ietf.idtracker.models import IDInternal, InternetDraft

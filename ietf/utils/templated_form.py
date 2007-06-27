@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.utils.html import escape
 
 def makeTemplatedForm(template=None):

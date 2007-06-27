@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 ##
 ## django form wizard
 ## http://code.djangoproject.com/ticket/3218

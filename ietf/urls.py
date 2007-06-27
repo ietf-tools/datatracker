@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.conf.urls.defaults import patterns, include, handler404, handler500
 
 from ietf.iesg.feeds import IESGMinutes

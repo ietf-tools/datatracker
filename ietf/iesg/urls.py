@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.conf.urls.defaults import patterns
 from ietf.iesg import views
 from ietf.iesg.models import TelechatMinutes

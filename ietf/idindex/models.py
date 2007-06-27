@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 #from django.db import models
 
 alphabet = [chr(65 + i) for i in range(0, 26)]

@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.shortcuts import render_to_response as render
 import urls
 import re

@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 """Beautiful Soup
 Elixir and Tonic
 "The Screen-Scraper's Friend"

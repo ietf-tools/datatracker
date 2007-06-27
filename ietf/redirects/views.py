@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.http import HttpResponsePermanentRedirect,Http404
 import re
 

@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 """A copy of the IfChanged standard node, updated with
 SmileyChris's patch in http://code.djangoproject.com/ticket/4534
 and with the context push removed."""

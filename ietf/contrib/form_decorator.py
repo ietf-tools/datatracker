@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 ## formfield_callback generator
 ## http://www.djangosnippets.org/snippets/59/
 def form_decorator(fields = {}, attrs = {}, widgets = {}, 

@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.db import models
 from ietf.idtracker.models import PersonOrOrgInfo, ChairsHistory
 from django.contrib.auth.models import Permission

@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.http import HttpResponse
 from django.views.generic.list_detail import object_list
 from django.db.models import Q

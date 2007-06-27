@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django import newforms as forms
 from ietf.idtracker.models import IDState, IDStatus, IETFWG
 from ietf.idindex.models import orgs

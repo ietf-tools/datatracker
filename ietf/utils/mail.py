@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from email.Utils import make_msgid, formatdate, formataddr, parseaddr, getaddresses
 from email.MIMEText import MIMEText
 from email.MIMEMessage import MIMEMessage

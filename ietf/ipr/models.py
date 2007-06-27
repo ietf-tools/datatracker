@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.db import models
 #from django import newforms as forms
 from ietf.idtracker.views import InternetDraft

@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.core.management import execute_manager
 try:
     import settings # Assumed to be in the same directory.

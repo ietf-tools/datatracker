@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 # Create your views here.
 #import models
 from django.shortcuts import render_to_response as render, get_object_or_404

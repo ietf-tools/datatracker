@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 # Caching accessor for the reverse of a ForeignKey relatinoship
 # Started by axiak on #django
 class FKAsOneToOne(object):

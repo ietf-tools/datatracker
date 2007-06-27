@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.contrib.syndication.feeds import Feed
 from django.utils.feedgenerator import Atom1Feed
 from ietf.ipr.models import IprDetail

@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.conf import settings
 from ietf import __date__, __rev__, __version__, __id__
 

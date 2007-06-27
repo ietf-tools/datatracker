@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor, ApprovalComment, ListApprover
 from models import NonWgMailingList, MailingList, Domain
 from ietf.idtracker.models import Area, PersonOrOrgInfo, AreaDirector, WGChair

@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 from django.template import RequestContext
 from django.shortcuts import render_to_response
 #from ietf.idtracker.models import PersonOrOrgInfo

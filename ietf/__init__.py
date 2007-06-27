@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 __version__ = "0.99"
 
 __date__    = "$Date$"

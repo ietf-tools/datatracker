@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
 import django.utils.html
 from django.shortcuts import render_to_response as render
 from django.template import RequestContext
