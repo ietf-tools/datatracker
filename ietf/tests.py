@@ -294,7 +294,7 @@ class UrlTestCase(TestCase):
                         mfile.close()
                         note("     200 %s" % (master))
                     except urllib.URLError, e:
-                        note("     %s %s" % (e.code, e.url))
+                        note("     Error retrieving %s: %s" % (e.url, e))
                         goodhtml = None                    
                     try:
                         if goodhtml and response.content:
