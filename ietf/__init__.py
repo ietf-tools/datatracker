@@ -1,7 +1,7 @@
-__version__ = "0.98-dev"
+__version__ = "2.0"
 
 __date__    = "$Date$"
 
-__rev__     = "$Rev$"
+__rev__     = "$Rev:$"
 
 __id__      = "$Id$"
