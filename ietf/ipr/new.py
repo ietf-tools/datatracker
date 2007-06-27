@@ -111,7 +111,10 @@ def new(request, type, update=None, submitter=None):
                 for contact in update.contact.all():
                     contact_initial[contact_type[contact.contact_type]] = contact.__dict__
 		if submitter:
-		    contact_initial["submitter"] = submitter
+		    if type == "third-party":
+			contact_initial["ietf_contact"] = submitter
+		    else:
+			contact_initial["submitter"] = submitter
             kwnoinit = kw.copy()
             kwnoinit.pop('initial', None)
             for contact in ["holder_contact", "ietf_contact", "submitter"]:
