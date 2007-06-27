@@ -26,8 +26,8 @@ Email: {{ ipr.ietf_contact.email }}
 
 Section IV. IETF Document or Working Group Contribution to Which Patent Disclosure
 Relates
-${doc_title_line}RFC Number(s) : {% for doc in ipr.rfcs.all %}{{ doc.document.rfc_number }}{% if not forloop.last %}, {% endif %}{% endfor %}
-I-D File Name(s)(draft-...) : {% for doc in ipr.drafts.all %}{{ doc.document.displayname }}{% if not forloop.last %}, {% endif %}{% endfor %}
+RFC Number(s) : {% for doc in ipr.rfcs.all %}{{ doc.document.rfc_number }} ({{ doc.document.title }}){% if not forloop.last %}, {% endif %}{% endfor %}
+I-D File Name(s)(draft-...) : {% for doc in ipr.drafts.all %}{{ doc.document.displayname }} ({{ doc.document.title }}){% if not forloop.last %}, {% endif %}{% endfor %}
 Designations for Other Contributions : {{ ipr.other_designations }}
 
 Section V. Disclosure of Patent Information (i.e., patents or patent applications 
