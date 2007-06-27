@@ -3,10 +3,10 @@
 {% block content %}
 
 <h1><center>IPR Disclosure Update Page</H1></center>
-<a href="https://datatracker.ietf.org/public/ipr_disclosure.cgi">Click here to submit an IPR disclosure</a> 
+<a href="{% url ietf.ipr.views.default %}">Click here to submit an IPR disclosure</a> 
 
 <hr><p>
-<P><a href="http://datatracker.ietf.org/public/ipr_search.cgi"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Search the IPR Disclosures</a><p>
+<P><a href="{% url ietf.ipr.search.search %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Search the IPR Disclosures</a><p>
 <P><a href="#generic"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Generic IPR Disclosures</a><p>
 
 <P><a href="#specific"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Specific IPR Disclosures</a><p>
