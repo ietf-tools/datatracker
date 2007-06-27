@@ -15,14 +15,14 @@ function toggle_submitter_info (src) {
 	    document.form1.subm_address1.value = document.form1.hold_address1.value;
 	    document.form1.subm_address2.value = document.form1.hold_address2.value;
 	} else {
-	    document.form1.subm_name.value = "";
-	    document.form1.subm_title.value = "";
-	    document.form1.subm_department.value = "";
-	    document.form1.subm_telephone.value = "";
-	    document.form1.subm_fax.value = "";
-	    document.form1.subm_email.value = "";
-	    document.form1.subm_address1.value = "";
-	    document.form1.subm_address2.value = "";	    
+	    document.form1.subm_name.value = document.form1.subm_name.defaultValue;
+	    document.form1.subm_title.value = document.form1.subm_title.defaultValue;
+	    document.form1.subm_department.value = document.form1.subm_department.defaultValue;
+	    document.form1.subm_telephone.value = document.form1.subm_telephone.defaultValue;
+	    document.form1.subm_fax.value = document.form1.subm_fax.defaultValue;
+	    document.form1.subm_email.value = document.form1.subm_email.defaultValue;
+	    document.form1.subm_address1.value = document.form1.subm_address1.defaultValue;
+	    document.form1.subm_address2.value = document.form1.subm_address2.defaultValue;	    
 	}
     } else if (src == 'ietf') {
 	checked = document.form1.ietf_contact_is_submitter.checked;
@@ -38,14 +38,14 @@ function toggle_submitter_info (src) {
 	    document.form1.subm_address1.value = document.form1.ietf_address1.value;
 	    document.form1.subm_address2.value = document.form1.ietf_address2.value;
 	} else {
-	    document.form1.subm_name.value = "";
-	    document.form1.subm_title.value = "";
-	    document.form1.subm_department.value = "";
-	    document.form1.subm_telephone.value = "";
-	    document.form1.subm_fax.value = "";
-	    document.form1.subm_email.value = "";
-	    document.form1.subm_address1.value = "";
-	    document.form1.subm_address2.value = "";	    
+	    document.form1.subm_name.value = document.form1.subm_name.defaultValue;
+	    document.form1.subm_title.value = document.form1.subm_title.defaultValue;
+	    document.form1.subm_department.value = document.form1.subm_department.defaultValue;
+	    document.form1.subm_telephone.value = document.form1.subm_telephone.defaultValue;
+	    document.form1.subm_fax.value = document.form1.subm_fax.defaultValue;
+	    document.form1.subm_email.value = document.form1.subm_email.defaultValue;
+	    document.form1.subm_address1.value = document.form1.subm_address1.defaultValue;
+	    document.form1.subm_address2.value = document.form1.subm_address2.defaultValue;	    
 	}
     }
     document.form1.subm_name.disabled = checked;
