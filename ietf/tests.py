@@ -304,6 +304,10 @@ class UrlTestCase(TestCase):
                             else:
                                 testtext = reduce_text(response.content)
                                 goodtext = reduce_text(goodhtml)
+                            # Always ignore some stuff
+                            for regex in module.ignores["always"]:
+                                testtext = re.sub(regex, "", testtext)
+                                goodtext = re.sub(regex, "", goodtext)
                             if "ignore" in codes:
                                 ignores = codes["ignore"].split("/")
                                 for ignore in ignores:
