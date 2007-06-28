@@ -16,7 +16,7 @@ base_extra = { 'alphabet': alphabet, 'orgs': orgs }
 def wgdocs(request, **kwargs):
     if kwargs.has_key('id'):
 	queryset = InternetDraft.objects.filter(group=kwargs['id'])
-	group = Acronym.objects.get(acronym_id=kwargs['id'])
+	group = get_object_or_404(Acronym, acronym_id=kwargs['id'])
     else:
 	wg = kwargs['slug']
 	try:
