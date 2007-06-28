@@ -289,6 +289,7 @@ class UrlTestCase(TestCase):
                     note("Exception for URL '%s'" % url)
                     traceback.print_exc()
                 if master and not "skipdiff" in codes:
+                    goodhtml = None
                     try:
                         #print "Fetching", master, "...",
                         mfile = urllib.urlopen(master)
@@ -296,8 +297,9 @@ class UrlTestCase(TestCase):
                         mfile.close()
                         note("     200 %s" % (master))
                     except urllib.URLError, e:
-                        note("     Error retrieving %s: %s" % (e.url, e))
-                        goodhtml = None                    
+                        note("     Error retrieving %s: %s" % (master, e))
+                    except urllib.BadStatusLine, e:
+                        note("     Error retrieving %s: %s" % (master, e))
                     try:
                         if goodhtml and response.content:
                             if "sort" in codes:
