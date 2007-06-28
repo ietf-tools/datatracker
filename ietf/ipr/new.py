@@ -13,7 +13,6 @@ from ietf.utils import log
 from ietf.utils.mail import send_mail
 from ietf.ipr.view_sections import section_table
 from ietf.idtracker.models import Rfc, InternetDraft
-from django.http import HttpResponseRedirect
 
 # ----------------------------------------------------------------
 # Callback methods for special field cases.
