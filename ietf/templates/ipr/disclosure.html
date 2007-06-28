@@ -25,15 +25,15 @@
    <p />
    <hr>
    <p>
-   <a href="./ipr.cgi"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">File a disclosure about your IPR related to a specific IETF contribution</a>
+   <a href="{% url ietf.ipr.new.new "specific" %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">File a disclosure about your IPR related to a specific IETF contribution</a>
    </p>
-   <p><a href="./ipr_generic.cgi"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">File an IPR disclosure that is not related to a specific IETF contribution</a>
+   <p><a href="{% url ietf.ipr.new.new "generic" %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">File an IPR disclosure that is not related to a specific IETF contribution</a>
    </p>
-   <p><a href="./ipr_notify.cgi"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Notify the IETF of IPR other than your own</a>
+   <p><a href="{% url ietf.ipr.new.new "third-party" %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Notify the IETF of IPR other than your own</a>
    </p>
    <p><a href="{% url ietf.ipr.views.updatelist %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Update an existing IPR disclosure</a>
    </p>
-   <p><a href="./ipr_search.cgi"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Search the IPR disclosures</a>
+   <p><a href="{% url ietf.ipr.search.search %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">Search the IPR disclosures</a>
    </p>
    <p><a href="{% url ietf.ipr.views.showlist %}"><img src="http://www.ietf.org/images/blue.gif" hspace="3" border="0">List of IPR disclosures</a><p>
    </p>
