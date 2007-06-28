@@ -187,8 +187,8 @@
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="32" model="redirects.redirect">
-    <field type="CharField" name="cgi">dummy/2</field>
-    <field type="CharField" name="url"></field>
+    <field type="CharField" name="cgi"></field>
+    <field type="CharField" name="url">idtracker</field>
     <field type="CharField" name="rest"></field>
     <field type="CharField" name="remove"></field>
   </object>

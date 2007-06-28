@@ -9,7 +9,9 @@ urlpatterns = patterns('',
      (r'^ipr-(?P<ipr_id>\d+)/$', views.show),
      (r'^update/$', views.updatelist),
      (r'^update/(?P<ipr_id>\d+)/$', new.update),
-     (r'^new-(?P<type>(specific|generic|third-party))/$', new.new),
+     (r'^new-(?P<type>specific)/$', new.new),
+     (r'^new-(?P<type>generic)/$', new.new),
+     (r'^new-(?P<type>third-party)/$', new.new),
      (r'^search/$', search.search),     
 )
 
