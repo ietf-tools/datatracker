@@ -1,7 +1,13 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 <html>
-<HEAD><TITLE>IETF I-D Tracker v1.1 {% block title %}{% endblock %}-- WCF</title>
-<link rel="icon" href="http://tools.ietf.org/images/django-ietf.png" />
+<HEAD>
+      <!-- Project Revision {{ revision_num }}, {{ revision_time }} -->
+      <title>{% block title %}IETF Data{% endblock %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}</title>
+      {% ifnotequal server_mode "production" %}
+      <link rel="icon" href="/images/ietf-dev-icon.bmp" />
+      {% else %}
+      <link rel="icon" href="/images/ietf-icon.bmp" />
+      {% endifnotequal %}
 
 <STYLE TYPE="text/css">
 <!--
