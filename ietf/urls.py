@@ -31,7 +31,7 @@ urlpatterns = patterns('',
       (r'^meeting/', include('ietf.meeting.urls')),
       (r'^accounts/', include('ietf.ietfauth.urls')),
 
-      (r'^$', 'ietf.redirects.views.redirect'),
+      (r'^$', ietf.views.apps),
 
     # Uncomment this for admin:
      (r'^admin/', include('django.contrib.admin.urls')),
