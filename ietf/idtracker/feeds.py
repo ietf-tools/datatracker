@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.contrib.syndication.feeds import Feed
+from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from ietf.idtracker.models import InternetDraft, DocumentComment
 import datetime
@@ -16,6 +16,8 @@ class DocumentComments(Feed):
 	return "I-D Tracker comments for %s" % obj.filename
 
     def link(self, obj):
+	if obj is None:
+	    raise FeedDoesNotExist
 	return "/idtracker/%s" % obj.filename
 	# obj.get_absolute_url() ?
 
