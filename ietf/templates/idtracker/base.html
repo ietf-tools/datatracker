@@ -2,7 +2,7 @@
 <html>
 <HEAD>
       <!-- Project Revision {{ revision_num }}, {{ revision_time }} -->
-      <title>{% block title %}IETF Data{% endblock %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}</title>
+      <title>IETF I-D Tracker {% block title %}{% endblock %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}</title>
       {% ifnotequal server_mode "production" %}
       <link rel="icon" href="/images/ietf-dev-icon.bmp" />
       {% else %}
