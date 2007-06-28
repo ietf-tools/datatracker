@@ -1,11 +1,12 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.views.generic.list_detail import object_list
 from django.db.models import Q
 from django.http import Http404
 from django.template import RequestContext, loader
 from django.shortcuts import render_to_response, get_object_or_404
+from django.core.urlresolvers import reverse
 from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, Rfc
 from ietf.idindex.forms import IDIndexSearchForm
 from ietf.idindex.models import alphabet, orgs, orgs_dict
@@ -13,26 +14,27 @@ from ietf.utils import orl, flattenl
 
 base_extra = { 'alphabet': alphabet, 'orgs': orgs }
 
-def wgdocs(request, **kwargs):
-    if kwargs.has_key('id'):
-	queryset = InternetDraft.objects.filter(group=kwargs['id'])
-	group = get_object_or_404(Acronym, acronym_id=kwargs['id'])
-    else:
-	wg = kwargs['slug']
-	try:
-	    group = Acronym.objects.get(acronym=wg)
-	except Acronym.DoesNotExist:	# try a search
-	    if wg == 'other':
-		queryset = IETFWG.objects.filter(
-		    orl([Q(group_acronym__acronym__istartswith="%d" % i) for i in range(0,10)])
-		    )
-	    else:
-		queryset = IETFWG.objects.filter(group_acronym__acronym__istartswith=wg)
-	    queryset = queryset.filter(group_type__type='WG').select_related().order_by('status_id', 'acronym.acronym')
-	    return object_list(request, queryset=queryset, template_name='idindex/wglist.html', allow_empty=True, extra_context=base_extra)
-        queryset = InternetDraft.objects.filter(group__acronym=wg)
+def wgdocs_redir(request, id):
+    group = get_object_or_404(Acronym, acronym_id=id)
+    return HttpResponsePermanentRedirect(reverse(wgdocs, args=[group.acronym]))
+
+def wgdocs(request, wg):
+    try:
+	group = Acronym.objects.get(acronym=wg)
+    except Acronym.DoesNotExist:	# try a search
+	if wg == 'other':
+	    queryset = IETFWG.objects.filter(
+		orl([Q(group_acronym__acronym__istartswith="%d" % i) for i in range(0,10)])
+		)
+	else:
+	    queryset = IETFWG.objects.filter(group_acronym__acronym__istartswith=wg)
+	queryset = queryset.filter(group_type__type='WG').select_related().order_by('status_id', 'acronym.acronym')
+	extra = base_extra.copy()
+	extra['search'] = wg
+	return object_list(request, queryset=queryset, template_name='idindex/wglist.html', allow_empty=True, extra_context=extra)
+    queryset = InternetDraft.objects.filter(group__acronym=wg)
     queryset = queryset.order_by('status_id', 'filename')
-    extra = base_extra
+    extra = base_extra.copy()
     extra['group'] = group
     return object_list(request, queryset=queryset, template_name='idindex/wgdocs.html', allow_empty=True, extra_context=extra)
 
@@ -47,7 +49,7 @@ def inddocs(request, filter=None):
     else:
 	queryset = InternetDraft.objects.filter(filename__istartswith='draft-' + filter)
     queryset = queryset.exclude(ind_exception).filter(group__acronym='none').order_by('filename')
-    extra = base_extra
+    extra = base_extra.copy()
     extra['filter'] = filter
     return object_list(request, queryset=queryset, template_name='idindex/inddocs.html', allow_empty=True, extra_context=extra)
 
@@ -61,7 +63,7 @@ def otherdocs(request, cat=None):
 	     Q(filename__istartswith="draft-ietf-%s-" % p)
 		for p in org.get('prefixes', [ org['key'] ])]))
     queryset = queryset.order_by('status_id','filename')
-    extra = base_extra
+    extra = base_extra.copy()
     extra['category'] = cat
     return object_list(request, queryset=queryset, template_name='idindex/otherdocs.html', allow_empty=True, extra_context=extra)
 

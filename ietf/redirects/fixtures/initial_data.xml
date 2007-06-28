@@ -272,7 +272,7 @@
   </object>
   <object pk="13" model="redirects.command">
     <field type="CharField" name="command">show_wg_id</field>
-    <field type="CharField" name="url">wg</field>
+    <field type="CharField" name="url">wgid</field>
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">4</field>
   </object>

@@ -15,8 +15,8 @@ info_dict = {
 }
 
 urlpatterns = patterns('',
-     (r'^wg/(?P<id>\d+)/$', views.wgdocs),
-     (r'^wg/(?P<slug>[^/]+)/$', views.wgdocs),
+     (r'^wgid/(?P<id>\d+)/$', views.wgdocs_redir),
+     (r'^wg/(?P<wg>[^/]+)/$', views.wgdocs),
      (r'^ind/(?P<filter>[^/]+)/$', views.inddocs),
      (r'^other/(?P<cat>[^/]+)/$', views.otherdocs),
      # (?P<cat>(?:all|rfc|current|dead)) really confuses reverse()

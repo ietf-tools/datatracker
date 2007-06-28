@@ -4,6 +4,7 @@
 {% block iddbcontent %}
 <hr>
 <h3>Please select a Working Group from the list below</h3>
+{% if object_list %}
 <blockquote>
 {% regroup object_list by status as grouped %}
 {% for status in grouped %}
@@ -19,5 +20,8 @@
 {% endfor %}
 </ul>
 {% endfor %}
+{% else %}
+<p>No working groups found beginning with "{{ search }}".</p>
+{% endif %}
 
 {% endblock %}
