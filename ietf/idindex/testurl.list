@@ -20,4 +20,4 @@
 200			/drafts/all_id.html
 200,skipdiff		/drafts/		https://datatracker.ietf.org/public/idindex.cgi?command=search_id
 200			/drafts/		https://datatracker.ietf.org/public/idindex.cgi
-404			/drafts/wg/11/
+200			/drafts/wg/11/
