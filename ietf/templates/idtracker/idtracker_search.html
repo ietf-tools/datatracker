@@ -74,8 +74,8 @@ Document States: <a href="/images/state_diagram.gif">State Diagram</a> and
 
 </center>
 
-<hr>
 {% if matches %} 
+<hr>
 <b>Search Result</b><br>
     {% regroup matches by docstate as grouped %}
     {% include "idtracker/search_result_table.html" %}
