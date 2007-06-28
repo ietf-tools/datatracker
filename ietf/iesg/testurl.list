@@ -4,7 +4,8 @@
 200		/iesg/telechat/354/	https://datatracker.ietf.org/public/view_telechat_minute.cgi?command=view_minute&id=354
 200,sort	/iesg/ann/ind/		https://datatracker.ietf.org/public/rfc_editor_announcement.cgi
 200,sort,ignore:1 /iesg/ann/new/	https://datatracker.ietf.org/public/recent_announcement.cgi
-200,sort	/iesg/ann/prev/	https://datatracker.ietf.org/public/previous_announcement.cgi
+# This takes ~ 300s:
+#200,sort	/iesg/ann/prev/	https://datatracker.ietf.org/public/previous_announcement.cgi
 200		/iesg/ann/2422/		https://datatracker.ietf.org/public/recent_announcement.cgi?command=show_detail&ballot_id=2422
 200		/iesg/ann/1563/		https://datatracker.ietf.org/public/previous_announcement.cgi?command=show_detail&ballot_id=1563
 404		/iesg/ann/567/		
