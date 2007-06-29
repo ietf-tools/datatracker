@@ -293,7 +293,7 @@ class UrlTestCase(TestCase):
                 if master and not "skipdiff" in codes:
                     hostprefix = settings.TEST_REFERENCE_URL_PREFIX
                     if hostprefix.endswith("/"):
-                        hostprefix = prefix[:-1]
+                        hostprefix = hostprefix[:-1]
                     if master.startswith("/"):
                         master = master[1:]
                     master = "%s/%s" % (hostprefix, master)
