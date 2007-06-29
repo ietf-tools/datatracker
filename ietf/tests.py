@@ -91,7 +91,9 @@ def read_testurls(filename):
             elif len(urlspec) == 3:
                 codes, testurl, goodurl = urlspec
                 # strip protocol and host -- we're making that configurable
-                goodurl = re.sub("^https?://[a-z0-9.]+/", "", goodurl)
+                goodurl = re.sub("^https?://[a-z0-9.]+", "", goodurl)
+                if not goodurl.startswith("/"):
+                    goodurl = "/" + goodurl
             else:
                 raise ValueError("Expected 'HTTP_CODE TESTURL [GOODURL]' in %s line, found '%s'." % (filename, line))
 
@@ -294,9 +296,7 @@ class UrlTestCase(TestCase):
                     hostprefix = settings.TEST_REFERENCE_URL_PREFIX
                     if hostprefix.endswith("/"):
                         hostprefix = hostprefix[:-1]
-                    if master.startswith("/"):
-                        master = master[1:]
-                    master = "%s/%s" % (hostprefix, master)
+                    master = hostprefix + master
                     goodhtml = None
                     try:
                         #print "Fetching", master, "...",
