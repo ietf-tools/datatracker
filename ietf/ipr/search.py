@@ -84,7 +84,7 @@ def search(request, type="", q="", id=""):
                     if q:
                         # normalize the draft name.
                         q = q.strip()
-                        q = re.sub("\.txt$","",q)
+                        q = re.sub("\.txt$","")
                         q = re.sub("-\d\d$","",q)
                         start = InternetDraft.objects.filter(filename__contains=q)
                     if id:

@@ -1,30 +1,30 @@
 # -*- conf-mode -*-
-200	/ipr/				https://datatracker.ietf.org/public/ipr_list.cgi
-200	/ipr/ipr-657/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657 # Generic disclosure
-200	/ipr/ipr-834/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=834 # Specific disclosure
-200	/ipr/ipr-795/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=795 # Third-party disclosure
-200	/ipr/new-generic/		https://datatracker.ietf.org/public/ipr_generic.cgi
-200	/ipr/new-specific/		https://datatracker.ietf.org/public/ipr.cgi
-200	/ipr/new-third-party/		https://datatracker.ietf.org/public/ipr_notify.cgi
-200	/ipr/update/			https://datatracker.ietf.org/public/ipr_update_list.cgi
+200			/ipr/				https://datatracker.ietf.org/public/ipr_list.cgi
+200			/ipr/ipr-657/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657 # Generic disclosure
+200			/ipr/ipr-834/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=834 # Specific disclosure
+200			/ipr/ipr-795/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=795 # Third-party disclosure
+200			/ipr/new-generic/		https://datatracker.ietf.org/public/ipr_generic.cgi
+200			/ipr/new-specific/		https://datatracker.ietf.org/public/ipr.cgi
+200			/ipr/new-third-party/		https://datatracker.ietf.org/public/ipr_notify.cgi
+200			/ipr/update/			https://datatracker.ietf.org/public/ipr_update_list.cgi
 
-200	/ipr/update/657/		https://datatracker.ietf.org/public/ipr_generic.cgi?command=update_ipr&ipr_id=657
+200			/ipr/update/657/		https://datatracker.ietf.org/public/ipr_generic.cgi?command=update_ipr&ipr_id=657
 
-200	/ipr/search/			https://datatracker.ietf.org/public/ipr_search.cgi
-302	/ipr/search/?option=document_search # incomplete argument set gives redirect
+200			/ipr/search/			https://datatracker.ietf.org/public/ipr_search.cgi
+302			/ipr/search/?option=document_search # incomplete argument set gives redirect
 
-200	/ipr/search/?document_search=mod&option=document_search https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&document_search=mod
+200			/ipr/search/?document_search=mod&option=document_search https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&document_search=mod
 200,sort /ipr/search/?id_document_tag=2220&option=document_search https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&id_document_tag=2220
-200	/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns-05	https://datatracker.ietf.org/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns
-200	/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns-05.txt	https://datatracker.ietf.org/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns
+200,skipredirect	/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns-05	https://datatracker.ietf.org/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns
+200,skipredirect	/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns-05.txt	https://datatracker.ietf.org/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns
 
 # This takes ~ 300s:
-#200,sort /ipr/search/?rfc_search=1034&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=1034			# Loong result, RFC search
-200,sort /ipr/search/?rfc_search=1032&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=1032			# Loong result, RFC search
-200	/ipr/search/?rfc_search=4444&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=4444			# Empty result, RFC search
+#200,sort		/ipr/search/?rfc_search=1034&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=1034			# Loong result, RFC search
+200,sort		/ipr/search/?rfc_search=1032&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=1032			# Loong result, RFC search
+200			/ipr/search/?rfc_search=4444&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=4444			# Empty result, RFC search
 
-200	/ipr/search/?patent_search=nortel&option=patent_search	https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_search&patent_search=nortel
-200	/ipr/search/?patent_search=nortelxz&option=patent_search	https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_search&patent_search=nortelxz	# Empty result
+200			/ipr/search/?patent_search=nortel&option=patent_search	https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_search&patent_search=nortel
+200			/ipr/search/?patent_search=nortelxz&option=patent_search	https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_search&patent_search=nortelxz	# Empty result
 
 200,sort,ignore:quote /ipr/search/?wg_search=dnsext&option=wg_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=wg_search&wg_search=dnsext
 #200,sort,ignore:quote /ipr/search/?wg_search=aaa&option=wg_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=wg_search&wg_search=aaa	# FIXME This fails, needs revisiting
@@ -33,17 +33,17 @@
 200,sort,ignore:quote /ipr/search/?option=title_search&title_search=AAA		https://datatracker.ietf.org/public/ipr_search.cgi?option=title_search&title_search=AAA
 200,sort,ignore:quote /ipr/search/?option=title_search&title_search=AAAxz	https://datatracker.ietf.org/public/ipr_search.cgi?option=title_search&title_search=AAAxz # Empty result
 
-200,sort /ipr/search/?patent_info_search=123&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=123
-200,sort /ipr/search/?patent_info_search=31415&option=patent_info_search	https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=31415 # Empty result
+200,sort		/ipr/search/?patent_info_search=123&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=123
+200,sort		/ipr/search/?patent_info_search=31415&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=31415 # Empty result
 
-200	/ipr/search/?patent_info_search=12&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=12 # Error: at least 3 characters
-200	/ipr/search/?patent_info_search=abc&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=abc # Error: at least 1 digit
+200			/ipr/search/?patent_info_search=12&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=12 # Error: at least 3 characters
+200			/ipr/search/?patent_info_search=abc&option=patent_info_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=patent_info_search&patent_info_search=abc # Error: at least 1 digit
 
-200	/ipr/search/?option=ipr_title_search&ipr_title_search=nortel	https://datatracker.ietf.org/public/ipr_search.cgi?option=ipr_title_search&ipr_title_search=nortel
-200	/ipr/search/?option=ipr_title_search&ipr_title_search=nortelxz	https://datatracker.ietf.org/public/ipr_search.cgi?option=ipr_title_search&ipr_title_search=nortelxz	# Empty result
+200			/ipr/search/?option=ipr_title_search&ipr_title_search=nortel	https://datatracker.ietf.org/public/ipr_search.cgi?option=ipr_title_search&ipr_title_search=nortel
+200			/ipr/search/?option=ipr_title_search&ipr_title_search=nortelxz	https://datatracker.ietf.org/public/ipr_search.cgi?option=ipr_title_search&ipr_title_search=nortelxz	# Empty result
 
 
-200	/ipr/about/			https://datatracker.ietf.org/public/ipr_disclosure.cgi
-200	/ipr/2006/
-200	/ipr/2006/feb/
-200	/ipr/by-date/
+200			/ipr/about/			https://datatracker.ietf.org/public/ipr_disclosure.cgi
+200			/ipr/2006/
+200			/ipr/2006/feb/
+200			/ipr/by-date/
