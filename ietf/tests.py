@@ -291,6 +291,12 @@ class UrlTestCase(TestCase):
                     note("Exception for URL '%s'" % url)
                     traceback.print_exc()
                 if master and not "skipdiff" in codes:
+                    hostprefix = settings.TEST_REFERENCE_URL_PREFIX
+                    if hostprefix.endswith("/"):
+                        hostprefix = prefix[:-1]
+                    if master.startswith("/"):
+                        master = master[1:]
+                    master = "%s/%s" % (hostprefix, master)
                     goodhtml = None
                     try:
                         #print "Fetching", master, "...",
