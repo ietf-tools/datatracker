@@ -2,7 +2,6 @@
 
 from django import template
 from ietf import __date__, __rev__, __version__, __id__
-from ietf.utils import log
 
 
 register = template.Library()
