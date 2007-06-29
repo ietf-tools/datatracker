@@ -50,7 +50,7 @@ PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	 {% block content %}{% endblock %}
 	 {% block main_content %}{% endblock %}
       </div>
-      {% include "footer.html" %}
+      {% block footer %}{% include "footer.html" %}{% endblock %}
       {% include "debug.html" %}
    </body>
 </html>
