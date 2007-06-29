@@ -9,7 +9,7 @@ from django.conf import settings
 from ietf.idtracker.models import IETFWG, InternetDraft, Rfc
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
 from ietf.ipr.related import related_docs
-from ietf.utils import log, draft_search
+from ietf.utils import log, normalize_draftname
 
 
 def mark_last_doc(iprs):
@@ -83,7 +83,8 @@ def search(request, type="", q="", id=""):
                 doc = q
                 if type == "document_search":
                     if q:
-                        start = draft_search(q)
+                        q = normalize_draftname(q)
+                        start = InternetDraft.objects.filter(filename__contains=q)
                     if id:
                         start = InternetDraft.objects.filter(id_document_tag=id)
                 if type == "rfc_search":
