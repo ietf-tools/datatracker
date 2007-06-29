@@ -82,6 +82,10 @@ def search(request, type="", q="", id=""):
             if type in ["document_search", "rfc_search"]:
                 if type == "document_search":
                     if q:
+                        # normalize the draft name.
+                        q = q.strip()
+                        q = re.sub("\.txt$","",q)
+                        q = re.sub("-\d\d$","",q)
                         start = InternetDraft.objects.filter(filename__contains=q)
                     if id:
                         start = InternetDraft.objects.filter(id_document_tag=id)
@@ -101,7 +105,8 @@ def search(request, type="", q="", id=""):
                     return render("ipr/search_doc_list.html", {"q": q, "docs": start },
                                   context_instance=RequestContext(request) )                        
                 else:
-                    raise ValueError("Missing or malformed search parameters, or internal error")
+                    return render("ipr/search_doc_result.html", {"q": q, "first": {}, "iprs": {}, "docs": {}},
+                                  context_instance=RequestContext(request) )
 
             # Search by legal name
             # IPR list with documents
