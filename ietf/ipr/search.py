@@ -89,23 +89,26 @@ def search(request, type="", q="", id=""):
                         start = InternetDraft.objects.filter(filename__contains=q)
                     if id:
                         start = InternetDraft.objects.filter(id_document_tag=id)
+                    doc = q
                 if type == "rfc_search":
                     if q:
                         start = Rfc.objects.filter(rfc_number=q)
+                        doc = "RFC%04d" % int(q)
                 if start.count() == 1:
                     first = start[0]
+                    doc = str(start)
                     # get all related drafts, then search for IPRs on all
 
                     docs = related_docs(first, [])
                     #docs = get_doclist.get_doclist(first)
                     iprs, docs = iprs_from_docs(docs)
-                    return render("ipr/search_doc_result.html", {"q": q, "first": first, "iprs": iprs, "docs": docs},
+                    return render("ipr/search_doc_result.html", {"q": q, "first": first, "docs": docs, "doc": doc },
                                   context_instance=RequestContext(request) )
                 elif start.count():
-                    return render("ipr/search_doc_list.html", {"q": q, "docs": start },
+                    return render("ipr/search_doc_list.html", {"q": q, "docs": start, "doc": doc  },
                                   context_instance=RequestContext(request) )                        
                 else:
-                    return render("ipr/search_doc_result.html", {"q": q, "first": {}, "iprs": {}, "docs": {}},
+                    return render("ipr/search_doc_result.html", {"q": q, "first": {}, "iprs": {}, "docs": {}, "doc": doc },
                                   context_instance=RequestContext(request) )
 
             # Search by legal name
