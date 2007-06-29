@@ -345,7 +345,7 @@ class UrlTestCase(TestCase):
                             else:
                                 contextlines = 0
                                 difflist = list(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
-                                diff = "\n".join(difflist)
+                                diff = "\n".join(difflist[2:])
                                 log("Checking diff: %s" % diff[:96])
                                 keys = module.diffchunks.keys()
                                 keys.sort

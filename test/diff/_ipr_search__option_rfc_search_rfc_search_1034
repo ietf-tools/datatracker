@@ -1,5 +1,3 @@
---- https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=1034 
-+++ /ipr/search/?option=rfc_search&rfc_search=1034 
 @@ -148,1 +148,1 @@
 -Search result on RFC1035, "Domain names - implementation and specification", that was updated by RFC3658, "Delegation Signer Resource Record"
 +Search result on RFC1035, "Domain names - implementation and specification", that was updated by RFC4033, "DNS Security Introduction and Requirements"
