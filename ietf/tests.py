@@ -362,7 +362,7 @@ class UrlTestCase(TestCase):
                                     # discard them too
                                     diff = ""
                                 if diff:
-                                    dfile = "%s/../test/diff/%s" % (settings.BASE_DIR, url.replace("/", "_").replace("?", "_"))
+                                    dfile = "%s/../test/diff/%s" % (settings.BASE_DIR, re.sub("[/?&=]", "", url) )
                                     if os.path.exists(dfile):
                                         dfile = open(dfile)
                                         #print "Reading OK diff file:", dfile.name
