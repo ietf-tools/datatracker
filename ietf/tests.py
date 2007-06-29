@@ -91,7 +91,7 @@ def read_testurls(filename):
             elif len(urlspec) == 3:
                 codes, testurl, goodurl = urlspec
                 # strip protocol and host -- we're making that configurable
-                goodurl = re.sub("^https?://[a-z0-9.]/", "", goodurl)
+                goodurl = re.sub("^https?://[a-z0-9.]+/", "", goodurl)
             else:
                 raise ValueError("Expected 'HTTP_CODE TESTURL [GOODURL]' in %s line, found '%s'." % (filename, line))
 
