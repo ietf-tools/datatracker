@@ -14,6 +14,7 @@ ietf/utils/__init__.py:2: 'log' imported but unused
 ietf/utils/__init__.py:3: 'FKAsOneToOne' imported but unused
 ietf/utils/__init__.py:5: 'TextSoup' imported but unused
 ietf/utils/__init__.py:5: 'soup2text' imported but unused
+ietf/utils/__init__.py:8: 'normalize_draftname' imported but unused
 ietf/idtracker/templatetags/ietf_filters.py:8: redefinition of unused 'emailutils' from line 6
 ietf/contrib/BeautifulSoup.py:59: redefinition of unused 'name2codepoint' from line 57
 ietf/contrib/BeautifulSoup.py:1497: redefinition of unused 'chardet' from line 1493
