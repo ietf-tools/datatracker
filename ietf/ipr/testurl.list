@@ -15,6 +15,8 @@
 
 200	/ipr/search/?document_search=mod&option=document_search https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&document_search=mod
 200,sort /ipr/search/?id_document_tag=2220&option=document_search https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&id_document_tag=2220
+200	/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns-05	https://datatracker.ietf.org/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns
+200	/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns-05.txt	https://datatracker.ietf.org/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns
 
 # This takes ~ 300s:
 #200,sort /ipr/search/?rfc_search=1034&option=rfc_search		https://datatracker.ietf.org/public/ipr_search.cgi?option=rfc_search&rfc_search=1034			# Loong result, RFC search
