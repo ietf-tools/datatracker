@@ -21,18 +21,18 @@ done
 
 
 for dir in $DBLOCK /var/lock /var/state /var/run /var/tmp; do
-    [ -d $dir -a -w $dir ] && lock=$dir/$program && break
+    [ -d $dir -a -w $dir ] && lock=$dir/ietfdb && break
 done
 [ "$lock" ] || die "Couldn't find a directory to keep lock in."
 
-
+set -x
 [ "$DBDUMP" ] || DBDUMP="$1"
 [ "$DBDUMP" ] || DBDUMP=/www/tools.ietf.org/events/raw/sqldump/sqldump.raw
 [ "$DBFIX"  ] || DBFIX=$build/test/sql_fixup.sql
 [ "$DBTIME" ] || DBTIME=$state/update-db.time
 [ "$DBDONE" ] || DBDONE=$state/update-db.done
 [ "$DBLOCK" ] || DBLOCK=$lock
-
+set +x
 
 PIDFILE=$DBLOCK/pid
 

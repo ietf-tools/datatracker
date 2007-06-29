@@ -53,7 +53,12 @@ cat $settings_local test/settings_local_test.py > test/settings_local.py
 
 # Acquire lock, to prevent running test and database update at the same time
 
-LOCKDIR=/var/lock/ietfdb
+for dir in $DBLOCK /var/lock /var/state /var/run /var/tmp; do
+    [ -d $dir -a -w $dir ] && lock=$dir/ietfdb && break
+done
+[ "$lock" ] || die "Couldn't find a directory to keep lock in."
+
+LOCKDIR=$lock
 PIDFILE=$LOCKDIR/pid
 
 while true; do
