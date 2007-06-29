@@ -96,7 +96,7 @@ def search(request, type="", q="", id=""):
                         doc = "RFC%04d" % int(q)
                 if start.count() == 1:
                     first = start[0]
-                    doc = str(start)
+                    doc = str(first)
                     # get all related drafts, then search for IPRs on all
 
                     docs = related_docs(first, [])
