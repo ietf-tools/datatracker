@@ -1,3 +1,4 @@
+         2007-06-29_18:43 +0s
 @@ -40,2 +40,3 @@
 -This draft is basically ready for publication, but has nits and more
 -...
@@ -49,3 +50,6 @@
 +> Definition of an IS-IS Link Attribute sub-TLV > > draft-ietf-isis-
 +link-attr-01.txt > > Abstract > > This document defines a sub-TLV
 +called "Link-attributes" carried > within the ...
+@@ -140,3 +142,0 @@
+-Did you find a bug? Let us know.
+-Any question or suggestion?
