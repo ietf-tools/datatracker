@@ -2,13 +2,16 @@
 import re
 from ietf.idtracker.models import InternetDraft
 
-def draft_search(s):
+def normalize_draftname(string):
+    string = string.strip()
+    string = re.sub("\.txt$","",string)
+    string = re.sub("-\d\d$","",string)
+    return string
+
+def draft_search(string):
     drafts = []
-    if s:
-        # normalize the draft name.
-        s = s.strip()
-        s = re.sub("\.txt$","",s)
-        s = re.sub("-\d\d$","",s)
-        drafts = InternetDraft.objects.filter(filename__contains=s)
+    if string:
+        string = normalize_draftname(string)
+        drafts = InternetDraft.objects.filter(filename__contains=string)
     return drafts
     
