@@ -564,8 +564,8 @@
       </form>
       <blockquote>
 	 <hr>
-	 <img src="/images/blue.gif" hspace="3" border="0"><a href="./ipr_disclosure.cgi">IPR Disclosure Page</a><br>
-	 <img src="/images/blue.gif" hspace="3" border="0"><a href="./ipr_list.cgi">View IPR Disclosures</a><br><br>
+	 <img src="/images/blue.gif" hspace="3" border="0"><a href="{% url ietf.ipr.views.default %}">IPR Disclosure Page</a><br>
+	 <img src="/images/blue.gif" hspace="3" border="0"><a href="{% url ietf.ipr.views.showlist %}">View IPR Disclosures</a><br><br>
       </blockquote>
       {% endif %}
 
