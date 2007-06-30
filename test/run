@@ -5,7 +5,8 @@ progdir=${0%/*}
 
 cd $progdir/..				# now at trunk/
 
-test/test-setup			# create a patched django for test purposes, and more
+pidfile=$(test/test-setup)		# create a patched django for test purposes, and more
+[ "$pidfile" ] || die "Didn't get a pidfile name"
 
 test/run-pyflakes ietf
 
@@ -13,7 +14,10 @@ test/run-pyflakes ietf
 trap 'echo "$program($LINENO): Caught Interrupt"' INT 
 
 # run tests with our patched django
-PYTHONPATH=test:test/lib URLPREFIX="$*" python ietf/manage.py test
+PYTHONPATH=test:test/lib URLPREFIX="$*" python ietf/manage.py test &
+pid=$!
+echo $pid > $pidfile
+wait $pid
 
 # reset keyboard interrupt trap
 trap INT
