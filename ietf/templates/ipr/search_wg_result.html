@@ -35,12 +35,7 @@
 					  IPR disclosure ID# {{ item.updated.ipr_id }}, "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>" Updated by
 				       {% endifequal %}
 				    {% endfor %}
-				    <a href="{% url ietf.ipr.views.show %}{{ ipr.ipr_id }}">"{{ ipr.title }}"</a>
-				    <!--{% for item in ipr.updated_by.all %}
-				       {% ifequal item.processed 1 %}
-					  Updated by "<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>"<br> 
-				       {% endifequal %}
-				    {% endfor %}-->
+				    <a href="{% url ietf.ipr.views.show ipr.ipr_id %}">"{{ ipr.title }}"</a>
 				 </td>
 			      </tr>
 			   {% endfor %}
