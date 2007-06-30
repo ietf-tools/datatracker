@@ -16,6 +16,9 @@ diffdir=$progdir/diff
 
 function die() { echo "$program: $*"; echo "Terminating"; exit 1; }
 
+sudo chown buildbot:staff -R $bblogdir
+sudo chmod g+rw -R $bblogdir
+
 latest=$(ls $bblogdir | egrep "^[0-9]+$" | sort -nr | head -n 1)
 
 modprefix="$bblogdir/$latest-log-django-test-mod_"
