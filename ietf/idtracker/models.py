@@ -915,3 +915,4 @@ class Test(TestCase):
         #import doctest
         #import templatetags.ietf_filters
         #doctest.testmod(templatetags.ietf_filters)
+        pass

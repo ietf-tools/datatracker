@@ -1,5 +1,5 @@
-301,skipredirect	/drafts/wgid/1041/	https://datatracker.ietf.org/public/idindex.cgi?command=show_wg_id&id=1041
-200			/drafts/wg/idr/		https://datatracker.ietf.org/public/idindex.cgi?command=show_wg_id&id=1041
+301,skipdiff		/drafts/wgid/1041/	https://datatracker.ietf.org/public/idindex.cgi?command=show_wg_id&id=1041
+200,skipredirect	/drafts/wg/idr/		https://datatracker.ietf.org/public/idindex.cgi?command=show_wg_id&id=1041
 # This takes ~ 300s:
 # 200			/drafts/wg/I/		https://datatracker.ietf.org/public/idindex.cgi?command=show_wg&fl=I
 200			/drafts/ind/F/		https://datatracker.ietf.org/public/idindex.cgi?command=show_ind_id&fl=F
