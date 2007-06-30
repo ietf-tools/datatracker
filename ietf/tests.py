@@ -19,11 +19,11 @@ from ietf.utils import log
 
 startup_database = settings.DATABASE_NAME  # The startup database name, before changing to test_...
 
-def run_tests(module_list, verbosity=1, extra_tests=[]):
+def run_tests(module_list, verbosity=0, extra_tests=[]):
     module_list.append(ietf.urls)
     # If we append 'ietf.tests', we get it twice, first as itself, then
     # during the search for a 'tests' module ...
-    return django.test.simple.run_tests(module_list, verbosity, extra_tests)
+    return django.test.simple.run_tests(module_list, 0, extra_tests)
 
 def reduce_text(html, pre=False, fill=True):
     if html.count("<li>") > 5*html.count("</li>"):
