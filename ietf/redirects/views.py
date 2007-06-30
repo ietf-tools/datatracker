@@ -27,7 +27,7 @@ def redirect(request, path="", script=""):
 	if request.REQUEST.has_key(fc[0]):
 	    remove_args.append(fc[0])
 	    num = re.match('(\d+)', request.REQUEST[fc[0]])
-	    if num and num.group(1):
+	    if num and int(num.group(1)):
 		cmd = flag
 	    break
     #
