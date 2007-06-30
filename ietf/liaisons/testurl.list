@@ -5,3 +5,6 @@
 200	/liaison/help/from_ietf/	https://datatracker.ietf.org/public/liaison_guide_from_ietf.cgi
 200	/liaison/help/fields/		https://datatracker.ietf.org/public/liaison_field_help.cgi
 200	/liaison/help/
+
+# Test case for ticket #182:
+200	/liaison/337/
