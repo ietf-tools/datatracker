@@ -18,14 +18,13 @@ class DocumentComments(Feed):
     def link(self, obj):
 	if obj is None:
 	    raise FeedDoesNotExist
-	return "/idtracker/%s" % obj.filename
-	# obj.get_absolute_url() ?
+	return obj.get_absolute_url()
 
     def description(self, obj):
 	self.title(obj)
 
     def items(self, obj):
-	return DocumentComment.objects.filter(document=obj.id_document_tag).order_by("-date")[:15]
+	return DocumentComment.objects.filter(document=obj.id_document_tag, public_flag=1).order_by("-date")[:15]
 
     def item_pubdate(self, item):
 	time = datetime.time(*[int(t) for t in item.time.split(":")])
