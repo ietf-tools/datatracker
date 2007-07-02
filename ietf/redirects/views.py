@@ -40,6 +40,10 @@ def redirect(request, path="", script=""):
 	    pass	# it's ok, there's no more-specific request.
 	except KeyError:
 	    pass	# it's ok, request didn't have 'command'.
+	except:
+	    pass	# strange exception like the one described in
+	    		# http://merlot.tools.ietf.org/tools/ietfdb/ticket/179 ?
+			# just ignore the command string.
     if cmd is not None:
 	remove_args.append('command')
 	if cmd.url:
