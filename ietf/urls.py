@@ -42,6 +42,9 @@ urlpatterns = patterns('',
      (r'^review/(?P<page>[0-9a-f]+)/$', 'ietf.utils.views.review'),
      (r'^review/top/(?P<page>[0-9a-f]+)/$', 'ietf.utils.views.top'),
 
+     # Google webmaster tools verification url
+     (r'googlea30ad1dacffb5e5b.html', 'django.views.generic.simple.direct_to_template', { 'template': 'googlea30ad1dacffb5e5b.html' })
+
 )
 
 if settings.SERVER_MODE in ('development', 'test'):
