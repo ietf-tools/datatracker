@@ -116,20 +116,20 @@
   </object>
   <object pk="20" model="redirects.redirect">
     <field type="CharField" name="cgi">public/ipr_generic.cgi</field>
-    <field type="CharField" name="url">ipr/new-generic</field>
-    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="url">ipr</field>
+    <field type="CharField" name="rest">new-generic</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="21" model="redirects.redirect">
     <field type="CharField" name="cgi">public/ipr_notify.cgi</field>
-    <field type="CharField" name="url">ipr/new-third-party</field>
-    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="url">ipr</field>
+    <field type="CharField" name="rest">new-third-party</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="22" model="redirects.redirect">
     <field type="CharField" name="cgi">public/ipr.cgi</field>
-    <field type="CharField" name="url">ipr/new-specific</field>
-    <field type="CharField" name="rest"></field>
+    <field type="CharField" name="url">ipr</field>
+    <field type="CharField" name="rest">new-specific</field>
     <field type="CharField" name="remove"></field>
   </object>
   <object pk="23" model="redirects.redirect">
@@ -318,6 +318,24 @@
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">8</field>
   </object>
+  <object pk="21" model="redirects.command">
+    <field type="CharField" name="command">update_ipr</field>
+    <field type="CharField" name="url">update</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">20</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">9</field>
+  </object>
+  <object pk="22" model="redirects.command">
+    <field type="CharField" name="command">update_ipr</field>
+    <field type="CharField" name="url">update</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">22</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">9</field>
+  </object>
+  <object pk="23" model="redirects.command">
+    <field type="CharField" name="command">update_ipr</field>
+    <field type="CharField" name="url">update</field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">21</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">9</field>
+  </object>
   <object pk="2" model="redirects.suffix">
     <field type="CharField" name="rest">%(fl)s</field>
     <field type="CharField" name="remove"></field>
@@ -340,6 +358,10 @@
   </object>
   <object pk="8" model="redirects.suffix">
     <field type="CharField" name="rest">%(id)s/related</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="9" model="redirects.suffix">
+    <field type="CharField" name="rest">%(ipr_id)s</field>
     <field type="CharField" name="remove"></field>
   </object>
 </django-objects>

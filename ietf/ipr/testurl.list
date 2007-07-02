@@ -1,14 +1,16 @@
 # -*- conf-mode -*-
 200			/ipr/				https://datatracker.ietf.org/public/ipr_list.cgi
-200			/ipr/ipr-657/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657 # Generic disclosure
-200			/ipr/ipr-834/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=834 # Specific disclosure
-200			/ipr/ipr-795/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=795 # Third-party disclosure
+200			/ipr/657/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657 # Generic disclosure
+200			/ipr/834/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=834 # Specific disclosure
+200			/ipr/795/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=795 # Third-party disclosure
 200			/ipr/new-generic/		https://datatracker.ietf.org/public/ipr_generic.cgi
 200			/ipr/new-specific/		https://datatracker.ietf.org/public/ipr.cgi
 200			/ipr/new-third-party/		https://datatracker.ietf.org/public/ipr_notify.cgi
 200			/ipr/update/			https://datatracker.ietf.org/public/ipr_update_list.cgi
 
 200			/ipr/update/657/		https://datatracker.ietf.org/public/ipr_generic.cgi?command=update_ipr&ipr_id=657
+200			/ipr/update/820/		https://datatracker.ietf.org/public/ipr_notify.cgi?command=update_ipr&ipr_id=820
+200			/ipr/update/844/		https://datatracker.ietf.org/public/ipr.cgi?command=update_ipr&ipr_id=844
 
 200			/ipr/search/			https://datatracker.ietf.org/public/ipr_search.cgi
 302			/ipr/search/?option=document_search # incomplete argument set gives redirect
@@ -44,6 +46,6 @@
 
 
 200			/ipr/about/			https://datatracker.ietf.org/public/ipr_disclosure.cgi
-200			/ipr/2006/
-200			/ipr/2006/feb/
+200			/ipr/y/2006/
+200			/ipr/y/2006/feb/
 200			/ipr/by-date/
