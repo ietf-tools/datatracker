@@ -11,6 +11,7 @@ from django.views.generic.list_detail import object_detail, object_list
 from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState, Rfc, DocumentWrapper
 from ietf.idtracker.forms import IDSearch, EmailFeedback
 from ietf.utils.mail import send_mail_text
+from ietf.utils import normalize_draftname
 import re
 
 # Override default form field mappings
@@ -34,6 +35,8 @@ def search(request):
     # "job_owner" of "0" means "All/Any"
     if args.get('search_job_owner', '') == '0':
 	args['search_job_owner'] = ''
+    if args.has_key('search_filename'):
+	args['search_filename'] = normalize_draftname(args['search_filename'])
     form = IDSearch(args)
     # if there's a post, do the search and supply results to the template
     searching = False

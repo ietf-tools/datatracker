@@ -11,7 +11,7 @@ from django.views.generic.list_detail import object_detail
 from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, Rfc
 from ietf.idindex.forms import IDIndexSearchForm
 from ietf.idindex.models import alphabet, orgs, orgs_dict
-from ietf.utils import orl, flattenl
+from ietf.utils import orl, flattenl, normalize_draftname
 
 base_extra = { 'alphabet': alphabet, 'orgs': orgs }
 
@@ -101,6 +101,9 @@ def showdocs(request, cat=None):
 
 
 def search(request):
+    args = request.GET.copy()
+    if args.has_key('filename'):
+	args['filename'] = normalize_draftname(args['filename'])
     form = IDIndexSearchForm()
     t = loader.get_template('idindex/search.html')
     # if there's a query, do the search and supply results to the template
@@ -113,20 +116,20 @@ def search(request):
 	      'first_name': 'authors__person__first_name__icontains',
 	    }
     for key in qdict.keys() + ['other_group']:
-	if key in request.REQUEST:
+	if key in args:
 	    searching = True
     if searching:
 	# '0' and '-1' are flag values for "any"
 	# in the original .cgi search page.
 	# They are compared as strings because the
 	# query dict is always strings.
-	q_objs = [Q(**{qdict[k]: request.REQUEST[k]})
+	q_objs = [Q(**{qdict[k]: args[k]})
 		for k in qdict.keys()
-		if request.REQUEST.get(k, '') != '' and
-		   request.REQUEST[k] != '0' and
-		   request.REQUEST[k] != '-1']
+		if args.get(k, '') != '' and
+		   args[k] != '0' and
+		   args[k] != '-1']
 	try:
-	    other = orgs_dict[request.REQUEST['other_group']]
+	    other = orgs_dict[args['other_group']]
 	    q_objs += [orl(
 		[Q(filename__istartswith="draft-%s-" % p)|
 		 Q(filename__istartswith="draft-ietf-%s-" % p)
