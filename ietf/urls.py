@@ -5,7 +5,6 @@ from django.conf.urls.defaults import patterns, include, handler404, handler500
 from ietf.iesg.feeds import IESGMinutes
 from ietf.idtracker.feeds import DocumentComments
 from ietf.ipr.feeds import LatestIprDisclosures
-import ietf.utils.views
 
 from django.conf import settings
 
