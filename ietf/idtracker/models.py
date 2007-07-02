@@ -920,12 +920,3 @@ class DocumentWrapper(object):
     def __init__(self, document):
 	self.document = document
 
-class Test(TestCase):
-    def testDoctest(self):
-        # doctests in models.py will be automatically tested when running
-        # django's 'test' command, but for other modules we need to make a
-        # bit of extra effort to have doctests run.
-        #import doctest
-        #import templatetags.ietf_filters
-        #doctest.testmod(templatetags.ietf_filters)
-        pass

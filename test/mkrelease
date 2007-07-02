@@ -164,7 +164,7 @@ svn info $REPO/tags/$VER 2>&1 | grep -q "Not a valid URL" || die "The tag '$VER'
 note "  Ok"
 
 note "Verifying there's no uncommitted changes..."
-$do svn st | grep "^[AMCG] " && die "There seems to be uncommitted changes in this working copy"
+$do svn st | grep "^[AMGRD] " && die "There seems to be uncommitted changes in this working copy"
 
 note "\nUpdating the version info in $VERFILE and making sure'\$Rev\$' is Ok"
 $do sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev)?\"/\"$VER\"/" \

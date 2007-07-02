@@ -25,14 +25,12 @@ for dir in $DBLOCK /var/lock /var/state /var/run /var/tmp; do
 done
 [ "$lock" ] || die "Couldn't find a directory to keep lock in."
 
-set -x
 [ "$DBDUMP" ] || DBDUMP="$1"
 [ "$DBDUMP" ] || DBDUMP=/www/tools.ietf.org/events/raw/sqldump/sqldump.raw
 [ "$DBFIX"  ] || DBFIX=$build/test/sql_fixup.sql
 [ "$DBTIME" ] || DBTIME=$state/update-db.time
 [ "$DBDONE" ] || DBDONE=$state/update-db.done
 [ "$DBLOCK" ] || DBLOCK=$lock
-set +x
 
 PIDFILE=$DBLOCK/pid
 
@@ -45,6 +43,7 @@ while true; do
 	#echo "Last update done $(date -r $DBDONE +'%Y-%m-%d %H:%M')."
 	if [ $DBDUMP -nt $DBTIME ]; then
 	    echo "Updating database dated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')"
+	    echo -n "Updating database from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')... " 1>&2
 
 	    echo "$$" > $PIDFILE
 	    chmod a+rw $PIDFILE
@@ -58,6 +57,7 @@ while true; do
 	    touch -r $DBDUMP $DBTIME
 	    touch $DBDONE
 	    echo "Done."
+	    echo "Done." 1>&2
 	else
 	    echo "Database is up-to-date (updated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M'))"
 	fi
