@@ -6,7 +6,6 @@ from ietf.iesg.feeds import IESGMinutes
 from ietf.idtracker.feeds import DocumentComments
 from ietf.ipr.feeds import LatestIprDisclosures
 import ietf.utils.views
-import ietf.views
 
 from django.conf import settings
 
