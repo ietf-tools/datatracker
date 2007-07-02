@@ -9,9 +9,9 @@
 200,skipdiff		/drafts/all/		https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=all
 200,sort		/drafts/dead/		https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=dead
 #200,sort		/drafts/dead/?sort=name		https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=dead&sort=name
-200,skipdiff		/drafts/9574/related/	https://datatracker.ietf.org/public/idindex.cgi?command=view_related_docs&id=9574
+301,skipdiff		/drafts/9574/related/	https://datatracker.ietf.org/public/idindex.cgi?command=view_related_docs&id=9574
 200			/drafts/draft-ietf-dnsext-dnssec-protocol/related/
-200			/drafts/9574/		https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
+301,skipdiff		/drafts/9574/		https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
 200,skipredirect	/drafts/draft-ietf-dnsext-dnssec-protocol/	https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
 200			/drafts/all_id_txt.html
 200			/drafts/all_id.html

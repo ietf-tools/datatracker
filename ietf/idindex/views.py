@@ -7,6 +7,7 @@ from django.http import Http404
 from django.template import RequestContext, loader
 from django.shortcuts import render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse
+from django.views.generic.list_detail import object_detail
 from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, Rfc
 from ietf.idindex.forms import IDIndexSearchForm
 from ietf.idindex.models import alphabet, orgs, orgs_dict
@@ -214,13 +215,25 @@ def related_docs(startdoc):
     process(startdoc, (0,0,0))
     return related
 
-def view_related_docs(request, **kwargs):
-    if kwargs.has_key('id'):
-	startdoc = get_object_or_404(InternetDraft, id_document_tag=kwargs['id'])
-    else:
-        startdoc = get_object_or_404(InternetDraft, filename=kwargs['slug'])
+def redirect_related(request, id):
+    doc = get_object_or_404(InternetDraft, id_document_tag=id)
+    return HttpResponsePermanentRedirect(reverse(view_related_docs, args=[doc.filename]))
+
+def view_related_docs(request, slug):
+    startdoc = get_object_or_404(InternetDraft, filename=slug)
     related = related_docs(startdoc)
     context = {'related': related, 'numdocs': len(related)}
     context.update(base_extra)
     return render_to_response("idindex/view_related_docs.html", context,
 		context_instance=RequestContext(request))
+
+def redirect_id(request, object_id):
+    '''Redirect from historical document ID to preferred filename url.'''
+    doc = get_object_or_404(InternetDraft, id_document_tag=object_id)
+    return HttpResponsePermanentRedirect(reverse(view_id, args=[doc.filename]))
+
+# Wrapper around object_detail to give permalink a handle.
+# The named-URLs feature in django 0.97 will eliminate the
+# need for these.
+def view_id(*args, **kwargs):
+    return object_detail(*args, **kwargs)
