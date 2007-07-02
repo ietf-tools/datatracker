@@ -222,7 +222,7 @@ def redirect_related(request, id):
 def view_related_docs(request, slug):
     startdoc = get_object_or_404(InternetDraft, filename=slug)
     related = related_docs(startdoc)
-    context = {'related': related, 'numdocs': len(related)}
+    context = {'related': related, 'numdocs': len(related), 'startdoc': startdoc}
     context.update(base_extra)
     return render_to_response("idindex/view_related_docs.html", context,
 		context_instance=RequestContext(request))

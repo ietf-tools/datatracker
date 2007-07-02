@@ -3,6 +3,8 @@
 
 {% load ietf_filters %}     
 
+{% block title %}-- {{ object.document.filename }}{% endblock %}
+
 {% block idcontent %}
     <table width="90%" cellpading="1" cellspacing="0">
       <tr>
