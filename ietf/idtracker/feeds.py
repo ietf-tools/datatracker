@@ -2,7 +2,7 @@
 
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
-from ietf.idtracker.models import IDInternal, DocumentComment
+from ietf.idtracker.models import IDInternal
 import datetime
 import re
 
