@@ -1,5 +1,6 @@
-import doctest
-import templatetags.ietf_filters
+#import doctest
+#import templatetags.ietf_filters
+from django.test import TestCase
 
 class IDTrackerTest(TestCase):
     def testDoctest(self):
