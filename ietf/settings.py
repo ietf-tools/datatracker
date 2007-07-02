@@ -29,11 +29,15 @@ DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@ietf.org>'
 MANAGERS = ADMINS
 
 DATABASE_ENGINE = 'mysql'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
-DATABASE_NAME = 'django_idtracker'             # Or path to database file if using sqlite3.
+#DATABASE_NAME = 'develdb'             #Devel DB
+DATABASE_NAME = 'ietf'             #Devel DB
+
 DATABASE_USER = 'django'             # Not used with sqlite3.
-DATABASE_PASSWORD = 'playing'         # Not used with sqlite3.
-DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
+DATABASE_PASSWORD = 'sqlpass!23'         # Not used with sqlite3.
 DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
+#DATABASE_HOST = '10.30.47.10'             # The MySQL 5 server, new and hot.. but seems to be slow
+DATABASE_HOST = '10.31.47.10'             # Existing MySQL 4.1 server.. 
+
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -51,7 +55,7 @@ SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
-USE_I18N = False
+USE_I18N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
@@ -155,7 +159,7 @@ SERVER_MODE = 'production'
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.tests.run_tests'
 
-IPR_DOCUMENT_PATH = '/home/master-site/ftp/data/ietf/IPR'
+IPR_DOCUMENT_PATH = '/home/local/ftp/data/ietf/IPR'
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
