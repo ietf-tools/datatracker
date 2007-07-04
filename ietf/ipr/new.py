@@ -6,7 +6,7 @@ import ietf.utils
 import django.newforms as forms
 
 from datetime import datetime
-from django.shortcuts import render_to_response as render
+from django.shortcuts import render_to_response as render, get_object_or_404
 from django.template import RequestContext
 from django.http import Http404
 from ietf.utils import log
@@ -313,6 +313,14 @@ def new(request, type, update=None, submitter=None):
 
 def update(request, ipr_id=None):
     """Update a specific IPR disclosure"""
+    ipr = get_object_or_404(models.IprDetail, ipr_id=ipr_id)
+    if not ipr.status in [1,3]:
+	raise Http404        
+    type = "specific"
+    if ipr.generic:
+	type = "generic"
+    if ipr.third_party:
+	type = "third-party"
     # We're either asking for initial permission or we're in
     # the general ipr form.  If the POST argument has the first
     # field of the ipr form, then we must be dealing with that,
@@ -332,18 +340,10 @@ def update(request, ipr_id=None):
 	if not(form.is_valid()):
             for error in form.errors:
                 log("Form error for field: %s: %s"%(error, form.errors[error]))
-	    return render("ipr/update.html", {"form": form}, context_instance=RequestContext(request))
+	    return render("ipr/update.html", {"form": form, "ipr": ipr, "type": type}, context_instance=RequestContext(request))
 	else:
 	    submitter = form.clean_data
 
-    ipr = models.IprDetail.objects.get(ipr_id=ipr_id)
-    if not ipr.status in [1,3]:
-	raise Http404        
-    type = "specific"
-    if ipr.generic:
-	type = "generic"
-    if ipr.third_party:
-	type = "third-party"
     return new(request, type, ipr, submitter)
 
 

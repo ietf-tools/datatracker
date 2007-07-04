@@ -2,6 +2,7 @@
 
 from django.db import models
 from ietf.utils import FKAsOneToOne
+from django.test import TestCase
 
 class Acronym(models.Model):
     acronym_id = models.AutoField(primary_key=True)
@@ -760,7 +761,7 @@ class WGChair(models.Model):
     def __str__(self):
 	return "%s (%s)" % ( self.person, self.role() )
     def role(self):
-	return "%s %s Chair" % ( self.group_acronym.acronym, self.group_acronym.group_type )
+	return "%s %s Chair" % ( self.group_acronym, self.group_acronym.group_type )
     class Meta:
         db_table = 'g_chairs'
 	verbose_name = "WG Chair"
@@ -781,7 +782,7 @@ class WGSecretary(models.Model):
     def __str__(self):
 	return "%s (%s)" % ( self.person, self.role() )
     def role(self):
-	return "%s %s Secretary" % ( self.group_acronym.acronym, self.group_acronym.group_type )
+	return "%s %s Secretary" % ( self.group_acronym, self.group_acronym.group_type )
     class Meta:
         db_table = 'g_secretaries'
 	verbose_name = "WG Secretary"
@@ -793,7 +794,7 @@ class WGTechAdvisor(models.Model):
     def __str__(self):
 	return "%s (%s)" % ( self.person, self.role() )
     def role(self):
-	return "%s Technical Advisor" % self.group_acronym.acronym
+	return "%s Technical Advisor" % self.group_acronym
     class Meta:
         db_table = 'g_tech_advisors'
 	verbose_name = "WG Technical Advisor"
@@ -832,6 +833,19 @@ class GoalMilestone(models.Model):
 	date_hierarchy = 'expected_due_date'
 	list_filter = ['done']
 	pass
+
+class WGRoleTest(TestCase):
+    fixtures = ['wgtest']
+
+    def setUp(self):
+	self.xmas = IETFWG.objects.get(group_acronym__acronym='xmas')
+	self.snow = IETFWG.objects.get(group_acronym__acronym='snow')
+
+    def test_roles(self):
+    	self.assertEquals(self.xmas.wgchair_set.all()[0].role(), 'xmas WG Chair')
+	self.assertEquals(self.snow.wgchair_set.all()[0].role(), 'snow BOF Chair')
+	self.assertEquals(self.xmas.wgsecretary_set.all()[0].role(), 'xmas WG Secretary')
+	self.assertEquals(self.xmas.wgtechadvisor_set.all()[0].role(), 'xmas Technical Advisor')
 
 #### end wg stuff
 
@@ -905,3 +919,4 @@ class DocumentWrapper(object):
     primary_flag = 1
     def __init__(self, document):
 	self.document = document
+

@@ -1,34 +1,45 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
-
+{% load versiontags %}
 
 {% block content %}
 <center>
-<img src="http://www.ietf.org/images/ietflogo2e.gif" height="160" width="280">
+<img src="/images/ietflogo2e.gif" height="80" width="140">
 <br clear=all>
 
-<center><h1>The Internet Engineering Task Force</h1></center>
+<h2>The Internet Engineering Task Force</h2>
 <table border=0 cellspacing=5 cellpadding=5>
 
 <br>
-<font size = 3>
-<center><img alt="" src="http://www.ietf.org/images/blue-line.jpg"></center>
+<center><img alt="" src="/images/blue-line.jpg"></center>
 <br clear=all>
-<h1>Error 500</h1>
-<h2>Internal Server Error</h2>
+<h2>Internal Server Error.</h2>
+<div style="width:50%">
+    The server encountered an internal error and was 
+    unable to complete your request. Either the server is
+    overloaded or there was an error in a script used to
+    generate the requested page.
+</div>
 <br>
 <br>
-Please contact <a href="mailto:webmaster@ietf.org">webmaster@ietf.org</a>. <br>
+Please contact <a href="mailto:webtools@ietf.org">webtools@ietf.org</a>. <br>
 <br>
-<font size = 3>
-<center><img alt="Blue Line" src="http://www.ietf.org/images/blue-line.jpg"></center>
+<!--
+<center><img alt="Blue Line" src="/images/blue-line.jpg"></center>
 <br clear=all>
-The IETF is an organized activity of the <a href="http://www.isoc.org"><img alt="ISOC" src="http://www.ietf.org/images/isoc-small.gif" hspace="3" border="0"></A>
+The IETF is an organized activity of the <a href="http://www.isoc.org"><img alt="ISOC" src="/images/isoc-small.gif" hspace="3" border="0"></A>
 
 <br>
 
 <hr>
-<i>The <A HREF="/secretariat.html">IETF Secretariat</A> is hosted by the NeuStar Secretariat Services, a wholly owned subsidiary of <a href="http://www.neustar.biz/"><img src="http://www.ietf.org/images/NS_logo_100px.gif" alt="NeuStar Logo" border="0">
+<i>The <A HREF="/secretariat.html">IETF Secretariat</A> is hosted by the NeuStar Secretariat Services, a wholly owned subsidiary of <a href="http://www.neustar.biz/"><img src="/images/NS_logo_100px.gif" alt="NeuStar Logo" border="0"/></a></i>
+-->
+{% endblock %}
 
-</i>
+{% block footer %}
+      <hr/>
+      <div style="width: 100%; height: 1em; font-size: 9pt; font-style: italic;">
+	 <span style="float: left;">Made with <a href="http://www.djangoproject.com/">django</a></span>
+	 <span style="float: right;">v{% version_num %}, {% revision_date %} - <a href="mailto:webtools@ietf.org">webtools@ietf.org</a></span>
+      </div>
 {% endblock %}

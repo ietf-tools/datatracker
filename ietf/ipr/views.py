@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import django.utils.html
-from django.shortcuts import render_to_response as render
+from django.shortcuts import render_to_response as render, get_object_or_404
 from django.template import RequestContext
 from django.utils.html import escape
 from django.http import Http404
@@ -47,7 +47,7 @@ def list_all(request, template):
 def show(request, ipr_id=None):
     """Show a specific IPR disclosure"""
     assert ipr_id != None
-    ipr = IprDetail.objects.get(ipr_id=ipr_id)
+    ipr = get_object_or_404(IprDetail, ipr_id=ipr_id)
     if not ipr.status == 1:
 	raise Http404        
     section_list = get_section_list(ipr)

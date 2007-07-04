@@ -1,15 +1,17 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 # Create your views here.
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from django import newforms as forms
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 from django.db.models import Q
+from django.core.urlresolvers import reverse
 from django.views.generic.list_detail import object_detail, object_list
 from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState, Rfc, DocumentWrapper
 from ietf.idtracker.forms import IDSearch, EmailFeedback
 from ietf.utils.mail import send_mail_text
+from ietf.utils import normalize_draftname
 import re
 
 # Override default form field mappings
@@ -33,6 +35,8 @@ def search(request):
     # "job_owner" of "0" means "All/Any"
     if args.get('search_job_owner', '') == '0':
 	args['search_job_owner'] = ''
+    if args.has_key('search_filename'):
+	args['search_filename'] = normalize_draftname(args['search_filename'])
     form = IDSearch(args)
     # if there's a post, do the search and supply results to the template
     searching = False
@@ -186,6 +190,11 @@ def status(request):
 def last_call(request):
     queryset = IDInternal.objects.filter(primary_flag=1).filter(cur_state__state__in=('In Last Call', 'Waiting for Writeup', 'Waiting for AD Go-Ahead')).order_by('cur_state', 'status_date', 'ballot_id')
     return object_list(request, template_name="idtracker/status_of_items.html", queryset=queryset, extra_context={'title': 'Documents in Last Call'})
+
+def redirect_id(request, object_id):
+    '''Redirect from historical document ID to preferred filename url.'''
+    doc = get_object_or_404(InternetDraft, id_document_tag=object_id)
+    return HttpResponsePermanentRedirect(reverse(view_id, args=[doc.filename]))
 
 # Wrappers around object_detail to give permalink a handle.
 # The named-URLs feature in django 0.97 will eliminate the

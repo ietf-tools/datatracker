@@ -6,7 +6,7 @@ from ietf.ipr import models, views, new, search
 urlpatterns = patterns('',
      (r'^$', views.showlist),
      (r'^about/$', views.default),
-     (r'^ipr-(?P<ipr_id>\d+)/$', views.show),
+     (r'^(?P<ipr_id>\d+)/$', views.show),
      (r'^update/$', views.updatelist),
      (r'^update/(?P<ipr_id>\d+)/$', new.update),
      (r'^new-(?P<type>specific)/$', new.new),
@@ -20,8 +20,8 @@ archive = {'queryset':queryset, 'date_field': 'submitted_date', 'allow_empty':Tr
 
 urlpatterns += patterns('django.views.generic.date_based',
 	(r'^by-date/$', 'archive_index', archive),
-	(r'^(?P<year>\d{4})/$', 'archive_year', archive),
-	(r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/$', 'archive_month', archive),
+	(r'^y/(?P<year>\d{4})/$', 'archive_year', archive),
+	(r'^y/(?P<year>\d{4})/(?P<month>[a-z]{3})/$', 'archive_month', archive),
 )
 
 

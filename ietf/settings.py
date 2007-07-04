@@ -51,7 +51,7 @@ SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
-USE_I18N = True
+USE_I18N = False
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
@@ -156,6 +156,8 @@ SERVER_MODE = 'development'
 TEST_RUNNER = 'ietf.tests.run_tests'
 
 IPR_DOCUMENT_PATH = '/home/master-site/ftp/data/ietf/IPR'
+
+TEST_REFERENCE_URL_PREFIX = 'http://compost.research.att.com/old/'
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

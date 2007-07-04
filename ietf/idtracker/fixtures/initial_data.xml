@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<django-objects version="1.0">
-  <object pk="6" model="idtracker.role">
-    <field to="redirects.suffix" name="person" rel="ManyToOneRel">14966</field>
-    <field type="CharField" name="role_name">IAD</field>
-  </object>
-</django-objects>

@@ -15,7 +15,7 @@ class IESGMinutes(Feed):
 	return TelechatMinutes.objects.order_by('-telechat_date')[:10]
 
     def item_link(self, item):
-	return "/iesg/telechat/detail/%d/" % (item.id)
+	return "/iesg/telechat/%d/" % (item.id)
 
     # The approval date isn't stored, so let's just say they're
     # published on the date of the telechat.

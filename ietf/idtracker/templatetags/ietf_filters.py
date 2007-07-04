@@ -25,24 +25,62 @@ def expand_comma(value):
 def parse_email_list(value):
     """
     Parse a list of comma-seperated email addresses into
-    a list of mailto: links."""
-    addrs = re.split(", ?", value)
-    ret = []
-    for addr in addrs:
-	(name, email) = emailutils.parseaddr(addr)
-	if not(name):
-	    name = email
-	ret.append('<a href="mailto:%s">%s</a>' % ( fix_ampersands(email), escape(name) ))
-    return ", ".join(ret)
+    a list of mailto: links.
 
+    Splitting a string of email addresses should return a list:
+
+    >>> parse_email_list('joe@example.org, fred@example.com')
+    '<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
+
+    Parsing a non-string should return the input value, rather than fail:
+    
+    >>> parse_email_list(['joe@example.org', 'fred@example.com'])
+    ['joe@example.org', 'fred@example.com']
+    
+    Null input values should pass through silently:
+    
+    >>> parse_email_list('')
+    ''
+
+    >>> parse_email_list(None)
+
+
+    """
+    if value and type(value) == type(""): # testing for 'value' being true isn't necessary; it's a fast-out route
+        addrs = re.split(", ?", value)
+        ret = []
+        for addr in addrs:
+            (name, email) = emailutils.parseaddr(addr)
+            if not(name):
+                name = email
+            ret.append('<a href="mailto:%s">%s</a>' % ( fix_ampersands(email), escape(name) ))
+        return ", ".join(ret)
+    else:
+        return value
+    
 # there's an "ahref -> a href" in GEN_UTIL
 # but let's wait until we understand what that's for.
 @register.filter(name='make_one_per_line')
 def make_one_per_line(value):
     """
-    Turn a comma-separated list into a carraige-return-seperated list."""
-    return re.sub(", ?", "\n", value)
+    Turn a comma-separated list into a carraige-return-seperated list.
 
+    >>> make_one_per_line("a, b, c")
+    'a\\nb\\nc'
+
+    Pass through non-strings:
+    
+    >>> make_one_per_line([1, 2])
+    [1, 2]
+
+    >>> make_one_per_line(None)
+
+    """
+    if value and type(value) == type(""):
+        return re.sub(", ?", "\n", value)
+    else:
+        return value
+        
 @register.filter(name='link_if_url')
 def link_if_url(value):
     """
@@ -174,3 +212,10 @@ def inpast(date):
     if date:
 	return date < datetime.datetime.now()
     return True
+
+def _test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    _test()

@@ -74,13 +74,14 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=hpvV
-longopts=help,repository,verbose,version
+shortopts=hnvV
+longopts=help,dry-run,verbose,version
 
 # Default values
 MSG=""
 VERFILE=ietf/__init__.py
 SETTINGS=ietf/settings.py
+do=""
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
@@ -99,6 +100,7 @@ while true ; do
     case "$1" in
 	-h| --help)		usage; exit;;	#	 Show this help, then exit
 	-m| --message)		MSG=$2; shift;;		# Specify a commit message
+	-n| --dry-run)		do="echo";;	#	 Show what would be done	
 	-v| --verbose)		VERBOSE=1;;	#	 Be more talkative
 	-V| --version)		version; exit;;	#	 Show program version, then exit
 	--)			shift; break;;
@@ -132,14 +134,20 @@ elif [ "${DIR%%/*}" = "branch" ]; then
     SRC="branch/${tmp%%/*}"	# keep first subdir under branch/
 fi
 
+note ""
+note "Releasing from $SRC"
+
 note "Locating the root of the working copy..."
-while [ "$RDIR" ]; do
-    [ "$RDIR" = "$prev" ] && die "Internal error"
+while [ "${#DIR}" -gt "${#SRC}" ]; do
+    [ "$DIR" = "$prev" ] && die "Internal error"
     cd ..
     note "  now at $PWD"
-    prev=$RDIR
-    RDIR=${RDIR%/*}
+    prev=$DIR
+    DIR=${DIR%/*}
 done
+if [ "$DIR" != "$SRC" ]; then
+    die "Couldn't find the root of your '$SRC' working copy"
+fi
 
 REPO=${REPO%/}				# remove trailing slash
 SRC=${SRC#/}				# remove leading slash
@@ -150,50 +158,57 @@ VER="$(printf %d.%02d $MAJOR $MINOR)"
 NEXT=$(( $MINOR + 1 ))
 DEV="$(printf %d.%02d-dev $MAJOR $NEXT)"
 
-note "Verifying that the version doesn't already exist"
+
+note "Verifying that version $VER doesn't already exist..."
 svn info $REPO/tags/$VER 2>&1 | grep -q "Not a valid URL" || die "The tag '$VER' already exists (or there was an error testing for it)."
+note "  Ok"
 
-note "Update the version info in $VERFILE and make sure'\$Rev\$' is Ok"
-sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev)?\"/\"$VER\"/" \
+note "Verifying there's no uncommitted changes..."
+$do svn st | grep "^[AMGRD] " && die "There seems to be uncommitted changes in this working copy"
+
+note "\nUpdating the version info in $VERFILE and making sure'\$Rev\$' is Ok"
+$do sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev)?\"/\"$VER\"/" \
 	  -e "/^__rev__/s/\".*\"/\"\$Rev:\$\"/" \
-	$SRC/$VERFILE
+	$VERFILE
 
-note "Update the deployment settings in settings.py"
-sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = False/' \
-	  -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'production'/" \
-	$SRC/$SETTINGS
+note "\nUpdating the deployment settings in settings.py"
+$do sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = False/' \
+	      -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'production'/" \
+	$SETTINGS
 
-note "Committing version information for version $VER. $MSG"
-svn commit $SRC/$VERFILE $SRC/$SETTINGS -m "Set version info to release version $VER before branching. $MSG"
+note "\nCommitting version information for version $VER: $MSG"
+$do svn commit $VERFILE $SETTINGS -m "Set version info to release version $VER before branching. $MSG"
 
-note "Creating new tag 'tags/$VER' from $SRC"
-svn cp $REPO/$SRC $REPO/tags/$VER -m "Creating new tag 'tags/$VER' from $SRC"
+note "\nCreating new tag 'tags/$VER' from $SRC"
+$do svn cp $REPO/$SRC $REPO/tags/$VER -m "Creating new tag 'tags/$VER' from $SRC"
 
-note "Updating version and revision info to indicate that the source and branch aren't releases"
-sed -i -r -e "/^__version__/s/\"[0-9.]*\"/\"$DEV\"/" \
-	  -e "/^__rev__/s/\"\\\$Rev: (.*) \\\$\"/\"\$Rev:\$ (dev) Latest release: Rev. \1 \"/" \
-	  $SRC/$VERFILE
+note "\nUpdating version and revision info to indicate that the source and branch aren't releases"
+$do sed -i -r -e "/^__version__/s/\"[0-9.]*\"/\"$DEV\"/" \
+	      -e "/^__rev__/s/\"\\\$Rev: (.*) \\\$\"/\"\$Rev:\$ (dev) Latest release: Rev. \1 \"/" \
+	$VERFILE
 
-note "Updating the deployment settings in settings.py to development mode"
-sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' \
-	  -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'development'/" \
-	$SRC/$SETTINGS
+note "\nUpdating the deployment settings in settings.py to development mode"
+$do sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' \
+	      -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'development'/" \
+	$SETTINGS
 
+note "\nCommitting the updated version and deployment settings"
+$do svn commit $VERFILE $SETTINGS -m "Set version info and settings back to development mode"
 
 # if SRC is 'trunk', then also create a new branch
 if [ $SRC = "trunk" ]; then
     if svn info $REPO/branch/$VER 2>&1 | grep -q "Not a valid URL"; then
-	note "Creating new branch 'branch/$VER' from $SRC"
-	svn cp $REPO/$SRC $REPO/branch/$VER -m "Creating new branch 'branch/$VER' from $SRC"
+	note "\nCreating new branch 'branch/$VER' from $SRC"
+	$do svn cp $REPO/$SRC $REPO/branch/$VER -m "Creating new branch 'branch/$VER' from $SRC"
     fi
 
-    note "Updating version and revision info on trunk"
-    sed -i -r -e "/^__version__/s/\"[0-9.]*\"/\"$MAJOR.xx-trunk\"/" \
-	  -e "/^__rev__/s/\"\\\$Rev: (.*) \\\$\"/\"\$Rev:\$ (dev) Latest release: Rev. \1 \"/" \
-	  $SRC/$VERFILE
+    note "\nUpdating version and revision info on trunk"
+    $do sed -i -r -e "/^__version__/s/\"[0-9.]*\"/\"$MAJOR.xx-trunk\"/" \
+	          -e "/^__rev__/s/\"\\\$Rev: (.*) \\\$\"/\"\$Rev:\$ (dev) Latest release: Rev. \1 \"/" \
+	$VERFILE
 
     note "Commit version information '$MAJOR.xx-trunk'"
-    svn commit $SRC/$VERFILE $SRC/$SETTINGS -m "Set version of the trunk to $MAJOR.xx-trunk after branching off $VER"
+    $do svn commit $VERFILE $SETTINGS -m "Set version of the trunk to $MAJOR.xx-trunk after branching off $VER"
 fi
 
-svn update
+$do svn update

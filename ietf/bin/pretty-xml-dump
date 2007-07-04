@@ -1,0 +1,5 @@
+#!/bin/sh
+python manage.py dumpdata --format=xml "$@" | sed -e 's/<\/*object/\
+  &/g' -e 's/<field/\
+    &/g' -e 's/<\/django-objects/\
+&/g'

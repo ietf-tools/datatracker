@@ -3,6 +3,8 @@
 
 {% load ietf_filters %}     
 
+{% block title %}-- {{ object.document.filename }}{% endblock %}
+
 {% block idcontent %}
     <table width="90%" cellpading="1" cellspacing="0">
       <tr>
@@ -282,19 +284,5 @@
       <input type="button" name="back_button" value="BACK"
         onclick="history.go(-1);return true">
     </form>
-    <!-- begin new footer -->
-    <hr>
-
-    <p>Did you find a bug? <a href=
-    "pidtracker.cgi?command=send_email&amp;cat=bugs">Let us
-    know</a>.</p>
-
-    <p><a href=
-    "pidtracker.cgi?command=send_email&amp;cat=discuss">Any
-    question or suggestion</a>?</p>
-
-    <p><i>This page produced by the <a href=
-    "mailto:iesg-secretary@ietf.org">IETF Secretariat</a> for
-    the <a href="mailto:iesg@ietf.org">IESG</a></i></p>
 
 {% endblock %}

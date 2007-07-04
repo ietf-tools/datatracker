@@ -1,38 +1,41 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.views.generic.list_detail import object_list
 from django.db.models import Q
 from django.http import Http404
 from django.template import RequestContext, loader
 from django.shortcuts import render_to_response, get_object_or_404
+from django.core.urlresolvers import reverse
+from django.views.generic.list_detail import object_detail
 from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, Rfc
 from ietf.idindex.forms import IDIndexSearchForm
 from ietf.idindex.models import alphabet, orgs, orgs_dict
-from ietf.utils import orl, flattenl
+from ietf.utils import orl, flattenl, normalize_draftname
 
 base_extra = { 'alphabet': alphabet, 'orgs': orgs }
 
-def wgdocs(request, **kwargs):
-    if kwargs.has_key('id'):
-	queryset = InternetDraft.objects.filter(group=kwargs['id'])
-	group = get_object_or_404(Acronym, acronym_id=kwargs['id'])
-    else:
-	wg = kwargs['slug']
-	try:
-	    group = Acronym.objects.get(acronym=wg)
-	except Acronym.DoesNotExist:	# try a search
-	    if wg == 'other':
-		queryset = IETFWG.objects.filter(
-		    orl([Q(group_acronym__acronym__istartswith="%d" % i) for i in range(0,10)])
-		    )
-	    else:
-		queryset = IETFWG.objects.filter(group_acronym__acronym__istartswith=wg)
-	    queryset = queryset.filter(group_type__type='WG').select_related().order_by('status_id', 'acronym.acronym')
-	    return object_list(request, queryset=queryset, template_name='idindex/wglist.html', allow_empty=True, extra_context=base_extra)
-        queryset = InternetDraft.objects.filter(group__acronym=wg)
+def wgdocs_redir(request, id):
+    group = get_object_or_404(Acronym, acronym_id=id)
+    return HttpResponsePermanentRedirect(reverse(wgdocs, args=[group.acronym]))
+
+def wgdocs(request, wg):
+    try:
+	group = Acronym.objects.get(acronym=wg)
+    except Acronym.DoesNotExist:	# try a search
+	if wg == 'other':
+	    queryset = IETFWG.objects.filter(
+		orl([Q(group_acronym__acronym__istartswith="%d" % i) for i in range(0,10)])
+		)
+	else:
+	    queryset = IETFWG.objects.filter(group_acronym__acronym__istartswith=wg)
+	queryset = queryset.filter(group_type__type='WG').select_related().order_by('status_id', 'acronym.acronym')
+	extra = base_extra.copy()
+	extra['search'] = wg
+	return object_list(request, queryset=queryset, template_name='idindex/wglist.html', allow_empty=True, extra_context=extra)
+    queryset = InternetDraft.objects.filter(group__acronym=wg)
     queryset = queryset.order_by('status_id', 'filename')
-    extra = base_extra
+    extra = base_extra.copy()
     extra['group'] = group
     return object_list(request, queryset=queryset, template_name='idindex/wgdocs.html', allow_empty=True, extra_context=extra)
 
@@ -47,7 +50,7 @@ def inddocs(request, filter=None):
     else:
 	queryset = InternetDraft.objects.filter(filename__istartswith='draft-' + filter)
     queryset = queryset.exclude(ind_exception).filter(group__acronym='none').order_by('filename')
-    extra = base_extra
+    extra = base_extra.copy()
     extra['filter'] = filter
     return object_list(request, queryset=queryset, template_name='idindex/inddocs.html', allow_empty=True, extra_context=extra)
 
@@ -61,7 +64,7 @@ def otherdocs(request, cat=None):
 	     Q(filename__istartswith="draft-ietf-%s-" % p)
 		for p in org.get('prefixes', [ org['key'] ])]))
     queryset = queryset.order_by('status_id','filename')
-    extra = base_extra
+    extra = base_extra.copy()
     extra['category'] = cat
     return object_list(request, queryset=queryset, template_name='idindex/otherdocs.html', allow_empty=True, extra_context=extra)
 
@@ -98,6 +101,9 @@ def showdocs(request, cat=None):
 
 
 def search(request):
+    args = request.GET.copy()
+    if args.has_key('filename'):
+	args['filename'] = normalize_draftname(args['filename'])
     form = IDIndexSearchForm()
     t = loader.get_template('idindex/search.html')
     # if there's a query, do the search and supply results to the template
@@ -110,20 +116,20 @@ def search(request):
 	      'first_name': 'authors__person__first_name__icontains',
 	    }
     for key in qdict.keys() + ['other_group']:
-	if key in request.REQUEST:
+	if key in args:
 	    searching = True
     if searching:
 	# '0' and '-1' are flag values for "any"
 	# in the original .cgi search page.
 	# They are compared as strings because the
 	# query dict is always strings.
-	q_objs = [Q(**{qdict[k]: request.REQUEST[k]})
+	q_objs = [Q(**{qdict[k]: args[k]})
 		for k in qdict.keys()
-		if request.REQUEST.get(k, '') != '' and
-		   request.REQUEST[k] != '0' and
-		   request.REQUEST[k] != '-1']
+		if args.get(k, '') != '' and
+		   args[k] != '0' and
+		   args[k] != '-1']
 	try:
-	    other = orgs_dict[request.REQUEST['other_group']]
+	    other = orgs_dict[args['other_group']]
 	    q_objs += [orl(
 		[Q(filename__istartswith="draft-%s-" % p)|
 		 Q(filename__istartswith="draft-ietf-%s-" % p)
@@ -212,13 +218,25 @@ def related_docs(startdoc):
     process(startdoc, (0,0,0))
     return related
 
-def view_related_docs(request, **kwargs):
-    if kwargs.has_key('id'):
-	startdoc = get_object_or_404(InternetDraft, id_document_tag=kwargs['id'])
-    else:
-        startdoc = get_object_or_404(InternetDraft, filename=kwargs['slug'])
+def redirect_related(request, id):
+    doc = get_object_or_404(InternetDraft, id_document_tag=id)
+    return HttpResponsePermanentRedirect(reverse(view_related_docs, args=[doc.filename]))
+
+def view_related_docs(request, slug):
+    startdoc = get_object_or_404(InternetDraft, filename=slug)
     related = related_docs(startdoc)
-    context = {'related': related, 'numdocs': len(related)}
+    context = {'related': related, 'numdocs': len(related), 'startdoc': startdoc}
     context.update(base_extra)
     return render_to_response("idindex/view_related_docs.html", context,
 		context_instance=RequestContext(request))
+
+def redirect_id(request, object_id):
+    '''Redirect from historical document ID to preferred filename url.'''
+    doc = get_object_or_404(InternetDraft, id_document_tag=object_id)
+    return HttpResponsePermanentRedirect(reverse(view_id, args=[doc.filename]))
+
+# Wrapper around object_detail to give permalink a handle.
+# The named-URLs feature in django 0.97 will eliminate the
+# need for these.
+def view_id(*args, **kwargs):
+    return object_detail(*args, **kwargs)

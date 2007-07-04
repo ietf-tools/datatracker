@@ -9,7 +9,7 @@ from django.conf import settings
 from ietf.idtracker.models import IETFWG, InternetDraft, Rfc
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
 from ietf.ipr.related import related_docs
-from ietf.utils import log
+from ietf.utils import log, normalize_draftname
 
 
 def mark_last_doc(iprs):
@@ -80,8 +80,10 @@ def search(request, type="", q="", id=""):
             # Search by RFC number or draft-identifier
             # Document list with IPRs
             if type in ["document_search", "rfc_search"]:
+                doc = q
                 if type == "document_search":
                     if q:
+                        q = normalize_draftname(q)
                         start = InternetDraft.objects.filter(filename__contains=q)
                     if id:
                         start = InternetDraft.objects.filter(id_document_tag=id)
@@ -90,18 +92,20 @@ def search(request, type="", q="", id=""):
                         start = Rfc.objects.filter(rfc_number=q)
                 if start.count() == 1:
                     first = start[0]
+                    doc = str(first)
                     # get all related drafts, then search for IPRs on all
 
                     docs = related_docs(first, [])
                     #docs = get_doclist.get_doclist(first)
                     iprs, docs = iprs_from_docs(docs)
-                    return render("ipr/search_doc_result.html", {"q": q, "first": first, "iprs": iprs, "docs": docs},
+                    return render("ipr/search_doc_result.html", {"q": q, "first": first, "iprs": iprs, "docs": docs, "doc": doc },
                                   context_instance=RequestContext(request) )
                 elif start.count():
                     return render("ipr/search_doc_list.html", {"q": q, "docs": start },
                                   context_instance=RequestContext(request) )                        
                 else:
-                    raise ValueError("Missing or malformed search parameters, or internal error")
+                    return render("ipr/search_doc_result.html", {"q": q, "first": {}, "iprs": {}, "docs": {}, "doc": doc },
+                                  context_instance=RequestContext(request) )
 
             # Search by legal name
             # IPR list with documents

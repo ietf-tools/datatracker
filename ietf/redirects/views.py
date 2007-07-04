@@ -26,7 +26,8 @@ def redirect(request, path="", script=""):
 		continue
 	if request.REQUEST.has_key(fc[0]):
 	    remove_args.append(fc[0])
-	    if int(request.REQUEST[fc[0]]):
+	    num = re.match('(\d+)', request.REQUEST[fc[0]])
+	    if num and int(num.group(1)):
 		cmd = flag
 	    break
     #
@@ -39,6 +40,10 @@ def redirect(request, path="", script=""):
 	    pass	# it's ok, there's no more-specific request.
 	except KeyError:
 	    pass	# it's ok, request didn't have 'command'.
+	except:
+	    pass	# strange exception like the one described in
+	    		# http://merlot.tools.ietf.org/tools/ietfdb/ticket/179 ?
+			# just ignore the command string.
     if cmd is not None:
 	remove_args.append('command')
 	if cmd.url:

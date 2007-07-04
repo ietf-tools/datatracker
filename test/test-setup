@@ -53,7 +53,12 @@ cat $settings_local test/settings_local_test.py > test/settings_local.py
 
 # Acquire lock, to prevent running test and database update at the same time
 
-LOCKDIR=/var/lock/ietfdb
+for dir in $DBLOCK /var/lock /var/state /var/run /var/tmp; do
+    [ -d $dir -a -w $dir ] && lock=$dir/ietfdb && break
+done
+[ "$lock" ] || die "Couldn't find a directory to keep lock in."
+
+LOCKDIR=$lock
 PIDFILE=$LOCKDIR/pid
 
 while true; do
@@ -61,18 +66,17 @@ while true; do
 	echo "$$" > $PIDFILE
 	chmod a+rwx $LOCKDIR
 	chmod a+rw $PIDFILE
+	echo $PIDFILE			# tell caller about the pidfile
 	break
     else
 	pid=$(< $PIDFILE )
 	[ "$pid" ] || die "Couldn't read pidfile '$PIDFILE'"
 	if kill -0 $pid; then
-	    echo "Pidfile for process $pid exists, and process is running. Sleeping."
+	    say "Pidfile for process $pid exists, and process is running. Sleeping."
 	    sleep 10
 	else
-	    echo "Pidfile for process $pid exists, but process isn't running."
-	    echo "Removing lock and old pid file $pidfile."
-	    rm -rf $LOCKDIR
-	    break 
+	    say "Pidfile for process $pid exists, but process doesn't seem to be running."
+	    die "Remove lockdir $LOCKDIR and old pid file $pidfile."
 	fi
     fi
 done

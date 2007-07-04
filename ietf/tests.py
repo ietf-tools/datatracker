@@ -19,11 +19,11 @@ from ietf.utils import log
 
 startup_database = settings.DATABASE_NAME  # The startup database name, before changing to test_...
 
-def run_tests(module_list, verbosity=1, extra_tests=[]):
+def run_tests(module_list, verbosity=0, extra_tests=[]):
     module_list.append(ietf.urls)
     # If we append 'ietf.tests', we get it twice, first as itself, then
     # during the search for a 'tests' module ...
-    return django.test.simple.run_tests(module_list, verbosity, extra_tests)
+    return django.test.simple.run_tests(module_list, 0, extra_tests)
 
 def reduce_text(html, pre=False, fill=True):
     if html.count("<li>") > 5*html.count("</li>"):
@@ -90,6 +90,10 @@ def read_testurls(filename):
                 goodurl = None
             elif len(urlspec) == 3:
                 codes, testurl, goodurl = urlspec
+                # strip protocol and host -- we're making that configurable
+                goodurl = re.sub("^https?://[a-z0-9.]+", "", goodurl)
+                if not goodurl.startswith("/"):
+                    goodurl = "/" + goodurl
             else:
                 raise ValueError("Expected 'HTTP_CODE TESTURL [GOODURL]' in %s line, found '%s'." % (filename, line))
 
@@ -289,6 +293,11 @@ class UrlTestCase(TestCase):
                     note("Exception for URL '%s'" % url)
                     traceback.print_exc()
                 if master and not "skipdiff" in codes:
+                    hostprefix = settings.TEST_REFERENCE_URL_PREFIX
+                    if hostprefix.endswith("/"):
+                        hostprefix = hostprefix[:-1]
+                    master = hostprefix + master
+                    goodhtml = None
                     try:
                         #print "Fetching", master, "...",
                         mfile = urllib.urlopen(master)
@@ -296,8 +305,9 @@ class UrlTestCase(TestCase):
                         mfile.close()
                         note("     200 %s" % (master))
                     except urllib.URLError, e:
-                        note("     Error retrieving %s: %s" % (e.url, e))
-                        goodhtml = None                    
+                        note("     Error retrieving %s: %s" % (master, e))
+                    except urllib.BadStatusLine, e:
+                        note("     Error retrieving %s: %s" % (master, e))
                     try:
                         if goodhtml and response.content:
                             if "sort" in codes:
@@ -335,7 +345,7 @@ class UrlTestCase(TestCase):
                             else:
                                 contextlines = 0
                                 difflist = list(unified_diff(goodtext, testtext, master, url, "", "", contextlines, lineterm=""))
-                                diff = "\n".join(difflist)
+                                diff = "\n".join(difflist[2:])
                                 log("Checking diff: %s" % diff[:96])
                                 keys = module.diffchunks.keys()
                                 keys.sort
@@ -352,7 +362,7 @@ class UrlTestCase(TestCase):
                                     # discard them too
                                     diff = ""
                                 if diff:
-                                    dfile = "%s/../test/diff/%s" % (settings.BASE_DIR, url.replace("/", "_").replace("?", "_"))
+                                    dfile = "%s/../test/diff/%s" % (settings.BASE_DIR, re.sub("[/?&=]", "_", url) )
                                     if os.path.exists(dfile):
                                         dfile = open(dfile)
                                         #print "Reading OK diff file:", dfile.name
@@ -367,9 +377,9 @@ class UrlTestCase(TestCase):
                                             note("Failed diff: %s" % (url))
                                         else:
                                             note("Diff:    %s" % (url))
-                                        print "\n".join(diff.split("\n")[:120])
-                                        if len(diff.split("\n")) > 120:
-                                            print "... (skipping %s lines of diff)" % (len(difflist)-120)
+                                        print "\n".join(diff.split("\n")[:100])
+                                        if len(diff.split("\n")) > 100:
+                                            print "... (skipping %s lines of diff)" % (len(difflist)-100)
                                 else:
                                     note("OK   cmp %s" % (url))
                                     

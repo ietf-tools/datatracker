@@ -2,7 +2,7 @@
 {% extends "idtracker/base.html" %}
 {% load ietf_filters %}
                                                                                                                 
-{% block title %}IESG Announcement{% endblock %}
+{% block title %}-- Ballot for {{ object.drafts.all.0.document.filename }}{% endblock %}
                                                                                                                 
 {% block idcontent %}
 <pre>

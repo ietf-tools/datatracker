@@ -15,7 +15,7 @@ class Redirect(models.Model):
     searched for in the Command table to see if there
     is a different value of rest= and remove=.
     """
-    cgi = models.CharField(maxlength=50, unique=True)
+    cgi = models.CharField(maxlength=50, unique=True, blank=True)
     url = models.CharField(maxlength=255)
     rest = models.CharField(maxlength=100, blank=True)
     remove = models.CharField(maxlength=50, blank=True)

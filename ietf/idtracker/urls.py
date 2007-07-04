@@ -30,9 +30,9 @@ urlpatterns += patterns('',
 )
 urlpatterns += patterns('django.views.generic.list_detail',
      (r'^rfc(?P<object_id>\d+)/$', 'object_detail', rfc_dict),
-     (r'^(?P<object_id>\d+)/$', 'object_detail', id_dict),
 )
 urlpatterns += patterns('',
+     (r'^(?P<object_id>\d+)/$', views.redirect_id),
      (r'^(?P<slug>[^/]+)/$', views.view_id, dict(id_dict, slug_field='draft__filename')),
      (r'^comment/(?P<object_id>\d+)/$', views.view_comment, comment_dict),
      (r'^ballot/(?P<object_id>\d+)/$', views.view_ballot, ballot_dict),

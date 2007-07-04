@@ -3,6 +3,8 @@
 
 {% load ietf_filters %}
 
+{% block title %}-- comment on {{ object.document.document.filename }}{% endblock %}
+
 {% block idcontent %}
 
 {% if object.ballot %}
@@ -11,15 +13,16 @@
    <table cellpadding="1" cellspacing="1" border="0">
 
    <tr><td><b>Date and Time:</td><td>{{ object.date }}, {{ object.time }}</td></tr>
+   <tr><td><b>Document:</td><td>{{ object.document.document.filename }}</td></tr>
    <tr><td><b>Version:</td><td>{{ object.version }}</td></tr>
-   <tr><td><b>Commented by:</td><td>{{ object.created_by.first_name }} {{ object.created_by.last_name }}</td></tr>
+   <tr><td><b>Commented by:</td><td>{{ object.get_author }}</td></tr>
 {% if object.origin_state %}
    <tr><td><b>State before Comment:</td><td>{{ object.origin_state }}</td></tr>
 {% endif %}
 {% if object.result_state %}
    <tr><td><b>State after Comment:</td><td>{{ object.result_state }}</td></tr>
 {% endif %}
-   <Tr><td><b>Comment:</td><td>{{ object.comment_text|format_textarea }}</td></tr>
+   <tr><td><b>Comment:</td><td>{{ object.comment_text|format_textarea }}</td></tr>
    </table>
    <center><form>
    <input type="button" value="close" onClick="history.go(-1);return true">

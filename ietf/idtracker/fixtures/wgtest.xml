@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<django-objects version="1.0">
+  <object pk="4" model="idtracker.personororginfo">
+    <field type="CharField" name="record_type"></field>
+    <field type="CharField" name="name_prefix"></field>
+    <field type="CharField" name="first_name">Hermey</field>
+    <field type="CharField" name="first_name_key">HERMEY</field>
+    <field type="CharField" name="middle_initial"></field>
+    <field type="CharField" name="middle_initial_key"></field>
+    <field type="CharField" name="last_name">Elf</field>
+    <field type="CharField" name="last_name_key">ELF</field>
+    <field type="CharField" name="name_suffix"></field>
+    <field type="DateField" name="date_modified">2007-07-02</field>
+    <field type="CharField" name="modified_by"></field>
+    <field type="DateField" name="date_created">2007-07-02</field>
+    <field type="CharField" name="created_by"></field>
+    <field type="CharField" name="address_type"></field>
+  </object>
+  <object pk="1" model="idtracker.personororginfo">
+    <field type="CharField" name="record_type"></field>
+    <field type="CharField" name="name_prefix"></field>
+    <field type="CharField" name="first_name">Kris</field>
+    <field type="CharField" name="first_name_key">KRIS</field>
+    <field type="CharField" name="middle_initial"></field>
+    <field type="CharField" name="middle_initial_key"></field>
+    <field type="CharField" name="last_name">Kringle</field>
+    <field type="CharField" name="last_name_key">KRINGLE</field>
+    <field type="CharField" name="name_suffix"></field>
+    <field type="DateField" name="date_modified">2007-07-02</field>
+    <field type="CharField" name="modified_by"></field>
+    <field type="DateField" name="date_created">2007-07-02</field>
+    <field type="CharField" name="created_by"></field>
+    <field type="CharField" name="address_type"></field>
+  </object>
+  <object pk="2" model="idtracker.personororginfo">
+    <field type="CharField" name="record_type"></field>
+    <field type="CharField" name="name_prefix"></field>
+    <field type="CharField" name="first_name">Snow</field>
+    <field type="CharField" name="first_name_key">SNOW</field>
+    <field type="CharField" name="middle_initial"></field>
+    <field type="CharField" name="middle_initial_key"></field>
+    <field type="CharField" name="last_name">Miser</field>
+    <field type="CharField" name="last_name_key">MISER</field>
+    <field type="CharField" name="name_suffix"></field>
+    <field type="DateField" name="date_modified">2007-07-02</field>
+    <field type="CharField" name="modified_by"></field>
+    <field type="DateField" name="date_created">2007-07-02</field>
+    <field type="CharField" name="created_by"></field>
+    <field type="CharField" name="address_type"></field>
+  </object>
+  <object pk="3" model="idtracker.personororginfo">
+    <field type="CharField" name="record_type"></field>
+    <field type="CharField" name="name_prefix"></field>
+    <field type="CharField" name="first_name">Rudolph</field>
+    <field type="CharField" name="first_name_key">RUDOLPH</field>
+    <field type="CharField" name="middle_initial"></field>
+    <field type="CharField" name="middle_initial_key"></field>
+    <field type="CharField" name="last_name">Reindeer</field>
+    <field type="CharField" name="last_name_key">REINDEER</field>
+    <field type="CharField" name="name_suffix"></field>
+    <field type="DateField" name="date_modified">2007-07-02</field>
+    <field type="CharField" name="modified_by"></field>
+    <field type="DateField" name="date_created">2007-07-02</field>
+    <field type="CharField" name="created_by"></field>
+    <field type="CharField" name="address_type"></field>
+  </object>
+  <object pk="1" model="idtracker.wgchair">
+    <field to="idtracker.personororginfo" name="person" rel="ManyToOneRel">1</field>
+    <field to="idtracker.ietfwg" name="group_acronym" rel="ManyToOneRel">1</field>
+  </object>
+  <object pk="2" model="idtracker.wgchair">
+    <field to="idtracker.personororginfo" name="person" rel="ManyToOneRel">2</field>
+    <field to="idtracker.ietfwg" name="group_acronym" rel="ManyToOneRel">2</field>
+  </object>
+  <object pk="1" model="idtracker.ietfwg">
+    <field to="idtracker.wgtype" name="group_type" rel="ManyToOneRel">1</field>
+    <field type="DateField" name="proposed_date"><None></None></field>
+    <field type="DateField" name="start_date"><None></None></field>
+    <field type="DateField" name="dormant_date"><None></None></field>
+    <field type="DateField" name="concluded_date"><None></None></field>
+    <field to="idtracker.wgstatus" name="status" rel="ManyToOneRel">1</field>
+    <field to="idtracker.areadirector" name="area_director" rel="ManyToOneRel"><None></None></field>
+    <field type="CharField" name="meeting_scheduled"></field>
+    <field type="CharField" name="email_address"></field>
+    <field type="CharField" name="email_subscribe"></field>
+    <field type="CharField" name="email_keyword"></field>
+    <field type="CharField" name="email_archive"></field>
+    <field type="TextField" name="comments"></field>
+    <field type="DateField" name="last_modified_date">2007-07-02</field>
+    <field type="CharField" name="meeting_scheduled_old"></field>
+  </object>
+  <object pk="2" model="idtracker.ietfwg">
+    <field to="idtracker.wgtype" name="group_type" rel="ManyToOneRel">3</field>
+    <field type="DateField" name="proposed_date"><None></None></field>
+    <field type="DateField" name="start_date"><None></None></field>
+    <field type="DateField" name="dormant_date"><None></None></field>
+    <field type="DateField" name="concluded_date"><None></None></field>
+    <field to="idtracker.wgstatus" name="status" rel="ManyToOneRel">1</field>
+    <field to="idtracker.areadirector" name="area_director" rel="ManyToOneRel"><None></None></field>
+    <field type="CharField" name="meeting_scheduled"></field>
+    <field type="CharField" name="email_address"></field>
+    <field type="CharField" name="email_subscribe"></field>
+    <field type="CharField" name="email_keyword"></field>
+    <field type="CharField" name="email_archive"></field>
+    <field type="TextField" name="comments"></field>
+    <field type="DateField" name="last_modified_date">2007-07-02</field>
+    <field type="CharField" name="meeting_scheduled_old"></field>
+  </object>
+  <object pk="1" model="idtracker.acronym">
+    <field type="CharField" name="acronym">xmas</field>
+    <field type="CharField" name="name">Christmas</field>
+    <field type="CharField" name="name_key">CHRISTMAS</field>
+  </object>
+  <object pk="2" model="idtracker.acronym">
+    <field type="CharField" name="acronym">snow</field>
+    <field type="CharField" name="name">Silly New Operational Work</field>
+    <field type="CharField" name="name_key">SILLY NEW OPERATIONAL WORK</field>
+  </object>
+  <object pk="1" model="idtracker.wgtype">
+    <field type="CharField" name="type">WG</field>
+  </object>
+  <object pk="2" model="idtracker.wgtype">
+    <field type="CharField" name="type">PWG</field>
+  </object>
+  <object pk="3" model="idtracker.wgtype">
+    <field type="CharField" name="type">BOF</field>
+  </object>
+  <object pk="4" model="idtracker.wgtype">
+    <field type="CharField" name="type">AG</field>
+  </object>
+  <object pk="5" model="idtracker.wgtype">
+    <field type="CharField" name="type">TEAM</field>
+  </object>
+  <object pk="1" model="idtracker.wgstatus">
+    <field type="CharField" name="status">Active</field>
+  </object>
+  <object pk="2" model="idtracker.wgstatus">
+    <field type="CharField" name="status">Dormant</field>
+  </object>
+  <object pk="3" model="idtracker.wgstatus">
+    <field type="CharField" name="status">Concluded</field>
+  </object>
+  <object pk="1" model="idtracker.wgtechadvisor">
+    <field to="idtracker.ietfwg" name="group_acronym" rel="ManyToOneRel">1</field>
+    <field to="idtracker.personororginfo" name="person" rel="ManyToOneRel">3</field>
+  </object>
+  <object pk="1" model="idtracker.wgsecretary">
+    <field to="idtracker.ietfwg" name="group_acronym" rel="ManyToOneRel">1</field>
+    <field to="idtracker.personororginfo" name="person" rel="ManyToOneRel">4</field>
+  </object>
+</django-objects>
