@@ -37,3 +37,18 @@ class DocumentComments(Feed):
 
     def item_author_name(self, item):
 	return item.get_author()
+
+class InLastCall(Feed):
+    title = "Documents in Last Call"
+    feed_type = Atom1Feed
+    author_name = 'IESG Secretary'
+    link = "/idtracker/status/last-call/"
+
+    def items(self):
+	ret = list(IDInternal.objects.filter(primary_flag=1).filter(cur_state__state='In Last Call'))
+	ret.sort(key=lambda item: (item.document().lc_expiration_date or datetime.date.today()))
+	return ret
+
+    def item_pubdate(self, item):
+        return item.document().lc_sent_date
+

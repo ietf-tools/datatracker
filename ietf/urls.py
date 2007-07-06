@@ -3,13 +3,14 @@
 from django.conf.urls.defaults import patterns, include, handler404, handler500
 
 from ietf.iesg.feeds import IESGMinutes
-from ietf.idtracker.feeds import DocumentComments
+from ietf.idtracker.feeds import DocumentComments, InLastCall
 from ietf.ipr.feeds import LatestIprDisclosures
 
 from django.conf import settings
 
 feeds = {
-    'iesg_minutes': IESGMinutes,
+    'iesg-minutes': IESGMinutes,
+    'last-call': InLastCall,
     'comments': DocumentComments,
     'ipr': LatestIprDisclosures,
 }
