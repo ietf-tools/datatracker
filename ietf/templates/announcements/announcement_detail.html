@@ -4,7 +4,7 @@
 
 {% block head %}<link rel="stylesheet" type="text/css" href="https://www1.ietf.org/css/base.css" />{% endblock %}
 
-{% block title %}NomCom Message{% endblock %}
+{% block title %}NomCom Message: {{ object.announced_date|date:"F j, Y" }} -- {{ object.subject|escape }}{% endblock %}
 
 {% block content %}
 <h2 style="text-align: center;">NomCom Message</h2>
