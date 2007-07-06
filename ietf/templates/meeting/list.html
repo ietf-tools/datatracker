@@ -92,7 +92,7 @@ Updated as of {% now "F j, Y, H:i:s (T)" %}
     <table cellpadding="0" cellspacing="0" border="2" width="80%">
       <tr><a name="wg-{{ wg.acronym }}"></a>
         <td align="center" bgcolor="#DDFFDD" width="20%"><b>{{ wg.acronym|upper }}</b><br>
-        {% if wg.agenda_file %}<a href="http://www3..ietf.org/proceedings/{{ wg.agenda_file }}">[Agenda]</a>{% endif %}{% if wg.minute_file %} <a href="http://www3.ietf.org/proceedings/{{ wg.minute_file }}">[Minutes]</a>{% endif %}</td>
+        {% if wg.agenda_file %}<a href="http://www3.ietf.org/proceedings/{{ wg.agenda_file }}">[Agenda]</a>{% endif %}{% if wg.minute_file %} <a href="http://www3.ietf.org/proceedings/{{ wg.minute_file }}">[Minutes]</a>{% endif %}</td>
         <td><table border="1" width="100%">
 {% include "meeting/submission_status_snippet.html" %}
               {% for slide in wg.slides %}
