@@ -27,7 +27,7 @@
 			   <tr valign="top">
 			      <td width="100">{{ ipr.submitted_date }}</td>
 			      <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
-			      <td><a href="{% url ietf.ipr.views.show %}{{ ipr.ipr_id }}">"{{ ipr.title }}"</a></td>
+			      <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a></td>
 			   </tr>
 			{% endfor %}
 		     {% else %}
