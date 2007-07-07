@@ -110,7 +110,6 @@ class TextSoup(BeautifulSoup):
             str = re.sub("[ \t]+", " ", str)
             str = re.sub("\n\n+", "\n\n", str)
         return str
-        
 
     def __str__(self, encoding='latin-1',
                 prettyPrint=False, indentLevel=0):
@@ -121,13 +120,6 @@ class TextSoup(BeautifulSoup):
         return str
 
 def soup2text(html, encoding='latin-1', pre=False, fill=True):
-    # Line ending normalization
-    html = html.replace("\r\n", "\n").replace("\r", "\n")
-    # remove comments
-    html = re.sub("(?s)<!--.*?-->", "", html)    
-    # some preprocessing to handle common pathological cases
-    html = re.sub("<br */?>[ \t\n]*(<br */?>)+", "<p/>", html)
-    html = re.sub("<br */?>([^\n])", r"<br />\n\1", html)
     soup = TextSoup(html)
     return soup.as_text(encoding, pre, fill)
 

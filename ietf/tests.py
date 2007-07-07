@@ -4,9 +4,10 @@ import os
 import re
 import traceback
 import urllib2 as urllib
+from urlparse import urljoin
 from datetime import datetime
 
-from ietf.utils import soup2text as html2text
+from ietf.utils.soup2text import TextSoup
 from difflib import unified_diff
 
 import django.test.simple
@@ -25,18 +26,50 @@ def run_tests(module_list, verbosity=0, extra_tests=[]):
     # during the search for a 'tests' module ...
     return django.test.simple.run_tests(module_list, 0, extra_tests)
 
-def reduce_text(html, pre=False, fill=True):
+def normalize_html(html, fill):
+    # Line ending normalization
+    html = html.replace("\r\n", "\n").replace("\r", "\n")
+    # remove comments
+    html = re.sub("(?s)<!--.*?-->", "", html)    
+    # attempt to close <li>s (avoid too deep recursion later)
     if html.count("<li>") > 5*html.count("</li>"):
         html = html.replace("<li>", "</li><li>")
     if not fill:
         html = re.sub("<br ?/?>", "<br/><br/>", html)
     html = re.sub(r"(?i)(RFC) (\d+)", r"\1\2", html) # ignore "RFC 1234" vs. "RFC1234" diffs
     html = re.sub(r"\bID\b", r"I-D", html)           # idnore " ID " vs. " I-D " diffs
-    text = html2text(html, pre=pre, fill=fill).strip()
+    # some preprocessing to handle common pathological cases
+    html = re.sub("<br */?>[ \t\n]*(<br */?>)+", "<p/>", html)
+    html = re.sub("<br */?>([^\n])", r"<br />\n\1", html)
+    return html
+    
+def reduce_text(html, pre=False, fill=True):
+    html = normalize_html(html, fill)
+    page = TextSoup(html)
+    text = page.as_text(encoding='latin-1', pre=pre, fill=fill).strip()
     text = text.replace(" : ", ": ").replace(" :", ": ")
     text = text.replace('."', '".')
     text = text.replace(',"', '",')
-    return text
+    return text, page
+
+def update_reachability(url, code, page):
+    if code in ["301", "302", "303", "307"]:
+        try:
+            file = urllib.urlopen(url)
+            html = file.read()
+            file.close()
+            code = 200
+            page = TextSoup(html)
+        except urllib.URLError, e:
+            note("     Error retrieving %s: %s" % (url, e))
+            code = e.code
+            page = None
+    module.reachability[url] = (code, "Test")
+    links = ( [ urljoin(url, a["href"]) for a in page.findAll("a") ]
+            + [ urljoin(url, img["src"]) for img in page.findAll("img") ] )
+    for link in links:
+        if not link in module.reachability:
+            module.reachability[link] = (None, url)
 
 def lines(text, pre=False):
     if pre:
@@ -126,7 +159,7 @@ def note(string):
     """Like a print function, but adds a leading timestamp line"""
     now = datetime.utcnow()
     print string
-    print now.strftime("         %Y-%m-%d_%H:%M"), "+%ds" % (now-prev_note_time).seconds
+    print now.strftime("         %Y-%m-%d_%H:%M"), "+%3.1f" % (now-prev_note_time).seconds
     prev_note_time = datetime.utcnow()
 
 def module_setup(module):
@@ -140,6 +173,7 @@ def module_setup(module):
     module.ignores = {}
     module.testtuples = get_testurls()
     module.testurls = [ tuple[1] for tuple in module.testtuples ]
+    module.reachability = {}
 
     # find diff chunks
     testdir = os.path.abspath(settings.BASE_DIR+"/../test/diff/")
@@ -188,7 +222,9 @@ class UrlTestCase(TestCase):
     def __init__(self, *args, **kwargs):
         TestCase.__init__(self, *args, **kwargs)
 
-        
+# ------------------------------------------------------------------------------
+# Setup and tear-down
+
     def setUp(self):
         from django.test.client import Client
         self.client = Client()
@@ -204,6 +240,13 @@ class UrlTestCase(TestCase):
         settings.DATABASE_NAME = self.testdb
         connection.cursor()
         
+# ------------------------------------------------------------------------------
+# Test methods.
+#
+# These are listed in alphabetic order, which is the order in which they will
+# be executed.
+#
+
     def testCoverage(self):
         covered = []
         for codes, testurl, goodurl in module.testtuples:
@@ -225,6 +268,55 @@ class UrlTestCase(TestCase):
         else:
             print "All the application URL patterns seem to have test cases."
             #print "Not all the application URLs has test cases."
+
+    def testRedirectsList(self):
+	note("\nTesting specified Redirects:")
+	self.doRedirectsTest(module.testtuples)
+
+    def testUrlsFallback(self):
+        note("\nFallback: Test access to URLs which don't have an explicit test entry:")
+        lst = []
+        for pattern in module.patterns:
+            if pattern.startswith("^") and pattern.endswith("$"):
+                url = "/"+pattern[1:-1]
+                # if there is no variable parts in the url, test it
+                if re.search("^[-a-z0-9./_]*$", url) and not url in module.testurls and not url.startswith("/admin/"):
+                    lst.append((["200"], url, None))
+                else:
+                    #print "No fallback test for %s" % (url)
+                    pass
+            else:
+                lst.append((["Skip"], pattern, None))
+        self.doUrlsTest(lst)
+
+    def testUrlsList(self):
+        note("\nTesting specified URLs:")
+        self.doUrlsTest(module.testtuples)
+
+    def testUrlsReachability(self):
+        # This test should be sorted after the other tests which retrieve URLs
+        note("\nTesting URL reachability:")
+        for url in module.reachability:
+            code, source = module.reachability[url]
+            if not code:
+                if url.startswith("/"):
+                    baseurl, args = split_url(url)
+                    code = str(self.client.get(baseurl, args).status_code)
+                elif url.startswith("mailto:"):
+                    continue
+                else:
+                    try:
+                        file = urllib.urlopen(url)
+                        file.close()
+                        code = "200"
+                    except urllib.HTTPError, e:
+                        code = str(e.code)
+            if not code in ["200"]:
+                note("Reach %5s %s (from %s)" % (code, url, source))
+
+
+# ------------------------------------------------------------------------------
+# Worker methods
 
     def doRedirectsTest(self, lst):
         response_count = {}
@@ -311,11 +403,12 @@ class UrlTestCase(TestCase):
                     try:
                         if goodhtml and response.content:
                             if "sort" in codes:
-                                testtext = reduce_text(response.content, fill=False)
-                                goodtext = reduce_text(goodhtml, fill=False)
+                                testtext, testpage = reduce_text(response.content, fill=False)
+                                goodtext, goodpage = reduce_text(goodhtml, fill=False)
                             else:
-                                testtext = reduce_text(response.content)
-                                goodtext = reduce_text(goodhtml)
+                                testtext, testpage = reduce_text(response.content)
+                                goodtext, goodpage = reduce_text(goodhtml)
+                            update_reachability(url, code, testpage)
                             # Always ignore some stuff
                             for regex in module.ignores["always"]:
                                 testtext = re.sub(regex, "", testtext)
@@ -405,30 +498,6 @@ class UrlTestCase(TestCase):
         if response_count:
             print ""
 
-    def testUrlsList(self):
-        note("\nTesting specified URLs:")
-        self.doUrlsTest(module.testtuples)
-
-    def testRedirectsList(self):
-	note("\nTesting specified Redirects:")
-	self.doRedirectsTest(module.testtuples)
-
-    def testUrlsFallback(self):
-        note("\nFallback: Test access to URLs which don't have an explicit test entry:")
-        lst = []
-        for pattern in module.patterns:
-            if pattern.startswith("^") and pattern.endswith("$"):
-                url = "/"+pattern[1:-1]
-                # if there is no variable parts in the url, test it
-                if re.search("^[-a-z0-9./_]*$", url) and not url in module.testurls and not url.startswith("/admin/"):
-                    lst.append((["200"], url, None))
-                else:
-                    #print "No fallback test for %s" % (url)
-                    pass
-            else:
-                lst.append((["Skip"], pattern, None))
-            
-        self.doUrlsTest(lst)
 
 
 class Module:
