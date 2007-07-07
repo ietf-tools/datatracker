@@ -8,6 +8,7 @@ except ImportError:
 from django.db import connection
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.http import HttpResponsePermanentRedirect
 from ietf.utils import log
 import re
 import smtplib
@@ -61,3 +62,9 @@ class SMTPExceptionMiddleware(object):
 	    return render_to_response('email_failed.html', {'exception': type, 'args': value, 'traceback': "".join(tb)},
 		context_instance=RequestContext(request))
 	return None
+
+class RedirectTrailingPeriod(object):
+    def process_response(self, request, response):
+	if response.status_code == 404 and request.path.endswith("."):
+	    return HttpResponsePermanentRedirect(request.path.rstrip("."))
+	return response

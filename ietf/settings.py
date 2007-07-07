@@ -90,6 +90,7 @@ MIDDLEWARE_CLASSES = (
 #    'ietf.middleware.PrettifyMiddleware',
     'ietf.middleware.SQLLogMiddleware',
     'ietf.middleware.SMTPExceptionMiddleware',
+    'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.transaction.TransactionMiddleware',
 )
 
