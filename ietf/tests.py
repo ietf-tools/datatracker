@@ -65,8 +65,8 @@ def update_reachability(url, code, page):
             code = e.code
             page = None
     module.reachability[url] = (code, "Test")
-    links = ( [ urljoin(url, a["href"]) for a in page.findAll("a") ]
-            + [ urljoin(url, img["src"]) for img in page.findAll("img") ] )
+    links = ( [ urljoin(url, a["href"]) for a in page.findAll("a") if a.has_key("href")]
+            + [ urljoin(url, img["src"]) for img in page.findAll("img") if a.has_key("src")] )
     for link in links:
         if not link in module.reachability:
             module.reachability[link] = (None, url)
@@ -299,9 +299,13 @@ class UrlTestCase(TestCase):
         for url in module.reachability:
             code, source = module.reachability[url]
             if not code:
+                note("       %s" % (code, url))
                 if url.startswith("/"):
                     baseurl, args = split_url(url)
-                    code = str(self.client.get(baseurl, args).status_code)
+                    try:
+                        code = str(self.client.get(baseurl, args).status_code)
+                    except AssertionError:
+                        code = "500"
                 elif url.startswith("mailto:"):
                     continue
                 else:
