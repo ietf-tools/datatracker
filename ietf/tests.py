@@ -4,6 +4,7 @@ import os
 import re
 import traceback
 import urllib2 as urllib
+import httplib
 from urlparse import urljoin
 from datetime import datetime
 
@@ -12,6 +13,7 @@ from difflib import unified_diff
 
 import django.test.simple
 from django.test import TestCase
+from django.test.client import Client
 from django.conf import settings
 from django.db import connection
 from django.core import management
@@ -68,6 +70,7 @@ def update_reachability(url, code, page):
     links = ( [ urljoin(url, a["href"]) for a in page.findAll("a") if a.has_key("href")]
             + [ urljoin(url, img["src"]) for img in page.findAll("img") if a.has_key("src")] )
     for link in links:
+        link = link.split("#")[0]   # don't include fragment identifier
         if not link in module.reachability:
             module.reachability[link] = (None, url)
 
@@ -226,7 +229,6 @@ class UrlTestCase(TestCase):
 # Setup and tear-down
 
     def setUp(self):
-        from django.test.client import Client
         self.client = Client()
 
         self.testdb = settings.DATABASE_NAME
@@ -295,35 +297,39 @@ class UrlTestCase(TestCase):
 
     def testUrlsReachability(self):
         # This test should be sorted after the other tests which retrieve URLs
-        note("\nTesting URL reachability:")
+        note("\nTesting URL reachability of %s URLs:" % len(module.reachability) )
         for url in module.reachability:
-            code, source = module.reachability[url]
-            if not code:
-                note("       %s" % ( url))
-                if url.startswith("/"):
-                    baseurl, args = split_url(url)
-                    try:
-                        code = str(self.client.get(baseurl, args).status_code)
-                    except AssertionError:
-                        note("Exception for URL '%s'" % url)
-                        traceback.print_exc()
-                        code = "500"
-                elif url.startswith("mailto:"):
-                    continue
-                else:
-                    try:
-                        file = urllib.urlopen(url)
-                        file.close()
-                        code = "200"
-                    except urllib.HTTPError, e:
-                        code = str(e.code)
-                    except urllib.InvalidURL, e:
-                        note("Exception for URL '%s'" % url)
-                        traceback.print_exc()
-                        code = "500"
-
+            if url:
+                code, source = module.reachability[url]
+                if not code:
+                    print "         %s" % ( url.strip() )
+                    if url.startswith("/"):
+                        baseurl, args = split_url(url)
+                        try:
+                            code = str(self.client.get(baseurl, args).status_code)
+                        except AssertionError:
+                            note("Exception for URL '%s'" % url)
+                            traceback.print_exc()
+                            self.client = Client()
+                            code = "500"
+                    elif url.startswith("mailto:"):
+                        continue
+                    else:
+                        try:
+                            file = urllib.urlopen(url)
+                            file.close()
+                            code = "200"
+                        except urllib.HTTPError, e:
+                            code = str(e.code)
+                        except httplib.InvalidURL, e:
+                            note("Exception for URL '%s'" % url)
+                            traceback.print_exc()
+                            self.client = Client()
+                            code = "500"
+            else:
+                code = "500"
             if not code in ["200"]:
-                note("Reach %3s %s (from %s)" % (code, url, source))
+                note("Reach %3s <%s> (from %s)\n" % (code, url, source))
 
 
 # ------------------------------------------------------------------------------
