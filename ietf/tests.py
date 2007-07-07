@@ -299,7 +299,7 @@ class UrlTestCase(TestCase):
         for url in module.reachability:
             code, source = module.reachability[url]
             if not code:
-                note("       %s" % (code, url))
+                note("       %s" % ( url))
                 if url.startswith("/"):
                     baseurl, args = split_url(url)
                     try:
