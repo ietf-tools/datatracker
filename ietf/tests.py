@@ -305,6 +305,8 @@ class UrlTestCase(TestCase):
                     try:
                         code = str(self.client.get(baseurl, args).status_code)
                     except AssertionError:
+                        note("Exception for URL '%s'" % testurl)
+                        traceback.print_exc()
                         code = "500"
                 elif url.startswith("mailto:"):
                     continue
@@ -315,8 +317,13 @@ class UrlTestCase(TestCase):
                         code = "200"
                     except urllib.HTTPError, e:
                         code = str(e.code)
+                    except InvalidURL, e:
+                        note("Exception for URL '%s'" % testurl)
+                        traceback.print_exc()
+                        code = "500"
+
             if not code in ["200"]:
-                note("Reach %5s %s (from %s)" % (code, url, source))
+                note("Reach %3s %s (from %s)" % (code, url, source))
 
 
 # ------------------------------------------------------------------------------
