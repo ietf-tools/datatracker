@@ -16,9 +16,11 @@ test/run-pyflakes ietf
 trap 'echo "$program($LINENO): Caught Interrupt"' INT 
 
 # run tests with our patched django
+set -m
 PYTHONPATH=test:test/lib URLPREFIX="$*" python ietf/manage.py test &
 pid=$!
 echo $pid > $pidfile
+fg %1
 wait $pid
 
 # reset keyboard interrupt trap
