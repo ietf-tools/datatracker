@@ -321,6 +321,11 @@ class UrlTestCase(TestCase):
                             code = "200"
                         except urllib.HTTPError, e:
                             code = str(e.code)
+                        except urllib.URLError, e:
+                            note("Exception for URL '%s'" % url)
+                            traceback.print_exc()
+                            self.client = Client()
+                            code = "500"
                         except httplib.InvalidURL, e:
                             note("Exception for URL '%s'" % url)
                             traceback.print_exc()
