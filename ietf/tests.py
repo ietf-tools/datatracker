@@ -295,7 +295,8 @@ class UrlTestCase(TestCase):
         note("\nTesting specified URLs:")
         self.doUrlsTest(module.testtuples)
 
-    def testUrlsReachability(self):
+    # Disable this test by not having it start with "test"
+    def xTestUrlsReachability(self):
         # This test should be sorted after the other tests which retrieve URLs
         note("\nTesting URL reachability of %s URLs:" % len(module.reachability) )
         for url in module.reachability:
@@ -311,7 +312,7 @@ class UrlTestCase(TestCase):
                             note("Exception for URL '%s'" % url)
                             traceback.print_exc()
                             self.client = Client()
-                            code = "500"
+                            code = "Exc"
                     elif url.startswith("mailto:"):
                         continue
                     else:
@@ -325,14 +326,14 @@ class UrlTestCase(TestCase):
                             note("Exception for URL '%s'" % url)
                             traceback.print_exc()
                             self.client = Client()
-                            code = "500"
+                            code = "Exc"
                         except httplib.InvalidURL, e:
                             note("Exception for URL '%s'" % url)
                             traceback.print_exc()
                             self.client = Client()
-                            code = "500"
+                            code = "Exc"
             else:
-                code = "500"
+                code = "000"
             if not code in ["200"]:
                 note("Reach %3s <%s> (from %s)\n" % (code, url, source))
 
