@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.http import HttpResponsePermanentRedirect,Http404
+from django.http import HttpResponsePermanentRedirect
+from django.shortcuts import get_object_or_404
 import re
 
 from ietf.redirects.models import Redirect, Command
@@ -8,10 +9,7 @@ from ietf.redirects.models import Redirect, Command
 def redirect(request, path="", script=""):
     if path:
 	script = path + "/" + script
-    try:
-	redir = Redirect.objects.get(cgi=script)
-    except Redirect.DoesNotExist:
-	raise Http404
+    redir = get_object_or_404(Redirect, cgi=script)
     url = "/" + redir.url + "/"
     (rest, remove) = (redir.rest, redir.remove)
     remove_args = []
