@@ -196,12 +196,19 @@ def redirect_id(request, object_id):
     doc = get_object_or_404(InternetDraft, id_document_tag=object_id)
     return HttpResponsePermanentRedirect(reverse(view_id, args=[doc.filename]))
 
+# calling sequence similar to object_detail, but we have different
+# 404 handling: if the draft exists, render a not-found template.
+def view_id(request, queryset, slug, slug_field):
+    try:
+	object = IDInternal.objects.get(draft__filename=slug, rfc_flag=0)
+    except IDInternal.DoesNotExist:
+	draft = get_object_or_404(InternetDraft, filename=slug)
+	return render_to_response('idtracker/idinternal_notfound.html', {'draft': draft}, context_instance=RequestContext(request))
+    return render_to_response('idtracker/idinternal_detail.html', {'object': object}, context_instance=RequestContext(request))
+
 # Wrappers around object_detail to give permalink a handle.
 # The named-URLs feature in django 0.97 will eliminate the
 # need for these.
-def view_id(*args, **kwargs):
-    return object_detail(*args, **kwargs)
-
 def view_comment(*args, **kwargs):
     return object_detail(*args, **kwargs)
 

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Not Found - {{ draft.filename }}{% endblock %}
+
+{% block content %}
+<h1>Not in I-D Tracker</h1>
+
+<p>{{ draft.filename }} is not in the I-D tracker, although it is
+an {{ draft.status.status|lower }} Internet Draft.  The
+<a href="{% url ietf.idindex.views.view_id draft.filename %}">Internet-Drafts Database Index</a>
+has more information on the status of this document.
+</p>
+
+{% endblock %}
