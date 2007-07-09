@@ -5,6 +5,10 @@
 
 {% block title %}-- {{ object.document.filename }}{% endblock %}
 
+{% block head %}
+<link rel="alternate" type="application/atom+xml" href="/feed/comments/{{ object.document.filename }}/">
+{% endblock %}
+
 {% block idcontent %}
     <table width="90%" cellpading="1" cellspacing="0">
       <tr>
@@ -241,7 +245,7 @@
     </table>
     {% endif %}
 
-    <h3>Comment Log</h3>
+    <h3>Comment Log <span style="font-size: 80%">[<a href="/feed/comments/{{ object.document.filename }}/">atom feed</a>]</span></h3>
 
     <table cellpadding="1" cellspacing="1" border="0">
       <tr bgcolor="#7DC189">

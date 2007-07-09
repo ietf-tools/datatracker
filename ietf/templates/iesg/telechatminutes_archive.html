@@ -1,6 +1,10 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
 
+{% block head %}
+<link rel="alternate" type="application/atom+xml" href="/feed/iesg-minutes/">
+{% endblock %}
+
 {% block title %}IESG Telechat Minutes{% endblock %}
 
 {% block content %}
