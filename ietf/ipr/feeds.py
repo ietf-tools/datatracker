@@ -10,16 +10,20 @@ class LatestIprDisclosures(Feed):
     link = "/ipr/"
     description = "Updates on new IPR Disclosures made to the IETF."
     language = "en"
-    feed_url = "/feeds/ipr/"
+    feed_url = "/feed/ipr/"
 
     def items(self):
-        return IprDetail.objects.filter(status__in=[1,3]).order_by('-submitted_date')[:5]
+        return IprDetail.objects.filter(status__in=[1,3]).order_by('-submitted_date')[:15]
         
-    def item_link(self, item):
-        return "/ipr/ipr-%s" % item.ipr_id
     def item_pubdate(self, item):
         return item.submitted_date
     def item_author_name(self, item):
-        return item.get_submitter().name or None
+	s = item.get_submitter()
+	if s:
+	    return s.name
+        return None
     def item_author_email(self, item):
-        return item.get_submitter().email or None
+	s = item.get_submitter()
+	if s:
+	    return s.email
+        return None

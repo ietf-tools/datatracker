@@ -73,10 +73,10 @@ class IprDetail(models.Model):
     legal_name = models.CharField("Legal Name", db_column="p_h_legal_name", maxlength=255)
 
     # Patent Holder Contact fieldset
-    # self.contacts.filter(contact_type=1)
+    # self.contact.filter(contact_type=1)
 
     # IETF Contact fieldset
-    # self.contacts.filter(contact_type=1)
+    # self.contact.filter(contact_type=3)
     
     # Related IETF Documents fieldset
     rfc_number = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
@@ -120,7 +120,12 @@ class IprDetail(models.Model):
     def docs(self):
         return list(self.drafts.all()) + list(self.rfcs.all())
     def get_absolute_url(self):
-        return "/ipr/ipr-%s" % self.ipr_id
+        return "/ipr/%d/" % self.ipr_id
+    def get_submitter(self):
+	try:
+	    return self.contact.get(contact_type=3)
+	except IprContact.DoesNotExist:
+	    return None
     class Meta:
         db_table = 'ipr_detail'
     class Admin:
