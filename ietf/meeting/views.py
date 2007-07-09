@@ -42,26 +42,32 @@ def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     nonsession_info=NonSession.objects.filter(meeting=meeting_num,day_id__gte='0').order_by("day_id")
     meetingvenue_info=get_object_or_404(MeetingVenue, meeting_num=meeting_num)
     last_update_info=get_object_or_404(Switches,id=1)
-    plenaryt_agenda_file = "/home/master-site/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-2).agenda_file()
     try:
-        f = open(plenaryt_agenda_file)
-        plenaryt_agenda = f.read()
-        f.close()
-    except IOError:
-        plenaryt_agenda = "THE AGENDA HAS NOT BEEN UPLOADED YET"
+        plenaryt_agenda_file = "/home/master-site/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-2).agenda_file()
+        try:
+            f = open(plenaryt_agenda_file)
+            plenaryt_agenda = f.read()
+            f.close()
+        except IOError:
+             plenaryt_agenda = "THE AGENDA HAS NOT BEEN UPLOADED YET"
+    except WgMeetingSession.DoesNotExist:
+        plenaryt_agenda = "The Technical Plenary has not been scheduled"
     if html_or_txt == "html":
         template_file="meeting/agenda.html"
     elif html_or_txt == "txt":
         template_file="meeting/agenda.txt"
     else:
         raise Http404
-    plenaryw_agenda_file = "/home/master-site/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-1).agenda_file()
     try:
-        f = open(plenaryw_agenda_file)
-        plenaryw_agenda = f.read()
-        f.close()
-    except IOError:
-        plenaryw_agenda = "THE AGENDA HAS NOT BEEN UPLOADED YET"
+        plenaryw_agenda_file = "/home/master-site/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-1).agenda_file()
+        try:
+            f = open(plenaryw_agenda_file)
+            plenaryw_agenda = f.read()
+            f.close()
+        except IOError:
+            plenaryw_agenda = "THE AGENDA HAS NOT BEEN UPLOADED YET"
+    except WgMeetingSession.DoesNotExist:
+        plenaryw_agenda = "THE IETF Operations and Administration Plenary has not been secheduled"
     # Due to a bug in Django@0.96 we can't use foreign key lookup in
     # order_by(), see http://code.djangoproject.com/ticket/2076.  Changeset
     # [133] is broken because it requires a patched Django to run.  Work
