@@ -50,7 +50,7 @@ class Announcement(models.Model):
     extra = models.TextField(blank=True)
     announced_to = models.ForeignKey(AnnouncedTo)
     nomcom = models.BooleanField()
-    nomcom_chair_id = models.IntegerField(null=True, blank=True) # ForeignKey to nomcom chairs
+    nomcom_chair = models.ForeignKey(ChairsHistory, null=True, blank=True)
     manually_added = models.BooleanField(db_column='manualy_added')
     other_val = models.CharField(blank=True, maxlength=255)
     def __str__(self):
@@ -58,8 +58,8 @@ class Announcement(models.Model):
     def from_name(self):
 	if self.announced_from_id == 99:
 	    return self.other_val
-	if self.announced_from_id == 14:	# sigh hardcoding
-	    return ChairsHistory.objects.all().get(id=self.nomcom_chair_id).person
+	if self.announced_from_id == 18:	# sigh hardcoding
+	    return self.nomcom_chair.person
 	return self.announced_from
     class Meta:
         db_table = 'announcements'
