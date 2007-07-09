@@ -7,4 +7,9 @@ skip	/css/base.css
 skip	/js/
 
 200	/googlea30ad1dacffb5e5b.html # Google webmaster tool verification page
+
+200	/sitemap.xml
+200	/sitemap-ipr.xml
+
 301	/list/request....	# test middleware that strips periods and redirects instead of 404
+
