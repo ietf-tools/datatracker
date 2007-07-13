@@ -241,7 +241,10 @@ class MeetingTime(models.Model):
     def an_br1_info(self):
 	an_br1_info = NonSession.objects.exclude(time_desc="").get(meeting=self.meeting, day_id=self.day_id, non_session_ref=4)
         if an_br1_info:
-          return "%s %s" % (an_br1_info.time_desc, an_br1_info.non_session_ref)
+          if self.day_id == 1 or self.day_id == 2:
+              return "%s Afternoon Beaverage Break I" % (an_br1_info.time_desc)
+          else:
+              return "%s %s" % (an_br1_info.time_desc, an_br1_info.non_session_ref)
         else:
           return ""
     def an_br2_info(self):
