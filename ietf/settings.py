@@ -7,7 +7,7 @@
 import os
 
 import syslog
-syslog.openlog("django", syslog.LOG_PID, syslog.LOG_USER)
+syslog.openlog("django", syslog.LOG_PID, syslog.LOG_LOCAL0)
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
