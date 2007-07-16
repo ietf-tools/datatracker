@@ -6,8 +6,6 @@ import os.path
 import ietf
 from django.conf import settings
 
-syslog.openlog("django", syslog.LOG_PID, syslog.LOG_USER)
-
 def getclass(frame):
     cls = None
     argnames, varargs, varkw, defaults  = inspect.getargvalues(frame)
