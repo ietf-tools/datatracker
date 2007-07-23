@@ -13,12 +13,19 @@ class DocumentComments(Feed):
 	    raise IDInternal.DoesNotExist
 	rfc = re.match('rfc(\d+)', bits[0])
 	if rfc:
-	    return IDInternal.objects.get(draft_id=int(rfc.group(1)), rfc_flag=1)
+	    return IDInternal.objects.get(draft=int(rfc.group(1)), rfc_flag=1)
 	else:
 	    return IDInternal.objects.get(draft__filename=bits[0], rfc_flag=0)
 
     def title(self, obj):
-	return "I-D Tracker comments for %s" % obj.document().filename
+	# filename is a function for RFCs and an attribute for I-Ds.
+	# This works transparently for templates but is not transparent
+	# for python.
+	if obj.rfc_flag:
+	    filename = obj.document().filename()
+	else:
+	    filename = obj.document().filename
+	return "I-D Tracker comments for %s" % filename
 
     def link(self, obj):
 	if obj is None:
