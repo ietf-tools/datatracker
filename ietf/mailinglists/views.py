@@ -91,8 +91,8 @@ class NonWgWizard(wizard.Wizard):
                 self.extra_context['list_q'] = NonWgMailingList.objects.get(pk=self.clean_forms[0].clean_data['list_id_delete'])
                 self.extra_context['approver'] =  formchoice(self.clean_forms[1], 'approver')
 	return super(NonWgWizard, self).render_template(*args, **kwargs)
-    def failed_hash(self, step):
-	raise NotImplementedError("step %d hash failed" % step)
+#    def failed_hash(self, request, step):
+#	raise NotImplementedError("step %d hash failed" % step)
     def process_step(self, request, form, step):
 	form.full_clean()
 	if step == 0:
