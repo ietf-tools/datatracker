@@ -13,6 +13,7 @@
 200			/drafts/draft-ietf-dnsext-dnssec-protocol/related/
 301,skipdiff		/drafts/9574/		https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
 200,skipredirect	/drafts/draft-ietf-dnsext-dnssec-protocol/	https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&id=9574
+200,skipdiff		/drafts/draft-ietf-dnsext-dnssec-protocol/	https://datatracker.ietf.org/public/idindex.cgi?command=id_detail&filename=draft-ietf-dnsext-dnssec-protocol
 200			/drafts/all_id_txt.html
 200			/drafts/all_id.html
 200,skipdiff		/drafts/		https://datatracker.ietf.org/public/idindex.cgi?command=search_id

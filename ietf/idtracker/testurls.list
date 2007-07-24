@@ -10,6 +10,7 @@ skipdiff,200	/idtracker/status/last-call/	https://datatracker.ietf.org/public/la
 200		/idtracker/rfc3847/		https://datatracker.ietf.org/public/pidtracker.cgi?command=view_id&dTag=3847&rfc_flag=1
 301,skipdiff	/idtracker/12689/		https://datatracker.ietf.org/public/pidtracker.cgi?command=view_id&dTag=12689&rfc_flag=0
 skipredirect,200 /idtracker/draft-ietf-isis-link-attr/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_id&dTag=12689&rfc_flag=0
+skipdiff,200	/idtracker/draft-ietf-isis-link-attr/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_id&filename=draft-ietf-isis-link-attr
 skipredirect,200 /idtracker/draft-ietf-isis-link-attr/comment/65232/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_comment&id=65232
 200		/idtracker/comment/65232/	https://datatracker.ietf.org/public/pidtracker.cgi?command=view_comment&id=65232
 skipredirect,200 /idtracker/ballot/1760/	https://datatracker.ietf.org/public/pidtracker.cgi?command=print_ballot&ballot_id=1760&filename=draft-ietf-isis-link-attr
