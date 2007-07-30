@@ -149,10 +149,12 @@ class IprContact(models.Model):
     fax = models.CharField(blank=True, maxlength=25)
     email = models.EmailField(maxlength=255, core=True)
     def __str__(self):
-	return self.name
+	return self.name or '<no name>'
     class Meta:
         db_table = 'ipr_contacts'
     class Admin:
+	# would like contact_type
+	list_display = ('__str__', 'ipr')
 	pass
     
 
