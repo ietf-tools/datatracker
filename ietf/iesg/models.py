@@ -8,6 +8,10 @@ class TelechatMinutes(models.Model):
     exported = models.IntegerField(null=True, blank=True)
     def get_absolute_url(self):
 	return "/iesg/telechat/%d/" % self.id
+    def __str__(self):
+	return "IESG Telechat Minutes for %s" % self.telechat_date
     class Meta:
         db_table = 'telechat_minutes'
+    class Admin:
+	pass
 
