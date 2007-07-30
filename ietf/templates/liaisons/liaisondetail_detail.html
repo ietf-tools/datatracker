@@ -27,7 +27,14 @@ a:hover {
           <tr valign="top"><td><img src="/images/liaison_title.gif" height="96" border="0"></td></tr>
           <tr valign="top"><td>
 
-<center><h3>{{ object.title }}</h3></center>
+<center><h3>
+{% if object.by_secretariat %}
+Liaison statement submitted by email from {{ object.from_body|escape }} on {{ object.submitted_date }}
+{% else %}
+{{ object.title }}
+{% endif %}
+</h3></center>
+  {% if not object.by_secretariat %}
   <blockquote>
   <table cellspacing="3" bgcolor="cccc99" width="600">
   <tr>
@@ -55,8 +62,10 @@ a:hover {
   <tr>
   <td bgcolor="#efefef">Body:</td><td><pre>{{ object.body|wordwrap:"71"|escape }}</pre></td></tr>
   </table>
-  <blockquote>
+  </blockquote>
+  {% endif %}
 <hr>
+<blockquote>
 <h3>Attached Document(s)</h3>
 {% if object.uploads_set.count %}
 <ul>
@@ -67,6 +76,7 @@ a:hover {
 {% else %}
 NONE
 {% endif %}
+</blockquote>
 
 </td></tr></table>
 </body>
