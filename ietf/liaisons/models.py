@@ -89,6 +89,8 @@ class LiaisonDetail(models.Model):
 	except FromBodies.DoesNotExist:
 	    email_priority = 1
 	return self.person.emailaddress_set.all().get(priority=email_priority)
+    def get_absolute_url(self):
+	return '/liaison/%d/' % self.detail_id
     class Meta:
         db_table = 'liaison_detail'
     class Admin:
