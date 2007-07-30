@@ -8,10 +8,11 @@ from django.contrib.auth.models import Permission
 # as char(N) instead of TIME.  Until it's important, let's
 # keep them as char here too.
 
+# email is not used; the announced_from text is Foo Bar <foo@bar.com>
 class AnnouncedFrom(models.Model):
     announced_from_id = models.AutoField(primary_key=True)
     announced_from = models.CharField(blank=True, maxlength=255, db_column='announced_from_value')
-    email = models.CharField(blank=True, maxlength=255, db_column='announced_from_email')
+    email = models.CharField(blank=True, maxlength=255, db_column='announced_from_email', editable=False)
     permission = models.ManyToManyField(Permission, limit_choices_to={'codename__endswith':'announcedfromperm'}, filter_interface=models.VERTICAL, verbose_name='Permission Required', blank=True)
     def __str__(self):
 	return self.announced_from
