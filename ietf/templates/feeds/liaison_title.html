@@ -1,6 +1,6 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% if obj.by_secretariat %}
-Liaison statement submitted by email from {{ obj.from_body|escape }} on {{ obj.submitted_date }}
+Liaison statement submitted by email from {{ obj.from_body|escape }} to {{ obj.submitter_name|escape }} on {{ obj.submitted_date }}
 {% else %}
 {{ obj.title|escape }}
 {% endif %}

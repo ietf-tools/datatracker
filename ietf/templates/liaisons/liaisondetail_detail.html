@@ -2,7 +2,8 @@
 {# no template, this page has its own look. #}
 {% load ietf_filters %}
 <html>
-<head><title>Liaison Statement Detail</title>
+<head><title>Liaison Statement Detail:
+{% include 'liaisons/liaison_title.html' %}</title>
 <style type="text/css">
 
 a:link, a:visited {
@@ -28,11 +29,7 @@ a:hover {
           <tr valign="top"><td>
 
 <center><h3>
-{% if object.by_secretariat %}
-Liaison statement submitted by email from {{ object.from_body|escape }} on {{ object.submitted_date }}
-{% else %}
-{{ object.title }}
-{% endif %}
+{% include 'liaisons/liaison_title.html' %}
 </h3></center>
   {% if not object.by_secretariat %}
   <blockquote>
