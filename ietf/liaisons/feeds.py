@@ -4,6 +4,7 @@ from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from ietf.liaisons.models import LiaisonDetail, FromBodies
 from ietf.idtracker.models import Acronym
+import re
 
 # A slightly funny feed class, the 'object' is really
 # just a dict with some parameters that items() uses
@@ -21,17 +22,27 @@ class Liaisons(Feed):
 	if bits[0] == 'from':
 	    if len(bits) != 2:
 		raise FeedDoesNotExist
-	    obj['title'] = 'Liaison Statements from %s' % bits[1]
 	    try:
 		acronym = Acronym.objects.get(acronym=bits[1])
 		obj['filter'] = {'from_id': acronym.acronym_id}
+		body = bits[1]
 	    except Acronym.DoesNotExist:
-		# would like to use from_body__body_name but relation
-		# is broken due to database structure
-		frmlist = [b['from_id'] for b in FromBodies.objects.filter(body_name=bits[1]).values('from_id')]
-		if not frmlist:
+		# Find body matches.  Turn all non-word characters
+		# into wildcards for the like search.
+		# Note that supplying sql here means that this is
+		# mysql-specific (e.g., postgresql wants 'ilike' for
+		# the same operation)
+		body_list = FromBodies.objects.values('from_id','body_name').extra(where=['body_name like "%s"' % re.sub('\W', '_', bits[1])])
+		if not body_list:
 		    raise FeedDoesNotExist
+		frmlist = [b['from_id'] for b in body_list]
+		# Assume that all of the matches have the same name.
+		# This is not guaranteed (e.g., a url like '-----------'
+		# will match several bodies) but is true of well-formed
+		# inputs.
+		body = body_list[0]['body_name']
 		obj['filter'] = {'from_id__in': frmlist}
+	    obj['title'] = 'Liaison Statements from %s' % body
 	    return obj
 
     def title(self, obj):
