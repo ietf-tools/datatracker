@@ -160,7 +160,7 @@
 		  {% if object.rfc_flag %}
 		  {% else %}
 		  {% ifequal object.cur_state.state "RFC Ed Queue" %}
-		  <a href="http://www.rfc-editor.org/queue.html#{{ object.draft.filename }}">
+		  <a href="http://www.rfc-editor.org/queue.html#{{ object.document.filename }}">
                   [RFC Editor State]</a>
 		  {% endifequal %}
 		  {% endif %}
