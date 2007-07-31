@@ -544,7 +544,9 @@ class DocumentComment(models.Model):
     origin_state = models.ForeignKey(IDState, db_column='origin_state', null=True, related_name="comments_coming_from_state")
     ballot = models.IntegerField(null=True, choices=BALLOT_CHOICES)
     def get_absolute_url(self):
-	if self.rfc_flag:
+	# use self.document.rfc_flag, since
+	# self.rfc_flag is not always set properly.
+	if self.document.rfc_flag:
 	    return "/idtracker/rfc%d/comment/%d/" % (self.document_id, self.id)
 	else:
 	    return "/idtracker/%s/comment/%d/" % (self.document.draft.filename, self.id)

@@ -19,3 +19,9 @@ skipredirect,200 /idtracker/ballot/1760/	https://datatracker.ietf.org/public/pid
 200		/feed/comments/rfc3373/
 200		/idtracker/?search_group_acronym=&search_job_owner=0&search_rfcnumber=&search_status_id=&sub_state_id=6&search_cur_state=&search_button=SEARCH&search_filename=bgp-m&search_area_acronym=	https://datatracker.ietf.org/public/pidtracker.cgi?command=search_list&search_job_owner=0&search_group_acronym=&search_status_id=&search_cur_state=&sub_state_id=6&search_filename=bgp-m&search_rfcnumber=&search_area_acronym=&search_button=SEARCH
 200		/feed/last-call/
+
+# An RFC with no matching value in InternetDrafts.  This tests
+# subtle cases of using the draft relation when it's not appropriate.
+# See ticket #218.
+200		/idtracker/rfc2444/
+200		/feed/comments/rfc2444/

@@ -28,10 +28,8 @@ urlpatterns += patterns('',
      (r'^status/$', views.status),
      (r'^status/last-call/$', views.last_call),
 )
-urlpatterns += patterns('django.views.generic.list_detail',
-     (r'^rfc(?P<object_id>\d+)/$', 'object_detail', rfc_dict),
-)
 urlpatterns += patterns('',
+     (r'^rfc(?P<object_id>\d+)/$', views.view_rfc),
      (r'^(?P<object_id>\d+)/$', views.redirect_id),
      (r'^(?P<slug>[^/]+)/$', views.view_id, dict(id_dict, slug_field='draft__filename')),
      (r'^comment/(?P<object_id>\d+)/$', views.view_comment, comment_dict),

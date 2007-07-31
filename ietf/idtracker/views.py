@@ -206,6 +206,20 @@ def view_id(request, queryset, slug, slug_field):
 	return render_to_response('idtracker/idinternal_notfound.html', {'draft': draft}, context_instance=RequestContext(request))
     return render_to_response('idtracker/idinternal_detail.html', {'object': object}, context_instance=RequestContext(request))
 
+def view_rfc(request, object_id):
+    '''A replacement for the object_detail generic view for this
+    specific case to work around the following problem:
+    The object_detail generic view looks up the value of the
+    primary key in order to hand it to populate_xheaders.
+    In the IDInternal table, the primary key is a foreign key
+    to InternetDraft.  object_detail assumes that the PK is not
+    an FK so doesn't do the foo_id trick, so the lookup is
+    attempted and an exception raised if there is no match.
+    This view gets the appropriate row from IDInternal and
+    calls the template with the necessary context.'''
+    object = get_object_or_404(IDInternal, pk=object_id, rfc_flag=1)
+    return render_to_response('idtracker/idinternal_detail.html', {'object': object}, context_instance=RequestContext(request))
+
 # Wrappers around object_detail to give permalink a handle.
 # The named-URLs feature in django 0.97 will eliminate the
 # need for these.
