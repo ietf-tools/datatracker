@@ -77,8 +77,6 @@ class Liaisons(Feed):
 	qs = LiaisonDetail.objects.all().order_by("-submitted_date")
 	if obj.has_key('q'):
 	    qs = qs.filter(*obj['q'])
-	    select, sql, params = qs._get_sql_clause()
-	    print "applied Q: %s" % sql
 	if obj.has_key('filter'):
 	    qs = qs.filter(**obj['filter'])
 	if obj.has_key('limit'):
@@ -87,3 +85,6 @@ class Liaisons(Feed):
 
     def item_pubdate(self, item):
 	return item.submitted_date
+
+    def item_author_name(self, item):
+	return item.from_body()
