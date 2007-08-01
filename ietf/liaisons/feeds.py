@@ -2,6 +2,7 @@
 
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
+from django.db.models import Q
 from ietf.liaisons.models import LiaisonDetail, FromBodies
 from ietf.idtracker.models import Acronym
 import re
@@ -44,6 +45,22 @@ class Liaisons(Feed):
 		obj['filter'] = {'from_id__in': frmlist}
 	    obj['title'] = 'Liaison Statements from %s' % body
 	    return obj
+	if bits[0] == 'to':
+	    if len(bits) != 2:
+		raise FeedDoesNotExist
+	    # The schema uses two different fields for the same
+	    # basic purpose, depending on whether it's a Secretariat-submitted
+	    # or Liaison-tool-submitted document.
+	    obj['q'] = [ (Q(by_secretariat=0) & Q(to_body__icontains=bits[1])) | (Q(by_secretariat=1) & Q(submitter_name__icontains=bits[1])) ]
+	    obj['title'] = 'Liaison Statements where to matches %s' % bits[1]
+	    return obj
+	if bits[0] == 'subject':
+	    if len(bits) != 2:
+		raise FeedDoesNotExist
+	    obj['q'] = [ Q(title__icontains=bits[1]) | Q(uploads__file_title__icontains=bits[1]) ]
+	    obj['title'] = 'Liaison Statements where subject matches %s' % bits[1]
+	    return obj
+	raise FeedDoesNotExist
 
     def title(self, obj):
 	return obj['title']
@@ -58,6 +75,10 @@ class Liaisons(Feed):
     def items(self, obj):
 	# Start with the common queryset
 	qs = LiaisonDetail.objects.all().order_by("-submitted_date")
+	if obj.has_key('q'):
+	    qs = qs.filter(*obj['q'])
+	    select, sql, params = qs._get_sql_clause()
+	    print "applied Q: %s" % sql
 	if obj.has_key('filter'):
 	    qs = qs.filter(**obj['filter'])
 	if obj.has_key('limit'):
