@@ -140,7 +140,7 @@ class InternetDraft(models.Model):
     b_discussion_date = models.DateField(null=True, blank=True)
     b_approve_date = models.DateField(null=True, blank=True)
     wgreturn_date = models.DateField(null=True, blank=True)
-    rfc_number = models.IntegerField(null=True, blank=True)
+    rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
     comments = models.TextField(blank=True)
     last_modified_date = models.DateField()
     replaced_by = models.ForeignKey('self', db_column='replaced_by', raw_id_admin=True, blank=True, null=True, related_name='replaces_set')
