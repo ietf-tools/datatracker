@@ -41,7 +41,11 @@
 {% if author.email %}
 <a href="mailto:{{ author.email }}">{{ author.person }}</a>
 {% else %}
+{% if author.person %}
 {{ author.person }}
+{% else %}
+Missing author info #{{ author.person_id }}
+{% endif %}
 {% endif %}
 <br>
 {% endfor %}
