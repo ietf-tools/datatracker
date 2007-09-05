@@ -141,7 +141,9 @@ class Wizard( object ):
 	    if bf.data is None:
 		d = ''
 	    else:
-	    	d = bf.data
+		# Hidden inputs strip trailing carraige returns
+		# so we exclude those from the hash.
+	    	d = bf.data.rstrip("\r\n")
 	    data.append((bf.name, d))
 	data.append(settings.SECRET_KEY)
         # Use HIGHEST_PROTOCOL because it's the most efficient. It requires
