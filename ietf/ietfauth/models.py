@@ -14,7 +14,7 @@ class UserMap(models.Model):
     user = models.ForeignKey(User, raw_id_admin=True, core=True)
     # user should have unique=True, but that confuses the
     # admin edit_inline interface.
-    person = models.ForeignKey(PersonOrOrgInfo, edit_inline=models.STACKED, max_num_in_admin=1, unique=True)
+    person = models.ForeignKey(PersonOrOrgInfo, edit_inline=models.STACKED, num_in_admin=1, max_num_in_admin=1, unique=True)
     def __str__(self):
 	return "Mapping django user %s to IETF person %s" % ( self.user, self.person )
 
