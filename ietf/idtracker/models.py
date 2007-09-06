@@ -3,6 +3,7 @@
 from django.db import models
 from ietf.utils import FKAsOneToOne
 from django.test import TestCase
+import datetime
 
 class Acronym(models.Model):
     acronym_id = models.AutoField(primary_key=True)
@@ -184,8 +185,8 @@ class InternetDraft(models.Model):
     class Meta:
         db_table = "internet_drafts"
     class Admin:
-        search_fields = ['filename']
-        list_display = ('filename', 'revision', 'status')
+        search_fields = ['filename','title']
+        list_display = ('filename', 'revision', 'title', 'status')
 	list_filter = ['status']
         pass
         #date_hierarchy = 'revision_date'
@@ -220,7 +221,7 @@ class PersonOrOrgInfo(models.Model):
 	name = str(self)
 	try:
 	    email = self.emailaddress_set.get(priority=priority, type=type).address
-	except EmailAddress.DoesNotExist:
+	except (EmailAddress.DoesNotExist, AssertionError):
 	    email = ''
 	return (name, email)
     # Added by Sunny Lee to display person's affiliation - 5/26/2007
@@ -239,6 +240,14 @@ class PersonOrOrgInfo(models.Model):
 	verbose_name_plural="Rolodex"
     class Admin:
         search_fields = ['first_name','last_name']
+	fields = (
+	    (None, {
+		'fields': (('first_name', 'middle_initial', 'last_name'), ('name_suffix', 'modified_by'))
+	    }),
+	    ('Obsolete Info', {
+		'classes': 'collapse',
+		'fields': ('record_type', 'created_by', 'address_type')
+	    }))
         pass
 
 # could use a mapping for user_level
@@ -293,6 +302,7 @@ class AreaDirector(models.Model):
 # RFC tables
 
 class RfcIntendedStatus(models.Model):
+    NONE=5
     intended_status_id = models.AutoField(primary_key=True)
     status = models.CharField(maxlength=25, db_column='status_value')
     def __str__(self):
@@ -316,17 +326,18 @@ class RfcStatus(models.Model):
 	pass
 
 class Rfc(models.Model):
+    ONLINE_CHOICES=(('YES', 'Yes'), ('NO', 'No'))
     rfc_number = models.IntegerField(primary_key=True)
     title = models.CharField(maxlength=200, db_column='rfc_name')
     rfc_name_key = models.CharField(maxlength=200, editable=False)
     group_acronym = models.CharField(blank=True, maxlength=8)
     area_acronym = models.CharField(blank=True, maxlength=8)
     status = models.ForeignKey(RfcStatus, db_column="status_id")
-    intended_status = models.ForeignKey(RfcIntendedStatus, db_column="intended_status_id")
+    intended_status = models.ForeignKey(RfcIntendedStatus, db_column="intended_status_id", default=RfcIntendedStatus.NONE)
     fyi_number = models.CharField(blank=True, maxlength=20)
     std_number = models.CharField(blank=True, maxlength=20)
     txt_page_count = models.IntegerField(null=True, blank=True)
-    online_version = models.CharField(blank=True, maxlength=3)
+    online_version = models.CharField(choices=ONLINE_CHOICES, maxlength=3, default='YES')
     rfc_published_date = models.DateField(null=True, blank=True)
     proposed_date = models.DateField(null=True, blank=True)
     draft_date = models.DateField(null=True, blank=True)
@@ -342,6 +353,7 @@ class Rfc(models.Model):
 	return "RFC%04d" % ( self.rfc_number )        
     def save(self):
 	self.rfc_name_key = self.title.upper()
+	self.last_modified_date = datetime.date.today()
 	super(Rfc, self).save()
     def displayname(self):
         return "%s.txt" % ( self.filename() )
@@ -375,9 +387,24 @@ class Rfc(models.Model):
 	verbose_name = 'RFC'
 	verbose_name_plural = 'RFCs'
     class Admin:
-	search_fields = ['title', 'group', 'area']
+	search_fields = ['title']
 	list_display = ['rfc_number', 'title']
-	pass
+	fields = (
+	    (None, {
+		'fields': ('rfc_number', 'title', 'group_acronym', 'area_acronym', 'status', 'comments', 'last_modified_date')
+	    }),
+	    ('Metadata', {
+		'classes': 'collapse',
+		'fields': (('online_version', 'txt_page_count'), ('fyi_number', 'std_number'))
+	    }),
+	    ('Standards Track Dates', {
+		'classes': 'collapse',
+		'fields': ('rfc_published_date', ('proposed_date', 'draft_date'), ('standard_date', 'historic_date'))
+	    }),
+	    ('Last Call / Ballot Info', {
+		'classes': 'collapse',
+		'fields': ('intended_status', ('lc_sent_date', 'lc_expiration_date'), ('b_sent_date', 'b_approve_date'))
+	    }))
 
 class RfcAuthor(models.Model):
     rfc = models.ForeignKey(Rfc, unique=True, db_column='rfc_number', related_name='authors', edit_inline=models.TABULAR)
@@ -649,12 +676,11 @@ class IDAuthor(models.Model):
 #  create the isUniquefoo_bar method properly.  Since django is
 #  moving away from oldforms, I have to assume that this is going
 #  to be fixed by moving admin to newforms.
-# A table without a unique primary key!
 # must decide which field is/are core.
 class PostalAddress(models.Model):
     address_type = models.CharField(maxlength=4)
     address_priority = models.IntegerField(null=True)
-    person_or_org = models.ForeignKey(PersonOrOrgInfo, primary_key=True, db_column='person_or_org_tag', edit_inline=models.STACKED)
+    person_or_org = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', edit_inline=models.STACKED, num_in_admin=1)
     person_title = models.CharField(maxlength=50, blank=True)
     affiliated_company = models.CharField(maxlength=70, blank=True)
     aff_company_key = models.CharField(maxlength=70, blank=True, editable=False)
@@ -675,7 +701,7 @@ class PostalAddress(models.Model):
 	verbose_name_plural = 'Postal Addresses'
 
 class EmailAddress(models.Model):
-    person_or_org = models.ForeignKey(PersonOrOrgInfo, primary_key=True, db_column='person_or_org_tag', edit_inline=models.TABULAR)
+    person_or_org = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', edit_inline=models.TABULAR, num_in_admin=1)
     type = models.CharField(maxlength=12, db_column='email_type')
     priority = models.IntegerField(db_column='email_priority')
     address = models.CharField(maxlength=255, core=True, db_column='email_address')
@@ -686,9 +712,10 @@ class EmailAddress(models.Model):
         db_table = 'email_addresses'
 	#unique_together = (('email_priority', 'person_or_org'), )
 	# with this, I get 'ChangeManipulator' object has no attribute 'isUniqueemail_priority_person_or_org'
+	verbose_name_plural = 'Email addresses'
 
 class PhoneNumber(models.Model):
-    person_or_org = models.ForeignKey(PersonOrOrgInfo, primary_key=True, db_column='person_or_org_tag', edit_inline=models.TABULAR)
+    person_or_org = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', edit_inline=models.TABULAR, num_in_admin=1)
     phone_type = models.CharField(maxlength=3)
     phone_priority = models.IntegerField()
     phone_number = models.CharField(blank=True, maxlength=255, core=True)
@@ -859,6 +886,7 @@ class Role(models.Model):
     '''
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
     role_name = models.CharField(maxlength=25, db_column='chair_name')
+    # This __str__ makes it odd to use as a ForeignKey.
     def __str__(self):
 	return "%s (%s)" % (self.person, self.role())
     def role(self):
@@ -872,18 +900,18 @@ class Role(models.Model):
 	pass
 
 class ChairsHistory(models.Model):
-    CHAIR_CHOICES = (
-	( '1', 'IETF' ),
-	( '2', 'IAB' ),
-	( '3', 'NOMCOM' ),
-    )
-    chair_type_id = models.IntegerField(choices=CHAIR_CHOICES)
+    chair_type = models.ForeignKey(Role)
     present_chair = models.BooleanField()
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
     start_year = models.IntegerField()
     end_year = models.IntegerField(null=True, blank=True)
+    def __str__(self):
+	return str(self.person)
     class Meta:
         db_table = 'chairs_history'
+    class Admin:
+	list_display = ('person', 'chair_type', 'start_year', 'end_year')
+	pass
 
 #
 # IRTF RG info
