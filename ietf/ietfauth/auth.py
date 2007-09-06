@@ -27,9 +27,9 @@ class EmailBackend(ModelBackend):
     def authenticate(self, username=None, password=None):
 	try:
 	    if email_re.search(username):
-                user = User.objects.get(email=username)
+                user = User.objects.get(email__iexact=username)
 	    else:
-		user = User.objects.get(username=username)
+		user = User.objects.get(username__iexact=username)
 	except User.DoesNotExist:
 	    return None
 	if crypt_check_password(user, password):

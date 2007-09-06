@@ -94,7 +94,7 @@ while line != '':
 		t = user
 		if add:
 		    t += "%d" % ( add )
-		u = User.objects.get(username = t)
+		u = User.objects.get(username__iexact = t)
 	    except User.DoesNotExist:
 		u = None
 		user = t
