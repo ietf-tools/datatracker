@@ -21,10 +21,10 @@
 #
 #
 from ietf.idtracker.models import PersonOrOrgInfo, IESGLogin, EmailAddress
-from ietf.ietfauth.models import UserMap, WgPassword, LiaisonUser
+from ietf.ietfauth.models import WgPassword, LiaisonUser
+from ietf.utils import users
 from django.core.validators import email_re
-from django.contrib.auth.models import User, Group
-from django.template import defaultfilters
+from django.contrib.auth.models import Group
 import sys
 
 # Group mappings for IESGLogin entries
@@ -54,7 +54,7 @@ while line != '':
 	except PersonOrOrgInfo.DoesNotExist:
 	    iesg = None
     except IESGLogin.DoesNotExist:
-	pass
+	iesg = None
     if person is None:
 	try:
 	    wg = WgPassword.objects.get(login_name=user)
@@ -77,56 +77,17 @@ while line != '':
 	except AssertionError:
 	    print "%s has multiple PersonOrOrgInfo entries, so couldn't pick" % email
     if person is not None:
-	if '@' in user:
-	    # slugify to remove non-ASCII; slugify uses hyphens but
-	    # user schema says underscore.
-	    user = defaultfilters.slugify(str(person)).replace("-", "_")
-	if email is None:
-	    email = person.email()[1]
-	# Make sure the username is unique.
-	# If it already exists, 
-	#  1. if the email is the same then skip, it's the same person
-	#  2. otherwise, add a number to the end of the username
-	#     and loop.
-        add = ''
-	while True:
-	    try:
-		t = user
-		if add:
-		    t += "%d" % ( add )
-		u = User.objects.get(username__iexact = t)
-	    except User.DoesNotExist:
-		u = None
-		user = t
-		break
-	    if u.email == email:
-		break
-	    else:
-		if add == '':
-		    add = 2
-		else:
-		    add = add + 1
-	if not u:
-	    try:
-		map = UserMap.objects.get(person = person)
-		u = map.user
-	    except UserMap.DoesNotExist:
-		pass
-	if u:
+	try:
+	    u = users.create_user(user, email, person, cryptpw=pw)
+	except users.UserAlreadyExists, (msg, u):
 	    print "Already in system as %s when adding %s (%s)" % ( u.username, user, email )
-	    pass
-	else:
-	    u = User(username = user, email = email, password = 'crypt$%s$%s' % ( pw[:2], pw[2:] ), first_name = person.first_name, last_name = person.last_name )
-	    #print "Saving user: username='%s', email='%s'" % ( u.username, u.email )
-	    u.save()
-	umap, created = UserMap.objects.get_or_create(user = u, person = person)
-	# get_or_create saves umap for us.
 	if iesg:
 	    try:
 		group, created = Group.objects.get_or_create(name = level2group[iesg.user_level])
 	    except KeyError:
 		group = None
 	    if group:
+		print "Adding %s to %s (user_level %d)" % (u.username, group.name, iesg.user_level)
 		u.groups.add(group)
     else:
 	print "Could not map %s to person" % ( user )
