@@ -11,7 +11,7 @@ from django.db import models
 
 class Acronym(models.Model):
     acronym_id = models.IntegerField(primary_key=True)
-    acronym = models.CharField(blank=True, unique=True, maxlength=12)
+    acronym = models.CharField(unique=True, blank=True, maxlength=12)
     name = models.CharField(unique=True, maxlength=100)
     name_key = models.CharField(maxlength=50)
     class Meta:
@@ -56,6 +56,13 @@ class AnnouncedFrom(models.Model):
     class Meta:
         db_table = 'announced_from'
 
+class AnnouncedFromPermission(models.Model):
+    id = models.IntegerField(primary_key=True)
+    announcedfrom_id = models.IntegerField(unique=True)
+    permission_id = models.IntegerField(unique=True)
+    class Meta:
+        db_table = 'announced_from_permission'
+
 class AnnouncedTo(models.Model):
     announced_to_id = models.IntegerField(primary_key=True)
     announced_to_value = models.CharField(blank=True, maxlength=255)
@@ -83,7 +90,7 @@ class Announcements(models.Model):
 
 class AreaDirectors(models.Model):
     id = models.IntegerField(primary_key=True)
-    area_acronym_id = models.IntegerField(unique=True)
+    area_acronym_id = models.IntegerField(unique=True, null=True, blank=True)
     person_or_org_tag = models.IntegerField(unique=True)
     class Meta:
         db_table = 'area_directors'
@@ -109,8 +116,66 @@ class Areas(models.Model):
     comments = models.TextField(blank=True)
     last_modified_date = models.DateField()
     extra_email_addresses = models.TextField(blank=True)
+    area_coordinator_tag = models.IntegerField(null=True, blank=True)
     class Meta:
         db_table = 'areas'
+
+class AuthGroup(models.Model):
+    id = models.IntegerField(primary_key=True)
+    name = models.CharField(unique=True, maxlength=80)
+    class Meta:
+        db_table = 'auth_group'
+
+class AuthGroupPermissions(models.Model):
+    id = models.IntegerField(primary_key=True)
+    group_id = models.IntegerField(unique=True)
+    permission_id = models.IntegerField(unique=True)
+    class Meta:
+        db_table = 'auth_group_permissions'
+
+class AuthMessage(models.Model):
+    id = models.IntegerField(primary_key=True)
+    user_id = models.IntegerField()
+    message = models.TextField()
+    class Meta:
+        db_table = 'auth_message'
+
+class AuthPermission(models.Model):
+    id = models.IntegerField(primary_key=True)
+    name = models.CharField(maxlength=50)
+    content_type_id = models.IntegerField()
+    codename = models.CharField(unique=True, maxlength=100)
+    class Meta:
+        db_table = 'auth_permission'
+
+class AuthUser(models.Model):
+    id = models.IntegerField(primary_key=True)
+    username = models.CharField(unique=True, maxlength=30)
+    first_name = models.CharField(maxlength=30)
+    last_name = models.CharField(maxlength=30)
+    email = models.CharField(maxlength=75)
+    password = models.CharField(maxlength=128)
+    is_staff = models.IntegerField()
+    is_active = models.IntegerField()
+    is_superuser = models.IntegerField()
+    last_login = models.DateTimeField()
+    date_joined = models.DateTimeField()
+    class Meta:
+        db_table = 'auth_user'
+
+class AuthUserGroups(models.Model):
+    id = models.IntegerField(primary_key=True)
+    user_id = models.IntegerField(unique=True)
+    group_id = models.IntegerField(unique=True)
+    class Meta:
+        db_table = 'auth_user_groups'
+
+class AuthUserUserPermissions(models.Model):
+    id = models.IntegerField(primary_key=True)
+    user_id = models.IntegerField(unique=True)
+    permission_id = models.IntegerField(unique=True)
+    class Meta:
+        db_table = 'auth_user_user_permissions'
 
 class BallotInfo(models.Model):
     ballot_id = models.IntegerField(primary_key=True)
@@ -129,8 +194,9 @@ class BallotInfo(models.Model):
         db_table = 'ballot_info'
 
 class Ballots(models.Model):
-    ballot_id = models.IntegerField(primary_key=True)
-    ad_id = models.IntegerField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
+    ballot_id = models.IntegerField(unique=True)
+    ad_id = models.IntegerField(unique=True)
     yes_col = models.IntegerField()
     no_col = models.IntegerField()
     abstain = models.IntegerField()
@@ -141,8 +207,9 @@ class Ballots(models.Model):
         db_table = 'ballots'
 
 class BallotsComment(models.Model):
-    ballot_id = models.IntegerField(primary_key=True)
-    ad_id = models.IntegerField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
+    ballot_id = models.IntegerField(unique=True)
+    ad_id = models.IntegerField(unique=True)
     comment_date = models.DateField()
     revision = models.CharField(maxlength=2)
     active = models.IntegerField()
@@ -151,8 +218,9 @@ class BallotsComment(models.Model):
         db_table = 'ballots_comment'
 
 class BallotsDiscuss(models.Model):
-    ballot_id = models.IntegerField(primary_key=True)
-    ad_id = models.IntegerField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
+    ballot_id = models.IntegerField(unique=True)
+    ad_id = models.IntegerField(unique=True)
     discuss_date = models.DateField()
     revision = models.CharField(maxlength=2)
     active = models.IntegerField()
@@ -169,7 +237,8 @@ class BashAgenda(models.Model):
         db_table = 'bash_agenda'
 
 class Chairs(models.Model):
-    person_or_org_tag = models.IntegerField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
+    person_or_org_tag = models.IntegerField()
     chair_name = models.CharField(blank=True, maxlength=25)
     class Meta:
         db_table = 'chairs'
@@ -183,6 +252,40 @@ class ChairsHistory(models.Model):
     end_year = models.IntegerField(null=True, blank=True)
     class Meta:
         db_table = 'chairs_history'
+
+class DjangoAdminLog(models.Model):
+    id = models.IntegerField(primary_key=True)
+    action_time = models.DateTimeField()
+    user_id = models.IntegerField()
+    content_type_id = models.IntegerField(null=True, blank=True)
+    object_id = models.TextField(blank=True)
+    object_repr = models.CharField(maxlength=200)
+    action_flag = models.IntegerField()
+    change_message = models.TextField()
+    class Meta:
+        db_table = 'django_admin_log'
+
+class DjangoContentType(models.Model):
+    id = models.IntegerField(primary_key=True)
+    name = models.CharField(maxlength=100)
+    app_label = models.CharField(unique=True, maxlength=100)
+    model = models.CharField(unique=True, maxlength=100)
+    class Meta:
+        db_table = 'django_content_type'
+
+class DjangoSession(models.Model):
+    session_key = models.CharField(maxlength=40, primary_key=True)
+    session_data = models.TextField()
+    expire_date = models.DateTimeField()
+    class Meta:
+        db_table = 'django_session'
+
+class DjangoSite(models.Model):
+    id = models.IntegerField(primary_key=True)
+    domain = models.CharField(maxlength=100)
+    name = models.CharField(maxlength=50)
+    class Meta:
+        db_table = 'django_site'
 
 class DocumentComments(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -212,6 +315,7 @@ class DtRequest(models.Model):
         db_table = 'dt_request'
 
 class EmailAddresses(models.Model):
+    id = models.IntegerField(primary_key=True)
     person_or_org_tag = models.IntegerField()
     email_type = models.CharField(maxlength=4)
     email_priority = models.IntegerField()
@@ -322,7 +426,7 @@ class GroupsIetf(models.Model):
     dormant_date = models.DateField(null=True, blank=True)
     concluded_date = models.DateField(null=True, blank=True)
     status_id = models.IntegerField()
-    area_director_id = models.IntegerField()
+    area_director_id = models.IntegerField(null=True, blank=True)
     meeting_scheduled = models.CharField(blank=True, maxlength=3)
     email_address = models.CharField(blank=True, maxlength=60)
     email_subscribe = models.CharField(blank=True, maxlength=120)
@@ -342,6 +446,16 @@ class HitCounter(models.Model):
     last_visited_date = models.DateField(null=True, blank=True)
     class Meta:
         db_table = 'hit_counter'
+
+class IdApprovedDetail(models.Model):
+    id = models.IntegerField(primary_key=True)
+    filename = models.CharField(blank=True, maxlength=255)
+    approved_status = models.IntegerField(null=True, blank=True)
+    approved_person_tag = models.IntegerField(null=True, blank=True)
+    approved_date = models.DateField(null=True, blank=True)
+    recorded_by = models.IntegerField(null=True, blank=True)
+    class Meta:
+        db_table = 'id_approved_detail'
 
 class IdAuthors(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -384,8 +498,8 @@ class IdInternal(models.Model):
     job_owner = models.IntegerField()
     event_date = models.DateField(null=True, blank=True)
     area_acronym_id = models.IntegerField()
-    cur_sub_state_id = models.IntegerField()
-    prev_sub_state_id = models.IntegerField()
+    cur_sub_state_id = models.IntegerField(null=True, blank=True)
+    prev_sub_state_id = models.IntegerField(null=True, blank=True)
     returning_item = models.IntegerField(null=True, blank=True)
     telechat_date = models.DateField(null=True, blank=True)
     via_rfc_editor = models.IntegerField(null=True, blank=True)
@@ -410,6 +524,39 @@ class IdStatus(models.Model):
     class Meta:
         db_table = 'id_status'
 
+class IdSubmissionDetail(models.Model):
+    submission_id = models.IntegerField(primary_key=True)
+    temp_id_document_tag = models.IntegerField(null=True, blank=True)
+    status_id = models.IntegerField(null=True, blank=True)
+    last_updated_date = models.DateField(null=True, blank=True)
+    last_updated_time = models.CharField(blank=True, maxlength=25)
+    id_document_name = models.CharField(blank=True, maxlength=255)
+    group_acronym_id = models.IntegerField(null=True, blank=True)
+    filename = models.CharField(blank=True, maxlength=255)
+    creation_date = models.DateField(null=True, blank=True)
+    submission_date = models.DateField(null=True, blank=True)
+    remote_ip = models.CharField(blank=True, maxlength=100)
+    revision = models.CharField(blank=True, maxlength=3)
+    submitter_tag = models.IntegerField(null=True, blank=True)
+    auth_key = models.CharField(blank=True, maxlength=255)
+    idnits_message = models.TextField(blank=True)
+    file_type = models.CharField(blank=True, maxlength=50)
+    comment_to_sec = models.TextField(blank=True)
+    abstract = models.TextField(blank=True)
+    txt_page_count = models.IntegerField(null=True, blank=True)
+    error_message = models.CharField(blank=True, maxlength=255)
+    warning_message = models.TextField(blank=True)
+    wg_submission = models.IntegerField(null=True, blank=True)
+    filesize = models.IntegerField(null=True, blank=True)
+    man_posted_date = models.DateField(null=True, blank=True)
+    man_posted_by = models.CharField(blank=True, maxlength=255)
+    first_two_pages = models.TextField(blank=True)
+    sub_email_priority = models.IntegerField(null=True, blank=True)
+    invalid_version = models.IntegerField(null=True, blank=True)
+    idnits_failed = models.IntegerField(null=True, blank=True)
+    class Meta:
+        db_table = 'id_submission_detail'
+
 class IdSubmissionEnv(models.Model):
     max_live = models.IntegerField(null=True, blank=True)
     staging_path = models.CharField(blank=True, maxlength=255)
@@ -426,13 +573,36 @@ class IdSubmissionEnv(models.Model):
     bottom_bar_html = models.TextField(blank=True)
     id_approval_request_msg = models.TextField(blank=True)
     emerg_auto_response = models.IntegerField(null=True, blank=True)
+    max_same_draft_name = models.IntegerField(null=True, blank=True)
+    max_same_draft_size = models.IntegerField(null=True, blank=True)
+    max_same_submitter = models.IntegerField(null=True, blank=True)
+    max_same_submitter_size = models.IntegerField(null=True, blank=True)
+    max_same_wg_draft = models.IntegerField(null=True, blank=True)
+    max_same_wg_draft_size = models.IntegerField(null=True, blank=True)
+    max_daily_submission = models.IntegerField(null=True, blank=True)
+    max_daily_submission_size = models.IntegerField(null=True, blank=True)
     class Meta:
         db_table = 'id_submission_env'
 
+class IdSubmissionStatus(models.Model):
+    status_id = models.IntegerField(primary_key=True)
+    status_value = models.CharField(blank=True, maxlength=255)
+    class Meta:
+        db_table = 'id_submission_status'
+
+class IdstUsers(models.Model):
+    id = models.IntegerField(primary_key=True)
+    login_name = models.CharField(maxlength=255)
+    password = models.CharField(blank=True, maxlength=255)
+    random_str = models.CharField(blank=True, maxlength=255)
+    class Meta:
+        db_table = 'idst_users'
+
 class IesgHistory(models.Model):
-    meeting_num = models.IntegerField(primary_key=True)
-    area_acronym_id = models.IntegerField(primary_key=True)
-    person_or_org_tag = models.IntegerField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
+    meeting_num = models.IntegerField()
+    area_acronym_id = models.IntegerField()
+    person_or_org_tag = models.IntegerField()
     class Meta:
         db_table = 'iesg_history'
 
@@ -455,6 +625,13 @@ class IesgPassword(models.Model):
     password = models.CharField(blank=True, maxlength=255)
     class Meta:
         db_table = 'iesg_password'
+
+class IetfauthUsermap(models.Model):
+    id = models.IntegerField(primary_key=True)
+    user_id = models.IntegerField(unique=True)
+    person_id = models.IntegerField(unique=True)
+    class Meta:
+        db_table = 'ietfauth_usermap'
 
 class ImportedMailingList(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -699,7 +876,7 @@ class LiaisonsMembers(models.Model):
         db_table = 'liaisons_members'
 
 class MailingList(models.Model):
-    mailing_list_id = models.CharField(primary_key=True, maxlength=25)
+    mailing_list_id = models.CharField(maxlength=25, primary_key=True)
     request_date = models.DateField(null=True, blank=True)
     mlist_name = models.CharField(blank=True, maxlength=250)
     short_desc = models.CharField(blank=True, maxlength=250)
@@ -725,6 +902,19 @@ class MailingList(models.Model):
     domain_name = models.CharField(blank=True, maxlength=10)
     class Meta:
         db_table = 'mailing_list'
+
+class MailinglistsDomain(models.Model):
+    id = models.IntegerField(primary_key=True)
+    domain = models.CharField(maxlength=100)
+    class Meta:
+        db_table = 'mailinglists_domain'
+
+class MailinglistsDomainApprovers(models.Model):
+    id = models.IntegerField(primary_key=True)
+    domain_id = models.IntegerField(unique=True)
+    role_id = models.IntegerField(unique=True)
+    class Meta:
+        db_table = 'mailinglists_domain_approvers'
 
 class ManagementIssues(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -855,7 +1045,7 @@ class NonSessionRef(models.Model):
         db_table = 'non_session_ref'
 
 class NoneWgMailingList(models.Model):
-    id = models.CharField(primary_key=True, maxlength=35)
+    id = models.CharField(maxlength=35, primary_key=True)
     purpose = models.TextField(blank=True)
     area_acronym_id = models.IntegerField(null=True, blank=True)
     admin = models.TextField(blank=True)
@@ -912,6 +1102,7 @@ class PersonOrOrgInfo(models.Model):
         db_table = 'person_or_org_info'
 
 class PhoneNumbers(models.Model):
+    id = models.IntegerField(primary_key=True)
     person_or_org_tag = models.IntegerField()
     phone_type = models.CharField(maxlength=3)
     phone_priority = models.IntegerField()
@@ -921,6 +1112,7 @@ class PhoneNumbers(models.Model):
         db_table = 'phone_numbers'
 
 class PostalAddresses(models.Model):
+    id = models.IntegerField(primary_key=True)
     address_type = models.CharField(maxlength=4)
     address_priority = models.IntegerField(null=True, blank=True)
     person_or_org_tag = models.IntegerField()
@@ -968,6 +1160,41 @@ class PwgCat(models.Model):
     pwg_status_val = models.CharField(blank=True, maxlength=255)
     class Meta:
         db_table = 'pwg_cat'
+
+class QuerylogQuerylog(models.Model):
+    id = models.IntegerField(primary_key=True)
+    url = models.CharField(maxlength=255)
+    query = models.CharField(maxlength=255)
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+    queries = models.IntegerField()
+    class Meta:
+        db_table = 'querylog_querylog'
+
+class RedirectsCommand(models.Model):
+    id = models.IntegerField(primary_key=True)
+    command = models.CharField(unique=True, maxlength=50)
+    url = models.CharField(maxlength=50)
+    script_id = models.IntegerField()
+    suffix_id = models.IntegerField(null=True, blank=True)
+    class Meta:
+        db_table = 'redirects_command'
+
+class RedirectsRedirect(models.Model):
+    id = models.IntegerField(primary_key=True)
+    cgi = models.CharField(unique=True, maxlength=50)
+    url = models.CharField(maxlength=255)
+    rest = models.CharField(maxlength=100)
+    remove = models.CharField(maxlength=50)
+    class Meta:
+        db_table = 'redirects_redirect'
+
+class RedirectsSuffix(models.Model):
+    id = models.IntegerField(primary_key=True)
+    rest = models.CharField(maxlength=100)
+    remove = models.CharField(maxlength=50)
+    class Meta:
+        db_table = 'redirects_suffix'
 
 class RefDocStatesNew(models.Model):
     document_state_id = models.IntegerField(primary_key=True)
@@ -1053,9 +1280,9 @@ class Rfcs(models.Model):
 
 class RfcsObsolete(models.Model):
     id = models.IntegerField(primary_key=True)
-    rfc_number = models.IntegerField(unique=True)
+    rfc_number = models.IntegerField()
     action = models.CharField(unique=True, maxlength=20)
-    rfc_acted_on = models.IntegerField(unique=True)
+    rfc_acted_on = models.IntegerField()
     class Meta:
         db_table = 'rfcs_obsolete'
 
@@ -1260,6 +1487,32 @@ class TempAdmins(models.Model):
     list_url = models.TextField(blank=True)
     class Meta:
         db_table = 'temp_admins'
+
+class TempAgenda71166(models.Model):
+    id = models.IntegerField(primary_key=True)
+    time_desc = models.CharField(blank=True, maxlength=50)
+    session_name = models.CharField(blank=True, maxlength=255)
+    room_name = models.CharField(blank=True, maxlength=255)
+    area = models.CharField(blank=True, maxlength=5)
+    group_acronym_id = models.IntegerField(null=True, blank=True)
+    group_acronym = models.CharField(blank=True, maxlength=20)
+    group_name = models.CharField(blank=True, maxlength=255)
+    special_agenda_note = models.CharField(blank=True, maxlength=255)
+    class Meta:
+        db_table = 'temp_agenda71166'
+
+class TempIdAuthors(models.Model):
+    id = models.IntegerField(primary_key=True)
+    id_document_tag = models.IntegerField()
+    first_name = models.CharField(blank=True, maxlength=255)
+    last_name = models.CharField(blank=True, maxlength=255)
+    email_address = models.CharField(blank=True, maxlength=255)
+    last_modified_date = models.DateField(null=True, blank=True)
+    last_modified_time = models.CharField(blank=True, maxlength=100)
+    author_order = models.IntegerField(null=True, blank=True)
+    submission_id = models.IntegerField()
+    class Meta:
+        db_table = 'temp_id_authors'
 
 class TempTelechatAttendees(models.Model):
     id = models.IntegerField(primary_key=True)
