@@ -23,7 +23,7 @@ class UserMap(models.Model):
 # legacy per-tool access tables.
 # ietf.idtracker.models.IESGLogin is in the same vein.
 
-class LiaisonUser(models.Model):
+class LegacyLiaisonUser(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', primary_key=True, raw_id_admin=True)
     login_name = models.CharField(maxlength=255)
     password = models.CharField(maxlength=25)
@@ -35,7 +35,7 @@ class LiaisonUser(models.Model):
         db_table = 'users'
 	ordering = ['login_name']
 
-class WgPassword(models.Model):
+class LegacyWgPassword(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', primary_key=True, raw_id_admin=True)
     password = models.CharField(blank=True, maxlength=255)
     secrete_question_id = models.IntegerField(null=True, blank=True)

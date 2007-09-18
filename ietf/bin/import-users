@@ -15,13 +15,13 @@
 #
 # Data sources:
 # - IESGLogin
-# - WgPassword
+# - LegacyWgPassword
 # - Liaison tool ('Users')
 # - Then look for email address
 #
 #
 from ietf.idtracker.models import PersonOrOrgInfo, IESGLogin, EmailAddress
-from ietf.ietfauth.models import WgPassword, LiaisonUser
+from ietf.ietfauth.models import LegacyWgPassword, LegacyLiaisonUser
 from ietf.utils import users
 from django.core.validators import email_re
 from django.contrib.auth.models import Group
@@ -57,17 +57,17 @@ while line != '':
 	iesg = None
     if person is None:
 	try:
-	    wg = WgPassword.objects.get(login_name=user)
+	    wg = LegacyWgPassword.objects.get(login_name=user)
 	    person = wg.person
-	except WgPassword.DoesNotExist:
+	except LegacyWgPassword.DoesNotExist:
 	    pass
 	except AssertionError:
 	    print "%s has multiple WGPassword rows, so couldn't pick" % user
     if person is None:
 	try:
-	    liaison = LiaisonUser.objects.get(login_name=user)
+	    liaison = LegacyLiaisonUser.objects.get(login_name=user)
 	    person = liaison.person
-	except LiaisonUser.DoesNotExist:
+	except LegacyLiaisonUser.DoesNotExist:
 	    pass
     if person is None and email:
 	try:
