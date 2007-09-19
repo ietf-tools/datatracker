@@ -702,7 +702,7 @@ class PostalAddress(models.Model):
 
 class EmailAddress(models.Model):
     person_or_org = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', edit_inline=models.TABULAR, num_in_admin=1)
-    type = models.CharField(maxlength=12, db_column='email_type')
+    type = models.CharField(maxlength=4, db_column='email_type')
     priority = models.IntegerField(db_column='email_priority')
     address = models.CharField(maxlength=255, core=True, db_column='email_address')
     comment = models.CharField(blank=True, maxlength=255, db_column='email_comment')
