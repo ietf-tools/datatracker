@@ -59,6 +59,13 @@ state</b>: {{ form.sub_state_id }}</label> </td>
 {{ form.search_area_acronym }}</td>
 </tr>
 
+{% if form.errors %}
+<tr>
+<td colspan="2">Please fix the following errors and try your search again:
+{{ form.errors }}</td>
+</tr>
+{% endif %}
+
 <TR BGCOLOR="silver">
 <TD ALIGN="CENTER" colspan="2"><INPUT TYPE="submit" VALUE="SEARCH" name="search_button">
 <input type="button" value="Clear Fields" onClick="clear_fields();">

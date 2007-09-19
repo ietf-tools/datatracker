@@ -54,12 +54,17 @@ def search(request):
 	    searching = True
 	    if args[k] != '' and qdict.has_key(k):
 		q_objs.append(Q(**{qdict[k]: args[k]}))
+    if form.is_valid() == False:
+	searching = False
     if searching:
         group = args.get('search_group_acronym', '')
 	if group != '':
 	    rfclist = [rfc['rfc_number'] for rfc in Rfc.objects.all().filter(group_acronym=group).values('rfc_number')]
 	    draftlist = [draft['id_document_tag'] for draft in InternetDraft.objects.all().filter(group__acronym=group).values('id_document_tag')]
-	    q_objs.append(Q(draft__in=draftlist)&Q(rfc_flag=0)|Q(draft__in=rfclist)&Q(rfc_flag=1))
+	    if rfclist or draftlist:
+		q_objs.append(Q(draft__in=draftlist)&Q(rfc_flag=0)|Q(draft__in=rfclist)&Q(rfc_flag=1))
+	    else:
+		q_objs.append(Q(draft__isnull=True)) # no matches
         rfc_number = args.get('search_rfcnumber', '')
 	if rfc_number != '':
 	    draftlist = [draft['id_document_tag'] for draft in InternetDraft.objects.all().filter(rfc_number=rfc_number).values('id_document_tag')]
