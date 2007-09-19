@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 {% load ietf_filters %}
 
-{% block title %}IESG Telechat Minutes{% endblock %}
+{% block title %}IESG Telechat Minutes - {{ object.telechat_date|date:"F j, Y" }}{% endblock %}
 
 
 
