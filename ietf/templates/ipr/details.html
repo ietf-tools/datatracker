@@ -8,7 +8,7 @@
 
 
 {% extends "base.html" %}
-{% block title %}IPR Details{% endblock %}
+{% block title %}IPR Details - {{ ipr.title }}{% endblock %}
 {% block body_attributes %}
     {% if section_list.holder_contact %}onload="toggle_submitter_info('holder')"{% endif %}
     {% if section_list.ietf_contact %}onload="toggle_submitter_info('ietf')"{% endif %}
@@ -569,6 +569,4 @@
       </blockquote>
       {% endif %}
 
-   {{ debug }}
-   
 {% endblock %}
