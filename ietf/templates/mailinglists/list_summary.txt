@@ -33,6 +33,8 @@ Administrator approval required for posts: {{ list.post_admin|yesno:"YES,NO" }}
 
 Private Archive: {{ list.archive_private|yesno:"YES,NO" }}
 
+Require TMDA: {{ list.require_tmda|yesno:"YES,NO" }}
+
 Specific information about how to access and move the existing archive from a remote location (optional):
 {{ list.archive_remote }}
 

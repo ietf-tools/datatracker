@@ -167,6 +167,7 @@ list_widgets = {
     'post_who': forms.Select(choices=(('1', 'List members only'), ('0', 'Open'))),
     'post_admin': forms.Select(choices=(('0', 'No'), ('1', 'Yes'))),
     'archive_private': forms.Select(choices=(('0', 'No'), ('1', 'Yes'))),
+    'require_tmda': forms.Select(choices=(('0', 'No'), ('1', 'Yes'))),
     'domain_name': forms.HiddenInput(),
 }
 

@@ -16,5 +16,6 @@
 <tr><td> Messages to this list can be posted by:</td><td>{{ list.get_post_who_display }}</td></tr>
 <tr><td> Administrator approval required for posts: </td><td>{{ list.post_admin|yesno:"YES,NO" }}</td></tr>
 <tr><td> Private Archive: </td><td>{{ list.archive_private|yesno:"YES,NO" }}</td></tr>
+<tr><td> Require TMDA: </td><td>{{ list.require_tmda|yesno:"YES,NO" }}</td></tr>
 <tr><td> Specific information about how to access and move the exiting archive from a remote location (optional): </td><td>{{ list.archive_remote }}</td></tr>
 {% endifequal %}

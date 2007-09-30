@@ -98,6 +98,7 @@ class MailingList(models.Model):
     approved_date = models.DateField(null=True, blank=True)
     reason_to_delete = models.TextField(blank=True)
     domain_name = models.CharField(maxlength=10)
+    require_tmda = models.IntegerField("Require TMDA", default=0, choices=YESNO_CHOICES)
     def __str__(self):
 	return self.mlist_name
     def save(self, *args, **kwargs):
