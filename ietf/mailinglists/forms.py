@@ -3,6 +3,7 @@
 from django import newforms as forms
 from models import NonWgMailingList, ImportedMailingList
 from ietf.idtracker.models import PersonOrOrgInfo, IETFWG
+from ietf.mailinglists import CODE_AREA
 import re
 
 class NonWgStep1(forms.Form):
@@ -220,3 +221,12 @@ class MultiEmailField(forms.CharField):
 
 class ApprovalComment(forms.Form):
     add_comment = forms.CharField(label="Approver's comments to the requestor (will be emailed to the requestor)", widget=forms.Textarea(attrs={'cols':41, 'rows': 4}))
+
+
+class SelectWidgetArea (forms.Select) :
+        def render(self, name, value, attrs=None, choices=()) :
+                choices = ((CODE_AREA["none"], "none", ), )
+                return super(SelectWidgetArea, self).render(name, value, attrs, choices)
+
+
+

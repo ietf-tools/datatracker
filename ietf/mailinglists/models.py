@@ -1,8 +1,16 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
+from django.db.models.fields.related import ManyToOneRel
+from django import newforms as forms
+from django.newforms import Field, util
+from django.utils.text import capfirst
+from django.utils.translation import gettext
+
 from ietf.idtracker.models import Acronym, Area, PersonOrOrgInfo
 from ietf.idtracker.models import Role
+from ietf.mailinglists import CODE_AREA
+
 import random
 from datetime import datetime
 
@@ -120,6 +128,48 @@ class MailingList(models.Model):
     class Admin:
 	pass
 
+class AreaPsuedo (object) :
+    """
+    Psuedo class for Area model.
+    This only works when add new NonWgMailingList entry.
+    """
+    area_acronym = CODE_AREA["none"]
+    area_acronym_id = CODE_AREA["none"]
+    start_date = datetime.now()
+    concluded_date = datetime.now()
+    status = 1
+    comments = str()
+    last_modified_date = datetime.now()
+    extra_email_addresses = str()
+
+    def __str__ (self) :
+        return CODE_AREA["none"]
+
+class ModelChoiceFieldArea (forms.ModelChoiceField) :
+    def clean(self, value):
+        Field.clean(self, value)
+        if value in ('', None):
+            return None
+
+        if value in CODE_AREA.values() :
+                return AreaPsuedo()
+        else :
+                try:
+                    value = self.queryset.model._default_manager.get(pk=value)
+                except self.queryset.model.DoesNotExist:
+                    raise util.ValidationError(gettext(u'Select a valid choice. That choice is not one of the available choices.'))
+
+        return value
+
+
+class ForeignKeyArea (models.ForeignKey) :
+
+    def formfield(self, **kwargs):
+        defaults = {'queryset': self.rel.to._default_manager.all(), 'required': not self.blank, 'label': capfirst(self.verbose_name), 'help_text': self.help_text}
+        defaults.update(kwargs)
+        return ModelChoiceFieldArea(**defaults)
+
+
 class NonWgMailingList(models.Model):
     id = models.CharField(primary_key=True, maxlength=35)
     s_name = models.CharField("Submitter's Name", blank=True, maxlength=255)
@@ -128,7 +178,7 @@ class NonWgMailingList(models.Model):
     list_url = models.CharField("List URL", maxlength=255)
     admin = models.TextField("Administrator(s)' Email Address(es)", blank=True)
     purpose = models.TextField(blank=True)
-    area = models.ForeignKey(Area, db_column='area_acronym_id')
+    area = ForeignKeyArea(Area, db_column='area_acronym_id', null=True)
     subscribe_url = models.CharField("Subscribe URL", blank=True, maxlength=255)
     subscribe_other = models.TextField("Subscribe Other", blank=True)
     # Can be 0, 1, -1, or what looks like a person_or_org_tag, positive or neg.
@@ -152,6 +202,15 @@ class NonWgMailingList(models.Model):
     def choices():
 	return [(list.id, list.list_name) for list in NonWgMailingList.objects.all().filter(status__gt=0)]
     choices = staticmethod(choices)
+
+    def __setattr__ (self, name, value) :
+        if name == "area_id" and str(value) in CODE_AREA.values() :
+                for k, v in CODE_AREA.iteritems() :
+                        if v == str(value) :
+                                setattr(self, "_area_cache", k)
+
+        super(NonWgMailingList, self).__setattr__(name,value)
+
     class Meta:
         db_table = 'none_wg_mailing_list'
 	ordering = ['list_name']
