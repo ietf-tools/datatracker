@@ -1,9 +1,8 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor, ApprovalComment, ListApprover, SelectWidgetArea
+from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor, ApprovalComment, ListApprover, LooseModelChoiceField
 from models import NonWgMailingList, MailingList, Domain
 from ietf.idtracker.models import Area, PersonOrOrgInfo, AreaDirector, WGChair, Role
-from ietf.mailinglists import CODE_AREA
 from django import newforms as forms
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
@@ -13,15 +12,15 @@ from ietf.contrib import wizard, form_decorator
 from ietf.utils.mail import send_mail_subj
 from datetime import datetime
 
+def get_approvers_from_area (area_id) :
+    if area_id == "none" :
+        return [ad.person_id for ad in Role.objects.filter(role_name__in=("IETF", "IAB", ))]
+    else :
+        return [ad.person_id for ad in Area.objects.get(area_acronym=area_id).areadirector_set.all()]
+
 def formchoice(form, field):
     if not(form.is_valid()):
 	return None
-
-    if field == "area" and str(form.clean_data[field]) in CODE_AREA.values() :
-        for k, v in CODE_AREA.iteritems() :
-                if v == str(form.clean_data[field]) :
-                        return k
-
     d = str(form.clean_data[field])
     for k, v in form.fields[field].choices:
 	if str(k) == d:
@@ -56,14 +55,12 @@ nonwg_widgets = {
     'purpose': forms.Textarea(attrs = {'rows': 4, 'cols': 70}),
     'subscribe_url': UrlMultiWidget(choices=(('n/a', 'Not Applicable'), ('http://', 'http://'), ('https://', 'https://')), attrs = {'size': 50}),
     'subscribe_other': forms.Textarea(attrs = {'rows': 3, 'cols': 50}),
-    'area' : SelectWidgetArea(),
 }
 
 nonwg_querysets = {
-    'area': Area.objects.filter(status=1)
+    #'area': Area.objects.filter(status=1)
 }
 
-nonwg_callback = form_decorator(fields=nonwg_fields, widgets=nonwg_widgets, attrs=nonwg_attrs, querysets=nonwg_querysets)
 
 def gen_approval(approvers, parent):
     class BoundApproval(parent):
@@ -102,22 +99,25 @@ class NonWgWizard(wizard.Wizard):
 #    def failed_hash(self, request, step):
 #	raise NotImplementedError("step %d hash failed" % step)
     def process_step(self, request, form, step):
+
 	form.full_clean()
+
 	if step == 0:
 	    self.clean_forms = [ form ]
 	    if form.clean_data['add_edit'] == 'add':
+                nonwg_fields["area"] = LooseModelChoiceField(Area.objects.filter(status=1))
+                nonwg_callback = form_decorator(fields=nonwg_fields, widgets=nonwg_widgets, attrs=nonwg_attrs, querysets=nonwg_querysets)
+
 		self.form_list.append(forms.form_for_model(NonWgMailingList, formfield_callback=nonwg_callback))
 	    elif form.clean_data['add_edit'] == 'edit':
-		self.form_list.append(forms.form_for_instance(NonWgMailingList.objects.get(pk=form.clean_data['list_id']), formfield_callback=nonwg_callback))
+                list = NonWgMailingList.objects.get(pk=form.clean_data['list_id'])
+                nonwg_fields["area"] = LooseModelChoiceField(Area.objects.filter(status=1), initial=list.area_id is None and "none" or list.area_id)
+                nonwg_callback = form_decorator(fields=nonwg_fields, widgets=nonwg_widgets, attrs=nonwg_attrs, querysets=nonwg_querysets)
+
+		self.form_list.append(forms.form_for_instance(list, formfield_callback=nonwg_callback))
 	    elif form.clean_data['add_edit'] == 'delete':
 		list = NonWgMailingList.objects.get(pk=form.clean_data['list_id_delete'])
-                if str(list.area_id) in CODE_AREA.values() :
-                        __list_persons = [r.person.person_or_org_tag for r in Role.objects.filter(role_name__in=("IETF", "IAB"))]
-                else :
-                        __list_persons = [ad.person_id for ad in list.area.areadirector_set.all()]
-
-		self.form_list.append(gen_approval(__list_persons, DeletionPickApprover))
-
+		self.form_list.append(gen_approval(get_approvers_from_area(list.area is None and "none" or list.area_id), DeletionPickApprover))
 		self.form_list.append(Preview)
 	else:
 	    self.clean_forms.append(form)
@@ -125,14 +125,7 @@ class NonWgWizard(wizard.Wizard):
 	    form0 = self.clean_forms[0]
 	    add_edit = form0.clean_data['add_edit']
 	    if add_edit == 'add' or add_edit == 'edit':
-                # if area value is in CODE_AREA, approval person must be in 'IETF' and 'IAB'.
-                if str(form.clean_data["area"]) in CODE_AREA.values() :
-                        __list_persons = [r.person.person_or_org_tag for r in Role.objects.filter(role_name__in=("IETF", "IAB"))]
-                else :
-                        __list_persons = [ad.person_id for ad in Area.objects.get(area_acronym=form.clean_data['area']).areadirector_set.all()]
-
-		self.form_list.append(gen_approval(__list_persons, PickApprover))
-
+		self.form_list.append(gen_approval(get_approvers_from_area(form.clean_data['area']), PickApprover))
 		self.form_list.append(Preview)
         super(NonWgWizard, self).process_step(request, form, step)
     def done(self, request, form_list):
@@ -142,6 +135,9 @@ class NonWgWizard(wizard.Wizard):
 	if add_edit == 'add' or add_edit == 'edit':
 	    template = 'mailinglists/nwg_addedit_email.txt'
 	    approver = self.clean_forms[2].clean_data['approver']
+	    if self.clean_forms[1].clean_data["area"] == "none" :
+	        self.clean_forms[1].clean_data["area"] = None
+
 	    list = NonWgMailingList(**self.clean_forms[1].clean_data)
 	    list.__dict__.update(self.clean_forms[2].clean_data)
 	    list.id = None	# create a new row no matter what
