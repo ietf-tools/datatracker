@@ -6,6 +6,7 @@ from email.MIMEMessage import MIMEMessage
 from email.MIMEMultipart import MIMEMultipart
 import smtplib
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from ietf.utils import log
@@ -33,10 +34,17 @@ def send_smtp(msg):
     to = [addr for name, addr in getaddresses(msg.get_all('To') + msg.get_all('Cc', []))]
     server = None
     try:
-	server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
+	server = smtplib.SMTP()
 	if settings.DEBUG:
 	    server.set_debuglevel(1)
+	server.connect(settings.EMAIL_HOST, settings.EMAIL_PORT)
 	if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
+	    server.ehlo()
+	    if 'starttls' not in server.esmtp_features:
+		raise ImproperlyConfigured('password configured but starttls not supported')
+	    (retval, retmsg) = server.starttls()
+	    if retval != 220:
+		raise ImproperlyConfigured('password configured but tls failed: %d %s' % ( retval, retmsg ))
 	    server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
 	server.sendmail(frm, to, msg.as_string())
 	# note: should pay attention to the return code, as it may
