@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor, ApprovalComment, ListApprover, LooseModelChoiceField
+from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor, ApprovalComment, ListApprover
 from models import NonWgMailingList, MailingList, Domain
 from ietf.idtracker.models import Area, PersonOrOrgInfo, AreaDirector, WGChair, Role
 from django import newforms as forms
@@ -13,10 +13,10 @@ from ietf.utils.mail import send_mail_subj
 from datetime import datetime
 
 def get_approvers_from_area (area_id) :
-    if area_id == "none" :
-        return [ad.person_id for ad in Role.objects.filter(role_name__in=("IETF", "IAB", ))]
-    else :
-        return [ad.person_id for ad in Area.objects.get(area_acronym=area_id).areadirector_set.all()]
+        if not area_id :
+                return [ad.person_id for ad in Role.objects.filter(role_name__in=("IETF", "IAB", ))]
+        else :
+                return [ad.person_id for ad in Area.objects.get(area_acronym=area_id).areadirector_set.all()]
 
 def formchoice(form, field):
     if not(form.is_valid()):
@@ -105,19 +105,19 @@ class NonWgWizard(wizard.Wizard):
 	if step == 0:
 	    self.clean_forms = [ form ]
 	    if form.clean_data['add_edit'] == 'add':
-                nonwg_fields["area"] = LooseModelChoiceField(Area.objects.filter(status=1))
+                nonwg_fields["area"] = forms.ModelChoiceField(Area.objects.filter(status=1), required=False, empty_label='none')
                 nonwg_callback = form_decorator(fields=nonwg_fields, widgets=nonwg_widgets, attrs=nonwg_attrs, querysets=nonwg_querysets)
 
 		self.form_list.append(forms.form_for_model(NonWgMailingList, formfield_callback=nonwg_callback))
 	    elif form.clean_data['add_edit'] == 'edit':
                 list = NonWgMailingList.objects.get(pk=form.clean_data['list_id'])
-                nonwg_fields["area"] = LooseModelChoiceField(Area.objects.filter(status=1), initial=list.area_id is None and "none" or list.area_id)
+                nonwg_fields["area"] = forms.ModelChoiceField(Area.objects.filter(status=1), required=False, empty_label='none',initial=list.area_id is None or list.area_id)
                 nonwg_callback = form_decorator(fields=nonwg_fields, widgets=nonwg_widgets, attrs=nonwg_attrs, querysets=nonwg_querysets)
 
 		self.form_list.append(forms.form_for_instance(list, formfield_callback=nonwg_callback))
 	    elif form.clean_data['add_edit'] == 'delete':
 		list = NonWgMailingList.objects.get(pk=form.clean_data['list_id_delete'])
-		self.form_list.append(gen_approval(get_approvers_from_area(list.area is None and "none" or list.area_id), DeletionPickApprover))
+		self.form_list.append(gen_approval(get_approvers_from_area(list.area is None or list.area_id), DeletionPickApprover))
 		self.form_list.append(Preview)
 	else:
 	    self.clean_forms.append(form)
@@ -135,7 +135,7 @@ class NonWgWizard(wizard.Wizard):
 	if add_edit == 'add' or add_edit == 'edit':
 	    template = 'mailinglists/nwg_addedit_email.txt'
 	    approver = self.clean_forms[2].clean_data['approver']
-	    if self.clean_forms[1].clean_data["area"] == "none" :
+	    if not self.clean_forms[1].clean_data["area"] :
 	        self.clean_forms[1].clean_data["area"] = None
 
 	    list = NonWgMailingList(**self.clean_forms[1].clean_data)

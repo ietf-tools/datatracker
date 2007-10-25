@@ -223,34 +223,4 @@ class MultiEmailField(forms.CharField):
 class ApprovalComment(forms.Form):
     add_comment = forms.CharField(label="Approver's comments to the requestor (will be emailed to the requestor)", widget=forms.Textarea(attrs={'cols':41, 'rows': 4}))
 
-class LooseModelChoiceField (ModelChoiceField) :
-    def __init__(self, queryset, empty_label=u"---------", cache_choices=False,
-        required=True, widget=forms.Select, label=None, initial=None,
-        help_text=None):
-
-        super(LooseModelChoiceField, self).__init__(queryset, empty_label, cache_choices, required, widget, label, initial, help_text)
-
-    def _get_choices(self):
-        return [i for i in super(LooseModelChoiceField, self)._get_choices()] + [("none", "none", )]
-
-    def _set_choices (self, value) :
-        return super(LooseModelChoiceField, self)._set_choices(value)
-
-    choices = property(_get_choices, _set_choices)
-
-    def clean(self, value):
-        Field.clean(self, value)
-        if value in ('', None):
-            return None
-
-        if value == "none" :
-                return value
-
-        try:
-            value = self.queryset.model._default_manager.get(pk=value)
-        except self.queryset.model.DoesNotExist:
-            raise ValidationError(gettext(u'Select a valid choice. That choice is not one of the available choices.'))
-        return value
-
-
 
