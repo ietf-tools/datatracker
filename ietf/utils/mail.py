@@ -45,6 +45,9 @@ def send_smtp(msg):
 	    (retval, retmsg) = server.starttls()
 	    if retval != 220:
 		raise ImproperlyConfigured('password configured but tls failed: %d %s' % ( retval, retmsg ))
+	    # Send a new EHLO, since without TLS the server might not
+	    # advertise the AUTH capability.
+	    server.ehlo()
 	    server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
 	server.sendmail(frm, to, msg.as_string())
 	# note: should pay attention to the return code, as it may
