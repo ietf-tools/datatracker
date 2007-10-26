@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django import newforms as forms
-from django.newforms.models import ModelChoiceField
 from models import NonWgMailingList, ImportedMailingList
 from ietf.idtracker.models import PersonOrOrgInfo, IETFWG
 import re
