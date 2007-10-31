@@ -16,13 +16,22 @@ Updated as of {{ last_update_info.updated_date }} {{ last_update_info.updated_ti
 *** Click on an acronym of the group to get a charter page *** <br />
 *** Click on a name of the group to get a meeting agenda *** <br />
 </P>
-<p><b>{{ meeting_info.start_date|date:"l"|upper }}, {{ meeting_info.start_date|date:"F j, Y" }}</b><br>
-{{ nonsession_info.0.time_desc }} {{ nonsession_info.0.non_session_ref }} - {{ meetingvenue_info.reg_area_name }}
+<!-- Update to include Saturday Session -->
+{% regroup queryset_list_pre_session by day_id as pre_days %}
+{% for pre_day in pre_days %}
+  <b>{{ pre_day.list.0.meeting_date|date:"l"|upper }}, {{ pre_day.list.0.meeting_date|date:"F j, Y" }} </b><br>
+  {% ifequal pre_day.list.0.day_id 0 %}
+    {{ nonsession_info.0.time_desc }} {{ nonsession_info.0.non_session_ref }} - {{ meetingvenue_info.reg_area_name }}
 <br>
-{% for item in qs_sun %}
-{{ item.sched_time_id1.time_desc }} {{ item.acronym_name }} - {{ item.sched_room_id1.room_name }}<br>
+  {% endifequal %}
+  {% for item in pre_day.list %}
+    {% for session in item.sessions %}
+      {{ item.time_desc }} {{ session.acronym_name }} - {{ session.sched_room_id1.room_name }}<br>
+    {% endfor %}
+  {% endfor %}
+  <br>
 {% endfor %}
-<br>
+<!-- End Update -->
 {% regroup object_list by day_id as days %}
 {% for day in days %}
    <b>{{ day.list.0.meeting_date|date:"l"|upper }}, {{ day.list.0.meeting_date|date:"F j, Y" }} </b><br>

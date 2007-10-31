@@ -37,7 +37,8 @@ def show_html_materials(request, meeting_num=None):
 def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     if html_or_txt == 'txt':
         return HttpResponsePermanentRedirect('http://www.ietf.org/meetings/agenda_%d.txt' % int(meeting_num))
-    queryset_list=MeetingTime.objects.filter(meeting=meeting_num).exclude(day_id=0).order_by("day_id","time_desc")
+    queryset_list=MeetingTime.objects.filter(meeting=meeting_num,day_id__gt='0').order_by("day_id","time_desc")
+    queryset_list_pre_session=MeetingTime.objects.filter(meeting=meeting_num,day_id__lte='0').order_by("day_id","time_desc")
     meeting_info=get_object_or_404(Meeting, meeting_num=meeting_num)
     nonsession_info=NonSession.objects.filter(meeting=meeting_num,day_id__gte='0').order_by("day_id")
     meetingvenue_info=get_object_or_404(MeetingVenue, meeting_num=meeting_num)
@@ -73,10 +74,7 @@ def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     # [133] is broken because it requires a patched Django to run.  Work
     # around this instead.  Later: FIXME (revert to the straightforward code
     # when this bug has been fixed in the Django release we're running.)
-    ## queryset_list_sun=WgMeetingSession.objects.filter(meeting=meeting_num, sched_time_id1__day_id=0).order_by('sched_time_id1__time_desc')
-    queryset_list_sun=list(WgMeetingSession.objects.filter(meeting=meeting_num, sched_time_id1__day_id=0))
-    queryset_list_sun.sort(key=(lambda item: item.sched_time_id1.time_desc))
     queryset_list_ads = list(IESGHistory.objects.filter(meeting=meeting_num))
     queryset_list_ads.sort(key=(lambda item: item.area.area_acronym.acronym))
-    return object_list(request,queryset=queryset_list, template_name=template_file,allow_empty=True, extra_context={'qs_sun':queryset_list_sun, 'meeting_info':meeting_info, 'meeting_num':meeting_num, 'nonsession_info':nonsession_info, 'meetingvenue_info':meetingvenue_info, 'plenaryw_agenda':plenaryw_agenda, 'plenaryt_agenda':plenaryt_agenda, 'qs_ads':queryset_list_ads,'last_update_info':last_update_info})
+    return object_list(request,queryset=queryset_list, template_name=template_file,allow_empty=True, extra_context={'queryset_list_pre_session':queryset_list_pre_session, 'meeting_info':meeting_info, 'meeting_num':meeting_num, 'nonsession_info':nonsession_info, 'meetingvenue_info':meetingvenue_info, 'plenaryw_agenda':plenaryw_agenda, 'plenaryt_agenda':plenaryt_agenda, 'qs_ads':queryset_list_ads,'last_update_info':last_update_info})
 
