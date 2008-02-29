@@ -9,6 +9,7 @@ from datetime import datetime
 from django.shortcuts import render_to_response as render, get_object_or_404
 from django.template import RequestContext
 from django.http import Http404
+from django.conf import settings
 from ietf.utils import log
 from ietf.utils.mail import send_mail
 from ietf.ipr.view_sections import section_table
@@ -290,7 +291,7 @@ def new(request, type, update=None, submitter=None):
                 iprrfc = models.IprRfc(document=rfc, ipr=instance)
                 iprrfc.save()
 
-            send_mail(request, ['ietf-ipr@ietf.org', 'sunny.lee@neustar.biz'], ('IPR Submitter App', 'ietf-ipr@ietf.org'), 'New IPR Submission Notification', "ipr/new_update_email.txt", {"ipr": instance, "update": update})
+            send_mail(request, settings.IPR_EMAIL_TO, ('IPR Submitter App', 'ietf-ipr@ietf.org'), 'New IPR Submission Notification', "ipr/new_update_email.txt", {"ipr": instance, "update": update})
             return render("ipr/submitted.html", {"update": update}, context_instance=RequestContext(request))
         else:
             if form.ietf_contact_is_submitter:

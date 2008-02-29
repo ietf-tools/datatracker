@@ -159,9 +159,11 @@ SERVER_MODE = 'development'
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.tests.run_tests'
 
+TEST_REFERENCE_URL_PREFIX = 'http://compost.research.att.com/old/'
+
 IPR_DOCUMENT_PATH = '/home/local/ftp/data/ietf/IPR'
 
-TEST_REFERENCE_URL_PREFIX = 'http://compost.research.att.com/old/'
+IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
