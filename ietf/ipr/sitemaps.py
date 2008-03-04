@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+#
 from django.contrib.sitemaps import GenericSitemap
 from ietf.ipr.urls import archive
 

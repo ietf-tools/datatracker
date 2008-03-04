@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+#
 #import doctest
 #import templatetags.ietf_filters
 from django.test import TestCase

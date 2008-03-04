@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 #
+# Copyright The IETF Trust 2007, All Rights Reserved
+#
 # Import users from all different IETF authentication sources into
 # django.  Map user names to people via the ietf.ietfauth.models.UserMap
 # model.  Use the htpasswd file to get passwords, ignoring any password

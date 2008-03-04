@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+#
 from django.contrib.sitemaps import Sitemap
 from ietf.liaisons.models import LiaisonDetail
 

@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+#
 
 from ietf.ietfauth.models import UserMap
 from django.contrib.auth.models import User

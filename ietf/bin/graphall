@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# Copyright The IETF Trust 2007, All Rights Reserved
+#
 # Requires modelviz.py from
 #  http://code.djangoproject.com/wiki/DjangoGraphviz
 #
