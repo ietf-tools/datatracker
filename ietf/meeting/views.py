@@ -5,7 +5,8 @@
 from django.shortcuts import render_to_response as render, get_object_or_404
 from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, NonSession, MeetingVenue, IESGHistory, Proceeding, Switches
 from django.views.generic.list_detail import object_list
-from django.http import HttpResponsePermanentRedirect, Http404
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect, Http404
+from django.core.urlresolvers import reverse
 from  django.db.models import Q
 import datetime
 
@@ -33,6 +34,10 @@ def show_html_materials(request, meeting_num=None):
             if item.slides():
                 queryset_training.append(item)
     return object_list(request,queryset=queryset_list, template_name="meeting/list.html",allow_empty=True, extra_context={'meeting_num':meeting_num,'irtf_list':queryset_irtf, 'interim_list':queryset_interim, 'training_list':queryset_training, 'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date,'sub_began':sub_began})
+
+def current_materials(request):
+    meeting = Meeting.objects.order_by('-meeting_num')[0]
+    return HttpResponseRedirect( reverse(show_html_materials, args=[meeting.meeting_num]) )
 
 def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     if html_or_txt == 'txt':
