@@ -253,11 +253,11 @@ class PersonOrOrgInfo(models.Model):
 # could use a mapping for user_level
 class IESGLogin(models.Model):
     USER_LEVEL_CHOICES = (
-	('0', 'Secretariat'),
-	('1', 'IESG'),
-	('2', 'ex-IESG'),
-	('3', 'Level 3'),
-	('4', 'Comment Only(?)'),
+	(0, 'Secretariat'),
+	(1, 'IESG'),
+	(2, 'ex-IESG'),
+	(3, 'Level 3'),
+	(4, 'Comment Only(?)'),
     )
     id = models.AutoField(primary_key=True)
     login_name = models.CharField(blank=True, maxlength=255)
@@ -445,7 +445,7 @@ class BallotInfo(models.Model):   # Added by Michael Lee
     ballot_issued = models.IntegerField(null=True, blank=True)
     def __str__(self):
 	try:
-	    return "Ballot for %s" % self.drafts.filter(primary_flag=1)
+	    return "Ballot for %s" % self.drafts.get(primary_flag=1)
 	except IDInternal.DoesNotExist:
 	    return "Ballot ID %d (no I-D?)" % (self.ballot)
     def remarks(self):
@@ -587,6 +587,10 @@ class DocumentComment(models.Model):
 	    return self.created_by.login_name
 	else:
 	    return "system"
+    def datetime(self):
+	# this is just a straightforward combination, except that the time is
+	# stored incorrectly in the database.
+	return datetime.datetime.combine( self.date, datetime.time( * [int(s) for s in self.time.split(":")] ) )
     class Meta:
         db_table = 'document_comments'
 
@@ -921,18 +925,22 @@ class IRTF(models.Model):
     name = models.CharField(blank=True, maxlength=255, db_column='irtf_name')
     charter_text = models.TextField(blank=True)
     meeting_scheduled = models.BooleanField(null=True, blank=True)
+    def __str__(self):
+	return self.acronym
     class Meta:
         db_table = 'irtf'
+        verbose_name="IRTF Research Group"
     class Admin:
 	pass
 
 class IRTFChair(models.Model):
-    irtf = models.ForeignKey(IRTF)
+    irtf = models.ForeignKey(IRTF, edit_inline=models.STACKED, num_in_admin=2, core=True)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
+    def __str__(self):
+        return "%s is chair of %s" % (self.person, self.irtf)
     class Meta:
         db_table = 'irtf_chairs'
-    class Admin:
-	pass
+        verbose_name="IRTF Research Group Chair"
 
 # Not a model, but it's related.
 # This is used in the view to represent documents

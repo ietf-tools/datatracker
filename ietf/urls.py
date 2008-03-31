@@ -2,7 +2,7 @@
 
 from django.conf.urls.defaults import patterns, include, handler404, handler500
 
-from ietf.iesg.feeds import IESGMinutes
+from ietf.iesg.feeds import IESGMinutes, IESGAgenda
 from ietf.idtracker.feeds import DocumentComments, InLastCall
 from ietf.ipr.feeds import LatestIprDisclosures
 from ietf.liaisons.feeds import Liaisons
@@ -17,6 +17,7 @@ from django.conf import settings
 
 feeds = {
     'iesg-minutes': IESGMinutes,
+    'iesg-agenda': IESGAgenda,
     'last-call': InLastCall,
     'comments': DocumentComments,
     'ipr': LatestIprDisclosures,
