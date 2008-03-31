@@ -4,9 +4,10 @@
 {% block content %}
 <p>
 Hello, {{ me }}!
-<h1>Internet Drafts that you Author (probably useless but hey)</h1>
+<h1>Stuff I know about you:</h1>
+<h2>Internet Drafts that you Author</h2>
 <ul>
-{% for doc in me.idauthors_set.all %}
+{% for doc in me.idauthor_set.all %}
   <li>{{ doc.document.filename }}: {{ doc.document.status }} / {{ doc.document.idstate }}
 {% endfor %}
 </ul>
