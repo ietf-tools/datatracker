@@ -132,4 +132,8 @@ def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=N
 	    copy_email(msg, to, toUser=True)
 	elif request and request.COOKIE.has_key( 'testmailcc' ):
 	    copy_email(msg, request.COOKIE[ 'testmailcc' ])
-    copy_email(msg, "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE)
+    try:
+	copy_to = settings.EMAIL_COPY_TO
+    except AttributeError:
+	copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
+    copy_email(msg, copy_to)
