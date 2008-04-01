@@ -784,9 +784,12 @@ class IETFWG(models.Model):
 	verbose_name = 'IETF Working Group'
     class Admin:
 	search_fields = ['group_acronym__acronym', 'group_acronym__name']
-	list_display = ('group_acronym', 'group_type', 'status', 'area_director')
-	list_filter = ['status', 'group_type', 'area_director']
-	pass
+	# Until the database is consistent, including area_director in
+	# this list means that we'll have FK failures, so skip it for now.
+	list_display = ('group_acronym', 'group_type', 'status')
+	list_filter = ['status', 'group_type']
+	#list_display = ('group_acronym', 'group_type', 'status', 'area_director')
+	#list_filter = ['status', 'group_type', 'area_director']
 
 class WGChair(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, unique=True, core=True)
