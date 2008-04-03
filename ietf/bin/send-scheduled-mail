@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+#
+from django.core.management import setup_environ
+from ietf import settings
+
+setup_environ(settings)
+
+from django.db.models import Q
+from django.db import connection
+from ietf.announcements.models import ScheduledAnnouncement
+from ietf.utils.mail import send_mail_text
+import datetime
+
+now = datetime.datetime.now()
+candidates = ScheduledAnnouncement.objects.filter(to_be_sent_date__isnull=True) | ScheduledAnnouncement.objects.exclude(to_be_sent_date__gt=now.date())
+candidates = candidates.filter(mail_sent=False) #.exclude(to_be_sent_date__gt=now.date())
+for c in candidates:
+    if c.to_be_sent_time:
+        tbst = datetime.time( *[int(t) for t in c.to_be_sent_time.split(":")] )
+        if tbst > now.time():
+	    # To be sent today, but not yet.
+	    continue
+    extra={}
+    if c.content_type:
+        extra['Content-Type'] = c.content_type
+    if c.replyto:
+        extra['Reply-To'] = c.replyto
+    send_mail_text(None, to=c.to_val, frm=c.from_val, subject=c.subject,
+	txt=c.body, cc=c.cc_val, extra=extra, bcc=c.bcc_val)
+    c.actual_sent_date=now.date()
+    c.actual_sent_time=str(now.time()) # sigh
+    c.mail_sent=True
+    c.save()

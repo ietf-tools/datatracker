@@ -22,7 +22,7 @@ def add_headers(msg):
 	msg['From'] = settings.DEFAULT_FROM_EMAIL
     return msg
 
-def send_smtp(msg):
+def send_smtp(msg, bcc=None):
     '''
     Send a Message via SMTP, based on the django email server settings.
     The destination list will be taken from the To:/Cc: headers in the
@@ -31,7 +31,10 @@ def send_smtp(msg):
     '''
     add_headers(msg)
     (fname, frm) = parseaddr(msg.get('From'))
-    to = [addr for name, addr in getaddresses(msg.get_all('To') + msg.get_all('Cc', []))]
+    addrlist = msg.get_all('To') + msg.get_all('Cc', [])
+    if bcc:
+        addrlist += [bcc]
+    to = [addr for name, addr in getaddresses(addrlist)]
     server = None
     try:
 	server = smtplib.SMTP()
@@ -107,7 +110,7 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     txt = render_to_string(template, context, context_instance=RequestContext(request))
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
-def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=None):
+def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=None, bcc=None):
     msg = MIMEText(txt)
     if isinstance(frm, tuple):
 	frm = formataddr(frm)
@@ -126,7 +129,7 @@ def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=N
 	for k, v in extra.iteritems():
 	    msg[k] = v
     if settings.SERVER_MODE == 'production':
-	send_smtp(msg)
+	send_smtp(msg, bcc)
     elif settings.SERVER_MODE == 'test':
 	if toUser:
 	    copy_email(msg, to, toUser=True)
@@ -136,4 +139,6 @@ def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=N
 	copy_to = settings.EMAIL_COPY_TO
     except AttributeError:
 	copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
+    if bcc:
+        msg['X-Tracker-Bcc']=bcc
     copy_email(msg, copy_to)
