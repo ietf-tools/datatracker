@@ -133,8 +133,8 @@ def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=N
     elif settings.SERVER_MODE == 'test':
 	if toUser:
 	    copy_email(msg, to, toUser=True)
-	elif request and request.COOKIE.has_key( 'testmailcc' ):
-	    copy_email(msg, request.COOKIE[ 'testmailcc' ])
+	elif request and request.COOKIES.has_key( 'testmailcc' ):
+	    copy_email(msg, request.COOKIES[ 'testmailcc' ])
     try:
 	copy_to = settings.EMAIL_COPY_TO
     except AttributeError:

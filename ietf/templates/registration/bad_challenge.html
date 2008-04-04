@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Bad Challenge{% endblock %}
+
+{% block content %}
+<h1>Bad Challenge</h1>
+
+<p>Sorry, the URL you used was incorrect.  Make sure that you copied it
+properly from the email you received.</p>
+
+{% comment %}
+if we feel like it, report the detailed error
+<table>
+<tr><th colspan="2">DEBUG</th></tr>
+{{ form }}
+</table>
+{% endcomment %}
+
+<p>Note that these URLs expire after {{ days }} days, so you may need
+to <a href="{% url ietf.ietfauth.views.password_request %}">request
+another one</a>.</p>
+{% endblock %}

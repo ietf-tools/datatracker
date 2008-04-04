@@ -1,7 +1,10 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
 
+{% block title %}Log In{% endblock %}
+
 {% block content %}
+<h1>Log In</h1>
 
 {% if form.has_errors %}
 <p>Your username and password didn't match our records. Please try again.</p>
@@ -16,5 +19,8 @@
 <input type="submit" value="login" />
 <input type="hidden" name="next" value="{{ next }}" />
 </form>
+
+<a href="{% url ietf.ietfauth.views.password_request %}">Reset Password</a> |
+<a href="{% url ietf.ietfauth.views.password_request %}">Register</a>
 
 {% endblock %}

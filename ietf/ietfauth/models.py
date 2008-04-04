@@ -10,11 +10,18 @@ class UserMap(models.Model):
     This can't represent the users in the existing tool that
     have multiple accounts with multiple privilege levels: they
     need extra IETF users.
+
+    It also contains a text field for the user's hashed htdigest
+    password.  In order to allow logging in with either username
+    or email address, we need to store two hashes.  One is in the
+    user model's password field, the other is here.
     """
     user = models.ForeignKey(User, raw_id_admin=True, core=True)
     # user should have unique=True, but that confuses the
     # admin edit_inline interface.
-    person = models.ForeignKey(PersonOrOrgInfo, edit_inline=models.STACKED, num_in_admin=1, max_num_in_admin=1, unique=True)
+    person = models.ForeignKey(PersonOrOrgInfo, edit_inline=models.STACKED, num_in_admin=1, max_num_in_admin=1, unique=True, null=True)
+    email_htdigest = models.CharField(maxlength=32, blank=True, null=True)
+    rfced_htdigest = models.CharField(maxlength=32, blank=True, null=True)
     def __str__(self):
 	return "Mapping django user %s to IETF person %s" % ( self.user, self.person )
 

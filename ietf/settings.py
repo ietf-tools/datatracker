@@ -165,6 +165,9 @@ IPR_DOCUMENT_PATH = '/home/local/ftp/data/ietf/IPR'
 
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 
+# The number of days for which a password-request URL is valid
+PASSWORD_DAYS = 3
+
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *
