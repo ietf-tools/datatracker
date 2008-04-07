@@ -1,6 +1,7 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 <!-- {{ object_list|length }} result{{ object_list|length|pluralize }}.<br> -->
-<b>Please click a document below to view detail information</b><br>
+<b>Please click a document below to view detail information,
+or the [draft] link for the document itself.</b><br>
 <table cellpadding="1" cellspacing="0" border="0">
 <tr bgcolor="#dfdfff">
 <td width="280"><b>I-D Filename and Version Number</td>
@@ -17,7 +18,9 @@
 {% for draft in object_list %}
 <tr bgcolor="{% cycle #efefff,#dfdfff %}">
 {# use url here! #}
-<td><a href="/drafts/{{ draft.filename }}/">{{ draft.filename }}-{{ draft.revision_display }}</a></td>
+<td><a href="/drafts/{{ draft.filename }}/">{{ draft.filename }}-{{ draft.revision_display }}</a>
+[<a href="{{ draft.doclink }}">draft</a>]
+</td>
 <td>{% firstof draft.revision_date &nbsp; %}</td>
 <td>{{ draft.status }}</td>
 {% if norfc %}
