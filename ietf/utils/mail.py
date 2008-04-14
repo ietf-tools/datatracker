@@ -72,6 +72,9 @@ def copy_email(msg, to, toUser=False):
     Send a copy of the given email message to the given recipient.
     '''
     add_headers(msg)
+    # Overwrite the From: header, so that the copy from a development or
+    # test server doesn't look like spam.
+    msg['From'] = settings.DEFAULT_FROM_EMAIL
     new = MIMEMultipart()
     # get info for first part.
     # Mode: if it's production, then "copy of a message", otherwise
