@@ -660,7 +660,7 @@ class IESGDiscuss(models.Model):
 class IDAuthor(models.Model):
     document = models.ForeignKey(InternetDraft, db_column='id_document_tag', related_name='authors', edit_inline=models.TABULAR, raw_id_admin=True)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, core=True)
-    author_order = models.IntegerField(null=True, blank=True)
+    author_order = models.IntegerField()
     def __str__(self):
 	return "%s authors %s" % ( self.person, self.document.filename )
     def email(self):
