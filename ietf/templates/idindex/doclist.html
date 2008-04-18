@@ -19,7 +19,9 @@ or the [draft] link for the document itself.</b><br>
 <tr bgcolor="{% cycle #efefff,#dfdfff %}">
 {# use url here! #}
 <td><a href="/drafts/{{ draft.filename }}/">{{ draft.filename }}-{{ draft.revision_display }}</a>
+{% ifequal draft.status.status "Active" %}
 [<a href="{{ draft.doclink }}">draft</a>]
+{% endifequal %}
 </td>
 <td>{% firstof draft.revision_date &nbsp; %}</td>
 <td>{{ draft.status }}</td>
