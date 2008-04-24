@@ -8,9 +8,9 @@ xml:lang="en-US"><head><title>Agenda of the {{ meeting_num|ordinal }} IETF Meeti
 </head><body><p>
 <pre>{# From here on out, horizontal and vertical whitespace is significant... #}
 {% filter center:72 %}Agenda of the {{ meeting_num|ordinal }} IETF Meeting{% endfilter %}
-{% filter center:72 %}{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date|date:"F" meeting_info.end_date|date:"F" %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }}{% endfilter %}
+{% filter center:72 %}{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date.month meeting_info.end_date.month %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }}{% endfilter %}
 
-Updated as of {{ last_update_info.updated_date }} {{ last_update_info.updated_time }} (ET) 
+Updated as of {{ last_update_info.updated|date:"F j, Y P (T)" }}
 
 <!-- Update to include Saturday Session -->
 {% regroup queryset_list_pre_session by day_id as pre_days %}
