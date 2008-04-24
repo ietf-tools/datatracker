@@ -159,7 +159,7 @@ SERVER_MODE = 'development'
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.tests.run_tests'
 
-TEST_REFERENCE_URL_PREFIX = os.environ.get("IETFDB_REF_PREFIX","") or 'http://compost.research.att.com/old/'
+TEST_REFERENCE_URL_PREFIX = os.environ.get("IETFDB_REF_PREFIX","") or 'https://datatracker.ietf.org/'
 
 IPR_DOCUMENT_PATH = '/home/local/ftp/data/ietf/IPR'
 
