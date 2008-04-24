@@ -409,6 +409,8 @@ class Switches(models.Model):
     val = models.IntegerField(null=True, blank=True)
     updated_date = models.DateField(null=True, blank=True)
     updated_time = models.TimeField(null=True, blank=True)
+    def updated(self):
+	return datetime.datetime.combine( self.updated_date, self.updated_time )
     def __str__(self):
 	return self.name
     class Meta:

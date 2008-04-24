@@ -1,13 +1,15 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
 {% block title %} IETF {{ meeting_num }} Preliminary & Interim Materials {% endblock %}
-{% block content %}
+{% block head %}
 <link rel="stylesheet" type="text/css" href="https://www.ietf.org/css/base.css" />
+{% endblock %}
+{% block content %}
 <center>
 <h2>IETF {{ meeting_num }} Preliminary & Interim Materials</h2>
 <h4>Submission began {{ begin_date|date:"F j, Y" }} </h4>
-<h4>Submission cutoff odate: {{ cut_off_date|date:"F j, Y" }}</h4>
-<h4>Corrections to submissions cutoff date:{{ cor_cut_off_date|date:"F j, Y" }} </h4>
+<h4>Submission cutoff date: {{ cut_off_date|date:"F j, Y" }}</h4>
+<h4>Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }} </h4>
 </center>
 <br>
 <i>
