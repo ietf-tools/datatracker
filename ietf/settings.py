@@ -21,7 +21,7 @@ ADMINS = (
 )
 
 # Override this in the settings_local.py file:
-SERVER_EMAIL = 'Django Server<django@tools.ietf.org>'
+SERVER_EMAIL = 'Django Server<django-project@ietf.org>'
 
 
 DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@ietf.org>'
@@ -30,19 +30,17 @@ MANAGERS = ADMINS
 
 DATABASE_ENGINE = 'mysql'      # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
 DATABASE_NAME = 'ietf'         # Or path to database file if using sqlite3.
-DATABASE_USER = 'django'       # Not used with sqlite3.
+DATABASE_USER = 'ietf'       # Not used with sqlite3.
 #DATABASE_PASSWORD = 'playing' # Not used with sqlite3.
 DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
 #DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
-#DATABASE_HOST = '10.30.47.10' 	   # The MySQL 5 server, new and hot.. but seems to be slow
-DATABASE_HOST = '10.31.47.10'      # Existing MySQL 4.1 server.. 
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 # although not all variations may be possible on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'America/New_York'
+TIME_ZONE = 'PST8PDT'
 
 # Language code for this installation. All choices can be found here:
 # http://www.w3.org/TR/REC-html40/struct/dirlang.html#langcodes
@@ -136,16 +134,10 @@ INSTALLED_APPS = (
 )
 
 INTERNAL_IPS = (
-# llama in san jose
-	'135.207.33.119',
-# fenestro
-	'67.188.114.134',
-# shiraz and marsanne
-        '81.232.110.214',
-        '2001:16d8:ff54::1',
-# merlot
-        '194.146.105.14',
-        '2001:698:9:31:214:22ff:fe21:bb',
+# AMS servers
+	'64.170.98.32',
+	'64.170.98.86',
+
 # local
         '127.0.0.1',
         '::1',
@@ -161,7 +153,7 @@ TEST_RUNNER = 'ietf.tests.run_tests'
 
 TEST_REFERENCE_URL_PREFIX = os.environ.get("IETFDB_REF_PREFIX","") or 'https://datatracker.ietf.org/'
 
-IPR_DOCUMENT_PATH = '/home/local/ftp/data/ietf/IPR'
+IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR'
 
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 
