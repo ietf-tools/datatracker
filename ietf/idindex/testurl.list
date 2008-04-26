@@ -1,7 +1,7 @@
 301,skipdiff		/drafts/wgid/1041/	https://datatracker.ietf.org/public/idindex.cgi?command=show_wg_id&id=1041
 200,skipredirect	/drafts/wg/idr/		https://datatracker.ietf.org/public/idindex.cgi?command=show_wg_id&id=1041
 200			/drafts/wg/I/		https://datatracker.ietf.org/public/idindex.cgi?command=show_wg&fl=I
-200			/drafts/ind/F/		https://datatracker.ietf.org/public/idindex.cgi?command=show_ind_id&fl=F
+200,ignore:2		/drafts/ind/F/		https://datatracker.ietf.org/public/idindex.cgi?command=show_ind_id&fl=F
 200			/drafts/other/tools/	https://datatracker.ietf.org/public/idindex.cgi?command=show_other&cat=tools
 200,sort		/drafts/rfc/		https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=rfc
 #200,sort		/drafts/rfc/?sort=name	https://datatracker.ietf.org/public/idindex.cgi?command=show_list&cat=rfc&sort=name
