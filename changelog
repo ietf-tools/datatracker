@@ -1,0 +1,26 @@
+ietfdb(2.07)
+
+  The full list of changes is here, highlights below:
+  http://tools.ietf.org/tools/ietfdb/log/branch/2.00?rev=1161&stop_rev=1060
+
+  * Template updates for agendas: 
+      - Use python, not template-language, to decide if the month is
+	different.  
+      - Don't use "odate" and add a space where   appropriate.  
+      - Use a datetime and time zone instead of hardcoding (ET).
+	(let the model combine the date and the time)
+
+  * Per suggestion from John Klensin, add a link directly to the text of the
+    I-D, but only give the explicit link to the draft if it's active.
+
+  * Expanded description of a document on the agenda.
+
+  * Added authorization infrastructure.  No impact on current functionality,
+    but needed for future features.
+
+  * Added a feed for documents on the IESG telechat.  Improved the admin
+    interface for iesg_login and irtf rg's and chairs.
+
+  * /meeting/ now redirects to meeting/<current>/materials.html
+
+  * Licencing information added.  IETF Trust copyright added as needed.
