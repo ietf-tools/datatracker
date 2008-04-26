@@ -425,14 +425,19 @@ class UrlTestCase(TestCase):
                         note("     Error retrieving %s: %s" % (master, e))
                     try:
                         if goodhtml and response.content:
+                            testhtml = response.content
+                            # Always ignore some stuff
+                            for regex in module.ignores["always"]:
+                                testhtml = re.sub(regex, "", testhtml)
+                                goodhtml = re.sub(regex, "", goodhtml)
                             if "sort" in codes:
-                                testtext, testpage = reduce_text(response.content, fill=False)
+                                testtext, testpage = reduce_text(testhtml, fill=False)
                                 goodtext, goodpage = reduce_text(goodhtml, fill=False)
                             else:
                                 testtext, testpage = reduce_text(response.content)
                                 goodtext, goodpage = reduce_text(goodhtml)
                             update_reachability(url, code, testpage)
-                            # Always ignore some stuff
+                            # Always ignore some stuff again
                             for regex in module.ignores["always"]:
                                 testtext = re.sub(regex, "", testtext)
                                 goodtext = re.sub(regex, "", goodtext)
