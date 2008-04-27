@@ -27,10 +27,10 @@ function checkthis () {
 <tr>
 <th>{{ field.label_tag }}:
 {% ifequal field.name "short_desc" %}
-<img src="/images/icon_help.gif" border="0" title="Click for help" onClick="window.open('help/{{ field.name }}',null,'height=200,width=500,status=no,toolbar=no,menubar=no,location=no')">
+<img src="/images/icon_help.gif" border="0" title="Click for help" onClick="window.open('{% url ietf.mailinglists.views.list_req_help field.name %}',null,'height=200,width=500,status=no,toolbar=no,menubar=no,location=no')">
 {% endifequal %}
 {% ifequal field.name "long_desc" %}
-<img src="/images/icon_help.gif" border="0" title="Click for help" onClick="window.open('help/{{ field.name }}',null,'height=300,width=600,status=no,toolbar=no,menubar=no,location=no')">
+<img src="/images/icon_help.gif" border="0" title="Click for help" onClick="window.open('{% url ietf.mailinglists.views.list_req_help field.name %}',null,'height=300,width=600,status=no,toolbar=no,menubar=no,location=no')">
 {% endifequal %}
 </th>
 <td>
