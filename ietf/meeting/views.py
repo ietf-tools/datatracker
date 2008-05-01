@@ -40,8 +40,6 @@ def current_materials(request):
     return HttpResponseRedirect( reverse(show_html_materials, args=[meeting.meeting_num]) )
 
 def show_html_agenda(request, meeting_num=None, html_or_txt=None):
-    if html_or_txt == 'txt':
-        return HttpResponsePermanentRedirect('http://www.ietf.org/meetings/agenda_%d.txt' % int(meeting_num))
     queryset_list=MeetingTime.objects.filter(meeting=meeting_num,day_id__gt='0').order_by("day_id","time_desc")
     queryset_list_pre_session=MeetingTime.objects.filter(meeting=meeting_num,day_id__lte='0').order_by("day_id","time_desc")
     meeting_info=get_object_or_404(Meeting, meeting_num=meeting_num)
@@ -49,7 +47,7 @@ def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     meetingvenue_info=get_object_or_404(MeetingVenue, meeting_num=meeting_num)
     last_update_info=get_object_or_404(Switches,id=1)
     try:
-        plenaryt_agenda_file = "/home/master-site/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-2).agenda_file()
+        plenaryt_agenda_file = "/a/www/ietf/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-2).agenda_file()
         try:
             f = open(plenaryt_agenda_file)
             plenaryt_agenda = f.read()
@@ -65,7 +63,7 @@ def show_html_agenda(request, meeting_num=None, html_or_txt=None):
     else:
         raise Http404
     try:
-        plenaryw_agenda_file = "/home/master-site/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-1).agenda_file()
+        plenaryw_agenda_file = "/a/www/ietf/proceedings/%s" % WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=-1).agenda_file()
         try:
             f = open(plenaryw_agenda_file)
             plenaryw_agenda = f.read()

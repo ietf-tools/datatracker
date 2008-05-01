@@ -11,7 +11,7 @@
 Updated as of {{ last_update_info.updated|date:"F j, Y P (T)" }}
 </center> 
 
-(<a href="http://www3.ietf.org//meetings/agenda_{{meeting_num}}.txt"> Text Format of the Agenda </a>) <br />
+(<a href="{% url ietf.meeting.views.show_html_agenda meeting_num,"txt" %}"> Text Format of the Agenda </a>) <br />
 <P>
 *** Click on an acronym of the group to get a charter page *** <br />
 *** Click on a name of the group to get a meeting agenda *** <br />
