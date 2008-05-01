@@ -1,6 +1,6 @@
 200,skipdiff	/meeting/68/agenda.html		https://datatracker.ietf.org/public/meeting_agenda_html.cgi?meeting_num=68
 200,skipdiff	/meeting/69/agenda.html		https://datatracker.ietf.org/public/meeting_agenda_html.cgi?meeting_num=69
-301		/meeting/68/agenda.txt
+200,skipdiff	/meeting/68/agenda.txt		https://datatracker.ietf.org/public/meeting_agenda_text.cgi?meeting_num=68
 200,ignore:date	/meeting/69/materials.html	https://datatracker.ietf.org/public/meeting_materials.cgi?meeting_num=69
 404		/meeting/99/agenda.html
 404		/meeting/99/materials.html
