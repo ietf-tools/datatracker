@@ -1,7 +1,10 @@
 ietfdb(2.07)
 
   The full list of changes is here, highlights below:
-  http://tools.ietf.org/tools/ietfdb/log/branch/2.00?rev=1161&stop_rev=1060
+  http://tools.ietf.org/tools/ietfdb/log/branch/2.00?rev=1161&stop_rev=1070
+
+  * Adjustments to the default settings, to match the new deployment environment
+    at AMS
 
   * Template updates for agendas: 
       - Use python, not template-language, to decide if the month is
@@ -24,3 +27,4 @@ ietfdb(2.07)
   * /meeting/ now redirects to meeting/<current>/materials.html
 
   * Licencing information added.  IETF Trust copyright added as needed.
+
