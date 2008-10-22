@@ -154,6 +154,7 @@ SRC=${SRC#/}				# remove leading slash
 
 MAJOR=${VER%.*}
 MINOR=${VER#*.}
+MINOR=${MINOR##0}
 VER="$(printf %d.%02d $MAJOR $MINOR)"
 NEXT=$(( $MINOR + 1 ))
 DEV="$(printf %d.%02d-dev $MAJOR $NEXT)"
