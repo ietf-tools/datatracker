@@ -452,6 +452,7 @@ class Slide(models.Model, ResolveAcronym):
         dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
         if self.slide_type_id==1:
             return "%s/slides/%s-%s/sld1.htm" % (dir,self.acronym(),self.slide_num)
+            return "%s/slides/%s-%s/%s-%s.htm" % (dir,self.acronym(),self.slide_num,self.acronym(),self.slide_num)
         else:
             if self.slide_type_id == 2:
                 ext = ".pdf"
