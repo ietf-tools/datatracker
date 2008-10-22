@@ -9,8 +9,10 @@ xml:lang="en-US"><head><title>Agenda of the {{ meeting_num|ordinal }} IETF Meeti
 <pre>{# From here on out, horizontal and vertical whitespace is significant... #}
 {% filter center:72 %}Agenda of the {{ meeting_num|ordinal }} IETF Meeting{% endfilter %}
 {% filter center:72 %}{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date.month meeting_info.end_date.month %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }}{% endfilter %}
+{% filter center:72 %}Updated {{ last_update_info.updated|date:"F j, Y P (T)" }}{% endfilter %}
 
-Updated as of {{ last_update_info.updated|date:"F j, Y P (T)" }}
+{% filter center:72 %}IETF agendas are subject to change, up to and during the meeting.{% endfilter %}
+
 {% regroup queryset_list_pre_session by day_id as pre_days %}
 {% for pre_day in pre_days %}
 {{ pre_day.list.0.meeting_date|date:"l"|upper }}, {{ pre_day.list.0.meeting_date|date:"F j, Y" }} 
