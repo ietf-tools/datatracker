@@ -2,7 +2,7 @@
 
 from forms import NonWgStep1, ListReqStep1, PickApprover, DeletionPickApprover, UrlMultiWidget, Preview, ListReqAuthorized, ListReqClose, MultiEmailField, AdminRequestor, ApprovalComment, ListApprover
 from models import NonWgMailingList, MailingList, Domain
-from ietf.idtracker.models import Area, PersonOrOrgInfo, AreaDirector, WGChair, Role
+from ietf.idtracker.models import Area, PersonOrOrgInfo, AreaDirector, WGChair, Role, IETFWG
 from django import newforms as forms
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
@@ -350,3 +350,7 @@ def list_approve(request, object_id):
     form = ApprovalComment()
     return render_to_response('mailinglists/list_%s.html' % action, {'list': list, 'form': form, 'req': req},
 	context_instance=RequestContext(request) )
+
+def list_wgwebmail(request):
+    wgs = IETFWG.objects.filter(email_archive__startswith='http')
+    return render_to_response('mailinglists/wgwebmail_list.html', {'object_list': wgs})

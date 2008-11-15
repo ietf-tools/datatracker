@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2008, All Rights Reserved #}
+
+{% block title %}Web-based Working Group E-mail Archives{% endblock %}
+
+{% block content %}
+<center><font size=+2>Web-based Working Group E-mail Archives</font></center>
+<br/>
+<p>These links to the Web-based working group e-mail archives are
+  extracted from the working group charters.  Please consult the
+  charters for more information about the mailing lists and archives
+  of specific working groups.  Charters for active working groups are
+  available on
+  the <a href="http://www.ietf.org/html.charters/wg-dir.html">Active
+    IETF Working Groups</a> Web page.  Charters for concluded working
+  groups are available on
+  the <a href="http://www.ietf.org/html.charters/OLD/index.html">Concluded
+    Working Groups</a> Web page.</p>
+<br/>
+<blockquote>
+<table cellpadding="4" cellspacing="0" border="0">
+<colgroup align="center">
+  <col width="20%"/>
+  <col width="80%"/>
+</colgroup>
+<tr>
+<th>Acronym</th><th>Name</th>
+</tr>
+{% for wg in object_list|dictsort:"group_acronym.acronym" %}
+<tr>
+<td><a href="{{ wg.email_archive|escape }}">{{ wg|escape }}</a></td>
+<td>{{ wg.group_acronym.name|escape }}</td>
+</tr>
+{% endfor %}
+</table>
+</blockquote>
+{% endblock %}

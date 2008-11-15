@@ -15,4 +15,5 @@ urlpatterns += patterns('',
      (r'^request/$', views.list_req_wizard),
      (r'^help/(?P<field>[^/]+)/$', views.list_req_help),
      (r'^approve/(?P<object_id>[^/]+)/$', views.list_approve),
+     (r'^wg/$', views.list_wgwebmail),
 )
