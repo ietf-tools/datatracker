@@ -76,7 +76,24 @@ def search(request):
 	if status != '':
 	    q_objs.append(Q(draft__status=status,rfc_flag=0))
 	matches = IDInternal.objects.all().filter(*q_objs)
-	matches = matches.order_by('cur_state', 'cur_sub_state', '-primary_flag')
+	matches = matches.order_by('cur_state', 'cur_sub_state', 'ballot_id', '-primary_flag')
+        # sort by date in reverse
+        # first build docstate groups, within which we sort
+        # in each docstate group, we build ballot id groups, which we sort
+        m1 = []                 # list of: docstate, list of: event date; ballot id; list of: ms for the ballot id
+        for m in matches:
+            if m1 and m1[-1][0] == m.docstate():
+                if m1[-1][1] and m1[-1][1][0][1] == m.ballot_id:
+                    m1[-1][1][0][2].append(m)
+                else:
+                    m1[-1][1].append((m.event_date, m.ballot_id, [m]))
+            else:
+                m1.append((m.docstate(), [(m.event_date, m.ballot_id, [m])]))
+        matches = []
+        for ms in m1: ms[1].sort(reverse=True)
+        for ms in m1:
+            for mt in ms[1]:
+                matches.extend(mt[2])
 	#
 	# Now search by I-D exists, if there could be any results.
 	# If searching by job owner, current state or substate, there
@@ -119,6 +136,7 @@ def search(request):
 	'form': form,
 	'matches': matches,
 	'searching': searching,
+	'spacing': True
       }, context_instance=RequestContext(request))
 
 # proof of concept, orphaned for now
@@ -209,7 +227,7 @@ def view_id(request, queryset, slug, slug_field):
     except IDInternal.DoesNotExist:
 	draft = get_object_or_404(InternetDraft, filename=slug)
 	return render_to_response('idtracker/idinternal_notfound.html', {'draft': draft}, context_instance=RequestContext(request))
-    return render_to_response('idtracker/idinternal_detail.html', {'object': object}, context_instance=RequestContext(request))
+    return render_to_response('idtracker/idinternal_detail.html', {'object': object, 'spacing': False}, context_instance=RequestContext(request))
 
 def view_rfc(request, object_id):
     '''A replacement for the object_detail generic view for this
@@ -223,7 +241,7 @@ def view_rfc(request, object_id):
     This view gets the appropriate row from IDInternal and
     calls the template with the necessary context.'''
     object = get_object_or_404(IDInternal, pk=object_id, rfc_flag=1)
-    return render_to_response('idtracker/idinternal_detail.html', {'object': object}, context_instance=RequestContext(request))
+    return render_to_response('idtracker/idinternal_detail.html', {'object': object, 'spacing': False}, context_instance=RequestContext(request))
 
 # Wrappers around object_detail to give permalink a handle.
 # The named-URLs feature in django 0.97 will eliminate the

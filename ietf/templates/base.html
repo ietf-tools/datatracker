@@ -1,56 +1,43 @@
 {% block doctype %}<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html
-PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 {% endblock %}
+
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-   <!-- Copyright The IETF Trust 2007, All Rights Reserved -->
-   <head>
-      <!-- Project Revision {{ revision_num }}, {{ revision_time }} -->
-      <title>{% block title %}IETF Data{% endblock %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}</title>
-      {% ifnotequal server_mode "production" %}
-      <link rel="icon" href="/images/ietf-dev-icon.bmp" />
-      {% else %}
-      <link rel="icon" href="/images/ietf-icon.bmp" />
-      {% endifnotequal %}
-      {% block head %}{% endblock %}
-      <style type="text/css"><!--
-      {% block css %}{% endblock %}
-      // -->
-      </style>
-   </head>
-   <body {% block body_attributes %}{% endblock %}>
-   <center>
-      <table border=0 cellpadding=0 cellspacing=0>
-	 <tr>
-	    <td><a href="http://www.ietf.org/home.html"><img src="/images/header/ietflogo_sm.gif" border="0" /></a></td>
-	    <td><a href="http://www.ietf.org/home.html"><img src="/images/header/home11.gif" border="0" /></a></td>
-	    <td><img src="/images/header/separator.gif" border="0" /></td>
-	    <td><a href="http://www.ietf.org/html.charters/wg-dir.html"><img src="/images/header/wg11.gif" border="0" /></a></td>
-	    <td><img src="/images/header/separator.gif" border="0" /></td>
-	    <td><a href="http://www.ietf.org/meetings/meetings.html"><img src="/images/header/meetings11.gif" border="0" /></a></td>
-	    <td><img src="/images/header/separator.gif" border="0" /></td>
-	    <td><a href="http://www.ietf.org/proceedings_directory.html"><img src="/images/header/proceed11.gif"  border="0" /></a></td>
-	    <td><img src="/images/header/separator.gif" border="0" /></td>
-	    <td><a href="{% url ietf.idindex.views.search %}"><img src="/images/header/id-index11.gif" border="0" /></a></td>
-	    <td><img src="/images/header/separator.gif" border="0" /></td>
-	    <td><a href="http://www.ietf.org/rfc.html"><img src="/images/header/rfc11.gif" border="0" /></a></td>
-	 </tr>
-      </table>
-   </center>
-   {% if user.is_authenticated %}
-   <span style="float: right; font-size: 80%;">Logged in as {{ user }}
-      |
-      <a href="/accounts/logout/">Log Out</a></span>
-   {% endif %}
-   <hr/>
-      <!-- end new headers and layout -->
-      <div id="content">
-	 {% block content %}{% endblock %}
-	 {% block main_content %}{% endblock %}
-      </div>
-      {% block footer %}{% include "footer.html" %}{% endblock %}
-      {% include "debug.html" %}
-   </body>
+<!-- Copyright The IETF Trust 2007, All Rights Reserved -->
+
+<head>
+	<!-- Project Revision {{ revision_num }}, {{ revision_time }} -->
+	<title>{% block title %}IETF Data{% endblock %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}</title>
+	
+	{% ifnotequal server_mode "production" %}
+		<link rel="icon" href="/images/ietf-dev-icon.bmp" />
+	{% else %}
+		<link rel="icon" href="/images/ietf-icon.bmp" />
+	{% endifnotequal %}
+	<link rel="stylesheet" href="/css/base.css" type="text/css" />
+	{% block head %}{% endblock %}
+	<style type="text/css"><!--
+	{% block css %}{% endblock %}
+	// -->
+	</style>
+</head>
+
+<body {% block body_attributes %}{% endblock %}>
+	<div id="leftmenu">
+		{% include "leftmenu.html" %}
+	</div>
+	
+	<!-- end new headers and layout -->
+	<div id="content">
+		{% if user.is_authenticated %}
+			<span style="float: right; font-size: 80%;">Logged in as {{ user }} | 
+			<a href="/accounts/logout/">Log Out</a></span>
+		{% endif %}
+		{% block content %}{% endblock %}
+	</div>
+	{% block footer %}{% include "footer.html" %}{% endblock %}
+	{% include "debug.html" %}
+</body>
 </html>

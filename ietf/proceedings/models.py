@@ -469,3 +469,23 @@ class Slide(models.Model, ResolveAcronym):
         db_table = 'slides'
     class Admin:
 	pass
+
+class WgProceedingsActivities(models.Model, ResolveAcronym):
+    id = models.AutoField(primary_key=True)
+    group_acronym_id = models.IntegerField(null=True, blank=True)
+    group_acronym = models.ForeignKey(Acronym, raw_id_admin=True)
+
+    meeting = models.ForeignKey(Meeting, db_column='meeting_num')
+    activity = models.CharField(blank=True, maxlength=255)
+    act_date =  models.DateField(null=True, blank=True)
+    act_time = models.CharField(blank=True, maxlength=100)
+    act_by = models.ForeignKey(PersonOrOrgInfo, db_column='act_by')
+    irtf = None
+
+    def __str__(self):
+	#return "IETF%d: %s slides (%s)" % (self.meeting_id, self.acronym(), self.activity)
+        return "this is WgProceedingsActivities.__str__"
+    class Meta:
+        db_table = 'wg_proceedings_activities'
+    class Admin:
+	pass

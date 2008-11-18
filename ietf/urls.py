@@ -1,10 +1,11 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+ # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.conf.urls.defaults import patterns, include, handler404, handler500
 
 from ietf.iesg.feeds import IESGMinutes, IESGAgenda
 from ietf.idtracker.feeds import DocumentComments, InLastCall
 from ietf.ipr.feeds import LatestIprDisclosures
+from ietf.proceedings.feeds import LatestWgProceedingsActivity
 from ietf.liaisons.feeds import Liaisons
 
 from ietf.idtracker.sitemaps import IDTrackerMap, DraftMap
@@ -22,6 +23,7 @@ feeds = {
     'comments': DocumentComments,
     'ipr': LatestIprDisclosures,
     'liaison': Liaisons,
+    'wg-proceedings' : LatestWgProceedingsActivity
 }
 
 sitemaps = {
@@ -64,8 +66,13 @@ urlpatterns = patterns('',
      (r'^review/top/(?P<page>[0-9a-f]+)/$', 'ietf.utils.views.top'),
 
      # Google webmaster tools verification url
-     (r'googlea30ad1dacffb5e5b.html', 'django.views.generic.simple.direct_to_template', { 'template': 'googlea30ad1dacffb5e5b.html' })
+     (r'googlea30ad1dacffb5e5b.html', 'django.views.generic.simple.direct_to_template', { 'template': 'googlea30ad1dacffb5e5b.html' }),
 
+     # ekr, fluffy, wgcharter tool
+     (r'^wgcharter/', include('ietf.wgcharter.urls')),                       
+     
+     # Uncomment this for pre-approval tool for initial Internet-Drafts
+     #(r'^wg/', include('ietf.wg.urls')),                       
 )
 
 if settings.SERVER_MODE in ('development', 'test'):

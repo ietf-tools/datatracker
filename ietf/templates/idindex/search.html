@@ -29,6 +29,23 @@
       <b>{{ form.other_group.label_tag }}</b> {{ form.other_group }}&nbsp;
       <b>{{ form.status_id.label_tag }}</b> {{ form.status_id }}</td>
 </tr>
+
+<tr>
+<td colspan="2">
+<table style="width:100%" cellpadding="2" cellspacing="1" border="0" bgcolor="#ffffff">
+
+<tr>
+<td><b>{{ form.sub_after_date.label_tag }}</b></td><td>{{ form.sub_after_date }}</td><td><b>{{ form.exp_after_date.label_tag }}</b></td><td>{{ form.exp_after_date }}</td>
+</tr>
+<tr>
+<td><b>{{ form.sub_before_date.label_tag }}</b></td><td>{{ form.sub_before_date }}</td><td><b>{{ form.exp_before_date.label_tag }}</b></td><td>{{ form.exp_before_date }}</td>
+</tr>
+<tr>
+<td><b>{{ form.sub_within_date.label_tag }}</b></td><td>{{ form.sub_within_date }}</td><td><b>{{ form.exp_within_date.label_tag }}</b></td><td>{{ form.exp_within_date }}</td>
+</tr>
+
+</table></td></tr>
+
 <tr>
   <td><b>Author:</b></td>
   <td>{{ form.last_name.label_tag }} {{ form.last_name }} &nbsp;
@@ -37,7 +54,17 @@
 <tr><td colspan="2" align="center"><br><input type="submit" value=" Search "></td></tr>
 </table>
 </td></tr></table>
+</form>
+
 </center>
+
+{% if form.errors %}
+<p class="error">
+Please fix the following error{{ form.errors|pluralize }} and retry your search:
+{{ form.errors }}
+</p>
+{% endif %}
+
 {% endif %}
 
 {% endblock %}

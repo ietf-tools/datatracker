@@ -1,9 +1,7 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "idtracker/base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}{% extends "base.html" %}
 
-{% block idcontent %}
-<h2>Key file</h2>
-<hr>
+{% block content %}
+<h1 class="first">Key file</h1>
 <pre>
 Key to how the Secretariat has historically recorded Evaluations:
    
@@ -18,7 +16,7 @@ Key to how the Secretariat has historically recorded Evaluations:
 - a "D" in the Discuss column indicates "Defer"
 </pre>
 
-   <center><form>
-   <input type="button" value="close" onClick="window.close();">
-   </form></center>
+   <form action=".">
+   <input type="button" value="Back" onClick="history.go(-1);"/>
+   </form>
 {% endblock %}

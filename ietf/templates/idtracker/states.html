@@ -1,42 +1,57 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "idtracker/base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}{% extends "base.html" %}
 
-{% block idcontent %}
+{% block content %}
 
-   <h2>Main States</h2>
-   <a href="/images/state_diagram.gif">[View States Diagram]</a><br>
-   <table cellpadding="1" cellspacing="0" border="1" width="750">
+   <h1 class="first">Main I-D States</h1>
+   
 
-   <tr>
-   <th>State Name</th><th>Description</th><th>Next State(s)</th>
+   <table class="states">
+
+   <tr class="states">
+   <th>State <a href="/images/state_diagram.gif">[View Diagram]</a></th>
+   <th>Description</th>
+   <th>Next State(s)</th>
    </tr>
-<tr><td>I-D Exists</td>
-<td width="700">Initial (default) state for all internet drafts. Such documents are<br>
+
+{# XXX I-D Exists should be added to the database #}
+<tr class="states">
+<td>I-D Exists</td>
+<td >Initial (default) state for all internet drafts. Such documents are
 not being tracked by the IESG as no request has been made of the
 IESG to do anything with the document.</td>
-<td><ul><li> AD is watching<li> Publication Requested</ul></td></tr>
+<td>
+<ul class="states">
+<li> AD is watching
+<li> Publication Requested</ul>
+</td></tr>
                                                                                                                
 {% for state in states %}   
-          <tr>
-          <td width="200">{{ state.state }}</td><td width="350">{{ state.description }}</td><td width="200">
-  <ul>
-  {% for next in state.nextstate.all %}
-  <li>{{ next.next_state.state }}
-  {% endfor %}
-  </ul>
+          <tr class="states">
+          <td class="state">{{ state.state }}</td>
+          <td>{{ state.description }}</td>
+          <td>
+		  <ul class="states">
+		  {% for next in state.nextstate.all %}
+		  <li>{{ next.next_state.state }}
+		  {% endfor %}
+		  </ul>
 </td>
           </tr>
 {% endfor %}
    </table>
-   <h2>Sub States</h2>
-<table cellpadding="1" cellspacing="0" border="1" width="750">
 
-<tr><th width="250">Sub State Name</th><th>Description</th></tr>
+   <h1>Sub States</h1>
+<table class="states">
+
+<tr class="states"><th>Sub State Name</th><th>Description</th></tr>
 
 {% for substate in substates %}
-<tr><td>{{ substate.sub_state }}</td>
-<td>{{ substate.description }}</td></tr>
+<tr class="states">
+<td class="state">{{ substate.sub_state }}</td>
+<td>{{ substate.description }}</td>
+</tr>
 {% endfor %}
 </table>
 
 {% endblock %}
+css

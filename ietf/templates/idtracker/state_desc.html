@@ -1,10 +1,9 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "idtracker/base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}{% extends "base.html" %}
 
-{% block idcontent %}
+{% block content %}
 <h3>{{ state.state }}</h3>
 {{ state.description|escape }}
-<center><form>
-<input type="button" value="close" onClick="window.close();">
+<center><form action=".">
+<input type="button" value="Back" onClick="history.go(-1);"/>
 </form></center>
 {% endblock%}

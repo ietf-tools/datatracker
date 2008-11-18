@@ -1,101 +1,86 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "idtracker/base.html" %}
 
-{% block title %}-- Search{% endblock %}
+{% extends "base.html" %}
+{% load ietf_filters %}
+{% block title %}IETF I-D Tracker{% endblock %}
 
-{% block idcontent %}
+{% block content %}
 
-   {# does this belong here or is it better in the head? #}
-   <script language="javascript">
-   function clear_fields() {
-      document.search_form.search_job_owner.selectedIndex=0;
-      document.search_form.search_status_id.selectedIndex=0;
-      document.search_form.search_area_acronym.selectedIndex=0;
-      document.search_form.search_cur_state.selectedIndex=0;
-      document.search_form.sub_state_id.selectedIndex=0;
-      document.search_form.search_group_acronym.value = "";
-      document.search_form.search_filename.value = "";
-      document.search_form.search_rfcnumber.value = "";
-      return true;
-   }
-   </script>
+<script type="text/javascript" language="javascript">
+function clear_fields() {
+   document.search_form.search_job_owner.selectedIndex = 0;
+   document.search_form.search_status_id.selectedIndex = 0;
+   document.search_form.search_area_acronym.selectedIndex = 0;
+   document.search_form.search_cur_state.selectedIndex = 0;
+   document.search_form.sub_state_id.selectedIndex = 0;
+   document.search_form.search_group_acronym.value = "";
+   document.search_form.search_filename.value = "";
+   document.search_form.search_rfcnumber.value = "";
+}
+</script>
 
-<form action="." method="GET" name="search_form">
 
-<center>
-{% if searching %}
-{% else %}
-   <img src="/images/ietflogo2e.gif" border="0" height="137" width="280"><br>
-   <h1>IETF I-D TRACKER</h1>
-{% endif %}
+<h1 class="first">IETF I-D Tracker</h1>
 
-<table cellpadding="1" cellspacing="0" border="0">
-<tr bgcolor="silver">
-<th colspan="2">I-D - Search Criteria</th>
-</tr>
-
+<form action="." method="get" name="search_form">
+<table class="top">
 <tr>
-<td align="right"><label for="id_search_job_owner"><b>Responsible
-AD:</b></label></td>
-<td>{{ form.search_job_owner }}&nbsp;&nbsp;&nbsp;<label for="id_search_group_acronym">
-<b>WG Acronym:</b></label>{{ form.search_group_acronym }}&nbsp;&nbsp;&nbsp;<label
-for="id_search_status_id"><b>Status:</b></label>
-{{ form.search_status_id }}</td>
+	<th><label for="id_search_job_owner">Responsible AD:</label></th>
+	<td>{{ form.search_job_owner }} </td>
 </tr>
-
 <tr>
-<td align="right"><label for="id_search_cur_state"><b>Document
-State:</b></label></td>
-<td>{{ form.search_cur_state }} <label for="id_sub_state_id"><b>sub
-state</b>: {{ form.sub_state_id }}</label> </td>
+	<th><label for="id_search_group_acronym">WG Acronym:</label></th>
+	<td>{{ form.search_group_acronym }} </td>
 </tr>
-
 <tr>
-<td align="right"><label for=
-"id_search_filename"><b>Filename:</b></label></td>
-<td>{{ form.search_filename }} &nbsp;&nbsp;&nbsp; <label for=
-"id_search_rfcnumber"><b>RFC Number:</b></label> {{ form.search_rfcnumber }}
-&nbsp;&nbsp;&nbsp; <label for="id_search_area_acronym"><b>Area Acronym:</b></label>
-{{ form.search_area_acronym }}</td>
+	<th><label for="id_search_area_acronym">Area Acronym:</label></th>
+	<td>{{ form.search_area_acronym }} </td>
 </tr>
-
-{% if form.errors %}
 <tr>
-<td colspan="2">Please fix the following errors and try your search again:
-{{ form.errors }}</td>
+	<th><label for="id_search_status_id">Status:</label></th>
+	<td>{{ form.search_status_id }} </td>      
 </tr>
-{% endif %}
-
-<TR BGCOLOR="silver">
-<TD ALIGN="CENTER" colspan="2"><INPUT TYPE="submit" VALUE="SEARCH" name="search_button">
-<input type="button" value="Clear Fields" onClick="clear_fields();">
-</TD>
-
-</TR>
+<tr>
+	<th><a href="/idtracker/help/state/">Current State:</a></th>
+	<td>{{ form.search_cur_state }}{{ form.sub_state_id }} </td>
+</tr>
+<tr>
+	<th><label for="id_search_filename">Draft Name:</label></th>
+	<td>{{ form.search_filename }}  </td>
+</tr>
+<tr>
+	<th><label for="id_search_rfcnumber">RFC Number:</label></th>
+	<td>{{ form.search_rfcnumber }} </td>
+</tr>
+<tr>
+	<td/>
+	<td class="buttons">
+	<input type="button" value="Reset Form" onClick="clear_fields()"/>
+	<input type="submit" value="Search I-Ds"/>
+	</td>
+</tr>
 </table>
 </form>
 
-<HR>
-Document States: <a href="/images/state_diagram.gif">State Diagram</a> and 
-<a href="/idtracker/help/state/">State Explanations</a>
+{% if form.errors %}
+<p class="error">
+Please fix the following error{{ form.errors|pluralize }} and retry your search:
+{{ form.errors }}
+</p>
+{% endif %}
 
-</center>
 
 {% if matches %} 
-<hr>
-<b>Search Result</b><br>
     {% regroup matches by docstate as grouped %}
     {% include "idtracker/search_result_table.html" %}
 {% else %} 
     {% if searching %}
-	<p>No matches to your query.</p>
+	<p class="error">No matches to your query.</p>
     {% endif %}
 {% endif %}
+
 {% if matches or searching %}
-   <form action="." method="POST">
-   <input type="submit" value="Main Menu">
-   <input type="button" name="back_button" value="BACK" onClick="history.go(-1);return true">
-   </form>
+	<p><a href=".">Back</a></p>
 {% endif %}
 
 {% endblock %}

@@ -1,9 +1,7 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "idtracker/base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}{% extends "base.html" %}
 
-{% block idcontent %}
-<h2>Explanation of Discusses</h2>
-<hr>
+{% block content %}
+<h1 class="first">Explanation of Discusses</h1>
 <pre>
 The process that the IESG uses for recording and documenting issues
 with documents is called an Evaluation.  Evaluations provide a
@@ -94,8 +92,8 @@ vote "no". Continued deadlock sends it back to the working group.
 
 
 </pre>
-   <center><form>
-   <input type="button" value="close" onClick="window.close();">
-   </form></center>
+   <form action=".">
+   <input type="button" value="Back" onClick="history.go(-1);"/>
+   </form>
 
 {% endblock %}

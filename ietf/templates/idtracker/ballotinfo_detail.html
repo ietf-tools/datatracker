@@ -1,10 +1,9 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "idtracker/base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}{% extends "base.html" %}
 {% load ietf_filters %}
                                                                                                                 
 {% block title %}-- Ballot for {{ object.drafts.all.0.document.filename }}{% endblock %}
                                                                                                                 
-{% block idcontent %}
+{% block content %}
 <pre>
 To: Internet Engineering Steering Group &lt;iesg@ietf.org&gt;
 From: IESG Secretary &lt;iesg-secretary@ietf.org&gt;

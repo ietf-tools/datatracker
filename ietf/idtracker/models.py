@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+from django.conf import settings
 from django.db import models
 from ietf.utils import FKAsOneToOne
 from django.test import TestCase
@@ -117,6 +118,7 @@ class IDIntendedStatus(models.Model):
         pass
 
 class InternetDraft(models.Model):
+    DAYS_TO_EXPIRE=185
     id_document_tag = models.AutoField(primary_key=True)
     title = models.CharField(maxlength=255, db_column='id_document_name')
     id_document_key = models.CharField(maxlength=255, editable=False)
@@ -153,9 +155,19 @@ class InternetDraft(models.Model):
         self.id_document_key = self.title.upper()
         super(InternetDraft, self).save()
     def displayname(self):
-	return "%s-%s.txt" % ( self.filename, self.revision_display() )
+	if self.status.status == "Replaced":
+	    css="replaced"
+	else:
+	    css="active"
+        return '<span class="' + css + '">' + self.filename + '</span>'
+    def displayname_with_link(self):
+	if self.status.status == "Replaced":
+	    css="replaced"
+	else:
+	    css="active"
+	return '<a class="' + css + '" href="%s">%s</a>' % ( self.doclink(), self.filename )
     def doclink(self):
-	return "http://www.ietf.org/internet-drafts/%s" % ( self.displayname() )
+	return "http://" + settings.TOOLS_SERVER + "/html/%s" % ( self.filename )
     def group_acronym(self):
 	return self.group.acronym
     def __str__(self):
@@ -176,12 +188,26 @@ class InternetDraft(models.Model):
     def filename_with_link(self, text=None):
 	if text is None:
 	    text=self.filename
-	if self.status.status != 'Active':
-	    return text
-	else:
-	    return '<a href="%s">%s</a>' % ( self.doclink(), text )
-    def displayname_with_link(self):
-	return self.filename_with_link(self.displayname())
+	return '<a href="%s">%s</a>' % ( self.doclink(), text )
+    def expiration(self):
+        return self.revision_date + datetime.timedelta(self.DAYS_TO_EXPIRE)
+    def can_expire(self):
+        # Copying the logic from expire-ids-1 without thinking
+        # much about it.
+        if self.review_by_rfc_editor:
+            return False
+        idinternal = self.idinternal
+        if idinternal:
+            cur_state_id = idinternal.cur_state_id
+            # 42 is "AD is Watching"; this matches what's in the
+            # expire-ids-1 perl script.
+            # A better way might be to add a column to the table
+            # saying whether or not a document is prevented from
+            # expiring.
+            if cur_state_id < 42:
+                return False
+        return True
+
     class Meta:
         db_table = "internet_drafts"
     class Admin:
@@ -364,7 +390,7 @@ class Rfc(models.Model):
     def revision_display(self):
 	return "RFC"
     def doclink(self):
-	return "http://www.ietf.org/rfc/%s" % ( self.displayname() )
+	return "http://" + settings.TOOLS_SERVER + "/html/%s" % ( self.displayname() )
     def doctype(self):
 	return "RFC"
     def filename_with_link(self):
@@ -581,12 +607,17 @@ class DocumentComment(models.Model):
 	if self.created_by_id and self.created_by_id != 999:
 	    return self.created_by.__str__()
 	else:
-	    return "system"
+	    return "(System)"
     def get_username(self):
 	if self.created_by_id and self.created_by_id != 999:
 	    return self.created_by.login_name
 	else:
-	    return "system"
+	    return "(System)"
+    def get_fullname(self):
+	if self.created_by_id and self.created_by_id != 999:
+	    return self.created_by.first_name + " " + self.created_by.last_name
+	else:
+	    return "(System)"
     def datetime(self):
 	# this is just a straightforward combination, except that the time is
 	# stored incorrectly in the database.

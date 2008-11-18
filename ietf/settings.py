@@ -5,7 +5,6 @@
 # http://code.djangoproject.com/wiki/SplitSettings
 
 import os
-
 import syslog
 syslog.openlog("django", syslog.LOG_PID, syslog.LOG_LOCAL0)
 
@@ -15,16 +14,21 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
+# Domain name of the IETF
+IETF_DOMAIN = 'ietf.org'
+
 ADMINS = (
-    ('IETF Django Developers', 'django-project@ietf.org'),
+    ('IETF Django Developers', 'django-project@' + IETF_DOMAIN),
     ('GMail Tracker Archive', 'ietf.tracker.archive+errors@gmail.com'),
 )
 
+# Server name of the tools server
+TOOLS_SERVER = 'tools.' + IETF_DOMAIN
+
 # Override this in the settings_local.py file:
-SERVER_EMAIL = 'Django Server<django-project@ietf.org>'
+SERVER_EMAIL = 'Django Server <django-project@' + TOOLS_SERVER + '>'
 
-
-DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@ietf.org>'
+DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN + '>'
 
 MANAGERS = ADMINS
 
@@ -33,7 +37,7 @@ DATABASE_NAME = 'ietf'         # Or path to database file if using sqlite3.
 DATABASE_USER = 'ietf'       # Not used with sqlite3.
 #DATABASE_PASSWORD = 'playing' # Not used with sqlite3.
 DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
-#DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
+DATABASE_HOST = '130.129.48.40'             # Set to empty string for localhost. Not used with sqlite3.
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -131,6 +135,8 @@ INSTALLED_APPS = (
     'ietf.my',
     'ietf.proceedings',
     'ietf.redirects',
+# not yet merged from the Vancouver branch    
+#    'ietf.wgcharter',
 )
 
 INTERNAL_IPS = (

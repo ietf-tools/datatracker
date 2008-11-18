@@ -1,292 +1,220 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "idtracker/base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}{% extends "base.html" %}
 
 {% load ietf_filters %}     
 
 {% block title %}-- {{ object.document.filename }}{% endblock %}
 
 {% block head %}
-<link rel="alternate" type="application/atom+xml" href="/feed/comments/{{ object.document.filename }}/">
+<link rel="alternate" type="application/atom+xml" href="/feed/comments/{{ object.document.filename }}/"/>
 {% endblock %}
 
-{% block idcontent %}
-    <table width="90%" cellpading="1" cellspacing="0">
-      <tr>
-        <td bgcolor="000000">
-          <table width="100%" cellspacing="0" cellpading="5">
-            <tr bgcolor="BEBEBE" align="center">
-              <th colspan="2">
-                <div class="largefont">
-                  Detail Info
-                </div>
-		{% if object.ballot_others.count %}
-		<div align="right">
-		  <a href="#action">Action List</a>
-		</div>
-		{% endif %}
-              </th>
-            </tr>
+{% block content %}
 
-            <tr bgcolor="white">
-              <td>
-                <div class="largefont3">
-                  {{ object.document.doctype }} Name:
-                </div>
-              </td>
+<h1 class="first">Detailed Information</h1>
 
-              <td>
-                <div class="largefont3">
-		  {{ object.document.displayname_with_link }}
-		  {% ifequal object.document.doctype "Draft" %}
-		    {% ifnotequal object.document.status.status "Active" %}
-		      ({{ object.document.status.status }})
-		    {% endifnotequal %}
-		  {% endifequal %}
-		  <font color="red">
-		  {% if object.via_rfc_editor %}
-		    (Independent submission via RFC Editor)
-		  {% else %}
-		    {% ifequal object.document.group_acronym "none" %}
-		      (Individual submission)
-		    {% else %}
-		      (WG &lt;{{ object.document.group_acronym }}&gt; submission)
-		    {% endifequal %}
-		  {% endif %}
-                  </font>
-		  {% ifequal object.document.status.status "Replaced" %}
-		    <br>Replaced by
-		    {% if object.document.replaced_by.idinternal %}
-		      <a href="{{ object.document.replaced_by.idinternal.get_absolute_url }}">
-		    {% endif %}
-		    {{ object.document.replaced_by.filename }}
-		    {% if object.document.replaced_by.idinternal %}
-		      </a>
-		    {% endif %}
-		  {% endifequal %}
-		  {% if object.document.replaces_set.count %}
-		    <br>Replaces
-		    {% for replaces in object.document.replaces_set.all %}
-		      {% if replaces.idinternal %}
-		        <a href="{{ replaces.idinternal.get_absolute_url }}">
-		      {% endif %}
-		      {{ replaces.filename }}{% if replaces.idinternal %}</a>{% endif %}{% if not forloop.last %},{% endif %}
-		    {% endfor %}
-		  {% endif %}
-                </div>
-              </td>
-            </tr>
+<!--
+{% if object.ballot_others.count %}
+<a href="#action">Action List</a>
+{% endif %}
+-->
 
-            <tr bgcolor="white">
-              <td>
-                <div class="largefont3">
-                  IESG Discussion:
-                </div>
-              </td>
+  <table class="top">
+    <tr>
+      <th>
+	  {{ object.document.doctype }} Name:
+      </th>
 
-              <td>
-                <div class="largefont3">
-		  {% if object.ballot.ballot_issued %}
-                  <a href="{% url ietf.idtracker.views.view_ballot object.ballot_id %}">IESG evaluation record</a>
-                  [<a href="/idtracker/help/evaluation/">What
-                  they mean</a>]
-                  [<a href="/idtracker/help/ballot/">How they are
-                  recorded</a>]
-		  {% else %}
-		  No IESG evaluation record
-		  {% endif %}
-                </div>
-              </td>
-            </tr>
+      <td>
+	  {{ object.document.displayname_with_link }}
+	  {% ifequal object.document.doctype "Draft" %}
+	    {% ifnotequal object.document.status.status "Active" %}
+	      ({{ object.document.status.status }})
+	    {% endifnotequal %}
+	  {% endifequal %}
+	  {% if object.via_rfc_editor %}
+	    (Independent submission via RFC Editor)
+	  {% else %}
+	    {% ifequal object.document.group_acronym "none" %}
+	      (Individual submission)
+	    {% else %}
+	      (<a href="/idtracker/?search_group_acronym={{ object.document.group_acronym }}">{{ object.document.group_acronym|upper }}</a> WG submission)
+	    {% endifequal %}
+	  {% endif %}
+	  {% ifequal object.document.status.status "Replaced" %}
+	    Replaced by
+	    {% if object.document.replaced_by.idinternal %}
+	      <a href="{{ object.document.replaced_by.idinternal.get_absolute_url }}">
+	    {% endif %}
+	    {{ object.document.replaced_by.displayname_with_link }}
+	    {% if object.document.replaced_by.idinternal %}
+	      </a>
+	    {% endif %}
+	  {% endifequal %}
+	  {% if object.document.replaces_set.count %}
+	    <br>Replaces
+	    {% for replaces in object.document.replaces_set.all %}
+	      {% if replaces.idinternal %}
+		<a href="{{ replaces.idinternal.get_absolute_url }}">
+	      {% endif %}
+	      {{ replaces.displayname_with_link }}{% if replaces.idinternal %}</a>{% endif %}{% if not forloop.last %},{% endif %}
+	    {% endfor %}
+	  {% endif %}
+      </td>
+    </tr>
 
-            <tr bgcolor="white">
-              <td>
-                <div class="largefont3">
-                  Version:
-                </div>
-              </td>
+    <tr>
+      <th>
+	  Version:
+      </th>
 
-              <td>
-                <div class="largefont3">
-                  {{ object.document.revision }}
-                </div>
-              </td>
-            </tr>
+      <td>
+	  {{ object.document.revision }}
+      </td>
+    </tr>
 
-            <tr bgcolor="white">
-              <td>
-                <div class="largefont3">
-                  Intended Status:
-                </div>
-              </td>
+    <tr>
+      <th>
+	  Intended Status:
+      </th>
 
-              <td>
-                <div class="largefont3">
-                  {{ object.document.intended_status }}
-                </div>
-              </td>
-            </tr>
+      <td>
+	  {{ object.document.intended_status }}
+      </td>
+    </tr>
 
-            <tr bgcolor="white">
-              <td>
-                <div class="largefont3">
-                  On Next Agenda?
-                </div>
-              </td>
+    <tr>
+      <th>
+	  On Next Agenda?
+      </th>
 
-              <td>
-                <div class="largefont3">
-                  {{ object.agenda|yesno:"Yes,No" }}
-                </div>
-              </td>
-            </tr>
+      <td>
+	  {{ object.agenda|yesno:"Yes,No" }}
+      </td>
+    </tr>
 
-            <tr bgcolor="white">
-              <td>
-                <div class="largefont3">
-                  Current State:
-                </div>
-              </td>
+    <tr>
+      <th>
+	  IESG Discussion:
+      </th>
 
-              <td>
-                <div class="largefont3">
-                  <a href="/idtracker/help/state/{{ object.cur_state_id }}/">
-                  {{ object.cur_state }}</a>
-		  {% if object.cur_sub_state %}
-		  ::
-		  <a href="/idtracker/help/substate/{{ object.cur_sub_state_id }}/">
-		  {{ object.cur_sub_state }}
-		  </a>
-		  {% endif %}
-		  {% if object.rfc_flag %}
-		  {% else %}
-		  {% ifequal object.cur_state.state "RFC Ed Queue" %}
-		  <a href="http://www.rfc-editor.org/queue.html#{{ object.document.filename }}">
-                  [RFC Editor State]</a>
-		  {% endifequal %}
-		  {% endif %}
-                </div>
-                <a href="/idtracker/help/state/">
-                [Show States Table]</a> 
-              </td>
-            </tr>
+      <td>
+	  {% if object.ballot.ballot_issued %}
+	  <a href="{% url ietf.idtracker.views.view_ballot object.ballot_id %}">IESG evaluation record</a>
+	  [<a href="/idtracker/help/evaluation/">What they mean</a>]
+	  [<a href="/idtracker/help/ballot/">How they are recorded</a>]
+	  {% else %}
+	  No IESG evaluation record
+	  {% endif %}
+      </td>
+    </tr>
 
-            <tr bgcolor="white">
-              <td>
-                <div class="largefont3">
-                  Responsible AD:
-                </div>
-              </td>
+    <tr>
+      <th>
+	  Current State:
+      </th>
 
-              <td>
-                <div class="largefont3">
-                  {{ object.job_owner }}
-                </div>
-              </td>
-            </tr>
+      <td>
+	  <a title="{{ object.cur_state.description|escape|allononelinew }}" href="/idtracker/help/state/{{ object.cur_state_id }}/">
+	  {{ object.cur_state }}</a>
+	  {% if object.cur_sub_state %}
+	  ::
+	  <a title="{{ object.cur_sub_state.description|escape|allononelinew }}" href="/idtracker/help/substate/{{ object.cur_sub_state_id }}/">
+	  {{ object.cur_sub_state }}</a>
+	  {% endif %}
+	  {% if object.rfc_flag %}
+	  {% else %}
+	  {% ifequal object.cur_state.state "RFC Ed Queue" %}
+	  <a href="http://www.rfc-editor.org/queue.html#{{ object.document.filename }}">
+	  [RFC Editor State]</a>
+	  {% endifequal %}
+	  {% endif %}
+	<a href="/idtracker/help/state/">
+	[State explanations]</a> 
+      </td>
+    </tr>
 
-            <tr bgcolor="white">
-              <td>
-                <div class="largefont3">
-                  Status Date:
-                </div>
-              </td>
+    <tr>
+      <th>
+	  Responsible AD:
+      </th>
 
-              <td bgcolor="white">
-                <div class="largefont3">
-                  {% firstof object.status_date "&nbsp;" %}
-                </div>
-              </td>
-            </tr>
+      <td>
+	  {{ object.job_owner }}
+      </td>
+    </tr>
 
-            <tr bgcolor="white">
-              <td>
-                <div class="largefont3">
-                  Note:
-                </div>
-              </td>
+    <tr>
+      <th>
+	  Status Date:
+      </th>
 
-              <td>
-                <div class="largefont3">
-		  {# |unformat_textarea #}
-                  {% firstof object.note &nbsp; %}
-                </div>
-              </td>
-            </tr>
+      <td>
+	  {% firstof object.status_date "&nbsp;" %}
+      </td>
+    </tr>
 
-            <tr bgcolor="white">
-              <td width="20%">&nbsp;</td>
+    <tr>
+      <th>
+	  Note:
+      </th>
 
-              <td>
-                <table cellpadding="1" cellspacing="1" border="0">
-                  <tr>
-                    <td>
-                      <form action="{% url ietf.idtracker.views.search %}" method="GET">
-			<input type="submit" value=
-			"Main Menu">
-                      </form>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-	</td>
-      </tr>
-    </table>
+      <td>
+	  {# |unformat_textarea #}
+	  {% firstof object.note &nbsp; %}
+      </td>
+    </tr>
+
+<!--
+    <tr>
+      <td/>
+
+      <td>
+	      <form action="{% url ietf.idtracker.views.search %}" method="GET">
+		<input type="submit" value=
+		"Main Menu">
+	      </form>
+      </td>
+    </tr>
+-->    
+  </table>
 
     {% if object.ballot_others.count %}
-    <a name="action"></a>
-    <table border="1" bgcolor="black">
-    <tr><td><font color="white"><h3>Actions</h3></font>
+    <h1>Ballot Set</h1>
     {% regroup object.ballot_set by docstate as grouped %}
     {% include "idtracker/search_result_table.html" %}
-    </td>
-    </tr>
-    </table>
     {% endif %}
 
-    <h3>Comment Log <span style="font-size: 80%">[<a href="/feed/comments/{{ object.document.filename }}/">atom feed</a>]</span></h3>
+    <h1>Comment Log [<a href="/feed/comments/{{ object.document.filename }}/">atom feed</a>]</h1>
 
-    <table cellpadding="1" cellspacing="1" border="0">
-      <tr bgcolor="#7DC189">
-	<th>Date</th>
-
+    <table>
+      <tr>
 	<th>Version</th>
-
-	<th>Comment</th>
+	<th>Action</th>
+	<th>Who</th>
+	<th>Date</th>
       </tr>
 
 {% for comment in object.public_comments %}
       <tr bgcolor="{% cycle #CFE1CC,#7DC189 %}">
+	<td>{{ comment.version }}</td>
+
+	<td>
+	{% if comment.ballot %}
+		<span class="{{ comment.get_ballot_display }}">[IESG Evaluation {{ comment.get_ballot_display|upper }}] </span>
+	{% endif %}
+
+	{{ comment.comment_text|removetags:"b br"|truncatewords_html:"20" }}
+	[<a href="{{ comment.get_absolute_url }}">more</a>]
+	</td>
+
+	<td>{{ comment.get_fullname }}</td>
 	<td>{{ comment.date }}</td>
-
-	<td align="center">{{ comment.version }}</td>
-
-	<td><font color="blue">[{{ comment.get_username }}]</font>
-{% if comment.ballot %}
-	  <font color="red">[IN IESG DISCUSSION
-	    <b>*{{ comment.get_ballot_display }}*</b>]</font>
-{% endif %} {{ comment.comment_text|format_textarea|truncatewords_html:"25" }}</td>
-
-        <!-- this form element technically belongs inside the <td>
-             but that actually changes the visible spacing in most
-             browsers, so we let layout concerns make us write
-             invalid HTML. -->
-	<form action="{{ comment.get_absolute_url }}" method="GET">
-	  <td>
-	    <input type="submit" value="View Detail">
-	  </td>
-	</form>
       </tr>
+
 {% endfor %} 
     </table>
-    <br>
      
 
-    <form action="{% url ietf.idtracker.views.search %}" method="GET">
-      <input type="submit" value="Main Menu">
-      <input type="button" name="back_button" value="BACK"
-        onclick="history.go(-1);return true">
-    </form>
+<p><a href="{% url ietf.idtracker.views.search %}">Main Menu</a></p>
 
 {% endblock %}

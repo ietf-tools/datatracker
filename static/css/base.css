@@ -1,34 +1,188 @@
+/* Copyright The IETF Trust 2007, All Rights Reserved */
+
 body {
-  margin:0;
-  padding:0;
-  font-family: Arial, sans-serif;
-  font-size: 13px;
-  color: #022D66;
-  font-style: normal;
-  }
-th {
-  padding:6px 0px 10px 30px;
-  line-height:1em;
-  font-family: Arial, sans-serif;
-  font-size: 1.0em;
-  color: #333;
-                                                                                                                                                                       
- }
-td {text-decoration: none; color: #000000; font: 10pt arial;}
-td img { whitespace: nowrap; display:inline; }
-/* Links
------------------------------------------------ */
-a:link, a:visited {
-  border-bottom:1px dotted #69f;
-  color:#36c;
-  text-decoration:none;
-  }
-a:visited {
-  border-bottom-color:#969;
-  color:#36c;
-  }
-a:hover {
-  border-bottom:1px solid #f00;
-  color:#f00;
-  }
-a.noline:link, a.noline:visited, a.noline:hover {border-style:none;}
+	font-size: .85em;
+	margin: 0;
+	padding: 0;
+	background-color: white;
+	font-family: Verdana, Helvetica, Arial, sans-serif;
+}
+
+#content {
+	margin-left: 12em;
+}
+
+#content h1 {
+	margin-top: 2em;
+	padding-bottom: .25em;
+	font-size: 1.5em;
+}
+
+#content h1.first {
+	margin-top: 0em;
+}
+
+#content h2 {
+	font-size: 1.15em;
+}
+
+#content table, #content td, #content th {
+	padding: 0em;
+	margin: 0em;
+	vertical-align: top;
+	border-style: none;
+	border-width: 0em;
+	border-collapse: collapse;
+}
+
+#content p.replace {
+	padding: 0em;
+	margin: 0em;
+	padding-left: 1.5em;
+}
+
+#content td.nonprimary {
+	padding-left: 1.5em;
+}
+
+#content th, #content td {
+	text-align: left;
+	padding-top: 0.25em;
+	padding-bottom: 0.25em;
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+}
+
+#content th {
+	font-weight: bold;
+	background-color: lightgray;
+	white-space: nowrap;
+}
+
+#content td.buttons {
+	text-align: right;
+}
+
+#content table.top {
+	background-color: lightgray;
+	padding: .5em;
+}
+
+#content p.error {
+	font-weight: bold;
+	color: red;
+}
+
+#content th.state {
+	padding-top: 2em;
+	font-size: 1.15em;
+	background-color: white;
+}
+
+#content tr.states {
+	border-style: solid;
+	border-width: 0.1em;
+}
+
+#content td.state, #content th.state {
+	white-space: nowrap;
+}
+
+#content ul.states {
+	margin-top: 0em;
+	padding-left: 1.25em;
+	list-style: square;
+}
+
+#content table {
+	margin-right: 1em;
+}
+
+#content .discuss {
+	color: red;
+	font-weight: bold;
+}
+
+#content .comment {
+	color: yellow;
+	font-weight: bold;
+}
+
+#content .replaced {
+	text-decoration: line-through;
+}
+
+#content .active {
+	text-decoration: none;
+}
+
+#content a.active {
+	text-decoration: underline;
+}
+
+#leftmenu {
+	float: left;
+	background-color: #313163;
+	color: #c8c8c8;
+	padding: 0.5em;
+	margin-right: 0em;
+	margin-right: 1em;
+	width: 11em;
+	min-width: 148px;
+}
+
+#leftmenu ul li { 
+	list-style-type: none;
+}
+
+#leftmenu ul li a:link, #leftmenu ul li a:visited {
+	color: #ffffff;
+	text-decoration: none;
+}
+
+
+#leftmenu ul {
+	padding-left: 0;
+	margin-left: 0;
+}
+
+#leftmenu ul li ul {
+	margin-left: 1.5em;
+	font-size: .85em;
+}
+
+.menulogo { 
+	text-align: center;
+}
+
+
+#footer {
+	clear: both;
+	margin-right: 1em;
+	font-size: 7pt;
+	font-style: italic;
+}
+
+#debug {
+	font-size: 7pt;
+}
+
+/*XXX announcement tool additions - may need to be new-css-i-fied? */
+input {
+  display: block
+  width: 95%
+}
+
+span.form-required {
+  color: #FFAE00;
+}
+
+.form-item .description {
+  font-size: 0.85em;
+}
+
+.description {
+  color: #898989;
+  line-height: 150%;
+  margin-bottom: 0.75em;
+}

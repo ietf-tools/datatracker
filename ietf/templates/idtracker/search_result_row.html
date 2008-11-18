@@ -1,38 +1,48 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
+
 {% load myifchanged %}
-	<tr bgcolor="#{% myifchanged match.ballot_id %}{% cycle F8D6F8,E2AFE2 as ballotcolor %}{% else %}{% if match.synthetic %}{% cycle ballotcolor %}{% else %}{% cyclevalue ballotcolor %}{% endif %}{% endmyifchanged %}">
-	{% if match.synthetic %}
-	<td>&nbsp;</td>
-	{% else %}
-        <!-- this form element technically belongs inside the <td>
-             but that actually changes the visible spacing in most
-             browsers, so we let layout concerns make us write
-             invalid HTML. -->
-        <form method="GET" action="{% url ietf.idtracker.views.view_id match.document.filename %}"><td><input type="submit" value="DETAIL"></td></form>
-	{% endif %}
-	<td nowrap>{% if match.primary_flag %}<li>{% else %}<dd>{% endif %}{{ match.document.filename_with_link }} ({{ match.document.intended_status }})
+	{# we can't do alternating row colors with CSS alone #}
+	<tr 
+	bgcolor="#{% myifchanged match.ballot_id %}{% cycle F8D6F8,E2AFE2 as ballotcolor %}{% else %}{% if match.synthetic %}{% cycle ballotcolor %}{% else %}{% cyclevalue ballotcolor %}{% endif %}{% endmyifchanged %}">
+
+
+	<td {% if not match.primary_flag %} class="nonprimary" {% endif %} >
+
+	    <a href="{% url ietf.idtracker.views.view_id match.document.filename %}">
+	    {{ match.document.displayname }}
+	    </a>
+		
 	    {% ifequal match.document.status.status "Replaced" %}
-	      <br>&nbsp;&nbsp;&nbsp;&nbsp;Replaced by
-	      {% if match.document.replaced_by.idinternal %}
+	      <p class="replace">Replaced by
+<!--	      {% if match.document.replaced_by.idinternal %}
 		<a href="{% url ietf.idtracker.views.search %}?search_filename={{ match.document.replaced_by.filename }}">
 	      {% endif %}
-	      {{ match.document.replaced_by.filename }}
-	      {% if match.document.replaced_by.idinternal %}
+-->	      {{ match.document.replaced_by.displayname_with_link }}
+<!--	      {% if match.document.replaced_by.idinternal %}
 		</a>
 	      {% endif %}
+-->	      </p>
 	    {% endifequal %}
+	    
 	    {% if match.document.replaces_set.count %}
-	      <br>&nbsp;&nbsp;&nbsp;&nbsp;Replaces
+	      <p class="replace">Replaces
 	      {% for replaces in match.document.replaces_set.all %}
-		{% if replaces.idinternal %}
+<!--		{% if replaces.idinternal %}
 		  <a href="{% url ietf.idtracker.views.search %}?search_filename={{ replaces.filename }}">
 		{% endif %}
-		{{ replaces.filename }}{% if replaces.idinternal %}</a>{% endif %}{% if not forloop.last %},{% endif %}
-	      {% endfor %}
+-->		{{ replaces.displayname_with_link }}
+<!--		{% if replaces.idinternal %}</a>{% endif %}{% if not forloop.last %}</p><p class="replace">{% endif %}
+-->	      {% endfor %}</p>
 	    {% endif %}
         </td>
-	<td>{{ match.document.revision_display }}</td>
+
+	<td>
+	<a href="{{ match.document.doclink }}">{{ match.document.revision_display }}</a>
+	</td>
+
+	<td>{{ match.document.intended_status }}</td>
+
 	<td>{{ match.job_owner }}</td>
-	<td>{% firstof match.status_date "" %}</td>
+
 	<td>{{ match.event_date }}</td>
 	</tr>

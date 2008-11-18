@@ -5,7 +5,7 @@ from models import IESGLogin, IDStatus, Area, IDState, IDSubState
 
 class IDSearch(forms.Form):
     search_job_owner = forms.ChoiceField(choices=(), required=False)
-    search_group_acronym = forms.CharField(widget=forms.TextInput(attrs={'size': 6, 'maxlength': 10}), required=False)
+    search_group_acronym = forms.CharField(widget=forms.TextInput(attrs={'size': 7, 'maxlength': 10}), required=False)
     search_status_id = forms.ModelChoiceField(IDStatus.objects.all(), empty_label="--All", required=False)
     search_area_acronym = forms.ModelChoiceField(Area.objects.filter(status=Area.ACTIVE), empty_label="--All/Any", required=False)
     search_cur_state = forms.ModelChoiceField(IDState.objects.all(), empty_label="--All/Any", required=False)
