@@ -545,9 +545,9 @@ class IDInternal(models.Model):
 	return IDInternal.objects.filter(models.Q(primary_flag=0)|models.Q(primary_flag__isnull=True), ballot=self.ballot_id)
     def docstate(self):
 	if self.cur_sub_state_id > 0:
-	    return "%s :: %s" % ( self.cur_state, self.cur_sub_state )
+	    return "%s::%s" % ( self.cur_state.state, self.cur_sub_state.sub_state )
 	else:
-	    return self.cur_state
+	    return self.cur_state.state
     class Meta:
         db_table = 'id_internal'
 	verbose_name = 'IDTracker Draft'
