@@ -69,7 +69,7 @@ urlpatterns = patterns('',
      (r'googlea30ad1dacffb5e5b.html', 'django.views.generic.simple.direct_to_template', { 'template': 'googlea30ad1dacffb5e5b.html' }),
 
      # ekr, fluffy, wgcharter tool
-     (r'^wgcharter/', include('ietf.wgcharter.urls')),                       
+#     (r'^wgcharter/', include('ietf.wgcharter.urls')),                       
      
      # Uncomment this for pre-approval tool for initial Internet-Drafts
      #(r'^wg/', include('ietf.wg.urls')),                       
