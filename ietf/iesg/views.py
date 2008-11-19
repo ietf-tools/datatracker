@@ -1,12 +1,45 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+# Portion Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies).
+# All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions 
+# are met:
+# 
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+# 
+#  * Neither the name of the Nokia Corporation and/or its
+#    subsidiary(-ies) nor the names of its contributors may be used
+#    to endorse or promote products derived from this software
+#    without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 # Create your views here.
 #from django.views.generic.date_based import archive_index
-from ietf.idtracker.models import IDInternal, InternetDraft
+from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup,IETFWG
 from django.views.generic.list_detail import object_list
 from django.http import Http404
 from django.template import RequestContext
 from django.shortcuts import render_to_response
+from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 import datetime 
 
 def date_threshold():
@@ -51,3 +84,70 @@ def wgdocs(request,cat):
          queryset_list_doc.append(sub_item2)
    return render_to_response( 'iesg/ietf_doc.html', {'object_list': queryset_list, 'object_list_doc':queryset_list_doc, 'is_recent':is_recent}, context_instance=RequestContext(request) )
 
+def get_doc_section(id):
+    states = [16,17,18,19,20,21]
+    if id.document().intended_status.intended_status_id in [1,2,6,7]:
+        s = "2"
+    else:
+        s = "3"
+    if id.rfc_flag == 0:
+        g = id.document().group_acronym()
+    else:
+        g = id.document().group_acronym
+    if g and str(g) != 'none':
+        s = s + "1"
+    elif (s == "3") and id.via_rfc_editor > 0:
+        s = s + "3"
+    else:
+        s = s + "2"
+    if not id.rfc_flag and id.cur_state.document_state_id not in states:
+        s = s + "3"
+    elif id.returning_item > 0:
+        s = s + "2"
+    else:
+        s = s + "1"
+    return s
+
+def agenda_docs(date):
+    matches = IDInternal.objects.filter(telechat_date=date,primary_flag=1,agenda=1)
+    idmatches = matches.filter(rfc_flag=0).order_by('ballot_id')
+    rfcmatches = matches.filter(rfc_flag=1).order_by('ballot_id')
+    res = {}
+    for id in list(idmatches)+list(rfcmatches):
+        section_key = "s"+get_doc_section(id)
+        if section_key not in res:
+            res[section_key] = []
+        others = id.ballot_others()
+        if id.note:
+            id.note = str(id.note).replace("\240","&nbsp;")
+        if len(others) > 0:
+            res[section_key].append({'obj':id, 'ballot_set':[id]+list(others)})
+        else:
+            res[section_key].append({'obj':id})
+    return res
+
+def agenda_wg_actions(date):
+    mapping = {12:'411', 13:'412',22:'421',23:'422'}
+    matches = WGAction.objects.filter(agenda=1,telechat_date=date,category__in=mapping.keys()).order_by('category')
+    res = {}
+    for o in matches:
+        section_key = "s"+mapping[o.category]
+        if section_key not in res:
+            res[section_key] = []
+        area = AreaGroup.objects.get(group=o.group_acronym)
+        res[section_key].append({'obj':o, 'area':str(area.area)})
+    return res
+
+def agenda_management_issues(date):
+    matches = TelechatAgendaItem.objects.filter(type=3).order_by('id')
+    return [o.title for o in matches]
+
+def telechat_agenda(request):
+    date = TelechatDates.objects.all()[0].date1
+    #date = "2006-03-16"
+    docs = agenda_docs(date)
+    mgmt = agenda_management_issues(date)
+    wgs = agenda_wg_actions(date)
+    private = 'private' in request.REQUEST
+    return render_to_response('iesg/agenda.html', {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs, 'private':private}, context_instance=RequestContext(request) )
+    

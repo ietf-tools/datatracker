@@ -1,0 +1,236 @@
+{% comment %}
+Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. #}
+{% endcomment %}
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<style type="text/css">
+.agenda h1 { text-align: center; }
+.agenda hr { margin-top: 2em; }
+.agenda #section1 h3, #section6 h3 { margin-top:0; margin-bottom:0;  }
+.agenda h3 { margin-left: 30px; }
+.agenda h4 { margin-left: 60px; margin-top: 0; margin-bottom: 0; }
+.agenda table { margin-left: 90px; margin-top:0em; margin-bottom: 1em;}
+.agenda #section2 p, #section3 p, #section4 p { margin-left:90px; margin-top: 0; margin-bottom:0; font-style:italic;}
+.agenda blockquote { margin-left: 30px; width: 70ex;}
+.agenda #section3 blockquote { margin-left: 60px; }
+</style>
+
+<title>IESG Agenda</title>
+</head>
+<body>
+<div class="agenda">
+
+<h1>IESG Agenda</h1>
+Good approximation of what will be included in the Agenda of 
+next Telechat ({{ date }}).
+<hr />
+
+<h2>1. Administrivia</h2>
+<div id="section1">
+
+   <h3>1.1 {% if private %}<a href="rollcall.txt">Roll Call</a>{%else%}Roll Call{%endif%}</h3>
+
+   <h3>1.2 Bash the Agenda</h3>
+
+   <h3>1.3 Approval of the {% if private %}<a href="MINUTES.txt">Minutes</a>{%else%}Minutes{%endif%} of the past telechat</h3>
+
+   <h3>1.4 List of Remaining {% if private %}<a href="task.txt">Action Items</a>{%else%}Action Items{%endif%} from Last Telechat</h3>
+</div>
+
+<h2>2. Protocol Actions</h2>
+<div id="section2">
+
+    <blockquote>
+    Reviews should focus on these questions: "Is this document a
+    reasonable basis on which to build the salient part of the Internet
+    infrastructure? If not, what changes would make it so?"
+    </blockquote>
+
+<h3>2.1 WG Submissions</h3>
+
+    <h4>2.1.1 New Item</h4>
+    {% if not docs.s211 %}<p>NONE</p>{% endif %}
+    {% for doc in docs.s211 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+
+    <h4>2.1.2 Returning Item</h4>
+    {% if not docs.s212 %}<p>NONE</p>{% endif %}
+    {% for doc in docs.s212 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+
+    {% if docs.s213 %}
+    <h4>2.1.3 For Action</h4>
+    {% for doc in docs.s213 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+    {% endif %}
+
+<h3>2.2 Individual Submissions</h3>
+
+    <h4>2.2.1 New Item</h4>
+    {% if not docs.s221 %}<p>NONE</p>{% endif %}
+    {% for doc in docs.s221 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+
+    <h4>2.2.2 Returning Item</h4>
+    {% if not docs.s222 %}<p>NONE</p>{% endif %}
+    {% for doc in docs.s222 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+
+    {% if docs.s223 %}
+    <h4>2.2.3 For Action</h4>
+    {% for doc in docs.s223 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+    {% endif %}
+
+</div> <!-- section2 -->
+
+<h2>3. Document Actions</h2>
+<div id="section3">
+
+<h3>3.1 WG Submissions</h3>
+
+    <blockquote>
+    Reviews should focus on these questions: "Is this document a
+    reasonable contribution to the area of Internet engineering
+    which it covers? If not, what changes would make it so?"
+    </blockquote>
+
+    <h4>3.1.1 New Item</h4>
+    {% if not docs.s311 %}<p>NONE</p>{% endif %}
+    {% for doc in docs.s311 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+
+    <h4>3.1.2 Returning Item</h4>
+    {% if not docs.s312 %}<p>NONE</p>{% endif %}
+    {% for doc in docs.s312 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+
+    {% if docs.s313 %}
+    <h4>3.1.3 For Action</h4>
+    {% for doc in docs.s313 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+    {% endif %}
+
+<h3>3.2 Individual Submissions Via AD</h3>
+
+    <blockquote>
+    Reviews should focus on these questions: "Is this document a
+    reasonable contribution to the area of Internet engineering
+    which it covers? If not, what changes would make it so?"
+    </blockquote>
+
+    <h4>3.2.1 New Item</h4>
+    {% if not docs.s321 %}<p>NONE</p>{% endif %}
+    {% for doc in docs.s321 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+
+    <h4>3.2.2 Returning Item</h4>
+    {% if not docs.s322 %}<p>NONE</p>{% endif %}
+    {% for doc in docs.s322 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+
+    {% if docs.s323 %}
+    <h4>3.2.3 For Action</h4>
+    {% for doc in docs.s323 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+    {% endif %}
+
+<h3>3.3 Independent Submissions Via RFC Editor</h3>
+
+    <blockquote>
+    The IESG will use RFC 3932 responses: 1) The IESG has not
+    found any conflict between this document and IETF work; 2) The
+    IESG thinks that this work is related to IETF work done in WG
+    &lt;X&gt;, but this does not prevent publishing; 3) The IESG thinks
+    that publication is harmful to work in WG &lt;X&gt; and recommends
+    not publishing at this time; 4) The IESG thinks that this
+    document violates the IETF procedures for &lt;X&gt; and should
+    therefore not be published without IETF review and IESG
+    approval; 5) The IESG thinks that this document extends an
+    IETF protocol in a way that requires IETF review and should
+    therefore not be published without IETF review and IESG approval.<br />
+    <br />
+    The document shepherd must propose one of these responses in
+    the Data Tracker note and supply complete text in the IESG
+    Note portion of the write-up. The Area Director ballot positions
+    indicate consensus with the response proposed by the
+    document shepherd.<br />
+    <br />
+    Other matters may be recorded in comments, and the comments will
+    be passed on to the RFC Editor as community review of the document.
+    </blockquote>
+
+    <h4>3.3.1 New Item</h4>
+    {% if not docs.s331 %}<p>NONE</p>{% endif %}
+    {% for doc in docs.s331 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+
+    <h4>3.3.2 Returning Item</h4>
+    {% if not docs.s332 %}<p>NONE</p>{% endif %}
+    {% for doc in docs.s332 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+
+    {% if docs.s333 %}
+    <h4>3.3.3 For Action</h4>
+    {% for doc in docs.s333 %}{% include "iesg/agenda_doc.html" %}{%endfor%}
+    {% endif %}
+
+</div> <!-- section3 -->
+
+<h2>4. Working Group Actions</h2>
+<div id="section4">
+
+<h3>4.1 WG Creation</h3>
+
+    <h4>4.1.1 Proposed for IETF Review</h4>
+    {% if not wgs.s411 %}<p>NONE</p>{% endif %}
+    {% for wg in wgs.s411 %}{% include "iesg/agenda_wg.html" %}{%endfor%}
+
+    <h4>4.1.2 Proposed for Approval</h4>
+    {% if not wgs.s412 %}<p>NONE</p>{% endif %}
+    {% for wg in wgs.s412 %}{% include "iesg/agenda_wg.html" %}{%endfor%}
+
+<h3>4.2 WG Rechartering</h3>
+
+    <h4>4.2.1 Under evaluation for IETF Review</h4>
+    {% if not wgs.s421 %}<p>NONE</p>{% endif %}
+    {% for wg in wgs.s421 %}{% include "iesg/agenda_wg.html" %}{%endfor%}
+
+    <h4>4.2.2 Proposed for Approval</h4>
+    {% if not wgs.s422 %}<p>NONE</p>{% endif %}
+    {% for wg in wgs.s422 %}{% include "iesg/agenda_wg.html" %}{%endfor%}
+
+</div>
+
+<h2>5. IAB News We Can Use</h2>
+
+<h2>{% if private %}<a href="https://datatracker.ietf.org/cgi-bin/display_news.cgi?template_type=3">6. Management Issues</a>{%else%}6. Management Issues{%endif%}</h2>
+<div id="section6">
+{% for m in mgmt %}
+<h3>6.{{forloop.counter}} {{m|escape}}</h3>
+{% endfor %}
+</div>
+
+<h2>7. Working Group News</h2>
+
+</div>
+
+</body></html>

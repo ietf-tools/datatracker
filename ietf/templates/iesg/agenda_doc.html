@@ -1,0 +1,77 @@
+{# 
+Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#}
+
+{% if forloop.first %}
+<table><tr><th>Area</th><th>Date</th></tr>
+{% endif %}
+
+<tr>
+<td>{{doc.obj.area_acronym|upper}}</td>
+<td>{{ doc.obj.event_date|date:"M d" }}</td>
+
+{% if not doc.ballot_set %}
+
+<td>{{ doc.obj.document.title|escape }} ({{ doc.obj.document.intended_status }})</td></tr>
+
+<tr><td></td><td></td><td>
+<a href="{{ doc.obj.document.doclink }}">{{doc.obj.document.displayname}}</a>
+
+{% if doc.obj.ballot.active %}
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{ doc.obj.draft_id }}">[Open Web Ballot]</a></td></tr>
+{% endif %}
+
+{% if doc.obj.note %} {# note: note is not escaped #}
+<tr><td></td><td></td><td>Note: {{ doc.obj.note }}</td></tr>
+{% endif %}
+
+{% else %} {# ballot_set #}
+
+<td>Multi-Document Ballot: <a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{ doc.obj.draft_id }}">[Open Web Ballot]</a></td></tr>
+
+{% for obj2 in doc.obj.ballot_set %}
+<tr><td></td><td></td><td>{{ obj2.draft.title|escape }} ({{ obj2.draft.intended_status }})</td></tr>
+<tr><td></td><td></td><td>
+<a href="{{obj2.draft.doclink}}">{{obj2.draft.displayname}}</a></td></tr>
+{% if obj2.note %} {# note: note is not escaped #}
+<tr><td></td><td></td><td>Note: {{ obj2.note }}</td></tr>
+{% endif %}
+{% endfor %}
+
+{% endif %} {# ballot_set #}
+
+<tr><td></td><td>Token:</td><td><a href="mailto:{{doc.obj.token_email|urlencode}}">{{ doc.obj.token_name|escape }}</a></td></tr>
+
+{% if forloop.last %}
+</table>
+{% endif %}
