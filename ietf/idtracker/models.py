@@ -132,7 +132,7 @@ class InternetDraft(models.Model):
     start_date = models.DateField()
     expiration_date = models.DateField()
     abstract = models.TextField()
-    dunn_sent_date = models.DateField()
+    dunn_sent_date = models.DateField(null=True, blank=True)
     extension_date = models.DateField(null=True, blank=True)
     status = models.ForeignKey(IDStatus)
     intended_status = models.ForeignKey(IDIntendedStatus)
