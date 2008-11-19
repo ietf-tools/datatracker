@@ -1,3 +1,61 @@
+ietfdb(2.13)
+
+  * Merged in code for a new IESG telechat agenda page at /iesg/agenda/, 
+    from Pasi Eronen <pasi.eronen@nokia.com>
+
+  * Made the dunn_sent_date field of InternetDrafts optional
+
+  * Removed references to code not yet merged in, related to wg charters
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb(2.12)
+
+  * settings.py: Fixed broken setting for database host, which had a
+    hardcoded IP address when it should be empty.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb(2.11)
+
+  * Template and layout fixes.  Removed broken links from the lefthand
+    menu-bar.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb(2.10)
+
+  * Changed look-and-feel of the datatracker, by introducing a different
+    style sheet, and using a more consistent style, and introducing a
+    lefthand menubar.
+
+  * Make IDInternal.docstate() consistent in the type of the returned
+    information.  Tweaked the format of returned docstate information
+    to not have spaces around the :: separator between state and substate.
+
+  * Fixed the help page for ballot symbols, which had a very old text
+    which no longer was correct.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb(2.09)
+
+  * Merged in support for a new URL, /list/wg/, which lists the archive
+    URLs for WG mailing lists, from Chris Newman <chris.newman@sun.com>
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb(2.08)
+
+  * Fixed mkrelease to handle minor numbers greater than 07 ,;-)
+
+  * Changed agenda templates, adding a note about agenda being subject to change.
+
+  * Backporting change from deployment copy, reflecting a change in
+    path and URL of presentation slides.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
 ietfdb(2.07)
 
   The full list of changes is here, highlights below:
