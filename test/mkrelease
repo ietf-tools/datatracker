@@ -167,6 +167,10 @@ note "  Ok"
 note "Verifying there's no uncommitted changes..."
 $do svn st | grep "^[AMGRD] " && die "There seems to be uncommitted changes in this working copy"
 
+note "Checking that changelog information is available"
+changes=$( sed -n "/^ietfdb ($VER.*)/,/^ -- /p" changelog | awk '{ if (line) print line ; line=$$0 }' )
+[ "$changes" ] || die "No changelog information for $VER found"
+
 note "\nUpdating the version info in $VERFILE and making sure'\$Rev\$' is Ok"
 $do sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev)?\"/\"$VER\"/" \
 	  -e "/^__rev__/s/\".*\"/\"\$Rev:\$\"/" \
@@ -213,3 +217,22 @@ if [ $SRC = "trunk" ]; then
 fi
 
 $do svn update
+
+echo "
+Hi,
+
+This is an automatic notification about a new datatracker release, 
+v$VER, generated when running the mkrelease script.
+
+Release notes:
+
+$changes
+
+The new version is available through SVN checkout, with
+  'svn checkout http://svn.tools.ietf.org/svn/tools/ietfdb/tags/$VER'
+
+Regards,
+
+	Henrik
+	(via the mkrelease script)
+" | mail -s "New datatracker release: v$VER" -c henrik@levkowetz.com  -c glen@amsl.com codesprints@ietf.org
