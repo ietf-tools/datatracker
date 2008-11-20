@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 
 {% block title %}Not Found - {{ draft.filename }}{% endblock %}
 
 {% block content %}
-<br/>
-<h2>Not in I-D Tracker</h2>
+<br />
+<h1>No IESG processing information available</h1>
 
-<p>{{ draft.filename }} is not in the I-D tracker, although it is
-an {{ draft.status.status|lower }} Internet Draft.  The
-<a href="{% url ietf.idindex.views.view_id draft.filename %}">Internet-Drafts Database Index</a>
-has more information on the status of this document.
+<p>
+   {{ draft.filename }} is an {{ draft.status.status|lower }} Internet Draft, but there
+   is no IESG tracking information available for it.  The
+   <a href="{% url ietf.idindex.views.view_id draft.filename %}">Internet-Drafts Database Index</a>
+   has the status information which is available on this document.
 </p>
 
 {% endblock %}
