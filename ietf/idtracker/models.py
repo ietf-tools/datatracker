@@ -808,7 +808,17 @@ class IETFWG(models.Model):
 	return [(wg.group_acronym_id, wg.group_acronym.acronym) for wg in IETFWG.objects.all().filter(group_type__type='WG').select_related().order_by('acronym.acronym')]
     choices = staticmethod(choices)
     def area_acronym(self):
-        return AreaGroup.objects.filter(group_acronym_id=self.group_acronym_id).area 
+        areas = AreaGroup.objects.filter(group__exact=self.group_acronym)
+        if areas:
+            return areas[areas.count()-1].area.area_acronym
+        else:
+            return None
+    def area_directors(self):
+        areas = AreaGroup.objects.filter(group__exact=self.group_acronym)
+        if areas:
+            return areas[areas.count()-1].area.areadirector_set.all()
+        else:
+            return None
     class Meta:
         db_table = 'groups_ietf'
 	ordering = ['?']	# workaround django wanting to sort by acronym but not joining with it
@@ -817,7 +827,7 @@ class IETFWG(models.Model):
 	search_fields = ['group_acronym__acronym', 'group_acronym__name']
 	# Until the database is consistent, including area_director in
 	# this list means that we'll have FK failures, so skip it for now.
-	list_display = ('group_acronym', 'group_type', 'status')
+	list_display = ('group_acronym', 'group_type', 'status', 'area_acronym', 'start_date', 'concluded_date')
 	list_filter = ['status', 'group_type']
 	#list_display = ('group_acronym', 'group_type', 'status', 'area_director')
 	#list_filter = ['status', 'group_type', 'area_director']
