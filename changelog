@@ -1,4 +1,14 @@
-ietfdb(2.13)
+ietfdb (2.13)
+
+  * Fixed IETFWG.area_acronym() so it works, and added IETFWG.area_directors()
+
+  * Added to the mkrelease script the generation of a mail about the
+    release to various interested parties.
+
+  * Changed the IDtracker's 'not in the tracker' error message, as it
+    sounded a bit as if there was no record of the draft in question.
+
+  * Added a new better blue-background ietf logo
 
   * Merged in code for a new IESG telechat agenda page at /iesg/agenda/, 
     from Pasi Eronen <pasi.eronen@nokia.com>
@@ -9,21 +19,21 @@ ietfdb(2.13)
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
 
-ietfdb(2.12)
+ietfdb (2.12)
 
   * settings.py: Fixed broken setting for database host, which had a
     hardcoded IP address when it should be empty.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
 
-ietfdb(2.11)
+ietfdb (2.11)
 
   * Template and layout fixes.  Removed broken links from the lefthand
     menu-bar.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
 
-ietfdb(2.10)
+ietfdb (2.10)
 
   * Changed look-and-feel of the datatracker, by introducing a different
     style sheet, and using a more consistent style, and introducing a
@@ -38,14 +48,14 @@ ietfdb(2.10)
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
 
-ietfdb(2.09)
+ietfdb (2.09)
 
   * Merged in support for a new URL, /list/wg/, which lists the archive
     URLs for WG mailing lists, from Chris Newman <chris.newman@sun.com>
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
 
-ietfdb(2.08)
+ietfdb (2.08)
 
   * Fixed mkrelease to handle minor numbers greater than 07 ,;-)
 
@@ -56,7 +66,7 @@ ietfdb(2.08)
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
 
-ietfdb(2.07)
+ietfdb (2.07)
 
   The full list of changes is here, highlights below:
   http://tools.ietf.org/tools/ietfdb/log/branch/2.00?rev=1161&stop_rev=1070
