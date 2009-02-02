@@ -29,6 +29,11 @@
       </table>
       <hr />
       {% endif %}
+      {% ifnotequal ipr.status 1 %}
+      <font color="red" size="3">
+	 This IPR disclosure was {{ ipr.get_status_display }}<br>
+      </font>
+      {% endifnotequal %}
       {% if section_list.legacy_intro %}
       <font size="3">
 	 This IPR disclosure was submitted by e-mail.<br>

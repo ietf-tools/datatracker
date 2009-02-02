@@ -44,11 +44,16 @@ def list_all(request, template):
 
 # Details views
 
-def show(request, ipr_id=None):
+def show(request, ipr_id=None, removed=None):
     """Show a specific IPR disclosure"""
     assert ipr_id != None
     ipr = get_object_or_404(IprDetail, ipr_id=ipr_id)
-    if not ipr.status == 1:
+    if ipr.status == 3 and not removed:
+	return render("ipr/removed.html",  {"ipr": ipr},
+			context_instance=RequestContext(request))
+    if removed and ipr.status != 3:
+	raise Http404
+    if not ipr.status == 1 and not removed:
 	raise Http404        
     section_list = get_section_list(ipr)
     contacts = ipr.contact.all()

@@ -1,0 +1,21 @@
+{# Copyright The IETF Trust 2009, All Rights Reserved #}
+{% extends "base.html" %}
+{% block title %}IPR Details - {{ ipr.title }}{% endblock %}
+{% block content %}
+
+{% include "ipr/style.html" %}
+
+   <blockquote style="margin-bottom: 0px;">
+      <table cellpadding=0 cellspacing=0 border=0>
+	 <tr>
+	    <td width="720" align="center">
+	       <h3>{{ ipr.title }}</h3>
+	    </td>
+	 </tr>
+      </table>
+      <hr />
+      <font size="3">
+	 This IPR disclosure was removed at the submitter's request.<br>
+      </blockquote>
+
+{% endblock %}
