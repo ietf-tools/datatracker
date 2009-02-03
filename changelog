@@ -1,3 +1,17 @@
+ietfdb (2.14)
+
+  * Changed to BSD license instead of OSL in the LICENSE file.
+
+  * Updated broken links in the lefthand menubar in base.html
+
+  * Added an explicit "This IPR disclosure was removed" message for
+    removed IPR disclusures
+
+  * Merged in code from Pasi, fixing some broken links in the IESG
+    agenda pages
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Feb 2009 13:09:35 +0100
+
 ietfdb (2.13)
 
   * Fixed IETFWG.area_acronym() so it works, and added IETFWG.area_directors()
