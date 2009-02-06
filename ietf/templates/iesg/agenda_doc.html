@@ -48,8 +48,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <a href="{{ doc.obj.document.doclink }}">{{doc.obj.document.displayname}}</a>
 
 {% if doc.obj.ballot.active %}
-<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{ doc.obj.draft_id }}">[Open Web Ballot]</a></td></tr>
+{% if private %}
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{ doc.obj.draft_id }}">
+{% else %}
+<a href="/idtracker/ballot/{{ doc.obj.ballot_id}}/">
 {% endif %}
+[Open Web Ballot]</a>
+{% endif %}
+</td></tr>
 
 {% if doc.obj.note %} {# note: note is not escaped #}
 <tr><td></td><td></td><td>Note: {{ doc.obj.note }}</td></tr>
@@ -57,7 +63,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% else %} {# ballot_set #}
 
-<td>Multi-Document Ballot: <a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{ doc.obj.draft_id }}">[Open Web Ballot]</a></td></tr>
+<td>Multi-Document Ballot: 
+{% if doc.obj.ballot.active %}
+{% if private %}
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{ doc.obj.draft_id }}">
+{% else %}
+<a href="/idtracker/ballot/{{ doc.obj.ballot_id }}/">
+{% endif %}
+[Open Web Ballot]</a>
+{% endif %}
+</td></tr>
 
 {% for obj2 in doc.obj.ballot_set %}
 <tr><td></td><td></td><td>{{ obj2.draft.title|escape }} ({{ obj2.draft.intended_status }})</td></tr>

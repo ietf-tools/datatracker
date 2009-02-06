@@ -40,7 +40,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr>
 <td>{{wg.area|upper}}</td>
 <td>{{ wg.obj.status_date|date:"M d"}}</td>
-<td><a href="http://www.ietf.org/IESG/EVALUATIONS/{{wg.obj.group_acronym}}-charter.txt">{{ wg.obj.group_acronym.name|escape }} ({{wg.obj.group_acronym}})</a></td>
+<td>
+{% if private %}
+<a href="http://www.ietf.org/IESG/EVALUATIONS/{{wg.obj.group_acronym}}-charter.txt">
+{% endif %}
+{{ wg.obj.group_acronym.name|escape }} ({{wg.obj.group_acronym}})
+{% if private %}
+</a>
+{% endif %}
+</td>
 </tr>
 {% if wg.obj.token_name %}
 <tr><td></td><td>Token:</td><td>{{ wg.obj.token_name|escape }}</td></tr>
