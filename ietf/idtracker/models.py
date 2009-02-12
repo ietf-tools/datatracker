@@ -160,6 +160,12 @@ class InternetDraft(models.Model):
 	else:
 	    css="active"
         return '<span class="' + css + '">' + self.filename + '</span>'
+    def displayname_current(self):
+	if self.status.status == "Replaced":
+	    css="replaced"
+	else:
+	    css="active"
+        return '<span class="%s">%s-%s</span>' % (css, self.filename, self.revision)
     def displayname_with_link(self):
 	if self.status.status == "Replaced":
 	    css="replaced"
@@ -168,6 +174,8 @@ class InternetDraft(models.Model):
 	return '<a class="' + css + '" href="%s">%s</a>' % ( self.doclink(), self.filename )
     def doclink(self):
 	return "http://" + settings.TOOLS_SERVER + "/html/%s" % ( self.filename )
+    def doclink_current(self):
+	return "http://%s/html/%s-%s" % (settings.TOOLS_SERVER, self.filename, self.revision)
     def group_acronym(self):
 	return self.group.acronym
     def __str__(self):

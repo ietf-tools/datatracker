@@ -45,7 +45,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <td>{{ doc.obj.document.title|escape }} ({{ doc.obj.document.intended_status }})</td></tr>
 
 <tr><td></td><td></td><td>
-<a href="{{ doc.obj.document.doclink }}">{{doc.obj.document.displayname}}</a>
+<a href="{{ doc.obj.document.doclink_current }}">{{doc.obj.document.displayname_current}}</a>
+<!--       <a href="http://www.ietf.org/internet-draft/{{ doc.obj.document.filename }}-{{ doc.obj.document.revision }}.txt">[txt]</a> -->
+<a href="http://tools.ietf.org/id/{{ doc.obj.document.filename }}-{{ doc.obj.document.revision }}.txt">[txt]</a>
 
 {% if doc.obj.ballot.active %}
 {% if private %}
