@@ -1,3 +1,13 @@
+ietfdb (2.15)
+
+  * Merged in Pasi's fixes for links in the public version of the IESG agenda
+
+  * Fix som nits in the new IESG agendapage (show and link to drafts with
+    explicit revision numbers, and provide direct links to the text-only
+    version of drafts)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Feb 2009 13:22:08 +0100
+
 ietfdb (2.14)
 
   * Changed to BSD license instead of OSL in the LICENSE file.
