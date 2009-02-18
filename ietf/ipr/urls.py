@@ -6,6 +6,7 @@ from ietf.ipr import models, views, new, search
 urlpatterns = patterns('',
      (r'^$', views.showlist),
      (r'^about/$', views.default),
+     (r'^by-draft/$', views.list_drafts),
      #(r'^(?P<removed>removed/)?(?P<ipr_id>\d+)/$', views.show),
      (r'^(?P<ipr_id>\d+)/$', views.show),
      (r'^update/$', views.updatelist),

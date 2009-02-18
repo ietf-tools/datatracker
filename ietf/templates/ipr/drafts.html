@@ -1,0 +1,3 @@
+# Machine-readable list of ipr disclosures by draft name
+{% for doc in docs %}{{doc.name}}{% for num in doc.iprs %}	{{ num }}{% endfor %}
+{% endfor %}
