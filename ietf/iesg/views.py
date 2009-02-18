@@ -108,8 +108,11 @@ def get_doc_section(id):
         s = s + "1"
     return s
 
-def agenda_docs(date):
-    matches = IDInternal.objects.filter(telechat_date=date,primary_flag=1,agenda=1)
+def agenda_docs(date, next_agenda):
+    if next_agenda:
+        matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
+    else:
+        matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1)
     idmatches = matches.filter(rfc_flag=0).order_by('ballot_id')
     rfcmatches = matches.filter(rfc_flag=1).order_by('ballot_id')
     res = {}
@@ -142,10 +145,16 @@ def agenda_management_issues(date):
     matches = TelechatAgendaItem.objects.filter(type=3).order_by('id')
     return [o.title for o in matches]
 
-def telechat_agenda(request):
-    date = TelechatDates.objects.all()[0].date1
+def telechat_agenda(request, date=None):
+    if not date:
+        date = TelechatDates.objects.all()[0].date1
+        next_agenda = True
+    else:
+        y,m,d = date.split("-")
+        date = datetime.date(int(y), int(m), int(d))
+        next_agenda = None
     #date = "2006-03-16"
-    docs = agenda_docs(date)
+    docs = agenda_docs(date, next_agenda)
     mgmt = agenda_management_issues(date)
     wgs = agenda_wg_actions(date)
     private = 'private' in request.REQUEST

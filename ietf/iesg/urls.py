@@ -64,6 +64,7 @@ urlpatterns += patterns('django.views.generic.list_detail',
 
 urlpatterns += patterns('',
         (r'^agenda/$', views.telechat_agenda),                        
+        (r'^agenda/(?P<date>\d{4}-\d\d-\d\d)/$', views.telechat_agenda),                        
         (r'^ann/ind/$',views.inddocs),
         (r'^ann/(?P<cat>[^/]+)/$',views.wgdocs),
 )
