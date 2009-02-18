@@ -33,6 +33,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django.conf.urls.defaults import patterns
+from django.conf import settings
 from ietf.iesg import views
 from ietf.iesg.models import TelechatMinutes
 from ietf.idtracker.models import BallotInfo
@@ -64,8 +65,11 @@ urlpatterns += patterns('django.views.generic.list_detail',
 
 urlpatterns += patterns('',
         (r'^agenda/$', views.telechat_agenda),                        
-        (r'^agenda/(?P<date>\d{4}-\d\d-\d\d)/$', views.telechat_agenda),                        
         (r'^ann/ind/$',views.inddocs),
         (r'^ann/(?P<cat>[^/]+)/$',views.wgdocs),
 )
 
+if settings.SERVER_MODE != 'production':
+    urlpatterns += patterns('',
+        (r'^agenda/(?P<date>\d{4}-\d\d-\d\d)/$', views.telechat_agenda),                        
+    )
