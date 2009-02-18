@@ -1,5 +1,5 @@
 {# 
-Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies).
+Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
 Redistribution and use in source and binary forms, with or without
@@ -45,9 +45,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <td>{{ doc.obj.document.title|escape }} ({{ doc.obj.document.intended_status }})</td></tr>
 
 <tr><td></td><td></td><td>
+{% if doc.obj.rfc_flag %}
+<a href="{{ doc.obj.document.doclink }}">{{doc.obj.document.filename}}</a>
+<a href="http://tools.ietf.org/rfc/{{ doc.obj.document.filename }}">[txt]</a>
+{% else %}
 <a href="{{ doc.obj.document.doclink_current }}">{{doc.obj.document.displayname_current}}</a>
 <!--       <a href="http://www.ietf.org/internet-draft/{{ doc.obj.document.filename }}-{{ doc.obj.document.revision }}.txt">[txt]</a> -->
 <a href="http://tools.ietf.org/id/{{ doc.obj.document.filename }}-{{ doc.obj.document.revision }}.txt">[txt]</a>
+{% endif %}
 
 {% if doc.obj.ballot.active %}
 {% if private %}
@@ -88,6 +93,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endif %} {# ballot_set #}
 
 <tr><td></td><td>Token:</td><td><a href="mailto:{{doc.obj.token_email|urlencode}}">{{ doc.obj.token_name|escape }}</a></td></tr>
+{% if doc.obj.ballot.defer %}
+<tr><td></td><td></td><td>Was deferred by {{doc.obj.ballot.defer_by}} on {{doc.obj.ballot.defer_date}}</td></tr>
+{% endif %}
 
 {% if forloop.last %}
 </table>
