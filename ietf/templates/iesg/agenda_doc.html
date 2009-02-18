@@ -31,6 +31,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #}
+{#
+Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
+#}
 
 {% if forloop.first %}
 <table><tr><th>Area</th><th>Date</th></tr>
@@ -67,6 +70,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if doc.obj.note %} {# note: note is not escaped #}
 <tr><td></td><td></td><td>Note: {{ doc.obj.note }}</td></tr>
 {% endif %}
+
+{% if doc.obj.draft.ipr.all %}
+<tr><td></td><td valign="top">IPR:</td><td>
+   <ul>
+   {% for ipr in doc.obj.draft.ipr.all %}
+      {% ifequal ipr.ipr.status 1 %}
+      <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title }}</a></li>
+      {% endifequal %}
+   {% endfor %}
+   </ul>
+</td></tr>
+{% endif %}
+
 
 {% else %} {# ballot_set #}
 
