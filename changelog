@@ -1,3 +1,13 @@
+ietfdb (2.16)
+
+  * Added per-draft IPR information to the IESG agenda
+  * From Pasi: Fixed links for RFCs in IESG agenda, and show deferred ballots 
+  * Added a test and development view which (sort of) lets you look at 
+    old IESG telechat agendas by date
+  * Added a machine-readable view listing IPR declarations per draft/rfc
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Feb 2009 13:46:35 +0100
+
 ietfdb (2.15)
 
   * Merged in Pasi's fixes for links in the public version of the IESG agenda
