@@ -235,4 +235,4 @@ Regards,
 
 	Henrik
 	(via the mkrelease script)
-" | mail -s "New datatracker release: v$VER" -c henrik@levkowetz.com  -c glen@amsl.com codesprints@ietf.org
+" | mail -s "New datatracker release: v$VER" -c henrik@levkowetz.com  -c glen@amsl.com -c fenner@fenron.com -c pasi.eronen@nokia.com -c rjs@nostrum.com codesprints@ietf.org
