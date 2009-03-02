@@ -46,7 +46,10 @@
 	 Sections {% block legacy_sections %}I, II, and IV{% endblock %} of "The Patent Disclosure and Licensing Declaration Template 
 	 for {{ section_list.disclosure_type }}" have been completed for this IPR disclosure.
 	 Additional information may be available in the original submission.<br>
-	 See the <a href="{{ ipr.legacy_url_0 }}">content of the original IPR disclosure</a>.<br>
+	 <br>
+	 The text of the original IPR disclosure is available further down, and also here:<br />
+	 <a href="{{ipr.legacy_url_0}}">{{ipr.legacy_url_0}}</a>.
+	 <br>
       </font>
       {% endif %}
       {% if section_list.new_intro %}
@@ -561,6 +564,15 @@
 	       <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</i></td></tr>
 	       {% endif %}
 	 </table>
+      </blockquote>
+      {% endif %}
+
+      {% if ipr.legacy_url_0 %}
+      <blockquote>
+      <h3>The text of the original IPR declaration:</h3>
+      <iframe src="{{ipr.legacy_url_0}}" style="width:55em; height:30em">
+	 Warning: Could not embed {{ipr.legacy_url_0}}.
+      </iframe>
       </blockquote>
       {% endif %}
 

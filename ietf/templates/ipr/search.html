@@ -1,19 +1,18 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
-{% block doctype %}{% endblock %}
 {% block title %}IPR Search{% endblock %}
 {% block content %}
 <center><br><br>
-   <font color="333366" size=4><b>Document Search</b></font>
+   <h2>Document Search</h2>
    <hr width="600"><br>
-   <table border="0" cellpadding="4" cellspacing="0" style="{padding:2px;border-width:1px;border-style:solid;border-color:305076}" width="580">
+   <table border="0" cellpadding="4" cellspacing="0" style="padding:2px;border-width:1px;border-style:solid;border-color:305076" width="580">
       <form method="get">
 	 <input type="hidden" name="option" value="document_search">  
 	 <tr>
 
-	    <td bgcolor="E2DFD3"><font color="000000" face="Arial" Size=3> Enter I-D Filename ( draft-...)</td>
-	       <td bgcolor="E2DFD3"><input type="text" name="document_search" size="40"></td>
-	       <td bgcolor="E2DFD3"><input type="submit" value="SEARCH" width="15"></td></tr>
+	    <td bgcolor="#E2DFD3"><font color="000000" face="Arial" Size=3> Enter I-D Filename ( draft-...)</td>
+	       <td bgcolor="#E2DFD3"><input type="text" name="document_search" size="40"></td>
+	       <td bgcolor="#E2DFD3"><input type="submit" value="SEARCH" width="15"></td></tr>
       </form>
       <script language="javascript"><!--
 	 function IsNumeric(strString) {
@@ -49,39 +48,39 @@
 	 <input type="hidden" name="option" value="rfc_search">
 	 <tr>
 
-	    <td bgcolor="E2DFD3"><font color="000000" face="Arial" Size=3> or Enter RFC Number</td>
-	       <td bgcolor="E2DFD3"><input type="text" name="rfc_search" size="8"></td>
-	       <td bgcolor="E2DFD3"><input type="submit" value="SEARCH" width="15" onClick="return check_numeric(document.form_rfc_search.rfc_search.value);"></td></tr>
+	    <td bgcolor="#E2DFD3"><font color="000000" face="Arial" Size=3> or Enter RFC Number</td>
+	       <td bgcolor="#E2DFD3"><input type="text" name="rfc_search" size="8"></td>
+	       <td bgcolor="#E2DFD3"><input type="submit" value="SEARCH" width="15" onClick="return check_numeric(document.form_rfc_search.rfc_search.value);"></td></tr>
       </form>
    </table>
    <hr width="600"><br><br><br><br>
    <font size=4 color="333366"><b>Keyword Search</b></font>
 
    <hr width="600"><br>
-   <table border="0" cellpadding="4" cellspacing="0" style="{padding:2px;border-width:1px;border-style:solid;border-color:305076}" width="800">
+   <table border="0" cellpadding="4" cellspacing="0" style="padding:2px;border-width:1px;border-style:solid;border-color:305076" width="800">
       <form method="get">
 	 <input type="hidden" name="option" value="patent_search">
 	 <tr>
-	    <td bgcolor="DDDDDD"><font color="000000" face="Arial" Size=3> Name of patent owner/applicant</td>
-	       <td bgcolor="DDDDDD"><input type="text" name="patent_search" size="20"></td>
-	       <td bgcolor="DDDDDD"><input type="submit" value="SEARCH" width="15"></td></tr>
+	    <td bgcolor="#DDDDDD"><font color="000000" face="Arial" Size=3> Name of patent owner/applicant</td>
+	       <td bgcolor="#DDDDDD"><input type="text" name="patent_search" size="20"></td>
+	       <td bgcolor="#DDDDDD"><input type="submit" value="SEARCH" width="15"></td></tr>
 
       </form>
       <form method="get">
 	 <input type="hidden" name="option" value="patent_info_search">
 	 <tr>
-	    <td bgcolor="DDDDDD" width="350"><font color="000000" face="Arial" Size=3> Characters in patent information (Full/Partial)<br>
+	    <td bgcolor="#DDDDDD" width="350"><font color="000000" face="Arial" Size=3> Characters in patent information (Full/Partial)<br>
 	       <font size="-1" color="red">* The search string must contain at least three characters, including at least one digit, and include punctuation marks. For best results, please enter the entire string, or as much of it as possible.</font>
 	    </td>
-	    <td bgcolor="DDDDDD"><input type="text" name="patent_info_search" size="20"></td>
+	    <td bgcolor="#DDDDDD"><input type="text" name="patent_info_search" size="20"></td>
 
-	    <td bgcolor="DDDDDD"><input type="submit" value="SEARCH" width="15"></td></tr>
+	    <td bgcolor="#DDDDDD"><input type="submit" value="SEARCH" width="15"></td></tr>
       </form>
       <form method="get">
 	 <input type="hidden" name="option" value="wg_search">
 	 <tr>
-	    <td bgcolor="DDDDDD"><font color="000000" face="Arial" Size=3> Working group name</td>
-	       <td bgcolor="DDDDDD">
+	    <td bgcolor="#DDDDDD"><font color="000000" face="Arial" Size=3> Working group name</td>
+	       <td bgcolor="#DDDDDD">
 		  <select name="wg_search">
 		     <option value="">--Select WG</option>
 		     {% for wg in wgs %}
@@ -89,22 +88,22 @@
 		  </select>
 	       </td>
 
-	       <td bgcolor="DDDDDD"><input type="submit" value="SEARCH" width="15"></td></tr>
+	       <td bgcolor="#DDDDDD"><input type="submit" value="SEARCH" width="15"></td></tr>
       </form>
       <form method="get">
 	 <input type="hidden" name="option" value="title_search">
 	 <tr>
-	    <td bgcolor="DDDDDD"><font color="000000" face="Arial" Size=3> Words in document title</td>
-	       <td bgcolor="DDDDDD"><input type="text" name="title_search" size="50"></td>
-	       <td bgcolor="DDDDDD"><input type="submit" value="SEARCH" width="15"></td></tr>
+	    <td bgcolor="#DDDDDD"><font color="000000" face="Arial" Size=3> Words in document title</td>
+	       <td bgcolor="#DDDDDD"><input type="text" name="title_search" size="50"></td>
+	       <td bgcolor="#DDDDDD"><input type="submit" value="SEARCH" width="15"></td></tr>
 
       </form>
       <form method="get">
 	 <input type="hidden" name="option" value="ipr_title_search">
 	 <tr>
-	    <td bgcolor="DDDDDD"><font color="000000" face="Arial" Size=3> Words in IPR disclosure title</td>
-	       <td bgcolor="DDDDDD"><input type="text" name="ipr_title_search" size="50"></td>
-	       <td bgcolor="DDDDDD"><input type="submit" value="SEARCH" width="15"></td></tr>
+	    <td bgcolor="#DDDDDD"><font color="000000" face="Arial" Size=3> Words in IPR disclosure title</td>
+	       <td bgcolor="#DDDDDD"><input type="text" name="ipr_title_search" size="50"></td>
+	       <td bgcolor="#DDDDDD"><input type="submit" value="SEARCH" width="15"></td></tr>
       </form>
 
    </table>
