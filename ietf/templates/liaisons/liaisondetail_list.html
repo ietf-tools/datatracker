@@ -1,13 +1,7 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{# no include because there's no style on the existing page #}
-<html>
-<HEAD>
-<TITLE>Liaison Statements</TITLE>
-<link rel="alternate" type="application/atom+xml" href="/feed/liaison/recent/">
-</HEAD>
+{% extends "base.html" %}
+{% block content %}
 
-
-<HR>
 <center><h2>Liaison Statements</H2></center>
 
 <table cellspacing="3">
@@ -729,5 +723,6 @@ MPEG-21 Requirements for a Rights Data Dictionary and a Rights Expression Langua
 <tr><td valign="top">Jan 1995<td valign="top">ISO/IEC JTC1/SC6<TD valign="top">ISOC<TD><A HREF="https://www.ietf.org/IESG/LIAISON/ISO-ISOC-coopagreement.txt">Cooperative Agreement Between the Internet Society and the International Organization for Standardization / International Electrotechnical Committee 1 / Sub Committee 6 (ISO/IEC JTC1/SC6)</A>
 
 
-</table><P><P><P>
-</html>
+</table>
+{% endblock %}
+
