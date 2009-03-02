@@ -1,49 +1,22 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
 {% load humanize %}
-<!DOCTYPE html
-	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US"
-xml:lang="en-US"><head><title>Agenda of the {{ meeting_num|ordinal }} IETF Meeting</title>
-</head><body><p>
-<pre>{# From here on out, horizontal and vertical whitespace is significant... #}
-{% filter center:72 %}Agenda of the {{ meeting_num|ordinal }} IETF Meeting{% endfilter %}
-{% filter center:72 %}{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date.month meeting_info.end_date.month %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }}{% endfilter %}
-{% filter center:72 %}Updated {{ last_update_info.updated|date:"F j, Y P (T)" }}{% endfilter %}
+{% filter center:72 %}Agenda of the {{ meeting.num|ordinal }} IETF Meeting{% endfilter %}
+{% filter center:72 %}{{ meeting.start_date|date:"F j" }}-{% ifnotequal meeting.start_date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}{% endfilter %}
+{% filter center:72 %}Updated {{ update.updated|date:"Y-m-d H:i:s T" }}{% endfilter %}
 
 {% filter center:72 %}IETF agendas are subject to change, up to and during the meeting.{% endfilter %}
 
-{% regroup queryset_list_pre_session by day_id as pre_days %}
-{% for pre_day in pre_days %}
-{{ pre_day.list.0.meeting_date|date:"l"|upper }}, {{ pre_day.list.0.meeting_date|date:"F j, Y" }} 
-{% ifequal pre_day.list.0.day_id 0 %}
-{{ nonsession_info.0.time_desc }} {{ nonsession_info.0.non_session_ref }} - {{ meetingvenue_info.reg_area_name }}
-{% endifequal %}
-{% for item in pre_day.list %}
-{% for session in item.sessions %}
-{{ item.time_desc }} {{ session.acronym_name }} - {{ session.sched_room_id1.room_name }}
-{% endfor %}
-{% endfor %}
-{% endfor %}
-<!-- End Update -->
-{% regroup object_list by day_id as days %}{% for day in days %}
-{{ day.list.0.meeting_date|date:"l"|upper }}, {{ day.list.0.meeting_date|date:"F j, Y" }}
-{% if day.list.0.reg_info %}{{ day.list.0.reg_info }} - {{ meetingvenue_info.reg_area_name }}
-{% endif %}{% ifequal day.list.0.day_id "5" %}{{ day.list.0.fbreak_info }} - {{ meetingvenue_info.break_area_name }}{% else %}{{ day.list.0.morning_br_info }} - {{ meetingvenue_info.break_area_name }}
-{% endifequal %}{% for item in day.list %}{% ifequal item.session_name_id 3 %}{{ day.list.0.lunch_br_info }} Break
-{% endifequal %}{% ifequal item.session_name_id 4 %}{{ day.list.0.an_br1_info }} - {{ meetingvenue_info.break_area_name }}
-{% endifequal %}{% ifequal item.session_name_id 5 %}{{ day.list.0.an_br2_info }} - {{ meetingvenue_info.break_area_name }}
-{% endifequal %}{{ item.time_desc }} {{ item.session_name }}{% ifequal item.sessions.0.acronym "plenaryw" %}{{ item.sessions.0.room_id.room_name }}
-{{ plenaryw_agenda|escape }}{% else %}{% ifequal item.sessions.0.acronym "plenaryt" %}{{ item.sessions.0.room_id.room_name }}
-{{ plenaryt_agenda|escape }}{% else %}{% for session in item.sessions|dictsort:"area" %}
-{{ session.room_id.room_name|ljust:16 }}  {{ session.area|upper|ljust:4 }} {{ session.acronym|ljust:7 }} 	{{ session.acronym_name }} {{ session.group_type_str }}{% if session.special_agenda_note %} - {{ session.special_agenda_note }}{% endif %}{% endfor %}
-{% endifequal %}{% endifequal %}
-{% endfor %}
-{% endfor %}
+{% for slot in timeslots %}{% ifchanged  %}
+
+{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}{% if slot.reg_info %}
+{{ slot.registration.time_desc  }}  {{ slot.registration.name  }}{% if venue.reg_area_name %} - {{ venue.reg_area_name }}{% endif %}{% endif %}
+{% endifchanged %}{% if slot.session_name %}{% if slot.break_info %}{{ slot.break_info.time_desc }}  {{ slot.break_info.name }}{% if venue.break_area_name %} - {{ venue.break_area_name }}{% endif %}
+{% endif %}{{ slot.time_desc               }}  {{ slot.session_name }}{% for session in slot.sessions_by_area|dictsort:"area" %}
+{{ session.info.room_id.room_name|ljust:14 }}  {% if session.info.area %}{{ session.info.area|upper|ljust:4 }}	{{ session.info.acronym|ljust:9 }}	{% endif %}{{ session.info.acronym_name }} {{ session.info.group_type_str }}{% if session.info.special_agenda_note %} - {{ session.info.special_agenda_note }}{% endif %}{% endfor %}
+
+{% else %}{% for session in slot.sessions %}{{ slot.time_desc }}  {{ session.acronym_name }} - {{ session.room_id.room_name }}
+{% endfor %}{% endif %}{% endfor %}
 ====================================================================
 AREA DIRECTORS
-{% regroup qs_ads by area as ads %}{% for ad in ads %}
-{{ ad.grouper|upper|ljust:5 }}{{ ad.list.0.area.area_acronym.name|ljust:18 }}  {% for ad_person in ad.list %}{% ifequal forloop.counter 2 %} & {% endifequal %}{{ ad_person.person }}/{{ ad_person.person.affiliation }}{% endfor %}{% endfor %}
-</pre>
-</body>
-</html>
+{% regroup ads by area as grouped %}{% for ad in grouped %}
+{{ ad.grouper|upper|ljust:5 }}{{ ad.list.0.area.area_acronym.name|slice:":18"|ljust:18 }}  {% for ad_person in ad.list %}{% ifequal forloop.counter 2 %} & {% endifequal %}{{ ad_person.person }}/{{ ad_person.person.affiliation }}{% endfor %}{% endfor %}
+

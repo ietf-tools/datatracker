@@ -108,6 +108,8 @@ class Meeting(models.Model):
 	return "IETF %d" % (self.meeting_num)
     def get_meeting_date (self,offset):
         return self.start_date + datetime.timedelta(days=offset) 
+    def num(self):
+        return self.meeting_num
     class Meta:
         db_table = 'meetings'
     class Admin:
@@ -130,6 +132,8 @@ class NonSessionRef(models.Model):
 	return self.name
     class Meta:
         db_table = 'non_session_ref'
+    class Admin:
+        pass
 
 class NonSession(models.Model):
     non_session_id = models.AutoField(primary_key=True)
@@ -225,37 +229,29 @@ class MeetingTime(models.Model):
 	    else:
 		s.room_id = 0
 	return sessions
+    def sessions_by_area(self):
+        return [ {"area":session.area()+session.acronym(), "info":session} for session in self.sessions() ]
     def meeting_date(self):
         return self.meeting.get_meeting_date(self.day_id)
+    def registration(self):
+        reg = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=1)
+        reg.name = reg.non_session_ref.name
+	return reg
     def reg_info(self):
-	reg_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=1)
+	reg_info = self.registration()
         if reg_info.time_desc:
-            return "%s %s" % (reg_info.time_desc, reg_info.non_session_ref)
+            return "%s %s" % (reg_info.time_desc, reg_info.name)
         else:
             return ""
-    def morning_br_info(self):
-	br_info = NonSession.objects.get(models.Q(day_id=self.day_id) | models.Q(day_id__isnull=True), meeting=self.meeting, non_session_ref=2)
-        return "%s %s" % (br_info.time_desc, br_info.non_session_ref)
-    def lunch_br_info(self):
-        return NonSession.objects.get(meeting=self.meeting, non_session_ref=3).time_desc
-    def an_br1_info(self):
-	an_br1_info = NonSession.objects.exclude(time_desc="").get(meeting=self.meeting, day_id=self.day_id, non_session_ref=4)
-        if an_br1_info:
-          if self.day_id == 1 or self.day_id == 2:
-              return "%s Afternoon Beverage Break I" % (an_br1_info.time_desc)
-          else:
-              return "%s %s" % (an_br1_info.time_desc, an_br1_info.non_session_ref)
-        else:
-          return ""
-    def an_br2_info(self):
-	an_br2_info = NonSession.objects.exclude(time_desc="").get(meeting=self.meeting, day_id=self.day_id, non_session_ref=5)
-        if an_br2_info:
-          return "%s %s" % (an_br2_info.time_desc, an_br2_info.non_session_ref)
-        else:
-          return ""
-    def fbreak_info(self):
-        fbreak_info = NonSession.objects.get(meeting=self.meeting, day_id=5, non_session_ref=6)
-        return "%s %s" % (fbreak_info.time_desc, fbreak_info.non_session_ref)
+    def break_info(self):
+        breaks = NonSession.objects.filter(meeting=self.meeting).exclude(non_session_ref=1).filter(models.Q(day_id=self.day_id) | models.Q(day_id__isnull=True)).order_by('time_desc')
+        for brk in breaks:
+            if brk.time_desc[-4:] == self.time_desc[:4]:
+                brk.name = brk.non_session_ref.name
+                return brk
+        return None
+    def is_plenary(self):
+        return self.session_name_id in [9, 10]
     class Meta:
         db_table = 'meeting_times'
     class Admin:
