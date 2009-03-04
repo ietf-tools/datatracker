@@ -1,3 +1,12 @@
+ietfdb (2.18)
+
+  * Made the plenary agenda font larger
+
+  * Don't show break location information for lunch breaks (requires new
+    column in non_session table, with the show_break_location information).
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Mar 2009 0:56:10 +0100
+
 ietfdb (2.17)
 
   * Fixed the agena problem where breaks would not have the right name.  Also
