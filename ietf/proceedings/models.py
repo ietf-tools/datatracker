@@ -141,6 +141,7 @@ class NonSession(models.Model):
     non_session_ref = models.ForeignKey(NonSessionRef)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     time_desc = models.CharField(blank=True, maxlength=75)
+    show_break_location = models.BooleanField()
     def __str__(self):
 	if self.day_id:
 	    return "%s %s %s @%d" % ((self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc, self.non_session_ref, self.meeting_id)
