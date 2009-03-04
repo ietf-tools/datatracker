@@ -209,3 +209,7 @@ tbody.even {
 	/* padding-right: 0.5em; */ /* inherited */
 	font-size: 0.9em;
 }
+
+#agenda pre {
+	font-size: 1.3em;
+}
