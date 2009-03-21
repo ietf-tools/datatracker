@@ -518,6 +518,15 @@ class IDInternal(models.Model):
     you cannot use draft__ as that will cause an INNER JOIN
     which will limit the responses to I-Ds.
     """
+
+    ACTIVE=1
+    PUBLISHED=3
+    EXPIRED=2
+    WITHDRAWN_SUBMITTER=4
+    REPLACED=5
+    WITHDRAWN_IETF=6
+    INACTIVE_STATES=[99,32,42]
+
     draft = models.ForeignKey(InternetDraft, primary_key=True, unique=True, db_column='id_document_tag')
     rfc_flag = models.IntegerField(null=True)
     ballot = models.ForeignKey(BallotInfo, related_name='drafts', db_column="ballot_id")
