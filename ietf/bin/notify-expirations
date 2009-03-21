@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+
+import datetime
+
+from ietf.idtracker.models import InternetDraft,IDAuthor,WGChair
+from ietf.utils.mail import send_mail_subj
+
+notify_days = 14        # notify about documents that expire within the
+                        # next 2 weeks
+
+start_date = datetime.date.today() - datetime.timedelta(InternetDraft.DAYS_TO_EXPIRE - 1)
+end_date = start_date + datetime.timedelta(notify_days - 1)
+
+
+matches = InternetDraft.objects.filter(revision_date__gte=start_date,revision_date__lte=end_date,status__status='Active')
+
+#For development - focus on one draft
+#matches = InternetDraft.objects.filter(filename__icontains='geopriv-http-location-delivery')
+
+# Todo:
+#second_cutoff = IDDates.objects.get(date_id=2)
+#ietf_monday = IDDates.objects.get(date_id=3)
+#freeze_delta = ietf_monday - second_cutoff
+
+for draft in matches:
+    if not draft.can_expire():
+        # debugging
+        #print "%s can't expire, skipping" % draft
+        continue
+    expiration = draft.expiration()
+#   # The I-D expiration job doesn't run while submissions are frozen.
+#   if ietf_monday > expiration > second_cutoff:
+#       expiration += freeze_delta
+    authors = draft.authors.all()
+    to_addrs = [author.email() for author in authors if author.email()]
+    cc_addrs = None
+    if draft.group.acronym != 'none':
+        cc_addrs = [chair.person.email() for chair in WGChair.objects.filter(group_acronym=draft.group)]
+
+    #For development debugging
+    """
+    print "filename: "+draft.filename
+    print "to: ", to_addrs
+    print "cc: ", cc_addrs
+    print "expires: ", expiration
+    print "status: ", draft.status.status, "/", draft.idstate()
+    print
+    continue
+    """
+
+    send_mail_subj(None, to_addrs, None, 'notify_expirations/subject.txt', 'notify_expirations/body.txt', 
+                   {
+                      'draft':draft,
+                      'expiration':expiration,
+                   },
+                   cc_addrs)
