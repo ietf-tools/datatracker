@@ -36,8 +36,8 @@
 #from django.views.generic.date_based import archive_index
 from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup,IETFWG
 from django.views.generic.list_detail import object_list
-from django.http import Http404
-from django.template import RequestContext
+from django.http import Http404, HttpResponse
+from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 import datetime 
@@ -160,3 +160,12 @@ def telechat_agenda(request, date=None):
     private = 'private' in request.REQUEST
     return render_to_response('iesg/agenda.html', {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs, 'private':private}, context_instance=RequestContext(request) )
     
+
+def telechat_agenda_documents(request):
+    dates = TelechatDates.objects.all()[0].dates()
+    docs = []
+    for date in dates:
+        docs.extend(IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1))
+    t = loader.get_template('iesg/agenda_documents.txt')
+    c = Context({'docs':docs})
+    return HttpResponse(t.render(c), mimetype='text/plain')
