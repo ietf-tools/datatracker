@@ -1,3 +1,10 @@
+ietfdb (2.20)
+
+  * Merged in Roberts django-based replacement for the old perl script 
+    generating all_id.txt
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 0:20:03 +0100
+
 ietfdb (2.19)
 
   * Merged in code from Pasi containing auxiliary tables and support scripts
