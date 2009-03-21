@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load ietf_filters %}
+{% block title %}IAB/IESG Nominating Committee Chairs{% endblock %}
+{% block content %}
+
+<H1><center>IAB/IESG Nominating Committee Chairs</center></H1>
+
+<table>
+  <tr>
+    <th>Year</th>
+    <th>Chair</th>
+  </tr>
+
+{% for chair in chairs %}
+  <tr>
+    <td>{{ chair.start_year }} - {{ chair.end_year }}</td>
+    <td><a href="mailto:{{ chair.person.email.1 }}">{{ chair.person }}</a></td>
+    </tr>
+  {% endfor %}
+
+  <tr>
+    <td>2003 - 2004</td>
+    <td>Richard Draves</td>
+  </tr>
+  <tr>
+    <td>2002 - 2003</td>
+    <td>Phil Roberts</td>
+  </tr>
+  <tr>
+    <td>2001 - 2002</td>
+    <td>Theodore Ts'o</td>
+  </tr>
+  <tr>
+    <td>2000 - 2001</td>
+    <td>Bernard Aboba</td>
+  </tr>
+  <tr>
+    <td>1999 - 2000</td>
+    <td>Avri Doria</td>
+  </tr>
+  <tr>
+    <td>1998 - 1999</td>
+    <td>Donald Eastlake 3rd</td>
+  </tr>
+  <tr>
+    <td>1997 - 1998</td>
+    <td>Michael St. Johns</td>
+  </tr>
+  <tr>
+    <td>1996 - 1997</td>
+    <td>Geoff Huston</td>
+  </tr>
+  <tr>
+    <td>1995 - 1996</td>
+    <td>Guy Almes</td>
+  </tr>
+  <tr>
+    <td>1994 - 1995</td>
+    <td>John Curran</td>
+  </tr>
+  <tr>
+    <td>1993 - 1994</td>
+    <td>Fred Baker</td>
+  </tr>
+  <tr>
+    <td>1992 - 1993</td>
+    <td>Jeff Case</td>
+  </tr>
+
+</table>
+
+{% endblock %}

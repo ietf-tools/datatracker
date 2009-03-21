@@ -8,6 +8,8 @@ nomcom_dict = {
 }
 
 urlpatterns = patterns('',
-    (r'^nomcom/$', 'django.views.generic.simple.redirect_to', {'url': 'http://www.ietf.org/nomcom/index.html'} ),
-    (r'^nomcom/(?P<object_id>\d+)/$', 'django.views.generic.list_detail.object_detail', nomcom_dict)
+#    (r'^nomcom/$', 'django.views.generic.simple.redirect_to', {'url': 'http://www.ietf.org/nomcom/index.html'} ),
+    (r'^$', 'ietf.announcements.views.all'),
+    (r'^chairs/', 'ietf.announcements.views.chairs'),
+    (r'^(?P<object_id>\d+)/$', 'django.views.generic.list_detail.object_detail', nomcom_dict)
 )
