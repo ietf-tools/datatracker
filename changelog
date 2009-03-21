@@ -1,3 +1,18 @@
+ietfdb (2.19)
+
+  * Merged in code from Pasi containing auxiliary tables and support scripts
+    for his new document meta-information pages.
+
+  * Merged in code from Pasi for a machine-readable list of documents on the
+    next iesg-agenda.
+
+  * ** To deploy this release, the Django db sync command has to be run
+    (python .../ietf/manage.py syncdb) and the cron scripts which fetch
+    information from the RFC-editor and tools.ietf.org has to be set up
+    to run **
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2009 22:33:07 +0100
+
 ietfdb (2.18)
 
   * Made the plenary agenda font larger
