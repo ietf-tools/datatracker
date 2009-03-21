@@ -135,6 +135,7 @@ INSTALLED_APPS = (
     'ietf.my',
     'ietf.proceedings',
     'ietf.redirects',
+    'ietf.idrfc',
 # not yet merged from the Vancouver branch    
 #    'ietf.wgcharter',
 )
@@ -160,6 +161,10 @@ TEST_RUNNER = 'ietf.tests.run_tests'
 TEST_REFERENCE_URL_PREFIX = os.environ.get("IETFDB_REF_PREFIX","") or 'https://datatracker.ietf.org/'
 
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR'
+
+# Override this in settings_local.py if needed
+INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
+RFC_PATH = '/a/www/ietf-ftp/rfc/'
 
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 

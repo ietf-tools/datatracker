@@ -53,6 +53,7 @@ urlpatterns = patterns('',
       (r'^ipr/', include('ietf.ipr.urls')),
       (r'^meeting/', include('ietf.meeting.urls')),
       (r'^accounts/', include('ietf.ietfauth.urls')),
+      (r'^doc/', include('ietf.idrfc.urls')),
 
       (r'^$', 'ietf.redirects.views.redirect'),
 
