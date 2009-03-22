@@ -11,7 +11,7 @@ from ietf.idtracker.models import PersonOrOrgInfo
 from ietf.idtracker.models import Role
 from ietf.announcements.models import Announcement
 
-def all(request):
+def nomcom(request):
     curr_chair       = (ChairsHistory.objects.
                         get(chair_type=Role.NOMCOM_CHAIR, present_chair='1'))
 
@@ -33,7 +33,7 @@ def all(request):
                               { 'curr_chair' : curr_chair,
                                 'regimes' : regimes })
 
-def chairs(request):
+def nomcom_chairs(request):
     all_chairs       = (ChairsHistory.objects.all().
                         filter(chair_type='3',start_year__gt = 2003).
                         order_by('-start_year'))
