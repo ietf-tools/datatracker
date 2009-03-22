@@ -1,0 +1,24 @@
+{# Copyright The IETF Trust 2009, All Rights Reserved #}
+{% extends "base.html" %}
+
+{% block title %}IETF Account Information{% endblock %}
+
+{% block content %}
+<h1>IETF Account Information</h1>
+
+<p>
+Starting at IETF 74, we have switched to a self-service username/password
+handling system.  We attempted to retain your password, so try
+<a href="{% url django.contrib.auth.views.login %}">logging in</a>.
+If you can't find your password, you can
+<a href="{% url ietf.ietfauth.views.password_request %}">get a new one here</a>.
+If you don't have an account, you can
+<a href="{% url ietf.ietfauth.views.password_request %}">create one</a>.
+</p>
+
+<p>
+If you find that even after you register an account, your tool access
+does not work (especially the historical cgi-based tools), please
+contact <a href="mailto:webtools@ietf.org">webtools@ietf.org</a>.
+</p>
+{% endblock %}

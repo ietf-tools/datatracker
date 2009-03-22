@@ -34,7 +34,9 @@
 	    <div id="content">
 	       {% if user.is_authenticated %}
 	       <span style="float: right; font-size: 80%;">Logged in as {{ user }} | 
-		  <a href="/accounts/logout/">Log Out</a></span>
+		  <a href="{% url django.contrib.auth.views.logout %}">Log Out</a></span>
+               {% else %}
+               <span style="float: right; font-size: 80%;"><a href="{% url django.contrib.auth.views.login %}">Log In</a></span>
 	       {% endif %}
 	       {% block content %}{% endblock %}
 	    </div>

@@ -53,7 +53,16 @@ class EmailBackend(ModelBackend):
 	    else:
 		user = User.objects.get(username__iexact=username)
 	except User.DoesNotExist:
-	    return None
+	    #
+	    # See if there's an IETF person with this address:
+	    try:
+		usermap = UserMap.objects.distinct().get(person__emailaddress__address__iexact=username)
+	    except UserMap.DoesNotExist:
+		return None
+	    except AssertionError:
+		# multiple UserMaps, should never happen!
+		return None
+	    user = usermap.user
 	if compat_check_password(user, password):
 	    return user
         return None

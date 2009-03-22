@@ -14,7 +14,8 @@ class UserMap(models.Model):
     It also contains a text field for the user's hashed htdigest
     password.  In order to allow logging in with either username
     or email address, we need to store two hashes.  One is in the
-    user model's password field, the other is here.
+    user model's password field, the other is here.  We also store
+    a hashed version of just the email address for the RFC Editor.
     """
     user = models.ForeignKey(User, raw_id_admin=True, core=True)
     # user should have unique=True, but that confuses the

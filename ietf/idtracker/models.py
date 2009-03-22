@@ -774,6 +774,11 @@ class EmailAddress(models.Model):
 	#unique_together = (('email_priority', 'person_or_org'), )
 	# with this, I get 'ChangeManipulator' object has no attribute 'isUniqueemail_priority_person_or_org'
 	verbose_name_plural = 'Email addresses'
+    class Admin:
+	# Even though this is edit_inline, we want to be able
+	# to search for email addresses.
+	search_fields = [ 'address' ]
+	list_display = ( 'person_or_org', 'address', 'type', 'priority' )
 
 class PhoneNumber(models.Model):
     person_or_org = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', edit_inline=models.TABULAR, num_in_admin=1)

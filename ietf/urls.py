@@ -1,4 +1,4 @@
- # Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007, 2009, All Rights Reserved
 
 from django.conf.urls.defaults import patterns, include, handler404, handler500
 
@@ -52,7 +52,7 @@ urlpatterns = patterns('',
       (r'^(?P<path>public|cgi-bin)/', include('ietf.redirects.urls')),
       (r'^ipr/', include('ietf.ipr.urls')),
       (r'^meeting/', include('ietf.meeting.urls')),
-      (r'^accounts/', include('ietf.ietfauth.urls')),
+      (r'^account/', include('ietf.ietfauth.urls')),
       (r'^doc/', include('ietf.idrfc.urls')),
       (r'^wg/', include('ietf.wginfo.urls')),
 
@@ -75,6 +75,10 @@ urlpatterns = patterns('',
      
      # Uncomment this for pre-approval tool for initial Internet-Drafts
      #(r'^wg/', include('ietf.wg.urls')),                       
+
+     # Django 0.96 hardcodes /accounts/profile/; we want to use
+     # /account/profile.
+     (r'accounts/profile/', 'django.views.generic.simple.redirect_to', { 'url': '/account/profile/' }),
 )
 
 if settings.SERVER_MODE in ('development', 'test'):

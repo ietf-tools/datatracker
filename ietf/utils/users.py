@@ -58,9 +58,11 @@ def create_user(user, email, person, pw=None, cryptpw=None):
 	    u.last_name = person.last_name
 	    u.save()
 	# make sure that the UserMap gets created
-	umap, created = UserMap.objects.get_or_create(user = u)
-	umap.person = person
-	umap.save()
+	umap, created = UserMap.objects.get_or_create(user = u,
+					defaults={'person': person})
+	if not created:
+	    umap.person = person
+	    umap.save()
 	raise UserAlreadyExists("Already in system as %s when adding %s (%s)" % ( u.username, user, email ), u)
     else:
 	if cryptpw:
@@ -72,9 +74,10 @@ def create_user(user, email, person, pw=None, cryptpw=None):
 	    set_password(u, pw)
 	#print "Saving user: username='%s', email='%s'" % ( u.username, u.email )
 	u.save()
-    umap, created = UserMap.objects.get_or_create(user = u)
-    umap.person = person
-    umap.save()
-    # get_or_create saves umap for us.
+    umap, created = UserMap.objects.get_or_create(user = u,
+				defaults={'person': person})
+    if not created:
+	umap.person = person
+	umap.save()
 
     return u
