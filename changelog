@@ -1,3 +1,11 @@
+ietfdb (2.23)
+
+  * Fixed a wrong link in the html agenda
+
+  * Removed the explicit database server ip address in settings.py
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 18:16:48 +0100
+
 ietfdb (2.22)
 
   * Fixed the menubar nomcom link.
@@ -6,15 +14,14 @@ ietfdb (2.22)
     WG overview page, the 1wg-summary.txt and 1wg-summary-by-acronym.txt
     pages.
 
-
- -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 0:20:03 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 2:22:09 +0100
 
 ietfdb (2.21)
 
   * Merged in Adams django-based replacement for the old perl-based
     nomcom announcement pages.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 0:20:03 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 1:09:00 +0100
 
 ietfdb (2.20)
 

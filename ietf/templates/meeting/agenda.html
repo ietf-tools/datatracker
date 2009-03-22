@@ -7,7 +7,7 @@
 Agenda of the {{ meeting.num|ordinal }} IETF Meeting<br />
 {{ meeting.start_date|date:"F j" }}-{% ifnotequal meeting.start_date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}<br />
 Updated {{ update.updated|date:"Y-m-d H:i:s T" }}<br />
-(There's also a <a href="./agenda.txt">plaintext agenda</a> and a <a href="http://tools.ietf.org/agenda/{{meeting.num}}/">tools-style agenda</a> available)<br />
+(There's also a <a href="/meeting/{meeting.num}/agenda.txt">plaintext agenda</a> and a <a href="http://tools.ietf.org/agenda/{{meeting.num}}/">tools-style agenda</a> available)<br />
 <br />
 IETF agendas are subject to change, up to and during the meeting.<br />
 </p>
