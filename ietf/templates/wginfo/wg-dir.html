@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2009, All Rights Reserved #}
+
+{% block title %} Active IETF Working Groups {% endblock %}
+
+{% block content %}
+<hr/>
+<h1>Active IETF Working Groups</h1>
+<hr/>
+<p>
+   Old WG pages can be found in the <a href="http://www.ietf.org/html.charters/OLD/index.html">Concluded WG Index</a>.
+</p>
+<p>
+   Archived WG Charters can be found in the <a href="http://www.ietf.org/html.charters/HISTORY/">Historic Charter Index</a>.
+</p>
+<hr/>
+<h2>Table of Contents</h2>
+<ul>
+{% regroup wg_list|dictsort:"area.area.area_acronym.acronym" by area.area as wga_list %}
+{% for area in wga_list %}
+{% for wg in area.list|dictsort:"group_acronym.acronym" %}
+{% ifequal wg.area.area.status_id 1 %}
+{% if forloop.first %}
+<li><a href="#{{ wg.area_acronym.name|cut:" " }}">{{ wg.area_acronym.name }}</a></li>
+{% endif %}
+{% endifequal %}
+{% endfor %}
+{% endfor %}
+</ul>
+{% for area in wga_list %}
+{% for wg in area.list|dictsort:"group_acronym.acronym" %}
+{% ifequal wg.area.area.status_id 1 %}
+{% if forloop.first %}
+<hr/>
+<a name="{{ wg.area_acronym.name|cut:" " }}"></a>
+<h2>{{ wg.area_acronym.name }}</h2>
+{% for ad in wg.area_directors %}
+{% if forloop.first %}
+<p>Area Director{{ forloop.revcounter|pluralize }}:</p>
+<ul>
+{% endif %}
+<li><a href="mailto:{{ ad.person.email.1|escape }}">{{ ad.person }} &lt;{{ ad.person.email.1 }}&gt;</a></li>
+{% endfor %}
+</ul>
+{% for url in wg.area.urls %}
+{% if forloop.first %}
+<p>Additional Area Information:</p>
+<ul>
+{% endif %}
+<li><a href="{{url.url}}">{{url.url_label}}</a></li>
+{% if forloop.last %}
+</ul>
+{% endif %}
+{% endfor %}
+<p>Working Groups:</p>
+<table>
+<colgroup align="center">
+  <col width="10%"/>
+  <col width="10%"/>
+  <col width="80%"/>
+</colgroup>
+{% endif %}
+{% if wg.start_date %}
+<tr><td></td><td><a href="http://www.ietf.org/html.charters/{{ wg|escape }}-charter.html">{{ wg|escape }}</a></td><td>{{ wg.group_acronym.name|escape }}</td></tr>
+{% endif %}
+{% if forloop.last %}
+</table>
+{% endif %}
+{% endifequal %}
+{% endfor %}
+{% endfor %}
+
+
+{% endblock %}

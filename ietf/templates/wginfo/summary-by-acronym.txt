@@ -1,0 +1,14 @@
+           IETF Working Group Summary (By Acronym)
+
+
+The following Area Abreviations are used in this document
+{% for area in area_list %}
+{{ area }}	 - {{ area.area_acronym.name }}{% endfor %}
+{% for wg in wg_list|dictsort:"group_acronym.acronym" %}{% if wg.start_date %}
+{{ wg.group_acronym.name }} ({{ wg }}) -- {{ wg.area.area|upper }}
+{% for chair in wg.wgchair_set.all %}{% if forloop.first %}   Chair{{ forloop.revcounter|pluralize:": ,s:" }}     {% else %}               {% endif %}{{ chair.person }} <{{ chair.person.email.1 }}>
+{% endfor %}   WG Mail:    {{ wg.email_address }}
+   To Join:    {{ wg.email_subscribe }}{%if wg.email_keyword %}
+   In Body:    {{ wg.email_keyword }}{% endif %}
+   Archive:    {{ wg.email_archive }}
+{% endif %}{% endfor %}

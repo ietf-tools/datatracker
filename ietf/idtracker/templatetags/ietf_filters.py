@@ -199,6 +199,14 @@ def rfcnospace(string):
     else:
         return string
 
+@register.filter(name='dashify')
+def dashify(string):
+    """
+    Replace each character in string with '-', to produce
+    an underline effect for plain text files.
+    """
+    return re.sub('.', '-', string)
+
 @register.filter(name='lstrip')
 def lstripw(string, chars):
     """Strip matching leading characters from words in string"""
