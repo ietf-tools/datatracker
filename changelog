@@ -1,3 +1,14 @@
+ietfdb (2.22)
+
+  * Fixed the menubar nomcom link.
+
+  * Merged in Chris' django-based replacement for the old perl-based
+    WG overview page, the 1wg-summary.txt and 1wg-summary-by-acronym.txt
+    pages.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 0:20:03 +0100
+
 ietfdb (2.21)
 
   * Merged in Adams django-based replacement for the old perl-based
