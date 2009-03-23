@@ -272,7 +272,7 @@ def wrap_long_lines(text):
             wrapped = False
         while (len(line) > 80) and (" " in line[:80]):
             wrapped = True
-            breakpoint = line.rfind(" ",0,79)
+            breakpoint = line.rfind(" ",0,80)
             filled += [ line[:breakpoint] ]
             line = line[breakpoint+1:]
         filled += [ line.rstrip() ]
