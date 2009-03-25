@@ -1,10 +1,30 @@
 ietfdb (2.23)
 
-  * Fixed a wrong link in the html agenda
+  * Fixed a wrong link in the html agenda (from Henrik)
 
   * Removed the explicit database server ip address in settings.py
+    (from Henrik)
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 18:16:48 +0100
+  * Integrated updated authorization system.  This requires applying
+    database fixups as follows:
+
+	cd /a/www/ietf-datatracker/2.23/ietf
+	python manage.py dbshell < ../test/sql_fixup.sql
+
+    The existing htpasswd file can be imported into this new system
+    as follows:
+
+	export PYTHONPATH=/a/www/ietf-datatracker/2.23
+	export DJANGO_SETTINGS_MODULE=ietf.settings
+	/a/www/ietf-datatracker/2.23/ietf/bin/import-users /a/www/htpasswd
+
+    Please capture the output of the import-users script, as it will
+    help us resolve any troubles that users have.
+
+  * Fixed infinite loop in wrapping code that prevented display of certain
+    document comments
+
+ -- Bill Fenner <fenner@fenron.com>  24 Mar 2009 17:48:12 PDT
 
 ietfdb (2.22)
 
