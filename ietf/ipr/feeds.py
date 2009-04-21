@@ -19,8 +19,8 @@ class LatestIprDisclosures(Feed):
         return item.submitted_date
     def item_author_name(self, item):
 	s = item.get_submitter()
-	if s:
-	    return s.name
+        if s:
+            return unicode(s.name, encoding='utf-8', errors='replace')
         return None
     def item_author_email(self, item):
 	s = item.get_submitter()
