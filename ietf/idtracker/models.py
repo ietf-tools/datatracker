@@ -95,7 +95,7 @@ class Area(models.Model):
 
 class AreaURL(models.Model):
     area = models.ForeignKey(Area, db_column='area_acronym_id', edit_inline=models.STACKED, num_in_admin=1, null=True, related_name='urls')
-    url = models.URLField(maxlength=255, db_column='url_value')
+    url = models.URLField(maxlength=255, db_column='url_value', core=True)
     url_label = models.CharField(maxlength=255, db_column='url_label')
     def __str__(self):
         return self.url
