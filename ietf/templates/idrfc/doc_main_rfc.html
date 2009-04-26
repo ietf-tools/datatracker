@@ -1,0 +1,167 @@
+{% comment %}
+Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+
+{% extends "idrfc/base.html" %}
+
+{% block title %}RFC {{ doc.rfc_number }}{% endblock %}
+
+{% block morecss %}
+
+#metabox { width: 99%; border:1px solid #cccccc; background:#edf5ff;margin-top:8px; padding:4px; margin-bottom:1em; }
+#metatable { border: 0; border-spacing: 0; }
+#metatable tr { vertical-align:top ;}
+#metatools { padding:4px; border: 1px solid #cccccc;  }
+
+#commentLog { margin-bottom: 1.5ex; }
+.commentToggle { text-decoration: underline; color: blue; }
+
+.comment_date { white-space: nowrap; }
+
+div.diffTool { border: 1px solid #cccccc; background: #edf5ff; padding: 8px 4px; margin: 8px 0;}
+.diffTool label { float:left; width:100px; }
+
+table.ietfTable { border-collapse:collapse; border:1px solid #7f7f7f; }
+.ietfTable tr.evenrow { background-color: #EDF5FF; }
+.ietfTable tr.oddrow {background-color: white; }
+.ietfTable td { border-right: 1px solid #cbcbcb; padding:3px 6px; }
+.ietfTable th { color:white; background: #2647A0; text-align:left; padding:3px 6px; border-right: 1px solid #7f7f7f; }
+
+.markup_draft pre {line-height: 1.2em; margin: 0; }
+.m_hdr, .m_ftr { color: #808080; }
+.m_ftr { border-bottom: 1px solid #a0a0a0; }
+.m_h { font-family: arial; font-weight:bold;}
+{% endblock %}
+
+{% block pagehead %}
+<script type="text/javascript">
+//<![CDATA[
+function toggleComment(n) {
+    var el = document.getElementById("commentF"+n);
+    var el2 = document.getElementById("commentS"+n);
+    var el3 = document.getElementById("commentT"+n);
+    if (el.style.display == 'none') {
+        el.style.display = 'block';
+        el2.style.display = 'none';
+        el3.innerHTML = ""; //[hide]";
+    } else {
+        el.style.display = 'none';
+        el2.style.display= 'block';
+        el3.innerHTML = "[show all]";
+    }
+}
+//]]>
+</script>
+{%endblock %}
+
+{% block content %}
+<h1 style="margin-top:0;">{{ doc.title|escape }}<br/>RFC {{ doc.rfc_number }}</h1>
+
+<div id="mytabs" class="yui-navset">
+<ul class="yui-nav">
+  <li class="selected"><a href="#tab1"><em>Document</em></a></li>
+  <li><a href="#tab2"><em>Versions</em></a></li>
+{%comment %}
+  <li {% if not doc.has_iesg_ballot %} class="disabled" {%endif%}><a href="#tab3"><em>IESG Evaluation Record</em></a></li>
+  <li {% if not doc.has_iesg_ballot %} class="disabled" {%endif%}><a href="#tab4"><em>IESG Writeups</em></a></li>
+  <li {% if not doc.in_iesg_tracker %} class="disabled" {%endif%}><a href="#tab5"><em>IESG Comment Log</em></a></li>
+{% endcomment %}
+</ul>
+<div class="yui-content">
+
+<div id="tab1">
+
+<div id="metabox">
+<table id="metatable">
+<tr><td style="width:18ex;">Document type:</td><td>RFC - {{ doc.rfc_maturity_level }}</td></tr>
+<tr><td>Published:</td><td> {{ doc.revision_date|default:"(data missing)" }}</td></tr>
+</table>
+
+</div>
+</div> <!-- tab1 -->
+
+<div id="tab2">
+<div id="doc_versions" style="display:none;">
+Foo
+</div>
+</div>
+
+</div> <!-- yui-content -->
+</div> <!-- mytabs -->
+
+<div id="rfcText1">
+<div class="markup_draft">
+{{ content1 }}
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/tabview/tabview-min.js"></script> 
+<script type="text/javascript">
+//<![CDATA[
+function loadX(element, url) {
+    var el = document.getElementById(element);
+      el.innerHTML = "Loading...";
+      YAHOO.util.Connect.asyncRequest('GET', 
+          url,
+          { success: function(o) { document.getElementById(element).innerHTML = (o.responseText !== undefined) ? o.responseText : "?"; }, 
+            failure: function(o) { document.getElementById(element).innerHTML = "Error: "+o.status+" "+o.statusText; },
+            argument: null
+   	  }, null);
+}
+
+var tabView = new YAHOO.widget.TabView('mytabs');
+tabView.subscribe('activeIndexChange', function(e) {
+if (e.newValue == 0) {
+document.getElementById('rfcText1').style.display = 'block';
+document.getElementById('rfcText2').style.display = 'block';
+} else {
+document.getElementById('rfcText1').style.display = 'none';
+document.getElementById('rfcText2').style.display = 'none';
+} });
+
+//document.getElementById('doc_versions').style.display = 'block';
+//loadX("doc_versions", '/doc/{{doc.draft_name}}/_versions.data');
+//]]>
+</script>
+
+{% endblock %}
+
+{% block content_end %}
+<div id="rfcText2">
+<div class="markup_draft">
+{{ content2 }}
+</div>
+</div>
+{% endblock %}

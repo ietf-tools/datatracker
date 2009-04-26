@@ -68,7 +68,7 @@ def parse(response):
         if event == pulldom.START_ELEMENT and node.tagName == "entry":
             events.expandNode(node)
             node.normalize()
-            draft_name = getChildText(node, "draft")
+            draft_name = getChildText(node, "draft").strip()
             if re.search("-\d\d\.txt$", draft_name):
                 draft_name = draft_name[0:-7]
             date_received = getChildText(node, "date-received")

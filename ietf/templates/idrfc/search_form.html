@@ -1,0 +1,132 @@
+{% comment %}
+Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+
+<form name="search_form" id="search_form" action="/doc/search/" method="post" onsubmit="submitSearch();return false;">
+
+<div class="search_field">
+<label>Name/number/title:</label> {{ form.name }}
+</div>
+
+<div class="search_field">
+<label>Types:</label>
+<table id="search_types">
+<tr><td>{{ form.rfcs }} RFCs</td></tr>
+<tr><td>{{ form.activeDrafts }} Internet-Drafts (active)</td></tr>
+<tr><td>{{ form.oldDrafts }} Internet-Drafts (expired/replaced/withdrawn)</td></tr>
+</table>
+</div>
+
+<span onclick="toggleAdvanced();"><b><img src="/images/plus.png" alt="[+]" id="search_advanced-img" /> Advanced</b></span>
+
+<div id="search_advanced" style="display:none;margin-top:1em;">
+
+<div class="search_field">
+<label>Author:</label> {{ form.author }}
+</div>
+<div class="search_field">
+<label>WG/Area:</label> {{ form.group }}{{ form.area }}
+</div>
+<div class="search_field">
+<label>Responsible AD:</label> {{ form.ad }} 
+</div>
+<div class="search_field">
+<label>IESG State:</label> {{ form.state }} :: {{ form.subState }}
+</div>
+{% comment %}
+<div class="search_field" style="text-decoration:line-through;color:#808080;">
+<label>Ballot position:</label> {{ form.positionAd }} has position  {{ form.positionValue }}
+</div>
+{% endcomment %}
+
+</div><!-- end of advanced -->
+
+<div style="padding-top:0.5em;">
+<input type="hidden" name="ajax" value="" />
+<span id="search_submit_button" class="yui-button yui-submit-button">
+<span class="first-child">
+<button type="submit" id="search_submit">Search</button>
+</span>
+</span>
+</div>
+
+</form>
+
+<script type="text/javascript">
+//<![CDATA[
+function searchResult(o) {
+    var el = document.getElementById("search_results");
+    el.innerHTML = (o.responseText !== undefined) ? o.responseText : "?";
+}
+
+function searchFailure(o) {
+    var el = document.getElementById("search_results");
+    el.innerHTML = "Error: "+o.status+" "+o.statusText;
+}
+
+function submitSearch() {
+    document.getElementById("search_results").innerHTML = "Searching...";
+    document.search_form.ajax.value = "1";
+    YAHOO.util.Connect.setForm("search_form");
+    YAHOO.util.Connect.asyncRequest('POST', '/doc/search/',
+        { success: searchResult,
+          failure: searchFailure,
+          argument: null
+	}, null);
+}
+
+function togglePlusMinus(id) {
+    var el = document.getElementById(id);
+    var imgEl = document.getElementById(id+"-img");
+    if (el.style.display == 'none') { 
+        el.style.display = 'block'; 
+        imgEl.src = "/images/minus.png";
+    } else { 
+        el.style.display = 'none'; 
+        imgEl.src = "/images/plus.png";
+    }
+}
+
+function toggleAdvanced() {
+    togglePlusMinus("search_advanced");
+    var f = document.search_form;
+    f.author.value = "";
+    f.ad.selectedIndex = 0;
+    f.group.value = "";
+    f.area.selectedIndex = 0;
+    f.state.selectedIndex = 0;
+    f.subState.selectedIndex = 0;
+
+}
+//]]>
+</script>

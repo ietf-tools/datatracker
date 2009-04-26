@@ -34,12 +34,15 @@
 
 # Create your views here.
 #from django.views.generic.date_based import archive_index
-from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup,IETFWG
+from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup,IETFWG, Position
 from django.views.generic.list_detail import object_list
+from django.views.generic.simple import direct_to_template
 from django.http import Http404, HttpResponse
 from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
+from ietf.idrfc.idrfc_wrapper import IdRfcWrapper, BallotWrapper
+
 import datetime 
 
 def date_threshold():
@@ -169,3 +172,31 @@ def telechat_agenda_documents(request):
     t = loader.get_template('iesg/agenda_documents.txt')
     c = Context({'docs':docs})
     return HttpResponse(t.render(c), mimetype='text/plain')
+
+def discusses(request):
+    positions = Position.objects.filter(discuss=1)
+    res = []
+    try:
+        ids = set()
+    except NameError:
+        # for Python 2.3 
+        from sets import Set as set
+        ids = set()
+    
+    for p in positions:
+        try:
+            draft = p.ballot.drafts.filter(primary_flag=1)
+            if len(draft) > 0 and draft[0].draft.id_document_tag not in ids:
+                ids.add(draft[0].draft.id_document_tag)
+                doc = IdRfcWrapper(draft=draft[0])
+                if doc.has_active_iesg_ballot():
+                    res.append({'doc':doc})
+        except IDInternal.DoesNotExist:
+            pass
+    # find discussing ads
+    for row in res:
+        ballot = BallotWrapper(row['doc'].idinternal, True)
+        row['discuss_positions'] = ballot.get_discuss()
+    return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
+
+    

@@ -1,0 +1,111 @@
+{% comment %}
+Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+
+{% endcomment %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>{% block title %}No title{% endblock %}</title>
+<link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/fonts/fonts-min.css"></link>
+<link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/assets/skins/sam/skin.css"></link>
+<link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
+<style type="text/css">
+{% block morecss %}{% endblock %}
+</style>
+{% block pagehead %}{% endblock %}
+<script type="text/javascript">
+IETF_DOCS = {};
+</script>
+</head>
+<body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
+
+<div style="background-color:#313163;color:white;font-size:150%;">
+<img src="/images/ietflogo-blue.png" width="60" style="vertical-align:middle;padding-left:8px;" alt=""/><span style="color:white; padding-left:15px;font-weight:bold;letter-spacing:0.1em;">datatracker.ietf.org</span>
+</div>
+<div id="ietf-login" style="position:absolute;top:8px;right:10px;">
+{% if user.is_authenticated %}
+{{ user }}&nbsp;|&nbsp;<a id="ietf-login-signout" href="{% url django.contrib.auth.views.logout %}">Sign out</a>
+{% else %}
+<a id="ietf-login-signin" href="{% url django.contrib.auth.views.login %}">Sign in</a>
+{% endif %}
+</div>
+
+<table style="margin-left:8px;margin-top:8px;" width="98%;">
+<tr valign="top">
+<td style="width:160px;padding-right:8px;">
+<div class="leftmenu" style="margin-top:4px;">
+{% include "idrfc/base_leftmenu.html" %}
+</div>
+</td>
+<td>
+
+<div style="padding:0 8px 0 8px;">
+
+{% block content %}
+{% endblock %}
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/yahoo-dom-event/yahoo-dom-event.js"></script> 
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/container/container-min.js"></script> 
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/menu/menu-min.js"></script> 
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/element/element-min.js"></script> 
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/button/button-min.js"></script> 
+
+<script type="text/javascript">
+//<![CDATA[
+YAHOO.util.Event.onContentReady("wgs", function () {
+    var oMenu = new YAHOO.widget.Menu("wgs", { position: "static", hidedelay:  750, lazyload: true });
+    oMenu.render();      
+});      
+
+YAHOO.util.Event.onContentReady("search_submit_button", function () {
+    var oButton = new YAHOO.widget.Button("search_submit_button", {});
+});      
+</script>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/connection/connection-min.js"></script> 
+<script type="text/javascript" src="/js/base.js"></script>
+{% block scripts %}
+{% endblock %}
+
+{% block content_end %}
+{% endblock %} 
+</div>
+
+<div id="db-extras"></div>
+
+</td></tr></table>
+{% include "debug.html" %}
+<!-- v{{version_num}}, {{ revision_date }} -->
+
+</body>
+</html>

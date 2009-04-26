@@ -1,0 +1,126 @@
+{% comment %}
+Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+
+{% load ietf_filters %}
+<table class="ballotTable">
+
+<tr valign="top">
+<td class="left">
+
+<p><span style="border:1px solid black;position:relative;top:2px;background:#c00000; display: block; float:left;width: 10px; height:10px;font-size:1px;margin-right:4px;"></span><b>Discuss</b><br/>
+{% if ballot.get_discuss %}
+{% for p in ballot.get_discuss %}
+{{p.ad_name}} {% if p.has_text %}*{% endif %}<br/>
+{% endfor %}
+{% else %}
+<i>none</i>
+{% endif %}
+</p>
+
+<p><span style="border:1px solid black;position:relative;top:2px;background:#80ff80; display: block; float:left;width: 10px; height:10px;font-size:1px;margin-right:4px;"></span><b>Yes</b><br/>
+{% if ballot.get_yes %}
+{% for p in ballot.get_yes %}
+{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
+{% endfor %}
+{% else %}
+<i>none</i>
+{% endif %}
+</p>
+
+<p><span style="border:1px solid black;position:relative;top:2px;background:#80ff80; display: block; float:left;width: 10px; height:10px;font-size:1px;margin-right:4px;"></span><b>No Objection</b><br/>
+{% if ballot.get_no_objection %}
+{% for p in ballot.get_no_objection %}
+{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
+{% endfor %}
+{% else %}
+<i>none</i>
+{% endif %}
+</p>
+
+<p><span style="border:1px solid black;position:relative;top:2px;background:#c0c0c0; display: block; float:left;width: 10px; height:10px;font-size:1px;margin-right:4px;"></span><b>Abstain</b><br/>
+{% if ballot.get_abstain %}
+{% for p in ballot.get_abstain %}
+{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
+{% endfor %}
+{% else %}
+<i>none</i>
+{% endif %}
+</p>
+
+<p><span style="border:1px solid black;position:relative;top:2px;background:#c0c0c0; display: block; float:left;width: 10px; height:10px;font-size:1px;margin-right:4px;"></span><b>Recuse</b><br/>
+{% if ballot.get_recuse %}
+{% for p in ballot.get_recuse %}
+{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
+{% endfor %}
+{% else %}
+<i>none</i>
+{% endif %}
+</p>
+
+<p><span style="border:1px solid black;position:relative;top:2px;background:white; display: block; float:left;width: 10px; height:10px;font-size:1px;margin-right:4px;"></span><b>No Record</b><br/>
+{% if ballot.get_no_record %}
+{% for p in ballot.get_no_record %}
+{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
+{% endfor %}
+{% else %}
+<i>none</i>
+{% endif %}
+</p>
+
+
+</td>
+<td class="right">
+
+<h2 style="margin-top:12px;">Discusses and other comments</h2>
+
+{% for pos in ballot.get_texts %}
+
+<h2 class="ballot_ad">{{pos.ad_name|escape}}</h2>
+
+{% ifequal pos.position "Discuss" %}
+<p><b>Discuss ({{pos.discuss_date}})</b></p>
+<pre>{{pos.discuss_text|fill:"80"|escape }}</pre>
+{% endifequal %}
+
+{% if pos.comment_text %}
+<p><b>Comment ({{pos.comment_date}})</b></p>
+<pre>{{pos.comment_text|fill:"80"|escape }}</pre>
+{% endif %}
+
+{% endfor %}
+
+
+</td>
+</tr>
+</table>

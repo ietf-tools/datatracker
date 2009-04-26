@@ -66,6 +66,7 @@ urlpatterns += patterns('django.views.generic.list_detail',
 urlpatterns += patterns('',
         (r'^agenda/$', views.telechat_agenda),                        
         (r'^agenda/documents.txt$', views.telechat_agenda_documents),
+        (r'^discusses/$', views.discusses),                
         (r'^ann/ind/$',views.inddocs),
         (r'^ann/(?P<cat>[^/]+)/$',views.wgdocs),
 )

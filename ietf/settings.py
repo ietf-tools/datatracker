@@ -166,6 +166,14 @@ IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR'
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 
+# Override this in settings_local.py if needed
+if SERVER_MODE == 'production':
+    CACHE_BACKEND= 'file://'+'/a/www/ietf-datatracker/cache/'
+else:
+    # Default to no caching in development/test, so that every developer
+    # doesn't have to set CACHE_BACKEND in settings_local
+    CACHE_BACKEND = 'dummy:///'
+
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 
 # The number of days for which a password-request URL is valid

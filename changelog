@@ -1,3 +1,20 @@
+ietfdb (2.24)
+
+  * Merged in code from Pasi for new ID/RFC search and per-document pages,
+    and IESG "discuss report".
+
+  * Added missing images for liaison_manager.cgi to static/images/.
+
+  * More sensible error message if settings_local.py is not found.
+	
+  * Fix feed problem for non-ascii names. From Pasi Eronen. 
+
+  * ** NOTE: This release uses the Django cache framework, and requires
+    that the cache directory in settings.py (/a/www/ietf-datatracker/cache/)
+    exists.
+
+  * Fix problem with area model in admin interface
+
 ietfdb (2.23)
 
   * Fixed a wrong link in the html agenda (from Henrik)
