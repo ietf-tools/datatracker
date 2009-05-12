@@ -286,6 +286,18 @@ def wrap_long_lines(text):
         filled += [ line.rstrip() ]
     return "\n".join(filled)
 
+@register.filter(name='greater_than')
+def greater_than(x, y):
+    return x > int(y)
+
+@register.filter(name='less_than')
+def less_than(x, y):
+    return x < int(y)
+
+@register.filter(name='equal')
+def equal(x, y):
+    return str(x)==str(y)
+
 # based on http://www.djangosnippets.org/snippets/847/ by 'whiteinge'
 @register.filter
 def in_group(user, groups):

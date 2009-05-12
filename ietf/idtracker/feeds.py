@@ -36,7 +36,7 @@ class DocumentComments(Feed):
 	return self.title(obj)
 
     def items(self, obj):
-	return obj.public_comments().order_by("-date")[:15]
+	return obj.public_comments().order_by("-date","-id")
 
     def item_pubdate(self, item):
 	time = datetime.time(*[int(t) for t in item.time.split(":")])

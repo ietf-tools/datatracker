@@ -7,7 +7,9 @@
 <h1>Log In</h1>
 
 {% if form.has_errors %}
-<p>Your username and password didn't match our records. Please try again.</p>
+{% for error in form.username.errors %}
+{{ error }}<br/>
+{% endfor %}
 {% endif %}
 
 <form method="post" action=".">

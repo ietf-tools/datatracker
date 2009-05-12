@@ -41,7 +41,8 @@ from django.http import Http404, HttpResponse
 from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
-from ietf.idrfc.idrfc_wrapper import IdRfcWrapper, BallotWrapper
+from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
+from ietf.idrfc.models import RfcIndex
 
 import datetime 
 
@@ -164,7 +165,7 @@ def telechat_agenda(request, date=None):
     return render_to_response('iesg/agenda.html', {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs, 'private':private}, context_instance=RequestContext(request) )
     
 
-def telechat_agenda_documents(request):
+def telechat_agenda_documents_txt(request):
     dates = TelechatDates.objects.all()[0].dates()
     docs = []
     for date in dates:
@@ -186,17 +187,44 @@ def discusses(request):
     for p in positions:
         try:
             draft = p.ballot.drafts.filter(primary_flag=1)
+            if len(draft) > 0 and draft[0].rfc_flag:
+                if not -draft[0].draft_id in ids:
+                    ids.add(-draft[0].draft_id)
+                    try:
+                        ri = RfcIndex.objects.get(rfc_number=draft[0].draft_id)
+                        doc = RfcWrapper(ri)
+                        if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
+                            res.append(doc)
+                    except RfcIndex.DoesNotExist:
+                        # NOT QUITE RIGHT, although this should never happen
+                        pass
             if len(draft) > 0 and draft[0].draft.id_document_tag not in ids:
                 ids.add(draft[0].draft.id_document_tag)
-                doc = IdRfcWrapper(draft=draft[0])
-                if doc.has_active_iesg_ballot():
-                    res.append({'doc':doc})
+                doc = IdWrapper(draft=draft[0])
+                if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
+                    res.append(doc)
         except IDInternal.DoesNotExist:
             pass
-    # find discussing ads
-    for row in res:
-        ballot = BallotWrapper(row['doc'].idinternal, True)
-        row['discuss_positions'] = ballot.get_discuss()
     return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
 
-    
+def telechat_agenda_documents(request):
+    dates = TelechatDates.objects.all()[0].dates()
+    telechats = []
+    for date in dates:
+        matches = IDInternal.objects.filter(telechat_date=date,primary_flag=1,agenda=1)
+        idmatches = matches.filter(rfc_flag=0).order_by('ballot_id')
+        rfcmatches = matches.filter(rfc_flag=1).order_by('ballot_id')
+        res = {}
+        for id in list(idmatches)+list(rfcmatches):
+            section_key = "s"+get_doc_section(id)
+            if section_key not in res:
+                res[section_key] = []
+            if not id.rfc_flag:
+                w = IdWrapper(draft=id)
+            else:
+                ri = RfcIndex.objects.get(rfc_number=id.draft_id)
+                w = RfcWrapper(ri)
+            res[section_key].append(w)
+        telechats.append({'date':date, 'docs':res})
+    return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats})
+                                                                                                        

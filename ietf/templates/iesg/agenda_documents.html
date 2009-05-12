@@ -1,0 +1,113 @@
+{% comment %}
+Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+
+{% extends "idrfc/base.html" %}
+{% load ballot_icon %}
+{% load ietf_filters %}
+
+{% block title %}Documents on Future IESG Telechat Agendas
+{% endblock %}
+
+{% block morecss %}
+.agenda_docs tr.oddrow {background-color: #EDF5FF; }
+.agenda_docs tr.header.telechat_date { margin-top:10px; background:#2647A0; color: white;}
+.agenda_docs tr.header.telechat_date td { font-size: 125%; }
+.agenda_docs tr.header + tr.header { border-top: 2px solid white;}
+{% endblock %}
+
+{% block content %}
+
+<h1 style="margin-top:0;">Documents on Future IESG Telechat Agendas</h1>
+
+<div class="search_results agenda_docs">
+<table>
+
+{% for t in telechats %}
+
+{% if not forloop.first %}
+<tr class="header"><td colspan="5">&nbsp;</td></tr>
+{% endif %}
+
+<tr class="header telechat_date"><td colspan="5">IESG telechat {{t.date}}</td></tr>
+
+<tr class="header"><td colspan="5">2. Protocol Actions</td></tr>
+
+<tr class="header"><td colspan="5">2.1 WG Submissions</td></tr>
+
+    {% for doc in t.docs.s211 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+    {% if t.docs.s212 %}<tr class="header"><td colspan="5">2.1.2 Returning Item</td></tr>{% endif %}
+    {% for doc in t.docs.s212 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+    {% if t.docs.s213 %}<tr class="header"><td colspan="5">2.1.3 For Action</td></tr>{% endif %}
+    {% for doc in t.docs.s213 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+
+<tr class="header"><td colspan="5">2.2 Individual Submissions</td></tr>
+
+    {% for doc in t.docs.s221 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+    {% if t.docs.s222 %}<tr class="header"><td colspan="5">2.2.2 Returning Item</td></tr>{% endif %}
+    {% for doc in t.docs.s222 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+    {% if t.docs.s223 %}<tr class="header"><td colspan="5">2.2.3 For Action</td></tr>{% endif %}
+    {% for doc in t.docs.s223 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+
+<tr class="header"><td colspan="5">3. Document Actions</td></tr>
+
+<tr class="header"><td colspan="5">3.1 WG Submissions</td></tr>
+
+    {% for doc in t.docs.s311 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+    {% if t.docs.s312 %}<tr class="header"><td colspan="5">3.1.2 Returning Item</td></tr>{% endif %}
+    {% for doc in t.docs.s312 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+    {% if t.docs.s313 %}<tr class="header"><td colspan="5">3.1.3 For Action</td></tr>{% endif %}
+    {% for doc in t.docs.s313 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+
+<tr class="header"><td colspan="5">3.2 Individual Submissions Via AD</td></tr>
+
+    {% for doc in t.docs.s321 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+    {% if t.docs.s322 %}<tr class="header"><td colspan="5">3.2.2 Returning Item</td></tr>{% endif %}
+    {% for doc in t.docs.s322 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+    {% if t.docs.s323 %}<tr class="header"><td colspan="5">3.2.3 For Action</td></tr>{% endif %}
+    {% for doc in t.docs.s323 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+
+<tr class="header"><td colspan="5">3.3 Independent Submissions Via RFC Editor</td></tr>
+
+    {% for doc in t.docs.s331 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+    {% if t.docs.s332 %}<tr class="header"><td colspan="5">3.3.2 Returning Item</td></tr>{% endif %}
+    {% for doc in t.docs.s332 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+    {% if t.docs.s333 %}<tr class="header"><td colspan="5">3.3.3 For Action</td></tr>{% endif %}
+    {% for doc in t.docs.s333 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
+
+{% endfor %}
+
+</table>
+</div>
+
+{% endblock %}

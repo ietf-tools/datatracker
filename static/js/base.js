@@ -33,32 +33,32 @@
 function showBallot(draftName, trackerId) {
 
     var handleEditPosition = function() {
-        IETF_DOCS.ballotDialog.hide();
+        IETF.ballotDialog.hide();
         var tid = document.getElementById("doc_ballot_dialog_id").innerHTML;
         window.open("https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&id_document_tag="+tid);
     }; 
     var handleClose = function() {
-        IETF_DOCS.ballotDialog.hide();
+        IETF.ballotDialog.hide();
     };
     var el;
 
-    if (!IETF_DOCS.ballotDialog) {
+    if (!IETF.ballotDialog) {
         el = document.createElement("div");
         el.innerHTML = '<div id="doc_ballot_dialog" class="mydialog" style="visibility:hidden;"><div class="hd">Positions for <span id="doc_ballot_dialog_name">draft-ietf-foo-bar</span><span id="doc_ballot_dialog_id" style="display:none;"></span></div><div class="bd">  <div id="doc_ballot_dialog_12" style="overflow-y:scroll; height:500px;"></div>   </div></div>';
         document.getElementById("db-extras").appendChild(el);
 
         var buttons = [{text:"Close", handler:handleClose, isDefault:true}];
 	buttons.unshift({text:"Edit Position", handler:handleEditPosition});
-        IETF_DOCS.ballotDialog = new YAHOO.widget.Dialog("doc_ballot_dialog", {
+        IETF.ballotDialog = new YAHOO.widget.Dialog("doc_ballot_dialog", {
             visible:false, draggable:false, close:true, modal:true,
             width:"850px", fixedcenter:true, constraintoviewport:true,
             buttons: buttons});
-        IETF_DOCS.ballotDialog.render();
+        IETF.ballotDialog.render();
     }
     document.getElementById("doc_ballot_dialog_name").innerHTML = draftName;
     document.getElementById("doc_ballot_dialog_id").innerHTML = trackerId;
 
-    IETF_DOCS.ballotDialog.show();
+    IETF.ballotDialog.show();
 
     el = document.getElementById("doc_ballot_dialog_12");
     el.innerHTML = "Loading...";
@@ -69,3 +69,59 @@ function showBallot(draftName, trackerId) {
             argument: null
    	  }, null);
 }
+
+function signIn() {
+   document.cookie = "mytestcookie=worked; path=/";
+   if (document.cookie.length == 0) {
+      alert("You must enable cookies to sign in");
+      return;
+   }
+   // Initialize Django session cookie
+   YAHOO.util.Connect.asyncRequest('GET', '/account/login/', {}, null);
+
+   var onSuccess = function(o) {
+       if (o.status != 200) {
+           document.getElementById("signin_msg").innerHTML = o.statusText;
+       } else {
+           var t = o.responseText;
+           if (t.search("Please enter a correct username and password") >= 0) {
+               document.getElementById("signin_msg").innerHTML = "The username or password you entered is incorrect.";
+           } else if (t.search("Username and Email Address for legacy tools") >= 0) {
+               IETF.signinDialog.hide();
+               window.location.reload();
+           } else {
+               alert(t);
+               document.getElementById("signin_msg").innerHTML = "Internal error?";
+           }
+       }
+    };
+    var onFailure = function(o) {
+        document.getElementById("signin_msg").innerHTML = o.statusText;
+    };
+    var handleOk = function() {
+        document.getElementById("signin_msg").innerHTML = "Signing in...";
+        document.cookie = "testcookie=worked; path=/";
+        YAHOO.util.Connect.setForm(document.signin_form); 
+        YAHOO.util.Connect.asyncRequest('POST',
+            '/account/login/', {success:onSuccess,failure:onFailure});
+        return false;
+    };
+    if (!IETF.signinDialog) {
+        var dialog = new YAHOO.widget.Panel("signin_dlg", {
+            draggable:false, modal:true,
+            width:"350px", fixedcenter:true, constraintoviewport:true });
+        var kl1 = new YAHOO.util.KeyListener(document, { keys: 27 }, function() { dialog.cancel();}); 
+	var kl2 = new YAHOO.util.KeyListener("signin_password", { keys: 13 }, function () {  } );
+        dialog.cfg.queueProperty("keylisteners", [kl1,kl2]);
+        dialog.render();
+        YAHOO.util.Event.addListener(document.signin_form, "submit", handleOk);
+        var cancelButton = new YAHOO.widget.Button("signin_button2");
+        cancelButton.on("click", function() {dialog.hide();});
+        IETF.signinDialog = dialog;
+    }
+    document.getElementById("signin_msg").innerHTML = "";
+    IETF.signinDialog.show();
+}
+function signOut() {
+    YAHOO.util.Connect.asyncRequest('GET', '/account/logout/', { success: function(o) { window.location.reload(); } }, null);
+};

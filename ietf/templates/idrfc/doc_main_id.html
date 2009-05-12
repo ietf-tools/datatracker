@@ -91,9 +91,9 @@ function toggleComment(n) {
 <ul class="yui-nav">
   <li class="selected"><a href="#tab1"><em>Document</em></a></li>
   <li><a href="#tab2"><em>Versions</em></a></li>
-  <li {% if not doc.has_iesg_ballot %} class="disabled" {%endif%}><a href="#tab3"><em>IESG Evaluation Record</em></a></li>
-  <li {% if not doc.has_iesg_ballot %} class="disabled" {%endif%}><a href="#tab4"><em>IESG Writeups</em></a></li>
-  <li {% if not doc.in_iesg_tracker %} class="disabled" {%endif%}><a href="#tab5"><em>IESG Comment Log</em></a></li>
+  <li {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}{% else %}class="disabled" {%endif%}><a href="#tab3"><em>IESG Evaluation Record</em></a></li>
+  <li {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}{%else%}class="disabled" {%endif%}><a href="#tab4"><em>IESG Writeups</em></a></li>
+  <li {% if not doc.in_ietf_process %} class="disabled" {%endif%}><a href="#tab5"><em>IESG Comment Log</em></a></li>
 </ul>
 <div class="yui-content">
 
@@ -103,17 +103,17 @@ function toggleComment(n) {
 <table id="metatable">
 <tr><td style="width:18ex;">Document type:</td><td>{{ info.type|escape }}</td></tr>
 <tr><td>State:</td><td> 
-{{ doc.friendly_state|escape }}
-{% if doc.last_call_ends %} (ends {{doc.last_call_ends}}){%endif%}
-{% if doc.draft_replaced_by %} by {% for rep in doc.draft_replaced_by %}<a href="/doc/{{rep}}/">{{rep}}</a> {% endfor %} {%endif %}
+{{ doc.friendly_state }}
 {% if doc.rfc_editor_state %}<br />RFC Editor State: {{ doc.rfc_editor_state|escape }} {% endif %}
+{% if doc.replaces %}<br />Replaces {% for rep in doc.replaces %}<a href="/doc/{{rep}}/">{{rep}}</a> {% endfor %}{% endif %}
 </td></tr>
 
-<tr><td>Last updated:</td><td> {{ doc.revision_date|default:"(data missing)" }}</td></tr>
-<tr><td>Responsible AD:</td><td>{{ doc.ad_name|default:"-"|escape }}</td></tr>
-{% if doc.iesg_note %}<tr><td>IESG Note:</td><td>{{ doc.iesg_note|escape }}</td></tr>{% endif %}
+<tr><td>Intended status:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.intended_maturity_level|default:"-"  }}{% else %}-{%endif%}</td></tr>
+<tr><td>Last updated:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
+<tr><td>Responsible AD:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.ad_name|default:"-"|escape }}{%else%}-{%endif%}</td></tr>
+{% if doc.in_ietf_process and doc.ietf_process.iesg_note %}<tr><td>IESG Note:</td><td>{{ doc.ietf_process.iesg_note|escape }}</td></tr>{% endif %}
 
-{% if doc.is_active_draft %}
+{% ifequal doc.draft_status "Active" %}
 <tr><td>Other versions:</td><td>
 <a href="http://www.ietf.org/internet-drafts/{{doc.draft_name_and_revision}}.txt" target="_blank">plain text</a>
 {% for ext in doc.file_types %}
@@ -125,12 +125,8 @@ function toggleComment(n) {
 <a href="http://tools.ietf.org/pdf/{{doc.draft_name_and_revision}}.pdf" target="_blank">pdf</a>
 {% endif %}
 </td></tr>
-{% else %}
-{% endif %}
+{% endifequal %}
 
-{% comment %}
-{% if doc.replaces %}<br />Replaces {% for rep in doc.replaces %}<a href="/doc/{{rep}}/">{{rep}}</a> {% endfor %}{% endif %}
-{% endcomment %}
 </table>
 
 <div style="padding-top:6px;padding-bottom:6px;">
@@ -138,7 +134,7 @@ function toggleComment(n) {
  <span class="mybutton"><a href="http://www.fenron.com/~fenner/ietf/deps/index.cgi?dep={{doc.draft_name}}" rel="nofollow" target="_blank">Dependencies to this draft</a></span> &nbsp;
  <span class="mybutton"><a href="https://datatracker.ietf.org/ipr/search/?option=document_search&amp;id_document_tag={{doc.tracker_id}}" rel="nofollow" target="_blank">IPR Disclosures</a></span> &nbsp;
  <span class="mybutton"><a href="http://tools.ietf.org/idnits?url=http://tools.ietf.org/id/{{doc.draft_name_and_revision}}.txt" rel="nofollow" target="_blank">Check nits</a></span> &nbsp;
-{% if doc.in_iesg_tracker %}
+{% if doc.in_ietf_process %}
 <span class="mybutton"><a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=view_id&amp;dTag={{doc.tracker_id}}" rel="nofollow" target="_blank">Edit state (IESG Tracker)</a></span>
 {% else %}
 <span class="mybutton"><a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=add_id_confirm&amp;dTag={{doc.tracker_id}}&amp;rfc_flag=0&amp;ballot_id=0" rel="nofollow" target="_blank">Add to IESG Tracker</a></span>
@@ -155,7 +151,7 @@ function toggleComment(n) {
 
 <div id="tab3">
 <div id="doc_ballot" style="display:none;">
-{% if doc.has_iesg_ballot %}
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
 <div style="position:absolute;right:0px;">
 <span id="doc_ballot_button" class="yui-button yui-link-button"><span class="first-child">
 <a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{doc.tracker_id}}">Edit position</a>
@@ -168,17 +164,17 @@ function toggleComment(n) {
 
 <div id="tab4">
 <div id="doc_writeup" style="display:none;">
-{% if doc.has_iesg_ballot %}
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
 <div style="position:absolute;right:0px;">
 <span id="doc_writeup_edit_button" class="yui-button yui-link-button"><span class="first-child">
-<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=ballot_writeup&amp;filename={{doc.draft_filename}}&amp;ballot_id={{doc.iesg_ballot_id}}">Edit writeups</a>
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=ballot_writeup&amp;filename={{doc.draft_filename}}&amp;ballot_id={{doc.ietf_process.iesg_ballot.ballot_id}}">Edit writeups</a>
 </span></span></div>
 ---- following is a DRAFT of message to be sent AFTER approval ---
 <pre>
-{{ doc.iesg_ballot_approval_text|escape|urlize }}
+{{ doc.ietf_process.iesg_ballot.approval_text|escape|urlize }}
 </pre>
 <pre>
-{{ doc.iesg_ballot_writeup|escape|urlize }}
+{{ doc.ietf_process.iesg_ballot.ballot_writeup|escape|urlize }}
 </pre>
 {% endif %}
 </div>
@@ -193,7 +189,7 @@ function toggleComment(n) {
 </div> <!-- mytabs -->
 
 <div id="rfcText1">
-{% if doc.is_active_draft %}
+{% ifequal doc.draft_status "Active" %}
 <div class="markup_draft">
 {{ content1 }}
 </div>
@@ -204,7 +200,7 @@ function toggleComment(n) {
 <p style="max-width: 400px;"><b>Abstract:</b><br/> {{ doc.abstract|escape }}</p>
 
 <p><b>Authors:</b><br/>
-{% for author in doc.draft.authors.all %}
+{% for author in doc.authors.all %}
 
 {% if author.email %}
 <a href="mailto:{{ author.email }}">{{ author.person }} &lt;{{author.email}}&gt;</a>
@@ -220,12 +216,12 @@ Missing author info #{{ author.person_id }}
 
 <p>(Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid)</p>
 
-{% endif %}
+{% endifequal %}
 </div> <!-- rfcText1 -->
 {% endblock %}
 
 {% block scripts %}
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/tabview/tabview-min.js"></script> 
+<script type="text/javascript" src="{{yui_url}}/2.7.0/build/tabview/tabview-min.js"></script> 
 <script type="text/javascript">
 //<![CDATA[
 function loadX(element, url) {
@@ -251,13 +247,13 @@ document.getElementById('rfcText2').style.display = 'none';
 
 document.getElementById('doc_versions').style.display = 'block';
 loadX("doc_versions", '/doc/{{doc.draft_name}}/_versions.data');
-{% if doc.has_iesg_ballot %}
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
 document.getElementById('doc_ballot').style.display = 'block';
 loadX("doc_ballot_content", '/doc/{{doc.draft_name}}/_ballot.data');
 document.getElementById('doc_writeup').style.display = 'block';
 {% endif %}
 
-{% if doc.in_iesg_tracker %}
+{% if doc.in_ietf_process %}
 document.getElementById('doc_comments').style.display = 'block';
 loadX("doc_comments", '/doc/{{doc.draft_name}}/_comments.data');
 {% endif %}
@@ -268,10 +264,10 @@ loadX("doc_comments", '/doc/{{doc.draft_name}}/_comments.data');
 
 {% block content_end %}
 <div id="rfcText2">
-{% if doc.is_active_draft %}
+{% ifequal doc.draft_status "Active" %}
 <div class="markup_draft">
 {{ content2 }}
 </div>
-{% endif %}
+{% endifequal %}
 </div>
 {% endblock %}

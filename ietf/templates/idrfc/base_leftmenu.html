@@ -35,7 +35,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load wg_menu %} 
 {% load ietf_filters %}
 <ul>
+{% if user|in_group:"IESG" %}
+<li class="sect first">IESG Dashboard</li>
+  <li><a href="/doc/ad/{{user.first_name|lower}}.{{user.last_name|lower}}/">My Documents (as AD)</a></li>
+  <li><a href="/iesg/agenda/documents/">Reviews for next telechat</a></li>
+  <li><a href="/iesg/discusses/">Discusses</a></li>
+</li>
+<li class="sect">Working Groups by Area</li>
+{% else %}
 <li class="sect first">Working Groups by Area</li>
+{% endif %}
 
   <li><div id="wgs" class="yuimenu"><div class="bd">
   <ul class="first-of-type" style="padding:0;">
@@ -49,15 +58,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
 <li class="sect">Internet Drafts&nbsp;&amp;&nbsp;RFCs</li>
   <li><a href="/doc/">Search</a></li>
-  <li><form action="/doc/search/" method="get"><input type="text" style="margin-left:10px; width:100px; border:1px solid #89d;" name="name"/>
+  <li><form action="/doc/search/" method="get" style="margin-bottom:0;"><input type="text" style="margin-left:10px; width:100px; border:1px solid #89d;" name="name"/>
 <input type="hidden" name="activeDrafts" value="on"/><input type="hidden" name="rfcs" value="on"/></form></li>
   <li><a href="https://datatracker.ietf.org/idst/upload.cgi">Submit a draft</a></li> 
 
-{% if user|in_group:"IESG" %}
-<li class="sect">IESG only</li>
-  <li><a href="/iesg/discusses/">Discusses</a></li>
-</li>
-{% endif %}
 
 <li class="sect">Meetings</li>
   <li><a href="/meeting/agenda/">Agenda</a></li>

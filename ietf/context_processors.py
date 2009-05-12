@@ -8,3 +8,6 @@ def server_mode(request):
     
 def revision_info(request):
     return {'revision_time': __date__[7:32], 'revision_date': __date__[34:-3], 'revision_num': __rev__[6:-2], "revision_id": __id__[5:-2], "version_num": __version__ }
+
+def yui_url(request):
+    return {'yui_url':settings.YUI_URL}

@@ -91,11 +91,9 @@ function toggleComment(n) {
 <ul class="yui-nav">
   <li class="selected"><a href="#tab1"><em>Document</em></a></li>
   <li><a href="#tab2"><em>Versions</em></a></li>
-{%comment %}
-  <li {% if not doc.has_iesg_ballot %} class="disabled" {%endif%}><a href="#tab3"><em>IESG Evaluation Record</em></a></li>
-  <li {% if not doc.has_iesg_ballot %} class="disabled" {%endif%}><a href="#tab4"><em>IESG Writeups</em></a></li>
-  <li {% if not doc.in_iesg_tracker %} class="disabled" {%endif%}><a href="#tab5"><em>IESG Comment Log</em></a></li>
-{% endcomment %}
+  <li {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}{%else%} class="disabled" {%endif%}><a href="#tab3"><em>IESG Evaluation Record</em></a></li>
+  <li {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}{%else%} class="disabled" {%endif%}><a href="#tab4"><em>IESG Writeups</em></a></li>
+  <li {% if not doc.in_ietf_process %} class="disabled" {%endif%}><a href="#tab5"><em>IESG Comment Log</em></a></li>
 </ul>
 <div class="yui-content">
 
@@ -103,8 +101,13 @@ function toggleComment(n) {
 
 <div id="metabox">
 <table id="metatable">
-<tr><td style="width:18ex;">Document type:</td><td>RFC - {{ doc.rfc_maturity_level }}</td></tr>
-<tr><td>Published:</td><td> {{ doc.revision_date|default:"(data missing)" }}</td></tr>
+<tr><td style="width:18ex;">Document type:</td><td>RFC - {{ doc.maturity_level }}
+{% if doc.obsoleted_by %}<br />Obsoleted by {{ doc.obsoleted_by }}{%endif %}
+{% if doc.updated_by %}<br />Updated by {{ doc.updated_by }}{%endif %}
+{% if doc.obsoletes %}<br />Obsoletes {{ doc.obsoletes }}{%endif %}
+{% if doc.updates %}<br />Updates {{ doc.updates }}{%endif %}
+</td></tr>
+<tr><td>Published:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
 </table>
 
 </div>
@@ -115,6 +118,43 @@ function toggleComment(n) {
 Foo
 </div>
 </div>
+
+<div id="tab3">
+<div id="doc_ballot" style="display:none;">
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
+<div style="position:absolute;right:0px;">
+<span id="doc_ballot_button" class="yui-button yui-link-button"><span class="first-child">
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{doc.rfc_number}}">Edit position</a>
+</span></span>
+</div>
+{% endif %}
+<div id="doc_ballot_content"></div>
+</div>
+</div> 
+
+<div id="tab4">
+<div id="doc_writeup" style="display:none;">
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
+<div style="position:absolute;right:0px;">
+<span id="doc_writeup_edit_button" class="yui-button yui-link-button"><span class="first-child">
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=ballot_writeup&amp;ballot_id={{doc.ietf_process.iesg_ballot.ballot_id}}">Edit writeups</a>
+</span></span></div>
+---- following is a DRAFT of message to be sent AFTER approval ---
+<pre>
+{{ doc.ietf_process.iesg_ballot.approval_text|escape|urlize }}
+</pre>
+<pre>
+{{ doc.ietf_process.iesg_ballot.ballot_writeup|escape|urlize }}
+</pre>
+{% endif %}
+</div>
+</div> 
+
+
+<div id="tab5">
+<div id="doc_comments" style="display:none;">
+</div>
+</div> 
 
 </div> <!-- yui-content -->
 </div> <!-- mytabs -->
@@ -127,7 +167,7 @@ Foo
 {% endblock %}
 
 {% block scripts %}
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/yui/2.7.0/build/tabview/tabview-min.js"></script> 
+<script type="text/javascript" src="{{yui_url}}/2.7.0/build/tabview/tabview-min.js"></script> 
 <script type="text/javascript">
 //<![CDATA[
 function loadX(element, url) {
@@ -151,8 +191,17 @@ document.getElementById('rfcText1').style.display = 'none';
 document.getElementById('rfcText2').style.display = 'none';
 } });
 
-//document.getElementById('doc_versions').style.display = 'block';
-//loadX("doc_versions", '/doc/{{doc.draft_name}}/_versions.data');
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
+document.getElementById('doc_ballot').style.display = 'block';
+loadX("doc_ballot_content", '/doc/rfc{{doc.rfc_number}}/_ballot.data');
+document.getElementById('doc_writeup').style.display = 'block';
+{% endif %}
+
+{% if doc.in_ietf_process %}
+document.getElementById('doc_comments').style.display = 'block';
+loadX("doc_comments", '/doc/rfc{{doc.rfc_number}}/_comments.data');
+{% endif %}
+
 //]]>
 </script>
 

@@ -38,7 +38,8 @@ from django.template import RequestContext
 
 from ietf.idtracker.models import IDState, IDStatus, IETFWG, IESGLogin, IDSubState, Area, InternetDraft, Rfc, IDInternal
 from ietf.idrfc.models import RfcIndex
-from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
+from django.http import Http404, HttpResponse
+from ietf.idrfc.idrfc_wrapper import IdWrapper,RfcWrapper,IdRfcWrapper
 from ietf.idindex.models import orgs
 from ietf.utils import normalize_draftname
 
@@ -186,13 +187,23 @@ def search_query(query):
             if len(rfcs) >= 1:
                 r[3] = rfcs[0]
 
+    # TODO: require that RfcINdex is present
+
     results = []
     for res in idresults+rfcresults:
         if len(res)==1:
-            doc = IdRfcWrapper(draft=res[0])
+            doc = IdRfcWrapper(IdWrapper(res[0]), None)
+            results.append(doc)
         else:
-            doc = IdRfcWrapper(draft=res[1], rfc=res[2], rfcIndex=res[3])
-        results.append(doc)
+            d = None
+            r = None
+            if res[1]:
+                d = IdWrapper(res[1])
+            if res[3]:
+                r = RfcWrapper(res[3])
+            if d or r:
+                doc = IdRfcWrapper(d, r)
+                results.append(doc)
     results.sort(key=lambda obj: obj.view_sort_key())
     meta = {}
     if maxReached:
@@ -214,4 +225,28 @@ def search_results(request):
 def search_main(request):
     form = SearchForm()
     return render_to_response('idrfc/search_main.html', {'form':form}, context_instance=RequestContext(request))
+
+def by_ad(request, name):
+    ad_id = None
+    ad_name = None
+    for i in IESGLogin.objects.all():
+        iname = str(i).lower().replace(' ','.')
+        if name == iname:
+            ad_id = i.id
+            ad_name = str(i)
+            break
+    if not ad_id:
+        raise Http404
+    form = SearchForm(request.REQUEST)
+    if form.is_valid():
+        pass
+    form.clean_data['ad'] = ad_id
+    form.clean_data['activeDrafts'] = True
+    form.clean_data['rfcs'] = True
+    form.clean_data['oldDrafts'] = True
+    (results,meta) = search_query(form.clean_data)
+
+    results.sort(key=lambda obj: obj.view_sort_key_byad())
+    return render_to_response('idrfc/by_ad.html', {'form':form, 'docs':results,'meta':meta, 'ad_name':ad_name}, context_instance=RequestContext(request))
+
 

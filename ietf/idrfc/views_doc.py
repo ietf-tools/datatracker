@@ -35,7 +35,7 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from ietf.idtracker.models import InternetDraft, IETFWG, Area, IDInternal
 from ietf.idrfc.models import RfcIndex, RfcEditorQueue, DraftVersions
-from ietf.idrfc.idrfc_wrapper import IdRfcWrapper, BallotWrapper
+from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.idrfc import markup_txt
 from ietf import settings
 from django.template import RequestContext
@@ -48,15 +48,15 @@ def document_debug(request, name):
     if m:
         rfc_number = int(m.group(1))
         rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
-        doc = IdRfcWrapper(rfcIndex=rfci, findRfc=True)
+        doc = RfcWrapper(rfci)
     else:
         id = get_object_or_404(InternetDraft, filename=name)
-        doc = IdRfcWrapper(draft=id, findRfc=True)
+        doc = IdWrapper(draft=id)
     return HttpResponse(doc.to_json(), mimetype='text/plain')
 
 def document_main_rfc(request, rfc_number):
     rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
-    doc = IdRfcWrapper(rfcIndex=rfci, findRfc=True)
+    doc = RfcWrapper(rfci)
 
     info = {}
     content1 = None
@@ -85,7 +85,7 @@ def document_main(request, name):
     if m:
         return document_main_rfc(request, int(m.group(1)))
     id = get_object_or_404(InternetDraft, filename=name)
-    doc = IdRfcWrapper(draft=id, findRfc=True)
+    doc = IdWrapper(id) 
     
     info = {}
     stream_id = doc.stream_id()
@@ -99,17 +99,19 @@ def document_main(request, name):
         stream = " ("+doc.group_acronym().upper()+" WG document)"
     else:
         stream = " (Individual document)"
-
+        
     if id.status.status == "Active":
+        info['is_active_draft'] = True
         info['type'] = "Active Internet-Draft"+stream
     else:
+        info['is_active_draft'] = False
         info['type'] = "Old Internet-Draft"+stream
 
     info['has_pdf'] = (".pdf" in doc.file_types())
     
     content1 = None
     content2 = None
-    if doc.is_active_draft():
+    if info['is_active_draft']:
         f = None
         try:
             try:
@@ -129,7 +131,12 @@ def document_main(request, name):
                               context_instance=RequestContext(request));
 
 def document_comments(request, name):
-    id = get_object_or_404(IDInternal, draft__filename=name)
+    r = re.compile("^rfc([0-9]+)$")
+    m = r.match(name)
+    if m:
+        id = get_object_or_404(IDInternal, rfc_flag=1, draft=int(m.group(1)))
+    else:
+        id = get_object_or_404(IDInternal, rfc_flag=0, draft__filename=name)
     results = []
     commentNumber = 0
     for comment in id.public_comments():
@@ -150,16 +157,20 @@ def document_comments(request, name):
     return render_to_response('idrfc/doc_comments.html', {'comments':results}, context_instance=RequestContext(request))
 
 def document_ballot(request, name):
-    id = get_object_or_404(IDInternal, draft__filename=name)
+    r = re.compile("^rfc([0-9]+)$")
+    m = r.match(name)
+    if m:
+        id = get_object_or_404(IDInternal, rfc_flag=1, draft=int(m.group(1)))
+    else:
+        id = get_object_or_404(IDInternal, rfc_flag=0, draft__filename=name)
     try:
         if not id.ballot.ballot_issued:
             raise Http404
     except BallotInfo.DoesNotExist:
         raise Http404
 
-    doc = IdRfcWrapper(draft=id)
-    ballot = BallotWrapper(id, doc.has_active_iesg_ballot())
-    return render_to_response('idrfc/doc_ballot.html', {'ballot':ballot, 'doc':doc}, context_instance=RequestContext(request))
+    ballot = BallotWrapper(id)
+    return render_to_response('idrfc/doc_ballot.html', {'ballot':ballot}, context_instance=RequestContext(request))
 
 def document_versions(request, name):
     draft = get_object_or_404(InternetDraft, filename=name)
@@ -172,3 +183,4 @@ def document_versions(request, name):
             ov.append({"draft_name":d.filename, "revision":v.revision, "revision_date":v.revision_date})
     
     return render_to_response('idrfc/doc_versions.html', {'versions':ov}, context_instance=RequestContext(request))
+

@@ -32,31 +32,35 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
-{% load ietf_filters %}
 {% load ballot_icon %}
-<tr class="{% cycle oddrow,evenrow %}">
+{% load ietf_filters %}
+<tr 
+{% if user|in_group:"IESG" %}
+{% if doc|my_position:user|equal:"Discuss" %}style="background:#ffa0a0;"{% endif %}
+{% if doc|my_position:user|equal:"Yes"  or  doc|my_position:user|slugify|equal:"no-objection" %}style="background:#a0ffa0;"{% endif %}
+{% if doc|my_position:user|equal:"Abstain" or doc|my_position:user|equal:"Recuse" %}style="background:#c0c0c0;"{% endif %}
+{% endif %}
+>
 <td class="doc">
-{% if doc.rfc %}<a href="/doc/rfc{{doc.rfc.rfc_number}}/">RFC {{doc.rfc.rfc_number}}</a>
-{% if doc.id %}<br />(<a href="/doc/{{doc.id.draft_name}}/">{{doc.id.draft_name}}</a>){%endif%}
-{% else %}<a href="/doc/{{doc.id.draft_name}}/">{{doc.id.draft_name_and_revision}}</a>{% endif %}</td>
-<td class="title">{{ doc.title|escape }}</td>
-<td class="date">{{ doc.publication_date }}
-{% if doc.publication_date|timesince_days|less_than:"14" %}<br/><span style="padding:0 2px;background:yellow;font-size:85%;">new</span>{%endif%}
-{% if doc.id and doc.id.expected_expiration_date and doc.id.expected_expiration_date|timesince_days|greater_than:"-14" %}<br/><span style="padding:0 2px;font-size:85%;background:yellow;">expires soon</span>{%endif%}
-</td>
-
-<td class="status">{{ doc.friendly_state|escape }}
-{% if not doc.rfc %}{{ doc.id|state_age_colored }}{% endif %}
-{% if doc.rfc %}
-{% if doc.rfc.obsoleted_by %}<br />Obsoleted by {{ doc.rfc.obsoleted_by }}{%endif %}
-{% if doc.rfc.updated_by %}<br />Updated by {{ doc.rfc.updated_by }}{%endif %}
-{% if doc.rfc.has_errata %}<br /><a href="http://www.rfc-editor.org/errata_search.php?rfc={{doc.rfc.rfc_number}}" rel="nofollow" target="_blank">Errata</a>{% endif %}
-{% else %}
-  {% if doc.id.rfc_editor_state %}<br />RFC Editor State: {{ doc.id.rfc_editor_state|escape }}{% endif %}
+{% if doc.is_rfc_wrapper %}<a href="/doc/rfc{{doc.rfc_number}}/">RFC {{doc.rfc_number}}</a>
+{% else %}<a href="/doc/{{doc.draft_name}}/">{{doc.draft_name_and_revision}}</a>{% endif %}
+{% if doc.ietf_process.iesg_ballot.was_deferred %}
+<br/><b title="deferred by {{ doc.ietf_process.iesg_ballot.deferred_by}}">(deferred on {{doc.ietf_process.iesg_ballot.deferred_date }})</b>
 {% endif %}
 </td>
-<td class="ballot">
-{% if doc.rfc and doc.rfc.in_ietf_process and doc.rfc.ietf_process.has_active_iesg_ballot %}{% ballot_icon doc.rfc %}{% else %}{% if doc.id %}{% ballot_icon doc.id %}{%endif%}{%endif%}</td>
+
+<td class="title">{{ doc.title|escape }}</td>
+
+<td class="status">{{ doc.friendly_state }}
+<br/>Intended status: {{doc.ietf_process.intended_maturity_level}}
+{% if doc.is_rfc_wrapper %}
+{% if doc.has_errata %}<br /><a href="http://www.rfc-editor.org/errata_search.php?rfc={{doc.rfc_number}}" rel="nofollow" target="_blank">Errata</a>{% endif %}
+{% else %}
+  {% if doc.rfc_editor_state %}<br />RFC Editor State: {{ doc.rfc_editor_state|escape }}{% endif %}
+{% endif %}
+
+</td>
+<td class="ballot">{% ballot_icon doc %}</td>
 <td class="ad">{% if doc.ad_name %}{{ doc.ad_name|escape }}{% else %}&nbsp;{% endif %}</td>
 
 </tr>

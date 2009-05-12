@@ -113,6 +113,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.i18n',
     'ietf.context_processors.server_mode',
     'ietf.context_processors.revision_info',
+    'ietf.context_processors.yui_url'
 )
 
 INSTALLED_APPS = (
@@ -178,6 +179,9 @@ IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 
 # The number of days for which a password-request URL is valid
 PASSWORD_DAYS = 3
+
+# Base URL for YUI library
+YUI_URL = "https://ajax.googleapis.com/ajax/libs/yui"
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

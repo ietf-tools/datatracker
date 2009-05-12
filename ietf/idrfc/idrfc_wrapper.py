@@ -43,156 +43,315 @@ BALLOT_ACTIVE_STATES = ['In Last Call',
                         'IESG Evaluation',
                         'IESG Evaluation - Defer']
 
-# A wrapper to make writing templates less painful
-# Can represent either an Internet Draft, RFC, or combine both
+def jsonify_helper(obj, keys):
+    result = {}
+    for k in keys:
+        if hasattr(obj, k):
+            v = getattr(obj, k)
+            if callable(v):
+                v = v()
+            if v == None:
+                pass
+            elif isinstance(v, (types.StringType, types.IntType, types.BooleanType, types.LongType, types.ListType)):
+                result[k] = v
+            elif isinstance(v, date):
+                result[k] = str(v)
+            else:
+                result[k] = 'Unknown type '+str(type(v))
+    return result
 
-class IdRfcWrapper:
-    # avoid using these in templates
-    draft = None
-    idinternal = None
-    rfc = None
-    rfcIndex = None
+# Wrappers to make writing templates less painful
 
-    # Active, RFC, Expired, Replaced, etc.
-    document_status = None
+# ---------------------------------------------------------------------------
+
+class IdWrapper:
+    _draft = None
+    _idinternal = None
+
+    is_id_wrapper = True
+    is_rfc_wrapper = False
+
     draft_name = None
-    draft_revision = None
+    # Active/Expired/RFC/Withdrawn by Submitter/Replaced/Withdrawn by IETF
+    draft_status = None
+    # Revision is sometimes incorrect (+1 too large) if status != Active
+    latest_revision = None
+    # Set if and only if draft_status is "RFC"
+    rfc_number = None          
     title = None
-    rfc_number = None
-    revision_date = None
     tracker_id = None
-    rfc_maturity_level = None
-    iesg_main_state = None
-    iesg_state = None
-    iesg_sub_state = None
-    iesg_state_date = None
+    publication_date = None
+    ietf_process = None
     
-    # must give either draft or rfcIndex!
-    def __init__(self, draft=None, rfc=None, rfcIndex=None, findRfc=False):
+    def __init__(self, draft):
         if isinstance(draft, IDInternal):
-            self.idinternal = draft
-            self.draft = self.idinternal.draft
-        elif draft:
-            self.draft = draft
+            self._idinternal = draft
+            self._draft = self._idinternal.draft
+        else:
+            self._draft = draft
             if draft.idinternal:
-                self.idinternal = draft.idinternal
-        if findRfc:
-            if self.draft and self.draft.rfc_number:
-                try:
-                    r = Rfc.objects.get(rfc_number=self.draft.rfc_number)
-                    ri = RfcIndex.objects.get(rfc_number=self.draft.rfc_number)
-                    self.rfc = r
-                    self.rfcIndex = ri
-                except Rfc.DoesNotExist:
-                    pass
-                except RfcIndex.DoesNotExist:
-                    pass
-            elif rfcIndex:
-                try:
-                    r = Rfc.objects.get(rfc_number=rfcIndex.rfc_number)
-                    self.rfc = r
-                except Rfc.DoesNotExist:
-                    pass
-    
-        if rfcIndex:
-            self.rfcIndex = rfcIndex
-            if rfc:
-                self.rfc = rfc
-        self.init_basic_data()
-        
-    def __str__(self):
-        return "IdRfcWrapper:"+self.debug_data()
+                self._idinternal = draft.idinternal
+        if self._idinternal:
+            self.ietf_process = IetfProcessData(self._idinternal)
 
-    def init_basic_data(self):
-        d = self.draft
-        i = self.idinternal
-        r = self.rfcIndex
-
-        if r:
-            self.document_status = "RFC"
-        else:
-            self.document_status = str(d.status)
-        
-        if d:
-            self.draft_name = d.filename
-            self.draft_revision = d.revision
-            self.title = d.title
-            self.revision_date = d.revision_date
-            self.tracker_id = d.id_document_tag
-            if d.rfc_number:
-                self.rfc_number = d.rfc_number
-            
-        if i:
-            self.iesg_main_state = str(i.cur_state)
-            if i.cur_sub_state_id > 0:
-                self.iesg_sub_state = str(i.cur_sub_state)
-                self.iesg_state = self.iesg_main_state + "::" + self.iesg_sub_state
+        self.draft_name = self._draft.filename
+        self.draft_status = str(self._draft.status)
+        if self.draft_status == "RFC":
+            if self._draft.rfc_number:
+                self.rfc_number = self._draft.rfc_number
             else:
-                self.iesg_sub_state = None
-                self.iesg_state = self.iesg_main_state
-            self.iesg_state_date = i.event_date
-
-        if r:
-            self.title = r.title
-            self.revision_date = r.rfc_published_date
-            self.rfc_number = r.rfc_number
-            if not d:
-                self.draft_name = r.draft
-            self.rfc_maturity_level = r.current_status
-
-        # Handle incorrect database entries
-        if self.is_rfc() and not self.rfc_number:
-            self.document_status = "Expired"
-        # Handle missing data
-        if self.is_rfc() and not self.rfc_maturity_level:
-            self.rfc_maturity_level = "Unknown?"
-
-    def is_rfc(self):
-        return (self.document_status == "RFC")
-
-    def in_iesg_tracker(self):
-        return (self.idinternal != None)
-
-    def ad_name(self):
-        if self.idinternal:
-            name = self.idinternal.token_name
-            # Some old documents have token name as "Surname, Firstname";
-            # newer ones have "Firstname Surname"
-            m = re.match(r'^(\w+), (\w+)$', name)
-            if m:
-                return m.group(2)+" "+m.group(1)
-            else:
-                return name
-        else:
-            return None
-
-    def draft_name_and_revision(self):
-        if self.draft_name and self.draft_revision:
-            return self.draft_name+"-"+self.draft_revision
-        else:
-            return None
+                # Handle incorrect database entries
+                self.draft_status = "Expired"
+        self.latest_revision = self._draft.revision
+        self.title = self._draft.title
+        self.tracker_id = self._draft.id_document_tag
+        self.publication_date = self._draft.revision_date
 
     def rfc_editor_state(self):
         try:
-            if self.draft:
-                qs = self.draft.rfc_editor_queue_state
-                return qs.state
+            qs = self._draft.rfc_editor_queue_state
+            return qs.state
         except RfcEditorQueue.DoesNotExist:
             pass
         return None
 
-    def has_rfc_errata(self):
-        return self.rfcIndex and (self.rfcIndex.has_errata > 0)
-
-    def last_call_ends(self):
-        if self.iesg_main_state == "In Last Call":
-            return self.draft.lc_expiration_date
+    def replaced_by(self):
+        try:
+            if self._draft.replaced_by:
+                return [self._draft.replaced_by.filename]
+        except InternetDraft.DoesNotExist:
+            pass
+        return None
+    def replaces(self):
+        r = [str(r.filename) for r in self._draft.replaces_set.all()]
+        if len(r) > 0:
+            return r
         else:
             return None
-        
+    def in_ietf_process(self):
+        return self.ietf_process != None
+    
+    def file_types(self):
+        return self._draft.file_type.split(",")
+
+    def group_acronym(self):
+        if self._draft.group_id != 0 and self._draft.group != None and str(self._draft.group) != "none":
+            return str(self._draft.group)
+        else:
+            return None
+   
+    # TODO: Returning integers here isn't nice
+    # 0=Unknown, 1=IETF, 2=IAB, 3=IRTF, 4=Independent
+    def stream_id(self):
+        if self.draft_name.startswith("draft-iab-"):
+            return 2
+        elif self.draft_name.startswith("draft-irtf-"):
+            return 3
+        elif self._idinternal:
+            if self._idinternal.via_rfc_editor > 0:
+                return 4
+            else:
+                return 1
+        elif self.group_acronym():
+            return 1
+        else:
+            return 0
+
+    def draft_name_and_revision(self):
+        return self.draft_name+"-"+self.latest_revision
+
+    def friendly_state(self):
+        if self.draft_status == "RFC":
+            return "<a href=\"/doc/rfc%d/\">RFC %d</a>" % (self.rfc_number, self.rfc_number)
+        elif self.draft_status == "Replaced":
+            rs = self.replaced_by()
+            if rs:
+                return "Replaced by <a href=\"/doc/%s/\">%s</a>" % (rs[0],rs[0])
+            else:
+                return "Replaced"
+        elif self.draft_status == "Active":
+            if self.in_ietf_process() and self.ietf_process.main_state != "Dead":
+                if self.ietf_process.main_state == "In Last Call":
+                    return self.ietf_process.state + " (ends "+str(self._idinternal.document().lc_expiration_date)+")"
+                else:
+                    return self.ietf_process.state
+            else:
+                return "I-D Exists"
+        else:
+            # Expired/Withdrawn by Submitter/IETF
+            return self.draft_status
+
+    def abstract(self):
+        return self._draft.abstract
+    # TODO: ugly hack
+    def authors(self):
+        return self._draft.authors
+
+    def expected_expiration_date(self):
+        if self.draft_status == "Active" and self._draft.can_expire():
+            return self._draft.expiration()
+        else:
+            return None
+
+    def ad_name(self):
+        if self.in_ietf_process():
+            return self.ietf_process.ad_name()
+        else:
+            return None
+
+    def to_json(self):
+        result = jsonify_helper(self, ['draft_name', 'draft_status', 'latest_revision', 'rfc_number', 'title', 'tracker_id', 'publication_date','rfc_editor_state', 'replaced_by', 'replaces', 'in_ietf_process', 'file_types', 'group_acronym', 'stream_id','friendly_state', 'abstract', 'ad_name'])
+        if self.in_ietf_process():
+            result['ietf_process'] = self.ietf_process.to_json_helper()
+        return simplejson.dumps(result, indent=2)
+
+# ---------------------------------------------------------------------------
+
+class RfcWrapper:
+    _rfc = None
+    _rfcindex = None
+    _idinternal = None
+
+    is_id_wrapper = False
+    is_rfc_wrapper = True
+
+    rfc_number = None
+    title = None
+    publication_date = None
+    maturity_level = None
+    ietf_process = None
+    
+    def __init__(self, rfcindex, rfc=None, idinternal=None):
+        self._rfcindex = rfcindex
+        self._rfc = rfc
+        self._idinternal = idinternal
+
+        if not self._idinternal:
+            try:
+                self._idinternal = IDInternal.objects.get(rfc_flag=1, draft=self._rfcindex.rfc_number)
+            except IDInternal.DoesNotExist:
+                pass
+            
+        if self._idinternal:
+            self.ietf_process = IetfProcessData(self._idinternal)
+
+        self.rfc_number = self._rfcindex.rfc_number
+        self.title = self._rfcindex.title
+        self.publication_date = self._rfcindex.rfc_published_date
+        self.maturity_level = self._rfcindex.current_status
+        if not self.maturity_level:
+            self.maturity_level = "Unknown"
+            
+    def _rfc_doc_list(self, name):
+        if (not self._rfcindex) or (not self._rfcindex.__dict__[name]):
+            return None
+        else:
+            s = self._rfcindex.__dict__[name]
+            s = s.replace(",", ",  ")
+            s = re.sub("([A-Z])([0-9])", "\\1 \\2", s)
+            return s
+    def obsoleted_by(self):
+        return self._rfc_doc_list("obsoleted_by")
+    def obsoletes(self):
+        return self._rfc_doc_list("obsoletes")
+    def updated_by(self):
+        return self._rfc_doc_list("updated_by")
+    def updates(self):
+        return self._rfc_doc_list("updates")
+    def has_errata(self):
+        return self._rfcindex and (self._rfcindex.has_errata > 0)
+
+    def in_ietf_process(self):
+        return self.ietf_process != None
+
+    def file_types(self):
+        # Not really correct, but the database doesn't
+        # have this data for RFCs yet
+        return [".txt"]
+
+    # TODO:
+    # also/bcp_number/std_number/fyi_number
+    # group_acronym
+    # ad_name
+
+    def friendly_state(self):
+        if self.in_ietf_process():
+            s = self.ietf_process.main_state
+            if not s in ["RFC Published", "AD is watching", "Dead"]:
+                return "RFC %d (%s)<br/>%s (to %s)" % (self.rfc_number, self.maturity_level, s, self.ietf_process.intended_maturity_level())
+        return "RFC %d (%s)" % (self.rfc_number, self.maturity_level)
+
+    def ad_name(self):
+        if self.in_ietf_process():
+            return self.ietf_process.ad_name()
+        else:
+            # TODO: get AD name of the draft
+            return None
+
+    def to_json(self):
+        result = jsonify_helper(self, ['rfc_number', 'title', 'publication_date', 'maturity_level', 'obsoleted_by','obsoletes','updated_by','updates','has_errata','file_types','in_ietf_process', 'friendly_state'])
+        if self.in_ietf_process():
+            result['ietf_process'] = self.ietf_process.to_json_helper()
+        return simplejson.dumps(result, indent=2)
+
+# ---------------------------------------------------------------------------
+
+class IetfProcessData:
+    _idinternal = None
+    main_state = None
+    sub_state = None
+    state = None
+    state_date = None
+    _ballot = None
+    def __init__(self, idinternal):
+        self._idinternal = idinternal
+        i = self._idinternal
+        self.main_state = str(i.cur_state)
+        if i.cur_sub_state_id > 0:
+            self.sub_state = str(i.cur_sub_state)
+            self.state = self.main_state + "::" + self.sub_state
+        else:
+            self.sub_state = None
+            self.state = self.main_state
+        self.state_date = i.event_date
+    
+    def has_iesg_ballot(self):
+        try:
+            if self._idinternal.ballot.ballot_issued:
+                return True
+        except BallotInfo.DoesNotExist:
+            pass
+        return False
+    
+    def has_active_iesg_ballot(self):
+        if not self.has_iesg_ballot():
+            return False
+        if not self.main_state in BALLOT_ACTIVE_STATES:
+            return False
+        if (not self._idinternal.rfc_flag) and self._idinternal.draft.status_id != 1:
+            # Active
+            return False
+        return True
+
+    # don't call this unless has_[active_]iesg_ballot returns True
+    def iesg_ballot(self):
+        if not self._ballot:
+            self._ballot = BallotWrapper(self._idinternal)
+        return self._ballot
+
+    def ad_name(self):
+        name = self._idinternal.token_name
+        # Some old documents have token name as "Surname, Firstname";
+        # newer ones have "Firstname Surname"
+        m = re.match(r'^(\w+), (\w+)$', name)
+        if m:
+            return m.group(2)+" "+m.group(1)
+        else:
+            return name
+
     def iesg_note(self):
-        if self.idinternal and self.idinternal.note:
-            n = self.idinternal.note
+        if self._idinternal.note:
+            n = self._idinternal.note
             # Hide unnecessary note of form "RFC 1234"
             if re.match("^RFC\s*\d+$", n):
                 return None
@@ -200,179 +359,121 @@ class IdRfcWrapper:
         else:
             return None
 
-    def iesg_ballot_approval_text(self):
+    def to_json_helper(self):
+        result = {'main_state':self.main_state,
+                  'sub_state':self.sub_state,
+                  'state':self.state,
+                  'state_date':str(self.state_date),
+                  'has_iesg_ballot':self.has_iesg_ballot(),
+                  'has_active_iesg_ballot':self.has_active_iesg_ballot(),
+                  'ad_name':self.ad_name(),
+                  'intended_maturity_level':self.intended_maturity_level()}
+        if self.iesg_note():
+            result['iesg_note'] = self.iesg_note()
         if self.has_iesg_ballot():
-            return self.idinternal.ballot.approval_text
+            result['iesg_ballot'] = self.iesg_ballot().to_json_helper()
+        return result
+
+    def intended_maturity_level(self):
+        if self._idinternal.rfc_flag:
+            s = str(self._idinternal.document().intended_status)
+            # rfc_intend_status table uses different names, argh!
+            if s == "Proposed":
+                s = "Proposed Standard"
+            elif s == "Draft":
+                s = "Draft Standard"
+            elif s == "None":
+                s = None
         else:
-            return None
-    def iesg_ballot_writeup(self):
-        if self.has_iesg_ballot():
-            return self.idinternal.ballot.ballot_writeup
+            s = str(self._idinternal.draft.intended_status)
+            if s == "None":
+                s = None
+            elif s == "Request":
+                s = None
+        return s
+
+    # intended_maturity_level(self):
+    # telechat_date, on_telechat_agenda, returning_telechat_item
+    # state_change_notice_to?
+    # comment_log?
+
+# ---------------------------------------------------------------------------
+
+class IdRfcWrapper:
+    rfc = None
+    id = None
+
+    def __init__(self, id, rfc):
+        self.id = id
+        self.rfc = rfc
+
+    def title(self):
+        if self.rfc:
+            return self.rfc.title
         else:
-            return None
+            return self.id.title
 
-    # TODO: Returning integers here isn't nice
-    # 0=Unknown, 1=IETF, 2=IAB, 3=IRTF, 4=Independent
-    def stream_id(self):
-        if self.draft_name:
-            if self.draft_name.startswith("draft-iab-"):
-                return 2
-            elif self.draft_name.startswith("draft-irtf-"):
-                return 3
-            elif self.idinternal:
-                if self.idinternal.via_rfc_editor > 0:
-                    return 4
-                else:
-                    return 1
-        g = self.group_acronym()
-        if g:
-            return 1
-        return 0
-
-    # Ballot exists (may be old or active one)
-    def has_iesg_ballot(self):
-        try:
-            if self.idinternal and self.idinternal.ballot.ballot_issued:
-                return True
-        except BallotInfo.DoesNotExist:
-            pass
-        return False
-
-    # Ballot exists and balloting is ongoing
-    def has_active_iesg_ballot(self):
-        return self.idinternal and (self.iesg_main_state in BALLOT_ACTIVE_STATES) and self.has_iesg_ballot() and self.document_status == "Active"
-
-    def iesg_ballot_id(self):
-        if self.has_iesg_ballot():
-            return self.idinternal.ballot_id
+    def friendly_state(self):
+        if self.rfc:
+            return self.rfc.friendly_state()
         else:
-            return None
+            return self.id.friendly_state()
 
-    # Don't call unless has_iesg_ballot() returns True
-    def iesg_ballot_positions(self):
-        return create_ballot_object(self.idinternal, self.has_active_iesg_ballot())
-
-    def group_acronym(self):
-        if self.draft and self.draft.group_id != 0 and self.draft.group != None and str(self.draft.group) != "none":
-            return str(self.draft.group)
-        else:
-            if self.rfc and self.rfc.group_acronym and (self.rfc.group_acronym != 'none'):
-                return str(self.rfc.group_acronym)
+    def ad_name(self):
+        if self.rfc:
+            s = self.rfc.ad_name()
+            if s:
+                return s
+        if self.id:
+            return self.id.ad_name()
         return None
+
+    def publication_date(self):
+        if self.rfc:
+            return self.rfc.publication_date
+        else:
+            return self.id.publication_date
         
     def view_sort_group(self):
-        if self.is_rfc():
+        if self.rfc:
             return 'RFC'
-        elif self.document_status == "Active":
+        elif self.id.draft_status == "Active":
             return 'Active Internet-Draft'
         else:
             return 'Old Internet-Draft'
     def view_sort_key(self):
-        if self.is_rfc():
-            x = self.rfc_number
-            y = self.debug_data()
-            if self.draft:
-                z = str(self.draft.status)
-            return "2%04d" % self.rfc_number
-        elif self.document_status == "Active":
-            return "1"+self.draft_name
-        else:
-            return "3"+self.draft_name
-
-    def friendly_state(self):
-        if self.is_rfc():
-            return "RFC - "+self.rfc_maturity_level
-        elif self.document_status == "Active":
-            if self.iesg_main_state and self.iesg_main_state != "Dead":
-                return self.iesg_main_state
-            else:
-                return "I-D Exists"
-        else:
-            return self.document_status
-
-    def draft_replaced_by(self):
-        try:
-            if self.draft and self.draft.replaced_by:
-                return [self.draft.replaced_by.filename]
-        except InternetDraft.DoesNotExist:
-            pass
-        return None
-    def draft_replaces(self):
-        if not self.draft:
-            return None
-        r = [str(r.filename) for r in self.draft.replaces_set.all()]
-        if len(r) > 0:
-            return r
-        else:
-            return None
-
-    # TODO: return just a text string for now
-    def rfc_obsoleted_by(self):
-        if (not self.rfcIndex) or (not self.rfcIndex.obsoleted_by):
-            return None
-        else:
-            return self.rfcIndex.obsoleted_by
-
-    def rfc_updated_by(self):
-        if (not self.rfcIndex) or (not self.rfcIndex.updated_by):
-            return None
-        else:
-            return self.rfcIndex.updated_by
-
-    def is_active_draft(self):
-        return self.document_status == "Active"
-
-    def file_types(self):
-        if self.draft:
-            return self.draft.file_type.split(",")
-        else:
-            # Not really correct, but the database doesn't
-            # have this data for RFCs yet
-            return [".txt"]
-        
-    def abstract(self):
-        if self.draft:
-            return self.draft.abstract
-        else:
-            return None
-
-    def debug_data(self):
-        s = ""
-        if self.draft:
-            s = s + "draft("+self.draft.filename+","+str(self.draft.id_document_tag)+","+str(self.draft.rfc_number)+")"
-        if self.idinternal:
-            s = s + ",idinternal()"
         if self.rfc:
-            s = s + ",rfc("+str(self.rfc.rfc_number)+")"
-        if self.rfcIndex:
-            s = s + ",rfcIndex("+str(self.rfcIndex.rfc_number)+")"
-        return s
+            return "2%04d" % self.rfc.rfc_number
+        elif self.id.draft_status == "Active":
+            return "1"+self.id.draft_name
+        else:
+            return "3"+self.id.draft_name
+    def view_sort_key_byad(self):
+        if self.rfc:
+            return "2%04d" % self.rfc.rfc_number
+        elif self.id.draft_status == "Active":
+            if self.id.in_ietf_process():
+                return "11%02d" % (self.id.ietf_process._idinternal.cur_state_id)
+            else:
+                return "10"
+        else:
+            return "3"
 
-    def to_json(self):
-        result = {}
-        for k in ['document_status', 'draft_name', 'draft_revision', 'title', 'rfc_number', 'revision_date', 'tracker_id', 'rfc_maturity_level', 'iesg_main_state', 'iesg_state', 'iesg_sub_state', 'iesg_state_date', 'is_rfc', 'in_iesg_tracker', 'ad_name', 'draft_name_and_revision','rfc_editor_state','has_rfc_errata','last_call_ends','iesg_note','iesg_ballot_approval_text', 'iesg_ballot_writeup', 'stream_id','has_iesg_ballot','has_active_iesg_ballot','iesg_ballot_id','group_acronym','friendly_state','file_types','debug_data','draft_replaced_by','draft_replaces']:
-            if hasattr(self, k):
-                v = getattr(self, k)
-                if callable(v):
-                    v = v()
-                if v == None:
-                    pass
-                elif isinstance(v, (types.StringType, types.IntType, types.BooleanType, types.LongType, types.ListType)):
-                    result[k] = v
-                elif isinstance(v, date):
-                    result[k] = str(v)
-                else:
-                    result[k] = 'Unknown type '+str(type(v))
-        return simplejson.dumps(result, indent=2)
+#     def debug_data(self):
+#         s = ""
+#         if self.draft:
+#             s = s + "draft("+self.draft.filename+","+str(self.draft.id_document_tag)+","+str(self.draft.rfc_number)+")"
+#         if self.idinternal:
+#             s = s + ",idinternal()"
+#         if self._rfc:
+#             s = s + ",rfc("+str(self._rfc.rfc_number)+")"
+#         if self.rfcIndex:
+#             s = s + ",rfcIndex("+str(self.rfcIndex.rfc_number)+")"
+#         if self.rfc_idinternal:
+#             s = s + ",rfc_idinternal("+str(self.rfc_idinternal.draft_id)+")"
+#         return s
+
             
-# def create_document_object(draft=None, rfc=None, rfcIndex=None, base=None):
-#     if draft:
-#         o['fileTypes'] = draft.file_type.split(",")
-#         if draft.intended_status and str(draft.intended_status) != "None":
-#             o['intendedStatus'] = str(draft.intended_status)
-#         else:
-#             o['intendedStatus'] = None
-#
 #     if idinternal:
 #         o['stateChangeNoticeTo'] = idinternal.state_change_notice_to
 #         if idinternal.returning_item > 0:
@@ -381,20 +482,11 @@ class IdRfcWrapper:
 #             o['telechatDate'] = str(idinternal.telechat_date)
 #             o['onTelechatAgenda'] = (idinternal.agenda > 0)
 #
-#     if rfc:
-#         o['intendedStatus'] = None
-#     if rfcIndex:
-#         o['rfcUpdates'] = rfcIndex.updates
-#         o['rfcObsoletes'] = rfcIndex.obsoletes
-#         o['rfcAlso'] = rfcIndex.also
-#         for k in ['rfcUpdates','rfcUpdatedBy','rfcObsoletes','rfcObsoletedBy','rfcAlso']:
-#             if o[k]:
-#                 o[k] = o[k].replace(",", ",  ")
-#                 o[k] = re.sub("([A-Z])([0-9])", "\\1 \\2", o[k])
-#     return o
+
+# ---------------------------------------------------------------------------
 
 class BallotWrapper:
-    idinternal = None
+    _idinternal = None
     ballot = None
     ballot_active = False
 
@@ -402,11 +494,29 @@ class BallotWrapper:
 
     position_values = ["Discuss", "Yes", "No Objection", "Abstain", "Recuse", "No Record"]
 
-    def __init__(self, idinternal, ballot_active):
-        self.idinternal = idinternal
+    def __init__(self, idinternal):
+        self._idinternal = idinternal
         self.ballot = idinternal.ballot
-        self.ballot_active = ballot_active
+        if not idinternal.rfc_flag:
+            self.ballot_active = self.ballot.ballot_issued and (str(idinternal.cur_state) in BALLOT_ACTIVE_STATES) and str(idinternal.draft.status)=="Active";
+        else:
+            self.ballot_active = self.ballot.ballot_issued and (str(idinternal.cur_state) in BALLOT_ACTIVE_STATES)
 
+    def approval_text(self):
+        return self.ballot.approval_text
+    def ballot_writeup(self):
+        return self.ballot.ballot_writeup
+    def is_active(self):
+        return self.ballot_active
+    def ballot_id(self):
+        return self._idinternal.ballot_id
+    def was_deferred(self):
+        return self.ballot.defer
+    def deferred_by(self):
+        return self.ballot.defer_by
+    def deferred_date(self):
+        return self.ballot.defer_date
+    
     def _init(self):
         try:
             ads = set()
@@ -428,6 +538,13 @@ class BallotWrapper:
                 if str(ad) not in ads:
                     positions.append({"ad_name":str(ad), "position":"No Record"})
         self._positions = positions
+
+    def position_for_ad(self, ad_name):
+        pl = self.position_list()
+        for p in pl:
+            if p["ad_name"] == ad_name:
+                return p["position"]
+        return None
 
     def position_list(self):
         if not self._positions:
@@ -452,6 +569,9 @@ class BallotWrapper:
 
     def get_texts(self):
         return [p for p in self.position_list() if ('has_text' in p) and p['has_text']]
+
+    def to_json_helper(self):
+        return {}
 
 def position_to_string(position):
     positions = {"yes":"Yes",
