@@ -1,3 +1,16 @@
+ietfdb (2.26)
+
+  * Fixed parsing of REF state in RFC Editor queue.
+
+  * Include draft version in document comment Atom feed.	
+
+  * Minor formatting bugfixes (should work better with IE6 and Safari)
+    in "new layout" (idrfc).
+
+  * Minor fixes to showing "days in state" data.
+	
+ -- Pasi Eronen <pasi.eronen@nokia.com>  28 May 2009 14:03:45 +0200
+
 ietfdb (2.25)
 
   * Refactored IdRfcWrapper and lots of improvements to ID/RFC pages.

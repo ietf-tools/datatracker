@@ -45,7 +45,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if doc.id and doc.id.expected_expiration_date and doc.id.expected_expiration_date|timesince_days|greater_than:"-14" %}<br/><span style="padding:0 2px;font-size:85%;background:yellow;">expires soon</span>{%endif%}
 </td>
 
-<td class="status">{{ doc.friendly_state|escape }}
+<td class="status">{{ doc.friendly_state }}
 {% if not doc.rfc %}{{ doc.id|state_age_colored }}{% endif %}
 {% if doc.rfc %}
 {% if doc.rfc.obsoleted_by %}<br />Obsoleted by {{ doc.rfc.obsoleted_by }}{%endif %}

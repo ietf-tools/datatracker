@@ -56,11 +56,14 @@ body { margin: 0; }
 
 .leftmenu { background-color: #edf5ff; padding:0; border: 1px solid #89d;  }
 .leftmenu ul { padding: 0; margin: 0; }
-.leftmenu ul li { list-style: none; padding: 0; margin: 0; font-size: 90%; }
-.leftmenu ul li a { display:block; padding: 2px 2px 2px 10px; }
+.leftmenu ul li { list-style: none; padding: 0; margin: 0; font-size: 90%; padding: 2px 0px 2px 0px; }
+.leftmenu ul li.yuimenuitem { padding: 1px 0px 1px 0px; border: 0;} 
+.leftmenu ul li a { padding: 0px 0px 0px 10px; }
+.leftmenu ul li.sect a { padding: 2px 2px 2px 2px; }
 .leftmenu ul li.sect { font-weight:bold; color:#fff; background:#2647A0; margin-top:2px; text-indent:2px; padding: 2px 0;}
 .leftmenu ul li.first { margin-top: 0px; }
 .leftmenu ul li a:hover { color:#fff; background: #e60; }
+.leftmenu ul li.sect a { color:#fff; } 
 
 .leftmenu .yuimenuitemlabel { font-size: 12px; padding: 0 10px; }
 .leftmenu a.yuimenuitemlabel { color:#0000ee; /*text-decoration: underline;*/ }
@@ -106,6 +109,7 @@ form#search_form { padding-top: 4px; padding-bottom: 4px; }
 .search_results th.ad, .search_results td.ad { white-space:nowrap; min-width: 6em; }
 .search_results td.ballot { border-left: hidden; }
 
+td.ballot { min-width:37px;  }
 table.ballot_icon { empty-cells: show; padding: 0; border-spacing: 0; border: 1px solid black; border-collapse: collapse; table-layout:fixed; min-width:35px; background:white; }
 table.ballot_icon td { border: 1px solid black; height: 7px; width: 6px; padding: 0;}
 td.ballot_icon_green { background:#80ff80; }

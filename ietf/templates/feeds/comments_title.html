@@ -1,3 +1,4 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 [{{ obj.get_username }}] {{ obj.comment_text|removetags:"b"|truncatewords:"15" }}
 {% if obj.ballot %}[[ IESG {{ obj.get_ballot_display.upper }} ]]{% endif %}
+{% if not obj.document.rfc_flag %}[ version {{ obj.version }} ]{% endif %}

@@ -77,19 +77,23 @@ def parse(response):
             for child in node.childNodes:
                 if child.nodeType == Node.ELEMENT_NODE and child.localName == "state":
                     states.append(child.firstChild.data)
-            if len(states) == 0:
-                state = "?"
-            else:
-                state = " ".join(states)
-            
-            drafts.append([draft_name, date_received, state, stream])
 
+            has_refs = False
             for child in node.childNodes:
                 if child.nodeType == Node.ELEMENT_NODE and child.localName == "normRef":
                     ref_name = getChildText(child, "ref-name")
                     ref_state = getChildText(child, "ref-state")
                     in_queue = ref_state.startswith("IN-QUEUE")
                     refs.append([draft_name, ref_name, in_queue, True])
+                    has_refs = True
+            if has_refs and not "MISSREF" in states:
+                states.append("REF")
+
+            if len(states) == 0:
+                state = "?"
+            else:
+                state = " ".join(states)
+            drafts.append([draft_name, date_received, state, stream])
         
         elif event == pulldom.START_ELEMENT and node.tagName == "section":
             name = node.getAttribute('name')
