@@ -604,6 +604,8 @@ class IDInternal(models.Model):
         db_table = 'id_internal'
 	verbose_name = 'IDTracker Draft'
     class Admin:
+        list_display = ['draft', 'token_email', 'note' ]
+        ordering = ['draft', ]
 	pass
 
 class DocumentComment(models.Model):
