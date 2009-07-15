@@ -20,6 +20,7 @@ IETF_DOMAIN = 'ietf.org'
 ADMINS = (
     ('IETF Django Developers', 'django-project@' + IETF_DOMAIN),
     ('GMail Tracker Archive', 'ietf.tracker.archive+errors@gmail.com'),
+    ('Henrik Levkowetz', 'henrik@levkowetz.com'),
 )
 
 # Server name of the tools server
