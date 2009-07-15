@@ -105,7 +105,7 @@ class Meeting(models.Model):
     overview1 = models.TextField(blank=True)
     overview2 = models.TextField(blank=True)
     def __str__(self):
-	return "IETF %d" % (self.meeting_num)
+	return "IETF %s" % (self.meeting_num)
     def get_meeting_date (self,offset):
         return self.start_date + datetime.timedelta(days=offset) 
     def num(self):
@@ -120,7 +120,7 @@ class MeetingVenue(models.Model):
     break_area_name = models.CharField(maxlength=255)
     reg_area_name = models.CharField(maxlength=255)
     def __str__(self):
-	return "IETF %d" % (self.meeting_num_id)
+	return "IETF %s" % (self.meeting_num_id)
     class Meta:
         db_table = 'meeting_venues'
     class Admin:
@@ -144,11 +144,13 @@ class NonSession(models.Model):
     show_break_location = models.BooleanField()
     def __str__(self):
 	if self.day_id:
-	    return "%s %s %s @%d" % ((self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc, self.non_session_ref, self.meeting_id)
+	    return "%s %s %s @%s" % ((self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc, self.non_session_ref, self.meeting_id)
 	else:
-	    return "** %s %s @%d" % (self.time_desc, self.non_session_ref, self.meeting_id)
+	    return "** %s %s @%s" % (self.time_desc, self.non_session_ref, self.meeting_id)
     class Meta:
 	db_table = 'non_session'
+    class Admin:
+        pass
 
 class Proceeding(models.Model):
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True, primary_key=True)
@@ -160,7 +162,7 @@ class Proceeding(models.Model):
     pr_from_date = models.DateField(null=True, blank=True)
     pr_to_date = models.DateField(null=True, blank=True)
     def __str__(self):
-	return "IETF %d" % (self.meeting_num_id)
+	return "IETF %s" % (self.meeting_num_id)
     class Meta:
         db_table = 'proceedings'
 	ordering = ['?']	# workaround for FK primary key
@@ -172,7 +174,7 @@ class SessionConflict(models.Model):
     conflict_gid = models.ForeignKey(Acronym, raw_id_admin=True, related_name='conflicts_with_set', db_column='conflict_gid')
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num')
     def __str__(self):
-	return "At IETF %d, %s conflicts with %s" % ( self.meeting_num_id, self.group_acronym.acronym, self.conflict_gid.acronym)
+	return "At IETF %s, %s conflicts with %s" % ( self.meeting_num_id, self.group_acronym.acronym, self.conflict_gid.acronym)
     class Meta:
         db_table = 'session_conflicts'
     class Admin:
@@ -379,7 +381,7 @@ class WgAgenda(models.Model, ResolveAcronym):
     irtf = models.BooleanField()
     interim = models.BooleanField()
     def __str__(self):
-	return "Agenda for %s at IETF %d" % (self.acronym(), self.meeting_id)
+	return "Agenda for %s at IETF %s" % (self.acronym(), self.meeting_id)
     class Meta:
         db_table = 'wg_agenda'
     class Admin:
@@ -392,7 +394,7 @@ class Minute(models.Model, ResolveAcronym):
     irtf = models.BooleanField()
     interim = models.BooleanField()
     def __str__(self):
-	return "Minutes for %s at IETF %d" % (self.acronym(), self.meeting_id)
+	return "Minutes for %s at IETF %s" % (self.acronym(), self.meeting_id)
     class Meta:
         db_table = 'minutes'
     class Admin:

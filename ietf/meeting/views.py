@@ -81,7 +81,10 @@ def text_agenda(request, num):
     if not ads:
         ads = list(IESGHistory.objects.filter(meeting=str(int(num)-1)))
     ads.sort(key=(lambda item: item.area.area_acronym.acronym))
+    plenaryw_agenda = "   "+get_plenary_agenda(num, -1).strip().replace("\n", "\n   ")
+    plenaryt_agenda = "   "+get_plenary_agenda(num, -2).strip().replace("\n", "\n   ")
     return HttpResponse(render_to_string("meeting/agenda.txt",
-        {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads},
+        {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
+            "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
         RequestContext(request)), mimetype="text/plain")
     
