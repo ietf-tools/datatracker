@@ -260,6 +260,14 @@ def truncatemore(text, arg):
         words.append(format % link)
     return ' '.join(words)
 
+@register.filter(name='trunc')
+def trunc(text, arg):
+    num = int(arg)
+    if len(text) > num:
+        return text[:num-1]+"&hellip;"
+    else:
+        return text
+    
 @register.filter(name="wrap_long_lines")
 def wrap_long_lines(text):
     """Wraps long lines without loosing the formatting and indentation
