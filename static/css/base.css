@@ -177,8 +177,8 @@ body {
 
 /*XXX announcement tool additions - may need to be new-css-i-fied? */
 input {
-  display: block
-  width: 95%
+  display: block;
+  width: 95%;
 }
 
 span.form-required {

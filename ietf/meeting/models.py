@@ -11,3 +11,6 @@
 
 
 # Create your models here.
+
+
+# Meeting models can be found under ../proceedings/
