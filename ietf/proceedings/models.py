@@ -91,6 +91,33 @@ class ResolveAcronym(object):
             except IETFWG.DoesNotExist:
                 return ""
 
+TIME_ZONE_CHOICES = (
+    (0, 'UTC'),
+    (-1, 'UTC -1'),
+    (-2, 'UTC -2'),
+    (-3, 'UTC -3'),
+    (-4, 'UTC -4 (Eastern Summer)'),
+    (-5, 'UTC -5 (Eastern Winter)'),
+    (-6, 'UTC -6'),
+    (-7, 'UTC -7'),
+    (-8, 'UTC -8 (Pacific Winter)'),
+    (-9, 'UTC -9'),
+    (-10, 'UTC -10 (Hawaii Winter)'),
+    (-11, 'UTC -11'),
+    (+12, 'UTC +12'),
+    (+11, 'UTC +11'),
+    (+10, 'UTC +10 (Brisbane)'),
+    (+9, 'UTC +9'),
+    (+8, 'UTC +8 (Perth Winter)'),
+    (+7, 'UTC +7'),
+    (+6, 'UTC +6'),
+    (+5, 'UTC +5'),
+    (+4, 'UTC +4'),
+    (+3, 'UTC +3 (Moscow Winter)'),
+    (+2, 'UTC +2 (Western Europe Summer'),
+    (+1, 'UTC +1 (Western Europe Winter)'),
+)
+
 class Meeting(models.Model):
     meeting_num = models.IntegerField(primary_key=True)
     start_date = models.DateField()
@@ -98,6 +125,7 @@ class Meeting(models.Model):
     city = models.CharField(blank=True, maxlength=255)
     state = models.CharField(blank=True, maxlength=255)
     country = models.CharField(blank=True, maxlength=255)
+    time_zone = models.IntegerField(null=True, blank=True, choices=TIME_ZONE_CHOICES)
     ack = models.TextField(blank=True)
     agenda_html = models.TextField(blank=True)
     agenda_text = models.TextField(blank=True)
@@ -113,6 +141,7 @@ class Meeting(models.Model):
     class Meta:
         db_table = 'meetings'
     class Admin:
+        list_display= ('meeting_num', 'start_date', 'city', 'state', 'country', 'time_zone')
 	pass
 
 class MeetingVenue(models.Model):
