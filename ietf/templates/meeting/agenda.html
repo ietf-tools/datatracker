@@ -2,7 +2,14 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 {% block title %} Meeting Agenda of the {{ meeting.num|ordinal }} IETF Meeting{% endblock %}
+{% block head %}
+  <link href="http://tools.ietf.org/css/palette.css"  rel="stylesheet" type="text/css" />
+  <script language='javascript' src='http://tools.ietf.org/js/prototype-1.6.0.2.js'></script>
+  <script language='javascript' src='/js/agenda.js'></script>
+{% endblock %}
+{% block body_attributes %}onload='set_cookie_colors()'{% endblock %}
 {% block content %}
+<span id='colorpallet'></span>
 <p style="text-align: center">
 Agenda of the {{ meeting.num|ordinal }} IETF Meeting<br />
 {{ meeting.start_date|date:"F j" }}-{% ifnotequal meeting.start_date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}<br />
@@ -55,7 +62,7 @@ IETF agendas are subject to change, up to and during the meeting.<br />
       </tr>
       {% if not slot.is_plenary %}
       {% for session in slot.sessions_by_area|dictsort:"area" %}
-      <tr>
+      <tr id="{{meeting.num}}-{{slot.meeting_date|date:"D"|lower}}-{{slot.time_desc|slice:":4"}}-{{session.info.acronym|lower}}">
 	 <td><a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{session.info.room_id.room_name|slugify}}">{{ session.info.room_id.room_name}}</a></td>
 	 {% if session.info.area %}
 	 <td>{{ session.info.area|upper}}</td>
