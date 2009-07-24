@@ -1,0 +1,2 @@
+#!/bin/bash
+svn log $PWD -r HEAD:BASE | sed -n -e 's/^/  * /' -e '1,/^  \* Set version info and settings back to development mode/p' | egrep -v -- '^  \* (----------|r[0-9]+ |$)' | head -n -1
