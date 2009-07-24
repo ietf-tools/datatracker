@@ -97,6 +97,7 @@ MIDDLEWARE_CLASSES = (
     'ietf.middleware.SMTPExceptionMiddleware',
     'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.transaction.TransactionMiddleware',
+    'django.middleware.cache.CacheMiddleware',
 )
 
 ROOT_URLCONF = 'ietf.urls'
@@ -167,8 +168,11 @@ IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR'
 # Override this in settings_local.py if needed
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
+AGENDA_PATH = '/a/www/www6/proceedings/'
 
 # Override this in settings_local.py if needed
+CACHE_MIDDLEWARE_SECONDS = 300
+CACHE_MIDDLEWARE_KEY_PREFIX = ''
 if SERVER_MODE == 'production':
     CACHE_BACKEND= 'file://'+'/a/www/ietf-datatracker/cache/'
 else:
