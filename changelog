@@ -1,3 +1,35 @@
+ietfdb (2.27)
+
+  * Add support for an iPhone specific agenda format.  Going to the html
+    agenda will now give an iPhone version if accessed by iPhone.
+
+  * Added AGENDA_PATH config variable to settings.py, and removed hardcoded
+    agenda path.
+
+  * Added a new template filter to truncate a string based on character count,
+    rather than word count.
+
+  * Added support for an additional field in the Meeting model, to hold
+    meeting time zone information.
+
+  * Added cookie-based coloring of agenda lines, using the same mechanism as
+    on http://tools.ietf.org/agenda/nn/
+
+  * Various updates to agenda presentations.  Make text agenda adhere better
+    to earlier format (for users who process it) and fix various flaws in the
+    html agenda.
+
+  * Replaced IESG minutes with redirect, and removed related feed/sitemap.
+    From Pasi.
+
+  * Correctly handle discusses for RFCs on /iesg/discusses/ page.  From Pasi.
+
+  * Fixed broken links in "new layout" navigation bar.	From Pasi.
+
+  * Other minor fixes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Jul 2009 16:38:03 +0200
+
 ietfdb (2.26)
 
   * Fixed parsing of REF state in RFC Editor queue.
