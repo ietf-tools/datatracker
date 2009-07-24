@@ -2,7 +2,7 @@
 
 from django.conf.urls.defaults import patterns, include, handler404, handler500
 
-from ietf.iesg.feeds import IESGMinutes, IESGAgenda
+from ietf.iesg.feeds import IESGAgenda
 from ietf.idtracker.feeds import DocumentComments, InLastCall
 from ietf.ipr.feeds import LatestIprDisclosures
 from ietf.proceedings.feeds import LatestWgProceedingsActivity
@@ -11,13 +11,11 @@ from ietf.liaisons.feeds import Liaisons
 from ietf.idtracker.sitemaps import IDTrackerMap, DraftMap
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
-from ietf.iesg.sitemaps import IESGMinutesMap
 from ietf.announcements.sitemaps import NOMCOMAnnouncementsMap
 
 from django.conf import settings
 
 feeds = {
-    'iesg-minutes': IESGMinutes,
     'iesg-agenda': IESGAgenda,
     'last-call': InLastCall,
     'comments': DocumentComments,
@@ -31,7 +29,6 @@ sitemaps = {
     'drafts': DraftMap,
     'liaison': LiaisonMap,
     'ipr': IPRMap,
-    'iesg-minutes': IESGMinutesMap,
     'nomcom-announcements': NOMCOMAnnouncementsMap,
 }
 

@@ -198,7 +198,7 @@ def discusses(request):
                     except RfcIndex.DoesNotExist:
                         # NOT QUITE RIGHT, although this should never happen
                         pass
-            if len(draft) > 0 and draft[0].draft.id_document_tag not in ids:
+            if len(draft) > 0 and not draft[0].rfc_flag and draft[0].draft.id_document_tag not in ids:
                 ids.add(draft[0].draft.id_document_tag)
                 doc = IdWrapper(draft=draft[0])
                 if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():

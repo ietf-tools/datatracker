@@ -278,7 +278,7 @@ class RfcWrapper:
         if self.in_ietf_process():
             s = self.ietf_process.main_state
             if not s in ["RFC Published", "AD is watching", "Dead"]:
-                return "RFC %d (%s)<br/>%s (to %s)" % (self.rfc_number, self.maturity_level, s, self.ietf_process.intended_maturity_level())
+                return "RFC %d (%s)<br/>%s (to %s)" % (self.rfc_number, self.maturity_level, self.ietf_process.state, self.ietf_process.intended_maturity_level())
         return "RFC %d (%s)" % (self.rfc_number, self.maturity_level)
 
     def ad_name(self):
