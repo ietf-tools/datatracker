@@ -97,7 +97,7 @@ MIDDLEWARE_CLASSES = (
     'ietf.middleware.SMTPExceptionMiddleware',
     'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.transaction.TransactionMiddleware',
-    'django.middleware.cache.CacheMiddleware',
+#    'django.middleware.cache.CacheMiddleware',
 )
 
 ROOT_URLCONF = 'ietf.urls'
