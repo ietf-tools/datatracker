@@ -1,3 +1,13 @@
+ietfdb (2.28)
+
+  * Show full name in document comment log.  From Pasi.
+
+  * Optimize meeting agenda page to use less SQL queries.  From Pasi.
+
+  * Include version in iesg/agenda/documents.txt.  From Pasi.	
+	
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2009 14:38:41 +0200
+
 ietfdb (2.27)
 
   * Add support for an iPhone specific agenda format.  Going to the html

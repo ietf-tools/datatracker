@@ -30,5 +30,5 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
-{% endcomment %}# Fields: telechat date, filename (draft-foo-bar or rfc1234), intended status, rfc editor submission flag (0=no, 1=yes), area acronym, AD name{% for doc in docs %}
-{{ doc.telechat_date }}	{{ doc.document.filename }}	{{ doc.document.intended_status }}	{{doc.via_rfc_editor}}	{{doc.area_acronym|lower}}	{{doc.token_name }}{% endfor %}
+{% endcomment %}# Fields: telechat date, filename (draft-foo-bar or rfc1234), intended status, rfc editor submission flag (0=no, 1=yes), area acronym, AD name, version{% for doc in docs %}
+{{ doc.telechat_date }}	{{ doc.document.filename }}	{{ doc.document.intended_status }}	{{doc.via_rfc_editor}}	{{doc.area_acronym|lower}}	{{doc.token_name }}	{{doc.document.revision}}{% endfor %}

@@ -41,7 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% else %}<a href="/doc/{{doc.id.draft_name}}/">{{doc.id.draft_name_and_revision}}</a>{% endif %}</td>
 <td class="title">{{ doc.title|escape }}</td>
 <td class="date">{{ doc.publication_date }}
-{% if doc.publication_date|timesince_days|less_than:"14" %}<br/><span style="padding:0 2px;background:yellow;font-size:85%;">new</span>{%endif%}
+{% if doc.publication_date|timesince_days|less_than:"14" %}<br/><span style="padding:0 2px;background:yellow;font-size:85%;">{% if not doc.rfc%}<a href="http://tools.ietf.org/rfcdiff?url2={{doc.id.draft_name_and_revision}}">new</a>{%else%}new{%endif%}</span>{%endif%}
 {% if doc.id and doc.id.expected_expiration_date and doc.id.expected_expiration_date|timesince_days|greater_than:"-14" %}<br/><span style="padding:0 2px;font-size:85%;background:yellow;">expires soon</span>{%endif%}
 </td>
 

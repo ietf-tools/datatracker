@@ -58,13 +58,13 @@ def get_plenary_agenda(meeting_num, id):
 def agenda_info(num=None):
     if not num:
         num = list(Meeting.objects.all())[-1].meeting_num
-    timeslots = MeetingTime.objects.filter(meeting=num).order_by("day_id", "time_desc")
+    timeslots = MeetingTime.objects.select_related().filter(meeting=num).order_by("day_id", "time_desc")
     update = get_object_or_404(Switches,id=1)
     meeting=get_object_or_404(Meeting, meeting_num=num)
     venue = get_object_or_404(MeetingVenue, meeting_num=num)
-    ads = list(IESGHistory.objects.filter(meeting=num))
+    ads = list(IESGHistory.objects.select_related().filter(meeting=num))
     if not ads:
-        ads = list(IESGHistory.objects.filter(meeting=str(int(num)-1)))
+        ads = list(IESGHistory.objects.select_related().filter(meeting=str(int(num)-1)))
     ads.sort(key=(lambda item: item.area.area_acronym.acronym))
     plenaryw_agenda = get_plenary_agenda(num, -1)
     plenaryt_agenda = get_plenary_agenda(num, -2)

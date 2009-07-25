@@ -13,32 +13,40 @@ import datetime
 #    an interim attribute first)
 class ResolveAcronym(object):
     def acronym(self):
+        if hasattr(self, '_acronym_acronym'):
+            return self._acronym_acronym
 	try:
 	    interim = self.interim
 	except AttributeError:
 	    interim = False
 	if self.irtf:
-	    acronym = IRTF.objects.get(pk=self.group_acronym_id).acronym
+	    o = IRTF.objects.get(pk=self.group_acronym_id)
 	else:
-	    acronym = Acronym.objects.get(pk=self.group_acronym_id).acronym
+            o = Acronym.objects.get(pk=self.group_acronym_id)
+        self._acronym_acronym = o.acronym
+        self._acronym_name = o.name
+        acronym = self._acronym_acronym
 	if interim:
 	    return "i" + acronym
-	return acronym
+        else:
+            return acronym
     def acronym_lower(self):
         return self.acronym().lower()
     def acronym_name(self):
+        if not hasattr(self, '_acronym_name'):
+            self.acronym()
         try:
             interim = self.interim
         except AttributeError:
             interim = False
-        if self.irtf:
-            acronym_name = IRTF.objects.get(pk=self.group_acronym_id).name
-        else:
-            acronym_name = Acronym.objects.get(pk=self.group_acronym_id).name
+        acronym_name = self._acronym_name
         if interim:
             return acronym_name + " (interim)"
-        return acronym_name
+        else:
+            return acronym_name
     def area(self):
+        if hasattr(self, '_area'):
+            return self._area
         if self.irtf:
             area = "irtf"
         elif self.group_acronym_id < 0  and self.group_acronym_id > -3:
@@ -47,9 +55,10 @@ class ResolveAcronym(object):
             area = ""
         else:
             try:
-                area = AreaGroup.objects.get(group=self.group_acronym_id).area.area_acronym.acronym
+                area = AreaGroup.objects.select_related().get(group=self.group_acronym_id).area.area_acronym.acronym
             except AreaGroup.DoesNotExist:
                 area = ""
+        self._area = area
         return area
     def area_name(self):
         if self.irtf:
@@ -67,28 +76,27 @@ class ResolveAcronym(object):
     def isWG(self):
         if self.irtf:
               return False
-        else:
+        if not hasattr(self,'_ietfwg'):
             try:
-                g_type_id = IETFWG.objects.get(pk=self.group_acronym_id).group_type_id == 1
-                if g_type_id == 1:
-                    return True
-                else:
-                    return False
+                self._ietfwg = IETFWG.objects.get(pk=self.group_acronym_id)
             except IETFWG.DoesNotExist:
-                return False
+                self._ietfwg = None
+        if self._ietfwg and self._ietfwg.group_type_id == 1:
+            return True
+        else:
+            return False
     def group_type_str(self):
         if self.irtf:
-              return ""
+            return ""
         else:
-            try:
-                g_type_id = IETFWG.objects.get(pk=self.group_acronym_id).group_type_id 
-                if g_type_id == 1:
-                    return "WG"
-                elif g_type_id == 3:
-                    return "BOF"
-                else:
-                    return ""
-            except IETFWG.DoesNotExist:
+            self.isWG()
+            if not self._ietfwg:
+                return ""
+            elif self._ietfwg.group_type_id == 1:
+                return "WG"
+            elif self._ietfwg.group_type_id == 3:
+                return "BOF"
+            else:
                 return ""
 
 TIME_ZONE_CHOICES = (
@@ -234,7 +242,7 @@ class MeetingTime(models.Model):
     time_desc = models.CharField(maxlength=100)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
     day_id = models.IntegerField()
-    session_name = models.ForeignKey(SessionName)
+    session_name = models.ForeignKey(SessionName,null=True)
     def __str__(self):
 	return "[%d] |%s| %s" % (self.meeting_id, (self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc)
     def sessions(self):
@@ -266,8 +274,11 @@ class MeetingTime(models.Model):
     def meeting_date(self):
         return self.meeting.get_meeting_date(self.day_id)
     def registration(self):
+        if hasattr(self, '_reg_info'):
+            return self._reg_info
         reg = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=1)
         reg.name = reg.non_session_ref.name
+        self._reg_info = reg
 	return reg
     def reg_info(self):
 	reg_info = self.registration()
@@ -341,6 +352,8 @@ class WgMeetingSession(models.Model, ResolveAcronym):
     def __str__(self):
 	return "%s at %s" % (self.acronym(), self.meeting)
     def agenda_file(self,interimvar=0):
+        if hasattr(self, '_agenda_file'):
+            return self._agenda_file
         irtfvar = 0
         if self.irtf:
             irtfvar = self.group_acronym_id 
@@ -352,10 +365,15 @@ class WgMeetingSession(models.Model, ResolveAcronym):
                     interimvar = 0
         try:
             filename = WgAgenda.objects.get(meeting=self.meeting, group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=interimvar).filename
-            dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
+            if self.meeting_id in WgMeetingSession._dirs:
+                dir = WgMeetingSession._dirs[self.meeting_id]
+            else:
+                dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
+                WgMeetingSession._dirs[self.meeting_id]=dir
             retvar = "%s/agenda/%s" % (dir,filename) 
         except WgAgenda.DoesNotExist:
             retvar = ""
+        self._agenda_file = retvar
         return retvar
     def minute_file(self,interimvar=0):
         irtfvar = 0
@@ -402,6 +420,7 @@ class WgMeetingSession(models.Model, ResolveAcronym):
         db_table = 'wg_meeting_sessions'
     class Admin:
 	pass
+    _dirs = {}
 
 class WgAgenda(models.Model, ResolveAcronym):
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
