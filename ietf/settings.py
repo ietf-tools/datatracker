@@ -163,12 +163,16 @@ TEST_RUNNER = 'ietf.tests.run_tests'
 
 TEST_REFERENCE_URL_PREFIX = os.environ.get("IETFDB_REF_PREFIX","") or 'https://datatracker.ietf.org/'
 
-IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR'
-
 # Override this in settings_local.py if needed
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 AGENDA_PATH = '/a/www/www6/proceedings/'
+IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR'
+
+# External page top and bottom, which gives a html page the current menubar
+# and footer used in the current web-page design
+EXTERNAL_PAGE_TOP = '/a/www/www6s/scripts/templates/top-page'
+EXTERNAL_PAGE_BOT = '/a/www/www6s/scripts/templates/bottom-page'
 
 # Override this in settings_local.py if needed
 CACHE_MIDDLEWARE_SECONDS = 300
