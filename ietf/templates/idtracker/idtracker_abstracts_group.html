@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Current Internet-Drafts</h1>
+
+{% for draft in drafts %}
+  <p>
+    <a href="http://www.ietf.org/internet-drafts/{{ draft.filename  }}">
+      {{ draft.title }},
+      {{ draft.authors }},
+      {{ draft.rev_date }}
+    </a>
+  </p>
+  <p>
+      {{ draft.abstract }}
+  </p>
+{% endfor %}
+
+{% endblock %}

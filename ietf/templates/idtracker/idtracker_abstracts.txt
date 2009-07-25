@@ -1,0 +1,18 @@
+
+              Current Internet-Drafts
+    This summary sheet provides a short synopsis of each Internet-Draft
+    available within the \"internet-drafts\" directory at the shadow
+    sites directory.  These drafts are listed alphabetically by working
+    group acronym and start date.
+
+{% for group in groups %}
+{{ group.name }}
+{{ group.dashes }}
+
+{% for draft in group.drafts %}
+{{ draft.title_all }}
+
+{{ draft.abstract }}
+
+{% endfor %}
+{% endfor %}

@@ -1,0 +1,15 @@
+
+              Current Internet-Drafts
+    This summary sheet provides an index of each Internet-Draft.
+    These drafts are listed alphabetically by Working Group acronym and
+    initial post date.
+
+{% for group in groups %}
+{{ group.name }}
+{{ group.dashes }}
+
+{% for draft in group.drafts %}
+{{ draft.title_all }}
+
+{% endfor %}
+{% endfor %}

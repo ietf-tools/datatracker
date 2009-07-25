@@ -42,7 +42,7 @@
 <li><a href="mailto:{{ ad.person.email.1|escape }}">{{ ad.person }} &lt;{{ ad.person.email.1 }}&gt;</a></li>
 {% endfor %}
 </ul>
-{% for url in wg.area.urls %}
+{% for url in wg.area.area.urls.all %}
 {% if forloop.first %}
 <p>Additional Area Information:</p>
 <ul>

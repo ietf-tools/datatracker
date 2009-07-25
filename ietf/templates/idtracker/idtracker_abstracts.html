@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Current Internet-Drafts</h1>
+
+<b>
+<p>
+  This list and the associated sub-lists were generated on
+  {% now "jS F Y"%} 
+</p>
+<p>
+  If you find errors, please notify
+  <a href="mailto:internet-drafts@ietf.org">The I-D Administrator</a>.
+</p>
+</b>
+
+<hr/>
+<p>
+Note that Internet-Drafts which are not associated with an
+IETF working group are collected into the "Individual Submissions"
+item at the bottom of the list.
+</p>
+<hr/>
+<p>
+This summary sheet provides a short synopsis of each Internet-Draft
+available within the "internet-drafts" directory at the shadow
+sites directory.  These drafts are listed alphabetically by working
+group acronym and start date.
+</p>
+
+<ul>
+{% for group in groups %}
+  <li>
+    <a href="{{ group.rel_url }}">{{ group.name }}</a>
+    -- {{ group.active_draft_count }} Internet-Drafts
+  </li>
+{% endfor %}
+</ul>
+
+{% endblock %}
