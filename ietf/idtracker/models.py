@@ -1,10 +1,12 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import os.path
+import datetime
+
 from django.conf import settings
 from django.db import models
 from ietf.utils import FKAsOneToOne
 from django.test import TestCase
-import datetime
 
 class Acronym(models.Model):
     acronym_id = models.AutoField(primary_key=True)
@@ -425,6 +427,15 @@ class Rfc(models.Model):
 	    self._idinternal_cache = None
 	self._idinternal_cached = True
 	return self._idinternal_cache
+
+    # return set of RfcObsolete objects obsoleted or updated by this RFC
+    def obsoletes(self): 
+        return RfcObsolete.objects.filter(rfc=self.rfc_number)
+
+    # return set of RfcObsolete objects obsoleting or updating this RFC
+    def obsoleted_by(self): 
+        return RfcObsolete.objects.filter(rfc_acted_on=self.rfc_number)
+
     class Meta:
         db_table = 'rfcs'
 	verbose_name = 'RFC'
@@ -852,6 +863,26 @@ class IETFWG(models.Model):
             return areas[areas.count()-1].area.areadirector_set.all()
         else:
             return None
+    def chairs(self): # return a set of WGChair objects for this work group
+        return WGChair.objects.filter(group_acronym__exact=self.group_acronym)
+    def secretaries(self): # return a set of WGSecretary objects for this group
+        return WGSecretary.objects.filter(group_acronym__exact=self.group_acronym)
+    def milestones(self): # return a set of GoalMilestone objects for this group
+        return GoalMilestone.objects.filter(group_acronym__exact=self.group_acronym)
+    def rfcs(self): # return a set of Rfc objects for this group
+        return Rfc.objects.filter(group_acronym__exact=self.group_acronym)
+    def drafts(self): # return a set of Rfc objects for this group
+        return InternetDraft.objects.filter(group__exact=self.group_acronym)
+    def charter_text(self): # return string containing WG description read from file
+        # get file path from settings. Syntesize file name from path, acronym, and suffix
+        try:
+            filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, self.group_acronym.acronym) + ".desc.txt"
+            desc_file = open(filename)
+            desc = desc_file.read()
+        except BaseException:    
+            desc =  'Error Loading Work Group Description'
+        return desc
+                  
     class Meta:
         db_table = 'groups_ietf'
 	ordering = ['?']	# workaround django wanting to sort by acronym but not joining with it

@@ -164,10 +164,13 @@ TEST_RUNNER = 'ietf.tests.run_tests'
 TEST_REFERENCE_URL_PREFIX = os.environ.get("IETFDB_REF_PREFIX","") or 'https://datatracker.ietf.org/'
 
 # Override this in settings_local.py if needed
+# *_PATH variables ends with a slash/ .
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 AGENDA_PATH = '/a/www/www6/proceedings/'
-IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR'
+IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
+# Path to Work Group Description Text Files
+IETFWG_DESCRIPTIONS_PATH = '/a/www/www6s/wg-descriptions/'
 
 # External page top and bottom, which gives a html page the current menubar
 # and footer used in the current web-page design
@@ -195,3 +198,4 @@ YUI_URL = "https://ajax.googleapis.com/ajax/libs/yui"
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *
+

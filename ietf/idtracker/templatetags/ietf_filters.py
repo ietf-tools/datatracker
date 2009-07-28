@@ -22,6 +22,14 @@ def expand_comma(value):
     long comma-separated lists."""
     return value.replace(",", ", ")
 
+@register.filter(name='format_charter')
+def format_charter(value):
+    return value.replace("\n\n", "</p><p>").replace("\n","<br/>\n")
+
+@register.filter(name='indent')
+def indent(value):
+    return value.replace("\n", "\n  ");
+
 @register.filter(name='parse_email_list')
 def parse_email_list(value):
     """

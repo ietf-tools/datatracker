@@ -1,0 +1,4 @@
+{% load ietf_filters %}{% for wg in wg_list|dictsort:"group_acronym.acronym" %}{% ifequal wg.area.area.status_id 1 %}{% if wg.start_date %}{{ wg }}
+{% endif %}{% endifequal %}{% endfor %}
+{% for wg in wg_list|dictsort:"group_acronym.acronym" %}{% ifequal wg.area.area.status_id 1 %}{% if wg.start_date %}{% include "wginfo/wg-charter.txt" %}
+{% endif %}{% endifequal %}{% endfor %}

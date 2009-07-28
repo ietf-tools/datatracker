@@ -1,3 +1,14 @@
+ietfdb (2.30)
+
+  * Merged in Adam and Ben's rewrite of the WG charter page generation,
+    which is used to produce the individual WG charter.txt and charter.html
+    pages, and also used by the script which produces 1wg-charters.txt.
+
+  * Also merged in Arifumi and RjS' rewrite of the script which produces
+    1wg-charters.txt.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2009 14:14:17 +0200
+
 ietfdb (2.29)
 
   * New script bin/abstracts.py, intended to be run as a cronjob, to generate

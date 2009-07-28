@@ -22,3 +22,27 @@ def wg_summary_area(request):
 def wg_dir(request):
     wgs = IETFWG.objects.filter(status='1',start_date__isnull=False)
     return render_to_response('wginfo/wg-dir.html', {'wg_list': wgs}, RequestContext(request))
+
+def collect_wg_info(acronym):
+    wg = (IETFWG.objects.get(group_acronym__acronym=acronym))
+    return {'wg': wg}
+
+def wg_charter(request, wg="1"):
+    return render_to_response('wginfo/wg-charter.html', collect_wg_info(wg), RequestContext(request))
+
+def generate_text_charter(wg):
+    text = loader.render_to_string('wginfo/wg-charter.txt',collect_wg_info(wg));
+    return text
+
+def wg_charter_txt(request, wg="1"):
+    return HttpResponse(generate_text_charter(wg),
+                        mimetype='text/plain; charset=UTF-8')
+
+def wg_charters(request):
+    wgs = IETFWG.objects.filter(status='1',start_date__isnull=False)
+    return HttpResponse(loader.render_to_string('wginfo/1wg-charters.txt', {'wg_list': wgs}),mimetype='text/plain; charset=UTF-8')
+
+def wg_charters_by_acronym(request):
+    wgs = IETFWG.objects.filter(status='1',start_date__isnull=False)
+    return HttpResponse(loader.render_to_string('wginfo/1wg-charters-by-acronym.txt', {'wg_list': wgs}),mimetype='text/plain; charset=UTF-8')
+
