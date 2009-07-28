@@ -1,0 +1,14 @@
+<table cellpadding="0" cellspacing="0" border="0" width="99%" style="border-bottom:1px solid #cbcbcb;">
+<tr><a name="wg-{{ wg.acronym }}"></a>
+<td style="width:12em;"><b>{% ifequal wg.acronym "plenaryw" %}Wednesday<br/>Plenary{%else%}{% ifequal wg.acronym "plenaryt" %}Thursday<br/>Plenary{%else%}{{ wg.acronym|upper }}{%endifequal%}{%endifequal%}
+{% ifequal wg.group_type_str "BOF" %} <font color="red">({{ wg.group_type_str }})</font> {% endifequal %}</b><br/>
+</td>
+<td>
+{% if wg.agenda_file %}<a href="http://www.ietf.org/proceedings/{{ wg.agenda_file }}">Agenda</a>{% else %}<span style="background:#ff8888;padding:0 2px;">No agenda received</span> {% endif %}<br/>
+{% if wg.minute_file %} <a href="http://www.ietf.org/proceedings/{{ wg.minute_file }}">Minutes</a>{% else %}No minutes received{% endif %}<br/>
+{% for slide in wg.slides %}
+<a href="http://www.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name }}</a><br/>
+{% endfor %}
+</td></tr>
+</table>
+

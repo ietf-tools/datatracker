@@ -1,3 +1,11 @@
+ietfdb (2.31)
+
+  * Fix dropped plenary agendas in the html agenda page.
+
+  * Some Django 1.0 related fixes plus conversion script.  From Pasi.
+	
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2009 16:30:28 +0200
+
 ietfdb (2.30)
 
   * Merged in Adam and Ben's rewrite of the WG charter page generation,
@@ -28,6 +36,13 @@ ietfdb (2.29)
   * Some Django 1.0 related fixes plus conversion script.  From Pasi.
 	
  -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2009 19:46:45 +0200
+
+ietfdb (2.31)
+
+  * Some Django 1.0 related fixes plus conversion script.  From Pasi.
+	
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2009 14:38:41 +0200
+
 
 ietfdb (2.28)
 
