@@ -52,11 +52,11 @@ IETF agendas are subject to change, up to and during the meeting.<br />
 	    <b>{{ slot.time_desc               }}  {{ slot.session_name }}</b>
 	    {% ifequal slot.sessions.0.acronym "plenaryw" %}
 	       <b>- {{ slot.sessions.0.room_id.room_name }}</b><br>
-	       <pre>{{ ops_plenary_agenda|escape }}</pre>
+	       <pre>{{ plenaryw_agenda|escape }}</pre>
 	    {% endifequal %}
 	    {% ifequal slot.sessions.0.acronym "plenaryt" %}
 	       <b>- {{ slot.sessions.0.room_id.room_name }}</b><br>
-	       <pre>{{ tech_plenary_agenda|escape }}</pre>
+	       <pre>{{ plenaryt_agenda|escape }}</pre>
 	    {% endifequal %}
 	 </td>
       </tr>
