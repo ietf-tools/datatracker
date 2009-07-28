@@ -117,8 +117,8 @@ def agenda_docs(date, next_agenda):
         matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
     else:
         matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1)
-    idmatches = matches.filter(rfc_flag=0).order_by('ballot_id')
-    rfcmatches = matches.filter(rfc_flag=1).order_by('ballot_id')
+    idmatches = matches.filter(rfc_flag=0).order_by('ballot')
+    rfcmatches = matches.filter(rfc_flag=1).order_by('ballot')
     res = {}
     for id in list(idmatches)+list(rfcmatches):
         section_key = "s"+get_doc_section(id)
@@ -212,8 +212,8 @@ def telechat_agenda_documents(request):
     telechats = []
     for date in dates:
         matches = IDInternal.objects.filter(telechat_date=date,primary_flag=1,agenda=1)
-        idmatches = matches.filter(rfc_flag=0).order_by('ballot_id')
-        rfcmatches = matches.filter(rfc_flag=1).order_by('ballot_id')
+        idmatches = matches.filter(rfc_flag=0).order_by('ballot')
+        rfcmatches = matches.filter(rfc_flag=1).order_by('ballot')
         res = {}
         for id in list(idmatches)+list(rfcmatches):
             section_key = "s"+get_doc_section(id)

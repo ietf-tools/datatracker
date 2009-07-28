@@ -41,8 +41,7 @@ class RfcEditorQueue(models.Model):
         (3, 'IRTF'),
         (4, 'Independent')
     )
-    draft = models.OneToOneField(InternetDraft, db_column="id_document_tag", related_name="rfc_editor_queue_state")
-    #draft = models.CharField(maxlength=200,primary_key=True)
+    draft = models.OneToOneField(InternetDraft, db_column="id_document_tag", related_name="rfc_editor_queue_state",primary_key=True)
     date_received = models.DateField()
     state = models.CharField(maxlength=200, blank=True, null=True)
     # currently, queue2.xml does not have this information, so

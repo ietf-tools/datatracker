@@ -1,6 +1,7 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 
 {% load myifchanged %}
+{% load ietf_filters %}
 	{# we can't do alternating row colors with CSS alone #}
 	<tr 
 	bgcolor="#{% myifchanged match.ballot_id %}{% cycle F8D6F8,E2AFE2 as ballotcolor %}{% else %}{% if match.synthetic %}{% cycle ballotcolor %}{% else %}{% cyclevalue ballotcolor %}{% endif %}{% endmyifchanged %}">
@@ -9,7 +10,7 @@
 	<td {% if not match.primary_flag %} class="nonprimary" {% endif %} >
 
 	    <a href="{% url ietf.idtracker.views.view_id match.document.filename %}">
-	    {{ match.document.displayname }}
+	    {{ match.document.displayname|safe }}
 	    </a>
 		
 	    {% ifequal match.document.status.status "Replaced" %}

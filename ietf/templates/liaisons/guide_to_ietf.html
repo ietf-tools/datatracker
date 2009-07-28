@@ -1,5 +1,5 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "base.html" %}
+{% extends "base.html" %}{% load ietf_filters %}
 
 {% block title %}Liaison Statements to the IETF - Guidelines for Completing the "To:" and "Cc:" Fields{% endblock %}
 
@@ -8,8 +8,8 @@
 <center><font size=+2>Liaison Statements to the IETF <br>Guidelines for Completing the "To:" and "Cc:" Fields</font></center>
 <br>
 The following table provides guidelines for completing the "To:" and "Cc:" fields of liaison statements that are sent TO the IETF by other Standards Development Organizations (SDOs).  
-For definitive information on generating liaison statements, please see RFC 4053 (BCP 103), 
-"<a href="http://www.ietf.org/rfc/rfc4053.txt?number=4053">Procedures for Handling Liaison Statements to and from the IETF.</a>"<br><br>
+For definitive information on generating liaison statements, please
+see <a href="{{ "4053"|rfcurl }}">RFC 4053 (BCP 103) "Procedures for Handling Liaison Statements to and from the IETF."</a><br><br>
 
 <table cellspacing="0" cellpadding="3" border="1" bgcolor="#ffffff">
   <tr>
@@ -37,16 +37,16 @@ For definitive information on generating liaison statements, please see RFC 4053
             <li>The IESG &lt;iesg@ietf.org&gt;</li></td></tr>
   <tr>
     <td><ul><li>An IETF Area </li></td>
-    <td><ul><li><a href="http://www.ietf.org/html.charters/wg-dir.html">The IETF Area Director(s)</a></li></td>
+    <td><ul><li><a href="/wg/">The IETF Area Director(s)</a></li></td>
     <td><ul><li><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br><br>
         <li>The IETF Chair &lt;chair@ietf.org&gt;<br><br>
         <li>The IETF Area Directorate Mailing List(where applicable)<sup><small>(3)</small></sup></li></td></tr>
   <tr>
     <td><ul><li>An IETF Working Group </li></td>
-    <td><ul><li><a href="http://www.ietf.org/html.charters/wg-dir.html">The Working Group Chair(s)</a></li></td>
+    <td><ul><li><a href="/wg/">The Working Group Chair(s)</a></li></td>
     <td><ul><li><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a><br><br>
-        <li><a href="http://www.ietf.org/html.charters/wg-dir.html">The IETF Area Director(s)</a><br><br>
-        <li><a href="http://www.ietf.org/html.charters/wg-dir.html">The IETF Working Group Discussion List</a></li></td></tr>
+        <li><a href="/wg/">The IETF Area Director(s)</a><br><br>
+        <li><a href="/wg/">The IETF Working Group Discussion List</a></li></td></tr>
   <tr>
     <td colspan="3"> <sup><small>(1)</small></sup> The IETF Secretariat, <a href="mailto:statement@ietf.org">&lt;statements@ietf.org&gt;</a>, is automatically blind-copied on every liaison statement sent to the IETF.<br>
     <sup><small>(2)</small></sup> Any addresses included in the "Response Contact" and 

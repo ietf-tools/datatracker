@@ -1,4 +1,5 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% load ietf_filters %}
 <!-- {{ object_list|length }} result{{ object_list|length|pluralize }}.<br> -->
 <b>Please click a document below to view detail information,
 or the [draft] link for the document itself.</b><br>
@@ -29,7 +30,7 @@ or the [draft] link for the document itself.</b><br>
 {% else %}
 <td>
 {% if draft.rfc_number %}
-<a href="http://www.ietf.org/rfc/rfc{{ draft.rfc_number|stringformat:"04d" }}.txt">{{ draft.rfc_number }}</a>
+<a href="{{ draft.rfc_number|rfcurl }}">{{ draft.rfc_number }}</a>
 {% else %}
 &nbsp;
 {% endif %}

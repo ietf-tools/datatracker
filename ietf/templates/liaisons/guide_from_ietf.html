@@ -1,5 +1,5 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "base.html" %}
+{% extends "base.html" %}{% load ietf_filters %}
 
 {% block title %}Liaison Statements from the IETF - Guidelines for Completing the "Cc:" Field{% endblock %}
 
@@ -9,9 +9,13 @@
 The individuals copied on a liaison statement that is sent BY the IETF to another Standards Development Organization (SDO) depend on the IETF entity that is sending the liaison statement.  
 The following table provides guidelines for completing the "Cc:" field of liaison statements that are sent by the IETF.
 <br><br>
-For definitive information on generating liaison statements, please see:<br><br>
-<li>RFC 4052 (BCP 102), "<a href="http://www.ietf.org/rfc/rfc4052.txt?number=4052">IAB Processes for Management of IETF Liaison Relationships.</a>"</li>
-<li>RFC 4053 (BCP 103), "<a href="http://www.ietf.org/rfc/rfc4053.txt?number=4053">Procedures for Handling Liaison Statements to and from the IETF.</a>"</li><br>
+For definitive information on generating liaison statements, please
+see:
+<ul>
+<li><a href="{{ "4052"|rfcurl }}">RFC 4052 (BCP 102), "IAB Processes for Management of IETF Liaison Relationships."</a></li>
+<li><a href="{{ "4053"|rfcurl }}">RFC 4053 (BCP 103),
+  "Procedures for Handling Liaison Statements to and from the IETF."</a></li>
+</ul>
 <table cellspacing="0" cellpadding="3" border="1" bgcolor="#ffffff">
   <tr>
     <td colspan="2"><center><b>Liaison Statements FROM the IETF</b></center></td></tr>
@@ -36,18 +40,18 @@ For definitive information on generating liaison statements, please see:<br><br>
   <tr>
     <td><ul><li>An IETF Area </li></td>
     <td><ul><li><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a> <sup><small>(4)</small></sup><br><br>
-        <li><a href="http://www.ietf.org/html.charters/wg-dir.html">The IETF Area Director(s)</a> (if not the submitter)<br><br>
+        <li><a href="/wg/">The IETF Area Director(s)</a> (if not the submitter)<br><br>
         <li>The IETF Chair &lt;chair@ietf.org&gt;<br><br>
         <li>The IETF Area Directorate Mailing List (where applicable) <sup><small>(5)</small></sup></li></td></tr>
   <tr>
     <td><ul><li>An IETF Working Group </li></td>
     <td><ul><li><a href="/liaison/managers/">The IETF Liaison Manager for the SDO</a> <sup><small>(4)</small></sup><br><br>
-        <li><a href="http://www.ietf.org/html.charters/wg-dir.html">The IETF Working Group Chair(s)</a> (if not the submitter)<br><br>
-        <li><a href="http://www.ietf.org/html.charters/wg-dir.html">The IETF Area Director(s)</a><br><br>
-        <li><a href="http://www.ietf.org/html.charters/wg-dir.html">The IETF Working Group Discussion List</a></li></td></tr>
+        <li><a href="/wg/">The IETF Working Group Chair(s)</a> (if not the submitter)<br><br>
+        <li><a href="/wg/">The IETF Area Director(s)</a><br><br>
+        <li><a href="/wg/">The IETF Working Group Discussion List</a></li></td></tr>
   <tr>
     <td colspan="2"> <sup><small>(1)</small></sup> Please see Section 4., "Approval and Transmission of Liaison Statements," 
-of <a href="http://www.ietf.org/rfc/rfc4052.txt?number=4052">RFC 4052</a> for information on who may submit a liaison statement on behalf of an IETF entity, and who should be copied.<br><br>
+of <a href="{{ "4052"|rfcurl }}">RFC 4052</a> for information on who may submit a liaison statement on behalf of an IETF entity, and who should be copied.<br><br>
 <sup><small>(2)</small></sup> The IETF Secretariat, <a href="mailto:statements@ietf.org">&lt;statements@ietf.org&gt;</a>, is automatically blind-copied on every liaison statement sent by the IETF.<br><br> 
 <sup><small>(3)</small></sup> Any addresses included in the "Response Contact" and "Technical Contact" fields of a liaison statement will also receive copies of the liaison statement.<br><br>
 <sup><small>(4)</small></sup> This guideline does not apply when sending a liaison statement to an SDO where no formal liaison relationship exists between the IETF and that SDO. <br><br>

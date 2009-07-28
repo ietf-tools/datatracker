@@ -1,11 +1,31 @@
+ietfdb (2.29)
+
+  * New script bin/abstracts.py, intended to be run as a cronjob, to generate
+    the ID abstracts files.  Merged in from Jelte.
+	
+  * Fixed bug in wg-dir.html to support additional area URLs properly.  
+    From Chris.
+
+  * Added new rfcurl filter to eliminate hardcoded references to RFC URLs
+    primarily in the liaisons and drafts pages.  From Chris.
+
+  * Fixed URLs that were broken or outdated by the IETF web page
+    re-organization throughout the tree.  In particular, references to
+    html.charters in URLs, and old charter references.  Including many
+    broken links in leftmenu.  From Chris.
+
+  * Some Django 1.0 related fixes plus conversion script.  From Pasi.
+	
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2009 19:46:45 +0200
+
 ietfdb (2.28)
 
   * Show full name in document comment log.  From Pasi.
 
   * Optimize meeting agenda page to use less SQL queries.  From Pasi.
 
-  * Include version in iesg/agenda/documents.txt.  From Pasi.	
-	
+  * Include version in iesg/agenda/documents.txt.  From Pasi.
+
  -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2009 14:38:41 +0200
 
 ietfdb (2.27)

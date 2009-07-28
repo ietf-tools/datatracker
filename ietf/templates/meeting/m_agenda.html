@@ -19,7 +19,8 @@
 	var utc = now;
 	utc.setMinutes(now.getMinutes() + now.getTimezoneOffset());
 	var loc = utc;
-	loc.setHours(utc.getHours() + {{meeting.time_zone}});
+	// Switch page location 1 hour after local time, to give stragglers some leeway.
+	loc.setHours(utc.getHours() + {{meeting.time_zone}} - 1);
 	localtime = loc.format("%Y-%m-%d_%H%M");
 	var anchors = document.getElementsByTagName("a");
 	for (var i = 0; i<anchors.length;i++){
@@ -93,7 +94,7 @@
       <tr id="{{meeting.num}}-{{slot.meeting_date|date:"D"|lower}}-{{slot.time_desc|slice:":4"}}-{{session.info.acronym|lower}}">	 <td><a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{session.info.room_id.room_name|slugify}}">{{ session.info.room_id.room_name}}</a></td>
 	 {% if session.info.area %}
 	 <td>
-	    {% if session.info.isWG %}<a href="http://www.ietf.org/html.charters/{{ session.info.acronym|lower }}-charter.html">{%endif%}
+	    {% if session.info.isWG %}<a href="http://www.ietf.org/dyn/wg/charter/{{ session.info.acronym|lower }}-charter.html">{%endif%}
 	       {{ session.info.acronym|lower }}
 	    {% if session.info.isWG %}</a>{%endif%}
 	 </td>
@@ -110,6 +111,7 @@
       {% for session in slot.sessions %}
       <tr>
 	 <td colspan="4">
+	    <a name="{{slot.meeting_date|date:"Y-m-d"}}_{{slot.time_desc|slice:":4"}}" /a>
 	    {{ slot.time_desc }}  {{ session.acronym_name|escape }} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{session.room_id.room_name|slugify}}">{{ session.room_id.room_name}}</a>
 	 </td>
       </tr>

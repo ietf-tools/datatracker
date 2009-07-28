@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import textwrap
+import django
 from django import template
 from django.utils.html import escape, fix_ampersands, linebreaks
 from django.template.defaultfilters import linebreaksbr
@@ -199,6 +200,15 @@ def rfcnospace(string):
     else:
         return string
 
+@register.filter(name='rfcurl')
+def rfclink(string):
+    """
+    This takes just the RFC number, and turns it into the
+    URL for that RFC.
+    """
+    string = str(string);
+    return "http://tools.ietf.org/html/rfc" + string;
+
 @register.filter(name='dashify')
 def dashify(string):
     """
@@ -310,6 +320,12 @@ def equal(x, y):
 @register.filter
 def in_group(user, groups):
     return user and user.is_authenticated() and bool(user.groups.filter(name__in=groups.split(',')).values('name'))
+
+# DJANGO_096: a dummy safe filter for Django 0.96
+if django.VERSION[0] == 0:
+    @register.filter
+    def safe(x):
+        return x
 
 def _test():
     import doctest

@@ -48,13 +48,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 [Ballot {{ c.comment.get_ballot_display }}]<br /> 
 {% endif %} 
 {% if c.info.snipped %}
-<div class="commentSnippet" id="commentS{{c.info.commentNumber}}">{{ c.info.textSnippet }}</div>
+<div class="commentSnippet" id="commentS{{c.info.commentNumber}}">{{ c.info.textSnippet|safe }}</div>
 <span class="commentToggle" onClick="toggleComment({{c.info.commentNumber}})" id="commentT{{c.info.commentNumber}}">[show all]</span>
 <div class="commentFull" id="commentF{{c.info.commentNumber}}" style="display:none;">
-{{c.info.text|fill:"80"|format_textarea}}
+{{c.info.text|fill:"80"|format_textarea|safe}}
 </div>
 {% else %}
-{{ c.info.text|fill:"80"|format_textarea}}
+{{ c.info.text|fill:"80"|format_textarea|safe}}
 {% endif %}
 </td>
 {% endfor %}

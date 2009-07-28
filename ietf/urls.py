@@ -55,6 +55,8 @@ urlpatterns = patterns('',
 
       (r'^$', 'ietf.redirects.views.redirect'),
 
+     # DJANGO_096: Comment out this line for Django 1.0 -- new admin
+     # site works differently, and needs work                       
     # Uncomment this for admin:
      (r'^admin/', include('django.contrib.admin.urls')),
 

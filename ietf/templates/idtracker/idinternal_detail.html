@@ -25,7 +25,7 @@
       </th>
 
       <td>
-	  {{ object.document.displayname_with_link }}
+	  {{ object.document.displayname_with_link|safe }}
 	  {% ifequal object.document.doctype "Draft" %}
 	    {% ifnotequal object.document.status.status "Active" %}
 	      ({{ object.document.status.status }})

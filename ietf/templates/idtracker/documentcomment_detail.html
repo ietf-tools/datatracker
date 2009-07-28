@@ -8,14 +8,14 @@ Comment on {{ object.document.document.filename }}
 {% endblock %}
 
 {% block content %}
-<h1 class="first">Comment on {{ object.document.document.displayname_with_link }}</h1>
+<h1 class="first">Comment on {{ object.document.document.displayname_with_link|safe }}</h1>
 
 
    <table class="top">
 
    <tr><th>Date:</th><td>{{ object.date }}, {{ object.time }}</td></tr>
    <tr><th>Document:</th>
-   <td>{{ object.document.document.displayname_with_link }}</td>
+   <td>{{ object.document.document.displayname_with_link|safe }}</td>
    </tr>
    <tr><th>Version:</th><td>{{ object.version }}</td></tr>
    <tr><th>Commented by:</th><td>{{ object.get_author }}</td></tr>

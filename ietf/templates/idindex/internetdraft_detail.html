@@ -1,5 +1,5 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "idindex/base.html" %}
+{% extends "idindex/base.html" %}{% load ietf_filters %}
 
 {% block title %}Internet Draft Database Index - {{ object.filename }}{% endblock %}
 
@@ -13,7 +13,7 @@
 <li> <b><a href="related/">View Related Documents</a></b> (e.g., documents that replaced or were replaced by the subject I-D, and their derivatives and precursors.)</li>
 {% ifequal object.group.acronym "none" %}
 {% else %}
-<li> <b>IETF Working Group: <a href="http://www.ietf.org/html.charters/{{ object.group.acronym }}-charter.html">{{ object.group.name }}</a></li>
+<li> <b>IETF Working Group: <a href="http://www.ietf.org/dyn/wg/charter/{{ object.group.acronym }}-charter.html">{{ object.group.name }}</a></li>
 {% endifequal %}
 <li> <b>I-D Title:</b> {{ object.title }}</li>
 <li> <b>I-D Status:</b> {{ object.status }}
@@ -25,7 +25,7 @@
 {% endif %}
 </li>
 <li> <b>I-D Intended Status at Publication:</b> {{ object.intended_status }}</li>
-<li> <b>RFC Number:</b> {% if object.rfc_number %}<a href="http://www.ietf.org/rfc/rfc{{ object.rfc_number }}.txt">{{ object.rfc_number }}</a>{% endif %}</li>
+<li> <b>RFC Number:</b> {% if object.rfc_number %}<a href="{{ object.rfc_number|rfcurl }}">{{ object.rfc_number }}</a>{% endif %}</li>
 <li> <b><a href="{% url ietf.idtracker.views.search %}">I-D Tracker</a> State:</b>
 {% if object.idtracker %}
 <a href="/idtracker/{{ object.filename }}/">{{ object.idstate }}</a>

@@ -76,7 +76,7 @@ def search(request):
 	if status != '':
 	    q_objs.append(Q(draft__status=status,rfc_flag=0))
 	matches = IDInternal.objects.all().filter(*q_objs)
-	matches = matches.order_by('cur_state', 'cur_sub_state', 'ballot_id', '-primary_flag')
+	matches = matches.order_by('cur_state', 'cur_sub_state', 'ballot', '-primary_flag')
         # sort by date in reverse
         # first build docstate groups, within which we sort
         # in each docstate group, we build ballot id groups, which we sort
@@ -207,11 +207,11 @@ def send_email(request):
 	context_instance=RequestContext(request))
 
 def status(request):
-    queryset = IDInternal.objects.filter(primary_flag=1).exclude(cur_state__state__in=('RFC Ed Queue', 'RFC Published', 'AD is watching', 'Dead')).order_by('cur_state', 'status_date', 'ballot_id')
+    queryset = IDInternal.objects.filter(primary_flag=1).exclude(cur_state__state__in=('RFC Ed Queue', 'RFC Published', 'AD is watching', 'Dead')).order_by('cur_state', 'status_date', 'ballot')
     return object_list(request, template_name="idtracker/status_of_items.html", queryset=queryset, extra_context={'title': 'IESG Status of Items'})
 
 def last_call(request):
-    queryset = IDInternal.objects.filter(primary_flag=1).filter(cur_state__state__in=('In Last Call', 'Waiting for Writeup', 'Waiting for AD Go-Ahead')).order_by('cur_state', 'status_date', 'ballot_id')
+    queryset = IDInternal.objects.filter(primary_flag=1).filter(cur_state__state__in=('In Last Call', 'Waiting for Writeup', 'Waiting for AD Go-Ahead')).order_by('cur_state', 'status_date', 'ballot')
     return object_list(request, template_name="idtracker/status_of_items.html", queryset=queryset, extra_context={'title': 'Documents in Last Call', 'lastcall': 1})
 
 def redirect_id(request, object_id):

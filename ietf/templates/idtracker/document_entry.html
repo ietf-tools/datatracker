@@ -16,7 +16,7 @@
   <td></td><td></td>
 {% endif %}
 <td>{{ doc.document.title }} ({{ doc.document.intended_status }})</td></tr>
-<tr><td></td><td></td><td><a href="{{ doc.document.doclink }}">{{ doc.document.displayname }}</a></td></tr>
+<tr><td></td><td></td><td><a href="{{ doc.document.doclink }}">{{ doc.document.displayname|safe }}</a></td></tr>
 {% if doc.primary_flag %}
 <tr><td></td><td>Token:</td><td><a href="mailto:{{ doc.token_email|urlencode }}">{{ doc.token_name }}</a></td></tr>
 {% if doc.note %}

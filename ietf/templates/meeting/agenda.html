@@ -66,7 +66,7 @@ IETF agendas are subject to change, up to and during the meeting.<br />
 	 <td><a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{session.info.room_id.room_name|slugify}}">{{ session.info.room_id.room_name}}</a></td>
 	 {% if session.info.area %}
 	 <td>{{ session.info.area|upper}}</td>
-	 <td>{% if session.info.isWG %}<a href="http://www.ietf.org/html.charters/{{ session.info.acronym|lower }}-charter.html">{{ session.info.acronym|lower }}</a>{% else %}{{ session.info.acronym|lower }}{% endif %}</td>
+	 <td>{% if session.info.isWG %}<a href="http://www.ietf.org/dyn/wg/charter/{{ session.info.acronym|lower }}-charter.html">{{ session.info.acronym|lower }}</a>{% else %}{{ session.info.acronym|lower }}{% endif %}</td>
 	 <td>
 	    {% if session.info.agenda_file %}<a href="http://www3.ietf.org/proceedings/{{ session.info.agenda_file }}">{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}</a>{% else %}{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}{% endif %}
 	    {% if session.info.special_agenda_note %}<br/> - {{ session.info.special_agenda_note }}{% endif %}

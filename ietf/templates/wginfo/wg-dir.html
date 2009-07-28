@@ -8,10 +8,14 @@
 <h1>Active IETF Working Groups</h1>
 <hr/>
 <p>
-   Old WG pages can be found in the <a href="http://www.ietf.org/html.charters/OLD/index.html">Concluded WG Index</a>.
+   Old WG pages can be found in
+   the <a href="http://www.ietf.org/wg/concluded/index.html">Concluded
+   Working Groups</a>.
 </p>
 <p>
-   Archived WG Charters can be found in the <a href="http://www.ietf.org/html.charters/HISTORY/">Historic Charter Index</a>.
+   Archived WG Charters can be found in
+   the <a href="http://www.ietf.org/dyn/wg/charter/history/">Historic
+   Charters page</a>.
 </p>
 <hr/>
 <h2>Table of Contents</h2>
@@ -61,7 +65,7 @@
 </colgroup>
 {% endif %}
 {% if wg.start_date %}
-<tr><td></td><td><a href="http://www.ietf.org/html.charters/{{ wg|escape }}-charter.html">{{ wg|escape }}</a></td><td>{{ wg.group_acronym.name|escape }}</td></tr>
+<tr><td></td><td><a href="http://www.ietf.org/dyn/wg/charter/{{ wg|escape }}-charter.html">{{ wg|escape }}</a></td><td>{{ wg.group_acronym.name|escape }}</td></tr>
 {% endif %}
 {% if forloop.last %}
 </table>

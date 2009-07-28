@@ -49,7 +49,8 @@ body { margin: 0; }
 .ballotTable .right { padding-left: 15px; padding-right:15px; width:610px;padding-top:0px;}
 .ballotTable h2.ballot_ad { background: #2647A0; color:white; padding: 2px 4px; font-size: 108%; margin-top: 0;}
 .ballotTable .right { background: white; }
-
+.ballotTable .square { border:1px solid black;position:relative;top:2px; display: block; float:left;width: 10px; height:10px;font-size:1px;margin-right:4px; }
+.ballotTable .was { padding-left: 10px; font-size:85%; }
 .mydialog button { margin-left: 8px; }
 .mybutton { background-color:white; border: 1px outset #808080; padding: 1px 3px; }
 .mybutton a { text-decoration: none; color: black; }
