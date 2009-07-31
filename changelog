@@ -1,3 +1,11 @@
+ietfdb (2.32)
+
+  * Make WG summary available also with the same name as before
+    (1wg-summary.txt).  Fix the template to more closely match
+    the old layout, for screenscraping scripts.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  
+
 ietfdb (2.31)
 
   * Fix dropped plenary agendas in the html agenda page.
