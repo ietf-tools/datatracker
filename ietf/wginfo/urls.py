@@ -6,6 +6,7 @@ from ietf.wginfo import views
 urlpatterns = patterns('',
      (r'^$', views.wg_dir),
      (r'^summary.txt', views.wg_summary_area),
+     (r'^1wg-summary.txt', views.wg_summary_area),
      (r'^summary-by-area.txt', views.wg_summary_area),
      (r'^summary-by-acronym.txt', views.wg_summary_acronym),
      (r'^(?P<wg>.*)-charter.html', views.wg_charter),

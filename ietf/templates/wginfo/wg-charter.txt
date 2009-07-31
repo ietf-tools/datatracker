@@ -1,28 +1,28 @@
 {% load ietf_filters %}{{wg.group_acronym.name}} ({{wg}})
 {{ wg.group_acronym.name|dashify }}{{ wg.group_acronym.acronym|dashify }}---
 
-Charter
-Last Modified: {{ wg.last_modified_date }}
+ Charter
+ Last Modified: {{ wg.last_modified_date }}
 
-Current Status: {{ wg.status }}
+ Current Status: {{ wg.status }}
 
-Chair{{ wg.chairs.count|pluralize:": ,s:" }}
-{% for chair in wg.chairs %}  {{ chair.person }} <{{chair.person.email.1}}>
+ Chair{{ wg.chairs.count|pluralize:": ,s:" }}
+{% for chair in wg.chairs %}     {{ chair.person }} <{{chair.person.email.1}}>
 {% endfor %}
-Area Directors:
-{% for ad in wg.area_directors %}  {{ ad.person }} <{{ad.person.email.1}}>
+ {{wg.area.area.area_acronym.name}} Directors:
+{% for ad in wg.area_directors %}     {{ ad.person }} <{{ad.person.email.1}}>
 {% endfor %}
-Area Advisor:
-  {{ wg.area_director.person }} <{{wg.area_director.person.email.1}}>
+ {{wg.area.area.area_acronym.name}} Advisor:
+     {{ wg.area_director.person }} <{{wg.area_director.person.email.1}}>
 {% if wg.secretaries %}
-Secretar{{ wg.secretaries.count|pluralize:"y: ,ies:" }}
-{% for secretary in wg.secretaries %}  {{ secretary.person }} <{{secretary.person.email.1}}>
+ {{wg.area.area.area_acronym.name}} Secretar{{ wg.secretaries.count|pluralize:"y: ,ies:" }}
+{% for secretary in wg.secretaries %}     {{ secretary.person }} <{{secretary.person.email.1}}>
 {% endfor %}
 {% endif %}
-Mailing List:
-  General Discussion: {{ wg.email_address }}
-  To Subscribe:       {{ wg.email_subscribe }}
-  Archive:            {{ wg.email_archive }}
+ Mailing Lists:
+     General Discussion: {{ wg.email_address }}
+     To Subscribe:       {{ wg.email_subscribe }}
+     Archive:            {{ wg.email_archive }}
 
 Description of Working Group:
 
