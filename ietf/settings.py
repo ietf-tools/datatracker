@@ -167,7 +167,7 @@ TEST_REFERENCE_URL_PREFIX = os.environ.get("IETFDB_REF_PREFIX","") or 'https://d
 # *_PATH variables ends with a slash/ .
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
-AGENDA_PATH = '/a/www/www6/proceedings/'
+AGENDA_PATH = '/a/www/www6s/proceedings/'
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
 # Path to Work Group Description Text Files
 IETFWG_DESCRIPTIONS_PATH = '/a/www/www6s/wg-descriptions/'
