@@ -421,7 +421,7 @@ class UrlTestCase(TestCase):
                         note("     200 %s" % (master))
                     except urllib.URLError, e:
                         note("     Error retrieving %s: %s" % (master, e))
-                    except urllib.BadStatusLine, e:
+                    except urllib.HTTPError, e:
                         note("     Error retrieving %s: %s" % (master, e))
                     try:
                         if goodhtml and response.content:
