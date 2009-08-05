@@ -519,7 +519,7 @@ class Slide(models.Model, ResolveAcronym):
 
 class WgProceedingsActivities(models.Model, ResolveAcronym):
     id = models.AutoField(primary_key=True)
-    group_acronym_id = models.IntegerField(null=True, blank=True)
+    #group_acronym_id = models.IntegerField(null=True, blank=True)
     group_acronym = models.ForeignKey(Acronym, raw_id_admin=True)
 
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
