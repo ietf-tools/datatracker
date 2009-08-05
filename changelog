@@ -4,6 +4,10 @@ ietfdb (2.32)
     (1wg-summary.txt).  Fix the template to more closely match
     the old layout, for screenscraping scripts.
 
+  * Make Django testing framework work again.  From Pasi.
+
+  * Minor fixes to bugs found by the testing framework.  From Pasi. 	 
+	
  -- Henrik Levkowetz <henrik@levkowetz.com>  
 
 ietfdb (2.31)
