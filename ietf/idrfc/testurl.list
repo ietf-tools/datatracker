@@ -1,0 +1,44 @@
+200	/doc/
+200	/doc/test/
+
+# draft that's now RFC
+200	/doc/draft-ietf-avt-rtp-atrac-family/
+200	/doc/draft-ietf-avt-rtp-atrac-family/_debug.data
+200	/doc/draft-ietf-avt-rtp-atrac-family/_comments.data
+200	/doc/draft-ietf-avt-rtp-atrac-family/_ballot.data
+200	/doc/draft-ietf-avt-rtp-atrac-family/_versions.data
+
+# replaced draft, never went to IESG
+200	/doc/draft-eronen-mobike-mopo/
+404	/doc/draft-eronen-mobike-mopo/_comments.data
+404	/doc/draft-eronen-mobike-mopo/_ballot.data
+200	/doc/draft-eronen-mobike-mopo/_versions.data
+
+# Normal RFC 
+200	/doc/rfc4739/
+200	/doc/rfc4739/_debug.data
+404	/doc/rfc4739/_comments.data
+404	/doc/rfc4739/_ballot.data
+404	/doc/rfc4739/_versions.data
+
+# RFC that's evaluated in IESG
+200	/doc/rfc3852/
+200	/doc/rfc3852/_debug.data
+200	/doc/rfc3852/_comments.data
+200	/doc/rfc3852/_ballot.data
+404	/doc/rfc3852/_versions.data
+
+404	/doc/draft-no-such-draft/
+404	/doc/rfc4637/
+
+# current AD -- needs to be updated at some point
+200	/doc/ad/robert.sparks/
+# former AD
+200	/doc/ad/sam.hartman/
+404	/doc/ad/no.body/
+skip	/doc/search/
+
+# ballot exists, but it's not issued
+404	/doc/draft-ietf-aaa-diameter-api/_ballot.data
+# ballot does not exist
+404	/doc/draft-zeilenga-cldap/_ballot.data
