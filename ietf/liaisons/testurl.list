@@ -1,10 +1,10 @@
-200	/liaison/			https://datatracker.ietf.org/public/liaisons.cgi
-200	/liaison/321/			https://datatracker.ietf.org/public/liaison_detail.cgi?detail_id=321
-200	/liaison/managers/		https://datatracker.ietf.org/public/liaison_managers_list.cgi
-200	/liaison/help/to_ietf/		https://datatracker.ietf.org/public/liaison_guide_to_ietf.cgi
-200	/liaison/help/from_ietf/	https://datatracker.ietf.org/public/liaison_guide_from_ietf.cgi
-200	/liaison/help/fields/		https://datatracker.ietf.org/public/liaison_field_help.cgi
-200	/liaison/help/
+#200	/liaison/			https://datatracker.ietf.org/public/liaisons.cgi
+#200	/liaison/321/			https://datatracker.ietf.org/public/liaison_detail.cgi?detail_id=321
+#200	/liaison/managers/		https://datatracker.ietf.org/public/liaison_managers_list.cgi
+#200	/liaison/help/to_ietf/		https://datatracker.ietf.org/public/liaison_guide_to_ietf.cgi
+#200	/liaison/help/from_ietf/	https://datatracker.ietf.org/public/liaison_guide_from_ietf.cgi
+#200	/liaison/help/fields/		https://datatracker.ietf.org/public/liaison_field_help.cgi
+#200	/liaison/help/
 
 # utf-8 causes buildbot to vomit; comment these out for now.
 #200	/feed/liaison/recent/
@@ -13,4 +13,4 @@
 #200	/feed/liaison/from/MFA_Forum/
 
 # Test case for ticket #182:
-200	/liaison/337/
+#200	/liaison/337/
