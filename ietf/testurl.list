@@ -1,7 +1,7 @@
 # Top-level test URL list.  Should probably be empty; all test URls should be
 # specified in the application level testurl.list
 
-#301	/ # Top level url.  Has no comparable page today.
+301	/ # Top level url.  Has no comparable page today.
 #skip	/images/ietf-icon.bmp
 #skip	/css/base.css
 #skip	/js/
