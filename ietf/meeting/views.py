@@ -73,8 +73,11 @@ def agenda_info(num=None):
     
 def html_agenda(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-    user_agent = request.META["HTTP_USER_AGENT"]
-    print user_agent
+    if 'HTTP_USER_AGENT' in request.META:
+        user_agent = request.META["HTTP_USER_AGENT"]
+    else:
+        user_agent = ""
+    #print user_agent
     if "iPhone" in user_agent:
         template = "meeting/m_agenda.html"
     else:
