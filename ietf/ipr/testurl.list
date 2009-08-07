@@ -1,18 +1,27 @@
-# -*- conf-mode -*-
-#200			/ipr/				https://datatracker.ietf.org/public/ipr_list.cgi
-#200			/ipr/657/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=657 # Generic disclosure
-#200			/ipr/834/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=834 # Specific disclosure
-#200			/ipr/795/			https://datatracker.ietf.org/public/ipr_detail_show.cgi?&ipr_id=795 # Third-party disclosure
-#200			/ipr/new-generic/		https://datatracker.ietf.org/public/ipr_generic.cgi
-#200			/ipr/new-specific/		https://datatracker.ietf.org/public/ipr.cgi
-#200			/ipr/new-third-party/		https://datatracker.ietf.org/public/ipr_notify.cgi
-#200			/ipr/update/			https://datatracker.ietf.org/public/ipr_update_list.cgi
+200	/ipr/				
+200	/ipr/657/	# Generic disclosure
+200	/ipr/564/	# Generic submitted by email
+200	/ipr/834/	# Specific disclosure 
+200	/ipr/1121/	# Specific disclosure submitted by email (PDF)
+200	/ipr/1173/	# Specific disclosure submitted by email (TXT)
+200	/ipr/795/	# Third-party disclosure
+200	/ipr/865/	# Third party disclosure submitted by email (TXT)
+200	/ipr/1140/	# Non-ASCII patent holder name
+200	/ipr/1069/	# Non-ASCII title
+200	/ipr/1129/	# Non-ASCII other fields
+200	/ipr/751/	# Updates others, and is updated by others
+200	/ipr/765/	# Removed
+
+200	/ipr/new-generic/		
+200	/ipr/new-specific/		
+200	/ipr/new-third-party/		
+200	/ipr/update/			
 
 #200			/ipr/update/657/		https://datatracker.ietf.org/public/ipr_generic.cgi?command=update_ipr&ipr_id=657
 #200			/ipr/update/820/		https://datatracker.ietf.org/public/ipr_notify.cgi?command=update_ipr&ipr_id=820
 #200			/ipr/update/844/		https://datatracker.ietf.org/public/ipr.cgi?command=update_ipr&ipr_id=844
 
-#200			/ipr/search/			https://datatracker.ietf.org/public/ipr_search.cgi
+200	/ipr/search/
 #302			/ipr/search/?option=document_search # incomplete argument set gives redirect
 
 #200			/ipr/search/?document_search=mod&option=document_search https://datatracker.ietf.org/public/ipr_search.cgi?option=document_search&document_search=mod
@@ -45,7 +54,8 @@
 #200			/ipr/search/?option=ipr_title_search&ipr_title_search=nortelxz	https://datatracker.ietf.org/public/ipr_search.cgi?option=ipr_title_search&ipr_title_search=nortelxz	# Empty result
 
 
-#200			/ipr/about/			https://datatracker.ietf.org/public/ipr_disclosure.cgi
+200			/ipr/about/
+200			/ipr/by-draft/
+200			/ipr/by-date/
 #200			/ipr/y/2006/
 #200			/ipr/y/2006/feb/
-#200			/ipr/by-date/

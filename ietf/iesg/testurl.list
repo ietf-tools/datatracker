@@ -1,8 +1,15 @@
+
 301		/iesg/telechat/
 301		/iesg/telechat/y/2007/
 301		/iesg/telechat/y/2007/apr/
 301		/iesg/telechat/354/
 
+200		/iesg/agenda/
+200		/iesg/agenda/documents.txt
+200		/iesg/agenda/documents/
+200		/iesg/discusses/
+
+200		/iesg/ann/ind/
 200 		/iesg/ann/new/
 # This takes ~ 300s:
 #200		/iesg/ann/prev/
