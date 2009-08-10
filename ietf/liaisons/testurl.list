@@ -11,9 +11,11 @@
 200	/liaison/help/fields/
 200	/liaison/help/
 
-# utf-8 causes buildbot to vomit; comment these out for now.
 200	/feed/liaison/recent/
 200	/feed/liaison/from/ccamp/
 #200	/feed/liaison/from/MFA%20Forum/
 200	/feed/liaison/from/MFA_Forum/
+200	/feed/liaison/subject/H.248/
+200	/feed/liaison/subject/2173/	# non-ASCII title
 
+200	/sitemap-liaison.xml

@@ -59,3 +59,6 @@
 200			/ipr/by-date/
 #200			/ipr/y/2006/
 #200			/ipr/y/2006/feb/
+
+200	/feed/ipr/
+200	/sitemap-ipr.xml

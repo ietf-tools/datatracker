@@ -25,3 +25,6 @@
 # See ticket #218.
 200	/idtracker/rfc2444/
 200	/feed/comments/rfc2444/
+
+200	/sitemap-drafts.xml
+200	/sitemap-idtracker.xml
