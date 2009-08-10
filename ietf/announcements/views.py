@@ -33,10 +33,3 @@ def nomcom(request):
                               { 'curr_chair' : curr_chair,
                                 'regimes' : regimes })
 
-def nomcom_chairs(request):
-    all_chairs       = (ChairsHistory.objects.all().
-                        filter(chair_type='3',start_year__gt = 2003).
-                        order_by('-start_year'))
-
-    return render_to_response("announcements/chairs.html", 
-                              { 'chairs' : all_chairs })
