@@ -12,6 +12,7 @@
 200	/liaison/help/fields/
 200	/liaison/help/
 
+404	/feed/liaison/
 200	/feed/liaison/recent/
 200	/feed/liaison/from/ccamp/
 #200	/feed/liaison/from/MFA%20Forum/

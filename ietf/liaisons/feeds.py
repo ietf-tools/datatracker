@@ -62,6 +62,12 @@ class Liaisons(Feed):
 	    return obj
 	raise FeedDoesNotExist
 
+    def get_feed(self, url=None):
+        if not url:
+            raise FeedDoesNotExist
+        else:
+            return Feed.get_feed(self, url=url)
+
     def title(self, obj):
 	return obj['title']
 
