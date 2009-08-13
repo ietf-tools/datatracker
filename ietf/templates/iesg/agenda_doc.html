@@ -34,6 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% comment %}
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endcomment %}
+{% load ietf_filters %}
 
 {% if forloop.first %}
 <table><tr><th>Area</th><th>Date</th></tr>
@@ -52,7 +53,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <a href="{{ doc.obj.document.doclink }}">{{doc.obj.document.filename}}</a>
 <a href="http://tools.ietf.org/rfc/{{ doc.obj.document.filename }}">[txt]</a>
 {% else %}
-<a href="{{ doc.obj.document.doclink_current }}">{{doc.obj.document.displayname_current}}</a>
+<a href="{{ doc.obj.document.doclink_current }}">{{doc.obj.document.displayname_current|safe}}</a>
 <!--       <a href="http://www.ietf.org/internet-draft/{{ doc.obj.document.filename }}-{{ doc.obj.document.revision }}.txt">[txt]</a> -->
 <a href="http://tools.ietf.org/id/{{ doc.obj.document.filename }}-{{ doc.obj.document.revision }}.txt">[txt]</a>
 {% endif %}
