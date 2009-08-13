@@ -22,7 +22,23 @@ from ietf.utils import log
 
 startup_database = settings.DATABASE_NAME  # The startup database name, before changing to test_...
 
+# Test that test/r5106.patch has been applied. This is not written
+# as normal test case, because it needs to be run before Django's
+# test framework takes over. This test applies only to Django 0.96,
+# and can be removed once we transition to 1.x.
+def test_django_foreignkey_patch():
+    if django.VERSION[0] > 0:
+        return
+    try:
+        t = django.core.management._get_sql_model_create(ietf.idtracker.models.GoalMilestone)
+    except KeyError, f:
+        if str(f.args) == "('ForeignKey',)":
+            raise Exception("Django 0.96 patch in test/r5106.patch not installed?")
+        else:
+            raise
+
 def run_tests(module_list, verbosity=0, extra_tests=[]):
+    test_django_foreignkey_patch()
     module_list.append(ietf.urls)
     # If we append 'ietf.tests', we get it twice, first as itself, then
     # during the search for a 'tests' module ...
