@@ -5,6 +5,7 @@ from django.utils.feedgenerator import Atom1Feed
 from django.db.models import Q
 from ietf.liaisons.models import LiaisonDetail, FromBodies
 from ietf.idtracker.models import Acronym
+from datetime import datetime, time
 import re
 
 # A slightly funny feed class, the 'object' is really
@@ -90,7 +91,9 @@ class Liaisons(Feed):
 	return qs
 
     def item_pubdate(self, item):
-	return item.submitted_date
-
+        # this method needs to return a datetime instance, even
+        # though the database has only date, not time 
+	return datetime.combine(item.submitted_date, time(0,0,0))
+ 
     def item_author_name(self, item):
 	return item.from_body()
