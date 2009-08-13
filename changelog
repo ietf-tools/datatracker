@@ -7,6 +7,9 @@ ietfdb (2.32)
   * Make Django testing framework work again.  From Pasi.
 
   * Minor fixes to bugs found by the testing framework.  From Pasi. 	 
+
+  * Replaced /liaison/managers/ with redirect to static page
+    on www.ietf.org.  From Pasi.
 	
  -- Henrik Levkowetz <henrik@levkowetz.com>  
 

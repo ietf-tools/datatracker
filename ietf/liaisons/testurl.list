@@ -5,7 +5,8 @@
 200	/liaison/458/  	# non-ASCII title
 200	/liaison/471/  	# non-ASCII body and submitter name
 
-200	/liaison/managers/	
+301	/liaison/managers/	
+
 200	/liaison/help/to_ietf/	
 200	/liaison/help/from_ietf/
 200	/liaison/help/fields/

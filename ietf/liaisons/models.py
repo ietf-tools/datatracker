@@ -96,45 +96,50 @@ class LiaisonDetail(models.Model):
     class Admin:
 	pass
 
-class SDOs(models.Model):
-    sdo_id = models.AutoField(primary_key=True)
-    sdo_name = models.CharField(blank=True, maxlength=255)
-    def __str__(self):
-	return self.sdo_name
-    def liaisonmanager(self):
-	try:
-	    return self.liaisonmanagers_set.all()[0]
-	except:
-	    return None
-    class Meta:
-        db_table = 'sdos'
-    class Admin:
-	pass
+# This table is not used by any code right now, and according to Glen,
+# probably not currently (Aug 2009) maintained by the secretariat.
+#class SDOs(models.Model):
+#    sdo_id = models.AutoField(primary_key=True)
+#    sdo_name = models.CharField(blank=True, maxlength=255)
+#    def __str__(self):
+#	return self.sdo_name
+#    def liaisonmanager(self):
+#	try:
+#	    return self.liaisonmanagers_set.all()[0]
+#	except:
+#	    return None
+#    class Meta:
+#        db_table = 'sdos'
+#    class Admin:
+#	pass
 
-class LiaisonManagers(models.Model):
-    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
-    email_priority = models.IntegerField(null=True, blank=True, core=True)
-    sdo = models.ForeignKey(SDOs, edit_inline=models.TABULAR, num_in_admin=1)
-    def email(self):
-	try:
-	    return self.person.emailaddress_set.get(priority=self.email_priority)
-	except ObjectDoesNotExist:
-	    return None
-    class Meta:
-        db_table = 'liaison_managers'
+# This table is not used by any code right now, and according to Glen,
+# probably not currently (Aug 2009) maintained by the secretariat.
+#class LiaisonManagers(models.Model):
+#    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
+#    email_priority = models.IntegerField(null=True, blank=True, core=True)
+#    sdo = models.ForeignKey(SDOs, edit_inline=models.TABULAR, num_in_admin=1)
+#    def email(self):
+#	try:
+#	    return self.person.emailaddress_set.get(priority=self.email_priority)
+#	except ObjectDoesNotExist:
+#	    return None
+#    class Meta:
+#        db_table = 'liaison_managers'
 
-class LiaisonsInterim(models.Model):
-    title = models.CharField(blank=True, maxlength=255)
-    submitter_name = models.CharField(blank=True, maxlength=255)
-    submitter_email = models.CharField(blank=True, maxlength=255)
-    submitted_date = models.DateField(null=True, blank=True)
-    from_id = models.IntegerField(null=True, blank=True)
-    def __str__(self):
-	return self.title
-    class Meta:
-        db_table = 'liaisons_interim'
-    class Admin:
-	pass
+# This table is not used by any code right now.
+#class LiaisonsInterim(models.Model):
+#    title = models.CharField(blank=True, maxlength=255)
+#    submitter_name = models.CharField(blank=True, maxlength=255)
+#    submitter_email = models.CharField(blank=True, maxlength=255)
+#    submitted_date = models.DateField(null=True, blank=True)
+#    from_id = models.IntegerField(null=True, blank=True)
+#    def __str__(self):
+#	return self.title
+#    class Meta:
+#        db_table = 'liaisons_interim'
+#    class Admin:
+#	pass
 
 class Uploads(models.Model):
     file_id = models.AutoField(primary_key=True)
