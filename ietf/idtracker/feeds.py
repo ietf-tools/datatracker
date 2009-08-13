@@ -57,5 +57,7 @@ class InLastCall(Feed):
 	return ret
 
     def item_pubdate(self, item):
-        return item.document().lc_sent_date
+        # this method needs to return a datetime instance, even
+        # though the database has only date, not time 
+        return datetime.datetime.combine(item.document().lc_sent_date, datetime.time(0,0,0))
 
