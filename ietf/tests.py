@@ -43,7 +43,7 @@ def test_django_foreignkey_patch():
 
 def run_tests(module_list, verbosity=0, extra_tests=[], interactive=True):
     test_django_foreignkey_patch()
-    if django.VERSION == 0:
+    if django.VERSION[0] == 0:
         module_list.append(ietf.urls)
     else:
         pass
