@@ -20,6 +20,10 @@ from django.core import management
 import ietf.urls
 from ietf.utils import log
 
+# This is needed so that "manage.py test ietf.UrlTestCase" works
+if django.VERSION[0] > 0:
+    settings.INSTALLED_APPS = settings.INSTALLED_APPS + ['ietf']
+
 startup_database = settings.DATABASE_NAME  # The startup database name, before changing to test_...
 
 # Test that test/r5106.patch has been applied. This is not written
@@ -37,9 +41,13 @@ def test_django_foreignkey_patch():
         else:
             raise
 
-def run_tests(module_list, verbosity=0, extra_tests=[]):
+def run_tests(module_list, verbosity=0, extra_tests=[], interactive=True):
     test_django_foreignkey_patch()
-    module_list.append(ietf.urls)
+    if django.VERSION == 0:
+        module_list.append(ietf.urls)
+    else:
+        pass
+        #module_list = module_list + ('ietf.urls',)
     # If we append 'ietf.tests', we get it twice, first as itself, then
     # during the search for a 'tests' module ...
     return django.test.simple.run_tests(module_list, 0, extra_tests)
@@ -231,7 +239,10 @@ def module_setup(module):
     settings.DATABASE_NAME = startup_database
     # Install updated fixtures:
     # Also has the side effect of creating the database connection.
-    management.syncdb(verbosity=1, interactive=False)
+    if django.VERSION[0] == 0:
+        management.syncdb(verbosity=1, interactive=False)
+    else:
+        management.call_command('syncdb', verbosity=1,noinput=True)
     connection.close()
     settings.DATABASE_NAME = module.testdb
     connection.cursor()
