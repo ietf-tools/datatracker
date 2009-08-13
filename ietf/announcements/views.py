@@ -3,8 +3,8 @@
 # Create your views here.
 
 from django.http import HttpResponse
-from django.template.loader import render_to_string
 from django.shortcuts import render_to_response
+from django.views.generic.simple import direct_to_template
 
 from ietf.idtracker.models import ChairsHistory
 from ietf.idtracker.models import PersonOrOrgInfo
@@ -29,7 +29,8 @@ def nomcom(request):
         regimes = regimes + [{'chair': chair, 
                               'announcements' : chair_announcements }]
 
-    return render_to_response("announcements/nomcom.html", 
+    return direct_to_template(request,
+                              "announcements/nomcom.html", 
                               { 'curr_chair' : curr_chair,
                                 'regimes' : regimes })
 
