@@ -29,12 +29,12 @@ def wgdocs(request, wg):
 		)
 	else:
 	    queryset = IETFWG.objects.filter(group_acronym__acronym__istartswith=wg)
-	queryset = queryset.filter(group_type__type='WG').select_related().order_by('status_id', 'acronym.acronym')
+	queryset = queryset.filter(group_type__type='WG').select_related().order_by('status', 'acronym.acronym')
 	extra = base_extra.copy()
 	extra['search'] = wg
 	return object_list(request, queryset=queryset, template_name='idindex/wglist.html', allow_empty=True, extra_context=extra)
     queryset = InternetDraft.objects.filter(group__acronym=wg)
-    queryset = queryset.order_by('status_id', 'filename')
+    queryset = queryset.order_by('status', 'filename')
     extra = base_extra.copy()
     extra['group'] = group
     return object_list(request, queryset=queryset, template_name='idindex/wgdocs.html', allow_empty=True, extra_context=extra)
@@ -63,7 +63,7 @@ def otherdocs(request, cat=None):
 	orl([Q(filename__istartswith="draft-%s-" % p)|
 	     Q(filename__istartswith="draft-ietf-%s-" % p)
 		for p in org.get('prefixes', [ org['key'] ])]))
-    queryset = queryset.order_by('status_id','filename')
+    queryset = queryset.order_by('status','filename')
     extra = base_extra.copy()
     extra['category'] = cat
     return object_list(request, queryset=queryset, template_name='idindex/otherdocs.html', allow_empty=True, extra_context=extra)
@@ -93,7 +93,7 @@ def showdocs(request, cat=None):
     queryset = InternetDraft.objects.all()
     if catmap[cat].has_key('query'):
 	queryset = queryset.filter(catmap[cat]['query'])
-    queryset = queryset.order_by(*list(['status_id'] + sortmap[sortby]['fields']))
+    queryset = queryset.order_by(*list(['status'] + sortmap[sortby]['fields']))
     extra = catmap[cat]['extra']
     extra['sort_header'] = sortmap[sortby]['header']
     extra.update(base_extra)
@@ -137,7 +137,7 @@ def search(request):
 	except KeyError:
 	    pass	# either no other_group arg or no orgs_dict entry
 	matches = InternetDraft.objects.all().filter(*q_objs)
-	matches = matches.order_by('status_id', 'filename')
+	matches = matches.order_by('status', 'filename')
 	searched = True
     else:
 	matches = None
@@ -160,11 +160,11 @@ def all_id(request, template_name):
     # 32 = RFC Published
     cursor.execute("SELECT id_document_tag FROM id_internal WHERE rfc_flag=0 AND cur_state NOT IN (99,32)")
     in_tracker = flattenl(cursor.fetchall())
-    tracker_list = InternetDraft.objects.all().filter(id_document_tag__in=in_tracker).order_by('status_id','filename').select_related(depth=1)
+    tracker_list = InternetDraft.objects.all().filter(id_document_tag__in=in_tracker).order_by('status','filename').select_related(depth=1)
     object_list = []
     for o in tracker_list:
 	object_list.append({'tracker': True, 'id': o})
-    notracker_list = InternetDraft.objects.all().exclude(id_document_tag__in=in_tracker).order_by('status_id','filename').select_related(depth=1)
+    notracker_list = InternetDraft.objects.all().exclude(id_document_tag__in=in_tracker).order_by('status','filename').select_related(depth=1)
     for o in notracker_list:
 	object_list.append({'tracker': False, 'id': o})
     return render_to_response(template_name, {'object_list': object_list},
