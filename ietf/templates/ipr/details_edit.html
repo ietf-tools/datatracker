@@ -98,6 +98,85 @@
 	 <font size="3"><strong>Submitted Date: {{ ipr.submitted_date|date:"F j, Y" }}</strong></font>
       {% endif %}
 
+      {% if section_list.form_intro %}
+	 <h4 class="ipr">The Patent Disclosure and Licensing Declaration Template for {{ section_list.disclosure_type }}</h4>
+	 <p class="ipr">
+	 {% if section_list.generic %}
+	    This document is an IETF IPR Patent Disclosure and Licensing Declaration
+	    Template and is submitted to inform the IETF of a) patent
+	    or patent application information that is not related to a specific
+	    IETF document or contribution, and b) an IPR Holder's intention with
+	    respect to the licensing of its necessary patent claims. No actual
+	    license is implied by submission of this template.
+	 {% endif %}
+	 {% if section_list.specific %}
+	    This document is an IETF IPR Disclosure and Licensing Declaration
+	    Template and is submitted to inform the IETF of a) patent or patent
+	    application information regarding the IETF document or contribution
+	    listed in Section IV, and b) an IPR Holder's intention with respect to
+	    the licensing of its necessary patent claims.  No actual license is
+	    implied by submission of this template. Please complete and submit a
+	    separate template for each IETF document or contribution to which the
+	    disclosed patent information relates.
+	 {% endif %}
+	 {% if section_list.third_party %}
+	    This form is used to let the IETF know about patent information
+	    regarding an IETF document or contribution when the person letting the
+	    IETF know about the patent has no relationship with the patent owners.
+	    Click <a href="https://datatracker.ietf.org/ipr/new-specific">here</a> if you want to disclose information about patents or patent
+	    applications where you do have a relationship to the patent owners or
+	    patent applicants.
+	 {% endif %}
+	 </p>
+
+	 {% if section_list.also_specific %}
+	 <p class="ipr">
+
+	    Note: According to Section 6.4.3 of
+	    <a href="http://www.ietf.org/rfc/rfc3979.txt?number=3979">RFC 3979</a>,
+	    "Intellectual Property Rights in IETF Technology," you
+	    are still required to file specific disclosures on IPR unless your
+	    generic disclosure satisfies certain conditions. Please see the
+	    RFC for details.
+	 </p>
+	 {% endif %}
+
+
+	 <p class="ipr">
+
+	    If you wish to submit your IPR disclosure by e-mail, then please send
+	    it to <a href="mailto:ietf-ipr@ietf.org">ietf-ipr@ietf.org</a>.
+	    Submissions made by e-mail that do not comply with the formal
+	    requirements of Section 6, "IPR Disclosures," of <a
+	    href="http://www.ietf.org/rfc/rfc3979.txt?number=3979">RFC 3979</a>,
+	    <!-- The following line isn't present on all three .cgi versions.  Bah. -->
+	    "Intellectual Property Rights in IETF Technology",
+	    will be posted, but will be marked as "non-compliant".
+
+	 </p>
+	 <hr />
+	 <form name="form1" method="post">
+      {% endif %}
+
+
+      {% if ipr.errors %}
+      <p class="errorlist">
+	 There were errors in the submitted form -- see below.  Please correct these and resubmit.
+	{% if ipr.non_field_errors %}
+	<ul class="errorlist">
+	  {% for error in ipr.non_field_errors %}
+	  <li>{{ error }}</li>
+	  {% endfor %}
+	</ul>
+	{% endif %}
+      </p>
+      {% endif %}
+
+      {% if section_list.form_legend %}
+      <p class="formlegend">
+	 Fields marked with <span class="required">*</span> are required.
+      </p>
+      {% endif %}
    </blockquote>
 
    {% if section_list.holder %}
@@ -172,6 +251,7 @@
       <table border="0" cellpadding="0" cellspacing="0" class="ipr">
 	 <tr class="{% cycle dark,light as row_parity %}">
 	    <th colspan="2" >
+	    {% if section_list.form_legend %}<span class="required">*</span>{% endif %}
 	    {% cycle section %}.
 	    IETF Document or Other Contribution to Which this IPR Disclosure Relates:
 	    </th>
@@ -203,8 +283,23 @@
 	    <tr class="{% cycle dark,light as row_parity %}">
 	       <th colspan="2" >
 	       {% cycle section %}.
+	       {% if section_list.form_legend %}	       
+		   {% if section_list.generic %}
+		   Disclosure of Patent Information (i.e., patents or patent
+		   applications required to be disclosed by Section 6 of RFC3979)
+		   {% endif %}
+		   {% if section_list.specific %}
+		   Disclosure of Patent Information (i.e., patents or patent
+		   applications required to be disclosed by Section 6 of RFC3979)
+		   {% endif %}
+		   {% if section_list.third_party %}
+		   Disclosure of Patent Information, if known (i.e., patents or
+		   patent applications required to be disclosed by Section 6 of RFC3979)
+		   {% endif %}
+	       {% else %}
 	       Disclosure of Patent Information (i.e., patents or patent
 	       applications required to be disclosed by Section 6 of RFC 3979)	    
+	       {% endif %}
 	       </th>
 	    </tr>
 	    {% if ipr.patents or ipr.notes %}
@@ -222,7 +317,11 @@
 	    <tr class="{% cycle row_parity %}"><td>Additional Notes:		</td><td><b>{{ ipr.notes }}</b></td></tr>
 	    <tr class="{% cycle row_parity %}">
 	       <td colspan="2">
+		     {% if section_list.form_legend %}
+		     B. Does your disclosure relate to an unpublished pending patent application?:
+		     {% else %}
 		     B. Does this disclosure relate to an unpublished pending patent application?:
+		     {% endif %}
 		  <b>{{ ipr.is_pending }}</b>
 	       </td>
 	    </tr>
@@ -275,12 +374,39 @@
 	    <tbody class="{% cycle row_parity %}">
 	    <tr>
 	       <td colspan="2">
+	       {% if section_list.form_legend %}
+		   {% if section_list.generic %}
+		   The Patent Holder states that its position with respect
+		   to licensing any patent claims contained in the patent(s) or patent
+		   application(s) disclosed above that would necessarily be infringed by
+		   implementation of a technology required by a relevant IETF specification
+		   ("Necessary Patent Claims"), for the purpose of implementing such
+		   specification, is as follows(select one licensing declaration option only):
+		   {% endif %}
+		   {% if section_list.specific %}
+		   The Patent Holder states that its position with respect
+		   to licensing any patent claims contained in the patent(s) or patent
+		   application(s) disclosed above that would necessarily be infringed by
+		   implementation of the technology required by the relevant IETF specification
+		   ("Necessary Patent Claims"), for the purpose of implementing such
+		   specification, is as follows(select one licensing declaration option only):
+		   {% endif %}
+		   {% if section_list.third_party %}
+		   The Patent Holder states that its position with respect
+		   to licensing any patent claims contained in the patent(s) or patent
+		   application(s) disclosed above that would necessarily be infringed by
+		   implementation of the technology required by the relevant IETF specification
+		   ("Necessary Patent Claims"), for the purpose of implementing such
+		   specification, is as follows(select one licensing declaration option only):
+		   {% endif %}
+	       {% else %}
 	       The Patent Holder states that its position with respect
 	       to licensing any patent claims contained in the patent(s) or patent
 	       application(s) disclosed above that would necessarily be infringed by
 	       implementation of the technology required by the relevant IETF specification
 	       ("Necessary Patent Claims"), for the purpose of implementing such
 	       specification, is as follows(select one licensing declaration option only):
+	       {% endif %}
 	       </td>
 	    </tr>
 	    <tr>
@@ -410,12 +536,24 @@
       </blockquote>
       {% endif %}
 
+      {% comment %} (doesn't work -- commented out for now) 
       {% if ipr.legacy_url_0 %}
       <blockquote>
       <h3>The text of the original IPR declaration:</h3>
       <iframe src="{{ipr.legacy_url_0}}" style="width:55em; height:30em">
 	 Warning: Could not embed {{ipr.legacy_url_0}}.
       </iframe>
+      </blockquote>
+      {% endif %}
+      {% endcomment %}
+
+      {% if section_list.form_submit %}
+      <center><input type="submit" name="submit" value="Submit"></center>
+      </form>
+      <blockquote>
+	 <hr>
+	 <img src="/images/blue.gif" hspace="3" border="0"><a href="{% url ietf.ipr.views.default %}">IPR Disclosure Page</a><br>
+	 <img src="/images/blue.gif" hspace="3" border="0"><a href="{% url ietf.ipr.views.showlist %}">View IPR Disclosures</a><br><br>
       </blockquote>
       {% endif %}
 

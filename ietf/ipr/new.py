@@ -310,7 +310,7 @@ def new(request, type, update=None, submitter=None):
         form.unbound_form = True
 
     # ietf.utils.log(dir(form.ietf_contact_is_submitter))
-    return render("ipr/details.html", {"ipr": form, "section_list":section_list, "debug": debug}, context_instance=RequestContext(request))
+    return render("ipr/details_edit.html", {"ipr": form, "section_list":section_list, "debug": debug}, context_instance=RequestContext(request))
 
 def update(request, ipr_id=None):
     """Update a specific IPR disclosure"""
