@@ -27,17 +27,16 @@
 	    Contact Information for Submitter of this Update.
 	    </th>
 	 </tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Name:</td>		<td><b>{{ form.name }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Title:</td>		<td><b>{{ form.title }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Department:</td>	<td><b>{{ form.department }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address1:</td>	<td><b>{{ form.address1 }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address2:</td>	<td><b>{{ form.address2 }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Telephone:</td>	<td><b>{{ form.telephone }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Fax:</td>		<td><b>{{ form.fax }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Email:</td>		<td><b>{{ form.email }}</b></td></tr>
+         {% for field in form %} 
+         {% ifnotequal field.name "update_auth" %}
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">{{field.label }}:</td><td><b>{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</b></td></tr>
+         {% endifnotequal %}
+         {% endfor %}
       </table>
    </blockquote>
       <p>
+      {{ form.update_auth.errors }}
+      <span class="required">*</span>
       {{ form.update_auth }}
       <b>I am authorized to update this IPR disclosure, and I understand that notification of this update will be provided to the submitter of the original IPR disclosure and to the Patent Holder's Contact.</b>
       </p>
