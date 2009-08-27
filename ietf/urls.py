@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2007, 2009, All Rights Reserved
 
+import django
 from django.conf.urls.defaults import patterns, include, handler404, handler500
 
 from ietf.iesg.feeds import IESGAgenda
@@ -55,11 +56,6 @@ urlpatterns = patterns('',
 
       (r'^$', 'ietf.redirects.views.redirect'),
 
-     # DJANGO_096: Comment out this line for Django 1.0 -- new admin
-     # site works differently, and needs work                       
-    # Uncomment this for admin:
-     (r'^admin/', include('django.contrib.admin.urls')),
-
      # Uncomment this for review pages:
      #(r'^review/$', 'ietf.utils.views.review'),
      #(r'^review/all/$', 'ietf.utils.views.all'),
@@ -79,6 +75,12 @@ urlpatterns = patterns('',
      # /account/.
      (r'^accounts/(?P<dir>\w+)/', 'django.views.generic.simple.redirect_to', { 'url': '/account/%(dir)s/' }),
 )
+
+# New admin site works differently, and needs work                       
+if django.VERSION[0] == 0:
+    urlpatterns += patterns('',
+        (r'^admin/', include('django.contrib.admin.urls')),
+        )
 
 if settings.SERVER_MODE in ('development', 'test'):
     urlpatterns += patterns('',
