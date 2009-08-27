@@ -170,8 +170,13 @@ class IdWrapper:
             else:
                 return "Replaced"
         elif self.draft_status == "Active":
-            if self.in_ietf_process() and self.ietf_process.main_state != "Dead":
-                if self.ietf_process.main_state == "In Last Call":
+            if self.in_ietf_process():
+                if self.ietf_process.main_state == "Dead":
+                    # Many drafts in "Dead" state are not dead; they're
+                    # just not currently under IESG processing. Show
+                    # them as "I-D Exists (IESG: Dead)" instead...
+                    return "I-D Exists (IESG: "+self.ietf_process.state+")"
+                elif self.ietf_process.main_state == "In Last Call":
                     return self.ietf_process.state + " (ends "+str(self._idinternal.document().lc_expiration_date)+")"
                 else:
                     return self.ietf_process.state
