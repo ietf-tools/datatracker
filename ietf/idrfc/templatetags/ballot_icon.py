@@ -156,7 +156,7 @@ def state_age_colored(doc):
     sub_state = doc.ietf_process.sub_state
     if main_state in ["Dead","AD is watching","RFC Published"]:
         return ""
-    days = timesince_days(doc.ietf_process.state_date)
+    days = timesince_days(doc.ietf_process.state_date())
     goal = 0
     if sub_state == "Revised ID Needed":
         goal = 30

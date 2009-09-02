@@ -35,6 +35,7 @@ from ietf.idrfc.models import RfcIndex, RfcEditorQueue, DraftVersions
 import re
 from datetime import date, timedelta
 from django.utils import simplejson
+from django.db.models import Q
 import types
 
 BALLOT_ACTIVE_STATES = ['In Last Call',
@@ -306,7 +307,6 @@ class IetfProcessData:
     main_state = None
     sub_state = None
     state = None
-    state_date = None
     _ballot = None
     def __init__(self, idinternal):
         self._idinternal = idinternal
@@ -318,7 +318,6 @@ class IetfProcessData:
         else:
             self.sub_state = None
             self.state = self.main_state
-        self.state_date = i.event_date
     
     def has_iesg_ballot(self):
         try:
@@ -364,11 +363,21 @@ class IetfProcessData:
         else:
             return None
 
+    def state_date(self):
+        try:
+            return self._idinternal.documentcomment_set.filter(
+                Q(comment_text__istartswith="Draft Added by ")|
+                Q(comment_text__istartswith="State Changes to ")|
+                Q(comment_text__istartswith="Sub state has been changed to ")).order_by('-id')[0].date
+        except IndexError:
+            # should never happen -- return an obviously bogus date
+            return date(1990,1,1)
+
     def to_json_helper(self):
         result = {'main_state':self.main_state,
                   'sub_state':self.sub_state,
                   'state':self.state,
-                  'state_date':str(self.state_date),
+                  'state_date':str(self.state_date()),
                   'has_iesg_ballot':self.has_iesg_ballot(),
                   'has_active_iesg_ballot':self.has_active_iesg_ballot(),
                   'ad_name':self.ad_name(),

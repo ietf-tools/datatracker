@@ -1,5 +1,7 @@
 ietfdb (2.32)
 
+  * Show correct days-in-state information (hopefully). From Pasi.
+	
   * Cleaning of IPR disclosure submission form internals  
     to simplify Django 1.0 transition.  From Jelte and Pasi.	 
 	
