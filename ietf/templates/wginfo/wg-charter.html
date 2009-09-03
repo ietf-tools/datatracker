@@ -17,7 +17,7 @@
 </font>
 {% endifequal %}</p>
 
-<h2>Chair{{ wg.chairs.count|pluralize:": ,s:" }}</h2>
+<h2>Chair{{ wg.chairs.count|pluralize:",s" }}:</h2>
 <ul>
 {% for chair in wg.chairs %}
   <li><a href="mailto:{{ chair.person.email.1 }}">{{ chair.person }} &lt;{{ chair.person.email.1 }}&gt;</a></li>
@@ -38,13 +38,31 @@
 </ul>
 {% endifequal %}
 
+{% if wg.wgtechadvisor_set.count %}
+<h2>Tech Advisor{{ wg.wgtechadvisor_set.count|pluralize:",s" }}:</h2>
+<ul>
+{% for techadvisor in wg.wgtechadvisor_set.all %}
+  <li><a href="mailto:{{ techadvisor.person.email.1 }}">{{ techadvisor.person }} &lt;{{ techadvisor.person.email.1 }}&gt;</a></li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% if wg.wgeditor_set.count %}
+<h2>Editor{{ wg.wgeditor_set.count|pluralize:",s" }}:</h2>
+<ul>
+{% for editor in wg.wgeditor_set.all %}
+  <li><a href="mailto:{{ editor.person.email.1 }}">{{ editor.person }} &lt;{{ editor.person.email.1 }}&gt;</a></li>
+{% endfor %}
+</ul>
+{% endif %}
+
 {% if wg.secretaries %}
-<h2>Secretar{{ wg.secretaries.count|pluralize:"y: ,ies:" }}</h2>
+<h2>Secretar{{ wg.secretaries.count|pluralize:"y,ies" }}:</h2>
 <ul>
 {% for secretary in wg.secretaries %}
   <li><a href="mailto:{{ secretary.person.email.1 }}">{{ secretary.person }} &lt;{{ secretary.person.email.1 }}&gt;</a></li>
-</ul>
 {% endfor %}
+</ul>
 {% endif %}
 
 <h2>Mailing List:</h2>
