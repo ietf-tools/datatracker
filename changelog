@@ -1,10 +1,10 @@
 ietfdb (2.32)
 
   * Show correct days-in-state information (hopefully). From Pasi.
-	
+
   * Cleaning of IPR disclosure submission form internals  
     to simplify Django 1.0 transition.  From Jelte and Pasi.	 
-	
+
   * Make WG summary available also with the same name as before
     (1wg-summary.txt).  Fix the template to more closely match
     the old layout, for screenscraping scripts.
@@ -16,7 +16,7 @@ ietfdb (2.32)
   * Replaced /liaison/managers/ with redirect to static page
     on www.ietf.org.  From Pasi.
 	
- -- Henrik Levkowetz <henrik@levkowetz.com>  
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Sep 2009 16:38:04 +0200
 
 ietfdb (2.31)
 
