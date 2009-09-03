@@ -16,7 +16,7 @@ SYNOPSIS
 
 DESCRIPTION
 
-	Do the sequence of actions necesary to properly produce a release
+	Do the sequence of actions necessary to properly produce a release
 	branch. This includes updating the project version and committing that
 	to the repository, creating a release tag and a release branch if
 	needed, and updating the project version again to indicate that any
@@ -35,7 +35,7 @@ DESCRIPTION
 EOF
     echo -e "OPTIONS"
     if   [ "$(uname)" = "Linux" ]; then
-        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\\1\t/' -e 's/\)[^#]*#/\t/'
     else
         egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
     fi
@@ -141,13 +141,14 @@ note "Locating the root of the working copy..."
 while [ "${#DIR}" -gt "${#SRC}" ]; do
     [ "$DIR" = "$prev" ] && die "Internal error"
     cd ..
-    note "  now at $PWD"
+    #note "  now at $PWD"
     prev=$DIR
     DIR=${DIR%/*}
 done
 if [ "$DIR" != "$SRC" ]; then
     die "Couldn't find the root of your '$SRC' working copy"
 fi
+note "  $DIR"
 
 REPO=${REPO%/}				# remove trailing slash
 SRC=${SRC#/}				# remove leading slash
@@ -160,16 +161,24 @@ NEXT=$(( $MINOR + 1 ))
 DEV="$(printf %d.%02d-dev $MAJOR $NEXT)"
 
 
+note "Checking that changelog information is available"
+changes=$( sed -n "/^ietfdb ($VER.*)/,/^ -- /p" changelog | awk '{ if (line) print line ; line=$0 }' )
+[ "$changes" ] || die "No changelog information for $VER found"
+note "$changes"
+
+note "Set the current time on the release notes in the changelog file"
+sed -r -i -e "1,/^ -- /s/([A-Za-z-]+ <[a-z0-9.-]+@[a-z0-9.-]+>  ).*$/\1$(date +'%d %b %Y %H:%M:%S %z')/" changelog
+note " $(grep -m1 "^ -- " changelog)"
+
 note "Verifying that version $VER doesn't already exist..."
 svn info $REPO/tags/$VER 2>&1 | grep -q "Not a valid URL" || die "The tag '$VER' already exists (or there was an error testing for it)."
 note "  Ok"
 
+note "Committing the changelog..."
+$do svn commit changelog -m "Changelog entry for $VER"
+
 note "Verifying there's no uncommitted changes..."
 $do svn st | grep "^[AMGRD] " && die "There seems to be uncommitted changes in this working copy"
-
-note "Checking that changelog information is available"
-changes=$( sed -n "/^ietfdb ($VER.*)/,/^ -- /p" changelog | awk '{ if (line) print line ; line=$$0 }' )
-[ "$changes" ] || die "No changelog information for $VER found"
 
 note "\nUpdating the version info in $VERFILE and making sure'\$Rev\$' is Ok"
 $do sed -i -r -e "/^__version__/s/\"[.0-9]+(-dev)?\"/\"$VER\"/" \
