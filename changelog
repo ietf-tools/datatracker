@@ -1,5 +1,18 @@
 ietfdb (2.32)
 
+  * Make the 1wg-charters.txt page stable, not changing dependent on the
+    order in which the database backend returns records.
+
+  * Various fixes to the new charter page generation.  Removed the area
+    prefix for secretaries (secretaries aren't area secretaries, they're
+    secretaries to the group).  Added tech advisors and WG editors.
+    Fixed html for secretary lists.
+
+  * Fixed link in Slides model (should be moved to templates, I suspect)
+    which has changed since ietf-74.  Todo: Should be made consistent in
+    the archives, or failing that, be dependent on the meeting number
+    (ugh!).
+
   * Show correct days-in-state information (hopefully). From Pasi.
 
   * Cleaning of IPR disclosure submission form internals  
@@ -16,7 +29,7 @@ ietfdb (2.32)
   * Replaced /liaison/managers/ with redirect to static page
     on www.ietf.org.  From Pasi.
 	
- -- Henrik Levkowetz <henrik@levkowetz.com>  03 Sep 2009 16:38:04 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  04 Sep 2009 16:19:53 +0200
 
 ietfdb (2.31)
 
