@@ -1,3 +1,9 @@
+ietfdb (2.33)
+
+  * Yet another bugfix for days-in-state information. From Pasi.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>
+
 ietfdb (2.32)
 
   * Make the 1wg-charters.txt page stable, not changing dependent on the
