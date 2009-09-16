@@ -22,7 +22,15 @@ from ietf.utils import log
 
 # This is needed so that "manage.py test ietf.UrlTestCase" works
 if django.VERSION[0] > 0:
+    # "ietf" is not a real application (because it doesn't have models.py),
+    # but let's make it look like one
     settings.INSTALLED_APPS = settings.INSTALLED_APPS + ['ietf']
+    import types
+    import ietf
+    ietf.models = types.ModuleType('ietf.models')
+    # Fixture loading code uses the directory of this file, not the actual file
+    ietf.models.__file__ = ietf.settings.__file__
+    
 
 startup_database = settings.DATABASE_NAME  # The startup database name, before changing to test_...
 
@@ -46,8 +54,8 @@ def run_tests(module_list, verbosity=0, extra_tests=[], interactive=True):
     if django.VERSION[0] == 0:
         module_list.append(ietf.urls)
     else:
-        pass
-        #module_list = module_list + ('ietf.urls',)
+        if len(module_list) == 0:
+            module_list = ('ietf',)
     # If we append 'ietf.tests', we get it twice, first as itself, then
     # during the search for a 'tests' module ...
     return django.test.simple.run_tests(module_list, 0, extra_tests)
