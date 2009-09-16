@@ -2,7 +2,7 @@
 
 from django.db import models
 from ietf.idtracker.models import PersonOrOrgInfo, ChairsHistory
-from django.contrib.auth.models import Permission
+#from django.contrib.auth.models import Permission
 
 # I don't know why the IETF database mostly stores times
 # as char(N) instead of TIME.  Until it's important, let's
@@ -13,18 +13,18 @@ class AnnouncedFrom(models.Model):
     announced_from_id = models.AutoField(primary_key=True)
     announced_from = models.CharField(blank=True, maxlength=255, db_column='announced_from_value')
     email = models.CharField(blank=True, maxlength=255, db_column='announced_from_email', editable=False)
-    permission = models.ManyToManyField(Permission, limit_choices_to={'codename__endswith':'announcedfromperm'}, filter_interface=models.VERTICAL, verbose_name='Permission Required', blank=True)
+    #permission = models.ManyToManyField(Permission, limit_choices_to={'codename__endswith':'announcedfromperm'}, filter_interface=models.VERTICAL, verbose_name='Permission Required', blank=True)
     def __str__(self):
 	return self.announced_from
     class Meta:
         db_table = 'announced_from'
-	permissions = (
-	    ("ietf_chair_announcedfromperm", "Can send messages from IETF Chair"),
-	    ("iab_chair_announcedfromperm", "Can send messages from IAB Chair"),
-	    ("iad_announcedfromperm", "Can send messages from IAD"),
-	    ("ietf_execdir_announcedfromperm", "Can send messages from IETF Executive Director"),
-	    ("other_announcedfromperm", "Can send announcements from others"),
-	)
+	#permissions = (
+	#    ("ietf_chair_announcedfromperm", "Can send messages from IETF Chair"),
+	#    ("iab_chair_announcedfromperm", "Can send messages from IAB Chair"),
+	#    ("iad_announcedfromperm", "Can send messages from IAD"),
+	#    ("ietf_execdir_announcedfromperm", "Can send messages from IETF Executive Director"),
+	#    ("other_announcedfromperm", "Can send announcements from others"),
+	#)
     class Admin:
 	pass
 
