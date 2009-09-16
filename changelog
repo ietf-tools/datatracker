@@ -1,5 +1,7 @@
 ietfdb (2.33)
 
+  * More fixes for Django 1.x. From Pasi.
+
   * Yet another bugfix for days-in-state information. From Pasi.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>
