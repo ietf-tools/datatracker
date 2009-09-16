@@ -14,45 +14,60 @@ from ietf.utils import log
 from ietf.utils.mail import send_mail
 from ietf.ipr.view_sections import section_table
 from ietf.idtracker.models import Rfc, InternetDraft
+import django
 
 # ----------------------------------------------------------------
-# Callback methods for special field cases.
-# ----------------------------------------------------------------
-
-def ipr_detail_form_callback(field, **kwargs):
-    if field.name == "licensing_option":
-        return forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES), required=False, **kwargs)
-    if field.name in ["is_pending", "applies_to_all"]:
-        return forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False, **kwargs)
-    if field.name in ["rfc_number", "id_document_tag"]:
-        log(field.name)
-        return forms.CharFieldField(required=False, **kwargs)
-    return field.formfield(**kwargs)
-
-def ipr_contact_form_callback(field, **kwargs):
-    phone_re = re.compile(r'^\+?[0-9 ]*(\([0-9]+\))?[0-9 -]+$')
-    error_message = """Phone numbers may have a leading "+", and otherwise only contain
-                numbers [0-9]; dash, period or space; parentheses, and an optional
-                extension number indicated by 'x'. """
-
-    if field.name in ['ipr', 'contact_type']:
-	return None
-    if field.name == "telephone":
-        return forms.RegexField(phone_re, error_message=error_message, **kwargs)
-    if field.name == "fax":
-        return forms.RegexField(phone_re, error_message=error_message, required=False, **kwargs)
-    return field.formfield(**kwargs)
-    # TODO:
-    #   Add rfc existence validation for RFC field
-    #   Add draft existence validation for Drafts field
-
-# ----------------------------------------------------------------
-# Classes
+# Create base forms from models
 # ----------------------------------------------------------------    
 
-# Get base form classes for our models
-BaseIprForm = forms.form_for_model(models.IprDetail, formfield_callback=ipr_detail_form_callback)
-BaseContactForm = forms.form_for_model(models.IprContact, formfield_callback=ipr_contact_form_callback)
+phone_re = re.compile(r'^\+?[0-9 ]*(\([0-9]+\))?[0-9 -]+$')
+phone_error_message = """Phone numbers may have a leading "+", and otherwise only contain numbers [0-9]; dash, period or space; parentheses, and an optional extension number indicated by 'x'."""
+
+if django.VERSION[0] == 0:
+
+    def ipr_detail_form_callback(field, **kwargs):
+        if field.name == "licensing_option":
+            return forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES), required=False, **kwargs)
+        if field.name in ["is_pending", "applies_to_all"]:
+            return forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False, **kwargs)
+        if field.name in ("rfc_number", "id_document_tag", 'legacy_url_0','legacy_url_1','legacy_title_1','legacy_url_2','legacy_title_2'):
+            return None
+        return field.formfield(**kwargs)
+
+    def ipr_contact_form_callback(field, **kwargs):
+        if field.name in ('ipr', 'contact_type'):
+            return None
+        if field.name == "telephone":
+            return forms.RegexField(phone_re, error_message=phone_error_message, **kwargs)
+        if field.name == "fax":
+            return forms.RegexField(phone_re, error_message=phone_error_message, required=False, **kwargs)
+        return field.formfield(**kwargs)
+        # TODO:
+        #   Add rfc existence validation for RFC field
+        #   Add draft existence validation for Drafts field
+
+    # Get base form classes for our models
+    BaseIprForm = forms.form_for_model(models.IprDetail, formfield_callback=ipr_detail_form_callback)
+    BaseContactForm = forms.form_for_model(models.IprContact, formfield_callback=ipr_contact_form_callback)
+    
+else:
+    # Django 1.x
+    
+    from django.forms import ModelForm
+    class BaseIprForm(ModelForm):
+        licensing_option = forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES), required=False)
+        is_pending = forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
+        applies_to_all = forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False)
+        class Meta:
+            model = models.IprDetail
+            exclude = ('rfc_document', 'id_document_tag', 'legacy_url_0','legacy_url_1','legacy_title_1','legacy_url_2','legacy_title_2')
+            
+    class BaseContactForm(ModelForm):
+        telephone = forms.RegexField(phone_re, error_message=phone_error_message)
+        fax = forms.RegexField(phone_re, error_message=phone_error_message, required=False)
+        class Meta:
+            model = models.IprContact
+            exclude = ('ipr', 'contact_type')
 
 # Some subclassing:
 
@@ -289,8 +304,10 @@ def new(request, type, update=None, submitter=None):
             send_mail(request, settings.IPR_EMAIL_TO, ('IPR Submitter App', 'ietf-ipr@ietf.org'), 'New IPR Submission Notification', "ipr/new_update_email.txt", {"ipr": instance, "update": update})
             return render("ipr/submitted.html", {"update": update}, context_instance=RequestContext(request))
         else:
-            if form.ietf_contact_is_submitter:
-                form.ietf_contact_is_submitter_checked = "checked"
+            if 'ietf_contact_is_submitter' in data:
+                form.ietf_contact_is_submitter_checked = True
+            if 'hold_contact_is_submitter' in data:
+                form.hold_contact_is_submitter_checked = True
 
             for error in form.errors:
                 log("Form error for field: %s: %s"%(error, form.errors[error]))

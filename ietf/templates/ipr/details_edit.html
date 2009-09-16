@@ -432,7 +432,7 @@
 	       <tr>
 		  <td colspan="2">
 		     Same as in Section II above:
-		     <input type="checkbox" name="hold_contact_is_submitter" onChange="toggle_submitter_info('holder');" {{ ipr.hold_contact_is_submitter_checked }} >
+		     <input type="checkbox" name="hold_contact_is_submitter" onChange="toggle_submitter_info('holder');" {% if ipr.hold_contact_is_submitter_checked %}checked="checked"{%endif%} >
 		  </td>
 	       </tr>
 	       {% endif %}
@@ -440,7 +440,7 @@
 	       <tr>
 		  <td colspan="2">
 		  Same as in Section III above:
-		  <input type="checkbox" name="ietf_contact_is_submitter" onChange="toggle_submitter_info('ietf');" {{ ipr.ietf_contact_is_submitter_checked }} />
+		  <input type="checkbox" name="ietf_contact_is_submitter" onChange="toggle_submitter_info('ietf');" {% if ipr.ietf_contact_is_submitter_checked %}checked="checked"{%endif%} }} />
 		  </td>
 	       </tr>
 	       {% endif %}
