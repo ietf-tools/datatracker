@@ -31,14 +31,30 @@
 404	/doc/draft-no-such-draft/
 404	/doc/rfc4637/
 
+200	/doc/rfc2444/_debug.data   # foreignkey problem with Django 1.x
+
 # current AD -- needs to be updated at some point
 200	/doc/ad/robert.sparks/
 # former AD
 200	/doc/ad/sam.hartman/
 404	/doc/ad/no.body/
-skip	/doc/search/
 
 # ballot exists, but it's not issued
 404	/doc/draft-ietf-aaa-diameter-api/_ballot.data
 # ballot does not exist
 404	/doc/draft-zeilenga-cldap/_ballot.data
+
+200	/doc/search/
+200	/doc/search/?rfcs=on&name=snmp
+200	/doc/search/?rfcs=on&name=nfs&ad=53
+200	/doc/search/?activeDrafts=on&name=sipping
+200	/doc/search/?oldDrafts=on&name=tls
+200	/doc/search/?activeDrafts=on&oldDrafts=on&ad=53
+200	/doc/search/?activeDrafts=on&state=20
+200	/doc/search/?activeDrafts=on&oldDrafts=on&subState=5
+200	/doc/search/?activeDrafts=on&oldDrafts=on&rfcs=on&ad=53&name=nfs
+200	/doc/search/?rfcs=on&group=tls
+200	/doc/search/?activeDrafts=on&group=tls
+200	/doc/search/?activeDrafts=on&oldDrafts=on&rfcs=on&author=eronen
+200	/doc/search/?activeDrafts=on&oldDrafts=on&rfcs=on&area=934&name=ldap
+200	/doc/search/?activeDrafts=on&name=asdfsadfsdfasdf
