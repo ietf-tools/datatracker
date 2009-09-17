@@ -19,7 +19,9 @@ def show_html_materials(request, meeting_num=None):
     cut_off_date = proceeding.sub_cut_off_date
     cor_cut_off_date = proceeding.c_sub_cut_off_date
     now = datetime.date.today()
-    if now > cor_cut_off_date:
+    if settings.SERVER_MODE != 'production' and '_testoverride' in request.REQUEST:
+        pass
+    elif now > cor_cut_off_date:
         return render("meeting/list_closed.html",{'meeting_num':meeting_num,'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date})
     sub_began = 0
     if now > begin_date:
@@ -73,7 +75,9 @@ def agenda_info(num=None):
     
 def html_agenda(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-    if 'HTTP_USER_AGENT' in request.META:
+    if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
+        user_agent = "iPhone"
+    elif 'HTTP_USER_AGENT' in request.META:
         user_agent = request.META["HTTP_USER_AGENT"]
     else:
         user_agent = ""
