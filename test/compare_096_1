@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+
+import sys
+import os
+
+# Warning: The following code assumes that this file is located in the svn
+# checkout directory, and hasn't been moved:
+ietfpath = os.path.abspath(__file__.rsplit("/", 1)[0] + "/..")
+sys.path.append(ietfpath)
+
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+from difflib import unified_diff
+import urllib2 as urllib
+from ietf.tests import get_testurls
+
+django_server0 = os.environ.get("DJANGO_SERVER0", "http://127.0.0.1:8809")
+django_server1 = os.environ.get("DJANGO_SERVER1", "http://127.0.0.1:8810")
+django_server0.rstrip("/")
+django_server1.rstrip("/")
+
+testtuples = get_testurls()
+
+def fetch(url):
+    file = urllib.urlopen(url)
+    html = file.read()
+    file.close()
+    return html
+
+for codes, url, master in testtuples:
+    print "Testing "+url
+    if not "200" in codes:
+        print "    Skipping, not 200 code"
+        continue
+    if url.startswith("/feed") or url.startswith("/sitemap"):
+        print "    Skipping Atom feeds and sitemaps"
+        continue
+    url0 = django_server0 + url
+    url1 = django_server1 + url
+    print "    Fetching %s ..." % url0
+    data0 = fetch(url0)
+    print "    Fetching %s ..." % url1
+    data1 = fetch(url1)
+    list0 = data0.split("\n")
+    list1 = data1.split("\n")
+    diff = "\n".join(unified_diff(list0, list1, url0, url1, "", "", 0, lineterm=""))
+    if diff:
+        print diff
+    else:
+        print "    No difference found"
