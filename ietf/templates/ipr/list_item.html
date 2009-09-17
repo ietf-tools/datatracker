@@ -4,9 +4,9 @@
       <td align="right">{{ ipr.ipr_id }}</td>
       <td>
 	 {% ifequal ipr.status 1 %}
-	    <a href="{% url ietf.ipr.views.show ipr.ipr_id %}">{{ ipr.title }}</a>
+	    <a href="{% url ietf.ipr.views.show ipr.ipr_id %}">{{ ipr.title|escape }}</a>
 	 {% else %}
-	    {{ ipr.title }}
+	    {{ ipr.title|escape }}
 	    <br>This IPR disclosure was removed at the request of the submitter.
 	 {% endifequal %}
 	 <br />
@@ -29,7 +29,7 @@
 	    <td></td>
 	    <td>
 	       <b>*</b>
-	       <a href="{{ ipr.legacy_url_1 }}">{{ ipr.legacy_title_1 }}</a>
+	       <a href="{{ ipr.legacy_url_1 }}">{{ ipr.legacy_title_1|escape }}</a>
 	    </td>
 	 </tr>
       {% endif %}
@@ -39,7 +39,7 @@
 	    <td></td>
 	    <td>
 	       <b>*</b>
-	       <a href="{{ ipr.legacy_url_2 }}">{{ ipr.legacy_title_2 }}</a>
+	       <a href="{{ ipr.legacy_url_2 }}">{{ ipr.legacy_title_2|escape }}</a>
 	    </td>
 	 </tr>
       {% endif %}

@@ -20,7 +20,7 @@
 		     <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
 			<tr >
 			   <td colspan="3">
-			      IPR that is related to <b><i>{{ doc|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.title }}"{% if doc.related %}, {{ doc.relation }} {{ doc.related|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.title }}"{% endif %}
+			      IPR that is related to <b><i>{{ doc|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.title|escape }}"{% if doc.related %}, {{ doc.relation }} {{ doc.related|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.title|escape }}"{% endif %}
 			      </i></b> which is a product of Working Group <b><i>{{ q }}</i></b>
 			   </td>
 			</tr>
@@ -32,10 +32,10 @@
 				 <td>
 				    {% for item in ipr.updates.all %}
 				       {% ifequal item.updated.status 1 %}
-					  IPR disclosure ID# {{ item.updated.ipr_id }}, "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>" Updated by
+					  IPR disclosure ID# {{ item.updated.ipr_id }}, "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title|escape }}</a>" Updated by
 				       {% endifequal %}
 				    {% endfor %}
-				    <a href="{% url ietf.ipr.views.show ipr.ipr_id %}">"{{ ipr.title }}"</a>
+				    <a href="{% url ietf.ipr.views.show ipr.ipr_id %}">"{{ ipr.title|escape }}"</a>
 				 </td>
 			      </tr>
 			   {% endfor %}

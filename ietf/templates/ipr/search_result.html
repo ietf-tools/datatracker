@@ -32,7 +32,7 @@
 				    is related to
 				    {% for item in ipr.docs %}
 				       {% ifequal item ipr.last_draft %}<b> and </b>{% endifequal %}
-				       <b><i>{{ item.document }}, "{{ item.document.title }},"</i></b>{% if item.document.related %}, {{ item.document.relation }} {{ item.document.related  }}, "{{ item.document.related.title }}"{% endif %}
+				       <b><i>{{ item.document }}, "{{ item.document.title|escape }},"</i></b>{% if item.document.related %}, {{ item.document.relation }} {{ item.document.related  }}, "{{ item.document.related.title|escape }}"{% endif %}
 				    {% endfor %}
 				 {% endif %}
 			      {% endblock %}
@@ -42,7 +42,7 @@
 			<tr valign="top">
 			   <td width="100">{{ ipr.submitted_date }}</td>
 			   <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
-			   <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a></td>
+			   <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title|escape }}"</a></td>
 			</tr>
 			{% for item in ipr.updates.all %}
 			{% ifnotequal item ipr %}
@@ -50,8 +50,8 @@
 			   <td width="100">{{ item.updated.submitted_date }}</td>
 			   <td width="90"><li>ID # {{ item.updated.ipr_id }}</li></td>
 			   <td>
-			      IPR disclosure ID# {{ ipr.ipr_id }} <a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a>
-			      Updates <a href="{% url ietf.ipr.views.show ipr_id=item.ipr_id %}">{{ item.updated.title }}</a>
+			      IPR disclosure ID# {{ ipr.ipr_id }} <a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title|escape }}"</a>
+			      Updates <a href="{% url ietf.ipr.views.show ipr_id=item.ipr_id %}">{{ item.updated.title|escape }}</a>
 			   </td>
 			</tr>
 			{% endifnotequal %}
