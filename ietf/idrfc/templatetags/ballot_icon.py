@@ -152,6 +152,9 @@ def my_position(doc, user):
 def state_age_colored(doc):
     if not doc.in_ietf_process():
         return ""
+    if doc.is_id_wrapper and not doc.draft_status in ["Active", "RFC"]:
+        # Don't show anything for expired/withdrawn/replaced drafts
+        return ""
     main_state = doc.ietf_process.main_state
     sub_state = doc.ietf_process.sub_state
     if main_state in ["Dead","AD is watching","RFC Published"]:
