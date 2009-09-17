@@ -33,7 +33,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
-
+{% load ietf_filters %}
 {% block title %}RFC {{ doc.rfc_number }}{% endblock %}
 
 {% block morecss %}
@@ -161,7 +161,7 @@ Foo
 
 <div id="rfcText1">
 <div class="markup_draft">
-{{ content1 }}
+{{ content1|safe }}
 </div>
 </div>
 {% endblock %}
@@ -210,7 +210,7 @@ loadX("doc_comments", '/doc/rfc{{doc.rfc_number}}/_comments.data');
 {% block content_end %}
 <div id="rfcText2">
 <div class="markup_draft">
-{{ content2 }}
+{{ content2|safe }}
 </div>
 </div>
 {% endblock %}

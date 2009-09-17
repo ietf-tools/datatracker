@@ -9,7 +9,7 @@
 		  <tr valign="top" bgcolor="#dadada">
 		     <td width="100">{{ ipr.submitted_date }}</td>
 		     <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
-		     <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a></td>
+		     <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title|escape }}"</a></td>
 		  </tr>
 		  {% endfor %}
 
@@ -18,7 +18,7 @@
 		  <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
 		     <tr >
 			<td colspan="3">
-			   Search result on {{ doc|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.title }}"{% ifnotequal doc first %}{% if doc.related %}, {{ doc.relation }} {{ doc.related|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.title }}"{% endif %}
+			   Search result on {{ doc|rfcspace|lstrip:"0"|rfcnospace }}, "{{ doc.title|escape }}"{% ifnotequal doc first %}{% if doc.related %}, {{ doc.relation }} {{ doc.related|rfcspace|lstrip:"0"|rfcnospace  }}, "{{ doc.related.title }}"{% endif %}
 			   {% endifnotequal %}
 			</td>
 		     </tr>
@@ -27,7 +27,7 @@
 			   <tr valign="top">
 			      <td width="100">{{ ipr.submitted_date }}</td>
 			      <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
-			      <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a></td>
+			      <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title|escape }}"</a></td>
 			   </tr>
 			{% endfor %}
 		     {% else %}

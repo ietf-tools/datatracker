@@ -72,7 +72,7 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 {% if each_ballot.grouper %}
 <li> <a href="/iesg/ann/{{ each_ballot.grouper }}/">
 {% for item in each_ballot.list %}
-{{ item.title }} ({{ item.intended_status }})<br>
+{{ item.title|escape }} ({{ item.intended_status }})<br>
 {% endfor %}
 </a></li>
 {% endif %}
@@ -90,7 +90,7 @@ This page contains links to all IESG Protocol, Document, and Working Group Actio
 {% if each_ballot.grouper %}
 <li> <a href="/iesg/ann/{{ each_ballot.grouper }}/">
 {% for item in each_ballot.list %}
-{{ item.title }} ({{ item.intended_status }})<br>
+{{ item.title|escape }} ({{ item.intended_status }})<br>
 {% endfor %}
 </a></li>
 {% endif %}

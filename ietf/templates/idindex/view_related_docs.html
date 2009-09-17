@@ -8,9 +8,9 @@
 <table>
 <tr><td colspan="3"><h3>Total number of related documents found: {{ numdocs }}</h3></td></tr>
 {% for doc in related %}
-<tr bgcolor="#{% cycle efefff,dfdfff %}"><td colspan="3">{{ doc.0.filename }}, "{{ doc.0.title }}{% if doc.1 %},{% endif %}"
+<tr bgcolor="#{% cycle efefff,dfdfff %}"><td colspan="3">{{ doc.0.filename }}, "{{ doc.0.title|escape }}{% if doc.1 %},{% endif %}"
 {% if doc.1 %}
-{{ doc.1 }} {{ doc.2.filename }}, "{{ doc.2.title }}"
+{{ doc.1 }} {{ doc.2.filename }}, "{{ doc.2.title|escape }}"
 {% endif %}
 </td></tr>
 {% endfor %}

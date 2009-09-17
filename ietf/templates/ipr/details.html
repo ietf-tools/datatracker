@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 
-{% block title %}IPR Details - {{ ipr.title }}{% endblock %}
+{% block title %}IPR Details - {{ ipr.title|escape }}{% endblock %}
 {% block body_attributes %}
     {% if section_list.holder_contact %}onload="toggle_submitter_info('holder')"{% endif %}
     {% if section_list.ietf_contact %}onload="toggle_submitter_info('ietf')"{% endif %}
@@ -16,7 +16,7 @@
       <table cellpadding=0 cellspacing=0 border=0>
 	 <tr>
 	    <td width="720" align="center">
-	       <h3>{{ ipr.title }}</h3>
+	       <h3>{{ ipr.title|escape }}</h3>
 	    </td>
 	 </tr>
       </table>
@@ -59,12 +59,12 @@
 	     <br>
 	     This IPR disclosure updates IPR disclosure ID #{{ item.updated.ipr_id }},
 	     {% ifequal item.updated.status 0 %}
-		"<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
+		"<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title|escape }}</a>".
 	     {% else %}
 		{% ifequal item.updated.status 1 %}
-		   "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
+		   "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title|escape }}</a>".
 		{% else %}
-		   "{{ item.updated.title }}", which was removed at the request of the submitter.
+		   "{{ item.updated.title|escape }}", which was removed at the request of the submitter.
 		{% endifequal %}
 	     {% endifequal %}
 	     <br>
@@ -107,7 +107,7 @@
 	 </tr>
 	 <tr class="{% cycle row_parity %}">
 	    {% block section1_data %}
-	    <td class="fixwidth">Legal Name:</td>	<td><b> {{ ipr.legal_name }} </b></td>
+	    <td class="fixwidth">Legal Name:</td>	<td><b> {{ ipr.legal_name|escape }} </b></td>
 	    {% endblock %}
 	 </tr>
       </table>
@@ -123,14 +123,14 @@
 	    Patent Holder's Contact for License Application
 	    </th>
 	 </tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Name:</td>		<td><b>{{ ipr.holder_contact.name }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Title:</td>		<td><b>{{ ipr.holder_contact.title }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Department:</td>	<td><b>{{ ipr.holder_contact.department }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address1:</td>	<td><b>{{ ipr.holder_contact.address1 }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address2:</td>	<td><b>{{ ipr.holder_contact.address2 }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Telephone:</td>	<td><b>{{ ipr.holder_contact.telephone }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.holder_contact.fax }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Email:</td>		<td><b>{{ ipr.holder_contact.email }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Name:</td>		<td><b>{{ ipr.holder_contact.name|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Title:</td>		<td><b>{{ ipr.holder_contact.title|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Department:</td>	<td><b>{{ ipr.holder_contact.department|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address1:</td>	<td><b>{{ ipr.holder_contact.address1|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address2:</td>	<td><b>{{ ipr.holder_contact.address2|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Telephone:</td>	<td><b>{{ ipr.holder_contact.telephone|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.holder_contact.fax|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Email:</td>		<td><b>{{ ipr.holder_contact.email|escape }}</b></td></tr>
       </table>
    </blockquote>
    {% endif %}
@@ -146,14 +146,14 @@
 	    </th>
 	 </tr>
 	 {% if ipr.ietf_contact.name %}
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Name:</td>		<td><b>{{ ipr.ietf_contact.name }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Title:</td>		<td><b>{{ ipr.ietf_contact.title }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Department:</td>	<td><b>{{ ipr.ietf_contact.department }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address1:</td>	<td><b>{{ ipr.ietf_contact.address1 }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address2:</td>	<td><b>{{ ipr.ietf_contact.address2 }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Telephone:</td>	<td><b>{{ ipr.ietf_contact.telephone }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.ietf_contact.fax }}</b></td></tr>
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Email:</td>		<td><b>{{ ipr.ietf_contact.email }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Name:</td>		<td><b>{{ ipr.ietf_contact.name|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Title:</td>		<td><b>{{ ipr.ietf_contact.title|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Department:</td>	<td><b>{{ ipr.ietf_contact.department|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address1:</td>	<td><b>{{ ipr.ietf_contact.address1|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Address2:</td>	<td><b>{{ ipr.ietf_contact.address2|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Telephone:</td>	<td><b>{{ ipr.ietf_contact.telephone|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.ietf_contact.fax|escape }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="fixwidth">Email:</td>		<td><b>{{ ipr.ietf_contact.email|escape }}</b></td></tr>
 	 {% else %}
 	 <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</i></td></tr>
 	 {% endif %}
@@ -371,14 +371,14 @@
 	       {% endif %}
 	    </tbody>
 	    {% endif %}
-	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Name:</td>		<td><b>{{ ipr.submitter.name }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Title:</td>		<td><b>{{ ipr.submitter.title }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Department:</td>	<td><b>{{ ipr.submitter.department }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Address1:</td>	<td><b>{{ ipr.submitter.address1 }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Address2:</td>	<td><b>{{ ipr.submitter.address2 }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Telephone:</td>	<td><b>{{ ipr.submitter.telephone }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.submitter.fax }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Email:</td>		<td><b>{{ ipr.submitter.email }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Name:</td>		<td><b>{{ ipr.submitter.name|escape }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Title:</td>		<td><b>{{ ipr.submitter.title|escape }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Department:</td>	<td><b>{{ ipr.submitter.department|escape }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Address1:</td>	<td><b>{{ ipr.submitter.address1|escape }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Address2:</td>	<td><b>{{ ipr.submitter.address2|escape }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Telephone:</td>	<td><b>{{ ipr.submitter.telephone|escape }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Fax:</td>		<td><b>{{ ipr.submitter.fax|escape }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Email:</td>		<td><b>{{ ipr.submitter.email|escape }}</b></td></tr>
 	    {% else %}
 	    <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</i></td></tr>
 	    {% endif %}
