@@ -599,7 +599,12 @@ class IDInternal(models.Model):
     def comments(self):
 	# would filter by rfc_flag but the database is broken. (see
 	# trac ticket #96) so this risks collisions.
-	return self.documentcomment_set.all().order_by('-date','-time','-id')
+	# return self.documentcomment_set.all().order_by('-date','-time','-id')
+        #
+        # the obvious code above doesn't work with django.VERSION 1.0/1.1
+        # because "draft" isn't a true foreign key (when rfc_flag=1 the
+        # related InternetDraft object doesn't necessarily exist).
+        return DocumentComment.objects.filter(document=self.draft_id).order_by('-date','-time','-id')
     def ballot_set(self):
 	return IDInternal.objects.filter(ballot=self.ballot_id).order_by('-primary_flag')
     def ballot_primary(self):
