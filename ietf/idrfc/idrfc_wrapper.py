@@ -53,7 +53,7 @@ def jsonify_helper(obj, keys):
                 v = v()
             if v == None:
                 pass
-            elif isinstance(v, (types.StringType, types.IntType, types.BooleanType, types.LongType, types.ListType)):
+            elif isinstance(v, (types.StringType, types.IntType, types.BooleanType, types.LongType, types.ListType, types.UnicodeType)):
                 result[k] = v
             elif isinstance(v, date):
                 result[k] = str(v)
@@ -365,7 +365,7 @@ class IetfProcessData:
 
     def state_date(self):
         try:
-            return self._idinternal.documentcomment_set.filter(
+            return self._idinternal.comments().filter(
                 Q(comment_text__istartswith="Draft Added by ")|
                 Q(comment_text__istartswith="State Changes to ")|
                 Q(comment_text__istartswith="Sub state has been changed to ")|
