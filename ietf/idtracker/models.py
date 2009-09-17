@@ -259,9 +259,15 @@ class PersonOrOrgInfo(models.Model):
         self.last_name_key = self.last_name.upper()
         super(PersonOrOrgInfo, self).save()
     def __str__(self):
+        # For django.VERSION 0.96
 	if self.first_name == '' and self.last_name == '':
 	    return self.affiliation()
         return "%s %s" % ( self.first_name or "<nofirst>", self.last_name or "<nolast>")
+    def __unicode__(self):
+        # For django.VERSION 1.x
+	if self.first_name == '' and self.last_name == '':
+	    return unicode(self.affiliation())
+        return u"%s %s" % ( self.first_name or u"<nofirst>", self.last_name or u"<nolast>")
     def email(self, priority=1, type='INET'):
 	name = str(self)
 	try:
