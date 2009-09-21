@@ -1,8 +1,42 @@
 ietfdb (2.33)
 
-  * More fixes for Django 1.x. From Pasi.
+  From Pasi  <pasi.eronen@nokia.com>:
 
-  * Yet another bugfix for days-in-state information. From Pasi.
+  * Added narrative minutes template
+
+  * New script for comparing output from Django 0.96 vs 1.x
+
+  * Added a bunch of safe/escape tags for Django 1.x
+
+  * Handle persons with non-ASCII names correctly in Django 1.x
+
+  * Improve test coverage for meeting/, idrfc/
+
+  * Multiple bugfixes for days-in-state information
+
+  * Avoid using IDInternal.documentcomment_set -- it breaks in Django 1.x 
+    because the foreign key isn't really a foreign key
+
+  * Fix author name (Unicode) and pubdate (datetime vs. date) for Django 1.x
+
+  * Use IDInternal.comments method to avoid foreign key problems; support 
+    Unicode in jsonify_helper
+
+  * Comment out unused permission code (causes test failures on Django 1.x)
+
+  * Fixes so test suite runs better on Django 1.x
+
+  * Make IPR form work with both Django 0.96 and 1.x
+
+  From Henrik:
+
+  * Return 404 not found when the wg acronym given as part of a wg charter 
+    URL can't be found.
+
+  * Sometimes a documents lc_sent_date is None; don't let the last-call 
+    feed break if that happens.
+
+  * Add debian-style control file with metainformation.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>
 
