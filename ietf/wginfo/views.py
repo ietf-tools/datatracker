@@ -24,7 +24,7 @@ def wg_dir(request):
     return render_to_response('wginfo/wg-dir.html', {'wg_list': wgs}, RequestContext(request))
 
 def collect_wg_info(acronym):
-    wg = (IETFWG.objects.get(group_acronym__acronym=acronym))
+    wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym)
     return {'wg': wg}
 
 def wg_charter(request, wg="1"):
