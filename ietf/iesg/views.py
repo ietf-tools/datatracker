@@ -228,3 +228,9 @@ def telechat_agenda_documents(request):
         telechats.append({'date':date, 'docs':res})
     return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats})
                                                                                                         
+def telechat_agenda_scribe_template(request):
+    date = TelechatDates.objects.all()[0].date1
+    docs = agenda_docs(date, True)
+    return render_to_response('iesg/scribe_template.html', {'date':str(date), 'docs':docs}, context_instance=RequestContext(request) )
+    
+    
