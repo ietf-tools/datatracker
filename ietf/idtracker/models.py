@@ -496,7 +496,7 @@ class BallotInfo(models.Model):   # Added by Michael Lee
     an_sent = models.BooleanField()
     an_sent_date = models.DateField(null=True, blank=True)
     an_sent_by = models.ForeignKey(IESGLogin, db_column='an_sent_by', related_name='ansent') 
-    defer = models.BooleanField(null=True, blank=True)
+    defer = models.BooleanField(blank=True)
     defer_by = models.ForeignKey(IESGLogin, db_column='defer_by', related_name='deferred')
     defer_date = models.DateField(null=True, blank=True)
     approval_text = models.TextField(blank=True)
@@ -1052,7 +1052,7 @@ class IRTF(models.Model):
     acronym = models.CharField(blank=True, maxlength=25, db_column='irtf_acronym')
     name = models.CharField(blank=True, maxlength=255, db_column='irtf_name')
     charter_text = models.TextField(blank=True)
-    meeting_scheduled = models.BooleanField(null=True, blank=True)
+    meeting_scheduled = models.BooleanField(blank=True)
     def __str__(self):
 	return self.acronym
     class Meta:
