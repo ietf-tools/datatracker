@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import codecs
 import re
 import os.path
 import django.utils.html
@@ -57,7 +58,7 @@ def patent_file_search(url, q):
         #print "*** Checking file", fpath
         if os.path.exists(fpath):
             #print "*** Found file", fpath            
-            file = open(fpath)
+            file = codecs.open(fpath, mode='r', encoding='utf-8', errors='replace')
             text = file.read()
             file.close
             return q in text
