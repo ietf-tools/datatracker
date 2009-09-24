@@ -31,8 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django import template
-from ietf.idtracker.models import BallotInfo
-from ietf.idrfc.idrfc_wrapper import position_to_string, BALLOT_ACTIVE_STATES
+from ietf.idrfc.idrfc_wrapper import position_to_string
 from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
 
 register = template.Library()

@@ -1,14 +1,9 @@
 # Copyright The IETF Trust 2008, All Rights Reserved
 
-from ietf.idtracker.models import Area, AreaStatus, AreaDirector, IETFWG, WGChair
+from ietf.idtracker.models import Area, IETFWG
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext, loader
-from django.db.models import Q
 from django.http import HttpResponse
-from django.contrib.sites.models import Site
-from ietf.contrib import wizard, form_decorator
-from ietf.utils.mail import send_mail_subj
-from datetime import datetime
 
 def wg_summary_acronym(request):
     areas = Area.objects.filter(status='1')

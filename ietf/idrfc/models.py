@@ -94,7 +94,7 @@ class DraftVersions(models.Model):
     revision = models.CharField(maxlength=2)
     revision_date = models.DateField()
     def __str__(self):
-        return "DraftVersions"+filename+revision+str(revision_date)
+        return "DraftVersions"+self.filename+self.revision+str(self.revision_date)
     class Meta:
         db_table = "draft_versions_mirror"
     class Admin:

@@ -30,10 +30,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ietf.idtracker.models import InternetDraft, Rfc, IDInternal, BallotInfo, IESGDiscuss, IESGComment, Position, IESGLogin
-from ietf.idrfc.models import RfcIndex, RfcEditorQueue, DraftVersions
+from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGComment, IESGLogin
+from ietf.idrfc.models import RfcEditorQueue
 import re
-from datetime import date, timedelta
+from datetime import date
 from django.utils import simplejson
 from django.db.models import Q
 import types

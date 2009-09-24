@@ -35,7 +35,6 @@ from django.core import management
 management.setup_environ(settings)
 from django import db
 
-import re
 import urllib2
 from datetime import datetime
 import socket

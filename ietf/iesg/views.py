@@ -34,14 +34,14 @@
 
 # Create your views here.
 #from django.views.generic.date_based import archive_index
-from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup,IETFWG, Position
+from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup, Position
 from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
 from django.http import Http404, HttpResponse
 from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
-from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
+from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
 from ietf.idrfc.models import RfcIndex
 
 import datetime 

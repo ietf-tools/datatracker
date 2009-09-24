@@ -36,11 +36,10 @@ from django.shortcuts import render_to_response
 from django.db.models import Q
 from django.template import RequestContext
 
-from ietf.idtracker.models import IDState, IDStatus, IETFWG, IESGLogin, IDSubState, Area, InternetDraft, Rfc, IDInternal
+from ietf.idtracker.models import IDState, IESGLogin, IDSubState, Area, InternetDraft, Rfc, IDInternal
 from ietf.idrfc.models import RfcIndex
 from django.http import Http404, HttpResponse
 from ietf.idrfc.idrfc_wrapper import IdWrapper,RfcWrapper,IdRfcWrapper
-from ietf.idindex.models import orgs
 from ietf.utils import normalize_draftname
 
 class SearchForm(forms.Form):

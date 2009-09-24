@@ -33,8 +33,8 @@
 import re
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404
-from ietf.idtracker.models import InternetDraft, IETFWG, Area, IDInternal, BallotInfo
-from ietf.idrfc.models import RfcIndex, RfcEditorQueue, DraftVersions
+from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo
+from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.idrfc import markup_txt
 from ietf import settings

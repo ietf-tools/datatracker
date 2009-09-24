@@ -32,8 +32,8 @@
 
 from django import template
 from django.core.cache import cache
-from django.template import RequestContext, Context, loader
-from ietf.idtracker.models import InternetDraft, IETFWG, Area
+from django.template import loader
+from ietf.idtracker.models import IETFWG, Area
 
 register = template.Library()
 

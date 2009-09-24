@@ -4,7 +4,6 @@ from django.utils.feedgenerator import Atom1Feed
 from ietf.proceedings.models import WgProceedingsActivities
 from ietf.proceedings.models import Slide, WgAgenda, Proceeding
 from datetime import datetime, time
-from django.db import connection
 
 class LatestWgProceedingsActivity(Feed):
     feed_type = Atom1Feed
