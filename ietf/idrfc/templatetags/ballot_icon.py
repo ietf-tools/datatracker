@@ -78,8 +78,10 @@ def render_ballot_icon(context, doc):
             green = green + 1
         elif (p['pos'].discuss > 0):
             red = red + 1
-        else:
+        elif (p['pos'].recuse > 0) or (p['pos'].abstain > 0):
             gray = gray + 1
+        else:
+            blank = blank + 1
         if adId and (p['ad'].id == adId):
             my = position_to_string(p['pos'])
     if doc.is_rfc_wrapper:
