@@ -35,20 +35,22 @@
 from django.db import models
 from ietf.idtracker.models import Acronym
 
-class TelechatMinutes(models.Model):
-    telechat_date = models.DateField(null=True, blank=True)
-    telechat_minute = models.TextField(blank=True)
-    exported = models.IntegerField(null=True, blank=True)
-    def get_absolute_url(self):
-	return "/iesg/telechat/%d/" % self.id
-    def __str__(self):
-	return "IESG Telechat Minutes for %s" % self.telechat_date
-    class Meta:
-        db_table = 'telechat_minutes'
-        verbose_name = "Telechat Minute Text"
-        verbose_name_plural = "Telechat Minutes"
-    class Admin:
-	pass
+# This table is not used by any code right now, and according to Glen,
+# probably not currently (Aug 2009) maintained by the secretariat.
+#class TelechatMinutes(models.Model):
+#    telechat_date = models.DateField(null=True, blank=True)
+#    telechat_minute = models.TextField(blank=True)
+#    exported = models.IntegerField(null=True, blank=True)
+#    def get_absolute_url(self):
+#	return "/iesg/telechat/%d/" % self.id
+#    def __str__(self):
+#	return "IESG Telechat Minutes for %s" % self.telechat_date
+#    class Meta:
+#        db_table = 'telechat_minutes'
+#        verbose_name = "Telechat Minute Text"
+#        verbose_name_plural = "Telechat Minutes"
+#    class Admin:
+#	pass
 
 class TelechatDates(models.Model):
     date1 = models.DateField(primary_key=True, null=True, blank=True)
