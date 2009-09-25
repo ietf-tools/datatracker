@@ -2,6 +2,7 @@
 
 import sys
 import os
+import re
 
 # Warning: The following code assumes that this file is located in the svn
 # checkout directory, and hasn't been moved:
@@ -9,6 +10,7 @@ ietfpath = os.path.abspath(__file__.rsplit("/", 1)[0] + "/..")
 sys.path.append(ietfpath)
 
 os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+prefixes = os.environ.get("URLPREFIX", "").split()
 
 from difflib import unified_diff
 import urllib2 as urllib
@@ -28,6 +30,14 @@ def fetch(url):
     return html
 
 for codes, url, master in testtuples:
+    if prefixes:
+        match = False
+        for prefix in prefixes:
+            if re.match(prefix, url[1:]):
+                match = True
+                break
+        if not match:
+            continue
     print "Testing "+url
     if not "200" in codes:
         print "    Skipping, not 200 code"
