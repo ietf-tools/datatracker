@@ -2,12 +2,12 @@
 {% load ietf_filters %}
 {# Copyright The IETF Trust 2009, All Rights Reserved #}
 
-{% block title %} {{ wg.group_acronym.name }} ({{wg}}) Charter  {% endblock %}
+{% block title %} {{ wg.group_acronym.name|escape }} ({{wg}}) Charter  {% endblock %}
 
 {% block content %}
 {% ifequal wg.status.status 'Concluded' %}<div class="wgdone"> {%endifequal%}
 {% ifequal wg.status.status 'Dormant' %}<div class="wgdormant"> {%endifequal%}
-<h1>{{wg.group_acronym.name}} ({{wg}}) {{wg.group_type}}</h1>
+<h1>{{wg.group_acronym.name|escape}} ({{wg}}) {{wg.group_type}}</h1>
 
 <p>Last Modified: {{ wg.last_modified_date }}</p>
 <p>Status: {% ifequal wg.status.status 'Active' %}Active{%else%}
@@ -20,7 +20,7 @@
 <h2>Chair{{ wg.chairs.count|pluralize:",s" }}:</h2>
 <ul>
 {% for chair in wg.chairs %}
-  <li><a href="mailto:{{ chair.person.email.1 }}">{{ chair.person }} &lt;{{ chair.person.email.1 }}&gt;</a></li>
+  <li><a href="mailto:{{ chair.person.email.1 }}">{{ chair.person|escape }} &lt;{{ chair.person.email.1 }}&gt;</a></li>
 {% endfor %}
 </ul>
 
@@ -97,7 +97,7 @@
       {{ milestone.expected_due_date.year }}
       {% endif %}
     </td>
-    <td>{{ milestone.description }}
+    <td>{{ milestone.description|escape }}
   </td></tr>
 {% endfor %}
 <table>
@@ -105,7 +105,7 @@
 <h2>Internet-Drafts:</h2>
 <ul>
 {% for draft in wg.drafts %}
-  <li><a href="{{draft.doclink}}">{{draft.title}}</a> ({{ draft.txt_page_count }} pages)</li>
+  <li><a href="{{draft.doclink}}">{{draft.title|escape}}</a> ({{ draft.txt_page_count }} pages)</li>
 {% endfor %}
 </ul>
 
@@ -114,7 +114,7 @@
 <table>
 {% for rfc in wg.rfcs %}
   <tr><td>{{rfc}}{% if rfc.fyi_number %}<br> / FYI{{rfc.fyi_number}}{%endif%}{% if rfc.std_number %}<br> / STD{{rfc.std_number}}{%endif%}:
-  </td><td><a href="{{rfc.doclink}}">{{rfc.title}}</a> ({{rfc.txt_page_count}} pages)
+  </td><td><a href="{{rfc.doclink}}">{{rfc.title|escape}}</a> ({{rfc.txt_page_count}} pages)
   {% for obs in rfc.obsoletes%}
     - <font color="orange">{{obs.action}} RFC{{obs.rfc_acted_on_id}}</font>
   {% endfor %}
