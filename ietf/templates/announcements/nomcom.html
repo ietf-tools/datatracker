@@ -20,7 +20,7 @@
   {% for ann in regime.announcements %}
     <tr>
       <td>{{ ann.announced_date|date:"Y-M-d" }}</td>
-      <td style="max-width:50%"><a href="/ann/nomcom/{{ ann.announcement_id  }}/">{{ ann.subject }}</a></td>
+      <td style="max-width:50%"><a href="/ann/nomcom/{{ ann.announcement_id  }}/">{{ ann.subject|escape }}</a></td>
       <td>{{ ann.announced_to }}</td>
     <tr>
   {% endfor %}

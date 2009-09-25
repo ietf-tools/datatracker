@@ -39,18 +39,18 @@ a:hover {
   <tr>
   <td bgcolor="#efefef" width="25%">From: </td><td width="75%"><pre>{{ object.from_body|escape }} (<a href="mailto:{{ object.from_email|fix_ampersands }}">{{ object.person|escape }}</a>)</pre></td></tr>
   <tr>
-  <td bgcolor="#efefef">To: </td><td><pre>{{ object.to_body|escape }} ({{ object.to_poc|parse_email_list }})</pre></td></tr>
+  <td bgcolor="#efefef">To: </td><td><pre>{{ object.to_body|escape }} ({{ object.to_poc|parse_email_list|safe }})</pre></td></tr>
   <tr>
-  <td bgcolor="#efefef">Cc:</td><td><pre>{{ object.cc1|parse_email_list|make_one_per_line }}</pre></td></tr>
+  <td bgcolor="#efefef">Cc:</td><td><pre>{{ object.cc1|parse_email_list|make_one_per_line|safe }}</pre></td></tr>
   <tr>
   <td bgcolor="#efefef">Response Contact:</td>
   <td>
-<pre>{{ object.response_contact|parse_email_list|make_one_per_line }}</pre>
+<pre>{{ object.response_contact|parse_email_list|make_one_per_line|safe }}</pre>
   </td></tr>
   <tr>
   <td bgcolor="#efefef">Technical Contact:</td>
   <td>
-<pre>{{ object.technical_contact|parse_email_list|make_one_per_line }}</pre></td>
+<pre>{{ object.technical_contact|parse_email_list|make_one_per_line|safe }}</pre></td>
   </tr>
   <tr>
   <td bgcolor="#efefef">Purpose:</td><td><pre>{% if object.purpose_text %}{{ object.purpose_text }}{% else %}{{ object.purpose }}{% endif %}</pre></td></tr>

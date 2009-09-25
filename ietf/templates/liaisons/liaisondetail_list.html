@@ -10,25 +10,25 @@
 {% for liaison in object_list %}
 <tr>
 <td>{{ liaison.submitted_date|date:"F Y" }}</td>
-<td>{{ liaison.from_body }}</td>
+<td>{{ liaison.from_body|escape }}</td>
 <td>
 {% if liaison.by_secretariat %}
   {% if liaison.submitter_email %}
-    <a href="mailto:{{ liaison.submitter_email}}">{{ liaison.submitter_name }}</a>
+    <a href="mailto:{{ liaison.submitter_email}}">{{ liaison.submitter_name|escape }}</a>
   {% else %}
-    {{ liaison.submitter_name }}
+    {{ liaison.submitter_name|escape }}
   {% endif %}
 {% else %}
-  {{ liaison.to_body }}
+  {{ liaison.to_body|escape }}
 {% endif %}
 </td>
 <td>
 {% if liaison.by_secretariat %}
   {% for file in liaison.uploads_set.all %}
-    <a href="https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}">{{ file.file_title }}</a><br>
+    <a href="https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}">{{ file.file_title|escape }}</a><br>
   {% endfor %}
 {% else %}
-  <a href="{{ liaison.detail_id }}/">{{ liaison.title }}</a>
+  <a href="{{ liaison.detail_id }}/">{{ liaison.title|escape }}</a>
 {% endif %}
 </td>
 </tr>
