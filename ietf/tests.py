@@ -2,6 +2,7 @@
 
 import os
 import re
+import sys
 import traceback
 import urllib2 as urllib
 import httplib
@@ -19,6 +20,7 @@ from django.db import connection
 from django.core import management
 import ietf.urls
 from ietf.utils import log
+from ietf.utils.test_utils import RealDatabaseTest
 
 # This is needed so that "manage.py test ietf.UrlTestCase" works
 if django.VERSION[0] > 0:
@@ -30,6 +32,7 @@ if django.VERSION[0] > 0:
     ietf.models = types.ModuleType('ietf.models')
     # Fixture loading code uses the directory of this file, not the actual file
     ietf.models.__file__ = ietf.settings.__file__
+    sys.modules['ietf.models'] = ietf.models
     
 
 startup_database = settings.DATABASE_NAME  # The startup database name, before changing to test_...
@@ -255,7 +258,7 @@ def module_setup(module):
     settings.DATABASE_NAME = module.testdb
     connection.cursor()
 
-class UrlTestCase(TestCase):
+class UrlTestCase(TestCase,RealDatabaseTest):
 
     def __init__(self, *args, **kwargs):
         TestCase.__init__(self, *args, **kwargs)
@@ -265,17 +268,10 @@ class UrlTestCase(TestCase):
 
     def setUp(self):
         self.client = Client()
-
-        self.testdb = settings.DATABASE_NAME
-        connection.close()
-        settings.DATABASE_NAME = startup_database
-        connection.cursor()
+        self.setUpRealDatabase()
         
     def tearDown(self):
-        # Revert to using the test database
-        connection.close()
-        settings.DATABASE_NAME = self.testdb
-        connection.cursor()
+        self.tearDownRealDatabase()
         
 # ------------------------------------------------------------------------------
 # Test methods.
