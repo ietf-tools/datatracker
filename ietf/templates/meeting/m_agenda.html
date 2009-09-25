@@ -100,7 +100,7 @@
 	 </td>
 	 <td>
 	    {% if session.info.agenda_file %}<a href="http://tools.ietf.org/wg/{{session.info.acronym}}/agenda/">{%endif%}
-	       {{ session.info.acronym_name|escape|trunc:"20"|safe }}
+	       {{ session.info.acronym_name|truncate_ellipsis:"20"|safe }}
 	    {% if session.info.agenda_file %}</a>{%endif%}
 	 </td>
 	 {% endif %}

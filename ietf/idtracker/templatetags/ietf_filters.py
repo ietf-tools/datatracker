@@ -278,13 +278,13 @@ def truncatemore(text, arg):
         words.append(format % link)
     return ' '.join(words)
 
-@register.filter(name='trunc')
-def trunc(text, arg):
+@register.filter(name='truncate_ellipsis')
+def truncate_ellipsis(text, arg):
     num = int(arg)
     if len(text) > num:
-        return text[:num-1]+"&hellip;"
+        return escape(text[:num-1])+"&hellip;"
     else:
-        return text
+        return escape(text)
     
 @register.filter(name="wrap_long_lines")
 def wrap_long_lines(text):
