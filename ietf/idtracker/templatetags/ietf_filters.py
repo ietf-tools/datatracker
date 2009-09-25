@@ -11,6 +11,7 @@ except ImportError:
     from email import Utils as emailutils
 import re
 import datetime
+import types
 #from ietf.utils import log
 
 register = template.Library()
@@ -55,7 +56,7 @@ def parse_email_list(value):
 
 
     """
-    if value and type(value) == type(""): # testing for 'value' being true isn't necessary; it's a fast-out route
+    if value and isinstance(value, (types.StringType,types.UnicodeType)): # testing for 'value' being true isn't necessary; it's a fast-out route
         addrs = re.split(", ?", value)
         ret = []
         for addr in addrs:
@@ -85,7 +86,7 @@ def make_one_per_line(value):
     >>> make_one_per_line(None)
 
     """
-    if value and type(value) == type(""):
+    if value and isinstance(value, (types.StringType,types.UnicodeType)):
         return re.sub(", ?", "\n", value)
     else:
         return value
@@ -144,7 +145,7 @@ def format_textarea(value):
 @register.filter(name='bracket')
 def square_brackets(value):
     """Adds square brackets around text."""
-    if   type(value) == type(""):
+    if isinstance(value, (types.StringType,types.UnicodeType)):
 	if value == "":
 	     value = " "
         return "[ %s ]" % value
@@ -290,7 +291,7 @@ def truncate_ellipsis(text, arg):
 def wrap_long_lines(text):
     """Wraps long lines without loosing the formatting and indentation
        of short lines"""
-    if type(text) != type(""):
+    if not isinstance(text, (types.StringType,types.UnicodeType)):
         return text
     text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
     text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings
