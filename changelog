@@ -1,3 +1,28 @@
+ietfdb (2.34)
+
+  From Pasi:
+
+  * Updated IESG telechat narrative scribe template based on feedback
+
+  * Added more test cases, and added some enhancements to the test framework.
+
+  * Added more safe/escape tags for Django 1.x, and other fixes for Django 1.1
+
+  * Added support for comparing only a subset pages via URLPREFIX variable
+
+  * Removed a bunch of unused code/templates
+
+  * Fixed some ballot issues.
+
+  * Gracefully handle non-ASCII IPR disclosure files
+
+  From Henrik:
+
+  * Fixed grouping problems in 1wg-summary.txt due to incomplete grouping
+    key in template.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Oct 2009 15:21:12 +0200
+
 ietfdb (2.33)
 
   From Pasi  <pasi.eronen@nokia.com>:
@@ -38,7 +63,7 @@ ietfdb (2.33)
 
   * Add debian-style control file with metainformation.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Sep 2009 15:49:00 +0200
 
 ietfdb (2.32)
 
