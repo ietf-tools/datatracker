@@ -12,12 +12,13 @@ from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, Rfc
 from ietf.idindex.forms import IDIndexSearchForm
 from ietf.idindex.models import alphabet, orgs, orgs_dict
 from ietf.utils import orl, flattenl, normalize_draftname
+import ietf
 
 base_extra = { 'alphabet': alphabet, 'orgs': orgs }
 
 def wgdocs_redir(request, id):
     group = get_object_or_404(Acronym, acronym_id=id)
-    return HttpResponsePermanentRedirect(reverse(wgdocs, args=[group.acronym]))
+    return HttpResponsePermanentRedirect(reverse(wgdocs, urlconf="ietf.idindex.urls", args=[group.acronym]))
 
 def wgdocs(request, wg):
     try:
@@ -220,7 +221,7 @@ def related_docs(startdoc):
 
 def redirect_related(request, id):
     doc = get_object_or_404(InternetDraft, id_document_tag=id)
-    return HttpResponsePermanentRedirect(reverse(view_related_docs, args=[doc.filename]))
+    return HttpResponsePermanentRedirect(reverse(view_related_docs, urlconf="ietf.idindex.urls", args=[doc.filename]))
 
 def view_related_docs(request, slug):
     startdoc = get_object_or_404(InternetDraft, filename=slug)
