@@ -331,6 +331,7 @@ class UrlTestCase(TestCase,RealDatabaseTest):
         # This test should be sorted after the other tests which retrieve URLs
         note("\nTesting URL reachability of %s URLs:" % len(module.reachability) )
         for url in module.reachability:
+            self.client = Client()
             if url:
                 code, source = module.reachability[url]
                 if not code:
@@ -342,7 +343,6 @@ class UrlTestCase(TestCase,RealDatabaseTest):
                         except AssertionError:
                             note("Exception for URL '%s'" % url)
                             traceback.print_exc()
-                            self.client = Client()
                             code = "Exc"
                     elif url.startswith("mailto:"):
                         continue
@@ -356,12 +356,10 @@ class UrlTestCase(TestCase,RealDatabaseTest):
                         except urllib.URLError, e:
                             note("Exception for URL '%s'" % url)
                             traceback.print_exc()
-                            self.client = Client()
                             code = "Exc"
                         except httplib.InvalidURL, e:
                             note("Exception for URL '%s'" % url)
                             traceback.print_exc()
-                            self.client = Client()
                             code = "Exc"
             else:
                 code = "000"
@@ -375,6 +373,7 @@ class UrlTestCase(TestCase,RealDatabaseTest):
     def doRedirectsTest(self, lst):
         response_count = {}
         for codes, url, master in lst:
+            self.client = Client()
             if "skipredir" in codes or "Skipredir" in codes or "skipredirect" in codes:
                 print "Skipping %s" % (url)
 	    elif url and master:
@@ -420,6 +419,7 @@ class UrlTestCase(TestCase,RealDatabaseTest):
     def doUrlsTest(self, lst):
         response_count = {}
         for codes, url, master in lst:
+            self.client = Client()
             if "skip" in codes or "Skip" in codes:
                 print "Skipping %s" % (url)
             elif url:
