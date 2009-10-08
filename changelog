@@ -21,7 +21,7 @@ ietfdb (2.34)
   * Fixed grouping problems in 1wg-summary.txt due to incomplete grouping
     key in template.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  08 Oct 2009 15:21:12 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Oct 2009 15:26:42 +0200
 
 ietfdb (2.33)
 
