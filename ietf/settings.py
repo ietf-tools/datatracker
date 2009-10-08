@@ -139,8 +139,7 @@ INSTALLED_APPS = (
     'ietf.proceedings',
     'ietf.redirects',
     'ietf.idrfc',
-# not yet merged from the Vancouver branch    
-#    'ietf.wgcharter',
+    'ietf.wginfo',
 )
 
 INTERNAL_IPS = (
