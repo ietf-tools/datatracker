@@ -21,13 +21,16 @@ def getcaller():
     return (pmodule, pclass, pfunction, pfile, pline)
 
 def log(msg):
-    mod, cls, func, file, line = getcaller()
-    file = os.path.abspath(file)
-    file = file.replace(settings.BASE_DIR, "")
-    if func == "<module>":
-        where = ""
-    else:
-        where = " in " + func + "()"
+    try:
+        mod, cls, func, file, line = getcaller()
+        file = os.path.abspath(file)
+        file = file.replace(settings.BASE_DIR, "")
+        if func == "<module>":
+            where = ""
+        else:
+            where = " in " + func + "()"
+    except IndexError:
+        file, line, where = "/<UNKNOWN>", 0, ""
     syslog.syslog("ietf%s(%d)%s: %s" % (file, line, where, msg))
 
 log("IETFdb v%s started" % ietf.__version__)
