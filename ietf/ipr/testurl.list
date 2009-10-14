@@ -63,12 +63,8 @@
 200	/ipr/search/?option=ipr_title_search&ipr_title_search=nortel
 200	/ipr/search/?option=ipr_title_search&ipr_title_search=nortelxz # Empty result
 
-
 200	/ipr/about/
 200	/ipr/by-draft/
-200	/ipr/by-date/
-#200	/ipr/y/2006/
-#200	/ipr/y/2006/feb/
 
 200	/feed/ipr/
 200	/sitemap-ipr.xml
