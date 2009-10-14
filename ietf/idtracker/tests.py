@@ -3,6 +3,7 @@
 #import doctest
 #import templatetags.ietf_filters
 from django.test import TestCase
+from ietf.utils.test_utils import SimpleUrlTestCase
 
 class IDTrackerTest(TestCase):
     def testDoctest(self):
@@ -12,3 +13,7 @@ class IDTrackerTest(TestCase):
 
         #doctest.testmod(templatetags.ietf_filters)
         pass
+
+class IdTrackerUrlTestCase(SimpleUrlTestCase):
+    def testUrls(self):
+        self.doTestUrls(__file__)

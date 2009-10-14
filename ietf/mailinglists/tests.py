@@ -34,6 +34,11 @@ import unittest
 import re
 from django.test.client import Client
 from ietf.utils.test_utils import RealDatabaseTest
+from ietf.utils.test_utils import SimpleUrlTestCase
+
+class MailingListsUrlTestCase(SimpleUrlTestCase):
+    def testUrls(self):
+        self.doTestUrls(__file__)
 
 class NonWgWizardAddTest(unittest.TestCase):
     def testAddStep1(self):

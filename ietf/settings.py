@@ -158,9 +158,7 @@ INTERNAL_IPS = (
 SERVER_MODE = 'development'
 
 # The name of the method to use to invoke the test suite
-TEST_RUNNER = 'ietf.tests.run_tests'
-
-TEST_REFERENCE_URL_PREFIX = os.environ.get("IETFDB_REF_PREFIX","") or 'https://datatracker.ietf.org/'
+TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
