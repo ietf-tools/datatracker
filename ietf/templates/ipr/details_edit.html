@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load ietf_filters %}
-{% block title %}IPR Details - {{ ipr.title }}{% endblock %}
+{% block title %}IPR Details - Form{% endblock %}
 {% block body_attributes %}
     {% if section_list.holder_contact %}onload="toggle_submitter_info('holder')"{% endif %}
     {% if section_list.ietf_contact %}onload="toggle_submitter_info('ietf')"{% endif %}
@@ -12,16 +12,6 @@
 {% include "ipr/js.html" %}
 
    <blockquote style="margin-bottom: 0px;">
-      {% if section_list.title %}
-      <table cellpadding=0 cellspacing=0 border=0>
-	 <tr>
-	    <td width="720" align="center">
-	       <h3>{{ ipr.title }}</h3>
-	    </td>
-	 </tr>
-      </table>
-      <hr />
-      {% endif %}
       {% if section_list.legacy_intro %}
       <font size="3">
 	 This IPR disclosure was submitted by e-mail.<br>
@@ -39,11 +29,6 @@
 	 <a href="{{ipr.legacy_url_0}}">{{ipr.legacy_url_0}}</a>.
 	 <br>
       </font>
-      {% endif %}
-      {% if section_list.new_intro %}
-      <font size="3"> Only those sections of the "Patent Disclosure and Licensing Declaration
-	 Template for {{ section_list.disclosure_type }}" where the submitter provided
-	 information are displayed.</font><br>
       {% endif %}
       {% if section_list.new_intro or section_list.legacy_intro %}
 	 {% if ipr.legacy_title_1 %}
