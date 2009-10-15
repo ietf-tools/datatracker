@@ -41,7 +41,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
   <br><a href="http://tools.ietf.org/html/{{doc.obj.document.filename}}-{{doc.obj.document.revision}}.html">{{doc.obj.document.filename}}-{{doc.obj.document.revision}}</a>
 {% endif %}  <br>Token: {{ doc.obj.token_name|escape }}    
 {% if doc.obj.note %}{# note: note is not escaped #}  <br>Note: {{ doc.obj.note }}
-{% endif %}{% for ipr in doc.obj.draft.ipr.all %}{% ifequal ipr.ipr.status 1 %}  <br>IPR: <a href="http://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title }}</a>{% endifequal %}
+{% endif %}{% for ipr in doc.obj.draft.ipr.all %}{% ifequal ipr.ipr.status 1 %}  <br>IPR: <a href="http://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a>{% endifequal %}
 {% endfor %}  {% if doc.obj.ballot.active %}<br><b>Discusses/comments</b> (from <a href="http://datatracker.ietf.org/idtracker/ballot/{{ doc.obj.ballot.ballot}}/">ballot {{doc.obj.ballot.ballot }})</a>:
   <ol>
 {% for position in doc.obj.ballot.positions.all|dictsort:"ad.last_name" %}{% ifequal position.discuss 1 %}    <li><a href="#{{doc.obj.document.filename}}+{{position.ad|slugify}}+discuss">{{ position.ad }}:{% for item in doc.obj.ballot.discusses.all %}{% ifequal position.ad item.ad %} Discuss [{{ item.date }}]</a>:<br>
