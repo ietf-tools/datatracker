@@ -1,13 +1,13 @@
 302	/meeting/
 200	/meeting/agenda/
-200	/meeting/agenda/?_testiphone
+200	/meeting/agenda/?_testiphone=1
 200	/meeting/agenda.html
 200	/meeting/agenda.txt
 200	/meeting/75/agenda.html
-200	/meeting/75/agenda.html?_testiphone
+200	/meeting/75/agenda.html?_testiphone=1
 200	/meeting/75/agenda.txt
 200	/meeting/75/materials.html
-200	/meeting/75/materials.html?_testoverride
+200	/meeting/75/materials.html?_testoverride=1
 404	/meeting/99/agenda.html
 404	/meeting/99/agenda.txt
 404	/meeting/99/materials.html

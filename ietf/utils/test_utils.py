@@ -179,10 +179,12 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
         except e:
             print "    Error retrieving %s: %s" % (refurl, e)
         testhtml = response.content
+        #print "REFERENCE:\n----------------------\n"+refhtml+"\n-------------\n"
+        #print "TEST:\n----------------------\n"+testhtml+"\n-------------\n"
 
         list0 = refhtml.split("\n")
         list1 = testhtml.split("\n")
-        diff = "\n".join(unified_diff(list0, list1, url, refurl, "", "", 0, lineterm=""))
+        diff = "\n".join(unified_diff(list0, list1, refurl, url, "", "", 0, lineterm=""))
         if diff:
             print "    Differences found:"
             print diff

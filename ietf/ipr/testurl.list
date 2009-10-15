@@ -16,9 +16,9 @@
 200	/ipr/new-generic/
 200	/ipr/new-specific/		
 200	/ipr/new-third-party/
-200	/ipr/new-generic/?_testpost
-200	/ipr/new-specific/?_testpost
-200	/ipr/new-third-party/?_testpost
+200	/ipr/new-generic/?_testpost=1
+200	/ipr/new-specific/?_testpost=1
+200	/ipr/new-third-party/?_testpost=1
 
 200	/ipr/update/			
 200	/ipr/update/657/ # Generic
@@ -26,12 +26,12 @@
 200	/ipr/update/844/ # Specific	
 404	/ipr/update/1066/ # Removed test record
 
-200	/ipr/update/657/?_testpost # Generic
-200	/ipr/update/820/?_testpost # Third-party		
-200	/ipr/update/844/?_testpost # Specific	
-200	/ipr/update/657/?_testpost&email=test@example.com&name=Test&telephone=123&update_auth=on
-200	/ipr/update/820/?_testpost&email=test@example.com&name=Test&telephone=123&update_auth=on
-200	/ipr/update/844/?_testpost&email=test@example.com&name=Test&telephone=123&update_auth=on
+200	/ipr/update/657/?_testpost=1 # Generic
+200	/ipr/update/820/?_testpost=1 # Third-party		
+200	/ipr/update/844/?_testpost=1 # Specific	
+200	/ipr/update/657/?_testpost=1&email=test@example.com&name=Test&telephone=123&update_auth=on
+200	/ipr/update/820/?_testpost=1&email=test@example.com&name=Test&telephone=123&update_auth=on
+200	/ipr/update/844/?_testpost=1&email=test@example.com&name=Test&telephone=123&update_auth=on
 
 200	/ipr/search/
 302	/ipr/search/?option=document_search # incomplete argument set gives redirect
