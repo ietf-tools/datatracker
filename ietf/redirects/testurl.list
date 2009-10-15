@@ -1,6 +1,0 @@
-#skip	/cgi-bin/
-#skip	/public/
-#skip	/public/desc.cgi
-
-# Test duplication of the script name
-#301,skipdiff	/drafts/12226/	https://datatracker.ietf.org/public/idindex.cgi/idindex.cgi?command=id_detail&id=12226
