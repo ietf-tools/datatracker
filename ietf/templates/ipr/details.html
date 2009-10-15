@@ -77,9 +77,9 @@
 	     <br>
 	     This IPR disclosure has been updated by IPR disclosure ID #{{ item.ipr.ipr_id }},
 	     {% ifequal item.status_to_be 1 %}
-		"<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>".
+		"<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title|escape }}</a>".
 	     {% else %}
-		"{{ item.ipr.title }}", which was removed at the request of the submitter.
+		"{{ item.ipr.title|escape }}", which was removed at the request of the submitter.
 	     {% endifequal %}
 	     <br>
 	  </font>
@@ -214,7 +214,7 @@
 	    </tbody>
 	    <tr class="{% cycle row_parity %}"><td>Date(s) granted or applied for:	</td><td><b>{{ ipr.date_applied }}</b></td></tr>
 	    <tr class="{% cycle row_parity %}"><td>Country:				</td><td><b>{{ ipr.country }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td>Additional Notes:		</td><td><b>{{ ipr.notes }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td>Additional Notes:		</td><td><b>{{ ipr.notes|escape|linebreaks }}</b></td></tr>
 	    <tr class="{% cycle row_parity %}">
 	       <td colspan="2">
 		     B. Does this disclosure relate to an unpublished pending patent application?:
@@ -242,7 +242,7 @@
 		     </td>
 		  </tr>
 		  {% if ipr.document_sections %}
-		  <tr class="{% cycle row_parity %}"><td class="fixwidth"></td><td><b>{{ ipr.document_sections }}</b></td></tr>
+		  <tr class="{% cycle row_parity %}"><td class="fixwidth"></td><td><b>{{ ipr.document_sections|escape|linebreaks }}</b></td></tr>
 		  {% else %}
 		  <tr class="{% cycle row_parity %}"><td class="fixwidth"></td><td></span><i>No information submitted</i></td></tr>
 		  {% endif %}
@@ -299,7 +299,7 @@
 		  </td>
 	       </tr>
 	       {% if ipr.comments %}
-	       <tr ><td class="fixwidth"> </td><td><b>{{ ipr.comments }}</b></td></tr>
+	       <tr ><td class="fixwidth"> </td><td><b>{{ ipr.comments|escape|linebreaks }}</b></td></tr>
 	       {% else %}
 	       <tr ><td class="fixwidth"> </td><td><i>No information submitted</i></td></tr>
 	       {% endif %}
@@ -397,7 +397,7 @@
 	       </th>
 	    </tr>
 	       {% if ipr.other_notes %}
-	       <tr class="{% cycle row_parity %}"><td class="fixwidth"> </td><td><b>{{ ipr.other_notes }}</b></td></tr>
+	       <tr class="{% cycle row_parity %}"><td class="fixwidth"> </td><td><b>{{ ipr.other_notes|escape|linebreaks }}</b></td></tr>
 	       {% else %}
 	       <tr class="{% cycle row_parity %}"><td colspan="2"><i>No information submitted</i></td></tr>
 	       {% endif %}

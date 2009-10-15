@@ -87,12 +87,6 @@ def show(request, ipr_id=None, removed=None):
             ipr.submitter = contact
         else:
             raise KeyError("Unexpected contact_type (%s) in ipr_contacts for ipr_id=%s" % (contact.contact_type, ipr.ipr_id))
-    # do escaping and line-breaking here instead of in the template,
-    # so that we can use the template for the form display, too.
-    ipr.notes = linebreaks(escape(ipr.notes))
-    ipr.document_sections = linebreaks(escape(ipr.document_sections))
-    ipr.comments = linebreaks(escape(ipr.comments))
-    ipr.other_notes = linebreaks(escape(ipr.other_notes))
 
     if ipr.licensing_option:
         text = dict(LICENSE_CHOICES)[ipr.licensing_option]
