@@ -35,6 +35,16 @@ import unittest
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, split_url
 
 REDIRECT_TESTS = {
+
+    # announcements
+
+    '/public/show_nomcom_message.cgi?id=1799':
+        '/ann/nomcom/1799/',
+
+    # idindex/idtracker
+    
+    '/':
+        '/idtracker/',
     '/public/pidtracker.cgi?command=view_id&dTag=11171&rfc_flag=0':
         '/idtracker/11171/',
     '/public/idindex.cgi?command=do_search_id&filename=draft-mills-sntp-v4-00.txt':
@@ -48,7 +58,27 @@ REDIRECT_TESTS = {
     '/public/idindex.cgi?command=view_related_docs&id=10845':
         '/drafts/10845/related/',
     '/public/idindex.cgi?command=id_detail&filename=draft-l3vpn-as4octet-ext-community':
-        '/drafts/draft-l3vpn-as4octet-ext-community/'
+        '/drafts/draft-l3vpn-as4octet-ext-community/',
+
+    # ipr
+
+    '/public/ipr_disclosure.cgi':
+        '/ipr/about/',
+    '/public/ipr_detail_show.cgi?ipr_id=693':
+        '/ipr/693/',
+    
+    # liaisons
+
+    '/public/liaison_detail.cgi?detail_id=340':
+        '/liaison/340/',
+
+    # meeting
+
+    '/public/meeting_agenda_html.cgi?meeting_num=72':
+        '/meeting/72/agenda.html',
+    '/public/meeting_materials.cgi?meeting_num=76':
+        '/meeting/76/materials.html',
+
     }
 
 class RedirectsTestCase(unittest.TestCase, RealDatabaseTest):
