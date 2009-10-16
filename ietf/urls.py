@@ -42,7 +42,6 @@ urlpatterns = patterns('',
 		{'sitemaps': sitemaps}),
       (r'^ann/', include('ietf.announcements.urls')),
       (r'^idtracker/', include('ietf.idtracker.urls')),
-      #(r'^my/', include('ietf.my.urls')),
       (r'^drafts/', include('ietf.idindex.urls')),
       (r'^iesg/', include('ietf.iesg.urls')),
       (r'^liaison/', include('ietf.liaisons.urls')),
@@ -56,20 +55,8 @@ urlpatterns = patterns('',
 
       (r'^$', 'ietf.redirects.views.redirect'),
 
-     # Uncomment this for review pages:
-     #(r'^review/$', 'ietf.utils.views.review'),
-     #(r'^review/all/$', 'ietf.utils.views.all'),
-     #(r'^review/(?P<page>[0-9a-f]+)/$', 'ietf.utils.views.review'),
-     #(r'^review/top/(?P<page>[0-9a-f]+)/$', 'ietf.utils.views.top'),
-
      # Google webmaster tools verification url
      (r'^googlea30ad1dacffb5e5b.html', 'django.views.generic.simple.direct_to_template', { 'template': 'googlea30ad1dacffb5e5b.html' }),
-
-     # ekr, fluffy, wgcharter tool
-#     (r'^wgcharter/', include('ietf.wgcharter.urls')),                       
-     
-     # Uncomment this for pre-approval tool for initial Internet-Drafts
-     #(r'^wg/', include('ietf.wg.urls')),                       
 
      # Django 0.96 hardcodes /accounts/; we want to use
      # /account/.
