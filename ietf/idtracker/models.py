@@ -749,6 +749,8 @@ class IDAuthor(models.Model):
 	    return self.person.emailaddress_set.filter(type='I-D').get(priority=self.document_id).address
 	except EmailAddress.DoesNotExist:
 	    return None
+    def id_index_sort_key(self):
+        return "%08d%08d" % (self.author_order, self.person_id)
     class Meta:
         db_table = 'id_authors'
 	verbose_name = "I-D Author"

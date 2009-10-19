@@ -4,7 +4,7 @@ import textwrap
 import django
 from django import template
 from django.utils.html import escape, fix_ampersands, linebreaks
-from django.template.defaultfilters import linebreaksbr
+from django.template.defaultfilters import linebreaksbr, wordwrap
 try:
     from email import utils as emailutils
 except ImportError:
@@ -312,6 +312,34 @@ def wrap_long_lines(text):
             line = line[breakpoint+1:]
         filled += [ line.rstrip() ]
     return "\n".join(filled)
+
+@register.filter(name="id_index_file_types")
+def id_index_file_types(text):
+    r = ".txt"
+    if text.find("txt") < 0:
+        return r
+    if text.find("ps") >= 0:
+        r = r + ",.ps"
+    if text.find("pdf") >= 0:
+        r = r + ",.pdf"
+    return r
+
+@register.filter(name="id_index_wrap")
+def id_index_wrap(text):
+    x = wordwrap(text, 72)
+    x = x.replace("\n", "\n  ")
+    return "  "+x.strip()
+
+@register.filter(name="id_abstracts_wrap")
+def id_abstracts_wrap(text):
+    text = text.replace("\n", " ")
+    x = wordwrap(text, 70)
+    x = x.replace("\n", "\n    ")
+    return "    "+x.strip()
+
+@register.filter(name="id_index_underline")
+def id_index_underline(text):
+    return "-"*len(text.strip())
 
 @register.filter(name='greater_than')
 def greater_than(x, y):

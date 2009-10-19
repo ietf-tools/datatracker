@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+from django.conf import settings
 from django.conf.urls.defaults import patterns
 from ietf.idtracker.models import InternetDraft
 from ietf.idindex import views
@@ -32,3 +33,10 @@ urlpatterns = patterns('',
      (r'^all_id.html$', views.all_id, { 'template_name': 'idindex/all_id.html' }),
      (r'^$', views.search),
 )
+
+if settings.SERVER_MODE != 'production':
+    urlpatterns += patterns('',
+        (r'^_test/all_id.txt$', views.test_all_id_txt),                        
+        (r'^_test/id_index.txt$', views.test_id_index_txt), 
+        (r'^_test/id_abstracts.txt$', views.test_id_abstracts_txt)   
+    )
