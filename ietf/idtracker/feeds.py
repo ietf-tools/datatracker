@@ -39,7 +39,7 @@ class DocumentComments(Feed):
 	return obj.public_comments().order_by("-date","-id")
 
     def item_pubdate(self, item):
-	time = datetime.time(*[int(t) for t in item.time.split(":")])
+        time = datetime.time(*[(t and int(t) or 0) for t in item.time.split(":")])
 	return datetime.datetime.combine(item.date, time)
 
     def item_author_name(self, item):
