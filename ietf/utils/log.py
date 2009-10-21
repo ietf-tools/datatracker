@@ -21,6 +21,8 @@ def getcaller():
     return (pmodule, pclass, pfunction, pfile, pline)
 
 def log(msg):
+    if isinstance(msg, unicode):
+        msg = msg.encode('unicode_escape')
     try:
         mod, cls, func, file, line = getcaller()
         file = os.path.abspath(file)
