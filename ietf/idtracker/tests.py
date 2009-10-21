@@ -9,7 +9,8 @@ class TemplateTagTest(unittest.TestCase):
     def testTemplateTags(self):
         print "Testing ietf_filters"
         #doctest.testmod(ietf_filters,verbose=True)
-        doctest.testmod(ietf_filters)
+        (failures, tests) = doctest.testmod(ietf_filters)
+        self.assertEqual(failures, 0)
         print "OK (ietf_filters)"
 
 class IdTrackerUrlTestCase(SimpleUrlTestCase):
