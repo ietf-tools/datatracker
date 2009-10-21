@@ -30,7 +30,7 @@ if django.VERSION[0] == 0:
             return forms.IntegerField(widget=forms.RadioSelect(choices=models.LICENSE_CHOICES), required=False, **kwargs)
         if field.name in ["is_pending", "applies_to_all"]:
             return forms.IntegerField(widget=forms.RadioSelect(choices=((1, "YES"), (2, "NO"))), required=False, **kwargs)
-        if field.name in ("rfc_number", "id_document_tag"): #, 'legacy_url_0','legacy_url_1','legacy_title_1','legacy_url_2','legacy_title_2')
+        if field.name in ("rfc_number", "id_document_tag"): #, 'legacy_url_0','legacy_url_1','legacy_title_1','legacy_url_2','legacy_title_2'):
             return None
         return field.formfield(**kwargs)
 
