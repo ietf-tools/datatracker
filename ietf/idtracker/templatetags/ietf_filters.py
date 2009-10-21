@@ -120,10 +120,6 @@ def timesum(value):
         sum += float(v['time'])
     return sum
 
-@register.filter(name='text_to_html')
-def text_to_html(value):
-    return keep_spacing(linebreaks(escape(value)))
-
 @register.filter(name='keep_spacing')
 def keep_spacing(value):
     """
@@ -238,13 +234,6 @@ def thisyear(date):
 	return date.year == datetime.date.today().year
     return True
 
-@register.filter(name='inpast')
-def inpast(date):
-    """Returns a boolean of whether or not the argument is in the past."""
-    if date:
-	return date < datetime.datetime.now()
-    return True
-
 @register.filter(name='timesince_days')
 def timesince_days(date):
     """Returns the number of days since 'date' (relative to now)"""
@@ -252,32 +241,6 @@ def timesince_days(date):
         date = datetime.datetime(date.year, date.month, date.day)
     delta = datetime.datetime.now() - date
     return delta.days
-
-@register.filter(name='truncatemore')
-def truncatemore(text, arg):
-    """Truncate the text if longer than 'words', and if truncated,
-    add a link to the full text (given in 'link').
-    """
-    from django.utils.text import truncate_words
-    args = arg.split(",")
-    if len(args) == 3:
-        count, link, format = args
-    elif len(args) == 2:
-        format = "[<a href='%s'>more</a>]"
-        count, link = args
-    else:
-        return text
-    try:
-        length = int(count)
-    except ValueError: # invalid literal for int()
-        return text # Fail silently.
-    if not isinstance(text, basestring):
-        text = str(text)
-    words = text.split()
-    if len(words) > length:
-        words = words[:length]
-        words.append(format % link)
-    return ' '.join(words)
 
 @register.filter(name='truncate_ellipsis')
 def truncate_ellipsis(text, arg):
