@@ -24,7 +24,6 @@ urlpatterns = patterns('django.views.generic.simple',
      (r'^help/evaluation/$', 'direct_to_template', { 'template': 'idtracker/view_evaluation_desc.html' }),
 )
 urlpatterns += patterns('',
-     (r'^feedback/$', views.send_email),
      (r'^status/$', views.status),
      (r'^status/last-call/$', views.last_call),
 )

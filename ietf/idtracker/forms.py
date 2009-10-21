@@ -17,15 +17,3 @@ class IDSearch(forms.Form):
 	self.fields['search_job_owner'].choices = [('', '--All/Any')] + [(ad.id, "%s, %s" % (ad.last_name, ad.first_name)) for ad in IESGLogin.objects.filter(user_level=1).order_by('last_name')] + [('-99', '------------------')] + [(ad.id, "%s, %s" % (ad.last_name, ad.first_name)) for ad in IESGLogin.objects.filter(user_level=2).order_by('last_name')]
 	self.fields['sub_state_id'].choices = [('', '--All Substates'), ('0', 'None')] + [(state.sub_state_id, state.sub_state) for state in IDSubState.objects.all()]
 
-class EmailFeedback(forms.Form):
-    category = forms.CharField(widget=forms.HiddenInput())
-    name = forms.CharField(label='Your Name')
-    email = forms.EmailField(label='Your Email')
-    subject = forms.CharField(widget=forms.TextInput(attrs={'size': 72}))
-    message = forms.CharField(widget=forms.Textarea(attrs={'rows': 10, 'cols': 70}))
-    def clean_category(self):
-	value = self.clean_data.get('category', 'bugs')
-	if value not in ('bugs', 'discuss'):
-	    raise forms.ValidationError, 'Unknown category, try "discuss" or "bugs".'
-	return value
-

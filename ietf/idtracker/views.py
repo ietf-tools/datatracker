@@ -9,8 +9,7 @@ from django.db.models import Q
 from django.core.urlresolvers import reverse
 from django.views.generic.list_detail import object_detail, object_list
 from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState, Rfc, DocumentWrapper
-from ietf.idtracker.forms import IDSearch, EmailFeedback
-from ietf.utils.mail import send_mail_text
+from ietf.idtracker.forms import IDSearch
 from ietf.utils import normalize_draftname
 import re
 
@@ -191,20 +190,6 @@ def comment(request, slug, object_id, queryset):
 	draft = get_object_or_404(InternetDraft, filename=slug)
 	queryset = queryset.filter(document=draft.id_document_tag)
     return object_detail(request, queryset=queryset, object_id=object_id)
-
-def send_email(request):
-    if request.method == 'POST':
-	form = EmailFeedback(request.POST)
-	cat = request.POST.get('category', 'bugs')
-	if form.is_valid():
-	    send_mail_text(request, "idtracker-%s@ietf.org" % form.clean_data['category'], (form.clean_data['name'], form.clean_data['email']), '[ID TRACKER %s] %s' % (form.clean_data['category'].upper(), form.clean_data['subject']), form.clean_data['message'])
-	    return render_to_response('idtracker/email_sent.html', {},
-		context_instance=RequestContext(request))
-    else:
-	cat = request.REQUEST.get('cat', 'bugs')
-	form = EmailFeedback(initial={'category': cat})
-    return render_to_response('idtracker/email_form.html', {'category': cat, 'form': form},
-	context_instance=RequestContext(request))
 
 def status(request):
     queryset = IDInternal.objects.filter(primary_flag=1).exclude(cur_state__state__in=('RFC Ed Queue', 'RFC Published', 'AD is watching', 'Dead')).order_by('cur_state', 'status_date', 'ballot')
