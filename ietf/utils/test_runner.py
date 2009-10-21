@@ -34,9 +34,11 @@
 
 import sys
 import unittest
+import socket
 from django.conf import settings
 import django
 
+mail_outbox = []
 test_database_name = None
 old_destroy = None
 old_create = None
@@ -80,6 +82,10 @@ def test_django_foreignkey_patch():
         else:
             raise
 
+def test_send_smtp(msg, bcc=None):
+    global mail_outbox
+    mail_outbox.append(msg)
+
 def run_tests_0(*args, **kwargs):
     global old_destroy, old_create, test_database_name
     import django.test.utils
@@ -90,7 +96,6 @@ def run_tests_0(*args, **kwargs):
     m.destroy_test_db = safe_destroy_0_1
     from django.test.simple import run_tests
     run_tests(*args, **kwargs)
-
 
 def run_tests_1(test_labels, *args, **kwargs):
     global old_destroy, old_create, test_database_name
@@ -105,6 +110,13 @@ def run_tests_1(test_labels, *args, **kwargs):
     run_tests(test_labels, *args, **kwargs)
 
 def run_tests(*args, **kwargs):
+    # Tests that involve switching back and forth between the real
+    # database and the test database are way too dangerous to run
+    # against the production database
+    if socket.gethostname().startswith("core3"):
+        raise EnvironmentError("Refusing to run tests on core3")
+    import ietf.utils.mail
+    ietf.utils.mail.send_smtp = test_send_smtp
     if django.VERSION[0] == 0:
         test_django_foreignkey_patch()
         run_tests_0(*args, **kwargs)
