@@ -135,7 +135,6 @@ INSTALLED_APPS = (
     'ietf.liaisons',
     'ietf.mailinglists',
     'ietf.meeting',
-    'ietf.my',
     'ietf.proceedings',
     'ietf.redirects',
     'ietf.idrfc',
