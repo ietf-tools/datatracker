@@ -1,3 +1,30 @@
+ietfdb (2.35)
+
+From Pasi:
+
+  * Changed slightly alternating row coloring for search results --> saved 
+    100+ lines of code
+
+  * Refactoring, removing old dead code and templates
+
+  * Fixed dependency link (point to fenron.net instead of fenron.com)
+
+  * More escaping fixes for Django 1.x
+
+  * Refactored testing code and many added test cases
+
+  * Fixed a number of problems and failures in IPR submisions and updates
+
+  * Removed account creation/password changing functionality
+
+  From Henrik:
+
+  * Handle the case when the time specification of a comment is incomplete, 
+    during generation of document feeds.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Oct 2009 19:08:44 +0200
+
 ietfdb (2.34)
 
   From Pasi:
