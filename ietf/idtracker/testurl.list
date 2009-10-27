@@ -24,5 +24,8 @@
 200	/idtracker/rfc2444/
 200	/feed/comments/rfc2444/
 
+# Test case for missing comment time (bug fixed in changeset 1733)
+200     /feed/comments/draft-ietf-msec-newtype-keyid/
+
 200	/sitemap-drafts.xml
 200	/sitemap-idtracker.xml
