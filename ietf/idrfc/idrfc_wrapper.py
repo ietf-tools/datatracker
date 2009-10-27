@@ -107,6 +107,10 @@ class IdWrapper:
         self.title = self._draft.title
         self.tracker_id = self._draft.id_document_tag
         self.publication_date = self._draft.revision_date
+        if not self.publication_date:
+            # should never happen -- but unfortunately it does. Return an
+            # obviously bogus date
+            self.publication_date = date(1990,1,1)
 
     def rfc_editor_state(self):
         try:

@@ -58,3 +58,6 @@
 200	/doc/search/?activeDrafts=on&oldDrafts=on&rfcs=on&author=eronen
 200	/doc/search/?activeDrafts=on&oldDrafts=on&rfcs=on&area=934&name=ldap
 200	/doc/search/?activeDrafts=on&name=asdfsadfsdfasdf
+
+# Test case for missing publication date
+200	/doc/search/?oldDrafts=on&name=ppvpn
