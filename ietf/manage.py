@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+# Don't complain about these DeprecationWarnings (we still
+# want to see others, though)
+import warnings
+warnings.filterwarnings("ignore", message="the sets module is deprecated")
+warnings.filterwarnings("ignore", message="the md5 module is deprecated; use hashlib instead")
+warnings.filterwarnings("ignore", message="the sha module is deprecated; use the hashlib module instead")
+
 from django.core.management import execute_manager
 try:
     import settings # Assumed to be in the same directory.
