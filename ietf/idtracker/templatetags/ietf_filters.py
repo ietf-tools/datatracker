@@ -5,6 +5,7 @@ import django
 from django import template
 from django.utils.html import escape, fix_ampersands, linebreaks
 from django.template.defaultfilters import linebreaksbr, wordwrap
+from django.template import resolve_variable
 try:
     from email import utils as emailutils
 except ImportError:
@@ -300,10 +301,6 @@ def id_abstracts_wrap(text):
     x = x.replace("\n", "\n    ")
     return "    "+x.strip()
 
-@register.filter(name="id_index_underline")
-def id_index_underline(text):
-    return "-"*len(text.strip())
-
 @register.filter(name='greater_than')
 def greater_than(x, y):
     return x > int(y)
@@ -320,6 +317,17 @@ def equal(x, y):
 @register.filter
 def in_group(user, groups):
     return user and user.is_authenticated() and bool(user.groups.filter(name__in=groups.split(',')).values('name'))
+
+@register.filter
+def stable_dictsort(value, arg):
+    """
+    Like dictsort, except it's stable (preserves the order of items 
+    whose sort key is the same). See also bug report
+    http://code.djangoproject.com/ticket/12110
+    """
+    decorated = [(resolve_variable('var.' + arg, {'var' : item}), item) for item in value]
+    decorated.sort(lambda a, b: cmp(a[0], b[0]))
+    return [item[1] for item in decorated]
 
 # DJANGO_096: a dummy safe filter for Django 0.96
 if django.VERSION[0] == 0:

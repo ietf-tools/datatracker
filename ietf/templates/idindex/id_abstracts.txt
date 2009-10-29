@@ -6,4 +6,4 @@ sites directory.  These drafts are listed alphabetically by working
 group acronym and start date.
 {% endblock %}{% block abstract %}
 
-{{ draft.abstract.strip|id_abstracts_wrap }}{% endblock %}
+    {{ draft.clean_abstract|indent|indent|safe }}{% endblock %}
