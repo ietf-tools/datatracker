@@ -192,7 +192,8 @@ class IdWrapper:
             return self.draft_status
 
     def abstract(self):
-        return self._draft.abstract
+        return self._draft.clean_abstract()
+
     # TODO: ugly hack
     def authors(self):
         return self._draft.authors

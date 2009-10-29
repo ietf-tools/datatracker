@@ -2,6 +2,7 @@
 
 import os.path
 import datetime
+import re
 
 from django.conf import settings
 from django.db import models
@@ -226,6 +227,23 @@ class InternetDraft(models.Model):
             if cur_state_id < 42:
                 return False
         return True
+
+    def clean_abstract(self):
+        # Cleaning based on what "id-abstracts-text" script does
+        a = self.abstract
+        a = re.sub(" *\r\n *", "\n", a)  # get rid of DOS line endings
+        a = re.sub(" *\r *", "\n", a)  # get rid of MAC line endings
+        a = re.sub("(\n *){3,}", "\n\n", a)  # get rid of excessive vertical whitespace
+        a = re.sub("\f[\n ]*[^\n]*\n", "", a)  # get rid of page headers
+        # Get rid of 'key words' boilerplate and anything which follows it:
+        # (No way that is part of the abstract...)
+        a = re.sub("(?s)(Conventions [Uu]sed in this [Dd]ocument|Requirements [Ll]anguage)?[\n ]*The key words \"MUST\", \"MUST NOT\",.*$", "", a)
+        # wrap long lines without messing up formatting of Ok paragraphs:
+        while re.match("([^\n]{72,}?) +", a):
+            a = re.sub("([^\n]{72,}?) +([^\n ]*)(\n|$)", "\\1\n\\2", a)
+        # Remove leading and trailing whitespace
+        a = a.strip()
+        return a 
 
     class Meta:
         db_table = "internet_drafts"
