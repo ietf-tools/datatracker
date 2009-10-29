@@ -36,6 +36,5 @@ urlpatterns += patterns('',
      (r'^(?P<slug>[^/]+)/comment/(?P<object_id>\d+)/$', views.comment, comment_dict),
      (r'^help/state/(?P<state>\d+)/$', views.state_desc),
      (r'^help/substate/(?P<state>\d+)/$', views.state_desc, { 'is_substate': 1 }),
-     #(r'^(?P<id>\d+)/edit/$', views.edit_idinternal),
      (r'^$', views.search),
 )

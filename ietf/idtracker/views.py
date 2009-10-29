@@ -138,32 +138,6 @@ def search(request):
 	'spacing': True
       }, context_instance=RequestContext(request))
 
-# proof of concept, orphaned for now
-def edit_idinternal(request, id=None):
-    #draft = InternetDraft.objects.get(pk=id)
-    draft = get_object_or_404(InternetDraft.objects, pk=id)
-    IDEntryForm = forms.models.form_for_instance(draft)
-    # todo: POST handling for idform
-    idform = IDEntryForm()
-    idinternal = draft.idinternal
-    if idinternal:
-	EntryForm = forms.models.form_for_instance(idinternal)
-	if request.method == 'POST':
-	    form = EntryForm(request.POST)
-	    if form.is_valid():
-		form.save()
-		return HttpResponseRedirect("/")	# really want here
-	else:
-	    form = EntryForm()
-    else:
-	form = None
-
-    return render_to_response('idtracker/idtracker_edit.html', {
-	'form': form,
-	'idform': idform,
-	'draft': draft,
-      }, context_instance=RequestContext(request))
-
 def state_desc(request, state, is_substate=0):
     if int(state) == 100:
 	object = {
