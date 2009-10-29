@@ -102,7 +102,7 @@ for root, dirs, files in os.walk("."):
         continue
     print "Processing ", root
     for file in files:
-        if file.endswith(".py"):
+        if file.endswith(".py") and not file.startswith("#"):
             convert_py(root+"/"+file)
 
 
