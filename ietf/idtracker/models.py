@@ -240,7 +240,7 @@ class InternetDraft(models.Model):
         a = re.sub("(?s)(Conventions [Uu]sed in this [Dd]ocument|Requirements [Ll]anguage)?[\n ]*The key words \"MUST\", \"MUST NOT\",.*$", "", a)
         # wrap long lines without messing up formatting of Ok paragraphs:
         while re.match("([^\n]{72,}?) +", a):
-            a = re.sub("([^\n]{72,}?) +([^\n ]*)(\n|$)", "\\1\n\\2", a)
+            a = re.sub("([^\n]{72,}?) +([^\n ]*)(\n|$)", "\\1\n\\2 ", a)
         # Remove leading and trailing whitespace
         a = a.strip()
         return a 
