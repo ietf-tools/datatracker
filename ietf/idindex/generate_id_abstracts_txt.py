@@ -35,4 +35,8 @@ from django.core import management
 management.setup_environ(settings)
 
 from ietf.idindex.views import id_abstracts_txt
-print id_abstracts_txt(),
+x = id_abstracts_txt()
+if isinstance(x, unicode):
+    print id_index_txt().encode('utf-8'),
+else:
+    print x,
