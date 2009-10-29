@@ -58,7 +58,7 @@ class IndexTestCase(unittest.TestCase, RealDatabaseTest):
         lines = content.split("\n")
         self.assert_(len(lines) > 18000)
         # Test that the lines look OK and have correct number of tabs
-        r = re.compile(r'^(draft-\S*-\d\d)\t(\d\d\d\d-\d\d-\d\d)?\t([^\t]+)\t([^\t]*)$')
+        r = re.compile(r'^(draft-\S*-\d\d)\t(\d\d\d\d-\d\d-\d\d)\t([^\t]+)\t([^\t]*)$')
         for line in lines:
             if ((line == "") or 
                 (line == "Internet-Drafts Status Summary") or
