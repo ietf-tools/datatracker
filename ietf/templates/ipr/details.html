@@ -182,7 +182,7 @@
 	       <tr class="{% cycle row_parity %}"><td class="fixwidth">I-D Filenames (draft-...):</td><td><b>{{ ipr.draftlist }}</b></td></tr>
 	    {% else %}
 	       {% for doc in ipr.drafts.all %}
-	       <tr class="{% cycle row_parity %}"><td class="fixwidth">Internet-Draft:</td><td><b>"{{ doc.document.title }}"<br />(<tt><big>{{ doc.document.filename }}-{{ doc.document.revision }}</big></tt>)</b></td></tr>
+	       <tr class="{% cycle row_parity %}"><td class="fixwidth">Internet-Draft:</td><td><b>"{{ doc.document.title }}"<br />(<tt><big>{{ doc.document.filename }}-{{ doc.revision }}</big></tt>)</b></td></tr>
 	       {% endfor %}
 	    {% endif %}
 	    {% if ipr.other_designations %}
