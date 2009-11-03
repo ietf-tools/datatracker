@@ -1,6 +1,29 @@
+ietfdb (2.36)
+
+  From Pasi:
+
+  * Code cleanup.
+  
+  * Test enhancements
+
+  * Fixed various Django 1.x bugs
+
+  * IPR disclosure page was showing the latest revision number, not the 
+    revision for which the disclosure was submitted.  Fixed
+
+  * Minor tweaking of scribe template based on comments from John
+
+  * Handle non-ASCII characters correct on both Django 0.96 and 1.x
+
+  * Removed unused (and unfinished) idtracker editing code
+
+  * Fixed a bug where missing revision date caused an exception
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Nov 2009 14:35:35 +0100
+
 ietfdb (2.35)
 
-From Pasi:
+  From Pasi:
 
   * Changed slightly alternating row coloring for search results --> saved 
     100+ lines of code
