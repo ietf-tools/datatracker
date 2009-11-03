@@ -33,7 +33,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys
-import unittest
 import socket
 from django.conf import settings
 import django
@@ -64,7 +63,7 @@ def safe_destroy_0_1(*args, **kwargs):
     print "Checking that it's safe to destroy test database..."
     if settings.DATABASE_NAME != test_database_name:
         print "NOT SAFE; Changing settings.DATABASE_NAME from "+settings.DATABASE_NAME+" to "+test_database_name
-        settings.DATABASE_NAME = test_name
+        settings.DATABASE_NAME = test_database_name
     return old_destroy(*args, **kwargs)
 
 # Test that test/r5106.patch has been applied. This is not written
