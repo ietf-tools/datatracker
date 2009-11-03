@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 # Create your views here.
-from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
+from django.http import HttpResponsePermanentRedirect
 from django import newforms as forms
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response

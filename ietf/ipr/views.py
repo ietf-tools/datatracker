@@ -4,7 +4,6 @@ import django.utils.html
 from django.shortcuts import render_to_response as render, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.utils.html import escape
 from django.http import HttpResponse, Http404
 from ietf.idtracker.models import IETFWG
 from ietf.ipr.models import IprDetail, SELECT_CHOICES, LICENSE_CHOICES

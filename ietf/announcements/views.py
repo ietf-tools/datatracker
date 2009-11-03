@@ -1,13 +1,8 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-# Create your views here.
-
-from django.http import HttpResponse
-from django.shortcuts import render_to_response
 from django.views.generic.simple import direct_to_template
 
 from ietf.idtracker.models import ChairsHistory
-from ietf.idtracker.models import PersonOrOrgInfo
 from ietf.idtracker.models import Role
 from ietf.announcements.models import Announcement
 

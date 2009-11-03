@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.conf.urls.defaults import patterns
-from ietf.ipr import models, views, new, search
+from ietf.ipr import views, new, search
 
 urlpatterns = patterns('',
      (r'^$', views.showlist),
