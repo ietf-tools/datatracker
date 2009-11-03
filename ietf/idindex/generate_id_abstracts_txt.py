@@ -37,6 +37,6 @@ management.setup_environ(settings)
 from ietf.idindex.views import id_abstracts_txt
 x = id_abstracts_txt()
 if isinstance(x, unicode):
-    print id_index_txt().encode('utf-8'),
+    print x.encode('utf-8'),
 else:
     print x,
