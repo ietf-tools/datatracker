@@ -30,9 +30,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import unittest, os, re
 from django.test.client import Client
-import unittest
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, split_url
+from django.conf import settings
+from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, split_url, read_testurls
+import ietf.urls
 
 REDIRECT_TESTS = {
 
@@ -104,3 +106,52 @@ class RedirectsTestCase(unittest.TestCase, RealDatabaseTest):
             except:
                 print "Fail "+src
                 raise
+
+def get_patterns(module):
+    all = []
+    try:
+        patterns = module.urlpatterns
+    except AttributeError:
+        patterns = []
+    for item in patterns:
+        try:
+            subpatterns = get_patterns(item.urlconf_module)
+        except:
+            subpatterns = [""]
+        for sub in subpatterns:
+            if not sub:
+                all.append(item.regex.pattern)
+            elif sub.startswith("^"):
+                all.append(item.regex.pattern + sub[1:])
+            else:
+                all.append(item.regex.pattern + ".*" + sub)
+    return all
+
+class CoverageTestCase(unittest.TestCase):
+    def testCoverage(self):
+        print "Testing testurl.list coverage"
+        testtuples = []
+        for root, dirs, files in os.walk(settings.BASE_DIR):
+            if "testurl.list" in files:
+                testtuples += read_testurls(root+"/testurl.list")
+
+        patterns = get_patterns(ietf.urls)
+        covered = []
+        for codes, testurl, goodurl in testtuples:
+            for pattern in patterns:
+                if re.match(pattern, testurl[1:]):
+                    covered.append(pattern)
+
+        if not set(patterns) == set(covered):
+            missing = list(set(patterns) - set(covered))
+            print "The following URLs are not tested by any testurl.list"
+            for pattern in missing:
+                if not pattern[1:].split("/")[0] in [ "admin", "accounts" ]:
+                    print "NoTest", pattern
+            print ""
+        else:
+            print "All URLs are included in some testurl.list"
+
+class MainUrlTestCase(SimpleUrlTestCase):
+    def testUrls(self):
+        self.doTestUrls(__file__)
