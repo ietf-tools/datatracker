@@ -7,7 +7,6 @@ import re
 from django.conf import settings
 from django.db import models
 from ietf.utils import FKAsOneToOne
-from django.test import TestCase
 
 class Acronym(models.Model):
     acronym_id = models.AutoField(primary_key=True)
@@ -1009,18 +1008,6 @@ class GoalMilestone(models.Model):
 	list_filter = ['done']
 	pass
 
-class WGRoleTest(TestCase):
-    fixtures = ['wgtest']
-
-    def setUp(self):
-	self.xmas = IETFWG.objects.get(group_acronym__acronym='xmas')
-	self.snow = IETFWG.objects.get(group_acronym__acronym='snow')
-
-    def test_roles(self):
-    	self.assertEquals(self.xmas.wgchair_set.all()[0].role(), 'xmas WG Chair')
-	self.assertEquals(self.snow.wgchair_set.all()[0].role(), 'snow BOF Chair')
-	self.assertEquals(self.xmas.wgsecretary_set.all()[0].role(), 'xmas WG Secretary')
-	self.assertEquals(self.xmas.wgtechadvisor_set.all()[0].role(), 'xmas Technical Advisor')
 
 #### end wg stuff
 
