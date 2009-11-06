@@ -2,13 +2,13 @@
 # specified in the application level testurl.list
 
 301	/ # Top level url.  Has no comparable page today.
+200	/googlea30ad1dacffb5e5b.html # Google webmaster tool verification page
+200	/sitemap.xml
+404	/_doesnotexist/
+skip	/_test500/
+
+#301	/list/request....	# test middleware that strips periods and redirects instead of 404
 #skip	/images/ietf-icon.bmp
 #skip	/css/base.css
 #skip	/js/
-
-200	/googlea30ad1dacffb5e5b.html # Google webmaster tool verification page
-
-200	/sitemap.xml
-
-#301	/list/request....	# test middleware that strips periods and redirects instead of 404
 
