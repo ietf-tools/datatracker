@@ -31,7 +31,7 @@
 
 Description of Working Group:
 
-  {{ wg.charter_text|indent }}
+  {{ wg.charter_text|indent|safe }}
 
 Goals and Milestones:
 {% for milestone in wg.milestones %}  {% if milestone.done %}Done    {% else %}{%ifequal milestone.expected_due_date.month 1 %}Jan{% endifequal %}{%ifequal milestone.expected_due_date.month 2 %}Feb{% endifequal %}{%ifequal milestone.expected_due_date.month 3 %}Mar{% endifequal %}{%ifequal milestone.expected_due_date.month 4 %}Apr{% endifequal %}{%ifequal milestone.expected_due_date.month 5 %}May{% endifequal %}{%ifequal milestone.expected_due_date.month 6 %}Jun{% endifequal %}{%ifequal milestone.expected_due_date.month 7 %}Jul{% endifequal %}{%ifequal milestone.expected_due_date.month 8 %}Aug{% endifequal %}{%ifequal milestone.expected_due_date.month 9 %}Sep{% endifequal %}{%ifequal milestone.expected_due_date.month 10 %}Oct{% endifequal %}{%ifequal milestone.expected_due_date.month 11 %}Nov{% endifequal %}{%ifequal milestone.expected_due_date.month 12 %}Dec{% endifequal %} {{ milestone.expected_due_date.year }}{% endif %} - {{ milestone.description|safe }}
