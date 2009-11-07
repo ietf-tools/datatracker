@@ -11,5 +11,5 @@ urlpatterns = patterns('django.views.generic.list_detail',
 )
 urlpatterns += patterns('',
      (r'^nonwg/update/$', 'django.views.generic.simple.redirect_to', { 'url': 'http://datatracker.ietf.org/list/nonwg/'}),
-     (r'^request/$', 'django.views.generic.simple.direct_to_template', { 'template': 'mailinglists/instructions.html' }),
+     (r'^request/$', 'django.views.generic.simple.redirect_to', { 'url': 'http://www.ietf.org/list/request.html' }),
 )
