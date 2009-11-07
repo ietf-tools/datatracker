@@ -115,7 +115,7 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
 
 def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=None, bcc=None):
     if isinstance(txt, unicode):
-        msg = MIMEText(encode('utf-8'), 'plain', 'UTF-8')
+        msg = MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
     else:
         msg = MIMEText(txt)
     if isinstance(frm, tuple):
