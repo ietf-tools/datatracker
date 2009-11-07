@@ -29,7 +29,7 @@
 <!--		{% if replaces.idinternal %}
 		  <a href="{% url ietf.idtracker.views.search %}?search_filename={{ replaces.filename }}">
 		{% endif %}
--->		{{ replaces.displayname_with_link }}
+-->		{{ replaces.displayname_with_link|safe }}
 <!--		{% if replaces.idinternal %}</a>{% endif %}{% if not forloop.last %}</p><p class="replace">{% endif %}
 -->	      {% endfor %}</p>
 	    {% endif %}
