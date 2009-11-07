@@ -38,7 +38,7 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 <tr><a name="wg-{{ wg.acronym }}"></a>
 <td style="width:12em;"><b>{{ wg.acronym|upper }}{% ifequal wg.group_type_str "BOF" %} <font color="red">({{ wg.group_type_str }})</font> {% endifequal %}</b><br/>
 {% for slide in wg.slides %}
-<a href="http://www3.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name }}</a><br/>
+<a href="http://www3.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name|escape }}</a><br/>
 {% endfor %}
 </td></tr></table>
 {% endfor %}  

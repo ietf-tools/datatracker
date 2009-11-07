@@ -59,7 +59,7 @@
       <tr>
 	 <td colspan="4">
 	    {{ slot.registration.time_desc  }}  {{ slot.registration.name  }}
-	    {% if venue.reg_area_name %} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{ venue.reg_area_name|slugify }}">{{ venue.reg_area_name }}</a>{% endif %}
+	    {% if venue.reg_area_name %} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{ venue.reg_area_name|slugify }}">{{ venue.reg_area_name|escape }}</a>{% endif %}
 	 </td>
       </tr>
       {% endif %}
@@ -70,7 +70,7 @@
 	 <td colspan="4">
 	    <br />
 	    {{ slot.break_info.time_desc }}  {{ slot.break_info.name }}
-	    {% if venue.break_area_name and slot.break_info.show_break_location %} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{ venue.break_area_name|slugify }}">{{ venue.break_area_name }}</a>{% endif %}
+	    {% if venue.break_area_name and slot.break_info.show_break_location %} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{ venue.break_area_name|slugify }}">{{ venue.break_area_name|escape }}</a>{% endif %}
 	 </td>
       </tr>
       {% endif %}

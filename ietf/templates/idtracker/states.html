@@ -27,8 +27,8 @@ IESG to do anything with the document.</td>
                                                                                                                
 {% for state in states %}   
           <tr class="states">
-          <td class="state">{{ state.state }}</td>
-          <td>{{ state.description }}</td>
+          <td class="state">{{ state.state|escape }}</td>
+          <td>{{ state.description|escape }}</td>
           <td>
 		  <ul class="states">
 		  {% for next in state.nextstate.all %}
@@ -47,8 +47,8 @@ IESG to do anything with the document.</td>
 
 {% for substate in substates %}
 <tr class="states">
-<td class="state">{{ substate.sub_state }}</td>
-<td>{{ substate.description }}</td>
+<td class="state">{{ substate.sub_state|escape }}</td>
+<td>{{ substate.description|escape }}</td>
 </tr>
 {% endfor %}
 </table>

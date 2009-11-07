@@ -34,7 +34,7 @@ Comment on {{ object.document.document.filename }}
 	<span class="{{ object.get_ballot_display }}">[IESG Evaluation {{ object.get_ballot_display|upper }}] </span>
 {% endif %}
    
-   <pre>{{ object.comment_text|wrap_long_lines }}</pre></td></tr>
+   <pre>{{ object.comment_text|wrap_long_lines|escape }}</pre></td></tr>
    </table>
    
    <form action="."><p><input type="button" value="Back" onClick="history.go(-1)"/></p></form>

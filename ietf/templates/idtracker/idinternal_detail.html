@@ -203,7 +203,7 @@
 		<span class="{{ comment.get_ballot_display }}">[IESG Evaluation {{ comment.get_ballot_display|upper }}] </span>
 	{% endif %}
 
-	{{ comment.comment_text|removetags:"b br"|truncatewords_html:"20" }}
+	{{ comment.comment_text|removetags:"b br"|truncatewords_html:"20"|escape }}
 	[<a href="{{ comment.get_absolute_url }}">more</a>]
 	</td>
 

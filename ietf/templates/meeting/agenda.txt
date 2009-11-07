@@ -9,8 +9,8 @@
 {% for slot in timeslots %}{% ifchanged  %}
 
 {{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}{% if slot.reg_info %}
-{{ slot.registration.time_desc  }}  {{ slot.registration.name  }}{% if venue.reg_area_name %} - {{ venue.reg_area_name }}{% endif %}{% endif %}
-{% endifchanged %}{% if slot.session_name %}{% if slot.break_info %}{{ slot.break_info.time_desc }}  {{ slot.break_info.name }}{% if venue.break_area_name and slot.break_info.show_break_location %} - {{ venue.break_area_name }}{% endif %}
+{{ slot.registration.time_desc  }}  {{ slot.registration.name  }}{% if venue.reg_area_name %} - {{ venue.reg_area_name|escape }}{% endif %}{% endif %}
+{% endifchanged %}{% if slot.session_name %}{% if slot.break_info %}{{ slot.break_info.time_desc }}  {{ slot.break_info.name }}{% if venue.break_area_name and slot.break_info.show_break_location %} - {{ venue.break_area_name|escape }}{% endif %}
 {% endif %}{{ slot.time_desc               }}  {{ slot.session_name }}{% if slot.is_plenary %} - {{ slot.sessions.0.room_id.room_name|safe }}{% endif %}{% ifequal slot.sessions.0.acronym "plenaryw" %}
 
 {{ plenaryw_agenda }}{% endifequal %}{% ifequal slot.sessions.0.acronym "plenaryt" %}
