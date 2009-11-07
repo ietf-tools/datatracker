@@ -20,7 +20,7 @@ import django
 # Create base forms from models
 # ----------------------------------------------------------------    
 
-phone_re = re.compile(r'^\+?[0-9 ]*(\([0-9]+\))?[0-9 -]+$')
+phone_re = re.compile(r'^\+?[0-9 ]*(\([0-9]+\))?[0-9 -]+( ?x ?[0-9]+)?$')
 phone_error_message = """Phone numbers may have a leading "+", and otherwise only contain numbers [0-9]; dash, period or space; parentheses, and an optional extension number indicated by 'x'."""
 
 if django.VERSION[0] == 0:
@@ -239,14 +239,16 @@ def new(request, type, update=None, submitter=None):
             # Save IprDetail
             instance = form.save(commit=False)
 
+	    legal_name_genitive = data['legal_name'] + "'" if data['legal_name'].endswith('s') else data['legal_name'] + "'s"
             if type == "generic":
-                instance.title = """%(legal_name)s's General License Statement""" % data
+                instance.title = legal_name_genitive + " General License Statement" % legal_name_genitive
             if type == "specific":
                 data["ipr_summary"] = get_ipr_summary(form.clean_data)
-                instance.title = """%(legal_name)s's Statement about IPR related to %(ipr_summary)s""" % data
+                instance.title = legal_name_genitive + """ Statement about IPR related to %(ipr_summary)s""" % data
             if type == "third-party":
                 data["ipr_summary"] = get_ipr_summary(form.clean_data)
-                instance.title = """%(ietf_name)s's Statement about IPR related to %(ipr_summary)s belonging to %(legal_name)s""" % data
+		ietf_name_genitive = data['ietf_name'] + "'" if data['ietf_name'].endswith('s') else data['ietf_name'] + "'s"
+                instance.title = ietf_name_genitive + """ Statement about IPR related to %(ipr_summary)s belonging to %(legal_name)s""" % data
 
             # A long document list can create a too-long title;
             # saving a too-long title raises an exception,
@@ -273,7 +275,7 @@ def new(request, type, update=None, submitter=None):
                     del cdata["contact_is_submitter"]
                 except KeyError:
                     pass
-                contact = models.IprContact(**cdata)
+                contact = models.IprContact(**dict([(str(a),b) for a,b in cdata.items()]))
                 contact.save()
                 # store this contact in the instance for the email
                 # similar to what views.show() does

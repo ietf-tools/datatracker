@@ -1,78 +1,78 @@
-IPR Title: {{ ipr.title }}
+{% load ietf_filters %}IPR Title: {{ ipr.title|safe }}
 
-Section I. Patent Holder/Applicant ("Patent Holder")
-Legal Name: {{ ipr.legal_name }}
 
-Section II. Patent Holder's Contact for License Application
-Name: {{ ipr.holder_contact.name }}
-Title: {{ ipr.holder_contact.title }}
-Department: {{ ipr.holder_contact.department }}
-Address1: {{ ipr.holder_contact.address1 }}
-Address2: {{ ipr.holder_contact.address2 }}
-Telephone: {{ ipr.holder_contact.telephone }}
-Fax: {{ ipr.holder_contact.fax }}
-Email: {{ ipr.holder_contact.email }}
+Section I: Patent Holder/Applicant ("Patent Holder")
+    Legal Name: {{ ipr.legal_name|safe }}
 
-Section III. Contact Information for the IETF Participant Whose Personal Belief Triggered
-the Disclosure in this Template (Optional):
-Name: {{ ipr.ietf_contact.name }}
-Title: {{ ipr.ietf_contact.title }}
-Department: {{ ipr.ietf_contact.department }}
-Address1: {{ ipr.ietf_contact.address1 }}
-Address2: {{ ipr.ietf_contact.address2 }}
-Telephone: {{ ipr.ietf_contact.telephone }}
-Fax: {{ ipr.ietf_contact.fax }}
-Email: {{ ipr.ietf_contact.email }}
 
-Section IV. IETF Document or Working Group Contribution to Which Patent Disclosure
-Relates
-RFC Number(s) : {% for doc in ipr.rfcs.all %}{{ doc.document.rfc_number }} ({{ doc.document.title }}){% if not forloop.last %}, {% endif %}{% endfor %}
-I-D File Name(s)(draft-...) : {% for doc in ipr.drafts.all %}{{ doc.document.displayname }} ({{ doc.document.title }}){% if not forloop.last %}, {% endif %}{% endfor %}
-Designations for Other Contributions : {{ ipr.other_designations }}
+Section II: Patent Holder's Contact for License Application
+    Name:       {{ ipr.holder_contact.name|safe }}
+    Title:      {{ ipr.holder_contact.title|safe }}
+    Department: {{ ipr.holder_contact.department|safe }}
+    Address1:   {{ ipr.holder_contact.address1|safe }}
+    Address2:   {{ ipr.holder_contact.address2|safe }}
+    Telephone:  {{ ipr.holder_contact.telephone|safe }}
+    Fax:        {{ ipr.holder_contact.fax|safe }}
+    Email:      {{ ipr.holder_contact.email|safe }}
 
-Section V. Disclosure of Patent Information (i.e., patents or patent applications 
-required to be disclosed by Section 6 of RFC 3979)
-A. For granted patents or published pending patent applications, please provide
-the following information:
-Patent, Serial, Publication, Registration, or Application/File number(s) : {{ ipr.patents }}
-Date(s) granted or applied for : {{ ipr.date_applied }}
-Country : {{ ipr.country }}
-Additional Note(s): 
-{{ ipr.notes }}
-B. Does your disclosure relate to an unpublished pending patent application? {{ ipr.get_is_pending_display }}
+
+Section III: Contact Information for the IETF Participant Whose Personal Belief Triggered the Disclosure in this Template (Optional):
+    Name:       {{ ipr.ietf_contact.name|safe }}
+    Title:      {{ ipr.ietf_contact.title|safe }}
+    Department: {{ ipr.ietf_contact.department|safe }}
+    Address1:   {{ ipr.ietf_contact.address1|safe }}
+    Address2:   {{ ipr.ietf_contact.address2|safe }}
+    Telephone:  {{ ipr.ietf_contact.telephone|safe }}
+    Fax:        {{ ipr.ietf_contact.fax|safe }}
+    Email:      {{ ipr.ietf_contact.email|safe }}
+
+
+Section IV: IETF Document or Working Group Contribution to Which Patent Disclosure Relates
+    RFC Number(s): {% for doc in ipr.rfcs.all %}{{ doc.document.rfc_number|safe }} ({{ doc.document.title|safe }}){% if not forloop.last %}, {% endif %}{% endfor %}
+    Internet-Draft(s): {% for doc in ipr.drafts.all %}{{ doc.document.filename|safe }} ({{ doc.document.title|safe }}){% if not forloop.last %}, {% endif %}{% endfor %}
+    Designations for Other Contributions: {{ ipr.other_designations|safe }}
+
+
+Section V: Disclosure of Patent Information (i.e., patents or patent applications required to be disclosed by Section 6 of RFC 3979)
+
+A. For granted patents or published pending patent applications, please provide the following information:
+    Patent, Serial, Publication, Registration, or Application/File number(s): {{ ipr.patents|safe }}
+    Date(s) granted or applied for: {{ ipr.date_applied|safe }}
+    Country: {{ ipr.country|safe }}
+    Additional Note(s):
+        {{ ipr.notes|safe }}
+
+B. Does your disclosure relate to an unpublished pending patent application? {{ ipr.get_is_pending_display|safe }}
 {# missing ipr.applies_to_all #}
-C. If an Internet-Draft or RFC includes multiple parts and it is not reasonably apparent which part of such Internet-Draft or RFC is alleged to be covered by
-the patent information disclosed in Section V(A) or V(B), it is helpful if the
-discloser identifies here the sections of the Internet-Draft or RFC that are
-alleged to be so covered. :
-{{ ipr.document_sections }}
 
-Section VI. Licensing Declaration The Patent Holder states that, upon approval by the IESG for publication as an
-RFC of the relevant IETF specification, its position with respect to licensing
-any patent claims contained in the patent(s) or patent application(s) disclosed
-above that would be necessary to implement the technology required by such IETF
-specification ("Patent Claims"), for the purpose of implementing the specification, is as follows(select one licensing declaration option only):
+C. If an Internet-Draft or RFC includes multiple parts and it is not reasonably apparent which part of such Internet-Draft or RFC is alleged to be covered by the patent information disclosed in Section V(A) or V(B), it is helpful if the discloser identifies here the sections of the Internet-Draft or RFC that are alleged to be so covered:
+{{ ipr.document_sections|safe }}
+
+
+Section VI: Licensing Declaration 
+
+The Patent Holder states that, upon approval by the IESG for publication as an RFC of the relevant IETF specification, its position with respect to licensing any patent claims contained in the patent(s) or patent application(s) disclosed above that would be necessary to implement the technology required by such IETF specification ("Patent Claims"), for the purpose of implementing the specification, is as follows(select one licensing declaration option only):
 
 Selection:
-{{ ipr.get_licensing_option_display }}
+    {{ ipr.get_licensing_option_display|safe }}
 {% if ipr.stdonly_license %}
-{{ ipr.stdonly_license }}
+    {{ ipr.stdonly_license|safe }}
 Above licensing declaration is limited solely to standards-track IETF documents.
 {% endif %}
-Licensing information, comments, notes or URL for further information :
-{{ ipr.comments }}
+Licensing information, comments, notes or URL for further information:
+    {{ ipr.comments|safe }}
 
-Section VII. Contact Information of Submitter of this Form (if different from
-IETF Participant in Section III above)
-Name: {{ ipr.submitter.name }}
-Title: {{ ipr.submitter.title }}
-Department: {{ ipr.submitter.department }}
-Address1: {{ ipr.submitter.address1 }}
-Address2: {{ ipr.submitter.address2 }}
-Telephone: {{ ipr.submitter.telephone }}
-Fax: {{ ipr.submitter.fax }}
-Email: {{ ipr.submitter.email }}
 
-Section VIII. Other Note(s):
-{{ ipr.other_notes }}
+Section VII: Contact Information of Submitter of this Form (if different from IETF Participant in Section III above)
+    Name:       {{ ipr.submitter.name|safe }}
+    Title:      {{ ipr.submitter.title|safe }}
+    Department: {{ ipr.submitter.department|safe }}
+    Address1:   {{ ipr.submitter.address1|safe }}
+    Address2:   {{ ipr.submitter.address2|safe }}
+    Telephone:  {{ ipr.submitter.telephone|safe }}
+    Fax:        {{ ipr.submitter.fax|safe }}
+    Email:      {{ ipr.submitter.email|safe }}
 
+
+Section VIII: Other Note(s)
+{{ ipr.other_notes|safe }}
