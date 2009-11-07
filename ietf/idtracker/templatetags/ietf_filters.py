@@ -40,8 +40,8 @@ def parse_email_list(value):
 
     Splitting a string of email addresses should return a list:
 
-    >>> parse_email_list('joe@example.org, fred@example.com')
-    '<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
+    >>> unicode(parse_email_list('joe@example.org, fred@example.com'))
+    u'<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
 
     Parsing a non-string should return the input value, rather than fail:
     
