@@ -103,7 +103,7 @@ function toggleComment(n) {
 <table id="metatable">
 <tr><td style="width:18ex;">Document type:</td><td>{{ info.type|escape }}</td></tr>
 <tr><td>State:</td><td> 
-{{ doc.friendly_state }}
+{{ doc.friendly_state|safe }}
 {% if doc.rfc_editor_state %}<br />RFC Editor State: {{ doc.rfc_editor_state|escape }} {% endif %}
 {% if doc.replaces %}<br />Replaces {% for rep in doc.replaces %}<a href="/doc/{{rep}}/">{{rep}}</a> {% endfor %}{% endif %}
 </td></tr>

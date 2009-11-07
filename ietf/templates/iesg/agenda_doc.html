@@ -69,7 +69,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 </td></tr>
 
 {% if doc.obj.note %} {# note: note is not escaped #}
-<tr><td></td><td></td><td>Note: {{ doc.obj.note }}</td></tr>
+<tr><td></td><td></td><td>Note: {{ doc.obj.note|safe }}</td></tr>
 {% endif %}
 
 {% if doc.obj.draft.ipr.all %}
