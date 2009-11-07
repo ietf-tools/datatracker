@@ -63,9 +63,9 @@ page.</p>
 {% for list in object_list %}
 <tr>
 <td><a href="{{ list.list_url|add_scheme }}">{% firstof list.list_name list.list_url %}</a></td>
-<td>{{ list.admin|make_one_per_line }}</td>
+<td>{{ list.admin|make_one_per_line|escape }}</td>
 <td>{{ list.purpose|truncatewords:"20"|escape }}</td>
-<td>{{ list.area }}</td>
+<td>{{ list.area|escape }}</td>
 <td>{% if list.subscribe_url %}
 {# There are lots of non-urls in the database #}
 {{ list.subscribe_url|link_if_url|safe }}</a>
@@ -74,7 +74,7 @@ page.</p>
 {% endif %}
 {% if list.subscribe_other %}
 <br>
-{{ list.subscribe_other }}
+{{ list.subscribe_other|escape }}
 {% endif %}
 </td>
 </tr>
