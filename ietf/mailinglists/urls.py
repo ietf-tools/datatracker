@@ -12,8 +12,6 @@ urlpatterns = patterns('django.views.generic.list_detail',
 )
 urlpatterns += patterns('',
      (r'^nonwg/update/$', views.non_wg_wizard),
-     (r'^request/$', views.list_req_wizard),
-     (r'^help/(?P<field>[^/]+)/$', views.list_req_help),
-     (r'^approve/(?P<object_id>[^/]+)/$', views.list_approve),
+     (r'^request/$', 'django.views.generic.simple.direct_to_template', { 'template': 'mailinglists/instructions.html' }),
      (r'^wg/$', views.list_wgwebmail),
 )

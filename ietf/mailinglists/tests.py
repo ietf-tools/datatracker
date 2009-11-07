@@ -74,13 +74,3 @@ class NonWgWizardDeleteTest(unittest.TestCase, RealDatabaseTest):
         self.assertEquals(response.status_code, 200)
         self.assert_('input type="hidden" name="hash_0"' in response.content)
         self.assert_('Message to the Area Director' in response.content)
-
-class ListReqWizardAddTest(unittest.TestCase):
-    def testAddStep1(self):
-        print "Testing /list/request/ add step 1"
-        c = Client()
-        response = c.post('/list/request/', {'0-mail_type':'newnon','0-domain_name':'ietf.org'})
-        self.assertEquals(response.status_code, 200)
-        self.assert_('input type="hidden" name="hash_0"' in response.content)
-        self.assert_("Step 2" in response.content)
-        self.assert_("Short description" in response.content)
