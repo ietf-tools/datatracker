@@ -72,5 +72,5 @@ if django.VERSION[0] == 0:
 if settings.SERVER_MODE in ('development', 'test'):
     urlpatterns += patterns('',
         (r'^(?P<path>(?:images|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
-        (r'^_test500/$', 'ietf.doesnotexist'),
+        (r'^_test500/$', lambda x: None),
 	)
