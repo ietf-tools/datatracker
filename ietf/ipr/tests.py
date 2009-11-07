@@ -30,8 +30,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
 import unittest
 from django.test.client import Client
+from django.conf import settings
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
 import ietf.utils.test_runner as test_runner
 
@@ -73,4 +75,17 @@ class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
         self.assertEquals(len(test_runner.mail_outbox), 1)
         print "OK (1 email found in test outbox)"
         
+    
+class IprFileTestCase(unittest.TestCase):
+    def testFileExistence(self):
+        print "Testing if IPR disclosure files exist locally"
+        fpath = os.path.join(settings.IPR_DOCUMENT_PATH, "juniper-ipr-RFC-4875.txt")
+        if not os.path.exists(fpath):
+            print "\nERROR: IPR disclosure files not found in "+settings.IPR_DOCUMENT_PATH
+            print "They are needed for testing IPR searching."
+            print "Download them to a local directory with:"
+            print "wget -nd -nc -np -r ftp://ftp.ietf.org/ietf/IPR/"
+            print "And set IPR_DOCUMENT_PATH in settings_local.py\n"
+        else:
+            print "OK (they seem to exist)"
     
