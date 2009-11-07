@@ -49,7 +49,7 @@ REF_TABLE = "rfc_editor_queue_mirror_refs"
 log_data = ""
 def log(line):
     global log_data
-    if len(sys.argv) > 1:
+    if __name__ == '__main__' and len(sys.argv) > 1:
         print line
     else:
         log_data += line + "\n"
@@ -125,6 +125,14 @@ def find_indirect_refs(drafts, refs):
                     ref_set.add(destination)
                     recurse(destination, ref_set, level+1)
         if level == 0:
+            # Remove self-reference
+            ref_set.remove(draft_name)
+            # Remove direct references
+            for (source, destination, in_queue, direct) in refs:
+                if source == draft_name:
+                    if destination in ref_set:
+                        ref_set.remove(destination)
+            # The rest are indirect references
             for ref in ref_set:
                 if draft_name != ref:
                     result.append([draft_name, ref, ref in draft_names, False])
@@ -151,14 +159,7 @@ def find_document_ids(cursor, drafts, refs):
             refs2.append([draft_ids[ref[0]]]+ref[1:])
     return (drafts2, refs2)
 
-try:
-    log("output from mirror_rfc_editor_queue.py:\n")
-    log("time: "+str(datetime.now()))
-    log("host: "+socket.gethostname())
-    log("url: "+QUEUE_URL)
-
-    log("downloading...")
-    response = urllib2.urlopen(QUEUE_URL)
+def parse_all(response):
     log("parsing...")
     (drafts, refs) = parse(response)
     log("got "+ str(len(drafts)) + " drafts and "+str(len(refs))+" direct refs")
@@ -168,18 +169,17 @@ try:
     refs.extend(indirect_refs)
     del(indirect_refs)
 
-    if len(drafts) < 10 or len(refs) < 10:
-        raise Exception('not enough data')
-
     # convert filenames to id_document_tags
     log("connecting to database...")
     cursor = db.connection.cursor()
     log("finding id_document_tags...")
     (drafts, refs) = find_document_ids(cursor, drafts, refs)
+    cursor.close()
+    return (drafts, refs)
 
-    if len(drafts) < 10 or len(refs) < 10:
-        raise Exception('not enough data')
-
+def insert_into_database(drafts, refs):
+    log("connecting to database...")
+    cursor = db.connection.cursor()
     log("removing old data...")
     cursor.execute("DELETE FROM "+TABLE)
     cursor.execute("DELETE FROM "+REF_TABLE)
@@ -190,10 +190,26 @@ try:
     cursor.close()
     db.connection._commit()
     db.connection.close()
+    
+if __name__ == '__main__':
+    try:
+        log("output from mirror_rfc_editor_queue.py:\n")
+        log("time: "+str(datetime.now()))
+        log("host: "+socket.gethostname())
+        log("url: "+QUEUE_URL)
+        
+        log("downloading...")
+        response = urllib2.urlopen(QUEUE_URL)
 
-    log("all done!")
-    if log_data.find("WARNING") < 0:
-        log_data = ""
-finally:
-    if len(log_data) > 0:
-        print log_data
+        (drafts, refs) = parse_all(response)
+        if len(drafts) < 10 or len(refs) < 10:
+            raise Exception('not enough data')
+    
+        insert_into_database(drafts, refs)
+
+        log("all done!")
+        if log_data.find("WARNING") < 0:
+            log_data = ""
+    finally:
+        if len(log_data) > 0:
+            print log_data

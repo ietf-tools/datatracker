@@ -48,7 +48,7 @@ TABLE = "rfc_index_mirror"
 log_data = ""
 def log(line):
     global log_data
-    if len(sys.argv) > 1:
+    if __name__ == '__main__' and len(sys.argv) > 1:
         print line
     else:
         log_data += line + "\n"
@@ -127,21 +127,7 @@ def parse(response):
             d[9] = ",".join(also_list[k])
     return data
 
-try:
-    log("output from mirror_rfc_index.py:\n")
-    log("time: "+str(datetime.now()))
-    log("host: "+socket.gethostname())
-    log("url: "+INDEX_URL)
-
-    log("downloading...")
-    response = urllib2.urlopen(INDEX_URL)
-    log("parsing...")
-    data = parse(response)
-
-    log("got " + str(len(data)) + " entries")
-    if len(data) < 5000:
-        raise Exception('not enough data')
-
+def insert_to_database(data):
     log("connecting to database...")
     cursor = db.connection.cursor()
     log("removing old data...")
@@ -152,9 +138,27 @@ try:
     db.connection._commit()
     db.connection.close()
 
-    log("all done!")
-    log_data = ""
+if __name__ == '__main__':
+    try:
+        log("output from mirror_rfc_index.py:\n")
+        log("time: "+str(datetime.now()))
+        log("host: "+socket.gethostname())
+        log("url: "+INDEX_URL)
 
-finally:
-    if len(log_data) > 0:
-        print log_data
+        log("downloading...")
+        response = urllib2.urlopen(INDEX_URL)
+        log("parsing...")
+        data = parse(response)
+
+        log("got " + str(len(data)) + " entries")
+        if len(data) < 5000:
+            raise Exception('not enough data')
+
+        insert_to_database(data)
+
+        log("all done!")
+        log_data = ""
+
+    finally:
+        if len(log_data) > 0:
+            print log_data
