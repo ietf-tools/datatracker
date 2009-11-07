@@ -176,8 +176,9 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
             mfile = urllib.urlopen(refurl)
             refhtml = mfile.read()
             mfile.close()
-        except e:
+        except Exception, e:
             print "    Error retrieving %s: %s" % (refurl, e)
+            return
         testhtml = response.content
         #print "REFERENCE:\n----------------------\n"+refhtml+"\n-------------\n"
         #print "TEST:\n----------------------\n"+testhtml+"\n-------------\n"
