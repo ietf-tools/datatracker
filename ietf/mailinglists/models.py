@@ -42,16 +42,6 @@ class NonWgMailingList(models.Model):
     msg_to_ad = models.TextField(blank=True)
     def __str__(self):
 	return self.list_name 
-    def save(self, *args, **kwargs):
-	if self.id is None:
-	    generate = True
-	    while generate:
-		self.id = ''.join([random.choice('0123456789abcdefghijklmnopqrstuvwxyz') for i in range(35)])
-		try:
-		    NonWgMailingList.objects.get(pk=self.id)
-		except NonWgMailingList.DoesNotExist:
-		    generate = False
-	super(NonWgMailingList, self).save(*args, **kwargs)
     def choices():
 	return [(list.id, list.list_name) for list in NonWgMailingList.objects.all().filter(status__gt=0)]
     choices = staticmethod(choices)
