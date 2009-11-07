@@ -2,7 +2,6 @@
 
 from django.db import models
 from ietf.idtracker.models import Acronym, Area
-import random
 
 class ImportedMailingList(models.Model):
     group_acronym = models.ForeignKey(Acronym, null=True)

@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import django.utils.html
 from django.shortcuts import render_to_response as render, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
@@ -10,11 +9,6 @@ from ietf.ipr.models import IprDetail, SELECT_CHOICES, LICENSE_CHOICES
 from ietf.ipr.view_sections import section_table
 from ietf.utils import log
 
-def linebreaks(value):
-    if value:
-        return django.utils.html.linebreaks(value)
-    else:
-        return value
 
 def default(request):
     """Default page, with links to sub-pages"""

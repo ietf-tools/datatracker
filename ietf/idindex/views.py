@@ -44,7 +44,6 @@ from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, Rfc, IDInterna
 from ietf.idindex.forms import IDIndexSearchForm
 from ietf.idindex.models import alphabet, orgs, orgs_dict
 from ietf.utils import orl, flattenl, normalize_draftname
-import ietf
 
 base_extra = { 'alphabet': alphabet, 'orgs': orgs }
 

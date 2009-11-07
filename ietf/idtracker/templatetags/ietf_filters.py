@@ -3,7 +3,7 @@
 import textwrap
 import django
 from django import template
-from django.utils.html import escape, fix_ampersands, linebreaks
+from django.utils.html import escape, fix_ampersands
 from django.template.defaultfilters import linebreaksbr, wordwrap
 from django.template import resolve_variable
 try:
