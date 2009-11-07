@@ -40,9 +40,9 @@ function activate_nwg_widgets() {
 <h2>Step 1</h2>
 <h3>Please select one:</h3>
 <form action="." method="POST" name="form_post">
-{{ form.add_edit_fields.0 }}<br>
-{{ form.add_edit_fields.1 }}{{ form.list_id }}<br>
-{{ form.add_edit_fields.2 }}{{ form.list_id_delete }}<br>
+<label for="{{ form.add_edit.auto_id }}_0"><input onClick="activate_nwg_widgets()" type="radio" id="{{ form.add_edit.auto_id }}_0" value="add" name="{{ form.add_edit.html_name }}" /> Add a new entry</label><br>
+<label for="{{ form.add_edit.auto_id }}_1"><input onClick="activate_nwg_widgets()" type="radio" id="{{ form.add_edit.auto_id }}_1" value="edit" name="{{ form.add_edit.html_name }}" /> Modify an existing entry</label>{{ form.list_id }}<br>
+<label for="{{ form.add_edit.auto_id }}_2"><input onClick="activate_nwg_widgets()" type="radio" id="{{ form.add_edit.auto_id }}_2" value="delete" name="{{ form.add_edit.html_name }}" /> Delete an existing entry</label>{{ form.list_id_delete }}<br>
 <input type="submit" value="     Proceed     ">
 <!--
  onClick="if (document.form_get.add_edit[0].checked == false && document.form_get.add_edit[1].checked == false && document.form_get.add_edit[2].checked == false) {alert('Please select one of three options');return false;}">
