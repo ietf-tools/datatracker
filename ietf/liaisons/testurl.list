@@ -17,7 +17,17 @@
 200	/feed/liaison/from/ccamp/
 #200	/feed/liaison/from/MFA%20Forum/
 200	/feed/liaison/from/MFA_Forum/
+200	/feed/liaison/to/ccamp/
 200	/feed/liaison/subject/H.248/
 200	/feed/liaison/subject/2173/	# non-ASCII title
+
+404	/feed/liaison/recent/foobar/
+404	/feed/liaison/from/
+404	/feed/liaison/from/nosuchorganization/
+404	/feed/liaison/from/foo/bar/
+404	/feed/liaison/to/
+404	/feed/liaison/to/foo/bar/
+404	/feed/liaison/subject/
+404	/feed/liaison/subject/foo/bar/
 
 200	/sitemap-liaison.xml
