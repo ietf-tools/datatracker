@@ -85,14 +85,14 @@ def search(request):
                 if m1[-1][1] and m1[-1][1][0][1] == m.ballot_id:
                     m1[-1][1][0][2].append(m)
                 else:
-                    m1[-1][1].append((m.event_date, m.ballot_id, [m]))
+                    m1[-1][1].append((m.event_date, m.ballot_id, m.primary_flag, m.draft_id, [m]))
             else:
-                m1.append((m.docstate(), [(m.event_date, m.ballot_id, [m])]))
+                m1.append((m.docstate(), [(m.event_date, m.ballot_id, m.primary_flag, m.draft_id, [m])]))
         matches = []
         for ms in m1: ms[1].sort(reverse=True)
         for ms in m1:
             for mt in ms[1]:
-                matches.extend(mt[2])
+                matches.extend(mt[4])
 	#
 	# Now search by I-D exists, if there could be any results.
 	# If searching by job owner, current state or substate, there
