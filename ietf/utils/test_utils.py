@@ -117,6 +117,7 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
         self.ref_prefix = os.environ.get("IETFDB_REF_PREFIX", "")
         if self.ref_prefix.endswith("/"):
             self.ref_prefix = self.ref_prefix[:-1]
+        self.skip_heavy_tests = os.environ.get("IETFDB_SKIP_HEAVY", False)
 
     def tearDown(self):
         self.tearDownRealDatabase()
@@ -140,6 +141,9 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
         #enable this to see query counts
         #settings.DEBUG = True
         try:
+            if "heavy" in codes and self.skip_heavy_tests:
+                print "Skipping heavy test %s" % (url,)
+                return
             now = datetime.utcnow()
             response = self.client.get(baseurl, args)
             elapsed_dt = datetime.utcnow()-now

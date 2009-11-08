@@ -11,5 +11,5 @@
 200	/wg/v6ops-charter.txt
 404	/wg/nosuchgroup-charter.html
 404	/wg/nosuchgroup-charter.txt
-200	/wg/1wg-charters.txt
-200	/wg/1wg-charters-by-acronym.txt
+200,heavy	/wg/1wg-charters.txt
+200,heavy	/wg/1wg-charters-by-acronym.txt
