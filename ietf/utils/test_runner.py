@@ -36,8 +36,10 @@ import sys
 import socket
 from django.conf import settings
 import django
+from django.template import TemplateDoesNotExist
 
 mail_outbox = []
+loaded_templates = set()
 test_database_name = None
 old_destroy = None
 old_create = None
@@ -85,6 +87,12 @@ def test_send_smtp(msg, bcc=None):
     global mail_outbox
     mail_outbox.append(msg)
 
+def template_coverage_loader(template_name, dirs):
+    loaded_templates.add(str(template_name))
+    raise TemplateDoesNotExist
+
+template_coverage_loader.is_usable = True
+
 def run_tests_0(*args, **kwargs):
     global old_destroy, old_create, test_database_name
     import django.test.utils
@@ -105,7 +113,8 @@ def run_tests_1(test_labels, *args, **kwargs):
     connection.creation.__class__.destroy_test_db = safe_destroy_0_1
     from django.test.simple import run_tests
     if not test_labels:
-        test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")]
+        settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
+        test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")] + ['redirects.TemplateCoverageTestCase',]
     run_tests(test_labels, *args, **kwargs)
 
 def run_tests(*args, **kwargs):

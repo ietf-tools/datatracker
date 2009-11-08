@@ -31,10 +31,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest, os, re
+import django
 from django.test.client import Client
 from django.conf import settings
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, split_url, read_testurls
 import ietf.urls
+import ietf.utils.test_runner as test_runner
 
 REDIRECT_TESTS = {
 
@@ -127,8 +129,8 @@ def get_patterns(module):
                 all.append(item.regex.pattern + ".*" + sub)
     return all
 
-class CoverageTestCase(unittest.TestCase):
-    def testCoverage(self):
+class UrlCoverageTestCase(unittest.TestCase):
+    def testUrlCoverage(self):
         print "Testing testurl.list coverage"
         testtuples = []
         for root, dirs, files in os.walk(settings.BASE_DIR):
@@ -155,3 +157,47 @@ class CoverageTestCase(unittest.TestCase):
 class MainUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
         self.doTestUrls(__file__)
+
+def get_templates():
+    templates = set()
+    for root, dirs, files in os.walk(os.path.join(settings.BASE_DIR,"templates")):
+        if ".svn" in dirs:
+            dirs.remove(".svn")
+        last_dir = os.path.split(root)[1]
+        for file in files:
+            if file.endswith("~") or file.startswith("#"):
+                continue
+            if last_dir == "templates":
+                templates.add(file)
+            else:
+                templates.add(os.path.join(last_dir, file))
+    return templates
+
+class TemplateCoverageTestCase(unittest.TestCase):
+    def testTemplateCoverage(self):
+        if django.VERSION[0] == 0:
+            print "Not testing template coverage under Django 0.96"
+            return
+        if not test_runner.loaded_templates:
+            print "Skipping template coverage test"
+            return
+
+        print "Testing template coverage"
+        all_templates = get_templates()
+
+        #notexist = list(test_runner.loaded_templates - all_templates)
+        #if notexist:
+        #    notexist.sort()
+        #    print "The following templates do not exist"
+        #    for x in notexist:
+        #        print "NotExist", x
+            
+        notloaded = list(all_templates - test_runner.loaded_templates)
+        if notloaded:
+            notloaded.sort()
+            print "The following templates were never loaded during test"
+            for x in notloaded:
+                print "NotLoaded", x
+        else:
+            print "All templates were loaded during test"
+        
