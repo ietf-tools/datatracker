@@ -10,7 +10,7 @@ class LatestWgProceedingsActivity(Feed):
     link = "/foo"
     description = "foobar"
     language = "en"
-    feed_url = "/feed/ipr/"
+    feed_url = "/feed/wg-proceedings/"
     base_url = "http://www3.ietf.org/proceedings/"
 
     def items(self):

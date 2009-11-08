@@ -6,9 +6,8 @@ from ietf.idtracker.models import IDInternal
 import datetime
 
 class IESGAgenda(Feed):
-    title = "IESG Telechat Agenda"
-    link = "http://www.ietf.org/IESG/agenda.html"
-    subtitle = "Documents on upcoming IESG Telechat Agendas."
+    title = "Documents on upcoming IESG Telechat Agenas"
+    link = "http://datatracker.ietf.org/iesg/agenda/"
     feed_type = Atom1Feed
 
     def items(self):
