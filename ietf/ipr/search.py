@@ -20,22 +20,6 @@ def mark_last_doc(iprs):
         if count > 1:
             item.last_draft = docs[count-1]
 
-def mark_related_doc(iprs):
-    for item in iprs:
-        for entry in item.drafts.all():
-            related_docs(entry.document, [])
-        for entry in item.rfcs.all():
-            related_docs(entry.document, [])
-
-def unique_iprs(iprs):
-    ids = []
-    unique = []
-    for ipr in iprs:
-        if not ipr.ipr_id in ids:
-            ids += [ ipr.ipr_id ]
-            unique += [ ipr ]
-    return unique
-
 def iprs_from_docs(docs):
     iprs = []
     for doc in docs:
