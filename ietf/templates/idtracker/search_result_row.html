@@ -16,7 +16,7 @@
 <!--	      {% if match.document.replaced_by.idinternal %}
 		<a href="{% url ietf.idtracker.views.search %}?search_filename={{ match.document.replaced_by.filename }}">
 	      {% endif %}
--->	      {{ match.document.replaced_by.displayname_with_link }}
+-->	      {{ match.document.replaced_by.displayname_with_link|safe }}
 <!--	      {% if match.document.replaced_by.idinternal %}
 		</a>
 	      {% endif %}
