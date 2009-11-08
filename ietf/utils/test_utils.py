@@ -162,6 +162,10 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
             print "Exception for URL '%s'" % url
             traceback.print_exc()
         self.assertEqual(failed, False)
+        
+    # Override this in subclasses if needed
+    def doCanonicalize(self, url, content):
+        return content
 
     def doDiff(self, tuple, response):
         if not self.ref_prefix:
@@ -179,7 +183,8 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
         except Exception, e:
             print "    Error retrieving %s: %s" % (refurl, e)
             return
-        testhtml = response.content
+        testhtml = self.doCanonicalize(url, response.content)
+        refhtml = self.doCanonicalize(url, refhtml)
         #print "REFERENCE:\n----------------------\n"+refhtml+"\n-------------\n"
         #print "TEST:\n----------------------\n"+testhtml+"\n-------------\n"
 
@@ -192,5 +197,15 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
         else:
             print "    No differences found"
 
+def canonicalize_feed(s):
+    # Django 0.96 handled time zone different -- ignore it for now
+    s = re.sub(r"(<updated>\d\d\d\d-\d\d-\d\dT)\d\d(:\d\d:\d\d)(Z|-08:00)(</updated>)",r"\g<1>00\g<2>Z\g<4>", s)
+    # Insert newline before tags to make diff easier to read
+    s = re.sub("\n*\s*(<[a-zA-Z])", "\n\g<1>", s)
+    return s
 
+def canonicalize_sitemap(s):
+    # Insert newline before tags to make diff easier to read
+    s = re.sub("\n*\s*(<[a-zA-Z])", "\n\g<1>", s)
+    return s
         
