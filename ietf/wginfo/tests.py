@@ -46,7 +46,8 @@ class WgFileTestCase(unittest.TestCase):
         if not os.path.exists(fpath):
             print "\nERROR: charter files not found in "+settings.IETFWG_DESCRIPTIONS_PATH
             print "They are needed for testing WG charter pages."
-            print "(you can't currently download them, but we're working on this.)"
+            print "Download them to a local directory with:"
+            print "wget -nd -nc -np -r http://www.ietf.org/wg-descriptions/"
             print "And set IETFWG_DESCRIPTIONS_PATH in settings_local.py\n"
         else:
             print "OK (they seem to exist)"

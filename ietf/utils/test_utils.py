@@ -205,6 +205,7 @@ def canonicalize_feed(s):
     return s
 
 def canonicalize_sitemap(s):
+    s = re.sub("> <", "><", s)
     # Insert newline before tags to make diff easier to read
     s = re.sub("\n*\s*(<[a-zA-Z])", "\n\g<1>", s)
     return s

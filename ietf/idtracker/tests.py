@@ -3,7 +3,7 @@
 import doctest
 from ietf.idtracker.templatetags import ietf_filters
 import unittest
-from ietf.utils.test_utils import SimpleUrlTestCase
+from ietf.utils.test_utils import SimpleUrlTestCase, canonicalize_feed, canonicalize_sitemap
 import django.test
 
 class TemplateTagTest(unittest.TestCase):
@@ -17,6 +17,13 @@ class TemplateTagTest(unittest.TestCase):
 class IdTrackerUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
         self.doTestUrls(__file__)
+    def doCanonicalize(self, url, content):
+        if url.startswith("/feed/"):
+            return canonicalize_feed(content)
+        elif url.startswith("/sitemap"):
+            return canonicalize_sitemap(content)
+        else:
+            return content
 
 class WGRoleTest(django.test.TestCase):
     fixtures = ['wgtest']

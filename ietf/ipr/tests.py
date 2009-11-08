@@ -30,16 +30,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
+import os, re
 import unittest
 from django.test.client import Client
 from django.conf import settings
-from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
+from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, canonicalize_sitemap
 import ietf.utils.test_runner as test_runner
 
 class IprUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
         self.doTestUrls(__file__)
+    def doCanonicalize(self, url, content):
+        if url.startswith("/feed/"):
+            return canonicalize_feed(content)
+        elif url == "/sitemap-ipr.xml":
+            return canonicalize_sitemap(content)
+        else:
+            return content
 
 class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
     SPECIFIC_DISCLOSURE = {
