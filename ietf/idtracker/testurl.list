@@ -17,6 +17,11 @@
 200	/feed/comments/draft-ietf-isis-link-attr/
 200	/feed/comments/rfc3373/
 200	/idtracker/?search_group_acronym=&search_job_owner=0&search_rfcnumber=&search_status_id=&sub_state_id=6&search_cur_state=&search_button=SEARCH&search_filename=bgp-m&search_area_acronym=	
+200	/idtracker/?search_rfcnumber=1234	
+200	/idtracker/?search_job_owner=53&search_filename=nfs
+200	/idtracker/?sub_state_id=5
+200	/idtracker/?search_area_acronym=1260
+200	/idtracker/?search_group_acronym=tls
 200	/feed/last-call/
 
 # An RFC with no matching value in InternetDrafts.  This tests
