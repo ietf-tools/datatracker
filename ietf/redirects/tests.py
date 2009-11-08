@@ -83,6 +83,10 @@ REDIRECT_TESTS = {
     '/public/meeting_materials.cgi?meeting_num=76':
         '/meeting/76/materials.html',
 
+    # RedirectTrailingPeriod middleware
+    '/sitemap.xml.':
+        '/sitemap.xml'
+
     }
 
 class RedirectsTestCase(unittest.TestCase, RealDatabaseTest):
