@@ -1,3 +1,44 @@
+ietfdb (2.37)
+
+  * With this release, the datatracker is changed to run under Django 1.1
+    rather than under 0.96, and in this sense it is a major release.  There
+    is however very few changes that can be seen by the users, which is the
+    reason why there is no major bump in the release number.
+
+  Major changes, from Pasi and the code sprint participants:
+
+  * Imported django/ directory from Django-1.1.1.tar.gz, placed in parallel
+    with the top-level ietf/ directory in the tree.  This lets us run with
+    a version of Django which could possibly be different than the system
+    installed version.
+
+  * Automated conversion of the code base to django-1.1 conventions, e.g.
+    to use max_length instead of maxlength in model declarations.
+
+  * Lots of escape and safe filters added to the templates, to handle the
+    transition from 0.96 to 1.1.  This work was contributed by a number of
+    people durint the IETF 76 code sprint:
+	Pasi Eronen (also leading up to the IETF 76 code sprint)
+	Tony Hansen
+	Ben Campbell
+	Tero Kivinen
+	Adam Roach
+	Arifumi Matsumoto
+
+  * Code cleanup, including removal of unused and seldomly used code (in
+    particular the code for mailing list change requests)
+
+  * A lot more test cases added, in preparation for the transition to 1.1;
+    also refinement of the testing framework.
+
+  From Lars Eggert:
+
+  * Support the use of UTF-8 in emails
+
+  * Fixed the IPR submission tool to work under Django 1.1
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Nov 2009 10:59:20 +0100
+
 ietfdb (2.36)
 
   From Pasi:
