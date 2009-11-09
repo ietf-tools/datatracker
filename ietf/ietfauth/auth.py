@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.contrib.auth.backends import ModelBackend
-from django.core.validators import email_re
+from django.forms.fields import email_re
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
@@ -93,3 +93,5 @@ def set_password( user, password, realm=None ):
     userprof.email_htdigest = htdigest( user.email, password, realm )
     userprof.rfced_htdigest = htdigest( user.email, password, 'RFC Editor' )
     userprof.save()
+
+# changes done by convert-096.py:changed email_re import

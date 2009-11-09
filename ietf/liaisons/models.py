@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 class LiaisonPurpose(models.Model):
     purpose_id = models.AutoField(primary_key=True)
-    purpose_text = models.CharField(blank=True, maxlength=50)
+    purpose_text = models.CharField(blank=True, max_length=50)
     def __str__(self):
 	return self.purpose_text
     class Meta:
@@ -16,8 +16,8 @@ class LiaisonPurpose(models.Model):
 
 class FromBodies(models.Model):
     from_id = models.AutoField(primary_key=True)
-    body_name = models.CharField(blank=True, maxlength=35)
-    poc = models.ForeignKey(PersonOrOrgInfo, db_column='poc', raw_id_admin=True, null=True)
+    body_name = models.CharField(blank=True, max_length=35)
+    poc = models.ForeignKey(PersonOrOrgInfo, db_column='poc', null=True)
     is_liaison_manager = models.BooleanField()
     other_sdo = models.BooleanField()
     email_priority = models.IntegerField(null=True, blank=True)
@@ -30,28 +30,28 @@ class FromBodies(models.Model):
 
 class LiaisonDetail(models.Model):
     detail_id = models.AutoField(primary_key=True)
-    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
     submitted_date = models.DateField(null=True, blank=True)
     last_modified_date = models.DateField(null=True, blank=True)
     from_id = models.IntegerField(null=True, blank=True)
-    to_body = models.CharField(blank=True, maxlength=255)
-    title = models.CharField(blank=True, maxlength=255)
-    response_contact = models.CharField(blank=True, maxlength=255)
-    technical_contact = models.CharField(blank=True, maxlength=255)
+    to_body = models.CharField(blank=True, max_length=255)
+    title = models.CharField(blank=True, max_length=255)
+    response_contact = models.CharField(blank=True, max_length=255)
+    technical_contact = models.CharField(blank=True, max_length=255)
     purpose_text = models.TextField(blank=True, db_column='purpose')
     body = models.TextField(blank=True)
     deadline_date = models.DateField(null=True, blank=True)
     cc1 = models.TextField(blank=True)
     # unclear why cc2 is a CharField, but it's always
     # either NULL or blank.
-    cc2 = models.CharField(blank=True, maxlength=50)
-    submitter_name = models.CharField(blank=True, maxlength=255)
-    submitter_email = models.CharField(blank=True, maxlength=255)
+    cc2 = models.CharField(blank=True, max_length=50)
+    submitter_name = models.CharField(blank=True, max_length=255)
+    submitter_email = models.CharField(blank=True, max_length=255)
     by_secretariat = models.IntegerField(null=True, blank=True)
-    to_poc = models.CharField(blank=True, maxlength=255)
-    to_email = models.CharField(blank=True, maxlength=255)
+    to_poc = models.CharField(blank=True, max_length=255)
+    to_email = models.CharField(blank=True, max_length=255)
     purpose = models.ForeignKey(LiaisonPurpose)
-    replyto = models.CharField(blank=True, maxlength=255)
+    replyto = models.CharField(blank=True, max_length=255)
     def __str__(self):
 	return self.title or "<no title>"
     def from_body(self):
@@ -100,7 +100,7 @@ class LiaisonDetail(models.Model):
 # probably not currently (Aug 2009) maintained by the secretariat.
 #class SDOs(models.Model):
 #    sdo_id = models.AutoField(primary_key=True)
-#    sdo_name = models.CharField(blank=True, maxlength=255)
+#    sdo_name = models.CharField(blank=True, max_length=255)
 #    def __str__(self):
 #	return self.sdo_name
 #    def liaisonmanager(self):
@@ -116,9 +116,9 @@ class LiaisonDetail(models.Model):
 # This table is not used by any code right now, and according to Glen,
 # probably not currently (Aug 2009) maintained by the secretariat.
 #class LiaisonManagers(models.Model):
-#    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
-#    email_priority = models.IntegerField(null=True, blank=True, core=True)
-#    sdo = models.ForeignKey(SDOs, edit_inline=models.TABULAR, num_in_admin=1)
+#    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+#    email_priority = models.IntegerField(null=True, blank=True)
+#    sdo = models.ForeignKey(SDOs)
 #    def email(self):
 #	try:
 #	    return self.person.emailaddress_set.get(priority=self.email_priority)
@@ -129,9 +129,9 @@ class LiaisonDetail(models.Model):
 
 # This table is not used by any code right now.
 #class LiaisonsInterim(models.Model):
-#    title = models.CharField(blank=True, maxlength=255)
-#    submitter_name = models.CharField(blank=True, maxlength=255)
-#    submitter_email = models.CharField(blank=True, maxlength=255)
+#    title = models.CharField(blank=True, max_length=255)
+#    submitter_name = models.CharField(blank=True, max_length=255)
+#    submitter_email = models.CharField(blank=True, max_length=255)
 #    submitted_date = models.DateField(null=True, blank=True)
 #    from_id = models.IntegerField(null=True, blank=True)
 #    def __str__(self):
@@ -143,10 +143,10 @@ class LiaisonDetail(models.Model):
 
 class Uploads(models.Model):
     file_id = models.AutoField(primary_key=True)
-    file_title = models.CharField(blank=True, maxlength=255, core=True)
-    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
-    file_extension = models.CharField(blank=True, maxlength=10)
-    detail = models.ForeignKey(LiaisonDetail, raw_id_admin=True, edit_inline=models.TABULAR, num_in_admin=1)
+    file_title = models.CharField(blank=True, max_length=255)
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+    file_extension = models.CharField(blank=True, max_length=10)
+    detail = models.ForeignKey(LiaisonDetail)
     def __str__(self):
 	return self.file_title
     class Meta:
@@ -155,9 +155,15 @@ class Uploads(models.Model):
 # empty table
 #class SdoChairs(models.Model):
 #    sdo = models.ForeignKey(SDOs)
-#    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True)
+#    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
 #    email_priority = models.IntegerField(null=True, blank=True)
 #    class Meta:
 #        db_table = 'sdo_chairs'
 #    class Admin:
 #	pass
+
+# changes done by convert-096.py:changed maxlength to max_length
+# removed core
+# removed edit_inline
+# removed num_in_admin
+# removed raw_id_admin

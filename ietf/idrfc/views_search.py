@@ -31,7 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import re
-from django import newforms as forms
+from django import forms
 from django.shortcuts import render_to_response
 from django.db.models import Q
 from django.template import RequestContext
@@ -57,7 +57,7 @@ class SearchForm(forms.Form):
     subState = forms.ChoiceField(choices=(), required=False)
         
     def clean_name(self):
-        value = self.clean_data.get('name','')
+        value = self.cleaned_data.get('name','')
         return normalize_draftname(value)
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
@@ -213,8 +213,8 @@ def search_results(request):
     form = SearchForm(request.REQUEST)
     if not form.is_valid():
         return HttpResponse("form not valid?", mimetype="text/plain")
-    x = form.clean_data
-    (results,meta) = search_query(form.clean_data)
+    x = form.cleaned_data
+    (results,meta) = search_query(form.cleaned_data)
     if 'ajax' in request.REQUEST and request.REQUEST['ajax']:
         return render_to_response('idrfc/search_results.html', {'docs':results, 'meta':meta}, context_instance=RequestContext(request))
     else:
@@ -239,13 +239,16 @@ def by_ad(request, name):
     form = SearchForm(request.REQUEST)
     if form.is_valid():
         pass
-    form.clean_data['ad'] = ad_id
-    form.clean_data['activeDrafts'] = True
-    form.clean_data['rfcs'] = True
-    form.clean_data['oldDrafts'] = True
-    (results,meta) = search_query(form.clean_data)
+    form.cleaned_data['ad'] = ad_id
+    form.cleaned_data['activeDrafts'] = True
+    form.cleaned_data['rfcs'] = True
+    form.cleaned_data['oldDrafts'] = True
+    (results,meta) = search_query(form.cleaned_data)
 
     results.sort(key=lambda obj: obj.view_sort_key_byad())
     return render_to_response('idrfc/by_ad.html', {'form':form, 'docs':results,'meta':meta, 'ad_name':ad_name}, context_instance=RequestContext(request))
 
 
+
+# changes done by convert-096.py:changed newforms to forms
+# cleaned_data

@@ -5,9 +5,9 @@ from ietf.idtracker.models import Acronym, Area
 
 class ImportedMailingList(models.Model):
     group_acronym = models.ForeignKey(Acronym, null=True)
-    acronym = models.CharField(maxlength=255, db_column='list_acronym')
-    name = models.CharField(blank=True, maxlength=255, db_column='list_name')
-    domain = models.CharField(blank=True, maxlength=25, db_column='list_domain')
+    acronym = models.CharField(max_length=255, db_column='list_acronym')
+    name = models.CharField(blank=True, max_length=255, db_column='list_name')
+    domain = models.CharField(blank=True, max_length=25, db_column='list_domain')
     def __str__(self):
 	return self.acronym or self.group_acronym.acronym
     def choices(dname):
@@ -23,21 +23,21 @@ class ImportedMailingList(models.Model):
 	pass
 
 class NonWgMailingList(models.Model):
-    id = models.CharField(primary_key=True, maxlength=35)
-    s_name = models.CharField("Submitter's Name", blank=True, maxlength=255)
-    s_email = models.EmailField("Submitter's Email Address", blank=True, maxlength=255)
-    list_name = models.CharField("Mailing List Name", unique=True, maxlength=255)
-    list_url = models.CharField("List URL", maxlength=255)
+    id = models.CharField(primary_key=True, max_length=35)
+    s_name = models.CharField("Submitter's Name", blank=True, max_length=255)
+    s_email = models.EmailField("Submitter's Email Address", blank=True, max_length=255)
+    list_name = models.CharField("Mailing List Name", unique=True, max_length=255)
+    list_url = models.CharField("List URL", max_length=255)
     admin = models.TextField("Administrator(s)' Email Address(es)", blank=True)
     purpose = models.TextField(blank=True)
     area = models.ForeignKey(Area, db_column='area_acronym_id', null=True)
-    subscribe_url = models.CharField("Subscribe URL", blank=True, maxlength=255)
+    subscribe_url = models.CharField("Subscribe URL", blank=True, max_length=255)
     subscribe_other = models.TextField("Subscribe Other", blank=True)
     # Can be 0, 1, -1, or what looks like a person_or_org_tag, positive or neg.
     # The values less than 1 don't get displayed on the list of lists.
     status = models.IntegerField()
-    ds_name = models.CharField(blank=True, maxlength=255)
-    ds_email = models.EmailField(blank=True, maxlength=255)
+    ds_name = models.CharField(blank=True, max_length=255)
+    ds_email = models.EmailField(blank=True, max_length=255)
     msg_to_ad = models.TextField(blank=True)
     def __str__(self):
 	return self.list_name 
@@ -50,3 +50,5 @@ class NonWgMailingList(models.Model):
     class Admin:
 	pass
 
+
+# changes done by convert-096.py:changed maxlength to max_length

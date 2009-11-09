@@ -15,10 +15,10 @@ class Redirect(models.Model):
     searched for in the Command table to see if there
     is a different value of rest= and remove=.
     """
-    cgi = models.CharField(maxlength=50, unique=True, blank=True)
-    url = models.CharField(maxlength=255)
-    rest = models.CharField(maxlength=100, blank=True)
-    remove = models.CharField(maxlength=50, blank=True)
+    cgi = models.CharField(max_length=50, unique=True, blank=True)
+    url = models.CharField(max_length=255)
+    rest = models.CharField(max_length=100, blank=True)
+    remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
 	return "%s -> %s/%s" % (self.cgi, self.url, self.rest)
     class Admin:
@@ -28,8 +28,8 @@ class Suffix(models.Model):
     """This is a "rest" and "remove" (see Redirect class)
     for requests with command=.
     """
-    rest = models.CharField(maxlength=100, blank=True)
-    remove = models.CharField(maxlength=50, blank=True)
+    rest = models.CharField(max_length=100, blank=True)
+    remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
 	return "-> %s - %s" % (self.rest, self.remove)
     class Meta:
@@ -44,9 +44,9 @@ class Command(models.Model):
     use than those specified in the Redirect class that
     matched.  The optional "url" is prepended to the "rest".
     """
-    command = models.CharField(maxlength=50, core=True)
-    url = models.CharField(maxlength=50, blank=True)
-    script = models.ForeignKey(Redirect, edit_inline=models.TABULAR, related_name='commands', editable=False)
+    command = models.CharField(max_length=50)
+    url = models.CharField(max_length=50, blank=True)
+    script = models.ForeignKey(Redirect, related_name='commands', editable=False)
     suffix = models.ForeignKey(Suffix, null=True, blank=True)
     def __str__(self):
 	ret = "%s?command=%s" % (self.script.cgi, self.command)
@@ -57,3 +57,7 @@ class Command(models.Model):
 	unique_together = (("script", "command"), )
     class Admin:
 	pass
+
+# changes done by convert-096.py:changed maxlength to max_length
+# removed core
+# removed edit_inline

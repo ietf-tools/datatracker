@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django import newforms as forms
+from django import forms
 from ietf.idtracker.models import IDState, IDStatus, IETFWG
 from ietf.idindex.models import orgs
 
@@ -17,3 +17,5 @@ class IDIndexSearchForm(forms.Form):
 	self.fields['id_tracker_state_id'].choices = [('', 'All/Any')] + IDState.choices()
 	self.fields['wg_id'].choices = [('', 'All/Any')] + IETFWG.choices()
 	self.fields['status_id'].choices = [('', 'All/Any')] + [(status.status_id, status.status) for status in IDStatus.objects.all()]
+
+# changes done by convert-096.py:changed newforms to forms

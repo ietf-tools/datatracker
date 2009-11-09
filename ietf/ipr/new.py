@@ -3,7 +3,7 @@
 import re
 import models
 import ietf.utils
-import django.newforms as forms
+from django import forms
 
 from datetime import datetime
 from django.shortcuts import render_to_response as render, get_object_or_404
@@ -151,14 +151,14 @@ def new(request, type, update=None, submitter=None):
                 # would like to put this in rfclist to get the error
                 # closer to the fields, but clean_data["draftlist"]
                 # isn't set yet.
-                rfclist = self.clean_data.get("rfclist", None)
-                draftlist = self.clean_data.get("draftlist", None)
-                other = self.clean_data.get("other_designations", None)
+                rfclist = self.cleaned_data.get("rfclist", None)
+                draftlist = self.cleaned_data.get("draftlist", None)
+                other = self.cleaned_data.get("other_designations", None)
                 if not rfclist and not draftlist and not other:
                     raise forms.ValidationError("One of the Document fields below must be filled in")
-            return self.clean_data
+            return self.cleaned_data
         def clean_rfclist(self):
-            rfclist = self.clean_data.get("rfclist", None)
+            rfclist = self.cleaned_data.get("rfclist", None)
             if rfclist:
                 rfclist = re.sub("(?i) *[,;]? *rfc[- ]?", " ", rfclist)
                 rfclist = rfclist.strip().split()
@@ -170,7 +170,7 @@ def new(request, type, update=None, submitter=None):
                 rfclist = " ".join(rfclist)
             return rfclist
         def clean_draftlist(self):
-            draftlist = self.clean_data.get("draftlist", None)
+            draftlist = self.cleaned_data.get("draftlist", None)
             if draftlist:
                 draftlist = re.sub(" *[,;] *", " ", draftlist)
                 draftlist = draftlist.strip().split()
@@ -195,7 +195,7 @@ def new(request, type, update=None, submitter=None):
                 return " ".join(drafts)
             return ""
         def clean_licensing_option(self):
-            licensing_option = self.clean_data['licensing_option']
+            licensing_option = self.cleaned_data['licensing_option']
             if section_list.get('licensing', False):
                 if licensing_option in (None, ''):
                     raise forms.ValidationError, 'This field is required.'
@@ -243,10 +243,10 @@ def new(request, type, update=None, submitter=None):
             if type == "generic":
                 instance.title = legal_name_genitive + " General License Statement" % legal_name_genitive
             if type == "specific":
-                data["ipr_summary"] = get_ipr_summary(form.clean_data)
+                data["ipr_summary"] = get_ipr_summary(form.cleaned_data)
                 instance.title = legal_name_genitive + """ Statement about IPR related to %(ipr_summary)s""" % data
             if type == "third-party":
-                data["ipr_summary"] = get_ipr_summary(form.clean_data)
+                data["ipr_summary"] = get_ipr_summary(form.cleaned_data)
 		ietf_name_genitive = data['ietf_name'] + "'" if data['ietf_name'].endswith('s') else data['ietf_name'] + "'s"
                 instance.title = ietf_name_genitive + """ Statement about IPR related to %(ipr_summary)s belonging to %(legal_name)s""" % data
 
@@ -292,13 +292,13 @@ def new(request, type, update=None, submitter=None):
 #                    log("Invalid contact: %s" % contact)
 
             # Save IprDraft(s)
-            for draft in form.clean_data["draftlist"].split():
+            for draft in form.cleaned_data["draftlist"].split():
                 id = InternetDraft.objects.get(filename=draft[:-3])
                 iprdraft = models.IprDraft(document=id, ipr=instance, revision=draft[-2:])
                 iprdraft.save()
 
             # Save IprRfc(s)
-            for rfcnum in form.clean_data["rfclist"].split():
+            for rfcnum in form.cleaned_data["rfclist"].split():
                 rfc = Rfc.objects.get(rfc_number=int(rfcnum))
                 iprrfc = models.IprRfc(document=rfc, ipr=instance)
                 iprrfc.save()
@@ -360,7 +360,7 @@ def update(request, ipr_id=None):
                 log("Form error for field: %s: %s"%(error, form.errors[error]))
 	    return render("ipr/update.html", {"form": form, "ipr": ipr, "type": type}, context_instance=RequestContext(request))
 	else:
-	    submitter = form.clean_data
+	    submitter = form.cleaned_data
 
     return new(request, type, ipr, submitter)
 
@@ -381,3 +381,6 @@ def get_ipr_summary(data):
         ipr = ", ".join(ipr[:-1]) + ", and " + ipr[-1]
 
     return ipr
+
+# changes done by convert-096.py:changed newforms to forms
+# cleaned_data

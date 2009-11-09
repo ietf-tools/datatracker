@@ -86,7 +86,7 @@ class TelechatAgendaItem(models.Model):
     id = models.AutoField(primary_key=True, db_column='template_id')
     text = models.TextField(blank=True, db_column='template_text')
     type = models.IntegerField(db_column='template_type', choices=TYPE_CHOICES)
-    title = models.CharField(maxlength=255, db_column='template_title')
+    title = models.CharField(max_length=255, db_column='template_title')
     #The following fields are apparently not used
     #note = models.TextField(null=True,blank=True)
     #discussed_status_id = models.IntegerField(null=True, blank=True)
@@ -109,7 +109,7 @@ class WGAction(models.Model):
     note = models.TextField(blank=True,null=True)
     status_date = models.DateField()
     agenda = models.BooleanField("On Agenda")
-    token_name = models.CharField(maxlength=25)
+    token_name = models.CharField(max_length=25)
     category = models.IntegerField(db_column='pwg_cat_id', choices=CATEGORY_CHOICES, default=11)
     telechat_date = models.DateField() #choices = [(x.telechat_date,x.telechat_date) for x in Telechat.objects.all().order_by('-telechat_date')])
     def __str__(self):
@@ -121,3 +121,5 @@ class WGAction(models.Model):
     class Admin:
         pass
 
+
+# changes done by convert-096.py:changed maxlength to max_length

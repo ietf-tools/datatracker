@@ -2,7 +2,7 @@
 
 # Create your views here.
 from django.http import HttpResponsePermanentRedirect
-from django import newforms as forms
+from django import forms
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 from django.db.models import Q
@@ -210,3 +210,5 @@ def view_comment(*args, **kwargs):
 
 def view_ballot(*args, **kwargs):
     return object_detail(*args, **kwargs)
+
+# changes done by convert-096.py:changed newforms to forms

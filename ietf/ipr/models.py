@@ -39,7 +39,7 @@ STATUS_CHOICES = (
 class IprSelecttype(models.Model):
     type_id = models.AutoField(primary_key=True)
     is_pending = models.IntegerField(unique=True, db_column="selecttype")
-    type_display = models.CharField(blank=True, maxlength=15)
+    type_display = models.CharField(blank=True, max_length=15)
     def __str__(self):
 	return self.type_display
     class Meta:
@@ -49,7 +49,7 @@ class IprSelecttype(models.Model):
 
 class IprLicensing(models.Model):
     licensing_option = models.AutoField(primary_key=True)
-    value = models.CharField(maxlength=255, db_column='licensing_option_value')
+    value = models.CharField(max_length=255, db_column='licensing_option_value')
     def __str__(self):
 	return self.value;
     class Meta:
@@ -60,17 +60,17 @@ class IprLicensing(models.Model):
 
 class IprDetail(models.Model):
     ipr_id = models.AutoField(primary_key=True)
-    title = models.CharField(blank=True, db_column="document_title", maxlength=255)
+    title = models.CharField(blank=True, db_column="document_title", max_length=255)
 
     # Legacy information fieldset
-    legacy_url_0 = models.CharField(blank=True, db_column="old_ipr_url", maxlength=255)
-    legacy_url_1 = models.CharField(blank=True, db_column="additional_old_url1", maxlength=255)
-    legacy_title_1 = models.CharField(blank=True, db_column="additional_old_title1", maxlength=255)
-    legacy_url_2 = models.CharField(blank=True, db_column="additional_old_url2", maxlength=255)
-    legacy_title_2 = models.CharField(blank=True, db_column="additional_old_title2", maxlength=255)
+    legacy_url_0 = models.CharField(blank=True, db_column="old_ipr_url", max_length=255)
+    legacy_url_1 = models.CharField(blank=True, db_column="additional_old_url1", max_length=255)
+    legacy_title_1 = models.CharField(blank=True, db_column="additional_old_title1", max_length=255)
+    legacy_url_2 = models.CharField(blank=True, db_column="additional_old_url2", max_length=255)
+    legacy_title_2 = models.CharField(blank=True, db_column="additional_old_title2", max_length=255)
 
     # Patent holder fieldset
-    legal_name = models.CharField("Legal Name", db_column="p_h_legal_name", maxlength=255)
+    legal_name = models.CharField("Legal Name", db_column="p_h_legal_name", max_length=255)
 
     # Patent Holder Contact fieldset
     # self.contact.filter(contact_type=1)
@@ -81,13 +81,13 @@ class IprDetail(models.Model):
     # Related IETF Documents fieldset
     rfc_number = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
     id_document_tag = models.IntegerField(null=True, editable=False, blank=True)	# always NULL
-    other_designations = models.CharField(blank=True, maxlength=255)
-    document_sections = models.TextField("Specific document sections covered", blank=True, maxlength=255, db_column='disclouser_identify')
+    other_designations = models.CharField(blank=True, max_length=255)
+    document_sections = models.TextField("Specific document sections covered", blank=True, max_length=255, db_column='disclouser_identify')
 
     # Patent Information fieldset
-    patents = models.TextField("Patent Applications", db_column="p_applications", maxlength=255)
-    date_applied = models.CharField(maxlength=255)
-    country = models.CharField(maxlength=100)
+    patents = models.TextField("Patent Applications", db_column="p_applications", max_length=255)
+    date_applied = models.CharField(max_length=255)
+    country = models.CharField(max_length=100)
     notes = models.TextField("Additional notes", db_column="p_notes", blank=True)
     is_pending = models.IntegerField("Unpublished Pending Patent Application", blank=True, choices=SELECT_CHOICES, db_column="selecttype")
     applies_to_all = models.IntegerField("Applies to all IPR owned by Submitter", blank=True, choices=SELECT_CHOICES, db_column="selectowned")
@@ -138,16 +138,16 @@ class IprContact(models.Model):
 	('3', 'Submitter Contact'),
     )
     contact_id = models.AutoField(primary_key=True)
-    ipr = models.ForeignKey(IprDetail, raw_id_admin=True, edit_inline=True, related_name="contact")
+    ipr = models.ForeignKey(IprDetail, related_name="contact")
     contact_type = models.IntegerField(choices=TYPE_CHOICES)
-    name = models.CharField(maxlength=255, core=True)
-    title = models.CharField(blank=True, maxlength=255)
-    department = models.CharField(blank=True, maxlength=255)
-    address1 = models.CharField(blank=True, maxlength=255)
-    address2 = models.CharField(blank=True, maxlength=255)
-    telephone = models.CharField(maxlength=25, core=True)
-    fax = models.CharField(blank=True, maxlength=25)
-    email = models.EmailField(maxlength=255, core=True)
+    name = models.CharField(max_length=255)
+    title = models.CharField(blank=True, max_length=255)
+    department = models.CharField(blank=True, max_length=255)
+    address1 = models.CharField(blank=True, max_length=255)
+    address2 = models.CharField(blank=True, max_length=255)
+    telephone = models.CharField(max_length=25)
+    fax = models.CharField(blank=True, max_length=25)
+    email = models.EmailField(max_length=255)
     def __str__(self):
 	return self.name or '<no name>'
     class Meta:
@@ -160,9 +160,9 @@ class IprContact(models.Model):
 
 
 class IprDraft(models.Model):
-    ipr = models.ForeignKey(IprDetail, raw_id_admin=True, edit_inline=True, related_name='drafts')
-    document = models.ForeignKey(InternetDraft, db_column='id_document_tag', raw_id_admin=True, core=True, related_name="ipr")
-    revision = models.CharField(maxlength=2)
+    ipr = models.ForeignKey(IprDetail, related_name='drafts')
+    document = models.ForeignKey(InternetDraft, db_column='id_document_tag', related_name="ipr")
+    revision = models.CharField(max_length=2)
     def __str__(self):
 	return "%s which applies to %s-%s" % ( self.ipr, self.document, self.revision )
     class Meta:
@@ -171,10 +171,10 @@ class IprDraft(models.Model):
 	pass
 
 class IprNotification(models.Model):
-    ipr = models.ForeignKey(IprDetail, raw_id_admin=True)
+    ipr = models.ForeignKey(IprDetail)
     notification = models.TextField(blank=True)
     date_sent = models.DateField(null=True, blank=True)
-    time_sent = models.CharField(blank=True, maxlength=25)
+    time_sent = models.CharField(blank=True, max_length=25)
     def __str__(self):
 	return "IPR notification for %s sent %s %s" % (self.ipr, self.date_sent, self.time_sent)
     class Meta:
@@ -183,8 +183,8 @@ class IprNotification(models.Model):
 	pass
 
 class IprRfc(models.Model):
-    ipr = models.ForeignKey(IprDetail, edit_inline=True, related_name='rfcs')
-    document = models.ForeignKey(Rfc, db_column='rfc_number', raw_id_admin=True, core=True, related_name="ipr")
+    ipr = models.ForeignKey(IprDetail, related_name='rfcs')
+    document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
     def __str__(self):
 	return "%s applies to RFC%04d" % ( self.ipr, self.document_id )
     class Meta:
@@ -194,11 +194,16 @@ class IprRfc(models.Model):
 
 class IprUpdate(models.Model):
     id = models.IntegerField(primary_key=True)
-    ipr = models.ForeignKey(IprDetail, raw_id_admin=True, related_name='updates')
-    updated = models.ForeignKey(IprDetail, db_column='updated', raw_id_admin=True, related_name='updated_by')
+    ipr = models.ForeignKey(IprDetail, related_name='updates')
+    updated = models.ForeignKey(IprDetail, db_column='updated', related_name='updated_by')
     status_to_be = models.IntegerField(null=True, blank=True)
     processed = models.IntegerField(null=True, blank=True)
     class Meta:
         db_table = 'ipr_updates'
     class Admin:
 	pass
+
+# changes done by convert-096.py:changed maxlength to max_length
+# removed core
+# removed edit_inline
+# removed raw_id_admin

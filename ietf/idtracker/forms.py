@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django import newforms as forms
+from django import forms
 from models import IESGLogin, IDStatus, Area, IDState, IDSubState
 
 class IDSearch(forms.Form):
@@ -17,3 +17,5 @@ class IDSearch(forms.Form):
 	self.fields['search_job_owner'].choices = [('', '--All/Any')] + [(ad.id, "%s, %s" % (ad.last_name, ad.first_name)) for ad in IESGLogin.objects.filter(user_level=1).order_by('last_name')] + [('-99', '------------------')] + [(ad.id, "%s, %s" % (ad.last_name, ad.first_name)) for ad in IESGLogin.objects.filter(user_level=2).order_by('last_name')]
 	self.fields['sub_state_id'].choices = [('', '--All Substates'), ('0', 'None')] + [(state.sub_state_id, state.sub_state) for state in IDSubState.objects.all()]
 
+
+# changes done by convert-096.py:changed newforms to forms
