@@ -74,7 +74,7 @@ def search(request):
 	status = args.get('search_status_id', '')
 	if status != '':
 	    q_objs.append(Q(draft__status=status,rfc_flag=0))
-	matches = IDInternal.objects.all().filter(*q_objs)
+	matches = IDInternal.objects.all().exclude(draft=999999).filter(*q_objs)
 	matches = matches.order_by('cur_state', 'cur_sub_state', 'ballot', '-primary_flag')
         # sort by date in reverse
         # first build docstate groups, within which we sort
@@ -83,7 +83,7 @@ def search(request):
         for m in matches:
             if m1 and m1[-1][0] == m.docstate():
                 if m1[-1][1] and m1[-1][1][0][1] == m.ballot_id:
-                    m1[-1][1][0][2].append(m)
+                    m1[-1][1][0][4].append(m)
                 else:
                     m1[-1][1].append((m.event_date, m.ballot_id, m.primary_flag, m.draft_id, [m]))
             else:

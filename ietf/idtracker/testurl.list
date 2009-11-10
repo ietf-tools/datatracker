@@ -20,6 +20,7 @@
 200	/idtracker/?search_rfcnumber=1234	
 200	/idtracker/?search_job_owner=53&search_filename=nfs
 200	/idtracker/?sub_state_id=5
+200,heavy	/idtracker/?sub_state_id=6
 200	/idtracker/?search_area_acronym=1260
 200	/idtracker/?search_group_acronym=tls
 200	/feed/last-call/
