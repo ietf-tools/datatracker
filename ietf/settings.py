@@ -167,6 +167,7 @@ AGENDA_PATH = '/a/www/www6s/proceedings/'
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
 # Path to Work Group Description Text Files
 IETFWG_DESCRIPTIONS_PATH = '/a/www/www6s/wg-descriptions/'
+IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
 
 # External page top and bottom, which gives a html page the current menubar
 # and footer used in the current web-page design

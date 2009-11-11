@@ -32,14 +32,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Create your views here.
-#from django.views.generic.date_based import archive_index
+import codecs
 from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup, Position
 from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
 from django.http import Http404, HttpResponse
 from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response
+from django.conf import settings
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
 from ietf.idrfc.models import RfcIndex
@@ -162,7 +162,13 @@ def telechat_agenda(request, date=None):
     mgmt = agenda_management_issues(date)
     wgs = agenda_wg_actions(date)
     private = 'private' in request.REQUEST
-    return render_to_response('iesg/agenda.html', {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs, 'private':private}, context_instance=RequestContext(request) )
+    try:
+        f = codecs.open(settings.IESG_TASK_FILE, 'r', 'utf-8', 'replace')
+        action_items = f.read().strip()
+        f.close()
+    except IOError:
+        action_items = "(Error reading task.txt)"
+    return render_to_response('iesg/agenda.html', {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs, 'action_items':action_items,'private':private}, context_instance=RequestContext(request) )
     
 
 def telechat_agenda_documents_txt(request):
