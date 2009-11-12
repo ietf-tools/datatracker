@@ -1,3 +1,19 @@
+ietfdb (2.38)
+
+  Miscellaneous minor fixes:
+
+  * Added differentiating colours for BOF sessions in iPhone agenda
+  From Pasi:
+  * Fix bug in urlize (http://code.djangoproject.com/ticket/12183)
+  * Added missing safe tags
+  * Fixed Russ' email address in mkrelease
+  * Updated account information template (fixes exception)
+  * Show action items in IESG agenda; updated some links in IESG agenda
+  * Fixed a bug in idtracker search (probably introduced by changeset 
+    1842); new test case for that
+  
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Nov 2009 04:54:00 +0100
+
 ietfdb (2.37)
 
   * With this release, the datatracker is changed to run under Django 1.1
