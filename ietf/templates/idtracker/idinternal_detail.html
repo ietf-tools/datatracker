@@ -45,7 +45,7 @@
 	    {% if object.document.replaced_by.idinternal %}
 	      <a href="{{ object.document.replaced_by.idinternal.get_absolute_url }}">
 	    {% endif %}
-	    {{ object.document.replaced_by.displayname_with_link }}
+	    {{ object.document.replaced_by.displayname_with_link|safe }}
 	    {% if object.document.replaced_by.idinternal %}
 	      </a>
 	    {% endif %}
@@ -56,7 +56,7 @@
 	      {% if replaces.idinternal %}
 		<a href="{{ replaces.idinternal.get_absolute_url }}">
 	      {% endif %}
-	      {{ replaces.displayname_with_link }}{% if replaces.idinternal %}</a>{% endif %}{% if not forloop.last %},{% endif %}
+	      {{ replaces.displayname_with_link|safe }}{% if replaces.idinternal %}</a>{% endif %}{% if not forloop.last %},{% endif %}
 	    {% endfor %}
 	  {% endif %}
       </td>
