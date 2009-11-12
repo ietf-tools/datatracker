@@ -94,8 +94,10 @@ def urlize(text, trim_url_limit=None, nofollow=False, autoescape=False):
     trim_url = lambda x, limit=trim_url_limit: limit is not None and (len(x) > limit and ('%s...' % x[:max(0, limit - 3)])) or x
     safe_input = isinstance(text, SafeData)
     words = word_split_re.split(force_unicode(text))
-    nofollow_attr = nofollow and ' rel="nofollow"' or ''
+    # Fix http://code.djangoproject.com/ticket/12183 
+    # (Pasi Eronen, 2009-11-12)
     for i, word in enumerate(words):
+        nofollow_attr = nofollow and ' rel="nofollow"' or ''
         match = None
         if '.' in word or '@' in word or ':' in word:
             match = punctuation_re.match(word)
