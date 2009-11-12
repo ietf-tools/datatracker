@@ -95,7 +95,9 @@
 	 {% if session.info.area %}
 	 <td>
 	    {% if session.info.isWG %}<a href="http://www.ietf.org/dyn/wg/charter/{{ session.info.acronym|lower }}-charter.html">{%endif%}
+	       {% ifequal session.info.group_type_str "BOF" %}<span style="background-color: #6FD">{% endifequal %}
 	       {{ session.info.acronym|lower }}
+	       {% ifequal session.info.group_type_str "BOF" %}</span>{% endifequal %}
 	    {% if session.info.isWG %}</a>{%endif%}
 	 </td>
 	 <td>
