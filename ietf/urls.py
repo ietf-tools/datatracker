@@ -63,12 +63,6 @@ urlpatterns = patterns('',
      (r'^accounts/(?P<dir>\w+)/', 'django.views.generic.simple.redirect_to', { 'url': '/account/%(dir)s/' }),
 )
 
-# New admin site works differently, and needs work                       
-if django.VERSION[0] == 0:
-    urlpatterns += patterns('',
-        (r'^admin/', include('django.contrib.admin.urls')),
-        )
-
 if settings.SERVER_MODE in ('development', 'test'):
     urlpatterns += patterns('',
         (r'^(?P<path>(?:images|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),

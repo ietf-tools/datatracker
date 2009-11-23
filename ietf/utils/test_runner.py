@@ -44,14 +44,6 @@ test_database_name = None
 old_destroy = None
 old_create = None
 
-def safe_create_0(verbosity, *args, **kwargs):
-    global test_database_name, old_create
-    print "Creating test database..."
-    x = old_create(0, *args, **kwargs)
-    print "Saving test database name "+settings.DATABASE_NAME+"..."
-    test_database_name = settings.DATABASE_NAME
-    return x
-
 def safe_create_1(self, verbosity, *args, **kwargs):
     global test_database_name, old_create
     print "Creating test database..."
@@ -68,21 +60,6 @@ def safe_destroy_0_1(*args, **kwargs):
         settings.DATABASE_NAME = test_database_name
     return old_destroy(*args, **kwargs)
 
-# Test that test/r5106.patch has been applied. This is not written
-# as normal test case, because it needs to be run before Django's
-# test framework takes over. This test applies only to Django 0.96,
-# and can be removed once we transition to 1.x.
-def test_django_foreignkey_patch():
-    print "Testing Django 0.96 ForeignKey patch..."
-    try:
-        import ietf
-        t = django.core.management._get_sql_model_create(ietf.idtracker.models.GoalMilestone)
-    except KeyError, f:
-        if str(f.args) == "('ForeignKey',)":
-            raise Exception("Django 0.96 patch in test/r5106.patch not installed?")
-        else:
-            raise
-
 def test_send_smtp(msg, bcc=None):
     global mail_outbox
     mail_outbox.append(msg)
@@ -92,17 +69,6 @@ def template_coverage_loader(template_name, dirs):
     raise TemplateDoesNotExist
 
 template_coverage_loader.is_usable = True
-
-def run_tests_0(*args, **kwargs):
-    global old_destroy, old_create, test_database_name
-    import django.test.utils
-    m = sys.modules['django.test.utils']
-    old_create = m.create_test_db
-    m.create_test_db = safe_create_0
-    old_destroy = m.destroy_test_db
-    m.destroy_test_db = safe_destroy_0_1
-    from django.test.simple import run_tests
-    run_tests(*args, **kwargs)
 
 def run_tests_1(test_labels, *args, **kwargs):
     global old_destroy, old_create, test_database_name
@@ -125,9 +91,5 @@ def run_tests(*args, **kwargs):
         raise EnvironmentError("Refusing to run tests on core3")
     import ietf.utils.mail
     ietf.utils.mail.send_smtp = test_send_smtp
-    if django.VERSION[0] == 0:
-        test_django_foreignkey_patch()
-        run_tests_0(*args, **kwargs)
-    else:
-        run_tests_1(*args, **kwargs)
+    run_tests_1(*args, **kwargs)
     

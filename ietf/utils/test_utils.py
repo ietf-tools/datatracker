@@ -60,18 +60,12 @@ class RealDatabaseTest:
         self._setDatabaseName(self._original_testdb)
 
     def _getDatabaseName(self):
-        if django.VERSION[0] == 0:
-            return django.conf.settings.DATABASE_NAME 
-        else:
-            return connection.settings_dict['DATABASE_NAME'] 
+        return connection.settings_dict['DATABASE_NAME'] 
 
     def _setDatabaseName(self, name):        
         connection.close()
-        if django.VERSION[0] == 0:
-            django.conf.settings.DATABASE_NAME = name
-        else:
-            django.conf.settings.DATABASE_NAME = name
-            connection.settings_dict['DATABASE_NAME'] = name
+        django.conf.settings.DATABASE_NAME = name
+        connection.settings_dict['DATABASE_NAME'] = name
         connection.cursor()
 
 def read_testurls(filename):

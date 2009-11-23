@@ -329,12 +329,6 @@ def stable_dictsort(value, arg):
     decorated.sort(lambda a, b: cmp(a[0], b[0]))
     return [item[1] for item in decorated]
 
-# DJANGO_096: a dummy safe filter for Django 0.96
-if django.VERSION[0] == 0:
-    @register.filter
-    def safe(x):
-        return x
-
 def _test():
     import doctest
     doctest.testmod()

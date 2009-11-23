@@ -179,9 +179,6 @@ def get_templates():
 
 class TemplateCoverageTestCase(unittest.TestCase):
     def testTemplateCoverage(self):
-        if django.VERSION[0] == 0:
-            print "Not testing template coverage under Django 0.96"
-            return
         if not test_runner.loaded_templates:
             print "Skipping template coverage test"
             return
