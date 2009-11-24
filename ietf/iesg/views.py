@@ -170,6 +170,10 @@ def agenda(request, date=None):
     data['private'] = 'private' in request.REQUEST
     return render_to_response("iesg/agenda.html", data, context_instance=RequestContext(request))
 
+def agenda_txt(request):
+    data = _agenda_data(request)
+    return render_to_response("iesg/agenda.txt", data, context_instance=RequestContext(request), mimetype="text/plain")
+
 def agenda_scribe_template(request):
     date = TelechatDates.objects.all()[0].date1
     docs = agenda_docs(date, True)
