@@ -33,7 +33,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import codecs
-from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup, Position
+from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup, Position, IESGLogin
 from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
 from django.http import Http404, HttpResponse
@@ -178,6 +178,11 @@ def agenda_scribe_template(request):
     date = TelechatDates.objects.all()[0].date1
     docs = agenda_docs(date, True)
     return render_to_response('iesg/scribe_template.html', {'date':str(date), 'docs':docs}, context_instance=RequestContext(request) )
+
+def agenda_moderator_package(request):
+    data = _agenda_data(request)
+    data['ad_names'] = [str(x) for x in IESGLogin.active_iesg()]
+    return render_to_response("iesg/moderator_package.html", data, context_instance=RequestContext(request))
 
 def agenda_documents_txt(request):
     dates = TelechatDates.objects.all()[0].dates()
