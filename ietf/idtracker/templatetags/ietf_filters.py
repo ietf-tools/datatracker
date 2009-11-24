@@ -294,13 +294,6 @@ def id_index_wrap(text):
     x = x.replace("\n", "\n  ")
     return "  "+x.strip()
 
-@register.filter(name="id_abstracts_wrap")
-def id_abstracts_wrap(text):
-    text = text.replace("\n", " ")
-    x = wordwrap(text, 70)
-    x = x.replace("\n", "\n    ")
-    return "    "+x.strip()
-
 @register.filter(name='greater_than')
 def greater_than(x, y):
     return x > int(y)
