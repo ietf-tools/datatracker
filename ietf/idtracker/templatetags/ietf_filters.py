@@ -294,6 +294,16 @@ def id_index_wrap(text):
     x = x.replace("\n", "\n  ")
     return "  "+x.strip()
 
+@register.filter(name="compress_empty_lines")
+def compress_empty_lines(text):
+    text = re.sub("( *\n){3,}", "\n\n", text)
+    return text
+
+@register.filter(name="remove_empty_lines")
+def remove_empty_lines(text):
+    text = re.sub("( *\n){2,}", "\n", text)
+    return text
+
 @register.filter(name='greater_than')
 def greater_than(x, y):
     return x > int(y)
@@ -305,6 +315,10 @@ def less_than(x, y):
 @register.filter(name='equal')
 def equal(x, y):
     return str(x)==str(y)
+
+@register.filter(name='startswith')
+def startswith(x, y):
+    return unicode(x).startswith(y)
 
 # based on http://www.djangosnippets.org/snippets/847/ by 'whiteinge'
 @register.filter

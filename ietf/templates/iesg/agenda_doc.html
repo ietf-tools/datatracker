@@ -36,6 +36,50 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endcomment %}
 {% load ietf_filters %}
 
+{% if title2_first %}{% if title1_first %}<h2>{{ title1 }}</h2>
+{% if title1|startswith:"2." %}
+    <blockquote>
+    Reviews should focus on these questions: "Is this document a
+    reasonable basis on which to build the salient part of the Internet
+    infrastructure? If not, what changes would make it so?"
+    </blockquote>
+{% endif %}
+{% endif %}
+<h3>{{ title2 }}</h3>
+{% if title2|startswith:"3.1" or title2|startswith:"3.2" %}
+    <blockquote>
+    Reviews should focus on these questions: "Is this document a
+    reasonable contribution to the area of Internet engineering
+    which it covers? If not, what changes would make it so?"
+    </blockquote>
+{% endif %}
+{% if title2|startswith:"3.3" %}
+    <blockquote>
+    The IESG will use RFC 3932 responses: 1) The IESG has not
+    found any conflict between this document and IETF work; 2) The
+    IESG thinks that this work is related to IETF work done in WG
+    &lt;X&gt;, but this does not prevent publishing; 3) The IESG thinks
+    that publication is harmful to work in WG &lt;X&gt; and recommends
+    not publishing at this time; 4) The IESG thinks that this
+    document violates the IETF procedures for &lt;X&gt; and should
+    therefore not be published without IETF review and IESG
+    approval; 5) The IESG thinks that this document extends an
+    IETF protocol in a way that requires IETF review and should
+    therefore not be published without IETF review and IESG approval.<br />
+    <br />
+    The document shepherd must propose one of these responses in
+    the Data Tracker note and supply complete text in the IESG
+    Note portion of the write-up. The Area Director ballot positions
+    indicate consensus with the response proposed by the
+    document shepherd.<br />
+    <br />
+    Other matters may be recorded in comments, and the comments will
+    be passed on to the RFC Editor as community review of the document.
+    </blockquote>
+{% endif %}
+{% endif %}<h4>{{ title3 }}</h4>
+
+{% for doc in section_docs %}
 {% if forloop.first %}
 <table><tr><th>Area</th><th>Date</th></tr>
 {% endif %}
@@ -43,8 +87,6 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <tr>
 <td>{{doc.obj.area_acronym|upper}}</td>
 <td>{{ doc.obj.event_date|date:"M d" }}</td>
-
-{% if not doc.ballot_set %}
 
 <td>{{ doc.obj.document.title|escape }} ({{ doc.obj.document.intended_status }})</td></tr>
 
@@ -84,31 +126,6 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 </td></tr>
 {% endif %}
 
-
-{% else %} {# ballot_set #}
-
-<td>Multi-Document Ballot: 
-{% if doc.obj.ballot.active %}
-{% if private %}
-<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{ doc.obj.draft_id }}">
-{% else %}
-<a href="/idtracker/ballot/{{ doc.obj.ballot_id }}/">
-{% endif %}
-[Open Web Ballot]</a>
-{% endif %}
-</td></tr>
-
-{% for obj2 in doc.obj.ballot_set %}
-<tr><td></td><td></td><td>{{ obj2.draft.title|escape }} ({{ obj2.draft.intended_status }})</td></tr>
-<tr><td></td><td></td><td>
-<a href="{{obj2.draft.doclink}}">{{obj2.draft.displayname}}</a></td></tr>
-{% if obj2.note %} {# note: note is not escaped #}
-<tr><td></td><td></td><td>Note: {{ obj2.note }}</td></tr>
-{% endif %}
-{% endfor %}
-
-{% endif %} {# ballot_set #}
-
 <tr><td></td><td>Token:</td><td><a href="mailto:{{doc.obj.token_email|urlencode}}">{{ doc.obj.token_name|escape }}</a></td></tr>
 {% if doc.obj.ballot.defer %}
 <tr><td></td><td></td><td>Was deferred by {{doc.obj.ballot.defer_by}} on {{doc.obj.ballot.defer_date}}</td></tr>
@@ -117,3 +134,6 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% if forloop.last %}
 </table>
 {% endif %}
+{% empty %}
+<p>NONE</p>
+{% endfor %}

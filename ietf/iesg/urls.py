@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-# Portion Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies).
+# Portion Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -48,16 +48,16 @@ urlpatterns += patterns('django.views.generic.list_detail',
 )
 
 urlpatterns += patterns('',
-        (r'^agenda/$', views.telechat_agenda),                        
-        (r'^agenda/documents.txt$', views.telechat_agenda_documents_txt),
-        (r'^agenda/documents/$', views.telechat_agenda_documents),
-        (r'^agenda/scribe_template.html$', views.telechat_agenda_scribe_template),
-        (r'^discusses/$', views.discusses),
         (r'^ann/ind/$',views.inddocs),
         (r'^ann/(?P<cat>[^/]+)/$',views.wgdocs),
+        (r'^agenda/$', views.agenda),                        
+        (r'^agenda/scribe_template.html$', views.agenda_scribe_template),
+        (r'^agenda/documents.txt$', views.agenda_documents_txt),
+        (r'^agenda/documents/$', views.agenda_documents),
+        (r'^discusses/$', views.discusses),
 )
 
 if settings.SERVER_MODE != 'production':
     urlpatterns += patterns('',
-        (r'^agenda/(?P<date>\d{4}-\d\d-\d\d)/$', views.telechat_agenda),                        
+        (r'^agenda/(?P<date>\d{4}-\d\d-\d\d)/$', views.agenda),                        
     )

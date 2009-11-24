@@ -32,9 +32,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}{% comment %}
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
-{% endcomment %}{% load ietf_filters %}{% if forloop.first %}
+{% endcomment %}{% load ietf_filters %}
+{% if title2_first %}{% if title1_first %}<p><b>{{ title1 }}</b></p>{% endif %}
+<p><b>{{ title2 }}</b></p>
+{% endif %}<p><b>{{ title3 }}</b></p>
+
 <ol>
-{% endif %}  
+{% for doc in section_docs %}
   <li>{{ doc.obj.document.title|escape }} ({{ doc.obj.document.intended_status }}){% if doc.obj.rfc_flag %}
   <br><a href="{{ doc.obj.document.doclink }}">{{ doc.obj.document.filename }}</a>
 {% else %}
@@ -56,5 +60,8 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
     <li>...
     <li>...
     <li>...
-  </ul><p>{% if forloop.last %}
-</ol>{% endif %}
+  </ul><p>
+{% empty %}
+<li>(none)</li>
+{% endfor %}
+</ol>

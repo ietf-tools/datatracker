@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-# Portion Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies).
+# Portion Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -124,13 +124,9 @@ def agenda_docs(date, next_agenda):
         section_key = "s"+get_doc_section(id)
         if section_key not in res:
             res[section_key] = []
-        others = id.ballot_others()
         if id.note:
             id.note = str(id.note).replace("\240","&nbsp;")
-        if len(others) > 0:
-            res[section_key].append({'obj':id, 'ballot_set':[id]+list(others)})
-        else:
-            res[section_key].append({'obj':id})
+        res[section_key].append({'obj':id})
     return res
 
 def agenda_wg_actions(date):
@@ -149,7 +145,7 @@ def agenda_management_issues(date):
     matches = TelechatAgendaItem.objects.filter(type=3).order_by('id')
     return [o.title for o in matches]
 
-def telechat_agenda(request, date=None):
+def _agenda_data(request, date=None):
     if not date:
         date = TelechatDates.objects.all()[0].date1
         next_agenda = True
@@ -161,17 +157,25 @@ def telechat_agenda(request, date=None):
     docs = agenda_docs(date, next_agenda)
     mgmt = agenda_management_issues(date)
     wgs = agenda_wg_actions(date)
-    private = 'private' in request.REQUEST
     try:
         f = codecs.open(settings.IESG_TASK_FILE, 'r', 'utf-8', 'replace')
         action_items = f.read().strip()
         f.close()
     except IOError:
         action_items = "(Error reading task.txt)"
-    return render_to_response('iesg/agenda.html', {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs, 'action_items':action_items,'private':private}, context_instance=RequestContext(request) )
-    
+    return {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs, 'action_items':action_items}
 
-def telechat_agenda_documents_txt(request):
+def agenda(request, date=None):
+    data = _agenda_data(request, date)
+    data['private'] = 'private' in request.REQUEST
+    return render_to_response("iesg/agenda.html", data, context_instance=RequestContext(request))
+
+def agenda_scribe_template(request):
+    date = TelechatDates.objects.all()[0].date1
+    docs = agenda_docs(date, True)
+    return render_to_response('iesg/scribe_template.html', {'date':str(date), 'docs':docs}, context_instance=RequestContext(request) )
+
+def agenda_documents_txt(request):
     dates = TelechatDates.objects.all()[0].dates()
     docs = []
     for date in dates:
@@ -179,6 +183,27 @@ def telechat_agenda_documents_txt(request):
     t = loader.get_template('iesg/agenda_documents.txt')
     c = Context({'docs':docs})
     return HttpResponse(t.render(c), mimetype='text/plain')
+
+def agenda_documents(request):
+    dates = TelechatDates.objects.all()[0].dates()
+    telechats = []
+    for date in dates:
+        matches = IDInternal.objects.filter(telechat_date=date,primary_flag=1,agenda=1)
+        idmatches = matches.filter(rfc_flag=0).order_by('ballot')
+        rfcmatches = matches.filter(rfc_flag=1).order_by('ballot')
+        res = {}
+        for id in list(idmatches)+list(rfcmatches):
+            section_key = "s"+get_doc_section(id)
+            if section_key not in res:
+                res[section_key] = []
+            if not id.rfc_flag:
+                w = IdWrapper(draft=id)
+            else:
+                ri = RfcIndex.objects.get(rfc_number=id.draft_id)
+                w = RfcWrapper(ri)
+            res[section_key].append(w)
+        telechats.append({'date':date, 'docs':res})
+    return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats})
 
 def discusses(request):
     positions = Position.objects.filter(discuss=1)
@@ -213,30 +238,3 @@ def discusses(request):
             pass
     return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
 
-def telechat_agenda_documents(request):
-    dates = TelechatDates.objects.all()[0].dates()
-    telechats = []
-    for date in dates:
-        matches = IDInternal.objects.filter(telechat_date=date,primary_flag=1,agenda=1)
-        idmatches = matches.filter(rfc_flag=0).order_by('ballot')
-        rfcmatches = matches.filter(rfc_flag=1).order_by('ballot')
-        res = {}
-        for id in list(idmatches)+list(rfcmatches):
-            section_key = "s"+get_doc_section(id)
-            if section_key not in res:
-                res[section_key] = []
-            if not id.rfc_flag:
-                w = IdWrapper(draft=id)
-            else:
-                ri = RfcIndex.objects.get(rfc_number=id.draft_id)
-                w = RfcWrapper(ri)
-            res[section_key].append(w)
-        telechats.append({'date':date, 'docs':res})
-    return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats})
-                                                                                                        
-def telechat_agenda_scribe_template(request):
-    date = TelechatDates.objects.all()[0].date1
-    docs = agenda_docs(date, True)
-    return render_to_response('iesg/scribe_template.html', {'date':str(date), 'docs':docs}, context_instance=RequestContext(request) )
-    
-    
