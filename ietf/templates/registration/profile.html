@@ -1,0 +1,11 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% extends "base.html" %}
+
+{% block content %}
+<h1>User information</h1>
+<p>User name: {{ user.username }}<br />
+Roles/Groups: {{ user.groups.all|join:", "|default:"(none)" }}<br />
+Person: {{ user.get_profile.person|default:"?" }} {% if user.get_profile.person %}({{user.get_profile.person.person_or_org_tag}}){% endif %}<br />
+IESG Login ID: {{ user.get_profile.iesg_login_id|default:"(none)" }} </p>
+
+{% endblock %}

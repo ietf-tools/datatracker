@@ -54,9 +54,9 @@ IETF = {};
 </div>
 <div id="ietf-login" style="position:absolute;top:8px;right:10px;">
 {% if user.is_authenticated %}
-{{ user }}&nbsp;|&nbsp;<a id="ietf-login-signout" href="javascript:signOut();">Sign out</a>
+{{ user }}
 {% else %}
-<a id="ietf-login-signin" href="javascript:signIn();">Sign in</a>
+<a href="/accounts/login/?next={{request.path|urlencode}}">Sign In</a>
 {% endif %}
 </div>
 

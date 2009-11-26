@@ -1,97 +1,111 @@
+# Portions Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+# All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#
+#  * Neither the name of the Nokia Corporation and/or its
+#    subsidiary(-ies) nor the names of its contributors may be used
+#    to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.contrib.auth.backends import ModelBackend
-from django.forms.fields import email_re
-from django.contrib.auth.models import User
-from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
-from ietf.ietfauth.models import UserMap
-import md5
+from django.contrib.auth.backends import RemoteUserBackend
+from django.contrib.auth.models import Group
+from ietf.idtracker.models import IESGLogin, Role, PersonOrOrgInfo
+from ietf.ietfauth.models import LegacyWgPassword, IetfUserProfile
 
-def compat_check_password(user, raw_password):
-    """
-    Returns a boolean of whether the raw_password was correct. Handles
-    crypt and htdigest formats, and updates the password to htdigest
-    on first use.  This is like User.check_password().
-    """
-    enc_password = user.password
-    algo, salt, hsh = enc_password.split('$')
-    if algo == 'crypt':
-        import crypt
-        is_correct = ( salt + hsh == crypt.crypt(raw_password, salt) )
-	if is_correct:
-	    # upgrade to htdigest
-	    set_password(user, raw_password)
-	return is_correct
-    if algo == 'htdigest':
-	# Check username hash.
-	is_correct = ( hsh == htdigest( user.username, raw_password ) )
-	if not is_correct:
-	    # Try to check email hash, which we stored in the profile.
-	    # If the profile doesn't exist, that's odd but we shouldn't
-	    # completely fail, so try/except it.
-	    try:
-		is_correct = ( user.get_profile().email_htdigest == htdigest( user.email, raw_password ) )
-	    except ObjectDoesNotExist:
-		# no user profile to store the htdigest, so can't check it.
-		pass
-	return is_correct
-    # permit django passwords, but upgrade to htdigest
-    is_correct = user.check_password(raw_password)
-    if is_correct:
-	# upgrade to htdigest
-	set_password(user, raw_password)
-    return is_correct
+from ietf.utils import log
 
-# Based on http://www.djangosnippets.org/snippets/74/
-#  but modified to use compat_check_password for all users.
-class EmailBackend(ModelBackend):
-    def authenticate(self, username=None, password=None):
-	try:
-	    if email_re.search(username):
-                user = User.objects.get(email__iexact=username)
-	    else:
-		user = User.objects.get(username__iexact=username)
-	except User.DoesNotExist:
-	    #
-	    # See if there's an IETF person with this address:
-	    try:
-		usermap = UserMap.objects.distinct().get(person__emailaddress__address__iexact=username)
-	    except UserMap.DoesNotExist:
-		return None
-	    except AssertionError:
-		# multiple UserMaps, should never happen!
-		return None
-	    user = usermap.user
-	if compat_check_password(user, password):
-	    return user
-        return None
+class IetfUserBackend(RemoteUserBackend):
 
-    def get_user(self, user_id):
-	try:
-	    return User.objects.get(pk=user_id)
-	except User.DoesNotExist:
-	    return None
+    def find_groups(username):
+        """
+        Role/Group:
+        Area_Director          currently sitting AD
+        IETF_Chair             currently sitting IETF Chair
+        IAB_Chair              currently sitting IAB Chair
+        IRTF_Chair             currently sitting IRTF Chair
+        Secretariat            secretariat staff
 
-def htdigest( username, password, realm=None ):
-    """Returns a hashed password in the Apache htdigest format, which
-    is used in an AuthDigestFile ."""
-    if realm is None:
-	try:
-	    realm = settings.DIGEST_REALM
-	except AttributeError:
-	    realm = 'IETF'
-    return md5.md5( ':'.join( [ username, realm, password ] ) ).hexdigest()
+        Roles/Groups NOT YET IMPLEMENTED
+        WG_Chair               currently sitting chair of some WG
+        IESG_Liaison           non-ADs on iesg@ietf.org and telechats
+        Session_Chair          chairing a non-WG session in IETF meeting
+        Ex_Area_Director       past AD
+        """
+        groups = []
+        try:
+            login = IESGLogin.objects.get(login_name=username)
+            if login.user_level == 1:
+                groups.append("Area_Director")
+            elif login.user_level == 0:
+                groups.append("Secretariat")
+            try:
+                person = login.person
+                for role in person.role_set.all():
+                    if role.id == Role.IETF_CHAIR:
+                        groups.append("IETF_Chair")
+                    elif role.id == Role.IAB_CHAIR:
+                        groups.append("IAB_Chair")
+                    elif role.id == Role.IRTF_CHAIR:
+                        groups.append("IRTF_Chair")
+            except PersonOrOrgInfo.DoesNotExist:
+                pass
+        except IESGLogin.DoesNotExist:
+            pass
+        #
+        # Additional sources of group memberships: 
+        # - wg_password table 
+        # - other Roles 
+        # - the /etc/.../*.perms files
+        return groups
 
-def set_password( user, password, realm=None ):
-    # The username-hashed digest goes in the user database;
-    # the email-address-hashed digest goes in the userprof.
-    user.password = '$'.join( [ 'htdigest', '',
-   		 htdigest( user.username, password, realm ) ] )
-    user.save()
-    ( userprof, created ) = UserMap.objects.get_or_create( user=user )
-    userprof.email_htdigest = htdigest( user.email, password, realm )
-    userprof.rfced_htdigest = htdigest( user.email, password, 'RFC Editor' )
-    userprof.save()
+    find_groups = staticmethod(find_groups)
 
-# changes done by convert-096.py:changed email_re import
+    def authenticate(self, remote_user):
+        user = RemoteUserBackend.authenticate(self, remote_user)
+        if not user:
+            return user
+
+        # Create profile if it doesn't exist
+        try:
+            profile = user.get_profile()
+        except IetfUserProfile.DoesNotExist:
+            profile = IetfUserProfile(user=user)
+            profile.save()
+
+        # Update group memberships
+        group_names = IetfUserBackend.find_groups(user.username)
+        groups = []
+        for group_name in group_names:
+            # Create groups as needed
+            group,created = Group.objects.get_or_create(name=group_name)
+            if created:
+                log("IetfUserBackend created Group '%s'" % (group_name,))
+            groups.append(group)
+        user.groups = groups
+        return user
+

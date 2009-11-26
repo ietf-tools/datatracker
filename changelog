@@ -1,3 +1,22 @@
+ietfdb (2.39)
+
+  * Replaced old authentication/authorization system with a new one
+    (which uses Apache's authentication). This requires applying
+    database fixups as follows:
+
+        cd /a/www/ietf-datatracker/2.39/ietf
+        PYTHONPATH=../ python manage.py dbshell < ../test/sql_fixup.sql
+	PYTHONPATH=../ python manage.py syncdb
+
+    And adding something like this to Apache configuration:
+
+	<LocationMatch "^/accounts/login/">
+        AuthType Basic
+        AuthName "IETF Datatracker"
+        AuthUserFile /a/www/htpasswd
+	Require valid-user
+	</LocationMatch>
+
 ietfdb (2.38)
 
   Miscellaneous minor fixes:

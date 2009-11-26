@@ -49,7 +49,7 @@ urlpatterns = patterns('',
       (r'^(?P<path>public|cgi-bin)/', include('ietf.redirects.urls')),
       (r'^ipr/', include('ietf.ipr.urls')),
       (r'^meeting/', include('ietf.meeting.urls')),
-      (r'^account/', include('ietf.ietfauth.urls')),
+      (r'^accounts/', include('ietf.ietfauth.urls')),
       (r'^doc/', include('ietf.idrfc.urls')),
       (r'^wg/', include('ietf.wginfo.urls')),
 
@@ -57,10 +57,6 @@ urlpatterns = patterns('',
 
      # Google webmaster tools verification url
      (r'^googlea30ad1dacffb5e5b.html', 'django.views.generic.simple.direct_to_template', { 'template': 'googlea30ad1dacffb5e5b.html' }),
-
-     # Django 0.96 hardcodes /accounts/; we want to use
-     # /account/.
-     (r'^accounts/(?P<dir>\w+)/', 'django.views.generic.simple.redirect_to', { 'url': '/account/%(dir)s/' }),
 )
 
 if settings.SERVER_MODE in ('development', 'test'):

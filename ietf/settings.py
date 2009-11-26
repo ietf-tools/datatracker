@@ -71,14 +71,10 @@ MEDIA_URL = ''
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/media/'
 
-# Link django user to IETF user
-AUTH_PROFILE_MODULE = 'ietfauth.UserMap'
-
-# Allow specification of email address as username,
-# and handle htpasswd crypt() format passwords.
-AUTHENTICATION_BACKENDS = (
-    "ietf.ietfauth.auth.EmailBackend",
-)
+AUTH_PROFILE_MODULE = 'ietfauth.IetfUserProfile'
+AUTHENTICATION_BACKENDS = ( "ietf.ietfauth.auth.IetfUserBackend", )
+SESSION_COOKIE_AGE = 43200 # 12 hours
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -91,6 +87,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.RemoteUserMiddleware',
     'django.middleware.doc.XViewMiddleware',
 #    'ietf.middleware.PrettifyMiddleware',
     'ietf.middleware.SQLLogMiddleware',
@@ -113,6 +110,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.auth',
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
+    'django.core.context_processors.request',
     'ietf.context_processors.server_mode',
     'ietf.context_processors.revision_info',
     'ietf.context_processors.yui_url'
@@ -186,8 +184,6 @@ else:
 
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 
-# The number of days for which a password-request URL is valid
-PASSWORD_DAYS = 3
 
 # Base URL for YUI library
 YUI_URL = "https://ajax.googleapis.com/ajax/libs/yui"

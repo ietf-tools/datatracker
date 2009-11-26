@@ -32,10 +32,9 @@
 	 <td class="column">
 	    <div id="content">
 	       {% if user.is_authenticated %}
-	       <span style="float: right; font-size: 80%;">Logged in as {{ user }} | 
-		  <a href="{% url django.contrib.auth.views.logout %}">Log Out</a></span>
+	       <span style="float: right; font-size: 80%;">Logged in as {{ user }}</span>
                {% else %}
-               <span style="float: right; font-size: 80%;"><a href="{% url django.contrib.auth.views.login %}">Log In</a></span>
+               <span style="float: right; font-size: 80%;"><a href="/accounts/login/?next={{request.path|urlencode}}">Sign In</a></span>
 	       {% endif %}
 	       {% block content %}{% endblock %}
 	    </div>
