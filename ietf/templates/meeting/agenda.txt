@@ -1,4 +1,4 @@
-{% load humanize %}
+{% load humanize %}{% autoescape off %}
 {% load ietf_filters %}
 {% filter center:72 %}Agenda of the {{ meeting.num|ordinal }} IETF Meeting{% endfilter %}
 {% filter center:72 %}{{ meeting.start_date|date:"F j" }}-{% ifnotequal meeting.start_date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}{% endfilter %}
@@ -9,19 +9,19 @@
 {% for slot in timeslots %}{% ifchanged  %}
 
 {{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}{% if slot.reg_info %}
-{{ slot.registration.time_desc  }}  {{ slot.registration.name  }}{% if venue.reg_area_name %} - {{ venue.reg_area_name|escape }}{% endif %}{% endif %}
-{% endifchanged %}{% if slot.session_name %}{% if slot.break_info %}{{ slot.break_info.time_desc }}  {{ slot.break_info.name }}{% if venue.break_area_name and slot.break_info.show_break_location %} - {{ venue.break_area_name|escape }}{% endif %}
-{% endif %}{{ slot.time_desc               }}  {{ slot.session_name }}{% if slot.is_plenary %} - {{ slot.sessions.0.room_id.room_name|safe }}{% endif %}{% ifequal slot.sessions.0.acronym "plenaryw" %}
+{{ slot.registration.time_desc  }}  {{ slot.registration.name  }}{% if venue.reg_area_name %} - {{ venue.reg_area_name }}{% endif %}{% endif %}
+{% endifchanged %}{% if slot.session_name %}{% if slot.break_info %}{{ slot.break_info.time_desc }}  {{ slot.break_info.name }}{% if venue.break_area_name and slot.break_info.show_break_location %} - {{ venue.break_area_name }}{% endif %}
+{% endif %}{{ slot.time_desc               }}  {{ slot.session_name }}{% if slot.is_plenary %} - {{ slot.sessions.0.room_id.room_name }}{% endif %}{% ifequal slot.sessions.0.acronym "plenaryw" %}
 
 {{ plenaryw_agenda }}{% endifequal %}{% ifequal slot.sessions.0.acronym "plenaryt" %}
 
 {{ plenaryt_agenda }}{% endifequal %}{% if not slot.is_plenary %}{% for session in slot.sessions_by_area|dictsort:"area" %}
-{{ session.info.room_id.room_name|safe|ljust:14 }}  	{% if session.info.area %}{{ session.info.area|upper|ljust:4 }}	{{ session.info.acronym|ljust:10 }}  	{% endif %}{{ session.info.acronym_name|safe }} {{ session.info.group_type_str }}{% if session.info.special_agenda_note %} - {{ session.info.special_agenda_note }}{% endif %}{% endfor %}{% endif %}
+{{ session.info.room_id.room_name|ljust:14 }}  	{% if session.info.area %}{{ session.info.area|upper|ljust:4 }}	{{ session.info.acronym|ljust:10 }}  	{% endif %}{{ session.info.acronym_name }} {{ session.info.group_type_str }}{% if session.info.special_agenda_note %} - {{ session.info.special_agenda_note }}{% endif %}{% endfor %}{% endif %}
 
-{% else %}{% for session in slot.sessions %}{{ slot.time_desc }}  {{ session.acronym_name|safe }} - {{ session.room_id.room_name|safe }}
+{% else %}{% for session in slot.sessions %}{{ slot.time_desc }}  {{ session.acronym_name }} - {{ session.room_id.room_name }}
 {% endfor %}{% endif %}{% endfor %}
 ====================================================================
 AREA DIRECTORS
 {% regroup ads by area as grouped %}{% for ad in grouped %}
 {{ ad.grouper|upper|ljust:5 }}{{ ad.list.0.area.area_acronym.name|slice:":18"|ljust:18 }}  {% for ad_person in ad.list %}{% ifequal forloop.counter 2 %} & {% endifequal %}{{ ad_person.person }}/{{ ad_person.person.affiliation }}{% endfor %}{% endfor %}
-
+{% endautoescape %}
