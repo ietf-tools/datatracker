@@ -37,26 +37,16 @@ from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
 register = template.Library()
 
 def get_user_adid(context):
-    if 'user' in context and in_group(context['user'], "iesg"):
-        try:
-            usermap = context['user'].usermap_set.all()[0]
-            person = usermap.person
-            iesglogin = person.iesglogin_set.all()[0] 
-            adId = iesglogin.id
-            return adId
-        except:
-            pass
-    return None
+    if 'user' in context and in_group(context['user'], "Area_Director"):
+        return context['user'].get_profile().iesg_login_id()
+    else:
+        return None
 
 def get_user_name(context):
     if 'user' in context and context['user'].is_authenticated():
-        try:
-            usermap = context['user'].usermap_set.all()[0]
-            person = usermap.person
-            if person:
-                return str(person)
-        except:
-            pass
+        person = context['user'].get_profile().person()
+        if person:
+            return str(person)
     return None
     
 def render_ballot_icon(context, doc):
@@ -140,7 +130,7 @@ def my_position(doc, user):
     user_name = get_user_name({'user':user})
     if not user_name:
         return None
-    if not in_group(user, "iesg"):
+    if not in_group(user, "Area_Director"):
         return None
     if not doc.in_ietf_process():
         return None

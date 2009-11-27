@@ -47,7 +47,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <h1 style="margin-top:0;">IESG Discuss Positions</h1>
 
-{% if user|in_group:"IESG" %}
+{% if user|in_group:"Area_Director" %}
 <div id="discuss_show1" style="display:block;">
 <a href="javascript:show_only_mine()">Show only my discusses</a>
 </div>
@@ -61,7 +61,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <table id="discuss_table">
 <tr><th class="doc">Document</th><th class="status" colspan="2">Status</th><th class="ad">Area Director</th><th>Discusses</th></tr>
 {% for doc in docs %}
-<tr {% if user|in_group:"IESG" %}{% if doc|my_position:user|equal:"Discuss" %}
+<tr {% if user|in_group:"Area_Director" %}{% if doc|my_position:user|equal:"Discuss" %}
 class="discuss_my" {% else %} class="discuss_not_my" {% endif %}{% endif %}>
 <td class="doc">
 {% if doc.is_rfc_wrapper %}

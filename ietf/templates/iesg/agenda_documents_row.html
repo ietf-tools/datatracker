@@ -35,7 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ballot_icon %}
 {% load ietf_filters %}
 <tr 
-{% if user|in_group:"IESG" %}
+{% if user|in_group:"Area_Director" %}
 {% if doc|my_position:user|equal:"Discuss" %}style="background:#ffa0a0;"{% endif %}
 {% if doc|my_position:user|equal:"Yes"  or  doc|my_position:user|slugify|equal:"no-objection" %}style="background:#a0ffa0;"{% endif %}
 {% if doc|my_position:user|equal:"Abstain" or doc|my_position:user|equal:"Recuse" %}style="background:#c0c0c0;"{% endif %}
