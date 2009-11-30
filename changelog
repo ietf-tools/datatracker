@@ -1,5 +1,7 @@
 ietfdb (2.39)
 
+  From Pasi:
+
   * Replaced old authentication/authorization system with a new one
     (which uses Apache's authentication). This requires applying
     database fixups as follows:
@@ -16,6 +18,26 @@ ietfdb (2.39)
         AuthUserFile /a/www/htpasswd
 	Require valid-user
 	</LocationMatch>
+
+  * Fixed ballot icon/etc. to work with the new auth/authz system
+
+  * Fixed escaping in text meeting agenda (ticket #331)
+
+  * Added first beta of IESG telechat moderator package (not fully working 
+    yet)
+
+  * Added ASCII version of IESG telechat agenda
+
+  * Refactored/cleaned IESG telechat agenda code (and removed support for 
+    ballot sets)
+
+  * Removed some unused code
+
+  * Replaced non-WG mailing list page with redirect to ietf.org
+
+  * Removed some Django 0.96-only code
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Nov 2009 10:38:41 +0100
 
 ietfdb (2.38)
 
