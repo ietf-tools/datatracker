@@ -43,6 +43,7 @@ while true; do
 	#echo "Database dump file is from $(date -r $DBDUMP +'%Y-%m-%d %H:%M')."
 	#echo "Last update done $(date -r $DBDONE +'%Y-%m-%d %H:%M')."
 	if [ $DBDUMP -nt $DBTIME ]; then
+	    export PYTHONPATH=$PWD
 	    echo "Updating database dated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')"
 	    echo -n "Updating database from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')... " 1>&2
 
