@@ -108,14 +108,9 @@ teleconference.  The Secretariat will post them in the public archive.</b></p>
 <!-- SECTION 6 -->
 <!-- ===================================================================== -->
 
-{% if not mgmt %}
-<h3>6. Management Items</h3>
-
-<p>NONE</p>
-{% else %}
 {% for m in mgmt %}
 <h3>6. Management Items<br>
-6.{{forloop.counter}} {{m}}</h3>
+6.{{forloop.counter}} {{m.title}}</h3>
 
 <p><b>Is there anything that you would like the Secretariat to record in the minutes for this management issue?</b></p>
 
@@ -125,8 +120,11 @@ teleconference.  The Secretariat will post them in the public archive.</b></p>
 
 <p><i>Action Item (if applicable):</i></p>
 
+{% empty %}
+<h3>6. Management Items</h3>
+
+<p>NONE</p>
 {% endfor %}
-{% endif %}
 
 <!-- ===================================================================== -->
 <!-- SECTION 7 -->

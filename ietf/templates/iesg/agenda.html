@@ -88,7 +88,7 @@ next Telechat ({{ date }}).
 <h2>{% if private %}<a href="https://datatracker.ietf.org/cgi-bin/display_news.cgi?template_type=3">6. Management Issues</a>{%else%}6. Management Issues{%endif%}</h2>
 <div id="section6">
 {% for m in mgmt %}
-<h3>6.{{forloop.counter}} {{m|escape}}</h3>
+<h3>6.{{forloop.counter}} {{m.title|escape}}</h3>
 {% endfor %}
 </div>
 

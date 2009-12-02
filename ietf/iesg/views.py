@@ -142,8 +142,7 @@ def agenda_wg_actions(date):
     return res
 
 def agenda_management_issues(date):
-    matches = TelechatAgendaItem.objects.filter(type=3).order_by('id')
-    return [o.title for o in matches]
+    return TelechatAgendaItem.objects.filter(type=3).order_by('id')
 
 def _agenda_data(request, date=None):
     if not date:

@@ -59,7 +59,7 @@ http://datatracker.ietf.org/iesg/agenda/
 
 6. Management Issues
 {% for m in mgmt %}
-6.{{forloop.counter}} {{m}}
+6.{{forloop.counter}} {{m.title}}
 {% endfor %}
 
 7. Working Group News
