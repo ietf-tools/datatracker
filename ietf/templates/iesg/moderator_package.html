@@ -33,6 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}{% comment %}
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endcomment %}<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+{% load ietf_filters %}
 <html><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <style type="text/css">
@@ -77,9 +78,9 @@ teleconference.  The Secretariat will post them in the public archive.</b></p>
 
 <h3>1. Administrivia<br>1.4 List of Remaining Action Items from Last Telehat</h3>
 
-<pre>
+{% filter linebreaks_crlf %}<pre>
 {{ action_items }}
-</pre>
+</pre>{% endfilter %}
 
 <!-- ===================================================================== -->
 <!-- SECTIONS 2+3 -->
@@ -133,9 +134,9 @@ teleconference.  The Secretariat will post them in the public archive.</b></p>
 
 <h3>7. Working Group News</h3>
 
-<pre>
+{% filter linebreaks_crlf %}<pre>
 {% for name in ad_names %}[ ] {{ name }}
 {% endfor %}
-</pre>
+</pre>{% endfilter %}
 
 </body></html>

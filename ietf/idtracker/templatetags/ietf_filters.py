@@ -304,6 +304,19 @@ def remove_empty_lines(text):
     text = re.sub("( *\n){2,}", "\n", text)
     return text
 
+@register.filter(name='linebreaks_crlf')
+def linebreaks_crlf(text):
+    """
+    Normalize all linebreaks to CRLF.
+    """
+    # First, map CRLF to LF
+    text = text.replace("\r\n", "\n")
+    # Next, map lone CRs to LFs
+    text = text.replace("\r", "\n")
+    # Finally, map LFs to CRLFs
+    text = text.replace("\n", "\r\n")
+    return text
+
 @register.filter(name='greater_than')
 def greater_than(x, y):
     return x > int(y)

@@ -38,19 +38,20 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% for doc in section_docs %}
 <h3>{{ title1 }}<br>
 {{ title2 }}<br>
-{{ title3 }} ({{ forloop.counter }} of {{ section_docs|length }})</h3>
+{{ title3 }} ({{ forloop.counter }} of {{ section_docs|length }})</h3>
 
 <p><b>{{doc.obj.document.filename}}{% if not doc.obj.rfc_flag %}-{{doc.obj.document.revision}}{% endif %}</b><br>
 <i>({{ doc.obj.document.title|escape }})</i><br>
 <b>Intended Status: {{ doc.obj.document.intended_status }}<br>
 Token: {{ doc.obj.token_name|escape }}</b></p>
 
-<small><pre>{% if doc.obj.ballot.active %}
+
+<small>{% filter linebreaks_crlf %}<pre>{% if doc.obj.ballot.active %}
                       Yes  No-Objection  Discuss  Abstain
 {% if not doc.obj.ballot.an_sent %}{% for curpos in doc.obj.ballot.active_positions %}{{ curpos.ad|ljust:"20" }} {{ curpos.pos.yes|bracket }}     {{ curpos.pos.noobj|bracket }}     {{ curpos.pos.discuss|bracket }}     {{ curpos.pos.abstain_ind|bracket }}
 {% endfor %}
 {% endif %}{% for position in doc.obj.ballot.positions.all|dictsort:"ad.last_name" %}{% if doc.obj.ballot.an_sent or not position.ad.is_current_ad %}{{ position.ad|ljust:"20" }} {{ position.yes|bracket }}     {{ position.noobj|bracket }}     {{ position.discuss|bracket }}     {{ position.abstain_ind|bracket }}
-{% endif %}{% endfor %}{% else %}(Ballot not issued){% endif %}</pre></small>
+{% endif %}{% endfor %}{% else %}(Ballot not issued){% endif %}</pre><{% endfilter %}/small>
 
 {% if doc.obj.document.lc_expiration_date and doc.obj.document.lc_expiration_date|timesince_days|less_than:"1" %}<p><b>NOTE: Last Call expires on {{ doc.obj.document.lc_expiration_date }}.</b></p>{% endif %}
 
