@@ -43,6 +43,7 @@ from django.conf import settings
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
 from ietf.idrfc.models import RfcIndex
+from ietf.ietfauth.decorators import group_required
 
 import datetime 
 
@@ -178,6 +179,7 @@ def agenda_scribe_template(request):
     docs = agenda_docs(date, True)
     return render_to_response('iesg/scribe_template.html', {'date':str(date), 'docs':docs}, context_instance=RequestContext(request) )
 
+@group_required('Area_Director','Secretariat')
 def agenda_moderator_package(request):
     data = _agenda_data(request)
     data['ad_names'] = [str(x) for x in IESGLogin.active_iesg()]
