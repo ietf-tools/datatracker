@@ -45,47 +45,97 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <b>Intended Status: {{ doc.obj.document.intended_status }}<br>
 Token: {{ doc.obj.token_name|escape }}</b></p>
 
-
-<small>{% filter linebreaks_crlf %}<pre>{% if doc.obj.ballot.active %}
+{% if doc.obj.ballot.active %}
+{% filter linebreaks_crlf %}<small><pre>
                       Yes  No-Objection  Discuss  Abstain
 {% if not doc.obj.ballot.an_sent %}{% for curpos in doc.obj.ballot.active_positions %}{{ curpos.ad|ljust:"20" }} {{ curpos.pos.yes|bracket }}     {{ curpos.pos.noobj|bracket }}     {{ curpos.pos.discuss|bracket }}     {{ curpos.pos.abstain_ind|bracket }}
 {% endfor %}
 {% endif %}{% for position in doc.obj.ballot.positions.all|dictsort:"ad.last_name" %}{% if doc.obj.ballot.an_sent or not position.ad.is_current_ad %}{{ position.ad|ljust:"20" }} {{ position.yes|bracket }}     {{ position.noobj|bracket }}     {{ position.discuss|bracket }}     {{ position.abstain_ind|bracket }}
-{% endif %}{% endfor %}{% else %}(Ballot not issued){% endif %}</pre><{% endfilter %}/small>
+{% endif %}{% endfor %}</pre></small>{% endfilter %}
+
+{% if title1|startswith:"2." %}
+<p>____ open positions<br>
+[ &nbsp; ] would you like to record a position?</p>
+{% endif %}
+
+<p>____ active discusses<br>
+[ &nbsp; ] there are [#] discusses in the tracker on this document.  Do we need to talk about them now?</p>
+
+{% else %}
+<p>(Ballot not issued)</p>
+{% endif %}
 
 {% if doc.obj.document.lc_expiration_date and doc.obj.document.lc_expiration_date|timesince_days|less_than:"1" %}<p><b>NOTE: Last Call expires on {{ doc.obj.document.lc_expiration_date }}.</b></p>{% endif %}
 
-<p>____ open positions<br>
-<b>[ &nbsp; ] would you like to record a position?</b></p>
-
-<p>____ active discusses<br>
-<b>[ &nbsp; ] there are [#] discusses in the tracker on this document.  Do we need to talk about them now?</b></p>
-
-{% ifequal title1 "2. Protocol Actions" %}
-<p>"Yes" or "No-Objection" positions from 2/3 of non-recused ADs, 
-with no "Discuss" positions, are needed for approval.</p>
-{% else %}
-<p>1 "Yes" with no "Discuss" positions are needed for approval.</p>
-{% endifequal %}
+{% if title2|startswith:"3.1" or title2|startswith:"3.2" %}
+<p>Does anyone have an[y further] objection to this document being published as an {{ doc.obj.document.intended_status }} RFC?</p>
+{% endif %}
+{% if title3|startswith:"3.3.1" or title3|startswith:"3.3.2" %}
+<p>Does anyone have an objection to the RFC Editor publishing this document as an {{ doc.obj.document.intended_status }} RFC?</p>
+{% endif %}
+{% if title3|startswith:"3.3.3" %}
+<p>Who will do the review of this document?</p>
+{% endif %}
 
 <p>Current State: {{ doc.obj.cur_state }}, sub state: {{ doc.obj.cur_sub_state|default:"(none)" }}<br>
 Next State:<br>
 Sub State: </p>
 
-{% if title2|startswith:"3.3" %}
-<p>(Text for RFC Editor submissions still missing)</p>
-{% else %}
-<p><i>If APPROVED - The Secretariat will send 
-{% if title2|startswith:"2.1" or title2|startswith:"3.1" %}a working group{%else%}an individual{%endif%} submission,
-{% if title1|startswith:"2." %}Protocol{%else%}Document{%endif%} Action 
-Announcement.</i>
+{% if title3|startswith:"2.1.1" or title3|startswith:"2.1.2" %}
+  <p>If APPROVED - The Secretariat will send a working group
+  submission, Protocol Action Announcement.</p>
 
-<p><i>If APPROVED with caveats - The Secretariat will send 
-{% if title2|startswith:"2.1" or title2|startswith:"3.1" %}a working group{%else%}an individual{%endif%} submission,
-{% if title1|startswith:"2." %}Protocol{%else%}Document{%endif%} Action 
-Announcement that includes the [RFC
-Editor Note, IESG Note, etc.] to be drafted by [Name that AD].</i></p>
+  <p>If APPROVED with caveats - The Secretariat will send a working
+  group submission, Protocol Action Announcement that includes the
+  [RFC Editor Note, IESG Note, etc.] to be drafted by [Name that
+  AD].</p>
 {% endif %}
+
+{% if title3|startswith:"2.2.1" or title3|startswith:"2.2.2" %}
+  <p>If APPROVED - The Secretariat will send an individual submission,
+  Protocol Action Announcement.</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send an
+  individual submission, Protocol Action Announcement that includes
+  the [RFC Editor Note, IESG Note, etc.] to be drafted by [Name that
+  AD].</p>
+{% endif %}
+
+{% if title3|startswith:"3.1.1" or title3|startswith:"3.1.2" %}
+  <p>If APPROVED - The Secretariat will send a working group submission
+  Document Action Announcement.</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send a working
+  group submission Document Action announcement that includes the [RFC
+  Ed. Note, IESG, note, etc.] from [Name that AD].</p>
+{% endif %}
+
+{% if title3|startswith:"3.2.1" or title3|startswith:"3.2.2" %}
+  <p>If APPROVED - The Secretariat will send an individual submission
+  Document Action Announcement.</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send an
+  individual submission Document Action announcement that includes the
+  [RFC Ed. Note, IESG, note, etc.] from [Name that AD].</p>
+{% endif %}
+
+{% if title3|startswith:"3.3.1" or title3|startswith:"3.3.2" %}
+  <p>If APPROVED - The Secretariat will send a standard no problem
+  message to the RFC Editor. [Name of AD] will you supply the text for
+  the IESG Note?</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send a standard
+  no problem message to the RFC Editor that includes the note drafted
+  by [Name that AD].</p>
+
+  <p>If NOT APPROVED - The Secretariat will send the standard Do Not
+  Publish message to the RFC Editor.</p>
+
+  <p>If NOT APPROVED with clarifications - The Secretariat will send
+  the Do Not Publish message to the RFC Editor that includes the note
+  drafted by[Name the AD].</p>
+{% endif %}
+
 
 {% empty %}
 <h3>{{ title1 }}<br>
