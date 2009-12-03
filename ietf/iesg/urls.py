@@ -54,6 +54,7 @@ urlpatterns += patterns('',
         (r'^agenda/agenda.txt$', views.agenda_txt),                        
         (r'^agenda/scribe_template.html$', views.agenda_scribe_template),
         (r'^agenda/moderator_package.html$', views.agenda_moderator_package),
+        (r'^agenda/agenda_package.txt$', views.agenda_package),
         (r'^agenda/documents.txt$', views.agenda_documents_txt),
         (r'^agenda/documents/$', views.agenda_documents),
         (r'^discusses/$', views.discusses),
@@ -61,5 +62,7 @@ urlpatterns += patterns('',
 
 if settings.SERVER_MODE != 'production':
     urlpatterns += patterns('',
-        (r'^agenda/(?P<date>\d{4}-\d\d-\d\d)/$', views.agenda),                        
+        (r'^agenda/(?P<date>\d{4}-\d\d-\d\d)/$', views.agenda),
+        (r'^_test/moderator_package.html$', views.agenda_moderator_package_test),
+        (r'^_test/agenda_package.txt', views.agenda_package_test),
     )

@@ -36,7 +36,7 @@ import codecs
 from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup, Position, IESGLogin
 from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseForbidden
 from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response
 from django.conf import settings
@@ -157,13 +157,18 @@ def _agenda_data(request, date=None):
     docs = agenda_docs(date, next_agenda)
     mgmt = agenda_management_issues(date)
     wgs = agenda_wg_actions(date)
-    try:
-        f = codecs.open(settings.IESG_TASK_FILE, 'r', 'utf-8', 'replace')
-        action_items = f.read().strip()
-        f.close()
-    except IOError:
-        action_items = "(Error reading task.txt)"
-    return {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs, 'action_items':action_items}
+    data = {'date':str(date), 'docs':docs,'mgmt':mgmt,'wgs':wgs}
+    for key, filename in {'action_items':settings.IESG_TASK_FILE,
+                          'roll_call':settings.IESG_ROLL_CALL_FILE,
+                          'minutes':settings.IESG_MINUTES_FILE}.items():
+        try:
+            f = codecs.open(filename, 'r', 'utf-8', 'replace')
+            text = f.read().strip()
+            f.close()
+            data[key] = text
+        except IOError:
+            data[key] = "(Error reading "+key+")"
+    return data
 
 def agenda(request, date=None):
     data = _agenda_data(request, date)
@@ -179,11 +184,34 @@ def agenda_scribe_template(request):
     docs = agenda_docs(date, True)
     return render_to_response('iesg/scribe_template.html', {'date':str(date), 'docs':docs}, context_instance=RequestContext(request) )
 
-@group_required('Area_Director','Secretariat')
-def agenda_moderator_package(request):
+def _agenda_moderator_package(request):
     data = _agenda_data(request)
     data['ad_names'] = [str(x) for x in IESGLogin.active_iesg()]
     return render_to_response("iesg/moderator_package.html", data, context_instance=RequestContext(request))
+
+@group_required('Area_Director','Secretariat')
+def agenda_moderator_package(request):
+    return _agenda_moderator_package(request)
+
+def agenda_moderator_package_test(request):
+    if request.META['REMOTE_ADDR'] == "127.0.0.1":
+        return _agenda_moderator_package(request)
+    else:
+        return HttpResponseForbidden()
+
+def _agenda_package(request):
+    data = _agenda_data(request)
+    return render_to_response("iesg/agenda_package.txt", data, context_instance=RequestContext(request), mimetype='text/plain')
+
+@group_required('Area_Director','Secretariat')
+def agenda_package(request):
+    return _agenda_package(request)
+
+def agenda_package_test(request):
+    if request.META['REMOTE_ADDR'] == "127.0.0.1":
+        return _agenda_package(request)
+    else:
+        return HttpResponseForbidden()
 
 def agenda_documents_txt(request):
     dates = TelechatDates.objects.all()[0].dates()

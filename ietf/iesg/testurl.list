@@ -7,10 +7,14 @@
 200		/iesg/agenda/
 200		/iesg/agenda/agenda.txt
 200		/iesg/agenda/scribe_template.html
-302		/iesg/agenda/moderator_package.html
 200		/iesg/agenda/documents.txt
 200		/iesg/agenda/documents/
 200		/iesg/discusses/
+
+302		/iesg/agenda/moderator_package.html
+302		/iesg/agenda/agenda_package.txt
+200		/iesg/_test/moderator_package.html
+200		/iesg/_test/agenda_package.txt
 
 200		/iesg/ann/ind/
 200 		/iesg/ann/new/

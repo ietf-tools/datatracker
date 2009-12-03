@@ -166,6 +166,8 @@ IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
 # Path to Work Group Description Text Files
 IETFWG_DESCRIPTIONS_PATH = '/a/www/www6s/wg-descriptions/'
 IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
+IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
+IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
 
 # External page top and bottom, which gives a html page the current menubar
 # and footer used in the current web-page design
