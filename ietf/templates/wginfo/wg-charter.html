@@ -80,7 +80,7 @@
 {% for milestone in wg.milestones %}
   <tr>
    <td width="80px">
-      {% if milestone.done %} Done
+      {% ifequal milestone.done 'Done' %} Done
       {% else %}
       {%ifequal milestone.expected_due_date.month 1 %}Jan{% endifequal %}
       {%ifequal milestone.expected_due_date.month 2 %}Feb{% endifequal %}
@@ -95,7 +95,7 @@
       {%ifequal milestone.expected_due_date.month 11 %}Nov{% endifequal %}
       {%ifequal milestone.expected_due_date.month 12 %}Dec{% endifequal %}
       {{ milestone.expected_due_date.year }}
-      {% endif %}
+      {% endifequal %}
     </td>
     <td>{{ milestone.description|escape }}
   </td></tr>
