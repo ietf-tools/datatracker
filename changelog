@@ -1,3 +1,28 @@
+ietfdb (2.40)
+
+  * Fixed bug in charter templates -- need to test that milestone.done is 
+    'Done', as it can also be set to 'No'...
+
+  From Pasi:
+  * Added roll call to moderator package; added agenda package email
+
+  * Updated moderator package texts
+
+  * Removed unused image (for the already-retired mailing list request tool)
+
+  * Restrict /iesg/agenda/moderator_package.html to ADs and secretariat
+
+  * Added group_required authentication/authorization decorator
+
+  * Minor refactoring of IESG telechat agenda management item code (to 
+    allow access controlled pages in the future)
+
+  * Fix line breaks in IESG telechat moderator package
+
+  * Removed the now-executed commands from sql_fixup.sql
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  04 Dec 2009 12:02:12 +0100
+
 ietfdb (2.39)
 
   From Pasi:
