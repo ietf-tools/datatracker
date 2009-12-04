@@ -101,44 +101,6 @@ YAHOO.util.Event.onContentReady("search_submit_button", function () {
 {% endblock %} 
 </div>
 
-<div id="db-extras">
-
-<div id="signin_dlg" style="visibility:hidden;">
-<form name="signin_form" method="post" action="/account/login/" onsubmit="return false;">
-<div class="hd">Sign in</div>
-<div class="bd">
-<table>
-<tr><td><label>Username:</label></td>
-<td><input type="text" name="username" size="30" maxlength="30" /></td></tr>
-<tr><td><label>Password:</label></td>
-<td><input id="signin_password" type="password" name="password" size="30" maxlength="30" /></td></tr>
-<tr><td colspan="2"><div id="signin_msg" style="color:red;"></div>
-</td></tr>
-<tr><td colspan="2">
-<a href="/account/request/">Create an account..</a><br/>
-<a href="/account/request/">I forgot my password...</a>
-</td>
-</tr>
-</table>
-
-<div style="text-align:right;">
-<span id="signin_button1" class="yui-button yui-submit-button default">
-<span class="first-child">
-<button type="submit">Sign in</button>
-</span>
-</span>
-<span id="signin_button2" class="yui-button yui-push-button">
-<span class="first-child">
-<button type="button">Cancel</button>
-</span>
-</span>
-</div>
-</div> <!-- bd -->
-</form>
-
-</div>
-</div>
-
 </td></tr></table>
 {% include "debug.html" %}
 <!-- v{{version_num}}, {{ revision_date }} -->
