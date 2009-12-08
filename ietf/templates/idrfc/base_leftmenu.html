@@ -38,12 +38,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if user|in_group:"Area_Director" %}
 <li class="sect first">AD Dashboard</li>
   <li><a href="/doc/ad/{{user.get_profile.person.first_name|lower}}.{{user.get_profile.person.last_name|lower}}/">My Documents (as AD)</a></li>
-  <li><a href="/iesg/agenda/documents/">Reviews for next telechat</a></li>
+  <li><a href="/iesg/agenda/documents/">Next Telechat</a></li>
   <li><a href="/iesg/discusses/">Discusses</a></li>
 </li>
-<li class="sect">Working Groups by Area</li>
+<li class="sect">Working Groups</li>
 {% else %}
-<li class="sect first">Working Groups by Area</li>
+<li class="sect first">Working Groups</li>
 {% endif %}
 
   <li><div id="wgs" class="yuimenu"><div class="bd" style="border:0;">
@@ -55,8 +55,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   </div></div></li>
   
   <li><a href="http://tools.ietf.org/wg/concluded">Concluded WGs</a></li>
+  <li><a href="http://www.ietf.org/list/nonwg.html">Non-WG Lists</a></li>
  
-<li class="sect">Internet Drafts&nbsp;&amp;&nbsp;RFCs</li>
+<li class="sect">Drafts&nbsp;&amp;&nbsp;RFCs</li>
   <li><a href="/doc/">Search</a></li>
   <li><form action="/doc/search/" method="get" style="padding-bottom:0;margin-bottom:0;"><input type="text" style="margin-left:10px; width:100px; border:1px solid #89d;" name="name" /><input type="hidden" name="activeDrafts" value="on"/><input type="hidden" name="rfcs" value="on"/></form></li>
   <li><a href="https://datatracker.ietf.org/idst/upload.cgi">Submit a draft</a></li> 
@@ -65,22 +66,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <li class="sect">Meetings</li>
   <li><a href="/meeting/agenda/">Agenda</a></li>
   <li><a href="/meeting/">Materials</a></li>
-  <li><a href="http://tools.ietf.org/rooms">Room maps</a></li>
   <li><a href="http://www.ietf.org/meeting/proceedings.html">Past Proceedings</a></li>
-  <li><a href="http://www.ietf.org/meeting/upcoming.html">Upcoming Meetings</a></li>
+  <li><a href="http://www.ietf.org/meeting/upcoming.html">Upcoming</a></li>
 
-<li class="sect">Other documents</li>
+<li class="sect">Other Documents</li>
   <li><a href="/ipr/">IPR Disclosures</a></li>
-  <li><a href="/liaison">Liaison Statements</a></li>
-  <li><a href="http://www.ietf.org/iesg/minutes.html">IESG Minutes</a></li>
+  <li><a href="/liaison/">Liaison Statements</a></li>
   
-<li class="sect">Related sites</li>
-  <li><a href="http://www.ietf.org/" >Main IETF site</a></li>
-  <li><a href="http://tools.ietf.org" > IETF tools site</a></li>
-  <li><a href="http://www.ietf.org/iesg.html" >IESG</a></li>
-  <li><a href="http://www.iab.org">IAB</a></li>
+<li class="sect">Related Sites</li>
+  <li><a href="http://www.ietf.org/">Main IETF site</a></li>
+  <li><a href="http://tools.ietf.org/">IETF tools</a></li>
+  <li><a href="http://www.iab.org/">IAB</a></li>
   <li><a href="http://www.rfc-editor.org/">RFC Editor</a></li>
-  <li><a href="http://www.irtf.org/">IRTF</a></li>
-  <li><a href="http://iaoc.ietf.org">IASA</a></li>
+  <li><a href="http://iaoc.ietf.org">IASA/IAOC/Trust</a></li>
   <li><a href="http://www.iana.org/">IANA</a></li>
+  <li><a href="http://www.irtf.org/">IRTF</a></li>
 </ul>

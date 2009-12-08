@@ -57,8 +57,8 @@ body { margin: 0; }
 
 .leftmenu { background-color: #edf5ff; padding:0; border: 1px solid #89d;  }
 .leftmenu ul { padding: 0; margin: 0; }
-.leftmenu ul li { list-style: none; padding: 0; margin: 0; font-size: 90%; padding: 2px 0px 2px 0px; }
-.leftmenu ul li.yuimenuitem { padding: 1px 0px 1px 0px; border: 0;} 
+.leftmenu ul li { list-style: none; padding: 0; margin: 0; font-size: 93%; padding: 2px 0px 2px 0px; }
+.leftmenu ul li.yuimenuitem { padding: 0px 0px 1px 0px; border: 0;} 
 .leftmenu ul li a { padding: 0px 0px 0px 10px; }
 .leftmenu ul li.sect a { padding: 2px 2px 2px 2px; }
 .leftmenu ul li.sect { font-weight:bold; color:#fff; background:#2647A0; margin-top:2px; text-indent:2px; padding: 2px 0;}

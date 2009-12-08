@@ -39,7 +39,7 @@ register = template.Library()
 
 area_short_names = {
     'ops':'Ops & Mgmt',
-    'rai':'Real-time Apps & Infra'
+    'rai':'RAI'
     }
 
 def get_wgs():
