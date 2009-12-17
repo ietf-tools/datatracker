@@ -126,7 +126,7 @@ def agenda_docs(date, next_agenda):
         if section_key not in res:
             res[section_key] = []
         if id.note:
-            id.note = str(id.note).replace("\240","&nbsp;")
+            id.note = id.note.replace(u"\240",u"&nbsp;")
         res[section_key].append({'obj':id})
     return res
 
