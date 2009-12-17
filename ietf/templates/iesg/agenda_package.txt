@@ -27,7 +27,7 @@ Contents:
 {% for m in mgmt %}
 6.{{forloop.counter}} {{m.title}}
 
-    {{m.text|wordwrap:"68"|indent|indent}}
+{{m.text|wordwrap:"76"}}
 {% endfor %}
 
 ------------------------------------------------------------------------
