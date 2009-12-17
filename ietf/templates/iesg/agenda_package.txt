@@ -1,4 +1,4 @@
-{% load ietf_filters %}{% autoescape off %}AGENDA PACKAGE FOR {{ date }} IESG TELECHAT
+{% load ietf_filters %}{% filter linebreaks_lf %}{% autoescape off %}AGENDA PACKAGE FOR {{ date }} IESG TELECHAT
 
 Contents:
 
@@ -37,4 +37,4 @@ Contents:
 {{ minutes }}
 
 ------------------------------------------------------------------------
-{% endautoescape %}
+{% endautoescape %}{% endfilter %}

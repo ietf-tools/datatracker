@@ -317,6 +317,17 @@ def linebreaks_crlf(text):
     text = text.replace("\n", "\r\n")
     return text
 
+@register.filter(name='linebreaks_lf')
+def linebreaks_lf(text):
+    """
+    Normalize all linebreaks to LF.
+    """
+    # First, map CRLF to LF
+    text = text.replace("\r\n", "\n")
+    # Finally, map lone CRs to LFs
+    text = text.replace("\r", "\n")
+    return text
+
 @register.filter(name='greater_than')
 def greater_than(x, y):
     return x > int(y)

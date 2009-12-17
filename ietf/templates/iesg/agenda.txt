@@ -30,7 +30,7 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. #}
-{% endcomment %}{% autoescape off %}{% load ietf_filters %}{% filter compress_empty_lines %}
+{% endcomment %}{% autoescape off %}{% load ietf_filters %}{% filter compress_empty_lines %}{% filter linebreaks_lf %}
 INTERNET ENGINEERING STEERING GROUP (IESG)
 Summarized Agenda for the {{date}} IESG Teleconference
 
@@ -63,4 +63,4 @@ http://datatracker.ietf.org/iesg/agenda/
 {% endfor %}
 
 7. Working Group News
-{% endfilter %}{% endautoescape %}
+{% endfilter %}{% endfilter %}{% endautoescape %}
