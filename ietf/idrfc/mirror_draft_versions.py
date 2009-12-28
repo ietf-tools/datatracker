@@ -58,6 +58,7 @@ try:
     log("url: "+URL)
                     
     log("downloading...")
+    socket.setdefaulttimeout(30)
     response = urllib2.urlopen(URL)
     #log("got \n"+str(response.info()))
     log("parsing...")

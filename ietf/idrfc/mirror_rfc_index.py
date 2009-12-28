@@ -146,6 +146,7 @@ if __name__ == '__main__':
         log("url: "+INDEX_URL)
 
         log("downloading...")
+        socket.setdefaulttimeout(30)
         response = urllib2.urlopen(INDEX_URL)
         log("parsing...")
         data = parse(response)

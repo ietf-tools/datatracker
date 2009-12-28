@@ -199,6 +199,7 @@ if __name__ == '__main__':
         log("url: "+QUEUE_URL)
         
         log("downloading...")
+        socket.setdefaulttimeout(30)
         response = urllib2.urlopen(QUEUE_URL)
 
         (drafts, refs) = parse_all(response)
