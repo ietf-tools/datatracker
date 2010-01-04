@@ -237,6 +237,8 @@ class InternetDraft(models.Model):
         # Get rid of 'key words' boilerplate and anything which follows it:
         # (No way that is part of the abstract...)
         a = re.sub("(?s)(Conventions [Uu]sed in this [Dd]ocument|Requirements [Ll]anguage)?[\n ]*The key words \"MUST\", \"MUST NOT\",.*$", "", a)
+        # Get rid of status/copyright boilerplate
+        a = re.sub("(?s)\nStatus of [tT]his Memo\n.*$", "", a)
         # wrap long lines without messing up formatting of Ok paragraphs:
         while re.match("([^\n]{72,}?) +", a):
             a = re.sub("([^\n]{72,}?) +([^\n ]*)(\n|$)", "\\1\n\\2 ", a)
