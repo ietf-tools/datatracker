@@ -1,6 +1,6 @@
-{% extends "idrfc/base.html" %}
+{% extends "idrfc/doc_main.html" %}
 {% comment %}
-Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
 Redistribution and use in source and binary forms, with or without
@@ -32,74 +32,12 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
-
 {% load ietf_filters %}
+
 {% block title %}{{ doc.draft_name_and_revision }}{% endblock %}
+{% block doc_h1 %}{{ doc.title|escape }}<br/>{{ doc.draft_name_and_revision }}{% endblock %}
 
-{% block morecss %}
-
-#metabox { width: 99%; border:1px solid #cccccc; background:#edf5ff;margin-top:8px; padding:4px; margin-bottom:1em; }
-#metatable { border: 0; border-spacing: 0; }
-#metatable tr { vertical-align:top ;}
-#metatools { padding:4px; border: 1px solid #cccccc;  }
-
-#commentLog { margin-bottom: 1.5ex; }
-.commentToggle { text-decoration: underline; color: blue; }
-
-.comment_date { white-space: nowrap; }
-
-div.diffTool { border: 1px solid #cccccc; background: #edf5ff; padding: 8px 4px; margin: 8px 0;}
-.diffTool label { float:left; width:100px; }
-
-table.ietfTable { border-collapse:collapse; border:1px solid #7f7f7f; }
-.ietfTable tr.evenrow { background-color: #EDF5FF; }
-.ietfTable tr.oddrow {background-color: white; }
-.ietfTable td { border-right: 1px solid #cbcbcb; padding:3px 6px; }
-.ietfTable th { color:white; background: #2647A0; text-align:left; padding:3px 6px; border-right: 1px solid #7f7f7f; }
-
-.markup_draft pre {line-height: 1.2em; margin: 0; }
-.m_hdr, .m_ftr { color: #808080; }
-.m_ftr { border-bottom: 1px solid #a0a0a0; }
-.m_h { font-family: arial; font-weight:bold;}
-{% endblock %}
-
-{% block pagehead %}
-<script type="text/javascript">
-//<![CDATA[
-function toggleComment(n) {
-    var el = document.getElementById("commentF"+n);
-    var el2 = document.getElementById("commentS"+n);
-    var el3 = document.getElementById("commentT"+n);
-    if (el.style.display == 'none') {
-        el.style.display = 'block';
-        el2.style.display = 'none';
-        el3.innerHTML = ""; //[hide]";
-    } else {
-        el.style.display = 'none';
-        el2.style.display= 'block';
-        el3.innerHTML = "[show all]";
-    }
-}
-//]]>
-</script>
-{%endblock %}
-
-{% block content %}
-<h1 style="margin-top:0;">{{ doc.title|escape }}<br/>{{ doc.draft_name_and_revision }}</h1>
-
-<div id="mytabs" class="yui-navset">
-<ul class="yui-nav">
-  <li class="selected"><a href="#tab1"><em>Document</em></a></li>
-  <li><a href="#tab2"><em>Versions</em></a></li>
-  <li {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}{% else %}class="disabled" {%endif%}><a href="#tab3"><em>IESG Evaluation Record</em></a></li>
-  <li {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}{%else%}class="disabled" {%endif%}><a href="#tab4"><em>IESG Writeups</em></a></li>
-  <li {% if not doc.in_ietf_process %} class="disabled" {%endif%}><a href="#tab5"><em>IESG Comment Log</em></a></li>
-</ul>
-<div class="yui-content">
-
-<div id="tab1">
-
-<div id="metabox">
+{% block doc_meta %}
 <table id="metatable">
 <tr><td style="width:18ex;">Document type:</td><td>{{ info.type|escape }}</td></tr>
 <tr><td>State:</td><td> 
@@ -127,7 +65,7 @@ function toggleComment(n) {
 </td></tr>
 {% endifequal %}
 
-</table>
+</table><!-- metatable -->
 
 <div style="padding-top:6px;padding-bottom:6px;">
 <span class="mybutton"><a href="mailto:{{doc.draft_name}}@tools.ietf.org?subject={{doc.draft_name}}%20" title="Send email to the document authors">Email authors</a></span> &nbsp;
@@ -140,55 +78,9 @@ function toggleComment(n) {
 <span class="mybutton"><a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=add_id_confirm&amp;dTag={{doc.tracker_id}}&amp;rfc_flag=0&amp;ballot_id=0" rel="nofollow" target="_blank">Add to IESG Tracker</a></span>
 {% endif %}
 </div> <!-- tools div -->
-</div>
+{% endblock %}{# doc_meta #}
 
-</div> <!-- tab1 -->
-
-<div id="tab2">
-<div id="doc_versions" style="display:none;">
-</div>
-</div>
-
-<div id="tab3">
-<div id="doc_ballot" style="display:none;">
-{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
-<div style="position:absolute;right:0px;">
-<span id="doc_ballot_button" class="yui-button yui-link-button"><span class="first-child">
-<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{doc.tracker_id}}">Edit position</a>
-</span></span>
-</div>
-{% endif %}
-<div id="doc_ballot_content"></div>
-</div>
-</div> 
-
-<div id="tab4">
-<div id="doc_writeup" style="display:none;">
-{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
-<div style="position:absolute;right:0px;">
-<span id="doc_writeup_edit_button" class="yui-button yui-link-button"><span class="first-child">
-<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=ballot_writeup&amp;filename={{doc.draft_filename}}&amp;ballot_id={{doc.ietf_process.iesg_ballot.ballot_id}}">Edit writeups</a>
-</span></span></div>
----- following is a DRAFT of message to be sent AFTER approval ---
-<pre>
-{{ doc.ietf_process.iesg_ballot.approval_text|escape|urlize }}
-</pre>
-<pre>
-{{ doc.ietf_process.iesg_ballot.ballot_writeup|escape|urlize }}
-</pre>
-{% endif %}
-</div>
-</div> 
-
-<div id="tab5">
-<div id="doc_comments" style="display:none;">
-</div>
-</div> 
-
-</div> <!-- yui-content -->
-</div> <!-- mytabs -->
-
-<div id="rfcText1">
+{% block doc_text1 %}
 {% ifequal doc.draft_status "Active" %}
 <div class="markup_draft">
 {{ content1|safe }}
@@ -217,57 +109,12 @@ Missing author info #{{ author.person_id }}
 <p>(Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid)</p>
 
 {% endifequal %}
-</div> <!-- rfcText1 -->
-{% endblock %}
+{% endblock %}{# doc_text1 #}
 
-{% block scripts %}
-<script type="text/javascript" src="{{yui_url}}/2.7.0/build/tabview/tabview-min.js"></script> 
-<script type="text/javascript">
-//<![CDATA[
-function loadX(element, url) {
-    var el = document.getElementById(element);
-      el.innerHTML = "Loading...";
-      YAHOO.util.Connect.asyncRequest('GET', 
-          url,
-          { success: function(o) { document.getElementById(element).innerHTML = o.responseText; }, 
-            failure: function(o) { document.getElementById(element).innerHTML = "Error: "+o.status+" "+o.statusText; },
-            argument: null
-   	  }, null);
-}
-
-var tabView = new YAHOO.widget.TabView('mytabs');
-tabView.subscribe('activeIndexChange', function(e) {
-if (e.newValue == 0) {
-document.getElementById('rfcText1').style.display = 'block';
-document.getElementById('rfcText2').style.display = 'block';
-} else {
-document.getElementById('rfcText1').style.display = 'none';
-document.getElementById('rfcText2').style.display = 'none';
-} });
-
-document.getElementById('doc_versions').style.display = 'block';
-loadX("doc_versions", '/doc/{{doc.draft_name}}/_versions.data');
-{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
-document.getElementById('doc_ballot').style.display = 'block';
-loadX("doc_ballot_content", '/doc/{{doc.draft_name}}/_ballot.data');
-document.getElementById('doc_writeup').style.display = 'block';
-{% endif %}
-
-{% if doc.in_ietf_process %}
-document.getElementById('doc_comments').style.display = 'block';
-loadX("doc_comments", '/doc/{{doc.draft_name}}/_comments.data');
-{% endif %}
-//]]>
-</script>
-
-{% endblock %}
-
-{% block content_end %}
-<div id="rfcText2">
+{% block doc_text2 %}
 {% ifequal doc.draft_status "Active" %}
 <div class="markup_draft">
 {{ content2|safe }}
 </div>
 {% endifequal %}
-</div>
-{% endblock %}
+{% endblock %} {# doc_text2 #}

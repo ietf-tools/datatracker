@@ -1,5 +1,5 @@
 {% comment %}
-Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
 Redistribution and use in source and binary forms, with or without
@@ -33,30 +33,44 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
 {% load ietf_filters %} 
-
-<h2 style="margin-top:0;">Document history</h2>
 <table class="ietfTable">
 <tr><th class="comment_date">Date</th><th class="comment_version">Version</th><th class="comment_by">By</th><th class="comment_text">Text</th></tr>
 
-{% for c in comments %}
-
+{% for c in history %}
 <tr class="{% cycle oddrow,evenrow %}">
-<td class="comment_date">{{ c.comment.date }}</td>
+<td class="comment_date">{{ c.date|date:"Y-m-d" }}</td>
+
+{% if c.is_rev %}
+<td class="comment_version">{{ c.revision }}</td>
+<td class="comment_by">(System)</td>
+<td class="comment_text">New version available: <a href="http://tools.ietf.org/id/{{c.draft_name}}-{{c.revision}}.txt">{{c.draft_name}}-{{c.revision}}</a> {% ifnotequal c.revision "00" %}(<a href="http://tools.ietf.org/rfcdiff?url2={{c.draft_name}}-{{c.revision}}">diff from -{{c.revision|add:"-1"|stringformat:"02d"}}</a>){% endifnotequal %}</td>
+{% endif %}
+
+{% if c.is_text %}
+<td class="comment_version">&nbsp;</td>
+<td class="comment_by">(System)</td>
+<td class="comment_text">{{ c.text }}</td>
+{% endif %}
+
+{% if c.is_com %}
 <td class="comment_version">{{ c.comment.version }}</td>
 <td class="comment_by">{{ c.info.by|escape }}</td>
 <td class="comment_text">{% if c.comment.ballot %}
 [Ballot {{ c.comment.get_ballot_display }}]<br /> 
 {% endif %} 
 {% if c.info.snipped %}
-<div class="commentSnippet" id="commentS{{c.info.commentNumber}}">{{ c.info.textSnippet|safe }}</div>
-<span class="commentToggle" onClick="toggleComment({{c.info.commentNumber}})" id="commentT{{c.info.commentNumber}}">[show all]</span>
-<div class="commentFull" id="commentF{{c.info.commentNumber}}" style="display:none;">
+<div class="commentSnippet" id="commentS{{forloop.counter}}">{{ c.info.textSnippet|safe }}</div>
+<span class="commentToggle" onclick="toggleComment({{forloop.counter}})" id="commentT{{forloop.counter}}">[show all]</span>
+<div class="commentFull" id="commentF{{forloop.counter}}" style="display:none;">
 {{c.info.text|fill:"80"|format_textarea|safe}}
 </div>
 {% else %}
 {{ c.info.text|fill:"80"|format_textarea|safe}}
 {% endif %}
 </td>
+{% endif %}
+
+</tr>
 {% endfor %}
 
 </table>

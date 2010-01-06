@@ -1,5 +1,5 @@
 {% comment %}
-Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
 Redistribution and use in source and binary forms, with or without
@@ -32,38 +32,37 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
-<h2 style="margin-top:0;">Old versions and diffs</h2>
-
 <div class="diffTool">
-<form action="http://tools.ietf.org/rfcdiff" method="get" target="_blank">
-
+<h2 style="margin-top:0;margin-bottom:4px;">Diffs</h2>
+<form action="http://tools.ietf.org/rfcdiff" method="get" target="_blank" style="margin:0;">
+<table>
+<tr><td>
 <label>From:</label> <select name="url1">
 {% for id in versions %}
-<option value="{{id.draft_name}}-{{id.revision}}" {% ifequal forloop.counter 2 %} selected="selected" {% endifequal %}>{{id.draft_name}}-{{id.revision}} ({{id.revision_date}})</option>
+<option value="{{id.draft_name}}-{{id.revision}}" {% ifequal forloop.counter 2 %} selected="selected" {% endifequal %}>{{id.draft_name}}-{{id.revision}} ({{id.date}})</option>
 {% endfor %}
-</select><br/>
-<label>To</label>
+</select>
+</td>
+<td rowspan="2" valign="top">
+Format:
+<select name="difftype">
+<option value="--html" selected="selected">Side-by-side</option>
+<option value="--abdiff">Before-after</option>
+<option value="--chbars">Change bars</option>
+<option value="--hwdiff">Wdiff</option>
+</select> <input name="submit" value="Go!" type="submit" />
+</td>
+</tr>
+<tr>
+<td>
+<label>To:</label>
 <select name="url2">
 {% for id in versions %}
-<option value="{{id.draft_name}}-{{id.revision}}" {% ifequal forloop.counter 1 %} selected="selected" {% endifequal %}>{{id.draft_name}}-{{id.revision}} ({{id.revision_date}})</option>
+<option value="{{id.draft_name}}-{{id.revision}}" {% ifequal forloop.counter 1 %} selected="selected" {% endifequal %}>{{id.draft_name}}-{{id.revision}} ({{id.date}})</option>
 {% endfor %}
-</select><br/>
-
-<label>Format:</label>
-
-<input name="difftype" value="--html" checked="checked" type="radio">Side-by-side 
-<input name="difftype" value="--abdiff" type="radio">Before-after
-<input name="difftype" value="--chbars" type="radio">Change bars
-<input name="difftype" value="--hwdiff" type="radio">Wdiff<br />
-
-<input name="submit" value="Generate diff" type="submit" />
-
+</select>
+</td>
+</tr>
+</table>
 </form>
 </div>
-
-<table class="ietfTable">
-<tr><th>Date</th><th>Document</th></tr>
-{% for id in versions %}
-<tr><td>{{id.revision_date}}</td><td><a href="http://tools.ietf.org/id/{{id.draft_name}}-{{id.revision}}.txt">{{id.draft_name}}-{{id.revision}}.txt</a></td></tr>
-{% endfor %}
-</table>

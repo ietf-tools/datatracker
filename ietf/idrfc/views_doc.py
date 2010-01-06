@@ -1,4 +1,4 @@
-# Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+# Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re
+import re, os
+from datetime import datetime, time
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404
 from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo
@@ -41,6 +42,7 @@ from ietf import settings
 from django.template import RequestContext
 from django.template.defaultfilters import truncatewords_html
 from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
+
 
 def document_debug(request, name):
     r = re.compile("^rfc([0-9]+)$")
@@ -54,29 +56,40 @@ def document_debug(request, name):
         doc = IdWrapper(draft=id)
     return HttpResponse(doc.to_json(), mimetype='text/plain')
 
+def _get_html(key, filename):
+    f = None
+    try:
+        f = open(filename, 'rb')
+        raw_content = f.read()
+    except IOError:
+        return ("Error; cannot read "+key, "")
+    finally:
+        if f:
+            f.close()
+    (c1,c2) = markup_txt.markup(raw_content)
+    return (c1,c2)
+
 def document_main_rfc(request, rfc_number):
     rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
     doc = RfcWrapper(rfci)
 
     info = {}
-    content1 = None
-    content2 = None
-    f = None
-    try:
-        try:
-            f = open(settings.RFC_PATH+"rfc"+str(rfc_number)+".txt")
-            content = f.read()
-            (content1, content2) = markup_txt.markup(content)
-        except IOError:
-            content1 = "Error - can't find"+"rfc"+str(rfc_number)+".txt"
-            content2 = ""
-    finally:
-        if f:
-            f.close()
+    info['is_rfc'] = True
+    (content1, content2) = _get_html(
+        "rfc"+str(rfc_number)+",html", 
+        os.path.join(settings.RFC_PATH, "rfc"+str(rfc_number)+".txt"))
+
+    if doc.in_ietf_process() and doc.ietf_process.has_iesg_ballot():
+        ballot = doc.ietf_process.iesg_ballot()
+    else:
+        ballot = None
+        
+    history = _get_history(doc)
             
     return render_to_response('idrfc/doc_main_rfc.html',
                               {'content1':content1, 'content2':content2,
-                               'doc':doc, 'info':info},
+                               'doc':doc, 'info':info, 'ballot':ballot,
+                               'history':history},
                               context_instance=RequestContext(request));
 
 def document_main(request, name):
@@ -108,53 +121,71 @@ def document_main(request, name):
         info['type'] = "Old Internet-Draft"+stream
 
     info['has_pdf'] = (".pdf" in doc.file_types())
+    info['is_rfc'] = False
     
-    content1 = None
-    content2 = None
-    if info['is_active_draft']:
-        f = None
-        try:
-            try:
-                f = open(settings.INTERNET_DRAFT_PATH+name+"-"+id.revision+".txt")
-                content = f.read()
-                (content1, content2) = markup_txt.markup(content)
-            except IOError:
-                content1 = "Error - can't find "+name+"-"+id.revision+".txt"
-                content2 = ""
-        finally:
-            if f:
-                f.close()
+    (content1, content2) = _get_html(
+        str(name)+","+str(id.revision)+",html",
+        os.path.join(settings.INTERNET_DRAFT_PATH, name+"-"+id.revision+".txt"))
+
+    if doc.in_ietf_process() and doc.ietf_process.has_iesg_ballot():
+        ballot = doc.ietf_process.iesg_ballot()
+    else:
+        ballot = None
+
+    versions = _get_versions(id)
+    history = _get_history(doc)
             
     return render_to_response('idrfc/doc_main_id.html',
                               {'content1':content1, 'content2':content2,
-                               'doc':doc, 'info':info},
+                               'doc':doc, 'info':info, 'ballot':ballot,
+                               'versions':versions, 'history':history},
                               context_instance=RequestContext(request));
 
-def document_comments(request, name):
-    r = re.compile("^rfc([0-9]+)$")
-    m = r.match(name)
-    if m:
-        id = get_object_or_404(IDInternal, rfc_flag=1, draft=int(m.group(1)))
-    else:
-        id = get_object_or_404(IDInternal, rfc_flag=0, draft__filename=name)
+# doc is either IdWrapper or RfcWrapper
+def _get_history(doc):
     results = []
-    commentNumber = 0
-    for comment in id.public_comments():
-        info = {}
-        r = re.compile(r'^(.*) by (?:<b>)?([A-Z]\w+ [A-Z]\w+)(?:</b>)?$')
-        m = r.match(comment.comment_text)
-        if m:
-            info['text'] = m.group(1)
-            info['by'] = m.group(2)
-        else:
+    if doc._idinternal:
+        for comment in doc._idinternal.public_comments():
+            info = {}
             info['text'] = comment.comment_text
             info['by'] = comment.get_fullname()
-        info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
-        info['snipped'] = info['textSnippet'][-3:] == "..."
-        info['commentNumber'] = commentNumber
-        commentNumber = commentNumber + 1
-        results.append({'comment':comment, 'info':info})
-    return render_to_response('idrfc/doc_comments.html', {'comments':results}, context_instance=RequestContext(request))
+            info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
+            info['snipped'] = info['textSnippet'][-3:] == "..."
+            results.append({'comment':comment, 'info':info, 'date':comment.datetime(), 'is_com':True})
+    if doc.is_id_wrapper:
+        versions = _get_versions(doc._draft, False)
+        versions.reverse()
+        for v in versions:
+            v['is_rev'] = True
+            results.append(v)
+    if doc.is_id_wrapper and doc.draft_status == "Expired" and doc._draft.expiration_date:
+        results.append({'is_text':True, 'date':doc._draft.expiration_date, 'text':'Draft expired'})
+    if doc.is_rfc_wrapper:
+        results.append({'is_text':True, 'date':doc.publication_date, 'text':'RFC Published'})
+
+    # convert plain dates to datetimes (required for sorting)
+    for x in results:
+        if not isinstance(x['date'], datetime):
+            x['date'] = datetime.combine(x['date'], time(0,0,0))
+
+    results.sort(key=lambda x: x['date'])
+    results.reverse()
+    return results
+
+# takes InternetDraft instance
+def _get_versions(draft, include_replaced=True):
+    ov = []
+    ov.append({"draft_name":draft.filename, "revision":draft.revision_display(), "date":draft.revision_date})
+    if include_replaced:
+        draft_list = [draft]+list(draft.replaces_set.all())
+    else:
+        draft_list = [draft]
+    for d in draft_list:
+        for v in DraftVersions.objects.filter(filename=d.filename).order_by('-revision'):
+            if (d.filename == draft.filename) and (draft.revision_display() == v.revision):
+                continue
+            ov.append({"draft_name":d.filename, "revision":v.revision, "date":v.revision_date})
+    return ov
 
 def document_ballot(request, name):
     r = re.compile("^rfc([0-9]+)$")
@@ -171,16 +202,4 @@ def document_ballot(request, name):
 
     ballot = BallotWrapper(id)
     return render_to_response('idrfc/doc_ballot.html', {'ballot':ballot}, context_instance=RequestContext(request))
-
-def document_versions(request, name):
-    draft = get_object_or_404(InternetDraft, filename=name)
-    ov = []
-    ov.append({"draft_name":draft.filename, "revision":draft.revision, "revision_date":draft.revision_date})
-    for d in [draft]+list(draft.replaces_set.all()):
-        for v in DraftVersions.objects.filter(filename=d.filename).order_by('-revision'):
-            if (d.filename == draft.filename) and (draft.revision == v.revision):
-                continue
-            ov.append({"draft_name":d.filename, "revision":v.revision, "revision_date":v.revision_date})
-    
-    return render_to_response('idrfc/doc_versions.html', {'versions':ov}, context_instance=RequestContext(request))
 
