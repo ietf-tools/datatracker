@@ -553,6 +553,16 @@ class BallotWrapper:
             #        del po['is_old_ad']
             ads.add(str(p.ad))
             positions.append(po)
+        for c in self.ballot.comments.all():
+            if (str(c.ad) not in ads) and c.ad.is_current_ad():
+                positions.append({'has_text':True,
+                                  'comment_text':c.text,
+                                  'comment_date':c.date,
+                                  'comment_revision':str(c.revision),
+                                  'ad_name':str(c.ad),
+                                  'position':'No Record',
+                                  'is_old_ad':False})
+                ads.add(str(c.ad))
         if self.ballot_active:
             for ad in IESGLogin.active_iesg():
                 if str(ad) not in ads:
