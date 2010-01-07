@@ -49,10 +49,11 @@ function showBallot(draftName, trackerId) {
 
         var buttons = [{text:"Close", handler:handleClose, isDefault:true}];
 	buttons.unshift({text:"Edit Position", handler:handleEditPosition});
+	var kl = [new YAHOO.util.KeyListener(document, {keys:27}, handleClose)]						 
         IETF.ballotDialog = new YAHOO.widget.Dialog("doc_ballot_dialog", {
             visible:false, draggable:false, close:true, modal:true,
             width:"850px", fixedcenter:true, constraintoviewport:true,
-            buttons: buttons});
+            buttons: buttons, keylisteners:kl});
         IETF.ballotDialog.render();
     }
     document.getElementById("doc_ballot_dialog_name").innerHTML = draftName;
