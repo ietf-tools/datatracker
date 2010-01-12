@@ -42,6 +42,8 @@ from ietf import settings
 from django.template import RequestContext
 from django.template.defaultfilters import truncatewords_html
 from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
+from django.utils.decorators import decorator_from_middleware
+from django.middleware.gzip import GZipMiddleware
 
 
 def document_debug(request, name):
@@ -92,6 +94,7 @@ def document_main_rfc(request, rfc_number):
                                'history':history},
                               context_instance=RequestContext(request));
 
+@decorator_from_middleware(GZipMiddleware)
 def document_main(request, name):
     r = re.compile("^rfc([0-9]+)$")
     m = r.match(name)
