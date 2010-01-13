@@ -45,7 +45,7 @@ while true; do
 	if [ $DBDUMP -nt $DBTIME ]; then
 	    export PYTHONPATH=$PWD
 	    echo "Updating database dated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')"
-	    echo -n "Updating database from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')... " 1>&2
+	    #echo -n "Updating database from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')... " 1>&2
 
 	    echo "$$" > $PIDFILE
 	    chmod a+rw $PIDFILE
@@ -61,7 +61,7 @@ while true; do
 	    touch -r $DBDUMP $DBTIME
 	    touch $DBDONE
 	    echo "Done."
-	    echo "Done." 1>&2
+	    #echo "Done." 1>&2
 	else
 	    echo "Database is up-to-date (updated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M'))"
 	fi
