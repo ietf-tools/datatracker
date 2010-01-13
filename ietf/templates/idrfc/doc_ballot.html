@@ -39,69 +39,57 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <td class="left">
 
 <p><span class="square" style="background:#c00000;"></span><b>Discuss</b><br/>
-{% if ballot.get_discuss %}
 {% for p in ballot.get_discuss %}
 {% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
 {% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% endfor %}
-{% else %}
+{% empty %}
 <i>none</i>
-{% endif %}
+{% endfor %}
 </p>
 
 <p><span class="square" style="background:#80ff80;"></span><b>Yes</b><br/>
-{% if ballot.get_yes %}
 {% for p in ballot.get_yes %}
 {% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
 {% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% endfor %}
-{% else %}
+{% empty %}
 <i>none</i>
-{% endif %}
+{% endfor %}
 </p>
 
 <p><span class="square" style="background:#80ff80;"></span><b>No Objection</b><br/>
-{% if ballot.get_no_objection %}
 {% for p in ballot.get_no_objection %}
 {% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
 {% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% endfor %}
-{% else %}
+{% empty %}
 <i>none</i>
-{% endif %}
+{% endfor %}
 </p>
 
 <p><span class="square" style="background:#c0c0c0;"></span><b>Abstain</b><br/>
-{% if ballot.get_abstain %}
 {% for p in ballot.get_abstain %}
 {% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
 {% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% endfor %}
-{% else %}
+{% empty %}
 <i>none</i>
-{% endif %}
+{% endfor %}
 </p>
 
 <p><span class="square" style="background:#c0c0c0;"></span><b>Recuse</b><br/>
-{% if ballot.get_recuse %}
 {% for p in ballot.get_recuse %}
 {% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
 {% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% endfor %}
-{% else %}
+{% empty %}
 <i>none</i>
-{% endif %}
+{% endfor %}
 </p>
 
 <p><span class="square" style="background:white;"></span><b>No Record</b><br/>
-{% if ballot.get_no_record %}
 {% for p in ballot.get_no_record %}
 {% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
 {% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% endfor %}
-{% else %}
+{% empty %}
 <i>none</i>
-{% endif %}
+{% endfor %}
 </p>
 
 
