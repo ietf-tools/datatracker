@@ -1,3 +1,57 @@
+ietfdb (2.41)
+
+  * The 'current agenda' url can fail between meetings, when the 'current 
+    meeting number' has been bumped up, but not all relevant information has 
+    been entered yet.  Fall back to the most recent meeting for which an agenda 
+    can be produced in that case.
+
+  * The self.affiliation() call can sometimes cause an exception, too, due 
+    to the deficiencies of the database.  Use something safer as fallback.
+
+  From Pasi:
+
+  * Show various edit buttons only to ADs/secretariat
+
+  * Simplify WG menu a bit
+
+  * Fix comment handling for drafts not in idinternal; use select_related 
+    to reduce SQL queries
+
+  * Make sure DOCTYPE is first (without empty lines above it)
+
+  * Use GZipMiddleware for per-document page (result is 25% of original, 
+    and loads visibly faster)
+
+  * Close ballot dialog if Escape is pressed
+
+  * Fix ballot dialog not appearing (in new tracker UI)
+
+  * Add timestamp to scribe template
+
+  * Show ballot comments even if AD has no position
+
+  * Improved history tab in "new tracker UI"; per-document page now works 
+    better without JavaScript; internal refactoring/cleaning of per-document 
+    page
+
+  * Better abstract cleaning (to remove new-style boilerplate)
+
+  * Updated independent submission text to point to RFC 5742 instead of 3932
+
+  * Time out after 30 seconds iwhen downloading
+
+  * Normalize linebreaks in iesg/{agenda.txt,agenda_package.txt} to LF
+
+  * Don't indent management item texts (looks a bit nicer)
+
+  * Don't choke on non-ASCII characters in agenda notes
+
+  * Cleaned/simplified left navbar in "new tracker UI"
+
+  * Removed unused HTML (related to the old authentication system)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jan 2010 18:25:22 +0100
+
 ietfdb (2.40)
 
   * Fixed bug in charter templates -- need to test that milestone.done is 
