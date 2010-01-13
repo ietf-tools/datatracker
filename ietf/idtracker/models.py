@@ -280,12 +280,12 @@ class PersonOrOrgInfo(models.Model):
     def __str__(self):
         # For django.VERSION 0.96
 	if self.first_name == '' and self.last_name == '':
-	    return self.affiliation()
+	    return "(Person #%s)" % self.person_or_org_tag
         return "%s %s" % ( self.first_name or "<nofirst>", self.last_name or "<nolast>")
     def __unicode__(self):
         # For django.VERSION 1.x
 	if self.first_name == '' and self.last_name == '':
-	    return unicode(self.affiliation())
+	    return u"(Person #%s)" % self.person_or_org_tag
         return u"%s %s" % ( self.first_name or u"<nofirst>", self.last_name or u"<nolast>")
     def email(self, priority=1, type='INET'):
 	name = str(self)
