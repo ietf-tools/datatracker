@@ -546,14 +546,14 @@ class BallotWrapper:
             ads = set()
 
         positions = []
-        for p in self.ballot.positions.all():
+        for p in self.ballot.positions.all().select_related('ad'):
             po = create_position_object(self.ballot, p)
             #if not self.ballot_active:
             #    if 'is_old_ad' in po:
             #        del po['is_old_ad']
             ads.add(str(p.ad))
             positions.append(po)
-        for c in self.ballot.comments.all():
+        for c in self.ballot.comments.all().select_related('ad'):
             if (str(c.ad) not in ads) and c.ad.is_current_ad():
                 positions.append({'has_text':True,
                                   'comment_text':c.text,
