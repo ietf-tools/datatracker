@@ -5,7 +5,7 @@
 from django.shortcuts import render_to_response as render, get_object_or_404
 from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches
 from django.views.generic.list_detail import object_list
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.template import RequestContext
@@ -58,19 +58,29 @@ def get_plenary_agenda(meeting_num, id):
         return "The Plenary has not been scheduled"
 
 def agenda_info(num=None):
-    if not num:
-        num = list(Meeting.objects.all())[-1].meeting_num
-    timeslots = MeetingTime.objects.select_related().filter(meeting=num).order_by("day_id", "time_desc")
-    update = get_object_or_404(Switches,id=1)
-    meeting=get_object_or_404(Meeting, meeting_num=num)
-    venue = get_object_or_404(MeetingVenue, meeting_num=num)
-    ads = list(IESGHistory.objects.select_related().filter(meeting=num))
+    if num:
+        meetings = [ num ]
+    else:
+        meetings =list(Meeting.objects.all())
+        meetings.reverse()
+        meetings = [ meeting.meeting_num for meeting in meetings ]
+    for n in meetings:
+        try:
+            timeslots = MeetingTime.objects.select_related().filter(meeting=n).order_by("day_id", "time_desc")
+            update = Switches.objects.get(id=1)
+            meeting= Meeting.objects.get(meeting_num=n)
+            venue  = MeetingVenue.objects.get(meeting_num=n)
+            break
+        except (MeetingTime.DoesNotExist, Switches.DoesNotExist, Meeting.DoesNotExist, MeetingVenue.DoesNotExist):
+            continue
+    else:
+        raise Http404("No meeting information for meeting %s available" % num)
+    ads = list(IESGHistory.objects.select_related().filter(meeting=n))
     if not ads:
-        ads = list(IESGHistory.objects.select_related().filter(meeting=str(int(num)-1)))
+        ads = list(IESGHistory.objects.select_related().filter(meeting=str(int(n)-1)))
     ads.sort(key=(lambda item: item.area.area_acronym.acronym))
-    plenaryw_agenda = get_plenary_agenda(num, -1)
-    plenaryt_agenda = get_plenary_agenda(num, -2)
-
+    plenaryw_agenda = get_plenary_agenda(n, -1)
+    plenaryt_agenda = get_plenary_agenda(n, -2)
     return timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda
     
 def html_agenda(request, num=None):
