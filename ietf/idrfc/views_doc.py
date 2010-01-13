@@ -34,7 +34,7 @@ import re, os
 from datetime import datetime, time
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404
-from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo
+from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, DocumentComment
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.idrfc import markup_txt
@@ -147,14 +147,18 @@ def document_main(request, name):
 # doc is either IdWrapper or RfcWrapper
 def _get_history(doc):
     results = []
-    if doc._idinternal:
-        for comment in doc._idinternal.public_comments():
-            info = {}
-            info['text'] = comment.comment_text
-            info['by'] = comment.get_fullname()
-            info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
-            info['snipped'] = info['textSnippet'][-3:] == "..."
-            results.append({'comment':comment, 'info':info, 'date':comment.datetime(), 'is_com':True})
+    if doc.is_id_wrapper:
+        comments = DocumentComment.objects.filter(document=doc.tracker_id)
+    else:
+        # note: DocumentComment.rfc_flag is often wrong; avoid it
+        comments = DocumentComment.objects.filter(document=doc.rfc_number) 
+    for comment in comments.order_by('-date','-time','-id').filter(public_flag=1).select_related('created_by'):
+        info = {}
+        info['text'] = comment.comment_text
+        info['by'] = comment.get_fullname()
+        info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
+        info['snipped'] = info['textSnippet'][-3:] == "..."
+        results.append({'comment':comment, 'info':info, 'date':comment.datetime(), 'is_com':True})
     if doc.is_id_wrapper:
         versions = _get_versions(doc._draft, False)
         versions.reverse()
