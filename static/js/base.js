@@ -48,7 +48,10 @@ function showBallot(draftName, trackerId) {
         document.getElementById("db-extras").appendChild(el);
 
         var buttons = [{text:"Close", handler:handleClose, isDefault:true}];
-	buttons.unshift({text:"Edit Position", handler:handleEditPosition});
+	if (("Area_Director" in IETF.user_groups) ||
+	    ("Secretariat" in IETF.user_groups)) {
+	    buttons.unshift({text:"Edit Position", handler:handleEditPosition});
+	}
 	var kl = [new YAHOO.util.KeyListener(document, {keys:27}, handleClose)]						 
         IETF.ballotDialog = new YAHOO.widget.Dialog("doc_ballot_dialog", {
             visible:false, draggable:false, close:true, modal:true,

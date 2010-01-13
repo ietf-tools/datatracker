@@ -103,11 +103,12 @@ function toggleComment(n) {
 <div id="ballot">
 <div id="ballot_content">
 {% if ballot %}
+{% if user|in_group:"Area_Director,Secretariat" %}
 <div style="position:absolute;right:0px;">
 <span id="doc_ballot_button" class="yui-button yui-link-button"><span class="first-child">
 <a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={% if info.is_rfc %}{{doc.rfc_number}}{% else %}{{doc.tracker_id}}{% endif %}">Edit position</a>
-</span></span>
-</div>
+</span></span></div>
+{% endif %}{# user in_group #}
 {% include "idrfc/doc_ballot.html" %}
 {% endif %}
 </div>
@@ -116,10 +117,12 @@ function toggleComment(n) {
 <div id="writeup">
 <div id="writeup_content">
 {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
+{% if user|in_group:"Area_Director,Secretariat" %}
 <div style="position:absolute;right:0px;">
 <span id="doc_writeup_edit_button" class="yui-button yui-link-button"><span class="first-child">
 <a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=ballot_writeup&amp;ballot_id={{doc.ietf_process.iesg_ballot.ballot_id}}">Edit writeups</a>
 </span></span></div>
+{% endif %}{# user in_group #}
 ---- following is a DRAFT of message to be sent AFTER approval ---
 <pre>
 {{ doc.ietf_process.iesg_ballot.approval_text|escape|urlize }}

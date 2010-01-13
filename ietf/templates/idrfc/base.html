@@ -45,6 +45,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block pagehead %}{% endblock %}
 <script type="text/javascript">
 IETF = {};
+IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not forloop.last %}, {%endif%}{%endfor%} };
 </script>
 </head>
 <body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
