@@ -33,6 +33,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 {% for area in areas %}
 <li class="yuimenuitem"><a class="yuimenuitemlabel">{{area.areaName|escape }}</a><div id="wgs-{{area.areaAcronym}}" class="yuimenu"><div class="bd"><ul>{% for wg in area.wgs %}
-<li class="yuimenuitem"><a class="yuimenuitemlabel" href="http://tools.ietf.org/wg/{{wg.group_acronym}}/">{{wg.group_acronym}} &nbsp; &mdash; &nbsp; {{wg.group_acronym.name|escape}}</a></li>{% endfor %}
+<li class="yuimenuitem"><a class="yuimenuitemlabel" href="http://tools.ietf.org/wg/{{wg.group_acronym}}/">{{wg.group_acronym}} &mdash; {{wg.group_acronym.name|escape}}</a></li>{% endfor %}
 </ul></div></div></li>
 {% endfor %}
