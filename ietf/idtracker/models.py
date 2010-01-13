@@ -661,6 +661,9 @@ class DocumentComment(models.Model):
     time = models.CharField(db_column='comment_time', max_length=20)
     version = models.CharField(blank=True, max_length=3)
     comment_text = models.TextField(blank=True)
+    # NOTE: This is not a true foreign key -- it sometimes has values 
+    # (like 999) that do not exist in IESGLogin. So using select_related()
+    # will break!    
     created_by = models.ForeignKey(IESGLogin, db_column='created_by', null=True)
     result_state = models.ForeignKey(IDState, db_column='result_state', null=True, related_name="comments_leading_to_state")
     origin_state = models.ForeignKey(IDState, db_column='origin_state', null=True, related_name="comments_coming_from_state")
