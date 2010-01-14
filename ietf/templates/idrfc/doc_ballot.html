@@ -31,67 +31,26 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
-
 {% load ietf_filters %}
-<table class="ballotTable">
-
-<tr valign="top">
-<td class="left">
+<table class="ballotTable"><tr valign="top"><td class="left">
 
 <p><span class="square" style="background:#c00000;"></span><b>Discuss</b><br/>
-{% for p in ballot.get_discuss %}
-{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
-{% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% empty %}
-<i>none</i>
-{% endfor %}
-</p>
+{% with ballot.get_discuss as positions %}{% include "idrfc/doc_ballot_list.html" %}{% endwith %}</p>
 
 <p><span class="square" style="background:#80ff80;"></span><b>Yes</b><br/>
-{% for p in ballot.get_yes %}
-{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
-{% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% empty %}
-<i>none</i>
-{% endfor %}
-</p>
+{% with ballot.get_yes as positions %}{% include "idrfc/doc_ballot_list.html" %}{% endwith %}</p>
 
 <p><span class="square" style="background:#80ff80;"></span><b>No Objection</b><br/>
-{% for p in ballot.get_no_objection %}
-{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
-{% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% empty %}
-<i>none</i>
-{% endfor %}
-</p>
+{% with ballot.get_no_objection as positions %}{% include "idrfc/doc_ballot_list.html" %}{% endwith %}</p>
 
 <p><span class="square" style="background:#c0c0c0;"></span><b>Abstain</b><br/>
-{% for p in ballot.get_abstain %}
-{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
-{% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% empty %}
-<i>none</i>
-{% endfor %}
-</p>
+{% with ballot.get_abstain as positions %}{% include "idrfc/doc_ballot_list.html" %}{% endwith %}</p>
 
 <p><span class="square" style="background:#c0c0c0;"></span><b>Recuse</b><br/>
-{% for p in ballot.get_recuse %}
-{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
-{% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% empty %}
-<i>none</i>
-{% endfor %}
-</p>
+{% with ballot.get_recuse as positions %}{% include "idrfc/doc_ballot_list.html" %}{% endwith %}</p>
 
 <p><span class="square" style="background:white;"></span><b>No Record</b><br/>
-{% for p in ballot.get_no_record %}
-{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%} {% if p.has_text %}*{% endif %} <br/>
-{% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
-{% empty %}
-<i>none</i>
-{% endfor %}
-</p>
-
+{% with ballot.get_no_record as positions %}{% include "idrfc/doc_ballot_list.html" %}{% endwith %}</p>
 
 </td>
 <td class="right">
@@ -99,7 +58,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <h2 style="margin-top:12px;">Discusses and other comments</h2>
 
 {% for pos in ballot.get_texts %}
-
 <h2 class="ballot_ad">{{pos.ad_name|escape}}</h2>
 
 {% ifequal pos.position "Discuss" %}
@@ -111,10 +69,5 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <p><b>Comment ({{pos.comment_date}})</b></p>
 <pre>{{pos.comment_text|fill:"80"|escape }}</pre>
 {% endif %}
-
 {% endfor %}
-
-
-</td>
-</tr>
-</table>
+</td></tr></table>
