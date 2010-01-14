@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr><td style="width:18ex;">Document type:</td><td>{{ info.type|escape }}</td></tr>
 <tr><td>State:</td><td> 
 {{ doc.friendly_state|safe }}
-{% if doc.rfc_editor_state %}<br />RFC Editor State: {{ doc.rfc_editor_state|escape }} {% endif %}
+{% if doc.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.draft_name}}">{{ doc.rfc_editor_state|escape }}</a>{% endif %}
 {% if doc.replaces %}<br />Replaces {% for rep in doc.replaces %}<a href="/doc/{{rep}}/">{{rep}}</a> {% endfor %}{% endif %}
 </td></tr>
 

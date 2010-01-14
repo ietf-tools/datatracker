@@ -52,7 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if doc.rfc.updated_by %}<br />Updated by {{ doc.rfc.updated_by }}{%endif %}
 {% if doc.rfc.has_errata %}<br /><a href="http://www.rfc-editor.org/errata_search.php?rfc={{doc.rfc.rfc_number}}" rel="nofollow" target="_blank">Errata</a>{% endif %}
 {% else %}
-  {% if doc.id.rfc_editor_state %}<br />RFC Editor State: {{ doc.id.rfc_editor_state|escape }}{% endif %}
+  {% if doc.id.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.id.draft_name}}">{{ doc.id.rfc_editor_state|escape }}</a>{% endif %}
 {% endif %}
 </td>
 <td class="ballot">
