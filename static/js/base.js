@@ -73,4 +73,6 @@ function showBallot(draftName, trackerId) {
             argument: null
    	  }, null);
 }
-
+function editBallot(trackerId) {
+    window.open("https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&id_document_tag="+trackerId);
+}

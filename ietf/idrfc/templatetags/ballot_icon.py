@@ -74,12 +74,16 @@ def render_ballot_icon(context, doc):
         if adId and (p['ad'].id == adId):
             my = position_to_string(p['pos'])
     if doc.is_rfc_wrapper:
-        return render_ballot_icon2("rfc"+str(doc.rfc_number), doc.rfc_number, red,green,gray,blank,my)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
+        return render_ballot_icon2("rfc"+str(doc.rfc_number), doc.rfc_number, red,green,gray,blank,my,adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
     else:
-        return render_ballot_icon2(doc.draft_name, doc.tracker_id, red,green,gray,blank,my)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
+        return render_ballot_icon2(doc.draft_name, doc.tracker_id, red,green,gray,blank,my,adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
 
-def render_ballot_icon2(draft_name, tracker_id, red,green,gray,blank,my):
-    res = '<table class="ballot_icon" title="IESG Evaluation Record (click to show more)" onclick="showBallot(\'' + draft_name + '\',' + str(tracker_id) + ')">'
+def render_ballot_icon2(draft_name, tracker_id, red,green,gray,blank,my,adId):
+    if adId:
+        res_cm = ' oncontextmenu="editBallot('+str(tracker_id)+');return false;"'
+    else:
+        res_cm = ''
+    res = '<table class="ballot_icon" title="IESG Evaluation Record (click to show more)" onclick="showBallot(\'' + draft_name + '\',' + str(tracker_id) + ')"'+res_cm+'>'
     for y in range(3):
         res = res + "<tr>"
         for x in range(5):
