@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 {% comment %}
-Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-<title>{% block title %}No title{% endblock %}</title>
+<!-- v{{version_num}}, {{ revision_num }}, {{ revision_time }} -->
+<title>{% block title %}No title{% endblock %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}</title>
 <link rel="stylesheet" type="text/css" href="{{yui_url}}/2.7.0/build/fonts/fonts-min.css"></link>
 <link rel="stylesheet" type="text/css" href="{{yui_url}}/2.7.0/build/assets/skins/sam/skin.css"></link>
 <link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
@@ -47,6 +48,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 IETF = {};
 IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not forloop.last %}, {%endif%}{%endfor%} };
 </script>
+{% ifnotequal server_mode "production" %}
+<link rel="icon" href="/images/ietf-dev-icon.bmp" />
+{% else %}
+<link rel="icon" href="/images/ietf-icon.bmp" />
+{% endifnotequal %}
 </head>
 <body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
 
@@ -86,7 +92,6 @@ YAHOO.util.Event.onContentReady("wgs", function () {
     var oMenu = new YAHOO.widget.Menu("wgs", { position: "static", hidedelay:  750, lazyload: true });
     oMenu.render();      
 });      
-
 YAHOO.util.Event.onContentReady("search_submit_button", function () {
     var oButton = new YAHOO.widget.Button("search_submit_button", {});
 });      
@@ -101,10 +106,7 @@ YAHOO.util.Event.onContentReady("search_submit_button", function () {
 {% block content_end %}
 {% endblock %} 
 </div>
-
 <div id="db-extras"></div>
-
 </td></tr></table>
 {% include "debug.html" %}
-<!-- v{{version_num}}, {{ revision_date }} -->
 </body></html>
