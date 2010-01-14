@@ -112,8 +112,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.i18n',
     'django.core.context_processors.request',
     'ietf.context_processors.server_mode',
-    'ietf.context_processors.revision_info',
-    'ietf.context_processors.yui_url'
+    'ietf.context_processors.revision_info'
 )
 
 INSTALLED_APPS = (
@@ -185,10 +184,6 @@ else:
     CACHE_BACKEND = 'dummy:///'
 
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
-
-
-# Base URL for YUI library
-YUI_URL = "https://ajax.googleapis.com/ajax/libs/yui"
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
