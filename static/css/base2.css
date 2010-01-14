@@ -63,11 +63,10 @@ body { margin: 0; }
 .leftmenu ul li.sect a { padding: 2px 2px 2px 2px; }
 .leftmenu ul li.sect { font-weight:bold; color:#fff; background:#2647A0; margin-top:2px; text-indent:2px; padding: 2px 0;}
 .leftmenu ul li.first { margin-top: 0px; }
-.leftmenu ul li a:hover { color:#fff; background: #e60; }
 .leftmenu ul li.sect a { color:#fff; } 
-
+.leftmenu a, .leftmenu a:visited { color: #000000; }
+.leftmenu > ul > li > a:hover { background-color: #b3d4ff; }
 .leftmenu .yuimenuitemlabel { font-size: 12px; padding: 0 10px; }
-.leftmenu a.yuimenuitemlabel { color:#0000ee; /*text-decoration: underline;*/ }
 .leftmenu #wgs .bd { background-color: #ecf5fa; }
 .leftmenu #wgs > .bd { border: 0;}
 
