@@ -374,7 +374,8 @@ class IetfProcessData:
                 Q(comment_text__istartswith="Draft Added by ")|
                 Q(comment_text__istartswith="State Changes to ")|
                 Q(comment_text__istartswith="Sub state has been changed to ")|
-                Q(comment_text__istartswith="State has been changed to ")).order_by('-id')[0].date
+                Q(comment_text__istartswith="State has been changed to ")|
+                Q(comment_text__istartswith="IESG has approved and state has been changed to")).order_by('-id')[0].date
         except IndexError:
             # should never happen -- return an obviously bogus date
             return date(1990,1,1)
