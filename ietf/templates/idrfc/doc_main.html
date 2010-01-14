@@ -80,6 +80,7 @@ function toggleComment(n) {
 }
 //]]>
 </script>
+<link rel="alternate" type="application/atom+xml" href="/feed/comments/{% if info.is_rfc %}rfc{{doc.rfc_number}}{% else %}{{doc.draft_name}}{% endif %}/" />
 {%endblock %}
 
 {% block content %}
