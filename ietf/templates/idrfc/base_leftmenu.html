@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <ul>
 {% if user|in_group:"Area_Director" %}
 <li class="sect first">AD Dashboard</li>
-  <li><a href="/doc/ad/{{user.get_profile.person.first_name|lower}}.{{user.get_profile.person.last_name|lower}}/">My Documents (as AD)</a></li>
+  <li><a href="/doc/ad/{{user.get_profile.person.first_name|lower}}.{{user.get_profile.person.last_name|lower}}/">My Documents</a></li>
   <li><a href="/iesg/agenda/documents/">Next Telechat</a></li>
   <li><a href="/iesg/discusses/">Discusses</a></li>
 </li>
