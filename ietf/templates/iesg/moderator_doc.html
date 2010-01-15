@@ -42,15 +42,16 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 
 <p><b>{{doc.obj.document.filename}}{% if not doc.obj.rfc_flag %}-{{doc.obj.document.revision}}{% endif %}</b><br>
 <i>({{ doc.obj.document.title|escape }})</i><br>
-<b>Intended Status: {{ doc.obj.document.intended_status }}<br>
-Token: {{ doc.obj.token_name|escape }}</b></p>
+<b>Intended status: {{ doc.obj.document.intended_status }}<br>
+Token: {{ doc.obj.token_name|escape }}<br>
+Last call ends: {{ doc.obj.document.lc_expiration_date|default:"(none)" }}</b></p>
 
 {% if doc.obj.ballot.active %}
 {% filter linebreaks_crlf %}<small><pre>
                       Yes  No-Objection  Discuss  Abstain
-{% if not doc.obj.ballot.an_sent %}{% for curpos in doc.obj.ballot.active_positions %}{{ curpos.ad|ljust:"20" }} {{ curpos.pos.yes|bracket }}     {{ curpos.pos.noobj|bracket }}     {{ curpos.pos.discuss|bracket }}     {{ curpos.pos.abstain_ind|bracket }}
+{% for curpos in doc.obj.ballot.active_positions %}{{ curpos.ad|ljust:"20" }} {{ curpos.pos.yes|bracket }}     {{ curpos.pos.noobj|bracket }}     {{ curpos.pos.discuss|bracket }}     {{ curpos.pos.abstain_ind|bracket }}
 {% endfor %}
-{% endif %}{% for position in doc.obj.ballot.positions.all|dictsort:"ad.last_name" %}{% if doc.obj.ballot.an_sent or not position.ad.is_current_ad %}{{ position.ad|ljust:"20" }} {{ position.yes|bracket }}     {{ position.noobj|bracket }}     {{ position.discuss|bracket }}     {{ position.abstain_ind|bracket }}
+{% for position in doc.obj.ballot.positions.all|dictsort:"ad.last_name" %}{% if not position.ad.is_current_ad %}{{ position.ad|ljust:"20" }} {{ position.yes|bracket }}     {{ position.noobj|bracket }}     {{ position.discuss|bracket }}     {{ position.abstain_ind|bracket }}
 {% endif %}{% endfor %}</pre></small>{% endfilter %}
 
 {% if title1|startswith:"2." %}
@@ -64,8 +65,6 @@ Token: {{ doc.obj.token_name|escape }}</b></p>
 {% else %}
 <p>(Ballot not issued)</p>
 {% endif %}
-
-{% if doc.obj.document.lc_expiration_date and doc.obj.document.lc_expiration_date|timesince_days|less_than:"1" %}<p><b>NOTE: Last Call expires on {{ doc.obj.document.lc_expiration_date }}.</b></p>{% endif %}
 
 {% if title2|startswith:"3.1" or title2|startswith:"3.2" %}
 <p>Does anyone have an[y further] objection to this document being published as an {{ doc.obj.document.intended_status }} RFC?</p>
