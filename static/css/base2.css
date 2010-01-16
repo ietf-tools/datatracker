@@ -52,8 +52,6 @@ body { margin: 0; }
 .ballotTable .square { border:1px solid black; display: block; float:left;width: 10px; height:10px;font-size:1px;margin-right:4px; margin-top:1px;}
 .ballotTable .was { padding-left: 10px; font-size:85%; }
 .mydialog button { margin-left: 8px; }
-.mybutton { background-color:white; border: 1px outset #808080; padding: 1px 3px; }
-.mybutton a { text-decoration: none; color: black; }
 
 .leftmenu { background-color: #edf5ff; padding:0; border: 1px solid #89d;  }
 .leftmenu ul { padding: 0; margin: 0; }
