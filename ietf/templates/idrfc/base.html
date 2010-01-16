@@ -80,7 +80,6 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 {% endblock %}
 
 <script type="text/javascript" src="/js/yui/yui.js"></script> 
-
 <script type="text/javascript">
 //<![CDATA[
 YAHOO.util.Event.onContentReady("wgs", function () {
@@ -90,12 +89,11 @@ YAHOO.util.Event.onContentReady("wgs", function () {
 YAHOO.util.Event.onContentReady("search_submit_button", function () {
     var oButton = new YAHOO.widget.Button("search_submit_button", {});
 });      
-//]]>
-</script>
-
-<script type="text/javascript" src="/js/base.js"></script>
 {% block scripts %}
 {% endblock %}
+//]]>
+</script>
+<script type="text/javascript" src="/js/base.js"></script>
 
 {% block content_end %}
 {% endblock %} 

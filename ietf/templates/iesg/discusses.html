@@ -86,8 +86,6 @@ class="discuss_my" {% else %} class="discuss_not_my" {% endif %}{% endif %}>
 {% endblock %}
 
 {% block scripts %}
-<script type="text/javascript">
-//<![CDATA[
 function show_only_mine() {
 document.getElementById("discuss_show2").style.display = 'block';
 document.getElementById("discuss_show1").style.display = 'none';
@@ -107,6 +105,4 @@ for (i =0; i < els.length; i++) {
   YAHOO.util.Dom.removeClass(els[i], "discuss_hidden");
 }
 }
-//]]>
-</script>
-{% endblock %}
+{% endblock scripts %}
