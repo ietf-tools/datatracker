@@ -35,24 +35,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% load ietf_filters %}
 {% block morecss %}
-
 #metabox { width: 99%; border:1px solid #cccccc; background:#edf5ff;margin-top:8px; padding:4px; margin-bottom:1em; }
 #metatable { border: 0; border-spacing: 0; }
 #metatable tr { vertical-align:top ;}
 
-#commentLog { margin-bottom: 1.5ex; }
-.commentToggle { text-decoration: underline; color: blue; }
-
+.comment_toggle { text-decoration: underline; color: blue; }
 .comment_date { white-space: nowrap; }
 
 div.diffTool { border: 1px solid #cccccc; background: #edf5ff; padding: 8px 4px; margin: 8px 0;}
 .diffTool label { float:left; width:50px; }
-
-table.ietfTable { border-collapse:collapse; border:1px solid #7f7f7f; }
-.ietfTable tr.evenrow { background-color: #EDF5FF; }
-.ietfTable tr.oddrow { background-color: white; }
-.ietfTable td { border-right: 1px solid #cbcbcb; padding:3px 6px; }
-.ietfTable th { color:white; background: #2647A0; text-align:left; padding:3px 6px; border-right: 1px solid #7f7f7f; }
 
 .markup_draft pre {line-height: 1.2em; margin: 0; }
 .m_hdr, .m_ftr { color: #808080; }
@@ -65,7 +56,7 @@ table.ietfTable { border-collapse:collapse; border:1px solid #7f7f7f; }
 {% endblock %}
 
 {% block content %}
-<h1 style="margin-top:0;">{% block doc_h1 %}{% endblock %}</h1>
+<h1>{% block doc_h1 %}{% endblock %}</h1>
 
 <div id="mytabs" class="yui-navset">
 <ul class="yui-nav">

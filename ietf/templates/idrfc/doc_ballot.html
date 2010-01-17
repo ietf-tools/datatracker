@@ -32,18 +32,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 {% load ietf_filters %}
-<table class="ballotTable"><tr valign="top"><td class="left">
+<table class="ietf-ballot"><tr valign="top"><td class="left">
 
 {% if doc_ballot_edit_button %}
 {% if user|in_group:"Area_Director,Secretariat" %}
-<div style="margin-top:8px; margin-bottom:8px;" nostyle="position:absolute;right:0px;">
+<div style="margin-top:8px; margin-bottom:8px;">
 <span id="doc_ballot_button" class="yui-button yui-link-button"><span class="first-child">
 <a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={% if info.is_rfc %}{{doc.rfc_number}}{% else %}{{doc.tracker_id}}{% endif %}">Edit position</a>
 </span></span></div>
 {% endif %}{# user in_group #}
 {% endif %}
 
-<p><span class="square" style="background:#c00000;"></span><b>Discuss</b><br/>
+<p style="margin-top:1em;"><span class="square" style="background:#c00000;"></span><b>Discuss</b><br/>
 {% with ballot.get_discuss as positions %}{% include "idrfc/doc_ballot_list.html" %}{% endwith %}</p>
 
 <p><span class="square" style="background:#80ff80;"></span><b>Yes</b><br/>

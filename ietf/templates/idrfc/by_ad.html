@@ -1,6 +1,6 @@
 {% extends "idrfc/base.html" %}
 {% comment %}
-Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
 Redistribution and use in source and binary forms, with or without
@@ -33,18 +33,14 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
-
-{% block title %}Internet-Drafts and RFCs for {{ ad_name }}
-{% endblock %}
+{% block title %}Internet-Drafts and RFCs for {{ ad_name }}{% endblock %}
 
 {% block content %}
+<h1>Internet-Drafts and RFCs for {{ ad_name }}</h1>
 
-<h1 style="margin-top:0;">Internet-Drafts and RFCs for {{ ad_name }}</h1>
-
-<div id="search_results" class="search_results">
 {% regroup docs by view_sort_group as grouped_docs %}
 
-<table>
+<table class="ietf-table ietf-doctable">
 <tr><th class="doc">Document</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ad">Area Director</th></tr> 
 {% for doc_group in grouped_docs %} 
 <tr class="header"><td colspan="6">{{doc_group.grouper}}s</td></tr>
@@ -55,7 +51,4 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% endfor %}
 </table>
-
-</div>
-
-{% endblock %}
+{% endblock content %}

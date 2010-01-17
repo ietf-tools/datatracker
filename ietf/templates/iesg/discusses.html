@@ -36,16 +36,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ballot_icon %}
 {% load ietf_filters %}
 
-{% block title %}IESG Discuss Positions
-{% endblock %}
+{% block title %}IESG Discuss Positions{% endblock %}
 
 {% block morecss %}
 .discuss_hidden {display:none;}
 {% endblock %}
 
 {% block content %}
-
-<h1 style="margin-top:0;">IESG Discuss Positions</h1>
+<h1>IESG Discuss Positions</h1>
 
 {% if user|in_group:"Area_Director" %}
 <div style="padding:4px 0;">
@@ -55,8 +53,7 @@ Show: <input type="radio" name="discuss_show" checked="checked" value="all" id="
 </div>
 {% endif %}
 
-<div class="search_results">
-<table id="discuss_table">
+<table class="ietf-table ietf-doctable">
 <tr><th class="doc">Document</th><th class="status" colspan="2">Status</th><th class="ad">Area Director</th><th>Discusses</th></tr>
 {% for doc in docs %}
 <tr{% if user|in_group:"Area_Director" %} class="{% if doc|my_position:user|equal:"Discuss" %}discuss_byme{% else %}discuss_notbyme{% endif %} {% ifequal user.get_profile.person|lower doc.ad_name|lower %}discuss_forme{%else%}discuss_notforme{%endifequal%}"{% endif %}>
@@ -78,9 +75,7 @@ Show: <input type="radio" name="discuss_show" checked="checked" value="all" id="
 </tr>
 {% endfor %}
 </table>
-</div>
-
-{% endblock %}
+{% endblock content %}
 
 {% block scripts %}
 {% if user|in_group:"Area_Director" %}
@@ -89,14 +84,11 @@ function radio_changed() {
   YAHOO.util.Dom.removeClass(els1, "discuss_hidden");
   var els2 = YAHOO.util.Dom.getElementsByClassName("discuss_notforme","tr");
   YAHOO.util.Dom.removeClass(els2, "discuss_hidden");
-  if (document.getElementById("discusses_all").checked) {
-    // done
-  } else if (document.getElementById("discusses_byme").checked) {
+  if (document.getElementById("discusses_byme").checked) {
     YAHOO.util.Dom.addClass(els1, "discuss_hidden");
   } else if (document.getElementById("discusses_forme").checked) {
-    els = YAHOO.util.Dom.getElementsByClassName("discuss_notforme","tr");
     YAHOO.util.Dom.addClass(els2, "discuss_hidden");
- }
+  }
 }
 var url = location.href.split('#'); 
 if (url[1] == 'byme') {

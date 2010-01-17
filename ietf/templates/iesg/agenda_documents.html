@@ -32,12 +32,10 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
-
 {% load ballot_icon %}
 {% load ietf_filters %}
 
-{% block title %}Documents on Future IESG Telechat Agendas
-{% endblock %}
+{% block title %}Documents on Future IESG Telechat Agendas{% endblock %}
 
 {% block morecss %}
 .agenda_docs tr.oddrow {background-color: #EDF5FF; }
@@ -47,12 +45,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endblock %}
 
 {% block content %}
+<h1>Documents on Future IESG Telechat Agendas</h1>
 
-<h1 style="margin-top:0;">Documents on Future IESG Telechat Agendas</h1>
-
-<div class="search_results agenda_docs">
-<table>
-
+<table class="ietf-table ietf-doctable agenda_docs">
 {% for t in telechats %}
 
 {% if not forloop.first %}
@@ -108,6 +103,4 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endfor %}
 
 </table>
-</div>
-
-{% endblock %}
+{% endblock content %}

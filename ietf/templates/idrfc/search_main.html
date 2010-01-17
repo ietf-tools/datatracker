@@ -33,19 +33,16 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
-
-{% block title %}Internet-Drafts and RFCs
-{% endblock %}
+{% block title %}Internet-Drafts and RFCs{% endblock %}
 
 {% block content %}
-
-<h1 style="margin-top:0;">Internet-Drafts and RFCs</h1>
+<h1>Internet-Drafts and RFCs</h1>
 
 <div id="search_form_box">
 {% include "idrfc/search_form.html" %}
 </div>
 
-<div id="search_results" class="search_results">
+<div id="search_results">
 {% if docs %}
 {% include "idrfc/search_results.html" %}
 {% endif %}

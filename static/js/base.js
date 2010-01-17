@@ -34,7 +34,7 @@ function showBallot(draftName, trackerId) {
 
     var handleEditPosition = function() {
         IETF.ballotDialog.hide();
-        var tid = document.getElementById("doc_ballot_dialog_id").innerHTML;
+        var tid = document.getElementById("ballot_dialog_id").innerHTML;
         window.open("https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&id_document_tag="+tid);
     }; 
     var handleClose = function() {
@@ -44,8 +44,8 @@ function showBallot(draftName, trackerId) {
 
     if (!IETF.ballotDialog) {
         el = document.createElement("div");
-        el.innerHTML = '<div id="doc_ballot_dialog" class="mydialog" style="visibility:hidden;"><div class="hd">Positions for <span id="doc_ballot_dialog_name">draft-ietf-foo-bar</span><span id="doc_ballot_dialog_id" style="display:none;"></span></div><div class="bd">  <div id="doc_ballot_dialog_12" style="overflow-y:scroll; height:500px;"></div>   </div></div>';
-        document.getElementById("db-extras").appendChild(el);
+        el.innerHTML = '<div id="ballot_dialog" style="visibility:hidden;"><div class="hd">Positions for <span id="ballot_dialog_name">draft-ietf-foo-bar</span><span id="ballot_dialog_id" style="display:none;"></span></div><div class="bd">  <div id="ballot_dialog_body" style="overflow-y:scroll; height:500px;"></div>   </div></div>';
+        document.getElementById("ietf-extras").appendChild(el);
 
         var buttons = [{text:"Close", handler:handleClose, isDefault:true}];
 	if (("Area_Director" in IETF.user_groups) ||
@@ -53,18 +53,18 @@ function showBallot(draftName, trackerId) {
 	    buttons.unshift({text:"Edit Position", handler:handleEditPosition});
 	}
 	var kl = [new YAHOO.util.KeyListener(document, {keys:27}, handleClose)]						 
-        IETF.ballotDialog = new YAHOO.widget.Dialog("doc_ballot_dialog", {
+        IETF.ballotDialog = new YAHOO.widget.Dialog("ballot_dialog", {
             visible:false, draggable:false, close:true, modal:true,
-            width:"850px", fixedcenter:true, constraintoviewport:true,
+            width:"860px", fixedcenter:true, constraintoviewport:true,
             buttons: buttons, keylisteners:kl});
         IETF.ballotDialog.render();
     }
-    document.getElementById("doc_ballot_dialog_name").innerHTML = draftName;
-    document.getElementById("doc_ballot_dialog_id").innerHTML = trackerId;
+    document.getElementById("ballot_dialog_name").innerHTML = draftName;
+    document.getElementById("ballot_dialog_id").innerHTML = trackerId;
 
     IETF.ballotDialog.show();
 
-    el = document.getElementById("doc_ballot_dialog_12");
+    el = document.getElementById("ballot_dialog_body");
     el.innerHTML = "Loading...";
     YAHOO.util.Connect.asyncRequest('GET', 
           "/doc/"+draftName+"/_ballot.data",

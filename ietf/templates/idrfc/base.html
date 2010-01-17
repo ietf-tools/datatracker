@@ -58,18 +58,17 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 <div style="background-color:#313163;color:white;font-size:150%;height:35px;">
 <img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/><span style="color:white; padding-left:15px;font-weight:bold;letter-spacing:0.1em;">datatracker.ietf.org</span>
 </div>
-<div id="ietf-login" style="position:absolute;top:8px;right:10px;">
-{% if user.is_authenticated %}
+
+<div id="ietf-login">{% if user.is_authenticated %}
 {{ user }}
 {% else %}
 <a href="/accounts/login/?next={{request.path|urlencode}}">Sign In</a>
-{% endif %}
-</div>
+{% endif %}</div>
 
 <table style="margin-left:8px;margin-top:8px;" width="98%;">
 <tr valign="top">
 <td style="width:130px;padding-right:8px;">
-<div class="leftmenu" style="margin-top:4px;">
+<div class="ietf-navbar">
 {% include "idrfc/base_leftmenu.html" %}
 </div>
 </td>
@@ -98,7 +97,7 @@ YAHOO.util.Event.onContentReady("search_submit_button", function () {
 {% block content_end %}
 {% endblock %} 
 </div>
-<div id="db-extras"></div>
+<div id="ietf-extras"></div>
 </td></tr></table>
 {% include "debug.html" %}
 </body></html>
