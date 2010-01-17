@@ -1,6 +1,6 @@
 {% extends "idrfc/base.html" %}
 {% comment %}
-Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
 Redistribution and use in source and binary forms, with or without
@@ -48,21 +48,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <h1 style="margin-top:0;">IESG Discuss Positions</h1>
 
 {% if user|in_group:"Area_Director" %}
-<div id="discuss_show1" style="display:block;">
-<a href="javascript:show_only_mine()">Show only my discusses</a>
+<div style="padding:4px 0;">
+Show: <input type="radio" name="discuss_show" checked="checked" value="all" id="discusses_all" onclick="radio_changed();"/>All
+<input type="radio" name="discuss_show" value="byme" id="discusses_byme" onclick="radio_changed();"/>By me
+<input type="radio" name="discuss_show" value="forme" id="discusses_forme" onclick="radio_changed();"/>For me
 </div>
-<div id="discuss_show2" style="display:none;">
-<a href="javascript:show_all()">Show all discusses (currently showing only mine)</a>
-</div>
-<div style="padding-top:4px;"></div>
 {% endif %}
 
 <div class="search_results">
 <table id="discuss_table">
 <tr><th class="doc">Document</th><th class="status" colspan="2">Status</th><th class="ad">Area Director</th><th>Discusses</th></tr>
 {% for doc in docs %}
-<tr {% if user|in_group:"Area_Director" %}{% if doc|my_position:user|equal:"Discuss" %}
-class="discuss_my" {% else %} class="discuss_not_my" {% endif %}{% endif %}>
+<tr{% if user|in_group:"Area_Director" %} class="{% if doc|my_position:user|equal:"Discuss" %}discuss_byme{% else %}discuss_notbyme{% endif %} {% ifequal user.get_profile.person|lower doc.ad_name|lower %}discuss_forme{%else%}discuss_notforme{%endifequal%}"{% endif %}>
 <td class="doc">
 {% if doc.is_rfc_wrapper %}
 <a href="/doc/rfc{{doc.rfc_number}}/">RFC {{doc.rfc_number}}</a>
@@ -86,23 +83,28 @@ class="discuss_my" {% else %} class="discuss_not_my" {% endif %}{% endif %}>
 {% endblock %}
 
 {% block scripts %}
-function show_only_mine() {
-document.getElementById("discuss_show2").style.display = 'block';
-document.getElementById("discuss_show1").style.display = 'none';
-
-var els = YAHOO.util.Dom.getElementsByClassName("discuss_not_my","tr");
-var i;
-for (i =0; i < els.length; i++) {
-  YAHOO.util.Dom.addClass(els[i], "discuss_hidden");
+{% if user|in_group:"Area_Director" %}
+function radio_changed() {
+  var els1 = YAHOO.util.Dom.getElementsByClassName("discuss_notbyme","tr");
+  YAHOO.util.Dom.removeClass(els1, "discuss_hidden");
+  var els2 = YAHOO.util.Dom.getElementsByClassName("discuss_notforme","tr");
+  YAHOO.util.Dom.removeClass(els2, "discuss_hidden");
+  if (document.getElementById("discusses_all").checked) {
+    // done
+  } else if (document.getElementById("discusses_byme").checked) {
+    YAHOO.util.Dom.addClass(els1, "discuss_hidden");
+  } else if (document.getElementById("discusses_forme").checked) {
+    els = YAHOO.util.Dom.getElementsByClassName("discuss_notforme","tr");
+    YAHOO.util.Dom.addClass(els2, "discuss_hidden");
+ }
 }
+var url = location.href.split('#'); 
+if (url[1] == 'byme') {
+  document.getElementById("discusses_byme").checked = true;
+  radio_changed();
+} else if (url[1] == 'forme') {
+  document.getElementById("discusses_forme").checked = true;
+  radio_changed();
 }
-function show_all() {
-document.getElementById("discuss_show1").style.display = 'block';
-document.getElementById("discuss_show2").style.display = 'none';
-var els = YAHOO.util.Dom.getElementsByClassName("discuss_not_my","tr");
-var i;
-for (i =0; i < els.length; i++) {
-  YAHOO.util.Dom.removeClass(els[i], "discuss_hidden");
-}
-}
+{% endif %}{# user in_group #}
 {% endblock scripts %}
