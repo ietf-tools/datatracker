@@ -547,14 +547,15 @@ class BallotWrapper:
             ads = set()
 
         positions = []
+        all_comments = self.ballot.comments.all().select_related('ad')
         for p in self.ballot.positions.all().select_related('ad'):
-            po = create_position_object(self.ballot, p)
+            po = create_position_object(self.ballot, p, all_comments)
             #if not self.ballot_active:
             #    if 'is_old_ad' in po:
             #        del po['is_old_ad']
             ads.add(str(p.ad))
             positions.append(po)
-        for c in self.ballot.comments.all().select_related('ad'):
+        for c in all_comments:
             if (str(c.ad) not in ads) and c.ad.is_current_ad():
                 positions.append({'has_text':True,
                                   'comment_text':c.text,
@@ -620,7 +621,7 @@ def position_to_string(position):
         p = "No Record"
     return p
 
-def create_position_object(ballot, position):
+def create_position_object(ballot, position, all_comments):
     positions = {"yes":"Yes",
                  "noobj":"No Objection",
                  "discuss":"Discuss",
@@ -640,15 +641,16 @@ def create_position_object(ballot, position):
     if len(was) > 0:
         r['old_positions'] = was
 
-    try:
-        comment = ballot.comments.get(ad=position.ad)
-        if comment and comment.text: 
-            r['has_text'] =  True
-            r['comment_text'] = comment.text
-            r['comment_date'] = comment.date
-            r['comment_revision'] = str(comment.revision)
-    except IESGComment.DoesNotExist:
-        pass
+    comment = None
+    for c in all_comments:
+        if c.ad == position.ad:
+            comment = c
+            break
+    if comment and comment.text: 
+        r['has_text'] =  True
+        r['comment_text'] = comment.text
+        r['comment_date'] = comment.date
+        r['comment_revision'] = str(comment.revision)
 
     if p == "Discuss":
         try:

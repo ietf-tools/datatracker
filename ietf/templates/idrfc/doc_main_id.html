@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr><td>State:</td><td> 
 {{ doc.friendly_state|safe }}
 {% if doc.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.draft_name}}">{{ doc.rfc_editor_state|escape }}</a>{% endif %}
-{% if doc.replaces %}<br />Replaces {% for rep in doc.replaces %}<a href="/doc/{{rep}}/">{{rep}}</a> {% endfor %}{% endif %}
+{% with doc.replaces as r %}{% if r %}<br />Replaces {% for rep in r %}<a href="/doc/{{rep}}/">{{rep}}</a> {% endfor %}{% endif %}{% endwith %}
 </td></tr>
 
 <tr><td>Intended status:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.intended_maturity_level|default:"-"  }}{% else %}-{%endif%}</td></tr>

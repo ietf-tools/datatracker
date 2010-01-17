@@ -81,16 +81,11 @@ def document_main_rfc(request, rfc_number):
         "rfc"+str(rfc_number)+",html", 
         os.path.join(settings.RFC_PATH, "rfc"+str(rfc_number)+".txt"))
 
-    if doc.in_ietf_process() and doc.ietf_process.has_iesg_ballot():
-        ballot = doc.ietf_process.iesg_ballot()
-    else:
-        ballot = None
-        
-    history = _get_history(doc)
+    history = _get_history(doc, None)
             
     return render_to_response('idrfc/doc_main_rfc.html',
                               {'content1':content1, 'content2':content2,
-                               'doc':doc, 'info':info, 'ballot':ballot,
+                               'doc':doc, 'info':info, 
                                'history':history},
                               context_instance=RequestContext(request));
 
@@ -130,22 +125,17 @@ def document_main(request, name):
         str(name)+","+str(id.revision)+",html",
         os.path.join(settings.INTERNET_DRAFT_PATH, name+"-"+id.revision+".txt"))
 
-    if doc.in_ietf_process() and doc.ietf_process.has_iesg_ballot():
-        ballot = doc.ietf_process.iesg_ballot()
-    else:
-        ballot = None
-
     versions = _get_versions(id)
-    history = _get_history(doc)
+    history = _get_history(doc, versions)
             
     return render_to_response('idrfc/doc_main_id.html',
                               {'content1':content1, 'content2':content2,
-                               'doc':doc, 'info':info, 'ballot':ballot,
+                               'doc':doc, 'info':info, 
                                'versions':versions, 'history':history},
                               context_instance=RequestContext(request));
 
 # doc is either IdWrapper or RfcWrapper
-def _get_history(doc):
+def _get_history(doc, versions):
     results = []
     if doc.is_id_wrapper:
         comments = DocumentComment.objects.filter(document=doc.tracker_id)
@@ -159,12 +149,12 @@ def _get_history(doc):
         info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
         info['snipped'] = info['textSnippet'][-3:] == "..."
         results.append({'comment':comment, 'info':info, 'date':comment.datetime(), 'is_com':True})
-    if doc.is_id_wrapper:
-        versions = _get_versions(doc._draft, False)
-        versions.reverse()
+    if doc.is_id_wrapper and versions:
         for v in versions:
-            v['is_rev'] = True
-            results.append(v)
+            if v['draft_name'] == doc.draft_name:
+                v = dict(v) # copy it, since we're modifying datetimes later
+                v['is_rev'] = True
+                results.insert(0, v)    
     if doc.is_id_wrapper and doc.draft_status == "Expired" and doc._draft.expiration_date:
         results.append({'is_text':True, 'date':doc._draft.expiration_date, 'text':'Draft expired'})
     if doc.is_rfc_wrapper:

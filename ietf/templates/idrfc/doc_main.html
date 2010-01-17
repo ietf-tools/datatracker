@@ -70,7 +70,7 @@ table.ietfTable { border-collapse:collapse; border:1px solid #7f7f7f; }
 <div id="mytabs" class="yui-navset">
 <ul class="yui-nav">
   <li class="selected"><a href="#doc"><em>Document</em></a></li>
-  <li {% if not ballot %}class="disabled" {%endif%}><a href="#ballot"><em>IESG Evaluation Record</em></a></li>
+  <li{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}{%else%} class="disabled"{%endif%}><a href="#ballot"><em>IESG Evaluation Record</em></a></li>
   <li {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}{%else%}class="disabled" {%endif%}><a href="#writeup"><em>IESG Writeups</em></a></li>
   <li><a href="#history"><em>History</em></a></li>
 </ul>
@@ -84,9 +84,11 @@ table.ietfTable { border-collapse:collapse; border:1px solid #7f7f7f; }
 
 <div id="ballot">
 <div id="ballot_content">
-{% if ballot %}
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot  %}
 {% with 1 as doc_ballot_edit_button %}
+{% with doc.ietf_process.iesg_ballot as ballot %}
 {% include "idrfc/doc_ballot.html" %}
+{% endwith %}
 {% endwith %}
 {% endif %}
 </div>
