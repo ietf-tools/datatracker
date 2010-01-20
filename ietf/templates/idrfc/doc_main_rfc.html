@@ -45,7 +45,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if doc.obsoletes %}<br />Obsoletes {{ doc.obsoletes }}{%endif %}
 {% if doc.updates %}<br />Updates {{ doc.updates }}{%endif %}
 </td></tr>
+{% if doc.in_ietf_process %}
+<tr><td>State:</td><td> 
+{{ doc.friendly_state|safe }}
+{% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}
+</td></tr>{% endif %}
 <tr><td>Published:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
+
 </table><!-- metatable -->
 {% endblock %}{# doc_meta #}
 

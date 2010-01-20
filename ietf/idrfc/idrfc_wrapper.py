@@ -388,7 +388,11 @@ class IetfProcessData:
                   'has_iesg_ballot':self.has_iesg_ballot(),
                   'has_active_iesg_ballot':self.has_active_iesg_ballot(),
                   'ad_name':self.ad_name(),
-                  'intended_maturity_level':self.intended_maturity_level()}
+                  'intended_maturity_level':self.intended_maturity_level(),
+                  'telechat_date':self.telechat_date()}
+        if result['telechat_date']:
+            result['telechat_date'] = str(result['telechat_date'])
+            result['telechat_returning_item'] = self.telechat_returning_item()
         if self.iesg_note():
             result['iesg_note'] = self.iesg_note()
         if self.has_iesg_ballot():
@@ -413,8 +417,17 @@ class IetfProcessData:
                 s = None
         return s
 
-    # intended_maturity_level(self):
-    # telechat_date, on_telechat_agenda, returning_telechat_item
+    def telechat_date(self):
+        # return date only if it's on upcoming agenda
+        if self._idinternal.agenda:
+            return self._idinternal.telechat_date
+        else:
+            return None
+        
+    def telechat_returning_item(self):
+        # should be called only if telechat_date() returns non-None
+        return bool(self._idinternal.returning_item)
+    
     # state_change_notice_to?
     # comment_log?
 
@@ -603,7 +616,7 @@ class BallotWrapper:
         return [p for p in self.position_list() if ('has_text' in p) and p['has_text']]
 
     def to_json_helper(self):
-        return {}
+        return {"not_implemented_yet:":True}
 
 def position_to_string(position):
     positions = {"yes":"Yes",
