@@ -70,12 +70,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <h2 class="ballot_ad">{{pos.ad_name|escape}}</h2>
 
 {% ifequal pos.position "Discuss" %}
-<p><b>Discuss ({{pos.discuss_date}})</b></p>
+<p><b>Discuss ({{pos.discuss_date}})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
 <pre>{{pos.discuss_text|fill:"80"|escape }}</pre>
 {% endifequal %}
 
 {% if pos.comment_text %}
-<p><b>Comment ({{pos.comment_date}})</b></p>
+<p><b>Comment ({{pos.comment_date}})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
 <pre>{{pos.comment_text|fill:"80"|escape }}</pre>
 {% endif %}
 {% endfor %}
