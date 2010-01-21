@@ -48,9 +48,9 @@ IETF = {};
 IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not forloop.last %}, {%endif%}{%endfor%} };
 </script>
 {% ifnotequal server_mode "production" %}
-<link rel="icon" href="/images/ietf-dev-icon.bmp" />
+<link rel="icon" href="/images/ietfdt-icon-red.ico" />
 {% else %}
-<link rel="icon" href="/images/ietf-icon.bmp" />
+<link rel="icon" href="/images/ietfdt-icon.ico" />
 {% endifnotequal %}
 </head>
 <body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
