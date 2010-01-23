@@ -14,7 +14,7 @@ class LatestIprDisclosures(Feed):
     feed_url = "/feed/ipr/"
 
     def items(self):
-        return IprDetail.objects.filter(status__in=[1,3]).order_by('-submitted_date')[:15]
+        return IprDetail.objects.filter(status__in=[1,3]).order_by('-submitted_date')[:30]
         
     def item_pubdate(self, item):
         # this method needs to return a datetime instance, even
