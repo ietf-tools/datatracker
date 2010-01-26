@@ -1,3 +1,38 @@
+ietfdb (2.42)
+
+  From Pasi:
+
+  * Use an ietf icon in an alternative colour for the new datatracker
+    interface.
+
+  * Include 30 items instead of 15 in IPR disclosure atom feed
+
+  * Document page: show IESG telechat date; show state for RFCs (if 
+    applicable)
+
+  * Move search button JavaScript to right template file
+
+  * IESG discuss page: better switching between all/by me/for me
+
+  * Less SQL queries for per-document page
+
+  * Moderator package: always show last call end date, fix bug in showing 
+    ballot.  Include previous minutes.
+
+  * Show small comment icon (instead of asterisk) when ballot has text.
+    Show comment icon also next to discuss/comment text
+
+  * Use a local copy of YUI library instead of pointing to Google CDN (this 
+    allows us to work with pure IPv6); upgrade to YUI 2.8.0r4
+
+  * Make RFC editor status a link (to queue)
+
+  * Add link to comments Atom feed
+
+  * Right-click ballot icon to edit your position (when logged in as IESG)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Jan 2010 11:54:06 +0100
+
 ietfdb (2.41)
 
   * The 'current agenda' url can fail between meetings, when the 'current 
