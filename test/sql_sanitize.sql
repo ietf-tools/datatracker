@@ -7,7 +7,4 @@ UPDATE wg_password SET password = 'deleted';
 UPDATE web_user_info SET password = 'deleted';
 UPDATE idst_users SET password = 'deleted';
 UPDATE idst_users SET random_str = 'deleted';
-UPDATE iesg_login SET password = 'deleted';
-
-
 

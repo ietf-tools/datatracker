@@ -29,7 +29,9 @@ done
 [ "$DBDUMP" ] || DBDUMP=/www/tools.ietf.org/events/raw/sqldump/sqldump.raw
 [ "$DBFIX"  ] || DBFIX=$build/test/sql_fixup.sql
 [ "$DBSANE" ] || DBSANE=$build/test/sql_sanitize.sql
-[ "$DBTIME" ] || DBTIME=$state/update-db.time
+[ "$DBTEST" ] || DBTEST=$build/test/sql_setup.sql
+[ "$DBTIME" ] || DBTIME=$state/update-db.dump
+[ "$DBSTART" ] || DBTIME=$state/update-db.start
 [ "$DBDONE" ] || DBDONE=$state/update-db.done
 [ "$DBLOCK" ] || DBLOCK=$lock
 
@@ -49,16 +51,18 @@ while true; do
 
 	    echo "$$" > $PIDFILE
 	    chmod a+rw $PIDFILE
-
+	    touch -r $DBDUMP $DBTIME
+	    touch $DBSTART
 	    echo "Updating local database from $DBDUMP ..."
 	    python ietf/manage.py dbshell <  $DBDUMP
 	    echo "Updating local database from $DBFIX ..."
 	    python ietf/manage.py dbshell <  $DBFIX
 	    echo "Updating local database from $DBSANE ..."
 	    python ietf/manage.py dbshell <  $DBSANE
+	    echo "Updating local database from $DBTEST ..."
+	    python ietf/manage.py dbshell <  $DBTEST
 	    echo "Running Django syncdb ..."
 	    python ietf/manage.py syncdb
-	    touch -r $DBDUMP $DBTIME
 	    touch $DBDONE
 	    echo "Done."
 	    #echo "Done." 1>&2
