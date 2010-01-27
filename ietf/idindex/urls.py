@@ -29,8 +29,7 @@ urlpatterns = patterns('',
      (r'^(?P<slug>[^/]+)/related/$', views.view_related_docs),
      (r'^(?P<object_id>\d+)/$', views.redirect_id),
      (r'^(?P<slug>[^/]+)/$', views.view_id, dict(info_dict, slug_field='filename')),
-     (r'^all_id_txt.html$', views.all_id, { 'template_name': 'idindex/all_id_txt.html' }),
-     (r'^all_id.html$', views.all_id, { 'template_name': 'idindex/all_id.html' }),
+     (r'^all_id(?:_txt)?.html$', 'django.views.generic.simple.redirect_to', { 'url': 'http://www.ietf.org/id/all_id.txt' }),
      (r'^$', views.search),
 )
 

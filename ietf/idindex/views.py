@@ -184,24 +184,6 @@ def search(request):
     })
     return HttpResponse(t.render(c))
 
-def all_id(request, template_name):
-    from django.db import connection
-    from ietf.utils import flattenl
-    cursor = connection.cursor()
-    # 99 = Dead
-    # 32 = RFC Published
-    cursor.execute("SELECT id_document_tag FROM id_internal WHERE rfc_flag=0 AND cur_state NOT IN (99,32)")
-    in_tracker = flattenl(cursor.fetchall())
-    tracker_list = InternetDraft.objects.all().filter(id_document_tag__in=in_tracker).order_by('status','filename').select_related(depth=1)
-    object_list = []
-    for o in tracker_list:
-	object_list.append({'tracker': True, 'id': o})
-    notracker_list = InternetDraft.objects.all().exclude(id_document_tag__in=in_tracker).order_by('status','filename').select_related(depth=1)
-    for o in notracker_list:
-	object_list.append({'tracker': False, 'id': o})
-    return render_to_response(template_name, {'object_list': object_list},
-		context_instance=RequestContext(request))
-
 def all_id_txt():
     all_ids = InternetDraft.objects.order_by('filename')
     in_track_ids = all_ids.filter(idinternal__rfc_flag=0).exclude(idinternal__cur_state__in=IDInternal.INACTIVE_STATES)

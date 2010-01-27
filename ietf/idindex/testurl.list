@@ -15,8 +15,8 @@
 200	/drafts/draft-ietf-dnsext-dnssec-protocol/	
 200	/drafts/draft-ietf-dnsext-dnssec-protocol/	
 200	/drafts/draft-shockey-enum-cnam/ # non-ASCII title and abstract
-200,heavy	/drafts/all_id_txt.html
-200,heavy	/drafts/all_id.html
+301	/drafts/all_id_txt.html
+301	/drafts/all_id.html
 200	/drafts/		
 200	/drafts/wg/11/
 200	/drafts/?filename=mobike
