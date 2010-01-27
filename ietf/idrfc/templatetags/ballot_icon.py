@@ -155,16 +155,37 @@ def state_age_colored(doc):
     if main_state in ["Dead","AD is watching","RFC Published"]:
         return ""
     days = timesince_days(doc.ietf_process.state_date())
-    goal = 0
-    if sub_state == "Revised ID Needed":
-        goal = 30
+    # loosely based on 
+    # http://trac.tools.ietf.org/group/iesg/trac/wiki/PublishPath
+    if main_state == "In Last Call":
+        goal1 = 30
+        goal2 = 30
     elif main_state == "RFC Ed Queue":
-        goal = 60
-    elif main_state == "In Last Call":
-        goal = 30
+        goal1 = 60
+        goal2 = 120
+    elif main_state in ["Last Call Requested", "Approved-announcement to be sent"]:
+        goal1 = 4
+        goal2 = 7
+    elif sub_state == "Revised ID Needed":
+        goal1 = 14
+        goal2 = 28
+    elif main_state == "Publication Requested":
+        goal1 = 7
+        goal2 = 14
+    elif main_state == "AD Evaluation":
+        goal1 = 14
+        goal2 = 28
     else:
-        goal = 14
-    if days > goal:
-        return '<span style="padding:0 2px;font-size:85%%;background:yellow;" title="Goal is %d days">(for&nbsp;%d&nbsp;day%s)</span>' % (goal,days,('','s')[days != 1])
+        goal1 = 14
+        goal2 = 28
+    if days > goal2:
+        style = 'padding:0 2px;background:#ffa0a0;'
+    elif days > goal1:
+        style = 'padding:0 2px;background:yellow;'
     else:
-        return '<span style="font-size:85%%;">(for&nbsp;%d&nbsp;day%s)</span>' % (days,('','s')[days != 1])
+        style = ''
+    if style:
+        title = ' title="Goal is &lt;%d days"' % (goal1,)
+    else:
+        title = ''
+    return '<span style="font-size:85%%;%s"%s>(for&nbsp;%d&nbsp;day%s)</span>' % (style,title,days,('','s')[days != 1])
