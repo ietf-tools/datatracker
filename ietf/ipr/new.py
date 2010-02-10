@@ -212,7 +212,7 @@ def new(request, type, update=None, submitter=None):
 
 	    legal_name_genitive = data['legal_name'] + "'" if data['legal_name'].endswith('s') else data['legal_name'] + "'s"
             if type == "generic":
-                instance.title = legal_name_genitive + " General License Statement" % legal_name_genitive
+                instance.title = legal_name_genitive + " General License Statement" 
             if type == "specific":
                 data["ipr_summary"] = get_ipr_summary(form.cleaned_data)
                 instance.title = legal_name_genitive + """ Statement about IPR related to %(ipr_summary)s""" % data
