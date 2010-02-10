@@ -4,6 +4,12 @@
 {% block title %}Internet Draft Database Index - {{ object.filename }}{% endblock %}
 
 {% block iddbcontent %}
+<script type="text/javascript">
+//<![CDATA[
+if (location.href.indexOf("#old") < 0) { window.location="/doc/{{object.filename}}/"; }
+//]]>
+</script>
+
 <hr>
 <h2>{{ object.filename }}-{{ object.revision_display }}</h2>
 <blockquote>
