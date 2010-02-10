@@ -47,8 +47,6 @@ REDIRECT_TESTS = {
 
     # idindex/idtracker
     
-    '/':
-        '/idtracker/',
     '/public/pidtracker.cgi?command=view_id&dTag=11171&rfc_flag=0':
         '/idtracker/11171/',
     '/public/idindex.cgi?command=do_search_id&filename=draft-mills-sntp-v4-00.txt':
