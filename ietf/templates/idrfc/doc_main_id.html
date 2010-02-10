@@ -55,15 +55,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% ifequal doc.draft_status "Active" %}
 <tr><td>Other versions:</td><td>
-<a href="http://www.ietf.org/internet-drafts/{{doc.draft_name_and_revision}}.txt" target="_blank">plain text</a>
+<a href="http://www.ietf.org/internet-drafts/{{doc.draft_name_and_revision}}.txt" target="_blank">plain text</a>,
 {% for ext in doc.file_types %}
 {% ifnotequal ext ".txt" %}
-<a href="http://www.ietf.org/internet-drafts/{{doc.draft_name_and_revision}}{{ext}}" target="_blank">{{ext|cut:"."}}</a>
+<a href="http://www.ietf.org/internet-drafts/{{doc.draft_name_and_revision}}{{ext}}" target="_blank">{{ext|cut:"."}}</a>,
 {% endifnotequal %}
 {% endfor %}
 {% if not info.has_pdf %}
-<a href="http://tools.ietf.org/pdf/{{doc.draft_name_and_revision}}.pdf" target="_blank">pdf</a>
+<a href="http://tools.ietf.org/pdf/{{doc.draft_name_and_revision}}.pdf" target="_blank">pdf</a>,
 {% endif %}
+<a href="http://tools.ietf.org/html/{{doc.draft_name_and_revision}}" target="_blank">html</a>
 </td></tr>
 {% endifequal %}
 

@@ -51,7 +51,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}
 </td></tr>{% endif %}
 <tr><td>Published:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
-
+<tr><td>Other versions:</td><td>
+<a href="http://www.ietf.org/rfc/rfc{{doc.rfc_number}}.txt" target="_blank">plain text</a>,
+<a href="http://www.rfc-editor.org/rfc/pdfrfc/rfc{{doc.rfc_number}}.txt.pdf" target="_blank">pdf</a>,
+<a href="http://tools.ietf.org/html/rfc{{doc.rfc_number}}" target="_blank">html</a>
+</td></tr>
 </table><!-- metatable -->
 {% endblock %}{# doc_meta #}
 
