@@ -138,10 +138,13 @@ def document_main(request, name):
 def _get_history(doc, versions):
     results = []
     if doc.is_id_wrapper:
-        comments = DocumentComment.objects.filter(document=doc.tracker_id)
+        comments = DocumentComment.objects.filter(document=doc.tracker_id).exclude(rfc_flag=1)
     else:
-        # note: DocumentComment.rfc_flag is often wrong; avoid it
-        comments = DocumentComment.objects.filter(document=doc.rfc_number) 
+        comments = DocumentComment.objects.filter(document=doc.rfc_number,rfc_flag=1)
+        if len(comments) > 0:
+            # also include rfc_flag=NULL, but only if at least one
+            # comment with rfc_flag=1 exists (usually NULL means same as 0)
+            comments = DocumentComment.objects.filter(document=doc.rfc_number).exclude(rfc_flag=0)
     for comment in comments.order_by('-date','-time','-id').filter(public_flag=1).select_related('created_by'):
         info = {}
         info['text'] = comment.comment_text

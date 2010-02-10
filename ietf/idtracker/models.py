@@ -655,7 +655,7 @@ class DocumentComment(models.Model):
 	(2, 'comment'),
     )
     document = models.ForeignKey(IDInternal)
-    # NOTE: This flag is often set incorrectly -- avoid using
+    # NOTE: This flag is often NULL, which complicates its correct use...
     rfc_flag = models.IntegerField(null=True, blank=True)
     public_flag = models.IntegerField()
     date = models.DateField(db_column='comment_date')
