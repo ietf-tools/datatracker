@@ -31,7 +31,7 @@ done
 [ "$DBSANE" ] || DBSANE=$build/test/sql_sanitize.sql
 [ "$DBTEST" ] || DBTEST=$build/test/sql_setup.sql
 [ "$DBTIME" ] || DBTIME=$state/update-db.dump
-[ "$DBSTART" ] || DBTIME=$state/update-db.start
+[ "$DBSTART" ] || DBSTART=$state/update-db.start
 [ "$DBDONE" ] || DBDONE=$state/update-db.done
 [ "$DBLOCK" ] || DBLOCK=$lock
 
