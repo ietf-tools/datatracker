@@ -1,3 +1,35 @@
+ietfdb (2.43)
+
+  From Pasi:
+
+  * New main datatracker page!
+
+  * Use normal POST instead of AJAX for search, in order to be able to go
+    back to the search result list with the browser back button
+
+  * Added pointers (but no redirect yet) to new pages to /idtracker/ and 
+    /idtracker/draft-foo-bar/
+
+  * Added javascript redirect for /drafts/draft-foo-bar/ page
+
+  * Fix history/comment tab for RFCs
+
+  * Added more links to other versions (like tools html)
+
+  * Fixed bug in submitting general license statements
+
+  * Fixed ballot icon width problem in Safari (regression introduced in 
+    2.42)
+
+  * Replaced /drafts/all_id.html with redirect (there are no links to it, 
+    and according to logs nobody is using it)
+
+  * Added rel=nofollow to various links
+
+  * Improve coloring for "for N days" information
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Feb 2010 18:39:23 +0100
+
 ietfdb (2.42)
 
   From Pasi:
