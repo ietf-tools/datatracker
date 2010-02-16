@@ -608,9 +608,9 @@ class IDInternal(models.Model):
 	    return self.draft.filename
     def get_absolute_url(self):
 	if self.rfc_flag:
-	    return "/idtracker/rfc%d/" % ( self.draft_id )
+	    return "/doc/rfc%d/" % ( self.draft_id )
 	else:
-	    return "/idtracker/%s/" % ( self.draft.filename )
+	    return "/doc/%s/" % ( self.draft.filename )
     _cached_rfc = None
     def document(self):
 	if self.rfc_flag:
