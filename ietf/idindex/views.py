@@ -283,7 +283,7 @@ def view_related_docs(request, slug):
 def redirect_id(request, object_id):
     '''Redirect from historical document ID to preferred filename url.'''
     doc = get_object_or_404(InternetDraft, id_document_tag=object_id)
-    return HttpResponsePermanentRedirect(reverse(view_id, args=[doc.filename]))
+    return HttpResponsePermanentRedirect("/doc/"+doc.filename+"/")
 
 # Wrapper around object_detail to give permalink a handle.
 # The named-URLs feature in django 0.97 will eliminate the

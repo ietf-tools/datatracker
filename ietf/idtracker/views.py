@@ -176,7 +176,7 @@ def last_call(request):
 def redirect_id(request, object_id):
     '''Redirect from historical document ID to preferred filename url.'''
     doc = get_object_or_404(InternetDraft, id_document_tag=object_id)
-    return HttpResponsePermanentRedirect(reverse(view_id, args=[doc.filename]))
+    return HttpResponsePermanentRedirect("/doc/"+doc.filename+"/")
 
 # calling sequence similar to object_detail, but we have different
 # 404 handling: if the draft exists, render a not-found template.
