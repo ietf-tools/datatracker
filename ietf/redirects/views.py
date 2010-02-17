@@ -54,7 +54,11 @@ def redirect(request, path="", script=""):
 	else:
 	    remove = ""
     try:
-	url += rest % request.REQUEST
+        # This throws exception (which gets caught below) if request 
+        # contains non-ASCII characters. The old scripts didn't support 
+        # non-ASCII characters anyway, so there's no need to handle 
+        # them fully correctly in these redirects.
+	url += str(rest % request.REQUEST)
 	url += "/"
     except:
 	# rest had something in it that request didn't have, so just

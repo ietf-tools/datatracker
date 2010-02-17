@@ -6,6 +6,9 @@
 404	/_doesnotexist/
 #skip	/_test500/
 
+# non-ASCII parameter
+301	/public/pidtracker.cgi?command=view_id&dTag=11171%D182&rfc_flag=0
+
 #301	/list/request....	# test middleware that strips periods and redirects instead of 404
 #skip	/images/ietf-icon.bmp
 #skip	/css/base.css
