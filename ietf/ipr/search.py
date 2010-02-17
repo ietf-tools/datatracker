@@ -71,9 +71,17 @@ def search(request, type="", q="", id=""):
                         q = normalize_draftname(q)
                         start = InternetDraft.objects.filter(filename__contains=q)
                     if id:
+                        try:
+                            id = int(id,10)
+                        except:
+                            id = -1
                         start = InternetDraft.objects.filter(id_document_tag=id)
                 if type == "rfc_search":
                     if q:
+                        try:
+                            q = int(q, 10)
+                        except:
+                            q = -1
                         start = Rfc.objects.filter(rfc_number=q)
                 if start.count() == 1:
                     first = start[0]

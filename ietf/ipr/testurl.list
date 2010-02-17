@@ -39,11 +39,13 @@
 200	/ipr/search/?document_search=mod&option=document_search # Returns document list
 200	/ipr/search/?id_document_tag=2220&option=document_search # Simple case
 200	/ipr/search/?id_document_tag=2221&option=document_search  # Empty result
+200	/ipr/search/?id_document_tag=2221x&option=document_search  # Non-numeric
 200	/ipr/search/?option=document_search&document_search=draft-housley-tls-authz-extns-05 # More complex result
 
 200	/ipr/search/?rfc_search=1034&option=rfc_search	# Loong result
 200	/ipr/search/?rfc_search=4555&option=rfc_search	# Simple result
 200	/ipr/search/?rfc_search=4444&option=rfc_search	# Empty result
+200	/ipr/search/?rfc_search=4xyz&option=rfc_search	# non-numeric
 
 200	/ipr/search/?patent_search=nortel&option=patent_search	
 200	/ipr/search/?patent_search=nortelxz&option=patent_search # Empty result
