@@ -86,8 +86,12 @@ function radio_changed() {
   YAHOO.util.Dom.removeClass(els2, "discuss_hidden");
   if (document.getElementById("discusses_byme").checked) {
     YAHOO.util.Dom.addClass(els1, "discuss_hidden");
+    location.hash = "#byme";
   } else if (document.getElementById("discusses_forme").checked) {
     YAHOO.util.Dom.addClass(els2, "discuss_hidden");
+    location.hash = "#forme";
+  } else {
+    location.hash = "#";
   }
 }
 var url = location.href.split('#'); 
