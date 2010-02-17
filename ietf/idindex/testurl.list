@@ -23,6 +23,7 @@
 200	/drafts/?first_name=joe
 200	/drafts/?other_group=irtf
 200	/drafts/?wg_id=1682
+200	/drafts/?filename=%EF%BD%8C #non-ASCII
 200,heavy	/drafts/_test/all_id.txt
 200,heavy	/drafts/_test/id_index.txt
 200,heavy	/drafts/_test/id_abstracts.txt

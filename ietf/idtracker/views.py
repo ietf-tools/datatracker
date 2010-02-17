@@ -56,6 +56,14 @@ def search(request):
     if form.is_valid() == False:
 	searching = False
     if searching:
+        # Non-ASCII group/filename doesn't match anything; this check
+        # is currently needed to avoid complaints from MySQL.
+        for k in ['search_group_acronym','search_filename']:
+            try:
+                tmp = str(args.get(k, ''))
+            except:
+                args[k] = '*NOSUCH*'
+
         group = args.get('search_group_acronym', '')
 	if group != '':
 	    rfclist = [rfc['rfc_number'] for rfc in Rfc.objects.all().filter(group_acronym=group).values('rfc_number')]

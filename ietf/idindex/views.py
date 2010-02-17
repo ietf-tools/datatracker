@@ -151,6 +151,14 @@ def search(request):
 	if key in args:
 	    searching = True
     if searching:
+        # Non-ASCII strings don't match anything; this check
+        # is currently needed to avoid complaints from MySQL.
+        for k in ['filename','last_name','first_name']:
+            try:
+                tmp = str(args.get(k, ''))
+            except:
+                args[k] = '*NOSUCH*'
+        
 	# '0' and '-1' are flag values for "any"
 	# in the original .cgi search page.
 	# They are compared as strings because the
