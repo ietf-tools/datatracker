@@ -98,7 +98,7 @@ def read_testurls(filename):
 def split_url(url):
     if "?" in url:
         url, args = url.split("?", 1)
-        args = dict([ arg.split("=", 1) for arg in args.split("&") if "=" in arg ])
+        args = dict([ map(urllib.unquote,arg.split("=", 1)) for arg in args.split("&") if "=" in arg ])
     else:
         args = {}
     return url, args
