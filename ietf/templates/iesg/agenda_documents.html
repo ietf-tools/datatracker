@@ -60,6 +60,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <tr class="header telechat_date"><td colspan="5">IESG telechat {{t.date}}</td></tr>
 
+{% if forloop.first %}
+<tr class="header"><td colspan="5"><a href="/iesg/agenda/">Full IESG Agenda</a></td></tr>
+{% endif %}
+
 <tr class="header"><td colspan="5">2. Protocol Actions</td></tr>
 
 <tr class="header"><td colspan="5">2.1 WG Submissions</td></tr>
