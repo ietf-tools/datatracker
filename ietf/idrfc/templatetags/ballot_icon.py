@@ -57,6 +57,7 @@ def render_ballot_icon(context, doc):
     adId = get_user_adid(context)
     red = 0
     green = 0
+    yellow = 0
     gray = 0
     blank = 0
     my = None
@@ -67,18 +68,20 @@ def render_ballot_icon(context, doc):
             green = green + 1
         elif (p['pos'].discuss > 0):
             red = red + 1
-        elif (p['pos'].recuse > 0) or (p['pos'].abstain > 0):
+        elif (p['pos'].abstain > 0):
+            yellow = yellow + 1
+        elif (p['pos'].recuse > 0):
             gray = gray + 1
         else:
             blank = blank + 1
         if adId and (p['ad'].id == adId):
             my = position_to_string(p['pos'])
     if doc.is_rfc_wrapper:
-        return render_ballot_icon2("rfc"+str(doc.rfc_number), doc.rfc_number, red,green,gray,blank,my,adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
+        return render_ballot_icon2("rfc"+str(doc.rfc_number), doc.rfc_number, red,yellow,green,gray,blank, my, adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
     else:
-        return render_ballot_icon2(doc.draft_name, doc.tracker_id, red,green,gray,blank,my,adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
+        return render_ballot_icon2(doc.draft_name, doc.tracker_id, red,yellow,green,gray,blank, my, adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
 
-def render_ballot_icon2(draft_name, tracker_id, red,green,gray,blank,my,adId):
+def render_ballot_icon2(draft_name, tracker_id, red,yellow,green,gray,blank, my,adId):
     if adId:
         res_cm = ' oncontextmenu="editBallot('+str(tracker_id)+');return false;"'
     else:
@@ -92,6 +95,10 @@ def render_ballot_icon2(draft_name, tracker_id, red,green,gray,blank,my,adId):
                 c = "ballot_icon_red"
                 red = red - 1
                 myMark = (my == "Discuss")
+            elif yellow > 0:
+                c = "ballot_icon_yellow"
+                yellow = yellow - 1
+                myMark = (my == "Abstain")
             elif green > 0:
                 c = "ballot_icon_green"
                 green = green - 1
@@ -99,7 +106,7 @@ def render_ballot_icon2(draft_name, tracker_id, red,green,gray,blank,my,adId):
             elif gray > 0:
                 c = "ballot_icon_gray"
                 gray = gray - 1
-                myMark = (my == "Abstain") or (my == "Recuse")
+                myMark = (my == "Recuse")
             else:
                 c = ""
                 myMark = (y == 2) and (x == 4) and (my == "No Record")

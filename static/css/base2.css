@@ -109,6 +109,7 @@ table.ballot_icon td { border: 1px solid black; height: 7px; width: 6px; padding
 td.ballot_icon_green { background:#80ff80; }
 td.ballot_icon_red { background: #c00000; color: yellow; }
 td.ballot_icon_gray { background: #c0c0c0; }
+td.ballot_icon_yellow { background: #ffff00; }
 table.ballot_icon td.ballot_icon_my { border: 3px outset black;}
 
 .ietf-highlight-y { padding:0 2px;background:yellow;font-size:85%;}
