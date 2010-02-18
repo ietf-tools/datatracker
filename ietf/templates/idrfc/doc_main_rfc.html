@@ -37,8 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block title %}RFC {{ doc.rfc_number }}{% endblock %}
 {% block doc_h1 %}{{ doc.title|escape }}<br/>RFC {{ doc.rfc_number }}{% endblock %}
 
-{% block doc_meta %}
-<table id="metatable">
+{% block doc_metatable %}
 <tr><td style="width:18ex;">Document type:</td><td>RFC - {{ doc.maturity_level }}
 {% if doc.obsoleted_by %}<br />Obsoleted by {{ doc.obsoleted_by }}{%endif %}
 {% if doc.updated_by %}<br />Updated by {{ doc.updated_by }}{%endif %}
@@ -56,8 +55,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <a href="http://www.rfc-editor.org/rfc/pdfrfc/rfc{{doc.rfc_number}}.txt.pdf">pdf</a>,
 <a href="http://tools.ietf.org/html/rfc{{doc.rfc_number}}">html</a>
 </td></tr>
-</table><!-- metatable -->
-{% endblock %}{# doc_meta #}
+{% endblock doc_metatable %}
+
+{% block doc_metalinks %}
+ <a href="http://datatracker.ietf.org/ipr/search/?option=rfc_search&amp;rfc_search={{doc.rfc_number}}" rel="nofollow">IPR Disclosures</a>
+| <a href="http://www.fenron.net/~fenner/ietf/deps/index.cgi?dep=rfc{{doc.rfc_number}}" rel="nofollow">Dependencies to this RFC</a>
+{% endblock %}
 
 {% block doc_text1 %}
 <div class="markup_draft">

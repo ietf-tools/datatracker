@@ -69,7 +69,26 @@ div.diffTool { border: 1px solid #cccccc; background: #edf5ff; padding: 8px 4px;
 
 <div id="doc">
 <div id="metabox">
-{% block doc_meta %}{% endblock %}
+<table id="metatable">
+{% block doc_metatable %}{% endblock %}
+</table>
+
+<div style="padding-top:6px;padding-bottom:6px;padding-left:2px;">
+{% block doc_metalinks %}{% endblock %}
+</div>
+
+{% block doc_metabuttons %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+<div style="padding-bottom:2px;">
+<span id="doc_edit_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child">{% if doc.in_ietf_process %}
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=view_id&amp;{% if info.is_rfc %}dTag={{doc.rfc_number}}&amp;rfc_flag=1{% else %}dTag={{doc.tracker_id}}{% endif %}" rel="nofollow" target="_blank">Edit state (IESG Tracker)</a>
+{% else %}
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=add_id_confirm&amp;{% if info.is_rfc %}dTag={{doc.rfc_number}}&amp;rfc_flag=1{% else %}dTag={{doc.tracker_id}}&amp;rfc_flag=0{% endif %}&amp;ballot_id=0" rel="nofollow" target="_blank">Add to IESG Tracker</a>
+{% endif %}
+</span></span>
+</div>
+{% endif %}{# if user in group #}
+{% endblock doc_metabuttons%}
 </div> <!-- metabox -->
 </div> <!-- doc -->
 
