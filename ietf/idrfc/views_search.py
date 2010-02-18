@@ -215,6 +215,7 @@ def search_results(request):
         return HttpResponse("form not valid?", mimetype="text/plain")
     x = form.cleaned_data
     (results,meta) = search_query(form.cleaned_data)
+    meta['searching'] = True
     if 'ajax' in request.REQUEST and request.REQUEST['ajax']:
         return render_to_response('idrfc/search_results.html', {'docs':results, 'meta':meta}, context_instance=RequestContext(request))
     else:
