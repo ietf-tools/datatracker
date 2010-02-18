@@ -427,8 +427,10 @@ class IetfProcessData:
     def telechat_returning_item(self):
         # should be called only if telechat_date() returns non-None
         return bool(self._idinternal.returning_item)
-    
-    # state_change_notice_to?
+
+    def state_change_notice_to(self):
+        return self._idinternal.state_change_notice_to
+
     # comment_log?
 
 # ---------------------------------------------------------------------------

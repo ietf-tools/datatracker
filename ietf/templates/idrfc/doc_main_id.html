@@ -51,6 +51,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr><td>Last updated:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
 <tr><td>Responsible AD:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.ad_name|default:"-"|escape }}{%else%}-{%endif%}</td></tr>
 {% if doc.in_ietf_process and doc.ietf_process.iesg_note %}<tr><td>IESG Note:</td><td>{{ doc.ietf_process.iesg_note|escape }}</td></tr>{% endif %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+{% if doc.in_ietf_process %}<tr><td>Send notices to:</td><td>{{ doc.ietf_process.state_change_notice_to}}</td></tr>{% endif %}
+{% endif %}{# if user|in_group:... #}
 
 {% ifequal doc.draft_status "Active" %}
 <tr><td>Other versions:</td><td>
