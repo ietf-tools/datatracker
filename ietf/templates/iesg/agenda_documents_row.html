@@ -54,7 +54,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <td class="status">{{ doc.friendly_state|safe }}
 <br/>Intended status: {{doc.ietf_process.intended_maturity_level}}
 {% if doc.is_rfc_wrapper %}
-{% if doc.has_errata %}<br /><a href="http://www.rfc-editor.org/errata_search.php?rfc={{doc.rfc_number}}" rel="nofollow" target="_blank">Errata</a>{% endif %}
+{% if doc.has_errata %}<br /><a href="http://www.rfc-editor.org/errata_search.php?rfc={{doc.rfc_number}}" rel="nofollow">Errata</a>{% endif %}
 {% else %}
   {% if doc.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{ doc.draft_name}}">{{ doc.rfc_editor_state|escape }}</a>{% endif %}
 {% endif %}
