@@ -35,7 +35,7 @@ from django import forms
 from django.shortcuts import render_to_response
 from django.db.models import Q
 from django.template import RequestContext
-
+from django.views.decorators.cache import cache_page
 from ietf.idtracker.models import IDState, IESGLogin, IDSubState, Area, InternetDraft, Rfc, IDInternal
 from ietf.idrfc.models import RfcIndex
 from django.http import Http404, HttpResponse
@@ -249,7 +249,12 @@ def by_ad(request, name):
     results.sort(key=lambda obj: obj.view_sort_key_byad())
     return render_to_response('idrfc/by_ad.html', {'form':form, 'docs':results,'meta':meta, 'ad_name':ad_name}, context_instance=RequestContext(request))
 
+@cache_page(15*60) # 15 minutes
+def all(request):
+    active = InternetDraft.objects.all().filter(status=1).order_by("filename").values('filename')
+    rfc1 = InternetDraft.objects.all().filter(status=3).order_by("filename").values('filename','rfc_number')
+    rfc_numbers1 = InternetDraft.objects.all().filter(status=3).values_list('rfc_number', flat=True)
+    rfc2 = RfcIndex.objects.all().exclude(rfc_number__in=rfc_numbers1).order_by('rfc_number').values('rfc_number','draft')
+    dead = InternetDraft.objects.all().exclude(status__in=[1,3]).order_by("filename").select_related('status__status')
+    return render_to_response('idrfc/all.html', {'active':active, 'rfc1':rfc1, 'rfc2':rfc2, 'dead':dead}, context_instance=RequestContext(request))
 
-
-# changes done by convert-096.py:changed newforms to forms
-# cleaned_data
