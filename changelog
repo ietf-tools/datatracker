@@ -1,3 +1,20 @@
+ietfdb (2.44)
+
+  From Robert:
+
+  * Moved old (1995-2003) liaison statements from the template file
+    to the database. This requires applying database fixups as
+    follows:
+
+        cd /a/www/ietf-datatracker/2.44/ietf
+        PYTHONPATH=../ python manage.py dbshell < ../test/liaison_fixup.sql
+
+    And updating the liaison files as follows:
+
+	cd /a/www/ietf-datatracker/documents/LIAISON/
+        # TAKE A BACKUP OF THE WHOLE DIRECTORY, JUST IN CASE
+	. /a/www/ietf-datatracker/2.44/test/liaison_fixup.sh
+
 ietfdb (2.43)
 
   From Pasi:
