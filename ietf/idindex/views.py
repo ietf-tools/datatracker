@@ -71,21 +71,6 @@ def wgdocs(request, wg):
     extra['group'] = group
     return object_list(request, queryset=queryset, template_name='idindex/wgdocs.html', allow_empty=True, extra_context=extra)
 
-def inddocs(request, filter=None):
-    ind_exception = orl(
-	[Q(filename__istartswith='draft-%s-' % e) for e in
-	    flattenl([org.get('prefixes', [ org['key'] ]) for org in orgs]) + ['ietf']])
-    if filter == 'other':
-        queryset = InternetDraft.objects.filter(
-	    orl([Q(filename__istartswith="draft-%d" % i) for i in range(0,10)])
-	    )
-    else:
-	queryset = InternetDraft.objects.filter(filename__istartswith='draft-' + filter)
-    queryset = queryset.exclude(ind_exception).filter(group__acronym='none').order_by('filename')
-    extra = base_extra.copy()
-    extra['filter'] = filter
-    return object_list(request, queryset=queryset, template_name='idindex/inddocs.html', allow_empty=True, extra_context=extra)
-
 def otherdocs(request, cat=None):
     try:
 	org = orgs_dict[cat]

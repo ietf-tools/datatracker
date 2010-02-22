@@ -22,11 +22,6 @@
 <a href="{% url ietf.idindex.views.wgdocs letter %}">{{ letter.upper }}</a>
 {% endfor %}
 <a href="{% url ietf.idindex.views.wgdocs "other" %}">other</a><br>
-<img src="/images/blue.gif" hspace="3" border="0"> Individual Drafts by Author Identifier
-{% for letter in alphabet %}
-<a href="{% url ietf.idindex.views.inddocs letter %}">{{ letter.upper }}</a>
-{% endfor %}
-<a href="{% url ietf.idindex.views.inddocs "other" %}">other</a><br>
 
 <img src="/images/blue.gif" hspace="3" border="0"> Other Drafts
 {% for org in orgs %}
