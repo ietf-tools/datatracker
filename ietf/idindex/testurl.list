@@ -2,12 +2,10 @@
 200	/drafts/wg/idr/		
 200	/drafts/wg/I/		
 200	/drafts/other/tools/	
-200,heavy	/drafts/rfc/		
-200,heavy	/drafts/rfc/?sort=name	
-200,heavy	/drafts/current/	
-200,heavy	/drafts/all/		
-200,heavy	/drafts/dead/		
-200,heavy	/drafts/dead/?sort=name		
+301	/drafts/rfc/
+301	/drafts/current/	
+301	/drafts/all/		
+301	/drafts/dead/		
 301	/drafts/9574/related/	
 200	/drafts/draft-ietf-dnsext-dnssec-protocol/related/
 301	/drafts/9574/		

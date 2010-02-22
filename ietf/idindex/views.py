@@ -85,37 +85,6 @@ def otherdocs(request, cat=None):
     extra['category'] = cat
     return object_list(request, queryset=queryset, template_name='idindex/otherdocs.html', allow_empty=True, extra_context=extra)
 
-def showdocs(request, cat=None):
-    catmap = {
-	'all': { 'extra': { 'header': 'All' } },
-	'current': { 'extra': { 'header': 'Current', 'norfc': 1 },
-		     'query': Q(status__status="Active") },
-	'rfc': { 'extra': { 'header': 'Published' },
-		 'query': Q(status__status="RFC") },
-	'dead': { 'extra': { 'header': "Expired/Withdrawn/Replaced", 'norfc': 1 },
-		  'query': Q(status__in=[2,4,5,6]) },	# Using the words seems fragile here for some reason
-	}
-    if not(catmap.has_key(cat)):
-	raise Http404
-    sortmap = { 'date': { 'header': "Submission Date",
-			  'fields': ['revision_date','filename'] },
-	        'name': { 'header': "Filename",
-			  'fields': ['filename'] },
-		'': { 'header': "WHA?",
-			'fields': ['filename'] },
-	}
-    sortby = request.GET.get('sort', 'name')
-    if not(sortmap.has_key(sortby)):
-	sortby = 'name'
-    queryset = InternetDraft.objects.all()
-    if catmap[cat].has_key('query'):
-	queryset = queryset.filter(catmap[cat]['query'])
-    queryset = queryset.order_by(*list(['status'] + sortmap[sortby]['fields']))
-    extra = catmap[cat]['extra']
-    extra['sort_header'] = sortmap[sortby]['header']
-    extra.update(base_extra)
-    return object_list(request, queryset=queryset, template_name='idindex/showdocs.html', allow_empty=True, extra_context=extra)
-
 
 def search(request):
     args = request.GET.copy()

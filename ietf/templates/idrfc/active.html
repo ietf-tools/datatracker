@@ -33,53 +33,35 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. #}
 {% endcomment %}
 <html>
 <head>
-<title>All Internet-Drafts and RFCs</title>
+<title>Active Internet-Drafts</title>
 </head>
 <body>
 
-<h1>All Internet-Drafts and RFCs</h1>
+<h1>Active Internet-Drafts</h1>
 
-<p>This page lists all Internet-Drafts and RFCs, grouped by
-status. The main purpose of this page is to ensure all pages can be
-found by search engines. For normal use, it is recommended to use
+<p>This page lists all active Internet-Drafts, grouped by
+working group (and individual submissions last).
+For normal use, it is recommended to use
 the <a href="/doc/">search page</a> instead.</p>
 
-<p>The following files are also available for download:</p>
+<p>There is also a list of <a href="/doc/all/">all Internet-Drafts</a>, and 
+the following files are available for download:</p>
 <ul>
 <li><a href="http://www.ietf.org/id/1id-index.txt">Active Internet-Drafts (text)</a></li>
+<li><a href="http://www.ietf.org/id/1id-abstracts.txt">Active Internet-Drafts with abstracts (text)</a></li>
 <li><a href="http://www.ietf.org/id/all_id.txt">All Internet-Drafts (tab-separated)</a></li>
-<li><a href="http://www.rfc-editor.org/rfc/rfc-index.txt">All RFCs (text)</a></li>
-<li><a href="http://www.rfc-editor.org/rfc/rfc-index.xml">All RFCs (XML)</a></li>
 </ul>
 
-<h2 id="active">Active Internet-Drafts</h2>
+{% for group in groups|dictsort:"group_acronym.acronym" %}{% if group.active_drafts %}
+<h2 id="{{group.group_acronym.acronym}}">{{ group.group_acronym.name }} ({{ group.group_acronym.acronym}})</h2>
+{% for draft in group.active_drafts|dictsort:"filename" %}
+<p>{{draft.title.strip}}<br/>{% for author in draft.authors.all|dictsort:"final_author_order" %}{{author.person}}{% if not forloop.last %}, {% endif %}{% endfor %}<br/><a href="/doc/{{draft.filename}}/">{{draft.filename}}-{{draft.revision}}</a> ({{draft.revision_date|date:"Y-m-d"}})</p>
+{% endfor %}{%endif %}{% endfor %}
 
-<p><a href="/doc/active/">More information about active Internet-Drafts</a></p>
+<h2 id="individual">Individual Submissions</h2>
 
-<p>
-{% for doc in active %}<a href="/doc/{{ doc.filename }}/">{{ doc.filename }}</a><br/>
+{% for draft in individual.active_drafts|dictsort:"filename" %}
+<p>{{draft.title.strip}}<br/>{% for author in draft.authors.all|dictsort:"final_author_order" %}{{author.person}}{% if not forloop.last %}, {% endif %}{% endfor %}<br/><a href="/doc/{{draft.filename}}/">{{draft.filename}}-{{draft.revision}}</a> ({{draft.revision_date|date:"Y-m-d"}})</p>
 {% endfor %}
-</p>
-
-<h2 id="rfc">Internet-Drafts Published as RFCs</h2>
-
-<p>
-{% for doc in rfc1 %}<a href="/doc/{{ doc.filename }}/">{{ doc.filename }}</a> (<a href="/doc/rfc{{doc.rfc_number}}/">RFC {{ doc.rfc_number }}</a>)<br/>
-{% endfor %}
-</p>
-
-<h2 id="rfc2">RFCs Without Internet-Draft Information</h2>
-
-<p>
-{% for doc in rfc2 %}<a href="/doc/rfc{{ doc.rfc_number }}/">RFC {{ doc.rfc_number }}</a>{% if doc.draft %} ({{ doc.draft }}?){% endif %}<br/>
-{% endfor %}
-</p>
-
-<h2 id="dead">Expired/Withdrawn/Replaced Internet-Drafts</h2>
-
-<p>
-{% for doc in dead %}<a href="/doc/{{ doc.filename }}/">{{ doc.filename }}</a> ({{ doc.status.status}})<br/>
-{% endfor %}
-</p>
 
 </body></html>

@@ -36,7 +36,7 @@ from django.shortcuts import render_to_response
 from django.db.models import Q
 from django.template import RequestContext
 from django.views.decorators.cache import cache_page
-from ietf.idtracker.models import IDState, IESGLogin, IDSubState, Area, InternetDraft, Rfc, IDInternal
+from ietf.idtracker.models import IDState, IESGLogin, IDSubState, Area, InternetDraft, Rfc, IDInternal, IETFWG
 from ietf.idrfc.models import RfcIndex
 from django.http import Http404, HttpResponse
 from ietf.idrfc.idrfc_wrapper import IdWrapper,RfcWrapper,IdRfcWrapper
@@ -258,3 +258,8 @@ def all(request):
     dead = InternetDraft.objects.all().exclude(status__in=[1,3]).order_by("filename").select_related('status__status')
     return render_to_response('idrfc/all.html', {'active':active, 'rfc1':rfc1, 'rfc2':rfc2, 'dead':dead}, context_instance=RequestContext(request))
 
+@cache_page(15*60) # 15 minutes
+def active(request):
+    groups = IETFWG.objects.exclude(group_acronym=1027)
+    individual = IETFWG.objects.get(group_acronym=1027)
+    return render_to_response("idrfc/active.html", {'groups':groups,'individual':individual}, context_instance=RequestContext(request))
