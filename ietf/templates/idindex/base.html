@@ -14,11 +14,6 @@ IETF Working Group Drafts
 {% endfor %}
 <a href="{% url ietf.idindex.views.wgdocs "other" %}">other</a><br>
 
-Other Drafts
-{% for org in orgs %}
-<a href="{% url ietf.idindex.views.otherdocs org.key %}">{{ org.name.upper }}</a>
-{% endfor %}
-<br>
 <a href="{% url ietf.idindex.views.search %}">I-D Search</a>
 {% endblock %}
 

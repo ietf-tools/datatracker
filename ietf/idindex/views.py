@@ -45,7 +45,7 @@ from ietf.idindex.forms import IDIndexSearchForm
 from ietf.idindex.models import alphabet, orgs, orgs_dict
 from ietf.utils import orl, flattenl, normalize_draftname
 
-base_extra = { 'alphabet': alphabet, 'orgs': orgs }
+base_extra = { 'alphabet': alphabet }
 
 def wgdocs_redir(request, id):
     group = get_object_or_404(Acronym, acronym_id=id)
@@ -70,21 +70,6 @@ def wgdocs(request, wg):
     extra = base_extra.copy()
     extra['group'] = group
     return object_list(request, queryset=queryset, template_name='idindex/wgdocs.html', allow_empty=True, extra_context=extra)
-
-def otherdocs(request, cat=None):
-    try:
-	org = orgs_dict[cat]
-    except KeyError:
-	raise Http404
-    queryset = InternetDraft.objects.filter(
-	orl([Q(filename__istartswith="draft-%s-" % p)|
-	     Q(filename__istartswith="draft-ietf-%s-" % p)
-		for p in org.get('prefixes', [ org['key'] ])]))
-    queryset = queryset.order_by('status','filename')
-    extra = base_extra.copy()
-    extra['category'] = cat
-    return object_list(request, queryset=queryset, template_name='idindex/otherdocs.html', allow_empty=True, extra_context=extra)
-
 
 def search(request):
     args = request.GET.copy()

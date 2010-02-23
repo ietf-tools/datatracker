@@ -18,7 +18,6 @@ info_dict = {
 urlpatterns = patterns('',
      (r'^wgid/(?P<id>\d+)/$', views.wgdocs_redir),
      (r'^wg/(?P<wg>[^/]+)/$', views.wgdocs),
-     (r'^other/(?P<cat>[^/]+)/$', views.otherdocs),
      (r'^all/$', 'django.views.generic.simple.redirect_to', { 'url': '/doc/all/'}),
      (r'^rfc/$', 'django.views.generic.simple.redirect_to', { 'url': '/doc/all/#rfc'}),
      (r'^dead/$', 'django.views.generic.simple.redirect_to', { 'url': '/doc/all/#dead'}),
