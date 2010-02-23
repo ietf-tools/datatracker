@@ -1,4 +1,11 @@
 200	/wg/
+404	/wg/nosuchgroup/
+200	/wg/tls/
+200	/wg/tls/charter/
+200	/wg/mobike/ # concluded
+200	/wg/mobike/charter/
+200	/wg/catnip/ # concluded very long time ago
+200	/wg/catnip/charter/ # concluded very long time ago
 200 	/wg/summary.txt
 200	/wg/1wg-summary.txt
 200	/wg/summary-by-area.txt
