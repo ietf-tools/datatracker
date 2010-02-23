@@ -1,14 +1,15 @@
+{% extends "idrfc/base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "base.html" %}
-{% block title %} IETF {{ meeting_num }} Preliminary & Interim Materials {% endblock %}
-{% block head %}
-<link rel="stylesheet" type="text/css" href="https://www.ietf.org/css/base.css" />
-{% endblock %}
-{% block css %}
-h2.divider { background:#2647A0; color:white; padding:0.5em 1em; };
-{% endblock %}
+{% block title %}IETF {{ meeting_num }} Preliminary &amp; Interim Materials{% endblock %}
+{% block morecss %}
+table.ietf-materials { width: 99%; border-bottom:1px solid #cbcbcb; nopadding: 0; margin: 0; vertical-align: top; border-collapse: collapse;}
+table.ietf-materials tr {vertical-align: top; }
+table.ietf-materials td { padding:0.5em 0; }
+{% endblock morecss %}
+
 {% block content %}
-<h1 style="align:center">IETF {{ meeting_num }} Meeting Materials</h1>
+<h1>IETF {{ meeting_num }} Meeting Materials</h1>
+
 {% if sub_began %}
 <p>Submission cutoff date: {{ cut_off_date|date:"F j, Y" }}<br/>
 Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
@@ -18,7 +19,7 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 
 {% regroup object_list|dictsort:"area" by area_name as areas %}
   {% for wgs in areas %}
-   <h2 class="divider">{{ wgs.grouper }}</h2>
+   <h2 class="ietf-divider">{{ wgs.grouper }}</h2>
     {% ifequal wgs.grouper "Plenary Sessions" %}
     {% for wg in wgs.list|dictsortreversed:"acronym" %}
       {% include "meeting/list_group.html" %}
@@ -29,35 +30,35 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
     {% endfor %}
   {% endifequal %}
   {% endfor %}
-<!--- Training Sessions --->
+<!-- Training Sessions -->
 {% if training_list %}
-<h2 class="divider">Training</h2>
+<h2 class="ietf-divider">Training</h2>
 {% for wg in training_list|dictsort:"acronym" %}
 
 <table cellpadding="0" cellspacing="0" border="0" width="99%" style="border-bottom:1px solid #cbcbcb;">
-<tr><a name="wg-{{ wg.acronym }}"></a>
-<td style="width:12em;"><b>{{ wg.acronym|upper }}{% ifequal wg.group_type_str "BOF" %} <font color="red">({{ wg.group_type_str }})</font> {% endifequal %}</b><br/>
+<tr>
+<td style="width:12em;"><a name="wg-{{ wg.acronym }}"></a><b>{{ wg.acronym|upper }}{% ifequal wg.group_type_str "BOF" %} <font color="red">({{ wg.group_type_str }})</font> {% endifequal %}</b><br/>
 {% for slide in wg.slides %}
 <a href="http://www3.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name|escape }}</a><br/>
 {% endfor %}
 </td></tr></table>
 {% endfor %}  
 {% endif %}
-<!--- End of Training Sessions --->
-<!--- IRTF Sessions --->
+<!-- End of Training Sessions -->
+<!-- IRTF Sessions -->
 {% if irtf_list %}
-<h2 class="divider">IRTF</h2>
+<h2 class="ietf-divider">IRTF</h2>
 {% for wg in irtf_list|dictsort:"acronym_lower" %}
    {% include "meeting/list_group.html" %}
 {% endfor %}
 {% endif %}
-<!--- End of IRTF Sessions --->
-<!--- Interim Meetings --->
+<!-- End of IRTF Sessions -->
+<!-- Interim Meetings -->
 {% if interim_list %}
-<h2 class="divider">Interim Meetings</h2>
+<h2 class="ietf-divider">Interim Meetings</h2>
 {% for wg in interim_list|dictsort:"acronym" %}
   {% include "meeting/list_group.html" %}
 {% endfor %}
 {% endif %}
-<!--- End of Imterim Meetings --->
+<!-- End of Imterim Meetings -->
 {% endblock %}

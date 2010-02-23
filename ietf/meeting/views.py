@@ -2,7 +2,7 @@
 
 # Create your views here.
 #import models
-from django.shortcuts import render_to_response as render, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404
 from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches
 from django.views.generic.list_detail import object_list
 from django.http import HttpResponseRedirect, HttpResponse, Http404
@@ -22,7 +22,7 @@ def show_html_materials(request, meeting_num=None):
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.REQUEST:
         pass
     elif now > cor_cut_off_date:
-        return render("meeting/list_closed.html",{'meeting_num':meeting_num,'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date})
+        return render_to_response("meeting/list_closed.html",{'meeting_num':meeting_num,'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date}, context_instance=RequestContext(request))
     sub_began = 0
     if now > begin_date:
         sub_began = 1
@@ -96,10 +96,10 @@ def html_agenda(request, num=None):
         template = "meeting/m_agenda.html"
     else:
         template = "meeting/agenda.html"
-    return render(template,
+    return render_to_response(template,
             {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
                 "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
-            RequestContext(request))
+            context_instance=RequestContext(request))
 
 def text_agenda(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
