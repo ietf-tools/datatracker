@@ -85,6 +85,8 @@ class Area(models.Model):
     extra_email_addresses = models.TextField(blank=True)
     def __str__(self):
 	return self.area_acronym.acronym
+    def active_wgs(self):
+        return IETFWG.objects.filter(group_type=1,status=IETFWG.ACTIVE,areagroup__area=self).order_by('group_acronym__acronym')
     def active_area_choices():
 	return [(area.area_acronym_id, area.area_acronym.acronym) for area in Area.objects.filter(status=1).select_related().order_by('acronym.acronym')]
     active_area_choices = staticmethod(active_area_choices)

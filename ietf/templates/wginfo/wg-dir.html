@@ -1,26 +1,52 @@
 {% extends "idrfc/base.html" %}
 {# Copyright The IETF Trust 2009, All Rights Reserved #}
+{% comment %}
+Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
-{% block title %} Active IETF Working Groups {% endblock %}
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+
+{% block title %}Active IETF Working Groups{% endblock %}
 
 {% block content %}
 <h1>Active IETF Working Groups</h1>
 
 <p>See also: <a href="http://www.ietf.org/wg/concluded/index.html">Concluded
-   Working Groups</a> and <a href="http://www.ietf.org/dyn/wg/charter/history/">Historic Charters</a>.
-</p>
+Working Groups</a> and 
+<a href="http://www.ietf.org/dyn/wg/charter/history/">Historic Charters</a>.</p>
 
-{% regroup wg_list|dictsort:"area.area.area_acronym.acronym" by area.area as wga_list %}
+{% for area in areas|dictsort:"area_acronym.name" %}
+<h2 class="ietf-divider" id="{{area.area_acronym.name|cut:" "}}">{{ area.area_acronym.name }}</h2>
 
-{% for area in wga_list %}
-{% for wg in area.list|dictsort:"group_acronym.acronym" %}
-{% ifequal wg.area.area.status_id 1 %}
-{% if forloop.first %}
-
-<a name="{{ wg.area_acronym.name|cut:" " }}"></a>
-<h2 style="background:#2647a0;color:white;padding:0.5em 1em;font-size:116%">{{ wg.area_acronym.name }}</h2>
-
-{% for ad in wg.area_directors %}
+{% for ad in area.areadirector_set.all|dictsort:"person.last_name" %}
 {% if forloop.first %}
 <p>Area Director{{ forloop.revcounter|pluralize }}:</p>
 <p style="margin-left: 2em">
@@ -31,20 +57,21 @@
 {% endif %}
 {% endfor %}
 
+{% for wg in area.active_wgs %}
+{% if forloop.first %}
 <p>Active Working Groups:</p>
 <div style="margin-left:2em;">
 <table width="100%" style="max-width:50em;">
 {% endif %}
-{% if wg.start_date %}
 <tr valign="top"><td width="10%;"><a href="/wg/{{wg}}/">{{ wg }}</a></td><td width="50%">{{ wg.group_acronym.name }}</td>
 <td width="39%">{% for chair in wg.chairs %}<a href="mailto:{{chair.person.email}}">{{chair.person}}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>
-{% endif %}
 {% if forloop.last %}
 </table>
 </div>
 {% endif %}
-{% endifequal %}
-{% endfor %}
-{% endfor %}
+{% empty %}
+<p>No Active Working Groups</p>
+{% endfor %}{# wg #}
 
+{% endfor %}{# area #}
 {% endblock %}
