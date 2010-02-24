@@ -4,7 +4,6 @@ from django.conf.urls.defaults import patterns
 from ietf.idtracker.models import Area, IETFWG
 
 urlpatterns = patterns('django.views.generic.list_detail',
-     (r'^area/$', 'object_list', { 'queryset': Area.objects.filter(status=1).select_related().order_by('acronym.acronym'), 'template_name': 'mailinglists/areas_list.html' }),
      (r'^wg/$', 'object_list', { 'queryset': IETFWG.objects.filter(email_archive__startswith='http'), 'template_name': 'mailinglists/wgwebmail_list.html' }),
 )
 urlpatterns += patterns('',
