@@ -1,80 +1,66 @@
+{% extends "idrfc/base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{# no template, this page has its own look. #}
 {% load ietf_filters %}
-<html>
-<head><title>Liaison Statement Detail:
-{% include 'liaisons/liaison_title.html' %}</title>
-<style type="text/css">
+{% block title %}Liaison Statement: {% include 'liaisons/liaison_title.html' %}{% endblock %}
 
-a:link, a:visited {
-  border-bottom:1px dotted #69f;
-  color:blue;
-  text-decoration:none;
-  }
-a:visited {
-  border-bottom:1px dotted #969;
-  color:#939;
-  }
-a:hover {
-  border-bottom:1px dotted #f00;
-  color:#f00;
-  }
-</style>
-</head>
-<body topmargin='0' bottommargin='0' leftmargin='0' rightmargin='0' background='/images/back_dot.gif'>
-<table bgcolor="#F4F2F2" border=2 cellpadding=0 cellspacing=0 width='671' height="300" align='center'>
-  <tr valign="top"><td>
-      <table width="100%" height='100%' border=0 cellpadding=0 cellspacing=0 bgcolor="#FFFFFF">
-          <tr valign="top"><td><img src="/images/liaison_title.gif" height="96" border="0"></td></tr>
-          <tr valign="top"><td>
+{% block morecss %}
+.ietf-liaison-details tr { vertical-align:top; }
+{% endblock morecss %}
 
-<center><h3>
-{% include 'liaisons/liaison_title.html' %}
-</h3></center>
-  {% if not object.by_secretariat %}
-  <blockquote>
-  <table cellspacing="3" bgcolor="cccc99" width="600">
-  <tr>
-  <td bgcolor="#efefef" width="25%">Submission Date: </td><td width="75%"><pre>{{ object.submitted_date }}</pre></td></tr>
-  <tr>
-  <td bgcolor="#efefef" width="25%">From: </td><td width="75%"><pre>{{ object.from_body|escape }} (<a href="mailto:{{ object.from_email|fix_ampersands }}">{{ object.person|escape }}</a>)</pre></td></tr>
-  <tr>
-  <td bgcolor="#efefef">To: </td><td><pre>{{ object.to_body|escape }} ({{ object.to_poc|parse_email_list|safe }})</pre></td></tr>
-  <tr>
-  <td bgcolor="#efefef">Cc:</td><td><pre>{{ object.cc1|parse_email_list|make_one_per_line|safe }}</pre></td></tr>
-  <tr>
-  <td bgcolor="#efefef">Response Contact:</td>
-  <td>
-<pre>{{ object.response_contact|parse_email_list|make_one_per_line|safe }}</pre>
-  </td></tr>
-  <tr>
-  <td bgcolor="#efefef">Technical Contact:</td>
-  <td>
-<pre>{{ object.technical_contact|parse_email_list|make_one_per_line|safe }}</pre></td>
-  </tr>
-  <tr>
-  <td bgcolor="#efefef">Purpose:</td><td><pre>{% if object.purpose_text %}{{ object.purpose_text }}{% else %}{{ object.purpose }}{% endif %}</pre></td></tr>
-  <tr>
-  <td bgcolor="#efefef">Deadline:</td><td><pre>{{ object.deadline_date }}</pre></td></tr>
-  <tr>
-  <td bgcolor="#efefef">Body:</td><td><pre>{{ object.body|wordwrap:"71"|escape }}</pre></td></tr>
-  </table>
-  </blockquote>
+{% block content %}
+<h1>Liaison Statement: {% include 'liaisons/liaison_title.html' %}</h1>
+
+<table class="ietf-liaison-details">
+<tr>
+<td style="width:18ex;">Submission Date:</td><td>{{ object.submitted_date }}</td></tr>
+<tr>
+<td>From:</td><td>{{ object.from_body }} (<a href="mailto:{{ object.from_email|fix_ampersands }}">{{ object.person }}</a>)</td></tr>
+
+<tr>
+<td>To:</td><td>
+{% if object.by_secretariat %}
+  {% if object.submitter_email %}
+    <a href="mailto:{{ object.submitter_email}}">{{ object.submitter_name }}</a>
+  {% else %}
+    {{ object.submitter_name }}
   {% endif %}
-<hr>
-<blockquote>
-<h3>Attached Document(s)</h3>
-{% if object.uploads_set.count %}
-<ul>
-{% for file in object.uploads_set.all %}
-<li><a href="https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}">{{ file.file_title }}</a><br>
-{% endfor %}
-</ul>
 {% else %}
-NONE
+{{ object.to_body }} ({{ object.to_poc|parse_email_list|safe }})</td></tr>
 {% endif %}
-</blockquote>
 
-</td></tr></table>
-</body>
-</html>
+{% if not object.by_secretariat %}
+
+<tr>
+<td>Cc:</td><td>{{ object.cc1|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td></tr>
+<tr>
+<td>Response Contact:</td>
+<td>
+{{ object.response_contact|parse_email_list|make_one_per_line|safe|linebreaksbr }}
+</td></tr>
+<tr>
+<td>Technical Contact:</td>
+<td>{{ object.technical_contact|parse_email_list|make_one_per_line|safe|linebreaksbr }}</td>
+</tr>
+<tr>
+<td>Purpose:</td><td>{% if object.purpose_text %}{{ object.purpose_text }}{% else %}{{ object.purpose }}{% endif %}</td></tr>
+<tr>
+<td>Deadline:</td><td>{{ object.deadline_date }}</td></tr>
+{% endif %}
+
+<tr>
+<td>Attachments:</td>
+<td>
+{% for file in object.uploads_set.all %}
+<a href="https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}">{{ file.file_title }}</a>{% if not forloop.last %}<br/>{% endif %}
+{% empty %}
+(none)
+{% endfor %}
+</td></tr>
+
+{% if not object.by_secretariat and object.body %}
+<tr>
+<td>Body:</td><td><pre>{{ object.body|wordwrap:"71"|escape }}</pre></td></tr>
+{% endif %}
+</table>
+
+{% endblock %}

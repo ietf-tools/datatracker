@@ -1,15 +1,21 @@
+{% extends "idrfc/base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "base.html" %}
+{% block title %}Liaison Statements{% endblock %}
+
+{% block pagehead %}
+<link rel="alternate" type="application/atom+xml" href="/feed/liaison/recent/" />
+{% endblock %}
+
 {% block content %}
 
-<center><h2>Liaison Statements</H2></center>
+<h1>Liaison Statements</h1>
 
-<table cellspacing="3">
-<tr><th>Date</th><th>Org</th><th>Token</th><th>Title</th></tr>
+<table class="ietf-table" width="100%">
+<tr><th width="9%">Date</th><th width="20%">From</th><th width="20%">To</th><th width="50%">Title</th></tr>
 
 {% for liaison in object_list %}
-<tr>
-<td nowrap>{{ liaison.submitted_date|date:"F Y" }}</td>
+<tr class="{% cycle oddrow,evenrow %}">
+<td style="white-space:nowrap;">{{ liaison.submitted_date|date:"Y-m-d" }}</td>
 <td>{{ liaison.from_body|escape }}</td>
 <td>
 {% if liaison.by_secretariat %}
@@ -25,7 +31,7 @@
 <td>
 {% if liaison.by_secretariat %}
   {% for file in liaison.uploads_set.all %}
-    <a href="https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}">{{ file.file_title|escape }}</a><br>
+    <a href="https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}">{{ file.file_title|escape }}</a><br/>
   {% endfor %}
 {% else %}
   <a href="{{ liaison.detail_id }}/">{{ liaison.title|escape }}</a>
