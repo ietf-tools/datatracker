@@ -1,24 +1,26 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "base.html" %}{% load ietf_filters %}
+{% extends "idrfc/base.html" %}{% load ietf_filters %}
 
 {% block title %}Liaison Statement Management Tool Field Help{% endblock %}
 
 {% block content %}
-<center><font size=+2>Liaison Statement Management Tool<br>Field Help</font></center>
-<br>
-The table below provides descriptions of the fields included in the 
+<h1>Liaison Statement Management Tool<br>Field Help</h1>
+
+<p>The table below provides descriptions of the fields included in the 
 liaison statement submission form, and suggestions for completing them,
 where appropriate.  Additional materials that may be useful in 
-completing this form can be found in the following documents:
-<br><br>
+completing this form can be found in the following documents:</p>
+
 <ul>
-<li><a href="/liaison/help/to_ietf/">Liaison Statements to the IETF: Guidelines for Completing the "To:" and "Cc:" Fields </a>
-<li><a href="/liaison/help/from_ietf/">Liaison Statements from the IETF: Guidelines for Completing the "Cc:" Field</a>
-<li><a href="/wg/">Active IETF Working Groups</a>
-<li><a href="/liaison/managers/">IETF Liaison Managers</a>
+<li><a href="/liaison/help/to_ietf/">Liaison Statements to the IETF: Guidelines for Completing the "To:" and "Cc:" Fields</a></li>
+<li><a href="/liaison/help/from_ietf/">Liaison Statements from the IETF: Guidelines for Completing the "Cc:" Field</a></li>
+<li><a href="/wg/">Active IETF Working Groups</a></li>
+<li><a href="/liaison/managers/">IETF Liaison Managers</a></li>
 </ul>
-For definitive information on generating liaison statements, please
-see <a href="{{ "4053"|rfcurl }}">RFC 4053 (BCP 103) "Procedures for Handling Liaison Statements to and from the IETF."</a><br><br>
+
+<p>For definitive information on generating liaison statements, please
+see <a href="{{ "4053"|rfcurl }}">RFC 4053 (BCP 103) "Procedures for Handling Liaison Statements to and from the IETF."</a></p>
+
 <table cellpadding="3" cellspacing="0" border="1">
   <tr align="center">
     <td><b>Field</b></td>

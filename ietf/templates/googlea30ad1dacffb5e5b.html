@@ -1,17 +1,8 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "base.html" %}
-{% load versiontags %}
-
-{% block content %}
+<html>
+<body>
 
 <h3>This is a verification page for the <a href="https://www.google.com/webmasters/tools/siteoverview">Google Webmaster Tools</a>.</h3>
 
-{% endblock %}
+</body></html>
 
-{% block footer %}
-      <hr/>
-      <div style="width: 100%; height: 1em; font-size: 9pt; font-style: italic;">
-	 <span style="float: left;">Made with <a href="http://www.djangoproject.com/">django</a></span>
-	 <span style="float: right;">v{% version_num %}, {% revision_date %} - <a href="mailto:webtools@ietf.org">webtools@ietf.org</a></span>
-      </div>
-{% endblock %}
