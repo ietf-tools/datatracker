@@ -49,7 +49,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if c.is_text %}
 <td>&nbsp;</td>
 <td>(System)</td>
-<td>{{ c.text }}</td>
+<td>{{ c.text|safe }}</td>
 {% endif %}
 
 {% if c.is_com %}

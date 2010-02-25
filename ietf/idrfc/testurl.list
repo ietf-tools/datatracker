@@ -26,6 +26,10 @@
 200	/doc/rfc3852/_debug.data
 200	/doc/rfc3852/_ballot.data
 
+# old RFC
+200     /doc/rfc822/
+200     /doc/rfc822/_debug.data
+
 404	/doc/draft-no-such-draft/
 404	/doc/rfc4637/
 

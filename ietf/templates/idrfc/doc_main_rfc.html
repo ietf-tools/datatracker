@@ -43,6 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if doc.updated_by %}<br />Updated by {{ doc.updated_by }}{%endif %}
 {% if doc.obsoletes %}<br />Obsoletes {{ doc.obsoletes }}{%endif %}
 {% if doc.updates %}<br />Updates {{ doc.updates }}{%endif %}
+{% if doc.draft_name %}<br/ >Was <a href="/doc/{{ doc.draft_name}}/">{{doc.draft_name}}</a>{% endif %}
 </td></tr>
 <tr><td>Published:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
 {% if doc.in_ietf_process %}

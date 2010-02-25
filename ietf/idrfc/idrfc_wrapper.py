@@ -1,4 +1,4 @@
-# Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+# Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -231,6 +231,7 @@ class RfcWrapper:
     publication_date = None
     maturity_level = None
     ietf_process = None
+    draft_name = None
     
     def __init__(self, rfcindex, rfc=None, idinternal=None):
         self._rfcindex = rfcindex
@@ -252,6 +253,16 @@ class RfcWrapper:
         self.maturity_level = self._rfcindex.current_status
         if not self.maturity_level:
             self.maturity_level = "Unknown"
+            
+        ids = InternetDraft.objects.filter(rfc_number=self.rfc_number)
+        if len(ids) >= 1:
+            self.draft_name = ids[0].filename
+        elif self._rfcindex and self._rfcindex.draft:
+            # rfcindex occasionally includes drafts that were not
+            # really submitted to IETF (e.g. April 1st)
+            ids = InternetDraft.objects.filter(filename=self._rfcindex.draft)
+            if len(ids) > 0:
+                self.draft_name = self._rfcindex.draft
             
     def _rfc_doc_list(self, name):
         if (not self._rfcindex) or (not self._rfcindex.__dict__[name]):
@@ -494,30 +505,6 @@ class IdRfcWrapper:
                 return "10"
         else:
             return "3"
-
-#     def debug_data(self):
-#         s = ""
-#         if self.draft:
-#             s = s + "draft("+self.draft.filename+","+str(self.draft.id_document_tag)+","+str(self.draft.rfc_number)+")"
-#         if self.idinternal:
-#             s = s + ",idinternal()"
-#         if self._rfc:
-#             s = s + ",rfc("+str(self._rfc.rfc_number)+")"
-#         if self.rfcIndex:
-#             s = s + ",rfcIndex("+str(self.rfcIndex.rfc_number)+")"
-#         if self.rfc_idinternal:
-#             s = s + ",rfc_idinternal("+str(self.rfc_idinternal.draft_id)+")"
-#         return s
-
-            
-#     if idinternal:
-#         o['stateChangeNoticeTo'] = idinternal.state_change_notice_to
-#         if idinternal.returning_item > 0:
-#             o['telechatReturningItem'] = True
-#         if idinternal.telechat_date:
-#             o['telechatDate'] = str(idinternal.telechat_date)
-#             o['onTelechatAgenda'] = (idinternal.agenda > 0)
-#
 
 # ---------------------------------------------------------------------------
 

@@ -161,7 +161,11 @@ def _get_history(doc, versions):
     if doc.is_id_wrapper and doc.draft_status == "Expired" and doc._draft.expiration_date:
         results.append({'is_text':True, 'date':doc._draft.expiration_date, 'text':'Draft expired'})
     if doc.is_rfc_wrapper:
-        results.append({'is_text':True, 'date':doc.publication_date, 'text':'RFC Published'})
+        if doc.draft_name:
+            text = 'RFC Published (see <a href="/doc/%s/">%s</a> for earlier history)' % (doc.draft_name,doc.draft_name)
+        else:
+            text = 'RFC Published'
+        results.append({'is_text':True, 'date':doc.publication_date, 'text':text})
 
     # convert plain dates to datetimes (required for sorting)
     for x in results:
