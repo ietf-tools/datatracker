@@ -1,17 +1,17 @@
-{% extends "base.html" %}
+{% extends "idrfc/base.html" %}
 {% load ietf_filters %}
 {% block title %}IAB/IESG Nominating Committee{% endblock %}
 {% block content %}
 
-<H1><center>IAB/IESG Nominating Committee</center></H1>
+<h1>IAB/IESG Nominating Committee</h1>
 
-<h3><center>Current Committee Chair: <a href="mailto:{{ curr_chair.person.email.1 }}">{{ curr_chair.person.email.0 }}</a></center></h3>
+<h3>Current Committee Chair: <a href="mailto:{{ curr_chair.person.email.1 }}">{{ curr_chair.person.email.0 }}</a></h3>
 
 {% for regime in regimes %}
   <hr>
   <h1>Messages from {{ regime.chair.start_year }} - {{ regime.chair.end_year }}</h1>
   <h4>Committee Chair: <a href="mailto:{{ regime.chair.person.email.1 }}">{{ regime.chair.person }}</a></h4>
-  <table>
+  <table class="ietf-table">
     <tr>
       <th width="10%">Date</th>
       <th width="60%">Subject</th>
