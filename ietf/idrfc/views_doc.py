@@ -47,7 +47,7 @@ from django.middleware.gzip import GZipMiddleware
 
 
 def document_debug(request, name):
-    r = re.compile("^rfc([0-9]+)$")
+    r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
     if m:
         rfc_number = int(m.group(1))
@@ -91,7 +91,7 @@ def document_main_rfc(request, rfc_number):
 
 @decorator_from_middleware(GZipMiddleware)
 def document_main(request, name):
-    r = re.compile("^rfc([0-9]+)$")
+    r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
     if m:
         return document_main_rfc(request, int(m.group(1)))
@@ -192,7 +192,7 @@ def _get_versions(draft, include_replaced=True):
     return ov
 
 def document_ballot(request, name):
-    r = re.compile("^rfc([0-9]+)$")
+    r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
     if m:
         id = get_object_or_404(IDInternal, rfc_flag=1, draft=int(m.group(1)))
