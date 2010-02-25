@@ -228,13 +228,6 @@ def lstripw(string, chars):
     """Strip matching leading characters from words in string"""
     return " ".join([word.lstrip(chars) for word in string.split()])
 
-@register.filter(name='thisyear')
-def thisyear(date):
-    """Returns a boolean of whether or not the argument is this year."""
-    if date:
-	return date.year == datetime.date.today().year
-    return True
-
 @register.filter(name='timesince_days')
 def timesince_days(date):
     """Returns the number of days since 'date' (relative to now)"""
