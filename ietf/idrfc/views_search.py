@@ -207,9 +207,13 @@ def search_query(query):
     meta = {}
     if maxReached:
         meta['max'] = MAX
+    if query['author'] or query['group'] or query['area'] or query['ad'] or query['state'] or query['subState']:
+        meta['advanced'] = True
     return (results,meta)
 
 def search_results(request):
+    if len(request.REQUEST.items()) == 0:
+        return search_main(request)
     form = SearchForm(request.REQUEST)
     if not form.is_valid():
         return HttpResponse("form not valid?", mimetype="text/plain")

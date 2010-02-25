@@ -49,7 +49,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <span onclick="toggleAdvanced();"><b><img src="/images/plus.png" alt="[+]" id="search_advanced-img" /> Advanced</b></span>
 
-<div id="search_advanced" style="display:none;margin-top:1em;">
+<div id="search_advanced" style="{% if not meta.advanced %}display:none;{%endif%}margin-top:1em;">
 
 <div class="search_field">
 <label>Author (last name):</label> {{ form.author }}
