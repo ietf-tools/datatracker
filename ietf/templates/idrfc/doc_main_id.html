@@ -39,7 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% block doc_metatable %}
 <tr><td style="width:18ex;">Document type:</td><td>{{ info.type|escape }}
-{% with doc.replaces as r %}{% if r %}<br />Replaces {% for rep in r %}<a href="/doc/{{rep}}/">{{rep}}</a>{% if not forloop.last %}, {%endif%}{% endfor %}{% endif %}{% endwith %}
+{% with doc.replaces as r %}{% if r %}<br />Replaces {% filter urlize_ietf_docs %}{{ r|join:", "}}{% endfilter %}{% endif %}{% endwith %}
 </td></tr>
 <tr><td>Last updated:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
 <tr><td>State:</td><td> 

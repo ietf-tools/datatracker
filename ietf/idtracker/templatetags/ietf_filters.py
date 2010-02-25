@@ -4,8 +4,9 @@ import textwrap
 import django
 from django import template
 from django.utils.html import escape, fix_ampersands
-from django.template.defaultfilters import linebreaksbr, wordwrap
+from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter
 from django.template import resolve_variable
+from django.utils.safestring import mark_safe, SafeData
 try:
     from email import utils as emailutils
 except ImportError:
@@ -13,7 +14,6 @@ except ImportError:
 import re
 import datetime
 import types
-#from ietf.utils import log
 
 register = template.Library()
 
@@ -214,6 +214,20 @@ def rfclink(string):
     """
     string = str(string);
     return "http://tools.ietf.org/html/rfc" + string;
+
+@register.filter(name='urlize_ietf_docs')
+def urlize_ietf_docs(string, autoescape=None):
+    """
+    Make occurrences of RFC NNNN and draft-foo-bar links to /doc/.
+    """
+    if autoescape and not isinstance(string, SafeData):
+        string = escape(string)
+    string = re.sub("(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
+    return mark_safe(string)
+urlize_ietf_docs.is_safe = True
+urlize_ietf_docs.needs_autoescape = True
+urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
 @register.filter(name='dashify')
 def dashify(string):

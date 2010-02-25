@@ -39,10 +39,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% block doc_metatable %}
 <tr><td style="width:18ex;">Document type:</td><td>RFC - {{ doc.maturity_level }}
-{% if doc.obsoleted_by %}<br />Obsoleted by {{ doc.obsoleted_by }}{%endif %}
-{% if doc.updated_by %}<br />Updated by {{ doc.updated_by }}{%endif %}
-{% if doc.obsoletes %}<br />Obsoletes {{ doc.obsoletes }}{%endif %}
-{% if doc.updates %}<br />Updates {{ doc.updates }}{%endif %}
+{% if doc.obsoleted_by %}<br />Obsoleted by {{ doc.obsoleted_by|urlize_ietf_docs }}{%endif %}
+{% if doc.updated_by %}<br />Updated by {{ doc.updated_by|urlize_ietf_docs }}{%endif %}
+{% if doc.obsoletes %}<br />Obsoletes {{ doc.obsoletes|urlize_ietf_docs }}{%endif %}
+{% if doc.updates %}<br />Updates {{ doc.updates|urlize_ietf_docs }}{%endif %}
 {% if doc.draft_name %}<br/ >Was <a href="/doc/{{ doc.draft_name}}/">{{doc.draft_name}}</a>{% endif %}
 </td></tr>
 <tr><td>Published:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
