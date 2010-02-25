@@ -44,12 +44,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if doc.obsoletes %}<br />Obsoletes {{ doc.obsoletes }}{%endif %}
 {% if doc.updates %}<br />Updates {{ doc.updates }}{%endif %}
 </td></tr>
-{% if doc.in_ietf_process %}
-<tr><td>State:</td><td> 
-{{ doc.friendly_state|safe }}
-{% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}
-</td></tr>{% endif %}
 <tr><td>Published:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
+{% if doc.in_ietf_process %}
+<tr class="post-rfc"><td colspan="2">* This information refers to IESG processing after the RFC was initially published</td></tr>
+<tr class="post-rfc"><td>State:</td><td> 
+{{ doc.friendly_state|safe }} (IESG: {{ doc.ietf_process.state}})
+{% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}
+</td></tr>
+<tr class="post-rfc"><td>Intended status:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.intended_maturity_level|default:"-"  }}{% else %}-{%endif%}</td></tr>
+<tr class="post-rfc"><td>Responsible AD:</td><td>{{ doc.ietf_process.ad_name|default:"-"|escape }}</td></tr>
+{% if doc.ietf_process.iesg_note %}<tr class="post-rfc"><td>IESG Note:</td><td>{{ doc.ietf_process.iesg_note|escape }}</td></tr>{% endif %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+<tr class="post-rfc"><td>Send notices to:</td><td>{{ doc.ietf_process.state_change_notice_to}}</td></tr>
+{% endif %}{# if user|in_group:... #}
+
+{% endif %}
 <tr><td>Other versions:</td><td>
 <a href="http://www.ietf.org/rfc/rfc{{doc.rfc_number}}.txt">plain text</a>,
 <a href="http://www.rfc-editor.org/rfc/pdfrfc/rfc{{doc.rfc_number}}.txt.pdf">pdf</a>,
