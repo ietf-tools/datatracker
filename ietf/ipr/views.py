@@ -4,10 +4,12 @@ from django.shortcuts import render_to_response as render, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404
+from django.conf import settings
 from ietf.idtracker.models import IETFWG
 from ietf.ipr.models import IprDetail, SELECT_CHOICES, LICENSE_CHOICES
 from ietf.ipr.view_sections import section_table
 from ietf.utils import log
+import os
 
 
 def default(request):
@@ -93,6 +95,10 @@ def show(request, ipr_id=None, removed=None):
         ipr.is_pending = dict(SELECT_CHOICES)[ipr.is_pending]
     if ipr.applies_to_all:
         ipr.applies_to_all = dict(SELECT_CHOICES)[ipr.applies_to_all]
+    if ipr.legacy_url_0 and ipr.legacy_url_0.startswith("http://www.ietf.org/") and not ipr.legacy_url_0.endswith(".pdf"):
+        file = open(os.path.join(settings.IPR_DOCUMENT_PATH, os.path.basename(ipr.legacy_url_0)))
+        ipr.legacy_text = file.read().decode("latin-1")
+        file.close()
     return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list},
                     context_instance=RequestContext(request))
 

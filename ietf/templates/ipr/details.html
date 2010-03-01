@@ -408,9 +408,13 @@
       {% if ipr.legacy_url_0 %}
       <blockquote>
       <h3>The text of the original IPR declaration:</h3>
+      {% if ipr.legacy_text %}
+      <pre>{{ipr.legacy_text|safe}}</pre>
+      {% else %}
       <iframe src="{{ipr.legacy_url_0}}" style="width:55em; height:30em">
 	 Warning: Could not embed {{ipr.legacy_url_0}}.
       </iframe>
+      {% endif %}
       </blockquote>
       {% endif %}
 
