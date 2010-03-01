@@ -72,6 +72,8 @@ ietfdb (2.44)
   * Add back in rudimentary Django Admin support which was lost in the 0.96 
     -> 1.1 transition.
 
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Mar 2010 13:17:16 +0100
+
 ietfdb (2.43)
 
   From Pasi:
