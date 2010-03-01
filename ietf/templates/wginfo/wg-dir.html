@@ -36,6 +36,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% block title %}Active IETF Working Groups{% endblock %}
 
+{% block morecss %}
+.ietf-wg-table { width: 100%; max-width:50em; }
+.ietf-wg-table tr { vertical-align:top; }
+{% endblock morecss %}
+
 {% block content %}
 <h1>Active IETF Working Groups</h1>
 
@@ -72,9 +77,9 @@ Working Groups</a> and
 {% if forloop.first %}
 <p>Active Working Groups:</p>
 <div style="margin-left:2em;">
-<table width="100%" style="max-width:50em;">
+<table class="ietf-wg-table">
 {% endif %}
-<tr valign="top"><td width="10%;"><a href="/wg/{{wg}}/">{{ wg }}</a></td><td width="50%">{{ wg.group_acronym.name }}</td>
+<tr><td width="10%;"><a href="/wg/{{wg}}/">{{ wg }}</a></td><td width="50%">{{ wg.group_acronym.name }}</td>
 <td width="39%">{% for chair in wg.chairs %}<a href="mailto:{{chair.person.email}}">{{chair.person}}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>
 {% if forloop.last %}
 </table>
