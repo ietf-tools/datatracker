@@ -15,6 +15,63 @@ ietfdb (2.44)
         # TAKE A BACKUP OF THE WHOLE DIRECTORY, JUST IN CASE
 	. /a/www/ietf-datatracker/2.44/test/liaison_fixup.sh
 
+  From Pasi:
+
+  * Use new look for more pages
+
+  * Make obsoletes/updates/etc. lists links (with new urlize_ietf_docs 
+    template filter)
+
+  * Always show year in /idtracker/status/ dates
+
+  * /doc/rfcNNNN/: show the internet-draft name (if known) and link to its 
+    history; show information about post-RFC IESG processing
+
+  * Use yellow for 'abstain' also in /iesg/agenda/documents/
+
+  * IESG ballot grid icon: show 'abstain' as yellow instead of gray
+
+  * IESG telechat agenda: include "private" links also if logged in, link 
+    from document list
+
+  * Added /doc/all/ page
+
+  * Better output if /doc/ search doesn't match anything
+
+  * Show state-change-notice-to field in /doc/ (to AD/secretariat)
+
+  * Make IESG telechat agenda feed discoverable
+
+  * Added IPR/dependency links and edit/add buttons for RFCs, too; some 
+    template refactoring
+
+  * Avoid exceptions from MySQL when searching for non-ASCII draft names/WG 
+    acronyms/etc.
+
+  * Handle non-ASCII characters gracefully in old cgi-bin script redirects
+
+  * IPR search: handle non-numeric RFC numbers/ID document tags gracefully 
+    (instead of uncaught exception)
+
+  * Change Atom feeds (+couple of other places) to point to /doc/draft-.. 
+    instead of /idtracker/draft-.../
+
+  From Henrik:
+
+  * In PersonOrOrgInfo.email(), try harder to find a relevant email address.
+    The new code will eventually fall back to a broad filter which matches that
+    of the perl code which creates WG charter pages, where the old code would
+    sometimes result in django-generated charter pages with missing email
+    addresses.
+
+  * Serve ipr disclosures which are available on the server directly, 
+    instead of through an external http link in an <iframe/>.  The <iframe/> 
+    method can result in mixing https and http content in the page, which some 
+    browser take issue with.
+
+  * Add back in rudimentary Django Admin support which was lost in the 0.96 
+    -> 1.1 transition.
+
 ietfdb (2.43)
 
   From Pasi:
@@ -45,7 +102,7 @@ ietfdb (2.43)
 
   * Improve coloring for "for N days" information
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  12 Feb 2010 18:40:21 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Mar 2010 13:05:22 +0100
 
 ietfdb (2.42)
 
