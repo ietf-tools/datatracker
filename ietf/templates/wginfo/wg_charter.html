@@ -108,6 +108,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </table>
 </div>
 
+{% if wg.additional_urls %}
+<p>In addition to the charter maintained by the IETF Secretariat, there is additional information about this working group on the Web at: 
+{% for url in wg.additional_urls %}
+<a href="{{ url.url }}">{{ url.description}}</a>{% if not forloop.last %}, {% endif %}
+{% endfor %}
+</p>
+{% endif %}
+
 <h2>Description of Working Group</h2>
 <p>{{ wg.charter_text|escape|format_charter|safe }}</p>
 

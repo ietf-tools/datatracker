@@ -57,6 +57,17 @@ Working Groups</a> and
 {% endif %}
 {% endfor %}
 
+{% for url in area.additional_urls %}
+{% if forloop.first %}
+<p>Area Specific Web Page{{ forloop.revcounter|pluralize}}:</p>
+<p style="margin-left: 2em">
+{% endif %}
+<a href="{{url.url}}">{{ url.description }}</a>{% if not forloop.last %}<br/>{% endif %}
+{% if forloop.last %}
+</p>
+{% endif %}
+{% endfor %}
+
 {% for wg in area.active_wgs %}
 {% if forloop.first %}
 <p>Active Working Groups:</p>

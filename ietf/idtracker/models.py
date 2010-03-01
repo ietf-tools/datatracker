@@ -85,6 +85,8 @@ class Area(models.Model):
     extra_email_addresses = models.TextField(blank=True)
     def __str__(self):
 	return self.area_acronym.acronym
+    def additional_urls(self):
+        return AreaWGURL.objects.filter(name=self.area_acronym.name)
     def active_wgs(self):
         return IETFWG.objects.filter(group_type=1,status=IETFWG.ACTIVE,areagroup__area=self).order_by('group_acronym__acronym')
     def active_areas():
@@ -97,14 +99,17 @@ class Area(models.Model):
         list_display = ('area_acronym', 'status')
 	pass
 
-class AreaURL(models.Model):
-    area = models.ForeignKey(Area, null=True, related_name='urls')
-    url = models.URLField(max_length=255, db_column='url_value')
-    url_label = models.CharField(max_length=255, db_column='url_label')
-    def __str__(self):
-        return self.url
-    class Admin:
-        pass
+class AreaWGURL(models.Model):
+    id = models.AutoField(primary_key=True, db_column='area_ID')
+    # For WGs, this is the WG acronym; for areas, it's the area name.
+    name = models.CharField(max_length=50, db_column='area_Name')
+    url = models.CharField(max_length=50)
+    description = models.CharField(max_length=50)
+    def __unicode__(self):
+        return u'%s (%s)' % (self.name, self.description)
+    class Meta:
+        ordering = ['name']
+        db_table = "wg_www_pages"
 
 class IDStatus(models.Model):
     status_id = models.AutoField(primary_key=True)
@@ -930,6 +935,9 @@ class IETFWG(models.Model):
         except BaseException:    
             desc =  'Error Loading Work Group Description'
         return desc
+
+    def additional_urls(self):
+        return AreaWGURL.objects.filter(name=self.group_acronym.acronym)        
                   
     class Meta:
         db_table = 'groups_ietf'

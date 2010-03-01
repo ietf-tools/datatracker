@@ -18,9 +18,9 @@ class AreaStatusAdmin(admin.ModelAdmin):
     pass
 admin.site.register(AreaStatus, AreaStatusAdmin)
 
-class AreaURLAdmin(admin.ModelAdmin):
+class AreaWGURLAdmin(admin.ModelAdmin):
     pass
-admin.site.register(AreaURL, AreaURLAdmin)
+admin.site.register(AreaWGURL, AreaWGURLAdmin)
 
 class BallotInfoAdmin(admin.ModelAdmin):
     pass

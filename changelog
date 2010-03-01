@@ -1,3 +1,13 @@
+ietfdb (2.45)
+
+  From Pasi:
+
+  * Use wg_www_pages table (and removed unused idtracker_areaurl).
+    Requires applying changes to database as follows:
+
+	cd /a/www/ietf-datatracker/2.45/ietf
+	PYTHONPATH=../ python manage.py dbshell < ../test/sql_fixup.sql
+
 ietfdb (2.44)
 
   From Robert:
