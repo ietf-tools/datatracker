@@ -64,7 +64,7 @@ def _get_html(key, filename):
         f = open(filename, 'rb')
         raw_content = f.read()
     except IOError:
-        return ("Error; cannot read "+key, "")
+        return ("Error; cannot read ("+key+")", "")
     finally:
         if f:
             f.close()
