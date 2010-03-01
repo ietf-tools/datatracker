@@ -1,4 +1,4 @@
-# Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+# Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 from django import template
 from django.core.cache import cache
 from django.template import loader
-from ietf.idtracker.models import IETFWG, Area
+from ietf.idtracker.models import Area
 
 register = template.Library()
 
@@ -42,23 +42,14 @@ area_short_names = {
     'rai':'RAI'
     }
 
-def get_wgs():
-    wgs = IETFWG.objects.filter(group_type__type='WG').filter(status__status='Active').select_related().order_by('acronym.acronym')
-    areas = []
-    for a in Area.objects.filter(status__status='Active').select_related().order_by('acronym.acronym'):
-        wglist = []
-        for w in wgs:
-            if w.area.area == a:
-                wglist.append(w)
-        if len(wglist) > 0:
-            if a.area_acronym.acronym in area_short_names:
-                area_name = area_short_names[a.area_acronym.acronym]
-            else:
-                area_name = a.area_acronym.name
-                if area_name.endswith(" Area"):
-                    area_name = area_name[:-5]
-            areas.append({'areaAcronym':a.area_acronym.acronym, 'areaName':area_name, 'areaObj':a, 'wgs':wglist})
-    return areas
+def get_short_name(area):
+    if area.area_acronym.acronym in area_short_names:
+        return area_short_names[area.area_acronym.acronym]
+    else:
+        area_name = area.area_acronym.name
+        if area_name.endswith(" Area"):
+            area_name = area_name[:-5]
+        return area_name
 
 class WgMenuNode(template.Node):
     def __init__(self):
@@ -67,7 +58,7 @@ class WgMenuNode(template.Node):
         x = cache.get('idrfc_wgmenu')
         if x:
             return x
-        areas = get_wgs()
+        areas = [{'area':x, 'short_name':get_short_name(x)} for x in Area.active_areas()]
         x = loader.render_to_string('idrfc/base_wgmenu.html', {'areas':areas})
         cache.set('idrfc_wgmenu', x, 30*60)
         return x

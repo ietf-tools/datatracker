@@ -87,9 +87,9 @@ class Area(models.Model):
 	return self.area_acronym.acronym
     def active_wgs(self):
         return IETFWG.objects.filter(group_type=1,status=IETFWG.ACTIVE,areagroup__area=self).order_by('group_acronym__acronym')
-    def active_area_choices():
-	return [(area.area_acronym_id, area.area_acronym.acronym) for area in Area.objects.filter(status=1).select_related().order_by('acronym.acronym')]
-    active_area_choices = staticmethod(active_area_choices)
+    def active_areas():
+        return Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
+    active_areas = staticmethod(active_areas)
     class Meta:
         db_table = 'areas'
 	verbose_name="area"

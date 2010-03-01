@@ -1,4 +1,4 @@
-# Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+# Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,7 @@ class SearchForm(forms.Form):
     oldDrafts = forms.BooleanField(required=False,initial=False)
 
     group = forms.CharField(required=False)
-    area = forms.ModelChoiceField(Area.objects.filter(status=Area.ACTIVE), empty_label="any area", required=False)
+    area = forms.ModelChoiceField(Area.active_areas(), empty_label="any area", required=False)
 
     ad = forms.ChoiceField(choices=(), required=False)
     state = forms.ModelChoiceField(IDState.objects.all(), empty_label="any state", required=False)
