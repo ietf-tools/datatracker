@@ -289,12 +289,19 @@ class PersonOrOrgInfo(models.Model):
 	if self.first_name == '' and self.last_name == '':
 	    return u"(Person #%s)" % self.person_or_org_tag
         return u"%s %s" % ( self.first_name or u"<nofirst>", self.last_name or u"<nolast>")
-    def email(self, priority=1, type='INET'):
+    def email(self, priority=1, type=None):
 	name = str(self)
-	try:
-	    email = self.emailaddress_set.get(priority=priority, type=type).address
-	except (EmailAddress.DoesNotExist, AssertionError):
-	    email = ''
+        email = ''
+        types = type and [ type ] or [ "INET", "Prim", None ]
+        for type in types:
+            try:
+                if type:
+                    email = self.emailaddress_set.get(priority=priority, type=type).address
+                else:
+                    email = self.emailaddress_set.get(priority=priority).address
+                break
+            except (EmailAddress.DoesNotExist, AssertionError):
+                pass
 	return (name, email)
     # Added by Sunny Lee to display person's affiliation - 5/26/2007
     def affiliation(self, priority=1):
@@ -307,7 +314,7 @@ class PersonOrOrgInfo(models.Model):
         return "%s" % ( postal.affiliated_company or postal.department or "???" )
     class Meta:
         db_table = 'person_or_org_info'
-	ordering = ['last_name']
+        ordering = ['last_name']
 	verbose_name="Rolodex Entry"
 	verbose_name_plural="Rolodex"
     class Admin:
