@@ -45,7 +45,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if doc.updates %}<br />Updates {{ doc.updates|urlize_ietf_docs }}{%endif %}
 {% if doc.draft_name %}<br/ >Was <a href="/doc/{{ doc.draft_name}}/">{{doc.draft_name}}</a>{% endif %}
 </td></tr>
-<tr><td>Published:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
+<tr><td>Published:</td><td> {{ doc.publication_date|date:"Y-m"|default:"(data missing)" }}</td></tr>
 {% if doc.in_ietf_process %}
 <tr class="post-rfc"><td colspan="2">* This information refers to IESG processing after the RFC was initially published</td></tr>
 <tr class="post-rfc"><td>State:</td><td> 
