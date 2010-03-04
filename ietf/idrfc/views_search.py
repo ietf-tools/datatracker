@@ -64,10 +64,19 @@ class SearchForm(forms.Form):
         self.fields['ad'].choices = [('', 'any AD')] + [(ad.id, "%s %s" % (ad.first_name, ad.last_name)) for ad in IESGLogin.objects.filter(user_level=1).order_by('last_name')] + [('-99', '------------------')] + [(ad.id, "%s %s" % (ad.first_name, ad.last_name)) for ad in IESGLogin.objects.filter(user_level=2).order_by('last_name')]
         self.fields['subState'].choices = [('', 'any substate'), ('0', 'no substate')] + [(state.sub_state_id, state.sub_state) for state in IDSubState.objects.all()]
                                                                         
-def search_query(query):
+def search_query(query_original):
+    query = dict(query_original.items())
     drafts = query['activeDrafts'] or query['oldDrafts']
     if (not drafts) and (not query['rfcs']):
         return ([], {})
+
+    # Non-ASCII strings don't match anything; this check
+    # is currently needed to avoid complaints from MySQL.
+    for k in ['name','author','group']:
+        try:
+            tmp = str(query.get(k, ''))
+        except:
+            query[k] = '*NOSUCH*'
 
     # Start by search InternetDrafts
     idresults = []
