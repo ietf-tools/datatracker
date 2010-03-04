@@ -32,7 +32,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
-<form name="search_form" id="search_form" action="/doc/search/" method="post" {# onsubmit="submitSearch();return false;" #}>
+<form name="search_form" id="search_form" class="search_form" action="/doc/search/" method="post" {# onsubmit="submitSearch();return false;" #}>
 
 <div class="search_field">
 <label>Name/number/title:</label> {{ form.name }}
@@ -47,21 +47,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </table>
 </div>
 
-<span onclick="toggleAdvanced();"><b><img src="/images/plus.png" alt="[+]" id="search_advanced-img" /> Advanced</b></span>
+<span onclick="toggleAdvanced();"><b><img src="/images/{% if meta.advanced %}minus{% else %}plus{% endif %}.png" alt="" id="search_advanced-img" /> Advanced</b></span>
 
 <div id="search_advanced" style="{% if not meta.advanced %}display:none;{%endif%}margin-top:1em;">
+Additional search criteria:
 
 <div class="search_field">
-<label>Author (last name):</label> {{ form.author }}
+<label><input type="radio" class="radio" name="by" value="author" {% ifequal meta.by "author" %}checked="checked"{% endifequal %} onclick="changeBy();"/> Author (last name):</label> {{ form.author }}
 </div>
 <div class="search_field">
-<label>WG/Area:</label> {{ form.group }}{{ form.area }}
+<label><input type="radio" class="radio" name="by" value="group" {% ifequal meta.by "group" %}checked="checked"{% endifequal %} onclick="changeBy();"/> WG:</label> {{ form.group }}
 </div>
 <div class="search_field">
-<label>Responsible AD:</label> {{ form.ad }} 
+<label><input type="radio" class="radio" name="by" value="area" {% ifequal meta.by "area" %}checked="checked"{% endifequal %} onclick="changeBy();"/> Area:</label> {{ form.area }}
 </div>
 <div class="search_field">
-<label>IESG State:</label> {{ form.state }} :: {{ form.subState }}
+<label><input type="radio" class="radio" name="by" value="ad" {% ifequal meta.by "ad" %}checked="checked"{% endifequal %} onclick="changeBy();"/> Responsible AD:</label> {{ form.ad }} 
+</div>
+<div class="search_field">
+<label><input type="radio" class="radio" name="by" value="state" {% ifequal meta.by "state" %}checked="checked"{% endifequal %} onclick="changeBy();"/> IESG State:</label> {{ form.state }} :: {{ form.subState }}
 </div>
 {% comment %}
 <div class="search_field" style="text-decoration:line-through;color:#808080;">
@@ -72,7 +76,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </div><!-- end of advanced -->
 
 <div style="padding-top:0.5em;">
-<input type="hidden" name="ajax" value="" />
+{# <input type="hidden" name="ajax" value="" /> #}
 <span id="search_submit_button" class="yui-button yui-submit-button">
 <span class="first-child">
 <button type="submit" id="search_submit">Search</button>
@@ -119,16 +123,34 @@ function togglePlusMinus(id) {
     }
 }
 
+function changeBy() {
+    var by=''; 
+    var f = document.search_form;
+    for (var i = 0; i < f.by.length; i++) {
+        if (f.by[i].checked) { 
+            by = f.by[i].value; 
+            break; 
+        }
+    }
+    f.author.disabled=true;  
+    f.group.disabled=true;
+    f.area.disabled=true;
+    f.ad.disabled=true;
+    f.state.disabled=true; f.subState.disabled=true;
+    if (by=='author') { f.author.disabled=false;}
+    if (by=='group') { f.group.disabled=false;}
+    if (by=='area') { f.area.disabled=false;}
+    if (by=='ad') { f.ad.disabled=false; }
+    if (by=='state') { f.state.disabled=false; f.subState.disabled=false; }
+}
+
 function toggleAdvanced() {
     togglePlusMinus("search_advanced");
-    var f = document.search_form;
-    f.author.value = "";
-    f.ad.selectedIndex = 0;
-    f.group.value = "";
-    f.area.selectedIndex = 0;
-    f.state.selectedIndex = 0;
-    f.subState.selectedIndex = 0;
-
+    var f = document.search_form; 
+    for (var i = 0; i < f.by.length; i++) { f.by[i].checked = false; }
+    changeBy();
 }
+
+changeBy();
 //]]>
 </script>

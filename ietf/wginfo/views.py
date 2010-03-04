@@ -77,13 +77,10 @@ from ietf.idrfc.views_search import SearchForm, search_query
 
 def wg_documents(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym)
-    form = SearchForm(request.REQUEST)
-    if form.is_valid():
-        pass
-    form.cleaned_data['group'] = str(wg.group_acronym.acronym)
-    form.cleaned_data['activeDrafts'] = True
-    form.cleaned_data['rfcs'] = True
-    #form.cleaned_data['oldDrafts'] = True
+    form = SearchForm({'by':'group', 'group':str(wg.group_acronym.acronym),
+                       'rfcs':'on', 'activeDrafts':'on'})
+    if not form.is_valid():
+        raise ValueError("form did not validate")
     (docs,meta) = search_query(form.cleaned_data)
     return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'selected':'documents', 'docs':docs, 'meta':meta}, RequestContext(request))
 
