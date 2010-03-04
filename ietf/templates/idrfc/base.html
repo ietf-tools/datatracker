@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <head>
 <!-- v{{version_num}}, {{ revision_num }}, {{ revision_time }} -->
 <title>{% block title %}No title{% endblock %}{% if server_mode %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}{% endif %}</title>
-<link rel="stylesheet" type="text/css" href="/css/yui/yui.css"></link>
+<link rel="stylesheet" type="text/css" href="/css/yui/yui-20100305.css"></link>
 <link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
 <style type="text/css">
 {% block morecss %}{% endblock %}
@@ -78,7 +78,7 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 {% block content %}
 {% endblock %}
 
-<script type="text/javascript" src="/js/yui/yui.js"></script> 
+<script type="text/javascript" src="/js/yui/yui-20100305.js"></script> 
 <script type="text/javascript">
 //<![CDATA[
 YAHOO.util.Event.onContentReady("wgs", function () {

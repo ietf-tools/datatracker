@@ -34,10 +34,10 @@ unless (-d 'images/yui' && -d 'js/yui' && -d 'css/yui') {
     die "run this script under /static/\n";
 }
 
-# From: http://developer.yahoo.com/yui/articles/hosting/?button&connection&container&event&fonts&menu&tabview&yahoo&MIN&norollup
+# From: http://developer.yahoo.com/yui/articles/hosting/?button&connection&container&cookie&event&fonts&menu&tabview&yahoo&MIN&norollup
 
 $css_url = 'http://yui.yahooapis.com/combo?2.8.0r4/build/fonts/fonts-min.css&2.8.0r4/build/container/assets/skins/sam/container.css&2.8.0r4/build/menu/assets/skins/sam/menu.css&2.8.0r4/build/button/assets/skins/sam/button.css&2.8.0r4/build/tabview/assets/skins/sam/tabview.css';
-$js_url = 'http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo/yahoo-min.js&2.8.0r4/build/event/event-min.js&2.8.0r4/build/connection/connection-min.js&2.8.0r4/build/dom/dom-min.js&2.8.0r4/build/container/container-min.js&2.8.0r4/build/menu/menu-min.js&2.8.0r4/build/element/element-min.js&2.8.0r4/build/button/button-min.js&2.8.0r4/build/tabview/tabview-min.js';
+$js_url = 'http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo/yahoo-min.js&2.8.0r4/build/event/event-min.js&2.8.0r4/build/connection/connection-min.js&2.8.0r4/build/dom/dom-min.js&2.8.0r4/build/container/container-min.js&2.8.0r4/build/menu/menu-min.js&2.8.0r4/build/element/element-min.js&2.8.0r4/build/button/button-min.js&2.8.0r4/build/cookie/cookie-min.js&2.8.0r4/build/tabview/tabview-min.js';
 
 $cmd = "wget '$css_url' -O css/yui/yui-original.css";
 print $cmd; system $cmd;
