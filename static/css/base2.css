@@ -72,9 +72,10 @@ body { margin: 0; }
 #search_form_box {width: 99.5%; border: 0px solid #cccccc; background:#edf5ff;margin-top:8px; padding:4px; margin-bottom:1em; padding-left:8px;}
 form#search_form { padding-top: 4px; padding-bottom: 4px; }
 #search_form input { padding: 0; padding-left: 2px; border: 1px solid #89d;}
+#search_form input.radio { padding-left: 0; border: 0; }
 #search_form select {  border: 1px solid #89d; }
-#search_form div.search_field { margin-top:2px; }
-#search_form label { width: 130px; float: left; }
+#search_form div.search_field { margin-top:2px; clear:both;}
+#search_form label { width: 170px; float: left; }
 /* checkboxes for document types */
 #search_form table#search_types { border-collapse:collapse;}
 #search_form #search_types td { padding:0; }

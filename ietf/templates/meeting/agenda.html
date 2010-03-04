@@ -1,31 +1,53 @@
-{% extends "base.html" %}
+{% extends "idrfc/base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
-{% block title %} Meeting Agenda of the {{ meeting.num|ordinal }} IETF Meeting{% endblock %}
-{% block head %}
-  <link href="http://tools.ietf.org/css/palette.css"  rel="stylesheet" type="text/css" />
-  <script language='javascript' src='http://tools.ietf.org/js/prototype-1.6.0.2.js'></script>
-  <script language='javascript' src='/js/agenda.js'></script>
-{% endblock %}
-{% block body_attributes %}onload='set_cookie_colors()'{% endblock %}
+{% block title %}IETF {{ meeting.num }} Meeting Agenda{% endblock %}
+
+{% block morecss %}
+table#agenda { border: 0; border-collapse:collapse; }
+tr.meeting-date td { padding-top:1em; }
+#agenda td { padding-right:2em; }
+.ietf-agenda-palette { border-collapse:collapse; border:2px solid black; background:white;}
+.ietf-agenda-palette td { border:1px solid black; }
+.ietf-agenda-palette td { padding: 4px; text-align:center;}
+.ietf-agenda-palette td a { text-decoration:none; }
+.bgnone {}
+.bgaqua, .bgaqua a { background-color: aqua; color: black; }
+.bgblue, .bgblue a { background-color: blue; color: black; }
+.bgfuchsia, .bgfuchsia a { background-color: fuchsia; color: black; }
+.bggray, .bggray a { background-color: gray; color: white; }
+.bggreen, .bggreen a { background-color: green; color: white; }
+.bglime, .bglime a { background-color: lime; color: black; }
+.bgmaroon, .bgmaroon a { background-color: maroon; color: white; }
+.bgnavy, .bgnavy a { background-color: navy; color: white; }
+.bgolive, .bgolive a { background-color: olive; color: white; }
+.bgpurple, .bgpurple a { background-color: purple; color: white; }
+.bgred, .bgred a { background-color: red; color: black; }
+.bgsilver, .bgsilver a { background-color: silver; color: black; }
+.bgteal, .bgteal a { background-color: teal; color: white; }
+.bgwhite, .bgwhite a { background-color: white; color: black; }
+.bgyellow, .bgyellow a { background-color: yellow; color: black; }
+.bgblack, .bgblack a { background-color: black; color: white; }
+{% endblock morecss %}
+
+{% block pagehead %}
+<script language='javascript' src='/js/agenda2.js'></script>
+{% endblock pagehead %}
+{% block bodyAttrs %}onload='updateAgendaColors()'{% endblock %}
 {% block content %}
-<span id='colorpallet'></span>
-<p style="text-align: center">
-Agenda of the {{ meeting.num|ordinal }} IETF Meeting<br />
-{{ meeting.start_date|date:"F j" }}-{% ifnotequal meeting.start_date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}<br />
+<h1>IETF {{ meeting.num }} Meeting Agenda</h1>
+<p>{{ meeting.city }}, {{ meeting.start_date|date:"F j" }}-{% ifnotequal meeting.start_date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}<br />
 Updated {{ update.updated|date:"Y-m-d H:i:s T" }}<br />
-(There's also a <a href="/meeting/{{meeting.num}}/agenda.txt">plaintext agenda</a> and a <a href="http://tools.ietf.org/agenda/{{meeting.num}}/">tools-style agenda</a> available)<br />
-<br />
-IETF agendas are subject to change, up to and during the meeting.<br />
-</p>
+(There's also a <a href="/meeting/{{meeting.num}}/agenda.txt">plaintext agenda</a> and a <a href="http://tools.ietf.org/agenda/{{meeting.num}}/">tools-style agenda</a> available)</p>
+
+<p><strong>IETF agendas are subject to change, up to and during the meeting.</strong></p>
 
 <table id="agenda">
 {% for slot in timeslots %}
    {% ifchanged  %}
-      <tr>
+      <tr class="meeting-date">
 	 <td colspan="4">
-	    <hr />
-	    <h4>{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}</h4>
+	   <h2 class="ietf-divider">{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}</h2>
 	 </td>
       </tr>
       {% if slot.reg_info %}
@@ -68,6 +90,7 @@ IETF agendas are subject to change, up to and during the meeting.<br />
 	 <td>{{ session.info.area|upper}}</td>
 	 <td>{% if session.info.isWG %}<a href="http://www.ietf.org/dyn/wg/charter/{{ session.info.acronym|lower }}-charter.html">{{ session.info.acronym|lower }}</a>{% else %}{{ session.info.acronym|lower }}{% endif %}</td>
 	 <td>
+            <img src="/images/color-palette-4x4.gif" alt="" onclick="pickAgendaColor('{{meeting.num}}-{{slot.meeting_date|date:"D"|lower}}-{{slot.time_desc|slice:":4"}}-{{session.info.acronym|lower}}',this);"/>
 	    {% if session.info.agenda_file %}<a href="http://www3.ietf.org/proceedings/{{ session.info.agenda_file }}">{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}</a>{% else %}{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}{% endif %}
 	    {% if session.info.special_agenda_note %}<br/> - {{ session.info.special_agenda_note }}{% endif %}
 	 </td>
@@ -85,23 +108,10 @@ IETF agendas are subject to change, up to and during the meeting.<br />
       {% endfor %}
    {% endif %}
 {% endfor %}
-<tr><td colspan="4"><hr /></td></tr>
-<tr><td colspan="4" style="text-align: center"><b>AREA DIRECTORS</b></td></tr>
-<tr><td colspan="4">
-<table>
-{% regroup ads by area as grouped %}{% for ad in grouped %}
-<tr valign="top">
-  <td>{{ ad.grouper|upper }}</td>
-  <td>{{ ad.list.0.area.area_acronym.name }}</td>
-  <td>
-  {% for ad_person in ad.list %}
-    {% ifequal forloop.counter 2 %} &amp; {% endifequal %}
-    {{ ad_person.person }}/{{ ad_person.person.affiliation }} 
-  {% endfor %}
-  </td>
-</tr>
-{% endfor %}
 </table>
-</td></tr>
-</table>
+
+{% endblock %}
+{% block scripts %}
+
+
 {% endblock %}
