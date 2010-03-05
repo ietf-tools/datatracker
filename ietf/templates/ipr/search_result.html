@@ -1,13 +1,11 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "base.html" %}
+{% extends "idrfc/base.html" %}
+{% block morecss %}
+{% endblock %}
 {% block doctype %}{% endblock %}
 {% block title %}IPR Search Result{% endblock %}
 {% block content %}
-	 <center>
-	    <h2>IPR Disclosures</h2>
-	 </center>
-	 <hr>
-	 <blockquote>
+<h1>IPR Disclosures</h1>
 	    {% block search_result %}
 	    <table cellpadding="1" cellspacing="0" border="0">
 
@@ -21,7 +19,7 @@
 		  <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
 		  {% block iprlist %}
 		     {% for ipr in iprs %}
-		     <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
+		     <tbody bgcolor="#{% cycle eeeeee,dddddd as bgcolor %}">
 			<tr valign="top">
 			   <td colspan="3">
 			      {% block intro_prefix %}IPR that was submitted by <b><i>{{ q }}</i></b>, and{% endblock %}
@@ -64,9 +62,8 @@
 	    {% endblock %}
 	    <hr><br>
 
-	    <a href="{% url ietf.ipr.search.search %}"><img src="/images/blue.gif" hspace="3" border="0">IPR Search Main Page</a><br>
-	    <a href="{% url ietf.ipr.views.showlist %}"><img src="/images/blue.gif" hspace="3" border="0">IPR Disclosure Page</a>
+	    <a href="{% url ietf.ipr.search.search %}">IPR Search Main Page</a><br>
+	    <a href="{% url ietf.ipr.views.showlist %}">IPR Disclosure Page</a>
 	    <br>
-	 </blockquote>
 {% endblock %}
 
