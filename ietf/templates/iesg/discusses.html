@@ -56,7 +56,7 @@ Show: <input type="radio" name="discuss_show" checked="checked" value="all" id="
 <table class="ietf-table ietf-doctable">
 <tr><th class="doc">Document</th><th class="status" colspan="2">Status</th><th class="ad">Area Director</th><th>Discusses</th></tr>
 {% for doc in docs %}
-<tr{% if user|in_group:"Area_Director" %} class="{% if doc|my_position:user|equal:"Discuss" %}discuss_byme{% else %}discuss_notbyme{% endif %} {% ifequal user.get_profile.person|lower doc.ad_name|lower %}discuss_forme{%else%}discuss_notforme{%endifequal%}"{% endif %}>
+<tr class="discuss_row {% cycle oddrow,evenrow %} {% if user|in_group:"Area_Director" %}{% if doc|my_position:user|equal:"Discuss" %}discuss_byme{% else %}discuss_notbyme{% endif %} {% ifequal user.get_profile.person|lower doc.ad_name|lower %}discuss_forme{%else%}discuss_notforme{%endifequal%}{% endif %}">
 <td class="doc">
 {% if doc.is_rfc_wrapper %}
 <a href="/doc/rfc{{doc.rfc_number}}/">RFC {{doc.rfc_number}}</a>
@@ -79,6 +79,20 @@ Show: <input type="radio" name="discuss_show" checked="checked" value="all" id="
 
 {% block scripts %}
 {% if user|in_group:"Area_Director" %}
+function update_even_odd() {
+  var els = YAHOO.util.Dom.getElementsByClassName("discuss_row","tr");
+  var j = 1;
+  for (var i = 0; i < els.length; i++) { 
+    if (!YAHOO.util.Dom.hasClass(els[i], "discuss_hidden")) {
+      if ((j % 2) == 1) {
+        YAHOO.util.Dom.replaceClass(els[i], "evenrow", "oddrow"); 
+      } else {
+        YAHOO.util.Dom.replaceClass(els[i], "oddrow", "evenrow"); 
+      }
+      j++;
+    }
+  }
+}
 function radio_changed() {
   var els1 = YAHOO.util.Dom.getElementsByClassName("discuss_notbyme","tr");
   YAHOO.util.Dom.removeClass(els1, "discuss_hidden");
@@ -93,6 +107,7 @@ function radio_changed() {
   } else {
     location.hash = "#";
   }
+  update_even_odd();
 }
 var url = location.href.split('#'); 
 if (url[1] == 'byme') {
