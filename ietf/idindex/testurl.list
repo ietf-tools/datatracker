@@ -1,25 +1,18 @@
 301	/drafts/wgid/1041/	
-200	/drafts/wg/idr/		
-200	/drafts/wg/I/		
+404	/drafts/wgid/987654/	
+301	/drafts/wg/idr/		
 301	/drafts/rfc/
 301	/drafts/current/	
 301	/drafts/all/		
 301	/drafts/dead/		
 301	/drafts/9574/related/	
-200	/drafts/draft-ietf-dnsext-dnssec-protocol/related/
 301	/drafts/9574/		
-200	/drafts/draft-ietf-dnsext-dnssec-protocol/	
-200	/drafts/draft-ietf-dnsext-dnssec-protocol/	
-200	/drafts/draft-shockey-enum-cnam/ # non-ASCII title and abstract
+301	/drafts/draft-ietf-dnsext-dnssec-protocol/related/
+301	/drafts/draft-ietf-dnsext-dnssec-protocol/	
+404	/drafts/987654/
 301	/drafts/all_id_txt.html
 301	/drafts/all_id.html
-200	/drafts/		
-200	/drafts/wg/11/
-200	/drafts/?filename=mobike
-200	/drafts/?first_name=joe
-200	/drafts/?other_group=irtf
-200	/drafts/?wg_id=1682
-200	/drafts/?filename=%EF%BD%8C #non-ASCII
+301	/drafts/		
 200,heavy	/drafts/_test/all_id.txt
 200,heavy	/drafts/_test/id_index.txt
 200,heavy	/drafts/_test/id_abstracts.txt

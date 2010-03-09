@@ -9,7 +9,7 @@
 <p>
    {{ draft.filename }} is an {{ draft.status.status|lower }} Internet Draft, but there
    is no IESG tracking information available for it.  The
-   <a href="{% url ietf.idindex.views.view_id draft.filename %}">Internet-Drafts Database Index</a>
+   <a href="/doc/{{draft.filename}}/">Internet-Drafts Database Index</a>
    has the status information which is available on this document.
 </p>
 

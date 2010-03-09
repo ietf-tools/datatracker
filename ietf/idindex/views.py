@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-# Portions Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+# Portions Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,103 +33,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django.http import HttpResponse, HttpResponsePermanentRedirect
-from django.views.generic.list_detail import object_list
-from django.db.models import Q
-from django.http import Http404
-from django.template import RequestContext, loader
-from django.shortcuts import render_to_response, get_object_or_404
-from django.core.urlresolvers import reverse
-from django.views.generic.list_detail import object_detail
+from django.template import loader
+from django.shortcuts import get_object_or_404
 from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, Rfc, IDInternal
-from ietf.idindex.forms import IDIndexSearchForm
-from ietf.idindex.models import alphabet, orgs, orgs_dict
-from ietf.utils import orl, flattenl, normalize_draftname
-
-base_extra = { 'alphabet': alphabet }
-
-def wgdocs_redir(request, id):
-    group = get_object_or_404(Acronym, acronym_id=id)
-    return HttpResponsePermanentRedirect(reverse(wgdocs, urlconf="ietf.idindex.urls", args=[group.acronym]))
-
-def wgdocs(request, wg):
-    try:
-	group = Acronym.objects.get(acronym=wg)
-    except Acronym.DoesNotExist:	# try a search
-	if wg == 'other':
-	    queryset = IETFWG.objects.filter(
-		orl([Q(group_acronym__acronym__istartswith="%d" % i) for i in range(0,10)])
-		)
-	else:
-	    queryset = IETFWG.objects.filter(group_acronym__acronym__istartswith=wg)
-	queryset = queryset.filter(group_type__type='WG').select_related().order_by('status', 'acronym.acronym')
-	extra = base_extra.copy()
-	extra['search'] = wg
-	return object_list(request, queryset=queryset, template_name='idindex/wglist.html', allow_empty=True, extra_context=extra)
-    queryset = InternetDraft.objects.filter(group__acronym=wg)
-    queryset = queryset.order_by('status', 'filename')
-    extra = base_extra.copy()
-    extra['group'] = group
-    return object_list(request, queryset=queryset, template_name='idindex/wgdocs.html', allow_empty=True, extra_context=extra)
-
-def search(request):
-    args = request.GET.copy()
-    if args.has_key('filename'):
-	args['filename'] = normalize_draftname(args['filename'])
-    form = IDIndexSearchForm()
-    t = loader.get_template('idindex/search.html')
-    # if there's a query, do the search and supply results to the template
-    searching = False
-    qdict = { 'filename': 'filename__icontains',
-	      'id_tracker_state_id': 'idinternal__cur_state',
-	      'wg_id': 'group',
-	      'status_id': 'status',
-	      'last_name': 'authors__person__last_name__icontains',
-	      'first_name': 'authors__person__first_name__icontains',
-	    }
-    for key in qdict.keys() + ['other_group']:
-	if key in args:
-	    searching = True
-    if searching:
-        # Non-ASCII strings don't match anything; this check
-        # is currently needed to avoid complaints from MySQL.
-        for k in ['filename','last_name','first_name']:
-            try:
-                tmp = str(args.get(k, ''))
-            except:
-                args[k] = '*NOSUCH*'
-        
-	# '0' and '-1' are flag values for "any"
-	# in the original .cgi search page.
-	# They are compared as strings because the
-	# query dict is always strings.
-	q_objs = [Q(**{qdict[k]: args[k]})
-		for k in qdict.keys()
-		if args.get(k, '') != '' and
-		   args[k] != '0' and
-		   args[k] != '-1']
-	try:
-	    other = orgs_dict[args['other_group']]
-	    q_objs += [orl(
-		[Q(filename__istartswith="draft-%s-" % p)|
-		 Q(filename__istartswith="draft-ietf-%s-" % p)
-		    for p in other.get('prefixes', [ other['key'] ])])]
-	except KeyError:
-	    pass	# either no other_group arg or no orgs_dict entry
-	matches = InternetDraft.objects.all().filter(*q_objs)
-	matches = matches.order_by('status', 'filename')
-	searched = True
-    else:
-	matches = None
-        searched = False
-
-    c = RequestContext(request, {
-	'form': form,
-	'object_list': matches,
-	'didsearch': searched,
-	'alphabet': alphabet,
-	'orgs': orgs,
-    })
-    return HttpResponse(t.render(c))
 
 def all_id_txt():
     all_ids = InternetDraft.objects.order_by('filename')
@@ -215,25 +121,18 @@ def related_docs(startdoc):
     process(startdoc, (0,0,0))
     return related
 
-def redirect_related(request, id):
-    doc = get_object_or_404(InternetDraft, id_document_tag=id)
-    return HttpResponsePermanentRedirect(reverse(view_related_docs, urlconf="ietf.idindex.urls", args=[doc.filename]))
-
-def view_related_docs(request, slug):
-    startdoc = get_object_or_404(InternetDraft, filename=slug)
-    related = related_docs(startdoc)
-    context = {'related': related, 'numdocs': len(related), 'startdoc': startdoc}
-    context.update(base_extra)
-    return render_to_response("idindex/view_related_docs.html", context,
-		context_instance=RequestContext(request))
-
 def redirect_id(request, object_id):
     '''Redirect from historical document ID to preferred filename url.'''
     doc = get_object_or_404(InternetDraft, id_document_tag=object_id)
     return HttpResponsePermanentRedirect("/doc/"+doc.filename+"/")
 
-# Wrapper around object_detail to give permalink a handle.
-# The named-URLs feature in django 0.97 will eliminate the
-# need for these.
-def view_id(*args, **kwargs):
-    return object_detail(*args, **kwargs)
+def redirect_filename(request, filename):
+    return HttpResponsePermanentRedirect("/doc/"+filename+"/")
+
+def wgdocs_redirect_id(request, id):
+    group = get_object_or_404(Acronym, acronym_id=id)
+    return HttpResponsePermanentRedirect("/wg/"+group.acronym+"/")
+
+def wgdocs_redirect_acronym(request, acronym):
+    return HttpResponsePermanentRedirect("/wg/"+acronym+"/")
+

@@ -2,32 +2,19 @@
 
 from django.conf import settings
 from django.conf.urls.defaults import patterns
-from ietf.idtracker.models import InternetDraft
 from ietf.idindex import views
-from ietf.idindex.views import alphabet, orgs
-
-info_dict = {
-    'queryset': InternetDraft.objects.all(),
-    'template_name': 'idindex/internetdraft_detail.html',
-    'extra_context': {
-	'alphabet': alphabet,
-	'orgs': orgs,
-    }
-}
 
 urlpatterns = patterns('',
-     (r'^wgid/(?P<id>\d+)/$', views.wgdocs_redir),
-     (r'^wg/(?P<wg>[^/]+)/$', views.wgdocs),
+     (r'^$', 'django.views.generic.simple.redirect_to', { 'url': '/doc/'}),
+     (r'^(?P<object_id>\d+)/(related/)?$', views.redirect_id),
+     (r'^(?P<filename>[^/]+)/(related/)?$', views.redirect_filename),
+     (r'^wgid/(?P<id>\d+)/$', views.wgdocs_redirect_id),
+     (r'^wg/(?P<acronym>[^/]+)/$', views.wgdocs_redirect_acronym),
      (r'^all/$', 'django.views.generic.simple.redirect_to', { 'url': '/doc/all/'}),
      (r'^rfc/$', 'django.views.generic.simple.redirect_to', { 'url': '/doc/all/#rfc'}),
      (r'^dead/$', 'django.views.generic.simple.redirect_to', { 'url': '/doc/all/#dead'}),
      (r'^current/$', 'django.views.generic.simple.redirect_to', { 'url': '/doc/active/'}),
-     (r'^(?P<id>\d+)/related/$', views.redirect_related),
-     (r'^(?P<slug>[^/]+)/related/$', views.view_related_docs),
-     (r'^(?P<object_id>\d+)/$', views.redirect_id),
-     (r'^(?P<slug>[^/]+)/$', views.view_id, dict(info_dict, slug_field='filename')),
      (r'^all_id(?:_txt)?.html$', 'django.views.generic.simple.redirect_to', { 'url': 'http://www.ietf.org/id/all_id.txt' }),
-     (r'^$', views.search),
 )
 
 if settings.SERVER_MODE != 'production':
