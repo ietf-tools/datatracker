@@ -71,6 +71,9 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 <div class="ietf-navbar">
 {% include "idrfc/base_leftmenu.html" %}
 </div>
+<div style="padding-left: 12px;padding-top:4px;font-size:69%;">
+{{ version_num }} {{revision_date}}
+</div>
 </td>
 <td>
 
