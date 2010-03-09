@@ -95,10 +95,14 @@ def show(request, ipr_id=None, removed=None):
         ipr.is_pending = dict(SELECT_CHOICES)[ipr.is_pending]
     if ipr.applies_to_all:
         ipr.applies_to_all = dict(SELECT_CHOICES)[ipr.applies_to_all]
-    if ipr.legacy_url_0 and ipr.legacy_url_0.startswith("http://www.ietf.org/") and not ipr.legacy_url_0.endswith(".pdf"):
-        file = open(os.path.join(settings.IPR_DOCUMENT_PATH, os.path.basename(ipr.legacy_url_0)))
-        ipr.legacy_text = file.read().decode("latin-1")
-        file.close()
+    if ipr.legacy_url_0 and ipr.legacy_url_0.startswith("http://www.ietf.org/") and not ipr.legacy_url_0.endswith((".pdf",".doc",".html")):
+        try:
+            file = open(os.path.join(settings.IPR_DOCUMENT_PATH, os.path.basename(ipr.legacy_url_0)))
+            ipr.legacy_text = file.read().decode("latin-1")
+            file.close()
+        except:
+            # if file does not exist, iframe is used instead
+            pass
     return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list},
                     context_instance=RequestContext(request))
 
