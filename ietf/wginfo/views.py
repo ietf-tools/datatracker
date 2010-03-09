@@ -76,14 +76,16 @@ def wg_charters_by_acronym(request):
 from ietf.idrfc.views_search import SearchForm, search_query
 
 def wg_documents(request, acronym):
-    wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym)
+    wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
+    concluded = (wg.status != 1)
     form = SearchForm({'by':'group', 'group':str(wg.group_acronym.acronym),
                        'rfcs':'on', 'activeDrafts':'on'})
     if not form.is_valid():
         raise ValueError("form did not validate")
     (docs,meta) = search_query(form.cleaned_data)
-    return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'selected':'documents', 'docs':docs, 'meta':meta}, RequestContext(request))
+    return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs, 'meta':meta}, RequestContext(request))
 
 def wg_charter2(request, acronym):
-    wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym)
-    return render_to_response('wginfo/wg_charter.html', {'wg': wg, 'selected':'charter'}, RequestContext(request))
+    wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
+    concluded = (wg.status != 1)
+    return render_to_response('wginfo/wg_charter.html', {'wg': wg, 'concluded':concluded, 'selected':'charter'}, RequestContext(request))
