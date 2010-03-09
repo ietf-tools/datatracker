@@ -5,9 +5,10 @@
 
 {% block morecss %}
 table#agenda { border: 0; border-collapse:collapse; }
-tr.meeting-date td { padding-top:1em; }
 #agenda td { padding-right:2em; }
-.ietf-agenda-palette { border-collapse:collapse; border:2px solid black; background:white;}
+#agenda tr.meeting-date td { padding-top:1em; padding-right:0;}
+
+.ietf-agenda-palette { border-collapse:collapse; border:2px solid black; background:white; overflow:hidden; }
 .ietf-agenda-palette td { border:1px solid black; }
 .ietf-agenda-palette td { padding: 4px; text-align:center;}
 .ietf-agenda-palette td a { text-decoration:none; }
