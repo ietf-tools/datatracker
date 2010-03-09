@@ -1,4 +1,4 @@
-# Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+# Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,8 @@ class RfcEditorQueue(models.Model):
     # this field will be NULL (but we could get it from other sources)
     state_date = models.DateField(blank=True,null=True)
     stream = models.IntegerField(choices=STREAM_CHOICES)
+    auth48_url =  models.CharField(max_length=200, blank=True, null=True)
+    rfc_number = models.IntegerField(null=True)
     def __str__(self):
         return "RfcEditorQueue"+str([self.draft, self.date_received, self.state, self.state_date, self.stream])
     class Meta:
@@ -74,6 +76,9 @@ class RfcIndex(models.Model):
     also = models.CharField(max_length=50,blank=True,null=True)
     draft = models.CharField(max_length=200,null=True)
     has_errata = models.BooleanField()
+    stream = models.CharField(max_length=15,blank=True,null=True)
+    wg = models.CharField(max_length=15,blank=True,null=True)
+    file_formats = models.CharField(max_length=20,blank=True,null=True)
     def __str__(self):
         return "RfcIndex"+str(self.rfc_number)
     class Meta:
