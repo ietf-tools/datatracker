@@ -49,8 +49,6 @@ from ietf.idtracker.models import Acronym
 #        db_table = 'telechat_minutes'
 #        verbose_name = "Telechat Minute Text"
 #        verbose_name_plural = "Telechat Minutes"
-#    class Admin:
-#	pass
 
 class TelechatDates(models.Model):
     date1 = models.DateField(primary_key=True, null=True, blank=True)
@@ -74,8 +72,6 @@ class TelechatDates(models.Model):
     class Meta:
         db_table = "telechat_dates"
         verbose_name = "Next Telechat Date"
-    class Admin:
-        pass
 
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
@@ -93,8 +89,6 @@ class TelechatAgendaItem(models.Model):
     #decision = models.TextField(null=True,blank=True)
     class Meta:
         db_table = 'templates'
-    class Admin:
-        pass
 
 class WGAction(models.Model):
     CATEGORY_CHOICES = (
@@ -118,8 +112,3 @@ class WGAction(models.Model):
         db_table = 'group_internal'
         ordering = ['-telechat_date']
         verbose_name = "WG Action"
-    class Admin:
-        pass
-
-
-# changes done by convert-096.py:changed maxlength to max_length

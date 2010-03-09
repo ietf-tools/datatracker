@@ -44,8 +44,6 @@ class IprSelecttype(models.Model):
 	return self.type_display
     class Meta:
         db_table = 'ipr_selecttype'
-    class Admin:
-	pass
 
 class IprLicensing(models.Model):
     licensing_option = models.AutoField(primary_key=True)
@@ -54,8 +52,6 @@ class IprLicensing(models.Model):
 	return self.value;
     class Meta:
         db_table = 'ipr_licensing'
-    class Admin:
-	pass
 
 
 class IprDetail(models.Model):
@@ -128,8 +124,6 @@ class IprDetail(models.Model):
 	    return None
     class Meta:
         db_table = 'ipr_detail'
-    class Admin:
-	pass
 
 class IprContact(models.Model):
     TYPE_CHOICES = (
@@ -152,11 +146,6 @@ class IprContact(models.Model):
 	return self.name or '<no name>'
     class Meta:
         db_table = 'ipr_contacts'
-    class Admin:
-	# would like contact_type
-	list_display = ('__str__', 'ipr')
-	pass
-    
 
 
 class IprDraft(models.Model):
@@ -167,8 +156,6 @@ class IprDraft(models.Model):
 	return "%s which applies to %s-%s" % ( self.ipr, self.document, self.revision )
     class Meta:
         db_table = 'ipr_ids'
-    class Admin:
-	pass
 
 class IprNotification(models.Model):
     ipr = models.ForeignKey(IprDetail)
@@ -179,8 +166,6 @@ class IprNotification(models.Model):
 	return "IPR notification for %s sent %s %s" % (self.ipr, self.date_sent, self.time_sent)
     class Meta:
         db_table = 'ipr_notifications'
-    class Admin:
-	pass
 
 class IprRfc(models.Model):
     ipr = models.ForeignKey(IprDetail, related_name='rfcs')
@@ -189,8 +174,6 @@ class IprRfc(models.Model):
 	return "%s applies to RFC%04d" % ( self.ipr, self.document_id )
     class Meta:
         db_table = 'ipr_rfcs'
-    class Admin:
-	pass
 
 class IprUpdate(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -200,8 +183,6 @@ class IprUpdate(models.Model):
     processed = models.IntegerField(null=True, blank=True)
     class Meta:
         db_table = 'ipr_updates'
-    class Admin:
-	pass
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core

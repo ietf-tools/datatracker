@@ -148,9 +148,6 @@ class Meeting(models.Model):
         return self.meeting_num
     class Meta:
         db_table = 'meetings'
-    class Admin:
-        list_display= ('meeting_num', 'start_date', 'city', 'state', 'country', 'time_zone')
-	pass
 
 class MeetingVenue(models.Model):
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
@@ -160,8 +157,6 @@ class MeetingVenue(models.Model):
 	return "IETF %s" % (self.meeting_num_id)
     class Meta:
         db_table = 'meeting_venues'
-    class Admin:
-	pass
 
 class NonSessionRef(models.Model):
     name = models.CharField(max_length=255)
@@ -169,8 +164,6 @@ class NonSessionRef(models.Model):
 	return self.name
     class Meta:
         db_table = 'non_session_ref'
-    class Admin:
-        pass
 
 class NonSession(models.Model):
     non_session_id = models.AutoField(primary_key=True)
@@ -186,8 +179,6 @@ class NonSession(models.Model):
 	    return "** %s %s @%s" % (self.time_desc, self.non_session_ref, self.meeting_id)
     class Meta:
 	db_table = 'non_session'
-    class Admin:
-        pass
 
 class Proceeding(models.Model):
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True, primary_key=True)
@@ -203,8 +194,6 @@ class Proceeding(models.Model):
     class Meta:
         db_table = 'proceedings'
 	ordering = ['?']	# workaround for FK primary key
-    #class Admin:
-    #    pass		# admin site doesn't like something about meeting_num
 
 class SessionConflict(models.Model):
     group_acronym = models.ForeignKey(Acronym, related_name='conflicts_set')
@@ -214,8 +203,6 @@ class SessionConflict(models.Model):
 	return "At IETF %s, %s conflicts with %s" % ( self.meeting_num_id, self.group_acronym.acronym, self.conflict_gid.acronym)
     class Meta:
         db_table = 'session_conflicts'
-    class Admin:
-	pass
 
 class SessionName(models.Model):
     session_name_id = models.AutoField(primary_key=True)
@@ -224,8 +211,7 @@ class SessionName(models.Model):
 	return self.session_name
     class Meta:
         db_table = 'session_names'
-    class Admin:
-	pass
+
 class IESGHistory(models.Model):
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     area = models.ForeignKey(Area, db_column='area_acronym_id')
@@ -234,8 +220,6 @@ class IESGHistory(models.Model):
         return "%s (%s)" % (self.person,self.area)
     class Meta:
         db_table = 'iesg_history'
-    class Admin:
-        pass
     
 class MeetingTime(models.Model):
     time_id = models.AutoField(primary_key=True)
@@ -297,8 +281,6 @@ class MeetingTime(models.Model):
         return self.session_name_id in [9, 10]
     class Meta:
         db_table = 'meeting_times'
-    class Admin:
-	pass
 
 class MeetingRoom(models.Model):
     room_id = models.AutoField(primary_key=True)
@@ -308,8 +290,6 @@ class MeetingRoom(models.Model):
 	return "[%d] %s" % (self.meeting_id, self.room_name)
     class Meta:
         db_table = 'meeting_rooms'
-    class Admin:
-	pass
 
 class WgMeetingSession(models.Model, ResolveAcronym):
     session_id = models.AutoField(primary_key=True)
@@ -418,8 +398,6 @@ class WgMeetingSession(models.Model, ResolveAcronym):
             return False
     class Meta:
         db_table = 'wg_meeting_sessions'
-    class Admin:
-	pass
     _dirs = {}
 
 class WgAgenda(models.Model, ResolveAcronym):
@@ -432,8 +410,6 @@ class WgAgenda(models.Model, ResolveAcronym):
 	return "Agenda for %s at IETF %s" % (self.acronym(), self.meeting_id)
     class Meta:
         db_table = 'wg_agenda'
-    class Admin:
-	pass
 
 class Minute(models.Model, ResolveAcronym):
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
@@ -445,8 +421,6 @@ class Minute(models.Model, ResolveAcronym):
 	return "Minutes for %s at IETF %s" % (self.acronym(), self.meeting_id)
     class Meta:
         db_table = 'minutes'
-    class Admin:
-	pass
 
 # It looks like Switches was meant for something bigger, but
 # is only used for the agenda generation right now so we'll
@@ -462,8 +436,6 @@ class Switches(models.Model):
 	return self.name
     class Meta:
         db_table = 'switches'
-    class Admin:
-	pass
 
 # Empty table, don't pretend that it exists.
 #class SlideTypes(models.Model):
@@ -473,8 +445,6 @@ class Switches(models.Model):
 #	return self.type
 #    class Meta:
 #        db_table = 'slide_types'
-#    class Admin:
-#	pass
 
 class Slide(models.Model, ResolveAcronym):
     SLIDE_TYPE_CHOICES=(
@@ -514,8 +484,6 @@ class Slide(models.Model, ResolveAcronym):
             return "%s/slides/%s-%s%s" % (dir,self.acronym(),self.slide_num,ext)
     class Meta:
         db_table = 'slides'
-    class Admin:
-	pass
 
 class WgProceedingsActivities(models.Model, ResolveAcronym):
     id = models.AutoField(primary_key=True)
@@ -534,8 +502,6 @@ class WgProceedingsActivities(models.Model, ResolveAcronym):
         return "this is WgProceedingsActivities.__str__"
     class Meta:
         db_table = 'wg_proceedings_activities'
-    class Admin:
-	pass
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core

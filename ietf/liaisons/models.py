@@ -11,8 +11,6 @@ class LiaisonPurpose(models.Model):
 	return self.purpose_text
     class Meta:
         db_table = 'liaison_purpose'
-    class Admin:
-	pass
 
 class FromBodies(models.Model):
     from_id = models.AutoField(primary_key=True)
@@ -25,8 +23,6 @@ class FromBodies(models.Model):
 	return self.body_name
     class Meta:
         db_table = 'from_bodies'
-    class Admin:
-	pass
 
 class LiaisonDetail(models.Model):
     detail_id = models.AutoField(primary_key=True)
@@ -93,8 +89,6 @@ class LiaisonDetail(models.Model):
 	return '/liaison/%d/' % self.detail_id
     class Meta:
         db_table = 'liaison_detail'
-    class Admin:
-	pass
 
 # This table is not used by any code right now, and according to Glen,
 # probably not currently (Aug 2009) maintained by the secretariat.
@@ -110,8 +104,6 @@ class LiaisonDetail(models.Model):
 #	    return None
 #    class Meta:
 #        db_table = 'sdos'
-#    class Admin:
-#	pass
 
 # This table is not used by any code right now, and according to Glen,
 # probably not currently (Aug 2009) maintained by the secretariat.
@@ -138,8 +130,6 @@ class LiaisonDetail(models.Model):
 #	return self.title
 #    class Meta:
 #        db_table = 'liaisons_interim'
-#    class Admin:
-#	pass
 
 class Uploads(models.Model):
     file_id = models.AutoField(primary_key=True)
@@ -159,8 +149,6 @@ class Uploads(models.Model):
 #    email_priority = models.IntegerField(null=True, blank=True)
 #    class Meta:
 #        db_table = 'sdo_chairs'
-#    class Admin:
-#	pass
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core

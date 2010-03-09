@@ -20,9 +20,6 @@ class Acronym(models.Model):
         return self.acronym
     class Meta:
         db_table = "acronym"
-    class Admin:
-        list_display = ('acronym', 'name')
-        pass
 
 class AreaStatus(models.Model):
     status_id = models.AutoField(primary_key=True)
@@ -31,8 +28,6 @@ class AreaStatus(models.Model):
 	return self.status
     class Meta:
         db_table = 'area_status'
-    class Admin:
-        pass
 
 # I think equiv_group_flag is historical.
 class IDState(models.Model):
@@ -48,8 +43,6 @@ class IDState(models.Model):
     class Meta:
         db_table = 'ref_doc_states_new'
 	ordering = ['document_state_id']
-    class Admin:
-	pass
 
 class IDNextState(models.Model):
     cur_state = models.ForeignKey(IDState, related_name='nextstate')
@@ -59,8 +52,6 @@ class IDNextState(models.Model):
 	return "%s -> %s" % (self.cur_state.state, self.next_state.state )
     class Meta:
         db_table = 'ref_next_states_new'
-    class Admin:
-	pass
 
 class IDSubState(models.Model):
     sub_state_id = models.AutoField(primary_key=True)
@@ -71,8 +62,6 @@ class IDSubState(models.Model):
     class Meta:
         db_table = 'sub_state'
 	ordering = ['sub_state_id']
-    class Admin:
-	pass
 
 class Area(models.Model):
     ACTIVE=1
@@ -95,9 +84,6 @@ class Area(models.Model):
     class Meta:
         db_table = 'areas'
 	verbose_name="area"
-    class Admin:
-        list_display = ('area_acronym', 'status')
-	pass
 
 class AreaWGURL(models.Model):
     id = models.AutoField(primary_key=True, db_column='area_ID')
@@ -120,8 +106,6 @@ class IDStatus(models.Model):
         db_table = "id_status"
 	verbose_name="I-D Status"
 	verbose_name_plural="I-D Statuses"
-    class Admin:
-        pass
 
 class IDIntendedStatus(models.Model):
     intended_status_id = models.AutoField(primary_key=True)
@@ -132,8 +116,6 @@ class IDIntendedStatus(models.Model):
         db_table = "id_intended_status"
 	verbose_name="I-D Intended Publication Status"
 	verbose_name_plural="I-D Intended Publication Statuses"
-    class Admin:
-        pass
 
 class InternetDraft(models.Model):
     DAYS_TO_EXPIRE=185
@@ -255,13 +237,6 @@ class InternetDraft(models.Model):
 
     class Meta:
         db_table = "internet_drafts"
-    class Admin:
-        search_fields = ['filename','title']
-        list_display = ('filename', 'revision', 'title', 'status')
-	list_filter = ['status']
-        pass
-        #date_hierarchy = 'revision_date'
-        #list_filter = ['revision_date']
 
 class PersonOrOrgInfo(models.Model):
     person_or_org_tag = models.AutoField(primary_key=True)
@@ -322,17 +297,6 @@ class PersonOrOrgInfo(models.Model):
         ordering = ['last_name']
 	verbose_name="Rolodex Entry"
 	verbose_name_plural="Rolodex"
-    class Admin:
-        search_fields = ['first_name','last_name']
-	fields = (
-	    (None, {
-		'fields': (('first_name', 'middle_initial', 'last_name'), ('name_suffix', 'modified_by'))
-	    }),
-	    ('Obsolete Info', {
-		'classes': 'collapse',
-		'fields': ('record_type', 'created_by', 'address_type')
-	    }))
-        pass
 
 # could use a mapping for user_level
 class IESGLogin(models.Model):
@@ -362,10 +326,6 @@ class IESGLogin(models.Model):
     active_iesg = staticmethod(active_iesg)
     class Meta:
         db_table = 'iesg_login'
-    class Admin:
-	list_display = ('login_name', 'first_name', 'last_name', 'user_level')
-        ordering = ['user_level','last_name']
-	pass
 
 class AreaDirector(models.Model):
     area = models.ForeignKey(Area, db_column='area_acronym_id', null=True)
@@ -379,8 +339,7 @@ class AreaDirector(models.Model):
 	    return "?%d? AD" % self.area_id
     class Meta:
         db_table = 'area_directors'
-    class Admin:
-	pass
+
 
 ###
 # RFC tables
@@ -394,8 +353,6 @@ class RfcIntendedStatus(models.Model):
     class Meta:
         db_table = 'rfc_intend_status'
 	verbose_name = 'RFC Intended Status Field'
-    class Admin:
-	pass
 
 class RfcStatus(models.Model):
     status_id = models.AutoField(primary_key=True)
@@ -406,8 +363,6 @@ class RfcStatus(models.Model):
         db_table = 'rfc_status'
 	verbose_name = 'RFC Status'
 	verbose_name_plural = 'RFC Statuses'
-    class Admin:
-	pass
 
 class Rfc(models.Model):
     ONLINE_CHOICES=(('YES', 'Yes'), ('NO', 'No'))
@@ -479,25 +434,6 @@ class Rfc(models.Model):
         db_table = 'rfcs'
 	verbose_name = 'RFC'
 	verbose_name_plural = 'RFCs'
-    class Admin:
-	search_fields = ['title']
-	list_display = ['rfc_number', 'title']
-	fields = (
-	    (None, {
-		'fields': ('rfc_number', 'title', 'group_acronym', 'area_acronym', 'status', 'comments', 'last_modified_date')
-	    }),
-	    ('Metadata', {
-		'classes': 'collapse',
-		'fields': (('online_version', 'txt_page_count'), ('fyi_number', 'std_number'))
-	    }),
-	    ('Standards Track Dates', {
-		'classes': 'collapse',
-		'fields': ('rfc_published_date', ('proposed_date', 'draft_date'), ('standard_date', 'historic_date'))
-	    }),
-	    ('Last Call / Ballot Info', {
-		'classes': 'collapse',
-		'fields': ('intended_status', ('lc_sent_date', 'lc_expiration_date'), ('b_sent_date', 'b_approve_date'))
-	    }))
 
 class RfcAuthor(models.Model):
     rfc = models.ForeignKey(Rfc, unique=True, db_column='rfc_number', related_name='authors')
@@ -518,8 +454,6 @@ class RfcObsolete(models.Model):
         db_table = 'rfcs_obsolete'
 	verbose_name = 'RFC updates or obsoletes'
 	verbose_name_plural = verbose_name
-    class Admin:
-	pass
 
 ## End RFC Tables
 
@@ -557,8 +491,6 @@ class BallotInfo(models.Model):   # Added by Michael Lee
 	return ret 
     class Meta:
         db_table = 'ballot_info'
-    class Admin:
-	pass
 
 class IDInternal(models.Model):
     """
@@ -658,10 +590,6 @@ class IDInternal(models.Model):
     class Meta:
         db_table = 'id_internal'
 	verbose_name = 'IDTracker Draft'
-    class Admin:
-        list_display = ['draft', 'token_email', 'note' ]
-        ordering = ['draft', ]
-	pass
 
 class DocumentComment(models.Model):
     BALLOT_CHOICES = (
@@ -734,8 +662,6 @@ class Position(models.Model):
         db_table = 'ballots'
 	unique_together = (('ballot', 'ad'), )
 	verbose_name = "IESG Ballot Position"
-    class Admin:
-	pass
 
 class IESGComment(models.Model):
     ballot = models.ForeignKey(BallotInfo, related_name="comments")
@@ -753,8 +679,6 @@ class IESGComment(models.Model):
 	unique_together = (('ballot', 'ad'), )
 	verbose_name = 'IESG Comment Text'
 	verbose_name_plural = 'IESG Comments'
-    class Admin:
-	pass
 
 class IESGDiscuss(models.Model):
     ballot = models.ForeignKey(BallotInfo, related_name="discusses")
@@ -772,8 +696,6 @@ class IESGDiscuss(models.Model):
 	unique_together = (('ballot', 'ad'), )
 	verbose_name = 'IESG Discuss Text'
 	verbose_name_plural = 'IESG Discusses'
-    class Admin:
-	pass
 
 class IDAuthor(models.Model):
     document = models.ForeignKey(InternetDraft, db_column='id_document_tag', related_name='authors')
@@ -840,11 +762,6 @@ class EmailAddress(models.Model):
 	#unique_together = (('email_priority', 'person_or_org'), )
 	# with this, I get 'ChangeManipulator' object has no attribute 'isUniqueemail_priority_person_or_org'
 	verbose_name_plural = 'Email addresses'
-    class Admin:
-	# Even though this is edit_inline, we want to be able
-	# to search for email addresses.
-	search_fields = [ 'address' ]
-	list_display = ( 'person_or_org', 'address', 'type', 'priority' )
 
 class PhoneNumber(models.Model):
     person_or_org = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
@@ -865,8 +782,6 @@ class WGType(models.Model):
 	return self.type
     class Meta:
         db_table = 'g_type'
-    class Admin:
-	pass
 
 class WGStatus(models.Model):
     status_id = models.AutoField(primary_key=True)
@@ -875,8 +790,6 @@ class WGStatus(models.Model):
 	return self.status
     class Meta:
         db_table = 'g_status'
-    class Admin:
-	pass
 
 class IETFWG(models.Model):
     ACTIVE = 1
@@ -943,14 +856,6 @@ class IETFWG(models.Model):
         db_table = 'groups_ietf'
 	ordering = ['?']	# workaround django wanting to sort by acronym but not joining with it
 	verbose_name = 'IETF Working Group'
-    class Admin:
-	search_fields = ['group_acronym__acronym', 'group_acronym__name']
-	# Until the database is consistent, including area_director in
-	# this list means that we'll have FK failures, so skip it for now.
-	list_display = ('group_acronym', 'group_type', 'status', 'area_acronym', 'start_date', 'concluded_date')
-	list_filter = ['status', 'group_type']
-	#list_display = ('group_acronym', 'group_type', 'status', 'area_director')
-	#list_filter = ['status', 'group_type', 'area_director']
 
 class WGChair(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', unique=True)
@@ -1025,11 +930,6 @@ class GoalMilestone(models.Model):
 	verbose_name = 'IETF WG Goal or Milestone'
 	verbose_name_plural = 'IETF WG Goals or Milestones'
 	ordering = ['expected_due_date']
-    class Admin:
-	list_display = ('group_acronym', 'description', 'expected_due_date', 'done')
-	date_hierarchy = 'expected_due_date'
-	list_filter = ['done']
-	pass
 
 
 #### end wg stuff
@@ -1061,8 +961,6 @@ class Role(models.Model):
 	    return self.role_name
     class Meta:
         db_table = 'chairs'
-    class Admin:
-	pass
 
 class ChairsHistory(models.Model):
     chair_type = models.ForeignKey(Role)
@@ -1074,9 +972,6 @@ class ChairsHistory(models.Model):
 	return str(self.person)
     class Meta:
         db_table = 'chairs_history'
-    class Admin:
-	list_display = ('person', 'chair_type', 'start_year', 'end_year')
-	pass
 
 #
 # IRTF RG info
@@ -1091,8 +986,6 @@ class IRTF(models.Model):
     class Meta:
         db_table = 'irtf'
         verbose_name="IRTF Research Group"
-    class Admin:
-	pass
 
 class IRTFChair(models.Model):
     irtf = models.ForeignKey(IRTF)

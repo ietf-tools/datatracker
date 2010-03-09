@@ -25,8 +25,6 @@ class AnnouncedFrom(models.Model):
 	#    ("ietf_execdir_announcedfromperm", "Can send messages from IETF Executive Director"),
 	#    ("other_announcedfromperm", "Can send announcements from others"),
 	#)
-    class Admin:
-	pass
 
 class AnnouncedTo(models.Model):
     announced_to_id = models.AutoField(primary_key=True)
@@ -36,8 +34,6 @@ class AnnouncedTo(models.Model):
 	return self.announced_to
     class Meta:
         db_table = 'announced_to'
-    class Admin:
-	pass
 
 class Announcement(models.Model):
     announcement_id = models.AutoField(primary_key=True)
@@ -64,11 +60,6 @@ class Announcement(models.Model):
 	return self.announced_from
     class Meta:
         db_table = 'announcements'
-    class Admin:
-	list_display = ('announced_from', 'announced_to', 'announced_date', 'subject')
-	date_hierarchy = 'announced_date'
-	list_filter = ['nomcom', 'manually_added']
-	pass
 
 class ScheduledAnnouncement(models.Model):
     mail_sent = models.BooleanField()
@@ -94,8 +85,6 @@ class ScheduledAnnouncement(models.Model):
 	return "Scheduled Announcement from %s to %s on %s %s" % (self.from_val, self.to_val, self.to_be_sent_date, self.to_be_sent_time)
     class Meta:
         db_table = 'scheduled_announcements'
-    class Admin:
-	pass
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed filter_interface

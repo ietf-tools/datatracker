@@ -52,8 +52,6 @@ class RfcEditorQueue(models.Model):
         return "RfcEditorQueue"+str([self.draft, self.date_received, self.state, self.state_date, self.stream])
     class Meta:
         db_table = "rfc_editor_queue_mirror"
-    class Admin:
-        pass
 
 class RfcEditorQueueRef(models.Model):
     source = models.ForeignKey(InternetDraft, db_column="source", related_name="rfc_editor_queue_refs")
@@ -62,8 +60,6 @@ class RfcEditorQueueRef(models.Model):
     direct = models.BooleanField()
     class Meta:
         db_table = "rfc_editor_queue_mirror_refs"
-    class Admin:
-        pass
 
 class RfcIndex(models.Model):
     rfc_number = models.IntegerField(primary_key=True)
@@ -82,8 +78,6 @@ class RfcIndex(models.Model):
         return "RfcIndex"+str(self.rfc_number)
     class Meta:
         db_table = "rfc_index_mirror"
-    class Admin:
-        pass
 
 class DraftVersions(models.Model):
     # Django does not support multi-column primary keys, so
@@ -97,8 +91,4 @@ class DraftVersions(models.Model):
         return "DraftVersions"+self.filename+self.revision+str(self.revision_date)
     class Meta:
         db_table = "draft_versions_mirror"
-    class Admin:
-        pass
     
-
-# changes done by convert-096.py:changed maxlength to max_length

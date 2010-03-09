@@ -21,8 +21,6 @@ class Redirect(models.Model):
     remove = models.CharField(max_length=50, blank=True)
     def __str__(self):
 	return "%s -> %s/%s" % (self.cgi, self.url, self.rest)
-    class Admin:
-        pass
 
 class Suffix(models.Model):
     """This is a "rest" and "remove" (see Redirect class)
@@ -34,8 +32,6 @@ class Suffix(models.Model):
 	return "-> %s - %s" % (self.rest, self.remove)
     class Meta:
         verbose_name_plural="Suffixes"
-    class Admin:
-        pass
 
 class Command(models.Model):
     """When a request comes in with a command= argument,
@@ -55,8 +51,6 @@ class Command(models.Model):
 	return ret
     class Meta:
 	unique_together = (("script", "command"), )
-    class Admin:
-	pass
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core
