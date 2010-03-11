@@ -8,6 +8,38 @@ ietfdb (2.45)
 	cd /a/www/ietf-datatracker/2.45/ietf
 	PYTHONPATH=../ python manage.py dbshell < ../test/sql_fixup.sql
 
+  * Parse stream/wg/file formats from rfc-index.xml; prepare for parsing 
+    auth48 info from queue2.xml
+
+  * IPR disclosures: Don't include .doc/.html inline; don't fail if file 
+    does not exist
+
+  * Replaced /drafts/* with redirects
+
+  * Show datatracker version+date in new look, too
+
+  * IESG discuss page: shade even/odd rows
+
+  * Use new look for IETF meeting agenda; add color-coding support (like 
+    tools has).  Also use new look for /iesg/agenda/, /ipr/ and /ipr/NNN/
+  * Show RFC publication date as YYYY-MM (since we don't currently have the 
+    day)
+
+  * Fix searching for RFCs that are processed by IESG; made 'advanced 
+    search' options mutually exclusive
+
+  * For plain text RFCs, point to www.rfc-editor.org instead of www.ietf.org
+
+  * Fix page title for 404/500 pages (ticket:298)
+
+
+  From Henrik:
+
+  * Apply django changeset 12634 to our copy, to permit usernames 
+    containing '@'.  See http://code.djangoproject.com/changeset/12634 .
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Mar 2010 14:41:47 +0100
+
 ietfdb (2.44)
 
   From Robert:
