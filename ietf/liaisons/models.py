@@ -26,28 +26,28 @@ class FromBodies(models.Model):
 
 class LiaisonDetail(models.Model):
     detail_id = models.AutoField(primary_key=True)
-    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+    person = models.ForeignKey(PersonOrOrgInfo, null=True, db_column='person_or_org_tag')
     submitted_date = models.DateField(null=True, blank=True)
     last_modified_date = models.DateField(null=True, blank=True)
     from_id = models.IntegerField(null=True, blank=True)
-    to_body = models.CharField(blank=True, max_length=255)
-    title = models.CharField(blank=True, max_length=255)
-    response_contact = models.CharField(blank=True, max_length=255)
-    technical_contact = models.CharField(blank=True, max_length=255)
-    purpose_text = models.TextField(blank=True, db_column='purpose')
-    body = models.TextField(blank=True)
+    to_body = models.CharField(blank=True, null=True, max_length=255)
+    title = models.CharField(blank=True, null=True, max_length=255)
+    response_contact = models.CharField(blank=True, null=True, max_length=255)
+    technical_contact = models.CharField(blank=True, null=True, max_length=255)
+    purpose_text = models.TextField(blank=True, null=True, db_column='purpose')
+    body = models.TextField(blank=True,null=True)
     deadline_date = models.DateField(null=True, blank=True)
-    cc1 = models.TextField(blank=True)
+    cc1 = models.TextField(blank=True, null=True)
     # unclear why cc2 is a CharField, but it's always
     # either NULL or blank.
-    cc2 = models.CharField(blank=True, max_length=50)
-    submitter_name = models.CharField(blank=True, max_length=255)
-    submitter_email = models.CharField(blank=True, max_length=255)
+    cc2 = models.CharField(blank=True, null=True, max_length=50)
+    submitter_name = models.CharField(blank=True, null=True, max_length=255)
+    submitter_email = models.CharField(blank=True, null=True, max_length=255)
     by_secretariat = models.IntegerField(null=True, blank=True)
-    to_poc = models.CharField(blank=True, max_length=255)
-    to_email = models.CharField(blank=True, max_length=255)
-    purpose = models.ForeignKey(LiaisonPurpose)
-    replyto = models.CharField(blank=True, max_length=255)
+    to_poc = models.CharField(blank=True, null=True, max_length=255)
+    to_email = models.CharField(blank=True, null=True, max_length=255)
+    purpose = models.ForeignKey(LiaisonPurpose,null=True)
+    replyto = models.CharField(blank=True, null=True, max_length=255)
     def __str__(self):
 	return self.title or "<no title>"
     def from_body(self):

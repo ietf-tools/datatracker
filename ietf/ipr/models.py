@@ -59,11 +59,11 @@ class IprDetail(models.Model):
     title = models.CharField(blank=True, db_column="document_title", max_length=255)
 
     # Legacy information fieldset
-    legacy_url_0 = models.CharField(blank=True, db_column="old_ipr_url", max_length=255)
-    legacy_url_1 = models.CharField(blank=True, db_column="additional_old_url1", max_length=255)
-    legacy_title_1 = models.CharField(blank=True, db_column="additional_old_title1", max_length=255)
-    legacy_url_2 = models.CharField(blank=True, db_column="additional_old_url2", max_length=255)
-    legacy_title_2 = models.CharField(blank=True, db_column="additional_old_title2", max_length=255)
+    legacy_url_0 = models.CharField(blank=True, null=True, db_column="old_ipr_url", max_length=255)
+    legacy_url_1 = models.CharField(blank=True, null=True, db_column="additional_old_url1", max_length=255)
+    legacy_title_1 = models.CharField(blank=True, null=True, db_column="additional_old_title1", max_length=255)
+    legacy_url_2 = models.CharField(blank=True, null=True, db_column="additional_old_url2", max_length=255)
+    legacy_title_2 = models.CharField(blank=True, null=True, db_column="additional_old_title2", max_length=255)
 
     # Patent holder fieldset
     legal_name = models.CharField("Legal Name", db_column="p_h_legal_name", max_length=255)

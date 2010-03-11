@@ -85,10 +85,10 @@ class LegacyWgPassword(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', primary_key=True)
     password = models.CharField(blank=True, max_length=255)
     secrete_question_id = models.IntegerField(null=True, blank=True)
-    secrete_answer = models.CharField(blank=True, max_length=255)
+    secrete_answer = models.CharField(blank=True, null=True, max_length=255)
     is_tut_resp = models.IntegerField(null=True, blank=True)
     irtf_id = models.IntegerField(null=True, blank=True)
-    comment = models.TextField(blank=True)
+    comment = models.TextField(blank=True,null=True)
     login_name = models.CharField(blank=True, max_length=100)
     def __str__(self):
 	return self.login_name

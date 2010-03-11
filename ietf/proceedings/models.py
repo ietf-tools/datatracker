@@ -224,7 +224,7 @@ class IESGHistory(models.Model):
 class MeetingTime(models.Model):
     time_id = models.AutoField(primary_key=True)
     time_desc = models.CharField(max_length=100)
-    meeting = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
+    meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     day_id = models.IntegerField()
     session_name = models.ForeignKey(SessionName,null=True)
     def __str__(self):
@@ -314,7 +314,7 @@ class WgMeetingSession(models.Model, ResolveAcronym):
     requested_by = models.ForeignKey(PersonOrOrgInfo, db_column='requested_by')
     scheduled_date = models.DateField(null=True, blank=True)
     last_modified_date = models.DateField(null=True, blank=True)
-    ad_comments = models.TextField(blank=True)
+    ad_comments = models.TextField(blank=True,null=True)
     sched_room_id1 = models.ForeignKey(MeetingRoom, db_column='sched_room_id1', null=True, blank=True, related_name='here1')
     sched_time_id1 = models.ForeignKey(MeetingTime, db_column='sched_time_id1', null=True, blank=True, related_name='now1')
     sched_date1 = models.DateField(null=True, blank=True)

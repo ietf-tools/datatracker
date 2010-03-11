@@ -71,7 +71,7 @@ class Area(models.Model):
     status = models.ForeignKey(AreaStatus)
     comments = models.TextField(blank=True)
     last_modified_date = models.DateField(auto_now=True)
-    extra_email_addresses = models.TextField(blank=True)
+    extra_email_addresses = models.TextField(blank=True,null=True)
     def __str__(self):
 	return self.area_acronym.acronym
     def additional_urls(self):
@@ -128,23 +128,23 @@ class InternetDraft(models.Model):
     revision_date = models.DateField()
     file_type = models.CharField(max_length=20)
     txt_page_count = models.IntegerField()
-    local_path = models.CharField(max_length=255, blank=True)
+    local_path = models.CharField(max_length=255, blank=True, null=True)
     start_date = models.DateField()
-    expiration_date = models.DateField()
+    expiration_date = models.DateField(null=True)
     abstract = models.TextField()
     dunn_sent_date = models.DateField(null=True, blank=True)
     extension_date = models.DateField(null=True, blank=True)
     status = models.ForeignKey(IDStatus)
     intended_status = models.ForeignKey(IDIntendedStatus)
     lc_sent_date = models.DateField(null=True, blank=True)
-    lc_changes = models.CharField(max_length=3)
+    lc_changes = models.CharField(max_length=3,null=True)
     lc_expiration_date = models.DateField(null=True, blank=True)
     b_sent_date = models.DateField(null=True, blank=True)
     b_discussion_date = models.DateField(null=True, blank=True)
     b_approve_date = models.DateField(null=True, blank=True)
     wgreturn_date = models.DateField(null=True, blank=True)
     rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
-    comments = models.TextField(blank=True)
+    comments = models.TextField(blank=True,null=True)
     last_modified_date = models.DateField()
     replaced_by = models.ForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
     replaces = FKAsOneToOne('replaces', reverse=True)
@@ -252,8 +252,8 @@ class PersonOrOrgInfo(models.Model):
     date_modified = models.DateField(null=True, blank=True, auto_now=True)
     modified_by = models.CharField(blank=True, max_length=8)
     date_created = models.DateField(auto_now_add=True)
-    created_by = models.CharField(blank=True, max_length=8)
-    address_type = models.CharField(blank=True, max_length=4)
+    created_by = models.CharField(blank=True, null=True, max_length=8)
+    address_type = models.CharField(blank=True, null=True, max_length=4)
     def save(self):
         self.first_name_key = self.first_name.upper()
         self.middle_initial_key = self.middle_initial.upper()
@@ -314,7 +314,7 @@ class IESGLogin(models.Model):
     first_name = models.CharField(blank=True, max_length=25)
     last_name = models.CharField(blank=True, max_length=25)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', unique=True)
-    pgp_id = models.CharField(blank=True, max_length=20)
+    pgp_id = models.CharField(blank=True, null=True, max_length=20)
     default_search = models.IntegerField(null=True)
     def __str__(self):
         #return "%s, %s" % ( self.last_name, self.first_name)
@@ -436,7 +436,7 @@ class Rfc(models.Model):
 	verbose_name_plural = 'RFCs'
 
 class RfcAuthor(models.Model):
-    rfc = models.ForeignKey(Rfc, unique=True, db_column='rfc_number', related_name='authors')
+    rfc = models.ForeignKey(Rfc, db_column='rfc_number', related_name='authors')
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
     def __str__(self):
         return "%s, %s" % ( self.person.last_name, self.person.first_name)
@@ -462,9 +462,9 @@ class BallotInfo(models.Model):   # Added by Michael Lee
     active = models.BooleanField()
     an_sent = models.BooleanField()
     an_sent_date = models.DateField(null=True, blank=True)
-    an_sent_by = models.ForeignKey(IESGLogin, db_column='an_sent_by', related_name='ansent') 
+    an_sent_by = models.ForeignKey(IESGLogin, db_column='an_sent_by', related_name='ansent', null=True) 
     defer = models.BooleanField(blank=True)
-    defer_by = models.ForeignKey(IESGLogin, db_column='defer_by', related_name='deferred')
+    defer_by = models.ForeignKey(IESGLogin, db_column='defer_by', related_name='deferred', null=True)
     defer_date = models.DateField(null=True, blank=True)
     approval_text = models.TextField(blank=True)
     last_call_text = models.TextField(blank=True)
@@ -754,7 +754,7 @@ class EmailAddress(models.Model):
     type = models.CharField(max_length=4, db_column='email_type')
     priority = models.IntegerField(db_column='email_priority')
     address = models.CharField(max_length=255, db_column='email_address')
-    comment = models.CharField(blank=True, max_length=255, db_column='email_comment')
+    comment = models.CharField(blank=True, null=True, max_length=255, db_column='email_comment')
     def __str__(self):
 	return self.address
     class Meta:
@@ -858,7 +858,7 @@ class IETFWG(models.Model):
 	verbose_name = 'IETF Working Group'
 
 class WGChair(models.Model):
-    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', unique=True)
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
     group_acronym = models.ForeignKey(IETFWG)
     def __str__(self):
 	return "%s (%s)" % ( self.person, self.role() )
@@ -880,7 +880,7 @@ class WGEditor(models.Model):
 # match the model naming scheme.
 class WGSecretary(models.Model):
     group_acronym = models.ForeignKey(IETFWG)
-    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', unique=True)
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
     def __str__(self):
 	return "%s (%s)" % ( self.person, self.role() )
     def role(self):
