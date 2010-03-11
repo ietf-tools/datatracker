@@ -74,7 +74,7 @@ class LegacyLiaisonUser(models.Model):
     login_name = models.CharField(max_length=255)
     password = models.CharField(max_length=25)
     user_level = models.IntegerField(null=True, blank=True)
-    comment = models.TextField(blank=True)
+    comment = models.TextField(blank=True,null=True)
     def __str__(self):
 	return self.login_name
     class Meta:
@@ -83,7 +83,7 @@ class LegacyLiaisonUser(models.Model):
 
 class LegacyWgPassword(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', primary_key=True)
-    password = models.CharField(blank=True, max_length=255)
+    password = models.CharField(blank=True, null=True,max_length=255)
     secrete_question_id = models.IntegerField(null=True, blank=True)
     secrete_answer = models.CharField(blank=True, null=True, max_length=255)
     is_tut_resp = models.IntegerField(null=True, blank=True)

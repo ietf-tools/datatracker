@@ -240,18 +240,18 @@ class InternetDraft(models.Model):
 
 class PersonOrOrgInfo(models.Model):
     person_or_org_tag = models.AutoField(primary_key=True)
-    record_type = models.CharField(blank=True, max_length=8)
-    name_prefix = models.CharField(blank=True, max_length=10)
+    record_type = models.CharField(blank=True, null=True, max_length=8)
+    name_prefix = models.CharField(blank=True, null=True, max_length=10)
     first_name = models.CharField(blank=True, max_length=20)
     first_name_key = models.CharField(blank=True, max_length=20, editable=False)
-    middle_initial = models.CharField(blank=True, max_length=4)
-    middle_initial_key = models.CharField(blank=True, max_length=4, editable=False)
+    middle_initial = models.CharField(blank=True, null=True, max_length=4)
+    middle_initial_key = models.CharField(blank=True, null=True, max_length=4, editable=False)
     last_name = models.CharField(blank=True, max_length=50)
     last_name_key = models.CharField(blank=True, max_length=50, editable=False)
-    name_suffix = models.CharField(blank=True, max_length=10)
+    name_suffix = models.CharField(blank=True, null=True, max_length=10)
     date_modified = models.DateField(null=True, blank=True, auto_now=True)
-    modified_by = models.CharField(blank=True, max_length=8)
-    date_created = models.DateField(auto_now_add=True)
+    modified_by = models.CharField(blank=True, null=True, max_length=8)
+    date_created = models.DateField(auto_now_add=True, null=True)
     created_by = models.CharField(blank=True, null=True, max_length=8)
     address_type = models.CharField(blank=True, null=True, max_length=4)
     def save(self):
@@ -979,7 +979,7 @@ class IRTF(models.Model):
     irtf_id = models.AutoField(primary_key=True)
     acronym = models.CharField(blank=True, max_length=25, db_column='irtf_acronym')
     name = models.CharField(blank=True, max_length=255, db_column='irtf_name')
-    charter_text = models.TextField(blank=True)
+    charter_text = models.TextField(blank=True,null=True)
     meeting_scheduled = models.BooleanField(blank=True)
     def __str__(self):
 	return self.acronym

@@ -46,7 +46,7 @@ class Announcement(models.Model):
     subject = models.CharField(blank=True, max_length=255)
     extra = models.TextField(blank=True,null=True)
     announced_to = models.ForeignKey(AnnouncedTo)
-    nomcom = models.BooleanField()
+    nomcom = models.NullBooleanField()
     nomcom_chair = models.ForeignKey(ChairsHistory, null=True, blank=True)
     manually_added = models.BooleanField(db_column='manualy_added')
     other_val = models.CharField(blank=True, null=True, max_length=255)
