@@ -35,7 +35,7 @@
 from django.contrib.auth.backends import RemoteUserBackend
 from django.contrib.auth.models import Group
 from ietf.idtracker.models import IESGLogin, Role, PersonOrOrgInfo
-from ietf.ietfauth.models import LegacyWgPassword, IetfUserProfile
+from ietf.ietfauth.models import IetfUserProfile
 
 from ietf.utils import log
 

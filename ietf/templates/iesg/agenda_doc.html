@@ -98,7 +98,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <a href="{{ doc.obj.document.doclink }}">{{doc.obj.document.filename}}</a>
 <a href="http://tools.ietf.org/rfc/{{ doc.obj.document.filename }}">[txt]</a>
 {% else %}
-<a href="{{ doc.obj.document.doclink_current }}">{{doc.obj.document.displayname_current|safe}}</a>
+<a href="{{ doc.obj.document.doclink }}">{{doc.obj.document.displayname|safe}}</a>
 <!--       <a href="http://www.ietf.org/internet-draft/{{ doc.obj.document.filename }}-{{ doc.obj.document.revision }}.txt">[txt]</a> -->
 <a href="http://tools.ietf.org/id/{{ doc.obj.document.filename }}-{{ doc.obj.document.revision }}.txt">[txt]</a>
 {% endif %}

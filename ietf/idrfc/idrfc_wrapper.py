@@ -30,7 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGComment, IESGLogin
+from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGLogin
 from ietf.idrfc.models import RfcEditorQueue
 import re
 from datetime import date

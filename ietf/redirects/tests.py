@@ -31,7 +31,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest, os, re
-import django
 from django.test.client import Client
 from django.conf import settings
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, split_url, read_testurls

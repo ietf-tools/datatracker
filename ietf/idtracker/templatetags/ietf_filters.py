@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import textwrap
-import django
 from django import template
 from django.utils.html import escape, fix_ampersands
 from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter
@@ -92,26 +91,6 @@ def make_one_per_line(value):
     else:
         return value
         
-@register.filter(name='link_if_url')
-def link_if_url(value):
-    """
-    If the argument looks like a url, return a link; otherwise, just
-    return the argument."""
-    if (re.match('(https?|mailto):', value)):
-	return "<a href=\"%s\">%s</a>" % ( fix_ampersands(value), escape(value) )
-    else:
-	return escape(value)
-
-# This replicates the nwg_list.cgi method.
-# It'd probably be better to check for the presence of
-# a scheme with a better RE.
-@register.filter(name='add_scheme')
-def add_scheme(value):
-    if (re.match('www', value)):
-	return "http://" + value
-    else:
-	return value
-
 @register.filter(name='timesum')
 def timesum(value):
     """
@@ -170,11 +149,6 @@ def fill(text, width):
                 para = textwrap.fill(para, width, replace_whitespace=False)
             wrapped.append(para)
     return "\n\n".join(wrapped)
-
-@register.filter(name='allononeline')
-def allononeline(text):
-    """Simply removes CRs, LFs, leading and trailing whitespace from the given string."""
-    return text.replace("\r", "").replace("\n", "").strip()
 
 @register.filter(name='allononelinew')
 def allononelinew(text):
@@ -374,4 +348,3 @@ def _test():
 if __name__ == "__main__":
     _test()
 
-    

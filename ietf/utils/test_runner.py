@@ -32,10 +32,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
 import socket
 from django.conf import settings
-import django
 from django.template import TemplateDoesNotExist
 
 mail_outbox = []

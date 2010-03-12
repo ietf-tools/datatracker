@@ -6,24 +6,11 @@ from django import forms
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 from django.db.models import Q
-from django.core.urlresolvers import reverse
 from django.views.generic.list_detail import object_detail, object_list
 from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState, Rfc, DocumentWrapper
 from ietf.idtracker.forms import IDSearch
 from ietf.utils import normalize_draftname
 import re
-
-# Override default form field mappings
-# group_acronym: CharField(max_length=10)
-# note: CharField(max_length=100)
-def myfields(f):
-    if f.name == "group":
-	return forms.CharField(max_length=10,
-			widget=forms.TextInput(attrs={'size': 5}))
-    if f.name == "note":
-	return forms.CharField(max_length=100,
-			widget=forms.TextInput(attrs={'size': 100}))
-    return f.formfield()
 
 def search(request):
     # for compatability with old tracker form, which has
@@ -219,4 +206,3 @@ def view_comment(*args, **kwargs):
 def view_ballot(*args, **kwargs):
     return object_detail(*args, **kwargs)
 
-# changes done by convert-096.py:changed newforms to forms

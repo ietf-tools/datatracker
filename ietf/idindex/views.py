@@ -35,7 +35,7 @@
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.template import loader
 from django.shortcuts import get_object_or_404
-from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, Rfc, IDInternal
+from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, IDInternal
 
 def all_id_txt():
     all_ids = InternetDraft.objects.order_by('filename')
@@ -72,54 +72,6 @@ def test_id_index_txt(request):
     return HttpResponse(id_index_txt(), mimetype='text/plain')
 def test_id_abstracts_txt(request):
     return HttpResponse(id_abstracts_txt(), mimetype='text/plain')
-
-def related_docs(startdoc):
-    related = []
-    processed = []
-
-    def handle(otherdoc,status,doc,skip=(0,0,0)):
-        new = (otherdoc, status, doc)
-    	if otherdoc in processed:
-	    return
-	related.append(new)
-	process(otherdoc,skip)
-
-    def process(doc, skip=(0,0,0)):
-	processed.append(doc)
-	if type(doc) == InternetDraft:
-	    if doc.replaced_by_id != 0 and not(skip[0]):
-		handle(doc.replaced_by, "that replaces", doc, (0,1,0))
-	    if not(skip[1]):
-		for replaces in doc.replaces_set.all():
-		    handle(replaces, "that was replaced by", doc, (1,0,0))
-	    if doc.rfc_number != 0 and not(skip[0]):
-		# should rfc be an FK in the model?
-		try:
-		    handle(Rfc.objects.get(rfc_number=doc.rfc_number), "which came from", doc, (1,0,0))
-		# In practice, there are missing rows in the RFC table.
-		except Rfc.DoesNotExist:
-		    pass
-	if type(doc) == Rfc:
-	    if not(skip[0]):
-		try:
-		    draft = InternetDraft.objects.get(rfc_number=doc.rfc_number)
-		    handle(draft, "that was published as", doc, (0,0,1))
-		except InternetDraft.DoesNotExist:
-		    pass
-		# The table has multiple documents published as the same RFC.
-		# This raises an AssertionError because using get
-		# presumes there is exactly one.
-		except AssertionError:
-		    pass
-	    if not(skip[1]):
-		for obsoleted_by in doc.updated_or_obsoleted_by.all():
-		    handle(obsoleted_by.rfc, "that %s" % obsoleted_by.action.lower(), doc)
-	    if not(skip[2]):
-		for obsoletes in doc.updates_or_obsoletes.all():
-		    handle(obsoletes.rfc_acted_on, "that was %s by" % obsoletes.action.lower().replace("tes", "ted"), doc)
-
-    process(startdoc, (0,0,0))
-    return related
 
 def redirect_id(request, object_id):
     '''Redirect from historical document ID to preferred filename url.'''

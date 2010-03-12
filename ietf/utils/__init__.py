@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from listop import orl, flattenl
 from log import log
 from cache_foreign_key import FKAsOneToOne
 from draft_search import normalize_draftname

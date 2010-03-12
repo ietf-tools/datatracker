@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.conf.urls.defaults import patterns
-from ietf.idtracker.models import Area, IETFWG
+from ietf.idtracker.models import IETFWG
 
 urlpatterns = patterns('django.views.generic.list_detail',
      (r'^wg/$', 'object_list', { 'queryset': IETFWG.objects.filter(email_archive__startswith='http'), 'template_name': 'mailinglists/wgwebmail_list.html' }),
