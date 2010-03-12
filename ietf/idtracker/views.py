@@ -180,7 +180,7 @@ def view_id(request, queryset, slug, slug_field):
 	object = IDInternal.objects.get(draft__filename=slug, rfc_flag=0)
     except IDInternal.DoesNotExist:
 	draft = get_object_or_404(InternetDraft, filename=slug)
-	return render_to_response('idtracker/idinternal_notfound.html', {'draft': draft}, context_instance=RequestContext(request))
+        return HttpResponsePermanentRedirect("/doc/"+draft.filename+"/")
     return render_to_response('idtracker/idinternal_detail.html', {'object': object, 'spacing': False}, context_instance=RequestContext(request))
 
 def view_rfc(request, object_id):
