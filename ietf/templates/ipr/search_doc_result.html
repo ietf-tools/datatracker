@@ -33,7 +33,11 @@
 		     {% else %}
 		     <tr>
 			<td></td>
-			<td colspan="2"><b>No IPR disclosures related to <i>{{ doc|rfcspace|lstrip:"0" }}</i> have been submitted</b></td>
+			<td colspan="2">
+			      No IPR disclosures have been submitted directly on <i>{{ doc|rfcspace|lstrip:"0" }}</i>{% if iprs %},
+			      but there are disclosures on {% ifequal docs|length 2 %}a related document{% else %}related documents{% endifequal %}, listed on this page{% endif %}.
+			   </b>
+			</td>
 		     </tr>
 		     {% endif %}
 		  </tbody>
