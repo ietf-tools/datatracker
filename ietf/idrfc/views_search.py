@@ -273,7 +273,7 @@ def search_main(request):
 def by_ad(request, name):
     ad_id = None
     ad_name = None
-    for i in IESGLogin.objects.all():
+    for i in IESGLogin.objects.filter(user_level__in=[1,2]):
         iname = str(i).lower().replace(' ','.')
         if name == iname:
             ad_id = i.id
