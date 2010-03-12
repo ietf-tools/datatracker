@@ -57,7 +57,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <div class="ietf-navset">
 {% ifequal selected "documents" %}<span class="selected">Documents</span>{% else %}<a href="/wg/{{wg}}/">Documents</a>{% endifequal %} | 
 {% ifequal selected "charter" %}<span class="selected">Charter</span>{% else %}<a href="/wg/{{wg}}/charter/">Charter</a>{% endifequal %} | 
-<a href="{{ wg.email_archive }}">List Archive</a> | 
+{% if wg.clean_email_archive|startswith:"http:" or wg.clean_email_archive|startswith:"ftp:" %}
+<a href="{{ wg.clean_email_archive }}">List Archive</a> | 
+{% endif %}
 <a href="http://tools.ietf.org/wg/{{wg}}/">Tools WG Page</a>
 </div>
 

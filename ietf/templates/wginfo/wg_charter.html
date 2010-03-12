@@ -90,9 +90,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </td>
 </tr>
 
-<tr><td>Address:</td><td><a href="mailto:{{ wg.email_address }}">{{ wg.email_address }}</a></td></tr>
-<tr><td>To Subscribe:</td><td><a href="{{ wg.email_subscribe }}">{{ wg.email_subscribe }}</a></td></tr>
-<tr><td>Archive:</td><td><a href="{{ wg.clean_email_archive }}">{{ wg.clean_email_archive }}</a></td></tr> 
+<tr><td>Address:</td><td>{{ wg.email_address|urlize }}</a></td></tr>
+<tr><td>To Subscribe:</td><td>{{ wg.email_subscribe|urlize }}</td></tr>
+<tr><td>Archive:</td><td>{{ wg.clean_email_archive|urlize }}</a></td></tr> 
 
 <tr>
 <td colspan="2">
