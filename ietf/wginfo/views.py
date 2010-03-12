@@ -77,7 +77,7 @@ from ietf.idrfc.views_search import SearchForm, search_query
 
 def wg_documents(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
-    concluded = (wg.status != 1)
+    concluded = (wg.status_id != 1)
     form = SearchForm({'by':'group', 'group':str(wg.group_acronym.acronym),
                        'rfcs':'on', 'activeDrafts':'on'})
     if not form.is_valid():
