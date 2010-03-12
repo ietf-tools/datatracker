@@ -186,13 +186,13 @@ def state_age_colored(doc):
         goal1 = 14
         goal2 = 28
     if days > goal2:
-        style = 'padding:0 2px;background:#ffa0a0;'
+        class_name = "ietf-small ietf-highlight-r"
     elif days > goal1:
-        style = 'padding:0 2px;background:yellow;'
+        class_name = "ietf-small ietf-highlight-y"
     else:
-        style = ''
-    if style:
+        class_name = "ietf-small"
+    if days > goal1:
         title = ' title="Goal is &lt;%d days"' % (goal1,)
     else:
         title = ''
-    return '<span style="font-size:85%%;%s"%s>(for&nbsp;%d&nbsp;day%s)</span>' % (style,title,days,('','s')[days != 1])
+    return '<span class="%s"%s>(for&nbsp;%d&nbsp;day%s)</span>' % (class_name,title,days,('','s')[days != 1])
