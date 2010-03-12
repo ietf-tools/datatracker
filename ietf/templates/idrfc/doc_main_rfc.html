@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ietf_filters %}
 
 {% block title %}RFC {{ doc.rfc_number }}{% endblock %}
+{% block doc_meta_description %}{{ doc.title }} ({{doc.maturity_level}}, {{doc.publication_date|date:"Y"}}){% if doc.obsoleted_by %}; Obsoleted by {{doc.obsoleted_by}}{% endif %}{% endblock %}
 {% block doc_h1 %}{{ doc.title|escape }}<br/>RFC {{ doc.rfc_number }}{% endblock %}
 
 {% block doc_metatable %}

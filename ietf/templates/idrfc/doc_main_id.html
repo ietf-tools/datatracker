@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ietf_filters %}
 
 {% block title %}{{ doc.draft_name_and_revision }}{% endblock %}
+{% block doc_meta_description %}{{ doc.title }} ({{info.type}}; {{doc.publication_date|date:"Y"}}){% endblock %}
 {% block doc_h1 %}{{ doc.title|escape }}<br/>{{ doc.draft_name_and_revision }}{% endblock %}
 
 {% block doc_metatable %}

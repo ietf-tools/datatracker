@@ -53,6 +53,7 @@ div.diffTool { border: 1px solid #cccccc; background: #edf5ff; padding: 8px 4px;
 
 {% block pagehead %}
 <link rel="alternate" type="application/atom+xml" href="/feed/comments/{% if info.is_rfc %}rfc{{doc.rfc_number}}{% else %}{{doc.draft_name}}{% endif %}/" />
+<meta name="description" content="{% block doc_meta_description %}{% endblock %}" />
 {% endblock %}
 
 {% block content %}
