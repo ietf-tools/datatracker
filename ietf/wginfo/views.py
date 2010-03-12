@@ -87,5 +87,5 @@ def wg_documents(request, acronym):
 
 def wg_charter2(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
-    concluded = (wg.status != 1)
+    concluded = (wg.status_id != 1)
     return render_to_response('wginfo/wg_charter.html', {'wg': wg, 'concluded':concluded, 'selected':'charter'}, RequestContext(request))
