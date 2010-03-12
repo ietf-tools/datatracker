@@ -3,7 +3,7 @@
 # Create your views here.
 #import models
 from django.shortcuts import render_to_response, get_object_or_404
-from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches
+from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches, WgProceedingsActivities
 from django.views.generic.list_detail import object_list
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.core.urlresolvers import reverse
@@ -11,8 +11,12 @@ from django.db.models import Q
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.utils.decorators import decorator_from_middleware
+from django.middleware.gzip import GZipMiddleware
+from django.db.models import Count
 import datetime
 
+@decorator_from_middleware(GZipMiddleware)
 def show_html_materials(request, meeting_num=None):
     proceeding = get_object_or_404(Proceeding, meeting_num=meeting_num)
     begin_date = proceeding.sub_begin_date
@@ -38,7 +42,8 @@ def show_html_materials(request, meeting_num=None):
         if item.group_acronym_id < -2:
             if item.slides():
                 queryset_training.append(item)
-    return object_list(request,queryset=queryset_list, template_name="meeting/list.html",allow_empty=True, extra_context={'meeting_num':meeting_num,'irtf_list':queryset_irtf, 'interim_list':queryset_interim, 'training_list':queryset_training, 'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date,'sub_began':sub_began})
+    cache_version = WgProceedingsActivities.objects.aggregate(Count('id'))
+    return object_list(request,queryset=queryset_list, template_name="meeting/list.html",allow_empty=True, extra_context={'meeting_num':meeting_num,'irtf_list':queryset_irtf, 'interim_list':queryset_interim, 'training_list':queryset_training, 'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date,'sub_began':sub_began,'cache_version':cache_version})
 
 def current_materials(request):
     meeting = Meeting.objects.order_by('-meeting_num')[0]
@@ -82,7 +87,8 @@ def agenda_info(num=None):
     plenaryw_agenda = get_plenary_agenda(n, -1)
     plenaryt_agenda = get_plenary_agenda(n, -2)
     return timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda
-    
+
+@decorator_from_middleware(GZipMiddleware)
 def html_agenda(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
     if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:

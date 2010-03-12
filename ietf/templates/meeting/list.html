@@ -17,6 +17,10 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 
 <p><a href="https://datatracker.ietf.org/cgi-bin/wg/wg_proceedings.cgi">Meeting Materials Manager</a> (for session chairs only; password required)</p>
 
+{# cache for 15 minutes, as long as there's no proceedings activity. takes 4-8 seconds to generate. #}
+{% load cache %}
+{% cache 900 ietf_meeting_materials meeting_num cache_version %}
+
 {% regroup object_list|dictsort:"area" by area_name as areas %}
   {% for wgs in areas %}
    <h2 class="ietf-divider">{{ wgs.grouper }}</h2>
@@ -61,4 +65,7 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 {% endfor %}
 {% endif %}
 <!-- End of Imterim Meetings -->
+
+{% endcache %}
+
 {% endblock %}

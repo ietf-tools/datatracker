@@ -43,6 +43,10 @@ Updated {{ update.updated|date:"Y-m-d H:i:s T" }}<br />
 
 <p><strong>IETF agendas are subject to change, up to and during the meeting.</strong></p>
 
+{# cache this part for 15 minutes -- it takes 3-6 seconds to generate #}
+{% load cache %}
+{% cache 900 ietf_meeting_agenda meeting.num %}
+
 <table id="agenda">
 {% for slot in timeslots %}
    {% ifchanged  %}
@@ -111,8 +115,6 @@ Updated {{ update.updated|date:"Y-m-d H:i:s T" }}<br />
 {% endfor %}
 </table>
 
-{% endblock %}
-{% block scripts %}
-
+{% endcache %}
 
 {% endblock %}
