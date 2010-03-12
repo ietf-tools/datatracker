@@ -843,7 +843,11 @@ class IETFWG(models.Model):
 
     def additional_urls(self):
         return AreaWGURL.objects.filter(name=self.group_acronym.acronym)        
-                  
+    def clean_email_archive(self):
+        x = self.email_archive
+        # remove "current/" and "maillist.html"
+        x = re.sub("^(http://www\.ietf\.org/mail-archive/web/)([^/]+/)(current/)?([a-z]+\.html)?$", "\\1\\2", x)
+        return x
     class Meta:
         db_table = 'groups_ietf'
 	ordering = ['?']	# workaround django wanting to sort by acronym but not joining with it
