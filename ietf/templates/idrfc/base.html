@@ -54,7 +54,6 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 {% endifnotequal %}
 </head>
 <body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
-<!-- 313163 sat51 v39--> 
 <div style="background-color:{% if server_mode %}{% ifnotequal server_mode "production" %}#c00000{% else %}#313163{% endifnotequal %}{%else %}#313163{%endif%};color:white;font-size:150%;height:35px;">
 <img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/><span style="padding-left:15px;font-weight:bold;letter-spacing:0.1em;">datatracker.ietf.org {% if server_mode %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper}} MODE{% endifnotequal %}{% endif %}</span>
 </div>
