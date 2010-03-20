@@ -1,4 +1,4 @@
-# Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+# Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django import template
-from ietf.idrfc.idrfc_wrapper import position_to_string
+from ietf.idtracker.models import IDInternal
+from ietf.idrfc.idrfc_wrapper import position_to_string, BALLOT_ACTIVE_STATES
 from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
 
 register = template.Library()
@@ -50,10 +51,31 @@ def get_user_name(context):
     return None
     
 def render_ballot_icon(context, doc):
-    if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
-        ballot = doc._idinternal.ballot
+    if isinstance(doc,IDInternal):
+        try:
+            ballot = doc.ballot
+            if not ballot.ballot_issued:
+                return ""
+        except BallotInfo.DoesNotExist:
+            return ""
+        if str(doc.cur_state) not in BALLOT_ACTIVE_STATES:
+            return ""
+        if doc.rfc_flag:
+            name = doc.document().filename()
+        else:
+            name = doc.document().filename
+        tracker_id = doc.draft_id
     else:
-        return ""
+        if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
+            ballot = doc._idinternal.ballot
+        else:
+            return ""
+        if doc.is_rfc_wrapper:
+            name = "rfc"+str(doc.rfc_number)
+            tracker_id = doc.rfc_number
+        else:
+            name = doc.draft_name
+            tracker_id = doc.tracker_id
     adId = get_user_adid(context)
     red = 0
     green = 0
@@ -76,10 +98,7 @@ def render_ballot_icon(context, doc):
             blank = blank + 1
         if adId and (p['ad'].id == adId):
             my = position_to_string(p['pos'])
-    if doc.is_rfc_wrapper:
-        return render_ballot_icon2("rfc"+str(doc.rfc_number), doc.rfc_number, red,yellow,green,gray,blank, my, adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
-    else:
-        return render_ballot_icon2(doc.draft_name, doc.tracker_id, red,yellow,green,gray,blank, my, adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
+    return render_ballot_icon2(name, tracker_id, red,yellow,green,gray,blank, my, adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
 
 def render_ballot_icon2(draft_name, tracker_id, red,yellow,green,gray,blank, my,adId):
     if adId:

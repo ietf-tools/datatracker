@@ -1,5 +1,5 @@
 {% comment %} 
-Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+Copyright (C) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
 Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% comment %}
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endcomment %}
-{% load ietf_filters %}
+{% load ietf_filters %}{% load ballot_icon %}
 
 {% if title2_first %}{% if title1_first %}<h2>{{ title1 }}</h2>
 {% if title1|startswith:"2." %}
@@ -84,41 +84,28 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 
 {% for doc in section_docs %}
 {% if forloop.first %}
-<table><tr><th>Area</th><th>Date</th></tr>
 {% endif %}
 
-<tr>
-<td>{{doc.obj.area_acronym|upper}}</td>
-<td>{{ doc.obj.event_date|date:"M d" }}</td>
-
-<td>{{ doc.obj.document.title|escape }} ({{ doc.obj.document.intended_status }})</td></tr>
-
-<tr><td></td><td></td><td>
+<table class="agenda-doc">
+<tbody>
+<tr><td>
 {% if doc.obj.rfc_flag %}
-<a href="{{ doc.obj.document.doclink }}">{{doc.obj.document.filename}}</a>
-<a href="http://tools.ietf.org/rfc/{{ doc.obj.document.filename }}">[txt]</a>
+<a href="/doc/rfc{{doc.obj.document.rfc_number}}">{{doc.obj.document.filename}}</a>
+<a href="http://www.rfc-editor.org/rfc/rfc{{doc.obj.document.rfc_number}}/">[txt]</a>
 {% else %}
-<a href="{{ doc.obj.document.doclink }}">{{doc.obj.document.displayname|safe}}</a>
-<!--       <a href="http://www.ietf.org/internet-draft/{{ doc.obj.document.filename }}-{{ doc.obj.document.revision }}.txt">[txt]</a> -->
-<a href="http://tools.ietf.org/id/{{ doc.obj.document.filename }}-{{ doc.obj.document.revision }}.txt">[txt]</a>
+<a href="/doc/{{doc.obj.document.filename}}/">{{doc.obj.document.displayname|safe}}</a>
+<a href="http://www.ietf.org/id/{{doc.obj.document.filename}}-{{doc.obj.document.revision}}.txt">[txt]</a>
 {% endif %}
 
-{% if doc.obj.ballot.active %}
-{% if private %}
-<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{ doc.obj.draft_id }}">
-{% else %}
-<a href="/idtracker/ballot/{{ doc.obj.ballot_id}}/">
-{% endif %}
-[Open Web Ballot]</a>
-{% endif %}
-</td></tr>
+<br/>{{ doc.obj.document.title|escape }} ({{ doc.obj.document.intended_status }})
+
 
 {% if doc.obj.note %} {# note: note is not escaped #}
-<tr><td></td><td></td><td>Note: {{ doc.obj.note|safe }}</td></tr>
+<br/>Note: {{ doc.obj.note|safe }}
 {% endif %}
 
 {% if doc.obj.draft.ipr.all %}
-<tr><td></td><td valign="top">IPR:</td><td>
+<td valign="top">IPR:
    <ul>
    {% for ipr in doc.obj.draft.ipr.all %}
       {% ifequal ipr.ipr.status 1 %}
@@ -126,16 +113,25 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
       {% endifequal %}
    {% endfor %}
    </ul>
-</td></tr>
+
 {% endif %}
 
-<tr><td></td><td>Token:</td><td><a href="mailto:{{doc.obj.token_email|urlencode}}">{{ doc.obj.token_name|escape }}</a></td></tr>
+<br/>Token: {{ doc.obj.token_name|escape }} ({{doc.obj.area_acronym}} area)
 {% if doc.obj.ballot.defer %}
-<tr><td></td><td></td><td>Was deferred by {{doc.obj.ballot.defer_by}} on {{doc.obj.ballot.defer_date}}</td></tr>
+<br/>Was deferred by {{doc.obj.ballot.defer_by}} on {{doc.obj.ballot.defer_date}}
 {% endif %}
-
+</td><td style="padding-left:20px;">
+{% ballot_icon doc.obj %}
+{% if doc.obj.ballot.active %}
+{% if private or user|in_group:"Area_Director,Secretariat" %}
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{ doc.obj.draft_id }}">
+{% else %}
+<a href="/idtracker/ballot/{{ doc.obj.ballot_id}}/">
+{% endif %}
+[ballot]</a>
+{% endif %}
+</td></tr></tbody></table>
 {% if forloop.last %}
-</table>
 {% endif %}
 {% empty %}
 <p>NONE</p>

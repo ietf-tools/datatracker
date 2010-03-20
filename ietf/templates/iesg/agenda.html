@@ -33,17 +33,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. #}
 {% endcomment %}
 {% load ietf_filters %}
-{% block title %}IESG Agenda{% endblock %}
+{% block title %}IESG Agenda: {{date}}{% endblock %}
 
 {% block morecss %}
 .agenda hr { margin-top: 2em; }
 .agenda #section1 h3, #section6 h3 { margin-top:0; margin-bottom:0;  }
-.agenda h3 { margin-left: 30px; }
-.agenda h4 { margin-left: 60px; margin-top: 0; margin-bottom: 0; }
-.agenda table { margin-left: 90px; margin-top:0em; margin-bottom: 1em;}
-.agenda #section23 p, #section4 p { margin-left:90px; margin-top: 0; margin-bottom:0; font-style:italic;}
-.agenda #section1 pre { margin-left: 60px; }
-.agenda blockquote { margin-left: 30px; width: 70ex;}
+.agenda noh3 { margin-left: 30px; }
+.agenda h4 { margin-top: 0; margin-bottom: 0; }
+.agenda #section23 p, #section4 p { margin-left:30px; nomargin-top: 0; nomargin-bottom:0; nofont-style:italic;}
+.agenda #section1 pre { margin-left: 30px; }
+.agenda blockquote { margin-left: 30px; width: 70ex; font-style:italic;}
+table.agenda-doc { margin-left: 30px; margin-top:0.5em; margin-bottom: 0.5em;}
+table.agenda-doc > tbody > tr { vertical-align:top; }
 {% endblock morecss %}
 
 {% block pagehead %}
@@ -54,14 +55,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. #}
 
 <div class="agenda">
 
-<h1>IESG Agenda</h1>
-
-<p>Good approximation of what will be included in the Agenda of 
-next Telechat ({{ date }}).</p>
+<h1>IESG Agenda: {{ date}} </h1>
 
 <p>See also: <a href="/iesg/agenda/documents/">Document on Future IESG Telechat Agendas</a> and <a href="/iesg/discusses/">IESG Discuss Positions</a>.</p>
-
-<hr />
 
 <h2>1. Administrivia</h2>
 <div id="section1">
