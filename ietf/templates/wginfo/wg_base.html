@@ -47,12 +47,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 .ietf-wg-details { float:right; padding: 4px;margin-top:16px; margin-left: 16px; }
 .ietf-wg-details tr { vertical-align: top; }
-.ietf-concluded-wg {background-color: #F8F8D0; }
+.ietf-concluded-bg {background-color: #F8F8D0; }
+.ietf-concluded-warning { background:red;color:white;padding:2px 2px;}
 {% endblock morecss %}
 
 {% block content %}
-<div {% if concluded %}class="ietf-concluded-wg"{% endif %}>
-<h1>{{wg.group_acronym.name}} ({{wg.group_acronym.acronym}}){% if concluded %}<br/>(concluded WG){% endif %}</h1>
+<div {% if concluded %}class="ietf-concluded-bg"{% endif %}>
+<h1>{{wg.group_acronym.name}} ({{wg.group_acronym.acronym}}){% if concluded %}<br/><span class="ietf-concluded-warning">(concluded WG)</span>{% endif %}</h1>
 
 <div class="ietf-navset">
 {% ifequal selected "documents" %}<span class="selected">Documents</span>{% else %}<a href="/wg/{{wg}}/">Documents</a>{% endifequal %} | 
