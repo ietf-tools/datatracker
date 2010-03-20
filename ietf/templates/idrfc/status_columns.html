@@ -31,24 +31,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
-
-{% load ballot_icon %}
-{% load ietf_filters %}
-<tr 
-{% if user|in_group:"Area_Director" %}
-{% if doc|my_position:user|equal:"Discuss" %}style="background:#ffa0a0;"{% endif %}
-{% if doc|my_position:user|equal:"Abstain" %}style="background:#ffff00;"{% endif %}
-{% if doc|my_position:user|equal:"Yes"  or  doc|my_position:user|slugify|equal:"no-objection" %}style="background:#a0ffa0;"{% endif %}
-{% if doc|my_position:user|equal:"Recuse" %}style="background:#c0c0c0;"{% endif %}
-{% endif %}
->
-<td class="doc">
-{{ doc.displayname_with_link|safe }}
-{% if doc.ietf_process.iesg_ballot.was_deferred %}
-<br/><b title="deferred by {{ doc.ietf_process.iesg_ballot.deferred_by}}">(deferred on {{doc.ietf_process.iesg_ballot.deferred_date }})</b>
+{% load ietf_filters %}{% load ballot_icon %}
+<td class="status">
+{{ doc.friendly_state|safe }} {% if not doc.rfc %}{{ doc.id|state_age_colored|safe }}{% endif %}
+{% block extra_status %}{% endblock %}
+{% if doc.rfc %}
+{% if doc.rfc.obsoleted_by %}<br />Obsoleted by {{ doc.rfc.obsoleted_by|urlize_ietf_docs }}{%endif %}
+{% if doc.rfc.updated_by %}<br />Updated by {{ doc.rfc.updated_by|urlize_ietf_docs }}{%endif %}
+{% if doc.rfc.has_errata %}<br /><a href="http://www.rfc-editor.org/errata_search.php?rfc={{doc.rfc.rfc_number}}" rel="nofollow">Errata</a>{% endif %}
+{% else %}{# not rfc #}
+{% if doc.id.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.id.draft_name}}">{{ doc.id.rfc_editor_state|escape }}</a>{% endif %}
 {% endif %}
 </td>
-<td class="title">{{ doc.title }}</td>
-{% include "iesg/agenda_documents_row_status.html" %}
-<td class="ad">{{ doc.ad_name|default:"" }}</td>
-</tr>
+<td class="ballot">
+{% if doc.rfc and doc.rfc.in_ietf_process and doc.rfc.ietf_process.has_active_iesg_ballot %}{% ballot_icon doc.rfc %}{% else %}{% if doc.id %}{% ballot_icon doc.id %}{%endif%}{%endif%}
+</td>

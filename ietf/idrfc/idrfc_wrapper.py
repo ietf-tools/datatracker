@@ -85,6 +85,7 @@ class IdWrapper:
     ietf_process = None
     
     def __init__(self, draft):
+        self.id = self
         if isinstance(draft, IDInternal):
             self._idinternal = draft
             self._draft = self._idinternal.draft
@@ -210,6 +211,11 @@ class IdWrapper:
         else:
             return None
 
+    def get_absolute_url(self):
+        return "/doc/"+self.draft_name+"/"
+    def displayname_with_link(self):
+        return '<a href="%s">%s</a>' % (self.get_absolute_url(), self.draft_name_and_revision())
+
     def to_json(self):
         result = jsonify_helper(self, ['draft_name', 'draft_status', 'latest_revision', 'rfc_number', 'title', 'tracker_id', 'publication_date','rfc_editor_state', 'replaced_by', 'replaces', 'in_ietf_process', 'file_types', 'group_acronym', 'stream_id','friendly_state', 'abstract', 'ad_name'])
         if self.in_ietf_process():
@@ -237,6 +243,7 @@ class RfcWrapper:
         self._rfcindex = rfcindex
         self._rfc = rfc
         self._idinternal = idinternal
+        self.rfc = self
 
         if not self._idinternal:
             try:
@@ -309,6 +316,11 @@ class RfcWrapper:
         else:
             # TODO: get AD name of the draft
             return None
+
+    def get_absolute_url(self):
+        return "/doc/rfc%d/" % (self.rfc_number,)
+    def displayname_with_link(self):
+        return '<a href="%s">RFC %d</a>' % (self.get_absolute_url(), self.rfc_number)
 
     def to_json(self):
         result = jsonify_helper(self, ['rfc_number', 'title', 'publication_date', 'maturity_level', 'obsoleted_by','obsoletes','updated_by','updates','has_errata','file_types','in_ietf_process', 'friendly_state'])
