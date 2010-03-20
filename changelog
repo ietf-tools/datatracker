@@ -9,7 +9,50 @@ ietfdb (2.46)
   # Send notifications about pending I-D expirations.
   42 4 * * 1 /a/www/ietf-datatracker/web/ietf/bin/notify-expirations
 
- -- Bill Fenner <fenner@fenron.net>  20 Mar 2010 12:59:50 -0800
+  From Henrik:
+
+  * Adding the south schema migration app (http://south.aeracode.org/).
+
+  * Change the text of IPR search result to more correctly reflect the 
+    status of the search result when IPR has been found on documents related to 
+    a listed document, but not on that document itself.
+
+  From Pasi:
+
+  * Use the new look for a bunch of additional pages
+
+  * /admin/: fix login redirects to work with RemoteUserMiddleware; hide 
+    password changing functionality (which doesn't work with RemoteUser anyway)
+
+  * /ipr/: remove separate list for updating
+
+  * /wg/acronym/*: clearer warning about concluded WGs
+
+  * A lot of various code and deployment cleanup
+
+  * A lot of minor tweaks and fixes (tooltips, links, and more)
+
+  * /doc/rfcNNNN/: include link to errata
+  * /doc/rfcNNN/: include links to PDF/PS versions (if they exist); handle 
+    RFCs that are not available as .txt
+
+  * Added meta description tags (to improve search result usability): 
+    drafts/RFCs, IPR disclosures, liaison statements
+
+  * Cache/gzip meeting agenda and materials pages
+
+  * If draft doesn't exist under /idtracker/, redirect to /doc/ instead of 
+    showing error
+
+  * Show /doc/ad/first.last/ only for ADs, not other folks in IESGLogin 
+    table
+
+  * Fixed bunch of null/unique attributes for model fields
+
+  * New script to check for violated database constraints (NOT NULL, 
+    UNIQUE, FOREIGN KEY)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2010 00:36:05 +0100
 
 ietfdb (2.45)
 
