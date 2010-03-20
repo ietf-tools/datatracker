@@ -8,6 +8,8 @@ ietfdb (2.46)
 
   * Added STD/FYI/BCP info to the standard RFC display page
 
+  * Added a link to the comment feed next to the nits link 
+
  -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2010 00:36:05 +0100
 
 ietfdb (2.46)
