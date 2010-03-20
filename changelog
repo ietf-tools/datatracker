@@ -4,6 +4,11 @@ ietfdb (2.46)
 
   * Add the I-D expiration notification script.
 
+  *** Please add the following cron entry:
+
+  # Send notifications about pending I-D expirations.
+  42 4 * * 1 /a/www/ietf-datatracker/web/ietf/bin/notify-expirations
+
  -- Bill Fenner <fenner@fenron.net>  20 Mar 2010 12:59:50 -0800
 
 ietfdb (2.45)
