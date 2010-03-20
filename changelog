@@ -4,6 +4,10 @@ ietfdb (2.46)
 
   * Added a link to the draft pages with email address to the draft authors
 
+  From RjS:
+
+  * Added STD/FYI/BCP info to the standard RFC display page
+
  -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2010 00:36:05 +0100
 
 ietfdb (2.46)

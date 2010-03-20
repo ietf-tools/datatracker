@@ -197,6 +197,9 @@ def urlize_ietf_docs(string, autoescape=None):
     if autoescape and not isinstance(string, SafeData):
         string = escape(string)
     string = re.sub("(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"http://tools.ietf.org/html/bcp\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"http://tools.ietf.org/html/std\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"http://tools.ietf.org/html/fyi\\2/\">\\1\\2</a>", string)
     string = re.sub("(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
     return mark_safe(string)
 urlize_ietf_docs.is_safe = True

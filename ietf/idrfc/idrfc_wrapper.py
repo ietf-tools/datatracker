@@ -287,6 +287,8 @@ class RfcWrapper:
         return self._rfc_doc_list("updated_by")
     def updates(self):
         return self._rfc_doc_list("updates")
+    def also(self):
+        return self._rfc_doc_list("also")
     def has_errata(self):
         return self._rfcindex and (self._rfcindex.has_errata > 0)
 
