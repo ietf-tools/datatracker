@@ -45,6 +45,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if doc.obsoletes %}<br />Obsoletes {{ doc.obsoletes|urlize_ietf_docs }}{%endif %}
 {% if doc.updates %}<br />Updates {{ doc.updates|urlize_ietf_docs }}{%endif %}
 {% if doc.draft_name %}<br/ >Was <a href="/doc/{{ doc.draft_name}}/">{{doc.draft_name}}</a>{% endif %}
+{% if doc.has_errata %}<br /><a href="http://www.rfc-editor.org/errata_search.php?rfc={{doc.rfc_number}}" rel="nofollow">Errata</a>{% endif %}
 </td></tr>
 <tr><td>Published:</td><td> {{ doc.publication_date|date:"Y-m"|default:"(data missing)" }}</td></tr>
 {% if doc.in_ietf_process %}
