@@ -123,6 +123,7 @@ INSTALLED_APPS = (
     'django.contrib.sitemaps',
     'django.contrib.admin',
     'django.contrib.humanize',
+    'south',
     'ietf.announcements',
     'ietf.idindex',
     'ietf.idtracker',
