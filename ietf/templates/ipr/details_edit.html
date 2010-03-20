@@ -1,143 +1,84 @@
-{% extends "base.html" %}
+{% extends "idrfc/base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load ietf_filters %}
 {% block title %}IPR Details - Form{% endblock %}
-{% block body_attributes %}
+{% block bodyAttrs %}
     {% if section_list.holder_contact %}onload="toggle_submitter_info('holder')"{% endif %}
     {% if section_list.ietf_contact %}onload="toggle_submitter_info('ietf')"{% endif %}
+{% endblock bodyAttrs %}
+
+{% block morecss %}
+table.ipr { margin-top: 1em; }
+.ipr .light td { background: #eeeeee; }
+.ipr .dark td { background: #dddddd; }
+.ipr th { background: #2647a0; color: white; }
+.ipr { width: 101ex; border: 0; border-collapse: collapse; }
+.ipr th, .ipr td { padding: 3px 6px; text-align: left; }
+.ipr tr { vertical-align: top; }
+.ipr td.iprlabel { width: 18ex; }
+.iprdata { font-weight: bold; }
+
+.iprdata li { list-style:none;}
+
+.required { color: red; float: right; padding-top: 0.7ex; font-size: 130%; }
+.errorlist { background: red; color: white; padding: 0.2ex 0.2ex 0.2ex 0.5ex; border: 0px; margin: 0px; }
+ ul.errorlist { margin: 0px; }
 {% endblock %}
+
 {% block content %}
 
-{% include "ipr/style.html" %}
 {% include "ipr/js.html" %}
 
-   <blockquote style="margin-bottom: 0px;">
-      {% if section_list.legacy_intro %}
-      <font size="3">
-	 This IPR disclosure was submitted by e-mail.<br>
-	 {% if not ipr.comply %}
-	 <font color="red">
-	    This IPR disclosure does not comply with the formal requirements of Section 6,
-	    "IPR Disclosures," of RFC 3979, "Intellectual Property Rights in IETF Technology."
-	 </font><br>
-	 {% endif %}
-	 Sections {% block legacy_sections %}I, II, and IV{% endblock %} of "The Patent Disclosure and Licensing Declaration Template 
-	 for {{ section_list.disclosure_type }}" have been completed for this IPR disclosure.
-	 Additional information may be available in the original submission.<br>
-	 <br>
-	 The text of the original IPR disclosure is available further down, and also here:<br />
-	 <a href="{{ipr.legacy_url_0}}">{{ipr.legacy_url_0}}</a>.
-	 <br>
-      </font>
-      {% endif %}
-      {% if section_list.new_intro or section_list.legacy_intro %}
-	 {% if ipr.legacy_title_1 %}
-	   <font size="3"><a href="{{ ipr.legacy_url_1 }}">{{ ipr.legacy_title_1 }}</a></font><br>
-	 {% endif %}
+<h1>The Patent Disclosure and Licensing Declaration Template for {{ section_list.disclosure_type }}</h1>
 
-	 {% if ipr.legacy_title_2 %}
-	   <font size="3"><a href="{{ ipr.legacy_url_2 }}">{{ ipr.legacy_title_2 }}</a></font><br>
-	 {% endif %}
+{% if section_list.generic %}
+<p>This document is an IETF IPR Patent Disclosure and Licensing
+Declaration Template and is submitted to inform the IETF of a) patent
+or patent application information that is not related to a specific
+IETF document or contribution, and b) an IPR Holder's intention with
+respect to the licensing of its necessary patent claims. No actual
+license is implied by submission of this template.</p>
+{% endif %}
 
-	 {% for item in ipr.updates.all %}
-	  <font size="3">
-	     <br>
-	     This IPR disclosure updates IPR disclosure ID #{{ item.updated.ipr_id }},
-	     {% ifequal item.updated.status 0 %}
-		"<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
-	     {% else %}
-		{% ifequal item.updated.status 1 %}
-		   "<a href="{% url ietf.ipr.views.show item.updated.ipr_id %}">{{ item.updated.title }}</a>".
-		{% else %}
-		   "{{ item.updated.title }}", which was removed at the request of the submitter.
-		{% endifequal %}
-	     {% endifequal %}
-	     <br>
-	  </font>
-	 {% endfor %}
+{% if section_list.specific %}
+<p>This document is an IETF IPR Disclosure and Licensing Declaration
+Template and is submitted to inform the IETF of a) patent or patent
+application information regarding the IETF document or contribution
+listed in Section IV, and b) an IPR Holder's intention with respect to
+the licensing of its necessary patent claims.  No actual license is
+implied by submission of this template. Please complete and submit a
+separate template for each IETF document or contribution to which the
+disclosed patent information relates.</p>
+{% endif %}
 
-	 {% for item in ipr.updated_by.all %}
-	 {% ifequal item.processed 1 %}
-	  <font size="3">
-	     <br>
-	     This IPR disclosure has been updated by IPR disclosure ID #{{ item.ipr.ipr_id }},
-	     {% ifequal item.status_to_be 1 %}
-		"<a href="{% url ietf.ipr.views.show item.ipr.ipr_id %}">{{ item.ipr.title }}</a>".
-	     {% else %}
-		"{{ item.ipr.title }}", which was removed at the request of the submitter.
-	     {% endifequal %}
-	     <br>
-	  </font>
-	 {% endifequal %}
-	 {% endfor %}
+{% if section_list.third_party %}
+<p>This form is used to let the IETF know about patent information
+regarding an IETF document or contribution when the person letting the
+IETF know about the patent has no relationship with the patent owners.
+Click <a href="https://datatracker.ietf.org/ipr/new-specific">here</a>
+if you want to disclose information about patents or patent
+applications where you do have a relationship to the patent owners or
+patent applicants.</p>
+ {% endif %}
 
-	 <br>
-	 Click <a href="{% url ietf.ipr.new.update ipr.ipr_id %}" rel="nofollow">here</a> to update this IPR disclosure<br>
-	 <!-- tag 1 -->
-	 <br>
-	 <font size="3"><strong>Submitted Date: {{ ipr.submitted_date|date:"F j, Y" }}</strong></font>
-      {% endif %}
+{% if section_list.also_specific %}
+<p>Note: According to Section 6.4.3 of
+<a href="http://www.ietf.org/rfc/rfc3979.txt">RFC 3979</a>,
+"Intellectual Property Rights in IETF Technology," you
+are still required to file specific disclosures on IPR unless your
+generic disclosure satisfies certain conditions. Please see the
+RFC for details.</p>
+ {% endif %}
 
-      {% if section_list.form_intro %}
-	 <h4 class="ipr">The Patent Disclosure and Licensing Declaration Template for {{ section_list.disclosure_type }}</h4>
-	 <p class="ipr">
-	 {% if section_list.generic %}
-	    This document is an IETF IPR Patent Disclosure and Licensing Declaration
-	    Template and is submitted to inform the IETF of a) patent
-	    or patent application information that is not related to a specific
-	    IETF document or contribution, and b) an IPR Holder's intention with
-	    respect to the licensing of its necessary patent claims. No actual
-	    license is implied by submission of this template.
-	 {% endif %}
-	 {% if section_list.specific %}
-	    This document is an IETF IPR Disclosure and Licensing Declaration
-	    Template and is submitted to inform the IETF of a) patent or patent
-	    application information regarding the IETF document or contribution
-	    listed in Section IV, and b) an IPR Holder's intention with respect to
-	    the licensing of its necessary patent claims.  No actual license is
-	    implied by submission of this template. Please complete and submit a
-	    separate template for each IETF document or contribution to which the
-	    disclosed patent information relates.
-	 {% endif %}
-	 {% if section_list.third_party %}
-	    This form is used to let the IETF know about patent information
-	    regarding an IETF document or contribution when the person letting the
-	    IETF know about the patent has no relationship with the patent owners.
-	    Click <a href="https://datatracker.ietf.org/ipr/new-specific">here</a> if you want to disclose information about patents or patent
-	    applications where you do have a relationship to the patent owners or
-	    patent applicants.
-	 {% endif %}
-	 </p>
+<p>If you wish to submit your IPR disclosure by e-mail, then please send
+it to <a href="mailto:ietf-ipr@ietf.org">ietf-ipr@ietf.org</a>.
+Submissions made by e-mail that do not comply with the formal
+requirements of Section 6, "IPR Disclosures," of 
+<a href="http://www.ietf.org/rfc/rfc3979.txt">RFC 3979</a>,
+"Intellectual Property Rights in IETF Technology",
+will be posted, but will be marked as "non-compliant".</p>
 
-	 {% if section_list.also_specific %}
-	 <p class="ipr">
-
-	    Note: According to Section 6.4.3 of
-	    <a href="http://www.ietf.org/rfc/rfc3979.txt?number=3979">RFC 3979</a>,
-	    "Intellectual Property Rights in IETF Technology," you
-	    are still required to file specific disclosures on IPR unless your
-	    generic disclosure satisfies certain conditions. Please see the
-	    RFC for details.
-	 </p>
-	 {% endif %}
-
-
-	 <p class="ipr">
-
-	    If you wish to submit your IPR disclosure by e-mail, then please send
-	    it to <a href="mailto:ietf-ipr@ietf.org">ietf-ipr@ietf.org</a>.
-	    Submissions made by e-mail that do not comply with the formal
-	    requirements of Section 6, "IPR Disclosures," of <a
-	    href="http://www.ietf.org/rfc/rfc3979.txt?number=3979">RFC 3979</a>,
-	    <!-- The following line isn't present on all three .cgi versions.  Bah. -->
-	    "Intellectual Property Rights in IETF Technology",
-	    will be posted, but will be marked as "non-compliant".
-
-	 </p>
-	 <hr />
-	 <form name="form1" method="post">
-      {% endif %}
-
+<form name="form1" method="post">
 
       {% if ipr.errors %}
       <p class="errorlist">
@@ -153,13 +94,12 @@
       {% endif %}
 
       <p class="formlegend">
-	 Fields marked with <span class="required">*</span> are required.
+	 Fields marked with "*" are required.
       </p>
    </blockquote>
 
    {% if section_list.holder %}
-   <blockquote class="{% cycle odd,even as field_parity %}" style="margin-top: 0px; ">
-      <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+      <table class="ipr">
 	 <tr class="{% cycle dark,light as row_parity %}">
 	    <th colspan=2>
 	       {% cycle I,II,III,IV,V,VI,VII,VIII as section %}.
@@ -168,35 +108,28 @@
 	    </th>
 	 </tr>
 	 <tr class="{% cycle row_parity %}">
-	    {% block section1_data %}
-	    <td class="fixwidth">Legal Name:</td>	<td><b> {{ ipr.legal_name.errors }} <span class="required">*</span> {{ ipr.legal_name }} </b></td>
-	    {% endblock %}
+	    <td class="iprlabel">Legal Name:</td>	<td class="iprdata">{{ ipr.legal_name.errors }} <span class="required">*</span> {{ ipr.legal_name }}</td>
 	 </tr>
       </table>
-   </blockquote>
    {% endif %}
 
-
    {% if section_list.holder_contact %}
-   <blockquote class="{% cycle field_parity %}">
-      <table border="0" cellpadding="0" cellspacing="0" class="ipr person">
-	 <tr class="{% cycle dark,light as row_parity %}"><th colspan="2" >
+      <table class="ipr">
+	 <tr class="{% cycle dark,light as row_parity %}"><th colspan="2">
 	    {% cycle section %}.
 	    Patent Holder's Contact for License Application
 	    </th>
 	 </tr>
          {% for field in ipr.holder_contact %}
          {% ifnotequal field.name "update_auth" %}
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">{{field.label }}:</td><td><b>{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">{{field.label }}:</td><td class="iprdata">{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</td></tr>
          {% endifnotequal %}
          {% endfor %}
       </table>
-   </blockquote>
    {% endif %}
 
    {% if section_list.ietf_contact %}
-   <blockquote class="{% cycle field_parity %}">
-      <table border="0" cellpadding="0" cellspacing="0" class="ipr person">
+      <table class="ipr">
 	 <tr class="{% cycle dark,light as row_parity %}">
 	    <th colspan="2" >
 	    {% cycle section %}.
@@ -205,17 +138,15 @@
 	 </tr>
          {% for field in ipr.ietf_contact %}
          {% ifnotequal field.name "update_auth" %}
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">{{field.label }}:</td><td><b>{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">{{field.label }}:</td><td class="iprdata">{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</td></tr>
          {% endifnotequal %}
          {% endfor %}
       </table>
-   </blockquote>
    {% endif %}
 
 
    {% if section_list.ietf_doc %}
-   <blockquote class="{% cycle field_parity %}">
-      <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+      <table class="ipr">
 	 <tr class="{% cycle dark,light as row_parity %}">
 	    <th colspan="2" >
 	    <span class="required">*</span>
@@ -223,16 +154,14 @@
 	    IETF Document or Other Contribution to Which this IPR Disclosure Relates:
 	    </th>
 	 </tr>
-            <tr class="{% cycle row_parity %}"><td class="fixwidth">RFC Numbers:</td><td><b>{{ ipr.rfclist.errors }} {{ ipr.rfclist }}</b></td></tr>
-            <tr class="{% cycle row_parity %}"><td class="fixwidth">I-D Filenames (draft-...):</td><td><b>{{ ipr.draftlist.errors}} {{ ipr.draftlist }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td class="fixwidth">Designations for Other Contributions:</td><td><b>{{ ipr.other_designations.errors }} {{ ipr.other_designations }}</b></td></tr>
+            <tr class="{% cycle row_parity %}"><td class="iprlabel">RFC Numbers:</td><td class="iprdata">{{ ipr.rfclist.errors }} {{ ipr.rfclist }}</td></tr>
+            <tr class="{% cycle row_parity %}"><td class="iprlabel">I-D Filenames (draft-...):</td><td class="iprdata">{{ ipr.draftlist.errors}} {{ ipr.draftlist }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Designations for Other Contributions:</td><td class="iprdata">{{ ipr.other_designations.errors }} {{ ipr.other_designations }}</td></tr>
       </table>
-   </blockquote>
    {% endif %}
 
       {% if section_list.patent_info %}
-      <blockquote class="{% cycle field_parity %}">
-	 <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+	 <table class="ipr">
 	    <tr class="{% cycle dark,light as row_parity %}">
 	       <th colspan="2" >
 	       {% cycle section %}.
@@ -257,16 +186,16 @@
 		  A. For granted patents or published pending patent applications,
 		  please provide the following information:</td>
 	       </tr>
-	       <tr><td class="fixwidth">Patent, Serial, Publication, Registration,
-			 or Application/File number(s):	</td><td><b>{{ ipr.patents.errors }} <span class="required">*</span> {{ ipr.patents }}</b></td></tr>
+	       <tr><td class="iprlabel">Patent, Serial, Publication, Registration,
+			 or Application/File number(s):	</td><td class="iprdata">{{ ipr.patents.errors }} <span class="required">*</span> {{ ipr.patents }}</td></tr>
 	    </tbody>
-	    <tr class="{% cycle row_parity %}"><td>Date(s) granted or applied for:	</td><td><b>{{ ipr.date_applied.errors }} <span class="required">*</span> {{ ipr.date_applied }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td>Country:				</td><td><b>{{ ipr.country.errors }} <span class="required">*</span> {{ ipr.country }}</b></td></tr>
-	    <tr class="{% cycle row_parity %}"><td>Additional Notes:		</td><td><b>{{ ipr.notes.errors }} {{ ipr.notes }}</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Date(s) granted or applied for:	</td><td class="iprdata">{{ ipr.date_applied.errors }} <span class="required">*</span> {{ ipr.date_applied }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Country:				</td><td class="iprdata">{{ ipr.country.errors }} <span class="required">*</span> {{ ipr.country }}</td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel">Additional Notes:		</td><td class="iprdata">{{ ipr.notes.errors }} {{ ipr.notes }}</td></tr>
 	    <tr class="{% cycle row_parity %}">
 	       <td colspan="2">
 		     B. Does your disclosure relate to an unpublished pending patent application?:
-		  <b>{{ ipr.is_pending.errors }} {{ ipr.is_pending }}</b>
+		  <div class="iprdata">{{ ipr.is_pending.errors }} {{ ipr.is_pending }}</div>
 	       </td>
 	    </tr>
 	    <tbody class="{% cycle row_parity %}">	    
@@ -275,7 +204,7 @@
 		     <td colspan="2">
 			C. Does this disclosure apply to all IPR owned by
 			the submitter?:
-			<b>{{ ipr.applies_to_all.errors }} {{ ipr.applies_to_all }}</b>
+			<div class="iprdata">{{ ipr.applies_to_all.errors }} {{ ipr.applies_to_all }}</div>
 		     </td>
 		  </tr>
 	       {% else %}
@@ -290,25 +219,23 @@
 		     </td>
 		  </tr>
 		  {% if ipr.document_sections %}
-		  <tr class="{% cycle row_parity %}"><td class="fixwidth"></td><td><b>{{ ipr.document_sections.errors }} {{ ipr.document_sections }}</b></td></tr>
+		  <tr class="{% cycle row_parity %}"><td class="iprlabel"></td><td><b>{{ ipr.document_sections.errors }} {{ ipr.document_sections }}</b></td></tr>
 		  {% else %}
-		  <tr class="{% cycle row_parity %}"><td class="fixwidth"></td><td></span><i>No information submitted</i></td></tr>
+		  <tr class="{% cycle row_parity %}"><td class="iprlabel"></td><td></span><i>No information submitted</i></td></tr>
 		  {% endif %}
 	       {% endif %}
 	    </tbody>
 	    {% else %}
-	    <tr class="{% cycle row_parity %}"><td class="fixwidth"></td><td><b>This disclosure relates to an unpublished pending patent application.</b></td></tr>
+	    <tr class="{% cycle row_parity %}"><td class="iprlabel"></td><td><b>This disclosure relates to an unpublished pending patent application.</b></td></tr>
 	    {% endif %}
 	    
 	 </table>
-      </blockquote>
       {% endif %}
 
 
       {% if section_list.licensing %}
       <!-- Not to be shown for third-party disclosures -->
-      <blockquote class="{% cycle field_parity %}">
-	 <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+	 <table  class="ipr">
 	    <tr class="{% cycle dark,light as row_parity %}">
 	       <th colspan="2" >
 	       {% cycle section %}.
@@ -324,7 +251,7 @@
 		   application(s) disclosed above that would necessarily be infringed by
 		   implementation of a technology required by a relevant IETF specification
 		   ("Necessary Patent Claims"), for the purpose of implementing such
-		   specification, is as follows(select one licensing declaration option only):
+		   specification, is as follows (select one licensing declaration option only):
 		   {% endif %}
 		   {% if section_list.specific %}
 		   The Patent Holder states that its position with respect
@@ -332,7 +259,7 @@
 		   application(s) disclosed above that would necessarily be infringed by
 		   implementation of the technology required by the relevant IETF specification
 		   ("Necessary Patent Claims"), for the purpose of implementing such
-		   specification, is as follows(select one licensing declaration option only):
+		   specification, is as follows (select one licensing declaration option only):
 		   {% endif %}
 		   {% if section_list.third_party %}
 		   The Patent Holder states that its position with respect
@@ -340,18 +267,18 @@
 		   application(s) disclosed above that would necessarily be infringed by
 		   implementation of the technology required by the relevant IETF specification
 		   ("Necessary Patent Claims"), for the purpose of implementing such
-		   specification, is as follows(select one licensing declaration option only):
+		   specification, is as follows (select one licensing declaration option only):
 		   {% endif %}
 	       </td>
 	    </tr>
 	    <tr>
 	       <td colspan="2">
-		  <b>{{ ipr.licensing_option.errors }} {{ ipr.licensing_option }}</b>
+		  <span class="iprdata">{{ ipr.licensing_option.errors }} {{ ipr.licensing_option }}</span>
 	       </td>
 	    </tr>
 	    </tbody>
 	    <tr class="{% cycle row_parity %}">
-	       <td></td><td> {{ ipr.stdonly_license.errors }}
+	       <td></td><td class="iprdata"> {{ ipr.stdonly_license.errors }}
 		  {{ ipr.stdonly_license }}
 		  Above licensing declaration is limited solely to standards-track IETF documents.
 	       </td>
@@ -362,7 +289,7 @@
 		     Licensing information, comments, notes, or URL for further information:
 		  </td>
 	       </tr>
-	       <tr ><td class="fixwidth"> </td><td><b>{{ ipr.comments.errors }} {{ ipr.comments }}</b></td></tr>
+	       <tr ><td class="iprlabel"> </td><td class="iprdata">{{ ipr.comments.errors }} {{ ipr.comments }}</td></tr>
 	    </tbody>
 	    {% if ipr.lic_checkbox %}
 	    <tr class="{% cycle row_parity %}">
@@ -397,13 +324,11 @@
 	       </td>
 	    </tr>
 	 </table>
-      </blockquote>
       {% endif %}
 
 
       {% if section_list.submitter %}
-      <blockquote class="{% cycle field_parity %}">
-	 <table border="0" cellpadding="0" cellspacing="0" class="ipr person">
+	 <table class="ipr">
 	    <tr class="{% cycle dark,light as row_parity %}">
 	       <th colspan="2" >
 	       {% cycle section %}.
@@ -433,34 +358,26 @@
 	    {% endif %}
          {% for field in ipr.submitter %}
          {% ifnotequal field.name "update_auth" %}
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">{{field.label }}:</td><td><b>{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">{{field.label }}:</td><td class="iprdata">{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</td></tr>
          {% endifnotequal %}
          {% endfor %}
 	 </table>
-      </blockquote>
       {% endif %}
 
 
       {% if section_list.notes %}
-      <blockquote class="{% cycle field_parity %}">
-	 <table border="0" cellpadding="0" cellspacing="0" class="ipr">
+	 <table class="ipr">
 	    <tr class="{% cycle dark,light as row_parity %}">
 	       <th colspan="2" >
 	       {% cycle section %}.
 	       Other Notes:
 	       </th>
 	    </tr>
-	       <tr class="{% cycle row_parity %}"><td class="fixwidth"> </td><td><b>{{ ipr.other_notes.errors }} {{ ipr.other_notes }}</b></td></tr>
+	       <tr class="{% cycle row_parity %}"><td class="iprlabel"> </td><td class="iprdata">{{ ipr.other_notes.errors }} {{ ipr.other_notes }}</td></tr>
 	 </table>
-      </blockquote>
       {% endif %}
 
-      <center><input type="submit" name="submit" value="Submit"></center>
+      <input type="submit" name="submit" value="Submit" />
       </form>
-      <blockquote>
-	 <hr>
-	 <img src="/images/blue.gif" hspace="3" border="0"><a href="{% url ietf.ipr.views.default %}">IPR Disclosure Page</a><br>
-	 <img src="/images/blue.gif" hspace="3" border="0"><a href="{% url ietf.ipr.views.showlist %}">View IPR Disclosures</a><br><br>
-      </blockquote>
 
 {% endblock %}

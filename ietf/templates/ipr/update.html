@@ -1,13 +1,30 @@
+{% extends "idrfc/base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "base.html" %}
 {% block title %}IPR Update{% endblock %}
+
+{% block morecss %}
+table.ipr { margin-top: 1em; }
+.ipr .light td { background: #eeeeee; }
+.ipr .dark td { background: #dddddd; }
+.ipr th { background: #2647a0; color: white; }
+.ipr { width: 101ex; border: 0; border-collapse: collapse; }
+.ipr th, .ipr td { padding: 3px 6px; text-align: left; }
+.ipr tr { vertical-align: top; }
+.ipr td.iprlabel { width: 18ex; }
+.iprdata { font-weight: bold; }
+
+.required { color: red; float: right; padding-top: 0.7ex; font-size: 130%; }
+   .errorlist	{ background: red; color: white; padding: 0.2ex 0.2ex 0.2ex 0.5ex; border: 0px; margin: 0px; font-family: Arial, sans-serif; }
+   ul.errorlist { margin: 0px; }
+   .errorlist	{ background: red; color: white; padding: 0.2ex 0.2ex 0.2ex 0.5ex; border: 0px; margin: 0px; font-family: Arial, sans-serif; }
+   ul.errorlist { margin: 0px; }
+{% endblock %}
+
 {% block content %}
 
-{% include "ipr/style.html" %}
+<h1>Updating {{ type|title }} IPR Disclosure <br><i>{{ ipr.title|escape }}</i></h1>
 
-<h4><font color="#000055"><center>Updating {{ type|title }} IPR Disclosures <br><i>{{ ipr.title|escape }}</i></center></font></h4>
-
-	 <form name="form1" method="post">
+ <form name="form1" method="post">
       {% if form.errors %}
       <p class="errorlist">
 	 There were errors in the submitted form -- see below.  Please correct these and resubmit.
@@ -21,27 +38,25 @@
       </p>
       {% endif %}
 
-   <blockquote class="odd">
-      <table border="0" cellpadding="0" cellspacing="0" class="ipr person">
+      <table class="ipr">
 	 <tr class="{% cycle dark,light as row_parity %}"><th colspan="2" >
 	    Contact Information for Submitter of this Update.
 	    </th>
 	 </tr>
          {% for field in form %} 
          {% ifnotequal field.name "update_auth" %}
-	 <tr class="{% cycle row_parity %}"><td class="fixwidth">{{field.label }}:</td><td><b>{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</b></td></tr>
+	 <tr class="{% cycle row_parity %}"><td class="iprlabel">{{field.label }}:</td><td class="iprdata">{{ field.errors }} {% if field.field.required %}<span class="required">*</span>{%endif%} {{ field }}</td></tr>
          {% endifnotequal %}
          {% endfor %}
       </table>
-   </blockquote>
       <p>
       {{ form.update_auth.errors }}
       <span class="required">*</span>
       {{ form.update_auth }}
       <b>I am authorized to update this IPR disclosure, and I understand that notification of this update will be provided to the submitter of the original IPR disclosure and to the Patent Holder's Contact.</b>
       </p>
-      <input type="submit" name="submit" value="Submit">
-      &nbsp; <input type="button" value="Cancel" onClick="history.go(-1);return true;"><br>
+      <p><input type="submit" name="submit" value="Submit" />
+      &nbsp; <input type="button" value="Cancel" onClick="history.go(-1);return true;" /></p>
       </form>
 
 {% endblock %}
