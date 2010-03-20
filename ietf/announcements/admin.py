@@ -14,6 +14,7 @@ class AnnouncementAdmin(admin.ModelAdmin):
     list_display=('announced_from', 'announced_to', 'announced_date', 'subject')
     date_hierarchy='announced_date'
     list_filter=['nomcom', 'manually_added']
+    raw_id_fields=['announced_by']
 admin.site.register(Announcement, AnnouncementAdmin)
 
 class ScheduledAnnouncementAdmin(admin.ModelAdmin):

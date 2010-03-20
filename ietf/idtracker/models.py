@@ -27,6 +27,8 @@ class AreaStatus(models.Model):
     def __str__(self):
 	return self.status
     class Meta:
+        verbose_name = "Area Status"
+        verbose_name_plural = "Area Statuses"
         db_table = 'area_status'
 
 # I think equiv_group_flag is historical.
@@ -95,6 +97,7 @@ class AreaWGURL(models.Model):
         return u'%s (%s)' % (self.name, self.description)
     class Meta:
         ordering = ['name']
+        verbose_name = "Area/WG URL"
         db_table = "wg_www_pages"
 
 class IDStatus(models.Model):
@@ -307,7 +310,7 @@ class IESGLogin(models.Model):
     last_name = models.CharField(blank=True, max_length=25)
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', unique=True)
     pgp_id = models.CharField(blank=True, null=True, max_length=20)
-    default_search = models.IntegerField(null=True)
+    default_search = models.NullBooleanField()
     def __str__(self):
         #return "%s, %s" % ( self.last_name, self.first_name)
         return "%s %s" % ( self.first_name, self.last_name)
@@ -437,8 +440,9 @@ class RfcAuthor(models.Model):
 	verbose_name = 'RFC Author'
 
 class RfcObsolete(models.Model):
+    ACTION_CHOICES=(('Obsoletes', 'Obsoletes'), ('Updates', 'Updates'))
     rfc = models.ForeignKey(Rfc, db_column='rfc_number', related_name='updates_or_obsoletes')
-    action = models.CharField(max_length=20)
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
     rfc_acted_on = models.ForeignKey(Rfc, db_column='rfc_acted_on', related_name='updated_or_obsoleted_by')
     def __str__(self):
         return "RFC%04d %s RFC%04d" % (self.rfc_id, self.action, self.rfc_acted_on_id)
@@ -773,6 +777,7 @@ class WGType(models.Model):
     def __str__(self):
 	return self.type
     class Meta:
+        verbose_name = "WG Type"
         db_table = 'g_type'
 
 class WGStatus(models.Model):
@@ -781,6 +786,8 @@ class WGStatus(models.Model):
     def __str__(self):
 	return self.status
     class Meta:
+        verbose_name = "WG Status"
+        verbose_name_plural = "WG Statuses"
         db_table = 'g_status'
 
 class IETFWG(models.Model):

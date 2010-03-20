@@ -77,8 +77,9 @@ class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
         (1, "Working Group News"),
         (2, "IAB News"),
-        (3, "Management Items")
+        (3, "Management Item")
         )
+    TYPE_CHOICES_DICT = dict(TYPE_CHOICES)
     id = models.AutoField(primary_key=True, db_column='template_id')
     text = models.TextField(blank=True, db_column='template_text')
     type = models.IntegerField(db_column='template_type', choices=TYPE_CHOICES)
@@ -87,6 +88,9 @@ class TelechatAgendaItem(models.Model):
     #note = models.TextField(null=True,blank=True)
     #discussed_status_id = models.IntegerField(null=True, blank=True)
     #decision = models.TextField(null=True,blank=True)
+    def __unicode__(self):
+        type_name = self.TYPE_CHOICES_DICT.get(self.type, str(self.type))
+        return u'%s: %s' % (type_name, self.title)
     class Meta:
         db_table = 'templates'
 

@@ -23,6 +23,8 @@ class FromBodies(models.Model):
 	return self.body_name
     class Meta:
         db_table = 'from_bodies'
+        verbose_name = "From body"
+        verbose_name_plural = "From bodies"
 
 class LiaisonDetail(models.Model):
     detail_id = models.AutoField(primary_key=True)

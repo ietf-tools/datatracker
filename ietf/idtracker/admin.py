@@ -11,7 +11,7 @@ class AreaAdmin(admin.ModelAdmin):
 admin.site.register(Area, AreaAdmin)
 
 class AreaDirectorAdmin(admin.ModelAdmin):
-    pass
+    raw_id_fields=['person']
 admin.site.register(AreaDirector, AreaDirectorAdmin)
 
 class AreaStatusAdmin(admin.ModelAdmin):
@@ -67,16 +67,17 @@ class IDSubStateAdmin(admin.ModelAdmin):
 admin.site.register(IDSubState, IDSubStateAdmin)
 
 class IESGCommentAdmin(admin.ModelAdmin):
-    pass
+    raw_id_fields = ['ballot','ad']
 admin.site.register(IESGComment, IESGCommentAdmin)
 
 class IESGDiscussAdmin(admin.ModelAdmin):
-    pass
+    raw_id_fields = ['ballot','ad']
 admin.site.register(IESGDiscuss, IESGDiscussAdmin)
 
 class IESGLoginAdmin(admin.ModelAdmin):
     ordering=['user_level', 'last_name']
     list_display=('login_name', 'first_name', 'last_name', 'user_level')
+    raw_id_fields=['person']
 admin.site.register(IESGLogin, IESGLoginAdmin)
 
 class IETFWGAdmin(admin.ModelAdmin):
@@ -93,6 +94,7 @@ class InternetDraftAdmin(admin.ModelAdmin):
     list_display=('filename', 'revision', 'title', 'status')
     search_fields=['filename', 'title']
     list_filter=['status']
+    raw_id_fields=['replaced_by']
 admin.site.register(InternetDraft, InternetDraftAdmin)
 
 class PersonOrOrgInfoAdmin(admin.ModelAdmin):
@@ -101,7 +103,7 @@ class PersonOrOrgInfoAdmin(admin.ModelAdmin):
 admin.site.register(PersonOrOrgInfo, PersonOrOrgInfoAdmin)
 
 class PositionAdmin(admin.ModelAdmin):
-    pass
+    raw_id_fields=['ballot','ad']
 admin.site.register(Position, PositionAdmin)
 
 class RfcAdmin(admin.ModelAdmin):
@@ -115,7 +117,7 @@ class RfcIntendedStatusAdmin(admin.ModelAdmin):
 admin.site.register(RfcIntendedStatus, RfcIntendedStatusAdmin)
 
 class RfcObsoleteAdmin(admin.ModelAdmin):
-    pass
+    raw_id_fields=['rfc','rfc_acted_on']
 admin.site.register(RfcObsolete, RfcObsoleteAdmin)
 
 class RfcStatusAdmin(admin.ModelAdmin):

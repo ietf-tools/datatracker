@@ -86,6 +86,4 @@ class ScheduledAnnouncement(models.Model):
     class Meta:
         db_table = 'scheduled_announcements'
 
-# changes done by convert-096.py:changed maxlength to max_length
-# removed filter_interface
-# removed raw_id_admin
+

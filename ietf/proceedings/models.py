@@ -502,6 +502,8 @@ class WgProceedingsActivities(models.Model, ResolveAcronym):
         return "this is WgProceedingsActivities.__str__"
     class Meta:
         db_table = 'wg_proceedings_activities'
+        verbose_name = "WG Proceedings Activity"
+        verbose_name_plural = "WG Proceedings Activities"
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core
