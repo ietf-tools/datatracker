@@ -11,27 +11,17 @@ from ietf.ipr.view_sections import section_table
 from ietf.utils import log
 import os
 
-
 def default(request):
     """Default page, with links to sub-pages"""
     return render("ipr/disclosure.html", {}, context_instance=RequestContext(request))
 
 def showlist(request):
-    """Display a list of existing disclosures"""
-    return list_all(request, 'ipr/list.html')
-
-def updatelist(request):
-    """Display a list of existing disclosures, with links to update forms"""
-    return list_all(request, 'ipr/update_list.html')
-
-def list_all(request, template):
-    """Display a list of existing disclosures, using the provided template"""    
     disclosures = IprDetail.objects.all()
     generic_disclosures  = disclosures.filter(status__in=[1,3], generic=1)    
     specific_disclosures = disclosures.filter(status__in=[1,3], generic=0, third_party=0)
     thirdpty_disclosures = disclosures.filter(status__in=[1,3], generic=0, third_party=1)
     
-    return render(template,
+    return render("ipr/list.html",
         {
             'generic_disclosures' : generic_disclosures.order_by(* ['-submitted_date', ] ),
             'specific_disclosures': specific_disclosures.order_by(* ['-submitted_date', ] ),

@@ -84,7 +84,10 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	 {% endifequal %}
 	 {% endfor %}
 
-	 <p>Click <a href="{% url ietf.ipr.new.update ipr.ipr_id %}" rel="nofollow">here</a> to update this IPR disclosure</p>
+	 <p><a href="{% url ietf.ipr.new.update ipr.ipr_id %}" rel="nofollow">Update this IPR disclosure</a>. Note: Updates to IPR disclosures must only be made by authorized
+   representatives of the original submitters. Updates will automatically
+   be forwarded to the current Patent Holder's Contact and to the Submitter
+   of the original IPR disclosure.</p>
 	 <!-- tag 1 -->
 	 <p><strong>Submitted Date: {{ ipr.submitted_date|date:"F j, Y" }}</strong></p>
       {% endif %}
@@ -100,9 +103,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	    </th>
 	 </tr>
 	 <tr class="{% cycle row_parity %}">
-	    {% block section1_data %}
 	    <td class="iprlabel">Legal Name:</td>	<td class="iprdata">{{ ipr.legal_name|escape }}</td>
-	    {% endblock %}
 	 </tr>
       </table>
    {% endif %}

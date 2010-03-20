@@ -20,7 +20,7 @@
 200	/ipr/new-specific/?_testpost=1
 200	/ipr/new-third-party/?_testpost=1
 
-200	/ipr/update/			
+301	/ipr/update/			
 200	/ipr/update/657/ # Generic
 200	/ipr/update/820/ # Third-party		
 200	/ipr/update/844/ # Specific	
