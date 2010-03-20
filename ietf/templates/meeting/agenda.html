@@ -96,7 +96,7 @@ Updated {{ update.updated|date:"Y-m-d H:i:s T" }}<br />
 	 <td>{% if session.info.isWG %}<a href="http://www.ietf.org/dyn/wg/charter/{{ session.info.acronym|lower }}-charter.html">{{ session.info.acronym|lower }}</a>{% else %}{{ session.info.acronym|lower }}{% endif %}</td>
 	 <td>
             <img src="/images/color-palette-4x4.gif" alt="" onclick="pickAgendaColor('{{meeting.num}}-{{slot.meeting_date|date:"D"|lower}}-{{slot.time_desc|slice:":4"}}-{{session.info.acronym|lower}}',this);" title="color tag this line"/>
-	    {% if session.info.agenda_file %}<a href="http://www3.ietf.org/proceedings/{{ session.info.agenda_file }}" title="session agenda">{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}</a>{% else %}{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}{% endif %}
+	    {% if session.info.agenda_file %}<a href="http://www.ietf.org/proceedings/{{ session.info.agenda_file }}" title="session agenda">{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}</a>{% else %}{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}{% endif %}
 	    {% if session.info.special_agenda_note %}<br/> - {{ session.info.special_agenda_note }}{% endif %}
 	 </td>
 	 {% endif %}
