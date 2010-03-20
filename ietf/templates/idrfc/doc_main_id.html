@@ -72,7 +72,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endblock doc_metatable %}
 
 {% block doc_metalinks %}
- <a href="/ipr/search/?option=document_search&amp;id_document_tag={{doc.tracker_id}}" rel="nofollow">IPR Disclosures</a>
+ <a href="mailto:{{doc.draft_name}}@tools.ietf.org" rel="nofollow">E-mail Authors</a>
+| <a href="/ipr/search/?option=document_search&amp;id_document_tag={{doc.tracker_id}}" rel="nofollow">IPR Disclosures</a>
 | <a href="http://www.fenron.net/~fenner/ietf/deps/index.cgi?dep={{doc.draft_name}}" rel="nofollow">Dependencies to this draft</a>
 | <a href="http://tools.ietf.org/idnits?url=http://tools.ietf.org/id/{{doc.draft_name_and_revision}}.txt" rel="nofollow" target="_blank">Check nits</a>
 {% endblock %}

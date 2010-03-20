@@ -1,5 +1,13 @@
 ietfdb (2.46)
 
+  From Suresh: 
+
+  * Added a link to the draft pages with email address to the draft authors
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2010 00:36:05 +0100
+
+ietfdb (2.46)
+
   From Robert:
 
   * Add the I-D expiration notification script.
