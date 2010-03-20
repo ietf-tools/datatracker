@@ -77,9 +77,16 @@ def document_main_rfc(request, rfc_number):
 
     info = {}
     info['is_rfc'] = True
-    (content1, content2) = _get_html(
-        "rfc"+str(rfc_number)+",html", 
-        os.path.join(settings.RFC_PATH, "rfc"+str(rfc_number)+".txt"))
+    info['has_pdf'] = (".pdf" in doc.file_types())
+    info['has_txt'] = (".txt" in doc.file_types())
+    info['has_ps'] = (".ps" in doc.file_types())
+    if info['has_txt']:
+        (content1, content2) = _get_html(
+            "rfc"+str(rfc_number)+",html", 
+            os.path.join(settings.RFC_PATH, "rfc"+str(rfc_number)+".txt"))
+    else:
+        content1 = ""
+        content2 = ""
 
     history = _get_history(doc, None)
             

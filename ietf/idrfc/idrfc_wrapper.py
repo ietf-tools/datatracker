@@ -287,9 +287,9 @@ class RfcWrapper:
         return self.ietf_process != None
 
     def file_types(self):
-        # Not really correct, but the database doesn't
-        # have this data for RFCs yet
-        return [".txt"]
+        types = self._rfcindex.file_formats
+        types = types.replace("ascii","txt")
+        return ["."+x for x in types.split(",")]
 
     # TODO:
     # also/bcp_number/std_number/fyi_number

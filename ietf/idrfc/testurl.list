@@ -30,6 +30,11 @@
 200     /doc/rfc822/
 200     /doc/rfc822/_debug.data
 
+# file formats
+200     /doc/rfc9/ # PDF only
+200	/doc/rfc2490/ # TXT+PDF+PS
+200	/doc/rfc500/ # not online
+
 404	/doc/draft-no-such-draft/
 404	/doc/rfc4637/
 
