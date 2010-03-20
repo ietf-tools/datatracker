@@ -8,7 +8,7 @@ import smtplib
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.template.loader import render_to_string
-from django.template import RequestContext
+from django.template import Context,RequestContext
 from ietf.utils import log
 import sys
 import time
@@ -95,12 +95,18 @@ def copy_email(msg, to, toUser=False):
     new['To'] = to
     send_smtp(new)
 
+def mail_context(request):
+    if request:
+        return RequestContext(request)
+    else:
+        return Context()
+  
 def send_mail_subj(request, to, frm, stemplate, template, context, *args, **kwargs):
     '''
     Send an email message, exactly as send_mail(), but the
     subject field is a template.
     '''
-    subject = render_to_string(stemplate, context, context_instance=RequestContext(request)).replace("\n"," ").strip()
+    subject = render_to_string(stemplate, context, context_instance=mail_context(request)).replace("\n"," ").strip()
     return send_mail(request, to, frm, subject, template, context, *args, **kwargs)
 
 def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
@@ -110,7 +116,7 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     The body is a text/plain rendering of the template with the context.
     extra is a dict of extra headers to add.
     '''
-    txt = render_to_string(template, context, context_instance=RequestContext(request))
+    txt = render_to_string(template, context, context_instance=mail_context(request))
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
 def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=None, bcc=None):
