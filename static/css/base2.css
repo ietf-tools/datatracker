@@ -47,6 +47,8 @@ body { margin: 0; }
 #ietf-login { color: white; position:absolute; top:8px; right: 10px; }
 #ietf-login a, #ietf-login a:visited { color: white; }
 
+.ietf-box { background:#edf5ff; border: 1px solid #cccccc; }
+
 .ietf-navbar { background-color: #edf5ff; padding:0; border: 1px solid #89d; margin-top:4px; }
 .ietf-navbar ul { padding: 0; margin: 0; }
 .ietf-navbar ul li { list-style: none; padding: 0; margin: 0; font-size: 93%; padding: 2px 0px 2px 0px; }
@@ -69,7 +71,7 @@ body { margin: 0; }
 .ietf-ballot .square { border:1px solid black; display: block; float:left;width: 10px; height:10px;font-size:1px;margin-right:4px; margin-top:1px;}
 .ietf-ballot .was { padding-left: 10px; font-size:85%; }
 
-#search_form_box {width: 99.5%; border: 0px solid #cccccc; background:#edf5ff;margin-top:8px; padding:4px; margin-bottom:1em; padding-left:8px;}
+.search_form_box {width: 99.5%; margin-top:8px; padding:4px; margin-bottom:1em; padding-left:8px;}
 form#search_form { padding-top: 4px; padding-bottom: 4px; }
 #search_form input { padding: 0; padding-left: 2px; border: 1px solid #89d;}
 #search_form input.radio { padding-left: 0; border: 0; }

@@ -5,13 +5,12 @@
 {% block morecss %}
 form { clear:both; margin-top:1em;}
 label { float:left; width: 200px; }
-.search_form_box { border: 1px solid #cccccc; background:#edf5ff; padding:4px;padding-left:8px;}
 {% endblock %}
 {% block content %}
 
 <h1>IPR Search</h1>
 <h2>Document Search</h2>
-<div class="search_form_box">
+<div class="ietf-box search_form_box">
       <form method="get">
 	 <input type="hidden" name="option" value="document_search">  
 
@@ -60,7 +59,7 @@ label { float:left; width: 200px; }
 
 <h2>Keyword Search</h2>
 
-<div class="search_form_box">
+<div class="ietf-box search_form_box">
 
       <form method="get">
 	 <input type="hidden" name="option" value="patent_search">

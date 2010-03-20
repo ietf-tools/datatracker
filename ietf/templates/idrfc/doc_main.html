@@ -35,14 +35,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% load ietf_filters %}
 {% block morecss %}
-#metabox { width: 99%; border:1px solid #cccccc; background:#edf5ff;margin-top:8px; padding:4px; margin-bottom:1em; }
+.metabox { width: 99%; margin-top:8px; padding:4px; margin-bottom:1em; }
 #metatable { border: 0; border-spacing: 0; }
 #metatable tr { vertical-align:top ;}
 #metatable .post-rfc { font-style: italic; color: #004000; }
 .comment_toggle { text-decoration: underline; color: blue; }
 .comment_date { white-space: nowrap; }
 
-div.diffTool { border: 1px solid #cccccc; background: #edf5ff; padding: 8px 4px; margin: 8px 0;}
+div.diffTool { padding: 8px 4px; margin: 8px 0;}
 .diffTool label { float:left; width:50px; }
 
 .markup_draft pre {line-height: 1.2em; margin: 0; }
@@ -69,7 +69,7 @@ div.diffTool { border: 1px solid #cccccc; background: #edf5ff; padding: 8px 4px;
 <div class="yui-content">
 
 <div id="doc">
-<div id="metabox">
+<div class="ietf-box metabox">
 <table id="metatable">
 {% block doc_metatable %}{% endblock %}
 </table>
