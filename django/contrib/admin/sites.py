@@ -204,12 +204,12 @@ class AdminSite(object):
             url(r'^logout/$',
                 wrap(self.logout),
                 name='logout'),
-            url(r'^password_change/$',
-                wrap(self.password_change, cacheable=True),
-                name='password_change'),
-            url(r'^password_change/done/$',
-                wrap(self.password_change_done, cacheable=True),
-                name='password_change_done'),
+            #url(r'^password_change/$',
+            #    wrap(self.password_change, cacheable=True),
+            #    name='password_change'),
+            #url(r'^password_change/done/$',
+            #    wrap(self.password_change_done, cacheable=True),
+            #    name='password_change_done'),
             url(r'^jsi18n/$',
                 wrap(self.i18n_javascript, cacheable=True),
                 name='jsi18n'),
@@ -277,6 +277,9 @@ class AdminSite(object):
         """
         Displays the login form for the given HttpRequest.
         """
+        url = "/accounts/login/?next="+request.get_full_path()
+        return http.HttpResponseRedirect(url)
+
         from django.contrib.auth.models import User
 
         # If this isn't already the login page, display it.

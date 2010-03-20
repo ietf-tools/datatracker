@@ -31,6 +31,7 @@
                 {% if docsroot %}
                     <a href="{{ docsroot }}">{% trans 'Documentation' %}</a> /
                 {% endif %}
+                {% comment %}
                 {% url admin:password_change as password_change_url %}
                 {% if password_change_url %}
                     <a href="{{ password_change_url }}">
@@ -38,6 +39,7 @@
                     <a href="{{ root_path }}password_change/">
                 {% endif %}
                 {% trans 'Change password' %}</a> /
+                {% endcomment %}
                 {% url admin:logout as logout_url %}
                 {% if logout_url %}
                     <a href="{{ logout_url }}">
