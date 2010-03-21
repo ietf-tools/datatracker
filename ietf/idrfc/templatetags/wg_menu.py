@@ -59,7 +59,7 @@ class WgMenuNode(template.Node):
         if x:
             return x
         areas = [{'area':x, 'short_name':get_short_name(x)} for x in Area.active_areas()]
-        x = loader.render_to_string('idrfc/base_wgmenu.html', {'areas':areas})
+        x = loader.render_to_string('base_wgmenu.html', {'areas':areas})
         cache.set('idrfc_wgmenu', x, 30*60)
         return x
     
