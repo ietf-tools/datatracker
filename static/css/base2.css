@@ -61,7 +61,7 @@ body { margin: 0; }
 .ietf-navbar a, .ietf-navbar a:visited { color: #000000; }
 .ietf-navbar > ul > li > a:hover { background-color: #b3d4ff; }
 .ietf-navbar .yuimenuitemlabel { font-size: 12px; padding: 0 10px; }
-.ietf-navbar #wgs .bd { background-color: #ecf5fa; }
+.ietf-navbar #wgs .bd { background-color: #edf5ff; }
 .ietf-navbar #wgs > .bd { border: 0;}
 
 .ietf-ballot .left { background: #edf5ff; width:160px; padding-left: 10px; }
