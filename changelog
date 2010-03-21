@@ -1,4 +1,4 @@
-ietfdb (2.46)
+ietfdb (2.47)
 
   From Suresh: 
 
@@ -9,6 +9,11 @@ ietfdb (2.46)
   * Added STD/FYI/BCP info to the standard RFC display page
 
   * Added a link to the comment feed next to the nits link 
+
+  From Bill:
+
+  * Output a summary of what's needed for the document to be approved in
+    the main and ballot views. 
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2010 00:36:05 +0100
 

@@ -65,6 +65,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <td class="right">
 
 <h2 style="margin-top:12px;">Discusses and other comments</h2>
+{% if doc.in_ietf_process and doc.ietf_process.has_active_iesg_ballot %}
+<p>Summary: <i>{{ doc.ietf_process.iesg_ballot_needed }}</i></p>
+{% endif %}
 
 {% for pos in ballot.get_texts %}
 <h2 class="ballot_ad">{{pos.ad_name|escape}}</h2>

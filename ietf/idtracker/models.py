@@ -485,6 +485,47 @@ class BallotInfo(models.Model):   # Added by Michael Lee
 	for ad in active_iesg:
 	    ret.append({'ad': ad, 'pos': positions.get(ad.id, None)})
 	return ret 
+    def needed(self, standardsTrack=True):
+	'''Returns text answering the question "what does this document
+	need to pass?".  The return value is only useful if the document
+	is currently in IESG evaluation.'''
+	active_iesg = IESGLogin.active_iesg()
+	ads = [ad.id for ad in active_iesg]
+	yes = 0
+	noobj = 0
+	discuss = 0
+	recuse = 0
+	for position in self.positions.filter(ad__in=ads):
+	    yes += 1 if position.yes > 0 else 0
+	    noobj += 1 if position.noobj > 0 else 0
+	    discuss += 1 if position.discuss > 0 else 0
+	    recuse += 1 if position.recuse > 0 else 0
+	answer = ''
+	if yes < 1:
+	    answer += "Needs a YES. "
+	if discuss > 0:
+	    if discuss == 1:
+		answer += "Has a DISCUSS. "
+	    else:
+		answer += "Has %d DISCUSSes. " % discuss
+	if standardsTrack:
+	    # For standards-track, need positions from 2/3 of the
+	    # non-recused current IESG.
+	    needed = ( active_iesg.count() - recuse ) * 2 / 3
+	else:
+	    # Info and experimental only need one position.
+	    needed = 1
+	have = yes + noobj + discuss
+	if have < needed:
+	    answer += "Needs %d more positions. " % (needed - have)
+	else:
+	    answer += "Has enough positions to pass"
+	    if discuss:
+		answer += " once DISCUSSes are resolved"
+	    answer += ". "
+
+	return answer.rstrip()
+
     class Meta:
         db_table = 'ballot_info'
 

@@ -373,6 +373,12 @@ class IetfProcessData:
             self._ballot = BallotWrapper(self._idinternal)
         return self._ballot
 
+    # don't call this unless has_[active_]iesg_ballot returns True
+    def iesg_ballot_needed( self ):
+	standardsTrack = 'Standard' in self.intended_maturity_level() or \
+			self.intended_maturity_level() == "BCP"
+	return self.iesg_ballot().ballot.needed( standardsTrack )
+
     def ad_name(self):
         name = self._idinternal.token_name
         # Some old documents have token name as "Surname, Firstname";
