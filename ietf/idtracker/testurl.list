@@ -6,31 +6,22 @@
 200	/idtracker/status/
 200	/idtracker/status/last-call/	
 
-200	/idtracker/rfc3847/
+301	/idtracker/rfc3847/
 301	/idtracker/12689/		
-200	/idtracker/draft-ietf-isis-link-attr/	
-200 	/idtracker/draft-ietf-isis-link-attr/comment/65232/	
+301	/idtracker/draft-ietf-isis-link-attr/	
+301 	/idtracker/draft-ietf-isis-link-attr/comment/65232/	
 301	/idtracker/draft-eronen-tls-psk/ # no IESG information
-200	/idtracker/comment/65232/	
-200 	/idtracker/ballot/1760/	
-200	/idtracker/
+301	/idtracker/comment/65232/	
+301 	/idtracker/ballot/1760/	
+301	/idtracker/
 200	/feed/comments/draft-ietf-isis-link-attr/
 200	/feed/comments/rfc3373/
-200	/idtracker/?search_group_acronym=&search_job_owner=0&search_rfcnumber=&search_status_id=&sub_state_id=6&search_cur_state=&search_button=SEARCH&search_filename=bgp-m&search_area_acronym=	
-200	/idtracker/?search_rfcnumber=1234	
-200	/idtracker/?search_job_owner=53&search_filename=nfs
-200	/idtracker/?sub_state_id=5
-200,heavy	/idtracker/?sub_state_id=6
-200	/idtracker/?search_area_acronym=1260
-200	/idtracker/?search_group_acronym=tls
-200	/idtracker/?search_group_acronym=%EF%BD%8C #non-ASCII
-200	/idtracker/?search_filename=%EF%BD%8C #non-ASCII
 200	/feed/last-call/
 
 # An RFC with no matching value in InternetDrafts.  This tests
 # subtle cases of using the draft relation when it's not appropriate.
 # See ticket #218.
-200	/idtracker/rfc2444/
+301     /idtracker/rfc2444/
 200	/feed/comments/rfc2444/
 
 # Test case for missing comment time (bug fixed in changeset 1733)
