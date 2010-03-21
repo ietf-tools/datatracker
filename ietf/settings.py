@@ -33,12 +33,12 @@ DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN +
 
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = 'mysql'      # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
-DATABASE_NAME = 'ietf'         # Or path to database file if using sqlite3.
-DATABASE_USER = 'ietf'       # Not used with sqlite3.
-#DATABASE_PASSWORD = 'ietf' # Not used with sqlite3.
-DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
-DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
+DATABASE_ENGINE = 'mysql'
+DATABASE_NAME = 'ietf'
+DATABASE_USER = 'ietf'
+#DATABASE_PASSWORD = 'ietf'
+DATABASE_PORT = ''
+DATABASE_HOST = ''
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -76,11 +76,9 @@ AUTHENTICATION_BACKENDS = ( "ietf.ietfauth.auth.IetfUserBackend", )
 SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.load_template_source',
     'django.template.loaders.app_directories.load_template_source',
-#     'django.template.loaders.eggs.load_template_source',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -89,20 +87,15 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.RemoteUserMiddleware',
     'django.middleware.doc.XViewMiddleware',
-#    'ietf.middleware.PrettifyMiddleware',
     'ietf.middleware.SQLLogMiddleware',
     'ietf.middleware.SMTPExceptionMiddleware',
     'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.transaction.TransactionMiddleware',
-#    'django.middleware.cache.CacheMiddleware',
 )
 
 ROOT_URLCONF = 'ietf.urls'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
     BASE_DIR + "/templates"
 )
 
@@ -163,16 +156,10 @@ INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
-# Path to Work Group Description Text Files
 IETFWG_DESCRIPTIONS_PATH = '/a/www/www6s/wg-descriptions/'
 IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
 IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
 IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
-
-# External page top and bottom, which gives a html page the current menubar
-# and footer used in the current web-page design
-EXTERNAL_PAGE_TOP = '/a/www/www6s/scripts/templates/top-page'
-EXTERNAL_PAGE_BOT = '/a/www/www6s/scripts/templates/bottom-page'
 
 # Override this in settings_local.py if needed
 CACHE_MIDDLEWARE_SECONDS = 300
@@ -189,4 +176,3 @@ IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *
-
