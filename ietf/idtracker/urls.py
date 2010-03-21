@@ -7,7 +7,6 @@ from django.views.generic.simple import redirect_to
 
 urlpatterns = patterns('django.views.generic.simple',
      (r'^help/state/$', 'direct_to_template', { 'template': 'idtracker/states.html', 'extra_context': { 'states': IDState.objects.all(), 'substates': IDSubState.objects.all() } }),
-     (r'^help/ballot/$', 'direct_to_template', { 'template': 'idtracker/view_key.html' }),
      (r'^help/evaluation/$', 'direct_to_template', { 'template': 'idtracker/view_evaluation_desc.html' }),
 )
 urlpatterns += patterns('',
