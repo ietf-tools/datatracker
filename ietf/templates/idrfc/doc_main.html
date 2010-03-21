@@ -52,7 +52,9 @@ div.diffTool { padding: 8px 4px; margin: 8px 0;}
 {% endblock %}
 
 {% block pagehead %}
+{% if doc.in_ietf_process %}
 <link rel="alternate" type="application/atom+xml" href="/feed/comments/{% if info.is_rfc %}rfc{{doc.rfc_number}}{% else %}{{doc.draft_name}}{% endif %}/" />
+{% endif %}
 <meta name="description" content="{% block doc_meta_description %}{% endblock %}" />
 {% endblock %}
 
