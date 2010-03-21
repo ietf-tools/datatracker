@@ -312,6 +312,18 @@ def linebreaks_lf(text):
     text = text.replace("\r", "\n")
     return text
 
+@register.filter(name='unescape')
+def unescape(text):
+    """
+    Unescape &nbsp;/&gt;/&lt; 
+    """
+    text = text.replace("&gt;", ">")
+    text = text.replace("&lt;", "<")
+    text = text.replace("&amp;", "&")
+    text = text.replace("<br>", "\n")
+    text = text.replace("<br/>", "\n")
+    return text
+
 @register.filter(name='greater_than')
 def greater_than(x, y):
     return x > int(y)
