@@ -1,10 +1,46 @@
+ietfdb (2.48)
+
+  From Pasi:
+
+  * Show comments feed link only if it exists (=document is in IDInternal)
+
+  * Fixed a broken link on main page
+
+  * Move new look-and-feel base templates from templates/idrfc/ to just 
+    templates/
+
+  * Remove more unused code
+
+  * Replaced /idtracker/help/evaluation/ with redirect to www.ietf.org
+
+  * /wg/: fix mailto links for WG chairs
+
+  * /doc/: show telechat date in search results list
+
+  * Show correct version number of expired drafts
+
+  * /doc/rfcNNNN/: show rfc stream
+
+  * Use new look for more pages
+
+  * Replaced most of /idtracker/ (search, document page, ballot page, 
+    comment page) with redirects to /doc/
+
+  * /doc/*: Show information about ballot sets
+
+  * Refactoring /wg/: use redirects instead of redundant URLs; removed old 
+    charter pages (not used/linked to); misc. cleaning
+
+  * Point to /wg/<acronym>/ in left navbar and /meeting/agenda/
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2010 00:26:41 +0100
+
 ietfdb (2.47)
 
   From Suresh: 
 
   * Added a link to the draft pages with email address to the draft authors
-
-  * Pointing to errata from RFC pages
 
   From RjS:
 
@@ -19,7 +55,7 @@ ietfdb (2.47)
 
   From Tony:
 
-  * From Tony: Search plugin for Firefox/IE/etc.
+  * Search plugin for Firefox/IE/etc.
 
   From Pasi:
 
