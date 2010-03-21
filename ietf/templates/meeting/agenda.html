@@ -32,7 +32,7 @@ table#agenda { border: 0; border-collapse:collapse; }
 {% endblock morecss %}
 
 {% block pagehead %}
-<script language='javascript' src='/js/agenda2.js'></script>
+<script type="text/javascript" src='/js/agenda2.js'></script>
 {% endblock pagehead %}
 {% block bodyAttrs %}onload='updateAgendaColors()'{% endblock %}
 {% block content %}
@@ -78,11 +78,11 @@ Updated {{ update.updated|date:"Y-m-d H:i:s T" }}<br />
 	 <td colspan="4">
 	    <b>{{ slot.time_desc               }}  {{ slot.session_name }}</b>
 	    {% ifequal slot.sessions.0.acronym "plenaryw" %}
-	       <b>- {{ slot.sessions.0.room_id.room_name }}</b><br>
+	       <b>- {{ slot.sessions.0.room_id.room_name }}</b><br/>
 	       <pre>{{ plenaryw_agenda|escape }}</pre>
 	    {% endifequal %}
 	    {% ifequal slot.sessions.0.acronym "plenaryt" %}
-	       <b>- {{ slot.sessions.0.room_id.room_name }}</b><br>
+	       <b>- {{ slot.sessions.0.room_id.room_name }}</b><br/>
 	       <pre>{{ plenaryt_agenda|escape }}</pre>
 	    {% endifequal %}
 	 </td>
