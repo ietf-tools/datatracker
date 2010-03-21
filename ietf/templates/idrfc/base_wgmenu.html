@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% for area in areas %}
 {% if area.area.active_wgs %}
 <li class="yuimenuitem"><a class="yuimenuitemlabel">{{area.short_name }}</a><div id="wgs-{{area.area.area_acronym}}" class="yuimenu"><div class="bd"><ul>{% for wg in area.area.active_wgs %}
-<li class="yuimenuitem"><a class="yuimenuitemlabel" href="http://tools.ietf.org/wg/{{wg.group_acronym}}/">{{wg.group_acronym}} &mdash; {{wg.group_acronym.name}}</a></li>{% endfor %}
+<li class="yuimenuitem"><a class="yuimenuitemlabel" href="/wg/{{wg.group_acronym}}/">{{wg.group_acronym}} &mdash; {{wg.group_acronym.name}}</a></li>{% endfor %}
 </ul></div></div></li>
 {% endif %}
 {% endfor %}
