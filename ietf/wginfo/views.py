@@ -36,34 +36,16 @@ from ietf.idtracker.models import Area, IETFWG
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext, loader
 from django.http import HttpResponse
+from ietf.idrfc.views_search import SearchForm, search_query
 
 def wg_summary_acronym(request):
     areas = Area.active_areas()
     wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE)
-    return HttpResponse(loader.render_to_string('wginfo/summary-by-acronym.txt', {'area_list': areas, 'wg_list': wgs}),mimetype='text/plain; charset=UTF-8')
+    return HttpResponse(loader.render_to_string('wginfo/1wg-summary-by-acronym.txt', {'area_list': areas, 'wg_list': wgs}),mimetype='text/plain; charset=UTF-8')
 
 def wg_summary_area(request):
     wgs = IETFWG.objects.filter(status='1',start_date__isnull=False)
-    return HttpResponse(loader.render_to_string('wginfo/summary-by-area.txt', {'wg_list': wgs}),mimetype='text/plain; charset=UTF-8')
-
-def wg_dir(request):
-    areas = Area.active_areas()
-    return render_to_response('wginfo/wg-dir.html', {'areas':areas}, RequestContext(request))
-
-def collect_wg_info(acronym):
-    wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym)
-    return {'wg': wg}
-
-def wg_charter(request, wg="1"):
-    return render_to_response('wginfo/wg-charter.html', collect_wg_info(wg), RequestContext(request))
-
-def generate_text_charter(wg):
-    text = loader.render_to_string('wginfo/wg-charter.txt',collect_wg_info(wg));
-    return text
-
-def wg_charter_txt(request, wg="1"):
-    return HttpResponse(generate_text_charter(wg),
-                        mimetype='text/plain; charset=UTF-8')
+    return HttpResponse(loader.render_to_string('wginfo/1wg-summary.txt', {'wg_list': wgs}),mimetype='text/plain; charset=UTF-8')
 
 def wg_charters(request):
     wgs = IETFWG.objects.filter(status='1',start_date__isnull=False)
@@ -73,7 +55,9 @@ def wg_charters_by_acronym(request):
     wgs = IETFWG.objects.filter(status='1',start_date__isnull=False)
     return HttpResponse(loader.render_to_string('wginfo/1wg-charters-by-acronym.txt', {'wg_list': wgs}),mimetype='text/plain; charset=UTF-8')
 
-from ietf.idrfc.views_search import SearchForm, search_query
+def wg_dir(request):
+    areas = Area.active_areas()
+    return render_to_response('wginfo/wg-dir.html', {'areas':areas}, RequestContext(request))
 
 def wg_documents(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
@@ -85,7 +69,7 @@ def wg_documents(request, acronym):
     (docs,meta) = search_query(form.cleaned_data)
     return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs, 'meta':meta}, RequestContext(request))
 
-def wg_charter2(request, acronym):
+def wg_charter(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
     concluded = (wg.status_id != 1)
     return render_to_response('wginfo/wg_charter.html', {'wg': wg, 'concluded':concluded, 'selected':'charter'}, RequestContext(request))
