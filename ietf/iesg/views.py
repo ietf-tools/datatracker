@@ -36,6 +36,7 @@ import codecs
 from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup, Position, IESGLogin
 from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
+from django.views.decorators.vary import vary_on_cookie
 from django.http import Http404, HttpResponse, HttpResponseForbidden
 from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response
@@ -44,7 +45,6 @@ from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
 from ietf.idrfc.models import RfcIndex
 from ietf.ietfauth.decorators import group_required
-
 import datetime 
 
 def date_threshold():
@@ -170,6 +170,7 @@ def _agenda_data(request, date=None):
             data[key] = "(Error reading "+key+")"
     return data
 
+@vary_on_cookie
 def agenda(request, date=None):
     data = _agenda_data(request, date)
     data['private'] = 'private' in request.REQUEST

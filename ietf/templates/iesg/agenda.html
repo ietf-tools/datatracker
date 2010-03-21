@@ -91,6 +91,12 @@ table.agenda-doc > tbody > tr { vertical-align:top; }
 <div id="section6">
 {% for m in mgmt %}
 <h3>6.{{forloop.counter}} {{m.title|escape}}</h3>
+{% if user|in_group:"Area_Director,Secretariat" %}
+<pre>
+{{m.text|wordwrap:"76"}}
+</pre>
+{% endif %}{# if user|in_group  #}
+
 {% endfor %}
 </div>
 
