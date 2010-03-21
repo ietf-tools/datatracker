@@ -52,6 +52,7 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 {% else %}
 <link rel="icon" href="/images/ietf-icon-blue.bmp" />
 {% endifnotequal %}
+<link rel="search" href="/js/datatracker-search.xml" type="application/opensearchdescription+xml" title="IETF Datatracker Search" />
 </head>
 <body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
 <div style="background-color:{% if server_mode %}{% ifnotequal server_mode "production" %}#c00000{% else %}#313163{% endifnotequal %}{%else %}#313163{%endif%};color:white;font-size:150%;height:35px;">

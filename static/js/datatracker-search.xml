@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+   <ShortName>IETF Datatracker Search</ShortName>
+   <Description>Use datatracker.ietf.org to search for Internet-Drafts and RFCs</Description>
+   <Tags>Requests For Comments</Tags>
+   <Url type="text/html"
+      template="http://datatracker.ietf.org/doc/search/?name={searchTerms}&amp;activeDrafts=on&amp;rfcs=on&amp;lucky=on"/>
+   <LongName>datatracker.ietf.org RFC and Internet-Draft Search</LongName>
+   <Image height="16" width="16" type="image/vnd.microsoft.icon">http://datatracker.ietf.org/images/ietf-icon-blue.bmp</Image>
+   <Developer>Tony Hansen</Developer>
+   <Language>en-us</Language>
+</OpenSearchDescription>
+

@@ -38,7 +38,7 @@ from django.template import RequestContext
 from django.views.decorators.cache import cache_page
 from ietf.idtracker.models import IDState, IESGLogin, IDSubState, Area, InternetDraft, Rfc, IDInternal, IETFWG
 from ietf.idrfc.models import RfcIndex
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponsePermanentRedirect
 from ietf.idrfc.idrfc_wrapper import IdWrapper,RfcWrapper,IdRfcWrapper
 from ietf.utils import normalize_draftname
 
@@ -47,6 +47,7 @@ class SearchForm(forms.Form):
     rfcs = forms.BooleanField(required=False,initial=True)
     activeDrafts = forms.BooleanField(required=False,initial=True)
     oldDrafts = forms.BooleanField(required=False,initial=False)
+    lucky = forms.BooleanField(required=False,initial=False)
 
     by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state')], required=False, initial='wg', label='Foobar')
     author = forms.CharField(required=False)
@@ -262,6 +263,12 @@ def search_results(request):
     meta['by'] = form.cleaned_data['by']
     if 'ajax' in request.REQUEST and request.REQUEST['ajax']:
         return render_to_response('idrfc/search_results.html', {'docs':results, 'meta':meta}, context_instance=RequestContext(request))
+    elif form.cleaned_data['lucky'] and len(results)==1:
+        doc = results[0]
+        if doc.id:
+            return HttpResponsePermanentRedirect(doc.id.get_absolute_url())
+        else:
+            return HttpResponsePermanentRedirect(doc.rfc.get_absolute_url())
     else:
         return render_to_response('idrfc/search_main.html', {'form':form, 'docs':results,'meta':meta}, context_instance=RequestContext(request))
         
