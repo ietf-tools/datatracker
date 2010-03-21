@@ -563,7 +563,7 @@ class IDInternal(models.Model):
     token_name = models.CharField(blank=True, max_length=25)
     token_email = models.CharField(blank=True, max_length=255)
     note = models.TextField(blank=True)
-    status_date = models.DateField(null=True)
+    status_date = models.DateField(blank=True,null=True)
     email_display = models.CharField(blank=True, max_length=50)
     agenda = models.IntegerField(null=True, blank=True)
     cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')

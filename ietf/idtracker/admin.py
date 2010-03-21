@@ -48,6 +48,8 @@ admin.site.register(IDIntendedStatus, IDIntendedStatusAdmin)
 class IDInternalAdmin(admin.ModelAdmin):
     ordering=['draft']
     list_display=['draft', 'token_email', 'note']
+    search_fields=['draft__filename']
+    raw_id_fields=['draft','ballot']
 admin.site.register(IDInternal, IDInternalAdmin)
 
 class IDNextStateAdmin(admin.ModelAdmin):
