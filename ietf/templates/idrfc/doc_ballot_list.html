@@ -1,5 +1,5 @@
 {% for p in positions %}
-{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%}{% if p.has_text %}&nbsp;<img src="/images/comment.png" width="14" height="12" alt="*"/>{% endif %}<br/>
+{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%}{% if p.has_text %}&nbsp;<a href="#{{p.ad_name|slugify}}"><img src="/images/comment.png" width="14" height="12" alt="*" border="0"/></a>{% endif %}<br/>
 {% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
 {% empty %}
 <i>none</i>
