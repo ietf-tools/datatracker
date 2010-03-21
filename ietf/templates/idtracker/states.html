@@ -1,36 +1,39 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}{% extends "base.html" %}
+{% extends "idrfc/base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
 
 {% block content %}
 
-   <h1 class="first">Main I-D States</h1>
+   <h1>Main I-D States</h1>
    
+<p><a href="/images/state_diagram.gif">View Diagram</a></p>
 
-   <table class="states">
+   <table class="ietf-table">
 
-   <tr class="states">
-   <th>State <a href="/images/state_diagram.gif">[View Diagram]</a></th>
+   <tr>
+   <th>State</th>
    <th>Description</th>
    <th>Next State(s)</th>
    </tr>
 
 {# XXX I-D Exists should be added to the database #}
-<tr class="states">
+<tr class="{% cycle oddrow,evenrow as cycle1 %}">
+<tr>
 <td>I-D Exists</td>
 <td >Initial (default) state for all internet drafts. Such documents are
 not being tracked by the IESG as no request has been made of the
 IESG to do anything with the document.</td>
 <td>
-<ul class="states">
+<ul>
 <li> AD is watching
 <li> Publication Requested</ul>
 </td></tr>
                                                                                                                
 {% for state in states %}   
-          <tr class="states">
-          <td class="state">{{ state.state|escape }}</td>
+<tr class="{% cycle cycle1 %}">
+          <td>{{ state.state|escape }}</td>
           <td>{{ state.description|escape }}</td>
           <td>
-		  <ul class="states">
+		  <ul>
 		  {% for next in state.nextstate.all %}
 		  <li>{{ next.next_state.state }}
 		  {% endfor %}
@@ -40,18 +43,17 @@ IESG to do anything with the document.</td>
 {% endfor %}
    </table>
 
-   <h1>Sub States</h1>
-<table class="states">
+<h2>Sub States</h2>
+<table class="ietf-table">
 
-<tr class="states"><th>Sub State Name</th><th>Description</th></tr>
+<tr><th>Sub State Name</th><th>Description</th></tr>
 
 {% for substate in substates %}
-<tr class="states">
-<td class="state">{{ substate.sub_state|escape }}</td>
+<tr class="{% cycle oddrow,evenrow %}">
+<td>{{ substate.sub_state|escape }}</td>
 <td>{{ substate.description|escape }}</td>
 </tr>
 {% endfor %}
 </table>
 
 {% endblock %}
-css

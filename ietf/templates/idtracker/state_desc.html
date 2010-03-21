@@ -1,9 +1,10 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}{% extends "base.html" %}
+{% extends "idrfc/base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
 
 {% block content %}
-<h3>{{ state.state }}</h3>
+<h1>{{ state.state }}</h1>
 {{ state.description|escape }}
-<center><form action=".">
+<form action=".">
 <input type="button" value="Back" onClick="history.go(-1);"/>
-</form></center>
+</form>
 {% endblock%}
