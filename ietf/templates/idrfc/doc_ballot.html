@@ -1,5 +1,5 @@
 {% comment %}
-Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
 Redistribution and use in source and binary forms, with or without
@@ -65,6 +65,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <td class="right">
 
 <h2 style="margin-top:12px;">Discusses and other comments</h2>
+
+{% if ballot.is_ballot_set %}<p>Other documents in this ballot set: {% for x in ballot.ballot_set_other%}{{x|urlize_ietf_docs}}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+
 {% if doc.in_ietf_process and doc.ietf_process.has_active_iesg_ballot %}
 <p>Summary: <i>{{ doc.ietf_process.iesg_ballot_needed }}</i></p>
 {% endif %}

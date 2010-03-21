@@ -202,9 +202,13 @@ def document_ballot(request, name):
     r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
     if m:
-        id = get_object_or_404(IDInternal, rfc_flag=1, draft=int(m.group(1)))
+        rfc_number = int(m.group(1))
+        rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
+        id = get_object_or_404(IDInternal, rfc_flag=1, draft=rfc_number)
+        doc = RfcWrapper(rfci, idinternal=id)
     else:
         id = get_object_or_404(IDInternal, rfc_flag=0, draft__filename=name)
+        doc = IdWrapper(id) 
     try:
         if not id.ballot.ballot_issued:
             raise Http404
@@ -212,5 +216,5 @@ def document_ballot(request, name):
         raise Http404
 
     ballot = BallotWrapper(id)
-    return render_to_response('idrfc/doc_ballot.html', {'ballot':ballot}, context_instance=RequestContext(request))
+    return render_to_response('idrfc/doc_ballot.html', {'ballot':ballot, 'doc':doc}, context_instance=RequestContext(request))
 

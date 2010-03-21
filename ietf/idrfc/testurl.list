@@ -30,6 +30,11 @@
 200     /doc/rfc822/
 200     /doc/rfc822/_debug.data
 
+# ballot sets
+200	 /doc/rfc3550/_ballot.data
+200	 /doc/rfc3551/_ballot.data
+200	 /doc/draft-irtf-dtnrg-ltp/_ballot.data
+
 # file formats
 200     /doc/rfc9/ # PDF only
 200	/doc/rfc2490/ # TXT+PDF+PS

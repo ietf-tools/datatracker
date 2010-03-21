@@ -532,9 +532,7 @@ class BallotWrapper:
     _idinternal = None
     ballot = None
     ballot_active = False
-
     _positions = None
-
     position_values = ["Discuss", "Yes", "No Objection", "Abstain", "Recuse", "No Record"]
 
     def __init__(self, idinternal):
@@ -544,6 +542,7 @@ class BallotWrapper:
             self.ballot_active = self.ballot.ballot_issued and (str(idinternal.cur_state) in BALLOT_ACTIVE_STATES) and str(idinternal.draft.status)=="Active";
         else:
             self.ballot_active = self.ballot.ballot_issued and (str(idinternal.cur_state) in BALLOT_ACTIVE_STATES)
+        self._ballot_set = None
 
     def approval_text(self):
         return self.ballot.approval_text
@@ -559,6 +558,15 @@ class BallotWrapper:
         return self.ballot.defer_by
     def deferred_date(self):
         return self.ballot.defer_date
+    def is_ballot_set(self):
+        if not self._ballot_set:
+            self._ballot_set = self._idinternal.ballot_set()
+        return len(list(self._ballot_set)) > 1
+    def ballot_set_other(self):
+        if not self.is_ballot_set():
+            return []
+        else:
+            return self._ballot_set.exclude(draft=self._idinternal)
     
     def _init(self):
         try:
