@@ -38,8 +38,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block wg_content %}
 
 <div class="ietf-box ietf-wg-details">
+{% if concluded %}
 <span class="ietf-concluded-warning">Note: The data for concluded WGs
 is occasionally incorrect.</span>
+{% endif %}
 <table>
 <tr>
 <td colspan="2">
@@ -96,6 +98,7 @@ is occasionally incorrect.</span>
 <tr><td>To Subscribe:</td><td>{{ wg.email_subscribe|urlize }}</td></tr>
 <tr><td>Archive:</td><td>{{ wg.clean_email_archive|urlize }}</a></td></tr> 
 
+{% if not concluded %}
 <tr>
 <td colspan="2">
 <br/><b>Jabber Chat</b>
@@ -104,6 +107,7 @@ is occasionally incorrect.</span>
 
 <tr><td>Room Address:</td><td><a href="xmpp:{{wg}}@jabber.ietf.org">xmpp:{{wg}}@jabber.ietf.org</a></td></tr>
 <tr><td>Logs:</td><td><a href="http://jabber.ietf.org/logs/{{wg}}/">http://jabber.ietf.org/logs/{{wg}}/</a></td></tr>
+{% endif %}
 
 </table>
 </div>
