@@ -40,7 +40,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <ol>
 {% for doc in section_docs %}
   <li>{{ doc.obj.document.title|escape }} ({{ doc.obj.document.intended_status }}){% if doc.obj.rfc_flag %}
-  <br><a href="{{ doc.obj.document.doclink }}">{{ doc.obj.document.filename }}</a>
+  <br><a href="http://tools.ietf.org/html/rfc{{doc.obj.document.rfc_number }}">{{ doc.obj.document.filename }}</a>
 {% else %}
   <br><a href="http://tools.ietf.org/html/{{doc.obj.document.filename}}-{{doc.obj.document.revision}}.html">{{doc.obj.document.filename}}-{{doc.obj.document.revision}}</a>
 {% endif %}  <br>Token: {{ doc.obj.token_name|escape }}    

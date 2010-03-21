@@ -158,19 +158,7 @@ class InternetDraft(models.Model):
         self.id_document_key = self.title.upper()
         super(InternetDraft, self).save()
     def displayname(self):
-	if self.status.status == "Replaced":
-	    css="replaced"
-	else:
-	    css="active"
-        return '<span class="' + css + '">' + self.filename + '</span>'
-    def displayname_with_link(self):
-	if self.status.status == "Replaced":
-	    css="replaced"
-	else:
-	    css="active"
-	return '<a class="' + css + '" href="%s">%s</a>' % ( self.doclink(), self.filename )
-    def doclink(self):
-	return "http://" + settings.TOOLS_SERVER + "/html/%s" % ( self.filename )
+        return self.filename
     def group_acronym(self):
 	return self.group.acronym
     def __str__(self):
@@ -186,12 +174,6 @@ class InternetDraft(models.Model):
 	if self.status.status != 'Active' and not self.expired_tombstone:
 	   r = max(r - 1, 0)
 	return "%02d" % r
-    def doctype(self):
-	return "Draft"
-    def filename_with_link(self, text=None):
-	if text is None:
-	    text=self.filename
-	return '<a href="%s">%s</a>' % ( self.doclink(), text )
     def expiration(self):
         return self.revision_date + datetime.timedelta(self.DAYS_TO_EXPIRE)
     def can_expire(self):
@@ -397,14 +379,6 @@ class Rfc(models.Model):
 	return "RFC"
     def revision_display(self):
 	return "RFC"
-    def doclink(self):
-	return "http://" + settings.TOOLS_SERVER + "/html/%s" % ( self.displayname() )
-    def doctype(self):
-	return "RFC"
-    def filename_with_link(self):
-	return '<a href="%s">%s</a>' % ( self.doclink(), self.displayname() )
-    def displayname_with_link(self):
-        return self.filename_with_link()
     _idinternal_cache = None
     _idinternal_cached = False
     def idinternal(self):
