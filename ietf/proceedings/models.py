@@ -451,8 +451,9 @@ class Slide(models.Model, ResolveAcronym):
 	('1', '(converted) HTML'),
 	('2', 'PDF'),
 	('3', 'Text'),
-	('4', 'PowerPoint'),
+	('4', 'PowerPoint -2003 (PPT)'),
 	('5', 'Microsoft Word'),
+	('6', 'PowerPoint 2007- (PPTX)'),
     )
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     group_acronym_id = models.IntegerField(null=True, blank=True)
@@ -479,6 +480,8 @@ class Slide(models.Model, ResolveAcronym):
                 ext = ".ppt"
             elif self.slide_type_id == 5:
                 ext = ".doc"
+            elif self.slide_type_id == 6:
+                ext = ".pptx"
             else:
                 ext = ""
             return "%s/slides/%s-%s%s" % (dir,self.acronym(),self.slide_num,ext)
