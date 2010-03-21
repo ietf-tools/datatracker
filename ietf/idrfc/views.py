@@ -32,14 +32,7 @@
 
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from ietf.idrfc.models import RfcIndex, RfcEditorQueue, DraftVersions
 from ietf.idrfc.views_search import SearchForm
-
-def test(request):
-    q = RfcEditorQueue.objects.order_by('-date_received')[:20]
-    v = DraftVersions.objects.order_by('-revision_date')[:20]
-    r = RfcIndex.objects.order_by('-rfc_number')[:20]
-    return render_to_response('idrfc/test.html', {'queue':q, 'versions':v, 'rfcs':r})
 
 def main(request):
     form = SearchForm()

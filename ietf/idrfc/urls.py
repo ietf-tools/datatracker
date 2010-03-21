@@ -34,7 +34,6 @@ from django.conf.urls.defaults import patterns
 from ietf.idrfc import views_doc, views_search, views
 
 urlpatterns = patterns('',
-    (r'^test/$', views.test),
     (r'^/?$', views_search.search_main),
     (r'^search/$', views_search.search_results),
     (r'^all/$', views_search.all),

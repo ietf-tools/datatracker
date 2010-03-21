@@ -2,7 +2,6 @@
 200	/doc/
 200,heavy /doc/all/
 200,heavy /doc/active/
-200	/doc/test/
 
 # draft that's now RFC
 200	/doc/draft-ietf-avt-rtp-atrac-family/
