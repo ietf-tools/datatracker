@@ -4,6 +4,8 @@ ietfdb (2.47)
 
   * Added a link to the draft pages with email address to the draft authors
 
+  * Pointing to errata from RFC pages
+
   From RjS:
 
   * Added STD/FYI/BCP info to the standard RFC display page
