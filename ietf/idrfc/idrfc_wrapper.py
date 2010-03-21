@@ -291,6 +291,17 @@ class RfcWrapper:
         return self._rfc_doc_list("also")
     def has_errata(self):
         return self._rfcindex and (self._rfcindex.has_errata > 0)
+    def stream_name(self):
+        if not self._rfcindex:
+            return None
+        else:
+            x = self._rfcindex.stream
+            if x == "INDEPENDENT":
+                return "Independent Submission Stream"
+            elif x == "LEGACY":
+                return "Legacy Stream"
+            else:
+                return x+" Stream"
 
     def in_ietf_process(self):
         return self.ietf_process != None
@@ -299,11 +310,6 @@ class RfcWrapper:
         types = self._rfcindex.file_formats
         types = types.replace("ascii","txt")
         return ["."+x for x in types.split(",")]
-
-    # TODO:
-    # also/bcp_number/std_number/fyi_number
-    # group_acronym
-    # ad_name
 
     def friendly_state(self):
         if self.in_ietf_process():
@@ -325,7 +331,7 @@ class RfcWrapper:
         return '<a href="%s">RFC %d</a>' % (self.get_absolute_url(), self.rfc_number)
 
     def to_json(self):
-        result = jsonify_helper(self, ['rfc_number', 'title', 'publication_date', 'maturity_level', 'obsoleted_by','obsoletes','updated_by','updates','has_errata','file_types','in_ietf_process', 'friendly_state'])
+        result = jsonify_helper(self, ['rfc_number', 'title', 'publication_date', 'maturity_level', 'obsoleted_by','obsoletes','updated_by','updates','also','has_errata','stream_name','file_types','in_ietf_process', 'friendly_state'])
         if self.in_ietf_process():
             result['ietf_process'] = self.ietf_process.to_json_helper()
         return simplejson.dumps(result, indent=2)

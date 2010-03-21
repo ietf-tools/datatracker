@@ -39,7 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block doc_h1 %}{{ doc.title|escape }}<br/>RFC {{ doc.rfc_number }}{% endblock %}
 
 {% block doc_metatable %}
-<tr><td style="width:18ex;">Document type:</td><td>RFC - {{ doc.maturity_level }}
+<tr><td style="width:18ex;">Document type:</td><td>RFC - {{ doc.maturity_level }} {% if doc.stream_name %}({{ doc.stream_name }}){% endif %}
 {% if doc.obsoleted_by %}<br />Obsoleted by {{ doc.obsoleted_by|urlize_ietf_docs }}{%endif %}
 {% if doc.updated_by %}<br />Updated by {{ doc.updated_by|urlize_ietf_docs }}{%endif %}
 {% if doc.obsoletes %}<br />Obsoletes {{ doc.obsoletes|urlize_ietf_docs }}{%endif %}
