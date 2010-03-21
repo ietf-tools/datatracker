@@ -506,6 +506,14 @@ class IdRfcWrapper:
             return self.rfc.publication_date
         else:
             return self.id.publication_date
+
+    def telechat_date(self):
+        if self.rfc and self.rfc.in_ietf_process():
+            return self.rfc.ietf_process.telechat_date()
+        elif self.id and self.id.in_ietf_process():
+            return self.id.ietf_process.telechat_date()
+        else:
+            return None
         
     def view_sort_group(self):
         if self.rfc:

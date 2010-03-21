@@ -242,7 +242,7 @@ def agenda_documents(request):
                 w = RfcWrapper(ri)
             res[section_key].append(w)
         telechats.append({'date':date, 'docs':res})
-    return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats})
+    return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats, 'hide_telechat_date':True})
 
 def discusses(request):
     positions = Position.objects.filter(discuss=1)

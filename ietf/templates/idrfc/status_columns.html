@@ -34,6 +34,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ietf_filters %}{% load ballot_icon %}
 <td class="status">
 {{ doc.friendly_state|safe }} {% if not doc.rfc %}{{ doc.id|state_age_colored|safe }}{% endif %}
+{% if not hide_telechat_date %}{% if doc.telechat_date %}<br/>IESG Telechat: {{ doc.telechat_date }}{% endif %}{% endif %}
+
 {% block extra_status %}{% endblock %}
 {% if doc.rfc %}
 {% if doc.rfc.obsoleted_by %}<br />Obsoleted by {{ doc.rfc.obsoleted_by|urlize_ietf_docs }}{%endif %}
