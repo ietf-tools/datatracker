@@ -104,7 +104,7 @@ class IdWrapper:
             else:
                 # Handle incorrect database entries
                 self.draft_status = "Expired"
-        self.latest_revision = self._draft.revision
+        self.latest_revision = self._draft.revision_display()
         self.title = self._draft.title
         self.tracker_id = self._draft.id_document_tag
         self.publication_date = self._draft.revision_date
