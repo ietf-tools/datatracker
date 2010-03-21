@@ -185,4 +185,22 @@ function toggleComment(n) {
 <div id="rfcText2">
 {% block doc_text2 %}{% endblock %}
 </div>
+
+<script type="text/javascript">
+//<![CDATA[
+// based on http://blog.davglass.com/files/yui/tab7/
+var url = location.href.split('#'); 
+if (url[1]) { 
+  url[1] = "#"+url[1];
+  var tabs = tabView.get('tabs'); 
+  for (var i = 0; i < tabs.length; i++) { 
+    if (url[1].indexOf(tabs[i].get('href')) == 0) {
+      tabView.set('activeIndex', i);
+      break; 
+     } 
+  } 
+} 
+//]]>
+</script>
+
 {% endblock content_end %}

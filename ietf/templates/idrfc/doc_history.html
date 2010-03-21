@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr><th class="comment_date">Date</th><th>Version</th><th>By</th><th>Text</th></tr>
 
 {% for c in history %}
-<tr class="{% cycle oddrow,evenrow %}">
+<tr class="{% cycle oddrow,evenrow %}"{% if c.is_com %} id="history-{{c.comment.id }}"{% endif %}>
 <td class="comment_date">{{ c.date|date:"Y-m-d" }}</td>
 
 {% if c.is_rev %}
@@ -59,9 +59,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 [Ballot {{ c.comment.get_ballot_display }}]<br /> 
 {% endif %} 
 {% if c.info.snipped %}
-<div id="commentS{{forloop.counter}}">{{ c.info.textSnippet|safe }}</div>
-<span class="comment_toggle" onclick="toggleComment({{forloop.counter}})" id="commentT{{forloop.counter}}">[show all]</span>
-<div id="commentF{{forloop.counter}}" style="display:none;">
+<div id="commentS{{c.comment.id}}">{{ c.info.textSnippet|safe }}</div>
+<span class="comment_toggle" onclick="toggleComment({{c.comment.id}})" id="commentT{{c.comment.id}}">[show all]</span>
+<div id="commentF{{c.comment.id}}" style="display:none;">
 {{c.info.text|fill:"80"|format_textarea|safe}}
 </div>
 {% else %}
