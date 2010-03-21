@@ -17,7 +17,25 @@ ietfdb (2.47)
   * Output a summary of what's needed for the document to be approved in
     the main and ballot views. 
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2010 00:36:05 +0100
+  From Tony:
+
+  * From Tony: Search plugin for Firefox/IE/etc.
+
+  From Pasi:
+
+  * Correctly handle entities (like &gt;) in IESG note field
+
+  * New script for finding database tables with non-ASCII data
+
+  * /doc/*: allow direct links to tabs/individual comments
+
+  * /iesg/agenda/: show management item text if logged in as AD
+
+  * /wg/acronym/: fix warning for concluded WGs
+
+  * Support PPTX meeting slides
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2010 03:03:42 +0100
 
 ietfdb (2.46)
 
