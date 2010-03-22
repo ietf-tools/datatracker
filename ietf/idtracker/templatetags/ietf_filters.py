@@ -150,11 +150,6 @@ def fill(text, width):
             wrapped.append(para)
     return "\n\n".join(wrapped)
 
-@register.filter(name='allononelinew')
-def allononelinew(text):
-    """Map runs of whitespace to a single space and strip leading and trailing whitespace from the given string."""
-    return re.sub("[\r\n\t ]+", " ", text).strip()
-
 @register.filter(name='rfcspace')
 def rfcspace(string):
     """
@@ -314,6 +309,10 @@ def linebreaks_lf(text):
 
 @register.filter(name='clean_whitespace')
 def clean_whitespace(text):
+    """
+    Map all ASCII control characters (0x00-0x1F) to spaces, and 
+    remove unnecessary spaces.
+    """
     text = re.sub("[\000-\040]+", " ", text)
     return text.strip()
 
