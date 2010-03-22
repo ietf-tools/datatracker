@@ -312,6 +312,11 @@ def linebreaks_lf(text):
     text = text.replace("\r", "\n")
     return text
 
+@register.filter(name='clean_whitespace')
+def clean_whitespace(text):
+    text = re.sub("[\000-\040]+", " ", text)
+    return text.strip()
+
 @register.filter(name='unescape')
 def unescape(text):
     """
