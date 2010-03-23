@@ -44,9 +44,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block content %}
 <h1>Active IETF Working Groups</h1>
 
-<p>See also: <a href="http://www.ietf.org/wg/concluded/index.html">Concluded
-Working Groups</a> and 
-<a href="http://www.ietf.org/dyn/wg/charter/history/">Historic Charters</a>.</p>
+<p>See also: <a href="http://www.ietf.org/wg/concluded/">Concluded
+Working Groups (www.ietf.org)</a>, <a href="http://tools.ietf.org/wg/concluded/">Concluded Working Groups (tools.ietf.org)</a>, <a href="http://www.ietf.org/dyn/wg/charter/history/">Historic Charters</a>.</p>
 
 {% for area in areas|dictsort:"area_acronym.name" %}
 <h2 class="ietf-divider" id="{{area.area_acronym.name|cut:" "}}">{{ area.area_acronym.name }}</h2>
