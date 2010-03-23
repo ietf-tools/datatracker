@@ -715,10 +715,11 @@ class IDAuthor(models.Model):
     def __str__(self):
 	return "%s authors %s" % ( self.person, self.document.filename )
     def email(self):
-	try:
-	    return self.person.emailaddress_set.filter(type='I-D').get(priority=self.document_id).address
-	except EmailAddress.DoesNotExist:
-	    return None
+        addresses = self.person.emailaddress_set.filter(type='I-D',priority=self.document_id)
+        if len(addresses) == 0:
+            return None
+        else:
+            return addresses[0].address
     def final_author_order(self):
         # Unfortunately, multiple authors for the same draft can have
         # the same value for author_order (although they should not).
