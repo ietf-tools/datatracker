@@ -35,7 +35,9 @@
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.template import loader
 from django.shortcuts import get_object_or_404
-from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, IDInternal
+from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, IDInternal,PersonOrOrgInfo
+from ietf.idtracker.templatetags.ietf_filters import clean_whitespace
+import re
 
 def all_id_txt():
     all_ids = InternetDraft.objects.order_by('filename')
@@ -58,6 +60,81 @@ def all_id_txt():
                                      'withdrawn_ietf':withdrawn_ietf,
                                      'replaced':replaced})
 
+def all_id2_entry(id):
+    fields = []
+    # 0
+    fields.append(id.filename+"-"+id.revision_display())
+    # 1
+    fields.append(id.id_document_tag)
+    # 2
+    status = id.status.status
+    fields.append(status)
+    # 3
+    iesgstate = id.idstate() if status=="Active" else ""
+    fields.append(iesgstate)
+    # 4
+    fields.append(id.rfc_number if status=="RFC" else "")
+    # 5
+    if status == "Replaced":
+        try:
+            fields.append(id.replaced_by.filename)
+        except InternetDraft.DoesNotExist:
+            fields.append("")
+    else:
+        fields.append("")
+    # 6
+    fields.append(id.revision_date)
+    # 7
+    group_acronym = id.group.acronym
+    if group_acronym == "none":
+        group_acronym = ""
+    fields.append(group_acronym)
+
+    # 8
+    area = ""
+    if id.idinternal:
+        area = id.idinternal.area_acronym
+    elif not group_acronym:
+        pass
+    else:
+        wgs = id.group.ietfwg_set.all()
+        if len(wgs) > 0:
+            area = wgs[0].area_acronym() or ""
+    fields.append(area)
+    # 9
+    fields.append(id.idinternal.job_owner if id.idinternal else "")
+    # 10
+    if id.intended_status and id.intended_status.intended_status not in ("None","Request"):
+        fields.append(id.intended_status.intended_status)
+    else:
+        fields.append("")
+    # 11
+    if (iesgstate=="In Last Call") or iesgstate.startswith("In Last Call::"):
+        fields.append(id.lc_expiration_date)
+    else:
+        fields.append("")
+    # 12
+    fields.append(id.file_type if status=="Active" else "")
+    # 13
+    fields.append(clean_whitespace(id.title))
+    # 14
+    authors = []
+    for author in sorted(id.authors.all(), key=lambda x: x.final_author_order()):
+        try:
+            realname = unicode(author.person)
+            email = author.email() or ""
+            name = re.sub(u"[<>@,]", u"", realname) + u" <"+re.sub(u"[<>,]", u"", email).strip()+u">"
+            authors.append(clean_whitespace(name))
+        except PersonOrOrgInfo.DoesNotExist:
+            pass
+    fields.append(u", ".join(authors))
+    return "\t".join([unicode(x) for x in fields])
+    
+def all_id2_txt():
+    all_ids = InternetDraft.objects.order_by('filename').select_related('status__status','group__acronym','intended_status__intended_status')
+    data = "\n".join([all_id2_entry(id) for id in all_ids])
+    return loader.render_to_string("idindex/all_id2.txt",{'data':data})
+
 def id_index_txt():
     groups = IETFWG.objects.all()
     return loader.render_to_string("idindex/id_index.txt", {'groups':groups})
@@ -68,6 +145,8 @@ def id_abstracts_txt():
 
 def test_all_id_txt(request):
     return HttpResponse(all_id_txt(), mimetype='text/plain')
+def test_all_id2_txt(request):
+    return HttpResponse(all_id2_txt(), mimetype='text/plain')
 def test_id_index_txt(request):
     return HttpResponse(id_index_txt(), mimetype='text/plain')
 def test_id_abstracts_txt(request):

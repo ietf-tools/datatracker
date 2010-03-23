@@ -20,6 +20,7 @@ urlpatterns = patterns('',
 if settings.SERVER_MODE != 'production':
     urlpatterns += patterns('',
         (r'^_test/all_id.txt$', views.test_all_id_txt),                        
+        (r'^_test/all_id2.txt$', views.test_all_id2_txt),
         (r'^_test/id_index.txt$', views.test_id_index_txt), 
         (r'^_test/id_abstracts.txt$', views.test_id_abstracts_txt)   
     )

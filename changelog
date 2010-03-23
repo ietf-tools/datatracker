@@ -1,3 +1,10 @@
+ietfdb (2.49)
+
+  * New script to generate all_id2.txt. This should be called in
+    www6s/scripts/datatracker-updater: run "python -m
+    ietf.idindex.generate_all_id2_txt" and place its output
+    in $ID/all_id2.txt.
+
 ietfdb (2.48)
 
   From Pasi:
