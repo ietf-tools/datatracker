@@ -12,6 +12,7 @@
 301	/idtracker/draft-eronen-tls-psk/ # no IESG information
 301	/idtracker/comment/65232/	
 301 	/idtracker/ballot/1760/	
+404	/idtracker/ballot/1723/ # dangling ballot, does not link to any doc
 301	/idtracker/
 200	/feed/comments/draft-ietf-isis-link-attr/
 200	/feed/comments/rfc3373/
