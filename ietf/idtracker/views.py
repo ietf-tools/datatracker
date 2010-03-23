@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 # Create your views here.
-from django.http import HttpResponsePermanentRedirect
+from django.http import HttpResponsePermanentRedirect, Http404
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 from django.views.generic.list_detail import object_detail, object_list
@@ -47,7 +47,10 @@ def redirect_filename(request, filename):
 
 def redirect_ballot(request, object_id):
     ballot = get_object_or_404(BallotInfo, pk=object_id)
-    id = ballot.drafts.filter(primary_flag=1)[0]
+    ids = ballot.drafts.filter(primary_flag=1)
+    if len(ids) == 0:
+        raise Http404("Ballot does not correspond to any document")
+    id = ids[0]
     if id.rfc_flag:
         return HttpResponsePermanentRedirect("/doc/rfc"+str(id.draft_id)+"/#ballot")
     else:
