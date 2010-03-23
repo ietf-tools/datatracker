@@ -386,14 +386,7 @@ class IetfProcessData:
 	return self.iesg_ballot().ballot.needed( standardsTrack )
 
     def ad_name(self):
-        name = self._idinternal.token_name
-        # Some old documents have token name as "Surname, Firstname";
-        # newer ones have "Firstname Surname"
-        m = re.match(r'^(\w+), (\w+)$', name)
-        if m:
-            return m.group(2)+" "+m.group(1)
-        else:
-            return name
+        return str(self._idinternal.job_owner)
 
     def iesg_note(self):
         if self._idinternal.note:
