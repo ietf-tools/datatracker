@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load ietf_filters %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% block title %}IETF {{ meeting_num }} Preliminary &amp; Interim Materials{% endblock %}
 {% block morecss %}
@@ -43,7 +43,7 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 <tr>
 <td style="width:12em;"><a name="wg-{{ wg.acronym }}"></a><b>{{ wg.acronym|upper }}{% ifequal wg.group_type_str "BOF" %} <font color="red">({{ wg.group_type_str }})</font> {% endifequal %}</b><br/>
 {% for slide in wg.slides %}
-<a href="http://www.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name|escape }}</a><br/>
+<a href="http://www.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name|clean_whitespace }}</a><br/>
 {% endfor %}
 </td></tr></table>
 {% endfor %}  

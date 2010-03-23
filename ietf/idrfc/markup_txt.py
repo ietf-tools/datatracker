@@ -58,7 +58,8 @@ def markup(content):
 
     content = re.sub("\n(.+\[Page \d+\])\n\f\n(.+)\n", """\n<span class="m_ftr">\g<1></span>\n<span class="m_hdr">\g<2></span>\n""", content)
     content = re.sub("\n(.+\[Page \d+\])\n\s*$", """\n<span class="m_ftr">\g<1></span>\n""", content)
-    # TODO: remove remaining FFs (to be valid XHTML)
+    # remove remaining FFs (to be valid XHTML)
+    content = content.replace("\f","\n")
 
     content = re.sub("\n\n([0-9]+\\.|[A-Z]\\.[0-9]|Appendix|Status of|Abstract|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index)(.*)(?=\n\n)", """\n\n<span class="m_h">\g<1>\g<2></span>""", content)
 

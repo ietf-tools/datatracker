@@ -213,7 +213,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 		     <td colspan="2">
 			C. Does this disclosure apply to all IPR owned by
 			the submitter?:
-			<span class="iprdata">>{{ ipr.applies_to_all }}</span>
+			<span class="iprdata">{{ ipr.applies_to_all }}</span>
 		     </td>
 		  </tr>
 	       {% else %}
@@ -230,7 +230,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 		  {% if ipr.document_sections %}
 		  <tr class="{% cycle row_parity %}"><td class="iprlabel"></td><td class="iprdata">{{ ipr.document_sections|escape|linebreaks }}</td></tr>
 		  {% else %}
-		  <tr class="{% cycle row_parity %}"><td class="iprlabel"></td><td></span><i>No information submitted</i></td></tr>
+		  <tr class="{% cycle row_parity %}"><td class="iprlabel"></td><td><i>No information submitted</i></td></tr>
 		  {% endif %}
 	       {% endif %}
 	    </tbody>
@@ -316,7 +316,7 @@ Template for {{ section_list.disclosure_type }}" where the submitter provided
 	       <td colspan="2">
 		  <span class="iprdata">Note: The individual submitting this template represents and warrants
 		  that he or she is authorized by the Patent Holder to agree to the
-		  above-selected licensing declaration.</span>>
+		  above-selected licensing declaration.</span>
 	       </td>
 	    </tr>
 	 </table>
