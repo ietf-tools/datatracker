@@ -1,9 +1,26 @@
 ietfdb (2.49)
 
+  From Pasi:
+
   * New script to generate all_id2.txt. This should be called in
     www6s/scripts/datatracker-updater: run "python -m
     ietf.idindex.generate_all_id2_txt" and place its output
     in $ID/all_id2.txt.
+
+  * /wg/: link to both www.ietf.org and tools lists of concluded WGs
+
+  * /doc/: show full responsible AD name for old drafts, too
+
+  * Eliminated some cases where exceptions could be thrown
+
+  * Various minor tweaks and fixes
+
+  From Henrik:
+
+  * Added commands to the mkrelease script to update the IETF Tools feed 
+    with release information.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2010 21:11:27 +0100
 
 ietfdb (2.48)
 
