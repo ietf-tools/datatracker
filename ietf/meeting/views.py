@@ -93,6 +93,8 @@ def html_agenda(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
     if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
         user_agent = "iPhone"
+    elif 'user_agent' in request.REQUEST:
+        user_agent = request.REQUEST['user_agent']
     elif 'HTTP_USER_AGENT' in request.META:
         user_agent = request.META["HTTP_USER_AGENT"]
     else:
