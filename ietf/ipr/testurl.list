@@ -64,6 +64,7 @@
 
 200	/ipr/search/?option=ipr_title_search&ipr_title_search=nortel
 200	/ipr/search/?option=ipr_title_search&ipr_title_search=nortelxz # Empty result
+404	/ipr/search/?id_document_tag=12345 # no search type: 404
 
 200	/ipr/about/
 200	/ipr/by-draft/

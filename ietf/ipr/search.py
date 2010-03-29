@@ -7,6 +7,7 @@ import django.utils.html
 from django.shortcuts import render_to_response as render
 from django.template import RequestContext
 from django.conf import settings
+from django.http import Http404
 from ietf.idtracker.models import IETFWG, InternetDraft, Rfc
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
 from ietf.ipr.related import related_docs
@@ -60,7 +61,7 @@ def search(request, type="", q="", id=""):
             if re.match(".*id", key):
                 id = value
         if type and q or id:
-            log("Got query: type=%s, q=%s, id=%s" % (type, q, id))
+            #log("Got query: type=%s, q=%s, id=%s" % (type, q, id))
 
             # Search by RFC number or draft-identifier
             # Document list with IPRs
@@ -183,6 +184,6 @@ def search(request, type="", q="", id=""):
                                   context_instance=RequestContext(request) )
 
             else:
-                raise ValueError("Unexpected search type in IPR query: %s" % type)
+                raise Http404("Unexpected search type in IPR query: %s" % type)
         return django.http.HttpResponseRedirect(request.path)
     return render("ipr/search.html", {"wgs": wgs}, context_instance=RequestContext(request))
