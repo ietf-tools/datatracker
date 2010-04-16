@@ -52,7 +52,8 @@ for draft in matches:
     continue
     """
 
-    send_mail_subj(None, to_addrs, None, 'notify_expirations/subject.txt', 'notify_expirations/body.txt', 
+    if to_addrs or cc_addrs:
+        send_mail_subj(None, to_addrs, None, 'notify_expirations/subject.txt', 'notify_expirations/body.txt', 
                    {
                       'draft':draft,
                       'expiration':expiration,
