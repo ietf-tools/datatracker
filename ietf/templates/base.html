@@ -1,7 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 {% comment %}
+
 Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
-All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions 
@@ -72,7 +73,7 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 {% include "base_leftmenu.html" %}
 </div>
 <div style="padding-left: 12px;padding-top:4px;font-size:69%;">
-{{ version_num }} {{revision_date}}
+Version {{ version_num }}, {{revision_date}}
 </div>
 </td>
 <td>
