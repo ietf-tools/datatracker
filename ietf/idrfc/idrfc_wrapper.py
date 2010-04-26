@@ -30,7 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGLogin
+from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGLogin, DocumentComment
 from ietf.idrfc.models import RfcEditorQueue
 import re
 from datetime import date
@@ -484,6 +484,18 @@ class IdRfcWrapper:
             return self.rfc.friendly_state()
         else:
             return self.id.friendly_state()
+
+    def get_absolute_url(self):
+        if self.rfc:
+            return self.rfc.get_absolute_url()
+        else:
+            return self.id.get_absolute_url()
+
+    def comment_count(self):
+        if self.rfc:
+            return DocumentComment.objects.filter(document=self.rfc.rfc_number,rfc_flag=1).count()
+        else:
+            return DocumentComment.objects.filter(document=self.id.tracker_id).exclude(rfc_flag=1).count()
 
     def ad_name(self):
         if self.rfc:
