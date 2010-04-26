@@ -105,7 +105,8 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endif %}
 
 {% if doc.obj.draft.ipr.all %}
-<td valign="top">IPR:
+<br />
+<h5>IPR:</h5>
    <ul>
    {% for ipr in doc.obj.draft.ipr.all %}
       {% ifequal ipr.ipr.status 1 %}
@@ -120,7 +121,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% if doc.obj.ballot.defer %}
 <br/>Was deferred by {{doc.obj.ballot.defer_by}} on {{doc.obj.ballot.defer_date}}
 {% endif %}
-</td><td style="padding-left:20px;">
+</td><td style="padding-left:20px; width: 50px;">
 {% ballot_icon doc.obj %}
 {% if doc.obj.ballot.active %}
 {% if private or user|in_group:"Area_Director,Secretariat" %}
