@@ -38,6 +38,7 @@ from django.shortcuts import get_object_or_404
 from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, IDInternal,PersonOrOrgInfo
 from ietf.idtracker.templatetags.ietf_filters import clean_whitespace
 import re
+import sys
 
 def all_id_txt():
     all_ids = InternetDraft.objects.order_by('filename')
@@ -75,12 +76,9 @@ def all_id2_entry(id):
     # 4
     fields.append(id.rfc_number if status=="RFC" else "")
     # 5
-    if status == "Replaced":
-        try:
-            fields.append(id.replaced_by.filename)
-        except InternetDraft.DoesNotExist:
-            fields.append("")
-    else:
+    try:
+        fields.append(id.replaced_by.filename)
+    except InternetDraft.DoesNotExist:
         fields.append("")
     # 6
     fields.append(id.revision_date)
