@@ -1,3 +1,37 @@
+ietfdb (2.50)
+
+  From RjS: 
+
+  * Don't send mail if we don't have any recipients...
+
+  From Pasi:
+
+  * /iesg/agenda/: fix bug related to non-existing ballots
+
+  * Removed old (unused) YUI js/css
+
+  * /ipr/search/: avoid exception for unexpected search types; comment out 
+    debug logging
+
+  * /doc/active, all: add link to all_id2.txt
+
+  * /liaison/: add link to liaison statement manager tool
+
+  From Henrik:
+
+  * Make version information on the web pages a little less cryptic.
+
+  * Tweak the IESG agenda page for better placement of IPR information; 
+    requested by Russ.  Also align the ballot graphics.
+
+  * Add admin site support for the DocumentComment model.
+
+  * If replaced-by information exists, display it, even if the document 
+    state seems to be incorrect (something else than 'Replaced').
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Apr 2010 11:45:24 +0200
+
 ietfdb (2.49)
 
   From Pasi:
