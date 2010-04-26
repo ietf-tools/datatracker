@@ -30,6 +30,10 @@ class ChairsHistoryAdmin(admin.ModelAdmin):
     list_display=('person', 'chair_type', 'start_year', 'end_year')
 admin.site.register(ChairsHistory, ChairsHistoryAdmin)
 
+class DocumentCommentAdmin(admin.ModelAdmin):
+    list_display=('document', 'date', 'time', 'comment_text')
+admin.site.register(DocumentComment, DocumentCommentAdmin)
+
 class EmailAddressAdmin(admin.ModelAdmin):
     list_display=('person_or_org', 'address', 'type', 'priority')
     search_fields=['address']
