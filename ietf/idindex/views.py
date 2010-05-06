@@ -78,7 +78,7 @@ def all_id2_entry(id):
     # 5
     try:
         fields.append(id.replaced_by.filename)
-    except InternetDraft.DoesNotExist:
+    except (AttributeError, InternetDraft.DoesNotExist):
         fields.append("")
     # 6
     fields.append(id.revision_date)
