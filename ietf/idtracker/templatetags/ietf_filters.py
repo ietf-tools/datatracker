@@ -117,6 +117,17 @@ def format_textarea(value):
     Also calls keep_spacing."""
     return keep_spacing(linebreaksbr(escape(value).replace('&lt;b&gt;','<b>').replace('&lt;/b&gt;','</b>').replace('&lt;br&gt;','<br>')))
 
+@register.filter(name='sanitize_html')
+def sanitize_html(value):
+    """Sanitizes an HTML fragment.
+    This means both fixing broken html and restricting elements and
+    attributes to those deemed acceptable.  See ietf/utils/html.py
+    for the details.
+    """
+    from ietf.utils.html import sanitize_html
+    return sanitize_html(value)
+
+
 # For use with ballot view
 @register.filter(name='bracket')
 def square_brackets(value):
