@@ -1,3 +1,19 @@
+ietfdb (2.51)
+
+  * Add an html sanitizer and a sanitize_html template filter.  This uses
+    the html5lib, which has also been included in the svn tree.
+
+  * Provide better handling of both text/plain document comments and 
+    document comments which contain html tags.  Adds urlization, 
+    linebreak-preservation and html sanitization.  Html sanitization would be 
+    better applied when adding comments, but we're not yet a position to 
+    enforce this for all input paths.
+
+  * Catch an additional exception which can occur during generation of 
+    all_id2.txt
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 May 2010 12:26:58 +0200
+
 ietfdb (2.50)
 
   From RjS: 
