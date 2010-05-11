@@ -9,6 +9,7 @@ import re
 import smtplib
 import sys
 import traceback
+import unicodedata
 
 class SQLLogMiddleware(object):
     def process_response(self, request, response):
@@ -39,3 +40,21 @@ class RedirectTrailingPeriod(object):
 	if response.status_code == 404 and request.path.endswith("."):
 	    return HttpResponsePermanentRedirect(request.path.rstrip("."))
 	return response
+
+class UnicodeNfkcNormalization(object):
+    def process_request(self, request):
+        """Do Unicode NFKC normalization to turn ligatures into individual characters.
+        This was prompted by somebody actually requesting an url for /wg/ipfix/charter
+        where the 'fi' was composed of an \ufb01 ligature...
+
+        There are probably other elements of a request which may need this normalization
+        too, but let's put that in as it comes up, rather than guess ahead.
+        """
+        if request.META["PATH_INFO"].startswith("/wg/"):
+            print "-------->>"
+            request.META["PATH_INFO"] = unicodedata.normalize('NFKC', request.META["PATH_INFO"])
+            request.path_info = unicodedata.normalize('NFKC', request.path_info)
+            print repr(request)
+            print "--------<<"
+        return None
+        
