@@ -32,16 +32,13 @@
 
 import re, os
 from datetime import datetime, time
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.template.defaultfilters import truncatewords_html
+from django.utils import simplejson as json
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 
@@ -234,9 +231,6 @@ def ballot_tsv(request, name):
 
 def ballot_json(request, name):
     ballot, doc = get_ballot(name)
-    response = HttpResponse(mimetype='application/json')
-    ballot_json = {}
-    for key in ballot.position_values:
-        ballot_json[key] = [ pos["ad_name"] for pos in ballot.get(key) ]
-    response.write(json.dumps(ballot_json))
+    response = HttpResponse(mimetype='text/plain')
+    response.write(json.dumps(ballot.dict(), indent=2))
     return response

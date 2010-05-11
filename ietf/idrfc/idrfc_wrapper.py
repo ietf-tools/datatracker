@@ -34,7 +34,7 @@ from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDis
 from ietf.idrfc.models import RfcEditorQueue
 import re
 from datetime import date
-from django.utils import simplejson
+from django.utils import simplejson as json
 from django.db.models import Q
 import types
 
@@ -219,8 +219,8 @@ class IdWrapper:
     def to_json(self):
         result = jsonify_helper(self, ['draft_name', 'draft_status', 'latest_revision', 'rfc_number', 'title', 'tracker_id', 'publication_date','rfc_editor_state', 'replaced_by', 'replaces', 'in_ietf_process', 'file_types', 'group_acronym', 'stream_id','friendly_state', 'abstract', 'ad_name'])
         if self.in_ietf_process():
-            result['ietf_process'] = self.ietf_process.to_json_helper()
-        return simplejson.dumps(result, indent=2)
+            result['ietf_process'] = self.ietf_process.dict()
+        return json.dumps(result, indent=2)
 
 # ---------------------------------------------------------------------------
 
@@ -333,8 +333,8 @@ class RfcWrapper:
     def to_json(self):
         result = jsonify_helper(self, ['rfc_number', 'title', 'publication_date', 'maturity_level', 'obsoleted_by','obsoletes','updated_by','updates','also','has_errata','stream_name','file_types','in_ietf_process', 'friendly_state'])
         if self.in_ietf_process():
-            result['ietf_process'] = self.ietf_process.to_json_helper()
-        return simplejson.dumps(result, indent=2)
+            result['ietf_process'] = self.ietf_process.dict()
+        return json.dumps(result, indent=2)
 
 # ---------------------------------------------------------------------------
 
@@ -410,7 +410,7 @@ class IetfProcessData:
             # should never happen -- return an obviously bogus date
             return date(1990,1,1)
 
-    def to_json_helper(self):
+    def dict(self):
         result = {'main_state':self.main_state,
                   'sub_state':self.sub_state,
                   'state':self.state,
@@ -426,7 +426,7 @@ class IetfProcessData:
         if self.iesg_note():
             result['iesg_note'] = self.iesg_note()
         if self.has_iesg_ballot():
-            result['iesg_ballot'] = self.iesg_ballot().to_json_helper()
+            result['iesg_ballot'] = self.iesg_ballot().dict()
         return result
 
     def intended_maturity_level(self):
@@ -651,8 +651,27 @@ class BallotWrapper:
     def get_texts(self):
         return [p for p in self.position_list() if ('has_text' in p) and p['has_text']]
 
-    def to_json_helper(self):
-        return {"not_implemented_yet:":True}
+    def dict(self):
+        summary = {}
+        for key in self.position_values:
+            tag = key.lower().replace(" ", "_")
+            summary[tag] = [ pos["ad_name"] for pos in self.get(key) ]
+        positions = self.position_list()
+        for i in range(len(positions)):
+            for key in ["comment_date", "discuss_date", ]:
+                if key in positions[i]:
+                    positions[i][key] = positions[i][key].strftime("%Y-%m-%d")
+        return {
+            "active": self.is_active(),
+            "approval_text": self.approval_text(),
+            "ballot_writeup": self.ballot_writeup(),
+            "ballot_id": self.ballot_id(),
+            "deferred_by": self.deferred_by(),
+            "deferred_date": self.deferred_date() and self.deferred_date().strftime("%Y-%m-%d") ,
+            "positions": positions,
+            "summary": summary,
+            "was_deferred": self.was_deferred(),
+        }
 
 def position_to_string(position):
     positions = {"yes":"Yes",
