@@ -1,0 +1,2 @@
+#Discuss	Yes	No Objection	Abstain	Recuse	No Record
+{% for p in ballot.get_discuss %}{{p.ad_name}}, {% endfor %}	{% for p in ballot.get_yes %}{{p.ad_name}}, {% endfor %}	{% for p in ballot.get_no_objection %}{{p.ad_name}}, {% endfor %}	{% for p in ballot.get_abstain %}{{p.ad_name}}, {% endfor %}	{% for p in ballot.get_recuse %}{{p.ad_name}}, {% endfor %}	{% for p in ballot.get_no_record %}{{p.ad_name}}, {% endfor %}	

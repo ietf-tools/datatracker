@@ -32,19 +32,25 @@
 
 import re, os
 from datetime import datetime, time
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404
-from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, DocumentComment
-from ietf.idrfc.models import RfcIndex, DraftVersions
-from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
-from ietf.idrfc import markup_txt
-from ietf import settings
 from django.template import RequestContext
+from django.template.loader import render_to_string
 from django.template.defaultfilters import truncatewords_html
-from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 
+from ietf import settings
+from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, DocumentComment
+from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
+from ietf.idrfc import markup_txt
+from ietf.idrfc.models import RfcIndex, DraftVersions
+from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 
 def document_debug(request, name):
     r = re.compile("^rfc([1-9][0-9]*)$")
@@ -198,7 +204,7 @@ def _get_versions(draft, include_replaced=True):
             ov.append({"draft_name":d.filename, "revision":v.revision, "date":v.revision_date})
     return ov
 
-def document_ballot(request, name):
+def get_ballot(name):
     r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
     if m:
@@ -216,5 +222,21 @@ def document_ballot(request, name):
         raise Http404
 
     ballot = BallotWrapper(id)
+    return ballot, doc
+
+def document_ballot(request, name):
+    ballot, doc = get_ballot(name)
     return render_to_response('idrfc/doc_ballot.html', {'ballot':ballot, 'doc':doc}, context_instance=RequestContext(request))
 
+def ballot_tsv(request, name):
+    ballot, doc = get_ballot(name)
+    return HttpResponse(render_to_string('idrfc/ballot.tsv', {'ballot':ballot}, RequestContext(request)), content_type="text/plain")
+
+def ballot_json(request, name):
+    ballot, doc = get_ballot(name)
+    response = HttpResponse(mimetype='application/json')
+    ballot_json = {}
+    for key in ballot.position_values:
+        ballot_json[key] = [ pos["ad_name"] for pos in ballot.get(key) ]
+    response.write(json.dumps(ballot_json))
+    return response
