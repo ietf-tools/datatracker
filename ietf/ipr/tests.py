@@ -73,19 +73,19 @@ class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
         self.tearDownRealDatabase()
 
     def testNewSpecific(self):
-        print "Testing IPR disclosure submission"
+        print "     Testing IPR disclosure submission"
         test_runner.mail_outbox = []
         c = Client()
         response = c.post('/ipr/new-specific/', self.SPECIFIC_DISCLOSURE)
         self.assertEquals(response.status_code, 200)
         self.assert_("Your IPR disclosure has been submitted" in response.content)
         self.assertEquals(len(test_runner.mail_outbox), 1)
-        print "OK (1 email found in test outbox)"
+        print "OK   (1 email found in test outbox)"
         
     
 class IprFileTestCase(unittest.TestCase):
     def testFileExistence(self):
-        print "Testing if IPR disclosure files exist locally"
+        print "     Testing if IPR disclosure files exist locally"
         fpath = os.path.join(settings.IPR_DOCUMENT_PATH, "juniper-ipr-RFC-4875.txt")
         if not os.path.exists(fpath):
             print "\nERROR: IPR disclosure files not found in "+settings.IPR_DOCUMENT_PATH
@@ -94,5 +94,5 @@ class IprFileTestCase(unittest.TestCase):
             print "wget -nd -nc -np -r ftp://ftp.ietf.org/ietf/IPR/"
             print "And set IPR_DOCUMENT_PATH in settings_local.py\n"
         else:
-            print "OK (they seem to exist)"
+            print "OK   (they seem to exist)"
     

@@ -8,11 +8,11 @@ import django.test
 
 class TemplateTagTest(unittest.TestCase):
     def testTemplateTags(self):
-        print "Testing ietf_filters"
+        print "     Testing ietf_filters"
         #doctest.testmod(ietf_filters,verbose=True)
         (failures, tests) = doctest.testmod(ietf_filters)
         self.assertEqual(failures, 0)
-        print "OK (ietf_filters)"
+        print "OK   (ietf_filters)"
 
 class IdTrackerUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
@@ -34,7 +34,7 @@ class WGRoleTest(django.test.TestCase):
 	self.snow = IETFWG.objects.get(group_acronym__acronym='snow')
 
     def test_roles(self):
-        print "Testing WG roles"
+        print "     Testing WG roles"
     	self.assertEquals(self.xmas.wgchair_set.all()[0].role(), 'xmas WG Chair')
 	self.assertEquals(self.snow.wgchair_set.all()[0].role(), 'snow BOF Chair')
 	self.assertEquals(self.xmas.wgsecretary_set.all()[0].role(), 'xmas WG Secretary')

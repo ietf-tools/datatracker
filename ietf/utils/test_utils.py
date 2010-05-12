@@ -51,12 +51,12 @@ class RealDatabaseTest:
     def setUpRealDatabase(self):
         self._original_testdb = self._getDatabaseName()
         newdb = ietf.settings.DATABASE_NAME
-        print "Switching database from "+self._original_testdb+" to "+newdb
+        print "     Switching database from "+self._original_testdb+" to "+newdb
         self._setDatabaseName(newdb)
 
     def tearDownRealDatabase(self):
         curdb = self._getDatabaseName()
-        print "Switching database from "+curdb+" to "+self._original_testdb
+        print "     Switching database from "+curdb+" to "+self._original_testdb
         self._setDatabaseName(self._original_testdb)
 
     def _getDatabaseName(self):
@@ -118,7 +118,7 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
 
     def doTestUrls(self, test_filename):
         filename = os.path.dirname(os.path.abspath(test_filename))+"/testurl.list"
-        print "Reading "+filename
+        print "     Reading "+filename
         tuples = read_testurls(filename)
         failures = 0
         for tuple in tuples:
@@ -136,7 +136,7 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
         #settings.DEBUG = True
         try:
             if "heavy" in codes and self.skip_heavy_tests:
-                print "Skipping heavy test %s" % (url,)
+                print "     Skipping heavy test %s" % (url,)
                 return
             now = datetime.utcnow()
             response = self.client.get(baseurl, args)

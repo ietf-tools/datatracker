@@ -66,7 +66,7 @@ class IetfAuthTestCase(unittest.TestCase,RealDatabaseTest):
 
     def testLogin(self):
         TEST_USERNAME = '__testuser'
-        print "Testing login with "+TEST_USERNAME
+        print "     Testing login with "+TEST_USERNAME
 
         # Delete test user (if it exists)
         try:
@@ -83,9 +83,9 @@ class IetfAuthTestCase(unittest.TestCase,RealDatabaseTest):
         print "OK"
 
     def testGroups(self):
-        print "Testing group assignment"
+        print "     Testing group assignment"
         username = Role.objects.get(id=Role.IETF_CHAIR).person.iesglogin_set.all()[0].login_name
-        print "(with username "+str(username)+")"
+        print "     (with username "+str(username)+")"
         
         self._doLogin(username)
         

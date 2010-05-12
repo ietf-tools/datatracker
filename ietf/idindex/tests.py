@@ -46,7 +46,7 @@ class IndexTestCase(unittest.TestCase, RealDatabaseTest):
         self.tearDownRealDatabase()
 
     def testAllId(self):
-        print "Testing all_id.txt generation"
+        print "     Testing all_id.txt generation"
         c = Client()
         response = c.get('/drafts/_test/all_id.txt')
         self.assertEquals(response.status_code, 200)
@@ -69,4 +69,4 @@ class IndexTestCase(unittest.TestCase, RealDatabaseTest):
                 pass
             else:
                 self.fail("Unexpected line \""+line+"\"")
-        print "OK (all_id.txt)"
+        print "OK   (all_id.txt)"

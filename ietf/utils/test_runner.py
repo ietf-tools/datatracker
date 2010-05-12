@@ -44,17 +44,17 @@ old_create = None
 
 def safe_create_1(self, verbosity, *args, **kwargs):
     global test_database_name, old_create
-    print "Creating test database..."
+    print "     Creating test database..."
     x = old_create(self, 0, *args, **kwargs)
-    print "Saving test database name "+settings.DATABASE_NAME+"..."
+    print "     Saving test database name "+settings.DATABASE_NAME+"..."
     test_database_name = settings.DATABASE_NAME
     return x
 
 def safe_destroy_0_1(*args, **kwargs):
     global test_database_name, old_destroy
-    print "Checking that it's safe to destroy test database..."
+    print "     Checking that it's safe to destroy test database..."
     if settings.DATABASE_NAME != test_database_name:
-        print "NOT SAFE; Changing settings.DATABASE_NAME from "+settings.DATABASE_NAME+" to "+test_database_name
+        print "     NOT SAFE; Changing settings.DATABASE_NAME from "+settings.DATABASE_NAME+" to "+test_database_name
         settings.DATABASE_NAME = test_database_name
     return old_destroy(*args, **kwargs)
 
@@ -79,6 +79,7 @@ def run_tests_1(test_labels, *args, **kwargs):
     if not test_labels:
         settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
         test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")] + ['redirects.TemplateCoverageTestCase',]
+    kwargs["verbosity"] = 0
     run_tests(test_labels, *args, **kwargs)
 
 def run_tests(*args, **kwargs):

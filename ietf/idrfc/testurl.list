@@ -5,11 +5,13 @@
 
 # draft that's now RFC
 200	/doc/draft-ietf-avt-rtp-atrac-family/
-200	/doc/draft-ietf-avt-rtp-atrac-family/_debug.data
+200	/doc/draft-ietf-avt-rtp-atrac-family/doc.json
+200	/doc/draft-ietf-avt-rtp-atrac-family/ballot.json
 200	/doc/draft-ietf-avt-rtp-atrac-family/_ballot.data
 
 # replaced draft, never went to IESG
 200	/doc/draft-eronen-mobike-mopo/
+404	/doc/draft-eronen-mobike-mopo/ballot.json
 404	/doc/draft-eronen-mobike-mopo/_ballot.data
 
 # expired draft
@@ -17,21 +19,26 @@
 
 # Normal RFC 
 200	/doc/rfc4739/
-200	/doc/rfc4739/_debug.data
+200	/doc/rfc4739/doc.json
+404	/doc/rfc4739/ballot.json
 404	/doc/rfc4739/_ballot.data
 
 # RFC that's evaluated in IESG
 200	/doc/rfc3852/
-200	/doc/rfc3852/_debug.data
+200	/doc/rfc3852/doc.json
+200	/doc/rfc3852/ballot.json
 200	/doc/rfc3852/_ballot.data
 
 # old RFC
 200     /doc/rfc822/
-200     /doc/rfc822/_debug.data
+200     /doc/rfc822/doc.json
 
 # ballot sets
+200	 /doc/rfc3550/ballot.json
 200	 /doc/rfc3550/_ballot.data
+200	 /doc/rfc3551/ballot.json
 200	 /doc/rfc3551/_ballot.data
+200	 /doc/draft-irtf-dtnrg-ltp/ballot.json
 200	 /doc/draft-irtf-dtnrg-ltp/_ballot.data
 
 # file formats
@@ -42,7 +49,7 @@
 404	/doc/draft-no-such-draft/
 404	/doc/rfc4637/
 
-200	/doc/rfc2444/_debug.data   # foreignkey problem with Django 1.x
+200	/doc/rfc2444/doc.json   # foreignkey problem with Django 1.x
 
 # current AD -- needs to be updated at some point
 200	/doc/ad/robert.sparks/
@@ -51,8 +58,10 @@
 404	/doc/ad/no.body/
 
 # ballot exists, but it's not issued
+404	/doc/draft-ietf-aaa-diameter-api/ballot.json
 404	/doc/draft-ietf-aaa-diameter-api/_ballot.data
 # ballot does not exist
+404	/doc/draft-zeilenga-cldap/ballot.json
 404	/doc/draft-zeilenga-cldap/_ballot.data
 # comment with created_by=999
 200	/doc/draft-ietf-l3vpn-2547bis-mcast-bgp/

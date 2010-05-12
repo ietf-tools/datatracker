@@ -93,7 +93,7 @@ class RedirectsTestCase(unittest.TestCase, RealDatabaseTest):
         self.tearDownRealDatabase()
 
     def testRedirects(self):
-        print "Testing redirects"
+        print "     Testing redirects"
 
         c = Client()
         for src, dst in REDIRECT_TESTS.items():
@@ -132,7 +132,7 @@ def get_patterns(module):
 
 class UrlCoverageTestCase(unittest.TestCase):
     def testUrlCoverage(self):
-        print "Testing testurl.list coverage"
+        print "     Testing testurl.list coverage"
         testtuples = []
         for root, dirs, files in os.walk(settings.BASE_DIR):
             if "testurl.list" in files:
@@ -150,7 +150,7 @@ class UrlCoverageTestCase(unittest.TestCase):
             print "The following URLs are not tested by any testurl.list"
             for pattern in missing:
                 if not pattern[1:].split("/")[0] in [ "admin", "accounts" ]:
-                    print "NoTest", pattern
+                    print "     NoTest", pattern
             print ""
         else:
             print "All URLs are included in some testurl.list"
@@ -177,10 +177,10 @@ def get_templates():
 class TemplateCoverageTestCase(unittest.TestCase):
     def testTemplateCoverage(self):
         if not test_runner.loaded_templates:
-            print "Skipping template coverage test"
+            print "     Skipping template coverage test"
             return
 
-        print "Testing template coverage"
+        print "     Testing template coverage"
         all_templates = get_templates()
 
         #notexist = list(test_runner.loaded_templates - all_templates)
@@ -195,7 +195,7 @@ class TemplateCoverageTestCase(unittest.TestCase):
             notloaded.sort()
             print "The following templates were never loaded during test"
             for x in notloaded:
-                print "NotLoaded", x
+                print "     NotLoaded", x
         else:
-            print "All templates were loaded during test"
+            print "     All templates were loaded during test"
         

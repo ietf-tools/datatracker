@@ -356,14 +356,14 @@ class MirrorScriptTestCases(unittest.TestCase,RealDatabaseTest):
         self.tearDownRealDatabase()
 
     def testRfcIndex(self):
-        print "Testing rfc-index.xml parsing"
+        print "     Testing rfc-index.xml parsing"
         from ietf.idrfc.mirror_rfc_index import parse
         data = parse(StringIO.StringIO(TEST_RFC_INDEX))
         self.assertEquals(len(data), 6)
         print "OK"
 
     def testRfcEditorQueue(self):
-        print "Testing queue2.xml parsing"
+        print "     Testing queue2.xml parsing"
         from ietf.idrfc.mirror_rfc_editor_queue import parse_all
         (drafts,refs) = parse_all(StringIO.StringIO(TEST_QUEUE))
         self.assertEquals(len(drafts), 3)

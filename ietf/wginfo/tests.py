@@ -41,7 +41,7 @@ class WgInfoUrlTestCase(SimpleUrlTestCase):
 
 class WgFileTestCase(unittest.TestCase):
     def testFileExistence(self):
-        print "Testing if WG charter files exist locally"
+        print "     Testing if WG charter files exist locally"
         fpath = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, "tls.desc.txt")
         if not os.path.exists(fpath):
             print "\nERROR: charter files not found in "+settings.IETFWG_DESCRIPTIONS_PATH
@@ -50,5 +50,5 @@ class WgFileTestCase(unittest.TestCase):
             print "wget -nd -nc -np -r http://www.ietf.org/wg-descriptions/"
             print "And set IETFWG_DESCRIPTIONS_PATH in settings_local.py\n"
         else:
-            print "OK (they seem to exist)"
+            print "OK   (they seem to exist)"
     
