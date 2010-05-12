@@ -50,11 +50,7 @@ class UnicodeNfkcNormalization(object):
         There are probably other elements of a request which may need this normalization
         too, but let's put that in as it comes up, rather than guess ahead.
         """
-        if request.META["PATH_INFO"].startswith("/wg/"):
-            print "-------->>"
-            request.META["PATH_INFO"] = unicodedata.normalize('NFKC', request.META["PATH_INFO"])
-            request.path_info = unicodedata.normalize('NFKC', request.path_info)
-            print repr(request)
-            print "--------<<"
+        request.META["PATH_INFO"] = unicodedata.normalize('NFKC', request.META["PATH_INFO"])
+        request.path_info = unicodedata.normalize('NFKC', request.path_info)
         return None
         
