@@ -666,7 +666,7 @@ class BallotWrapper:
             "approval_text": self.approval_text(),
             "ballot_writeup": self.ballot_writeup(),
             "ballot_id": self.ballot_id(),
-            "deferred_by": self.deferred_by(),
+            "deferred_by": unicode(self.deferred_by()),
             "deferred_date": self.deferred_date() and self.deferred_date().strftime("%Y-%m-%d") ,
             "positions": positions,
             "summary": summary,
