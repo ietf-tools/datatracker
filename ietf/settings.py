@@ -31,6 +31,8 @@ SERVER_EMAIL = 'Django Server <django-project@' + TOOLS_SERVER + '>'
 
 DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN + '>'
 
+LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
+
 MANAGERS = ADMINS
 
 DATABASE_ENGINE = 'mysql'
