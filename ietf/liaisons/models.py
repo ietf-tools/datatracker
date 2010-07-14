@@ -92,34 +92,49 @@ class LiaisonDetail(models.Model):
     class Meta:
         db_table = 'liaison_detail'
 
-# This table is not used by any code right now, and according to Glen,
-# probably not currently (Aug 2009) maintained by the secretariat.
-#class SDOs(models.Model):
-#    sdo_id = models.AutoField(primary_key=True)
-#    sdo_name = models.CharField(blank=True, max_length=255)
-#    def __str__(self):
-#	return self.sdo_name
-#    def liaisonmanager(self):
-#	try:
-#	    return self.liaisonmanagers_set.all()[0]
-#	except:
-#	    return None
-#    class Meta:
-#        db_table = 'sdos'
+class SDOs(models.Model):
+    sdo_id = models.AutoField(primary_key=True)
+    sdo_name = models.CharField(blank=True, max_length=255)
+    def __str__(self):
+	return self.sdo_name
+    def liaisonmanager(self):
+	try:
+	    return self.liaisonmanagers_set.all()[0]
+	except:
+	    return None
+    class Meta:
+        verbose_name = 'SDO'
+        verbose_name_plural = 'SDOs'
+        db_table = 'sdos'
+        ordering = ('sdo_name', )
 
-# This table is not used by any code right now, and according to Glen,
-# probably not currently (Aug 2009) maintained by the secretariat.
-#class LiaisonManagers(models.Model):
-#    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
-#    email_priority = models.IntegerField(null=True, blank=True)
-#    sdo = models.ForeignKey(SDOs)
-#    def email(self):
-#	try:
-#	    return self.person.emailaddress_set.get(priority=self.email_priority)
-#	except ObjectDoesNotExist:
-#	    return None
-#    class Meta:
-#        db_table = 'liaison_managers'
+class LiaisonManagers(models.Model):
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+    email_priority = models.IntegerField(null=True, blank=True)
+    sdo = models.ForeignKey(SDOs)
+    def email(self):
+	try:
+	    return self.person.emailaddress_set.get(priority=self.email_priority)
+	except ObjectDoesNotExist:
+	    return None
+    def __unicode__(self):
+        return '%s (%s)' % (self.person, self.sdo)
+    class Meta:
+        verbose_name = 'Liaison Manager'
+        verbose_name_plural = 'Liaison Managers'
+        db_table = 'liaison_managers'
+        ordering = ('sdo__sdo_name', )
+
+class SDOAuthorizedIndividual(models.Model):
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+    sdo = models.ForeignKey(SDOs)
+
+    def __unicode__(self):
+        return '%s (%s)' % (self.person, self.sdo)
+
+    class Meta:
+        verbose_name = 'SDO Authorized Individual'
+        verbose_name_plural = 'SDO Authorized Individuals'
 
 # This table is not used by any code right now.
 #class LiaisonsInterim(models.Model):
