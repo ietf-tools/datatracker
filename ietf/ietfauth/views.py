@@ -43,11 +43,8 @@ from django.utils.http import urlquote
 
 def url_login(request, user, passwd):
     user = authenticate(username=user, password=passwd)
-    print user
     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
-    print redirect_to
     if user is not None:
-        print user.is_active
         if user.is_active:
             login(request, user)
             return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
