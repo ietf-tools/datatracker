@@ -13,7 +13,7 @@ ietfdb (2.52)
     reports now starts at the beginning of the line, without whitespace.  This
     makes it easier to scan a test run visually to find reported failures.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2010 13:01:34 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2010 13:02:46 +0200
 
 ietfdb (2.51)
 
