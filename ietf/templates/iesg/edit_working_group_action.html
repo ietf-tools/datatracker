@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Working Group Action {{ wga.group_acronym.name }}{% endblock %}
+
+{% block morecss %}
+form table th {
+  vertical-align: top;
+  text-align: left;
+  font-weight: normal;
+  padding-top: 3px;
+}
+{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+
+<h1>{{ wga.group_acronym.name }} ({{ wga.group_acronym.acronym }})</h1>
+
+<form action="" method="POST">
+<table>
+  {{ form.as_table }}
+</table>
+
+<div class="actions">
+  <a href="{% url iesg_working_group_actions %}">Back</a>
+  <input type="submit" value="Save"/>
+</div>
+
+</form>
+{% endblock %}

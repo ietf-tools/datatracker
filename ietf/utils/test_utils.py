@@ -208,3 +208,10 @@ def canonicalize_sitemap(s):
     s = re.sub("\n*\s*(<[a-zA-Z])", "\n\g<1>", s)
     return s
         
+def login_testing_unauthorized(tc, remote_user, url):
+    r = tc.client.get(url)
+    tc.assertEquals(r.status_code, 302)
+    tc.assertTrue("/accounts/login" in r['Location'])
+
+    tc.client.login(remote_user=remote_user)
+    

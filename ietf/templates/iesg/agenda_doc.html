@@ -123,14 +123,6 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endif %}
 </td><td style="padding-left:20px; width: 50px;">
 {% ballot_icon doc.obj %}
-{% if doc.obj.ballot.active %}
-{% if private or user|in_group:"Area_Director,Secretariat" %}
-<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={{ doc.obj.draft_id }}">
-{% else %}
-<a href="/idtracker/ballot/{{ doc.obj.ballot_id}}/">
-{% endif %}
-[ballot]</a>
-{% endif %}
 </td></tr></tbody></table>
 {% if forloop.last %}
 {% endif %}

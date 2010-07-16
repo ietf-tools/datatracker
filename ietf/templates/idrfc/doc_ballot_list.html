@@ -1,5 +1,6 @@
+{% load ietf_filters %}
 {% for p in positions %}
-{% if p.is_old_ad %}[{%endif%}{{p.ad_name}}{% if p.is_old_ad %}]{%endif%}{% if p.has_text %}&nbsp;<a href="#{{p.ad_name|slugify}}"><img src="/images/comment.png" width="14" height="12" alt="*" border="0"/></a>{% endif %}<br/>
+{% if p.is_old_ad %}[{%endif%}<a{% if user|in_group:"Secretariat" %} href="{% url doc_edit_position name=doc.draft_name %}?ad={{ p.ad_username }}" title="Click to edit the position of {{ p.ad_name }}"{% endif %}>{{p.ad_name}}</a>{% if p.is_old_ad %}]{%endif%}{% if p.has_text %}&nbsp;<a href="#{{p.ad_name|slugify}}"><img src="/images/comment.png" width="14" height="12" alt="*" border="0"/></a>{% endif %}<br/>
 {% if p.old_positions %}<span class="was">(was {{p.old_positions|join:", "}})</span><br/>{%endif%}
 {% empty %}
 <i>none</i>

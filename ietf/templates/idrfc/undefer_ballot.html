@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Undefer ballot for {{ doc }}{% endblock %}
+
+{% block content %}
+<h1>Undefer ballot for {{ doc }}</h1>
+
+<form action="" method="POST">
+  <p>Undefer the ballot for {{ doc.file_tag }}?</p>
+  
+  <div class="actions">
+    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <input type="submit" value="Undefer ballot"/>
+  </div>
+</form>
+{% endblock %}

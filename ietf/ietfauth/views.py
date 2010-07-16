@@ -36,9 +36,22 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect, HttpResponse
-from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
+from django.contrib.auth.models import User
 from django.conf import settings
 from django.utils.http import urlquote
+
+def url_login(request, user, passwd):
+    user = authenticate(username=user, password=passwd)
+    print user
+    redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
+    print redirect_to
+    if user is not None:
+        print user.is_active
+        if user.is_active:
+            login(request, user)
+            return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
+    return HttpResponse("Not authenticated?", status=500)        
 
 def ietf_login(request):
     if not request.user.is_authenticated():

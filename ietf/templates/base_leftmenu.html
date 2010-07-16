@@ -37,13 +37,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <ul>
 {% if user|in_group:"Area_Director" %}
 <li class="sect first">AD Dashboard</li>
-  <li><a href="/doc/ad/{{user.get_profile.person.first_name|lower}}.{{user.get_profile.person.last_name|lower}}/">My Documents</a></li>
-  <li><a href="/iesg/agenda/documents/">Next Telechat</a></li>
-  <li><a href="/iesg/discusses/">Discusses</a></li>
-<li class="sect">Working Groups</li>
-{% else %}
-<li class="sect first">Working Groups</li>
+  <li><a href="{% url doc_search_by_ad name=user.get_profile.person.full_name_as_key %}">My Documents</a></li>
+  <li><a href="{% url ietf.iesg.views.agenda_documents %}">Next Telechat</a></li>
+  <li><a href="{% url ietf.iesg.views.discusses %}">Discusses</a></li>
+  <li><a href="{% url iesg_working_group_actions %}">Working Groups</a></li>
 {% endif %}
+{% if user|in_group:"Secretariat" %}
+<li class="sect first">Secretariat</li>
+  <li><a href="{% url ietf.iesg.views.telechat_dates %}">Telechat Dates</a></li>
+  <li><a href="{% url iesg_working_group_actions %}">Working Groups</a></li>
+{% endif %}
+<li class="sect{% if not user|in_group:"Area_Director,Secretariat" %} first{% endif %}">Working Groups</li>
 
   <li style="padding-bottom:0;"><div id="wgs" class="yuimenu"><div class="bd" style="border:0;">
   <ul class="first-of-type" style="padding:0;">

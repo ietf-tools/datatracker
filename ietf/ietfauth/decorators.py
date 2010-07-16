@@ -60,5 +60,5 @@ def group_required(*group_names):
     get a "403" page.
     """
     def decorate(view_func):
-        return _CheckLogin403(view_func, lambda u: bool(u.groups.filter(name__in=group_names)), "Restricted to group(s) "+",".join(group_names))
+        return _CheckLogin403(view_func, lambda u: bool(u.groups.filter(name__in=group_names)), "Restricted to group%s %s" % ("s" if len(group_names) != 1 else "", ",".join(group_names)))
     return decorate

@@ -30,12 +30,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-function showBallot(draftName, trackerId) {
-
+function showBallot(draftName, editPositionUrl) {
     var handleEditPosition = function() {
         IETF.ballotDialog.hide();
-        var tid = document.getElementById("ballot_dialog_id").innerHTML;
-        window.open("https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&id_document_tag="+tid);
+        window.location = editPositionUrl;
     }; 
     var handleClose = function() {
         IETF.ballotDialog.hide();
@@ -44,7 +42,7 @@ function showBallot(draftName, trackerId) {
 
     if (!IETF.ballotDialog) {
         el = document.createElement("div");
-        el.innerHTML = '<div id="ballot_dialog" style="visibility:hidden;"><div class="hd">Positions for <span id="ballot_dialog_name">draft-ietf-foo-bar</span><span id="ballot_dialog_id" style="display:none;"></span></div><div class="bd">  <div id="ballot_dialog_body" style="overflow-y:scroll; height:500px;"></div>   </div></div>';
+        el.innerHTML = '<div id="ballot_dialog" style="visibility:hidden;"><div class="hd">Positions for <span id="ballot_dialog_name">draft-ietf-foo-bar</span></span></div><div class="bd">  <div id="ballot_dialog_body" style="overflow-y:scroll; height:500px;"></div>   </div></div>';
         document.getElementById("ietf-extras").appendChild(el);
 
         var buttons = [{text:"Close", handler:handleClose, isDefault:true}];
@@ -60,7 +58,6 @@ function showBallot(draftName, trackerId) {
         IETF.ballotDialog.render();
     }
     document.getElementById("ballot_dialog_name").innerHTML = draftName;
-    document.getElementById("ballot_dialog_id").innerHTML = trackerId;
 
     IETF.ballotDialog.show();
 
@@ -73,6 +70,6 @@ function showBallot(draftName, trackerId) {
             argument: null
    	  }, null);
 }
-function editBallot(trackerId) {
-    window.open("https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&id_document_tag="+trackerId);
+function editBallot(editPositionUrl) {
+    window.open(editPositionUrl);
 }

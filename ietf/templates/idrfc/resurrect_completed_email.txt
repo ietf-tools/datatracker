@@ -1,0 +1,4 @@
+As you requsted, the Internet Draft {{ doc.file_tag|safe }}
+has been resurrected.
+
+ID Tracker URL: {{ url|safe }}

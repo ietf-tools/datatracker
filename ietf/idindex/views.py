@@ -95,9 +95,10 @@ def all_id2_entry(id):
     elif not group_acronym:
         pass
     else:
-        wgs = id.group.ietfwg_set.all()
-        if len(wgs) > 0:
-            area = wgs[0].area_acronym() or ""
+        try:
+            area = id.group.ietfwg.area_acronym()
+        except IETFWG.DoesNotExist:
+            area = ""
     fields.append(area)
     # 9
     fields.append(id.idinternal.job_owner if id.idinternal else "")

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Last Call Requested{% endblock %}
+
+{% block content %}
+<h1>Last Call Requested</h1>
+
+<p>Your request to issue the Last Call has been submitted to the Secretariat.</p>
+
+<p>Note that the Last Call will not actually go out until the
+secretariat takes appropriate steps. This may take up to one business
+day, as it involves a person taking action.</p>
+
+<div class="actions">
+  <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+</div>
+{% endblock %}

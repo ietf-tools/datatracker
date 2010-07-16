@@ -32,19 +32,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import codecs
-from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup, Position, IESGLogin
+import codecs, re, os, glob
+from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup, Position, IESGLogin, Acronym
 from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
 from django.views.decorators.vary import vary_on_cookie
-from django.http import Http404, HttpResponse, HttpResponseForbidden
+from django.core.urlresolvers import reverse as urlreverse
+from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.template import RequestContext, Context, loader
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.conf import settings
+from django import forms
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
 from ietf.idrfc.models import RfcIndex
+from ietf.idrfc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required
+from ietf.idtracker.templatetags.ietf_filters import in_group
 import datetime 
 
 def date_threshold():
@@ -223,23 +227,71 @@ def agenda_documents_txt(request):
     c = Context({'docs':docs})
     return HttpResponse(t.render(c), mimetype='text/plain')
 
+class RescheduleForm(forms.Form):
+    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
+    clear_returning_item = forms.BooleanField(initial=False, required=False)
+
+    def __init__(self, *args, **kwargs):
+        dates = kwargs.pop('telechat_dates')
+        
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+        # telechat choices
+        init = kwargs['initial']['telechat_date']
+        if init and init not in dates:
+            dates.insert(0, init)
+
+        choices = [("", "(not on agenda)")]
+        for d in dates:
+            choices.append((d, d.strftime("%Y-%m-%d")))
+
+        self.fields['telechat_date'].choices = choices
+
+def handle_reschedule_form(request, idinternal, dates):
+    initial = dict(
+        telechat_date=idinternal.telechat_date if idinternal.agenda else None)
+
+    formargs = dict(telechat_dates=dates,
+                    prefix="%s" % idinternal.draft_id,
+                    initial=initial)
+    if request.method == 'POST':
+        form = RescheduleForm(request.POST, **formargs)
+        if form.is_valid():
+            update_telechat(request, idinternal,
+                            form.cleaned_data['telechat_date'])
+            if form.cleaned_data['clear_returning_item']:
+                idinternal.returning_item = False
+            idinternal.event_date = datetime.date.today()
+            idinternal.save()
+    else:
+        form = RescheduleForm(**formargs)
+
+    form.show_clear = idinternal.returning_item
+    return form
+
 def agenda_documents(request):
     dates = TelechatDates.objects.all()[0].dates()
+    idinternals = list(IDInternal.objects.filter(telechat_date__in=dates,primary_flag=1,agenda=1).order_by('rfc_flag', 'ballot'))
+    for i in idinternals:
+        i.reschedule_form = handle_reschedule_form(request, i, dates)
+
+    # some may have been taken off the schedule by the reschedule form
+    idinternals = filter(lambda x: x.agenda, idinternals)
+        
     telechats = []
     for date in dates:
-        matches = IDInternal.objects.filter(telechat_date=date,primary_flag=1,agenda=1)
-        idmatches = matches.filter(rfc_flag=0).order_by('ballot')
-        rfcmatches = matches.filter(rfc_flag=1).order_by('ballot')
+        matches = filter(lambda x: x.telechat_date == date, idinternals)
         res = {}
-        for id in list(idmatches)+list(rfcmatches):
-            section_key = "s"+get_doc_section(id)
+        for i in matches:
+            section_key = "s" + get_doc_section(i)
             if section_key not in res:
                 res[section_key] = []
-            if not id.rfc_flag:
-                w = IdWrapper(draft=id)
+            if not i.rfc_flag:
+                w = IdWrapper(draft=i)
             else:
-                ri = RfcIndex.objects.get(rfc_number=id.draft_id)
+                ri = RfcIndex.objects.get(rfc_number=i.draft_id)
                 w = RfcWrapper(ri)
+            w.reschedule_form = i.reschedule_form
             res[section_key].append(w)
         telechats.append({'date':date, 'docs':res})
     return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats, 'hide_telechat_date':True})
@@ -277,3 +329,196 @@ def discusses(request):
             pass
     return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
 
+
+class TelechatDatesForm(forms.ModelForm):
+    class Meta:
+        model = TelechatDates
+        fields = ['date1', 'date2', 'date3', 'date4']
+
+@group_required('Secretariat')
+def telechat_dates(request):
+    dates = TelechatDates.objects.all()[0]
+
+    if request.method == 'POST':
+        if request.POST.get('rollup_dates'):
+            TelechatDates.objects.all().update(
+                date1=dates.date2, date2=dates.date3, date3=dates.date4,
+                date4=dates.date4 + datetime.timedelta(days=14))
+            form = TelechatDatesForm(instance=dates)
+        else:
+            form = TelechatDatesForm(request.POST, instance=dates)
+            if form.is_valid():
+                form.save(commit=False)
+                TelechatDates.objects.all().update(date1 = dates.date1,
+                                                  date2 = dates.date2,
+                                                  date3 = dates.date3,
+                                                  date4 = dates.date4)
+    else:
+        form = TelechatDatesForm(instance=dates)
+
+    from django.contrib.humanize.templatetags import humanize
+    for f in form.fields:
+        form.fields[f].label = "Date " + humanize.ordinal(form.fields[f].label[4])
+        form.fields[f].thursday = getattr(dates, f).isoweekday() == 4
+        
+    return render_to_response("iesg/telechat_dates.html",
+                              dict(form=form),
+                              context_instance=RequestContext(request))
+
+def parse_wg_action_file(path):
+    f = open(path, 'r')
+    
+    line = f.readline()
+    while line and not line.strip():
+        line = f.readline()
+
+    # name
+    m = re.search(r'([^\(]*) \(', line)
+    if not m:
+        return None
+    name = m.group(1)
+
+    # acronym
+    m = re.search(r'\((\w+)\)', line)
+    if not m:
+        return None
+    acronym = m.group(1)
+
+    # date
+    line = f.readline()
+    m = re.search(r'(\d{4})-(\d{2})-(\d{2})', line)
+    while line and not m:
+        line = f.readline()
+        m = re.search(r'(\d{4})-(\d{2})-(\d{2})', line)
+
+    last_updated = None
+    if m:
+        try:
+            last_updated = datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except:
+            pass
+
+    # token
+    line = f.readline()
+    while line and not 'area director' in line.lower():
+        line = f.readline()
+
+    line = f.readline()
+    line = f.readline()
+    m = re.search(r'\s*(\w+)\s*', line)
+    token = ""
+    if m:
+        token = m.group(1)
+
+    return dict(filename=os.path.basename(path), name=name, acronym=acronym,
+                status_date=last_updated, token=token)
+
+def get_possible_wg_actions():
+    res = []
+    charters = glob.glob(os.path.join(settings.IESG_WG_EVALUATION_DIR, '*-charter.txt'))
+    for path in charters:
+        d = parse_wg_action_file(path)
+        if d:
+            res.append(d)
+            
+    res.sort(key=lambda x: x['status_date'])
+
+    return res
+
+
+@group_required('Area_Director', 'Secretariat')
+def working_group_actions(request):
+    current_items = WGAction.objects.order_by('status_date').select_related()
+
+    if request.method == 'POST' and in_group(request.user, 'Secretariat'):
+        filename = request.POST.get('filename')
+        if filename and filename in os.listdir(settings.IESG_WG_EVALUATION_DIR):
+            if 'delete' in request.POST:
+                os.unlink(os.path.join(settings.IESG_WG_EVALUATION_DIR, filename))
+            if 'add' in request.POST:
+                d = parse_wg_action_file(os.path.join(settings.IESG_WG_EVALUATION_DIR, filename))
+                qstr = "?" + "&".join("%s=%s" % t for t in d.iteritems())
+                return HttpResponseRedirect(urlreverse('iesg_add_working_group_action') + qstr)
+    
+
+    skip = [c.group_acronym.acronym for c in current_items]
+    possible_items = filter(lambda x: x['acronym'] not in skip,
+                            get_possible_wg_actions())
+    
+    return render_to_response("iesg/working_group_actions.html",
+                              dict(current_items=current_items,
+                                   possible_items=possible_items),
+                              context_instance=RequestContext(request))
+
+class EditWGActionForm(forms.ModelForm):
+    token_name = forms.ChoiceField()
+    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
+
+    class Meta:
+        model = WGAction
+        fields = ['status_date', 'token_name', 'category', 'note']
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+        # token name choices
+        self.fields['token_name'].choices = [(p.first_name, p.first_name) for p in IESGLogin.active_iesg().order_by('first_name')]
+        
+        # telechat choices
+        dates = TelechatDates.objects.all()[0].dates()
+        init = kwargs['initial']['telechat_date']
+        if init and init not in dates:
+            dates.insert(0, init)
+
+        choices = [("", "(not on agenda)")]
+        for d in dates:
+            choices.append((d, d.strftime("%Y-%m-%d")))
+
+        self.fields['telechat_date'].choices = choices
+        
+        
+@group_required('Secretariat')
+def edit_working_group_action(request, wga_id):
+    if wga_id != None:
+        wga = get_object_or_404(WGAction, pk=wga_id)
+    else:
+        wga = WGAction()
+        try:
+            wga.group_acronym = Acronym.objects.get(acronym=request.GET.get('acronym'))
+        except Acronym.DoesNotExist:
+            pass
+        
+        wga.token_name = request.GET.get('token')
+        try:
+            d = datetime.datetime.strptime(request.GET.get('status_date'), '%Y-%m-%d').date()
+        except:
+            d = datetime.date.today()
+        wga.status_date = d
+        wga.telechat_date = TelechatDates.objects.all()[0].date1
+        wga.agenda = True
+
+    initial = dict(telechat_date=wga.telechat_date if wga.agenda else None)
+
+    if request.method == 'POST':
+        if "delete" in request.POST:
+            wga.delete()
+            return HttpResponseRedirect(urlreverse('iesg_working_group_actions'))
+
+        form = EditWGActionForm(request.POST, instance=wga, initial=initial)
+        if form.is_valid():
+            form.save(commit=False)
+            wga.agenda = bool(form.cleaned_data['telechat_date'])
+            if wga.category in (11, 21):
+                wga.agenda = False
+            if wga.agenda:
+                wga.telechat_date = form.cleaned_data['telechat_date']
+            wga.save()
+            return HttpResponseRedirect(urlreverse('iesg_working_group_actions'))
+    else:
+        form = EditWGActionForm(instance=wga, initial=initial)
+        
+
+    return render_to_response("iesg/edit_working_group_action.html",
+                              dict(wga=wga,
+                                   form=form),
+                              context_instance=RequestContext(request))

@@ -30,7 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGLogin, DocumentComment
+from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGLogin, DocumentComment, Acronym
 from ietf.idrfc.models import RfcEditorQueue
 import re
 from datetime import date
@@ -107,6 +107,7 @@ class IdWrapper:
         self.latest_revision = self._draft.revision_display()
         self.title = self._draft.title
         self.tracker_id = self._draft.id_document_tag
+        self.resurrect_requested_by = self._idinternal.resurrect_requested_by if self._idinternal else None
         self.publication_date = self._draft.revision_date
         if not self.publication_date:
             # should never happen -- but unfortunately it does. Return an
@@ -137,6 +138,19 @@ class IdWrapper:
     def in_ietf_process(self):
         return self.ietf_process != None
     
+    def submission(self):
+        if self._idinternal and self._idinternal.via_rfc_editor:
+            return "Via IRTF or RFC Editor"
+
+        if self._draft.group_id == Acronym.INDIVIDUAL_SUBMITTER:
+            return "Individual"
+        
+        a = self.group_acronym()
+        if a:
+            return "WG <%s>" % a
+
+        return ""
+        
     def file_types(self):
         return self._draft.file_type.split(",")
 
@@ -611,13 +625,16 @@ class BallotWrapper:
                                   'comment_date':c.date,
                                   'comment_revision':str(c.revision),
                                   'ad_name':str(c.ad),
+                                  'ad_username': c.ad.login_name,
                                   'position':'No Record',
                                   'is_old_ad':False})
                 ads.add(str(c.ad))
         if self.ballot_active:
             for ad in IESGLogin.active_iesg():
                 if str(ad) not in ads:
-                    positions.append({"ad_name":str(ad), "position":"No Record"})
+                    positions.append(dict(ad_name=str(ad),
+                                          ad_username=ad.login_name,
+                                          position="No Record"))
         self._positions = positions
 
     def position_for_ad(self, ad_name):
@@ -701,7 +718,9 @@ def create_position_object(ballot, position, all_comments):
             p = v
     if not p:
         p = "No Record"
-    r = {"ad_name":str(position.ad), "position":p}
+    r = dict(ad_name=str(position.ad),
+             ad_username=position.ad.login_name, 
+             position=p)
     if not position.ad.is_current_ad():
         r['is_old_ad'] = True
         

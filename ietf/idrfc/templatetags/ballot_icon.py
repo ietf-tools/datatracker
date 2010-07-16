@@ -31,6 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django import template
+from django.core.urlresolvers import reverse as urlreverse
 from ietf.idtracker.models import IDInternal, BallotInfo
 from ietf.idrfc.idrfc_wrapper import position_to_string, BALLOT_ACTIVE_STATES
 from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
@@ -101,11 +102,12 @@ def render_ballot_icon(context, doc):
     return render_ballot_icon2(name, tracker_id, red,yellow,green,gray,blank, my, adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
 
 def render_ballot_icon2(draft_name, tracker_id, red,yellow,green,gray,blank, my,adId):
+    edit_position_url = urlreverse('doc_edit_position', kwargs=dict(name=draft_name))
     if adId:
-        res_cm = ' oncontextmenu="editBallot('+str(tracker_id)+');return false;"'
+        res_cm = ' oncontextmenu="editBallot(\''+str(edit_position_url)+'\');return false;"'
     else:
         res_cm = ''
-    res = '<table class="ballot_icon" title="IESG Evaluation Record (click to show more)" onclick="showBallot(\'' + draft_name + '\',' + str(tracker_id) + ')"'+res_cm+'>'
+    res = '<table class="ballot_icon" title="IESG Evaluation Record (click to show more, right-click to edit position)" onclick="showBallot(\'' + draft_name + '\',\'' + str(edit_position_url) + '\')"'+res_cm+'>'
     for y in range(3):
         res = res + "<tr>"
         for x in range(5):

@@ -4,6 +4,7 @@ from email.Utils import make_msgid, formatdate, formataddr, parseaddr, getaddres
 from email.MIMEText import MIMEText
 from email.MIMEMessage import MIMEMessage
 from email.MIMEMultipart import MIMEMultipart
+from email import message_from_string
 import smtplib
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -154,3 +155,11 @@ def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=N
     if bcc:
         msg['X-Tracker-Bcc']=bcc
     copy_email(msg, copy_to)
+
+def send_mail_preformatted(request, preformatted):
+    """Parse preformatted string containing mail with From:, To:, ...,
+    and send it through the standard IETF mail interface (inserting
+    extra headers as needed)."""
+
+    msg = message_from_string(preformatted.encode("utf-8"))
+    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], msg.get_payload(), cc=msg["Cc"], bcc=msg["Bcc"])

@@ -42,6 +42,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .agenda_docs tr.header.telechat_date { margin-top:10px; background:#2647A0; color: white;}
 .agenda_docs tr.header.telechat_date td { font-size: 125%; }
 .agenda_docs tr.header + tr.header { border-top: 2px solid white;}
+.agenda_docs tr td {
+  vertical-align: top;
+}
+.agenda_docs tr .reschedule,
+.agenda_docs tr .clear-returning-item {
+  font-size: 11px;
+}
+.secretariat-actions {
+  margin-bottom: 10px;
+}
 {% endblock %}
 
 {% block pagehead %}
@@ -51,6 +61,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block content %}
 <h1>Documents on Future IESG Telechat Agendas</h1>
 
+<form action="" method="POST">
+{% if user|in_group:"Secretariat" %}
+<div class="secretariat-actions">
+<button id="clear-all-on-schedule">Set all to not on agenda</button>
+<input type="submit" value="Save"/>
+</div>
+{% endif %}
+  
 <table class="ietf-table ietf-doctable agenda_docs">
 {% for t in telechats %}
 
@@ -108,7 +126,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     {% if t.docs.s333 %}<tr class="header"><td colspan="5">3.3.3 For Action</td></tr>{% endif %}
     {% for doc in t.docs.s333 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
+{% if user|in_group:"Secretariat,Area_Director" %}    
+<tr class="header"><td colspan="5"><input type="submit" value="Save All Changes"/></td></tr>
+{% endif %}
+
 {% endfor %}
 
 </table>
+</form>
+
 {% endblock content %}
+
+{% block content_end %}
+<script type="text/javascript" src="/js/agenda-documents.js"></script>
+{% endblock %}

@@ -34,13 +34,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ietf_filters %}
 <table class="ietf-ballot"><tr valign="top"><td class="left">
 
-{% if doc_ballot_edit_button %}
-{% if user|in_group:"Area_Director,Secretariat" %}
-<div style="margin-top:8px; margin-bottom:8px;">
-<span id="doc_ballot_button" class="yui-button yui-link-button"><span class="first-child">
-<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=open_ballot&amp;id_document_tag={% if info.is_rfc %}{{doc.rfc_number}}{% else %}{{doc.tracker_id}}{% endif %}">Edit position</a>
-</span></span></div>
-{% endif %}{# user in_group #}
+{% if doc_ballot_edit_button and user|in_group:"Area_Director,Secretariat" %}
+{% if user|in_group:"Area_Director" %}
+<div style="margin-top:8px; margin-bottom:8px;"><span id="doc_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url doc_edit_position name=doc.draft_name %}">Edit position</a></span></span></div>
+{% endif %}
+
+{% if ballot.was_deferred %}
+<div style="margin-top:8px; margin-bottom:8px;"><span id="doc_undefer_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url doc_undefer_ballot name=doc.draft_name %}">Undefer ballot</a></span></span></div>
+<div style="margin-top:8px; margin-bottom:8px;">Ballot deferred by {{ ballot.deferred_by }} on {{ ballot.deferred_date }}.</div>
+{% else %}
+<div style="margin-top:8px; margin-bottom:8px;"><span id="doc_defer_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url doc_defer_ballot name=doc.draft_name %}">Defer ballot</a></span></span></div>
+{% endif %}
+
 {% endif %}
 
 <p style="margin-top:1em;"><span class="square" style="background:#c00000;"></span><b>Discuss</b><br/>

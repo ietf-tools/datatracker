@@ -1,0 +1,21 @@
+From: The IESG <iesg-secretary@ietf.org>
+To: IETF-Announce <ietf-announce@ietf.org>{% if cc %}
+CC: {{ cc|safe }}{% endif %}
+Reply-To: ietf@ietf.org
+Subject: Last Call: {{ doc.file_tag|safe }} ({{ doc.title }}) to {{ status }}
+
+{% filter wordwrap:73 %}
+The IESG has received a request from {{ group }} to consider the following document{{ docs|pluralize }}:{% for d in docs %}
+- '{{ d.filled_title }}'
+  {{ d.file_tag|safe }} as {{ d.full_status }}{% endfor %}
+
+The IESG plans to make a decision in the next few weeks, and solicits final comments on this action. Please send substantive comments to the ietf@ietf.org mailing lists by {{ expiration_date }}. Exceptionally, comments may be sent to iesg@ietf.org instead. In either case, please retain the beginning of the Subject line to allow automated sorting.{% endfilter %}
+
+The file{{ urls|pluralize }} can be obtained via
+{% for u in urls %}{{ u }}
+{% endfor %}{% if impl_report %}
+Implementation Report can be accessed at
+http://www.ietf.org/iesg/implementation.html
+{% endif %}
+IESG discussion can be tracked via
+{{ doc_url|safe }}

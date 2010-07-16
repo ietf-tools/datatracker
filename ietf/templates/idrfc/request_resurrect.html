@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Request resurrect of {{ doc }}{% endblock %}
+
+{% block content %}
+<h1>Request resurrect of {{ doc }}</h1>
+
+<form action="" method="POST">
+  <p>Request resurrection of the Internet Draft {{ doc.file_tag }}?</p>
+
+  <p>This will send a notification to the Secretariat to resurrect the
+  I-D.</p>
+
+  <div class="actions">
+    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <input type="submit" value="Request resurrect"/>
+  </div>
+</form>
+{% endblock %}

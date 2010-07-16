@@ -43,9 +43,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endif %}
 >
 <td class="doc">
-{{ doc.displayname_with_link|safe }}
+<div>{{ doc.displayname_with_link|safe }}</div>
 {% if doc.ietf_process.iesg_ballot.was_deferred %}
-<br/><b title="deferred by {{ doc.ietf_process.iesg_ballot.deferred_by}}">(deferred on {{doc.ietf_process.iesg_ballot.deferred_date }})</b>
+<div><b title="deferred by {{ doc.ietf_process.iesg_ballot.deferred_by}}">(deferred on {{ doc.ietf_process.iesg_ballot.deferred_date }})</b></div>
+{% endif %}
+{% if user|in_group:"Secretariat,Area_Director" %}    
+<div class="reschedule"><label>Reschedule: {{ doc.reschedule_form.telechat_date }}</label></div>
+{% if doc.reschedule_form.show_clear %}
+<div class="clear-returning-item"><label>{{ doc.reschedule_form.clear_returning_item }} Clear returning item</label></div>
+{% endif %}
 {% endif %}
 </td>
 <td class="title">{{ doc.title }}</td>

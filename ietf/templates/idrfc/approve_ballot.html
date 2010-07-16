@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Approve ballot for {{ doc }}{% endblock %}
+
+{% block morecss %}
+form.approve-ballot pre {
+  margin: 0;
+  padding: 4px;
+  border-top: 4px solid #eee;
+  border-bottom: 4px solid #eee;
+}
+form.approve-ballot .announcement {
+  overflow-x: auto;
+  overflow-y: scroll;
+  width: 800px;
+  height: 400px;
+  border: 1px solid #bbb;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Approve Ballot for {{ doc }}</h1>
+
+<div>IETF announcement:</div>
+
+<form class="approve-ballot" action="" method="POST">
+
+  <div class="announcement">
+    <pre>{{ announcement }}</pre>
+  </div>
+
+  <div class="actions">
+    <a href="{% url doc_ballot_writeups name=doc.filename %}">Back</a>
+    {% ifequal action "to_announcement_list" %}
+    <input type="submit" value="Send out the announcement and close ballot"/>
+    {% endifequal %}
+    {% ifequal action "to_rfc_editor" %}
+    <input type="submit" value="Send message to the RFC Editor and close ballot"/>
+    {% endifequal %}
+    {% ifequal action "do_not_publish" %}
+    <input type="submit" value="Send message to the RFC Editor (DNP) and close ballot"/>
+    {% endifequal %}    
+  </div>
+</form>
+{% endblock %}

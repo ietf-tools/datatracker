@@ -66,6 +66,10 @@ class TelechatDates(models.Model):
         if self.date4:
             l.append(self.date4)
         return l
+
+    def save(self):
+        # date1 isn't really a primary id, so save() doesn't work
+        raise NotImplemented
     
     def __str__(self):
         return " / ".join([str(d) for d in [self.date1,self.date2,self.date3,self.date4]])

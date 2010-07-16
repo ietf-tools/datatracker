@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Ballot for {{ doc }} issued{% endblock %}
+
+{% block content %}
+<h1>Ballot for {{ doc }} issued</h1>
+
+<p>Ballot has been sent out.</p>
+
+<div class="actions">
+  <a href="{{ doc.idinternal.get_absolute_url }}">Back to document</a>
+</div>
+{% endblock %}

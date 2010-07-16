@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
-from ietf.idtracker.models import Acronym,PersonOrOrgInfo
+from ietf.idtracker.models import Acronym, PersonOrOrgInfo, Area
 from django.core.exceptions import ObjectDoesNotExist
 
 class LiaisonPurpose(models.Model):
@@ -68,11 +68,12 @@ class LiaisonDetail(models.Model):
 	    pass
 	try:
 	    acronym = Acronym.objects.get(pk=self.from_id)
-	    if acronym.area_set.count():
-		type = "AREA"
-	    else:
-		type = "WG"
-	    return "IETF %s %s" % ( acronym.acronym.upper(), type )
+            try:
+                x = acronym.area
+		kind = "AREA"
+            except Area.DoesNotExist:
+                kind = "WG"
+	    return "IETF %s %s" % (acronym.acronym.upper(), kind)
 	except ObjectDoesNotExist:
 	    pass
 	return "<unknown body %d>" % self.from_id

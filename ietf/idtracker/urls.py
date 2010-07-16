@@ -1,12 +1,12 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.conf.urls.defaults import patterns
+from django.conf.urls.defaults import patterns, url
 from ietf.idtracker.models import IDState, IDSubState
 from ietf.idtracker import views
 from django.views.generic.simple import redirect_to
 
 urlpatterns = patterns('django.views.generic.simple',
-     (r'^help/state/$', 'direct_to_template', { 'template': 'idtracker/states.html', 'extra_context': { 'states': IDState.objects.all(), 'substates': IDSubState.objects.all() } }),
+     url(r'^help/state/$', 'direct_to_template', { 'template': 'idtracker/states.html', 'extra_context': { 'states': IDState.objects.all(), 'substates': IDSubState.objects.all() } }, name="help_states"),
      (r'^help/evaluation/$', redirect_to, {'url':'http://www.ietf.org/iesg/voting-procedures.html' }),
 )
 urlpatterns += patterns('',

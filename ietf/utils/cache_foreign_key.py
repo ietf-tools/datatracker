@@ -36,12 +36,7 @@ class FKAsOneToOne(object):
 
         return instance._field_values[self.field]
 
-    def __set__(self, instance, value):
-        if self.reverse:
-            # this is dangerous
-            #other_instance = self.__get_attr(instance).all()[0]
-            #setattr(other_instance, self.field, value)
-            #other_instance.save()
-	    raise NotImplemented
-        else:
-            setattr(instance, self.field, value)
+    # We don't try to be smart and define __set__ to adjust the other
+    # end of the relation since that could require setting several
+    # fields, failing silently with a naive implementation. Updating
+    # the other end is the responsibility of the caller.

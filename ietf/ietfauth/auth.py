@@ -63,17 +63,14 @@ class IetfUserBackend(RemoteUserBackend):
                 groups.append("Area_Director")
             elif login.user_level == 0:
                 groups.append("Secretariat")
-            try:
-                person = login.person
-                for role in person.role_set.all():
+            if login.person:
+                for role in login.person.role_set.all():
                     if role.id == Role.IETF_CHAIR:
                         groups.append("IETF_Chair")
                     elif role.id == Role.IAB_CHAIR:
                         groups.append("IAB_Chair")
                     elif role.id == Role.IRTF_CHAIR:
                         groups.append("IRTF_Chair")
-            except PersonOrOrgInfo.DoesNotExist:
-                pass
         except IESGLogin.DoesNotExist:
             pass
         #

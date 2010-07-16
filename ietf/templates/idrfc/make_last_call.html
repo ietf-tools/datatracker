@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Make Last Call for Internet Draft{{ docs|pluralize }}{% endblock %}
+
+{% block morecss %}
+form.approve-ballot pre {
+  margin: 0;
+  padding: 4px;
+  border-top: 4px solid #eee;
+  border-bottom: 4px solid #eee;
+}
+form.approve-ballot .announcement {
+  overflow-x: auto;
+  overflow-y: scroll;
+  width: 800px;
+  height: 400px;
+  border: 1px solid #bbb;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Make Last Call for Internet Draft{{ docs|pluralize }}</h1>
+
+<p>Make last call for following draft{{ docs|pluralize }}:</p>
+
+{% for d in docs %}
+<div>{{ d.file_tag }} ({{ d.group.acronym }}) - {{ d.intended_status.intended_status }}</div>
+{% endfor %}
+
+<form style="margin-top:20px" action="" method="POST">
+  <table>
+    {{ form.as_table }}
+  </table>
+
+  <div class="actions">
+    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <input type="reset" value="Reset">
+    <input type="submit" value="Make Last Call"/>
+  </div>
+</form>
+{% endblock %}

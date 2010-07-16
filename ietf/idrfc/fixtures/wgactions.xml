@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<django-objects version="1.0">
+    <object pk="1791" model="iesg.wgaction">
+        <field type="TextField" name="note"></field>
+        <field type="DateField" name="status_date">2010-04-22</field>
+        <field type="BooleanField" name="agenda">1</field>
+        <field type="CharField" name="token_name">Robert</field>
+        <field type="IntegerField" name="category">13</field>
+        <field type="DateField" name="telechat_date">2010-05-06</field>
+    </object>
+    <object pk="1784" model="iesg.wgaction">
+        <field type="TextField" name="note"></field>
+        <field type="DateField" name="status_date">2010-04-23</field>
+        <field type="BooleanField" name="agenda">1</field>
+        <field type="CharField" name="token_name">Peter</field>
+        <field type="IntegerField" name="category">12</field>
+        <field type="DateField" name="telechat_date">2010-05-06</field>
+    </object>
+    <object pk="1775" model="iesg.wgaction">
+        <field type="TextField" name="note"></field>
+        <field type="DateField" name="status_date">2010-01-19</field>
+        <field type="BooleanField" name="agenda">1</field>
+        <field type="CharField" name="token_name">Lars</field>
+        <field type="IntegerField" name="category">13</field>
+        <field type="DateField" name="telechat_date">2010-05-06</field>
+    </object>
+    <object pk="1775" model="idtracker.acronym">
+        <field type="CharField" name="acronym">conex</field>
+        <field type="CharField" name="name">Congestion Exposure</field>
+        <field type="CharField" name="name_key">CONGESTION E</field>
+    </object>
+    <object pk="1784" model="idtracker.acronym">
+        <field type="CharField" name="acronym">newprep</field>
+        <field type="CharField" name="name">Stringprep after IDNA2008</field>
+        <field type="CharField" name="name_key">STRINGPREP A</field>
+    </object>
+    <object pk="1791" model="idtracker.acronym">
+        <field type="CharField" name="acronym">soc</field>
+        <field type="CharField" name="name">SIP Overload Control</field>
+        <field type="CharField" name="name_key">SIP OVERLOAD CONTROL</field>
+    </object>
+    <object pk="1389" model="idtracker.acronym">
+        <field type="CharField" name="acronym">sieve</field>
+        <field type="CharField" name="name">Sieve Mail Filtering Language</field>
+        <field type="CharField" name="name_key">SIEVE MAIL F</field>
+    </object>
+</django-objects>
