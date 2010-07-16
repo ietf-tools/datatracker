@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% load ietf_filters %}
+{% block title %}Liaison Statement: {% include 'liaisons/liaison_title.html' %}{% endblock %}
+
+{% block pagehead %}
+<meta name="description" content="Liaison Statement from {{ object.from_body }}{% if not object.by_secretariat %} to {{object.to_body}}{% endif %} ({{ object.submitted_date|date:"Y" }})" />
+{% endblock %}
+
+{% block content %}
+<h1>Liaison Statement: {% include 'liaisons/liaison_title.html' %}</h1>
+
+<table>
+{{ form }}
+</table>
+
+{% endblock %}

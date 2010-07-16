@@ -1,0 +1,26 @@
+{% load i18n %}
+{% block content %}
+
+<div class="baseform">
+{% for fieldset in form.get_fieldsets %}
+{% if fieldset.name %}
+<fieldset>
+<legend>{{ fieldset.name }}</legend>
+{% endif %}
+{% for field in fieldset.fields %}
+<div id="baseform-fieldname-{{ field.html_name }}" class="{% if field.errors %}error {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
+  <label for="id_{{ field.html_name }}">{{ field.label }}</label>
+  {% if field.field.required %}
+    <span class="fieldRequired" title="Required"></span>
+  {% endif %}
+  {{ field.errors }} 
+  <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
+    {{ field }}
+  </div>
+{% endfor %}
+{% if fieldset.name %}
+</fieldset>
+{% endif %}
+{% endfor %}
+{% endblock %}
+</div>
