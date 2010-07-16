@@ -1,3 +1,33 @@
+ietfdb (3.00)
+
+  * This release adds the IOLA port of the former Perl IESG datatracker to
+    the Python/Django datatracker.  This should make most AD actions on
+    drafts available through the Django datatracker, normally from the
+    datatracker.ietf.org/doc/<draftname>/ page or from the /doc/ad/.../
+    page, or expressed UI-wise: from the pages reached from the 'AD Dashboard'
+    menu at the top of the lefthand menubar in the datatracker.  This
+    includes actions such as:
+
+    - Change draft state
+    - Edit draft metadata
+    - Defer ballot, undefer ballot
+    - Handle ballot comments
+    - Handle ballot writeups
+    - Approve ballots
+    - Initiate last call
+
+    Secretariat staff actions supported through the Django datatracker now
+    includes:
+
+    - Manage telechat dates
+    - Manage working group descriptions
+
+    Tweaks to the new interface and capabilities will be releases with
+    a short release cycle, as they are discovered and fixed over the next
+    weeks.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2010 18:14:48 +0200
+
 ietfdb (2.52)
 
   * Added machine-readable ballot information (tsv and json) for drafts with
