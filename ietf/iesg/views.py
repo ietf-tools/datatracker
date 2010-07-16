@@ -366,7 +366,7 @@ def telechat_dates(request):
                               context_instance=RequestContext(request))
 
 def parse_wg_action_file(path):
-    f = open(path, 'r')
+    f = open(path, 'rU')
     
     line = f.readline()
     while line and not line.strip():
