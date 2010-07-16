@@ -3,7 +3,7 @@ from django.contrib import admin
 from ietf.proceedings.models import *
                 
 class IESGHistoryAdmin(admin.ModelAdmin):
-    pass
+    raw_id_fields = ["person", ]
 admin.site.register(IESGHistory, IESGHistoryAdmin)
 
 class MeetingAdmin(admin.ModelAdmin):
