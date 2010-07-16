@@ -1,3 +1,20 @@
+ietfdb (2.52)
+
+  * Added machine-readable ballot information (tsv and json) for drafts with
+    ballots: /doc/<draftname>/ballot.tsv and /doc/<draftname>/ballot.json .
+    Json data for the whole document is available for all drafts at
+    /doc/<draftname>/doc.json .
+
+  * Added Unicode NFKC normalization of paths.  Somebody just tried to access 
+    /wg/ipfix/charter/ with 'fi' represented as the unicode ligature \ufb01...
+
+  * Changed the text emitted during testing to have less noise at the
+    beginning of the line -- only 'OK', 'Fail', and the initial line of coverage
+    reports now starts at the beginning of the line, without whitespace.  This
+    makes it easier to scan a test run visually to find reported failures.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2010 13:01:34 +0200
+
 ietfdb (2.51)
 
   * Add an html sanitizer and a sanitize_html template filter.  This uses
