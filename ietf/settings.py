@@ -11,7 +11,7 @@ syslog.openlog("django", syslog.LOG_PID, syslog.LOG_LOCAL0)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 # Domain name of the IETF
@@ -146,7 +146,7 @@ INTERNAL_IPS = (
 # Valid values:
 # 'production', 'test', 'development'
 # Override this in settings_local.py if it's not true
-SERVER_MODE = 'production'
+SERVER_MODE = 'development'
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
