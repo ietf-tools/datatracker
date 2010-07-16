@@ -3,12 +3,12 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 from ietf.liaisons.decorators import can_submit_liaison
-from ietf.liaisons.forms import LiaisonForm
+from ietf.liaisons.forms import liaison_form_factory
 
 
 @can_submit_liaison
 def add_liaison(request):
-    form = LiaisonForm(request.user)
+    form = liaison_form_factory(request)
 
     return render_to_response(
         'liaisons/liaisondetail_edit.html',

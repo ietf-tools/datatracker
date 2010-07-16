@@ -33,7 +33,7 @@ def is_iab_executive_director(person):
     return has_role(person, Role.IAB_EXCUTIVE_DIRECTOR)
 
 
-def can_add_liaison(user):
+def can_add_outgoing_liaison(user):
     person = get_person_for_user(user)
     if not person:
         return False
@@ -43,3 +43,26 @@ def can_add_liaison(user):
         is_iabchair(person) or is_iab_executive_director(person)):
         return True
     return False
+
+
+def is_sdo_liaison_manager(person):
+    return bool(person.liaisonmanagers_set.all())
+
+
+def is_sdo_authorized_individual(person):
+    return bool(person.sdoauthorizedindividual_set.all())
+
+
+def can_add_incoming_liaison(user):
+    person = get_person_for_user(user)
+    if not person:
+        return False
+
+    if (is_sdo_liaison_manager(person) or
+        is_sdo_authorized_individual(person)):
+        return True
+    return False
+
+
+def can_add_liaison(user):
+    return can_add_incoming_liaison(user) or can_add_outgoing_liaison(user)
