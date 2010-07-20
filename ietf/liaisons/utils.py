@@ -82,7 +82,7 @@ class AreaEntityManager(IETFEntityManager):
             self.queryset = Area.active_areas()
 
     def get_managed_list(self):
-        return [(u'%s_%s' % (self.pk, i.pk), i.area_acronym.name) for i in self.queryset]
+        return [(u'%s_%s' % (self.pk, i.pk), i.area_acronym.name) for i in self.queryset.order_by('area_acronym__name')]
 
     def get_entity(self, pk=None):
         if not pk:
@@ -102,7 +102,7 @@ class WGEntityManager(IETFEntityManager):
             self.queryset = IETFWG.objects.filter(group_type=1, status=IETFWG.ACTIVE, areagroup__area__status=Area.ACTIVE)
 
     def get_managed_list(self):
-        return [(u'%s_%s' % (self.pk, i.pk), i.group_acronym.name) for i in self.queryset]
+        return [(u'%s_%s' % (self.pk, i.pk), i.group_acronym.name) for i in self.queryset.order_by('group_acronym__name')]
 
     def get_entity(self, pk=None):
         if not pk:
@@ -127,8 +127,8 @@ class IETFHierarchyManager(object):
                                                   poc=[FakePerson(**IABCHAIR),
                                                        FakePerson(**IABEXECUTIVEDIRECTOR)],
                                                   cc=FakePerson(**IAB)),
-                         'area': AreaEntityManager(pk='area'),
-                         'wg': WGEntityManager(pk='wg'),
+                         'area': AreaEntityManager(pk='area', name=u'IETF Areas'),
+                         'wg': WGEntityManager(pk='wg', name=u'IETF Working Groups'),
                         }
 
     def get_entity_by_key(self, entity_id):
@@ -145,4 +145,14 @@ class IETFHierarchyManager(object):
         entities = []
         for manager in self.managers.values():
             entities += manager.get_managed_list()
+        return entities
+
+    def get_all_decorated_entities(self):
+        entities = []
+        results = []
+        for key in ['ietf', 'iesg', 'iab']:
+            results += self.managers[key].get_managed_list()
+        entities.append(('Main IETF Entities', results))
+        entities.append(('IETF Areas', self.managers['area'].get_managed_list()))
+        entities.append(('IETF Working Groups', self.managers['wg'].get_managed_list()))
         return entities

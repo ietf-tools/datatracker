@@ -21,7 +21,10 @@ def get_iab_executive_director():
 
 
 def get_person_for_user(user):
-    return user.get_profile().person()
+    try:
+        return user.get_profile().person()
+    except:
+        return None
 
 
 def is_areadirector(person):

@@ -81,7 +81,7 @@ class IncomingLiaisonForm(LiaisonForm):
         self.fields['from_field'].widget.submitter = unicode(self.person)
 
     def set_organization_field(self):
-        self.fields['organization'].choices = self.hm.get_all_entities()
+        self.fields['organization'].choices = self.hm.get_all_decorated_entities()
 
 
 class OutgoingLiaisonForm(LiaisonForm):
