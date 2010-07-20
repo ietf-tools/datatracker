@@ -1,3 +1,22 @@
+ietfdb (3.01)
+
+  * Add a button to issue a ballot for documents which has entered IESG 
+    processing but don't have a ballot yet.
+
+  * Always make idinternal.docstate() return a string -- there are callers 
+    that assume this, like the script which generates all_id2.
+
+  * Don't fail with a server error (500) if a bad draft name (containing 
+    for instance newlines) is entered -- just return a 404.
+
+  * For WG charters under evaluation, show the year too, not only month and 
+    day.  This will reveal bad date information in the charter files.
+
+  * If we fail to parse the date of a WG charter under evaluation, use 1 
+    Jan 1900, and carry on.  Don't fail with a server error.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Jul 2010 18:41:31 +0200
+
 ietfdb (3.00)
 
   * This release adds the IOLA port of the former Perl IESG datatracker to
