@@ -419,8 +419,10 @@ def get_possible_wg_actions():
     for path in charters:
         d = parse_wg_action_file(path)
         if d:
+            if not d['status_date']:
+                d['status_date'] = datetime.date(1900,1,1)
             res.append(d)
-            
+
     res.sort(key=lambda x: x['status_date'])
 
     return res
