@@ -1,0 +1,43 @@
+.baseform { 
+    font-size: 12px;
+}
+
+.baseform .fieldset {
+    margin: 1em 0px;
+    border: none;
+    border: 1px solid #8899dd;
+    background-color: #edf5ff;
+}
+
+.baseform .fieldset h2 {
+    background-color: #2647a0;
+    color: white;
+    font-size: 14px;
+    padding: 5px 10px;
+    margin: 0px;
+}
+
+.baseform .field {
+    margin: 1em 0px;
+    padding: 0px 10px;
+}
+
+.baseform .field label {
+    display: block;
+    width: 200px;
+    float: left;
+    clear: left;
+}
+
+.baseform .field .endfield {
+    clear: left;
+}
+
+.baseform .fieldWidget {
+    margin-left: 200px;
+}
+
+.baseform #baseform-fieldname-purpose_text,
+.baseform #baseform-fieldname-deadline_date {
+    display: none;
+}

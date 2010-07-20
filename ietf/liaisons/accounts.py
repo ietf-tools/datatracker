@@ -1,4 +1,23 @@
-from ietf.idtracker.models import Role
+from ietf.idtracker.models import Role, PersonOrOrgInfo
+
+
+def get_ietf_chair():
+    person = PersonOrOrgInfo.objects.filter(role=Role.IETF_CHAIR)
+    return person and person[0] or None
+
+
+def get_iesg_chair():
+    return get_ietf_chair()
+
+
+def get_iab_chair():
+    person = PersonOrOrgInfo.objects.filter(role=Role.IAB_CHAIR)
+    return person and person[0] or None
+
+
+def get_iab_executive_director():
+    person = PersonOrOrgInfo.objects.filter(role=Role.IAB_EXCUTIVE_DIRECTOR)
+    return person and person[0] or None
 
 
 def get_person_for_user(user):
