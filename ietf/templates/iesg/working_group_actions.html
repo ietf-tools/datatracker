@@ -28,7 +28,7 @@ an IESG Telechat agenda.</p>
 <table>
 {% for wga in current_items %}
   <tr class="working-group-action">
-    <td>{{ wga.status_date|date:"M d" }}</td>
+    <td>{{ wga.status_date|date:"Y, M d" }}</td>
     <td class="name">{{ wga.group_acronym.name }} ({{ wga.group_acronym.acronym }})</td>
     {% if user|in_group:"Secretariat" %}
     <td class="edit">
@@ -47,7 +47,7 @@ an IESG Telechat agenda.</p>
 <table>
 {% for wga in possible_items %}
   <tr class="working-group-action">
-    <td>{{ wga.status_date|date:"M d" }}</td>
+    <td>{{ wga.status_date|date:"Y, M d" }}</td>
     <td class="name">{{ wga.name }} ({{ wga.acronym }})</td>
     {% if user|in_group:"Secretariat" %}
     <td class="edit">
