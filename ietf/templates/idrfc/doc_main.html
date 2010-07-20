@@ -95,6 +95,9 @@ div.diffTool { padding: 8px 4px; margin: 8px 0;}
 <span id="doc_edit_state_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_change_state name=doc.draft_name %}">Change state</a></span></span>
 
 <span id="doc_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_edit_info name=doc.draft_name %}">Edit</a></span></span>
+{% if not doc.ietf_process_has_iesg_ballot %}
+<span id="doc_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_ballot_writeups name=doc.draft_name %}">Issue Ballot</a></span></span>
+{% endif %}
 {% else %}
 <span id="doc_add_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_edit_info name=doc.draft_name %}">Add</a></span></span>
 {% endif %}
