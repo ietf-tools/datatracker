@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 from django.template.loader import render_to_string
 
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
@@ -15,6 +16,8 @@ class LiaisonForm(forms.ModelForm):
     organization = forms.ChoiceField()
     to_poc = forms.CharField(widget=ReadOnlyWidget, label="POC")
     cc1 = forms.CharField(widget=ReadOnlyWidget, label="CC")
+    purpose_text = forms.CharField(widget=forms.Textarea, label='Other purpose')
+    deadline_date = forms.DateField(label='Deadline')
 
     fieldsets = (('From', ('from_field', 'replyto')),
                  ('To', ('organization', 'to_poc')),

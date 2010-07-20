@@ -41,3 +41,9 @@
 .baseform #baseform-fieldname-deadline_date {
     display: none;
 }
+
+.baseform select,
+.baseform textarea,
+.baseform input {
+    border: 1px solid lightgray;
+}

@@ -8,6 +8,8 @@
             var cc = form.find('#id_cc1');
             var reply = form.find('#id_replyto');
             var purpose = form.find('#id_purpose');
+            var other_purpose = form.find('#id_purpose_text');
+            var deadline = form.find('#id_deadline_date');
             var config = {};
 
             var readConfig = function() {
@@ -70,17 +72,39 @@
                 form.find('a.from_mailto').attr('href', 'mailto:' + reply_to);
             };
 
+            var updatePurpose = function() {
+                var datecontainer = deadline.parents('.field');
+                var othercontainer = other_purpose.parents('.field');
+                var selected_id = purpose.find('option:selected').val();
+             
+                if (selected_id == '1' || selected_id == '2' || selected_id == '5') {
+                    datecontainer.show();
+                } else {
+                    datecontainer.hide();
+                    deadline.val('');
+                }
+
+                if (selected_id == '5') {
+                    othercontainer.show();
+                } else {
+                    othercontainer.hide();
+                    other_purpose.html('');
+                }
+            };
+
             var initTriggers = function() {
                 organization.change(updatePOC);
                 organization.change(updateCC);
                 from.change(updateCC);
                 reply.keyup(updateFrom);
+                purpose.change(updatePurpose);
             };
 
             var updateOnInit = function() {
                 updateFrom();
                 updateCC();
                 updatePOC();
+                updatePurpose();
             };
 
             var initForm = function() {
