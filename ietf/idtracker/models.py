@@ -528,7 +528,7 @@ def format_document_state(state, substate):
     if substate:
         return state.state + "::" + substate.sub_state
     else:
-        return state
+        return state.state
 
 class IDInternal(models.Model):
     """
