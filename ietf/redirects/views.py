@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.http import HttpResponsePermanentRedirect
+from django.http import HttpResponsePermanentRedirect, Http404, BadHeaderError
 from django.shortcuts import get_object_or_404
 import re
 
@@ -82,4 +82,7 @@ def redirect(request, path="", script=""):
 	    get.pop(arg)
     if get:
 	url += '?' + get.urlencode()
-    return HttpResponsePermanentRedirect(url)
+    try:
+        return HttpResponsePermanentRedirect(url)
+    except BadHeaderError, e:
+        raise Http404
