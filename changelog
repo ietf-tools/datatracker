@@ -3,7 +3,7 @@ ietfdb (3.02)
   * Remove the per-document rescheduling dropdown boxes from the future iesg
     telechat document list (/iesg/agenda/documents/).  Fixes issue #346.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  21 Jul 2010 15:29:16 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Jul 2010 15:30:46 +0200
 
 ietfdb (3.01)
 
