@@ -1,0 +1,36 @@
+/* Copyright The IETF Trust 2007, All Rights Reserved */
+
+body {
+	margin: 0;
+	padding: 0;
+	background-color: white;
+	font-family: sans-serif;
+	font-size: small;
+
+	font-size-adjust: none;
+	font-stretch: normal;
+}
+
+
+.legal {
+	font-size: .7em;
+	font-weight: bold;
+	text-align: center; 
+	padding: 0.4em;
+}
+
+h1	{ font-size: 1.44em; font-weight: bold; text-align: center; color: white; background-color: blue; }
+h2	{ font-size: 1.2em; font-weight: bold; text-align: center; color: white; background-color: blue; }
+h3	{ font-size: 1.095em; font-weight: bold; text-align: center; color: white; background-color: blue; }
+h4	{ font-size: 1em; font-weight: bold; text-align: left; color: white; background-color: blue; padding: 0.2em; }
+h5	{ font-size: 1em; font-weight: bold; text-align: left; color: black; background-color: #BBF; padding: 0.2em; }
+h5 a	{ font-size: 1em; font-weight: bold; text-align: left; color: black; background-color: #BBF; padding: 0.2em; }
+
+.header {
+	border: 0;
+	margin: 0;
+	padding: 0.1em;
+	color: white;
+	background-color: blue; 
+}
+

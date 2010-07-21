@@ -1,0 +1,145 @@
+{% comment %} 
+Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+{% comment %}
+Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
+{% endcomment %}
+{% load ietf_filters %}
+{% for doc in section_docs %}
+<h3>{{ title1 }}<br>
+{{ title2 }}<br>
+{{ title3 }} ({{ forloop.counter }} of {{ section_docs|length }})</h3>
+
+<p><b>{{doc.obj.document.filename}}{% if not doc.obj.rfc_flag %}-{{doc.obj.document.revision}}{% endif %}</b><br>
+<i>({{ doc.obj.document.title|escape }})</i><br>
+<b>Intended status: {{ doc.obj.document.intended_status }}<br>
+Token: {{ doc.obj.token_name|escape }}<br>
+Last call ends: {{ doc.obj.document.lc_expiration_date|default:"(none)" }}</b></p>
+
+{% if doc.obj.ballot.active %}
+{% filter linebreaks_crlf %}<small><pre>
+                      Yes  No-Objection  Discuss  Abstain
+{% for curpos in doc.obj.ballot.active_positions %}{{ curpos.ad|ljust:"20" }} {{ curpos.pos.yes|bracket }}     {{ curpos.pos.noobj|bracket }}     {{ curpos.pos.discuss|bracket }}     {{ curpos.pos.abstain_ind|bracket }}
+{% endfor %}
+{% for position in doc.obj.ballot.positions.all|dictsort:"ad.last_name" %}{% if not position.ad.is_current_ad %}{{ position.ad|ljust:"20" }} {{ position.yes|bracket }}     {{ position.noobj|bracket }}     {{ position.discuss|bracket }}     {{ position.abstain_ind|bracket }}
+{% endif %}{% endfor %}</pre></small>{% endfilter %}
+
+{% if title1|startswith:"2." %}
+<p>____ open positions<br>
+[ &nbsp; ] would you like to record a position?</p>
+{% endif %}
+
+<p>____ active discusses<br>
+[ &nbsp; ] there are [#] discusses in the tracker on this document.  Do we need to talk about them now?</p>
+
+{% else %}
+<p>(Ballot not issued)</p>
+{% endif %}
+
+{% if title2|startswith:"3.1" or title2|startswith:"3.2" %}
+<p>Does anyone have an[y further] objection to this document being published as an {{ doc.obj.document.intended_status }} RFC?</p>
+{% endif %}
+{% if title3|startswith:"3.3.1" or title3|startswith:"3.3.2" %}
+<p>Does anyone have an objection to the RFC Editor publishing this document as an {{ doc.obj.document.intended_status }} RFC?</p>
+{% endif %}
+{% if title3|startswith:"3.3.3" %}
+<p>Who will do the review of this document?</p>
+{% endif %}
+
+<p>Current State: {{ doc.obj.cur_state }}, sub state: {{ doc.obj.cur_sub_state|default:"(none)" }}<br>
+Next State:<br>
+Sub State: </p>
+
+{% if title3|startswith:"2.1.1" or title3|startswith:"2.1.2" %}
+  <p>If APPROVED - The Secretariat will send a working group
+  submission, Protocol Action Announcement.</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send a working
+  group submission, Protocol Action Announcement that includes the
+  [RFC Editor Note, IESG Note, etc.] to be drafted by [Name that
+  AD].</p>
+{% endif %}
+
+{% if title3|startswith:"2.2.1" or title3|startswith:"2.2.2" %}
+  <p>If APPROVED - The Secretariat will send an individual submission,
+  Protocol Action Announcement.</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send an
+  individual submission, Protocol Action Announcement that includes
+  the [RFC Editor Note, IESG Note, etc.] to be drafted by [Name that
+  AD].</p>
+{% endif %}
+
+{% if title3|startswith:"3.1.1" or title3|startswith:"3.1.2" %}
+  <p>If APPROVED - The Secretariat will send a working group submission
+  Document Action Announcement.</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send a working
+  group submission Document Action announcement that includes the [RFC
+  Ed. Note, IESG, note, etc.] from [Name that AD].</p>
+{% endif %}
+
+{% if title3|startswith:"3.2.1" or title3|startswith:"3.2.2" %}
+  <p>If APPROVED - The Secretariat will send an individual submission
+  Document Action Announcement.</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send an
+  individual submission Document Action announcement that includes the
+  [RFC Ed. Note, IESG, note, etc.] from [Name that AD].</p>
+{% endif %}
+
+{% if title3|startswith:"3.3.1" or title3|startswith:"3.3.2" %}
+  <p>If APPROVED - The Secretariat will send a standard no problem
+  message to the RFC Editor. [Name of AD] will you supply the text for
+  the IESG Note?</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send a standard
+  no problem message to the RFC Editor that includes the note drafted
+  by [Name that AD].</p>
+
+  <p>If NOT APPROVED - The Secretariat will send the standard Do Not
+  Publish message to the RFC Editor.</p>
+
+  <p>If NOT APPROVED with clarifications - The Secretariat will send
+  the Do Not Publish message to the RFC Editor that includes the note
+  drafted by[Name the AD].</p>
+{% endif %}
+
+
+{% empty %}
+<h3>{{ title1 }}<br>
+{{ title2 }}<br>
+{{ title3 }}</h3>
+
+<p>NONE</p>
+{% endfor %}

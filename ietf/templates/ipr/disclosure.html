@@ -2,14 +2,9 @@
 {% extends "base.html" %}
 {% block title %}IPR Disclosure Page{% endblock %}
 {% block content %}
-<center>
-   <img src="/images/ietflogo2e.gif" height="160" width="280">
-</center>
-<div>
-   <center>
-      <img src="/images/ipr_header.gif" >
-   </center>
-   <p>
+<h1>IPR Disclosure Page</h1>
+
+<p>
    This page provides a mechanism for filing Disclosures about intellectual property rights
    (IPR) and for finding out what IPR Disclosures have been filed.  The IETF intellectual
    property rights rules are defined in RFC 3979,
@@ -22,48 +17,36 @@
    pertain to the implementation or use of the technology described in any IETF documents or the extent to
    which any license under such rights might or might not be available; nor does it represent that it has made any independent effort to identify any such rights.
    </p>
-   <p />
-   <hr>
-   <p>
-   <a href="{% url ietf.ipr.new.new "specific" %}"><img src="/images/blue.gif" hspace="3" border="0">File a disclosure about your IPR related to a specific IETF contribution</a>
-   </p>
-   <p><a href="{% url ietf.ipr.new.new "generic" %}"><img src="/images/blue.gif" hspace="3" border="0">File an IPR disclosure that is not related to a specific IETF contribution</a>
-   </p>
-   <p><a href="{% url ietf.ipr.new.new "third-party" %}"><img src="/images/blue.gif" hspace="3" border="0">Notify the IETF of IPR other than your own</a>
-   </p>
-   <p><a href="{% url ietf.ipr.views.updatelist %}"><img src="/images/blue.gif" hspace="3" border="0">Update an existing IPR disclosure</a>
-   </p>
-   <p><a href="{% url ietf.ipr.search.search %}"><img src="/images/blue.gif" hspace="3" border="0">Search the IPR disclosures</a>
-   </p>
-   <p><a href="{% url ietf.ipr.views.showlist %}"><img src="/images/blue.gif" hspace="3" border="0">List of IPR disclosures</a><p>
-   </p>
-   <hr>
-   <p>To remove an IPR disclosure from the list, please contact the IETF Secretariat at <a href="mailto:ietf-ipr@ietf.org">ietf-ipr@ietf.org</a>.
-   </p>
-   <hr>
-   <p><font color="333366"><strong>IETF Contribution:</strong></font>
-   any submission to the IETF intended by the Contributor for publication as all or part of an Internet-Draft or RFC (except for RFC Editor Contributions described below) and any statement made within the context of an IETF activity.  Such statements include oral statements in IETF sessions, as well as written and electronic communications made at any time or place, which are addressed to: <br>
-   </p>
-   <p>-  the IETF plenary session,<br>
-   -  any IETF working group or portion thereof,<br>
-   -  the IESG, or any member thereof on behalf or the IESG,<br>
-   -  the IAB or any member thereof on behalf of the IAB,<br>
-   -  any IETF mailing list, including the IETF list itself, any working group or design team list, or any other list functioning under IETF auspices,<br>
-   -  the RFC Editor or the Internet-Drafts function (except for RFC Editor Contributions described below).<br>
 
+   <hr />
+<ul>
+<li><a href="{% url ietf.ipr.new.new "specific" %}">File a disclosure about your IPR related to a specific IETF contribution</a></li>
+<li><a href="{% url ietf.ipr.new.new "generic" %}">File an IPR disclosure that is not related to a specific IETF contribution</a></li>
+<li><a href="{% url ietf.ipr.new.new "third-party" %}">Notify the IETF of IPR other than your own</a></li>
+<li>To update an existing IPR disclosure, find the original disclosure and select "update this IPR disclosure".</li>
+<li><a href="{% url ietf.ipr.search.search %}">Search the IPR disclosures</a></li>
+<li><a href="{% url ietf.ipr.views.showlist %}">List of IPR disclosures</a></li>
+</ul>
+
+<p>To remove an IPR disclosure from the list, please contact the IETF Secretariat at <a href="mailto:ietf-ipr@ietf.org">ietf-ipr@ietf.org</a>.</p>
+
+   <hr/>
+   <p><strong>IETF Contribution:</strong>
+   any submission to the IETF intended by the Contributor for publication as all or part of an Internet-Draft or RFC (except for RFC Editor Contributions described below) and any statement made within the context of an IETF activity.  Such statements include oral statements in IETF sessions, as well as written and electronic communications made at any time or place, which are addressed to:</p>
+   <p>-  the IETF plenary session,<br/>
+   -  any IETF working group or portion thereof,<br/>
+   -  the IESG, or any member thereof on behalf or the IESG,<br/>
+   -  the IAB or any member thereof on behalf of the IAB,<br/>
+   -  any IETF mailing list, including the IETF list itself, any working group or design team list, or any other list functioning under IETF auspices,<br/>
+   -  the RFC Editor or the Internet-Drafts function (except for RFC Editor Contributions described below).<br/>
    </p>
    <p>Statements made outside of an IETF session, mailing list or other function, that are clearly not intended to be input to an IETF activity, group or function, are not IETF Contributions in the context of this document.</p>
-<p>A participant in any IETF activity is deemed to accept all IETF rules of process, as documented in Best Current Practices RFCs and IESG Statements.      
-</p>
+<p>A participant in any IETF activity is deemed to accept all IETF rules of process, as documented in Best Current Practices RFCs and IESG Statements</p>
 
-<br>
-<br>
-A participant in any IETF activity acknowledges that written, audio and video records of meetings may be made and may be available to the public.
-   </p>
-   <p>
-   <font color="333366"><strong>RFC Editor Contribution:</strong></font>
+<p>A participant in any IETF activity acknowledges that written, audio and video records of meetings may be made and may be available to the public.</p>
+
+<p><strong>RFC Editor Contribution:</strong>
    An Internet-Draft intended by the Contributor to be submitted to the
-   RFC Editor for publication as an Informational or Experimental RFC but not intended to be part of the IETF Standards Process.<br> 
-   </p>
+   RFC Editor for publication as an Informational or Experimental RFC but not intended to be part of the IETF Standards Process.</p>
 
 {% endblock %}

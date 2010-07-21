@@ -1,16 +1,12 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% block title %}IPR Submission{% endblock %}
 {% block content %}
 
-  <br>
-  <font size=4 >Your IPR disclosure has been submitted, and the IETF Secretariat has been notified.<br>                                                         
+<h1>Your IPR disclosure has been submitted, and the IETF Secretariat has been notified.</h1>
                                               
-Please note that it may take one business day for your IPR disclosure to be posted<br>
-on the IETF Page of Intellectual Property Rights Notices.<br><br>
-<font color="red">
-</font>
-<br><hr>
-  <a href="{% url ietf.ipr.views.showlist %}"><font size=3>Back to IPR Disclosure Page</a></font><br>
+<h3>Please note that it may take one business day for your IPR disclosure to be posted
+on the IETF Page of Intellectual Property Rights Notices.</h3>
 
+<p><a href="{% url ietf.ipr.views.showlist %}">Back to IPR Disclosure Page</a></p>
 {% endblock %}

@@ -2,15 +2,17 @@
 
 import textwrap
 from django import template
-from django.utils.html import escape, fix_ampersands, linebreaks
-from django.template.defaultfilters import linebreaksbr
+from django.utils.html import escape, fix_ampersands
+from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter
+from django.template import resolve_variable
+from django.utils.safestring import mark_safe, SafeData
 try:
     from email import utils as emailutils
 except ImportError:
     from email import Utils as emailutils
 import re
 import datetime
-#from ietf.utils import log
+import types
 
 register = template.Library()
 
@@ -21,6 +23,14 @@ def expand_comma(value):
     long comma-separated lists."""
     return value.replace(",", ", ")
 
+@register.filter(name='format_charter')
+def format_charter(value):
+    return value.replace("\n\n", "</p><p>").replace("\n","<br/>\n")
+
+@register.filter(name='indent')
+def indent(value):
+    return value.replace("\n", "\n  ");
+
 @register.filter(name='parse_email_list')
 def parse_email_list(value):
     """
@@ -29,8 +39,8 @@ def parse_email_list(value):
 
     Splitting a string of email addresses should return a list:
 
-    >>> parse_email_list('joe@example.org, fred@example.com')
-    '<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
+    >>> unicode(parse_email_list('joe@example.org, fred@example.com'))
+    u'<a href="mailto:joe@example.org">joe@example.org</a>, <a href="mailto:fred@example.com">fred@example.com</a>'
 
     Parsing a non-string should return the input value, rather than fail:
     
@@ -46,7 +56,7 @@ def parse_email_list(value):
 
 
     """
-    if value and type(value) == type(""): # testing for 'value' being true isn't necessary; it's a fast-out route
+    if value and isinstance(value, (types.StringType,types.UnicodeType)): # testing for 'value' being true isn't necessary; it's a fast-out route
         addrs = re.split(", ?", value)
         ret = []
         for addr in addrs:
@@ -76,31 +86,11 @@ def make_one_per_line(value):
     >>> make_one_per_line(None)
 
     """
-    if value and type(value) == type(""):
+    if value and isinstance(value, (types.StringType,types.UnicodeType)):
         return re.sub(", ?", "\n", value)
     else:
         return value
         
-@register.filter(name='link_if_url')
-def link_if_url(value):
-    """
-    If the argument looks like a url, return a link; otherwise, just
-    return the argument."""
-    if (re.match('(https?|mailto):', value)):
-	return "<a href=\"%s\">%s</a>" % ( fix_ampersands(value), escape(value) )
-    else:
-	return escape(value)
-
-# This replicates the nwg_list.cgi method.
-# It'd probably be better to check for the presence of
-# a scheme with a better RE.
-@register.filter(name='add_scheme')
-def add_scheme(value):
-    if (re.match('www', value)):
-	return "http://" + value
-    else:
-	return value
-
 @register.filter(name='timesum')
 def timesum(value):
     """
@@ -109,10 +99,6 @@ def timesum(value):
     for v in value:
         sum += float(v['time'])
     return sum
-
-@register.filter(name='text_to_html')
-def text_to_html(value):
-    return keep_spacing(linebreaks(escape(value)))
 
 @register.filter(name='keep_spacing')
 def keep_spacing(value):
@@ -131,11 +117,22 @@ def format_textarea(value):
     Also calls keep_spacing."""
     return keep_spacing(linebreaksbr(escape(value).replace('&lt;b&gt;','<b>').replace('&lt;/b&gt;','</b>').replace('&lt;br&gt;','<br>')))
 
+@register.filter(name='sanitize_html')
+def sanitize_html(value):
+    """Sanitizes an HTML fragment.
+    This means both fixing broken html and restricting elements and
+    attributes to those deemed acceptable.  See ietf/utils/html.py
+    for the details.
+    """
+    from ietf.utils.html import sanitize_html
+    return sanitize_html(value)
+
+
 # For use with ballot view
 @register.filter(name='bracket')
 def square_brackets(value):
     """Adds square brackets around text."""
-    if   type(value) == type(""):
+    if isinstance(value, (types.StringType,types.UnicodeType)):
 	if value == "":
 	     value = " "
         return "[ %s ]" % value
@@ -164,11 +161,6 @@ def fill(text, width):
             wrapped.append(para)
     return "\n\n".join(wrapped)
 
-@register.filter(name='allononeline')
-def allononeline(text):
-    """Simply removes CRs, LFs, leading and trailing whitespace from the given string."""
-    return text.replace("\r", "").replace("\n", "").strip()
-
 @register.filter(name='rfcspace')
 def rfcspace(string):
     """
@@ -194,24 +186,190 @@ def rfcnospace(string):
     else:
         return string
 
+@register.filter(name='rfcurl')
+def rfclink(string):
+    """
+    This takes just the RFC number, and turns it into the
+    URL for that RFC.
+    """
+    string = str(string);
+    return "http://tools.ietf.org/html/rfc" + string;
+
+@register.filter(name='urlize_ietf_docs')
+def urlize_ietf_docs(string, autoescape=None):
+    """
+    Make occurrences of RFC NNNN and draft-foo-bar links to /doc/.
+    """
+    if autoescape and not isinstance(string, SafeData):
+        string = escape(string)
+    string = re.sub("(?<!>)(RFC ?)0{0,3}(\d+)", "<a href=\"/doc/rfc\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(BCP ?)0{0,3}(\d+)", "<a href=\"http://tools.ietf.org/html/bcp\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(STD ?)0{0,3}(\d+)", "<a href=\"http://tools.ietf.org/html/std\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(FYI ?)0{0,3}(\d+)", "<a href=\"http://tools.ietf.org/html/fyi\\2/\">\\1\\2</a>", string)
+    string = re.sub("(?<!>)(draft-[-0-9a-zA-Z._+]+)", "<a href=\"/doc/\\1/\">\\1</a>", string)
+    return mark_safe(string)
+urlize_ietf_docs.is_safe = True
+urlize_ietf_docs.needs_autoescape = True
+urlize_ietf_docs = stringfilter(urlize_ietf_docs)
+
+@register.filter(name='dashify')
+def dashify(string):
+    """
+    Replace each character in string with '-', to produce
+    an underline effect for plain text files.
+    """
+    return re.sub('.', '-', string)
+
 @register.filter(name='lstrip')
 def lstripw(string, chars):
     """Strip matching leading characters from words in string"""
     return " ".join([word.lstrip(chars) for word in string.split()])
 
-@register.filter(name='thisyear')
-def thisyear(date):
-    """Returns a boolean of whether or not the argument is this year."""
-    if date:
-	return date.year == datetime.date.today().year
-    return True
+@register.filter(name='timesince_days')
+def timesince_days(date):
+    """Returns the number of days since 'date' (relative to now)"""
+    if date.__class__ is not datetime.datetime:
+        date = datetime.datetime(date.year, date.month, date.day)
+    delta = datetime.datetime.now() - date
+    return delta.days
 
-@register.filter(name='inpast')
-def inpast(date):
-    """Returns a boolean of whether or not the argument is in the past."""
-    if date:
-	return date < datetime.datetime.now()
-    return True
+@register.filter(name='truncate_ellipsis')
+def truncate_ellipsis(text, arg):
+    num = int(arg)
+    if len(text) > num:
+        return escape(text[:num-1])+"&hellip;"
+    else:
+        return escape(text)
+    
+@register.filter(name="wrap_long_lines")
+def wrap_long_lines(text):
+    """Wraps long lines without loosing the formatting and indentation
+       of short lines"""
+    if not isinstance(text, (types.StringType,types.UnicodeType)):
+        return text
+    text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
+    text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings
+    text = re.sub("( *\n){3,}", "\n\n", text) # get rid of excessive vertical whitespace
+    lines = text.split("\n")
+    filled = []
+    wrapped = False
+    for line in lines:
+        if wrapped and line.strip() != "":
+            line = filled[-1] + " " + line
+            filled = filled[:-1]
+        else:
+            wrapped = False
+        while (len(line) > 80) and (" " in line[:80]):
+            wrapped = True
+            breakpoint = line.rfind(" ",0,80)
+            filled += [ line[:breakpoint] ]
+            line = line[breakpoint+1:]
+        filled += [ line.rstrip() ]
+    return "\n".join(filled)
+
+@register.filter(name="id_index_file_types")
+def id_index_file_types(text):
+    r = ".txt"
+    if text.find("txt") < 0:
+        return r
+    if text.find("ps") >= 0:
+        r = r + ",.ps"
+    if text.find("pdf") >= 0:
+        r = r + ",.pdf"
+    return r
+
+@register.filter(name="id_index_wrap")
+def id_index_wrap(text):
+    x = wordwrap(text, 72)
+    x = x.replace("\n", "\n  ")
+    return "  "+x.strip()
+
+@register.filter(name="compress_empty_lines")
+def compress_empty_lines(text):
+    text = re.sub("( *\n){3,}", "\n\n", text)
+    return text
+
+@register.filter(name="remove_empty_lines")
+def remove_empty_lines(text):
+    text = re.sub("( *\n){2,}", "\n", text)
+    return text
+
+@register.filter(name='linebreaks_crlf')
+def linebreaks_crlf(text):
+    """
+    Normalize all linebreaks to CRLF.
+    """
+    # First, map CRLF to LF
+    text = text.replace("\r\n", "\n")
+    # Next, map lone CRs to LFs
+    text = text.replace("\r", "\n")
+    # Finally, map LFs to CRLFs
+    text = text.replace("\n", "\r\n")
+    return text
+
+@register.filter(name='linebreaks_lf')
+def linebreaks_lf(text):
+    """
+    Normalize all linebreaks to LF.
+    """
+    # First, map CRLF to LF
+    text = text.replace("\r\n", "\n")
+    # Finally, map lone CRs to LFs
+    text = text.replace("\r", "\n")
+    return text
+
+@register.filter(name='clean_whitespace')
+def clean_whitespace(text):
+    """
+    Map all ASCII control characters (0x00-0x1F) to spaces, and 
+    remove unnecessary spaces.
+    """
+    text = re.sub("[\000-\040]+", " ", text)
+    return text.strip()
+
+@register.filter(name='unescape')
+def unescape(text):
+    """
+    Unescape &nbsp;/&gt;/&lt; 
+    """
+    text = text.replace("&gt;", ">")
+    text = text.replace("&lt;", "<")
+    text = text.replace("&amp;", "&")
+    text = text.replace("<br>", "\n")
+    text = text.replace("<br/>", "\n")
+    return text
+
+@register.filter(name='greater_than')
+def greater_than(x, y):
+    return x > int(y)
+
+@register.filter(name='less_than')
+def less_than(x, y):
+    return x < int(y)
+
+@register.filter(name='equal')
+def equal(x, y):
+    return str(x)==str(y)
+
+@register.filter(name='startswith')
+def startswith(x, y):
+    return unicode(x).startswith(y)
+
+# based on http://www.djangosnippets.org/snippets/847/ by 'whiteinge'
+@register.filter
+def in_group(user, groups):
+    return user and user.is_authenticated() and bool(user.groups.filter(name__in=groups.split(',')).values('name'))
+
+@register.filter
+def stable_dictsort(value, arg):
+    """
+    Like dictsort, except it's stable (preserves the order of items 
+    whose sort key is the same). See also bug report
+    http://code.djangoproject.com/ticket/12110
+    """
+    decorated = [(resolve_variable('var.' + arg, {'var' : item}), item) for item in value]
+    decorated.sort(lambda a, b: cmp(a[0], b[0]))
+    return [item[1] for item in decorated]
 
 def _test():
     import doctest
@@ -219,3 +377,4 @@ def _test():
 
 if __name__ == "__main__":
     _test()
+

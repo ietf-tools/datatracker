@@ -1,0 +1,7 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% load ietf_filters %}
+{% if obj.by_secretariat %}
+Liaison statement submitted by email from {{ obj.from_body|safe }} to {{ obj.submitter_name|safe }} on {{ obj.submitted_date }}
+{% else %}
+{{ obj.title|safe }}
+{% endif %}

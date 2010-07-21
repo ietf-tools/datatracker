@@ -1,0 +1,5 @@
+{% load ietf_filters %}{% regroup wg_list|dictsort:"area_acronym.acronym" by area.area as wga_list %}{% for area in wga_list %}{% for wg in area.list|dictsort:"group_acronym.name" %}{% ifequal wg.area.area.status_id 1 %}{% if wg.start_date %}{{ wg }}
+{% endif %}{% endifequal %}{% endfor %}{% endfor %}
+{% regroup wg_list|dictsort:"area_acronym.acronym" by area.area as wga_list %}{% for area in wga_list %}{% for wg in area.list|dictsort:"group_acronym.name" %}{% ifequal wg.area.area.status_id 1 %}{% if wg.start_date %}
+{% include "wginfo/wg-charter.txt" %}
+{% endif %}{% endifequal %}{% endfor %}{% endfor %}

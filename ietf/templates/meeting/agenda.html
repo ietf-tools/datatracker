@@ -1,97 +1,120 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
-{% block title %} Meeting Agenda of the {{ meeting_num|ordinal }} IETF Meeting{% endblock %}
-{% block body_attributes %}background="http://www.ietf.org/meetings/peachbkg.gif"{% endblock %}
+{% block title %}IETF {{ meeting.num }} Meeting Agenda{% endblock %}
+
+{% block morecss %}
+table#agenda { border: 0; border-collapse:collapse; }
+#agenda td { padding-right:2em; }
+#agenda tr.meeting-date td { padding-top:1em; padding-right:0;}
+
+.ietf-agenda-palette { border-collapse:collapse; border:2px solid black; background:white; overflow:hidden; }
+.ietf-agenda-palette td { border:1px solid black; }
+.ietf-agenda-palette td { padding: 4px; text-align:center;}
+.ietf-agenda-palette td a { text-decoration:none; }
+.bgnone {}
+.bgaqua, .bgaqua a { background-color: aqua; color: black; }
+.bgblue, .bgblue a { background-color: blue; color: black; }
+.bgfuchsia, .bgfuchsia a { background-color: fuchsia; color: black; }
+.bggray, .bggray a { background-color: gray; color: white; }
+.bggreen, .bggreen a { background-color: green; color: white; }
+.bglime, .bglime a { background-color: lime; color: black; }
+.bgmaroon, .bgmaroon a { background-color: maroon; color: white; }
+.bgnavy, .bgnavy a { background-color: navy; color: white; }
+.bgolive, .bgolive a { background-color: olive; color: white; }
+.bgpurple, .bgpurple a { background-color: purple; color: white; }
+.bgred, .bgred a { background-color: red; color: black; }
+.bgsilver, .bgsilver a { background-color: silver; color: black; }
+.bgteal, .bgteal a { background-color: teal; color: white; }
+.bgwhite, .bgwhite a { background-color: white; color: black; }
+.bgyellow, .bgyellow a { background-color: yellow; color: black; }
+.bgblack, .bgblack a { background-color: black; color: white; }
+{% endblock morecss %}
+
+{% block pagehead %}
+<script type="text/javascript" src='/js/agenda2.js'></script>
+{% endblock pagehead %}
+{% block bodyAttrs %}onload='updateAgendaColors()'{% endblock %}
 {% block content %}
+<h1>IETF {{ meeting.num }} Meeting Agenda</h1>
+<p>{{ meeting.city }}, {{ meeting.start_date|date:"F j" }}-{% ifnotequal meeting.start_date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}<br />
+Updated {{ update.updated|date:"Y-m-d H:i:s T" }}<br />
+(There's also a <a href="/meeting/{{meeting.num}}/agenda.txt">plaintext agenda</a> and a <a href="http://tools.ietf.org/agenda/{{meeting.num}}/">tools-style agenda</a> available)</p>
 
-<center> 
-<strong> Agenda of the {{ meeting_num|ordinal }} IETF Meeting </strong> <br/> 
-<strong>{{ meeting_info.start_date|date:"F j" }}-{% ifnotequal meeting_info.start_date|date:"F" meeting_info.end_date|date:"F" %}{{ meeting_info.end_date|date:"F " }}{% endifnotequal %}{{ meeting_info.end_date|date:"j, Y" }} </strong><br />
-Updated as of {{ last_update_info.updated_date }} {{ last_update_info.updated_time }} (ET)
-</center> 
+<p><strong>IETF agendas are subject to change, up to and during the meeting.</strong></p>
 
-(<a href="http://www3.ietf.org//meetings/agenda_{{meeting_num}}.txt"> Text Format of the Agenda </a>) <br />
-<P>
-*** Click on an acronym of the group to get a charter page *** <br />
-*** Click on a name of the group to get a meeting agenda *** <br />
-</P>
-<p><b>{{ meeting_info.start_date|date:"l"|upper }}, {{ meeting_info.start_date|date:"F j, Y" }}</b><br>
-{{ nonsession_info.0.time_desc }} {{ nonsession_info.0.non_session_ref }} - {{ meetingvenue_info.reg_area_name }}
-<br>
-{% for item in qs_sun %}
-{{ item.sched_time_id1.time_desc }} {{ item.acronym_name }} - {{ item.sched_room_id1.room_name }}<br>
-{% endfor %}
-<br>
-{% regroup object_list by day_id as days %}
-{% for day in days %}
-   <b>{{ day.list.0.meeting_date|date:"l"|upper }}, {{ day.list.0.meeting_date|date:"F j, Y" }} </b><br>
-   {% if day.list.0.reg_info %}{{ day.list.0.reg_info }} - {{ meetingvenue_info.reg_area_name }} <br>{% endif %}
-   {% ifequal day.list.0.day_id "5" %}
-   {{ day.list.0.fbreak_info }} - {{ meetingvenue_info.break_area_name }} <br>
+{# cache this part for 15 minutes -- it takes 3-6 seconds to generate #}
+{% load cache %}
+{% cache 900 ietf_meeting_agenda meeting.num %}
+
+<table id="agenda">
+{% for slot in timeslots %}
+   {% ifchanged  %}
+      <tr class="meeting-date">
+	 <td colspan="4">
+	   <h2 class="ietf-divider">{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}</h2>
+	 </td>
+      </tr>
+      {% if slot.reg_info %}
+      <tr>
+	 <td colspan="4">
+	    {{ slot.registration.time_desc  }}  {{ slot.registration.name  }}
+	    {% if venue.reg_area_name %} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{ venue.reg_area_name|slugify }}">{{ venue.reg_area_name|escape }}</a>{% endif %}
+	 </td>
+      </tr>
+      {% endif %}
+   {% endifchanged %}
+   {% if slot.session_name %}
+      {% if slot.break_info %}
+      <tr>
+	 <td colspan="4">
+	    <br />
+	    {{ slot.break_info.time_desc }}  {{ slot.break_info.name }}
+	    {% if venue.break_area_name and slot.break_info.show_break_location %} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{ venue.break_area_name|slugify }}">{{ venue.break_area_name|escape }}</a>{% endif %}
+	 </td>
+      </tr>
+      {% endif %}
+      <tr>
+	 <td colspan="4">
+	    <b>{{ slot.time_desc               }}  {{ slot.session_name }}</b>
+	    {% ifequal slot.sessions.0.acronym "plenaryw" %}
+	       <b>- {{ slot.sessions.0.room_id.room_name }}</b><br/>
+	       <pre>{{ plenaryw_agenda|escape }}</pre>
+	    {% endifequal %}
+	    {% ifequal slot.sessions.0.acronym "plenaryt" %}
+	       <b>- {{ slot.sessions.0.room_id.room_name }}</b><br/>
+	       <pre>{{ plenaryt_agenda|escape }}</pre>
+	    {% endifequal %}
+	 </td>
+      </tr>
+      {% if not slot.is_plenary %}
+      {% for session in slot.sessions_by_area|dictsort:"area" %}
+      <tr id="{{meeting.num}}-{{slot.meeting_date|date:"D"|lower}}-{{slot.time_desc|slice:":4"}}-{{session.info.acronym|lower}}">
+	 <td><a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{session.info.room_id.room_name|slugify}}" title="room map">{{ session.info.room_id.room_name}}</a></td>
+	 {% if session.info.area %}
+	 <td>{{ session.info.area|upper}}</td>
+	 <td>{% if session.info.isWG %}<a href="/wg/{{ session.info.acronym|lower }}/">{{ session.info.acronym|lower }}</a>{% else %}{{ session.info.acronym|lower }}{% endif %}</td>
+	 <td>
+            <img src="/images/color-palette-4x4.gif" alt="" onclick="pickAgendaColor('{{meeting.num}}-{{slot.meeting_date|date:"D"|lower}}-{{slot.time_desc|slice:":4"}}-{{session.info.acronym|lower}}',this);" title="color tag this line"/>
+	    {% if session.info.agenda_file %}<a href="http://www.ietf.org/proceedings/{{ session.info.agenda_file }}" title="session agenda">{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}</a>{% else %}{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}{% endif %}
+	    {% if session.info.special_agenda_note %}<br/> - {{ session.info.special_agenda_note }}{% endif %}
+	 </td>
+	 {% endif %}
+      </tr>
+      {% endfor %}
+      {% endif %}
    {% else %}
-   {{ day.list.0.morning_br_info }} - {{ meetingvenue_info.break_area_name }} <br>
-   {% endifequal %}
-   <br>
-   {% for item in day.list %}
-      {% ifequal item.session_name_id 3 %}
-	 {{ day.list.0.lunch_br_info }} Break<br>
-      {% endifequal %}
-      {% ifequal item.session_name_id 4 %}
-         {% if day.list.0.an_br1_info %}
-	   {{ day.list.0.an_br1_info }} - {{ meetingvenue_info.break_area_name }}<br>
-         {% endif %}
-      {% endifequal %}
-      {% ifequal item.session_name_id 5 %}
-         {% if day.list.0.an_br2_info %}
-	   {{ day.list.0.an_br2_info }} - {{ meetingvenue_info.break_area_name }}<br>
-         {% endif %}
-      {% endifequal %}
-      {% ifequal item.session_name_id 8 %}
-         {% if day.list.0.an_br2_info %}
-           {{ day.list.0.an_br2_info }} - {{ meetingvenue_info.break_area_name }}<br>
-         {% endif %}
-      {% endifequal %}
-      {% ifequal item.session_name_id 10 %}
-         {% if day.list.0.an_br2_info %}
-           {{ day.list.0.an_br2_info }} - {{ meetingvenue_info.break_area_name }}<br>
-         {% endif %}
-      {% endifequal %}
-      <b>{{ item.time_desc }} {{ item.session_name }} </b>
-      {% ifequal item.sessions.0.acronym "plenaryw" %}
-         <b>- {{ item.sessions.0.room_id.room_name }}</b><br>
-         <pre>{{ plenaryw_agenda|escape }}</pre>
-      {% else %}
-          {% ifequal item.sessions.0.acronym "plenaryt" %}
-             <b>- {{ item.sessions.0.room_id.room_name }}</b><br>
-             <pre>{{ plenaryt_agenda|escape }}</pre>
-          {% else %}
-             <table border="0" cellspacing="0" cellpadding="0" width="800">
-             {% for session in item.sessions|dictsort:"area" %}
-	        <tr><td width="200">{{ session.room_id.room_name }}</td><td width="50">{{ session.area|upper }}</td><td width="100">{% if session.isWG %}<a href="http://www.ietf.org/html.charters/{{ session.acronym|lower }}-charter.html">{{ session.acronym|lower }}</a>{% else %}{{ session.acronym|lower }}{% endif %}</td><td>{% if session.agenda_file %}<a href="http://www3.ietf.org/proceedings/{{ session.agenda_file }}">{{ session.acronym_name }} {{ session.group_type_str }}</a>{% else %}{{ session.acronym_name }} {{ session.group_type_str }}{% endif %}{% if session.special_agenda_note %} <b>- {{ session.special_agenda_note }}</b>{% endif %}</td></tr>
-             {% endfor %}
-             </table>
-          {% endifequal %}
-      {% endifequal %}
-      <br>
-   {% endfor %}
-   <br>
-{% endfor %}
-<hr>
-<center><b>AREA DIRECTORS</b></center><br>
-<table border="0" width="800">
-{% regroup qs_ads by area as ads %}
-{% for ad in ads %}
-<tr valign="top">
-  <td width="65">{{ ad.grouper|upper }}</td>
-  <td width="140">{{ ad.list.0.area.area_acronym.name }}</td>
-  <td>
-  {% for ad_person in ad.list %}
-    {% ifequal forloop.counter 2 %} & {% endifequal %}
-    {{ ad_person.person }}/{{ ad_person.person.affiliation }} 
-  {% endfor %}
-  </td>
-</tr>
+      {% for session in slot.sessions %}
+      <tr>
+	 <td colspan="4">
+	    {{ slot.time_desc }}  {{ session.acronym_name|escape }} - <a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{session.room_id.room_name|slugify}}">{{ session.room_id.room_name}}</a>
+	 </td>
+      </tr>
+      {% endfor %}
+   {% endif %}
 {% endfor %}
 </table>
+
+{% endcache %}
+
 {% endblock %}

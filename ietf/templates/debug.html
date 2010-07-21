@@ -1,7 +1,7 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% if debug %}
 {% load ietf_filters %}
-<div id="debug">
+<div id="debug" style="clear: right;">
   <h2>Queries</h2>
   <p>
     {{ sql_queries|length }} Queries ({{ sql_queries|timesum }}s)

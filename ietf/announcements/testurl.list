@@ -1,1 +1,5 @@
-200	/ann/nomcom/1230/	https://datatracker.ietf.org/public/show_nomcom_message.cgi?id=1230
+200	/ann/nomcom/
+200	/ann/nomcom/1230/
+200	/ann/nomcom/1607/	# non-ASCII content
+200	/ann/nomcom/2001/	# non-ASCII content
+200	/sitemap-nomcom-announcements.xml

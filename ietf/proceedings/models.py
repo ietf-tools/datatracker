@@ -13,32 +13,40 @@ import datetime
 #    an interim attribute first)
 class ResolveAcronym(object):
     def acronym(self):
+        if hasattr(self, '_acronym_acronym'):
+            return self._acronym_acronym
 	try:
 	    interim = self.interim
 	except AttributeError:
 	    interim = False
 	if self.irtf:
-	    acronym = IRTF.objects.get(pk=self.group_acronym_id).acronym
+	    o = IRTF.objects.get(pk=self.group_acronym_id)
 	else:
-	    acronym = Acronym.objects.get(pk=self.group_acronym_id).acronym
+            o = Acronym.objects.get(pk=self.group_acronym_id)
+        self._acronym_acronym = o.acronym
+        self._acronym_name = o.name
+        acronym = self._acronym_acronym
 	if interim:
 	    return "i" + acronym
-	return acronym
+        else:
+            return acronym
     def acronym_lower(self):
         return self.acronym().lower()
     def acronym_name(self):
+        if not hasattr(self, '_acronym_name'):
+            self.acronym()
         try:
             interim = self.interim
         except AttributeError:
             interim = False
-        if self.irtf:
-            acronym_name = IRTF.objects.get(pk=self.group_acronym_id).name
-        else:
-            acronym_name = Acronym.objects.get(pk=self.group_acronym_id).name
+        acronym_name = self._acronym_name
         if interim:
             return acronym_name + " (interim)"
-        return acronym_name
+        else:
+            return acronym_name
     def area(self):
+        if hasattr(self, '_area'):
+            return self._area
         if self.irtf:
             area = "irtf"
         elif self.group_acronym_id < 0  and self.group_acronym_id > -3:
@@ -47,9 +55,10 @@ class ResolveAcronym(object):
             area = ""
         else:
             try:
-                area = AreaGroup.objects.get(group=self.group_acronym_id).area.area_acronym.acronym
+                area = AreaGroup.objects.select_related().get(group=self.group_acronym_id).area.area_acronym.acronym
             except AreaGroup.DoesNotExist:
                 area = ""
+        self._area = area
         return area
     def area_name(self):
         if self.irtf:
@@ -67,37 +76,64 @@ class ResolveAcronym(object):
     def isWG(self):
         if self.irtf:
               return False
-        else:
+        if not hasattr(self,'_ietfwg'):
             try:
-                g_type_id = IETFWG.objects.get(pk=self.group_acronym_id).group_type_id == 1
-                if g_type_id == 1:
-                    return True
-                else:
-                    return False
+                self._ietfwg = IETFWG.objects.get(pk=self.group_acronym_id)
             except IETFWG.DoesNotExist:
-                return False
+                self._ietfwg = None
+        if self._ietfwg and self._ietfwg.group_type_id == 1:
+            return True
+        else:
+            return False
     def group_type_str(self):
         if self.irtf:
-              return ""
+            return ""
         else:
-            try:
-                g_type_id = IETFWG.objects.get(pk=self.group_acronym_id).group_type_id 
-                if g_type_id == 1:
-                    return "WG"
-                elif g_type_id == 3:
-                    return "BOF"
-                else:
-                    return ""
-            except IETFWG.DoesNotExist:
+            self.isWG()
+            if not self._ietfwg:
                 return ""
+            elif self._ietfwg.group_type_id == 1:
+                return "WG"
+            elif self._ietfwg.group_type_id == 3:
+                return "BOF"
+            else:
+                return ""
+
+TIME_ZONE_CHOICES = (
+    (0, 'UTC'),
+    (-1, 'UTC -1'),
+    (-2, 'UTC -2'),
+    (-3, 'UTC -3'),
+    (-4, 'UTC -4 (Eastern Summer)'),
+    (-5, 'UTC -5 (Eastern Winter)'),
+    (-6, 'UTC -6'),
+    (-7, 'UTC -7'),
+    (-8, 'UTC -8 (Pacific Winter)'),
+    (-9, 'UTC -9'),
+    (-10, 'UTC -10 (Hawaii Winter)'),
+    (-11, 'UTC -11'),
+    (+12, 'UTC +12'),
+    (+11, 'UTC +11'),
+    (+10, 'UTC +10 (Brisbane)'),
+    (+9, 'UTC +9'),
+    (+8, 'UTC +8 (Perth Winter)'),
+    (+7, 'UTC +7'),
+    (+6, 'UTC +6'),
+    (+5, 'UTC +5'),
+    (+4, 'UTC +4'),
+    (+3, 'UTC +3 (Moscow Winter)'),
+    (+2, 'UTC +2 (Western Europe Summer'),
+    (+1, 'UTC +1 (Western Europe Winter)'),
+)
 
 class Meeting(models.Model):
     meeting_num = models.IntegerField(primary_key=True)
     start_date = models.DateField()
     end_date = models.DateField()
-    city = models.CharField(blank=True, maxlength=255)
-    state = models.CharField(blank=True, maxlength=255)
-    country = models.CharField(blank=True, maxlength=255)
+    city = models.CharField(blank=True, max_length=255)
+    state = models.CharField(blank=True, max_length=255)
+    country = models.CharField(blank=True, max_length=255)
+    time_zone = models.IntegerField(null=True, blank=True, choices=TIME_ZONE_CHOICES)
     ack = models.TextField(blank=True)
     agenda_html = models.TextField(blank=True)
     agenda_text = models.TextField(blank=True)
@@ -105,27 +141,25 @@ class Meeting(models.Model):
     overview1 = models.TextField(blank=True)
     overview2 = models.TextField(blank=True)
     def __str__(self):
-	return "IETF %d" % (self.meeting_num)
+	return "IETF %s" % (self.meeting_num)
     def get_meeting_date (self,offset):
         return self.start_date + datetime.timedelta(days=offset) 
+    def num(self):
+        return self.meeting_num
     class Meta:
         db_table = 'meetings'
-    class Admin:
-	pass
 
 class MeetingVenue(models.Model):
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
-    break_area_name = models.CharField(maxlength=255)
-    reg_area_name = models.CharField(maxlength=255)
+    break_area_name = models.CharField(max_length=255)
+    reg_area_name = models.CharField(max_length=255)
     def __str__(self):
-	return "IETF %d" % (self.meeting_num_id)
+	return "IETF %s" % (self.meeting_num_id)
     class Meta:
         db_table = 'meeting_venues'
-    class Admin:
-	pass
 
 class NonSessionRef(models.Model):
-    name = models.CharField(maxlength=255)
+    name = models.CharField(max_length=255)
     def __str__(self):
 	return self.name
     class Meta:
@@ -136,18 +170,19 @@ class NonSession(models.Model):
     day_id = models.IntegerField(blank=True, null=True)
     non_session_ref = models.ForeignKey(NonSessionRef)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
-    time_desc = models.CharField(blank=True, maxlength=75)
+    time_desc = models.CharField(blank=True, max_length=75)
+    show_break_location = models.BooleanField()
     def __str__(self):
 	if self.day_id:
-	    return "%s %s %s @%d" % ((self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc, self.non_session_ref, self.meeting_id)
+	    return "%s %s %s @%s" % ((self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc, self.non_session_ref, self.meeting_id)
 	else:
-	    return "** %s %s @%d" % (self.time_desc, self.non_session_ref, self.meeting_id)
+	    return "** %s %s @%s" % (self.time_desc, self.non_session_ref, self.meeting_id)
     class Meta:
 	db_table = 'non_session'
 
 class Proceeding(models.Model):
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True, primary_key=True)
-    dir_name = models.CharField(blank=True, maxlength=25)
+    dir_name = models.CharField(blank=True, max_length=25)
     sub_begin_date = models.DateField(null=True, blank=True)
     sub_cut_off_date = models.DateField(null=True, blank=True)
     frozen = models.IntegerField(null=True, blank=True)
@@ -155,50 +190,43 @@ class Proceeding(models.Model):
     pr_from_date = models.DateField(null=True, blank=True)
     pr_to_date = models.DateField(null=True, blank=True)
     def __str__(self):
-	return "IETF %d" % (self.meeting_num_id)
+	return "IETF %s" % (self.meeting_num_id)
     class Meta:
         db_table = 'proceedings'
 	ordering = ['?']	# workaround for FK primary key
-    #class Admin:
-    #    pass		# admin site doesn't like something about meeting_num
 
 class SessionConflict(models.Model):
-    group_acronym = models.ForeignKey(Acronym, raw_id_admin=True, related_name='conflicts_set')
-    conflict_gid = models.ForeignKey(Acronym, raw_id_admin=True, related_name='conflicts_with_set', db_column='conflict_gid')
+    group_acronym = models.ForeignKey(Acronym, related_name='conflicts_set')
+    conflict_gid = models.ForeignKey(Acronym, related_name='conflicts_with_set', db_column='conflict_gid')
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num')
     def __str__(self):
-	return "At IETF %d, %s conflicts with %s" % ( self.meeting_num_id, self.group_acronym.acronym, self.conflict_gid.acronym)
+	return "At IETF %s, %s conflicts with %s" % ( self.meeting_num_id, self.group_acronym.acronym, self.conflict_gid.acronym)
     class Meta:
         db_table = 'session_conflicts'
-    class Admin:
-	pass
 
 class SessionName(models.Model):
     session_name_id = models.AutoField(primary_key=True)
-    session_name = models.CharField(blank=True, maxlength=255)
+    session_name = models.CharField(blank=True, max_length=255)
     def __str__(self):
 	return self.session_name
     class Meta:
         db_table = 'session_names'
-    class Admin:
-	pass
+
 class IESGHistory(models.Model):
-    meeting = models.ForeignKey(Meeting, db_column='meeting_num', core=True)
-    area = models.ForeignKey(Area, db_column='area_acronym_id', core=True)
-    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', raw_id_admin=True, core=True)
+    meeting = models.ForeignKey(Meeting, db_column='meeting_num')
+    area = models.ForeignKey(Area, db_column='area_acronym_id')
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
     def __str__(self):
         return "%s (%s)" % (self.person,self.area)
     class Meta:
         db_table = 'iesg_history'
-    class Admin:
-        pass
     
 class MeetingTime(models.Model):
     time_id = models.AutoField(primary_key=True)
-    time_desc = models.CharField(maxlength=100)
-    meeting = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)
+    time_desc = models.CharField(max_length=100)
+    meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     day_id = models.IntegerField()
-    session_name = models.ForeignKey(SessionName)
+    session_name = models.ForeignKey(SessionName,null=True)
     def __str__(self):
 	return "[%d] |%s| %s" % (self.meeting_id, (self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc)
     def sessions(self):
@@ -225,62 +253,56 @@ class MeetingTime(models.Model):
 	    else:
 		s.room_id = 0
 	return sessions
+    def sessions_by_area(self):
+        return [ {"area":session.area()+session.acronym(), "info":session} for session in self.sessions() ]
     def meeting_date(self):
         return self.meeting.get_meeting_date(self.day_id)
+    def registration(self):
+        if hasattr(self, '_reg_info'):
+            return self._reg_info
+        reg = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=1)
+        reg.name = reg.non_session_ref.name
+        self._reg_info = reg
+	return reg
     def reg_info(self):
-	reg_info = NonSession.objects.get(meeting=self.meeting, day_id=self.day_id, non_session_ref=1)
+	reg_info = self.registration()
         if reg_info.time_desc:
-            return "%s %s" % (reg_info.time_desc, reg_info.non_session_ref)
+            return "%s %s" % (reg_info.time_desc, reg_info.name)
         else:
             return ""
-    def morning_br_info(self):
-	br_info = NonSession.objects.get(models.Q(day_id=self.day_id) | models.Q(day_id__isnull=True), meeting=self.meeting, non_session_ref=2)
-        return "%s %s" % (br_info.time_desc, br_info.non_session_ref)
-    def lunch_br_info(self):
-        return NonSession.objects.get(meeting=self.meeting, non_session_ref=3).time_desc
-    def an_br1_info(self):
-	an_br1_info = NonSession.objects.exclude(time_desc="").get(meeting=self.meeting, day_id=self.day_id, non_session_ref=4)
-        if an_br1_info:
-          return "%s %s" % (an_br1_info.time_desc, an_br1_info.non_session_ref)
-        else:
-          return ""
-    def an_br2_info(self):
-	an_br2_info = NonSession.objects.exclude(time_desc="").get(meeting=self.meeting, day_id=self.day_id, non_session_ref=5)
-        if an_br2_info:
-          return "%s %s" % (an_br2_info.time_desc, an_br2_info.non_session_ref)
-        else:
-          return ""
-    def fbreak_info(self):
-        fbreak_info = NonSession.objects.get(meeting=self.meeting, day_id=5, non_session_ref=6)
-        return "%s %s" % (fbreak_info.time_desc, fbreak_info.non_session_ref)
+    def break_info(self):
+        breaks = NonSession.objects.filter(meeting=self.meeting).exclude(non_session_ref=1).filter(models.Q(day_id=self.day_id) | models.Q(day_id__isnull=True)).order_by('time_desc')
+        for brk in breaks:
+            if brk.time_desc[-4:] == self.time_desc[:4]:
+                brk.name = brk.non_session_ref.name
+                return brk
+        return None
+    def is_plenary(self):
+        return self.session_name_id in [9, 10]
     class Meta:
         db_table = 'meeting_times'
-    class Admin:
-	pass
 
 class MeetingRoom(models.Model):
     room_id = models.AutoField(primary_key=True)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
-    room_name = models.CharField(maxlength=255)
+    room_name = models.CharField(max_length=255)
     def __str__(self):
 	return "[%d] %s" % (self.meeting_id, self.room_name)
     class Meta:
         db_table = 'meeting_rooms'
-    class Admin:
-	pass
 
 class WgMeetingSession(models.Model, ResolveAcronym):
     session_id = models.AutoField(primary_key=True)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     group_acronym_id = models.IntegerField()
-    irtf = models.BooleanField()
+    irtf = models.NullBooleanField()
     num_session = models.IntegerField()
-    length_session1 = models.CharField(blank=True, maxlength=100)
-    length_session2 = models.CharField(blank=True, maxlength=100)
-    length_session3 = models.CharField(blank=True, maxlength=100)
-    conflict1 = models.CharField(blank=True, maxlength=255)
-    conflict2 = models.CharField(blank=True, maxlength=255)
-    conflict3 = models.CharField(blank=True, maxlength=255)
+    length_session1 = models.CharField(blank=True, max_length=100)
+    length_session2 = models.CharField(blank=True, max_length=100)
+    length_session3 = models.CharField(blank=True, max_length=100)
+    conflict1 = models.CharField(blank=True, max_length=255)
+    conflict2 = models.CharField(blank=True, max_length=255)
+    conflict3 = models.CharField(blank=True, max_length=255)
     conflict_other = models.TextField(blank=True)
     special_req = models.TextField(blank=True)
     number_attendee = models.IntegerField(null=True, blank=True)
@@ -289,10 +311,10 @@ class WgMeetingSession(models.Model, ResolveAcronym):
     ts_status_id = models.IntegerField(null=True, blank=True)
     requested_date = models.DateField(null=True, blank=True)
     approved_date = models.DateField(null=True, blank=True)
-    requested_by = models.ForeignKey(PersonOrOrgInfo, raw_id_admin=True, db_column='requested_by')
+    requested_by = models.ForeignKey(PersonOrOrgInfo, db_column='requested_by')
     scheduled_date = models.DateField(null=True, blank=True)
     last_modified_date = models.DateField(null=True, blank=True)
-    ad_comments = models.TextField(blank=True)
+    ad_comments = models.TextField(blank=True,null=True)
     sched_room_id1 = models.ForeignKey(MeetingRoom, db_column='sched_room_id1', null=True, blank=True, related_name='here1')
     sched_time_id1 = models.ForeignKey(MeetingTime, db_column='sched_time_id1', null=True, blank=True, related_name='now1')
     sched_date1 = models.DateField(null=True, blank=True)
@@ -302,7 +324,7 @@ class WgMeetingSession(models.Model, ResolveAcronym):
     sched_room_id3 = models.ForeignKey(MeetingRoom, db_column='sched_room_id3', null=True, blank=True, related_name='here3')
     sched_time_id3 = models.ForeignKey(MeetingTime, db_column='sched_time_id3', null=True, blank=True, related_name='now3')
     sched_date3 = models.DateField(null=True, blank=True)
-    special_agenda_note = models.CharField(blank=True, maxlength=255)
+    special_agenda_note = models.CharField(blank=True, max_length=255)
     combined_room_id1 = models.ForeignKey(MeetingRoom, db_column='combined_room_id1', null=True, blank=True, related_name='here4')
     combined_time_id1 = models.ForeignKey(MeetingTime, db_column='combined_time_id1', null=True, blank=True, related_name='now4')
     combined_room_id2 = models.ForeignKey(MeetingRoom, db_column='combined_room_id2', null=True, blank=True, related_name='here5')
@@ -310,6 +332,8 @@ class WgMeetingSession(models.Model, ResolveAcronym):
     def __str__(self):
 	return "%s at %s" % (self.acronym(), self.meeting)
     def agenda_file(self,interimvar=0):
+        if hasattr(self, '_agenda_file'):
+            return self._agenda_file
         irtfvar = 0
         if self.irtf:
             irtfvar = self.group_acronym_id 
@@ -321,10 +345,15 @@ class WgMeetingSession(models.Model, ResolveAcronym):
                     interimvar = 0
         try:
             filename = WgAgenda.objects.get(meeting=self.meeting, group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=interimvar).filename
-            dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
+            if self.meeting_id in WgMeetingSession._dirs:
+                dir = WgMeetingSession._dirs[self.meeting_id]
+            else:
+                dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
+                WgMeetingSession._dirs[self.meeting_id]=dir
             retvar = "%s/agenda/%s" % (dir,filename) 
         except WgAgenda.DoesNotExist:
             retvar = ""
+        self._agenda_file = retvar
         return retvar
     def minute_file(self,interimvar=0):
         irtfvar = 0
@@ -369,75 +398,69 @@ class WgMeetingSession(models.Model, ResolveAcronym):
             return False
     class Meta:
         db_table = 'wg_meeting_sessions'
-    class Admin:
-	pass
+    _dirs = {}
 
 class WgAgenda(models.Model, ResolveAcronym):
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     group_acronym_id = models.IntegerField()
-    filename = models.CharField(maxlength=255)
-    irtf = models.BooleanField()
+    filename = models.CharField(max_length=255)
+    irtf = models.IntegerField()
     interim = models.BooleanField()
     def __str__(self):
-	return "Agenda for %s at IETF %d" % (self.acronym(), self.meeting_id)
+	return "Agenda for %s at IETF %s" % (self.acronym(), self.meeting_id)
     class Meta:
         db_table = 'wg_agenda'
-    class Admin:
-	pass
 
 class Minute(models.Model, ResolveAcronym):
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     group_acronym_id = models.IntegerField()
-    filename = models.CharField(blank=True, maxlength=255)
-    irtf = models.BooleanField()
+    filename = models.CharField(blank=True, max_length=255)
+    irtf = models.IntegerField()
     interim = models.BooleanField()
     def __str__(self):
-	return "Minutes for %s at IETF %d" % (self.acronym(), self.meeting_id)
+	return "Minutes for %s at IETF %s" % (self.acronym(), self.meeting_id)
     class Meta:
         db_table = 'minutes'
-    class Admin:
-	pass
 
 # It looks like Switches was meant for something bigger, but
 # is only used for the agenda generation right now so we'll
 # put it here.
 class Switches(models.Model):
-    name = models.CharField(maxlength=100)
+    name = models.CharField(max_length=100)
     val = models.IntegerField(null=True, blank=True)
     updated_date = models.DateField(null=True, blank=True)
     updated_time = models.TimeField(null=True, blank=True)
+    def updated(self):
+	return datetime.datetime.combine( self.updated_date, self.updated_time )
     def __str__(self):
 	return self.name
     class Meta:
         db_table = 'switches'
-    class Admin:
-	pass
 
 # Empty table, don't pretend that it exists.
 #class SlideTypes(models.Model):
 #    type_id = models.AutoField(primary_key=True)
-#    type = models.CharField(maxlength=255, db_column='type_name')
+#    type = models.CharField(max_length=255, db_column='type_name')
 #    def __str__(self):
 #	return self.type
 #    class Meta:
 #        db_table = 'slide_types'
-#    class Admin:
-#	pass
 
 class Slide(models.Model, ResolveAcronym):
     SLIDE_TYPE_CHOICES=(
 	('1', '(converted) HTML'),
 	('2', 'PDF'),
 	('3', 'Text'),
-	('4', 'PowerPoint'),
+	('4', 'PowerPoint -2003 (PPT)'),
 	('5', 'Microsoft Word'),
+	('6', 'PowerPoint 2007- (PPTX)'),
     )
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     group_acronym_id = models.IntegerField(null=True, blank=True)
     slide_num = models.IntegerField(null=True, blank=True)
     slide_type_id = models.IntegerField(choices=SLIDE_TYPE_CHOICES)
-    slide_name = models.CharField(blank=True, maxlength=255)
-    irtf = models.BooleanField()
+    slide_name = models.CharField(blank=True, max_length=255)
+    irtf = models.IntegerField()
     interim = models.BooleanField()
     order_num = models.IntegerField(null=True, blank=True)
     in_q = models.IntegerField(null=True, blank=True)
@@ -446,7 +469,8 @@ class Slide(models.Model, ResolveAcronym):
     def file_loc(self):
         dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
         if self.slide_type_id==1:
-            return "%s/slides/%s-%s/sld1.htm" % (dir,self.acronym(),self.slide_num)
+            #return "%s/slides/%s-%s/sld1.htm" % (dir,self.acronym(),self.slide_num)
+            return "%s/slides/%s-%s/%s-%s.htm" % (dir,self.acronym(),self.slide_num,self.acronym(),self.slide_num)
         else:
             if self.slide_type_id == 2:
                 ext = ".pdf"
@@ -456,10 +480,34 @@ class Slide(models.Model, ResolveAcronym):
                 ext = ".ppt"
             elif self.slide_type_id == 5:
                 ext = ".doc"
+            elif self.slide_type_id == 6:
+                ext = ".pptx"
             else:
                 ext = ""
             return "%s/slides/%s-%s%s" % (dir,self.acronym(),self.slide_num,ext)
     class Meta:
         db_table = 'slides'
-    class Admin:
-	pass
+
+class WgProceedingsActivities(models.Model, ResolveAcronym):
+    id = models.AutoField(primary_key=True)
+    #group_acronym_id = models.IntegerField(null=True, blank=True)
+    group_acronym = models.ForeignKey(Acronym)
+
+    meeting = models.ForeignKey(Meeting, db_column='meeting_num')
+    activity = models.CharField(blank=True, max_length=255)
+    act_date =  models.DateField(null=True, blank=True)
+    act_time = models.CharField(blank=True, max_length=100)
+    act_by = models.ForeignKey(PersonOrOrgInfo, db_column='act_by')
+    irtf = None
+
+    def __str__(self):
+	#return "IETF%d: %s slides (%s)" % (self.meeting_id, self.acronym(), self.activity)
+        return "this is WgProceedingsActivities.__str__"
+    class Meta:
+        db_table = 'wg_proceedings_activities'
+        verbose_name = "WG Proceedings Activity"
+        verbose_name_plural = "WG Proceedings Activities"
+
+# changes done by convert-096.py:changed maxlength to max_length
+# removed core
+# removed raw_id_admin

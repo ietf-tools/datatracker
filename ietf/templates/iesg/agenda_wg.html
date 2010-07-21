@@ -1,0 +1,67 @@
+{% comment %} 
+Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+{% if title2_first %}{% if title1_first %}<h2>{{ title1 }}</h2>
+{% endif %}
+<h3>{{ title2 }}</h3>
+{% endif %}<h4>{{ title3 }}</h4>
+
+{% for wg in section_wgs %}
+{% if forloop.first %}
+<table>
+<tr><th>Area</th><th>Date</th><th></th></tr>
+{% endif %}
+
+<tr>
+<td>{{wg.area|upper}}</td>
+<td>{{ wg.obj.status_date|date:"M d"}}</td>
+<td>
+<a href="http://www.ietf.org/iesg/evaluation/{{wg.obj.group_acronym}}-charter.txt">
+{{ wg.obj.group_acronym.name|escape }} ({{wg.obj.group_acronym}})
+</a>
+</td>
+</tr>
+{% if wg.obj.token_name %}
+<tr><td></td><td>Token:</td><td>{{ wg.obj.token_name|escape }}</td></tr>
+{% endif %}
+{% if wg.obj.note %}
+<tr><td></td><td></td><td>Note: {{wg.obj.note|escape}}</td></tr>
+{% endif %}
+
+{% if forloop.last %}
+</table>
+{% endif %}
+
+{% empty %}
+<p>NONE</p>
+{% endfor %}

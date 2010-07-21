@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Telechat Dates{% endblock %}
+
+{% block content %}
+<h1>Manage Telechat Dates</h1>
+
+<form action="" method="POST">
+<table>
+{% for f in form %}
+<tr>
+  <td>{{ f.label_tag }}</td>
+  <td>{{ f }}</td>
+  <td style="font-weight:bold;color:#a00">{% if not f.field.thursday %}NOT THURSDAY{% endif %}</td>
+</tr>
+{% endfor %}
+</table>
+
+<div class="actions">
+  <input type="reset" value="Reset"/>
+  <input type="submit" value="Save"/>
+  <input style="margin-left: 8px" type="submit" name="rollup_dates" value="Rollup"/>
+</div>
+
+</form>
+{% endblock %}

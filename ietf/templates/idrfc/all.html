@@ -1,0 +1,86 @@
+{% comment %}
+Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. #}
+{% endcomment %}
+<html>
+<head>
+<title>All Internet-Drafts and RFCs</title>
+</head>
+<body>
+
+<h1>All Internet-Drafts and RFCs</h1>
+
+<p>This page lists all Internet-Drafts and RFCs, grouped by
+status. The main purpose of this page is to ensure all pages can be
+found by search engines. For normal use, it is recommended to use
+the <a href="/doc/">search page</a> instead.</p>
+
+<p>The following files are also available for download:</p>
+<ul>
+<li><a href="http://www.ietf.org/id/1id-index.txt">Active Internet-Drafts (text)</a></li>
+<li><a href="http://www.ietf.org/id/1id-abstracts.txt">Active Internet-Drafts with abstracts (text)</a></li>
+<li><a href="http://www.ietf.org/id/all_id2.txt">All Internet-Drafts (tab-separated)</a>, <a href="http://www.ietf.org/id/all_id.txt">older version (with fewer fields)</a></li>
+<li><a href="http://www.rfc-editor.org/rfc/rfc-index.txt">All RFCs (text)</a></li>
+<li><a href="http://www.rfc-editor.org/rfc/rfc-index.xml">All RFCs (XML)</a></li>
+</ul>
+
+<h2 id="active">Active Internet-Drafts</h2>
+
+<p><a href="/doc/active/">More information about active Internet-Drafts</a></p>
+
+<p>
+{% for doc in active %}<a href="/doc/{{ doc.filename }}/">{{ doc.filename }}</a><br/>
+{% endfor %}
+</p>
+
+<h2 id="rfc">Internet-Drafts Published as RFCs</h2>
+
+<p>
+{% for doc in rfc1 %}<a href="/doc/{{ doc.filename }}/">{{ doc.filename }}</a> (<a href="/doc/rfc{{doc.rfc_number}}/">RFC {{ doc.rfc_number }}</a>)<br/>
+{% endfor %}
+</p>
+
+<h2 id="rfc2">RFCs Without Internet-Draft Information</h2>
+
+<p>
+{% for doc in rfc2 %}<a href="/doc/rfc{{ doc.rfc_number }}/">RFC {{ doc.rfc_number }}</a>{% if doc.draft %} ({{ doc.draft }}?){% endif %}<br/>
+{% endfor %}
+</p>
+
+<h2 id="dead">Expired/Withdrawn/Replaced Internet-Drafts</h2>
+
+<p>
+{% for doc in dead %}<a href="/doc/{{ doc.filename }}/">{{ doc.filename }}</a> ({{ doc.status.status}})<br/>
+{% endfor %}
+</p>
+
+</body></html>

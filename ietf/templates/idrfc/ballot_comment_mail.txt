@@ -1,0 +1,6 @@
+{% if discuss %}Discuss:
+{{ discuss|safe }}
+
+{% endif %}{% if comment %}Comment:
+{{ comment|safe }}
+{% endif %}

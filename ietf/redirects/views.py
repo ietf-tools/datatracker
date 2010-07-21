@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.http import HttpResponsePermanentRedirect,Http404
+from django.http import HttpResponsePermanentRedirect, Http404, BadHeaderError
+from django.shortcuts import get_object_or_404
 import re
 
 from ietf.redirects.models import Redirect, Command
@@ -8,10 +9,7 @@ from ietf.redirects.models import Redirect, Command
 def redirect(request, path="", script=""):
     if path:
 	script = path + "/" + script
-    try:
-	redir = Redirect.objects.get(cgi=script)
-    except Redirect.DoesNotExist:
-	raise Http404
+    redir = get_object_or_404(Redirect, cgi=script)
     url = "/" + redir.url + "/"
     (rest, remove) = (redir.rest, redir.remove)
     remove_args = []
@@ -27,7 +25,7 @@ def redirect(request, path="", script=""):
 	if request.REQUEST.has_key(fc[0]):
 	    remove_args.append(fc[0])
 	    num = re.match('(\d+)', request.REQUEST[fc[0]])
-	    if num and int(num.group(1)):
+	    if (num and int(num.group(1))) or (num is None):
 		cmd = flag
 	    break
     #
@@ -56,7 +54,11 @@ def redirect(request, path="", script=""):
 	else:
 	    remove = ""
     try:
-	url += rest % request.REQUEST
+        # This throws exception (which gets caught below) if request 
+        # contains non-ASCII characters. The old scripts didn't support 
+        # non-ASCII characters anyway, so there's no need to handle 
+        # them fully correctly in these redirects.
+	url += str(rest % request.REQUEST)
 	url += "/"
     except:
 	# rest had something in it that request didn't have, so just
@@ -80,4 +82,7 @@ def redirect(request, path="", script=""):
 	    get.pop(arg)
     if get:
 	url += '?' + get.urlencode()
-    return HttpResponsePermanentRedirect(url)
+    try:
+        return HttpResponsePermanentRedirect(url)
+    except BadHeaderError, e:
+        raise Http404

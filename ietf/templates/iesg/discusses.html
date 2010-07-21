@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% comment %}
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+
+{% load ballot_icon %}
+{% load ietf_filters %}
+
+{% block title %}IESG Discuss Positions{% endblock %}
+
+{% block morecss %}
+.discuss_hidden {display:none;}
+{% endblock %}
+
+{% block content %}
+<h1>IESG Discuss Positions</h1>
+
+{% if user|in_group:"Area_Director" %}
+<div style="padding:4px 0;">
+Show: <input type="radio" name="discuss_show" checked="checked" value="all" id="discusses_all" onclick="radio_changed();"/>All
+<input type="radio" name="discuss_show" value="byme" id="discusses_byme" onclick="radio_changed();"/>By me
+<input type="radio" name="discuss_show" value="forme" id="discusses_forme" onclick="radio_changed();"/>For me
+</div>
+{% endif %}
+
+<table class="ietf-table ietf-doctable">
+<tr><th class="doc">Document</th><th class="status" colspan="2">Status</th><th class="ad">Area Director</th><th>Discusses</th></tr>
+{% for doc in docs %}
+<tr class="discuss_row {% cycle oddrow,evenrow %} {% if user|in_group:"Area_Director" %}{% if doc|my_position:user|equal:"Discuss" %}discuss_byme{% else %}discuss_notbyme{% endif %} {% ifequal user.get_profile.person|lower doc.ad_name|lower %}discuss_forme{%else%}discuss_notforme{%endifequal%}{% endif %}">
+<td class="doc">{{ doc.displayname_with_link|safe }}</td>
+{% include "idrfc/status_columns.html" %}
+<td class="ad">{{ doc.ad_name|default:"" }}</td>
+<td>
+{% for po in doc.ietf_process.iesg_ballot.get_discuss %}
+{{po.ad_name}} ({% if po.discuss_date %}{{po.discuss_date|timesince_days}}{%endif%} days ago{% if doc.is_id_wrapper %}{% ifnotequal po.discuss_revision doc.latest_revision %} for -{{po.discuss_revision}}{% endifnotequal %}{% endif %})<br/>
+{% endfor %}
+</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock content %}
+
+{% block scripts %}
+{% if user|in_group:"Area_Director" %}
+function update_even_odd() {
+  var els = YAHOO.util.Dom.getElementsByClassName("discuss_row","tr");
+  var j = 1;
+  for (var i = 0; i < els.length; i++) { 
+    if (!YAHOO.util.Dom.hasClass(els[i], "discuss_hidden")) {
+      if ((j % 2) == 1) {
+        YAHOO.util.Dom.replaceClass(els[i], "evenrow", "oddrow"); 
+      } else {
+        YAHOO.util.Dom.replaceClass(els[i], "oddrow", "evenrow"); 
+      }
+      j++;
+    }
+  }
+}
+function radio_changed() {
+  var els1 = YAHOO.util.Dom.getElementsByClassName("discuss_notbyme","tr");
+  YAHOO.util.Dom.removeClass(els1, "discuss_hidden");
+  var els2 = YAHOO.util.Dom.getElementsByClassName("discuss_notforme","tr");
+  YAHOO.util.Dom.removeClass(els2, "discuss_hidden");
+  if (document.getElementById("discusses_byme").checked) {
+    YAHOO.util.Dom.addClass(els1, "discuss_hidden");
+    location.hash = "#byme";
+  } else if (document.getElementById("discusses_forme").checked) {
+    YAHOO.util.Dom.addClass(els2, "discuss_hidden");
+    location.hash = "#forme";
+  } else {
+    location.hash = "#";
+  }
+  update_even_odd();
+}
+var url = location.href.split('#'); 
+if (url[1] == 'byme') {
+  document.getElementById("discusses_byme").checked = true;
+  radio_changed();
+} else if (url[1] == 'forme') {
+  document.getElementById("discusses_forme").checked = true;
+  radio_changed();
+}
+{% endif %}{# user in_group #}
+{% endblock scripts %}

@@ -1,0 +1,89 @@
+{% comment %}
+Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+
+{% endcomment %}
+{% load wg_menu %} 
+{% load ietf_filters %}
+<ul>
+{% if user|in_group:"Area_Director" %}
+<li class="sect first">AD Dashboard</li>
+  <li><a href="{% url doc_search_by_ad name=user.get_profile.person.full_name_as_key %}">My Documents</a></li>
+  <li><a href="{% url ietf.iesg.views.agenda_documents %}">Next Telechat</a></li>
+  <li><a href="{% url ietf.iesg.views.discusses %}">Discusses</a></li>
+  <li><a href="{% url iesg_working_group_actions %}">Working Groups</a></li>
+{% endif %}
+{% if user|in_group:"Secretariat" %}
+<li class="sect first">Secretariat</li>
+  <li><a href="{% url ietf.iesg.views.telechat_dates %}">Telechat Dates</a></li>
+  <li><a href="{% url iesg_working_group_actions %}">Working Groups</a></li>
+{% endif %}
+<li class="sect{% if not user|in_group:"Area_Director,Secretariat" %} first{% endif %}">Working Groups</li>
+
+  <li style="padding-bottom:0;"><div id="wgs" class="yuimenu"><div class="bd" style="border:0;">
+  <ul class="first-of-type" style="padding:0;">
+  <!-- begin wg_menu -->
+  {% wg_menu %}
+  <!-- end wg_menu -->
+  </ul>
+  </div></div></li>
+  
+  <li style="padding-top:0;"><a href="/wg/">Active WGs</a></li>
+  <li><a href="http://tools.ietf.org/wg/concluded">Concluded WGs</a></li>
+  <li><a href="http://www.ietf.org/list/nonwg.html">Non-WG Lists</a></li>
+ 
+<li class="sect">Drafts&nbsp;&amp;&nbsp;RFCs</li>
+  <li><a href="/doc/">Search</a></li>
+  <li><form action="/doc/search/" method="post" style="padding-bottom:0;margin-bottom:0;"><input type="text" style="margin-left:10px; width:100px; border:1px solid #89d;" name="name" /><input type="hidden" name="activeDrafts" value="on"/><input type="hidden" name="rfcs" value="on"/></form></li>
+  <li><a href="https://datatracker.ietf.org/idst/upload.cgi">Submit a draft</a></li> 
+
+
+<li class="sect">Meetings</li>
+  <li><a href="/meeting/agenda/">Agenda</a></li>
+  <li><a href="/meeting/">Materials</a></li>
+  <li><a href="http://www.ietf.org/meeting/proceedings.html">Past Proceedings</a></li>
+  <li><a href="http://www.ietf.org/meeting/upcoming.html">Upcoming</a></li>
+
+<li class="sect">Other Documents</li>
+  <li><a href="/ipr/">IPR Disclosures</a></li>
+  <li><a href="/liaison/">Liaison&nbsp;Statements</a></li>
+  <li><a href="/iesg/agenda/">IESG Agenda</a></li>
+  
+<li class="sect">Related Sites</li>
+  <li><a href="http://www.ietf.org/">Main IETF site</a></li>
+  <li><a href="http://tools.ietf.org/">IETF tools</a></li>
+  <li><a href="http://www.iab.org/">IAB</a></li>
+  <li><a href="http://www.rfc-editor.org/">RFC Editor</a></li>
+  <li><a href="http://iaoc.ietf.org">IASA/IAOC/Trust</a></li>
+  <li><a href="http://www.iana.org/">IANA</a></li>
+  <li><a href="http://www.irtf.org/">IRTF</a></li>
+</ul>

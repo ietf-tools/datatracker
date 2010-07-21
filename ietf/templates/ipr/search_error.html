@@ -1,17 +1,13 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
-{% block doctype %}{% endblock %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% block title %}IPR Search Result Error{% endblock %}
 {% block content %}
-<blockquote>
-   <h1>Error</h1>
-   <p>
-      Your request was not processed due to the following error(s):
-   </p>
+<h1>IPR Search Result Error</h1>
+
+<p>Your request was not processed due to the following error(s):</p>
    <p>
       <i>{{ error }}</i>
    </p>
-</blockquote>
 {% endblock %}
 
 

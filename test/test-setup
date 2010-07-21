@@ -25,10 +25,11 @@ say "Setting up a local Django for the test suite"
 cd $build
 
 django=$(py_module_path "django")
-rsync -av $django $build/test/lib/
+rsync -a $django $build/test/lib/ >&2
+
 cd $build/test/lib
 for patch in $build/test/*.patch; do
-    patch -p 3 -t -N < $patch
+    patch -p 3 -t -N < $patch >&2
 done
 
 # Database setup

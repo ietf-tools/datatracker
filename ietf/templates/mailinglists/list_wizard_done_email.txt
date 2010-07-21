@@ -1,8 +1,0 @@
-{% load ietf_filters %}{% filter wordwrap:"72" %}
-The Secretariat has received a request from {{ list.requestor }}
-to {% filter allononeline %}{% include "mailinglists/list_type_message2.txt" %}{% endfilter %}.
-Please use the following URL to review and approve or deny this request:
-{# https is only for production #}https://{{ site.domain }}{% url ietf.mailinglists.views.list_approve list.mailing_list_id %}
-{% endfilter %}
-
-{% include "mailinglists/list_summary.txt" %}

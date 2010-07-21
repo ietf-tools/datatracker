@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% comment %}
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+
+{% load ietf_filters %}
+{% block morecss %}
+.metabox { width: 99%; margin-top:8px; padding:4px; margin-bottom:1em; }
+#metatable { border: 0; border-spacing: 0; }
+#metatable tr { vertical-align:top ;}
+#metatable .post-rfc { font-style: italic; color: #004000; }
+.comment_toggle { text-decoration: underline; color: blue; }
+.comment_date { white-space: nowrap; }
+
+div.diffTool { padding: 8px 4px; margin: 8px 0;}
+.diffTool label { float:left; width:50px; }
+
+.markup_draft pre {line-height: 1.2em; margin: 0; }
+.m_hdr, .m_ftr { color: #808080; }
+.m_ftr { border-bottom: 1px solid #a0a0a0; }
+.m_h { font-family: arial; font-weight:bold;}
+{% endblock %}
+
+{% block pagehead %}
+{% if doc.in_ietf_process %}
+<link rel="alternate" type="application/atom+xml" href="/feed/comments/{% if info.is_rfc %}rfc{{doc.rfc_number}}{% else %}{{doc.draft_name}}{% endif %}/" />
+{% endif %}
+<meta name="description" content="{% block doc_meta_description %}{% endblock %}" />
+{% endblock %}
+
+{% block content %}
+<h1>{% block doc_h1 %}{% endblock %}</h1>
+
+<div id="mytabs" class="yui-navset">
+<ul class="yui-nav">
+  <li class="selected"><a href="#doc"><em>Document</em></a></li>
+  <li{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}{%else%} class="disabled"{%endif%}><a href="#ballot"><em>IESG Evaluation Record</em></a></li>
+  <li {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}{%else%}class="disabled" {%endif%}><a href="#writeup"><em>IESG Writeups</em></a></li>
+  <li><a href="#history"><em>History</em></a></li>
+</ul>
+<div class="yui-content">
+
+<div id="doc">
+<div class="ietf-box metabox">
+<table id="metatable">
+{% block doc_metatable %}{% endblock %}
+</table>
+
+<div style="padding-top:6px;padding-bottom:6px;padding-left:2px;">
+{% block doc_metalinks %}{% endblock %}
+</div>
+
+{% block doc_metabuttons %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+<div style="padding-bottom:2px;">
+{% ifequal doc.draft_status "Expired" %}
+{% if not doc.resurrect_requested_by %}
+<span id="doc_request_resurrect_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_request_resurrect name=doc.draft_name %}">Request resurrect</a></span></span>
+{% endif %}
+{% if user|in_group:"Secretariat" %}
+<span id="doc_resurrect_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_resurrect name=doc.draft_name %}">Resurrect</a></span></span>
+{% endif %}
+{% else %}
+{% if doc.in_ietf_process %}
+<span id="doc_edit_state_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_change_state name=doc.draft_name %}">Change state</a></span></span>
+
+<span id="doc_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_edit_info name=doc.draft_name %}">Edit</a></span></span>
+{% if not doc.ietf_process_has_iesg_ballot %}
+<span id="doc_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_ballot_writeups name=doc.draft_name %}">Issue Ballot</a></span></span>
+{% endif %}
+{% else %}
+<span id="doc_add_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_edit_info name=doc.draft_name %}">Add</a></span></span>
+{% endif %}
+{% endifequal %}
+
+{# links to old system #}
+<span id="doc_edit_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child">
+{% if doc.in_ietf_process %}
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=view_id&amp;{% if info.is_rfc %}dTag={{doc.rfc_number}}&amp;rfc_flag=1{% else %}dTag={{doc.tracker_id}}{% endif %}" rel="nofollow" target="_blank">Edit (old IESG Tracker)</a>
+{% else %}
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=add_id_confirm&amp;{% if info.is_rfc %}dTag={{doc.rfc_number}}&amp;rfc_flag=1{% else %}dTag={{doc.tracker_id}}&amp;rfc_flag=0{% endif %}&amp;ballot_id=0" rel="nofollow" target="_blank">Add (old IESG Tracker)</a>
+{% endif %}
+</span></span>
+{# end links to old #}
+
+</div>
+{% endif %}{# if user in group #}
+{% endblock doc_metabuttons%}
+</div> <!-- metabox -->
+</div> <!-- doc -->
+
+<div id="ballot">
+<div id="ballot_content">
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot  %}
+{% with 1 as doc_ballot_edit_button %}
+{% with doc.ietf_process.iesg_ballot as ballot %}
+{% include "idrfc/doc_ballot.html" %}
+{% endwith %}
+{% endwith %}
+{% endif %}
+</div>
+</div> 
+
+<div id="writeup">
+<div id="writeup_content">
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+<div style="margin-bottom:8px;">
+<span id="doc_writeup_edit_button" class="yui-button yui-link-button"><span class="first-child">
+<a href="{% url doc_ballot_writeups name=doc.draft_name %}">Ballot write-ups</a>
+</span></span></div>
+{% endif %}{# user in_group #}
+---- following is a DRAFT of message to be sent AFTER approval ---
+<pre>
+{{ doc.ietf_process.iesg_ballot.approval_text|escape|urlize }}
+</pre>
+<pre>
+{{ doc.ietf_process.iesg_ballot.ballot_writeup|escape|urlize }}
+</pre>
+{% endif %}
+</div>
+</div> 
+
+<div id="history">
+<div id="history_content">
+{% if not info.is_rfc %}
+{% include "idrfc/doc_diffs.html" %}
+{% endif %}
+<h2 style="margin-top:1em;">Document history</h2>
+{% if user|in_group:"Area_Director,Secretariat" and doc.in_ietf_process %}
+<div style="margin-bottom:8px" id="history_actions">
+  <span id="doc_add_comment_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_add_comment name=doc.draft_name %}">Add comment</a></span></span>
+</div>
+{% endif %}
+
+{% include "idrfc/doc_history.html" %}
+</div>
+</div> 
+
+</div> <!-- yui-content -->
+</div> <!-- mytabs -->
+
+<script type="text/javascript">
+//<![CDATA[
+document.getElementById('ballot_content').style.display = 'none';
+document.getElementById('writeup_content').style.display = 'none';
+document.getElementById('history_content').style.display = 'none';
+//]]>
+</script>
+
+<div id="rfcText1">
+{% block doc_text1 %}{% endblock %}
+</div> <!-- rfcText1 -->
+{% endblock %}{# content #}
+
+{% block scripts %}
+var tabView = new YAHOO.widget.TabView('mytabs');
+tabView.subscribe('activeIndexChange', function(e) {
+if (e.newValue == 0) {
+document.getElementById('rfcText1').style.display = 'block';
+document.getElementById('rfcText2').style.display = 'block';
+} else {
+document.getElementById('rfcText1').style.display = 'none';
+document.getElementById('rfcText2').style.display = 'none';
+} });
+document.getElementById('writeup_content').style.display = 'block';
+document.getElementById('ballot_content').style.display = 'block';
+document.getElementById('history_content').style.display = 'block';
+
+function toggleComment(n) {
+    var el = document.getElementById("commentF"+n);
+    var el2 = document.getElementById("commentS"+n);
+    var el3 = document.getElementById("commentT"+n);
+    if (el.style.display == 'none') {
+        el.style.display = 'block';
+        el2.style.display = 'none';
+        el3.innerHTML = ""; //[hide]";
+    } else {
+        el.style.display = 'none';
+        el2.style.display= 'block';
+        el3.innerHTML = "[show all]";
+    }
+}
+{% endblock scripts %}
+
+{% block content_end %}
+<div id="rfcText2">
+{% block doc_text2 %}{% endblock %}
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+// based on http://blog.davglass.com/files/yui/tab7/
+var url = location.href.split('#'); 
+if (url[1]) { 
+  url[1] = "#"+url[1];
+  var tabs = tabView.get('tabs'); 
+  for (var i = 0; i < tabs.length; i++) { 
+    if (url[1].indexOf(tabs[i].get('href')) == 0) {
+      tabView.set('activeIndex', i);
+      break; 
+     } 
+  } 
+} 
+//]]>
+</script>
+
+{% endblock content_end %}

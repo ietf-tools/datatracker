@@ -1,0 +1,113 @@
+{% extends "idrfc/doc_main.html" %}
+{% comment %}
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+{% load ietf_filters %}
+
+{% block title %}RFC {{ doc.rfc_number }}{% endblock %}
+{% block doc_meta_description %}{{ doc.title }} ({{doc.maturity_level}}, {{doc.publication_date|date:"Y"}}){% if doc.obsoleted_by %}; Obsoleted by {{doc.obsoleted_by}}{% endif %}{% endblock %}
+{% block doc_h1 %}{{ doc.title|escape }}<br/>RFC {{ doc.rfc_number }}{% endblock %}
+
+{% block doc_metatable %}
+<tr><td style="width:18ex;">Document type:</td><td>RFC - {{ doc.maturity_level }} {% if doc.stream_name %}({{ doc.stream_name }}){% endif %}
+{% if doc.obsoleted_by %}<br />Obsoleted by {{ doc.obsoleted_by|urlize_ietf_docs }}{%endif %}
+{% if doc.updated_by %}<br />Updated by {{ doc.updated_by|urlize_ietf_docs }}{%endif %}
+{% if doc.obsoletes %}<br />Obsoletes {{ doc.obsoletes|urlize_ietf_docs }}{%endif %}
+{% if doc.updates %}<br />Updates {{ doc.updates|urlize_ietf_docs }}{%endif %}
+{% if doc.also %}<br />Also Known As {{ doc.also|urlize_ietf_docs }}{%endif %}
+{% if doc.draft_name %}<br />Was <a href="/doc/{{ doc.draft_name}}/">{{doc.draft_name}}</a>{% endif %}
+{% if doc.has_errata %}<br /><a href="http://www.rfc-editor.org/errata_search.php?rfc={{doc.rfc_number}}" rel="nofollow">Errata</a>{% endif %}
+</td></tr>
+<tr><td>Published:</td><td> {{ doc.publication_date|date:"Y-m"|default:"(data missing)" }}</td></tr>
+{% if doc.in_ietf_process %}
+<tr class="post-rfc"><td colspan="2">* This information refers to IESG processing after the RFC was initially published</td></tr>
+<tr class="post-rfc"><td>State:</td><td> 
+{{ doc.friendly_state|safe }} (IESG: {{ doc.ietf_process.state}})
+{% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}
+</td></tr>
+<tr class="post-rfc"><td>Intended status:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.intended_maturity_level|default:"-"  }}{% else %}-{%endif%}</td></tr>
+<tr class="post-rfc"><td>Responsible AD:</td><td>{{ doc.ietf_process.ad_name|default:"-"|escape }}</td></tr>
+{% if doc.ietf_process.iesg_note %}<tr class="post-rfc"><td>IESG Note:</td><td>{{ doc.ietf_process.iesg_note|escape }}</td></tr>{% endif %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+<tr class="post-rfc"><td>Send notices to:</td><td>{{ doc.ietf_process.state_change_notice_to}}</td></tr>
+{% endif %}{# if user|in_group:... #}
+
+{% endif %}
+<tr><td>Other versions:</td><td>
+{% if info.has_txt or info.has_ps or info.has_pdf %}
+{% if info.has_txt %}
+<a href="http://www.rfc-editor.org/rfc/rfc{{doc.rfc_number}}.txt">plain text</a>,
+{% endif %}
+{% if info.has_ps %}
+<a href="http://www.rfc-editor.org/rfc/rfc{{doc.rfc_number}}.ps">ps</a>,
+{% endif %}
+{% if info.has_pdf %}
+<a href="http://www.rfc-editor.org/rfc/rfc{{doc.rfc_number}}.pdf">pdf</a>,
+{% else %}
+{% if info.has_txt %}
+<a href="http://www.rfc-editor.org/rfc/pdfrfc/rfc{{doc.rfc_number}}.txt.pdf">pdf</a>,
+{% endif %}
+{% endif %}
+{% if info.has_txt %}
+<a href="http://tools.ietf.org/html/rfc{{doc.rfc_number}}">html</a>
+{% endif %}
+{% else %}
+(not online)
+{% endif %}
+</td></tr>
+{% endblock doc_metatable %}
+
+{% block doc_metalinks %}
+ <a href="/ipr/search/?option=rfc_search&amp;rfc_search={{doc.rfc_number}}" rel="nofollow">IPR Disclosures</a>
+| <a href="http://www.fenron.net/~fenner/ietf/deps/index.cgi?dep=rfc{{doc.rfc_number}}" rel="nofollow">Dependencies to this RFC</a>
+{% endblock %}
+
+{% block doc_text1 %}
+{% if info.has_txt %}
+<div class="markup_draft">
+{{ content1|safe }}
+</div>
+{% else %}
+{% if info.has_pdf or info.has_ps %}
+<p>This RFC is not available in plain text format.</p>
+{% else %}
+<p>This RFC is not currently available online.</p>
+{% endif %}
+{% endif %}
+{% endblock %}{# doc_text1 #}
+
+{% block doc_text2 %}
+<div class="markup_draft">
+{{ content2|safe }}
+</div>
+{% endblock %}{# doc_text2 #}

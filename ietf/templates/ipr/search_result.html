@@ -1,13 +1,11 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
+{% block morecss %}
+{% endblock %}
 {% block doctype %}{% endblock %}
 {% block title %}IPR Search Result{% endblock %}
 {% block content %}
-	 <center>
-	    <h2>IPR Disclosures</h2>
-	 </center>
-	 <hr>
-	 <blockquote>
+<h1>IPR Disclosures</h1>
 	    {% block search_result %}
 	    <table cellpadding="1" cellspacing="0" border="0">
 
@@ -21,7 +19,7 @@
 		  <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
 		  {% block iprlist %}
 		     {% for ipr in iprs %}
-		     <tbody bgcolor="#{% cycle dadada,eaeaea as bgcolor %}">
+		     <tbody bgcolor="#{% cycle eeeeee,dddddd as bgcolor %}">
 			<tr valign="top">
 			   <td colspan="3">
 			      {% block intro_prefix %}IPR that was submitted by <b><i>{{ q }}</i></b>, and{% endblock %}
@@ -32,7 +30,7 @@
 				    is related to
 				    {% for item in ipr.docs %}
 				       {% ifequal item ipr.last_draft %}<b> and </b>{% endifequal %}
-				       <b><i>{{ item.document }}, "{{ item.document.title }},"</i></b>{% if item.document.related %}, {{ item.document.relation }} {{ item.document.related  }}, "{{ item.document.related.title }}"{% endif %}
+				       <b><i>{{ item.document }}, "{{ item.document.title|escape }},"</i></b>{% if item.document.related %}, {{ item.document.relation }} {{ item.document.related  }}, "{{ item.document.related.title|escape }}"{% endif %}
 				    {% endfor %}
 				 {% endif %}
 			      {% endblock %}
@@ -42,7 +40,7 @@
 			<tr valign="top">
 			   <td width="100">{{ ipr.submitted_date }}</td>
 			   <td width="90"><li>ID # {{ ipr.ipr_id }}</li></td>
-			   <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a></td>
+			   <td><a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title|escape }}"</a></td>
 			</tr>
 			{% for item in ipr.updates.all %}
 			{% ifnotequal item ipr %}
@@ -50,8 +48,8 @@
 			   <td width="100">{{ item.updated.submitted_date }}</td>
 			   <td width="90"><li>ID # {{ item.updated.ipr_id }}</li></td>
 			   <td>
-			      IPR disclosure ID# {{ ipr.ipr_id }} <a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title }}"</a>
-			      Updates <a href="{% url ietf.ipr.views.show ipr_id=item.ipr_id %}">{{ item.updated.title }}</a>
+			      IPR disclosure ID# {{ ipr.ipr_id }} <a href="{% url ietf.ipr.views.show ipr_id=ipr.ipr_id %}">"{{ ipr.title|escape }}"</a>
+			      Updates <a href="{% url ietf.ipr.views.show ipr_id=item.ipr_id %}">{{ item.updated.title|escape }}</a>
 			   </td>
 			</tr>
 			{% endifnotequal %}
@@ -64,9 +62,8 @@
 	    {% endblock %}
 	    <hr><br>
 
-	    <a href="{% url ietf.ipr.search.search %}"><img src="/images/blue.gif" hspace="3" border="0">IPR Search Main Page</a><br>
-	    <a href="{% url ietf.ipr.views.showlist %}"><img src="/images/blue.gif" hspace="3" border="0">IPR Disclosure Page</a>
+	    <a href="{% url ietf.ipr.search.search %}">IPR Search Main Page</a><br>
+	    <a href="{% url ietf.ipr.views.showlist %}">IPR Disclosure Page</a>
 	    <br>
-	 </blockquote>
 {% endblock %}
 

@@ -1,0 +1,40 @@
+{% load ietf_filters %}{% filter linebreaks_lf %}{% autoescape off %}AGENDA PACKAGE FOR {{ date }} IESG TELECHAT
+
+Contents:
+
+1. Roll Call and Dial-In Instructions
+   https://www.ietf.org/iesg/internal/rollcall.txt
+2. Agenda
+   http://datatracker.ietf.org/iesg/agenda/?private
+3. Management Item Details
+   https://datatracker.ietf.org/cgi-bin/display_news.cgi?template_type=3
+4. Previous minutes
+   https://www.ietf.org/iesg/internal/minutes.txt
+
+------------------------------------------------------------------------
+1. ROLL CALL AND DIAL-IN INSTRUCTIONS
+------------------------------------------------------------------------
+
+{{ roll_call }}
+
+------------------------------------------------------------------------
+2. AGENDA
+------------------------------------------------------------------------
+{% include "iesg/agenda.txt" %}
+------------------------------------------------------------------------
+3. MANAGEMENT ITEM DETAILS
+------------------------------------------------------------------------
+{% for m in mgmt %}
+6.{{forloop.counter}} {{m.title}}
+
+{{m.text|wordwrap:"76"}}
+{% endfor %}
+
+------------------------------------------------------------------------
+4. PREVIOUS MINUTES
+------------------------------------------------------------------------
+
+{{ minutes }}
+
+------------------------------------------------------------------------
+{% endautoescape %}{% endfilter %}

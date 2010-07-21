@@ -1,47 +1,17 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
-{% load versiontags %}
-
+{% block title %}404 Not Found{% endblock %}
 {% block content %}
-<center>
-<img src="/images/ietflogo2e.gif" height="80" width="140">
-<br clear=all>
 
-<h2>The Internet Engineering Task Force</h2>
-<table border=0 cellspacing=5 cellpadding=5>
+<img src="/images/ietflogo2e.gif" height="80" width="140"/>
 
-<br>
-<center><img alt="" src="/images/blue-line.jpg"></center>
-<br clear=all>
 <h2>The page you were looking for couldn't be found.</h2>
-<div style="width:50%">
-   The requested URL was not found on this server. If you entered the URL
-   manually please check your spelling and try again.
-</div>
-<br>
-<br>
 
-   If you think this is a server error, please contact <a
-   href="mailto:webtools@ietf.org">webtools@ietf.org</a>.
 
-<br>
-<br>
-<!--
-<center><img alt="Blue Line" src="/images/blue-line.jpg"></center>
-<br clear=all>
-The IETF is an organized activity of the <a href="http://www.isoc.org"><img alt="ISOC" src="/images/isoc-small.gif" hspace="3" border="0"></A>
+<p> The requested URL was not found on this server. If you entered the URL
+   manually please check your spelling and try again.</p>
 
-<br>
-
-<hr>
-<i>The <A HREF="/secretariat.html">IETF Secretariat</A> is hosted by the NeuStar Secretariat Services, a wholly owned subsidiary of <a href="http://www.neustar.biz/"><img src="/images/NS_logo_100px.gif" alt="NeuStar Logo" border="0"/></a></i>
--->
+<p>If you think this is a server error, please contact <a
+   href="mailto:webtools@ietf.org">webtools@ietf.org</a>.</p>
 {% endblock %}
 
-{% block footer %}
-      <hr/>
-      <div style="width: 100%; height: 1em; font-size: 9pt; font-style: italic;">
-	 <span style="float: left;">Made with <a href="http://www.djangoproject.com/">django</a></span>
-	 <span style="float: right;">v{% version_num %}, {% revision_date %} - <a href="mailto:webtools@ietf.org">webtools@ietf.org</a></span>
-      </div>
-{% endblock %}

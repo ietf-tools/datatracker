@@ -1,0 +1,5 @@
+{% if object.by_secretariat %}
+Liaison statement submitted by email from {{ object.from_body|escape }} to {{ object.submitter_name|escape }} on {{ object.submitted_date }}
+{% else %}
+{{ object.title }}
+{% endif %}

@@ -1,0 +1,16 @@
+From: The IESG <iesg-secretary@ietf.org>
+To: IETF-Announce <ietf-announce@ietf.org>{% if cc %}
+Cc: {{ cc|safe }}{% endif %}
+Subject: {{ action_type }} Action: '{{ doc.title }}' to {{ status }}
+
+{% filter wordwrap:73 %}The IESG has approved the following document{{ docs|pluralize }}:{% for d in docs %}
+- '{{ d.filled_title }}'
+  {{ d.file_tag|safe }} as {{ d.full_status }}{% endfor %}
+
+{{ made_by }}
+
+{{ contacts }}
+
+A URL of this {{ doc_type }} is:
+{{ doc_url|safe }}
+{% endfilter %}

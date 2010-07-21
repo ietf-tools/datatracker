@@ -5,21 +5,21 @@
   <td nowrap>
   {% ifequal doc.cur_state.state "In Last Call" %}
     {% if doc.document.lc_expiration_date %}
-      {{ doc.document.lc_expiration_date|date:"M j" }}{% if not doc.lc_expiration_date|thisyear %}, {{ doc.lc_expiration_date|date:"Y" }}{% endif %}
+      {{ doc.document.lc_expiration_date|date:"M j" }}, {{ doc.document.lc_expiration_date|date:"Y" }}
     {% endif %}
   {% else %}
     {% if doc.status_date %}
-      {{ doc.status_date|date:"M j" }}{% if not doc.status_date|thisyear %}, {{ doc.status_date|date:"Y" }}{% endif %}
+      {{ doc.status_date|date:"M j" }}, {{ doc.status_date|date:"Y" }}
     {% endif %}
   {% endifequal %}</td>
 {% else %}
   <td></td><td></td>
 {% endif %}
-<td>{{ doc.document.title }} ({{ doc.document.intended_status }})</td></tr>
-<tr><td></td><td></td><td><a href="{{ doc.document.doclink }}">{{ doc.document.displayname }}</a></td></tr>
+<td>{{ doc.document.title|escape }} ({{ doc.document.intended_status|escape }})</td></tr>
+<tr><td></td><td></td><td><a href="/doc/{{ doc.document.filename }}/">{{ doc.document.displayname|safe }}</a></td></tr>
 {% if doc.primary_flag %}
 <tr><td></td><td>Token:</td><td><a href="mailto:{{ doc.token_email|urlencode }}">{{ doc.token_name }}</a></td></tr>
 {% if doc.note %}
-<tr><td></td><td>Note:</td><td>{{ doc.note|urlize }}</td></tr>
+<tr><td></td><td>Note:</td><td>{{ doc.note|safe|urlize }}</td></tr>
 {% endif %}
 {% endif %}

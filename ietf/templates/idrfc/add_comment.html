@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Add comment on {{ doc }}{% endblock %}
+
+{% block morecss %}
+form.add-comment #id_comment {
+  width: 600px;
+  height: 300px;
+}
+
+form.add-comment .actions {
+  padding-top: 20px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Add comment on {{ doc }}</h1>
+
+<p>The comment will be added to the comment trail.</p>
+
+<form class="add-comment" action="" method="POST">
+  <table>
+  {{ form.as_table }}
+  <tr>
+    <td></td>
+    <td class="actions">
+      <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+      <input type="submit" value="Add comment"/>
+    </td>
+  </tr>
+  </table>
+</form>
+{% endblock %}

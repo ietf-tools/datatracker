@@ -1,0 +1,4 @@
+{% extends "idrfc/status_columns.html" %}
+{% block extra_status %}
+<br/>Intended status: {{doc.ietf_process.intended_maturity_level}}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2009, All Rights Reserved #}
+{% block title %}IPR Details - {{ ipr.title|escape }}{% endblock %}
+{% block content %}
+
+<h1>{{ ipr.title|escape }}</h1>
+
+<font size="3">
+This IPR disclosure was removed at the submitter's request.
+</font>
+
+{% endblock %}

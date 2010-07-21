@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+version = "0.10"
+program = os.path.basename(sys.argv[0])
+progdir = os.path.dirname(sys.argv[0])
+
+sys.path = [progdir+"/../../"] + sys.path
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+from django.template import Template, Context
+
+from ietf.idtracker.models import IDInternal
+#from ietf.idtracker.models import InternetDraft
+#from ietf.idtracker.models import IDStatus
+
+drafts             = IDInternal.objects.all()
+
+templ_text = """{% for draft in drafts %}{% if draft.state_change_notice_to or draft.job_owner %}{% if draft.draft.filename %}{{ draft.draft.filename }}{% if draft.state_change_notice_to %} docnotify='{{ draft.state_change_notice_to|cut:"<"|cut:">" }}'{% endif %}{% if draft.job_owner %} docsponsor='{{ draft.job_owner.person.email.1 }}'{% endif %}
+{% endif %}{% endif %}{% endfor %}"""
+template = Template(templ_text)
+context = Context({  'drafts':drafts })
+
+print template.render(context)

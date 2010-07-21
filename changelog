@@ -1,0 +1,1155 @@
+ietfdb (3.01)
+
+  * Add a button to issue a ballot for documents which has entered IESG 
+    processing but don't have a ballot yet.
+
+  * Always make idinternal.docstate() return a string -- there are callers 
+    that assume this, like the script which generates all_id2.
+
+  * Don't fail with a server error (500) if a bad draft name (containing 
+    for instance newlines) is entered -- just return a 404.
+
+  * For WG charters under evaluation, show the year too, not only month and 
+    day.  This will reveal bad date information in the charter files.
+
+  * If we fail to parse the date of a WG charter under evaluation, use 1 
+    Jan 1900, and carry on.  Don't fail with a server error.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Jul 2010 18:41:31 +0200
+
+ietfdb (3.00)
+
+  * This release adds the IOLA port of the former Perl IESG datatracker to
+    the Python/Django datatracker.  This should make most AD actions on
+    drafts available through the Django datatracker, normally from the
+    datatracker.ietf.org/doc/<draftname>/ page or from the /doc/ad/.../
+    page, or expressed UI-wise: from the pages reached from the 'AD Dashboard'
+    menu at the top of the lefthand menubar in the datatracker.  This
+    includes actions such as:
+
+    - Change draft state
+    - Edit draft metadata
+    - Defer ballot, undefer ballot
+    - Handle ballot comments
+    - Handle ballot writeups
+    - Approve ballots
+    - Initiate last call
+
+    Secretariat staff actions supported through the Django datatracker now
+    includes:
+
+    - Manage telechat dates
+    - Manage working group descriptions
+
+    Tweaks to the new interface and capabilities will be releases with
+    a short release cycle, as they are discovered and fixed over the next
+    weeks.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2010 18:14:48 +0200
+
+ietfdb (2.52)
+
+  * Added machine-readable ballot information (tsv and json) for drafts with
+    ballots: /doc/<draftname>/ballot.tsv and /doc/<draftname>/ballot.json .
+    Json data for the whole document is available for all drafts at
+    /doc/<draftname>/doc.json .
+
+  * Added Unicode NFKC normalization of paths.  Somebody just tried to access 
+    /wg/ipfix/charter/ with 'fi' represented as the unicode ligature \ufb01...
+
+  * Changed the text emitted during testing to have less noise at the
+    beginning of the line -- only 'OK', 'Fail', and the initial line of coverage
+    reports now starts at the beginning of the line, without whitespace.  This
+    makes it easier to scan a test run visually to find reported failures.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2010 13:02:46 +0200
+
+ietfdb (2.51)
+
+  * Add an html sanitizer and a sanitize_html template filter.  This uses
+    the html5lib, which has also been included in the svn tree.
+
+  * Provide better handling of both text/plain document comments and 
+    document comments which contain html tags.  Adds urlization, 
+    linebreak-preservation and html sanitization.  Html sanitization would be 
+    better applied when adding comments, but we're not yet a position to 
+    enforce this for all input paths.
+
+  * Catch an additional exception which can occur during generation of 
+    all_id2.txt
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 May 2010 12:26:58 +0200
+
+ietfdb (2.50)
+
+  From RjS: 
+
+  * Don't send mail if we don't have any recipients...
+
+  From Pasi:
+
+  * /iesg/agenda/: fix bug related to non-existing ballots
+
+  * Removed old (unused) YUI js/css
+
+  * /ipr/search/: avoid exception for unexpected search types; comment out 
+    debug logging
+
+  * /doc/active, all: add link to all_id2.txt
+
+  * /liaison/: add link to liaison statement manager tool
+
+  From Henrik:
+
+  * Make version information on the web pages a little less cryptic.
+
+  * Tweak the IESG agenda page for better placement of IPR information; 
+    requested by Russ.  Also align the ballot graphics.
+
+  * Add admin site support for the DocumentComment model.
+
+  * If replaced-by information exists, display it, even if the document 
+    state seems to be incorrect (something else than 'Replaced').
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Apr 2010 11:45:24 +0200
+
+ietfdb (2.49)
+
+  From Pasi:
+
+  * New script to generate all_id2.txt. This should be called in
+    www6s/scripts/datatracker-updater: run "python -m
+    ietf.idindex.generate_all_id2_txt" and place its output
+    in $ID/all_id2.txt.
+
+  * /wg/: link to both www.ietf.org and tools lists of concluded WGs
+
+  * /doc/: show full responsible AD name for old drafts, too
+
+  * Eliminated some cases where exceptions could be thrown
+
+  * Various minor tweaks and fixes
+
+  From Henrik:
+
+  * Added commands to the mkrelease script to update the IETF Tools feed 
+    with release information.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2010 21:11:27 +0100
+
+ietfdb (2.48)
+
+  From Pasi:
+
+  * Show comments feed link only if it exists (=document is in IDInternal)
+
+  * Fixed a broken link on main page
+
+  * Move new look-and-feel base templates from templates/idrfc/ to just 
+    templates/
+
+  * Remove more unused code
+
+  * Replaced /idtracker/help/evaluation/ with redirect to www.ietf.org
+
+  * /wg/: fix mailto links for WG chairs
+
+  * /doc/: show telechat date in search results list
+
+  * Show correct version number of expired drafts
+
+  * /doc/rfcNNNN/: show rfc stream
+
+  * Use new look for more pages
+
+  * Replaced most of /idtracker/ (search, document page, ballot page, 
+    comment page) with redirects to /doc/
+
+  * /doc/*: Show information about ballot sets
+
+  * Refactoring /wg/: use redirects instead of redundant URLs; removed old 
+    charter pages (not used/linked to); misc. cleaning
+
+  * Point to /wg/<acronym>/ in left navbar and /meeting/agenda/
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2010 00:26:41 +0100
+
+ietfdb (2.47)
+
+  From Suresh: 
+
+  * Added a link to the draft pages with email address to the draft authors
+
+  From RjS:
+
+  * Added STD/FYI/BCP info to the standard RFC display page
+
+  * Added a link to the comment feed next to the nits link 
+
+  From Bill:
+
+  * Output a summary of what's needed for the document to be approved in
+    the main and ballot views. 
+
+  From Tony:
+
+  * Search plugin for Firefox/IE/etc.
+
+  From Pasi:
+
+  * Correctly handle entities (like &gt;) in IESG note field
+
+  * New script for finding database tables with non-ASCII data
+
+  * /doc/*: allow direct links to tabs/individual comments
+
+  * /iesg/agenda/: show management item text if logged in as AD
+
+  * /wg/acronym/: fix warning for concluded WGs
+
+  * Support PPTX meeting slides
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2010 03:03:42 +0100
+
+ietfdb (2.46)
+
+  From Robert:
+
+  * Add the I-D expiration notification script.
+
+  *** Please add the following cron entry:
+
+  # Send notifications about pending I-D expirations.
+  42 4 * * 1 /a/www/ietf-datatracker/web/ietf/bin/notify-expirations
+
+  From Henrik:
+
+  * Adding the south schema migration app (http://south.aeracode.org/).
+
+  * Change the text of IPR search result to more correctly reflect the 
+    status of the search result when IPR has been found on documents related to 
+    a listed document, but not on that document itself.
+
+  From Pasi:
+
+  * Use the new look for a bunch of additional pages
+
+  * /admin/: fix login redirects to work with RemoteUserMiddleware; hide 
+    password changing functionality (which doesn't work with RemoteUser anyway)
+
+  * /ipr/: remove separate list for updating
+
+  * /wg/acronym/*: clearer warning about concluded WGs
+
+  * A lot of various code and deployment cleanup
+
+  * A lot of minor tweaks and fixes (tooltips, links, and more)
+
+  * /doc/rfcNNNN/: include link to errata
+  * /doc/rfcNNN/: include links to PDF/PS versions (if they exist); handle 
+    RFCs that are not available as .txt
+
+  * Added meta description tags (to improve search result usability): 
+    drafts/RFCs, IPR disclosures, liaison statements
+
+  * Cache/gzip meeting agenda and materials pages
+
+  * If draft doesn't exist under /idtracker/, redirect to /doc/ instead of 
+    showing error
+
+  * Show /doc/ad/first.last/ only for ADs, not other folks in IESGLogin 
+    table
+
+  * Fixed bunch of null/unique attributes for model fields
+
+  * New script to check for violated database constraints (NOT NULL, 
+    UNIQUE, FOREIGN KEY)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2010 00:36:05 +0100
+
+ietfdb (2.45)
+
+  From Pasi:
+
+  * Use wg_www_pages table (and removed unused idtracker_areaurl).
+    Requires applying changes to database as follows:
+
+	cd /a/www/ietf-datatracker/2.45/ietf
+	PYTHONPATH=../ python manage.py dbshell < ../test/sql_fixup.sql
+
+  * Parse stream/wg/file formats from rfc-index.xml; prepare for parsing 
+    auth48 info from queue2.xml
+
+  * IPR disclosures: Don't include .doc/.html inline; don't fail if file 
+    does not exist
+
+  * Replaced /drafts/* with redirects
+
+  * Show datatracker version+date in new look, too
+
+  * IESG discuss page: shade even/odd rows
+
+  * Use new look for IETF meeting agenda; add color-coding support (like 
+    tools has).  Also use new look for /iesg/agenda/, /ipr/ and /ipr/NNN/
+  * Show RFC publication date as YYYY-MM (since we don't currently have the 
+    day)
+
+  * Fix searching for RFCs that are processed by IESG; made 'advanced 
+    search' options mutually exclusive
+
+  * For plain text RFCs, point to www.rfc-editor.org instead of www.ietf.org
+
+  * Fix page title for 404/500 pages (ticket:298)
+
+
+  From Henrik:
+
+  * Apply django changeset 12634 to our copy, to permit usernames 
+    containing '@'.  See http://code.djangoproject.com/changeset/12634 .
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Mar 2010 14:41:47 +0100
+
+ietfdb (2.44)
+
+  From Robert:
+
+  * Moved old (1995-2003) liaison statements from the template file
+    to the database. This requires applying database fixups as
+    follows:
+
+        cd /a/www/ietf-datatracker/2.44/ietf
+        PYTHONPATH=../ python manage.py dbshell < ../test/liaison_fixup.sql
+
+    And updating the liaison files as follows:
+
+	cd /a/www/ietf-datatracker/documents/LIAISON/
+        # TAKE A BACKUP OF THE WHOLE DIRECTORY, JUST IN CASE
+	. /a/www/ietf-datatracker/2.44/test/liaison_fixup.sh
+
+  From Pasi:
+
+  * Use new look for more pages
+
+  * Make obsoletes/updates/etc. lists links (with new urlize_ietf_docs 
+    template filter)
+
+  * Always show year in /idtracker/status/ dates
+
+  * /doc/rfcNNNN/: show the internet-draft name (if known) and link to its 
+    history; show information about post-RFC IESG processing
+
+  * Use yellow for 'abstain' also in /iesg/agenda/documents/
+
+  * IESG ballot grid icon: show 'abstain' as yellow instead of gray
+
+  * IESG telechat agenda: include "private" links also if logged in, link 
+    from document list
+
+  * Added /doc/all/ page
+
+  * Better output if /doc/ search doesn't match anything
+
+  * Show state-change-notice-to field in /doc/ (to AD/secretariat)
+
+  * Make IESG telechat agenda feed discoverable
+
+  * Added IPR/dependency links and edit/add buttons for RFCs, too; some 
+    template refactoring
+
+  * Avoid exceptions from MySQL when searching for non-ASCII draft names/WG 
+    acronyms/etc.
+
+  * Handle non-ASCII characters gracefully in old cgi-bin script redirects
+
+  * IPR search: handle non-numeric RFC numbers/ID document tags gracefully 
+    (instead of uncaught exception)
+
+  * Change Atom feeds (+couple of other places) to point to /doc/draft-.. 
+    instead of /idtracker/draft-.../
+
+  From Henrik:
+
+  * In PersonOrOrgInfo.email(), try harder to find a relevant email address.
+    The new code will eventually fall back to a broad filter which matches that
+    of the perl code which creates WG charter pages, where the old code would
+    sometimes result in django-generated charter pages with missing email
+    addresses.
+
+  * Serve ipr disclosures which are available on the server directly, 
+    instead of through an external http link in an <iframe/>.  The <iframe/> 
+    method can result in mixing https and http content in the page, which some 
+    browser take issue with.
+
+  * Add back in rudimentary Django Admin support which was lost in the 0.96 
+    -> 1.1 transition.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Mar 2010 13:17:16 +0100
+
+ietfdb (2.43)
+
+  From Pasi:
+
+  * New main datatracker page!
+
+  * Use normal POST instead of AJAX for search, in order to be able to go
+    back to the search result list with the browser back button
+
+  * Added pointers (but no redirect yet) to new pages to /idtracker/ and 
+    /idtracker/draft-foo-bar/
+
+  * Added javascript redirect for /drafts/draft-foo-bar/ page
+
+  * Fix history/comment tab for RFCs
+
+  * Added more links to other versions (like tools html)
+
+  * Fixed bug in submitting general license statements
+
+  * Fixed ballot icon width problem in Safari (regression introduced in 
+    2.42)
+
+  * Replaced /drafts/all_id.html with redirect (there are no links to it, 
+    and according to logs nobody is using it)
+
+  * Added rel=nofollow to various links
+
+  * Improve coloring for "for N days" information
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Mar 2010 13:05:22 +0100
+
+ietfdb (2.42)
+
+  From Pasi:
+
+  * Use an ietf icon in an alternative colour for the new datatracker
+    interface.
+
+  * Include 30 items instead of 15 in IPR disclosure atom feed
+
+  * Document page: show IESG telechat date; show state for RFCs (if 
+    applicable)
+
+  * Move search button JavaScript to right template file
+
+  * IESG discuss page: better switching between all/by me/for me
+
+  * Less SQL queries for per-document page
+
+  * Moderator package: always show last call end date, fix bug in showing 
+    ballot.  Include previous minutes.
+
+  * Show small comment icon (instead of asterisk) when ballot has text.
+    Show comment icon also next to discuss/comment text
+
+  * Use a local copy of YUI library instead of pointing to Google CDN (this 
+    allows us to work with pure IPv6); upgrade to YUI 2.8.0r4
+
+  * Make RFC editor status a link (to queue)
+
+  * Add link to comments Atom feed
+
+  * Right-click ballot icon to edit your position (when logged in as IESG)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Jan 2010 11:54:06 +0100
+
+ietfdb (2.41)
+
+  * The 'current agenda' url can fail between meetings, when the 'current 
+    meeting number' has been bumped up, but not all relevant information has 
+    been entered yet.  Fall back to the most recent meeting for which an agenda 
+    can be produced in that case.
+
+  * The self.affiliation() call can sometimes cause an exception, too, due 
+    to the deficiencies of the database.  Use something safer as fallback.
+
+  From Pasi:
+
+  * Show various edit buttons only to ADs/secretariat
+
+  * Simplify WG menu a bit
+
+  * Fix comment handling for drafts not in idinternal; use select_related 
+    to reduce SQL queries
+
+  * Make sure DOCTYPE is first (without empty lines above it)
+
+  * Use GZipMiddleware for per-document page (result is 25% of original, 
+    and loads visibly faster)
+
+  * Close ballot dialog if Escape is pressed
+
+  * Fix ballot dialog not appearing (in new tracker UI)
+
+  * Add timestamp to scribe template
+
+  * Show ballot comments even if AD has no position
+
+  * Improved history tab in "new tracker UI"; per-document page now works 
+    better without JavaScript; internal refactoring/cleaning of per-document 
+    page
+
+  * Better abstract cleaning (to remove new-style boilerplate)
+
+  * Updated independent submission text to point to RFC 5742 instead of 3932
+
+  * Time out after 30 seconds iwhen downloading
+
+  * Normalize linebreaks in iesg/{agenda.txt,agenda_package.txt} to LF
+
+  * Don't indent management item texts (looks a bit nicer)
+
+  * Don't choke on non-ASCII characters in agenda notes
+
+  * Cleaned/simplified left navbar in "new tracker UI"
+
+  * Removed unused HTML (related to the old authentication system)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jan 2010 18:25:22 +0100
+
+ietfdb (2.40)
+
+  * Fixed bug in charter templates -- need to test that milestone.done is 
+    'Done', as it can also be set to 'No'...
+
+  From Pasi:
+  * Added roll call to moderator package; added agenda package email
+
+  * Updated moderator package texts
+
+  * Removed unused image (for the already-retired mailing list request tool)
+
+  * Restrict /iesg/agenda/moderator_package.html to ADs and secretariat
+
+  * Added group_required authentication/authorization decorator
+
+  * Minor refactoring of IESG telechat agenda management item code (to 
+    allow access controlled pages in the future)
+
+  * Fix line breaks in IESG telechat moderator package
+
+  * Removed the now-executed commands from sql_fixup.sql
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  04 Dec 2009 12:02:12 +0100
+
+ietfdb (2.39)
+
+  From Pasi:
+
+  * Replaced old authentication/authorization system with a new one
+    (which uses Apache's authentication). This requires applying
+    database fixups as follows:
+
+        cd /a/www/ietf-datatracker/2.39/ietf
+        PYTHONPATH=../ python manage.py dbshell < ../test/sql_fixup.sql
+	PYTHONPATH=../ python manage.py syncdb
+
+    And adding something like this to Apache configuration:
+
+	<LocationMatch "^/accounts/login/">
+        AuthType Basic
+        AuthName "IETF Datatracker"
+        AuthUserFile /a/www/htpasswd
+	Require valid-user
+	</LocationMatch>
+
+  * Fixed ballot icon/etc. to work with the new auth/authz system
+
+  * Fixed escaping in text meeting agenda (ticket #331)
+
+  * Added first beta of IESG telechat moderator package (not fully working 
+    yet)
+
+  * Added ASCII version of IESG telechat agenda
+
+  * Refactored/cleaned IESG telechat agenda code (and removed support for 
+    ballot sets)
+
+  * Removed some unused code
+
+  * Replaced non-WG mailing list page with redirect to ietf.org
+
+  * Removed some Django 0.96-only code
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Nov 2009 10:38:41 +0100
+
+ietfdb (2.38)
+
+  Miscellaneous minor fixes:
+
+  * Added differentiating colours for BOF sessions in iPhone agenda
+  From Pasi:
+  * Fix bug in urlize (http://code.djangoproject.com/ticket/12183)
+  * Added missing safe tags
+  * Fixed Russ' email address in mkrelease
+  * Updated account information template (fixes exception)
+  * Show action items in IESG agenda; updated some links in IESG agenda
+  * Fixed a bug in idtracker search (probably introduced by changeset 
+    1842); new test case for that
+  
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Nov 2009 04:54:00 +0100
+
+ietfdb (2.37)
+
+  * With this release, the datatracker is changed to run under Django 1.1
+    rather than under 0.96, and in this sense it is a major release.  There
+    is however very few changes that can be seen by the users, which is the
+    reason why there is no major bump in the release number.
+
+  Major changes, from Pasi and the code sprint participants:
+
+  * Imported django/ directory from Django-1.1.1.tar.gz, placed in parallel
+    with the top-level ietf/ directory in the tree.  This lets us run with
+    a version of Django which could possibly be different than the system
+    installed version.
+
+  * Automated conversion of the code base to django-1.1 conventions, e.g.
+    to use max_length instead of maxlength in model declarations.
+
+  * Lots of escape and safe filters added to the templates, to handle the
+    transition from 0.96 to 1.1.  This work was contributed by a number of
+    people durint the IETF 76 code sprint:
+	Pasi Eronen (also leading up to the IETF 76 code sprint)
+	Tony Hansen
+	Ben Campbell
+	Tero Kivinen
+	Adam Roach
+	Arifumi Matsumoto
+
+  * Code cleanup, including removal of unused and seldomly used code (in
+    particular the code for mailing list change requests)
+
+  * A lot more test cases added, in preparation for the transition to 1.1;
+    also refinement of the testing framework.
+
+  From Lars Eggert:
+
+  * Support the use of UTF-8 in emails
+
+  * Fixed the IPR submission tool to work under Django 1.1
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Nov 2009 10:59:20 +0100
+
+ietfdb (2.36)
+
+  From Pasi:
+
+  * Code cleanup.
+  
+  * Test enhancements
+
+  * Fixed various Django 1.x bugs
+
+  * IPR disclosure page was showing the latest revision number, not the 
+    revision for which the disclosure was submitted.  Fixed
+
+  * Minor tweaking of scribe template based on comments from John
+
+  * Handle non-ASCII characters correct on both Django 0.96 and 1.x
+
+  * Removed unused (and unfinished) idtracker editing code
+
+  * Fixed a bug where missing revision date caused an exception
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Nov 2009 14:35:35 +0100
+
+ietfdb (2.35)
+
+  From Pasi:
+
+  * Changed slightly alternating row coloring for search results --> saved 
+    100+ lines of code
+
+  * Refactoring, removing old dead code and templates
+
+  * Fixed dependency link (point to fenron.net instead of fenron.com)
+
+  * More escaping fixes for Django 1.x
+
+  * Refactored testing code and many added test cases
+
+  * Fixed a number of problems and failures in IPR submisions and updates
+
+  * Removed account creation/password changing functionality
+
+  From Henrik:
+
+  * Handle the case when the time specification of a comment is incomplete, 
+    during generation of document feeds.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Oct 2009 19:08:44 +0200
+
+ietfdb (2.34)
+
+  From Pasi:
+
+  * Updated IESG telechat narrative scribe template based on feedback
+
+  * Added more test cases, and added some enhancements to the test framework.
+
+  * Added more safe/escape tags for Django 1.x, and other fixes for Django 1.1
+
+  * Added support for comparing only a subset pages via URLPREFIX variable
+
+  * Removed a bunch of unused code/templates
+
+  * Fixed some ballot issues.
+
+  * Gracefully handle non-ASCII IPR disclosure files
+
+  From Henrik:
+
+  * Fixed grouping problems in 1wg-summary.txt due to incomplete grouping
+    key in template.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Oct 2009 15:26:42 +0200
+
+ietfdb (2.33)
+
+  From Pasi  <pasi.eronen@nokia.com>:
+
+  * Added narrative minutes template
+
+  * New script for comparing output from Django 0.96 vs 1.x
+
+  * Added a bunch of safe/escape tags for Django 1.x
+
+  * Handle persons with non-ASCII names correctly in Django 1.x
+
+  * Improve test coverage for meeting/, idrfc/
+
+  * Multiple bugfixes for days-in-state information
+
+  * Avoid using IDInternal.documentcomment_set -- it breaks in Django 1.x 
+    because the foreign key isn't really a foreign key
+
+  * Fix author name (Unicode) and pubdate (datetime vs. date) for Django 1.x
+
+  * Use IDInternal.comments method to avoid foreign key problems; support 
+    Unicode in jsonify_helper
+
+  * Comment out unused permission code (causes test failures on Django 1.x)
+
+  * Fixes so test suite runs better on Django 1.x
+
+  * Make IPR form work with both Django 0.96 and 1.x
+
+  From Henrik:
+
+  * Return 404 not found when the wg acronym given as part of a wg charter 
+    URL can't be found.
+
+  * Sometimes a documents lc_sent_date is None; don't let the last-call 
+    feed break if that happens.
+
+  * Add debian-style control file with metainformation.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Sep 2009 15:49:00 +0200
+
+ietfdb (2.32)
+
+  * Make the 1wg-charters.txt page stable, not changing dependent on the
+    order in which the database backend returns records.
+
+  * Various fixes to the new charter page generation.  Removed the area
+    prefix for secretaries (secretaries aren't area secretaries, they're
+    secretaries to the group).  Added tech advisors and WG editors.
+    Fixed html for secretary lists.
+
+  * Fixed link in Slides model (should be moved to templates, I suspect)
+    which has changed since ietf-74.  Todo: Should be made consistent in
+    the archives, or failing that, be dependent on the meeting number
+    (ugh!).
+
+  * Show correct days-in-state information (hopefully). From Pasi.
+
+  * Cleaning of IPR disclosure submission form internals  
+    to simplify Django 1.0 transition.  From Jelte and Pasi.	 
+
+  * Make WG summary available also with the same name as before
+    (1wg-summary.txt).  Fix the template to more closely match
+    the old layout, for screenscraping scripts.
+
+  * Make Django testing framework work again.  From Pasi.
+
+  * Minor fixes to bugs found by the testing framework.  From Pasi. 	 
+
+  * Replaced /liaison/managers/ with redirect to static page
+    on www.ietf.org.  From Pasi.
+	
+ -- Henrik Levkowetz <henrik@levkowetz.com>  04 Sep 2009 16:19:53 +0200
+
+ietfdb (2.31)
+
+  * Fix dropped plenary agendas in the html agenda page.
+
+  * Some Django 1.0 related fixes plus conversion script.  From Pasi.
+	
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2009 16:30:28 +0200
+
+ietfdb (2.30)
+
+  * Merged in Adam and Ben's rewrite of the WG charter page generation,
+    which is used to produce the individual WG charter.txt and charter.html
+    pages, and also used by the script which produces 1wg-charters.txt.
+
+  * Also merged in Arifumi and RjS' rewrite of the script which produces
+    1wg-charters.txt.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2009 14:14:17 +0200
+
+ietfdb (2.29)
+
+  * New script bin/abstracts.py, intended to be run as a cronjob, to generate
+    the ID abstracts files.  Merged in from Jelte.
+	
+  * Fixed bug in wg-dir.html to support additional area URLs properly.  
+    From Chris.
+
+  * Added new rfcurl filter to eliminate hardcoded references to RFC URLs
+    primarily in the liaisons and drafts pages.  From Chris.
+
+  * Fixed URLs that were broken or outdated by the IETF web page
+    re-organization throughout the tree.  In particular, references to
+    html.charters in URLs, and old charter references.  Including many
+    broken links in leftmenu.  From Chris.
+
+  * Some Django 1.0 related fixes plus conversion script.  From Pasi.
+	
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2009 19:46:45 +0200
+
+ietfdb (2.31)
+
+  * Some Django 1.0 related fixes plus conversion script.  From Pasi.
+	
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2009 14:38:41 +0200
+
+
+ietfdb (2.28)
+
+  * Show full name in document comment log.  From Pasi.
+
+  * Optimize meeting agenda page to use less SQL queries.  From Pasi.
+
+  * Include version in iesg/agenda/documents.txt.  From Pasi.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2009 14:38:41 +0200
+
+ietfdb (2.27)
+
+  * Add support for an iPhone specific agenda format.  Going to the html
+    agenda will now give an iPhone version if accessed by iPhone.
+
+  * Added AGENDA_PATH config variable to settings.py, and removed hardcoded
+    agenda path.
+
+  * Added a new template filter to truncate a string based on character count,
+    rather than word count.
+
+  * Added support for an additional field in the Meeting model, to hold
+    meeting time zone information.
+
+  * Added cookie-based coloring of agenda lines, using the same mechanism as
+    on http://tools.ietf.org/agenda/nn/
+
+  * Various updates to agenda presentations.  Make text agenda adhere better
+    to earlier format (for users who process it) and fix various flaws in the
+    html agenda.
+
+  * Replaced IESG minutes with redirect, and removed related feed/sitemap.
+    From Pasi.
+
+  * Correctly handle discusses for RFCs on /iesg/discusses/ page.  From Pasi.
+
+  * Fixed broken links in "new layout" navigation bar.	From Pasi.
+
+  * Other minor fixes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Jul 2009 16:38:03 +0200
+
+ietfdb (2.26)
+
+  * Fixed parsing of REF state in RFC Editor queue.
+
+  * Include draft version in document comment Atom feed.	
+
+  * Minor formatting bugfixes (should work better with IE6 and Safari)
+    in "new layout" (idrfc).
+
+  * Minor fixes to showing "days in state" data.
+	
+ -- Pasi Eronen <pasi.eronen@nokia.com>  28 May 2009 14:03:45 +0200
+
+ietfdb (2.25)
+
+  * Refactored IdRfcWrapper and lots of improvements to ID/RFC pages.
+
+  * New "Documents on Future IESG Telechat Agendas" page; some
+    improvements for the "IESG Discuss Positions" page.
+
+  * Improved "Sign in" dialog for new ID/RFC pages.
+	
+  * Better error message if cookies are not supported when logging in.
+
+  * Include all comments (not just 15) in document comment Atom feed; 
+    correctly sort comments on same date.
+	
+  * New template tags for comparisons: greater_than/less_than/equal.
+
+  * Get YUI base URL from settings instead of hardcoding.
+	
+ -- Pasi Eronen <pasi.eronen@nokia.com>  12 May 2009 14:45:17 +0200
+
+ietfdb (2.24)
+
+  * Merged in code from Pasi for new ID/RFC search and per-document pages,
+    and IESG "discuss report".
+
+  * Added missing images for liaison_manager.cgi to static/images/.
+
+  * More sensible error message if settings_local.py is not found.
+	
+  * Fix feed problem for non-ascii names. From Pasi Eronen. 
+
+  * ** NOTE: This release uses the Django cache framework, and requires
+    that the cache directory in settings.py (/a/www/ietf-datatracker/cache/)
+    exists.
+
+  * Fix problem with area model in admin interface
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Apr 2009 16:02:00 +0200
+
+ietfdb (2.23)
+
+  * Fixed a wrong link in the html agenda (from Henrik)
+
+  * Removed the explicit database server ip address in settings.py
+    (from Henrik)
+
+  * Integrated updated authorization system.  This requires applying
+    database fixups as follows:
+
+	cd /a/www/ietf-datatracker/2.23/ietf
+	python manage.py dbshell < ../test/sql_fixup.sql
+
+    The existing htpasswd file can be imported into this new system
+    as follows:
+
+	export PYTHONPATH=/a/www/ietf-datatracker/2.23
+	export DJANGO_SETTINGS_MODULE=ietf.settings
+	/a/www/ietf-datatracker/2.23/ietf/bin/import-users /a/www/htpasswd
+
+    Please capture the output of the import-users script, as it will
+    help us resolve any troubles that users have.
+
+  * Fixed infinite loop in wrapping code that prevented display of certain
+    document comments
+
+ -- Bill Fenner <fenner@fenron.com>  24 Mar 2009 17:48:12 PDT
+
+ietfdb (2.22)
+
+  * Fixed the menubar nomcom link.
+
+  * Merged in Chris' django-based replacement for the old perl-based
+    WG overview page, the 1wg-summary.txt and 1wg-summary-by-acronym.txt
+    pages.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 2:22:09 +0100
+
+ietfdb (2.21)
+
+  * Merged in Adams django-based replacement for the old perl-based
+    nomcom announcement pages.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 1:09:00 +0100
+
+ietfdb (2.20)
+
+  * Merged in Roberts django-based replacement for the old perl script 
+    generating all_id.txt
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2009 0:20:03 +0100
+
+ietfdb (2.19)
+
+  * Merged in code from Pasi containing auxiliary tables and support scripts
+    for his new document meta-information pages.
+
+  * Merged in code from Pasi for a machine-readable list of documents on the
+    next iesg-agenda.
+
+  * ** To deploy this release, the Django db sync command has to be run
+    (python .../ietf/manage.py syncdb) and the cron scripts which fetch
+    information from the RFC-editor and tools.ietf.org has to be set up
+    to run **
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2009 22:33:07 +0100
+
+ietfdb (2.18)
+
+  * Made the plenary agenda font larger
+
+  * Don't show break location information for lunch breaks (requires new
+    column in non_session table, with the show_break_location information).
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Mar 2009 0:56:10 +0100
+
+ietfdb (2.17)
+
+  * Fixed the agena problem where breaks would not have the right name.  Also
+    refactor and simplify the agenda code and templates.  Requires some database
+    changes, too.
+
+  * Made the liaison statement list inherit from base.html, to have the same style
+
+  * Changed to table layout for the base page.  Not puristic, but the non-table
+    approach had problems with some pages, (some content being forced to start
+    below the lefthand menu even when there was space higher up), and I could see
+    no easy way to fix it.
+
+  * Added the text from the original IPR declaration to the detail page for
+    declarations submitted by mail.  Made the link to the email text page more
+    prominent. Fixed some html issues.
+
+  * Added a link to the meeting agenda to the lefthand menu, and did some minor
+    fixes to the html.
+
+  * Added more people to the autogenerated release mail.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  02 Mar 2009 21:51:33 +0100
+
+ietfdb (2.16)
+
+  * Added per-draft IPR information to the IESG agenda
+  * From Pasi: Fixed links for RFCs in IESG agenda, and show deferred ballots 
+  * Added a test and development view which (sort of) lets you look at 
+    old IESG telechat agendas by date
+  * Added a machine-readable view listing IPR declarations per draft/rfc
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Feb 2009 13:46:35 +0100
+
+ietfdb (2.15)
+
+  * Merged in Pasi's fixes for links in the public version of the IESG agenda
+
+  * Fix som nits in the new IESG agendapage (show and link to drafts with
+    explicit revision numbers, and provide direct links to the text-only
+    version of drafts)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Feb 2009 13:22:08 +0100
+
+ietfdb (2.14)
+
+  * Changed to BSD license instead of OSL in the LICENSE file.
+
+  * Updated broken links in the lefthand menubar in base.html
+
+  * Added an explicit "This IPR disclosure was removed" message for
+    removed IPR disclusures
+
+  * Merged in code from Pasi, fixing some broken links in the IESG
+    agenda pages
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Feb 2009 13:09:35 +0100
+
+ietfdb (2.13)
+
+  * Fixed IETFWG.area_acronym() so it works, and added IETFWG.area_directors()
+
+  * Added to the mkrelease script the generation of a mail about the
+    release to various interested parties.
+
+  * Changed the IDtracker's 'not in the tracker' error message, as it
+    sounded a bit as if there was no record of the draft in question.
+
+  * Added a new better blue-background ietf logo
+
+  * Merged in code for a new IESG telechat agenda page at /iesg/agenda/, 
+    from Pasi Eronen <pasi.eronen@nokia.com>
+
+  * Made the dunn_sent_date field of InternetDrafts optional
+
+  * Removed references to code not yet merged in, related to wg charters
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb (2.12)
+
+  * settings.py: Fixed broken setting for database host, which had a
+    hardcoded IP address when it should be empty.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb (2.11)
+
+  * Template and layout fixes.  Removed broken links from the lefthand
+    menu-bar.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb (2.10)
+
+  * Changed look-and-feel of the datatracker, by introducing a different
+    style sheet, and using a more consistent style, and introducing a
+    lefthand menubar.
+
+  * Make IDInternal.docstate() consistent in the type of the returned
+    information.  Tweaked the format of returned docstate information
+    to not have spaces around the :: separator between state and substate.
+
+  * Fixed the help page for ballot symbols, which had a very old text
+    which no longer was correct.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb (2.09)
+
+  * Merged in support for a new URL, /list/wg/, which lists the archive
+    URLs for WG mailing lists, from Chris Newman <chris.newman@sun.com>
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb (2.08)
+
+  * Fixed mkrelease to handle minor numbers greater than 07 ,;-)
+
+  * Changed agenda templates, adding a note about agenda being subject to change.
+
+  * Backporting change from deployment copy, reflecting a change in
+    path and URL of presentation slides.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2008 17:20:49 +0100
+
+ietfdb (2.07)
+
+  The full list of changes is here, highlights below:
+  http://tools.ietf.org/tools/ietfdb/log/branch/2.00?rev=1161&stop_rev=1070
+
+  * Adjustments to the default settings, to match the new deployment environment
+    at AMS
+
+  * Template updates for agendas: 
+      - Use python, not template-language, to decide if the month is
+	different.  
+      - Don't use "odate" and add a space where   appropriate.  
+      - Use a datetime and time zone instead of hardcoding (ET).
+	(let the model combine the date and the time)
+
+  * Per suggestion from John Klensin, add a link directly to the text of the
+    I-D, but only give the explicit link to the draft if it's active.
+
+  * Expanded description of a document on the agenda.
+
+  * Added authorization infrastructure.  No impact on current functionality,
+    but needed for future features.
+
+  * Added a feed for documents on the IESG telechat.  Improved the admin
+    interface for iesg_login and irtf rg's and chairs.
+
+  * /meeting/ now redirects to meeting/<current>/materials.html
+
+  * Licencing information added.  IETF Trust copyright added as needed.
+

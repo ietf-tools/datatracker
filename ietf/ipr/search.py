@@ -1,11 +1,13 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import codecs
 import re
 import os.path
 import django.utils.html
 from django.shortcuts import render_to_response as render
 from django.template import RequestContext
 from django.conf import settings
+from django.http import Http404
 from ietf.idtracker.models import IETFWG, InternetDraft, Rfc
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
 from ietf.ipr.related import related_docs
@@ -18,22 +20,6 @@ def mark_last_doc(iprs):
         count = len(docs)
         if count > 1:
             item.last_draft = docs[count-1]
-
-def mark_related_doc(iprs):
-    for item in iprs:
-        for entry in item.drafts.all():
-            related_docs(entry.document, [])
-        for entry in item.rfcs.all():
-            related_docs(entry.document, [])
-
-def unique_iprs(iprs):
-    ids = []
-    unique = []
-    for ipr in iprs:
-        if not ipr.ipr_id in ids:
-            ids += [ ipr.ipr_id ]
-            unique += [ ipr ]
-    return unique
 
 def iprs_from_docs(docs):
     iprs = []
@@ -57,7 +43,7 @@ def patent_file_search(url, q):
         #print "*** Checking file", fpath
         if os.path.exists(fpath):
             #print "*** Found file", fpath            
-            file = open(fpath)
+            file = codecs.open(fpath, mode='r', encoding='utf-8', errors='replace')
             text = file.read()
             file.close
             return q in text
@@ -75,7 +61,7 @@ def search(request, type="", q="", id=""):
             if re.match(".*id", key):
                 id = value
         if type and q or id:
-            log("Got query: type=%s, q=%s, id=%s" % (type, q, id))
+            #log("Got query: type=%s, q=%s, id=%s" % (type, q, id))
 
             # Search by RFC number or draft-identifier
             # Document list with IPRs
@@ -86,9 +72,17 @@ def search(request, type="", q="", id=""):
                         q = normalize_draftname(q)
                         start = InternetDraft.objects.filter(filename__contains=q)
                     if id:
+                        try:
+                            id = int(id,10)
+                        except:
+                            id = -1
                         start = InternetDraft.objects.filter(id_document_tag=id)
                 if type == "rfc_search":
                     if q:
+                        try:
+                            q = int(q, 10)
+                        except:
+                            q = -1
                         start = Rfc.objects.filter(rfc_number=q)
                 if start.count() == 1:
                     first = start[0]
@@ -190,6 +184,6 @@ def search(request, type="", q="", id=""):
                                   context_instance=RequestContext(request) )
 
             else:
-                raise ValueError("Unexpected search type in IPR query: %s" % type)
+                raise Http404("Unexpected search type in IPR query: %s" % type)
         return django.http.HttpResponseRedirect(request.path)
     return render("ipr/search.html", {"wgs": wgs}, context_instance=RequestContext(request))

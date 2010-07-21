@@ -1,56 +1,105 @@
-{% block doctype %}<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html
-PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+{% comment %}
+
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+
+{% endcomment %}
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<!-- v{{version_num}}, {{ revision_num }}, {{ revision_time }} -->
+<title>{% block title %}No title{% endblock %}{% if server_mode %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}{% endif %}</title>
+<link rel="stylesheet" type="text/css" href="/css/yui/yui-20100305.css"></link>
+<link rel="stylesheet" type="text/css" href="/css/base2.css"></link>
+<style type="text/css">
+{% block morecss %}{% endblock %}
+</style>
+{% block pagehead %}{% endblock %}
+<script type="text/javascript">
+IETF = {};
+IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not forloop.last %}, {%endif%}{%endfor%} };
+</script>
+{% ifnotequal server_mode "production" %}
+<link rel="icon" href="/images/ietf-dev-icon.bmp" />
+{% else %}
+<link rel="icon" href="/images/ietf-icon-blue.bmp" />
+{% endifnotequal %}
+<link rel="search" href="/js/datatracker-search.xml" type="application/opensearchdescription+xml" title="IETF Datatracker Search" />
+</head>
+<body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
+<div style="background-color:{% if server_mode %}{% ifnotequal server_mode "production" %}#c00000{% else %}#313163{% endifnotequal %}{%else %}#313163{%endif%};color:white;font-size:150%;height:35px;">
+<img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/><span style="padding-left:15px;font-weight:bold;letter-spacing:0.1em;">datatracker.ietf.org {% if server_mode %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper}} MODE{% endifnotequal %}{% endif %}</span>
+</div>
+
+<div id="ietf-login">{% if user.is_authenticated %}
+{{ user }}
+{% else %}
+<a href="/accounts/login/?next={{request.path|urlencode}}" rel="nofollow">Sign In</a>
+{% endif %}</div>
+
+<table style="margin-left:8px;margin-top:8px;" width="98%;">
+<tr valign="top">
+<td style="width:130px;padding-right:8px;">
+<div class="ietf-navbar">
+{% include "base_leftmenu.html" %}
+</div>
+<div style="padding-left: 12px;padding-top:4px;font-size:69%;">
+Version {{ version_num }}, {{revision_date}}
+</div>
+</td>
+<td>
+
+<div style="padding:0 8px 0 8px;">
+{% block content %}
 {% endblock %}
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-   <!-- Copyright The IETF Trust 2007, All Rights Reserved -->
-   <head>
-      <!-- Project Revision {{ revision_num }}, {{ revision_time }} -->
-      <title>{% block title %}IETF Data{% endblock %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper }} MODE{% endifnotequal %}</title>
-      {% ifnotequal server_mode "production" %}
-      <link rel="icon" href="/images/ietf-dev-icon.bmp" />
-      {% else %}
-      <link rel="icon" href="/images/ietf-icon.bmp" />
-      {% endifnotequal %}
-      {% block head %}{% endblock %}
-      <style type="text/css"><!--
-      {% block css %}{% endblock %}
-      // -->
-      </style>
-   </head>
-   <body {% block body_attributes %}{% endblock %}>
-   <center>
-      <table border=0 cellpadding=0 cellspacing=0>
-	 <tr>
-	    <td><a href="http://www.ietf.org/home.html"><img src="/images/header/ietflogo_sm.gif" border="0" /></a></td>
-	    <td><a href="http://www.ietf.org/home.html"><img src="/images/header/home11.gif" border="0" /></a></td>
-	    <td><img src="/images/header/separator.gif" border="0" /></td>
-	    <td><a href="http://www.ietf.org/html.charters/wg-dir.html"><img src="/images/header/wg11.gif" border="0" /></a></td>
-	    <td><img src="/images/header/separator.gif" border="0" /></td>
-	    <td><a href="http://www.ietf.org/meetings/meetings.html"><img src="/images/header/meetings11.gif" border="0" /></a></td>
-	    <td><img src="/images/header/separator.gif" border="0" /></td>
-	    <td><a href="http://www.ietf.org/proceedings_directory.html"><img src="/images/header/proceed11.gif"  border="0" /></a></td>
-	    <td><img src="/images/header/separator.gif" border="0" /></td>
-	    <td><a href="{% url ietf.idindex.views.search %}"><img src="/images/header/id-index11.gif" border="0" /></a></td>
-	    <td><img src="/images/header/separator.gif" border="0" /></td>
-	    <td><a href="http://www.ietf.org/rfc.html"><img src="/images/header/rfc11.gif" border="0" /></a></td>
-	 </tr>
-      </table>
-   </center>
-   {% if user.is_authenticated %}
-   <span style="float: right; font-size: 80%;">Logged in as {{ user }}
-      |
-      <a href="/accounts/logout/">Log Out</a></span>
-   {% endif %}
-   <hr>
-      <!-- end new headers and layout -->
-      <div id="content">
-	 {% block content %}{% endblock %}
-	 {% block main_content %}{% endblock %}
-      </div>
-      {% block footer %}{% include "footer.html" %}{% endblock %}
-      {% include "debug.html" %}
-   </body>
-</html>
+
+<script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
+<script type="text/javascript" src="/js/yui/yui-20100305.js"></script> 
+<script type="text/javascript">
+//<![CDATA[
+YAHOO.util.Event.onContentReady("wgs", function () {
+    var oMenu = new YAHOO.widget.Menu("wgs", { position: "static", hidedelay:  750, lazyload: true });
+    oMenu.render();      
+});      
+{% block scripts %}
+{% endblock %}
+//]]>
+</script>
+<script type="text/javascript" src="/js/base.js"></script>
+
+{% block content_end %}
+{% endblock %} 
+</div>
+<div id="ietf-extras"></div>
+</td></tr></table>
+{% include "debug.html" %}
+</body></html>

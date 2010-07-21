@@ -1,0 +1,33 @@
+{% autoescape off %}#
+# Index of all Internet-Drafts
+# generated: {% now "Y-m-d H:i:s T" %}
+#
+# Description of fields:
+# 0   draft name and latest revision
+# 1   id_document_tag (internal database identifier; avoid using
+#     unless you really need it)
+# 2   one of "Active", "Expired", "RFC", "Withdrawn by Submitter",
+#     "Replaced", or "Withdrawn by IETF"
+# 3   if #2 is "Active", the IESG state for the document (such as
+#     "In Last Call", "AD Evaluation::Revised ID Needed", or "I-D Exists");
+#     otherwise empty
+# 4   if #2 is "RFC", the RFC number (otherwise empty)
+# 5   if #2 is "Replaced", the replacing draft name (otherwise empty)
+# 6   revision date (YYYY-MM-DD)
+# 7   group acronym (or empty if no group/not known)
+# 8   area acronym (or empty if not known; not necessarily accurate
+#     for older drafts)
+# 9   responsible AD name (or empty if not known)
+# 10  intended maturity level (or empty if not known)
+# 11  if #3 is "In Last Call" (with any substate), the last call
+#     end date (YYYY-MM-DD); otherwise empty
+# 12  if #2 is "Active", list of file types; otherwise empty
+# 13  draft title
+# 14  draft authors (often quite inaccurate, especially the email
+#     addresses...)
+#
+# new fields can be added to the end in the future, so remember to
+# ignore those in your code
+#
+{{ data }}
+# end{% endautoescape %}

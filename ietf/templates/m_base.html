@@ -1,0 +1,29 @@
+{% block doctype %}<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+{% endblock %}
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US">
+
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+<!-- Copyright The IETF Trust 2007, All Rights Reserved -->
+
+<head>
+	<!-- Project Revision {{ revision_num }}, {{ revision_time }} -->
+	<title>{% block title %}IETF Data{% endblock %}</title>
+	<meta name="viewport" content="width=320; " />
+	{% ifnotequal server_mode "production" %}
+		<link rel="icon" href="/images/ietf-dev-icon.bmp" />
+	{% else %}
+		<link rel="icon" href="/images/ietf-icon.bmp" />
+	{% endifnotequal %}
+	<link rel="stylesheet" href="/css/mobile.css" type="text/css" />
+	{% block head %}{% endblock %}
+	<style type="text/css">
+	{% block css %}{% endblock %}
+	</style>
+</head>
+
+<body {% block body_attributes %}{% endblock %}>
+      {% block content %}{% endblock %}
+      {% include "debug.html" %}
+</body>
+</html>

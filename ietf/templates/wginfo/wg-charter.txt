@@ -1,0 +1,47 @@
+{% load ietf_filters %}{{wg.group_acronym.name|safe}} ({{wg}})
+{{ wg.group_acronym.name|dashify }}{{ wg.group_acronym.acronym|dashify }}---
+
+ Charter
+ Last Modified: {{ wg.last_modified_date }}
+
+ Current Status: {{ wg.status }}
+
+ Chair{{ wg.chairs.count|pluralize:",s" }}:
+{% for chair in wg.chairs %}     {{ chair.person|safe }} <{{chair.person.email.1}}>
+{% endfor %}
+ {{wg.area.area.area_acronym.name}} Directors:
+{% for ad in wg.area_directors %}     {{ ad.person|safe }} <{{ad.person.email.1}}>
+{% endfor %}
+ {{wg.area.area.area_acronym.name}} Advisor:
+     {{ wg.area_director.person|safe }} <{{wg.area_director.person.email.1}}>
+{% if wg.wgtechadvisor_set.count %}
+ Tech Advisor{{ wg.wgtechadvisor_set.count|pluralize:",s" }}:
+{% for techadvisor in wg.wgtechadvisor_set.all %}     {{ techadvisor.person|safe }} <{{techadvisor.person.email.1}}>
+{% endfor %}{% endif %}{% if wg.wgeditor_set.count %}
+ Editor{{ wg.wgeditor_set.count|pluralize:",s" }}:
+{% for editor in wg.wgeditor_set.all %}     {{ editor.person|safe }} <{{editor.person.email.1}}>
+{% endfor %}{% endif %}{% if wg.secretaries %}
+ Secretar{{ wg.secretaries.count|pluralize:"y,ies" }}:
+{% for secretary in wg.secretaries %}     {{ secretary.person|safe }} <{{secretary.person.email.1}}>
+{% endfor %}{% endif %}
+ Mailing Lists:
+     General Discussion: {{ wg.email_address }}
+     To Subscribe:       {{ wg.email_subscribe }}
+     Archive:            {{ wg.email_archive }}
+
+Description of Working Group:
+
+  {{ wg.charter_text|indent|safe }}
+
+Goals and Milestones:
+{% for milestone in wg.milestones %}  {% ifequal milestone.done 'Done' %}Done    {% else %}{%ifequal milestone.expected_due_date.month 1 %}Jan{% endifequal %}{%ifequal milestone.expected_due_date.month 2 %}Feb{% endifequal %}{%ifequal milestone.expected_due_date.month 3 %}Mar{% endifequal %}{%ifequal milestone.expected_due_date.month 4 %}Apr{% endifequal %}{%ifequal milestone.expected_due_date.month 5 %}May{% endifequal %}{%ifequal milestone.expected_due_date.month 6 %}Jun{% endifequal %}{%ifequal milestone.expected_due_date.month 7 %}Jul{% endifequal %}{%ifequal milestone.expected_due_date.month 8 %}Aug{% endifequal %}{%ifequal milestone.expected_due_date.month 9 %}Sep{% endifequal %}{%ifequal milestone.expected_due_date.month 10 %}Oct{% endifequal %}{%ifequal milestone.expected_due_date.month 11 %}Nov{% endifequal %}{%ifequal milestone.expected_due_date.month 12 %}Dec{% endifequal %} {{ milestone.expected_due_date.year }}{% endifequal %} - {{ milestone.description|safe }}
+{% endfor %}
+Internet-Drafts:
+{% for draft in wg.drafts %}  - {{draft.title|safe}} [{{draft.filename}}-{{draft.revision}}] ({{ draft.txt_page_count }} pages)
+{% endfor %}
+{% if wg.rfcs %}Requests for Comments:
+{% for rfc in wg.rfcs %}  {{rfc}}: {{rfc.title|safe}} ({{ rfc.txt_page_count }} pages){% for obs in rfc.obsoletes%}
+           * {{obs.action}} RFC{{obs.rfc_acted_on_id}}{% endfor %}{% for obs in rfc.obsoleted_by%}
+           * {%ifequal obs.action 'Obsoletes'%}OBSOLETED BY{%else%}Updated by{%endifequal%} RFC{{obs.rfc_id}}{% endfor %}
+{%endfor%}
+{%else%}No Requests for Comments{% endif %}

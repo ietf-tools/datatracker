@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Edit info on {{ doc }}{% endblock %}
+
+{% block morecss %}
+form.edit-info #id_state_change_notice_to {
+  width: 600px;
+}
+form.edit-info #id_note {
+  width: 600px;
+  height: 150px;
+}
+form.edit-info .actions {
+  padding-top: 20px;
+}
+{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+<h1>Edit info on {{ doc }}</h1>
+
+<form class="edit-info" action="" method="POST">
+  <table>
+    {% for field in form.standard_fields %}
+    <tr>
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% ifequal field.name "telechat_date" %}{{ form.returning_item }} {{ form.returning_item.label_tag }} {{ form.returning_item.errors }}{% endifequal %}
+      {% ifequal field.name "job_owner" %}
+      {% if user|in_group:"Area_Director" %}
+      <label><input type="checkbox" name="job_owner" value="{{ login.id }}" /> Assign to me</label>
+      {% endif %}
+      {% endifequal %}      
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {{ field.errors }}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td></td>
+      <td class="actions">
+        <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+        <input type="submit" value="Save"/>
+      </td>
+    </tr>
+  </table>
+</form>
+{% endblock %}

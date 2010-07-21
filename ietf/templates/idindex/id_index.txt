@@ -1,0 +1,13 @@
+{% autoescape off %}{% load ietf_filters %}{% block intro %}              Current Internet-Drafts
+   This summary sheet provides an index of each Internet-Draft
+These drafts are listed alphabetically by Working Group acronym and
+initial post date.
+{% endblock %}
+{% for group in groups|dictsort:"group_acronym.acronym" %}{% if group.active_drafts %}
+{{ group.group_acronym.name }} ({{ group.group_acronym.acronym}})
+{% filter dashify %}{{ group.group_acronym.name }} ({{ group.group_acronym.acronym}}){% endfilter %}
+{% for draft in group.active_drafts|stable_dictsort:"filename"|stable_dictsort:"start_date" %}
+{% filter id_index_wrap %}
+"{{draft.title.strip|clean_whitespace}}", {% for author in draft.authors.all|dictsort:"final_author_order" %}{{author.person}}, {% endfor %}{{draft.revision_date|date:"j-M-y"}}, <{{draft.filename}}-{{draft.revision}}{{draft.file_type|id_index_file_types}}>
+{% endfilter %}{% block abstract %}{% endblock %}
+{% endfor %}{%endif %}{% endfor %}{% endautoescape %}

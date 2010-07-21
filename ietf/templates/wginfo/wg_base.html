@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% comment %}
+Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+{% load ietf_filters %}
+{% block title %}{{wg.group_acronym.name}} ({{wg.group_acronym.acronym}}) - {% block wg_titledetail %}{% endblock %}{% endblock %}
+
+{% block morecss %}
+.ietf-navset {
+    background:#214197 url(/images/yui/sprite.png) repeat-x left -1400px;
+    color:white;
+    border:1px solid black;
+    padding:4px;
+}
+.ietf-navset .selected { font-weight:bold; padding: 0 3px; }
+.ietf-navset a, .ietf-navset a:visited { color: white; padding:0 3px; }
+
+.ietf-wg-details { float:right; padding: 4px;margin-top:16px; margin-left: 16px; }
+.ietf-wg-details tr { vertical-align: top; }
+.ietf-concluded-bg {background-color: #F8F8D0; }
+.ietf-concluded-warning { background:red;color:white;padding:2px 2px;}
+{% endblock morecss %}
+
+{% block content %}
+<div {% if concluded %}class="ietf-concluded-bg"{% endif %}>
+<h1>{{wg.group_acronym.name}} ({{wg.group_acronym.acronym}}){% if concluded %}<br/><span class="ietf-concluded-warning">(concluded WG)</span>{% endif %}</h1>
+
+<div class="ietf-navset">
+{% ifequal selected "documents" %}<span class="selected">Documents</span>{% else %}<a href="/wg/{{wg}}/">Documents</a>{% endifequal %} | 
+{% ifequal selected "charter" %}<span class="selected">Charter</span>{% else %}<a href="/wg/{{wg}}/charter/">Charter</a>{% endifequal %} | 
+{% if wg.clean_email_archive|startswith:"http:" or wg.clean_email_archive|startswith:"ftp:" %}
+<a href="{{ wg.clean_email_archive }}">List Archive &#187;</a> | 
+{% endif %}
+<a href="http://tools.ietf.org/wg/{{wg}}/">Tools WG Page &#187;</a>
+</div>
+
+{% block wg_content %}
+{% endblock wg_content %}
+
+</div>
+{% endblock content %}

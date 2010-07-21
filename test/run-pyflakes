@@ -17,4 +17,4 @@ for line in sys.stdin:
 ' "$@"
 }
 
-pyflakes "$@" | filter "${0%/*}/pyflakes.exclude"
+pyflakes "$@" | filter "${0%/*}/pyflakes.exclude" | sort -u

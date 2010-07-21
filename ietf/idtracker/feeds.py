@@ -13,12 +13,19 @@ class DocumentComments(Feed):
 	    raise IDInternal.DoesNotExist
 	rfc = re.match('rfc(\d+)', bits[0])
 	if rfc:
-	    return IDInternal.objects.get(draft_id=int(rfc.group(1)), rfc_flag=1)
+	    return IDInternal.objects.get(draft=int(rfc.group(1)), rfc_flag=1)
 	else:
 	    return IDInternal.objects.get(draft__filename=bits[0], rfc_flag=0)
 
     def title(self, obj):
-	return "I-D Tracker comments for %s" % obj.document().filename
+	# filename is a function for RFCs and an attribute for I-Ds.
+	# This works transparently for templates but is not transparent
+	# for python.
+	if obj.rfc_flag:
+	    filename = obj.document().filename()
+	else:
+	    filename = obj.document().filename
+	return "I-D Tracker comments for %s" % filename
 
     def link(self, obj):
 	if obj is None:
@@ -29,11 +36,28 @@ class DocumentComments(Feed):
 	return self.title(obj)
 
     def items(self, obj):
-	return obj.public_comments().order_by("-date")[:15]
+	return obj.public_comments().order_by("-date","-id")
 
     def item_pubdate(self, item):
-	time = datetime.time(*[int(t) for t in item.time.split(":")])
+        time = datetime.time(*[(t and int(t) or 0) for t in item.time.split(":")])
 	return datetime.datetime.combine(item.date, time)
 
     def item_author_name(self, item):
 	return item.get_author()
+
+class InLastCall(Feed):
+    title = "Documents in Last Call"
+    feed_type = Atom1Feed
+    author_name = 'IESG Secretary'
+    link = "/idtracker/status/last-call/"
+
+    def items(self):
+	ret = list(IDInternal.objects.filter(primary_flag=1).filter(cur_state__state='In Last Call'))
+	ret.sort(key=lambda item: (item.document().lc_expiration_date or datetime.date.today()))
+	return ret
+
+    def item_pubdate(self, item):
+        # this method needs to return a datetime instance, even
+        # though the database has only date, not time 
+        return datetime.datetime.combine((item.document().lc_sent_date or datetime.datetime.now().date()), datetime.time(0,0,0))
+

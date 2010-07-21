@@ -1,0 +1,123 @@
+{% extends "idrfc/doc_main.html" %}
+{% comment %}
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+{% load ietf_filters %}
+
+{% block title %}{{ doc.draft_name_and_revision }}{% endblock %}
+{% block doc_meta_description %}{{ doc.title }} ({{info.type}}; {{doc.publication_date|date:"Y"}}){% endblock %}
+{% block doc_h1 %}{{ doc.title|escape }}<br/>{{ doc.draft_name_and_revision }}{% endblock %}
+
+{% block doc_metatable %}
+<tr><td style="width:18ex;">Document type:</td><td>{{ info.type|escape }}
+{% with doc.replaces as r %}{% if r %}<br />Replaces {% filter urlize_ietf_docs %}{{ r|join:", "}}{% endfilter %}{% endif %}{% endwith %}
+</td></tr>
+<tr><td>Last updated:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
+<tr><td>State:</td><td> 
+{{ doc.friendly_state|safe }}
+{% if doc.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.draft_name}}">{{ doc.rfc_editor_state|escape }}</a>{% endif %}
+{% ifequal doc.draft_status "Expired" %}
+{% if doc.resurrect_requested_by %}(resurrect requested by {{ doc.resurrect_requested_by }}){% endif %}
+{% endifequal %}
+{% if doc.in_ietf_process %}{% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}{% if doc.ietf_process.has_active_iesg_ballot %}<br/><i>({{ doc.ietf_process.iesg_ballot_needed }})</i>{%endif%}{%endif%}
+</td></tr>
+<tr><td>Intended status:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.intended_maturity_level|default:"-"  }}{% else %}-{%endif%}</td></tr>
+<tr><td>Submission:</td><td>{{ doc.submission }}</td></tr>
+<tr><td>Responsible AD:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.ad_name|default:"-"|escape }}{%else%}-{%endif%}</td></tr>
+{% if doc.in_ietf_process and doc.ietf_process.iesg_note %}<tr><td>IESG Note:</td><td>{{ doc.ietf_process.iesg_note|format_textarea|safe }}</td></tr>{% endif %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+{% if doc.in_ietf_process %}<tr><td>Send notices to:</td><td>{{ doc.ietf_process.state_change_notice_to}}</td></tr>{% endif %}
+{% endif %}{# if user|in_group:... #}
+
+{% ifequal doc.draft_status "Active" %}
+<tr><td>Other versions:</td><td>
+<a href="http://www.ietf.org/id/{{doc.draft_name_and_revision}}.txt">plain text</a>,
+{% for ext in doc.file_types %}
+{% ifnotequal ext ".txt" %}
+<a href="http://www.ietf.org/id/{{doc.draft_name_and_revision}}{{ext}}">{{ext|cut:"."}}</a>,
+{% endifnotequal %}
+{% endfor %}
+{% if not info.has_pdf %}
+<a href="http://tools.ietf.org/pdf/{{doc.draft_name_and_revision}}.pdf">pdf</a>,
+{% endif %}
+<a href="http://tools.ietf.org/html/{{doc.draft_name_and_revision}}">html</a>
+</td></tr>
+{% endifequal %}
+{% endblock doc_metatable %}
+
+{% block doc_metalinks %}
+ <a href="mailto:{{doc.draft_name}}@tools.ietf.org?subject=Mail%20regarding%20{{doc.draft_name}}" rel="nofollow">Email Authors</a>
+| <a href="/ipr/search/?option=document_search&amp;id_document_tag={{doc.tracker_id}}" rel="nofollow">IPR Disclosures</a>
+| <a href="http://www.fenron.net/~fenner/ietf/deps/index.cgi?dep={{doc.draft_name}}" rel="nofollow">Dependencies to this draft</a>
+| <a href="http://tools.ietf.org/idnits?url=http://tools.ietf.org/id/{{doc.draft_name_and_revision}}.txt" rel="nofollow" target="_blank">Check nits</a>
+{% if doc.in_ietf_process %}| <a href="/feed/comments/{% if info.is_rfc %}rfc{{doc.rfc_number}}{% else %}{{doc.draft_name}}{% endif %}/">Comments feed</a>{% endif %}
+{% endblock %}
+
+{% block doc_text1 %}
+{% ifequal doc.draft_status "Active" %}
+<div class="markup_draft">
+{{ content1|safe }}
+</div>
+{% else %}
+<p>This Internet-Draft is no longer active. Unofficial copies of old Internet-Drafts can be found here:<br/>
+<a href="http://tools.ietf.org/id/{{doc.draft_name}}">http://tools.ietf.org/id/{{doc.draft_name}}</a>.</p>
+
+<p style="max-width: 400px;"><b>Abstract:</b><br/> {{ doc.abstract|escape }}</p>
+
+<p><b>Authors:</b><br/>
+{% for author in doc.authors.all %}
+
+{% if author.email %}
+<a href="mailto:{{ author.email }}">{{ author.person }} &lt;{{author.email}}&gt;</a>
+{% else %}
+{% if author.person %}
+{{ author.person }}
+{% else %}
+Missing author info #{{ author.person_id }}
+{% endif %}
+{% endif %}<br />
+
+{% endfor %}</p>
+
+<p>(Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid)</p>
+
+{% endifequal %}
+{% endblock %}{# doc_text1 #}
+
+{% block doc_text2 %}
+{% ifequal doc.draft_status "Active" %}
+<div class="markup_draft">
+{{ content2|safe }}
+</div>
+{% endifequal %}
+{% endblock %} {# doc_text2 #}

@@ -1,0 +1,153 @@
+{% extends "wginfo/wg_base.html" %}
+{% comment %}
+Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+{% load ietf_filters %}
+{% block wg_titledetail %}Charter{% endblock %}
+
+{% block wg_content %}
+
+<div class="ietf-box ietf-wg-details">
+{% if concluded %}
+<span class="ietf-concluded-warning">Note: The data for concluded WGs
+is occasionally incorrect.</span>
+{% endif %}
+<table>
+<tr>
+<td colspan="2">
+<b>Personnel</b>
+</td>
+</tr>
+
+<tr valign="top">
+<td style="width:14ex;">Chair{{ wg.chairs.count|pluralize:",s" }}:</td>
+<td>
+{% for chair in wg.chairs %}
+<a href="mailto:{{ chair.person.email.1 }}">{{ chair.person|escape }} &lt;{{ chair.person.email.1 }}&gt;</a><br/>
+{% endfor %}
+</td></tr>
+<tr><td>Area Director:</td>
+<td>
+{% ifequal wg.area_director.person.email.1 "noreply@ietf.org" %}?{%else%}
+<a href="mailto:{{ wg.area_director.person.email.1 }}">{{ wg.area_director.person }} &lt;{{wg.area_director.person.email.1 }}&gt;</a>{% endifequal %}
+</td>
+</tr>
+{% if wg.wgtechadvisor_set.count %}
+<tr>
+<td>Tech Advisor{{ wg.wgtechadvisor_set.count|pluralize:",s" }}:</td>
+<td>
+{% for techadvisor in wg.wgtechadvisor_set.all %}
+<a href="mailto:{{ techadvisor.person.email.1 }}">{{ techadvisor.person }} &lt;{{ techadvisor.person.email.1 }}&gt;</a><br/>
+{% endfor %}
+</td></tr>
+{% endif %}
+{% if wg.wgeditor_set.count %}
+<td>Editor{{ wg.wgeditor_set.count|pluralize:",s" }}:</td>
+<td>
+{% for editor in wg.wgeditor_set.all %}
+<a href="mailto:{{ editor.person.email.1 }}">{{ editor.person }} &lt;{{ editor.person.email.1 }}&gt;</a><br/>
+{% endfor %}
+</td></tr>
+{% endif %}
+{% if wg.secretaries %}
+<tr><td>Secretar{{ wg.secretaries.count|pluralize:"y,ies" }}:</td>
+<td>
+{% for secretary in wg.secretaries %}
+<a href="mailto:{{ secretary.person.email.1 }}">{{ secretary.person }} &lt;{{ secretary.person.email.1 }}&gt;</a><br/>
+{% endfor %}
+</td></tr>
+{% endif %}
+
+<tr>
+<td colspan="2">
+<br/><b>Mailing List</b>
+</td>
+</tr>
+
+<tr><td>Address:</td><td>{{ wg.email_address|urlize }}</td></tr>
+<tr><td>To Subscribe:</td><td>{{ wg.email_subscribe|urlize }}</td></tr>
+<tr><td>Archive:</td><td>{{ wg.clean_email_archive|urlize }}</td></tr> 
+
+{% if not concluded %}
+<tr>
+<td colspan="2">
+<br/><b>Jabber Chat</b>
+</td>
+</tr>
+
+<tr><td>Room Address:</td><td><a href="xmpp:{{wg}}@jabber.ietf.org">xmpp:{{wg}}@jabber.ietf.org</a></td></tr>
+<tr><td>Logs:</td><td><a href="http://jabber.ietf.org/logs/{{wg}}/">http://jabber.ietf.org/logs/{{wg}}/</a></td></tr>
+{% endif %}
+
+</table>
+</div>
+
+{% if wg.additional_urls %}
+<p>In addition to the charter maintained by the IETF Secretariat, there is additional information about this working group on the Web at: 
+{% for url in wg.additional_urls %}
+<a href="{{ url.url }}">{{ url.description}}</a>{% if not forloop.last %}, {% endif %}
+{% endfor %}
+</p>
+{% endif %}
+
+<h2>Description of Working Group</h2>
+<p>{{ wg.charter_text|escape|format_charter|safe }}</p>
+
+<h2>Goals and Milestones</h2>
+<table>
+{% for milestone in wg.milestones %}
+  <tr>
+   <td width="80px">
+      {% ifequal milestone.done 'Done' %} Done
+      {% else %}
+      {%ifequal milestone.expected_due_date.month 1 %}Jan{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 2 %}Feb{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 3 %}Mar{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 4 %}Apr{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 5 %}May{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 6 %}Jun{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 7 %}Jul{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 8 %}Aug{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 9 %}Sep{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 10 %}Oct{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 11 %}Nov{% endifequal %}
+      {%ifequal milestone.expected_due_date.month 12 %}Dec{% endifequal %}
+      {{ milestone.expected_due_date.year }}
+      {% endifequal %}
+    </td>
+    <td>{{ milestone.description|escape }}
+  </td></tr>
+{% endfor %}
+</table>
+{% endblock wg_content %}
+

@@ -1,0 +1,142 @@
+/*
+* Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+*
+*  * Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+*
+*  * Redistributions in binary form must reproduce the above
+*    copyright notice, this list of conditions and the following
+*    disclaimer in the documentation and/or other materials provided
+*    with the distribution.
+*
+*  * Neither the name of the Nokia Corporation and/or its
+*    subsidiary(-ies) nor the names of its contributors may be used
+*    to endorse or promote products derived from this software
+*    without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+* A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+body { margin: 0; }
+.yui-skin-sam h1 {margin: 0.5em 0; font-size: 167%;}
+.yui-skin-sam .yui-navset .yui-content { 
+    background: white;
+    border:0px;
+    border-top:1px solid #243356; 
+    padding:0.5em 0;
+}
+.yui-navset .disabled a em {color:#a0a0a0;}
+
+.yui-skin-sam h1 { margin-top: 0; }
+
+#ietf-login { color: white; position:absolute; top:8px; right: 10px; }
+#ietf-login a, #ietf-login a:visited { color: white; }
+
+.ietf-box { background:#edf5ff; border: 1px solid #cccccc; }
+
+.ietf-navbar { background-color: #edf5ff; padding:0; border: 1px solid #89d; margin-top:4px; }
+.ietf-navbar ul { padding: 0; margin: 0; }
+.ietf-navbar ul li { list-style: none; padding: 0; margin: 0; font-size: 93%; padding: 2px 0px 2px 0px; }
+.ietf-navbar ul li.yuimenuitem { padding: 0px 0px 1px 0px; border: 0;} 
+.ietf-navbar ul li a { padding: 0px 0px 0px 10px; }
+.ietf-navbar ul li.sect a { padding: 2px 2px 2px 2px; }
+.ietf-navbar ul li.sect { font-weight:bold; color:#fff; background:#2647A0; margin-top:2px; text-indent:2px; padding: 2px 0;}
+.ietf-navbar ul li.first { margin-top: 0px; }
+.ietf-navbar ul li.sect a { color:#fff; } 
+.ietf-navbar a, .ietf-navbar a:visited { color: #000000; }
+.ietf-navbar > ul > li > a:hover { background-color: #b3d4ff; }
+.ietf-navbar .yuimenuitemlabel { font-size: 12px; padding: 0 10px; }
+.ietf-navbar #wgs .bd { background-color: #edf5ff; }
+.ietf-navbar #wgs > .bd { border: 0;}
+
+.ietf-ballot .left { background: #edf5ff; width:160px; padding-left: 10px; }
+.ietf-ballot .right { padding-left: 15px; padding-right:15px; width:610px;padding-top:0px;}
+.ietf-ballot h2.ballot_ad { background: #2647A0; color:white; padding: 2px 4px; font-size: 108%; margin-top: 0;}
+.ietf-ballot .right { background: white; }
+.ietf-ballot .square { border:1px solid black; display: block; float:left;width: 10px; height:10px;font-size:1px;margin-right:4px; margin-top:1px;}
+.ietf-ballot .was { padding-left: 10px; font-size:85%; }
+
+.search_form_box {width: 99.5%; margin-top:8px; padding:4px; margin-bottom:1em; padding-left:8px;}
+form#search_form { padding-top: 4px; padding-bottom: 4px; }
+#search_form input { padding: 0; padding-left: 2px; border: 1px solid #89d;}
+#search_form input.radio { padding-left: 0; border: 0; }
+#search_form select {  border: 1px solid #89d; }
+#search_form div.search_field { margin-top:2px; clear:both;}
+#search_form label { width: 170px; float: left; }
+/* checkboxes for document types */
+#search_form table#search_types { border-collapse:collapse;}
+#search_form #search_types td { padding:0; }
+#search_form #search_types td input { margin-left: 0; width:14px; border:0;}
+/* give checkbox a fixed width so that IE6 aligns the left edge correctly */
+#search_form #id_filename,
+#search_form #id_author { width: 244px; }
+#search_form #id_state,
+#search_form #id_ad, 
+#search_form #id_positionAd { width:248px; }
+#search_form #id_group {width: 120px; margin-right:4px; }
+#search_form #id_area {width:120px; }
+
+table.ietf-table { border-collapse:collapse; border:1px solid #7f7f7f; }
+.ietf-table tr.evenrow { background-color: #EDF5FF; }
+.ietf-table tr.oddrow { background-color: white; }
+.ietf-table td { border-right: 1px solid #cbcbcb; padding:3px 6px; }
+.ietf-table th { color:white; background: #2647A0; text-align:left; padding:3px 6px; border-right: 1px solid #7f7f7f; }
+
+.ietf-doctable tr.header { border-top: 1px solid #7f7f7f; border-bottom: 1px solid #7f7f7f; border-left: 1px solid white; border-right:2px solid white;}
+.ietf-doctable tr.header td {padding: 6px 6px; font-weight: bold; }
+.ietf-doctable table { max-width: 1200px; }
+.ietf-doctable th.doc, .ietf-doctable td.doc { min-width:20em; max-width: 35em; }
+.ietf-doctable th.title, .ietf-doctable td.title { min-width: 20em; max-width: 35em; }
+.ietf-doctable th.date, .ietf-doctable td.date { white-space:nowrap; min-width: 6em;}
+.ietf-doctable th.status, .ietf-doctable td.status { min-width: 20em;}
+.ietf-doctable th.ad, .ietf-doctable td.ad { white-space:nowrap; min-width: 6em; }
+.ietf-doctable td.ballot { border-left: hidden; min-width: 37px; }
+
+table.ballot_icon { empty-cells: show; padding: 0; border-spacing: 0; border: 1px solid black; border-collapse: collapse; table-layout:fixed; min-width:35px; background:white; }
+table.ballot_icon td { border: 1px solid black; height: 7px; width: 6px; padding: 0;}
+td.ballot_icon_green { background:#80ff80; }
+td.ballot_icon_red { background: #c00000; color: yellow; }
+td.ballot_icon_gray { background: #c0c0c0; }
+td.ballot_icon_yellow { background: #ffff00; }
+table.ballot_icon td.ballot_icon_my { border: 3px outset black;}
+
+.ietf-small { font-size:85%; }
+.ietf-highlight-y { padding:0 2px;background:yellow;}
+.ietf-highlight-r { padding:0 2px;background:#ffa0a0;}
+.ietf-divider { background: #2647a0; color: white; font-size:116%; padding:0.5em 1em; }
+
+form .actions {
+  margin-top: 20px;
+}
+
+form .actions a {
+  margin-right: 10px;
+}
+
+form table th {
+  font-weight: normal;
+  text-align: left;
+  padding-right: 10px;
+  padding-top: 2px;
+  vertical-align: top;
+}
+
+form table .help {
+  font-style: italic;
+  font-size: 11px;
+}

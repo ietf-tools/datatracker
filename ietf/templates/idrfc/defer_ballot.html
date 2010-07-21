@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Defer ballot for {{ doc }}{% endblock %}
+
+{% block content %}
+<h1>Defer ballot for {{ doc }}</h1>
+
+<form action="" method="POST">
+  <p>Defer the ballot for {{ doc.file_tag }}?</p>
+
+  <p>The ballot will then be on the IESG agenda of {{ telechat_date }}.</p>
+  
+  <div class="actions">
+    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <input type="submit" value="Defer ballot"/>
+  </div>
+</form>
+{% endblock %}

@@ -1,9 +1,0 @@
-{% ifequal add_edit "edit" %}
-Request to Edit an Existing Entry on the Non-WG Mailing List Web Page
-{% else %}
-  {% ifequal add_edit "add" %}
-  Request to Add a New Entry to the Non-WG Mailing List Web Page
-  {% else %}
-  Request to Delete an Existing Entry on the Non-WG Mailing List Web Page
-  {% endifequal %}
-{% endifequal %}

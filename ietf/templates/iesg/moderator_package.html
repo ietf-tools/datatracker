@@ -1,0 +1,149 @@
+{% comment %} 
+Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}{% comment %}
+Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
+{% endcomment %}<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+{% load ietf_filters %}
+<html><head>
+<title>Moderator Package for {{date}} IESG Telechat</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+h3 { page-break-before:always; }
+@media print {
+html { margin: 0; }
+body { margin: 0; }
+h3 { margin-top: 0; }
+}
+@media screen {
+h3 { border-top: 1px dotted #a0a0a0; padding-top: 1em; }
+}
+</style>
+</head>
+<body>
+
+<h1>Moderator Package for {{date}} IESG Telechat</h1>
+
+<p>Generated at {% now "Y-m-d H:i:s T" %}.</p>
+
+<!-- ===================================================================== -->
+<!-- SECTION 1 -->
+<!-- ===================================================================== -->
+
+<h3>1. Administrivia<br>1.1 Roll Call</h3>
+
+{% filter linebreaks_crlf %}<pre>
+{{ roll_call }}
+</pre>{% endfilter %}
+
+<h3>1. Administrivia<br>1.2 Bash the Agenda</h3>
+
+<p>Does anyone want to add anything NEW to the agenda?</p>
+
+<p>Does anyone have any other changes to the agenda as it stands?</p>
+
+<h3>1. Administrivia<br>1.3 Approval of the Minutes of Past Telechats</h3>
+
+<p>Does anyone have an objection to the minutes of the __________ IESG
+Teleconference being approved?</p>
+
+<p>IF APPROVED: The minutes are approved for the __________
+teleconference.  The Secretariat will post them in the public archive.</p>
+
+<p>Are there narrative minutes to approve for today?</p>
+
+{% filter linebreaks_crlf %}<pre>
+{{ minutes }}
+</pre>{% endfilter %}
+
+<h3>1. Administrivia<br>1.4 List of Remaining Action Items from Last Telehat</h3>
+
+{% filter linebreaks_crlf %}<pre>
+{{ action_items }}
+</pre>{% endfilter %}
+
+<!-- ===================================================================== -->
+<!-- SECTIONS 2+3 -->
+<!-- ===================================================================== -->
+
+{% with "iesg/moderator_doc.html" as doc_template %}
+{% include "iesg/agenda_outline_23.html" %}
+{% endwith %}
+
+<!-- ===================================================================== -->
+<!-- SECTION 4 -->
+<!-- ===================================================================== -->
+
+{% with "iesg/moderator_wg.html" as wg_template %}
+{% include "iesg/agenda_outline_4.html" %}
+{% endwith %}
+
+<!-- ===================================================================== -->
+<!-- SECTION 5 -->
+<!-- ===================================================================== -->
+
+<h3>5. IAB News We Can Use</h3>
+
+<!-- ===================================================================== -->
+<!-- SECTION 6 -->
+<!-- ===================================================================== -->
+
+{% for m in mgmt %}
+<h3>6. Management Items<br>
+6.{{forloop.counter}} {{m.title}}</h3>
+
+<p>Is there anything that you would like the Secretariat to record in the minutes for this management issue?</p>
+
+<p>Decision:</p>
+
+<p>The management issue was discussed.</p>
+
+<p>Action Item (if applicable):</p>
+
+{% empty %}
+<h3>6. Management Items</h3>
+
+<p>NONE</p>
+{% endfor %}
+
+<!-- ===================================================================== -->
+<!-- SECTION 7 -->
+<!-- ===================================================================== -->
+
+<h3>7. Working Group News</h3>
+
+{% filter linebreaks_crlf %}<pre>
+{% for name in ad_names %}[ ] {{ name }}
+{% endfor %}
+</pre>{% endfilter %}
+
+</body></html>

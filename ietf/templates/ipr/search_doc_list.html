@@ -1,17 +1,14 @@
+{% extends "base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-<html>
-<head><title>IPR Search Engine </title></head>
-<body>
+{% block title %}IPR Disclosures - Select Internet-Draft{% endblock %}
 
-  <center>
-  <h2>IPR Disclosures</h2></center>
-  <hr width="100%">
-  <blockquote>
+{% block content %}
+<h1>IPR Disclosures - Selct Internet-Draft</h1>
 
-  <h3>Please select one of following I-Ds</h3>
-  <ul>
-  {% for doc in docs %}
-     <li> <a href="?option=document_search&id_document_tag={{ doc.id_document_tag }}">{{ doc.filename }}</a></li>
-  {% endfor %}
-  </ul>
-</body>
+<h3>Please select one of following I-Ds</h3>
+<ul>
+{% for doc in docs %}
+   <li><a href="?option=document_search&id_document_tag={{ doc.id_document_tag }}">{{ doc.filename }}</a></li>
+{% endfor %}
+</ul>
+{% endblock %}

@@ -28,7 +28,10 @@ done
 [ "$DBDUMP" ] || DBDUMP="$1"
 [ "$DBDUMP" ] || DBDUMP=/www/tools.ietf.org/events/raw/sqldump/sqldump.raw
 [ "$DBFIX"  ] || DBFIX=$build/test/sql_fixup.sql
-[ "$DBTIME" ] || DBTIME=$state/update-db.time
+[ "$DBSANE" ] || DBSANE=$build/test/sql_sanitize.sql
+[ "$DBTEST" ] || DBTEST=$build/test/sql_setup.sql
+[ "$DBTIME" ] || DBTIME=$state/update-db.dump
+[ "$DBSTART" ] || DBSTART=$state/update-db.start
 [ "$DBDONE" ] || DBDONE=$state/update-db.done
 [ "$DBLOCK" ] || DBLOCK=$lock
 
@@ -42,22 +45,27 @@ while true; do
 	#echo "Database dump file is from $(date -r $DBDUMP +'%Y-%m-%d %H:%M')."
 	#echo "Last update done $(date -r $DBDONE +'%Y-%m-%d %H:%M')."
 	if [ $DBDUMP -nt $DBTIME ]; then
+	    export PYTHONPATH=$PWD
 	    echo "Updating database dated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')"
-	    echo -n "Updating database from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')... " 1>&2
+	    #echo -n "Updating database from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M')... " 1>&2
 
 	    echo "$$" > $PIDFILE
 	    chmod a+rw $PIDFILE
-
+	    touch -r $DBDUMP $DBTIME
+	    touch $DBSTART
 	    echo "Updating local database from $DBDUMP ..."
 	    python ietf/manage.py dbshell <  $DBDUMP
 	    echo "Updating local database from $DBFIX ..."
 	    python ietf/manage.py dbshell <  $DBFIX
+	    echo "Updating local database from $DBSANE ..."
+	    python ietf/manage.py dbshell <  $DBSANE
+	    echo "Updating local database from $DBTEST ..."
+	    python ietf/manage.py dbshell <  $DBTEST
 	    echo "Running Django syncdb ..."
 	    python ietf/manage.py syncdb
-	    touch -r $DBDUMP $DBTIME
 	    touch $DBDONE
 	    echo "Done."
-	    echo "Done." 1>&2
+	    #echo "Done." 1>&2
 	else
 	    echo "Database is up-to-date (updated $(date -r $DBDONE +'%Y-%m-%d %H:%M') from dump with time $(date -r $DBDUMP +'%Y-%m-%d %H:%M'))"
 	fi

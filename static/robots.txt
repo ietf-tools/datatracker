@@ -1,0 +1,13 @@
+User-agent: *
+Disallow: /idtracker/feedback
+Disallow: /cgi-bin/idtracker.cgi
+Disallow: /cgi-bin/wg/
+Disallow: /drafts/draft-ietf-hubmib-etherif-MIB/
+Disallow: /drafts/draft-ietf-hubmib-etherif-mib/
+Disallow: /drafts/draft-jamoussi-mpls-crldp-applic/
+Disallow: /drafts/draft-mavrakis-videotex-url-spec/
+Disallow: /drafts/draft-perkins-bits/
+Disallow: /drafts/draft-perkins-float/
+Disallow: /drafts/draft-rauschenbach-pop3-framework/
+Disallow: /drafts/draft-shivkumar-ldapext-dirtxn/
+Disallow: /drafts/draft-wu-mpls-multicast-te/

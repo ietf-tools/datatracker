@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load ietf_filters %}
+{% block title %}IAB/IESG Nominating Committee{% endblock %}
+{% block content %}
+
+<h1>IAB/IESG Nominating Committee</h1>
+
+<h3>Current Committee Chair: <a href="mailto:{{ curr_chair.person.email.1 }}">{{ curr_chair.person.email.0 }}</a></h3>
+
+{% for regime in regimes %}
+  <hr>
+  <h1>Messages from {{ regime.chair.start_year }} - {{ regime.chair.end_year }}</h1>
+  <h4>Committee Chair: <a href="mailto:{{ regime.chair.person.email.1 }}">{{ regime.chair.person }}</a></h4>
+  <table class="ietf-table">
+    <tr>
+      <th width="10%">Date</th>
+      <th width="60%">Subject</th>
+      <th width="30%">Sent To</th>
+    </tr>
+  {% for ann in regime.announcements %}
+    <tr>
+      <td>{{ ann.announced_date|date:"Y-M-d" }}</td>
+      <td style="max-width:50%"><a href="/ann/nomcom/{{ ann.announcement_id  }}/">{{ ann.subject|escape }}</a></td>
+      <td>{{ ann.announced_to }}</td>
+    <tr>
+  {% endfor %}
+  </table>
+{% endfor %}
+
+<hr>
+
+<h3>Messages from 2003-2004 NomCom</h3>
+Committee Chair: <A HREF="mailto:richdr@microsoft.com">Rich Draves</A>
+<br><br><li><a href="http://www.ietf.org/old/2009/nomcom/msg08-25-2003.txt">IETF Nominations Committee Chair Announcement</a> August 25, 2003
+<LI><a href="http://www.ietf.org/old/2009/nomcom/msg09.22.txt">NomCom call for volunteers</a> September 22, 2003
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/select-announce_03.txt">Selection of the Nominations Committee</A>
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg10.06.txt">NomCom Volunteer List</a> October 06, 2004
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg1010.txt">NomCom Selection</a> October 10, 2003
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg10.17.txt">Call for Nominees</a> October 17, 2003 
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg10.24.txt">NomCom members</a> October 24, 2003
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg11.07.txt">NomCom at IETF</a> November 07, 2003
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg11.14.txt">NomCom News</a> November 14, 2003
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg11.26.txt">Reminder - nominations to replace Randy Bush</a> November 26, 2003
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg12.01.txt">Randy Bush replacement schedule</a> December 01, 2003
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg01.14.txt">Randy Bush replacement</a> January 14, 2004 
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg02.13.txt">NomCom results</a> February 13, 2004
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg09.28.txt">Call for Security AD nominations</a> September 28, 2004
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg11.07.04.txt">Steve Bellovin replacement</a> November  07, 2004 
+ 
+<h3>Messages from 2002-2003 NomCom</h3>
+
+Committee Chair: <A HREF="mailto:PRoberts@MEGISTO.com">Phil Roberts</A>
+<br><br>
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg19765.html">First Call for Volunteers</A> July 30, 2002
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/select-announce.txt">Selection of the Nominations Committee</A>
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg0918.txt">Announcement of the Nominations Committee</A> September 18, 2002
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg10.21.txt">Announcement of IESG and IAB Nominations Requests</A> October 21, 2002
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg11.05.txt">Announcement of IESG and IAB Nominations Requests</A> November 5, 2002
+<LI><A HREF="http://www.ietf.org/old/2009/nomcom/msg11.12.txt">Announcement of IESG and IAB Nominations Requests</A> November 12, 2002
+<LI><a href="http://www.ietf.org/old/2009/nomcom/msg02.27.txt">IETF Nomcom Announcement</a> February 27, 2003
+<LI><a href="http://www.ietf.org/old/2009/nomcom/msg06.11.txt">Announcement of IESG and IAB Nominations Request</a> June 11, 2003
+<LI><a href="http://www.ietf.org/old/2009/nomcom/msg07.15.txt">Nomcom result announcement</a> July 15, 2003
+
+<h3>Historical Information</h3>
+
+<li><a href="http://www.ietf.org/nomcom/committee.html">IAB/IESG Nominating Committee Members (by year)</a>
+
+<h3>References</h3>
+
+<LI><A HREF="http://www.ietf.org/rfc/rfc2026.txt">The Internet Standards Process (RFC 2026)</A>
+<LI><A HREF="http://www.ietf.org/rfc/rfc3777.txt">IAB and IESG Selection, Confirmation, and Recall Process: Operation of the Nominating and Recall Committees (RFC 3777) (Also BCP10)</A>
+<LI><A HREF="http://www.ietf.org/rfc/rfc3797.txt">Publicly Verifiable Nominations Committee (NomCom) Random Selection (RFC 3797)</A>
+
+{% endblock %}

@@ -1,13 +1,14 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% extends "base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+
+{% block pagehead %}{% if lastcall %}
+<link rel="alternate" type="application/atom+xml" href="/feed/last-call/">
+{% endif %}{% endblock %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<center><h1>{{ title }}</h1></center>
-<i>Generated {% now "M j, Y" %}<br>
-{# no hit counter #}
-</i>
+<h1>{{ title }}</h1>
 
 {% regroup object_list by cur_state_id as grouped %}
 {% for state in grouped %}
@@ -24,17 +25,4 @@
 {% endfor %}
 </table>
 {% endfor %}
-
-<HR>
-<b><A href="http://www.rfc-editor.org/queue.html">RFC Editor Queue</a></b>
-<p>
-
-
-<!-- begin new footer -->
-<HR>
-
-<i>This page produced by the <A HREF="mailto:iesg-secretary@ietf.org">IETF Secretariat</a> 
-for the <A HREF="mailto:iesg@ietf.org">IESG</A></i>
-<p>
-
 {% endblock %}

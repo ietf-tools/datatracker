@@ -2,8 +2,7 @@
 
 
 section_table = {
-                "index":    {   "index": True   },
-                "specific": {   "index": False, "title": True,
+                "specific": {   "title": True,
                                 "specific": 1, "generic": 0, "third_party": 0, 
                                 "legacy_intro": False, "new_intro": True,  "form_intro": False,
                                 "holder": True, "holder_contact": True, "ietf_contact": True,
@@ -12,7 +11,7 @@ section_table = {
                                 "disclosure_type": "Specific IPR Disclosures", "form_legend": False, 
                                 "per_rfc_disclosure": True, "also_specific": False,
                             },
-                "generic": {   "index": False, "title": True,
+                "generic": {   "title": True,
                                 "specific": 0, "generic": 1, "third_party": 0, 
                                 "legacy_intro": False, "new_intro": True,  "form_intro": False,
                                 "holder": True, "holder_contact": True, "ietf_contact": False,
@@ -21,7 +20,7 @@ section_table = {
                                 "disclosure_type": "Generic IPR Disclosures", "form_legend": False, 
                                 "per_rfc_disclosure": False, "also_specific": True,
                             },
-                "third-party": {"index": False, "title": True,
+                "third-party": {"title": True,
                                 "specific": 0, "generic": 0, "third_party": 1, 
                                 "legacy_intro": False, "new_intro": True,  "form_intro": False,
                                 "holder": True, "holder_contact": False, "ietf_contact": True,
@@ -30,7 +29,7 @@ section_table = {
                                 "disclosure_type": "Notification", "form_legend": False, 
                                 "per_rfc_disclosure": False, "also_specific": False,
                             },
-                "legacy":   {   "index": False, "title": True, "legacy": True,
+                "legacy":   {   "title": True, "legacy": True,
                                 "legacy_intro": True, "new_intro": False,  "form_intro": False,
                                 "holder": True, "holder_contact": True, "ietf_contact": False,
                                 "ietf_doc": True, "patent_info": False, "licensing": False,

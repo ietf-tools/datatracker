@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Change position for {{ ad }}{% endblock %}
+
+{% block morecss %}
+form.position-form .position ul {
+  padding: 0;
+  margin: 0;
+}
+form.position-form .position li {
+  list-style-type: none;
+  float: left;
+  padding-right: 10px;
+}
+form.position-form .last-edited {
+  font-style: italic;
+}
+form.position-form .discuss-text {
+  padding-top: 20px
+}
+form.position-form #id_discuss_text,
+form.position-form #id_comment_text {
+  width: 700px;
+  height: 250px;
+}
+form.position-form .comment-text {
+  margin-top: 20px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Change position for {{ ad }}</h1>
+
+<form class="position-form" action="" method="POST">
+  <div class="position">{{ form.position }}</div>
+
+  <div style="clear:left"></div>
+  
+  <div class="discuss-widgets">
+  <div class="discuss-text">
+    {{ form.discuss_text.label_tag }}:
+    {% if discuss %}<span class="last-edited">(last edited {{ discuss.date }})</span>{% endif %}
+  </div>
+  {{ form.discuss_text }}
+  </div>
+  
+  <div class="comment-text">
+    {{ form.comment_text.label_tag }}:
+    {% if comment %}<span class="last-edited">(last edited {{ comment.date }}){% endif %}</span>
+  </div>
+  {{ form.comment_text }}
+
+  <div class="actions">
+    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <input type="submit" name="send_mail" value="Save and send email"/>
+    <input type="submit" value="Save"/>
+  </div>
+</form>
+{% endblock %}
+
+{% block content_end %}
+<script type="text/javascript" src="/js/doc-edit-position.js"></script>
+{% endblock %}

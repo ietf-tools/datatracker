@@ -1,7 +1,0 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% extends "mailinglists/list_approval_base.html" %}
-
-{% block innercontent %}
-<font color="#022d66">  Your note approving the request to {% filter escape %}{% include "mailinglists/list_type_message2.txt" %}{% endfilter %} has been sent to the Secretariat and the requestor.<br>
-It will take up to two business days for the Secretariat to {% include "mailinglists/list_action.txt" %} email list.</font><br><br>
-{% endblock %}

@@ -336,6 +336,18 @@
     <field to="redirects.redirect" name="script" rel="ManyToOneRel">21</field>
     <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">9</field>
   </object>
+  <object pk="24" model="redirects.command">
+    <field type="CharField" name="command">^filename^view_id</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">10</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">10</field>
+  </object>
+  <object pk="25" model="redirects.command">
+    <field type="CharField" name="command">^filename^id_detail</field>
+    <field type="CharField" name="url"></field>
+    <field to="redirects.redirect" name="script" rel="ManyToOneRel">7</field>
+    <field to="redirects.suffix" name="suffix" rel="ManyToOneRel">10</field>
+  </object>
   <object pk="2" model="redirects.suffix">
     <field type="CharField" name="rest">%(fl)s</field>
     <field type="CharField" name="remove"></field>
@@ -362,6 +374,10 @@
   </object>
   <object pk="9" model="redirects.suffix">
     <field type="CharField" name="rest">%(ipr_id)s</field>
+    <field type="CharField" name="remove"></field>
+  </object>
+  <object pk="10" model="redirects.suffix">
+    <field type="CharField" name="rest">%(filename)s</field>
     <field type="CharField" name="remove"></field>
   </object>
 </django-objects>

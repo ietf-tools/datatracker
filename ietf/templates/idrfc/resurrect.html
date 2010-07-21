@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Resurrect {{ doc }}{% endblock %}
+
+{% block content %}
+<form action="" method="POST">
+  <h1>Resurrect {{ doc }}</h1>
+  
+  <p>Resurrect {{ doc.file_tag }}?</p>
+
+  <p>This will change the status to Active{% if doc.idinternal.resurrect_requested_by %} and email a notice to {{ doc.idinternal.resurrect_requested_by }}{% endif %}.</p>
+
+  <div class="actions">
+    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <input type="submit" value="Resurrect"/>
+  </div>
+</form>
+{% endblock %}
