@@ -209,22 +209,6 @@ $do sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' \
 note "\nCommitting the updated version and deployment settings"
 $do svn commit $VERFILE $SETTINGS -m "Set version info and settings back to development mode"
 
-# if SRC is 'trunk', then also create a new branch
-if [ $SRC = "trunk" ]; then
-    if svn info $REPO/branch/$VER 2>&1 | grep -q "Not a valid URL"; then
-	note "\nCreating new branch 'branch/$VER' from $SRC"
-	$do svn cp $REPO/$SRC $REPO/branch/$VER -m "Creating new branch 'branch/$VER' from $SRC"
-    fi
-
-    note "\nUpdating version and revision info on trunk"
-    $do sed -i -r -e "/^__version__/s/\"[0-9.]*\"/\"$MAJOR.xx-trunk\"/" \
-	          -e "/^__rev__/s/\"\\\$Rev: (.*) \\\$\"/\"\$Rev:\$ (dev) Latest release: Rev. \1 \"/" \
-	$VERFILE
-
-    note "Commit version information '$MAJOR.xx-trunk'"
-    $do svn commit $VERFILE $SETTINGS -m "Set version of the trunk to $MAJOR.xx-trunk after branching off $VER"
-fi
-
 $do svn update
 
 echo "
@@ -244,7 +228,7 @@ Regards,
 
 	Henrik
 	(via the mkrelease script)
-" | mail -s "New datatracker release: v$VER" -c henrik@levkowetz.com  -c glen@amsl.com -c fenner@fenron.net -c pasi.eronen@nokia.com -c rjs@nostrum.com -c housley@vigilsec.com codesprints@ietf.org
+" | $do mail -s "New datatracker release: v$VER" -c henrik@levkowetz.com  -c glen@amsl.com -c fenner@fenron.net -c pasi.eronen@nokia.com -c rjs@nostrum.com -c housley@vigilsec.com codesprints@ietf.org
 
-toolsfeed control changelog /www/tools.ietf.org/tools/atomfeed.xml
-toolpush /www/tools.ietf.org/tools/atomfeed.xml
+$do toolsfeed control changelog /www/tools.ietf.org/tools/atomfeed.xml
+$do toolpush /www/tools.ietf.org/tools/atomfeed.xml
