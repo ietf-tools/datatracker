@@ -20,8 +20,9 @@
                 }
 
                 config.showOn = $('#' + fieldset.find('.showAttachsOn').html());
+                config.showOnDisplay = config.showOn.find('.attachedFiles');
+                config.showOnEmpty = config.showOn.find('.showAttachmentsEmpty').html();
                 config.enabledLabel = fieldset.find('.attachEnabledLabel').html();
-                config.initialAttachments = config.showOn.html();
             };
 
             var setState = function() {
@@ -44,7 +45,7 @@
             var cloneFields = function() {
                 var html = '<div class="attachedFileInfo">';
                 if (count) {
-	            html = config.showOn.html() + html;
+	            html = config.showOnDisplay.html() + html;
                 }
                 config.fields.each(function() {
                     var field = $(this);
@@ -65,7 +66,7 @@
                 });
                 html += ' <a href="#" class="removeAttach">Remove</a>';
                 html += '</div>';
-                config.showOn.html(html);
+                config.showOnDisplay.html(html);
                 config.fields.val('');
                 count += 1;
             };
@@ -83,8 +84,8 @@
                     $('#' + $(this).html()).remove();
                 });
                 attach.remove();
-                if (!config.showOn.html()) {
-                    config.showOn.html(config.initialAttachments);
+                if (!config.showOnDisplay.html()) {
+                    config.showOnDisplay.html(config.showOnEmpty);
                     count = 0;
                 }
                 return false;
@@ -93,7 +94,7 @@
             var initTriggers = function() {
                 config.fields.change(setState);
                 config.fields.keyup(setState);
-                config.showOn.find('a.removeAttach').live('click', removeAttachment);
+                config.showOnDisplay.find('a.removeAttach').live('click', removeAttachment);
                 button.click(doAttach);
             };
 

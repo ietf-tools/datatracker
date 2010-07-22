@@ -40,3 +40,16 @@ class ButtonWidget(Widget):
             html += u'<span style="display: none" class="attachDisabledLabel">%s</span>' % required_str
         html += u'<input type="button" class="addAttachmentWidget" value="%s" />' % self.label
         return mark_safe(html)
+
+
+class ShowAttachmentsWidget(Widget):
+
+    def render(self, name, value, attrs=None):
+        html = u'<div id="id_%s">' % name
+        html += u'<span style="display: none" class="showAttachmentsEmpty">No files attached</span>'
+        if not value:
+            html += u'<div class="attachedFiles">No files attached</div>' 
+        else:
+            pass
+        html += u'</div>'
+        return mark_safe(html)

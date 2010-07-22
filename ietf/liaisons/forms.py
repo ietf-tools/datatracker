@@ -1,3 +1,5 @@
+import datetime
+
 from django import forms
 from django.conf import settings
 from django.forms.util import ErrorList
@@ -5,9 +7,10 @@ from django.template.loader import render_to_string
 
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
                                     get_person_for_user)
-from ietf.liaisons.models import LiaisonDetail
+from ietf.liaisons.models import LiaisonDetail, Uploads
 from ietf.liaisons.utils import IETFHierarchyManager
-from ietf.liaisons.widgets import FromWidget, ReadOnlyWidget, ButtonWidget
+from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
+                                   ShowAttachmentsWidget)
 
 
 class LiaisonForm(forms.ModelForm):
@@ -20,7 +23,7 @@ class LiaisonForm(forms.ModelForm):
     purpose_text = forms.CharField(widget=forms.Textarea, label='Other purpose')
     deadline_date = forms.DateField(label='Deadline')
     title = forms.CharField(label=u'Title')
-    attachments = forms.CharField(label='Attachments', widget=ReadOnlyWidget, initial='No files attached', required=False)
+    attachments = forms.CharField(label='Attachments', widget=ShowAttachmentsWidget, required=False)
     attach_title = forms.CharField(label='Title', required=False)
     attach_file = forms.FileField(label='File', required=False)
     attach_button = forms.CharField(label='',
@@ -119,6 +122,42 @@ class LiaisonForm(forms.ModelForm):
             self._errors['body'] = ErrorList([u'You must provide a body or attachment files'])
             self._errors['attachments'] = ErrorList([u'You must provide a body or attachment files'])
         return self.cleaned_data
+
+    def get_organization(self):
+        organization_key = self.cleaned_data.get('organization')
+        return self.hm.get_entity_by_key(organization_key)
+
+    def save(self, *args, **kwargs):
+        now = datetime.datetime.now()
+        liaison = super(LiaisonForm, self).save(*args, **kwargs)
+        liaison.submitted_date = now
+        liaison.last_modified_date = now
+        organization =  self.get_organization()
+        liaison.to_body = organization.name
+        liaison.to_poc = ', '.join([i.email()[1] for i in organization.get_poc()])
+        liaison.submitter_name, liaison.submitter_email = self.person.email()
+        liaison.cc1 = ', '.join(['%s <%s>' % i.email() for i in organization.get_cc()])
+        liaison.save()
+        self.save_attachments(liaison)
+
+    def save_attachments(self, instance):
+        for key in self.files.keys():
+            title_key = key.replace('file', 'title')
+            if not key.startswith('attach_file_') or not title_key in self.data.keys():
+                continue
+            attached_file = self.files.get(key)
+            extension=attached_file.name.rsplit('.', 1)
+            basename = extension[0]
+            if len(extension) > 1:
+                extension = '.' + extension[1]
+            else:
+                extension = ''
+            attach = Uploads.objects.create(
+                file_title = self.data.get(title_key),
+                person = self.person,
+                detail = instance,
+                file_extension = extension
+                )
 
 
 class IncomingLiaisonForm(LiaisonForm):

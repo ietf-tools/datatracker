@@ -17,8 +17,7 @@ def add_liaison(request):
         form = liaison_form_factory(request, data=request.POST.copy(), 
                                     files = request.FILES)
         if form.is_valid():
-            #form.save()
-            pass
+            form.save()
     else:
         form = liaison_form_factory(request)
 
