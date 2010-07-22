@@ -1,6 +1,6 @@
 {% load i18n %}
 
-<form class="liaisonform" method="post" action="">
+<form class="liaisonform" method="post" action="" enctype="multipart/form-data">
 
 <div class="formconfig" style="display: none;">
 {% block formconfig %}
@@ -10,6 +10,11 @@
 </div>
 
 <div class="baseform">
+  {% if form.errors %}
+   <div class="formErrors">
+     Please correct the errors below.
+   </div>
+  {% endif %}
 {% for fieldset in form.get_fieldsets %}
   {% if fieldset.name %}
     <div class="fieldset">
@@ -18,15 +23,16 @@
 
   {% for field in fieldset.fields %}
     <div id="baseform-fieldname-{{ field.html_name }}"
-         class="{% if field.errors %}error {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
-      <label for="id_{{ field.html_name }}">{{ field.label }}</label>
+         class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
+      <label for="id_{{ field.html_name }}">{{ field.label }}
       {% if field.field.required %}
-      <span class="fieldRequired" title="Required"></span>
+         <span class="fieldRequired" title="Required">*</span>
       {% endif %}
+      </label>
       <div class="fieldWidget">
-      {{ field.errors }} 
       <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
       {{ field }}
+      {{ field.errors }} 
       </div>
       <div class="endfield"></div>
     </div>
@@ -37,10 +43,10 @@
   {% endif %}
 {% endfor %}
 
+  <div class="submitrow">
+    <input type="submit" value="Send and Post" name="send" />
+    <input type="submit" value="Post Only" name="post_only" />
+  </div>
 </div>
 
-<div class="submitrow">
-  <input type="submit" value="Send and Post" name="send" />
-  <input type="submit" value="Post Only" name="post_only" />
-</div>
 </form>

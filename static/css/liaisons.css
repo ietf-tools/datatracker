@@ -18,13 +18,12 @@
 }
 
 .baseform .field {
-    margin: 1em 0px;
-    padding: 0px 10px;
+    padding: 0.5em 10px;
 }
 
 .baseform .field label {
     display: block;
-    width: 200px;
+    width: 150px;
     float: left;
     clear: left;
 }
@@ -34,7 +33,7 @@
 }
 
 .baseform .fieldWidget {
-    margin-left: 200px;
+    margin-left: 150px;
 }
 
 .baseform #baseform-fieldname-purpose_text,
@@ -45,5 +44,38 @@
 .baseform select,
 .baseform textarea,
 .baseform input {
-    border: 1px solid lightgray;
+    border: 1px solid #cccccc;
+}
+
+.baseform input {
+    font-size: 12px;
+}
+
+#id_title,
+.baseform textarea {
+    width: 80%;
+}
+
+#id_purpose_text {
+    height: 100px;
+}
+
+#id_body {
+    height: 300px;
+}
+
+span.fieldRequired {
+    color: red;
+}
+
+.fieldError {
+    background-color: #ffcc66;
+}
+
+.errorlist li,
+.errorlist {
+    padding: 0px; 
+    margin: 0px;
+    list-style: none;
+    color: red;
 }

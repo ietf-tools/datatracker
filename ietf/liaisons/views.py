@@ -13,7 +13,14 @@ from ietf.liaisons.utils import IETFHierarchyManager
 
 @can_submit_liaison
 def add_liaison(request):
-    form = liaison_form_factory(request)
+    if request.method == 'POST':
+        form = liaison_form_factory(request, data=request.POST.copy(), 
+                                    files = request.FILES)
+        if form.is_valid():
+            #form.save()
+            pass
+    else:
+        form = liaison_form_factory(request)
 
     return render_to_response(
         'liaisons/liaisondetail_edit.html',

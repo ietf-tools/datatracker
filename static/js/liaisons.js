@@ -1,4 +1,112 @@
 (function ($) {
+    $.fn.AttachmentWidget = function() {
+        return this.each(function () {
+            var button = $(this);
+            var fieldset = $(this).parents('.fieldset');
+            var config = {};
+            var count = 0;
+
+            var readConfig = function() {
+                var disabledLabel = fieldset.find('.attachDisabledLabel');
+
+                if (disabledLabel.length) {
+                    config.disabledLabel = disabledLabel.html();
+                    var required = ''
+                    fieldset.find('.attachRequiredField').each(function(index, field) {
+                        required += '#' + $(field).html() + ',';
+                    });
+                    var fields = fieldset.find(required);
+                    config.fields = fields;
+                }
+
+                config.showOn = $('#' + fieldset.find('.showAttachsOn').html());
+                config.enabledLabel = fieldset.find('.attachEnabledLabel').html();
+                config.initialAttachments = config.showOn.html();
+            };
+
+            var setState = function() {
+                var enabled = true;
+                config.fields.each(function() {
+                    if (!$(this).val()) {
+                        enabled = false;
+                        return;
+                    }
+                });
+                if (enabled) {
+                    button.removeAttr('disabled');
+                    button.val(config.enabledLabel);
+                } else {
+                    button.attr('disabled', 'disabled');
+                    button.val(config.disabledLabel);
+                }
+            };
+
+            var cloneFields = function() {
+                var html = '<div class="attachedFileInfo">';
+                if (count) {
+	            html = config.showOn.html() + html;
+                }
+                config.fields.each(function() {
+                    var field = $(this);
+                    var newcontainer= $(this).parents('.field').clone();
+                    var newfield = newcontainer.find('#' + field.attr('id'));
+                    newcontainer.hide();
+                    newfield.attr('name', newfield.attr('name') + '_' + count);
+                    newcontainer.attr('id', 'container_id_' + newfield.attr('name'));
+                    newcontainer.insertBefore(button.parents('.field'));
+                    if (newcontainer.find(':file').length) {
+                        html += ' (' + newfield.val() + ')';
+                    } else {
+                        html += ' ' + newfield.val();
+                    }
+                    html += '<span style="display: none;" class="removeField">';
+                    html += newcontainer.attr('id');
+                    html += '</span>';
+                });
+                html += ' <a href="#" class="removeAttach">Remove</a>';
+                html += '</div>';
+                config.showOn.html(html);
+                config.fields.val('');
+                count += 1;
+            };
+
+            var doAttach = function() {
+                cloneFields();    
+                setState();
+            };
+
+            var removeAttachment = function() {
+                var link = $(this);
+                var attach = $(this).parent('.attachedFileInfo');
+                var fields = attach.find('.removeField');
+                fields.each(function() {
+                    $('#' + $(this).html()).remove();
+                });
+                attach.remove();
+                if (!config.showOn.html()) {
+                    config.showOn.html(config.initialAttachments);
+                    count = 0;
+                }
+                return false;
+            };
+
+            var initTriggers = function() {
+                config.fields.change(setState);
+                config.fields.keyup(setState);
+                config.showOn.find('a.removeAttach').live('click', removeAttachment);
+                button.click(doAttach);
+            };
+
+            var initWidget = function() {
+                readConfig();
+                initTriggers();
+                setState();
+            };
+
+            initWidget();
+        });
+    };
+
     $.fn.LiaisonForm = function() {
         return this.each(function () {
             var form = $(this);
@@ -76,6 +184,7 @@
                 var datecontainer = deadline.parents('.field');
                 var othercontainer = other_purpose.parents('.field');
                 var selected_id = purpose.find('option:selected').val();
+                var deadline_required = datecontainer.find('.fieldRequired');
              
                 if (selected_id == '1' || selected_id == '2' || selected_id == '5') {
                     datecontainer.show();
@@ -86,9 +195,11 @@
 
                 if (selected_id == '5') {
                     othercontainer.show();
+                    deadline_required.hide();
                 } else {
                     othercontainer.hide();
-                    other_purpose.html('');
+                    other_purpose.val('');
+                    deadline_required.show();
                 }
             };
 
@@ -107,10 +218,23 @@
                 updatePurpose();
             };
 
+            var initDatePicker = function() {
+                deadline.datepicker({
+                    dateFormat: $.datepicker.ATOM,
+                    changeYear: true
+                });
+            };
+
+            var initAttachments = function() {
+                form.find('.addAttachmentWidget').AttachmentWidget();
+            };
+
             var initForm = function() {
                 readConfig();
                 initTriggers();
                 updateOnInit();
+                initDatePicker();
+                initAttachments();
             };
 
             initForm();
