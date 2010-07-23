@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
                                     get_person_for_user)
 from ietf.liaisons.models import LiaisonDetail, Uploads
-from ietf.liaisons.utils import IETFHierarchyManager
+from ietf.liaisons.utils import IETFHM
 from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
                                    ShowAttachmentsWidget)
 
@@ -56,7 +56,7 @@ class LiaisonForm(forms.ModelForm):
         if kwargs.get('data', None):
             kwargs['data'].update({'person': self.person.pk})
         super(LiaisonForm, self).__init__(*args, **kwargs)
-        self.hm = IETFHierarchyManager()
+        self.hm = IETFHM
         self.set_from_field()
         self.set_replyto_field()
         self.set_organization_field()
@@ -123,7 +123,11 @@ class LiaisonForm(forms.ModelForm):
             self._errors['attachments'] = ErrorList([u'You must provide a body or attachment files'])
         return self.cleaned_data
 
-    def get_organization(self):
+    def get_from_entity(self):
+        organization_key = self.cleaned_data.get('from_field')
+        return self.hm.get_entity_by_key(organization_key)
+
+    def get_to_entity(self):
         organization_key = self.cleaned_data.get('organization')
         return self.hm.get_entity_by_key(organization_key)
 
@@ -132,7 +136,9 @@ class LiaisonForm(forms.ModelForm):
         liaison = super(LiaisonForm, self).save(*args, **kwargs)
         liaison.submitted_date = now
         liaison.last_modified_date = now
-        organization =  self.get_organization()
+        from_entity =  self.get_from_entity()
+        liaison.from_raw_body = from_entity.name
+        organization =  self.get_to_entity()
         liaison.to_body = organization.name
         liaison.to_poc = ', '.join([i.email()[1] for i in organization.get_poc()])
         liaison.submitter_name, liaison.submitter_email = self.person.email()
@@ -166,11 +172,11 @@ class IncomingLiaisonForm(LiaisonForm):
         sdo_managed = [i.sdo for i in self.person.liaisonmanagers_set.all()]
         sdo_authorized = [i.sdo for i in self.person.sdoauthorizedindividual_set.all()]
         sdos = set(sdo_managed).union(sdo_authorized)
-        self.fields['from_field'].choices = [(i.pk, i.sdo_name) for i in sdos]
+        self.fields['from_field'].choices = [('sdo_%s' % i.pk, i.sdo_name) for i in sdos]
         self.fields['from_field'].widget.submitter = unicode(self.person)
 
     def set_organization_field(self):
-        self.fields['organization'].choices = self.hm.get_all_decorated_entities()
+        self.fields['organization'].choices = self.hm.get_all_incoming_entities()
 
 
 class OutgoingLiaisonForm(LiaisonForm):

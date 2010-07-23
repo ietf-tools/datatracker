@@ -1,4 +1,5 @@
 from ietf.idtracker.models import Area, IETFWG
+from ietf.liaisons.models import SDOs
 
 IETFCHAIR = {'name': u'The IETF Chair', 'address': u'chair@ietf.org'}
 IESG = {'name': u'The IESG', 'address': u'iesg@ietf.org'}
@@ -30,7 +31,7 @@ class IETFEntity(object):
             return [self.poc]
         return self.poc
 
-    def get_cc(self):
+    def get_cc(self, person=None):
         if not isinstance(self.cc, list):
             return [self.cc]
         return self.cc
@@ -41,7 +42,7 @@ class AreaEntity(IETFEntity):
     def get_poc(self):
         return [i.person for i in self.obj.areadirector_set.all()]
 
-    def get_cc(self):
+    def get_cc(self, person=None):
         return [FakePerson(**IETFCHAIR)]
 
 
@@ -50,12 +51,27 @@ class WGEntity(IETFEntity):
     def get_poc(self):
         return [i.person for i in self.obj.wgchair_set.all()]
 
-    def get_cc(self):
+    def get_cc(self, person=None):
         result = [i.person for i in self.obj.area_directors()]
         if self.obj.email_address:
             result.append(FakePerson(name ='%s Discussion List' % self.obj.group_acronym.name,
                                      address = self.obj.email_address))
         return result
+
+
+class SDOEntity(IETFEntity):
+
+    def get_poc(self):
+        return []
+
+    def get_cc(self, person=None):
+        return []
+
+    def get_from_cc(self, person=None):
+        manager = self.obj.liaisonmanager()
+        if manager and manager.person!=person:
+            return [manager.person]
+        return []
 
 
 class IETFEntityManager(object):
@@ -114,6 +130,26 @@ class WGEntityManager(IETFEntityManager):
         return WGEntity(name=obj.group_acronym.name, obj=obj)
 
 
+class SDOEntityManager(IETFEntityManager):
+
+    def __init__(self, pk=None, name=None, queryset=None, poc=None):
+        super(SDOEntityManager, self).__init__(pk, name, queryset, poc)
+        if self.queryset == None:
+            self.queryset = SDOs.objects.all()
+
+    def get_managed_list(self):
+        return [(u'%s_%s' % (self.pk, i.pk), i.sdo_name) for i in self.queryset.order_by('sdo_name')]
+
+    def get_entity(self, pk=None):
+        if not pk:
+            return None
+        try:
+            obj = self.queryset.get(pk=pk)
+        except self.queryset.model.DoesNotExist:
+            return None
+        return SDOEntity(name=obj.sdo_name, obj=obj)
+
+
 class IETFHierarchyManager(object):
 
     def __init__(self):
@@ -129,6 +165,7 @@ class IETFHierarchyManager(object):
                                                   cc=FakePerson(**IAB)),
                          'area': AreaEntityManager(pk='area', name=u'IETF Areas'),
                          'wg': WGEntityManager(pk='wg', name=u'IETF Working Groups'),
+                         'sdo': SDOEntityManager(pk='sdo', name=u'Standards Development Organizations'),
                         }
 
     def get_entity_by_key(self, entity_id):
@@ -147,7 +184,7 @@ class IETFHierarchyManager(object):
             entities += manager.get_managed_list()
         return entities
 
-    def get_all_decorated_entities(self):
+    def get_all_incoming_entities(self):
         entities = []
         results = []
         for key in ['ietf', 'iesg', 'iab']:
@@ -156,3 +193,9 @@ class IETFHierarchyManager(object):
         entities.append(('IETF Areas', self.managers['area'].get_managed_list()))
         entities.append(('IETF Working Groups', self.managers['wg'].get_managed_list()))
         return entities
+
+    def get_all_outgoing_entities(self):
+        entities = [(self.manager['sdo'].name, self.managers['sdo'].get_managed_list())]
+        return entities
+
+IETFHM = IETFHierarchyManager()
