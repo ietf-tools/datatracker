@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 from django.shortcuts import render_to_response
-from django.http import HttpResponse
+from django.core.urlresolvers import reverse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
 from django.utils import simplejson
 
@@ -18,6 +19,7 @@ def add_liaison(request):
                                     files = request.FILES)
         if form.is_valid():
             form.save()
+            return HttpResponseRedirect(reverse('liaison_list'))
     else:
         form = liaison_form_factory(request)
 
