@@ -50,9 +50,19 @@ class LiaisonDetail(models.Model):
     to_email = models.CharField(blank=True, null=True, max_length=255)
     purpose = models.ForeignKey(LiaisonPurpose,null=True)
     replyto = models.CharField(blank=True, null=True, max_length=255)
+    from_raw_body = models.CharField(blank=True, null=True, max_length=255)
     def __str__(self):
 	return self.title or "<no title>"
     def from_body(self):
+	"""The from_raw_body stores the name of the entity
+    sending the liaison.
+    For legacy liaisons (the ones with empty from_raw_body)
+    the legacy_from_body() is returned."""
+        if not self.from_raw_body:
+            return self.legacy_from_body()
+        return self.from_raw_body
+
+    def legacy_from_body(self):
 	"""The from_id field is a foreign key for either
 	FromBodies or Acronyms, depending on whether it's
 	the IETF or not.  There is no flag field saying
