@@ -37,6 +37,7 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext, loader
 from django.http import HttpResponse
 from ietf.idrfc.views_search import SearchForm, search_query
+from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
 
 def wg_summary_acronym(request):
     areas = Area.active_areas()
@@ -67,7 +68,19 @@ def wg_documents(request, acronym):
     if not form.is_valid():
         raise ValueError("form did not validate")
     (docs,meta) = search_query(form.cleaned_data)
-    return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs, 'meta':meta}, RequestContext(request))
+    
+    # get the related docs
+    form_related = SearchForm({'by':'group', 'name':'-'+str(wg.group_acronym.acronym)+'-', 'activeDrafts':'on'})
+    if not form_related.is_valid():
+        raise ValueError("form_related did not validate")
+    (docs_related,meta_related) = search_query(form_related.cleaned_data)
+    docs_related_pruned = []
+    for d in docs_related:
+        if d.id.draft_name_and_revision().count('-ietf-') == 0:
+             docs_related_pruned.append(d)
+        
+    return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs,  'meta':meta, 
+                                                           'docs_related':docs_related_pruned, 'meta_related':meta_related}, RequestContext(request))
 
 def wg_charter(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
