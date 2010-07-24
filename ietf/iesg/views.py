@@ -50,6 +50,7 @@ from ietf.idrfc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
 import datetime 
+import tarfile
 
 def date_threshold():
     """Return the first day of the month that is 185 days ago."""
@@ -295,6 +296,19 @@ def agenda_documents(request):
             res[section_key].append(w)
         telechats.append({'date':date, 'docs':res})
     return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats, 'hide_telechat_date':True})
+
+def agenda_downloaddocstgz(request,year,month,day):
+    date=datetime.date(int(year),int(month),int(day))
+    docs= IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
+    response = HttpResponse(mimetype='application/octet-stream')
+    response['Content-Disposition'] = 'attachment; filename=telechat-%s-%s-%s-docs.tgz'%(year, month, day)
+    tarstream = tarfile.open('','w:gz',response)
+    for doc in docs:
+      tarstream.add(os.path.join(settings.INTERNET_DRAFT_PATH, doc.draft.filename+"-"+doc.draft.revision_display()+".txt"),
+                                                               doc.draft.filename+"-"+doc.draft.revision_display()+".txt")
+    tarstream.close()
+    return response
+
 
 def discusses(request):
     positions = Position.objects.filter(discuss=1)
