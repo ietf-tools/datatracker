@@ -8,9 +8,9 @@ urlpatterns = patterns('',
     (r'^agenda/$', views.html_agenda),
     (r'^agenda(.html)?$', views.html_agenda),
     (r'^agenda.txt$', views.text_agenda),
-    (r'^(?P<num>\d+)/agenda(.html)?$', views.html_agenda),
+    (r'^(?P<num>\d+)/agenda(.html)?/?$', views.html_agenda),
     (r'^(?P<num>\d+)/agenda.txt$', views.text_agenda),
-    (r'^(?P<num>\d+)/session/(?P<session>[A-Za-z0-9-]+)(?P<ext>\.[A-Za-z0-9]+)?$', views.session_agenda),
+    (r'^(?P<num>\d+)/agenda/(?P<session>[A-Za-z0-9-]+)(?P<ext>\.[A-Za-z0-9]+)?$', views.session_agenda),
     (r'^$', views.current_materials),
 )
 
