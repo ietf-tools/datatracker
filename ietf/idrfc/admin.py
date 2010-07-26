@@ -11,6 +11,7 @@ class RfcEditorQueueAdmin(admin.ModelAdmin):
 admin.site.register(RfcEditorQueue, RfcEditorQueueAdmin)
 
 class RfcEditorQueueRefAdmin(admin.ModelAdmin):
+    list_display = ["id", "source", "destination", "in_queue", "direct"]
     pass
 admin.site.register(RfcEditorQueueRef, RfcEditorQueueRefAdmin)
 

@@ -59,7 +59,7 @@ class RfcEditorQueueRef(models.Model):
     source = models.ForeignKey(InternetDraft, db_column="source", related_name="rfc_editor_queue_refs")
     destination = models.CharField(max_length=200)
     in_queue = models.BooleanField()
-    direct = models.BooleanField()
+    direct = models.BooleanField()      # Is this a direct (or indirect) depencency?
     class Meta:
         db_table = "rfc_editor_queue_mirror_refs"
 
