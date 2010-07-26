@@ -2,8 +2,10 @@
 
 # Create your views here.
 #import models
+import datetime
+import os
+
 from django.shortcuts import render_to_response, get_object_or_404
-from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches, WgProceedingsActivities
 from django.views.generic.list_detail import object_list
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.core.urlresolvers import reverse
@@ -14,7 +16,9 @@ from django.conf import settings
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.db.models import Count
-import datetime
+
+from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches, WgProceedingsActivities
+
 
 @decorator_from_middleware(GZipMiddleware)
 def show_html_materials(request, meeting_num=None):
@@ -118,3 +122,23 @@ def text_agenda(request, num=None):
             "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
         RequestContext(request)), mimetype="text/plain")
     
+def session_agenda(request, num, session, ext=None):
+    if ext:
+        extensions = [ ext.lstrip(".") ]
+    else:
+        extensions = ["html", "htm", "txt", "HTML", "HTM", "TXT", ]
+    for wg in (session, session.upper(), session.lower()):
+        for e in extensions:
+            path = settings.AGENDA_PATH_PATTERN % {"meeting":num, "wg":session, "ext":e}
+            if os.path.exists(path):
+                file = open(path)
+                text = file.read()
+                file.close()
+                if e.lower() == "txt":
+                    return HttpResponse(text, mimetype="text/plain")
+                else:
+                    return HttpResponse(text)
+    if ext:
+        raise Http404("No %s agenda for the %s session of IETF %s is available" % (ext, session, num))
+    else:
+        raise Http404("No agenda for the %s session of IETF %s is available" % (session, num))
