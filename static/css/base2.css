@@ -140,3 +140,5 @@ form table .help {
   font-style: italic;
   font-size: 11px;
 }
+
+@media print { .noprint { display: none } }

@@ -56,11 +56,11 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 <link rel="search" href="/js/datatracker-search.xml" type="application/opensearchdescription+xml" title="IETF Datatracker Search" />
 </head>
 <body class="yui-skin-sam" {% block bodyAttrs %}{%endblock%}>
-<div style="background-color:{% if server_mode %}{% ifnotequal server_mode "production" %}#c00000{% else %}#313163{% endifnotequal %}{%else %}#313163{%endif%};color:white;font-size:150%;height:35px;">
+<div style="background-color:{% if server_mode %}{% ifnotequal server_mode "production" %}#c00000{% else %}#313163{% endifnotequal %}{%else %}#313163{%endif%};color:white;font-size:150%;height:35px;" class="noprint">
 <img src="/images/ietflogo-blue-small.png" width="60" height="34" style="vertical-align:middle;padding-left:8px;" alt=""/><span style="padding-left:15px;font-weight:bold;letter-spacing:0.1em;">datatracker.ietf.org {% if server_mode %}{% ifnotequal server_mode "production" %} - {{ server_mode|upper}} MODE{% endifnotequal %}{% endif %}</span>
 </div>
 
-<div id="ietf-login">{% if user.is_authenticated %}
+<div id="ietf-login" class="noprint">{% if user.is_authenticated %}
 {{ user }}
 {% else %}
 <a href="/accounts/login/?next={{request.path|urlencode}}" rel="nofollow">Sign In</a>
@@ -68,7 +68,7 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 
 <table style="margin-left:8px;margin-top:8px;" width="98%;">
 <tr valign="top">
-<td style="width:130px;padding-right:8px;">
+<td style="width:130px;padding-right:8px;" class="noprint">
 <div class="ietf-navbar">
 {% include "base_leftmenu.html" %}
 </div>
