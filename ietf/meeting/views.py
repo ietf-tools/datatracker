@@ -127,9 +127,9 @@ def session_agenda(request, num, session, ext=None):
         extensions = [ ext.lstrip(".") ]
     else:
         extensions = ["html", "htm", "txt", "HTML", "HTM", "TXT", ]
-    for wg in (session, session.upper(), session.lower()):
+    for wg in [session, session.upper(), session.lower()]:
         for e in extensions:
-            path = settings.AGENDA_PATH_PATTERN % {"meeting":num, "wg":session, "ext":e}
+            path = settings.AGENDA_PATH_PATTERN % {"meeting":num, "wg":wg, "ext":e}
             if os.path.exists(path):
                 file = open(path)
                 text = file.read()
