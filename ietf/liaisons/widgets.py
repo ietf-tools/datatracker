@@ -6,7 +6,9 @@ class FromWidget(Select):
 
     def render(self, name, value, attrs=None, choices=()):
         all_choices = list(self.choices) + list(choices)
-        if len(all_choices)!=1:
+        if len(all_choices)!=1 or \
+            (isinstance(all_choices[0], (list, tuple)) and \
+             len(all_choices[0][1])!=1):
             base = super(FromWidget, self).render(name, value, attrs, choices)
         else:
             base = u'<input type="hidden" value="%s" />%s' % all_choices[0]

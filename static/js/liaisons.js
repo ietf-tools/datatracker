@@ -166,7 +166,7 @@
                     async: true,
                     dataType: 'json',
                     data: {to_entity_id: organization.val(),
-                           sdo_id: sdo.val()},
+                           from_entity_id: sdo.val()},
                     success: function(response){
                         if (!response.error) {
                             render_mails_into(cc, response.cc);

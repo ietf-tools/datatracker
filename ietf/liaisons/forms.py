@@ -32,13 +32,13 @@ class LiaisonForm(forms.ModelForm):
                                                         required_label='title and file'),
                                     required=False)
 
-    fieldsets = (('From', ('from_field', 'replyto')),
+    fieldsets = [('From', ('from_field', 'replyto')),
                  ('To', ('organization', 'to_poc')),
                  ('Other email addresses', ('response_contact', 'technical_contact', 'cc1')),
                  ('Purpose', ('purpose', 'purpose_text', 'deadline_date')),
                  ('Liaison Statement', ('title', 'body', 'attachments')),
                  ('Add attachment', ('attach_title', 'attach_file', 'attach_button')),
-                )
+                ]
 
     class Meta:
         model = LiaisonDetail
@@ -129,7 +129,10 @@ class LiaisonForm(forms.ModelForm):
 
     def get_to_entity(self):
         organization_key = self.cleaned_data.get('organization')
-        return self.hm.get_entity_by_key(organization_key)
+        organization = self.hm.get_entity_by_key(organization_key)
+        if not organization and self.cleaned_data.get('other_organization', None):
+            return self.cleaned_data.get('other_organization')
+        return organization
 
     def save(self, *args, **kwargs):
         now = datetime.datetime.now()
@@ -181,17 +184,22 @@ class IncomingLiaisonForm(LiaisonForm):
 
 class OutgoingLiaisonForm(LiaisonForm):
 
+    to_poc = forms.CharField(label="POC", required=True)
+    other_organization = forms.CharField(label="Other SDO", required=True)
+
     def set_from_field(self):
-        pass
+        self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
+        self.fields['from_field'].widget.submitter = unicode(self.person)
 
     def set_organization_field(self):
-        pass
+        self.fields['organization'].choices = self.hm.get_all_outgoing_entities()
+        self.fieldsets[1] = ('To', ('organization', 'other_organization', 'to_poc'))
 
 
 def liaison_form_factory(request, **kwargs):
     user = request.user
-    if can_add_incoming_liaison(user):
-        return IncomingLiaisonForm(user, **kwargs)
-    elif can_add_outgoing_liaison(user):
+    if can_add_outgoing_liaison(user):
         return OutgoingLiaisonForm(user, **kwargs)
+    elif can_add_incoming_liaison(user):
+        return IncomingLiaisonForm(user, **kwargs)
     return None
