@@ -190,6 +190,7 @@ class IncomingLiaisonForm(LiaisonForm):
 class OutgoingLiaisonForm(LiaisonForm):
 
     to_poc = forms.CharField(label="POC", required=True)
+    approval = forms.BooleanField(label="Obtained prior approval", required=False)
     other_organization = forms.CharField(label="Other SDO", required=True)
 
     def get_to_entity(self):
@@ -202,6 +203,7 @@ class OutgoingLiaisonForm(LiaisonForm):
     def set_from_field(self):
         self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
         self.fields['from_field'].widget.submitter = unicode(self.person)
+        self.fieldsets[0] = ('From', ('from_field', 'replyto', 'approval'))
 
     def set_organization_field(self):
         self.fields['organization'].choices = self.hm.get_all_outgoing_entities()
