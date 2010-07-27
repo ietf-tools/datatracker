@@ -119,6 +119,7 @@
             var purpose = form.find('#id_purpose');
             var other_purpose = form.find('#id_purpose_text');
             var deadline = form.find('#id_deadline_date');
+            var other_organization = form.find('#id_other_organization');
             var config = {};
 
             var readConfig = function() {
@@ -204,9 +205,19 @@
                 }
             };
 
+            var checkOtherSDO = function() {
+                var entity = organization.find('option:selected').val();
+		if (entity=='othersdo') {
+                    other_organization.parents('.field').show();
+                } else {
+                    other_organization.parents('.field').hide();
+                }
+            };
+
             var initTriggers = function() {
                 organization.change(updatePOC);
                 organization.change(updateCC);
+                organization.change(checkOtherSDO);
                 from.change(updateCC);
                 reply.keyup(updateFrom);
                 purpose.change(updatePurpose);
@@ -217,6 +228,7 @@
                 updateCC();
                 updatePOC();
                 updatePurpose();
+                checkOtherSDO();
             };
 
             var initDatePicker = function() {

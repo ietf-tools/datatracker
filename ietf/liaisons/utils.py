@@ -21,6 +21,9 @@ class FakePerson(object):
 
 class Entity(object):
 
+    poc = []
+    cc = []
+
     def __init__(self, name, obj=None):
         self.name = name
         self.obj = obj
@@ -129,7 +132,7 @@ class EntityManager(object):
         self.queryset = queryset
 
     def get_entity(self, pk=None):
-        return Entity(name=self.name, poc=self.poc, cc=self.cc)
+        return Entity(name=self.name)
 
     def get_managed_list(self):
         return [(self.pk, self.name)]
@@ -252,6 +255,7 @@ class IETFHierarchyManager(object):
                          'area': AreaEntityManager(pk='area', name=u'IETF Areas'),
                          'wg': WGEntityManager(pk='wg', name=u'IETF Working Groups'),
                          'sdo': SDOEntityManager(pk='sdo', name=u'Standards Development Organizations'),
+                         'othersdo': EntityManager(pk='othersdo', name=u'Other SDOs'),
                         }
 
     def get_entity_by_key(self, entity_id):
@@ -282,6 +286,7 @@ class IETFHierarchyManager(object):
 
     def get_all_outgoing_entities(self):
         entities = [(self.managers['sdo'].name, self.managers['sdo'].get_managed_list())]
+        entities += [(self.managers['othersdo'].name, self.managers['othersdo'].get_managed_list())]
         return entities
 
     def get_entities_for_person(self, person):

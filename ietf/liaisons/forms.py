@@ -64,7 +64,7 @@ class LiaisonForm(forms.ModelForm):
     def __unicode__(self):
         return self.as_div()
 
-    def set_purpose_required_fields(self):
+    def set_required_fields(self):
         purpose = self.data.get('purpose', None)
         if purpose == '5':
             self.fields['purpose_text'].required=True
@@ -75,7 +75,7 @@ class LiaisonForm(forms.ModelForm):
         else:
             self.fields['deadline_date'].required=False
 
-    def reset_purpose_required_fields(self):
+    def reset_required_fields(self):
         self.fields['purpose_text'].required=True
         self.fields['deadline_date'].required=True
 
@@ -107,9 +107,9 @@ class LiaisonForm(forms.ModelForm):
                 yield fieldset_dict
 
     def full_clean(self):
-        self.set_purpose_required_fields()
+        self.set_required_fields()
         super(LiaisonForm, self).full_clean()
-        self.reset_purpose_required_fields()
+        self.reset_required_fields()
 
     def has_attachments(self):
         for key in self.files.keys():
@@ -129,23 +129,28 @@ class LiaisonForm(forms.ModelForm):
 
     def get_to_entity(self):
         organization_key = self.cleaned_data.get('organization')
-        organization = self.hm.get_entity_by_key(organization_key)
-        if not organization and self.cleaned_data.get('other_organization', None):
-            return self.cleaned_data.get('other_organization')
-        return organization
+        return self.hm.get_entity_by_key(organization_key)
+
+    def get_poc(self, organization):
+        return ', '.join([i.email()[1] for i in organization.get_poc()])
+
+    def get_cc(self, from_entity, to_entity):
+        persons = to_entity.get_cc(self.person)
+        persons += from_entity.get_from_cc(self.person)
+        return ', '.join(['%s <%s>' % i.email() for i in persons])
 
     def save(self, *args, **kwargs):
         now = datetime.datetime.now()
         liaison = super(LiaisonForm, self).save(*args, **kwargs)
         liaison.submitted_date = now
         liaison.last_modified_date = now
-        from_entity =  self.get_from_entity()
+        from_entity = self.get_from_entity()
         liaison.from_raw_body = from_entity.name
-        organization =  self.get_to_entity()
+        organization = self.get_to_entity()
         liaison.to_body = organization.name
-        liaison.to_poc = ', '.join([i.email()[1] for i in organization.get_poc()])
+        liaison.to_poc = self.get_poc(organization)
         liaison.submitter_name, liaison.submitter_email = self.person.email()
-        liaison.cc1 = ', '.join(['%s <%s>' % i.email() for i in organization.get_cc()])
+        liaison.cc1 = self.get_cc(from_entity, organization)
         liaison.save()
         self.save_attachments(liaison)
 
@@ -165,7 +170,7 @@ class LiaisonForm(forms.ModelForm):
                 file_title = self.data.get(title_key),
                 person = self.person,
                 detail = instance,
-                file_extension = extension
+                file_extension = extension,
                 )
 
 
@@ -187,6 +192,13 @@ class OutgoingLiaisonForm(LiaisonForm):
     to_poc = forms.CharField(label="POC", required=True)
     other_organization = forms.CharField(label="Other SDO", required=True)
 
+    def get_to_entity(self):
+        organization_key = self.cleaned_data.get('organization')
+        organization = self.hm.get_entity_by_key(organization_key)
+        if organization_key == 'othersdo' and self.cleaned_data.get('other_organization', None):
+            organization.name=self.cleaned_data['other_organization']
+        return organization
+
     def set_from_field(self):
         self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
         self.fields['from_field'].widget.submitter = unicode(self.person)
@@ -194,6 +206,21 @@ class OutgoingLiaisonForm(LiaisonForm):
     def set_organization_field(self):
         self.fields['organization'].choices = self.hm.get_all_outgoing_entities()
         self.fieldsets[1] = ('To', ('organization', 'other_organization', 'to_poc'))
+
+    def set_required_fields(self):
+        super(OutgoingLiaisonForm, self).set_required_fields()
+        organization = self.data.get('organization', None)
+        if organization == 'othersdo':
+            self.fields['other_organization'].required=True
+        else:
+            self.fields['other_organization'].required=False
+
+    def reset_required_fields(self):
+        super(OutgoingLiaisonForm, self).reset_required_fields()
+        self.fields['other_organization'].required=True
+
+    def get_poc(self, organization):
+        return self.cleaned_data['to_poc']
 
 
 def liaison_form_factory(request, **kwargs):
