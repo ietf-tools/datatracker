@@ -8,6 +8,7 @@
 200	/meeting/75/agenda.txt
 200	/meeting/75/materials.html
 200	/meeting/75/materials.html?_testoverride=1
+200	/meeting/75/agenda/mip4
 404	/meeting/99/agenda.html
 404	/meeting/99/agenda.txt
 404	/meeting/99/materials.html
