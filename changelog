@@ -1,3 +1,14 @@
+ietfdb (3.03)
+
+  * IETF 78 Sprint code from Adam Roach: Make the IETF agenda page view 
+    user-modifiable, providing a custom bookmarkable agenda view for each user.
+
+  * Make WG agendas available trough datatracker URLs; this will avoid 
+    problems when the text from these pages are incorporated in frames in other 
+    datatracker pages.  Example: /meeting/78/agenda/sipcore
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Jul 2010 15:07:41 +0200
+
 ietfdb (3.02)
 
   * Remove the per-document rescheduling dropdown boxes from the future iesg
