@@ -1,3 +1,25 @@
+ietfdb (3.04)
+
+  * From Adam Roach: Make the selectable WG agenda feature of the datatracker
+    IETF Agenda less resource intensive by not preloading all WG agendas.
+
+  * From Peter Musgrave: Improve the selection of listed 'related documents'
+    on the WG document pages.
+
+  The following features were included already in v3.03, but by mistake
+  weren't listed in the changelog for that revision:
+
+  * IETF 78 Sprint code from Peter Musgrave: Add related documents section to
+    the wg documents page (e.g., /wg/sipclf/).
+
+  * IETF 78 Sprint code from Robert Sparks: Relabel the 'Issue Ballot' button
+    (for AD use, on the draft info page).
+
+  * IETF 78 Sprint code from Robert Sparks: provide a downloadable tarball of
+    the documents on the IESG agenda of a given date.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2010 16:13:23 +0200
+
 ietfdb (3.03)
 
   * IETF 78 Sprint code from Adam Roach: Make the IETF agenda page view 
