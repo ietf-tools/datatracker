@@ -101,6 +101,12 @@ img.hidden { display: none; }
         if (re.test(rows[i].id) || (hidenone && rows[i].className == 'grouprow'))
         {
           rows[i].style.display="table-row";
+          if (rows[i].className == 'groupagenda')
+          {
+            var iframe = rows[i].firstElementChild.nextElementSibling.firstElementChild;
+            iframe.setAttribute("src",iframe.getAttribute("xsrc"));
+            r(iframe);
+          }
         }
         else
         {
@@ -115,13 +121,12 @@ img.hidden { display: none; }
   /* Resizes an IFRAME to fit its contents */
   function r(obj)
   {
-    /* This can't work until we move the agendas into the datatracker.ietf.org
-       domain -- we can't query the height of a document from another domain. */
-
-    /*
-    docHeight = obj.contentWindow.document.height;
-    obj.style.height = (docHeight + 20) * 1.05 + "px"
-    */
+    try
+    {
+      docHeight = obj.contentWindow.document.height;
+      obj.style.height = (docHeight + 20) * 1.05 + "px"
+    }
+    catch (e) {}
   }
 
   function toggle(selection)
@@ -197,6 +202,7 @@ You can customize the agenda below to show only selected working group sessions.
     {% for area in area_list %}
       <th><div id='selector-{{area.area_acronym|upper}}' class="unselected" onclick="toggle(this)">{{area.area_acronym|upper}}</div></th>
     {% endfor %}
+    <th><div id='selector-IRTF' class="unselected" onclick="toggle(this)">IRTF</div></th>
   </tr>
 
   <tr>
@@ -209,6 +215,13 @@ You can customize the agenda below to show only selected working group sessions.
       {% endfor %}
       </td>
     {% endfor %}
+
+      <td valign="top" id="IRTF-groups">
+      {% for rg in rg_list %}
+        <div id='selector-{{rg|lower}}' class="unselected" onclick="toggle(this)">{{rg|lower}}</div>
+      {% endfor %}
+      </td>
+
   </tr>
 </table>
 
@@ -271,7 +284,7 @@ You can customize the agenda below to show only selected working group sessions.
         <td></td>
         <td colspan="3">
 	  {% if session.info.agenda_file %}
-          <iframe width="100%" height="400px" src="http://www.ietf.org/proceedings/{{ session.info.agenda_file }}" onload="r(this)"></iframe>
+          <iframe width="100%" height="400px" src="about:blank" xsrc="/meeting/{{ session.info.agenda_file }}" onload="r(this)"></iframe>
 	  {% else %}
 	  <b>No Agenda Submitted</b>
 	  {% endif %}
