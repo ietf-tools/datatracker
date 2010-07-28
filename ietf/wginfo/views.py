@@ -76,9 +76,12 @@ def wg_documents(request, acronym):
     (docs_related,meta_related) = search_query(form_related.cleaned_data)
     docs_related_pruned = []
     for d in docs_related:
-        if d.id.draft_name_and_revision().count('-ietf-') == 0:
-             docs_related_pruned.append(d)
-        
+        parts = d.id.draft_name.split("-", 2);
+        # canonical form draft-<name|ietf>-wg-etc
+        if ( len(parts) >= 3):
+            if parts[1] != "ietf" and parts[2].startswith(wg.group_acronym.acronym+"-"):
+                docs_related_pruned.append(d)
+
     return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs,  'meta':meta, 
                                                            'docs_related':docs_related_pruned, 'meta_related':meta_related}, RequestContext(request))
 
