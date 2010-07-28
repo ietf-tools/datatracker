@@ -104,7 +104,10 @@ img.hidden { display: none; }
           if (rows[i].className == 'groupagenda')
           {
             var iframe = rows[i].firstElementChild.nextElementSibling.firstElementChild;
-            iframe.setAttribute("src",iframe.getAttribute("xsrc"));
+            if (iframe.getAttribute("xsrc") != iframe.getAttribute("src"))
+            {
+              iframe.setAttribute("src",iframe.getAttribute("xsrc"));
+            }
             r(iframe);
           }
         }
@@ -123,8 +126,8 @@ img.hidden { display: none; }
   {
     try
     {
-      docHeight = obj.contentWindow.document.height;
-      obj.style.height = (docHeight + 20) * 1.05 + "px"
+      docHeight = obj.contentWindow.document.body.scrollHeight;
+      obj.height = docHeight;
     }
     catch (e) {}
   }
