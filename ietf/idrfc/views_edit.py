@@ -214,7 +214,8 @@ def edit_info(request, name):
                 # Django barfs in the diff below because these fields
                 # can't be NULL
                 doc.idinternal.job_owner = r['job_owner']
-                doc.idinternal.area_acronym = r['area_acronym']
+                if 'area_acronym' in r:
+                    doc.idinternal.area_acronym = r['area_acronym']
                 
                 replaces = doc.replaces_set.all()
                 if replaces:
