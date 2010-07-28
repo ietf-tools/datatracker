@@ -41,6 +41,9 @@ class Entity(object):
     def get_from_cc(self, person=None):
         return []
 
+    def needs_approval(self, person=None):
+        return False
+
 
 class IETFEntity(Entity):
 
@@ -53,6 +56,11 @@ class IETFEntity(Entity):
             result.append(self.poc)
         result.append(self.cc)
         return result
+
+    def needs_approval(self, person=None):
+        if is_ietfchair(person):
+            return False
+        return True
 
 
 class IABEntity(Entity):
@@ -70,6 +78,11 @@ class IABEntity(Entity):
             result.append(self.director)
         return result
 
+    def needs_approval(self, person=None):
+        if is_iabchair(person) or is_iab_executive_director(person):
+            return False
+        return True
+
 
 class AreaEntity(Entity):
 
@@ -83,6 +96,12 @@ class AreaEntity(Entity):
         result = [i.person for i in self.obj.areadirector_set.all() if i.person!=person]
         result.append(FakePerson(**IETFCHAIR))
         return result
+
+    def needs_approval(self, person=None):
+        # Check if person is an area director
+        if self.obj.areadirector_set.filter(person=person):
+            return False
+        return True
 
 
 class WGEntity(Entity):
@@ -104,6 +123,12 @@ class WGEntity(Entity):
             result.append(FakePerson(name ='%s Discussion List' % self.obj.group_acronym.name,
                                      address = self.obj.email_address))
         return result
+
+    def needs_approval(self, person=None):
+        # Check if person is director of this wg area
+        if self.obj.area.area.areadirector_set.filter(person=person):
+            return False
+        return True
 
 
 class SDOEntity(Entity):

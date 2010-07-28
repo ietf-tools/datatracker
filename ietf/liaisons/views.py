@@ -15,7 +15,7 @@ from ietf.liaisons.utils import IETFHM
 @can_submit_liaison
 def add_liaison(request):
     if request.method == 'POST':
-        form = liaison_form_factory(request, data=request.POST.copy(), 
+        form = liaison_form_factory(request, data=request.POST.copy(),
                                     files = request.FILES)
         if form.is_valid():
             form.save()
@@ -30,36 +30,33 @@ def add_liaison(request):
     )
 
 
-@can_submit_liaison
-def get_poc_for_incoming(request):
-    entity_id = request.GET.get('entity_id', None)
-    if not entity_id:
-        result = {'poc': None, 'error': 'No entity id'}
-    else:
-        entity = IETFHM.get_entity_by_key(entity_id)
-        if not entity:
-            result = {'poc': None, 'error': 'Invalid entity id'}
-        else:
-            result = {'error': False, 'poc': [i.email() for i in entity.get_poc()]}
-    json_result = simplejson.dumps(result)
-    return HttpResponse(json_result, mimetype='text/javascript')
-
-
-@can_submit_liaison
-def get_cc_for_incoming(request):
-    entity_id = request.GET.get('to_entity_id', None)
-    from_entity_id = request.GET.get('from_entity_id', None)
-    if not entity_id and not from_entity_id:
-        result = {'cc': [], 'error': 'No entity id and no sdo id'}
+def get_info(request):
     person = get_person_for_user(request.user)
-    if entity_id:
-        entity = IETFHM.get_entity_by_key(entity_id)
-        if not entity:
-            result = {'cc': [], 'error': 'Invalid entity id'}
-        else:
-            result = {'error': False, 'cc': [i.email() for i in entity.get_cc()]}
+
+    to_entity_id = request.GET.get('to_entity_id', None)
+    from_entity_id = request.GET.get('from_entity_id', None)
+
+    result = {'poc': [], 'cc': [], 'needs_approval': False}
+
+    to_error = 'Invalid TO entity id'
+    if to_entity_id:
+        to_entity = IETFHM.get_entity_by_key(to_entity_id)
+        if to_entity:
+            to_error = ''
+
+    from_error = 'Invalid FROM entity id'
     if from_entity_id:
         from_entity = IETFHM.get_entity_by_key(from_entity_id)
-        result['cc'] += [i.email() for i in from_entity.get_from_cc(person=person)]
+        if from_entity:
+            from_error = ''
+
+    if to_error or from_error:
+        result.update({'error': '\n'.join([to_error, from_error])})
+    else:
+        result.update({'error': False,
+                       'cc': [i.email() for i in to_entity.get_cc(person=person)] +\
+                             [i.email() for i in from_entity.get_from_cc(person=person)],
+                       'poc': [i.email() for i in to_entity.get_poc()],
+                       'needs_approval': from_entity.needs_approval(person=person)})
     json_result = simplejson.dumps(result)
     return HttpResponse(json_result, mimetype='text/javascript')

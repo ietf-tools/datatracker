@@ -7,11 +7,16 @@ class FromWidget(Select):
     def render(self, name, value, attrs=None, choices=()):
         all_choices = list(self.choices) + list(choices)
         if len(all_choices)!=1 or \
-            (isinstance(all_choices[0], (list, tuple)) and \
+            (isinstance(all_choices[0][1], (list, tuple)) and \
              len(all_choices[0][1])!=1):
             base = super(FromWidget, self).render(name, value, attrs, choices)
         else:
-            base = u'<input type="hidden" value="%s" />%s' % all_choices[0]
+            option = all_choices[0]
+            if isinstance(option[1], (list, tuple)):
+                option = option[1][0]
+            value = option[0]
+            text = option[1]
+            base = u'<input type="hidden" value="%s" id="id_%s" name="%s" />%s' % (value, name, name, text)
         base += u' (<a class="from_mailto" href="">' + self.submitter + u'</a>)'
         return mark_safe(base)
 

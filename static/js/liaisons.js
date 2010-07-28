@@ -120,12 +120,12 @@
             var other_purpose = form.find('#id_purpose_text');
             var deadline = form.find('#id_deadline_date');
             var other_organization = form.find('#id_other_organization');
+            var approval = form.find('#id_approval');
             var config = {};
 
             var readConfig = function() {
                 var confcontainer = form.find('.formconfig');
-                config.poc_update_url = confcontainer.find('.poc_update_url').text();
-                config.cc_update_url = confcontainer.find('.cc_update_url').text();
+                config.info_update_url = confcontainer.find('.info_update_url').text();
             };
 
             var render_mails_into = function(container, person_list) {
@@ -137,29 +137,23 @@
                 container.html(html);
             };
 
-            var updatePOC = function() {
-                var entity = organization.find('option:selected');
-                var url = config.poc_update_url;
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-                    cache: false,
-                    async: true,
-                    dataType: 'json',
-                    data: {entity_id: entity.val()},
-                    success: function(response){
-                        if (!response.error) {
-                            render_mails_into(poc, response.poc);
-                        }
-                    }
-                });
-                return false;
+            var toggleApproval = function(needed) {
+                if (!approval.length) {
+                    return;
+                }
+                if (needed) {
+                    approval.removeAttr('disabled');
+                    approval.removeAttr('checked');
+                } else {
+                    approval.attr('checked','checked');
+                    approval.attr('disabled','disabled');
+                }
             };
 
-            var updateCC = function() {
-                var entity = organization.find('option:selected');
-                var sdo = from.find('option:selected');
-                var url = config.cc_update_url;
+            var updateInfo = function() {
+                var entity = organization;
+                var to_entity = from;
+                var url = config.info_update_url;
                 $.ajax({
                     url: url,
                     type: 'GET',
@@ -167,10 +161,12 @@
                     async: true,
                     dataType: 'json',
                     data: {to_entity_id: organization.val(),
-                           from_entity_id: sdo.val()},
+                           from_entity_id: to_entity.val()},
                     success: function(response){
                         if (!response.error) {
                             render_mails_into(cc, response.cc);
+                            render_mails_into(poc, response.poc);
+                            toggleApproval(response.needs_approval);
                         }
                     }
                 });
@@ -185,7 +181,7 @@
             var updatePurpose = function() {
                 var datecontainer = deadline.parents('.field');
                 var othercontainer = other_purpose.parents('.field');
-                var selected_id = purpose.find('option:selected').val();
+                var selected_id = purpose.val();
                 var deadline_required = datecontainer.find('.fieldRequired');
              
                 if (selected_id == '1' || selected_id == '2' || selected_id == '5') {
@@ -206,7 +202,7 @@
             };
 
             var checkOtherSDO = function() {
-                var entity = organization.find('option:selected').val();
+                var entity = organization.val();
 		if (entity=='othersdo') {
                     other_organization.parents('.field').show();
                 } else {
@@ -215,18 +211,17 @@
             };
 
             var initTriggers = function() {
-                organization.change(updatePOC);
-                organization.change(updateCC);
+                organization.change(updateInfo);
+                organization.change(updateInfo);
                 organization.change(checkOtherSDO);
-                from.change(updateCC);
+                from.change(updateInfo);
                 reply.keyup(updateFrom);
                 purpose.change(updatePurpose);
             };
 
             var updateOnInit = function() {
                 updateFrom();
-                updateCC();
-                updatePOC();
+                updateInfo();
                 updatePurpose();
                 checkOtherSDO();
             };

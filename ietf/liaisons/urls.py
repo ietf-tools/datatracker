@@ -23,6 +23,5 @@ urlpatterns += patterns('django.views.generic.simple',
 
 urlpatterns += patterns('ietf.liaisons.views',
      url(r'^add/$', 'add_liaison', name='add_liaison'),
-     url(r'^ajax/get_poc_for_incoming/$', 'get_poc_for_incoming', name='get_poc_for_incoming'),
-     url(r'^ajax/get_cc_for_incoming/$', 'get_cc_for_incoming', name='get_cc_for_incoming'),
+     url(r'^ajax/get_info/$', 'get_info', name='get_info'),
 )
