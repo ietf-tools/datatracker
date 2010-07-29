@@ -120,7 +120,7 @@
             var other_purpose = form.find('#id_purpose_text');
             var deadline = form.find('#id_deadline_date');
             var other_organization = form.find('#id_other_organization');
-            var approval = form.find('#id_approval');
+            var approval = form.find('#id_approved');
             var config = {};
 
             var readConfig = function() {
@@ -211,7 +211,6 @@
             };
 
             var initTriggers = function() {
-                organization.change(updateInfo);
                 organization.change(updateInfo);
                 organization.change(checkOtherSDO);
                 from.change(updateInfo);

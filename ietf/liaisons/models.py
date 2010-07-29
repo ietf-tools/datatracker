@@ -26,6 +26,13 @@ class FromBodies(models.Model):
         verbose_name = "From body"
         verbose_name_plural = "From bodies"
 
+
+class OutgoingLiaisonApproval(models.Model):
+    approved = models.BooleanField(default=True)
+    approval_date = models.DateField(null=True, blank=True)
+    normalized_entity_code = models.CharField(max_length=255)
+
+
 class LiaisonDetail(models.Model):
     detail_id = models.AutoField(primary_key=True)
     person = models.ForeignKey(PersonOrOrgInfo, null=True, db_column='person_or_org_tag')
@@ -51,6 +58,7 @@ class LiaisonDetail(models.Model):
     purpose = models.ForeignKey(LiaisonPurpose,null=True)
     replyto = models.CharField(blank=True, null=True, max_length=255)
     from_raw_body = models.CharField(blank=True, null=True, max_length=255)
+    approval = models.ForeignKey(OutgoingLiaisonApproval, blank=True, null=True)
     def __str__(self):
 	return self.title or "<no title>"
     def from_body(self):

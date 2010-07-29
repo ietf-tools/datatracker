@@ -1,10 +1,11 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.conf.urls.defaults import patterns, url
+from django.db.models import Q
 from ietf.liaisons.models import LiaisonDetail
 
 info_dict = {
-    'queryset': LiaisonDetail.objects.all().order_by("-submitted_date"),
+    'queryset': LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date"),
 }
 
 # there's an opportunity for date-based filtering.

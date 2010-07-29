@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
                                     get_person_for_user)
-from ietf.liaisons.models import LiaisonDetail, Uploads
+from ietf.liaisons.models import LiaisonDetail, Uploads, OutgoingLiaisonApproval
 from ietf.liaisons.utils import IETFHM
 from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
                                    ShowAttachmentsWidget)
@@ -153,6 +153,7 @@ class LiaisonForm(forms.ModelForm):
         liaison.cc1 = self.get_cc(from_entity, organization)
         liaison.save()
         self.save_attachments(liaison)
+        return liaison
 
     def save_attachments(self, instance):
         for key in self.files.keys():
@@ -190,7 +191,7 @@ class IncomingLiaisonForm(LiaisonForm):
 class OutgoingLiaisonForm(LiaisonForm):
 
     to_poc = forms.CharField(label="POC", required=True)
-    approval = forms.BooleanField(label="Obtained prior approval", required=False)
+    approved = forms.BooleanField(label="Obtained prior approval", required=False)
     other_organization = forms.CharField(label="Other SDO", required=True)
 
     def get_to_entity(self):
@@ -203,7 +204,7 @@ class OutgoingLiaisonForm(LiaisonForm):
     def set_from_field(self):
         self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
         self.fields['from_field'].widget.submitter = unicode(self.person)
-        self.fieldsets[0] = ('From', ('from_field', 'replyto', 'approval'))
+        self.fieldsets[0] = ('From', ('from_field', 'replyto', 'approved'))
 
     def set_organization_field(self):
         self.fields['organization'].choices = self.hm.get_all_outgoing_entities()
@@ -223,6 +224,23 @@ class OutgoingLiaisonForm(LiaisonForm):
 
     def get_poc(self, organization):
         return self.cleaned_data['to_poc']
+
+    def save(self, *args, **kwargs):
+        liaison = super(OutgoingLiaisonForm, self).save(*args, **kwargs)
+        from_entity = self.get_from_entity()
+        needs_approval = from_entity.needs_approval(self.person)
+        if not needs_approval or self.cleaned_data.get('approved', False):
+            approved = True
+            approval_date = datetime.datetime.now()
+        else:
+            approved = False
+            approval_date = None
+        approval = OutgoingLiaisonApproval.objects.create(
+            approved = approved,
+            approval_date = approval_date,
+            normalized_entity_code = self.cleaned_data.get('from_field'))
+        liaison.approval = approval
+        liaison.save()
 
 
 def liaison_form_factory(request, **kwargs):
