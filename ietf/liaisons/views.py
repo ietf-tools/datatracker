@@ -20,15 +20,16 @@ def add_liaison(request):
                                     files = request.FILES)
         if form.is_valid():
             liaison = form.save()
-            if not settings.DEBUG:
-                liaison.send_by_mail()
-            else:
-                mail = liaison.send_by_email(fake=True)
-                return render_to_response('liaisons/liaison_mail_detail.html',
-                                          {'mail': mail,
-                                           'message': mail.message(),
-                                           'liaison': liaison},
-                                          context_instance=RequestContext(request))
+            if request.POST.get('send', None):
+                if not settings.DEBUG:
+                    liaison.send_by_mail()
+                else:
+                    mail = liaison.send_by_email(fake=True)
+                    return render_to_response('liaisons/liaison_mail_detail.html',
+                                              {'mail': mail,
+                                               'message': mail.message(),
+                                               'liaison': liaison},
+                                              context_instance=RequestContext(request))
             return HttpResponseRedirect(reverse('liaison_list'))
     else:
         form = liaison_form_factory(request)
