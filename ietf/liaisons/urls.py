@@ -11,7 +11,7 @@ info_dict = {
 # there's an opportunity for date-based filtering.
 urlpatterns = patterns('django.views.generic.list_detail',
      url(r'^$', 'object_list', info_dict, name='liaison_list'),
-     (r'^(?P<object_id>\d+)/$', 'object_detail', info_dict),
+     url(r'^(?P<object_id>\d+)/$', 'object_detail', info_dict, name='liaison_detail'),
 )
 
 urlpatterns += patterns('django.views.generic.simple',

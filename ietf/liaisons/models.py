@@ -1,8 +1,12 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.db import models
-from ietf.idtracker.models import Acronym,PersonOrOrgInfo
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import models
+from django.template.loader import render_to_string
+
+from ietf.idtracker.models import Acronym,PersonOrOrgInfo
+from ietf.liaisons.mail import IETFEmailMessage
 
 class LiaisonPurpose(models.Model):
     purpose_id = models.AutoField(primary_key=True)
@@ -109,6 +113,30 @@ class LiaisonDetail(models.Model):
 	return '/liaison/%d/' % self.detail_id
     class Meta:
         db_table = 'liaison_detail'
+
+    def send_by_email(self, fake=False):
+        subject = 'New Liaison Statement, "%s"' % (self.title)
+        from_email = settings.LIAISON_UNIVERSAL_FROM
+        to_email = self.to_poc.split(',')
+        cc = self.cc1.split(',')
+        if self.technical_contact:
+            cc += self.technical_contact.split(',')
+        if self.response_contact:
+            cc += self.response_contact.split(',')
+        bcc = ['statements@ietf.org']
+        body = render_to_string('liaisons/liaison_mail.txt',
+                                {'liaison': self,
+                                })
+        mail = IETFEmailMessage(subject=subject,
+                                to=to_email,
+                                from_email=from_email,
+                                cc = cc,
+                                bcc = bcc,
+                                body = body)
+        if not fake:
+            mail.send()         
+        return mail                                                     
+
 
 class SDOs(models.Model):
     sdo_id = models.AutoField(primary_key=True)

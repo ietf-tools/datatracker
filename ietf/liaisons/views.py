@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
-from django.shortcuts import render_to_response
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils import simplejson
 
@@ -18,7 +19,16 @@ def add_liaison(request):
         form = liaison_form_factory(request, data=request.POST.copy(),
                                     files = request.FILES)
         if form.is_valid():
-            form.save()
+            liaison = form.save()
+            if not settings.DEBUG:
+                liaison.send_by_mail()
+            else:
+                mail = liaison.send_by_email(fake=True)
+                return render_to_response('liaisons/liaison_mail_detail.html',
+                                          {'mail': mail,
+                                           'message': mail.message(),
+                                           'liaison': liaison},
+                                          context_instance=RequestContext(request))
             return HttpResponseRedirect(reverse('liaison_list'))
     else:
         form = liaison_form_factory(request)

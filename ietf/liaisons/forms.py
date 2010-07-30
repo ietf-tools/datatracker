@@ -140,8 +140,13 @@ class LiaisonForm(forms.ModelForm):
         return ', '.join(['%s <%s>' % i.email() for i in persons])
 
     def save(self, *args, **kwargs):
-        now = datetime.datetime.now()
         liaison = super(LiaisonForm, self).save(*args, **kwargs)
+        self.save_extra_fields(liaison)
+        self.save_attachments(liaison)
+        return liaison
+
+    def save_extra_fields(self, liaison):
+        now = datetime.datetime.now()
         liaison.submitted_date = now
         liaison.last_modified_date = now
         from_entity = self.get_from_entity()
@@ -152,8 +157,6 @@ class LiaisonForm(forms.ModelForm):
         liaison.submitter_name, liaison.submitter_email = self.person.email()
         liaison.cc1 = self.get_cc(from_entity, organization)
         liaison.save()
-        self.save_attachments(liaison)
-        return liaison
 
     def save_attachments(self, instance):
         for key in self.files.keys():
@@ -225,8 +228,8 @@ class OutgoingLiaisonForm(LiaisonForm):
     def get_poc(self, organization):
         return self.cleaned_data['to_poc']
 
-    def save(self, *args, **kwargs):
-        liaison = super(OutgoingLiaisonForm, self).save(*args, **kwargs)
+    def save_extra_fields(self, liaison):
+        super(OutgoingLiaisonForm, self).save_extra_fields(liaison)
         from_entity = self.get_from_entity()
         needs_approval = from_entity.needs_approval(self.person)
         if not needs_approval or self.cleaned_data.get('approved', False):
