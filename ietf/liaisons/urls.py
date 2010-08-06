@@ -10,7 +10,6 @@ info_dict = {
 
 # there's an opportunity for date-based filtering.
 urlpatterns = patterns('django.views.generic.list_detail',
-     url(r'^$', 'object_list', info_dict, name='liaison_list'),
      url(r'^(?P<object_id>\d+)/$', 'object_detail', info_dict, name='liaison_detail'),
 )
 
@@ -23,6 +22,9 @@ urlpatterns += patterns('django.views.generic.simple',
 )
 
 urlpatterns += patterns('ietf.liaisons.views',
+     url(r'^$', 'liaison_list', name='liaison_list'),
+     url(r'^for_approval/$', 'liaison_approval_list', name='liaison_approval_list'),
+     url(r'^for_approval/(?P<object_id>\d+)/$', 'liaison_approval_detail', name='liaison_approval_detail'),
      url(r'^add/$', 'add_liaison', name='add_liaison'),
      url(r'^ajax/get_info/$', 'get_info', name='get_info'),
 )

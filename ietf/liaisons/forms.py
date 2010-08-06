@@ -1,7 +1,6 @@
 import datetime
 
 from django import forms
-from django.conf import settings
 from django.forms.util import ErrorList
 from django.template.loader import render_to_string
 
@@ -151,6 +150,7 @@ class LiaisonForm(forms.ModelForm):
         liaison.last_modified_date = now
         from_entity = self.get_from_entity()
         liaison.from_raw_body = from_entity.name
+        liaison.from_raw_code = self.cleaned_data.get('from_field')
         organization = self.get_to_entity()
         liaison.to_body = organization.name
         liaison.to_poc = self.get_poc(organization)
@@ -165,7 +165,6 @@ class LiaisonForm(forms.ModelForm):
                 continue
             attached_file = self.files.get(key)
             extension=attached_file.name.rsplit('.', 1)
-            basename = extension[0]
             if len(extension) > 1:
                 extension = '.' + extension[1]
             else:
@@ -248,7 +247,8 @@ class OutgoingLiaisonForm(LiaisonForm):
 
 def liaison_form_factory(request, **kwargs):
     user = request.user
-    if can_add_outgoing_liaison(user):
+    force_incoming = 'incoming' in request.GET.keys()
+    if not force_incoming and can_add_outgoing_liaison(user):
         return OutgoingLiaisonForm(user, **kwargs)
     elif can_add_incoming_liaison(user):
         return IncomingLiaisonForm(user, **kwargs)

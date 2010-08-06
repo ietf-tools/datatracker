@@ -1,15 +1,20 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
+import datetime
+
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils import simplejson
+from django.views.generic.list_detail import object_list, object_detail
 
-from ietf.liaisons.accounts import get_person_for_user
+from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaison,
+                                    can_add_incoming_liaison)
 from ietf.liaisons.decorators import can_submit_liaison
 from ietf.liaisons.forms import liaison_form_factory
-from ietf.liaisons.models import SDOs
+from ietf.liaisons.models import LiaisonDetail, OutgoingLiaisonApproval
 from ietf.liaisons.utils import IETFHM
 
 
@@ -24,12 +29,7 @@ def add_liaison(request):
                 if not settings.DEBUG:
                     liaison.send_by_mail()
                 else:
-                    mail = liaison.send_by_email(fake=True)
-                    return render_to_response('liaisons/liaison_mail_detail.html',
-                                              {'mail': mail,
-                                               'message': mail.message(),
-                                               'liaison': liaison},
-                                              context_instance=RequestContext(request))
+                    return _fake_email_view(request, liaison)
             return HttpResponseRedirect(reverse('liaison_list'))
     else:
         form = liaison_form_factory(request)
@@ -41,6 +41,7 @@ def add_liaison(request):
     )
 
 
+@can_submit_liaison
 def get_info(request):
     person = get_person_for_user(request.user)
 
@@ -71,3 +72,76 @@ def get_info(request):
                        'needs_approval': from_entity.needs_approval(person=person)})
     json_result = simplejson.dumps(result)
     return HttpResponse(json_result, mimetype='text/javascript')
+
+
+def _fake_email_view(request, liaison):
+    mail = liaison.send_by_email(fake=True)
+    return render_to_response('liaisons/liaison_mail_detail.html',
+                              {'mail': mail,
+                               'message': mail.message(),
+                               'liaison': liaison},
+                              context_instance=RequestContext(request))
+
+
+def liaison_list(request):
+    user = request.user
+    can_send_outgoing = can_add_outgoing_liaison(user)
+    can_send_incoming = can_add_incoming_liaison(user)
+
+    person = get_person_for_user(request.user)
+    approval_codes = IETFHM.get_all_can_approve_codes(person)
+    can_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).count()
+
+    public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date")
+
+    return object_list(request, public_liaisons,
+                       allow_empty=True,
+                       template_name='liaisons/liaisondetail_list.html',
+                       extra_context={'can_manage': can_approve or can_send_incoming or can_send_outgoing,
+                                      'can_approve': can_approve,
+                                      'can_send_incoming': can_send_incoming,
+                                      'can_send_outgoing': can_send_outgoing},
+                      )
+
+
+@can_submit_liaison
+def liaison_approval_list(request):
+    person = get_person_for_user(request.user)
+    approval_codes = IETFHM.get_all_can_approve_codes(person)
+    to_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).order_by("-submitted_date")
+
+    return object_list(request, to_approve,
+                       allow_empty=True,
+                       template_name='liaisons/liaisondetail_approval_list.html',
+                      )
+
+
+@can_submit_liaison
+def liaison_approval_detail(request, object_id):
+    person = get_person_for_user(request.user)
+    approval_codes = IETFHM.get_all_can_approve_codes(person)
+    to_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).order_by("-submitted_date")
+
+    if request.method=='POST' and request.POST.get('do_approval', False):
+        try:
+            liaison = to_approve.get(pk=object_id)
+            approval = liaison.approval
+            if not approval:
+                approval = OutgoingLiaisonApproval.objects.create(approved=True, approval_date=datetime.datetime.now())
+                liaison.approval = approval
+                liaison.save()
+            else:
+                approval.approved=True
+                approval.save()
+            if not settings.DEBUG:
+                liaison.send_by_mail()
+            else:
+                return _fake_email_view(request, liaison)
+        except LiaisonDetail.DoesNotExist:
+            pass
+        return HttpResponseRedirect(reverse('liaison_list'))
+    return  object_detail(request,
+                          to_approve,
+                          object_id=object_id,
+                          template_name='liaisons/liaisondetail_approval_detail.html',
+                         )

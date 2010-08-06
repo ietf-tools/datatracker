@@ -1,31 +1,33 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-{% block title %}Liaison Statements{% endblock %}
-
-{% block pagehead %}
-<link rel="alternate" type="application/atom+xml" href="/feed/liaison/recent/" />
-{% endblock %}
+{% load ietf_filters %}
+{% block title %}Liaison Management{% endblock %}
 
 {% block content %}
+<h1>Liaison Management</h1>
 
-{% block content-title %}
-<h1>Liaison Statements</h1>
-{% endblock %}
-
-{% block management-links %}
-{% if can_manage %}
-<ul>
+{% if can_send_incoming or can_send_outgoing %}
+<div class="liaison-box">
+  <h1>Add new liaison</h1>
+  <ul>
   {% if can_send_incoming %}<li><a href="{% url add_liaison %}?incoming">Add new incoming liaison</a></li>{% endif %}
   {% if can_send_outgoing %}<li><a href="{% url add_liaison %}">Add new outgoing liaison</a></li>{% endif %}
-  {% if can_approve %}<li><a href="{% url liaison_approval_list %}">You have {{ can_approve }} pending liaison statement{{ can_approve|pluralize }} that need{{ can_approve|pluralize:"s," }} your approval</a></li>{% endif %}
-</ul>
+</div>
 {% endif %}
-{% endblock %}
 
-<table class="ietf-table" width="100%">
-<tr><th width="9%">Date</th><th width="20%">From</th><th width="20%">To</th><th width="50%">Title</th></tr>
+{% if to_aprove %}
+<div class="liaison-box pending-for-aproval">
+  <h1>Liaisons that need your approval</h1>
+  {% for liaison in to_aprove %}
+  <a href="">{{ liaison }}</a>
+  {% endfor %}
+</div>
+{% endif %}
 
-{% for liaison in object_list %}
+{% if to_edit %}
+<div class="liaison-box edit-liaison-list">
+  <h1>Liaisons you can edit</h1>
+{% for liaison in to_edit %}
 <tr class="{% cycle oddrow,evenrow %}">
 <td style="white-space:nowrap;">{{ liaison.submitted_date|date:"Y-m-d" }}</td>
 <td>{{ liaison.from_body|escape }}</td>
@@ -53,5 +55,8 @@
 {% endfor %}
 
 </table>
-{% endblock %}
 
+</div>
+{% endif %}
+
+{% endblock %}

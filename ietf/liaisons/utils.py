@@ -165,6 +165,9 @@ class EntityManager(object):
     def can_send_on_behalf(self, person):
         return []
 
+    def can_approve_list(self, person):
+        return []
+
 
 class IETFEntityManager(EntityManager):
 
@@ -180,6 +183,11 @@ class IETFEntityManager(EntityManager):
             return self.get_managed_list()
         return []
 
+    def can_approve_list(self, person):
+        if is_ietfchair(person):
+            return self.get_managed_list()
+        return []
+
 
 class IABEntityManager(EntityManager):
 
@@ -191,6 +199,12 @@ class IABEntityManager(EntityManager):
         return self.entity
 
     def can_send_on_behalf(self, person):
+        if (is_iabchair(person) or
+            is_iab_executive_director(person)):
+            return self.get_managed_list()
+        return []
+
+    def can_approve_list(self, person):
         if (is_iabchair(person) or
             is_iab_executive_director(person)):
             return self.get_managed_list()
@@ -222,6 +236,10 @@ class AreaEntityManager(EntityManager):
         query_filter = {'areadirector__in': person.areadirector_set.all()}
         return self.get_managed_list(query_filter)
 
+    def can_approve_list(self, person):
+        query_filter = {'areadirector__in': person.areadirector_set.all()}
+        return self.get_managed_list(query_filter)
+
 
 class WGEntityManager(EntityManager):
 
@@ -248,6 +266,10 @@ class WGEntityManager(EntityManager):
         wgs = set([i.group_acronym.pk for i in person.wgchair_set.all()])
         wgs = wgs.union([i.group_acronym.pk for i in person.wgsecretary_set.all()])
         query_filter = {'pk__in': wgs}
+        return self.get_managed_list(query_filter)
+
+    def can_approve_list(self, person):
+        query_filter = {'areagroup__area__areadirector__in': person.areadirector_set.all()}
         return self.get_managed_list(query_filter)
 
 
@@ -328,5 +350,14 @@ class IETFHierarchyManager(object):
         if wgs:
             entities.append(('IETF Working Groups', wgs))
         return entities
+
+    def get_all_can_approve_codes(self, person):
+        entities = []
+        for key in ['ietf', 'iesg', 'iab']:
+            entities += self.managers[key].can_approve_list(person)
+        entities += self.managers['area'].can_approve_list(person)
+        entities += self.managers['wg'].can_approve_list(person)
+        return [i[0] for i in entities]
+
 
 IETFHM = IETFHierarchyManager()
