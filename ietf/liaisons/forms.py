@@ -5,8 +5,8 @@ from django.forms.util import ErrorList
 from django.template.loader import render_to_string
 
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
-                                    get_person_for_user)
-from ietf.liaisons.models import LiaisonDetail, Uploads, OutgoingLiaisonApproval
+                                    get_person_for_user, is_ietf_liaison_manager)
+from ietf.liaisons.models import LiaisonDetail, Uploads, OutgoingLiaisonApproval, SDOs
 from ietf.liaisons.utils import IETFHM
 from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
                                    ShowAttachmentsWidget)
@@ -51,6 +51,7 @@ class LiaisonForm(forms.ModelForm):
                        "/css/jquery-ui-themes/jquery-ui-1.8.2.custom.css")}
 
     def __init__(self, user, *args, **kwargs):
+        self.user = user
         self.person = get_person_for_user(user)
         if kwargs.get('data', None):
             kwargs['data'].update({'person': self.person.pk})
@@ -180,9 +181,12 @@ class LiaisonForm(forms.ModelForm):
 class IncomingLiaisonForm(LiaisonForm):
 
     def set_from_field(self):
-        sdo_managed = [i.sdo for i in self.person.liaisonmanagers_set.all()]
-        sdo_authorized = [i.sdo for i in self.person.sdoauthorizedindividual_set.all()]
-        sdos = set(sdo_managed).union(sdo_authorized)
+        if is_ietf_liaison_manager(self.user):
+            sdos = SDOs.objects.all()
+        else:
+            sdo_managed = [i.sdo for i in self.person.liaisonmanagers_set.all()]
+            sdo_authorized = [i.sdo for i in self.person.sdoauthorizedindividual_set.all()]
+            sdos = set(sdo_managed).union(sdo_authorized)
         self.fields['from_field'].choices = [('sdo_%s' % i.pk, i.sdo_name) for i in sdos]
         self.fields['from_field'].widget.submitter = unicode(self.person)
 
@@ -204,7 +208,10 @@ class OutgoingLiaisonForm(LiaisonForm):
         return organization
 
     def set_from_field(self):
-        self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
+        if is_ietf_liaison_manager(self.user):
+            self.fields['from_field'].choices = self.hm.get_all_incoming_entities()
+        else:
+            self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
         self.fields['from_field'].widget.submitter = unicode(self.person)
         self.fieldsets[0] = ('From', ('from_field', 'replyto', 'approved'))
 
@@ -239,8 +246,7 @@ class OutgoingLiaisonForm(LiaisonForm):
             approval_date = None
         approval = OutgoingLiaisonApproval.objects.create(
             approved = approved,
-            approval_date = approval_date,
-            normalized_entity_code = self.cleaned_data.get('from_field'))
+            approval_date = approval_date)
         liaison.approval = approval
         liaison.save()
 

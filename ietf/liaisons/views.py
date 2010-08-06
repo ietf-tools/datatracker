@@ -87,10 +87,12 @@ def liaison_list(request):
     user = request.user
     can_send_outgoing = can_add_outgoing_liaison(user)
     can_send_incoming = can_add_incoming_liaison(user)
+    can_approve = False
 
     person = get_person_for_user(request.user)
-    approval_codes = IETFHM.get_all_can_approve_codes(person)
-    can_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).count()
+    if person:
+        approval_codes = IETFHM.get_all_can_approve_codes(person)
+        can_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).count()
 
     public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date")
 
