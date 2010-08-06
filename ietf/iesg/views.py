@@ -297,18 +297,30 @@ def agenda_documents(request):
         telechats.append({'date':date, 'docs':res})
     return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats, 'hide_telechat_date':True})
 
-def agenda_downloaddocstgz(request,year,month,day):
+def telechat_docs_tarfile(request,year,month,day):
+    from tempfile import mkstemp
     date=datetime.date(int(year),int(month),int(day))
     docs= IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
     response = HttpResponse(mimetype='application/octet-stream')
     response['Content-Disposition'] = 'attachment; filename=telechat-%s-%s-%s-docs.tgz'%(year, month, day)
     tarstream = tarfile.open('','w:gz',response)
+    mfh, mfn = mkstemp()
+    manifest = open(mfn, "w")
     for doc in docs:
-      tarstream.add(os.path.join(settings.INTERNET_DRAFT_PATH, doc.draft.filename+"-"+doc.draft.revision_display()+".txt"),
-                                                               doc.draft.filename+"-"+doc.draft.revision_display()+".txt")
+        doc_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.draft.filename+"-"+doc.draft.revision_display()+".txt")
+        if os.path.exists(doc_path):
+            try:
+                tarstream.add(doc_path, str(doc.draft.filename+"-"+doc.draft.revision_display()+".txt"))
+                manifest.write("Included:  "+doc_path+"\n")
+            except Exception, e:
+                manifest.write(("Failed (%s): "%e)+doc_path+"\n")
+        else:
+            manifest.write("Not found: "+doc_path+"\n")
+    manifest.close()
+    tarstream.add(mfn, "manifest.txt")
     tarstream.close()
+    os.unlink(mfn)
     return response
-
 
 def discusses(request):
     positions = Position.objects.filter(discuss=1)
