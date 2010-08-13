@@ -99,13 +99,11 @@ class IetfUserBackend(RemoteUserBackend):
 
         # Update group memberships
         group_names = IetfUserBackend.find_groups(user.username)
-        groups = []
         for group_name in group_names:
             # Create groups as needed
             group,created = Group.objects.get_or_create(name=group_name)
             if created:
                 log("IetfUserBackend created Group '%s'" % (group_name,))
-            groups.append(group)
-        user.groups = groups
+            user.groups.add(group)
         return user
 
