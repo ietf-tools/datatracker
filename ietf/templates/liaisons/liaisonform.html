@@ -46,7 +46,9 @@
 {% if form.liaison %}
     <input type="submit" value="Edit" name="edit" />
 {% else %}
+    {% if not form.get_post_only %}
     <input type="submit" value="Send and Post" name="send" />
+    {% endif %}
     <input type="submit" value="Post Only" name="post_only" />
 {% endif %}
   </div>

@@ -64,6 +64,9 @@ class LiaisonForm(forms.ModelForm):
     def __unicode__(self):
         return self.as_div()
 
+    def get_post_only(self):
+        return False
+
     def set_required_fields(self):
         purpose = self.data.get('purpose', None)
         if purpose == '5':
@@ -192,6 +195,16 @@ class IncomingLiaisonForm(LiaisonForm):
 
     def set_organization_field(self):
         self.fields['organization'].choices = self.hm.get_all_incoming_entities()
+
+    def get_post_only(self):
+        if self.user.groups.filter(name='Liaison_Manager'):
+            return True
+        return False
+
+    def clean(self):
+        if self.data.has_key('send') and self.get_post_only():
+            self._errors['from_field'] = ErrorList([u'As an IETF Liaison Manager you can not send an incoming liaison statements, you only can post them'])
+        return super(IncomingLiaisonForm, self).clean()
 
 
 class OutgoingLiaisonForm(LiaisonForm):
