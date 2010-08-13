@@ -266,7 +266,39 @@ class OutgoingLiaisonForm(LiaisonForm):
 
 class EditLiaisonForm(LiaisonForm):
 
-    pass
+    from_field = forms.CharField(widget=forms.TextInput, label=u'From')
+    replyto = forms.CharField(label=u'Reply to', widget=forms.TextInput)
+    organization = forms.CharField(widget=forms.TextInput)
+    to_poc = forms.CharField(widget=forms.TextInput, label="POC", required=False)
+    cc1 = forms.CharField(widget=forms.TextInput, label="CC", required=False)
+
+    class Meta:
+        model = LiaisonDetail
+        fields = ('from_raw_body', 'to_body', 'to_poc', 'cc1', 'last_modified_date', 'title', 
+                  'response_contact', 'technical_contact', 'purpose_text', 'body', 
+                  'deadline_date', 'purpose', 'replyto', )
+
+    def __init__(self, *args, **kwargs):
+        super(EditLiaisonForm, self).__init__(*args, **kwargs)
+        self.edit = True
+
+    def set_from_field(self):
+        self.fields['from_field'].initial = self.instance.from_body
+
+    def set_replyto_field(self):
+        self.fields['replyto'].initial = self.instance.replyto
+
+    def set_organization_field(self):
+        self.fields['organization'].initial = self.instance.to_body
+
+    def save_extra_fields(self, liaison):
+        now = datetime.datetime.now()
+        liaison.last_modified_date = now
+        liaison.from_raw_body = self.cleaned_data.get('from_field')
+        liaison.to_body = self.cleaned_data.get('organization')
+        liaison.to_poc = self.cleaned_data['to_poc']
+        liaison.cc1 = self.cleaned_data['cc1']
+        liaison.save()
 
 
 def liaison_form_factory(request, **kwargs):
@@ -274,7 +306,7 @@ def liaison_form_factory(request, **kwargs):
     force_incoming = 'incoming' in request.GET.keys()
     liaison = kwargs.pop('liaison', None)
     if liaison:
-        return EditLiaisonForm(instance=liaison, **kwargs)
+        return EditLiaisonForm(user, instance=liaison, **kwargs)
     if not force_incoming and can_add_outgoing_liaison(user):
         return OutgoingLiaisonForm(user, **kwargs)
     elif can_add_incoming_liaison(user):

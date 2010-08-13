@@ -43,8 +43,8 @@
 {% endfor %}
 
   <div class="submitrow">
-{% if form.liaison %}
-    <input type="submit" value="Edit" name="edit" />
+{% if form.edit %}
+    <input type="submit" value="Save" name="save" />
 {% else %}
     {% if not form.get_post_only %}
     <input type="submit" value="Send and Post" name="send" />
