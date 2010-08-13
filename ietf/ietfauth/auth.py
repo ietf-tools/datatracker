@@ -39,6 +39,9 @@ from ietf.ietfauth.models import IetfUserProfile
 
 from ietf.utils import log
 
+AUTOMATIC_GROUPS = ["Area_Director", "Secretariat", "IETF_Chair",
+                    "IAB_Chair", "IRTF_Chair", ]
+
 class IetfUserBackend(RemoteUserBackend):
 
     def find_groups(username):
@@ -56,6 +59,8 @@ class IetfUserBackend(RemoteUserBackend):
         Session_Chair          chairing a non-WG session in IETF meeting
         Ex_Area_Director       past AD
         """
+        # Any group name added by this method should be added to the 
+        # AUTOMATIC_GROUPS list
         groups = []
         try:
             login = IESGLogin.objects.get(login_name=username)
@@ -97,6 +102,10 @@ class IetfUserBackend(RemoteUserBackend):
             profile = IetfUserProfile(user=user)
             profile.save()
 
+        # Remove any automatic groups, the proper ones will be retrieved by 
+        # find_groups
+        groups = [group for group in user.groups.exclude(name__in=AUTOMATIC_GROUPS)]
+
         # Update group memberships
         group_names = IetfUserBackend.find_groups(user.username)
         for group_name in group_names:
@@ -104,6 +113,6 @@ class IetfUserBackend(RemoteUserBackend):
             group,created = Group.objects.get_or_create(name=group_name)
             if created:
                 log("IetfUserBackend created Group '%s'" % (group_name,))
-            user.groups.add(group)
+            groups.append(group)
+        user.groups = groups
         return user
-
