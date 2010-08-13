@@ -1,6 +1,8 @@
 from ietf.idtracker.models import Role, PersonOrOrgInfo
 
 
+LIAISON_EDIT_GROUPS = ['Liaison_Manager', 'Secreatriat']
+
 def get_ietf_chair():
     person = PersonOrOrgInfo.objects.filter(role=Role.IETF_CHAIR)
     return person and person[0] or None

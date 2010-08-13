@@ -5,13 +5,13 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
 from django.views.generic.list_detail import object_list, object_detail
 
 from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaison,
-                                    can_add_incoming_liaison)
+                                    can_add_incoming_liaison, LIAISON_EDIT_GROUPS)
 from ietf.liaisons.decorators import can_submit_liaison
 from ietf.liaisons.forms import liaison_form_factory
 from ietf.liaisons.models import LiaisonDetail, OutgoingLiaisonApproval
@@ -19,10 +19,10 @@ from ietf.liaisons.utils import IETFHM
 
 
 @can_submit_liaison
-def add_liaison(request):
+def add_liaison(request, liaison=None):
     if request.method == 'POST':
         form = liaison_form_factory(request, data=request.POST.copy(),
-                                    files = request.FILES)
+                                    files = request.FILES, liaison=liaison)
         if form.is_valid():
             liaison = form.save()
             if request.POST.get('send', None):
@@ -32,11 +32,12 @@ def add_liaison(request):
                     return _fake_email_view(request, liaison)
             return HttpResponseRedirect(reverse('liaison_list'))
     else:
-        form = liaison_form_factory(request)
+        form = liaison_form_factory(request, liaison=liaison)
 
     return render_to_response(
         'liaisons/liaisondetail_edit.html',
-        {'form': form},
+        {'form': form,
+         'liaison': liaison},
         context_instance=RequestContext(request),
     )
 
@@ -88,6 +89,7 @@ def liaison_list(request):
     can_send_outgoing = can_add_outgoing_liaison(user)
     can_send_incoming = can_add_incoming_liaison(user)
     can_approve = False
+    can_edit = False
 
     person = get_person_for_user(request.user)
     if person:
@@ -101,6 +103,7 @@ def liaison_list(request):
                        template_name='liaisons/liaisondetail_list.html',
                        extra_context={'can_manage': can_approve or can_send_incoming or can_send_outgoing,
                                       'can_approve': can_approve,
+                                      'can_edit': can_edit,
                                       'can_send_incoming': can_send_incoming,
                                       'can_send_outgoing': can_send_outgoing},
                       )
@@ -147,3 +150,19 @@ def liaison_approval_detail(request, object_id):
                           object_id=object_id,
                           template_name='liaisons/liaisondetail_approval_detail.html',
                          )
+
+
+def liaison_detail(request, object_id):
+    public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date")
+    can_edit = False
+    if request.user.groups.filter(name__in=LIAISON_EDIT_GROUPS):
+        can_edit = True
+    return  object_detail(request,
+                          public_liaisons,
+                          object_id=object_id,
+                          extra_context = {'can_edit': can_edit}
+                         )
+
+def liaison_edit(request, object_id):
+    liaison = get_object_or_404(LiaisonDetail, pk=object_id)
+    return add_liaison(request, liaison=liaison)

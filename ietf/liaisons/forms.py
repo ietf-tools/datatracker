@@ -251,9 +251,17 @@ class OutgoingLiaisonForm(LiaisonForm):
         liaison.save()
 
 
+class EditLiaisonForm(LiaisonForm):
+
+    pass
+
+
 def liaison_form_factory(request, **kwargs):
     user = request.user
     force_incoming = 'incoming' in request.GET.keys()
+    liaison = kwargs.pop('liaison', None)
+    if liaison:
+        return EditLiaisonForm(instance=liaison, **kwargs)
     if not force_incoming and can_add_outgoing_liaison(user):
         return OutgoingLiaisonForm(user, **kwargs)
     elif can_add_incoming_liaison(user):
