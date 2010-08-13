@@ -44,6 +44,9 @@ class Entity(object):
     def needs_approval(self, person=None):
         return False
 
+    def can_approve(self):
+        return []
+
 
 class IETFEntity(Entity):
 
@@ -61,6 +64,9 @@ class IETFEntity(Entity):
         if is_ietfchair(person):
             return False
         return True
+
+    def can_approve(self):
+        return [self.poc]
 
 
 class IABEntity(Entity):
@@ -83,6 +89,9 @@ class IABEntity(Entity):
             return False
         return True
 
+    def can_approve(self):
+        return [self.chair]
+
 
 class AreaEntity(Entity):
 
@@ -102,6 +111,9 @@ class AreaEntity(Entity):
         if self.obj.areadirector_set.filter(person=person):
             return False
         return True
+
+    def can_approve(self):
+        return self.get_poc()
 
 
 class WGEntity(Entity):
@@ -129,6 +141,9 @@ class WGEntity(Entity):
         if self.obj.area.area.areadirector_set.filter(person=person):
             return False
         return True
+
+    def can_approve(self):
+        return [i.person for i in self.obj.area.area.areadirector_set.all()]
 
 
 class SDOEntity(Entity):

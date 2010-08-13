@@ -114,7 +114,31 @@ class LiaisonDetail(models.Model):
     class Meta:
         db_table = 'liaison_detail'
 
+    def notify_pending_by_email(self, fake):
+        from ietf.liaisons.utils import IETFHM
+
+        from_entity = IETFHM.get_entity_by_key(self.from_raw_code)
+        if not from_entity:
+            return None
+        to_email = []
+        for person in from_entity.can_approve():
+            to_email.append('%s <%s>' % person.email())
+        subject = 'New Liaison Statement, "%s" needs your approval' % (self.title)
+        from_email = settings.LIAISON_UNIVERSAL_FROM
+        body = render_to_string('liaisons/pending_liaison_mail.txt',
+                                {'liaison': self,
+                                })
+        mail = IETFEmailMessage(subject=subject,
+                                to=to_email,
+                                from_email=from_email,
+                                body = body)
+        if not fake:
+            mail.send()         
+        return mail                                                     
+
     def send_by_email(self, fake=False):
+        if self.is_pending():
+            return self.notify_pending_by_email(fake)
         subject = 'New Liaison Statement, "%s"' % (self.title)
         from_email = settings.LIAISON_UNIVERSAL_FROM
         to_email = self.to_poc.split(',')
@@ -136,6 +160,9 @@ class LiaisonDetail(models.Model):
         if not fake:
             mail.send()         
         return mail                                                     
+
+    def is_pending(self):
+        return bool(self.approval and not self.approval.approved)
 
 
 class SDOs(models.Model):
