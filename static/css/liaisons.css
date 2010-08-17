@@ -52,6 +52,13 @@
 }
 
 #id_title,
+.baseformedit #id_from_field,
+.baseformedit #id_replyto,
+.baseformedit #id_organization,
+.baseformedit #id_to_poc,
+.baseformedit #id_response_contact,
+.baseformedit #id_technical_contact,
+.baseformedit #id_cc1,
 .baseform textarea {
     width: 80%;
 }

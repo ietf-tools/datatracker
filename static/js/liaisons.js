@@ -21,6 +21,7 @@
 
                 config.showOn = $('#' + fieldset.find('.showAttachsOn').html());
                 config.showOnDisplay = config.showOn.find('.attachedFiles');
+                count = config.showOnDisplay.find('.initialAttach').length;
                 config.showOnEmpty = config.showOn.find('.showAttachmentsEmpty').html();
                 config.enabledLabel = fieldset.find('.attachEnabledLabel').html();
             };

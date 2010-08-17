@@ -1,6 +1,7 @@
 import datetime
 
 from django import forms
+from django.conf import settings
 from django.forms.util import ErrorList
 from django.template.loader import render_to_string
 
@@ -179,6 +180,9 @@ class LiaisonForm(forms.ModelForm):
                 detail = instance,
                 file_extension = extension,
                 )
+            attach_file = open('%sfile%s%s' % (settings.LIAISON_ATTACH_PATH, attach.pk, attach.file_extension), 'w')
+            attach_file.write(attached_file.read())
+            attach_file.close()
 
 
 class IncomingLiaisonForm(LiaisonForm):
@@ -281,6 +285,7 @@ class EditLiaisonForm(LiaisonForm):
     def __init__(self, *args, **kwargs):
         super(EditLiaisonForm, self).__init__(*args, **kwargs)
         self.edit = True
+        self.initial.update({'attachments': self.instance.uploads_set.all()})
 
     def set_from_field(self):
         self.fields['from_field'].initial = self.instance.from_body

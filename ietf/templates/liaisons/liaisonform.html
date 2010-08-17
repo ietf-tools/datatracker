@@ -8,7 +8,7 @@
 {% endblock %}
 </div>
 
-<div class="baseform">
+<div class="baseform{% if form.edit %} baseformedit{% endif %}">
   {% if form.errors %}
    <div class="formErrors">
      Please correct the errors below.

@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.db.models.query import QuerySet
 from django.forms.widgets import Select, Widget
 from django.utils.safestring import mark_safe
 
@@ -54,9 +56,11 @@ class ShowAttachmentsWidget(Widget):
     def render(self, name, value, attrs=None):
         html = u'<div id="id_%s">' % name
         html += u'<span style="display: none" class="showAttachmentsEmpty">No files attached</span>'
-        if not value:
-            html += u'<div class="attachedFiles">No files attached</div>' 
+        html += u'<div class="attachedFiles">'
+        if value and isinstance(value, QuerySet):
+            for attach in value:
+                html += u'<a class="initialAttach" href="%sfile%s%s">%s</a><br />' % (settings.LIAISON_ATTACH_URL, attach.file_id, attach.file_extension, attach.file_title, )
         else:
-            pass
-        html += u'</div>'
+            html += u'No files attached'
+        html += u'</div></div>'
         return mark_safe(html)
