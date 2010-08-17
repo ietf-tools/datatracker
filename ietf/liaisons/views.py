@@ -155,7 +155,8 @@ def liaison_approval_detail(request, object_id):
 def liaison_detail(request, object_id):
     public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date")
     can_edit = False
-    if request.user.groups.filter(name__in=LIAISON_EDIT_GROUPS):
+    user = request.user
+    if user.is_authenticated() and user.groups.filter(name__in=LIAISON_EDIT_GROUPS):
         can_edit = True
     return  object_detail(request,
                           public_liaisons,

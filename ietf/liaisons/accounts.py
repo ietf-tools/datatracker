@@ -1,7 +1,7 @@
 from ietf.idtracker.models import Role, PersonOrOrgInfo
 
 
-LIAISON_EDIT_GROUPS = ['Liaison_Manager', 'Secreatriat']
+LIAISON_EDIT_GROUPS = ['Liaison_Manager', 'Secretariat']
 
 def get_ietf_chair():
     person = PersonOrOrgInfo.objects.filter(role=Role.IETF_CHAIR)
