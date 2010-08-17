@@ -416,6 +416,7 @@ class IetfProcessData:
         try:
             return self._idinternal.comments().filter(
                 Q(comment_text__istartswith="Draft Added by ")|
+                Q(comment_text__istartswith="Draft Added in state ")|
                 Q(comment_text__istartswith="State Changes to ")|
                 Q(comment_text__istartswith="Sub state has been changed to ")|
                 Q(comment_text__istartswith="State has been changed to ")|
