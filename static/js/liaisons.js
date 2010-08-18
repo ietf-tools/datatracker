@@ -16,7 +16,7 @@
                         required += '#' + $(field).html() + ',';
                     });
                     var fields = fieldset.find(required);
-                    config.fields = fields;
+                    config.basefields = fields;
                 }
 
                 config.showOn = $('#' + fieldset.find('.showAttachsOn').html());
@@ -50,26 +50,22 @@
                 }
                 config.fields.each(function() {
                     var field = $(this);
-                    var newcontainer= $(this).parents('.field').clone();
-                    var newfield = newcontainer.find('#' + field.attr('id'));
-                    newcontainer.hide();
-                    newfield.attr('name', newfield.attr('name') + '_' + count);
-                    newcontainer.attr('id', 'container_id_' + newfield.attr('name'));
-                    newcontainer.insertBefore(button.parents('.field'));
-                    if (newcontainer.find(':file').length) {
-                        html += ' (' + newfield.val() + ')';
+                    var container= $(this).parents('.field');
+                    if (container.find(':file').length) {
+                        html += ' (' + field.val() + ')';
                     } else {
-                        html += ' ' + newfield.val();
+                        html += ' ' + field.val();
                     }
                     html += '<span style="display: none;" class="removeField">';
-                    html += newcontainer.attr('id');
+                    html += container.attr('id');
                     html += '</span>';
+                    container.hide();
                 });
                 html += ' <a href="#" class="removeAttach">Remove</a>';
                 html += '</div>';
                 config.showOnDisplay.html(html);
-                config.fields.val('');
                 count += 1;
+                initFileInput();
             };
 
             var doAttach = function() {
@@ -93,14 +89,33 @@
             };
 
             var initTriggers = function() {
-                config.fields.change(setState);
-                config.fields.keyup(setState);
                 config.showOnDisplay.find('a.removeAttach').live('click', removeAttachment);
                 button.click(doAttach);
             };
 
+            var initFileInput = function() {
+                var fieldids = ''
+                config.basefields.each(function(i) {
+                    var field = $(this);
+                    var oldcontainer= $(this).parents('.field');
+                    var newcontainer= oldcontainer.clone();
+                    var newfield = newcontainer.find('#' + field.attr('id'));
+                    newfield.attr('name', newfield.attr('name') + '_' + count);
+                    newfield.attr('id', newfield.attr('id') + '_' + count);
+                    newcontainer.attr('id', 'container_id_' + newfield.attr('name'));
+                    oldcontainer.after(newcontainer);
+                    oldcontainer.hide();
+                    newcontainer.show();
+                    fieldids += '#' + newfield.attr('id') + ','
+                });
+                config.fields = $(fieldids);
+                config.fields.change(setState);
+                config.fields.keyup(setState);
+            };
+
             var initWidget = function() {
                 readConfig();
+                initFileInput();
                 initTriggers();
                 setState();
             };
