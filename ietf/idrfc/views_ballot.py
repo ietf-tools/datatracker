@@ -52,7 +52,7 @@ def get_ballot_info(ballot, area_director):
     return (pos, discuss, comment)
 
 class EditPositionForm(forms.Form):
-    position = forms.ChoiceField(choices=BALLOT_CHOICES, widget=forms.RadioSelect)
+    position = forms.ChoiceField(choices=BALLOT_CHOICES, widget=forms.RadioSelect, required=False)
     discuss_text = forms.CharField(required=False, widget=forms.Textarea)
     comment_text = forms.CharField(required=False, widget=forms.Textarea)
 
@@ -95,7 +95,10 @@ def edit_position(request, name):
                 setattr(pos, vote, 1)
 
             if pos.id:
-                pos.save()
+                if vote:
+                    pos.save()
+                else:
+                    pos.delete()
                 if vote != old_vote:
                     add_document_comment(request, doc, "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad, position_label(vote), position_label(old_vote)))
             elif vote:
