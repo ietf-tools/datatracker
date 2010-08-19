@@ -4,7 +4,7 @@
 
 {% block morecss %}
 form.change-state select {
-  width: 100%;
+  width: 22em;
 }
 form.change-state .actions {
   text-align: right;
@@ -26,7 +26,7 @@ form.change-state .actions {
 
 <p class="helptext">For help on the states, see the <a href="{% url help_states %}">state table</a>.</p>
 
-<form class="change-state" action="" method="POST">
+<form class="change-state" action="" method="post">
   <table>
     {{ form.as_table }}
     <tr>
@@ -43,7 +43,7 @@ form.change-state .actions {
 
 <div class="next-states">
   {% for n in next_states %}
-  <form action="" method="POST">
+  <form action="" method="post">
     <input type="hidden" name="state" value="{{ n.next_state.document_state_id }}" />
     <input type="hidden" name="substate" value="" />
     <input type="submit" value="{{ n.next_state.state }}" />
@@ -55,7 +55,7 @@ form.change-state .actions {
 <h3>Or revert to previous state</h3>
 
 <div class="prev-state">
-  <form action="" method="POST">
+  <form action="" method="post">
     <input type="hidden" name="state" value="{{ doc.idinternal.prev_state_id }}" />
     <input type="hidden" name="substate" value="{{ doc.idinternal.prev_sub_state_id|default_if_none:"" }}" />
     <input type="submit" value="Back to {{ prev_state_formatted }}" />
