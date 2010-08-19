@@ -35,7 +35,7 @@
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.template import loader
 from django.shortcuts import get_object_or_404
-from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, IDInternal,PersonOrOrgInfo
+from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, IDInternal,PersonOrOrgInfo, Area
 from ietf.idtracker.templatetags.ietf_filters import clean_whitespace
 import re
 import sys
@@ -91,7 +91,10 @@ def all_id2_entry(id):
     # 8
     area = ""
     if id.idinternal:
-        area = id.idinternal.area_acronym
+        try:
+            area = id.idinternal.area_acronym
+        except Area.DoesNotExist:
+            pass
     elif not group_acronym:
         pass
     else:
