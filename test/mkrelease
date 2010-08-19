@@ -228,7 +228,7 @@ Regards,
 
 	Henrik
 	(via the mkrelease script)
-" | $do mail -s "New datatracker release: v$VER" -c henrik@levkowetz.com  -c glen@amsl.com -c fenner@fenron.net -c pasi.eronen@nokia.com -c rjs@nostrum.com -c housley@vigilsec.com codesprints@ietf.org
+" | $do mail -s "New datatracker release: v$VER" -c henrik@levkowetz.com  -c glen@amsl.com -c fenner@fenron.net -c rjs@nostrum.com -c housley@vigilsec.com -c cmorgan@amsl.com -c avezza@amsl.com -c amorris@amsl.com codesprints@ietf.org
 
 $do toolsfeed control changelog /www/tools.ietf.org/tools/atomfeed.xml
 $do toolpush /www/tools.ietf.org/tools/atomfeed.xml
