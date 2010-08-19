@@ -42,7 +42,7 @@ function showBallot(draftName, editPositionUrl) {
 
     if (!IETF.ballotDialog) {
         el = document.createElement("div");
-        el.innerHTML = '<div id="ballot_dialog" style="visibility:hidden;"><div class="hd">Positions for <span id="ballot_dialog_name">draft-ietf-foo-bar</span></span></div><div class="bd">  <div id="ballot_dialog_body" style="overflow-y:scroll; height:500px;"></div>   </div></div>';
+        el.innerHTML = '<div id="ballot_dialog" style="visibility:hidden;"><div class="hd">Positions for <span id="ballot_dialog_name">draft-ietf-foo-bar</span></span></div><div class="bd">  <div id="ballot_dialog_body" style="overflow-y:scroll; height:400px;"></div>   </div></div>';
         document.getElementById("ietf-extras").appendChild(el);
 
         var buttons = [{text:"Close", handler:handleClose, isDefault:true}];
