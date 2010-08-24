@@ -180,7 +180,10 @@ def _get_history(doc, versions):
     # convert plain dates to datetimes (required for sorting)
     for x in results:
         if not isinstance(x['date'], datetime):
-            x['date'] = datetime.combine(x['date'], time(0,0,0))
+            if x['date']:
+                x['date'] = datetime.combine(x['date'], time(0,0,0))
+            else:
+                x['date'] = datetime(1970,1,1)
 
     results.sort(key=lambda x: x['date'])
     results.reverse()

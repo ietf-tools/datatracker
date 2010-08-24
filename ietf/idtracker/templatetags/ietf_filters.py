@@ -368,7 +368,7 @@ def stable_dictsort(value, arg):
     http://code.djangoproject.com/ticket/12110
     """
     decorated = [(resolve_variable('var.' + arg, {'var' : item}), item) for item in value]
-    decorated.sort(lambda a, b: cmp(a[0], b[0]))
+    decorated.sort(lambda a, b: cmp(a[0], b[0]) if a[0] and b[0] else -1 if b[0] else 1 if a[0] else 0)
     return [item[1] for item in decorated]
 
 def _test():
