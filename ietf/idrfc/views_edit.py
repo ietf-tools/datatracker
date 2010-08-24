@@ -190,7 +190,7 @@ def edit_info(request, name):
                                     prev_state_id=IDState.PUBLICATION_REQUESTED,
                                     state_change_notice_to=get_initial_state_change_notice(doc),
                                     primary_flag=1,
-                                    area_acronym_id=doc.group_id,
+                                    area_acronym_id=Acronym.INDIVIDUAL_SUBMITTER,
                                     # would be better to use NULL to
                                     # signify an empty ballot
                                     ballot_id=get_new_ballot_id(),
