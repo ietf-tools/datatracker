@@ -188,6 +188,51 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue(draft.filename in mail_outbox[-1]['Subject'])
 
+    def test_edit_telechat_date(self):
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft.idinternal.agenda = False
+        draft.idinternal.save()
+        url = urlreverse('doc_edit_info', kwargs=dict(name=draft.filename))
+        login_testing_unauthorized(self, "klm", url)
+
+        data = dict(intended_status=str(draft.intended_status_id),
+                    status_date=str(date.today() + timedelta(2)),
+                    area_acronym=str(draft.idinternal.area_acronym_id),
+                    via_rfc_editor="1",
+                    job_owner=str(draft.idinternal.job_owner_id),
+                    state_change_notice_to="test@example.com",
+                    note="",
+                    )
+
+        from ietf.iesg.models import TelechatDates
+
+        # add to telechat
+        data["telechat_date"] = TelechatDates.objects.all()[0].date1.isoformat()
+        r = self.client.post(url, data)
+        self.assertEquals(r.status_code, 302)
+
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        self.assertTrue(draft.idinternal.agenda)
+        self.assertEquals(draft.idinternal.telechat_date, TelechatDates.objects.all()[0].date1)
+
+        # change telechat
+        data["telechat_date"] = TelechatDates.objects.all()[0].date2.isoformat()
+        r = self.client.post(url, data)
+        self.assertEquals(r.status_code, 302)
+
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        self.assertTrue(draft.idinternal.agenda)
+        self.assertEquals(draft.idinternal.telechat_date, TelechatDates.objects.all()[0].date2)
+
+        # remove from agenda
+        data["telechat_date"] = ""
+        r = self.client.post(url, data)
+        self.assertEquals(r.status_code, 302)
+
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        self.assertTrue(not draft.idinternal.agenda)
+        
+
     def test_add_draft(self):
         draft = InternetDraft.objects.get(filename="draft-ah-rfc2141bis-urn")
         url = urlreverse('doc_edit_info', kwargs=dict(name=draft.filename))
@@ -225,8 +270,9 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.idinternal.job_owner, job_owner)
         self.assertEquals(draft.idinternal.note, "This is a note")
         self.assertTrue(not draft.idinternal.agenda)
-        self.assertEquals(draft.idinternal.comments().count(), 3)
+        self.assertEquals(draft.idinternal.comments().count(), 2)
         self.assertTrue("Draft added" in draft.idinternal.comments()[0].comment_text)
+        self.assertTrue("This is a note" in draft.idinternal.comments()[1].comment_text)
         self.assertEquals(len(mail_outbox), mailbox_before)
 
 
@@ -375,6 +421,7 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertEquals(len(pos), 0)
         self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
         self.assertTrue("Position" in draft.idinternal.comments()[0].comment_text)
+
     def test_edit_position_as_secretary(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         url = urlreverse('doc_edit_position', kwargs=dict(name=draft.filename))
