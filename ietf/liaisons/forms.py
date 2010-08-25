@@ -207,6 +207,12 @@ class LiaisonForm(forms.ModelForm):
             attach_file.write(attached_file.read())
             attach_file.close()
 
+    def clean_title(self):
+        title = self.cleaned_data.get('title', None)
+        exists = bool(LiaisonDetail.objects.filter(title__iexact=title).count())
+        if exists:
+            raise forms.ValidationError('A liaison statement with the same title has previously been submitted.')
+
 
 class IncomingLiaisonForm(LiaisonForm):
 
