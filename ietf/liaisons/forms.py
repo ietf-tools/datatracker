@@ -1,8 +1,10 @@
 import datetime
+from email.utils import parseaddr
 
 from django import forms
 from django.conf import settings
 from django.forms.util import ErrorList
+from django.forms.fields import email_re
 from django.template.loader import render_to_string
 
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
@@ -121,6 +123,27 @@ class LiaisonForm(forms.ModelForm):
                 return True
         return False
 
+    def check_email(self, value):
+        if not value:
+            return
+        emails = value.split(',')
+        for email in emails:
+            name, addr = parseaddr(email)
+            if not email_re.search(addr):
+                raise forms.ValidationError('Invalid email address: %s' % addr)
+
+    def clean_response_contact(self):
+        value = self.cleaned_data.get('response_contact', None)
+        self.check_email(value)
+
+    def clean_technical_contact(self):
+        value = self.cleaned_data.get('technical_contact', None)
+        self.check_email(value)
+
+    def clean_reply_to(self):
+        value = self.cleaned_data.get('reply_to', None)
+        self.check_email(value)
+
     def clean(self):
         if not self.cleaned_data.get('body', None) and not self.has_attachments():
             self._errors['body'] = ErrorList([u'You must provide a body or attachment files'])
@@ -206,7 +229,7 @@ class IncomingLiaisonForm(LiaisonForm):
         return False
 
     def clean(self):
-        if self.data.has_key('send') and self.get_post_only():
+        if 'send' in self.data.keys() and self.get_post_only():
             self._errors['from_field'] = ErrorList([u'As an IETF Liaison Manager you can not send an incoming liaison statements, you only can post them'])
         return super(IncomingLiaisonForm, self).clean()
 
@@ -267,6 +290,10 @@ class OutgoingLiaisonForm(LiaisonForm):
         liaison.approval = approval
         liaison.save()
 
+    def clean_to_poc(self):
+        value = self.cleaned_data.get('to_poc', None)
+        self.check_email(value)
+
 
 class EditLiaisonForm(LiaisonForm):
 
@@ -278,8 +305,8 @@ class EditLiaisonForm(LiaisonForm):
 
     class Meta:
         model = LiaisonDetail
-        fields = ('from_raw_body', 'to_body', 'to_poc', 'cc1', 'last_modified_date', 'title', 
-                  'response_contact', 'technical_contact', 'purpose_text', 'body', 
+        fields = ('from_raw_body', 'to_body', 'to_poc', 'cc1', 'last_modified_date', 'title',
+                  'response_contact', 'technical_contact', 'purpose_text', 'body',
                   'deadline_date', 'purpose', 'replyto', )
 
     def __init__(self, *args, **kwargs):
