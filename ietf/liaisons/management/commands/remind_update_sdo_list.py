@@ -32,21 +32,26 @@ class Command(BaseCommand):
                             body = body)
         if not settings.DEBUG:
             mail.send()
-            print '%05s#: %s Mail Sent!' % (sdo.pk, sdo.sdo_name)
+            msg = '%05s#: %s Mail Sent!' % (sdo.pk, sdo.sdo_name)
         else:
-            print '%05s#: %s Mail Not Sent because in DEBUG mode!' % (sdo.pk, sdo.sdo_name)
-        return
+            msg = '%05s#: %s Mail Not Sent because in DEBUG mode!' % (sdo.pk, sdo.sdo_name)
+        return msg
 
     def handle(self, *args, **options):
         query = SDOs.objects.all().order_by('pk')
         sdo_pk = options.get('sdo_pk', None)
+        return_output = options.get('return_output', False)
         if sdo_pk:
             query = query.filter(pk=sdo_pk)
 
+        msg_list = []
         for sdo in query:
             manager = sdo.liaisonmanager()
             if manager:
-                self.send_mail_to(manager.person, sdo)
+                msg = self.send_mail_to(manager.person, sdo)
             else:
-                print '%05s#: %s has no liaison manager' % (sdo.pk, sdo.sdo_name)
-
+                msg = '%05s#: %s has no liaison manager' % (sdo.pk, sdo.sdo_name)
+            print msg
+            msg_list.append(msg)
+        if return_output:
+            return msg_list
