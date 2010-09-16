@@ -421,7 +421,6 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertEquals(len(pos), 0)
         self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
         self.assertTrue("Position" in draft.idinternal.comments()[0].comment_text)
-
     def test_edit_position_as_secretary(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         url = urlreverse('doc_edit_position', kwargs=dict(name=draft.filename))

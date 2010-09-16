@@ -55,6 +55,7 @@ class EditPositionForm(forms.Form):
     position = forms.ChoiceField(choices=BALLOT_CHOICES, widget=forms.RadioSelect, required=False)
     discuss_text = forms.CharField(required=False, widget=forms.Textarea)
     comment_text = forms.CharField(required=False, widget=forms.Textarea)
+    return_to_url = forms.CharField(required=False, widget=forms.HiddenInput)
 
 @group_required('Area_Director','Secretariat')
 def edit_position(request, name):
@@ -64,6 +65,12 @@ def edit_position(request, name):
         raise Http404()
 
     ad = login = IESGLogin.objects.get(login_name=request.user.username)
+
+    if 'HTTP_REFERER' in request.META:
+      return_to_url = request.META['HTTP_REFERER']
+    else:
+      return_to_url = doc.idinternal.get_absolute_url()
+
 
     # if we're in the Secretariat, we can select an AD to act as stand-in for
     if not in_group(request.user, "Area_Director"):
@@ -77,8 +84,13 @@ def edit_position(request, name):
     if request.method == 'POST':
         form = EditPositionForm(request.POST)
         if form.is_valid():
+ 
             # save the vote
             clean = form.cleaned_data
+
+            if clean['return_to_url']:
+              return_to_url = clean['return_to_url']
+
             vote = clean['position']
             if pos:
                 # mark discuss as cleared (quirk from old system)
@@ -142,13 +154,14 @@ def edit_position(request, name):
             
             doc.idinternal.event_date = date.today()
             doc.idinternal.save()
+
             if request.POST.get("send_mail"):
-                qstr = ""
+                qstr = "?return_to_url=%s" % return_to_url
                 if request.GET.get('ad'):
-                    qstr = "?ad=%s" % request.GET.get('ad')
+                    qstr += "&ad=%s" % request.GET.get('ad')
                 return HttpResponseRedirect(urlreverse("doc_send_ballot_comment", kwargs=dict(name=doc.filename)) + qstr)
             else:
-                return HttpResponseRedirect(doc.idinternal.get_absolute_url())
+                return HttpResponseRedirect(return_to_url)
     else:
         initial = {}
         if pos:
@@ -159,15 +172,21 @@ def edit_position(request, name):
 
         if comment:
             initial['comment_text'] = comment.text
+
+        if return_to_url:
+            initial['return_to_url'] = return_to_url
             
         form = EditPositionForm(initial=initial)
   
+
     return render_to_response('idrfc/edit_position.html',
                               dict(doc=doc,
                                    form=form,
                                    discuss=discuss,
                                    comment=comment,
-                                   ad=ad),
+                                   ad=ad,
+                                   return_to_url=return_to_url,
+                                   ),
                               context_instance=RequestContext(request))
 
 @group_required('Area_Director','Secretariat')
@@ -178,6 +197,18 @@ def send_ballot_comment(request, name):
         raise Http404()
 
     ad = login = IESGLogin.objects.get(login_name=request.user.username)
+
+    return_to_url = request.GET.get('return_to_url')
+    if not return_to_url:
+        return_to_url = doc.idinternal.get_absolute_url()
+
+    if 'HTTP_REFERER' in request.META:
+      back_url = request.META['HTTP_REFERER']
+    else:
+      back_url = doc.idinternal.get_absolute_url()
+
+
+
     # if we're in the Secretariat, we can select an AD to act as stand-in for
     if not in_group(request.user, "Area_Director"):
         ad_username = request.GET.get('ad')
@@ -210,7 +241,7 @@ def send_ballot_comment(request, name):
 
         send_mail_text(request, to, frm, subject, body, cc=", ".join(cc))
             
-        return HttpResponseRedirect(doc.idinternal.get_absolute_url())
+        return HttpResponseRedirect(return_to_url)
   
     return render_to_response('idrfc/send_ballot_comment.html',
                               dict(doc=doc,
@@ -219,7 +250,9 @@ def send_ballot_comment(request, name):
                                    frm=frm,
                                    to=to,
                                    ad=ad,
-                                   can_send=d or c),
+                                   can_send=d or c,
+                                   back_url=back_url,
+                                  ),
                               context_instance=RequestContext(request))
 
 
