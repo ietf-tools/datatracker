@@ -311,8 +311,8 @@ class ApprovalTextForm(forms.ModelForm):
         return self.cleaned_data["approval_text"].replace("\r", "")
 
 @group_required('Area_Director','Secretariat')
-def ballot_writeups(request, name):
-    """Editing of ballot write-ups, sending last calls, ..."""
+def lastcalltext(request, name):
+    """Editing of the last call text"""
     doc = get_object_or_404(InternetDraft, filename=name)
     if not doc.idinternal:
         raise Http404()
@@ -325,8 +325,6 @@ def ballot_writeups(request, name):
         ballot = generate_ballot(request, doc)
 
     last_call_form = LastCallTextForm(instance=ballot)
-    ballot_writeup_form = BallotWriteupForm(instance=ballot)
-    approval_text_form = ApprovalTextForm(instance=ballot)
 
     if request.method == 'POST':
         if "save_last_call_text" in request.POST or "send_last_call_request" in request.POST:
@@ -355,6 +353,43 @@ def ballot_writeups(request, name):
 
             # make sure form has the updated text
             last_call_form = LastCallTextForm(instance=ballot)
+
+        doc.idinternal.event_date = date.today()
+        doc.idinternal.save()
+
+    can_request_last_call = doc.idinternal.cur_state_id < 27
+    can_make_last_call = doc.idinternal.cur_state_id < 20
+    can_announce = doc.idinternal.cur_state_id > 19
+    docs_with_invalid_status = [d.document().file_tag() for d in doc.idinternal.ballot_set() if "None" in d.document().intended_status.intended_status or "Request" in d.document().intended_status.intended_status]
+    need_intended_status = ", ".join(docs_with_invalid_status)
+
+    return render_to_response('idrfc/ballot_lastcalltext.html',
+                              dict(doc=doc,
+                                   ballot=ballot,
+                                   last_call_form=last_call_form,
+                                   can_request_last_call=can_request_last_call,
+                                   can_make_last_call=can_make_last_call,
+                                   need_intended_status=need_intended_status,
+                                   ),
+                              context_instance=RequestContext(request))
+
+@group_required('Area_Director','Secretariat')
+def ballot_writeupnotes(request, name):
+    """Editing of ballot write-up and notes"""
+    doc = get_object_or_404(InternetDraft, filename=name)
+    if not doc.idinternal:
+        raise Http404()
+
+    login = IESGLogin.objects.get(login_name=request.user.username)
+
+    try:
+        ballot = doc.idinternal.ballot
+    except BallotInfo.DoesNotExist:
+        ballot = generate_ballot(request, doc)
+
+    ballot_writeup_form = BallotWriteupForm(instance=ballot)
+
+    if request.method == 'POST':
 
         if "save_ballot_writeup" in request.POST:
             ballot_writeup_form = BallotWriteupForm(request.POST, instance=ballot)
@@ -398,6 +433,38 @@ def ballot_writeups(request, name):
                                           context_instance=RequestContext(request))
                 
 
+        doc.idinternal.event_date = date.today()
+        doc.idinternal.save()
+
+    docs_with_invalid_status = [d.document().file_tag() for d in doc.idinternal.ballot_set() if "None" in d.document().intended_status.intended_status or "Request" in d.document().intended_status.intended_status]
+    need_intended_status = ", ".join(docs_with_invalid_status)
+
+    return render_to_response('idrfc/ballot_writeupnotes.html',
+                              dict(doc=doc,
+                                   ballot=ballot,
+                                   ballot_writeup_form=ballot_writeup_form,
+                                   need_intended_status=need_intended_status,
+                                   ),
+                              context_instance=RequestContext(request))
+
+@group_required('Area_Director','Secretariat')
+def ballot_approvaltext(request, name):
+    """Editing of approval text"""
+    doc = get_object_or_404(InternetDraft, filename=name)
+    if not doc.idinternal:
+        raise Http404()
+
+    login = IESGLogin.objects.get(login_name=request.user.username)
+
+    try:
+        ballot = doc.idinternal.ballot
+    except BallotInfo.DoesNotExist:
+        ballot = generate_ballot(request, doc)
+
+    approval_text_form = ApprovalTextForm(instance=ballot)
+
+    if request.method == 'POST':
+
         if "save_approval_text" in request.POST:
             approval_text_form = ApprovalTextForm(request.POST, instance=ballot)            
             if approval_text_form.is_valid():
@@ -414,20 +481,14 @@ def ballot_writeups(request, name):
         doc.idinternal.event_date = date.today()
         doc.idinternal.save()
 
-    can_request_last_call = doc.idinternal.cur_state_id < 27
-    can_make_last_call = doc.idinternal.cur_state_id < 20
     can_announce = doc.idinternal.cur_state_id > 19
     docs_with_invalid_status = [d.document().file_tag() for d in doc.idinternal.ballot_set() if "None" in d.document().intended_status.intended_status or "Request" in d.document().intended_status.intended_status]
     need_intended_status = ", ".join(docs_with_invalid_status)
 
-    return render_to_response('idrfc/ballot_writeups.html',
+    return render_to_response('idrfc/ballot_approvaltext.html',
                               dict(doc=doc,
                                    ballot=ballot,
-                                   last_call_form=last_call_form,
-                                   ballot_writeup_form=ballot_writeup_form,
                                    approval_text_form=approval_text_form,
-                                   can_request_last_call=can_request_last_call,
-                                   can_make_last_call=can_make_last_call,
                                    can_announce=can_announce,
                                    need_intended_status=need_intended_status,
                                    ),

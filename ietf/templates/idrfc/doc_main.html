@@ -95,9 +95,6 @@ div.diffTool { padding: 8px 4px; margin: 8px 0;}
 <span id="doc_edit_state_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_change_state name=doc.draft_name %}">Change state</a></span></span>
 
 <span id="doc_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_edit_info name=doc.draft_name %}">Edit</a></span></span>
-{% if not doc.ietf_process_has_iesg_ballot %}
-<span id="doc_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_ballot_writeups name=doc.draft_name %}">Ballot Writeups</a></span></span>
-{% endif %}
 {% else %}
 <span id="doc_add_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_edit_info name=doc.draft_name %}">Add</a></span></span>
 {% endif %}
@@ -133,20 +130,39 @@ div.diffTool { padding: 8px 4px; margin: 8px 0;}
 
 <div id="writeup">
 <div id="writeup_content">
+---- following is a DRAFT of message to be sent AFTER approval ---
 {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
 {% if user|in_group:"Area_Director,Secretariat" %}
-<div style="margin-bottom:8px;">
-<span id="doc_writeup_edit_button" class="yui-button yui-link-button"><span class="first-child">
-<a href="{% url doc_ballot_writeups name=doc.draft_name %}">Ballot write-ups</a>
-</span></span></div>
-{% endif %}{# user in_group #}
----- following is a DRAFT of message to be sent AFTER approval ---
+<div style="background:#E0E0FF">
+<p align=right>
+<span id="doc_edit_announce_button" class="yui-button yui-link-button"><span class="first-child">
+<a href="{% url doc_ballot_approvaltext name=doc.draft_name %}">Edit Announcement Text</a>
+</span></span>
+</p>
+{% endif %}
+{% endif %}
 <pre>
 {{ doc.ietf_process.iesg_ballot.approval_text|escape|urlize }}
 </pre>
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+</div>
+
+<div style="background:#E0E0FF">
+<p align=right>
+<span id="doc_ballot_edit_button" class="yui-button yui-link-button"><span class="first-child">
+<a href="{% url doc_ballot_writeupnotes name=doc.draft_name %}">Edit Ballot Text</a>
+</span></span>
+</p>
+{% endif %}
+{% endif %}
 <pre>
 {{ doc.ietf_process.iesg_ballot.ballot_writeup|escape|urlize }}
 </pre>
+{% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+</div>
+{% endif %}
 {% endif %}
 </div>
 </div> 

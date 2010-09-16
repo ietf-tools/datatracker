@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Last Call text for {{ doc }}{% endblock %}
+
+{% block morecss %}
+form #id_last_call_text {
+  width: 700px;
+  height: 600px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Last Call text for {{ doc }}</h1>
+
+<form action="" method="POST">
+
+  <p>{{ last_call_form.last_call_text.errors }}</p>
+
+  {{ last_call_form.last_call_text }}
+
+  <p>{{ last_call_form.last_call_text.errors }}</p>
+  
+  {% if can_request_last_call and need_intended_status %}
+  <p>You need to select intended status of {{ need_intended_status }} and regenerate last call text to request last call.</p>
+  {% endif %}
+    
+  <div class="actions">
+    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <input type="submit" name="save_last_call_text" value="Save Last Call Text" />
+    <input type="submit" name="regenerate_last_call_text" value="Regenerate Last Call Text" />
+    {% if can_request_last_call and not need_intended_status %}
+    <input style="margin-left: 8px" type="submit" name="send_last_call_request" value="Save and Request Last Call" />
+    {% endif %}
+  </div>
+</form>
+
+{% load ietf_filters %}
+{% if user|in_group:"Secretariat" %}
+<p>
+{% if can_make_last_call %}
+<a href="{% url doc_make_last_call name=doc.filename %}">Make Last Call</a>
+{% endif %}
+
+</p>
+{% endif %}
+{% endblock%}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Approval announcement writeup for {{ doc }}{% endblock %}
+
+{% block morecss %}
+form #id_approval_text {
+  width: 700px;
+  height: 600px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Approval announcement writeup for {{ doc }}</h1>
+
+<form action="" method="POST">
+
+  <p>Sent after approval.</p>
+
+  {{ approval_text_form.approval_text }}
+
+  <div class="actions">
+    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <input type="submit" name="save_approval_text" value="Save Approval Announcement Text" />
+    <input type="submit" name="regenerate_approval_text" value="Regenerate Approval Announcement Text" />
+  </div>
+</form>
+
+{% load ietf_filters %}
+{% if user|in_group:"Secretariat" %}
+<p>
+{% if can_announce %}
+<a href="{% url doc_approve_ballot name=doc.filename %}">Approve ballot</a>
+{% endif %}
+</p>
+{% endif %}
+{% endblock%}

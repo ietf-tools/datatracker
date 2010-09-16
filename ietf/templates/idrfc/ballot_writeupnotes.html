@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Ballot writeup and notes for {{ doc }}{% endblock %}
+
+{% block morecss %}
+form #id_ballot_writeup {
+  width: 700px;
+  height: 600px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Ballot writeup and notes for {{ doc }}</h1>
+
+  
+<form action="" method="POST">
+  
+  <p>(Technical Summary, Working Group Summary, Document Quality,
+  Personnel, RFC Editor Note, IRTF Note, IESG Note, IANA Note)</p>
+  
+  <p>This text will be appended to all announcements and messages to
+  the IRTF or RFC Editor.</p>
+
+  {{ ballot_writeup_form.ballot_writeup }}
+  
+  <div class="actions">
+    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <input type="submit" name="save_ballot_writeup" value="Save Ballot Writeup" />
+    <input style="margin-left: 8px" type="submit" name="issue_ballot" value="Save and {% if ballot.ballot_issued %}Re-{% endif %}Issue Ballot" />
+  </div>
+</form>
+
+
+{% endblock%}
