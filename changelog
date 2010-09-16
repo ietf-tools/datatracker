@@ -4,19 +4,28 @@ ietfdb (3.05)
   release page http://trac.tools.ietf.org/tools/ietfdb/milestone/3.05)
 
   From olau@iola.dk:
-    #354  Document State Change Edit lacks dropdowns in IE 8
-    #359  Test cases fail in fresh checkout from iesg-tracker branch
-    #364  Impossible to move back to No-Position
-    #366  The popup view of current positions when you left click on the
-	  grids needs to be smarter when it doesn't fit on the display.
-    #369  IDInternal entry with missing information generated
-    #370  Documents marked for telechat not on the web agenda
+
+  * #354  Document State Change Edit lacks dropdowns in IE 8
+
+  * #359  Test cases fail in fresh checkout from iesg-tracker branch
+
+  * #364  Impossible to move back to No-Position
+
+  * #366  The popup view of current positions when you left click on the
+    grids needs to be smarter when it doesn't fit on the display.
+
+  * #369  IDInternal entry with missing information generated
+
+  * #370  Documents marked for telechat not on the web agenda
 
   From Henrik:
-    #367  Document state age not always shown correctly
-    #355  tarfile generation fails on production system
-    #371  When a draft lacks creation date, the all_id* and 1id_* 
-          generating script fail
+
+  * #367  Document state age not always shown correctly
+
+  * #355  tarfile generation fails on production system
+
+  * #371  When a draft lacks creation date, the all_id* and 1id_*
+    generating script fail
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  24 Aug 2010 15:42:30 +0200
 
