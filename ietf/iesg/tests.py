@@ -25,25 +25,32 @@ class RescheduleOnAgendaTestCase(django.test.TestCase):
         form_id = draft.idinternal.draft_id
         telechat_date_before = draft.idinternal.telechat_date
         
-        url = urlreverse('ietf.iesg.views.agenda_documents')
+        url = urlreverse('ietf.idrfc.views_edit.edit_info', kwargs={"name":"draft-ietf-mipshop-pfmipv6",})
         self.client.login(remote_user="klm")
 
         # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form select[name=%s-telechat_date]' % form_id)), 1)
-        self.assertEquals(len(q('form input[name=%s-clear_returning_item]' % form_id)), 1)
+        self.assertEquals(len(q('form select[name=telechat_date]')), 1)
+        self.assertEquals(len(q('form input[name=returning_item]')), 1)
 
         # reschedule
         comments_before = draft.idinternal.comments().count()
         d = TelechatDates.objects.all()[0].dates()[2]
 
-        r = self.client.post(url, { '%s-telechat_date' % form_id: d.strftime("%Y-%m-%d"),
-                                    '%s-clear_returning_item' % form_id: "1" })
-        self.assertEquals(r.status_code, 200)
+        r = self.client.post(url, { 'telechat_date': d.strftime("%Y-%m-%d"),
+                                    'returning_item': "0",
+                                    'job_owner': "49",
+                                    'note': draft.idinternal.note,
+                                    'state_change_notice_to': draft.idinternal.state_change_notice_to,
+                                    'intended_status': "6", })
+        self.assertEquals(r.status_code, 302)
 
-        # check that it moved below the right header in the DOM
+        # check that it moved below the right header in the DOM on the
+        # agenda docs page
+        url = urlreverse('ietf.iesg.views.agenda_documents')
+        r = self.client.get(url)
         d_header_pos = r.content.find("IESG telechat %s" % d.strftime("%Y-%m-%d"))
         draft_pos = r.content.find(draft.filename)
         self.assertTrue(d_header_pos < draft_pos)
