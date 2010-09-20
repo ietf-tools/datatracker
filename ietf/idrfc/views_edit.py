@@ -194,6 +194,7 @@ def edit_info(request, name):
                                     # would be better to use NULL to
                                     # signify an empty ballot
                                     ballot_id=get_new_ballot_id(),
+                                    via_rfc_editor = False,
                                     )
 
     if doc.idinternal.agenda:
