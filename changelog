@@ -1,3 +1,22 @@
+ietfdb (3.06)
+
+  From rjsparks@nostrum.com:
+
+  * Changed the navigation round editing ballots and sending discuss/email so
+    that the user comes back to the page the edit started from.
+
+  * Fix for ticket #374 (all in base.js) and removal of a vestigial 'save all
+    changes' button from the iesg/agenda/documents page.
+
+  * Split the ballot writeups page into three pages, for a more
+    understandable user interface.
+
+  From henrik@levkowetz.com:
+
+  * Fix a presentation bug in /iesg/agenda/documents.txt
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Sep 2010 16:45:37 +0200
+
 ietfdb (3.05)
 
   Bugfix release.  Fixes the following issues (for more details, see the
