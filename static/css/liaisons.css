@@ -86,3 +86,10 @@ span.fieldRequired {
     list-style: none;
     color: red;
 }
+
+.js-info {
+    border: 1px dashed red;
+    padding: 1em 2em;
+    font-size: 1.2em;
+    background-color: #ffdd88;
+}
