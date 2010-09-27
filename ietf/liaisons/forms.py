@@ -135,14 +135,17 @@ class LiaisonForm(forms.ModelForm):
     def clean_response_contact(self):
         value = self.cleaned_data.get('response_contact', None)
         self.check_email(value)
+        return value
 
     def clean_technical_contact(self):
         value = self.cleaned_data.get('technical_contact', None)
         self.check_email(value)
+        return value
 
     def clean_reply_to(self):
         value = self.cleaned_data.get('reply_to', None)
         self.check_email(value)
+        return value
 
     def clean(self):
         if not self.cleaned_data.get('body', None) and not self.has_attachments():
@@ -212,6 +215,7 @@ class LiaisonForm(forms.ModelForm):
         exists = bool(LiaisonDetail.objects.filter(title__iexact=title).count())
         if exists:
             raise forms.ValidationError('A liaison statement with the same title has previously been submitted.')
+        return title
 
 
 class IncomingLiaisonForm(LiaisonForm):
@@ -299,6 +303,7 @@ class OutgoingLiaisonForm(LiaisonForm):
     def clean_to_poc(self):
         value = self.cleaned_data.get('to_poc', None)
         self.check_email(value)
+        return value
 
 
 class EditLiaisonForm(LiaisonForm):
