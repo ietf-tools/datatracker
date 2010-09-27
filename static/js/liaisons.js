@@ -137,6 +137,8 @@
             var deadline = form.find('#id_deadline_date');
             var other_organization = form.find('#id_other_organization');
             var approval = form.find('#id_approved');
+            var cancel = form.find('#id_cancel');
+            var cancel_dialog = form.find('#cancel-dialog');
             var config = {};
 
             var readConfig = function() {
@@ -226,12 +228,17 @@
                 }
             };
 
+            var cancelForm = function() {
+                cancel_dialog.dialog("open");
+            };
+
             var initTriggers = function() {
                 organization.change(updateInfo);
                 organization.change(checkOtherSDO);
                 from.change(updateInfo);
                 reply.keyup(updateFrom);
                 purpose.change(updatePurpose);
+                cancel.click(cancelForm);
             };
 
             var updateOnInit = function() {
@@ -252,12 +259,31 @@
                 form.find('.addAttachmentWidget').AttachmentWidget();
             };
 
+            var initDialogs = function() {
+                cancel_dialog.dialog({
+                    resizable: false,
+                    height:200,
+                    modal: true,
+                    autoOpen: false,
+                    buttons: {
+                       Ok: function() {
+                           window.location='..';
+                           $( this ).dialog( "close" );
+                       },
+                       Cancel: function() {
+                           $( this ).dialog( "close" );
+                       }
+                    }
+                });
+            };
+
             var initForm = function() {
                 readConfig();
                 initTriggers();
                 updateOnInit();
                 initDatePicker();
                 initAttachments();
+                initDialogs();
             };
 
             initForm();

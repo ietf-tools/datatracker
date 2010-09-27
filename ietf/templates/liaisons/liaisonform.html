@@ -51,6 +51,10 @@
     {% endif %}
     <input type="submit" value="Post Only" name="post_only" />
 {% endif %}
+    <div id="cancel-dialog" style="display: none;" title="Cancel {% if form.edit %}editing liaison{% else %}adding new liaison{% endif %}">
+    Are you sure you want to return to liaison statement list?<br/><br/>All data entered into this form will be lost.
+    </div>
+    <input id="id_cancel" type="button" value="Cancel" name="cancel" />
   </div>
 </div>
 
