@@ -28,4 +28,5 @@ urlpatterns += patterns('ietf.liaisons.views',
      url(r'^for_approval/(?P<object_id>\d+)/$', 'liaison_approval_detail', name='liaison_approval_detail'),
      url(r'^add/$', 'add_liaison', name='add_liaison'),
      url(r'^ajax/get_info/$', 'get_info', name='get_info'),
+     url(r'^ajax/liaison_list/$', 'ajax_liaison_list', name='ajax_liaison_list'),
 )

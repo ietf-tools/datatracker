@@ -3,6 +3,7 @@ from email.utils import parseaddr
 
 from django import forms
 from django.conf import settings
+from django.db.models import Q
 from django.forms.util import ErrorList
 from django.forms.fields import email_re
 from django.template.loader import render_to_string
@@ -12,7 +13,7 @@ from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_l
 from ietf.liaisons.models import LiaisonDetail, Uploads, OutgoingLiaisonApproval, SDOs
 from ietf.liaisons.utils import IETFHM
 from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
-                                   ShowAttachmentsWidget)
+                                   ShowAttachmentsWidget, RelatedLiaisonWidget)
 
 
 class LiaisonForm(forms.ModelForm):
@@ -33,11 +34,13 @@ class LiaisonForm(forms.ModelForm):
                                                         require=['id_attach_title', 'id_attach_file'],
                                                         required_label='title and file'),
                                     required=False)
+    related_to = forms.ModelChoiceField(LiaisonDetail.objects.all(), label=u'Related Liaison', widget=RelatedLiaisonWidget, required=False)
 
     fieldsets = [('From', ('from_field', 'replyto')),
                  ('To', ('organization', 'to_poc')),
                  ('Other email addresses', ('response_contact', 'technical_contact', 'cc1')),
                  ('Purpose', ('purpose', 'purpose_text', 'deadline_date')),
+                 ('References', ('related_to', )),
                  ('Liaison Statement', ('title', 'body', 'attachments')),
                  ('Add attachment', ('attach_title', 'attach_file', 'attach_button')),
                 ]
@@ -318,7 +321,7 @@ class EditLiaisonForm(LiaisonForm):
         model = LiaisonDetail
         fields = ('from_raw_body', 'to_body', 'to_poc', 'cc1', 'last_modified_date', 'title',
                   'response_contact', 'technical_contact', 'purpose_text', 'body',
-                  'deadline_date', 'purpose', 'replyto', )
+                  'deadline_date', 'purpose', 'replyto', 'related_to')
 
     def __init__(self, *args, **kwargs):
         super(EditLiaisonForm, self).__init__(*args, **kwargs)

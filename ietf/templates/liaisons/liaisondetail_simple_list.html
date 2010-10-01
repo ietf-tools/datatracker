@@ -1,0 +1,32 @@
+<table class="ietf-table" width="100%">
+<tr><th width="9%">Date</th><th width="20%">From</th><th width="20%">To</th><th width="50%">Title</th></tr>
+
+{% for liaison in object_list %}
+<tr class="{% cycle oddrow,evenrow %}">
+<td style="white-space:nowrap;">{{ liaison.submitted_date|date:"Y-m-d" }}</td>
+<td>{{ liaison.from_body|escape }}</td>
+<td>
+{% if liaison.by_secretariat %}
+  {% if liaison.submitter_email %}
+    <a href="mailto:{{ liaison.submitter_email}}">{{ liaison.submitter_name|escape }}</a>
+  {% else %}
+    {{ liaison.submitter_name|escape }}
+  {% endif %}
+{% else %}
+  {{ liaison.to_body|escape }}
+{% endif %}
+</td>
+<td>
+{% if liaison.by_secretariat %}
+  {% for file in liaison.uploads_set.all %}
+    <a href="https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}">{{ file.file_title|escape }}</a><br/>
+  {% endfor %}
+{% else %}
+  <a href="{{ liaison.detail_id }}/">{{ liaison.title|escape }}</a>
+{% endif %}
+<span style="display: none" class="liaisonPK">{{ liaison.pk }}</span>
+</td>
+</tr>
+{% endfor %}
+
+</table>

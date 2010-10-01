@@ -140,6 +140,9 @@
             var cancel = form.find('#id_cancel');
             var cancel_dialog = form.find('#cancel-dialog');
             var config = {};
+            var related_trigger = form.find('#id_related_to');
+            var related_dialog = form.find('#related-dialog');
+            var unrelate_trigger = form.find('#id_no_related_to');
 
             var readConfig = function() {
                 var confcontainer = form.find('.formconfig');
@@ -232,6 +235,47 @@
                 cancel_dialog.dialog("open");
             };
 
+            var getRelatedLink = function() {
+                link = $(this).text();;
+                pk = $(this).nextAll('.liaisonPK').text();
+                widget = related_trigger.parent();
+                widget.find('.relatedLiaisonWidgetTitle').text(link);
+                widget.find('.relatedLiaisonWidgetValue').val(pk);
+                widget.find('.noRelated').hide();
+                unrelate_trigger.show();
+                related_dialog.dialog('close');
+                return false;
+            };
+
+            var selectNoRelated = function() {
+                widget = $(this).parent();
+                widget.find('.relatedLiaisonWidgetTitle').text('');
+                widget.find('.noRelated').show();
+                widget.find('.relatedLiaisonWidgetValue').val('');
+                $(this).hide();
+                return false;
+            };
+
+            var selectRelated = function() {
+                widget = $(this).parent();
+                url = widget.find('.listURL').text();
+                title = widget.find('.relatedLiaisonWidgetTitle');
+                related_dialog.html('<img src="/images/ajax-loader.gif" />');
+                related_dialog.dialog('open');
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    cache: false,
+                    async: true,
+                    dataType: 'html',
+                    success: function(response){
+                        related_dialog.html(response);
+                        related_dialog.find('a').click(getRelatedLink);
+                    }
+                });
+                return false;
+            };
+
             var initTriggers = function() {
                 organization.change(updateInfo);
                 organization.change(checkOtherSDO);
@@ -239,6 +283,8 @@
                 reply.keyup(updateFrom);
                 purpose.change(updatePurpose);
                 cancel.click(cancelForm);
+                related_trigger.click(selectRelated);
+                unrelate_trigger.click(selectNoRelated);
             };
 
             var updateOnInit = function() {
@@ -274,6 +320,14 @@
                            $( this ).dialog( "close" );
                        }
                     }
+                });
+
+                related_dialog.dialog({
+                    height: 400,
+                    width: 800,
+                    draggable: true,
+                    modal: true,
+                    autoOpen: false
                 });
             };
 

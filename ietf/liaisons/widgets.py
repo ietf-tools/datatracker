@@ -1,6 +1,7 @@
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.db.models.query import QuerySet
-from django.forms.widgets import Select, Widget
+from django.forms.widgets import Select, Widget, TextInput
 from django.utils.safestring import mark_safe
 
 
@@ -63,4 +64,34 @@ class ShowAttachmentsWidget(Widget):
         else:
             html += u'No files attached'
         html += u'</div></div>'
+        return mark_safe(html)
+
+
+class RelatedLiaisonWidget(TextInput):
+
+    def render(self, name, value, attrs=None):
+        if not value:
+            value = ''
+            title = ''
+            noliaison = 'inline'
+            deselect = 'none'
+        else:
+            from ietf.liaisons.models import LiaisonDetail
+            liaison = LiaisonDetail.objects.get(pk=value)
+            title = liaison.title
+            if not title:
+                files = liaison.uploads_set.all()
+                if files:
+                    title = files[0].file_title
+                else:
+                    title = 'Liaison #%s' % liaison.pk
+            noliaison = 'none'
+            deselect = 'inline'
+        html = u'<span class="noRelated" style="display: %s;">No liaison selected</span>' % noliaison
+        html += u'<span class="relatedLiaisonWidgetTitle">%s</span>' % title
+        html += u'<input type="hidden" name="%s" class="relatedLiaisonWidgetValue" value="%s" /> ' % (name, value)
+        html += u'<span style="display: none;" class="listURL">%s</span> ' % reverse('ajax_liaison_list')
+        html += u'<div style="display: none;" class="relatedLiaisonWidgetDialog" id="related-dialog" title="Select a liaison"></div> '
+        html += '<input type="button" id="id_%s" value="Select liaison" /> ' % name
+        html += '<input type="button" style="display: %s;" id="id_no_%s" value="Deselect liaison" />' % (deselect, name)
         return mark_safe(html)

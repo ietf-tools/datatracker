@@ -167,3 +167,12 @@ def liaison_detail(request, object_id):
 def liaison_edit(request, object_id):
     liaison = get_object_or_404(LiaisonDetail, pk=object_id)
     return add_liaison(request, liaison=liaison)
+
+def ajax_liaison_list(request):
+    public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date")
+
+    return object_list(request, public_liaisons,
+                       allow_empty=True,
+                       template_name='liaisons/liaisondetail_simple_list.html',
+                       extra_context={}
+                      )
