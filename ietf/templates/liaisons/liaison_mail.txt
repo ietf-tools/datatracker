@@ -8,6 +8,7 @@ Cc: {{ liaison.cc1 }}
 Reponse Contact: {{ liaison.response_contact }}
 Technical Contact: {{ liaison.technical_contact }}
 Purpose: {% if liaison.purpose_text %}{{ liaison.purpose_text }}{% else %}{{ liaison.purpose.purpose_text }}{% endif %}
+{% if liaison.related_to %}Referenced liaison: {% if liaison.related_to.title %}{{ liaison.related_to.title }}{% else %}Liaison #{{ liaison.related_to.pk }}{% endif %} ({% url liaison_detail object_id=liaison.related_to.pk %}){% endif %}
 Body: {{ liaison.body }}
 Attachment(s):
 {% for file in liaison.uploads_set.all %}

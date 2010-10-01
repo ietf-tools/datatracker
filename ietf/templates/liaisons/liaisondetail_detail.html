@@ -51,6 +51,14 @@
 <td>Deadline:</td><td>{{ object.deadline_date }}</td></tr>
 {% endif %}
 
+{% if object.related_to %}
+<tr>
+<td>Referenced liaison:</td>
+<td>
+<a href="../{{ object.related_to.pk }}">{% if object.related_to.title %}{{ object.related_to.title }}{% else %}Liaison #{{ object.related_to.pk }}{% endif %}</a>
+</td></tr>
+{% endif %}
+
 <tr>
 <td>Attachments:</td>
 <td>
