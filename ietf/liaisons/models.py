@@ -63,6 +63,7 @@ class LiaisonDetail(models.Model):
     from_raw_body = models.CharField(blank=True, null=True, max_length=255)
     from_raw_code = models.CharField(blank=True, null=True, max_length=255)
     approval = models.ForeignKey(OutgoingLiaisonApproval, blank=True, null=True)
+    related_to = models.ForeignKey('LiaisonDetail', blank=True, null=True)
     def __str__(self):
 	return self.title or "<no title>"
     def from_body(self):
