@@ -96,7 +96,22 @@ def liaison_list(request):
         approval_codes = IETFHM.get_all_can_approve_codes(person)
         can_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).count()
 
-    public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date")
+    order = request.GET.get('order_by', 'submitted_date')
+    plain_order = order
+    reverse_order = order.startswith('-')
+    if reverse_order:
+        plain_order = order[1:]
+    if plain_order not in ('submitted_date', 'deadline_date', 'title', 'to_body', 'from_raw_body'):
+        order = 'submitted_date'
+        reverse_order = True
+        plain_order = 'submitted_date'
+    elif plain_order in ('submitted_date', 'deadline_date'):
+        # Reverse order for date fields, humans find it more natural
+        if reverse_order:
+            order = plain_order
+        else:
+            order = '-%s' % plain_order
+    public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by(order)
 
     return object_list(request, public_liaisons,
                        allow_empty=True,
@@ -105,7 +120,8 @@ def liaison_list(request):
                                       'can_approve': can_approve,
                                       'can_edit': can_edit,
                                       'can_send_incoming': can_send_incoming,
-                                      'can_send_outgoing': can_send_outgoing},
+                                      'can_send_outgoing': can_send_outgoing,
+                                      plain_order: not reverse_order and '-' or None},
                       )
 
 

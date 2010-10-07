@@ -93,3 +93,19 @@ span.fieldRequired {
     font-size: 1.2em;
     background-color: #ffdd88;
 }
+
+th.orderField  a {
+    text-decoration: none;
+    color: white;
+    display: block;
+}
+
+th.orderFieldReversed a {
+    background: #2647A0 url(/images/arrow-down.gif) no-repeat left center;
+    padding-left: 20px;
+}
+
+th.orderFieldActive a {
+    background: #2647A0 url(/images/arrow-up.gif) no-repeat left center;
+    padding-left: 20px;
+}
