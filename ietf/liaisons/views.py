@@ -227,10 +227,25 @@ def liaison_edit(request, object_id):
     return add_liaison(request, liaison=liaison)
 
 def ajax_liaison_list(request):
-    public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date")
+    order = request.GET.get('order_by', 'submitted_date')
+    plain_order = order
+    reverse_order = order.startswith('-')
+    if reverse_order:
+        plain_order = order[1:]
+    if plain_order not in ('submitted_date', 'deadline_date', 'title', 'to_body', 'from_raw_body'):
+        order = 'submitted_date'
+        reverse_order = True
+        plain_order = 'submitted_date'
+    elif plain_order in ('submitted_date', 'deadline_date'):
+        # Reverse order for date fields, humans find it more natural
+        if reverse_order:
+            order = plain_order
+        else:
+            order = '-%s' % plain_order
+    public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by(order)
 
     return object_list(request, public_liaisons,
                        allow_empty=True,
                        template_name='liaisons/liaisondetail_simple_list.html',
-                       extra_context={}
+                       extra_context={plain_order: not reverse_order and '-' or None}
                       )

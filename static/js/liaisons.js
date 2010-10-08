@@ -141,6 +141,7 @@
             var cancel_dialog = form.find('#cancel-dialog');
             var config = {};
             var related_trigger = form.find('#id_related_to');
+            var related_url = form.find('#id_related_to').parent().find('.listURL').text();
             var related_dialog = form.find('#related-dialog');
             var unrelate_trigger = form.find('#id_no_related_to');
 
@@ -257,6 +258,7 @@
             };
 
             var selectRelated = function() {
+	        trigger = $(this);
                 widget = $(this).parent();
                 url = widget.find('.listURL').text();
                 title = widget.find('.relatedLiaisonWidgetTitle');
@@ -270,7 +272,12 @@
                     dataType: 'html',
                     success: function(response){
                         related_dialog.html(response);
-                        related_dialog.find('a').click(getRelatedLink);
+                        related_dialog.find('th a').click(function() {
+                            widget.find('.listURL').text(related_url + $(this).attr('href'));
+                            trigger.click();
+                            return false;
+                        });
+                        related_dialog.find('td a').click(getRelatedLink);
                     }
                 });
                 return false;

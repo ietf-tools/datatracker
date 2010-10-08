@@ -1,5 +1,21 @@
 <table class="ietf-table" width="100%">
-<tr><th width="9%">Date</th><th width="20%">From</th><th width="20%">To</th><th width="50%">Title</th></tr>
+<tr>
+  <th width="9%" class="orderField orderField{{ submitted_date|yesno:"Active,Inactive,Reversed" }}">
+    <a href="?order_by={{ submitted_date|default_if_none:"" }}submitted_date">Date</a>
+  </th>
+  <th width="15%" class="orderField orderField{{ from_raw_body|yesno:"Active,Inactive,Reversed" }}">
+    <a href="?order_by={{ from_raw_body|default_if_none:"" }}from_raw_body">From</a>
+  </th>
+  <th width="15%" class="orderField orderField{{ to_body|yesno:"Active,Inactive,Reversed" }}">
+    <a href="?order_by={{ to_body|default_if_none:"" }}to_body">To</a>
+  </th>
+  <th width="9%" class="orderField orderField{{ deadline_date|yesno:"Active,Inactive,Reversed" }}">
+    <a href="?order_by={{ deadline_date|default_if_none:"" }}deadline_date">Deadline</a>
+  </th>
+  <th width="50%" class="orderField orderField{{ title|yesno:"Active,Inactive,Reversed" }}">
+    <a href="?order_by={{ title|default_if_none:"" }}title">Title</a>
+  </th>
+</tr>
 
 {% for liaison in object_list %}
 <tr class="{% cycle oddrow,evenrow %}">
@@ -17,6 +33,9 @@
 {% endif %}
 </td>
 <td>
+  {{ liaison.deadline_date|default:"--" }}
+</td>
+<td>
 {% if liaison.by_secretariat %}
   {% for file in liaison.uploads_set.all %}
     <a href="https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}">{{ file.file_title|escape }}</a><br/>
@@ -24,7 +43,6 @@
 {% else %}
   <a href="{{ liaison.detail_id }}/">{{ liaison.title|escape }}</a>
 {% endif %}
-<span style="display: none" class="liaisonPK">{{ liaison.pk }}</span>
 </td>
 </tr>
 {% endfor %}
