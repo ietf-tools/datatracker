@@ -1,9 +1,11 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 import datetime
+from email.utils import parseaddr
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Q
+from django.forms.fields import email_re
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
@@ -11,7 +13,8 @@ from django.utils import simplejson
 from django.views.generic.list_detail import object_list, object_detail
 
 from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaison,
-                                    can_add_incoming_liaison, LIAISON_EDIT_GROUPS)
+                                    can_add_incoming_liaison, LIAISON_EDIT_GROUPS,
+                                    is_ietfchair, is_iabchair, is_iab_executive_director)
 from ietf.liaisons.decorators import can_submit_liaison
 from ietf.liaisons.forms import liaison_form_factory
 from ietf.liaisons.models import LiaisonDetail, OutgoingLiaisonApproval
@@ -168,16 +171,55 @@ def liaison_approval_detail(request, object_id):
                          )
 
 
+def _can_take_care(liaison, user):
+    if not liaison.deadline_date or liaison.taken_care:
+        return False
+
+    if user.is_authenticated():
+        if user.groups.filter(name__in=LIAISON_EDIT_GROUPS):
+            return True
+        else:
+            return _can_take_care(liaison, get_person_for_user(user))
+    return False
+            
+
+def _find_person_in_emails(liaison, person):
+    if not person:
+        return False
+    emails = ','.join([liaison.cc1, liaison.cc2, liaison.to_email,
+                       liaison.to_poc, liaison.submitter_email,
+                       liaison.replyto, liaison.response_contact,
+                       technical_contact])
+    for email in emails.split(','):
+        name, addr = parseaddr(email)
+        if email_re.search(addr) and person.emailaddress_set.filter(address=addr):
+            return True
+        elif addr in ('chair@ietf.org', 'iesg@ietf.org') and is_ietfchair(person):
+            return True
+        elif addr in ('iab@iab.org', 'iab-chair@iab.org') and is_iabchair(person):
+            return True
+        elif addr in ('execd@iab.org', ) and is_iab_executive_director(person):
+            return True
+    return False
+
+
 def liaison_detail(request, object_id):
     public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date")
+    liaison = get_object_or_404(public_liaisons, pk=object_id)
     can_edit = False
     user = request.user
+    can_take_care = _can_take_care(liaison, user)
     if user.is_authenticated() and user.groups.filter(name__in=LIAISON_EDIT_GROUPS):
         can_edit = True
+    if request.method == 'POST' and request.POST.get('do_taken_care', None) and can_take_care:
+        liaison.taken_care = True
+        liaison.save()
+        can_take_care = False
     return  object_detail(request,
                           public_liaisons,
                           object_id=object_id,
-                          extra_context = {'can_edit': can_edit}
+                          extra_context = {'can_edit': can_edit,
+                                           'can_take_care': can_take_care}
                          )
 
 def liaison_edit(request, object_id):

@@ -4,6 +4,8 @@
 {% block title %}Liaison Statement: {% include 'liaisons/liaison_title.html' %}{% endblock %}
 
 {% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/liaisons.css"></link>
+
 <meta name="description" content="Liaison Statement from {{ object.from_body }}{% if not object.by_secretariat %} to {{object.to_body}}{% endif %} ({{ object.submitted_date|date:"Y" }})" />
 {% endblock %}
 
@@ -47,8 +49,23 @@
 </tr>
 <tr>
 <td>Purpose:</td><td>{% if object.purpose_text %}{{ object.purpose_text }}{% else %}{{ object.purpose }}{% endif %}</td></tr>
+{% if object.deadline_date %}
 <tr>
-<td>Deadline:</td><td>{{ object.deadline_date }}</td></tr>
+<td>Deadline:</td>
+{% if can_take_care %}
+<td><form method="post" action="">
+{{ object.deadline_date }}
+{% if object.taken_care %}<span class="takedCare">Already taken care</span>{% else %}<span class="noTakedCare">No actions taked</span>{% endif %}
+<input type="submit" value="Take care of" name='do_taken_care' />
+</form></td>
+{% else %}
+<td>{{ object.deadline_date }}
+{% if object.taken_care %}<span class="takedCare">Already taken care</span>{% else %}<span class="noTakedCare">No actions taked</span>{% endif %}
+</td>
+{% endif %}
+</tr>
+{% endif %}
+
 {% endif %}
 
 {% if object.related_to %}
@@ -80,4 +97,5 @@
 <input type="submit" value="Edit" />
 </form>
 {% endif %}
+
 {% endblock %}

@@ -41,7 +41,6 @@ class Command(BaseCommand):
                                 {'liaison': liaison,
                                  'days_msg': days_msg,
                                 })
-        print body
         mail = IETFEmailMessage(subject=subject,
                                 to=to_email,
                                 from_email=from_email,

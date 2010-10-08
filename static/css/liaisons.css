@@ -109,3 +109,15 @@ th.orderFieldActive a {
     background: #2647A0 url(/images/arrow-up.gif) no-repeat left center;
     padding-left: 20px;
 }
+
+.noTakedCare,
+.takedCare {
+    border: 1px solid green;
+    padding: 2px 5px;
+    background-color: #ccffbb;
+}
+
+.noTakedCare {
+    border: 1px solid red;
+    background-color: #ffccbb;
+}
