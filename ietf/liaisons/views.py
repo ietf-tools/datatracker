@@ -179,7 +179,7 @@ def _can_take_care(liaison, user):
         if user.groups.filter(name__in=LIAISON_EDIT_GROUPS):
             return True
         else:
-            return _can_take_care(liaison, get_person_for_user(user))
+            return _find_person_in_emails(liaison, get_person_for_user(user))
     return False
             
 
