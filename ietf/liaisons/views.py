@@ -189,7 +189,7 @@ def _find_person_in_emails(liaison, person):
     emails = ','.join([liaison.cc1, liaison.cc2, liaison.to_email,
                        liaison.to_poc, liaison.submitter_email,
                        liaison.replyto, liaison.response_contact,
-                       technical_contact])
+                       liaison.technical_contact])
     for email in emails.split(','):
         name, addr = parseaddr(email)
         if email_re.search(addr) and person.emailaddress_set.filter(address=addr):
