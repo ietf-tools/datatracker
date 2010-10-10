@@ -204,7 +204,8 @@ def _find_person_in_emails(liaison, person):
 
 
 def liaison_detail(request, object_id):
-    public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by("-submitted_date")
+    qfilter = Q(approval__isnull=True)|Q(approval__approved=True)
+    public_liaisons = LiaisonDetail.objects.filter(qfilter).order_by("-submitted_date")
     liaison = get_object_or_404(public_liaisons, pk=object_id)
     can_edit = False
     user = request.user
@@ -215,10 +216,12 @@ def liaison_detail(request, object_id):
         liaison.taken_care = True
         liaison.save()
         can_take_care = False
+    relations = liaison.liaisondetail_set.filter(qfilter)
     return  object_detail(request,
                           public_liaisons,
                           object_id=object_id,
                           extra_context = {'can_edit': can_edit,
+                                           'relations': relations,
                                            'can_take_care': can_take_care}
                          )
 

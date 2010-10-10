@@ -68,6 +68,16 @@
 
 {% endif %}
 
+{% if relations %}
+<tr>
+<td>Liaisons referring to this one:</td>
+<td>
+{% for liaison in relations %}
+<a href="../{{ liaison.pk }}">{% if liaison.title %}{{ object.title }}{% else %}Liaison #{{ liaison.pk }}{% endif %}</a><br />
+{% endfor %}
+</td></tr>
+{% endif %}
+
 {% if object.related_to %}
 <tr>
 <td>Referenced liaison:</td>

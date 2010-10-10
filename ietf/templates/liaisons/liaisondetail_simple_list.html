@@ -43,6 +43,7 @@
 {% else %}
   <a href="{{ liaison.detail_id }}/">{{ liaison.title|escape }}</a>
 {% endif %}
+<span style="display: none" class="liaisonPK">{{ liaison.pk }}</span>
 </td>
 </tr>
 {% endfor %}
