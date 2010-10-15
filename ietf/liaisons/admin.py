@@ -110,10 +110,7 @@ class SDOsAdmin(admin.ModelAdmin):
         return self.send_reminder(request, sdo=obj)
 
 
-class RelatedAdmin(admin.ModelAdmin):
-    pass
-
-admin.site.register(FromBodies, FromBodiesAdmin)
+#admin.site.register(FromBodies, FromBodiesAdmin)
 admin.site.register(LiaisonDetail, LiaisonDetailAdmin)
 admin.site.register(LiaisonPurpose, LiaisonPurposeAdmin)
 admin.site.register(SDOs, SDOsAdmin)
