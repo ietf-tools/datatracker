@@ -67,6 +67,8 @@ class LiaisonDetail(models.Model):
     related_to = models.ForeignKey('LiaisonDetail', blank=True, null=True)
     def __str__(self):
 	return self.title or "<no title>"
+    def __unicode__(self):
+	return self.title or "<no title>"
     def from_body(self):
 	"""The from_raw_body stores the name of the entity
     sending the liaison.
