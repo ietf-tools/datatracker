@@ -20,11 +20,14 @@ class FromBodiesAdmin(admin.ModelAdmin):
 
 
 class LiaisonDetailAdmin(admin.ModelAdmin):
-    pass
-
+    ordering = ('title', )
+    fields = ('title', 'body','submitted_date', 'last_modified_date', 'to_email', 'cc1', 'cc2', 'to_poc',
+              'response_contact', 'technical_contact', 'purpose', 'purpose_text', 'deadline_date', 'taken_care',
+              'related_to')
+    raw_id_fields=['related_to']
 
 class LiaisonPurposeAdmin(admin.ModelAdmin):
-    pass
+    ordering = ('purpose_text', )
 
 
 class LiaisonManagersInline(admin.TabularInline):
@@ -38,6 +41,8 @@ class SDOAuthorizedIndividualInline(admin.TabularInline):
 
 
 class LiaisonManagersAdmin(admin.ModelAdmin):
+    ordering = ('person__first_name', 'person__last_name' )
+    fields = ('person', 'sdo')
     raw_id_fields=['person']
 
 
