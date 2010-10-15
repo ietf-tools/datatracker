@@ -195,8 +195,8 @@ class LiaisonManagers(models.Model):
     def __unicode__(self):
         return '%s (%s)' % (self.person, self.sdo)
     class Meta:
-        verbose_name = 'Liaison Manager'
-        verbose_name_plural = 'Liaison Managers'
+        verbose_name = 'SDO Liaison Manager'
+        verbose_name_plural = 'SDO Liaison Managers'
         db_table = 'liaison_managers'
         ordering = ('sdo__sdo_name', )
 
