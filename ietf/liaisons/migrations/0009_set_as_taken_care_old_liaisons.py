@@ -1,15 +1,16 @@
 
 from south.db import db
+from south.v2 import DataMigration
 from django.db import models
-from ietf.liaisons.models import *
 
-class Migration:
+class Migration(DataMigration):
     
+    no_dry_run = True
+
     def forwards(self, orm):
         
         import datetime
-        from ietf.liaisons.models import LiaisonDetail
-        for liaison in LiaisonDetail.objects.filter(deadline_date__lt=datetime.date.today(), taken_care=False):
+        for liaison in orm.LiaisonDetail.objects.filter(deadline_date__lt=datetime.date.today(), taken_care=False):
             liaison.taken_care = True
             liaison.save()
     
