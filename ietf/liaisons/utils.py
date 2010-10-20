@@ -266,7 +266,7 @@ class WGEntityManager(EntityManager):
     def get_managed_list(self, query_filter=None):
         if not query_filter:
             query_filter = {}
-        return [(u'%s_%s' % (self.pk, i.pk), i.group_acronym.name) for i in self.queryset.filter(**query_filter).order_by('group_acronym__name')]
+        return [(u'%s_%s' % (self.pk, i.pk), '%s - %s' % (i.group_acronym.acronym, i.group_acronym.name)) for i in self.queryset.filter(**query_filter).order_by('group_acronym__acronym')]
 
     def get_entity(self, pk=None):
         if not pk:
