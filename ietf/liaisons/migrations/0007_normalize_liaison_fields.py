@@ -1,10 +1,9 @@
 # encoding: utf-8
 import datetime
 from south.db import db
-from south.v2 import DataMigration
 from django.db import models
 
-class Migration(DataMigration):
+class Migration:
     
     no_dry_run = True
     
@@ -49,14 +48,14 @@ class Migration(DataMigration):
     
     models = {
         'idtracker.acronym': {
-            'Meta': {'object_name': 'Acronym', 'db_table': "'acronym'"},
+            'Meta': {'db_table': "'acronym'"},
             'acronym': ('django.db.models.fields.CharField', [], {'max_length': '12'}),
             'acronym_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'name_key': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         },
         'idtracker.area': {
-            'Meta': {'object_name': 'Area', 'db_table': "'areas'"},
+            'Meta': {'db_table': "'areas'"},
             'area_acronym': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.Acronym']", 'unique': 'True', 'primary_key': 'True'}),
             'comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'concluded_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
@@ -66,31 +65,31 @@ class Migration(DataMigration):
             'status': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.AreaStatus']"})
         },
         'idtracker.areadirector': {
-            'Meta': {'object_name': 'AreaDirector', 'db_table': "'area_directors'"},
+            'Meta': {'db_table': "'area_directors'"},
             'area': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.Area']", 'null': 'True', 'db_column': "'area_acronym_id'"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.PersonOrOrgInfo']", 'db_column': "'person_or_org_tag'"})
         },
         'idtracker.areagroup': {
-            'Meta': {'object_name': 'AreaGroup', 'db_table': "'area_group'"},
+            'Meta': {'db_table': "'area_group'"},
             'area': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'areagroup'", 'db_column': "'area_acronym_id'", 'to': "orm['idtracker.Area']"}),
             'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.IETFWG']", 'unique': 'True', 'db_column': "'group_acronym_id'"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
         },
         'idtracker.areastatus': {
-            'Meta': {'object_name': 'AreaStatus', 'db_table': "'area_status'"},
+            'Meta': {'db_table': "'area_status'"},
             'status': ('django.db.models.fields.CharField', [], {'max_length': '25', 'db_column': "'status_value'"}),
             'status_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
         },
         'idtracker.areawgurl': {
-            'Meta': {'ordering': "['name']", 'object_name': 'AreaWGURL', 'db_table': "'wg_www_pages'"},
+            'Meta': {'ordering': "['name']", 'db_table': "'wg_www_pages'"},
             'description': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True', 'db_column': "'area_ID'"}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50', 'db_column': "'area_Name'"}),
             'url': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         },
         'idtracker.ballotinfo': {
-            'Meta': {'object_name': 'BallotInfo', 'db_table': "'ballot_info'"},
+            'Meta': {'db_table': "'ballot_info'"},
             'active': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'an_sent': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'an_sent_by': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'ansent'", 'null': 'True', 'db_column': "'an_sent_by'", 'to': "orm['idtracker.IESGLogin']"}),
@@ -105,7 +104,7 @@ class Migration(DataMigration):
             'last_call_text': ('django.db.models.fields.TextField', [], {'blank': 'True'})
         },
         'idtracker.chairshistory': {
-            'Meta': {'object_name': 'ChairsHistory', 'db_table': "'chairs_history'"},
+            'Meta': {'db_table': "'chairs_history'"},
             'chair_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.Role']"}),
             'end_year': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -114,7 +113,7 @@ class Migration(DataMigration):
             'start_year': ('django.db.models.fields.IntegerField', [], {})
         },
         'idtracker.documentcomment': {
-            'Meta': {'object_name': 'DocumentComment', 'db_table': "'document_comments'"},
+            'Meta': {'db_table': "'document_comments'"},
             'ballot': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
             'comment_text': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'created_by': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.IESGLogin']", 'null': 'True', 'db_column': "'created_by'"}),
@@ -129,7 +128,7 @@ class Migration(DataMigration):
             'version': ('django.db.models.fields.CharField', [], {'max_length': '3', 'blank': 'True'})
         },
         'idtracker.emailaddress': {
-            'Meta': {'object_name': 'EmailAddress', 'db_table': "'email_addresses'"},
+            'Meta': {'db_table': "'email_addresses'"},
             'address': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_column': "'email_address'"}),
             'comment': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'db_column': "'email_comment'", 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -138,7 +137,7 @@ class Migration(DataMigration):
             'type': ('django.db.models.fields.CharField', [], {'max_length': '4', 'db_column': "'email_type'"})
         },
         'idtracker.goalmilestone': {
-            'Meta': {'ordering': "['expected_due_date']", 'object_name': 'GoalMilestone', 'db_table': "'goals_milestones'"},
+            'Meta': {'ordering': "['expected_due_date']", 'db_table': "'goals_milestones'"},
             'description': ('django.db.models.fields.TextField', [], {}),
             'done': ('django.db.models.fields.CharField', [], {'max_length': '4', 'blank': 'True'}),
             'done_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
@@ -148,19 +147,19 @@ class Migration(DataMigration):
             'last_modified_date': ('django.db.models.fields.DateField', [], {})
         },
         'idtracker.idauthor': {
-            'Meta': {'ordering': "['document', 'author_order']", 'object_name': 'IDAuthor', 'db_table': "'id_authors'"},
+            'Meta': {'ordering': "['document', 'author_order']", 'db_table': "'id_authors'"},
             'author_order': ('django.db.models.fields.IntegerField', [], {}),
             'document': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'authors'", 'db_column': "'id_document_tag'", 'to': "orm['idtracker.InternetDraft']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.PersonOrOrgInfo']", 'db_column': "'person_or_org_tag'"})
         },
         'idtracker.idintendedstatus': {
-            'Meta': {'object_name': 'IDIntendedStatus', 'db_table': "'id_intended_status'"},
+            'Meta': {'db_table': "'id_intended_status'"},
             'intended_status': ('django.db.models.fields.CharField', [], {'max_length': '25', 'db_column': "'status_value'"}),
             'intended_status_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
         },
         'idtracker.idinternal': {
-            'Meta': {'object_name': 'IDInternal', 'db_table': "'id_internal'"},
+            'Meta': {'db_table': "'id_internal'"},
             'agenda': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'approved_in_minute': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'area_acronym': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.Area']"}),
@@ -192,32 +191,32 @@ class Migration(DataMigration):
             'via_rfc_editor': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'})
         },
         'idtracker.idnextstate': {
-            'Meta': {'object_name': 'IDNextState', 'db_table': "'ref_next_states_new'"},
+            'Meta': {'db_table': "'ref_next_states_new'"},
             'condition': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'cur_state': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'nextstate'", 'to': "orm['idtracker.IDState']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'next_state': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'prevstate'", 'to': "orm['idtracker.IDState']"})
         },
         'idtracker.idstate': {
-            'Meta': {'ordering': "['document_state_id']", 'object_name': 'IDState', 'db_table': "'ref_doc_states_new'"},
+            'Meta': {'ordering': "['document_state_id']", 'db_table': "'ref_doc_states_new'"},
             'description': ('django.db.models.fields.TextField', [], {'db_column': "'document_desc'", 'blank': 'True'}),
             'document_state_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'equiv_group_flag': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'state': ('django.db.models.fields.CharField', [], {'max_length': '50', 'db_column': "'document_state_val'"})
         },
         'idtracker.idstatus': {
-            'Meta': {'object_name': 'IDStatus', 'db_table': "'id_status'"},
+            'Meta': {'db_table': "'id_status'"},
             'status': ('django.db.models.fields.CharField', [], {'max_length': '25', 'db_column': "'status_value'"}),
             'status_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
         },
         'idtracker.idsubstate': {
-            'Meta': {'ordering': "['sub_state_id']", 'object_name': 'IDSubState', 'db_table': "'sub_state'"},
+            'Meta': {'ordering': "['sub_state_id']", 'db_table': "'sub_state'"},
             'description': ('django.db.models.fields.TextField', [], {'db_column': "'sub_state_desc'", 'blank': 'True'}),
             'sub_state': ('django.db.models.fields.CharField', [], {'max_length': '55', 'db_column': "'sub_state_val'"}),
             'sub_state_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
         },
         'idtracker.iesgcomment': {
-            'Meta': {'unique_together': "(('ballot', 'ad'),)", 'object_name': 'IESGComment', 'db_table': "'ballots_comment'"},
+            'Meta': {'unique_together': "(('ballot', 'ad'),)", 'db_table': "'ballots_comment'"},
             'active': ('django.db.models.fields.IntegerField', [], {}),
             'ad': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.IESGLogin']"}),
             'ballot': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'comments'", 'to': "orm['idtracker.BallotInfo']"}),
@@ -227,7 +226,7 @@ class Migration(DataMigration):
             'text': ('django.db.models.fields.TextField', [], {'db_column': "'comment_text'", 'blank': 'True'})
         },
         'idtracker.iesgdiscuss': {
-            'Meta': {'unique_together': "(('ballot', 'ad'),)", 'object_name': 'IESGDiscuss', 'db_table': "'ballots_discuss'"},
+            'Meta': {'unique_together': "(('ballot', 'ad'),)", 'db_table': "'ballots_discuss'"},
             'active': ('django.db.models.fields.IntegerField', [], {}),
             'ad': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.IESGLogin']"}),
             'ballot': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'discusses'", 'to': "orm['idtracker.BallotInfo']"}),
@@ -237,7 +236,7 @@ class Migration(DataMigration):
             'text': ('django.db.models.fields.TextField', [], {'db_column': "'discuss_text'", 'blank': 'True'})
         },
         'idtracker.iesglogin': {
-            'Meta': {'object_name': 'IESGLogin', 'db_table': "'iesg_login'"},
+            'Meta': {'db_table': "'iesg_login'"},
             'default_search': ('django.db.models.fields.NullBooleanField', [], {'null': 'True'}),
             'first_name': ('django.db.models.fields.CharField', [], {'max_length': '25', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -249,7 +248,7 @@ class Migration(DataMigration):
             'user_level': ('django.db.models.fields.IntegerField', [], {})
         },
         'idtracker.ietfwg': {
-            'Meta': {'ordering': "['?']", 'object_name': 'IETFWG', 'db_table': "'groups_ietf'"},
+            'Meta': {'ordering': "['?']", 'db_table': "'groups_ietf'"},
             'area_director': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.AreaDirector']", 'null': 'True'}),
             'comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'concluded_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
@@ -268,7 +267,7 @@ class Migration(DataMigration):
             'status': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.WGStatus']"})
         },
         'idtracker.internetdraft': {
-            'Meta': {'object_name': 'InternetDraft', 'db_table': "'internet_drafts'"},
+            'Meta': {'db_table': "'internet_drafts'"},
             'abstract': ('django.db.models.fields.TextField', [], {}),
             'b_approve_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'b_discussion_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
@@ -301,7 +300,7 @@ class Migration(DataMigration):
             'wgreturn_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'})
         },
         'idtracker.irtf': {
-            'Meta': {'object_name': 'IRTF', 'db_table': "'irtf'"},
+            'Meta': {'db_table': "'irtf'"},
             'acronym': ('django.db.models.fields.CharField', [], {'max_length': '25', 'db_column': "'irtf_acronym'", 'blank': 'True'}),
             'charter_text': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'irtf_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -309,13 +308,13 @@ class Migration(DataMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_column': "'irtf_name'", 'blank': 'True'})
         },
         'idtracker.irtfchair': {
-            'Meta': {'object_name': 'IRTFChair', 'db_table': "'irtf_chairs'"},
+            'Meta': {'db_table': "'irtf_chairs'"},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'irtf': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.IRTF']"}),
             'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.PersonOrOrgInfo']", 'db_column': "'person_or_org_tag'"})
         },
         'idtracker.personororginfo': {
-            'Meta': {'ordering': "['last_name']", 'object_name': 'PersonOrOrgInfo', 'db_table': "'person_or_org_info'"},
+            'Meta': {'ordering': "['last_name']", 'db_table': "'person_or_org_info'"},
             'address_type': ('django.db.models.fields.CharField', [], {'max_length': '4', 'null': 'True', 'blank': 'True'}),
             'created_by': ('django.db.models.fields.CharField', [], {'max_length': '8', 'null': 'True', 'blank': 'True'}),
             'date_created': ('django.db.models.fields.DateField', [], {'auto_now_add': 'True', 'null': 'True', 'blank': 'True'}),
@@ -333,7 +332,7 @@ class Migration(DataMigration):
             'record_type': ('django.db.models.fields.CharField', [], {'max_length': '8', 'null': 'True', 'blank': 'True'})
         },
         'idtracker.phonenumber': {
-            'Meta': {'object_name': 'PhoneNumber', 'db_table': "'phone_numbers'"},
+            'Meta': {'db_table': "'phone_numbers'"},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'person_or_org': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.PersonOrOrgInfo']", 'db_column': "'person_or_org_tag'"}),
             'phone_comment': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
@@ -342,7 +341,7 @@ class Migration(DataMigration):
             'phone_type': ('django.db.models.fields.CharField', [], {'max_length': '3'})
         },
         'idtracker.position': {
-            'Meta': {'unique_together': "(('ballot', 'ad'),)", 'object_name': 'Position', 'db_table': "'ballots'"},
+            'Meta': {'unique_together': "(('ballot', 'ad'),)", 'db_table': "'ballots'"},
             'abstain': ('django.db.models.fields.IntegerField', [], {}),
             'ad': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.IESGLogin']"}),
             'approve': ('django.db.models.fields.IntegerField', [], {}),
@@ -354,7 +353,7 @@ class Migration(DataMigration):
             'yes': ('django.db.models.fields.IntegerField', [], {'db_column': "'yes_col'"})
         },
         'idtracker.postaladdress': {
-            'Meta': {'object_name': 'PostalAddress', 'db_table': "'postal_addresses'"},
+            'Meta': {'db_table': "'postal_addresses'"},
             'address_priority': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
             'address_type': ('django.db.models.fields.CharField', [], {'max_length': '4'}),
             'aff_company_key': ('django.db.models.fields.CharField', [], {'max_length': '70', 'blank': 'True'}),
@@ -372,7 +371,7 @@ class Migration(DataMigration):
             'state_or_prov': ('django.db.models.fields.CharField', [], {'max_length': '20', 'blank': 'True'})
         },
         'idtracker.rfc': {
-            'Meta': {'object_name': 'Rfc', 'db_table': "'rfcs'"},
+            'Meta': {'db_table': "'rfcs'"},
             'area_acronym': ('django.db.models.fields.CharField', [], {'max_length': '8', 'blank': 'True'}),
             'b_approve_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'b_sent_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
@@ -397,65 +396,65 @@ class Migration(DataMigration):
             'txt_page_count': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'})
         },
         'idtracker.rfcauthor': {
-            'Meta': {'object_name': 'RfcAuthor', 'db_table': "'rfc_authors'"},
+            'Meta': {'db_table': "'rfc_authors'"},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.PersonOrOrgInfo']", 'db_column': "'person_or_org_tag'"}),
             'rfc': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'authors'", 'db_column': "'rfc_number'", 'to': "orm['idtracker.Rfc']"})
         },
         'idtracker.rfcintendedstatus': {
-            'Meta': {'object_name': 'RfcIntendedStatus', 'db_table': "'rfc_intend_status'"},
+            'Meta': {'db_table': "'rfc_intend_status'"},
             'intended_status_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'status': ('django.db.models.fields.CharField', [], {'max_length': '25', 'db_column': "'status_value'"})
         },
         'idtracker.rfcobsolete': {
-            'Meta': {'object_name': 'RfcObsolete', 'db_table': "'rfcs_obsolete'"},
+            'Meta': {'db_table': "'rfcs_obsolete'"},
             'action': ('django.db.models.fields.CharField', [], {'max_length': '20'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'rfc': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'updates_or_obsoletes'", 'db_column': "'rfc_number'", 'to': "orm['idtracker.Rfc']"}),
             'rfc_acted_on': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'updated_or_obsoleted_by'", 'db_column': "'rfc_acted_on'", 'to': "orm['idtracker.Rfc']"})
         },
         'idtracker.rfcstatus': {
-            'Meta': {'object_name': 'RfcStatus', 'db_table': "'rfc_status'"},
+            'Meta': {'db_table': "'rfc_status'"},
             'status': ('django.db.models.fields.CharField', [], {'max_length': '25', 'db_column': "'status_value'"}),
             'status_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
         },
         'idtracker.role': {
-            'Meta': {'object_name': 'Role', 'db_table': "'chairs'"},
+            'Meta': {'db_table': "'chairs'"},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.PersonOrOrgInfo']", 'db_column': "'person_or_org_tag'"}),
             'role_name': ('django.db.models.fields.CharField', [], {'max_length': '25', 'db_column': "'chair_name'"})
         },
         'idtracker.wgchair': {
-            'Meta': {'object_name': 'WGChair', 'db_table': "'g_chairs'"},
+            'Meta': {'db_table': "'g_chairs'"},
             'group_acronym': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.IETFWG']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.PersonOrOrgInfo']", 'db_column': "'person_or_org_tag'"})
         },
         'idtracker.wgeditor': {
-            'Meta': {'object_name': 'WGEditor', 'db_table': "'g_editors'"},
+            'Meta': {'db_table': "'g_editors'"},
             'group_acronym': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.IETFWG']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.PersonOrOrgInfo']", 'unique': 'True', 'db_column': "'person_or_org_tag'"})
         },
         'idtracker.wgsecretary': {
-            'Meta': {'object_name': 'WGSecretary', 'db_table': "'g_secretaries'"},
+            'Meta': {'db_table': "'g_secretaries'"},
             'group_acronym': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.IETFWG']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.PersonOrOrgInfo']", 'db_column': "'person_or_org_tag'"})
         },
         'idtracker.wgstatus': {
-            'Meta': {'object_name': 'WGStatus', 'db_table': "'g_status'"},
+            'Meta': {'db_table': "'g_status'"},
             'status': ('django.db.models.fields.CharField', [], {'max_length': '25', 'db_column': "'status_value'"}),
             'status_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
         },
         'idtracker.wgtechadvisor': {
-            'Meta': {'object_name': 'WGTechAdvisor', 'db_table': "'g_tech_advisors'"},
+            'Meta': {'db_table': "'g_tech_advisors'"},
             'group_acronym': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.IETFWG']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['idtracker.PersonOrOrgInfo']", 'db_column': "'person_or_org_tag'"})
         },
         'idtracker.wgtype': {
-            'Meta': {'object_name': 'WGType', 'db_table': "'g_type'"},
+            'Meta': {'db_table': "'g_type'"},
             'group_type_id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'type': ('django.db.models.fields.CharField', [], {'max_length': '25', 'db_column': "'group_type'"})
         },
