@@ -215,7 +215,11 @@ class LiaisonForm(forms.ModelForm):
 
     def clean_title(self):
         title = self.cleaned_data.get('title', None)
-        exists = bool(LiaisonDetail.objects.filter(title__iexact=title).count())
+        if self.instance and self.instance.pk:
+            exclude_filter = {'pk': self.instance.pk}
+        else:
+            exclude_filter = {}
+        exists = bool(LiaisonDetail.objects.exclude(**exclude_filter).filter(title__iexact=title).count())
         if exists:
             raise forms.ValidationError('A liaison statement with the same title has previously been submitted.')
         return title
