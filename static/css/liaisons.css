@@ -71,6 +71,16 @@
     height: 300px;
 }
 
+.baseform input.disabledAddAttachment {
+    border: none;
+    padding: none;
+    background: none;
+    padding: 0px;
+    margin: 0px;
+    color: black;
+    font-weight: bold;
+}
+
 span.fieldRequired {
     color: red;
 }

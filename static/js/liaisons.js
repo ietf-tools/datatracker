@@ -35,10 +35,10 @@
                     }
                 });
                 if (enabled) {
-                    button.removeAttr('disabled');
+                    button.removeAttr('disabled').removeClass('disabledAddAttachment');
                     button.val(config.enabledLabel);
                 } else {
-                    button.attr('disabled', 'disabled');
+                    button.attr('disabled', 'disabled').addClass('disabledAddAttachment');
                     button.val(config.disabledLabel);
                 }
             };
