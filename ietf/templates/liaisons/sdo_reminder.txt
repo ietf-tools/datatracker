@@ -1,0 +1,21 @@
+Dear {{ manager_name }}
+
+This is an automatic reminder, please do not reply to this email.
+
+As liaison manager of {{ sdo_name }} you have to provide and updated list of persons who are authorized to send liaison statements on behalf of your SDO.
+
+Current list in our system for {{ sdo_name }} is:
+
+------
+{% for person in individuals %}
+{{ person.email.0 }} <{{ person.email.1 }}>
+{% endfor %}
+------
+
+Please fell free to add or remove individuals from the list and send it to the secretariat at statments@ietf.org.
+
+For any questions please contact statments@ietf.org.
+
+Thank you,
+
+The IETF Secretariat (statements@ietf.org)

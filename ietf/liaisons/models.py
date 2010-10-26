@@ -1,8 +1,11 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.db import models
-from ietf.idtracker.models import Acronym, PersonOrOrgInfo, Area
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import models
+from django.template.loader import render_to_string
+from ietf.idtracker.models import Acronym,PersonOrOrgInfo, Area
+from ietf.liaisons.mail import IETFEmailMessage
 
 class LiaisonPurpose(models.Model):
     purpose_id = models.AutoField(primary_key=True)
@@ -25,6 +28,12 @@ class FromBodies(models.Model):
         db_table = 'from_bodies'
         verbose_name = "From body"
         verbose_name_plural = "From bodies"
+
+
+class OutgoingLiaisonApproval(models.Model):
+    approved = models.BooleanField(default=True)
+    approval_date = models.DateField(null=True, blank=True)
+
 
 class LiaisonDetail(models.Model):
     detail_id = models.AutoField(primary_key=True)
@@ -50,9 +59,25 @@ class LiaisonDetail(models.Model):
     to_email = models.CharField(blank=True, null=True, max_length=255)
     purpose = models.ForeignKey(LiaisonPurpose,null=True)
     replyto = models.CharField(blank=True, null=True, max_length=255)
+    from_raw_body = models.CharField(blank=True, null=True, max_length=255)
+    from_raw_code = models.CharField(blank=True, null=True, max_length=255)
+    approval = models.ForeignKey(OutgoingLiaisonApproval, blank=True, null=True)
+    taken_care = models.BooleanField(default=False)
+    related_to = models.ForeignKey('LiaisonDetail', blank=True, null=True)
     def __str__(self):
 	return self.title or "<no title>"
+    def __unicode__(self):
+	return self.title or "<no title>"
     def from_body(self):
+	"""The from_raw_body stores the name of the entity
+    sending the liaison.
+    For legacy liaisons (the ones with empty from_raw_body)
+    the legacy_from_body() is returned."""
+        if not self.from_raw_body:
+            return self.legacy_from_body()
+        return self.from_raw_body
+
+    def legacy_from_body(self):
 	"""The from_id field is a foreign key for either
 	FromBodies or Acronyms, depending on whether it's
 	the IETF or not.  There is no flag field saying
@@ -93,34 +118,100 @@ class LiaisonDetail(models.Model):
     class Meta:
         db_table = 'liaison_detail'
 
-# This table is not used by any code right now, and according to Glen,
-# probably not currently (Aug 2009) maintained by the secretariat.
-#class SDOs(models.Model):
-#    sdo_id = models.AutoField(primary_key=True)
-#    sdo_name = models.CharField(blank=True, max_length=255)
-#    def __str__(self):
-#	return self.sdo_name
-#    def liaisonmanager(self):
-#	try:
-#	    return self.liaisonmanagers_set.all()[0]
-#	except:
-#	    return None
-#    class Meta:
-#        db_table = 'sdos'
+    def notify_pending_by_email(self, fake):
+        from ietf.liaisons.utils import IETFHM
 
-# This table is not used by any code right now, and according to Glen,
-# probably not currently (Aug 2009) maintained by the secretariat.
-#class LiaisonManagers(models.Model):
-#    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
-#    email_priority = models.IntegerField(null=True, blank=True)
-#    sdo = models.ForeignKey(SDOs)
-#    def email(self):
-#	try:
-#	    return self.person.emailaddress_set.get(priority=self.email_priority)
-#	except ObjectDoesNotExist:
-#	    return None
-#    class Meta:
-#        db_table = 'liaison_managers'
+        from_entity = IETFHM.get_entity_by_key(self.from_raw_code)
+        if not from_entity:
+            return None
+        to_email = []
+        for person in from_entity.can_approve():
+            to_email.append('%s <%s>' % person.email())
+        subject = 'New Liaison Statement, "%s" needs your approval' % (self.title)
+        from_email = settings.LIAISON_UNIVERSAL_FROM
+        body = render_to_string('liaisons/pending_liaison_mail.txt',
+                                {'liaison': self,
+                                })
+        mail = IETFEmailMessage(subject=subject,
+                                to=to_email,
+                                from_email=from_email,
+                                body = body)
+        if not fake:
+            mail.send()         
+        return mail                                                     
+
+    def send_by_email(self, fake=False):
+        if self.is_pending():
+            return self.notify_pending_by_email(fake)
+        subject = 'New Liaison Statement, "%s"' % (self.title)
+        from_email = settings.LIAISON_UNIVERSAL_FROM
+        to_email = self.to_poc.split(',')
+        cc = self.cc1.split(',')
+        if self.technical_contact:
+            cc += self.technical_contact.split(',')
+        if self.response_contact:
+            cc += self.response_contact.split(',')
+        bcc = ['statements@ietf.org']
+        body = render_to_string('liaisons/liaison_mail.txt',
+                                {'liaison': self,
+                                })
+        mail = IETFEmailMessage(subject=subject,
+                                to=to_email,
+                                from_email=from_email,
+                                cc = cc,
+                                bcc = bcc,
+                                body = body)
+        if not fake:
+            mail.send()         
+        return mail                                                     
+
+    def is_pending(self):
+        return bool(self.approval and not self.approval.approved)
+
+
+class SDOs(models.Model):
+    sdo_id = models.AutoField(primary_key=True)
+    sdo_name = models.CharField(blank=True, max_length=255)
+    def __str__(self):
+	return self.sdo_name
+    def liaisonmanager(self):
+	try:
+	    return self.liaisonmanagers_set.all()[0]
+	except:
+	    return None
+    class Meta:
+        verbose_name = 'SDO'
+        verbose_name_plural = 'SDOs'
+        db_table = 'sdos'
+        ordering = ('sdo_name', )
+
+class LiaisonManagers(models.Model):
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+    email_priority = models.IntegerField(null=True, blank=True)
+    sdo = models.ForeignKey(SDOs)
+    def email(self):
+	try:
+	    return self.person.emailaddress_set.get(priority=self.email_priority)
+	except ObjectDoesNotExist:
+	    return None
+    def __unicode__(self):
+        return '%s (%s)' % (self.person, self.sdo)
+    class Meta:
+        verbose_name = 'SDO Liaison Manager'
+        verbose_name_plural = 'SDO Liaison Managers'
+        db_table = 'liaison_managers'
+        ordering = ('sdo__sdo_name', )
+
+class SDOAuthorizedIndividual(models.Model):
+    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+    sdo = models.ForeignKey(SDOs)
+
+    def __unicode__(self):
+        return '%s (%s)' % (self.person, self.sdo)
+
+    class Meta:
+        verbose_name = 'SDO Authorized Individual'
+        verbose_name_plural = 'SDO Authorized Individuals'
 
 # This table is not used by any code right now.
 #class LiaisonsInterim(models.Model):

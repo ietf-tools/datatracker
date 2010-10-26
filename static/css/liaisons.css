@@ -1,0 +1,133 @@
+.baseform { 
+    font-size: 12px;
+}
+
+.baseform .fieldset {
+    margin: 1em 0px;
+    border: none;
+    border: 1px solid #8899dd;
+    background-color: #edf5ff;
+}
+
+.baseform .fieldset h2 {
+    background-color: #2647a0;
+    color: white;
+    font-size: 14px;
+    padding: 5px 10px;
+    margin: 0px;
+}
+
+.baseform .field {
+    padding: 0.5em 10px;
+}
+
+.baseform .field label {
+    display: block;
+    width: 150px;
+    float: left;
+    clear: left;
+}
+
+.baseform .field .endfield {
+    clear: left;
+}
+
+.baseform .fieldWidget {
+    margin-left: 150px;
+}
+
+.baseform #baseform-fieldname-purpose_text,
+.baseform #baseform-fieldname-deadline_date {
+    display: none;
+}
+
+.baseform select,
+.baseform textarea,
+.baseform input {
+    border: 1px solid #cccccc;
+}
+
+.baseform input {
+    font-size: 12px;
+}
+
+#id_title,
+.baseformedit #id_from_field,
+.baseformedit #id_replyto,
+.baseformedit #id_organization,
+.baseformedit #id_to_poc,
+.baseformedit #id_response_contact,
+.baseformedit #id_technical_contact,
+.baseformedit #id_cc1,
+.baseform textarea {
+    width: 80%;
+}
+
+#id_purpose_text {
+    height: 100px;
+}
+
+#id_body {
+    height: 300px;
+}
+
+.baseform input.disabledAddAttachment {
+    border: none;
+    padding: none;
+    background: none;
+    padding: 0px;
+    margin: 0px;
+    color: black;
+    font-weight: bold;
+}
+
+span.fieldRequired {
+    color: red;
+}
+
+.fieldError {
+    background-color: #ffcc66;
+}
+
+.errorlist li,
+.errorlist {
+    padding: 0px; 
+    margin: 0px;
+    list-style: none;
+    color: red;
+}
+
+.js-info {
+    border: 1px dashed red;
+    padding: 1em 2em;
+    font-size: 1.2em;
+    background-color: #ffdd88;
+}
+
+th.orderField  a {
+    text-decoration: none;
+    color: white;
+    display: block;
+}
+
+th.orderFieldReversed a {
+    background: #2647A0 url(/images/arrow-down.gif) no-repeat left center;
+    padding-left: 20px;
+}
+
+th.orderFieldActive a {
+    background: #2647A0 url(/images/arrow-up.gif) no-repeat left center;
+    padding-left: 20px;
+}
+
+.noTakedCare,
+.takedCare {
+    border: 1px solid green;
+    padding: 2px 5px;
+    background-color: #ccffbb;
+}
+
+.noTakedCare {
+    border: 1px solid red;
+    background-color: #ffccbb;
+}

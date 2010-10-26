@@ -1,3 +1,70 @@
+ietfdb (3.07)
+
+  From esanchez@yaco.es:
+
+  * Merged in Yaco's Liaison Management Tool Port & Rewrite.  Enjoy!
+
+  Note: Deploying this release requires additional steps; to verify
+  that liaison related settings in settings.py are correct, and to create
+  new tables and update existing tables and table content.  The latter
+  is done as South migrations (see http://south.aeracode.org/ for more
+  info on the South app).  More extensiive documentation about the actions
+  needed are provided in the user manual (doc/LSMT_user_manual.pdf in
+  the release).  The brief version follows:
+
+    # 8<----------
+    # First the regular checkout and prepare:
+
+       cd /a/www/ietf-datatracker
+       svn co http://svn.tools.ietf.org/svn/tools/ietfdb/tags/3.07
+       cp web/ietf/settings_local.py 3.07/ietf/
+       cd 3.07
+
+    # Verify that the new variables in settings.py are correct; if not,
+    # add the correct settings in settings_local.py and inform the release
+    # manager of the correct settings so they can be incorporated in the
+    # next release.  The variables in question are (as set in the release):
+    #
+    # # The email address from wich all liaison emails come:
+    # LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
+    #
+    # # The filesystem path where the liaison attachments will be saved:
+    # LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'
+    #
+    # # The url from where the webserver serves the liaison attachments
+    # LIAISON_ATTACH_URL = '/documents/LIAISON/'
+
+    # Next, the changes to the MySQL tables will be done.
+    # You can list the table migrations which will be applied if desired,
+    # this should list migrations from 0001_... to 0009_... under liaisons:
+
+       PYTHONPATH=$PWD ietf/manage.py migrate --list
+
+    # Apply the migrations:
+ 
+       PYTHONPATH=$PWD ietf/manage.py migrate
+
+    # Then carry on with the usual actions:
+
+       cd ../
+       rm ./web; ln -s 3.07 web
+       sudo /etc/init.d/apache restart
+
+    # 8<----------
+
+  Once the datatracker is up and running with the new liaison tool in
+  place, liaison role assignments have to be done as described in
+  the LSMT user manual (in doc/LSMT_user_manual.pdf) page 14, summarized
+  by Patrik on the yaco-liaison-tool mailing list:
+
+    1. Add the IAB and IETF chairs, wg chairs, area directors etc as
+    apropriate (as described in the document).
+
+    2. Add the liaisons in the IETF assigned and named on the IAB list of
+    liaisons.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Oct 2010 13:59:04 +0200
+
 ietfdb (3.06)
 
   From rjsparks@nostrum.com:

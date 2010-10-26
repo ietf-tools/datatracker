@@ -1,0 +1,61 @@
+{% load i18n %}
+
+<form class="liaisonform" method="post" action="" enctype="multipart/form-data">
+
+<div class="formconfig" style="display: none;">
+{% block formconfig %}
+  <span class="info_update_url">{% url get_info %}</span>
+{% endblock %}
+</div>
+
+<div class="baseform{% if form.edit %} baseformedit{% endif %}">
+  {% if form.errors %}
+   <div class="formErrors">
+     Please correct the errors below.
+   </div>
+  {% endif %}
+{% for fieldset in form.get_fieldsets %}
+  {% if fieldset.name %}
+    <div class="fieldset">
+    <h2>{{ fieldset.name }}</h2>
+  {% endif %}
+
+  {% for field in fieldset.fields %}
+    <div id="baseform-fieldname-{{ field.html_name }}"
+         class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
+      <label for="id_{{ field.html_name }}">{{ field.label }}
+      {% if field.field.required %}
+         <span class="fieldRequired" title="Required">*</span>
+      {% endif %}
+      </label>
+      <div class="fieldWidget">
+      <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
+      {{ field }}
+      {{ field.errors }} 
+      </div>
+      <div class="endfield"></div>
+    </div>
+  {% endfor %}
+
+  {% if fieldset.name %}
+    </div>
+  {% endif %}
+{% endfor %}
+
+  <div class="submitrow">
+{% if form.edit %}
+    <input type="submit" value="Save" name="save" />
+{% else %}
+    {% if not form.get_post_only %}
+    <input type="submit" value="Send and Post" name="send" />
+    {% endif %}
+    <input type="submit" value="Post Only" name="post_only" />
+{% endif %}
+    <div id="cancel-dialog" style="display: none;" title="Cancel {% if form.edit %}editing liaison{% else %}adding new liaison{% endif %}">
+    Are you sure you want to return to liaison statement list?<br/><br/>All data entered into this form will be lost.
+    </div>
+    <input id="id_cancel" type="button" value="Cancel" name="cancel" />
+  </div>
+</div>
+
+</form>

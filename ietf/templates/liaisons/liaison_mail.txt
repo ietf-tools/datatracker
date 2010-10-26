@@ -1,0 +1,18 @@
+Title: {{ liaison.title }}
+Submission Date: {{ liaison.submitted_date }}
+URL of the IETF Web page: {% url liaison_detail object_id=liaison.pk %}
+{% if liaison.deadline_date %}Please reply by {{ liaison.deadline_date }}{% endif %}
+From: {{ liaison.from_body }} ({{ liaison.person }} &lt;{{ liaison.replyto|default:liaison.from_email|fix_ampersands }}&gt;)
+To: {{ liaison.to_body }} ({{ liaison.to_poc }})
+Cc: {{ liaison.cc1 }}
+Reponse Contact: {{ liaison.response_contact }}
+Technical Contact: {{ liaison.technical_contact }}
+Purpose: {% if liaison.purpose_text %}{{ liaison.purpose_text }}{% else %}{{ liaison.purpose.purpose_text }}{% endif %}
+{% if liaison.related_to %}Referenced liaison: {% if liaison.related_to.title %}{{ liaison.related_to.title }}{% else %}Liaison #{{ liaison.related_to.pk }}{% endif %} ({% url liaison_detail object_id=liaison.related_to.pk %}){% endif %}
+Body: {{ liaison.body }}
+Attachment(s):
+{% for file in liaison.uploads_set.all %}
+    {{ file.file_title }} https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}
+{% empty %}
+No document has been attached
+{% endfor %}
