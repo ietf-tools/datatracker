@@ -44,6 +44,12 @@ ietfdb (3.07)
  
        PYTHONPATH=$PWD ietf/manage.py migrate
 
+    # Add the static/doc location as statically served files to the apache
+    # configuration.  Fix line 6 in etc/apache2/vhoosts.d/ietf-datatracker.common
+    # to read:
+    #  <LocationMatch "^/(?!(cgi-bin|css|documents|error|idst|images|js|media|doc|private)/|robots.txt).*$">
+    # (i.e., add '|doc' to the exception list).
+
     # Then carry on with the usual actions:
 
        cd ../
@@ -63,7 +69,7 @@ ietfdb (3.07)
     2. Add the liaisons in the IETF assigned and named on the IAB list of
     liaisons.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  22 Oct 2010 13:59:04 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Oct 2010 16:11:24 +0200
 
 ietfdb (3.06)
 
