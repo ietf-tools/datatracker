@@ -74,7 +74,7 @@ class ScheduledAnnouncement(models.Model):
     cc_val = models.TextField(blank=True,null=True)
     body = models.TextField(blank=True)
     actual_sent_date = models.DateField(null=True, blank=True)
-    actual_sent_time = models.CharField(blank=True, max_length=50)
+    actual_sent_time = models.CharField(blank=True, max_length=50) # should be time, but database contains oddities
     first_q = models.IntegerField(null=True, blank=True)
     second_q = models.IntegerField(null=True, blank=True)
     note = models.TextField(blank=True,null=True)

@@ -32,10 +32,12 @@
 
 import unittest
 import StringIO
+import os, shutil
 from datetime import date, timedelta
 
 import django.test
 from django.core.urlresolvers import reverse as urlreverse
+from django.conf import settings
 
 from pyquery import PyQuery
 
@@ -101,7 +103,7 @@ class ChangeStateTestCase(django.test.TestCase):
         self.assertTrue(draft.filename in mail_outbox[-1]['Subject'])
 
         
-    def test_make_last_call(self):
+    def test_request_last_call(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
 
         self.client.login(remote_user="klm")
@@ -111,7 +113,8 @@ class ChangeStateTestCase(django.test.TestCase):
         
         self.assertRaises(BallotInfo.DoesNotExist, lambda: draft.idinternal.ballot)
         r = self.client.post(url,
-                             dict(state="15", substate=""))
+                             dict(state=str(IDState.LAST_CALL_REQUESTED),
+                                  substate=""))
         self.assertContains(r, "Your request to issue the Last Call")
 
         # last call text
@@ -133,6 +136,7 @@ class ChangeStateTestCase(django.test.TestCase):
 
         # comment
         self.assertTrue("Last Call was requested" in draft.idinternal.comments()[0].comment_text)
+        
 
 class EditInfoTestCase(django.test.TestCase):
     fixtures = ['base', 'draft']
@@ -704,6 +708,11 @@ class MakeLastCallTestCase(django.test.TestCase):
 
     def test_make_last_call(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft.idinternal.cur_state = IDState.objects.get(document_state_id=IDState.LAST_CALL_REQUESTED)
+        draft.idinternal.save()
+        draft.lc_expiration_date = None
+        draft.save()
+        
         url = urlreverse('doc_make_last_call', kwargs=dict(name=draft.filename))
         login_testing_unauthorized(self, "klm", url)
 
@@ -715,23 +724,226 @@ class MakeLastCallTestCase(django.test.TestCase):
 
         # make last call
         mailbox_before = len(mail_outbox)
+
+        expire_date = q('input[name=last_call_expiration_date]')[0].get("value")
         
         r = self.client.post(url,
                              dict(last_call_sent_date=q('input[name=last_call_sent_date]')[0].get("value"),
-                                  last_call_expiration_date=q('input[name=last_call_expiration_date]')[0].get("value")
+                                  last_call_expiration_date=expire_date
                                   ))
         self.assertEquals(r.status_code, 302)
 
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         self.assertEquals(draft.idinternal.cur_state_id, IDState.IN_LAST_CALL)
-        
+        self.assertEquals(draft.lc_expiration_date.strftime("%Y-%m-%d"), expire_date)
         self.assertEquals(len(mail_outbox), mailbox_before + 4)
 
         self.assertTrue("Last Call" in mail_outbox[-4]['Subject'])
         # the IANA copy
         self.assertTrue("Last Call" in mail_outbox[-3]['Subject'])
 
+class ExpireIDsTestCase(django.test.TestCase):
+    fixtures = ['base', 'draft']
+
+    def setUp(self):
+        self.id_dir = os.path.abspath("tmp-id-dir")
+        self.archive_dir = os.path.abspath("tmp-id-archive")
+        os.mkdir(self.id_dir)
+        os.mkdir(self.archive_dir)
+        os.mkdir(os.path.join(self.archive_dir, "unknown_ids"))
+        os.mkdir(os.path.join(self.archive_dir, "deleted_tombstones"))
+        os.mkdir(os.path.join(self.archive_dir, "expired_without_tombstone"))
         
+        settings.INTERNET_DRAFT_PATH = self.id_dir
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
+
+    def tearDown(self):
+        shutil.rmtree(self.id_dir)
+        shutil.rmtree(self.archive_dir)
+
+    def write_id_file(self, name, size):
+        f = open(os.path.join(self.id_dir, name), 'w')
+        f.write("a" * size)
+        f.close()
+        
+    def test_in_id_expire_freeze(self):
+        from ietf.idrfc.expire import in_id_expire_freeze
+        
+        self.assertTrue(not in_id_expire_freeze(datetime.datetime(2010, 7, 11, 0, 0)))
+        self.assertTrue(not in_id_expire_freeze(datetime.datetime(2010, 7, 12, 8, 0)))
+        self.assertTrue(in_id_expire_freeze(datetime.datetime(2010, 7, 12, 10, 0)))
+        self.assertTrue(in_id_expire_freeze(datetime.datetime(2010, 7, 25, 0, 0)))
+        self.assertTrue(not in_id_expire_freeze(datetime.datetime(2010, 7, 26, 0, 0)))
+        
+    def test_expire_ids(self):
+        from ietf.idrfc.expire import get_expired_ids, send_expire_notice_for_id, expire_id
+
+        # hack into expirable state
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft.status = IDStatus.objects.get(status="Active")
+        draft.review_by_rfc_editor = 0
+        draft.revision_date = datetime.date.today() - datetime.timedelta(days=InternetDraft.DAYS_TO_EXPIRE + 1)
+        draft.idinternal.cur_state_id = IDState.AD_WATCHING
+        draft.idinternal.save()
+        draft.save()
+        
+        draft = InternetDraft.objects.get(filename="draft-ah-rfc2141bis-urn")
+        self.assertTrue(draft.idinternal == None)
+        draft.status = IDStatus.objects.get(status="Active")
+        draft.review_by_rfc_editor = 0
+        draft.revision_date = datetime.date.today() - datetime.timedelta(days=InternetDraft.DAYS_TO_EXPIRE + 1)
+        draft.save()
+
+        # test query
+        documents = get_expired_ids()
+        self.assertEquals(len(documents), 2)
+
+        for d in documents:
+            # test notice
+            mailbox_before = len(mail_outbox)
+
+            send_expire_notice_for_id(d)
+
+            self.assertEquals(InternetDraft.objects.get(filename=d.filename).dunn_sent_date, datetime.date.today())
+            if d.idinternal:
+                self.assertEquals(len(mail_outbox), mailbox_before + 1)
+                self.assertTrue("expired" in mail_outbox[-1]["Subject"])
+
+            # test expiry
+            txt = "%s-%s.txt" % (d.filename, d.revision_display())
+            self.write_id_file(txt, 5000)
+
+            revision_before = d.revision
+            
+            expire_id(d)
+
+            draft = InternetDraft.objects.get(filename=d.filename)
+            self.assertEquals(draft.status.status, "Expired")
+            self.assertEquals(int(draft.revision), int(revision_before) + 1)
+            self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
+            self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
+            new_txt = "%s-%s.txt" % (draft.filename, draft.revision)
+            self.assertTrue(os.path.exists(os.path.join(self.id_dir, new_txt)))
+
+    def test_clean_up_id_files(self):
+        from ietf.idrfc.expire import clean_up_id_files
+
+        # put unknown file
+        unknown = "draft-i-am-unknown-01.txt"
+        self.write_id_file(unknown, 5000)
+
+        clean_up_id_files()
+        
+        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, unknown)))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "unknown_ids", unknown)))
+
+        
+        # put file with malformed name (no revision)
+        malformed = "draft-ietf-mipshop-pfmipv6.txt"
+        self.write_id_file(malformed, 5000)
+
+        clean_up_id_files()
+        
+        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, malformed)))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "unknown_ids", malformed)))
+
+        
+        # RFC draft
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft.status_id = 3
+        draft.save()
+
+        txt = "%s-%s.txt" % (draft.filename, draft.revision)
+        self.write_id_file(txt, 5000)
+        pdf = "%s-%s.pdf" % (draft.filename, draft.revision)
+        self.write_id_file(pdf, 5000)
+
+        clean_up_id_files()
+        
+        # txt files shouldn't be moved (for some reason)
+        self.assertTrue(os.path.exists(os.path.join(self.id_dir, txt)))
+        
+        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, pdf)))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "unknown_ids", pdf)))
+
+
+        # expired without tombstone
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft.status_id = 2
+        draft.expiration_date = datetime.date.today() - datetime.timedelta(days=InternetDraft.DAYS_TO_EXPIRE + 1)
+        draft.save()
+
+        txt = "%s-%s.txt" % (draft.filename, draft.revision)
+        self.write_id_file(txt, 5000)
+
+        clean_up_id_files()
+        
+        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "expired_without_tombstone", txt)))
+        
+
+        # expired with tombstone
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft.status_id = 2
+        draft.expiration_date = datetime.date.today() - datetime.timedelta(days=InternetDraft.DAYS_TO_EXPIRE + 1)
+        draft.expired_tombstone = False
+        draft.save()
+
+        revision_before = draft.revision
+
+        txt = "%s-%s.txt" % (draft.filename, draft.revision)
+        self.write_id_file(txt, 1000)
+
+        clean_up_id_files()
+        
+        self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "deleted_tombstones", txt)))
+
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        self.assertEquals(int(draft.revision), int(revision_before) - 1)
+        self.assertTrue(draft.expired_tombstone)
+        
+class ExpireLastCallTestCase(django.test.TestCase):
+    fixtures = ['base', 'draft']
+
+    def test_expire_last_call(self):
+        from ietf.idrfc.lastcall import get_expired_last_calls, expire_last_call
+        
+        # check that not expired drafts aren't expired 
+
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft.idinternal.cur_state = IDState.objects.get(document_state_id=IDState.IN_LAST_CALL)
+        draft.idinternal.cur_substate = None
+        draft.idinternal.save()
+        draft.lc_expiration_date = datetime.date.today() + datetime.timedelta(days=2)
+        draft.save()
+
+        self.assertEquals(len(get_expired_last_calls()), 0)
+
+        draft.lc_expiration_date = None
+        draft.save()
+        
+        self.assertEquals(len(get_expired_last_calls()), 0)
+
+        # test expired
+        draft.lc_expiration_date = datetime.date.today()
+        draft.save()
+        
+        drafts = get_expired_last_calls()
+        self.assertEquals(len(drafts), 1)
+
+        mailbox_before = len(mail_outbox)
+        comments_before = draft.idinternal.comments().count()
+        
+        expire_last_call(drafts[0])
+
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        self.assertEquals(draft.idinternal.cur_state.document_state_id, IDState.WAITING_FOR_WRITEUP)
+        self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
+        self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        self.assertTrue("Last Call Expired" in mail_outbox[-1]["Subject"])
+        
+
         
 TEST_RFC_INDEX = '''<?xml version="1.0" encoding="UTF-8"?>
 <rfc-index xmlns="http://www.rfc-editor.org/rfc-index" 

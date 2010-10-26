@@ -5,6 +5,7 @@ from datetime import datetime, date, time, timedelta
 
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from django.conf import settings
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
@@ -15,12 +16,12 @@ def email_state_changed(request, doc, text):
               "ID Tracker State Update Notice: %s" % doc.file_tag(),
               "idrfc/state_changed_email.txt",
               dict(text=text,
-                   url=request.build_absolute_uri(doc.idinternal.get_absolute_url())))
+                   url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
 
 def html_to_text(html):
     return strip_tags(html.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("<br>", "\n"))
     
-def email_owner(request, doc, owner, changed_by, text):
+def email_owner(request, doc, owner, changed_by, text, subject=None):
     if not owner or not changed_by or owner == changed_by:
         return
 
@@ -28,10 +29,10 @@ def email_owner(request, doc, owner, changed_by, text):
     send_mail(request, to,
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
               "%s updated by %s" % (doc.file_tag(), changed_by),
-              "idrfc/changes_by_other.txt",
+              "idrfc/change_notice.txt",
               dict(text=html_to_text(text),
                    doc=doc,
-                   url=request.build_absolute_uri(doc.idinternal.get_absolute_url())))
+                   url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
 
 def full_intended_status(intended_status):
     s = str(intended_status)
@@ -70,11 +71,11 @@ def generate_last_call_announcement(request, doc):
     for d in docs:
         d.full_status = full_intended_status(d.intended_status)
         d.filled_title = textwrap.fill(d.title, width=70, subsequent_indent=" " * 3)
-        urls.append(request.build_absolute_uri(d.idinternal.get_absolute_url()))
+        urls.append(settings.IDTRACKER_BASE_URL + d.idinternal.get_absolute_url())
     
     return render_to_string("idrfc/last_call_announcement.txt",
                             dict(doc=doc,
-                                 doc_url=request.build_absolute_uri(doc.idinternal.get_absolute_url()),
+                                 doc_url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url(),
                                  expiration_date=expiration_date.strftime("%Y-%m-%d"), #.strftime("%B %-d, %Y"),
                                  cc=", ".join("<%s>" % e for e in cc),
                                  group=group,
@@ -131,7 +132,7 @@ def generate_approval_mail(request, doc):
         
     return render_to_string("idrfc/approval_mail.txt",
                             dict(doc=doc,
-                                 doc_url=request.build_absolute_uri(doc.idinternal.get_absolute_url()),
+                                 doc_url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url(),
                                  cc=",\n    ".join(cc),
                                  docs=docs,
                                  doc_type=doc_type,
@@ -150,7 +151,7 @@ def generate_approval_mail_rfc_editor(request, doc):
     
     return render_to_string("idrfc/approval_mail_rfc_editor.txt",
                             dict(doc=doc,
-                                 doc_url=request.build_absolute_uri(doc.idinternal.get_absolute_url()),
+                                 doc_url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url(),
                                  doc_type=doc_type,
                                  status=status,
                                  full_status=full_status,
@@ -167,7 +168,7 @@ def send_last_call_request(request, doc, ballot):
               "Last Call: %s" % doc.file_tag(),
               "idrfc/last_call_request.txt",
               dict(docs=docs,
-                   doc_url=request.build_absolute_uri(doc.idinternal.get_absolute_url())))
+                   doc_url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
 
 def email_resurrect_requested(request, doc, by):
     to = "I-D Administrator <internet-drafts@ietf.org>"
@@ -177,7 +178,7 @@ def email_resurrect_requested(request, doc, by):
               "idrfc/resurrect_request_email.txt",
               dict(doc=doc,
                    by=frm,
-                   url=request.build_absolute_uri(doc.idinternal.get_absolute_url())))
+                   url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
 
 def email_resurrection_completed(request, doc):
     to = u"%s <%s>" % doc.idinternal.resurrect_requested_by.person.email()
@@ -187,7 +188,7 @@ def email_resurrection_completed(request, doc):
               "idrfc/resurrect_completed_email.txt",
               dict(doc=doc,
                    by=frm,
-                   url=request.build_absolute_uri(doc.idinternal.get_absolute_url())))
+                   url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
 
 def email_ballot_deferred(request, doc, by, telechat_date):
     to = "iesg@ietf.org"
@@ -248,7 +249,7 @@ def generate_issue_ballot_mail(request, doc):
     
     return render_to_string("idrfc/issue_ballot_mail.txt",
                             dict(doc=doc,
-                                 doc_url=request.build_absolute_uri(doc.idinternal.get_absolute_url()),
+                                 doc_url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url(),
                                  status=status,
                                  active_ad_positions=active_ad_positions,
                                  inactive_ad_positions=inactive_ad_positions,
@@ -272,4 +273,17 @@ def email_iana(request, doc, to, msg):
                        parsed_msg.get_payload(),
                        extra=extra,
                        bcc="fenner@research.att.com")
+
+def email_last_call_expired(doc):
+    text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.idinternal.cur_state.state
+    
+    send_mail(None,
+              "iesg@ietf.org",
+              "DraftTracker Mail System <iesg-secretary@ietf.org>",
+              "Last Call Expired: %s" % doc.file_tag(),
+              "idrfc/change_notice.txt",
+              dict(text=text,
+                   doc=doc,
+                   url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()),
+              cc="iesg-secretary@ietf.org")
 

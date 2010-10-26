@@ -20,7 +20,7 @@ from ietf.iesg.models import *
 from ietf.ipr.models import IprDetail
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
-
+from ietf.idrfc.lastcall import request_last_call
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),

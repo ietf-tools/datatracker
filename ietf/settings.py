@@ -143,6 +143,9 @@ INTERNAL_IPS = (
         '::1',
 )
 
+# no slash at end
+IDTRACKER_BASE_URL = "http://datatracker.ietf.org"
+
 # Valid values:
 # 'production', 'test', 'development'
 # Override this in settings_local.py if it's not true
@@ -165,6 +168,7 @@ IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
 IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
 IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
+INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/ietf/DRAFT_ARCHIVE'
 
 # Override this in settings_local.py if needed
 CACHE_MIDDLEWARE_SECONDS = 300

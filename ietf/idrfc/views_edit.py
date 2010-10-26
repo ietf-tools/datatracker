@@ -20,6 +20,7 @@ from ietf.idtracker.models import *
 from ietf.iesg.models import *
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
+from ietf.idrfc.lastcall import request_last_call
 
     
 class ChangeStateForm(forms.Form):

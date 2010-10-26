@@ -45,6 +45,7 @@ base.extend(IDState.objects.all())
 base.extend(WGType.objects.all())
 base.extend(TelechatDates.objects.all())
 base.extend(Acronym.objects.filter(acronym_id=Acronym.INDIVIDUAL_SUBMITTER))
+base.extend(IDDates.objects.all())
 
 output("base", base)
 

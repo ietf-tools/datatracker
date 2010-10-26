@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+import datetime, os
+import syslog
+
+from ietf import settings
+from django.core import management
+management.setup_environ(settings)
+
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
+
+from ietf.idrfc.lastcall import *
+
+drafts = get_expired_last_calls()
+for doc in drafts:
+    expire_last_call(doc)
+    syslog.syslog("Expired last call for %s (id=%s)" % (doc.file_tag(), doc.id_document_tag))

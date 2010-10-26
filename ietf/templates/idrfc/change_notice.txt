@@ -1,4 +1,4 @@
-Please DO NOT reply on this email.
+Please DO NOT reply to this email.
 
 I-D: {{ doc.file_tag|safe }}
 ID Tracker URL: {{ url }}

@@ -1283,4 +1283,34 @@ withdrawn, etc.)</field>
         <field type="CharField" name="name">Individual Submissions</field>
         <field type="CharField" name="name_key">INDIVIDUAL SUBMISSIONS</field>
     </object>
+    <object pk="1" model="idtracker.iddates">
+        <field type="DateField" name="date">2010-07-05</field>
+        <field type="CharField" name="description">1st Cut-Off Date (Initial version)</field>
+        <field type="CharField" name="f_name">first</field>
+    </object>
+    <object pk="2" model="idtracker.iddates">
+        <field type="DateField" name="date">2010-07-12</field>
+        <field type="CharField" name="description">2nd Cut-Off Date (Update version)</field>
+        <field type="CharField" name="f_name">second</field>
+    </object>
+    <object pk="3" model="idtracker.iddates">
+        <field type="DateField" name="date">2010-07-26</field>
+        <field type="CharField" name="description">Date of Monday of IETF</field>
+        <field type="CharField" name="f_name">third</field>
+    </object>
+    <object pk="4" model="idtracker.iddates">
+        <field type="DateField" name="date">2010-07-29</field>
+        <field type="CharField" name="description">All I-Ds will be processed by</field>
+        <field type="CharField" name="f_name">fourth</field>
+    </object>
+    <object pk="5" model="idtracker.iddates">
+        <field type="DateField" name="date">2010-08-02</field>
+        <field type="CharField" name="description">Date of Monday after IETF</field>
+        <field type="CharField" name="f_name">fifth</field>
+    </object>
+    <object pk="6" model="idtracker.iddates">
+        <field type="DateField" name="date">2010-06-28</field>
+        <field type="CharField" name="description">Date for List of Approved V-00 Submissions from WG Chairs</field>
+        <field type="CharField" name="f_name">sixth</field>
+    </object>
 </django-objects>

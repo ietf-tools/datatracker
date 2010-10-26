@@ -1,10 +1,15 @@
-from ietf.idtracker.models import DocumentComment, BallotInfo, IESGLogin
+from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo, IESGLogin
 from ietf.idrfc.mails import *
 
 def add_document_comment(request, doc, text, include_by=True, ballot=None):
-    login = IESGLogin.objects.get(login_name=request.user.username)
-    if include_by:
-        text += " by %s" % login
+    if request:
+        login = IESGLogin.objects.get(login_name=request.user.username)
+        if include_by:
+            text += " by %s" % login
+    else:
+        login = None
+        if include_by:
+            text += " by %s" % "system"
 
     c = DocumentComment()
     c.document = doc.idinternal
@@ -28,20 +33,11 @@ def generate_ballot(request, doc):
     doc.idinternal.ballot = ballot
     return ballot
     
-def request_last_call(request, doc):
-    try:
-        ballot = doc.idinternal.ballot
-    except BallotInfo.DoesNotExist:
-        ballot = generate_ballot(request, doc)
-
-    send_last_call_request(request, doc, ballot)
-    add_document_comment(request, doc, "Last Call was requested")
-
-def log_state_changed(request, doc, by):
+def log_state_changed(request, doc, by, email_watch_list=True):
     change = u"State changed to <b>%s</b> from <b>%s</b> by %s" % (
         doc.idinternal.docstate(),
-        format_document_state(doc.idinternal.prev_state, doc.
-                              idinternal.prev_sub_state),
+        format_document_state(doc.idinternal.prev_state,
+                              doc.idinternal.prev_sub_state),
         by)
 
     c = DocumentComment()
@@ -49,13 +45,15 @@ def log_state_changed(request, doc, by):
     c.public_flag = True
     c.version = doc.revision_display()
     c.comment_text = change
-    c.created_by = by
+    if isinstance(by, IESGLogin):
+        c.created_by = by
     c.result_state = doc.idinternal.cur_state
     c.origin_state = doc.idinternal.prev_state
     c.rfc_flag = doc.idinternal.rfc_flag
     c.save()
 
-    email_state_changed(request, doc, strip_tags(change))
+    if email_watch_list:
+        email_state_changed(request, doc, strip_tags(change))
 
     return change
 

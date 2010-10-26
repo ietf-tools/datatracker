@@ -1,33 +1,42 @@
 #!/usr/bin/env python
-#
-from django.core.management import setup_environ
+
+import datetime, os, sys
+import syslog
+
 from ietf import settings
+from django.core import management
+management.setup_environ(settings)
 
-setup_environ(settings)
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
 
-from django.db.models import Q
-from django.db import connection
+
 from ietf.announcements.models import ScheduledAnnouncement
-from ietf.utils.mail import send_mail_text
-import datetime
+from ietf.announcements.send_scheduled import *
+from django.db.models import Q
+
+if not len(sys.argv) == 2 or sys.argv[1] not in ('all', 'rsync', 'specific'):
+    print "USAGE: %s <all | rsync | specific>" % os.path.basename(__file__)
+    print "'all' means all not sent"
+    print "'rsync' means all not sent where to-be-sent-date is null"
+    print "'specific' means all not sent that are due to be sent"
+    sys.exit(1)
+
+mode = sys.argv[1]
 
 now = datetime.datetime.now()
-candidates = ScheduledAnnouncement.objects.filter(to_be_sent_date__isnull=True) | ScheduledAnnouncement.objects.exclude(to_be_sent_date__gt=now.date())
-candidates = candidates.filter(mail_sent=False) #.exclude(to_be_sent_date__gt=now.date())
-for c in candidates:
-    if c.to_be_sent_time:
-        tbst = datetime.time( *[int(t) for t in c.to_be_sent_time.split(":")] )
-        if tbst > now.time():
-	    # To be sent today, but not yet.
-	    continue
-    extra={}
-    if c.content_type:
-        extra['Content-Type'] = c.content_type
-    if c.replyto:
-        extra['Reply-To'] = c.replyto
-    send_mail_text(None, to=c.to_val, frm=c.from_val, subject=c.subject,
-	txt=c.body, cc=c.cc_val, extra=extra, bcc=c.bcc_val)
-    c.actual_sent_date=now.date()
-    c.actual_sent_time=str(now.time()) # sigh
-    c.mail_sent=True
-    c.save()
+now = datetime.datetime(2010, 8, 5)
+
+announcements = ScheduledAnnouncement.objects.filter(mail_sent=False)
+if mode == "rsync":
+    # include bogus 0000-00-00 entries
+    announcements = announcements.filter(Q(to_be_sent_date=None) | Q(to_be_sent_date__lte=datetime.date.min))
+elif mode == "specific":
+    # exclude null/bogus entries
+    announcements = announcements.exclude(Q(to_be_sent_date=None) | Q(to_be_sent_date__lte=datetime.date.min))
+    announcements = announcements.filter(to_be_sent_date__lte=now.date(),
+                                         to_be_sent_time__lte=now.time())
+    
+for announcement in announcements:
+    send_scheduled_announcement(announcement)
+    
+    syslog.syslog('Sent scheduled announcement %s "%s"' % (announcement.id, announcement.subject))

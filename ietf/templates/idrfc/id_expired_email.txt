@@ -1,0 +1,6 @@
+{{ doc.file_tag|safe }} was just expired.
+This draft is in the state {{ doc.idstate }} in ID Tracker.
+
+
+Thanks,
+IETF Secretariat.
