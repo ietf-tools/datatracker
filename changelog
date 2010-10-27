@@ -1,3 +1,21 @@
+ietfdb (3.08)
+
+  From olau@iola.dk:
+
+  * Ported scripts for expiration of drafts and last-calls, and sending
+    scheduled announcements.
+
+    The command-line front-ends are in bin/ as expire-ids, expire-last-calls
+    and send-scheduled-mail. The last one already existed with some code, but
+    it's not certain it actually worked. The new one accepts the same arguments
+    as the Perl script (there's a little bit of help if you run it).
+
+    All three log to syslog.  They need to be started from cron with
+    PYTHONPATH=/a/www/ietf-datatracker/web , in the same manner as other
+    scripts which use the django models to interact with the database.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Oct 2010 13:52:26 +0200
+
 ietfdb (3.07)
 
   From esanchez@yaco.es:
