@@ -70,7 +70,7 @@ def remove_workflow_from_model(ctype):
     for obj in get_objects_for_workflow(workflow):
         try:
             ctype = ContentType.objects.get_for_model(obj)
-            sor = StateObjectRelation.objects.get(content_id=obj.id, content_type=ctype)
+            sor = StateObjectRelation.objects.get(content_id=obj.pk, content_type=ctype)
         except StateObjectRelation.DoesNotExist:
             pass
         else:
@@ -201,7 +201,7 @@ def get_workflow_for_object(obj):
     """
     try:
         ctype = ContentType.objects.get_for_model(obj)
-        wor = WorkflowObjectRelation.objects.get(content_id=obj.id, content_type=ctype)
+        wor = WorkflowObjectRelation.objects.get(content_id=obj.pk, content_type=ctype)
     except WorkflowObjectRelation.DoesNotExist:
         return None
     else:
@@ -234,7 +234,7 @@ def get_state(obj):
     """
     ctype = ContentType.objects.get_for_model(obj)
     try:
-        sor = StateObjectRelation.objects.get(content_type=ctype, content_id=obj.id)
+        sor = StateObjectRelation.objects.get(content_type=ctype, content_id=obj.pk)
     except StateObjectRelation.DoesNotExist:
         return None
     else:
@@ -255,7 +255,7 @@ def set_state(obj, state):
     """
     ctype = ContentType.objects.get_for_model(obj)
     try:
-        sor = StateObjectRelation.objects.get(content_type=ctype, content_id=obj.id)
+        sor = StateObjectRelation.objects.get(content_type=ctype, content_id=obj.pk)
     except StateObjectRelation.DoesNotExist:
         sor = StateObjectRelation.objects.create(content=obj, state=state)
     else:
@@ -315,7 +315,7 @@ def update_permissions(obj):
     ct = ContentType.objects.get_for_model(obj)
     ps = [wpr.permission for wpr in WorkflowPermissionRelation.objects.filter(workflow=workflow)]
 
-    ObjectPermission.objects.filter(content_type = ct, content_id=obj.id, permission__in=ps).delete()
+    ObjectPermission.objects.filter(content_type = ct, content_id=obj.pk, permission__in=ps).delete()
             
     # Grant permission for the state
     for spr in StatePermissionRelation.objects.filter(state=state):
@@ -323,7 +323,7 @@ def update_permissions(obj):
     
     # Remove all inheritance blocks from the object
     ObjectPermissionInheritanceBlock.objects.filter(
-        content_type = ct, content_id=obj.id, permission__in=ps).delete()
+        content_type = ct, content_id=obj.pk, permission__in=ps).delete()
     
     # Add inheritance blocks of this state to the object
     for sib in StateInheritanceBlock.objects.filter(state=state):

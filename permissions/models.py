@@ -128,7 +128,7 @@ class Role(models.Model):
         if content:
             ctype = ContentType.objects.get_for_model(content)
             prrs = PrincipalRoleRelation.objects.filter(role=self,
-                content_id__in = (None, content.id),
+                content_id__in = (None, content.pk),
                 content_type__in = (None, ctype)).exclude(group=None)
         else:
             prrs = PrincipalRoleRelation.objects.filter(role=self,
@@ -143,7 +143,7 @@ class Role(models.Model):
         if content:
             ctype = ContentType.objects.get_for_model(content)
             prrs = PrincipalRoleRelation.objects.filter(role=self,
-                content_id__in = (None, content.id),
+                content_id__in = (None, content.pk),
                 content_type__in = (None, ctype)).exclude(user=None)
         else:
             prrs = PrincipalRoleRelation.objects.filter(role=self,

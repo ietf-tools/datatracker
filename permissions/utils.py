@@ -62,13 +62,13 @@ def add_local_role(obj, principal, role):
     ctype = ContentType.objects.get_for_model(obj)
     if isinstance(principal, User):
         try:
-            ppr = PrincipalRoleRelation.objects.get(user=principal, role=role, content_id=obj.id, content_type=ctype)
+            ppr = PrincipalRoleRelation.objects.get(user=principal, role=role, content_id=obj.pk, content_type=ctype)
         except PrincipalRoleRelation.DoesNotExist:
             PrincipalRoleRelation.objects.create(user=principal, role=role, content=obj)
             return True
     else:
         try:
-            ppr = PrincipalRoleRelation.objects.get(group=principal, role=role, content_id=obj.id, content_type=ctype)
+            ppr = PrincipalRoleRelation.objects.get(group=principal, role=role, content_id=obj.pk, content_type=ctype)
         except PrincipalRoleRelation.DoesNotExist:
             PrincipalRoleRelation.objects.create(group=principal, role=role, content=obj)
             return True
@@ -120,10 +120,10 @@ def remove_local_role(obj, principal, role):
 
         if isinstance(principal, User):
             ppr = PrincipalRoleRelation.objects.get(
-                user=principal, role=role, content_id=obj.id, content_type=ctype)
+                user=principal, role=role, content_id=obj.pk, content_type=ctype)
         else:
             ppr = PrincipalRoleRelation.objects.get(
-                group=principal, role=role, content_id=obj.id, content_type=ctype)
+                group=principal, role=role, content_id=obj.pk, content_type=ctype)
 
     except PrincipalRoleRelation.DoesNotExist:
         return False
@@ -169,10 +169,10 @@ def remove_local_roles(obj, principal):
 
     if isinstance(principal, User):
         ppr = PrincipalRoleRelation.objects.filter(
-            user=principal, content_id=obj.id, content_type=ctype)
+            user=principal, content_id=obj.pk, content_type=ctype)
     else:
         ppr = PrincipalRoleRelation.objects.filter(
-            group=principal, content_id=obj.id, content_type=ctype)
+            group=principal, content_id=obj.pk, content_type=ctype)
 
     if ppr:
         ppr.delete()
@@ -222,7 +222,7 @@ def get_roles(user, obj=None):
                           FROM permissions_principalrolerelation
                           WHERE (user_id='%s' OR group_id IN (%s))
                           AND content_id='%s'
-                          AND content_type_id='%s'""" % (user.id, groups_ids_str, obj.id, ctype.id))
+                          AND content_type_id='%s'""" % (user.id, groups_ids_str, obj.pk, ctype.id))
 
         for row in cursor.fetchall():
             roles.append(row[0])
@@ -253,10 +253,10 @@ def get_local_roles(obj, principal):
 
     if isinstance(principal, User):
         return [prr.role for prr in PrincipalRoleRelation.objects.filter(
-            user=principal, content_id=obj.id, content_type=ctype)]
+            user=principal, content_id=obj.pk, content_type=ctype)]
     else:
         return [prr.role for prr in PrincipalRoleRelation.objects.filter(
-            group=principal, content_id=obj.id, content_type=ctype)]
+            group=principal, content_id=obj.pk, content_type=ctype)]
 
 # Permissions ################################################################
 
@@ -306,7 +306,7 @@ def grant_permission(obj, role, permission):
 
     ct = ContentType.objects.get_for_model(obj)
     try:
-        ObjectPermission.objects.get(role=role, content_type = ct, content_id=obj.id, permission=permission)
+        ObjectPermission.objects.get(role=role, content_type = ct, content_id=obj.pk, permission=permission)
     except ObjectPermission.DoesNotExist:
         ObjectPermission.objects.create(role=role, content=obj, permission=permission)
 
@@ -337,7 +337,7 @@ def remove_permission(obj, role, permission):
     ct = ContentType.objects.get_for_model(obj)
 
     try:
-        op = ObjectPermission.objects.get(role=role, content_type = ct, content_id=obj.id, permission = permission)
+        op = ObjectPermission.objects.get(role=role, content_type = ct, content_id=obj.pk, permission = permission)
     except ObjectPermission.DoesNotExist:
         return False
 
@@ -362,7 +362,7 @@ def has_permission(obj, user, codename, roles=None):
         If given these roles will be assigned to the user temporarily before
         the permissions are checked.
     """
-    cache_key = "%s-%s-%s" % (obj.content_type, obj.id, codename)
+    cache_key = "%s-%s-%s" % (obj.content_type, obj.pk, codename)
     result = _get_cached_permission(user, cache_key)
     if result is not None:
         return result
@@ -381,7 +381,7 @@ def has_permission(obj, user, codename, roles=None):
     result = False
     while obj is not None:
         p = ObjectPermission.objects.filter(
-            content_type=ct, content_id=obj.id, role__in=roles, permission__codename = codename).values("id")
+            content_type=ct, content_id=obj.pk, role__in=roles, permission__codename = codename).values("id")
 
         if len(p) > 0:
             result = True
@@ -422,7 +422,7 @@ def add_inheritance_block(obj, permission):
 
     ct = ContentType.objects.get_for_model(obj)
     try:
-        ObjectPermissionInheritanceBlock.objects.get(content_type = ct, content_id=obj.id, permission=permission)
+        ObjectPermissionInheritanceBlock.objects.get(content_type = ct, content_id=obj.pk, permission=permission)
     except ObjectPermissionInheritanceBlock.DoesNotExist:
         try:
             result = ObjectPermissionInheritanceBlock.objects.create(content=obj, permission=permission)
@@ -451,7 +451,7 @@ def remove_inheritance_block(obj, permission):
 
     ct = ContentType.objects.get_for_model(obj)
     try:
-        opi = ObjectPermissionInheritanceBlock.objects.get(content_type = ct, content_id=obj.id, permission=permission)
+        opi = ObjectPermissionInheritanceBlock.objects.get(content_type = ct, content_id=obj.pk, permission=permission)
     except ObjectPermissionInheritanceBlock.DoesNotExist:
         return False
 
@@ -473,7 +473,7 @@ def is_inherited(obj, codename):
     ct = ContentType.objects.get_for_model(obj)
     try:
         ObjectPermissionInheritanceBlock.objects.get(
-            content_type=ct, content_id=obj.id, permission__codename = codename)
+            content_type=ct, content_id=obj.pk, permission__codename = codename)
     except ObjectDoesNotExist:
         return True
     else:
@@ -515,8 +515,8 @@ def reset(obj):
     """Resets all permissions and inheritance blocks of passed object.
     """
     ctype = ContentType.objects.get_for_model(obj)
-    ObjectPermissionInheritanceBlock.objects.filter(content_id=obj.id, content_type=ctype).delete()
-    ObjectPermission.objects.filter(content_id=obj.id, content_type=ctype).delete()
+    ObjectPermissionInheritanceBlock.objects.filter(content_id=obj.pk, content_type=ctype).delete()
+    ObjectPermission.objects.filter(content_id=obj.pk, content_type=ctype).delete()
 
 # Registering ################################################################
 
