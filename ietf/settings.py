@@ -118,6 +118,8 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.humanize',
     'south',
+    'workflows',
+    'permissions',
     'ietf.announcements',
     'ietf.idindex',
     'ietf.idtracker',
