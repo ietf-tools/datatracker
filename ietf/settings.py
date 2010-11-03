@@ -133,6 +133,7 @@ INSTALLED_APPS = (
     'ietf.redirects',
     'ietf.idrfc',
     'ietf.wginfo',
+    'ietf.ietfworkflows',
 )
 
 INTERNAL_IPS = (
