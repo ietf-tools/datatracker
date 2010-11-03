@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<django-objects version="1.0">
+    <object pk="8" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Revised I-D Needed - Issue raised by AD</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="7" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Revised I-D Needed - Issue raised by WGLC</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="6" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Waiting for Referencing Document</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="5" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Waiting for Referenced Document</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="4" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Author or Editor Needed</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="3" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Awaiting Merge with Other Document</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="2" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Awaiting External Review/Resolution of Issues Raised</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="1" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Awaiting Expert Review/Resolution of Issues Raised</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="9" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Revised I-D Needed - Issue raised by IESG</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="10" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Doc Shepherd Follow-Up Underway</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="11" model="ietfworkflows.annotationtag">
+        <field type="CharField" name="name">Other - see Comment Log</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="1" model="ietfworkflows.wgworkflow">
+    </object>
+    <object pk="1" model="workflows.workflow">
+        <field type="CharField" name="name">Default WG Workflow</field>
+        <field to="workflows.state" name="initial_state" rel="ManyToOneRel">11</field>
+    </object>
+    <object pk="12" model="workflows.state">
+        <field type="CharField" name="name">Adopted by a WG</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.transition" name="transitions" rel="ManyToManyRel"><object pk="12"></object></field>
+    </object>
+    <object pk="13" model="workflows.state">
+        <field type="CharField" name="name">Adopted for WG Info Only</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.transition" name="transitions" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="11" model="workflows.state">
+        <field type="CharField" name="name">Call For Adoption By WG Issued</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.transition" name="transitions" rel="ManyToManyRel"><object pk="10"></object><object pk="11"></object></field>
+    </object>
+    <object pk="16" model="workflows.state">
+        <field type="CharField" name="name">Dead WG Document</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.transition" name="transitions" rel="ManyToManyRel"><object pk="12"></object></field>
+    </object>
+    <object pk="17" model="workflows.state">
+        <field type="CharField" name="name">In WG Last Call</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.transition" name="transitions" rel="ManyToManyRel"><object pk="12"></object><object pk="17"></object><object pk="18"></object></field>
+    </object>
+    <object pk="15" model="workflows.state">
+        <field type="CharField" name="name">Parked WG Document</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.transition" name="transitions" rel="ManyToManyRel"><object pk="12"></object></field>
+    </object>
+    <object pk="20" model="workflows.state">
+        <field type="CharField" name="name">Submitted to IESG for Publication</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.transition" name="transitions" rel="ManyToManyRel"><object pk="12"></object></field>
+    </object>
+    <object pk="18" model="workflows.state">
+        <field type="CharField" name="name">Waiting for WG Chair Go-Ahead</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.transition" name="transitions" rel="ManyToManyRel"><object pk="16"></object><object pk="17"></object></field>
+    </object>
+    <object pk="19" model="workflows.state">
+        <field type="CharField" name="name">WG Consensus: Waiting for Write-Up</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.transition" name="transitions" rel="ManyToManyRel"><object pk="15"></object></field>
+    </object>
+    <object pk="14" model="workflows.state">
+        <field type="CharField" name="name">WG Document</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.transition" name="transitions" rel="ManyToManyRel"><object pk="13"></object><object pk="14"></object><object pk="16"></object><object pk="17"></object></field>
+    </object>
+    <object pk="16" model="workflows.transition">
+        <field type="CharField" name="name">Raise last call</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.state" name="destination" rel="ManyToOneRel">17</field>
+        <field type="CharField" name="condition"></field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="15" model="workflows.transition">
+        <field type="CharField" name="name">Submit to IESG</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.state" name="destination" rel="ManyToOneRel">20</field>
+        <field type="CharField" name="condition"></field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="14" model="workflows.transition">
+        <field type="CharField" name="name">Die</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.state" name="destination" rel="ManyToOneRel">16</field>
+        <field type="CharField" name="condition"></field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="13" model="workflows.transition">
+        <field type="CharField" name="name">Park</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.state" name="destination" rel="ManyToOneRel">15</field>
+        <field type="CharField" name="condition"></field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="12" model="workflows.transition">
+        <field type="CharField" name="name">Develop</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.state" name="destination" rel="ManyToOneRel">14</field>
+        <field type="CharField" name="condition"></field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="11" model="workflows.transition">
+        <field type="CharField" name="name">Adopt for WG info only</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.state" name="destination" rel="ManyToOneRel">13</field>
+        <field type="CharField" name="condition"></field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="10" model="workflows.transition">
+        <field type="CharField" name="name">Adopt</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.state" name="destination" rel="ManyToOneRel">12</field>
+        <field type="CharField" name="condition"></field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="17" model="workflows.transition">
+        <field type="CharField" name="name">Reach consensus</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.state" name="destination" rel="ManyToOneRel">19</field>
+        <field type="CharField" name="condition"></field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="18" model="workflows.transition">
+        <field type="CharField" name="name">Wait for go-ahead</field>
+        <field to="workflows.workflow" name="workflow" rel="ManyToOneRel">1</field>
+        <field to="workflows.state" name="destination" rel="ManyToOneRel">18</field>
+        <field type="CharField" name="condition"></field>
+        <field to="permissions.permission" name="permission" rel="ManyToOneRel"><None></None></field>
+    </object>
+</django-objects>
