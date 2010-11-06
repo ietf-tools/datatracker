@@ -1,4 +1,4 @@
-{% extends "idrfc/doc_main.html" %}
+{% extends "idrfc/doc_tab_document.html" %}
 {% comment %}
 Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
@@ -32,11 +32,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
-{% load ietf_filters %}
 
-{% block title %}RFC {{ doc.rfc_number }}{% endblock %}
-{% block doc_meta_description %}{{ doc.title }} ({{doc.maturity_level}}, {{doc.publication_date|date:"Y"}}){% if doc.obsoleted_by %}; Obsoleted by {{doc.obsoleted_by}}{% endif %}{% endblock %}
-{% block doc_h1 %}{{ doc.title|escape }}<br/>RFC {{ doc.rfc_number }}{% endblock %}
+{% load ietf_filters %}
 
 {% block doc_metatable %}
 <tr><td style="width:18ex;">Document type:</td><td>RFC - {{ doc.maturity_level }} {% if doc.stream_name %}({{ doc.stream_name }}){% endif %}

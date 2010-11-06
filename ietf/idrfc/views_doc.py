@@ -74,7 +74,7 @@ def _get_html(key, filename):
     (c1,c2) = markup_txt.markup(raw_content)
     return (c1,c2)
 
-def document_main_rfc(request, rfc_number):
+def document_main_rfc(request, rfc_number, tab):
     rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
     doc = RfcWrapper(rfci)
 
@@ -93,18 +93,24 @@ def document_main_rfc(request, rfc_number):
 
     history = _get_history(doc, None)
             
-    return render_to_response('idrfc/doc_main_rfc.html',
+    template = "idrfc/doc_tab_%s" % tab
+    if tab == "document":
+	template += "_rfc"
+    return render_to_response(template + ".html",
                               {'content1':content1, 'content2':content2,
-                               'doc':doc, 'info':info, 
+                               'doc':doc, 'info':info, 'tab':tab,
+			       'include_text':request.GET.get( 'include_text' ),
                                'history':history},
                               context_instance=RequestContext(request));
 
 @decorator_from_middleware(GZipMiddleware)
-def document_main(request, name):
+def document_main(request, name, tab):
+    if tab is None:
+	tab = "document"
     r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
     if m:
-        return document_main_rfc(request, int(m.group(1)))
+        return document_main_rfc(request, int(m.group(1)), tab)
     id = get_object_or_404(InternetDraft, filename=name)
     doc = IdWrapper(id) 
     
@@ -138,9 +144,13 @@ def document_main(request, name):
     versions = _get_versions(id)
     history = _get_history(doc, versions)
             
-    return render_to_response('idrfc/doc_main_id.html',
+    template = "idrfc/doc_tab_%s" % tab
+    if tab == "document":
+	template += "_id"
+    return render_to_response(template + ".html",
                               {'content1':content1, 'content2':content2,
-                               'doc':doc, 'info':info, 
+                               'doc':doc, 'info':info, 'tab':tab,
+			       'include_text':request.GET.get( 'include_text' ),
                                'versions':versions, 'history':history},
                               context_instance=RequestContext(request));
 

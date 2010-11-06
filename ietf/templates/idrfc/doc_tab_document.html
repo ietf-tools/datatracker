@@ -1,0 +1,96 @@
+{% extends "idrfc/doc_main.html" %}
+{% comment %}
+Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+
+{% load ietf_filters %}
+
+{% block tab_content %}
+<div class="ietf-box metabox">
+<table id="metatable">
+{% block doc_metatable %}{% endblock %}
+</table>
+
+<div style="padding-top:6px;padding-bottom:6px;padding-left:2px;">
+{% block doc_metalinks %}{% endblock %}
+</div>
+
+{% block doc_metabuttons %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+<div style="padding-bottom:2px;">
+{% ifequal doc.draft_status "Expired" %}
+{% if not doc.resurrect_requested_by %}
+<span id="doc_request_resurrect_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_request_resurrect name=doc.draft_name %}">Request resurrect</a></span></span>
+{% endif %}
+{% if user|in_group:"Secretariat" %}
+<span id="doc_resurrect_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_resurrect name=doc.draft_name %}">Resurrect</a></span></span>
+{% endif %}
+{% else %}
+{% if doc.in_ietf_process %}
+<span id="doc_edit_state_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_change_state name=doc.draft_name %}">Change state</a></span></span>
+
+<span id="doc_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_edit_info name=doc.draft_name %}">Edit</a></span></span>
+{% else %}
+<span id="doc_add_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_edit_info name=doc.draft_name %}">Add</a></span></span>
+{% endif %}
+{% endifequal %}
+
+{# links to old system #}
+<span id="doc_edit_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child">
+{% if doc.in_ietf_process %}
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=view_id&amp;{% if info.is_rfc %}dTag={{doc.rfc_number}}&amp;rfc_flag=1{% else %}dTag={{doc.tracker_id}}{% endif %}" rel="nofollow" target="_blank">Edit (old IESG Tracker)</a>
+{% else %}
+<a href="https://datatracker.ietf.org/cgi-bin/idtracker.cgi?command=add_id_confirm&amp;{% if info.is_rfc %}dTag={{doc.rfc_number}}&amp;rfc_flag=1{% else %}dTag={{doc.tracker_id}}&amp;rfc_flag=0{% endif %}&amp;ballot_id=0" rel="nofollow" target="_blank">Add (old IESG Tracker)</a>
+{% endif %}
+</span></span>
+{# end links to old #}
+
+</div>
+{% endif %}{# if user in group #}
+{% endblock doc_metabuttons%}
+</div> <!-- metabox -->
+
+<div id="rfcText1">
+{% block doc_text1 %}{% endblock %}
+</div> <!-- rfcText1 -->
+{% endblock tab_content %}
+
+{% block content_end %}
+<div id="rfcText2">
+{% if include_text %}
+{% block doc_text2 %}{% endblock %}
+{% else %}
+<a href="?include_text=1">[include full document text]</a>
+{% endif %}
+</div>
+{% endblock content_end %}

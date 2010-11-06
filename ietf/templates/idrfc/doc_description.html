@@ -1,0 +1,6 @@
+{{ doc.title }}
+{% if info.is_rfc %}
+({{doc.maturity_level}}, {{doc.publication_date|date:"Y"}}){% if doc.obsoleted_by %}; Obsoleted by {{doc.obsoleted_by}}{% endif %}
+{% else %}
+({{info.type}}; {{doc.publication_date|date:"Y"}})
+{% endif %}
