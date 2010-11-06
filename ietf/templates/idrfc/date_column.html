@@ -32,6 +32,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 {% load ietf_filters %}<td class="date">{% if not doc.rfc %}{{ doc.publication_date }}{% else %}{{ doc.publication_date|date:"Y-m" }}{% endif %}
-{% if doc.publication_date|timesince_days|less_than:"14" %}<br/><span class="ietf-small ietf-highlight-y">{% if not doc.rfc%}<a href="http://tools.ietf.org/rfcdiff?url2={{doc.id.draft_name_and_revision}}">new</a>{%else%}new{%endif%}</span>{%endif%}
-{% if doc.id and doc.id.expected_expiration_date and doc.id.expected_expiration_date|timesince_days|greater_than:"-14" %}<br/><span class="ietf-small ietf-highlight-y">expires soon</span>{%endif%}
+{% if doc.publication_date|timesince_days|new_enough:request %}<br/><span class="ietf-small ietf-highlight-y">{% if not doc.rfc%}<a href="http://tools.ietf.org/rfcdiff?url2={{doc.id.draft_name_and_revision}}">new</a>{%else%}new{%endif%}</span>{%endif%}
+{% if doc.id and doc.id.expected_expiration_date and doc.id.expected_expiration_date|timesince_days|expires_soon:request %}<br/><span class="ietf-small ietf-highlight-y">expires soon</span>{%endif%}
 </td>

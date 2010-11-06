@@ -1,0 +1,53 @@
+{# Copyright The IETF Trust 2010, All Rights Reserved #}
+{% extends "base.html" %}
+{% load ietf_filters %}
+{% block title %}User settings{% endblock %}
+{% block content %}
+
+<h2>Cookie settings for the ietf datatracker.</h2>
+
+<p> Following settings are implemented using cookies, so if you have
+cookies disabled then you are not able to change the settings
+(everything still continues to work by using default settings).</p>
+
+<table id="settings">
+  <tr class="setting-header">
+    <td colspan="6">
+      <h2 class="ietf-divider">How many days is considered new</h2>
+    </td>
+  <tr>
+  <tr class="setting-description">
+    <td colspan="6">
+      <p>This setting affects how many days is considered new enough to get the special marking in the drafts page. Default setting is 14 days.</p>
+    </td>
+  </tr>
+  <tr class="settings-values">
+    <td>{% if new_enough|equal:"7" %}<span class="ietf-highlight-y"><a href="/cookies/new_enough/7">7 days</a></span>{%else%}<a href="/cookies/new_enough/7">7 days</a>{% endif %}</td></td>
+    <td>{% if new_enough|equal:"14" %}<span class="ietf-highlight-y"><a href="/cookies/new_enough/14">14 days</a></span>{%else%}<a href="/cookies/new_enough/14">14 days</a>{% endif %}</td>
+    <td>{% if new_enough|equal:"21" %}<span class="ietf-highlight-y"><a href="/cookies/new_enough/21">21 days</a></span>{%else%}<a href="/cookies/new_enough/21">21 days</a>{% endif %}</td>
+    <td>{% if new_enough|equal:"30" %}<span class="ietf-highlight-y"><a href="/cookies/new_enough/30">30 days</a></span>{%else%}<a href="/cookies/new_enough/30">30 days</a>{% endif %}</td>
+    <td>{% if new_enough|equal:"60" %}<span class="ietf-highlight-y"><a href="/cookies/new_enough/60">60 days</a></span>{%else%}<a href="/cookies/new_enough/60">60 days</a>{% endif %}</td>
+    <td>{% if new_enough|equal:"90" %}<span class="ietf-highlight-y"><a href="/cookies/new_enough/90">90 days</a></span>{%else%}<a href="/cookies/new_enough/90">90 days</a>{% endif %}</td>
+  </tr>
+
+  <tr class="setting-header">
+    <td colspan="6">
+      <h2 class="ietf-divider">How many days is considered soon</h2>
+    </td>
+  <tr>
+  <tr class="setting-description">
+    <td colspan="6">
+      <p>This setting tells what is considered soon when showing document which is going to be expire soon. Default setting is 14 days.</p>
+    </td>
+  </tr>
+  <tr class="settings-values">
+    <td>{% if expires_soon|equal:"7" %}<span class="ietf-highlight-y"><a href="/cookies/expires_soon/7">7 days</a></span>{%else%}<a href="/cookies/expires_soon/7">7 days</a>{% endif %}</td></td>
+    <td>{% if expires_soon|equal:"14" %}<span class="ietf-highlight-y"><a href="/cookies/expires_soon/14">14 days</a></span>{%else%}<a href="/cookies/expires_soon/14">14 days</a>{% endif %}</td>
+    <td>{% if expires_soon|equal:"21" %}<span class="ietf-highlight-y"><a href="/cookies/expires_soon/21">21 days</a></span>{%else%}<a href="/cookies/expires_soon/21">21 days</a>{% endif %}</td>
+    <td>{% if expires_soon|equal:"30" %}<span class="ietf-highlight-y"><a href="/cookies/expires_soon/30">30 days</a></span>{%else%}<a href="/cookies/expires_soon/30">30 days</a>{% endif %}</td>
+    <td>{% if expires_soon|equal:"60" %}<span class="ietf-highlight-y"><a href="/cookies/expires_soon/60">60 days</a></span>{%else%}<a href="/cookies/expires_soon/60">60 days</a>{% endif %}</td>
+    <td>{% if expires_soon|equal:"90" %}<span class="ietf-highlight-y"><a href="/cookies/expires_soon/90">90 days</a></span>{%else%}<a href="/cookies/expires_soon/90">90 days</a>{% endif %}</td>
+  </tr>
+</table>
+{% endblock %}
+

@@ -13,6 +13,7 @@ except ImportError:
 import re
 import datetime
 import types
+from django.template import RequestContext
 
 register = template.Library()
 
@@ -338,6 +339,22 @@ def unescape(text):
     text = text.replace("<br>", "\n")
     text = text.replace("<br/>", "\n")
     return text
+
+@register.filter(name='new_enough')
+def new_enough(x,request):
+    if "new_enough" in request.COOKIES:
+        days = int(request.COOKIES["new_enough"])
+    else:
+        days = 14
+    return x < days
+
+@register.filter(name='expires_soon')
+def expires_soon(x,request):
+    if "expires_soon" in request.COOKIES:
+        days = int(request.COOKIES["expires_soon"])
+    else:
+        days = 14
+    return x > -days
 
 @register.filter(name='greater_than')
 def greater_than(x, y):
