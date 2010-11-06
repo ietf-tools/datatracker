@@ -228,11 +228,13 @@ def send_ballot_comment(request, name):
         c = comment.text
         subj.append("COMMENT")
 
-    subject = "%s: %s" % (" and ".join(subj), doc.file_tag())
+    ad_name = str(ad)
+    ad_name_genitive = ad_name + "'" if ad_name.endswith('s') else ad_name + "'s"
+    subject = "%s %s on %s" % (ad_name_genitive, " and ".join(subj), doc.filename + '-' + doc.revision_display())
     body = render_to_string("idrfc/ballot_comment_mail.txt",
-                            dict(discuss=d, comment=c))
+                            dict(discuss=d, comment=c, ad=ad, doc=doc))
     frm = u"%s <%s>" % ad.person.email()
-    to = "iesg@ietf.org"
+    to = "The IESG <iesg@ietf.org>"
         
     if request.method == 'POST':
         cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]

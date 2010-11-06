@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Email Discuss and Comment text for {{ ad }} to IESG list{% endblock %}
+{% block title %}Send ballot position email for {{ ad }}{% endblock %}
 
 {% block morecss %}
 form.send-ballot pre {
@@ -12,7 +12,7 @@ form.send-ballot pre {
 {% endblock %}
 
 {% block content %}
-<h1>Email Discuss and Comment text for {{ ad }} to IESG list</h1>
+<h1>Send ballot position email for {{ ad }}</h1>
 
 <form class="send-ballot" action="" method="POST">
   <table>
@@ -24,7 +24,7 @@ form.send-ballot pre {
       <td><input type="text" name="cc" value="" size="75" /><br/>
       {% if doc.idinternal.state_change_notice_to %}
       <label>
-        <input type="checkbox" name="cc_state_change" value="1" />
+        <input type="checkbox" name="cc_state_change" value="1" checked="yes" />
         {{ doc.idinternal.state_change_notice_to }}
       </label>
       {% endif %}
