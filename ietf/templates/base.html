@@ -63,7 +63,7 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 <div id="ietf-login" class="noprint">{% if user.is_authenticated %}
 {{ user }}
 {% else %}
-<a href="/accounts/login/?next={{request.path|urlencode}}" rel="nofollow">Sign In</a>
+<a href="/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign In</a>
 {% endif %}</div>
 
 <table style="margin-left:8px;margin-top:8px;" width="98%;">
