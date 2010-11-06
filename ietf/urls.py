@@ -57,6 +57,7 @@ urlpatterns = patterns('',
     (r'^wg/', include('ietf.wginfo.urls')),
 
     (r'^$', 'ietf.idrfc.views.main'),
+    (r'^admin/doc/', include('django.contrib.admindocs.urls')),
     ('^admin/', include(admin.site.urls)),
 
     # Google webmaster tools verification url

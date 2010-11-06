@@ -116,6 +116,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.sitemaps',
     'django.contrib.admin',
+    'django.contrib.admindocs',
     'django.contrib.humanize',
     'south',
     'ietf.announcements',
