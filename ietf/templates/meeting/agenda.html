@@ -277,9 +277,11 @@ You can customize the agenda below to show only selected working group sessions.
 	 <td>{{ session.info.area|upper}}</td>
 	 <td>{% if session.info.isWG %}<a href="/wg/{{ session.info.acronym|lower }}/">{{ session.info.acronym|lower }}</a>{% else %}{{ session.info.acronym|lower }}{% endif %}</td>
 	 <td>
+            <table width="100%"><tr><td>
             <img src="/images/color-palette-4x4.gif" alt="" onclick="pickAgendaColor('{{meeting.num}}-{{slot.meeting_date|date:"D"|lower}}-{{slot.time_desc|slice:":4"}}-{{session.info.area|upper}}-{{session.info.acronym|lower}}',this);" title="color tag this line"/ class="noprint">
 	    {% if session.info.agenda_file %}<a href="http://www.ietf.org/proceedings/{{ session.info.agenda_file }}" title="session agenda">{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}</a>{% else %}{{ session.info.acronym_name|escape }} {{ session.info.group_type_str }}{% endif %}
 	    {% if session.info.special_agenda_note %}<br/> - {{ session.info.special_agenda_note }}{% endif %}
+           </td><td align="right">drafts:&nbsp;<a href="/meeting/79/agenda/{{session.info.acronym}}-drafts.tgz">tar</a>|<a href="/meeting/79/agenda/{{session.info.acronym}}-drafts.pdf">pdf</a></td></tr></table>
 	 </td>
 	 {% endif %}
       </tr>
