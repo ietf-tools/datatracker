@@ -634,7 +634,7 @@ def make_last_call(request, name):
         announcement += "\n".join(links)
     else:
         announcement += "\n\n"
-        announcement += "No IPR declarations were found that appear related to this I-D."
+        announcement += "No IPR declarations have been submitted directly on this I-D."
     
     if request.method == 'POST':
         form = MakeLastCallForm(request.POST)
