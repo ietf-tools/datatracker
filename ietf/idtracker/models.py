@@ -178,7 +178,9 @@ class InternetDraft(models.Model):
     def displayname(self):
         return self.filename
     def file_tag(self):
-        return "<%s-%s.txt>" % (self.filename, self.revision_display())
+        return "<%s>" % (self.filename_with_rev())
+    def filename_with_rev(self):
+        return "%s-%s.txt" % (self.filename, self.revision_display())
     def group_acronym(self):
 	return self.group.acronym
     def group_ml_archive(self):
