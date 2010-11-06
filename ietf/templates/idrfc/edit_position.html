@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Change position for {{ ad }}{% endblock %}
+{% block title %}Change position for {{ ad }} on {{ doc }}{% endblock %}
 
 {% block morecss %}
 form.position-form .position ul {
@@ -29,7 +29,7 @@ form.position-form .comment-text {
 {% endblock %}
 
 {% block content %}
-<h1>Change position for {{ ad }}</h1>
+<h1>Change position for {{ ad }} on {{ doc }}</h1>
 
 <form class="position-form" action="" method="POST">
   <div class="position">{{ form.position }}</div>
