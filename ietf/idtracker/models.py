@@ -181,6 +181,8 @@ class InternetDraft(models.Model):
         return "<%s-%s.txt>" % (self.filename, self.revision_display())
     def group_acronym(self):
 	return self.group.acronym
+    def group_ml_archive(self):
+	return self.group.ietfwg.clean_email_archive()
     def idstate(self):
 	idinternal = self.idinternal
 	if idinternal:

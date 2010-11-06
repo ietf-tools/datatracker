@@ -151,6 +151,20 @@ class IdWrapper:
 
         return ""
         
+    def search_archive(self):
+
+        if self._idinternal and self._idinternal.via_rfc_editor:
+            return "www.ietf.org/mail-archive/web/"
+
+        if self._draft.group_id == Acronym.INDIVIDUAL_SUBMITTER:
+            return "www.ietf.org/mail-archive/web/"
+        
+        a = self._draft.group_ml_archive()
+        if a:
+            return a
+
+        return ""
+
     def file_types(self):
         return self._draft.file_type.split(",")
 
