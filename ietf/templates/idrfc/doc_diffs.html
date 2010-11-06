@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <div class="ietf-box diffTool">
 <h2 style="margin-top:0;margin-bottom:4px;">Diffs</h2>
-<form action="http://tools.ietf.org/rfcdiff" method="get" target="_blank" style="margin:0;">
+<form action="http{% if request.is_secure %}s{% endif %}://tools.ietf.org/rfcdiff" method="get" target="_blank" style="margin:0;">
 <table>
 <tr><td>
 <label>From:</label> <select name="url1">
