@@ -26,6 +26,7 @@ from ietf.idrfc.lastcall import request_last_call
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(IDState.objects.all(), empty_label=None, required=True)
     substate = forms.ModelChoiceField(IDSubState.objects.all(), required=False)
+    note = forms.CharField(widget=forms.Textarea, label="Comment", required=False)
 
 @group_required('Area_Director','Secretariat')
 def change_state(request, name):
@@ -42,6 +43,7 @@ def change_state(request, name):
         if form.is_valid():
             state = form.cleaned_data['state']
             sub_state = form.cleaned_data['substate']
+            note = form.cleaned_data['note']
             internal = doc.idinternal
             if state != internal.cur_state or sub_state != internal.cur_sub_state:
                 internal.change_state(state, sub_state)
@@ -49,7 +51,7 @@ def change_state(request, name):
                 internal.mark_by = login
                 internal.save()
 
-                change = log_state_changed(request, doc, login)
+                change = log_state_changed(request, doc, login, note=note)
                 email_owner(request, doc, internal.job_owner, login, change)
 
                 if internal.cur_state.document_state_id == IDState.LAST_CALL_REQUESTED:
@@ -222,7 +224,7 @@ def edit_info(request, name):
                 replaces = doc.replaces_set.all()
                 if replaces:
                     c = "Earlier history may be found in the Comment Log for <a href=\"%s\">%s</a>" % (replaces[0], replaces[0].idinternal.get_absolute_url())
-                    add_document_comment(request, doc, c, include_by=False)
+                    add_document_comment(request, doc, c)
                     
             orig_job_owner = doc.idinternal.job_owner
 
@@ -370,7 +372,7 @@ def add_comment(request, name):
         form = AddCommentForm(request.POST)
         if form.is_valid():
             c = form.cleaned_data['comment']
-            add_document_comment(request, doc, c, include_by=False)
+            add_document_comment(request, doc, c)
             email_owner(request, doc, doc.idinternal.job_owner, login,
                         "A new comment added by %s" % login)
             return HttpResponseRedirect(doc.idinternal.get_absolute_url())
