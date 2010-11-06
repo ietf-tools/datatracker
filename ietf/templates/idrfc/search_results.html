@@ -40,9 +40,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% else %}
 {% regroup docs by view_sort_group as grouped_docs %}
 <table class="ietf-table ietf-doctable">
-<tr><th class="doc">Document</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ad">Area Director</th></tr> 
+<tr><th class="doc">Document</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th><th class="ad">Area Director</th></tr> 
 {% for doc_group in grouped_docs %} 
-<tr class="header"><td colspan="6">{{doc_group.grouper}}s</td></tr>
+<tr class="header"><td colspan="7">{{doc_group.grouper}}s</td></tr>
 
 {% for doc in doc_group.list %}
 {% include "idrfc/search_result_row.html" %}

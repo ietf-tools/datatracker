@@ -32,6 +32,8 @@
 
 from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGLogin, DocumentComment, Acronym
 from ietf.idrfc.models import RfcEditorQueue
+from ietf.ipr.models import IprRfc, IprDraft, IprDetail
+
 import re
 from datetime import date
 from django.utils import simplejson as json
@@ -498,11 +500,23 @@ class IetfProcessData:
 class IdRfcWrapper:
     rfc = None
     id = None
+    iprCount = None
+    iprUrl = None
 
     def __init__(self, id, rfc):
         self.id = id
         self.rfc = rfc
-
+        if id:
+            iprs = IprDraft.objects.filter(document=self.id.tracker_id)
+            self.iprUrl = "../../ipr/search?option=document_search&id_document_tag=" + str(self.id.tracker_id)
+        elif rfc:
+            iprs = IprRfc.objects.filter(rfc_number=self.rfc.rfc_number) 
+            self.iprUrl = "../../ipr/search?option=rfc_search&rfc_search=" + str(elf.rfc.rfc_number)
+        else:
+            raise ValueError("Construction with null id and rfc")
+        # iprs is a list of docs which contain IPR
+        self.iprCount = len(iprs)
+ 
     def title(self):
         if self.rfc:
             return self.rfc.title

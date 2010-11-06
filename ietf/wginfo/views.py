@@ -38,6 +38,8 @@ from django.template import RequestContext, loader
 from django.http import HttpResponse
 from ietf.idrfc.views_search import SearchForm, search_query
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
+from ietf.ipr.models import IprDetail
+
 
 def wg_summary_acronym(request):
     areas = Area.active_areas()
@@ -81,7 +83,7 @@ def wg_documents(request, acronym):
         if ( len(parts) >= 3):
             if parts[1] != "ietf" and parts[2].startswith(wg.group_acronym.acronym+"-"):
                 docs_related_pruned.append(d)
-
+  
     return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs,  'meta':meta, 
                                                            'docs_related':docs_related_pruned, 'meta_related':meta_related}, RequestContext(request))
 

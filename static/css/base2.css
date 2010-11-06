@@ -104,6 +104,7 @@ table.ietf-table { border-collapse:collapse; border:1px solid #7f7f7f; }
 .ietf-doctable th.title, .ietf-doctable td.title { min-width: 20em; max-width: 35em; }
 .ietf-doctable th.date, .ietf-doctable td.date { white-space:nowrap; min-width: 6em;}
 .ietf-doctable th.status, .ietf-doctable td.status { min-width: 20em;}
+.ietf-doctable th.ipr, .ietf-doctable td.status { font-variant: small-caps; }
 .ietf-doctable th.ad, .ietf-doctable td.ad { white-space:nowrap; min-width: 6em; }
 .ietf-doctable td.ballot { border-left: hidden; min-width: 37px; }
 

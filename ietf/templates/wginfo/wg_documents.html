@@ -39,9 +39,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% regroup docs by view_sort_group as grouped_docs %}
 
 <table class="ietf-table ietf-doctable" style="margin-top:16px;">
-<tr><th class="doc">Document</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ad">Area Director</th></tr> 
+<tr><th class="doc">Document</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th><th class="ad">Area Director</th></tr> 
 {% for doc_group in grouped_docs %} 
-<tr class="header"><td colspan="6">{{doc_group.grouper}}s</td></tr>
+<tr class="header"><td colspan="7">{{doc_group.grouper}}s</td></tr>
 
 {% for doc in doc_group.list %}
 {% include "idrfc/search_result_row.html" %}
@@ -53,9 +53,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% regroup docs_related by view_sort_group as grouped_docs_related %}
 
 <table class="ietf-table ietf-doctable" style="margin-top:16px;">
-<tr><th class="doc">Related Documents</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ad">Area Director</th></tr> 
+<tr><th class="doc">Related Documents</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th><th class="ad">Area Director</th></tr> 
 {% for doc_group in grouped_docs_related %} 
-<tr class="header"><td colspan="6">{{doc_group.grouper}}s</td></tr>
+<tr class="header"><td colspan="7">{{doc_group.grouper}}s</td></tr>
 
 {% for doc in doc_group.list %}
 {% include "idrfc/search_result_row.html" %}
