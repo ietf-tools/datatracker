@@ -45,6 +45,12 @@ def log_state_changed(request, doc, by, email_watch_list=True):
     c.public_flag = True
     c.version = doc.revision_display()
     c.comment_text = change
+
+    if doc.idinternal.docstate()=="In Last Call":
+        c.comment_text += "\n\n<b>The following Last Call Announcement was sent out:</b>\n\n"
+        c.comment_text += doc.idinternal.ballot.last_call_text
+
+
     if isinstance(by, IESGLogin):
         c.created_by = by
     c.result_state = doc.idinternal.cur_state
