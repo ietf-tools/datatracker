@@ -14,6 +14,19 @@ from ietf.utils import log
 import sys
 import time
 
+# Testing mode:
+# import ietf.utils.mail
+# ietf.utils.mail.test_mode = True
+# ... send some mail ...
+# ... inspect ietf.utils.mail.outbox ...
+# ... call ietf.utils.mail.empty_outbox() ...
+test_mode=False
+outbox=[]
+
+def empty_outbox():
+    global outbox
+    outbox = []
+
 def add_headers(msg):
     if not(msg.has_key('Message-ID')):
 	msg['Message-ID'] = make_msgid('idtracker')
@@ -29,6 +42,9 @@ def send_smtp(msg, bcc=None):
     The destination list will be taken from the To:/Cc: headers in the
     Message.  The From address will be used if present or will default
     to the django setting DEFAULT_FROM_EMAIL
+
+    If someone has set test_mode=True, then just append the msg to
+    the outbox.
     '''
     add_headers(msg)
     (fname, frm) = parseaddr(msg.get('From'))
@@ -36,6 +52,9 @@ def send_smtp(msg, bcc=None):
     if bcc:
         addrlist += [bcc]
     to = [addr for name, addr in getaddresses(addrlist)]
+    if test_mode:
+        outbox.append((msg, to, msg.as_string()))
+        return
     server = None
     try:
 	server = smtplib.SMTP()
@@ -73,9 +92,6 @@ def copy_email(msg, to, toUser=False):
     Send a copy of the given email message to the given recipient.
     '''
     add_headers(msg)
-    # Overwrite the From: header, so that the copy from a development or
-    # test server doesn't look like spam.
-    msg['From'] = settings.DEFAULT_FROM_EMAIL
     new = MIMEMultipart()
     # get info for first part.
     # Mode: if it's production, then "copy of a message", otherwise
@@ -91,7 +107,9 @@ def copy_email(msg, to, toUser=False):
 	explanation = "The attached message would have been sent, but the tracker is in %s mode.\nIt was not sent to anybody." % settings.SERVER_MODE
     new.attach(MIMEText(explanation + "\n\n"))
     new.attach(MIMEMessage(msg))
-    new['From'] = msg['From']
+    # Overwrite the From: header, so that the copy from a development or
+    # test server doesn't look like spam.
+    new['From'] = settings.DEFAULT_FROM_EMAIL
     new['Subject'] = '[Django %s] %s' % (settings.SERVER_MODE, msg.get('Subject', '[no subject]'))
     new['To'] = to
     send_smtp(new)
@@ -148,7 +166,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=N
     if extra:
 	for k, v in extra.iteritems():
 	    msg[k] = v
-    if settings.SERVER_MODE == 'production':
+    if test_mode or settings.SERVER_MODE == 'production':
 	send_smtp(msg, bcc)
     elif settings.SERVER_MODE == 'test':
 	if toUser:
