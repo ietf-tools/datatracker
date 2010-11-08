@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
+import ietf
 from ietf.utils import log
 import sys
 import time
@@ -163,6 +164,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=N
 	msg['Cc'] = cc
     msg['Subject'] = subject
     msg['X-Test-IDTracker'] = (settings.SERVER_MODE == 'production') and 'no' or 'yes'
+    msg['X-IETF-IDTracker'] = ietf.__version__
     if extra:
 	for k, v in extra.iteritems():
 	    msg[k] = v
