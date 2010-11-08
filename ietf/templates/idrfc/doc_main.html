@@ -56,6 +56,12 @@ div.diffTool { padding: 8px 4px; margin: 8px 0;}
 <link rel="alternate" type="application/atom+xml" href="/feed/comments/{% if info.is_rfc %}rfc{{doc.rfc_number}}{% else %}{{doc.draft_name}}{% endif %}/" />
 {% endif %}
 <meta name="description" content="{% include "idrfc/doc_description.html" %}" />
+{% comment %}
+## See ticket #545 -- this is commented out because the versions
+## that we currently serve is not sufficiently cachable, so the
+## prefetched version is actually thrown away.
+## Once the content becomes cacheable, these links should
+## be reinserted into the document.
 {% ifequal tab "document" %}
 {% if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot %}
 <link rel="prefetch" href="ballot/" />
@@ -63,6 +69,7 @@ div.diffTool { padding: 8px 4px; margin: 8px 0;}
 {% endif %}
 <link rel="prefetch" href="history/" />
 {% endifequal %}
+{% endcomment %}
 {% endblock %}
 
 {% block title %}{% include "idrfc/doc_title.html" %}{% endblock title %}
