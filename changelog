@@ -1,3 +1,76 @@
+ietfdb (3.09)
+
+  From suresh.krishnan@ericsson.com: 
+
+  * Added the last call e-mail event to the draft history page. 
+
+  * Added a search function for drafts on their respective mailing lists.
+    Fixes issue #458.
+
+  From adam@nostrum.com: 
+
+  * Added tarfile and pdf-composite links and functionality to download
+    working group documents from the agenda page. Fixes #539
+
+  From peter.musgrave@magorcorp.com: 
+
+  * Added column 'IPR' to documnet table for WG docs and by AD docs, and also
+    in search results. Fixes issue #497.
+
+  From kivinen@iki.fi: 
+
+  * Make the idea of what is 'soon' and 'new' in the I-D and RFC lists
+    configurable.
+
+  From lars.eggert@nokia.com: 
+
+  * Fix for #467: History tab: Avoid HTTP/HTTPS warning for the diff tool form
+    submission.
+
+  * Fix for #456: Make it possible for an IESG member to add a comment (for
+    the document history) in the 'change document state' dialog
+
+  * Fix for #537: Remove redundant "by" info from doc history text.
+
+  * Fix for #525. Adds more information to the document history tab,
+    specifically changes to writeup, announcement and last-call text.
+
+  * Fix for #372. Makes the position editing form display the name of the
+    document being edited.
+
+  * Fix for #526 and #530: Change the format of the notification email sent
+    out when an AD posts a ballot position on a draft, it by default CCs that
+    email to the authors and chairs, and adds some explanatory text to the body
+    of those messages. 
+
+  From rjsparks@nostrum.com: 
+
+  * Changed the language used in the last call email to be closer to the
+    language the tracker uses when no IPR declarations are found directly on the
+    draft. Fixes #506
+
+  * Retained search results on login. Fixes #482.
+
+  * Added filename to the subject of Protocol Action and Document Action email
+    messages (and fixed a bug that was preventing CC/BCC from being honored).
+    Fixes issue #528.
+
+  From fenner@fenron.net: 
+
+  * Split the /doc/ tabs into separate pages. This fixes #533. (Eventually,
+    this will use <link rel=prefetch> to ask the tabs to be prefetched when the
+    first tab is loaded, as documented at
+    https://developer.mozilla.org/en/Link_prefetching_FAQ, but as there is some
+    issues with this which haven't been fully resolved, the prefetch part is not
+    part of this release.)
+
+  * Fill in the X-IETF-IDTracker header with the I-D Tracker version number.
+    This fixes #513
+
+  * Added support for admin site documentation 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Oct 2010 13:52:26 +0200
+
 ietfdb (3.08)
 
   From olau@iola.dk:
