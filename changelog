@@ -69,7 +69,16 @@ ietfdb (3.09)
 
   * Added support for admin site documentation 
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  27 Oct 2010 13:52:26 +0200
+  From henrik@levkowetz.com:
+
+  * Updated IESG Agenda Section 3.3 title
+
+  * Added fix for announcement email multipart bug, in part contributed
+    by glen@amsl.com and tony@att.com.
+
+  * Other minor fixes
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Nov 2010 10:42:13 +0100
 
 ietfdb (3.08)
 
