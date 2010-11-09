@@ -510,8 +510,8 @@ class IdRfcWrapper:
             iprs = IprDraft.objects.filter(document=self.id.tracker_id)
             self.iprUrl = "../../ipr/search?option=document_search&id_document_tag=" + str(self.id.tracker_id)
         elif rfc:
-            iprs = IprRfc.objects.filter(rfc_number=self.rfc.rfc_number) 
-            self.iprUrl = "../../ipr/search?option=rfc_search&rfc_search=" + str(elf.rfc.rfc_number)
+            iprs = IprRfc.objects.filter(document=self.rfc.rfc_number) 
+            self.iprUrl = "../../ipr/search?option=rfc_search&rfc_search=" + str(self.rfc.rfc_number)
         else:
             raise ValueError("Construction with null id and rfc")
         # iprs is a list of docs which contain IPR
