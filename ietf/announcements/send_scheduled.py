@@ -16,8 +16,8 @@ def send_scheduled_announcement(announcement):
     # announcement.content_type can contain a case-sensitive parts separator,
     # so we need to keep it as is, not lowercased, but we want a lowercased
     # version for the coming comparisons.
-    content_type_lowercase = announcement.content_type
-    if not content_type or 'text/plain' in content_type_lowercase:
+    content_type_lowercase = announcement.content_type.lower()
+    if not content_type_lowercase or 'text/plain' in content_type_lowercase:
         send_mail_text(None, announcement.to_val, announcement.from_val, announcement.subject,
                        body, cc=announcement.cc_val, bcc=announcement.bcc_val)
     elif 'multipart/' in content_type_lowercase:
