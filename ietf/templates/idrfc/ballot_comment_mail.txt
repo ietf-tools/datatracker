@@ -1,5 +1,5 @@
 {{ ad }} has entered the following ballot position for
-{{ doc.filename }}-{{ doc.revision_display }}.
+{{ doc.filename }}-{{ doc.revision_display }}: {{ pos.name }}
 
 When responding, please keep the subject line intact and reply to all
 email addresses included in the To and CC lines. (Feel free to cut this
@@ -8,6 +8,9 @@ introductory paragraph, however.)
 Please refer to http://www.ietf.org/iesg/statement/discuss-criteria.html
 for more information about IESG DISCUSS and COMMENT positions.
 
+{% if not discuss and not comment %}
+There is no DISCUSS or COMMENT text associated with this position.
+{% endif %}
 
 {% if discuss %}----------------------------------------------------------------------
 DISCUSS:

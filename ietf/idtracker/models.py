@@ -710,6 +710,20 @@ class Position(models.Model):
             return 'X'
         else:
             return ' '
+    def name(self):
+      positions = {"yes":"Yes",
+                   "noobj":"No Objection",
+                   "discuss":"Discuss",
+                   "abstain":"Abstain",
+                   "recuse":"Recuse"}
+      p = None
+      for k,v in positions.iteritems():
+          if self.__dict__[k] > 0:
+              p = v
+      if not p:
+          p = "No Record"
+      return p
+
     class Meta:
         db_table = 'ballots'
 	unique_together = (('ballot', 'ad'), )
