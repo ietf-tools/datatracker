@@ -9,4 +9,6 @@ urlpatterns = patterns('',
      (r'^new_enough/', views.new_enough),
      (r'^expires_soon/(?P<days>.*)$', views.expires_soon),
      (r'^expires_soon/', views.expires_soon),
+     (r'^full_draft/(?P<enabled>.*)$', views.full_draft),
+     (r'^full_draft/', views.full_draft),
 )

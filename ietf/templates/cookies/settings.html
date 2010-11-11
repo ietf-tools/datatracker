@@ -48,6 +48,21 @@ cookies disabled then you are not able to change the settings
     <td>{% if expires_soon|equal:"60" %}<span class="ietf-highlight-y"><a href="/cookies/expires_soon/60">60 days</a></span>{%else%}<a href="/cookies/expires_soon/60">60 days</a>{% endif %}</td>
     <td>{% if expires_soon|equal:"90" %}<span class="ietf-highlight-y"><a href="/cookies/expires_soon/90">90 days</a></span>{%else%}<a href="/cookies/expires_soon/90">90 days</a>{% endif %}</td>
   </tr>
+
+  <tr class="setting-header">
+    <td colspan="6">
+      <h2 class="ietf-divider">Show full document text in document page</h2>
+    </td>
+  <tr>
+  <tr class="setting-description">
+    <td colspan="6">
+      <p>Show the full draft immediately on the document page instead of only showing beginning of it. This defaults to off.</p>
+    </td>
+  </tr>
+  <tr class="settings-values">
+    <td>{% if full_draft|equal:"off" %}<span class="ietf-highlight-y"><a href="/cookies/full_draft/off">off</a></span>{%else%}<a href="/cookies/full_draft/off">off</a>{% endif %}</td></td>
+    <td>{% if full_draft|equal:"on" %}<span class="ietf-highlight-y"><a href="/cookies/full_draft/on">on</a></span>{%else%}<a href="/cookies/full_draft/on">on</a>{% endif %}</td></td>
+  </tr>
 </table>
 {% endblock %}
 

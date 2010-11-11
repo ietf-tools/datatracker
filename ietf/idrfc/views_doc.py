@@ -74,6 +74,13 @@ def _get_html(key, filename):
     (c1,c2) = markup_txt.markup(raw_content)
     return (c1,c2)
 
+def include_text(request):
+    include_text = request.GET.get( 'include_text' )
+    if "full_draft" in request.COOKIES:
+        if request.COOKIES["full_draft"] == "on":
+            include_text = 1
+    return include_text
+
 def document_main_rfc(request, rfc_number, tab):
     rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
     doc = RfcWrapper(rfci)
@@ -99,7 +106,7 @@ def document_main_rfc(request, rfc_number, tab):
     return render_to_response(template + ".html",
                               {'content1':content1, 'content2':content2,
                                'doc':doc, 'info':info, 'tab':tab,
-			       'include_text':request.GET.get( 'include_text' ),
+			       'include_text':include_text(request),
                                'history':history},
                               context_instance=RequestContext(request));
 
@@ -150,7 +157,7 @@ def document_main(request, name, tab):
     return render_to_response(template + ".html",
                               {'content1':content1, 'content2':content2,
                                'doc':doc, 'info':info, 'tab':tab,
-			       'include_text':request.GET.get( 'include_text' ),
+			       'include_text':include_text(request),
                                'versions':versions, 'history':history},
                               context_instance=RequestContext(request));
 
