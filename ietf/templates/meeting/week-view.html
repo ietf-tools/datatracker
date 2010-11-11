@@ -1,0 +1,268 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% load humanize %}
+
+<html> <head>
+<script type="text/javascript" src='/js/agenda2.js'></script>
+<script type="text/javascript">
+var items = new Array();
+{% autoescape off %}
+{% for slot in timeslots %}{% for session in slot.sessions %}
+items.push({day:{{slot.day_id}}, time:"{{slot.time_desc}}", time_id:{{slot.time_id}}, name:"{{session.acronym_name}}", wg:"{{session.acronym}}", area:"{{session.area}}", room:"{{session.room_id.room_name}}"});{% endfor %}{% endfor %}
+{% endautoescape %}
+
+var fg = {
+  'app': "#008",
+  'gen': "#080",
+  'int': "#088",
+  'ops': "#800",
+  'rai': "#808",
+  'rtg': "#880",
+  'sec': "#488",
+  'tsv': "#484",
+  'irtf': "#448"
+};
+
+var bg = {
+  'app': "#eef",
+  'gen': "#efe",
+  'int': "#eff",
+  'ops': "#fee",
+  'rai': "#fef",
+  'rtg': "#ffe",
+  'sec': "#dff",
+  'tsv': "#dfd",
+  'irtf': "#ddf"
+};
+
+var day = [
+  'Saturday',
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday'
+];
+
+var lastfrag;
+var lastheight;
+var lastwidth;
+
+function draw_calendar()
+{
+  window.setTimeout("draw_calendar()",1000);
+
+  var width = document.body.clientWidth;
+  var height = document.body.clientHeight;
+
+  if (lastheight == height && 
+      lastwidth == width &&
+      lastfrag == window.location.hash)
+  {
+    return;
+  }
+
+  var i;
+  var text="";
+  var start_day = items[0].day;
+  var end_day = start_day;
+  var sessions = Array();
+  var used = Array();
+
+  var day_start = 0;
+  var day_end = 0;
+  var include = Array();
+
+  var frag = window.location.hash.replace("#",'').split(',');
+  for (i = 0; i < frag.length; i++)
+  {
+    include[(frag[i]+"").toLowerCase()] = true;
+  }
+  include[''] = true;
+  include['1plenary'] = true;
+  include['2plenary'] = true;
+
+  /* Find our boundaries */
+  for (i = 0; i < items.length; i++)
+  {
+    if (include[(items[i].wg).toLowerCase()] 
+        || include[(items[i].area).toLowerCase()])
+    {
+      var start_time = parseInt(items[i].time.substr(0,2),10) * 60 +
+                       parseInt(items[i].time.substr(2,2),10);
+      var end_time   = parseInt(items[i].time.substr(5,2),10) * 60 +
+                       parseInt(items[i].time.substr(7,2),10);
+
+      if (!day_start || start_time < day_start) { day_start = start_time; }
+      if (end_time > day_end) { day_end = end_time; }
+
+      if (items[i].day < start_day) { start_day = items[i].day; }
+      if (items[i].day > end_day) { end_day = items[i].day; }
+      if (sessions[items[i].time_id])
+      {
+        sessions[items[i].time_id]++;
+      }
+      else
+      {
+        sessions[items[i].time_id] = 1;
+        used[items[i].time_id] = 0;
+      }
+    }
+  }
+
+  var header_height = height * 0.05 ;
+
+  var num_days = end_day - start_day + 1;
+  var num_minutes = day_end - day_start;
+  var day_width = width / num_days;
+  var minute_height = (height - header_height)/num_minutes;
+  var body = document.body;
+  while (body.childNodes.length) { body.removeChild(body.childNodes[0]); }
+  var padding = 2;
+  var border = 1;
+
+  for (i = 0; i < num_days; i++)
+  {
+    var e = document.createElement("div");
+
+    e.style.border="solid";
+    e.style.borderWidth=border;
+
+    e.style.background="#000";
+    e.style.color="#fff";
+    e.style.borderColor="#000 #fff";
+
+    e.style.display="block";
+    e.style.overflow="hidden";
+    e.style.position="absolute";
+
+    e.style.top=0;
+    e.style.left = i*day_width;
+    e.style.width=day_width - 2 * (padding + border);
+    e.style.height=header_height;
+
+    e.style.margin=0;
+    e.style.padding=padding;
+    e.style.fontFamily="sans-serif";
+    e.style.fontSize=header_height * 0.6;
+
+    e.style.textAlign="center";
+
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode(day[i]));
+    e.appendChild(div);
+    body.appendChild(e);
+
+    //-----------------------------------------------------------------
+    e = document.createElement("div");
+
+    e.style.border="solid";
+    e.style.borderWidth=border;
+
+    e.style.background="#fff";
+    e.style.color="#000";
+    e.style.borderColor="#fff #000";
+
+    e.style.display="block";
+    e.style.overflow="hidden";
+    e.style.position="absolute";
+
+    e.style.top=header_height;
+    e.style.left=i*day_width;
+    e.style.width=day_width - 2 * (padding + border);
+    e.style.height=height - 
+                   2 * (padding + border) - header_height;
+
+    e.style.margin=0;
+    e.style.padding=padding;
+
+    body.appendChild(e);
+  }
+
+
+  for (i = 0; i < items.length; i++)
+  {
+    if (include[(items[i].wg).toLowerCase()] 
+        || include[(items[i].area).toLowerCase()])
+    {
+      var start_time = parseInt(items[i].time.substr(0,2),10) * 60 +
+                       parseInt(items[i].time.substr(2,2),10);
+      var end_time   = parseInt(items[i].time.substr(5,2),10) * 60 +
+                       parseInt(items[i].time.substr(7,2),10);
+
+      var sess_width = day_width / sessions[items[i].time_id];
+      var sess_height = ((end_time - start_time) * minute_height) 
+                        - 2 * (padding + border);
+      var sess_left = ((items[i].day - start_day) * day_width 
+                      + sess_width * used[items[i].time_id]);
+      var sess_top = ((start_time - day_start) * minute_height) + header_height;
+
+      sess_width = sess_width - 2 * (padding + border);
+
+      used[items[i].time_id]++;
+
+      var e = document.createElement("div");
+      e.style.border="solid";
+      e.style.borderWidth=border;
+
+      if (fg[items[i].area])
+      {
+        e.style.background=bg[items[i].area];
+        e.style.color=fg[items[i].area];
+        e.style.borderColor=fg[items[i].area];
+      }
+      else
+      {
+        e.style.background="#e0e0e0";
+        e.style.color="#000000";
+        e.style.borderColor="#000000";
+      }
+
+      e.style.display="block";
+      e.style.overflow="hidden";
+      e.style.position="absolute";
+      e.style.top=sess_top;
+      e.style.left=sess_left;
+      e.style.width=sess_width;
+      e.style.height=sess_height;
+      e.style.margin=0;
+      e.style.padding=padding;
+      e.style.fontFamily="sans-serif";
+      e.style.fontSize="8pt";
+
+      var div = document.createElement("div");
+      div.appendChild(document.createTextNode(items[i].time));
+      div.appendChild(document.createElement("br"));
+
+      var label = items[i].name;
+      if (fg[items[i].area])
+      {
+        label = label + " (" + items[i].wg + ")";
+      }
+      var bold = document.createElement("span");
+      bold.appendChild(document.createTextNode(label));
+      bold.style.fontWeight="bold";
+      div.appendChild(bold);
+
+      div.appendChild(document.createElement("br"));
+      var italics = document.createElement("span");
+      italics.appendChild(document.createTextNode(items[i].room));
+      italics.style.fontStyle="oblique";
+      div.appendChild(italics);
+
+      e.appendChild(div);
+      body.appendChild(e);
+
+    }
+  }
+
+  lastheight = height;
+  lastwidth = width;
+  lastfrag = window.location.hash;
+}
+
+</script>
+</head>
+<body onload="draw_calendar()" onresize="draw_calendar()" id="body">
+<div id="cal"><span>Error loading calendar</span></div>
+</body></html>

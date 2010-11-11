@@ -17,6 +17,10 @@ table#wg-selector { border:1px solid black; border-collapse:collapse; }
 #wg-selector-toggle-text { text-decoration: underline; cursor: pointer; }
 #wg-selector-triangle-right { vertical-align: text-top; }
 #wg-selector-triangle-down { vertical-align: text-top; }
+
+#weekview.hidden { display: none; }
+#weekview { border: none; margin: 10px 0 0 0;}
+
 img.hidden { display: none; }
 
 .ietf-agenda-palette { border-collapse:collapse; border:2px solid black; background:white; overflow:hidden; }
@@ -56,9 +60,21 @@ img.hidden { display: none; }
     window.setTimeout("setGroupState()",1000);
     if (frag == lastfrag) { return; }
 
+    var weekview = document.getElementById('weekview');
+
     lastfrag = frag;
 
     var fragment = frag.split(',');
+
+    if (frag.length)
+    {
+      weekview.setAttribute("src","week-view.html#"+frag);
+      weekview.className = '';
+    }
+    else
+    {
+      weekview.className = 'hidden';
+    }
 
     var selectors = document.getElementsByTagName('div');
     var re = RegExp("^selector-");
@@ -228,6 +244,7 @@ You can customize the agenda below to show only selected working group sessions.
   </tr>
 </table>
 
+<iframe id="weekview" class="hidden" width="100%" height="600px" src="about:blank"></iframe>
 
 <table id="agenda" width="100%">
 {% for slot in timeslots %}
