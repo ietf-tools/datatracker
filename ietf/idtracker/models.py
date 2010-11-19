@@ -1087,6 +1087,11 @@ class DocumentWrapper(object):
     def __init__(self, document):
 	self.document = document
 
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from redesign.doc.proxy import InternetDraft
+    from redesign.group.proxy import Area
+    from redesign.group.proxy import Acronym
+
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core

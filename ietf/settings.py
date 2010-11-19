@@ -8,8 +8,11 @@ import os
 import syslog
 syslog.openlog("django", syslog.LOG_PID, syslog.LOG_LOCAL0)
 
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+import sys
+sys.path.append(os.path.abspath(BASE_DIR + "/.."))
+sys.path.append(os.path.abspath(BASE_DIR + "/../redesign"))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -118,6 +121,11 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.humanize',
     'south',
+    'redesign.person',
+    'redesign.name',
+    'redesign.group',
+    'redesign.doc',
+    'redesign.issue',
     'ietf.announcements',
     'ietf.idindex',
     'ietf.idtracker',
@@ -186,6 +194,9 @@ IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
 LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'
 LIAISON_ATTACH_URL = '/documents/LIAISON/'
+
+# DB redesign
+USE_DB_REDESIGN_PROXY_CLASSES=True
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

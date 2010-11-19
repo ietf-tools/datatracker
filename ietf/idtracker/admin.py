@@ -1,14 +1,17 @@
 #coding: utf-8
 from django.contrib import admin
+from django.conf import settings
 from ietf.idtracker.models import *
-                
-class AcronymAdmin(admin.ModelAdmin):
-    list_display=('acronym', 'name')
-admin.site.register(Acronym, AcronymAdmin)
 
-class AreaAdmin(admin.ModelAdmin):
-    list_display=('area_acronym', 'status')
-admin.site.register(Area, AreaAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    class AcronymAdmin(admin.ModelAdmin):
+        list_display=('acronym', 'name')
+    admin.site.register(Acronym, AcronymAdmin)
+
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    class AreaAdmin(admin.ModelAdmin):
+        list_display=('area_acronym', 'status')
+    admin.site.register(Area, AreaAdmin)
 
 class AreaDirectorAdmin(admin.ModelAdmin):
     raw_id_fields=['person']
@@ -96,12 +99,13 @@ class IRTFAdmin(admin.ModelAdmin):
     pass
 admin.site.register(IRTF, IRTFAdmin)
 
-class InternetDraftAdmin(admin.ModelAdmin):
-    list_display=('filename', 'revision', 'title', 'status')
-    search_fields=['filename', 'title']
-    list_filter=['status']
-    raw_id_fields=['replaced_by']
-admin.site.register(InternetDraft, InternetDraftAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    class InternetDraftAdmin(admin.ModelAdmin):
+        list_display=('filename', 'revision', 'title', 'status')
+        search_fields=['filename', 'title']
+        list_filter=['status']
+        raw_id_fields=['replaced_by']
+    admin.site.register(InternetDraft, InternetDraftAdmin)
 
 class PersonOrOrgInfoAdmin(admin.ModelAdmin):
     fieldsets=((None, {'fields': (('first_name', 'middle_initial', 'last_name'), ('name_suffix', 'modified_by'))}), ('Obsolete Info', {'fields': ('record_type', 'created_by', 'address_type'), 'classes': 'collapse'}))

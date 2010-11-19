@@ -36,6 +36,7 @@ import re
 from datetime import date
 from django.utils import simplejson as json
 from django.db.models import Q
+from django.conf import settings
 import types
 
 BALLOT_ACTIVE_STATES = ['In Last Call',
@@ -602,8 +603,64 @@ class BallotWrapper:
             return []
         else:
             return self._ballot_set.exclude(draft=self._idinternal)
-    
+
     def _init(self):
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            self.old_init()
+            return
+
+        from redesign.person.models import Email
+        active_ads = Email.objects.filter(role__name="ad", role__group__state="active")
+        
+        positions = []
+        seen = {}
+
+	for pos in self.ballot.event_set.filter(type="changed_ballot_position").select_related('pos', 'ad').order_by("-time", '-id'):
+            pos = pos.ballotposition
+            if pos.ad not in seen:
+                p = dict(ad_name=pos.ad.get_name(),
+                         ad_username="", # FIXME: don't seem to have username at the moment
+                         position=pos.pos.name,
+                         is_old_ad=pos.ad in active_ads,
+                         old_positions=[])
+
+                if pos.pos.slug == "discuss":
+                    p["has_text"] = True
+                    p["discuss_text"] = pos.discuss
+                    p["discuss_date"] = pos.discuss_time
+                    p["discuss_revision"] = pos.doc.rev # FIXME: wrong
+
+                if pos.comment:
+                    p["has_text"] = True
+                    p["comment_text"] = pos.comment
+                    p["comment_date"] = pos.comment_time
+                    p["comment_revision"] = pos.doc.rev # FIXME: wrong
+
+                positions.append(p)
+                seen[pos.ad] = p
+            else:
+                latest = seen[pos.ad]
+                if latest["old_positions"]:
+                    prev = latest["old_positions"][-1]
+                else:
+                    prev = latest["position"]
+                    
+                if prev != pos.pos.name:
+                    seen[pos.ad]["old_positions"].append(pos.pos.name)
+
+        # add any missing ADs as No Record
+        if self.ballot_active:
+            for ad in active_ads:
+                if ad not in seen:
+                    d = dict(ad_name=ad.get_name(),
+                             ad_username="", # FIXME: don't seem to have username at the moment
+                             position="No Record",
+                             )
+                    positions.append(d)
+                
+        self._positions = positions
+        
+    def old_init(self):
         try:
             ads = set()
         except NameError:

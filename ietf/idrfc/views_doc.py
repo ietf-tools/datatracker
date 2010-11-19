@@ -147,21 +147,32 @@ def document_main(request, name):
 # doc is either IdWrapper or RfcWrapper
 def _get_history(doc, versions):
     results = []
-    if doc.is_id_wrapper:
-        comments = DocumentComment.objects.filter(document=doc.tracker_id).exclude(rfc_flag=1)
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        for e in doc._draft.event_set.all().select_related('by').order_by('-time'):
+            info = {}
+            info['text'] = e.desc
+            info['by'] = e.by.get_name()
+            info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
+            info['snipped'] = info['textSnippet'][-3:] == "..."
+            e.version = e.doc.rev
+            results.append({'comment':e, 'info':info, 'date':e.time, 'is_com':True})
     else:
-        comments = DocumentComment.objects.filter(document=doc.rfc_number,rfc_flag=1)
-        if len(comments) > 0:
-            # also include rfc_flag=NULL, but only if at least one
-            # comment with rfc_flag=1 exists (usually NULL means same as 0)
-            comments = DocumentComment.objects.filter(document=doc.rfc_number).exclude(rfc_flag=0)
-    for comment in comments.order_by('-date','-time','-id').filter(public_flag=1).select_related('created_by'):
-        info = {}
-        info['text'] = comment.comment_text
-        info['by'] = comment.get_fullname()
-        info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
-        info['snipped'] = info['textSnippet'][-3:] == "..."
-        results.append({'comment':comment, 'info':info, 'date':comment.datetime(), 'is_com':True})
+        if doc.is_id_wrapper:
+            comments = DocumentComment.objects.filter(document=doc.tracker_id).exclude(rfc_flag=1)
+        else:
+            comments = DocumentComment.objects.filter(document=doc.rfc_number,rfc_flag=1)
+            if len(comments) > 0:
+                # also include rfc_flag=NULL, but only if at least one
+                # comment with rfc_flag=1 exists (usually NULL means same as 0)
+                comments = DocumentComment.objects.filter(document=doc.rfc_number).exclude(rfc_flag=0)
+        for comment in comments.order_by('-date','-time','-id').filter(public_flag=1).select_related('created_by'):
+            info = {}
+            info['text'] = comment.comment_text
+            info['by'] = comment.get_fullname()
+            info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
+            info['snipped'] = info['textSnippet'][-3:] == "..."
+            results.append({'comment':comment, 'info':info, 'date':comment.datetime(), 'is_com':True})
+    
     if doc.is_id_wrapper and versions:
         for v in versions:
             if v['draft_name'] == doc.draft_name:
