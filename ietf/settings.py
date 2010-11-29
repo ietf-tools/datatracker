@@ -134,6 +134,7 @@ INSTALLED_APPS = (
     'ietf.idrfc',
     'ietf.wginfo',
     'ietf.ietfworkflows',
+    'ietf.wgchairs',
 )
 
 INTERNAL_IPS = (
