@@ -116,6 +116,7 @@ class NotExistDelegateForm(MultipleDelegateForm):
     def __init__(self, *args, **kwargs):
         super(NotExistDelegateForm, self).__init__(*args, **kwargs)
         self.email_list = []
+        del(self.fields['persons'])
 
     def get_email_list(self):
         if self.email_list:
@@ -128,7 +129,8 @@ class NotExistDelegateForm(MultipleDelegateForm):
 
     def as_p(self):
         email_list = self.get_email_list()
-        return render_to_string('wgchairs/notexistdelegate.html', {'email_list': email_list})
+        info = render_to_string('wgchairs/notexistdelegate.html', {'email_list': email_list})
+        return info + super(NotExistDelegateForm, self).as_p()
 
     def send_email(self, email, template):
         subject = 'WG Delegate needs system credentials'
@@ -137,12 +139,14 @@ class NotExistDelegateForm(MultipleDelegateForm):
                                 {'chair': get_person_for_user(self.user),
                                  'delegate_email': self.email,
                                  'delegate_persons': persons,
+                                 'wg': self.wg,
                                 })
         mail = EmailMessage(subject=subject,
                             body=body,
                             to=email,
                             from_email=settings.DEFAULT_FROM_EMAIL)
-        return mail
+        mail.send()
+
 
     def send_email_to_delegate(self, email):
         self.send_email(email, 'wgchairs/notexistsdelegate_delegate_email.txt')
