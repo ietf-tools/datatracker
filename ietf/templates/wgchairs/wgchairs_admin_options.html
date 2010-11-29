@@ -1,0 +1,15 @@
+{% if can_manage_workflow %}
+  {% ifequal selected "manage_workflow" %}
+    <span class="selected">Manage workflow</span>
+  {% else %}
+    <a href="{% url manage_workflow wg.group_acronym.acronym %}">Manage workflow</a>
+  {% endifequal %} |
+{% endif %}
+
+{% if can_manage_delegates %}
+  {% ifequal selected "manage_delegates" %}
+    <span class="selected">Manage delegates</span>
+  {% else %}
+    <a href="{% url manage_delegates wg.group_acronym.acronym %}">Manage delegates</a>
+  {% endifequal %} |
+{% endif %}

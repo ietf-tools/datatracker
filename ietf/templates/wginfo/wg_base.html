@@ -32,7 +32,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
-{% load ietf_filters %}
+{% load ietf_filters wgchairs_tags %}
 {% block title %}{{wg.group_acronym.name}} ({{wg.group_acronym.acronym}}) - {% block wg_titledetail %}{% endblock %}{% endblock %}
 
 {% block morecss %}
@@ -58,6 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <div class="ietf-navset">
 {% ifequal selected "documents" %}<span class="selected">Documents</span>{% else %}<a href="/wg/{{wg}}/">Documents</a>{% endifequal %} | 
 {% ifequal selected "charter" %}<span class="selected">Charter</span>{% else %}<a href="/wg/{{wg}}/charter/">Charter</a>{% endifequal %} | 
+{% wgchairs_admin_options wg %}
 {% if wg.clean_email_archive|startswith:"http:" or wg.clean_email_archive|startswith:"ftp:" %}
 <a href="{{ wg.clean_email_archive }}">List Archive &#187;</a> | 
 {% endif %}

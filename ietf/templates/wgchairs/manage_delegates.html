@@ -1,0 +1,55 @@
+{% extends "wginfo/wg_base.html" %}
+
+{% block morecss %}
+{{ block.super }}
+.wg-chair-management ul {
+    list-style: none;
+}
+
+.wg-chair-management input {
+    border: 1px solid green;
+}
+{% endblock %}
+
+{% block wg_titledetail %}Delegates{% endblock %}
+
+{% block wg_content %}
+<div class="wg-chair-management">
+<h2>Add new delegate</h2>
+{% if add_form.message %}
+<div class="message message-{{ add_form.message.type }}">
+    {{ add_form.message.value }}
+</div>
+{% endif %}
+{% if can_add %}
+  <form action="" method="POST">
+    {{ add_form.as_p }}
+    <p>
+    <input type="submit" value="{% if add_form.submit_msg %}{{ add_form.submit_msg }}{% else %}Add delegate{% endif %}" name="add" />
+    {% if add_form.can_cancel %}<a href="">No! I don't want to continue</a>{% endif %}
+    </p>
+  </form>
+{% else %}
+<p>
+You can only assign three delegates. Please remove delegates to add a new one.
+</p>
+{% endif %}
+
+<h2>Delegates</h2>
+{% if delegates %}
+  <form action="" method="POST">
+  <table>
+    <tr><th>Remove</th><th>Delegate name</th></tr>
+  {% for delegate in delegates %}
+    <tr><td><input type="checkbox" name="delete" value="{{ delegate.pk }}" /></td><td>{{ delegate.person }}</td></tr>
+  {% endfor %}
+  </table>
+  <input type="submit" value="Remove delegate(s)" name="remove" />
+  </form>
+{% else %}
+<p>
+No delegates
+</p>
+{% endif %}
+</div>
+{% endblock %}

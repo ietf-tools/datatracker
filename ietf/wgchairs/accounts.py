@@ -22,7 +22,7 @@ def can_do_wg_workflow_in_document(user, document):
     person = get_person_for_user(user)
     if not person or not document.group:
         return False
-    return can_do_wg_wgorkflow_in_group(document.group)
+    return can_do_wg_workflow_in_group(document.group)
 
 
 def can_manage_workflow_in_group(user, group):
