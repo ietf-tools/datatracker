@@ -20,6 +20,7 @@ from ietf.idtracker.models import *
 from ietf.iesg.models import *
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
+from idrfc.forms import ManagingShepherdForm
 
     
 class ChangeStateForm(forms.Form):
@@ -31,6 +32,8 @@ def change_state(request, name):
     """Change state of Internet Draft, notifying parties as necessary
     and logging the change as a comment."""
     doc = get_object_or_404(InternetDraft, filename=name)
+    print doc.idinternal
+    print doc.status.status
     if not doc.idinternal or doc.status.status == "Expired":
         raise Http404()
 
@@ -381,4 +384,21 @@ def add_comment(request, name):
                                    form=form),
                               context_instance=RequestContext(request))
 
-
+def managing_shepherd(request, name):
+    """
+     View for managing the assigned shepherd of a document.
+    """
+    doc = get_object_or_404(InternetDraft, filename=name)
+    login = IESGLogin.objects.get(login_name=request.user.username)
+    form = ManagingShepherdForm()    
+    if request.method == "POST":
+        form = ManagingShepherdForm(request.POST, current_person=login.person)
+        if form.is_valid():
+            form.change_shepherd(doc)
+    
+    return render_to_response('idrfc/edit_management_shepherd.html',
+                              dict(doc=doc,
+                                   form=form,
+                                   user=request.user,
+                                   login=login),
+                              context_instance=RequestContext(request))

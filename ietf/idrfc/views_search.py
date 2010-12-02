@@ -85,6 +85,9 @@ class SearchForm(forms.Form):
         return q
                                                                         
 def search_query(query_original):
+    """
+    @FIXME: This method should be re-factored !
+    """
     query = dict(query_original.items())
     drafts = query['activeDrafts'] or query['oldDrafts']
     if (not drafts) and (not query['rfcs']):
@@ -135,6 +138,7 @@ def search_query(query_original):
         matches = IDInternal.objects.filter(*q_objs)
     else:
         matches = InternetDraft.objects.filter(*q_objs)
+        print q_objs
     if not query['activeDrafts']:
         matches = matches.exclude(Q(**{prefix+"status":1}))
     if not query['rfcs']:
@@ -184,6 +188,7 @@ def search_query(query_original):
             numbers = IDInternal.objects.filter(*numbers_q).values_list('draft_id',flat=True)
             q_objs.append(Q(rfc_number__in=numbers))
 
+        
         if searchRfcIndex:
             matches = RfcIndex.objects.filter(*q_objs)[:MAX]
         else:
@@ -205,6 +210,7 @@ def search_query(query_original):
                 else:
                     rfcresults.append([rfc.rfc_number, None, rfc, None])
                     
+    
     # Find missing InternetDraft objects
     for r in rfcresults:
         if not r[1]:
@@ -229,7 +235,7 @@ def search_query(query_original):
 
     # TODO: require that RfcIndex is present?
 
-    results = []
+    results = []    
     for res in idresults+rfcresults:
         if len(res)==1:
             doc = IdRfcWrapper(IdWrapper(res[0]), None)

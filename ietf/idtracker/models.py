@@ -263,7 +263,7 @@ class PersonOrOrgInfo(models.Model):
 	    return u"(Person #%s)" % self.person_or_org_tag
         return u"%s %s" % ( self.first_name or u"<nofirst>", self.last_name or u"<nolast>")
     def email(self, priority=1, type=None):
-	name = str(self)
+        name = str(self)
         email = ''
         types = type and [ type ] or [ "INET", "Prim", None ]
         for type in types:

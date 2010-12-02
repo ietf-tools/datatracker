@@ -101,7 +101,7 @@ class InternetDraftAdmin(admin.ModelAdmin):
     search_fields=['filename', 'title']
     list_filter=['status']
     raw_id_fields=['replaced_by']
-admin.site.register(InternetDraft, InternetDraftAdmin)
+admin.site.register(InternetDraft)
 
 class PersonOrOrgInfoAdmin(admin.ModelAdmin):
     fieldsets=((None, {'fields': (('first_name', 'middle_initial', 'last_name'), ('name_suffix', 'modified_by'))}), ('Obsolete Info', {'fields': ('record_type', 'created_by', 'address_type'), 'classes': 'collapse'}))
