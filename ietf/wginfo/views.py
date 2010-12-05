@@ -38,6 +38,8 @@ from django.template import RequestContext, loader
 from django.http import HttpResponse
 from ietf.idrfc.views_search import SearchForm, search_query
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
+from idtracker.models import InternetDraft, PersonOrOrgInfo, IESGLogin
+from django.db.models import Q
 
 def wg_summary_acronym(request):
     areas = Area.active_areas()
@@ -84,6 +86,24 @@ def wg_documents(request, acronym):
 
     return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs,  'meta':meta, 
                                                            'docs_related':docs_related_pruned, 'meta_related':meta_related}, RequestContext(request))
+
+def wg_shepherd_documents(request):
+    current_person = PersonOrOrgInfo.objects. \
+                            get(iesglogin__login_name=request.user.username)
+                            
+    base_qs = InternetDraft.objects.select_related('status')
+    documents_no_shepherd = base_qs.filter(shepherd__isnull=True)    
+    documents_my = base_qs.filter(shepherd=current_person)
+    documents_other = base_qs.filter(~Q(shepherd=current_person))
+    context = {
+        'groupped_documents': {
+            'Documents without Shepherd': documents_no_shepherd,
+            'My documents': documents_my,
+            'Other documents': documents_other,        
+        }
+    }
+    return render_to_response('wginfo/wg_shepherd_documents.html', context, RequestContext(request))
+
 
 def wg_charter(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)

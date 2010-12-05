@@ -167,9 +167,10 @@ class InternetDraft(models.Model):
     review_by_rfc_editor = models.BooleanField()
     expired_tombstone = models.BooleanField()
     idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
-    shepherd = models.ForeignKey('PersonOrOrgInfo')
+    shepherd = models.ForeignKey('PersonOrOrgInfo', null=True, blank=True)
     def __str__(self):
         return self.filename
+    
     def save(self):
         self.id_document_key = self.title.upper()
         super(InternetDraft, self).save()
