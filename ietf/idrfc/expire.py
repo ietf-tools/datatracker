@@ -56,6 +56,7 @@ def expire_id(doc):
             shutil.move(src, dst)
 
     move_file("%s-%s.txt" % (doc.filename, doc.revision_display()))
+    move_file("%s-%s.txt.p7s" % (doc.filename, doc.revision_display()))
     move_file("%s-%s.ps" % (doc.filename, doc.revision_display()))
     move_file("%s-%s.pdf" % (doc.filename, doc.revision_display()))
 
@@ -88,10 +89,29 @@ def clean_up_id_files():
 
     pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
     files = []
-    filename_re = re.compile('^(.*)-(\d+)$')
+    filename_re = re.compile('^(.*)-(\d\d)$')
+
+    def splitext(fn):
+        """
+        Split the pathname path into a pair (root, ext) such that root + ext
+        == path, and ext is empty or begins with a period and contains all
+        periods in the last path component.
+
+        This differs from os.path.splitext in the number of periods in the ext
+        parts when the final path component containt more than one period.
+        """
+        s = fn.rfind("/")
+        if s == -1:
+            s = 0
+        i = fn[s:].find(".")
+        if i == -1:
+            return fn, ''
+        else:
+            return fn[:s+i], fn[s+i:]
+
     for path in glob.glob(pattern):
         basename = os.path.basename(path)
-        stem, ext = os.path.splitext(basename)
+        stem, ext = splitext(basename)
         match = filename_re.search(stem)
         if not match:
             filename, revision = ("UNKNOWN", "00")
