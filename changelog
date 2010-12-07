@@ -1,3 +1,33 @@
+ietfdb (3.10)
+
+  * Fix css for IPR header (status column was included by mistake).  Fixes 
+    issue #546.
+
+  * Tweak some GUI strings in the Liaison Manager
+
+  From adam@nostrum.com: 
+
+  * Added week-at-a-time view to agenda page when viewing selected areas 
+    and/or groups. If no groups are selected, the week view is hidden, leaving the
+    base-level functionality unchanged. 
+
+  From peter.musgrave@magorcorp.com: 
+
+  * 548# Link in IPR column should use an absolute, not relative URL.  This 
+    fixes issue #546.
+
+  From kivinen@iki.fi: 
+
+  * Added new setting to the /cookies page which enables always showing
+    full document text instead of showing beginning of the document. This 
+    fixes issue #551.
+
+  From rjsparks@nostrum.com: 
+
+  * Refined the email sent when an position changes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Dec 2010 21:39:17 +0100
+
 ietfdb (3.09)
 
   From suresh.krishnan@ericsson.com: 
