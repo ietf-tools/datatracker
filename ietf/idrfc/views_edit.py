@@ -32,8 +32,6 @@ def change_state(request, name):
     """Change state of Internet Draft, notifying parties as necessary
     and logging the change as a comment."""
     doc = get_object_or_404(InternetDraft, filename=name)
-    print doc.idinternal
-    print doc.status.status
     if not doc.idinternal or doc.status.status == "Expired":
         raise Http404()
 

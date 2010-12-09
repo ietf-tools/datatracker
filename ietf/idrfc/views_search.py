@@ -85,9 +85,6 @@ class SearchForm(forms.Form):
         return q
                                                                         
 def search_query(query_original):
-    """
-    @FIXME: This method should be re-factored !
-    """
     query = dict(query_original.items())
     drafts = query['activeDrafts'] or query['oldDrafts']
     if (not drafts) and (not query['rfcs']):
@@ -138,7 +135,6 @@ def search_query(query_original):
         matches = IDInternal.objects.filter(*q_objs)
     else:
         matches = InternetDraft.objects.filter(*q_objs)
-        print q_objs
     if not query['activeDrafts']:
         matches = matches.exclude(Q(**{prefix+"status":1}))
     if not query['rfcs']:
