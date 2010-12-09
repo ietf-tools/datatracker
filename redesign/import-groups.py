@@ -14,7 +14,9 @@ from redesign.group.models import *
 from redesign.name.models import *
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF
 
-# Group replaces IETFWG, Area, AreaGroup, Acronym, IRTF
+# imports IETFWG, Area, AreaGroup, Acronym
+
+# FIXME: should also import IRTF
 
 # make sure we got the names
 GroupStateName.objects.get_or_create(slug="bof", name="BOF") # is this a state?
@@ -29,10 +31,9 @@ GroupTypeName.objects.get_or_create(slug="area", name="Area")
 GroupTypeName.objects.get_or_create(slug="wg", name="WG")
 GroupTypeName.objects.get_or_create(slug="rg", name="RG")
 GroupTypeName.objects.get_or_create(slug="team", name="Team")
-
 # FIXME: what about AG (area group?)?
 
-    
+
 # Area
 for o in Area.objects.all():
     group, _ = Group.objects.get_or_create(acronym=o.area_acronym.acronym)
@@ -80,3 +81,4 @@ for o in IETFWG.objects.all():
     
     group.save()
 
+# FIXME: IRTF
