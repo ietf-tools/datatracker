@@ -145,10 +145,12 @@ class SendQueue(models.Model):
 
 
 EVENT_TYPES = [
-    # misc document events
+    # core events
     ("new_revision", "Added new revision"),
-    ("document_changed", "Changed document"),
-    ("tombstone_added", "Added tombstone"),
+    ("changed_document", "Changed document metadata"),
+    
+    # misc document events
+    ("added_tombstone", "Added tombstone"),
     ("requested_resurrect", "Requested resurrect"),
     
     # IESG events

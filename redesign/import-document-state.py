@@ -18,7 +18,7 @@ from ietf.idtracker.models import InternetDraft, IESGLogin, DocumentComment
 
 # assumptions:
 # - groups have been imported
-# - iesglogin emails have been imported
+# - roles have been imported
 
 # FIXME: what about RFCs
 
@@ -94,6 +94,7 @@ def date_in_match(match):
 re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat - %s by" % date_re_str)
 re_ballot_position = re.compile(r"\[Ballot Position Update\] (New position, (?P<position>.*), has been recorded (|for (?P<for>.*) )|Position (|for (?P<for2>.*) )has been changed to (?P<position2>.*) from .*)by (?P<by>.*)")
 re_ballot_issued = re.compile(r"Ballot has been issued by")
+re_state_changed = re.compile(r"(State (changed|Changes) to <b>(?P<to>.*)</b> from <b>(?P<from>.*)</b> by|Sub state has been changed to (?P<tosub>.*) from (?P<fromsub>.*))")
 
 # helpers for events
 
@@ -104,16 +105,30 @@ def save_event(doc, event, comment):
     event.desc = comment.comment_text # FIXME: consider unquoting here
     event.save()
 
+iesg_login_cache = {}
+
+# make sure system email exists
+system_email, _ = Email.objects.get_or_create(address="(System)")
+
 def iesg_login_to_email(l):
     if not l:
-        return None
+        return system_email
     else:
+        # fix logins without the right person
+        if not l.person:
+            if l.id not in iesg_login_cache:
+                logins = IESGLogin.objects.filter(first_name=l.first_name, last_name=l.last_name).exclude(id=l.id)
+                if logins:
+                    iesg_login_cache[l.id] = logins[0]
+                else:
+                    iesg_login_cache[l.id] = None
+            l = iesg_login_cache[l.id]
+            
         try:
             return Email.objects.get(address=l.person.email()[1])
         except Email.DoesNotExist:
             print "MISSING IESG LOGIN", l.person.email()
             return None
-
     
         
 all_drafts = InternetDraft.objects.all().select_related()
@@ -158,6 +173,8 @@ for o in all_drafts:
         
         # extract events
         for c in o.idinternal.documentcomment_set.order_by('date', 'time', 'id'):
+            handled = False
+            
             # telechat agenda schedulings
             match = re_telechat_agenda.search(c.comment_text)
             if match:
@@ -167,6 +184,7 @@ for o in all_drafts:
                 # can't extract this from history so we just take the latest value
                 e.returning_item = bool(o.idinternal.returning_item)
                 save_event(d, e, c)
+                handled = True
 
                 
             # ballot issued
@@ -187,6 +205,7 @@ for o in all_drafts:
                 e.comment = last_pos.ballotposition.comment if last_pos else ""
                 e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
                 save_event(d, e, c)
+                handled = True
                 
                 
             # ballot positions
@@ -206,6 +225,7 @@ for o in all_drafts:
                 e.comment = last_pos.ballotposition.comment if last_pos else ""
                 e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
                 save_event(d, e, c)
+                handled = True
 
 
             # ballot discusses/comments
@@ -230,6 +250,19 @@ for o in all_drafts:
                     # put header into description
                     c.comment_text = "[Ballot comment]\n" + c.comment_text
                 save_event(d, e, c)
+                handled = True
+                
+            # state changes
+            match = re_state_changed.search(c.comment_text)
+            if match:
+                # we currently don't recreate DocumentHistory
+                e = Event(type="changed_document")
+                save_event(d, e, c)
+                handled = True
+
+                
+            if not handled:
+                print "couldn't handle %s '%s'" % (c.id, c.comment_text.replace("\n", "").replace("\r", ""))
         
     
     print "imported", d.name, "state", d.iesg_state
@@ -317,4 +350,4 @@ class CheckListBallotInfo(models.Model):
     approval_text = models.TextField(blank=True)
     last_call_text = models.TextField(blank=True)
     ballot_writeup = models.TextField(blank=True)
-    ballot_issued = models.IntegerField(null=True, blank=True)
+#    ballot_issued = models.IntegerField(null=True, blank=True)
