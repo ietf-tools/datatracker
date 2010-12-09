@@ -5,6 +5,7 @@ from django.http import HttpResponseForbidden
 
 from ietf.wgchairs.forms import RemoveDelegateForm, add_form_factory
 from ietf.wgchairs.accounts import can_manage_delegates_in_group
+from ietf.ietfworkflows.utils import get_workflow_for_wg
 
 
 def manage_delegates(request, acronym):
@@ -28,11 +29,13 @@ def manage_delegates(request, acronym):
                                'selected': 'manage_delegates',
                                'can_add': delegates.count() < 3,
                                'add_form': add_form,
-                              },
-                              RequestContext(request))
+                              }, RequestContext(request))
 
 
 def manage_workflow(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
-    concluded = (wg.status_id != 1)
-    return render_to_response('wginfo/wg_charter.html', {'wg': wg, 'concluded': concluded, 'selected': 'manage_workflow'}, RequestContext(request))
+    workflow = get_workflow_for_wg(wg)
+    return render_to_response('wgchairs/manage_workflow.html',
+                              {'wg': wg,
+                               'workflow': workflow,
+                              }, RequestContext(request))

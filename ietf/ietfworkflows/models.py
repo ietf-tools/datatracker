@@ -47,4 +47,6 @@ class ObjectAnnotationTagHistoryEntry(models.Model):
 
 
 class WGWorkflow(Workflow):
-    pass
+
+    class Meta:
+        proxy = True
