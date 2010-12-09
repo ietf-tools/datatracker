@@ -7,6 +7,8 @@ from ietf.wgchairs.forms import (RemoveDelegateForm, add_form_factory,
                                  ManagingShepherdForm)
 from ietf.wgchairs.accounts import can_manage_delegates_in_group
 from ietf.ietfworkflows.utils import get_workflow_for_wg
+from ietf.idtracker.models import InternetDraft, PersonOrOrgInfo, IESGLogin
+from django.db.models import Q
 
 
 def manage_delegates(request, acronym):
@@ -60,3 +62,21 @@ def managing_shepherd(request, acronym, name):
                                    user=request.user,
                                    login=login),
                               context_instance=RequestContext(request))
+
+
+def wg_shepherd_documents(request, acronym):
+    current_person = PersonOrOrgInfo.objects. \
+                            get(iesglogin__login_name=request.user.username)
+
+    base_qs = InternetDraft.objects.select_related('status')
+    documents_no_shepherd = base_qs.filter(shepherd__isnull=True)
+    documents_my = base_qs.filter(shepherd=current_person)
+    documents_other = base_qs.filter(~Q(shepherd=current_person))
+    context = {
+        'groupped_documents': {
+            'Documents without Shepherd': documents_no_shepherd,
+            'My documents': documents_my,
+            'Other documents': documents_other,
+        }
+    }
+    return render_to_response('wgchairs/wg_shepherd_documents.html', context, RequestContext(request))
