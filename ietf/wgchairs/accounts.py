@@ -37,3 +37,10 @@ def can_manage_delegates_in_group(user, group):
     if not person:
         return False
     return is_group_chair(person, group)
+
+
+def can_manage_shepherds_in_group(user, group):
+    person = get_person_for_user(user)
+    if not person:
+        return False
+    return is_group_chair(person, group)

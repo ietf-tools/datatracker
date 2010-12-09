@@ -5,9 +5,9 @@ from django.http import HttpResponseForbidden
 
 from ietf.wgchairs.forms import (RemoveDelegateForm, add_form_factory,
                                  ManagingShepherdForm)
-from ietf.wgchairs.accounts import can_manage_delegates_in_group
+from ietf.wgchairs.accounts import (can_manage_delegates_in_group, get_person_for_user,
+                                    can_manage_shepherds_in_group)
 from ietf.ietfworkflows.utils import get_workflow_for_wg
-from ietf.idtracker.models import InternetDraft, PersonOrOrgInfo, IESGLogin
 from django.db.models import Q
 
 
@@ -65,8 +65,11 @@ def managing_shepherd(request, acronym, name):
 
 
 def wg_shepherd_documents(request, acronym):
-    current_person = PersonOrOrgInfo.objects. \
-                            get(iesglogin__login_name=request.user.username)
+    wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
+    user = request.user
+    if not can_manage_shepherds_in_group(user, wg):
+        return HttpResponseForbidden('You have no permission to access this view')
+    current_person = get_person_for_user(user)
 
     base_qs = InternetDraft.objects.select_related('status')
     documents_no_shepherd = base_qs.filter(shepherd__isnull=True)
@@ -77,6 +80,7 @@ def wg_shepherd_documents(request, acronym):
             'Documents without Shepherd': documents_no_shepherd,
             'My documents': documents_my,
             'Other documents': documents_other,
-        }
+        },
+        'wg': wg,
     }
     return render_to_response('wgchairs/wg_shepherd_documents.html', context, RequestContext(request))
