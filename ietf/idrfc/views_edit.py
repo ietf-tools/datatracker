@@ -20,7 +20,7 @@ from ietf.idtracker.models import *
 from ietf.iesg.models import *
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
-from idrfc.forms import ManagingShepherdForm
+from ietf.idrfc.forms import ManagingShepherdForm
 
     
 class ChangeStateForm(forms.Form):
