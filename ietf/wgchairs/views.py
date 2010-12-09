@@ -1,9 +1,10 @@
-from ietf.idtracker.models import IETFWG
+from ietf.idtracker.models import IETFWG, InternetDraft, IESGLogin
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.http import HttpResponseForbidden
 
-from ietf.wgchairs.forms import RemoveDelegateForm, add_form_factory
+from ietf.wgchairs.forms import (RemoveDelegateForm, add_form_factory,
+                                 ManagingShepherdForm)
 from ietf.wgchairs.accounts import can_manage_delegates_in_group
 from ietf.ietfworkflows.utils import get_workflow_for_wg
 
@@ -39,3 +40,23 @@ def manage_workflow(request, acronym):
                               {'wg': wg,
                                'workflow': workflow,
                               }, RequestContext(request))
+
+
+def managing_shepherd(request, acronym, name):
+    """
+     View for managing the assigned shepherd of a document.
+    """
+    doc = get_object_or_404(InternetDraft, filename=name)
+    login = IESGLogin.objects.get(login_name=request.user.username)
+    form = ManagingShepherdForm()
+    if request.method == "POST":
+        form = ManagingShepherdForm(request.POST, current_person=login.person)
+        if form.is_valid():
+            form.change_shepherd(doc)
+
+    return render_to_response('wgchairs/edit_management_shepherd.html',
+                              dict(doc=doc,
+                                   form=form,
+                                   user=request.user,
+                                   login=login),
+                              context_instance=RequestContext(request))

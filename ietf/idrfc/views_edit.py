@@ -20,7 +20,6 @@ from ietf.idtracker.models import *
 from ietf.iesg.models import *
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
-from ietf.idrfc.forms import ManagingShepherdForm
 
     
 class ChangeStateForm(forms.Form):
@@ -380,23 +379,4 @@ def add_comment(request, name):
     return render_to_response('idrfc/add_comment.html',
                               dict(doc=doc,
                                    form=form),
-                              context_instance=RequestContext(request))
-
-def managing_shepherd(request, name):
-    """
-     View for managing the assigned shepherd of a document.
-    """
-    doc = get_object_or_404(InternetDraft, filename=name)
-    login = IESGLogin.objects.get(login_name=request.user.username)
-    form = ManagingShepherdForm()    
-    if request.method == "POST":
-        form = ManagingShepherdForm(request.POST, current_person=login.person)
-        if form.is_valid():
-            form.change_shepherd(doc)
-    
-    return render_to_response('idrfc/edit_management_shepherd.html',
-                              dict(doc=doc,
-                                   form=form,
-                                   user=request.user,
-                                   login=login),
                               context_instance=RequestContext(request))

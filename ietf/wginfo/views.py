@@ -38,7 +38,7 @@ from django.template import RequestContext, loader
 from django.http import HttpResponse
 from ietf.idrfc.views_search import SearchForm, search_query
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
-from idtracker.models import InternetDraft, PersonOrOrgInfo, IESGLogin
+from ietf.idtracker.models import InternetDraft, PersonOrOrgInfo, IESGLogin
 from django.db.models import Q
 
 def wg_summary_acronym(request):

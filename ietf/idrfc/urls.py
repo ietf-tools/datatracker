@@ -51,8 +51,6 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[^/]+)/edit/requestresurrect/$', views_edit.request_resurrect, name='doc_request_resurrect'),
     url(r'^(?P<name>[^/]+)/edit/resurrect/$', views_edit.resurrect, name='doc_resurrect'),                       
     url(r'^(?P<name>[^/]+)/edit/addcomment/$', views_edit.add_comment, name='doc_add_comment'),
-    url(r'^(?P<name>[^/]+)/edit/managing-shepherd/$', views_edit.managing_shepherd, name='doc_managing_shepherd'),
-    
     url(r'^(?P<name>[^/]+)/edit/position/$', views_ballot.edit_position, name='doc_edit_position'),
     url(r'^(?P<name>[^/]+)/edit/deferballot/$', views_ballot.defer_ballot, name='doc_defer_ballot'),
     url(r'^(?P<name>[^/]+)/edit/undeferballot/$', views_ballot.undefer_ballot, name='doc_undefer_ballot'),
