@@ -14,13 +14,26 @@ management.setup_environ(settings)
 from redesign.doc.models import *
 from redesign.group.models import *
 from redesign.name.models import *
-from ietf.idtracker.models import InternetDraft, IESGLogin, DocumentComment
+from ietf.idtracker.models import InternetDraft, IESGLogin, DocumentComment, PersonOrOrgInfo
+from ietf.idrfc.models import DraftVersions
+
+import sys
+
+draft_name_to_import = None
+if len(sys.argv) > 1:
+    draft_name_to_import = sys.argv[1]
 
 # assumptions:
 # - groups have been imported
-# - roles have been imported
+# - IESG login emails/roles have been imported
 
 # FIXME: what about RFCs
+
+# Regarding history, we currently don't try to create DocumentHistory
+# objects, we just import the comments as events.
+
+# imports InternetDraft, IDInternal, BallotInfo, Position,
+# IESGComment, IESGDiscuss, DocumentComment, idrfc.DraftVersions
 
 def name(name_class, slug, name, desc=""):
     # create if it doesn't exist, set name
@@ -85,16 +98,6 @@ ballot_position_mapping = {
     None: name(BallotPositionName, 'norecord', 'No record'),
     }
 
-# regexps for parsing document comments
-
-date_re_str = "(?P<year>[0-9][0-9][0-9][0-9])-(?P<month>[0-9][0-9])-(?P<day>[0-9][0-9])"
-def date_in_match(match):
-    return datetime.date(int(match.group('year')), int(match.group('month')), int(match.group('day')))
-
-re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat - %s by" % date_re_str)
-re_ballot_position = re.compile(r"\[Ballot Position Update\] (New position, (?P<position>.*), has been recorded (|for (?P<for>.*) )|Position (|for (?P<for2>.*) )has been changed to (?P<position2>.*) from .*)by (?P<by>.*)")
-re_ballot_issued = re.compile(r"Ballot has been issued by")
-re_state_changed = re.compile(r"(State (changed|Changes) to <b>(?P<to>.*)</b> from <b>(?P<from>.*)</b> by|Sub state has been changed to (?P<tosub>.*) from (?P<fromsub>.*))")
 
 # helpers for events
 
@@ -102,10 +105,11 @@ def save_event(doc, event, comment):
     event.time = comment.datetime()
     event.by = iesg_login_to_email(comment.created_by)
     event.doc = doc
-    event.desc = comment.comment_text # FIXME: consider unquoting here
+    if not event.desc:
+        event.desc = comment.comment_text # FIXME: consider unquoting here
     event.save()
 
-iesg_login_cache = {}
+buggy_iesg_logins_cache = {}
 
 # make sure system email exists
 system_email, _ = Email.objects.get_or_create(address="(System)")
@@ -116,13 +120,18 @@ def iesg_login_to_email(l):
     else:
         # fix logins without the right person
         if not l.person:
-            if l.id not in iesg_login_cache:
+            if l.id not in buggy_iesg_logins_cache:
                 logins = IESGLogin.objects.filter(first_name=l.first_name, last_name=l.last_name).exclude(id=l.id)
                 if logins:
-                    iesg_login_cache[l.id] = logins[0]
+                    buggy_iesg_logins_cache[l.id] = logins[0]
                 else:
-                    iesg_login_cache[l.id] = None
-            l = iesg_login_cache[l.id]
+                    persons = PersonOrOrgInfo.objects.filter(first_name=l.first_name, last_name=l.last_name)
+                    if persons:
+                        l.person = persons[0]
+                        buggy_iesg_logins_cache[l.id] = l
+                    else:
+                        buggy_iesg_logins_cache[l.id] = None
+            l = buggy_iesg_logins_cache[l.id]
             
         try:
             return Email.objects.get(address=l.person.email()[1])
@@ -130,9 +139,25 @@ def iesg_login_to_email(l):
             print "MISSING IESG LOGIN", l.person.email()
             return None
     
+# regexps for parsing document comments
+
+date_re_str = "(?P<year>[0-9][0-9][0-9][0-9])-(?P<month>[0-9][0-9])-(?P<day>[0-9][0-9])"
+def date_in_match(match):
+    return datetime.date(int(match.group('year')), int(match.group('month')), int(match.group('day')))
+
+re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat - %s by" % date_re_str)
+re_ballot_position = re.compile(r"\[Ballot Position Update\] (New position, (?P<position>.*), has been recorded (|for (?P<for>.*) )|Position (|for (?P<for2>.*) )has been changed to (?P<position2>.*) from .*)by (?P<by>.*)")
+re_ballot_issued = re.compile(r"Ballot has been issued by")
+re_state_changed = re.compile(r"(State (changed|Changes) to <b>(?P<to>.*)</b> from <b>(?P<from>.*)</b> by|Sub state has been changed to (?P<tosub>.*) from (?P<fromsub>.*))")
+re_note_field_cleared = re.compile(r"Note field has been cleared by")
+re_draft_added = re.compile(r"Draft [Aa]dded (by .*)? in state (?P<state>.*)")
+re_last_call_requested = re.compile(r"Last Call was requested")
+re_status_date_changed = re.compile(r"Status [dD]ate has been changed to (<b>)?" + date_re_str)
+
         
 all_drafts = InternetDraft.objects.all().select_related()
-all_drafts = all_drafts.filter(filename="draft-arkko-townsley-coexistence")
+if draft_name_to_import:
+    all_drafts = all_drafts.filter(filename=draft_name_to_import)
 #all_drafts = all_drafts[all_drafts.count() - 1000:]
 
 for o in all_drafts:
@@ -198,6 +223,7 @@ for o in all_drafts:
                 e = BallotPosition()
                 e.type = "changed_ballot_position"
                 e.ad = iesg_login_to_email(c.created_by)
+                e.desc = "[Ballot Position Update] New position, Yes, has been recorded by %s" % e.ad.get_name()
                 last_pos = d.latest_event(type="changed_ballot_position", ballotposition__ad=e.ad)
                 e.pos = ballot_position_mapping["Yes"]
                 e.discuss = last_pos.ballotposition.discuss if last_pos else ""
@@ -251,21 +277,96 @@ for o in all_drafts:
                     c.comment_text = "[Ballot comment]\n" + c.comment_text
                 save_event(d, e, c)
                 handled = True
-                
+
+            # last call requested
+            match = re_last_call_requested.search(c.comment_text)
+            if match:
+                e = Event(type="requested_last_call")
+                save_event(d, e, c)
+                handled = True
+
             # state changes
             match = re_state_changed.search(c.comment_text)
             if match:
-                # we currently don't recreate DocumentHistory
                 e = Event(type="changed_document")
                 save_event(d, e, c)
                 handled = True
 
+            # note cleared
+            match = re_note_field_cleared.search(c.comment_text)
+            if match:
+                e = Event(type="changed_document")
+                save_event(d, e, c)
+                handled = True
+
+            # note cleared
+            match = re_draft_added.search(c.comment_text)
+            if match:
+                e = Event(type="changed_document")
+                save_event(d, e, c)
+                handled = True
+
+            # status date changed
+            match = re_status_date_changed.search(c.comment_text)
+            if match:
+                # FIXME: handle multiple comments in one
+                e = Status(type="changed_status_date", date=date_in_match(match))
+                save_event(d, e, c)
+                handled = True
                 
+            # new version
+            if c.comment_text == "New version available":
+                e = NewRevision(type="new_revision", rev=c.version)
+                save_event(d, e, c)
+                handled = True
+
+            # all others are added as comments
+            if not handled:
+                e = Event(type="added_comment")
+                save_event(d, e, c)
+
+                # stop typical comments from being output
+                typical_comments = ["Who is the Document Shepherd for this document",
+                                    "We understand that this document doesn't require any IANA actions"]
+                for t in typical_comments:
+                    if t in c.comment_text:
+                        handled = True
+                        break
+            
             if not handled:
                 print "couldn't handle %s '%s'" % (c.id, c.comment_text.replace("\n", "").replace("\r", ""))
+
+        # import new revision changes from DraftVersions
+        known_revisions = set(e.newrevision.rev for e in d.event_set.filter(type="new_revision").select_related('newrevision'))
+        for v in DraftVersions.objects.filter(filename=d.name).order_by("revision"):
+            if v.revision not in known_revisions:
+                e = NewRevision(type="new_revision")
+                e.rev = v.revision
+                # we don't have time information in this source, so
+                # hack the seconds to include the revision to ensure
+                # they're ordered correctly
+                e.time = datetime.datetime.combine(v.revision_date, datetime.time(0, 0, int(v.revision)))
+                e.by = system_email
+                e.doc = d
+                e.desc = "New version available"
+                e.save()
+                known_revisions.add(v.revision)
         
-    
-    print "imported", d.name, "state", d.iesg_state
+        # import events that might be missing, we don't know where to
+        # place them but if we don't generate them, we'll be missing
+        # the information completely
+        e = d.latest_event(Status, type="changed_status_date")
+        status_date = e.date if e else None
+        if o.idinternal.status_date != status_date:
+            e = Status(type="changed_status_date", date=o.idinternal.status_date)
+            e.by = system_email
+            e.doc = d
+            e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (o.idinternal.status_date, status_date)
+            e.save()
+
+        # FIXME: import writeups
+            
+    print "imported", d.name, "S:", d.iesg_state
 
     
 
@@ -316,7 +417,7 @@ class CheckListIDInternal(models.Model):
     token_name = models.CharField(blank=True, max_length=25)
     token_email = models.CharField(blank=True, max_length=255)
 #    note = models.TextField(blank=True)
-    status_date = models.DateField(blank=True,null=True)
+#    status_date = models.DateField(blank=True,null=True)
     email_display = models.CharField(blank=True, max_length=50)
     agenda = models.IntegerField(null=True, blank=True)
 #    cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')

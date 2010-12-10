@@ -2,6 +2,10 @@ from models import *
 from redesign.person.models import Email 
 from redesign.proxy_utils import TranslatingManager
 
+from django.conf import settings
+
+import glob, os
+
 
 class InternetDraft(Document):
     objects = TranslatingManager(dict(filename="name",
@@ -12,53 +16,61 @@ class InternetDraft(Document):
 
     # things from InternetDraft
     
-#     id_document_tag = models.AutoField(primary_key=True)
+    #id_document_tag = models.AutoField(primary_key=True)
     @property
     def id_document_tag(self):
         return self.name              # Will only work for some use cases
-#     title = models.CharField(max_length=255, db_column='id_document_name') # same name
-#     id_document_key = models.CharField(max_length=255, editable=False)
+    #title = models.CharField(max_length=255, db_column='id_document_name') # same name
+    #id_document_key = models.CharField(max_length=255, editable=False)
     @property
     def id_document_key(self):
         return self.title.upper()
-#     group = models.ForeignKey(Acronym, db_column='group_acronym_id')
+    #group = models.ForeignKey(Acronym, db_column='group_acronym_id')
     @property
     def group(self):
-        return super(self.__class__, self).group
-#     filename = models.CharField(max_length=255, unique=True)
+        from group.proxy import Acronym as AcronymProxy
+        return AcronymProxy(super(self.__class__, self).group)
+    #filename = models.CharField(max_length=255, unique=True)
     @property
     def filename(self):
         return self.name
-#     revision = models.CharField(max_length=2)
+    #revision = models.CharField(max_length=2)
     @property
     def revision(self):
         return self.rev
-#     revision_date = models.DateField()
+    #revision_date = models.DateField()
     @property
     def revision_date(self):
         e = self.latest_event(type="new_revision")
-        return e.time if e else None
-#     file_type = models.CharField(max_length=20)
+        return e.time.date() if e else None
+    #file_type = models.CharField(max_length=20)
     @property
     def file_type(self):
-        return ".txt"                   # FIXME XXX should look in the repository to see what's available
-#     txt_page_count = models.IntegerField()
+        matches = glob.glob(os.path.join(settings.INTERNET_DRAFT_PATH, self.filename + "*.*"))
+        possible_types = [".txt", ".pdf", ".xml", ".ps"]
+        res = set()
+        for m in matches:
+            for t in possible_types:
+                if m.endswith(t):
+                    res.add(t)
+        return ",".join(res)
+    #txt_page_count = models.IntegerField()
     @property
     def txt_page_count(self):
         return self.pages
-#     local_path = models.CharField(max_length=255, blank=True) # unused
-#     start_date = models.DateField()
+    #local_path = models.CharField(max_length=255, blank=True) # unused
+    #start_date = models.DateField()
     @property
     def start_date(self):
         return self.dochistory_set.dates("time","day","ASC")[0]
-#     expiration_date = models.DateField()
+    #expiration_date = models.DateField()
     @property
     def expiration_date(self):
         return self.expiration()
-#     abstract = models.TextField() # same name
-#     dunn_sent_date = models.DateField(null=True, blank=True) # unused
-#     extension_date = models.DateField(null=True, blank=True) # unused
-#     status = models.ForeignKey(IDStatus)
+    #abstract = models.TextField() # same name
+    #dunn_sent_date = models.DateField(null=True, blank=True) # unused
+    #extension_date = models.DateField(null=True, blank=True) # unused
+    #status = models.ForeignKey(IDStatus)
     @property
     def status(self):
         from redesign.name.proxy import IDStatus
@@ -69,42 +81,42 @@ class InternetDraft(Document):
         from redesign.name.proxy import IDStatus
         return { 'active': 1, 'repl': 5, 'expired': 2, 'rfc': 3, 'auth-rm': 4, 'ietf-rm': 6 }[self.state_id]
         
-#     intended_status = models.ForeignKey(IDIntendedStatus)
+    #intended_status = models.ForeignKey(IDIntendedStatus)
     @property
     def intended_status(self):
         return self.intended_std_level
         
-#     lc_sent_date = models.DateField(null=True, blank=True)
+    #lc_sent_date = models.DateField(null=True, blank=True)
     @property
     def lc_sent_date(self):
         e = self.latest_event(type="sent_last_call")
         return e.time if e else None
         
-#     lc_changes = models.CharField(max_length=3) # used in DB, unused in Django code?
+    #lc_changes = models.CharField(max_length=3) # used in DB, unused in Django code?
         
-#     lc_expiration_date = models.DateField(null=True, blank=True)
+    #lc_expiration_date = models.DateField(null=True, blank=True)
     @property
     def lc_expiration_date(self):
         e = self.latest_event(type="sent_last_call")
         return e.expiration.expires if e else None
         
-#     b_sent_date = models.DateField(null=True, blank=True)
+    #b_sent_date = models.DateField(null=True, blank=True)
     @property
     def b_sent_date(self):
         e = self.latest_event(type="sent_ballot_announcement")
         return e.time if e else None
         
-#     b_discussion_date = models.DateField(null=True, blank=True) # unused
+    #b_discussion_date = models.DateField(null=True, blank=True) # unused
         
-#     b_approve_date = models.DateField(null=True, blank=True)
+    #b_approve_date = models.DateField(null=True, blank=True)
     @property
     def b_approve_date(self):
         e = self.latest_event(type="approved_ballot")
         return e.time if e else None
         
-#     wgreturn_date = models.DateField(null=True, blank=True) # unused
+    #wgreturn_date = models.DateField(null=True, blank=True) # unused
         
-#     rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
+    #rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
     @property
     def rfc_number(self):
         try:
@@ -112,20 +124,20 @@ class InternetDraft(Document):
         except IndexError:
             return None
         
-#     comments = models.TextField(blank=True) # unused
+    #comments = models.TextField(blank=True) # unused
         
-#     last_modified_date = models.DateField()
+    #last_modified_date = models.DateField()
     @property
     def last_modified_date(self):
         return self.time
         
-#     replaced_by = models.ForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
+    #replaced_by = models.ForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
     @property
     def replaced_by(self):
         r = InternetDraft.objects.filter(docalias__relateddoc__relationship="replaces", docalias__relateddoc__related_document_set=self)
         return r[0] if r else None
         
-#     replaces = FKAsOneToOne('replaces', reverse=True)
+    #replaces = FKAsOneToOne('replaces', reverse=True)
     @property
     def replaces(self):
         r = InternetDraft.objects.filter(related__doc_alias__document=self, related__relationship="replaces")
@@ -137,17 +149,17 @@ class InternetDraft(Document):
         # this is replaced_by
         return InternetDraft.objects.filter(docalias__relateddoc__relationship="replaces", docalias__relateddoc__related_document_set=self)
         
-#     review_by_rfc_editor = models.BooleanField()
+    #review_by_rfc_editor = models.BooleanField()
     @property
     def review_by_rfc_editor(self): raise NotImplemented # should use tag
         
-#     expired_tombstone = models.BooleanField()
+    #expired_tombstone = models.BooleanField()
     @property
     def expired_tombstone(self):
         # FIXME: this is probably not perfect, what happens when we delete it again
         return self.latest_event(type="added_tombstone")
         
-#     idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
+    #idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
     @property
     def idinternal(self):
         return self if self.iesg_state else None
@@ -246,7 +258,9 @@ class InternetDraft(Document):
     
     #status_date = models.DateField(blank=True,null=True)
     @property
-    def status_date(self): raise NotImplemented # FIXME
+    def status_date(self):
+        e = self.latest_event(Status, type="changed_status_date")
+        return e.date if e else None
 
     #email_display = models.CharField(blank=True, max_length=50) # unused
     #agenda = models.IntegerField(null=True, blank=True)
@@ -276,7 +290,8 @@ class InternetDraft(Document):
     # job_owner = models.ForeignKey(IESGLogin, db_column='job_owner', related_name='documents')
     @property
     def job_owner(self):
-        return self.ad
+        from person.proxy import IESGLogin as IESGLoginProxy
+        return IESGLoginProxy(self.ad)
     
     #event_date = models.DateField(null=True)
     @property
@@ -485,7 +500,7 @@ class InternetDraft(Document):
         
 	yes = noobj = discuss = recuse = 0
 	for position in positions:
-            p = position.pos_id
+            p = position.ballotposition.pos_id
             if p == "yes":
                 yes += 1
             if p == "noobj":
@@ -505,7 +520,7 @@ class InternetDraft(Document):
 	if standardsTrack:
 	    # For standards-track, need positions from 2/3 of the
 	    # non-recused current IESG.
-	    needed = (len(ads) - recuse) * 2 / 3
+	    needed = int((len(ads) - recuse) * 2 / 3)
 	else:
 	    # Info and experimental only need one position.
 	    needed = 1

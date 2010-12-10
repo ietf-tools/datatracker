@@ -6,6 +6,7 @@ from redesign.name.models import *
 from redesign.person.models import Email
 from redesign.util import admin_link
 
+import datetime
 
 class RelatedDoc(models.Model):
     relationship = models.ForeignKey(DocRelationshipName)
@@ -49,12 +50,13 @@ class DocumentInfo(models.Model):
         abstract = True
     def author_list(self):
         return ", ".join(email.address for email in self.authors.all())
-    def latest_event(self, **filter_args):
-        e = self.event_set.filter(**filter_args).order_by('-time')[:1]
-        if e:
-            return e[0]
-        else:
-            return None
+    def latest_event(self, *args, **filter_args):
+        """Get latest event with specific requirements, e.g.
+        d.latest_event(type="xyz") returns an Event while
+        d.latest_event(Status, type="xyz") returns a Status event."""
+        model = args[0] if args else Event
+        e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time')[:1]
+        return e[0] if e else None
 
 class Document(DocumentInfo):
     name = models.CharField(max_length=255, primary_key=True)           # immutable
@@ -150,6 +152,7 @@ EVENT_TYPES = [
     ("changed_document", "Changed document metadata"),
     
     # misc document events
+    ("added_comment", "Added comment"),
     ("added_tombstone", "Added tombstone"),
     ("requested_resurrect", "Requested resurrect"),
     
@@ -163,6 +166,9 @@ EVENT_TYPES = [
 
     ("changed_last_call_text", "Changed last call text"),
     ("sent_last_call", "Sent last call"),
+    ("requested_last_call", "Requested last call"),
+    
+    ("changed_status_date", "Changed status date"),
     
     ("scheduled_for_telechat", "Scheduled for telechat"),
 
@@ -174,9 +180,9 @@ EVENT_TYPES = [
 
 class Event(models.Model):
     """An occurrence in connection with a document."""
-    time = models.DateTimeField()
+    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
-    by = models.ForeignKey(Email, blank=True, null=True)
+    by = models.ForeignKey(Email, blank=True, null=True) # FIXME: make NOT NULL?
     doc = models.ForeignKey('doc.Document')
     desc = models.TextField()
 
@@ -192,7 +198,10 @@ class Message(Event):
 
 class Text(Event):
     content = models.TextField(blank=True)
-    
+
+class NewRevision(Event):
+    rev = models.CharField(max_length=16)
+   
 # IESG events
 class BallotPosition(Event):
     ad = models.ForeignKey(Email)
@@ -202,6 +211,9 @@ class BallotPosition(Event):
     comment = models.TextField(help_text="Optional comment", blank=True)
     comment_time = models.DateTimeField(help_text="Time optional comment was written", blank=True, null=True)
     
+class Status(Event):
+    date = models.DateField()
+
 class Expiration(Event):
     expires = models.DateTimeField()
     

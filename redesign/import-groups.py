@@ -6,6 +6,8 @@ basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path = [ basedir ] + sys.path
 
 from ietf import settings
+settings.USE_DB_REDESIGN_PROXY_CLASSES = False
+
 from django.core import management
 management.setup_environ(settings)
 
@@ -31,6 +33,7 @@ GroupTypeName.objects.get_or_create(slug="area", name="Area")
 GroupTypeName.objects.get_or_create(slug="wg", name="WG")
 GroupTypeName.objects.get_or_create(slug="rg", name="RG")
 GroupTypeName.objects.get_or_create(slug="team", name="Team")
+GroupTypeName.objects.get_or_create(slug="individ", name="Individual")
 # FIXME: what about AG (area group?)?
 
 
@@ -53,7 +56,11 @@ for o in Area.objects.all():
     
 # IETFWG, AreaGroup
 for o in IETFWG.objects.all():
-    group, _ = Group.objects.get_or_create(acronym=o.group_acronym.acronym)
+    try:
+        group = Group.objects.get(acronym=o.group_acronym.acronym)
+    except Group.DoesNotExist:
+        group = Group(acronym=o.group_acronym.acronym)
+        
     group.name = o.group_acronym.name
     # state
     if o.group_type.type == "BOF":
@@ -68,14 +75,25 @@ for o in IETFWG.objects.all():
         s = GroupStateName.objects.get(slug="conclude")
     group.state = s
     # type
-    if o.group_type.type == "team":
+    if o.group_type.type == "TEAM":
         group.type = GroupTypeName.objects.get(slug="team")
-    else:
+    elif o.group_type.type == "AG":
+        # this contains groups like
+        #apptsv, none, saag, iesg, iab, tsvdir, apples, usac, secdir, apparea, null, opsarea, rtgarea, usvarea, genarea, tsvarea, raiarea, dirdir
+        # which we currently just ignore
+        if o.group_acronym.acronym == "none":
+            group.type = GroupTypeName.objects.get(slug="individ")
+        else:
+            if group.id:
+                group.delete()
+            continue
+    else: # PWG/BOF/WG
         group.type = GroupTypeName.objects.get(slug="wg")
 
     if o.area:
-        print "no area for", group.acronym, group.name, group.type, group.state
         group.parent = Group.objects.get(acronym=o.area.area.area_acronym.acronym)
+    else:
+        print "no area for", group.acronym, group.name, group.type, group.state
         
     # FIXME: missing fields from old: proposed_date, start_date, dormant_date, concluded_date, meeting_scheduled, email_address, email_subscribe, email_keyword, email_archive, comments, last_modified_date, meeting_scheduled_old
     

@@ -622,7 +622,7 @@ class BallotWrapper:
                 p = dict(ad_name=pos.ad.get_name(),
                          ad_username="", # FIXME: don't seem to have username at the moment
                          position=pos.pos.name,
-                         is_old_ad=pos.ad in active_ads,
+                         is_old_ad=pos.ad not in active_ads,
                          old_positions=[])
 
                 if pos.pos.slug == "discuss":

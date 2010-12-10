@@ -236,7 +236,7 @@ def edit_info(request, name):
                     setattr(obj, attr, r[attr])
 
             diff(doc, 'intended_status', "Intended Status")
-            diff(doc.idinternal, 'status_date', "Status Date")
+            diff(doc.idinternal, 'status_date', "Status date")
             if 'area_acronym' in r and r['area_acronym']:
                 diff(doc.idinternal, 'area_acronym', 'Area acronym')
             diff(doc.idinternal, 'job_owner', 'Responsible AD')

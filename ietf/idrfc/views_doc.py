@@ -148,14 +148,30 @@ def document_main(request, name):
 def _get_history(doc, versions):
     results = []
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        versions = [] # clear versions
         for e in doc._draft.event_set.all().select_related('by').order_by('-time'):
             info = {}
+            if e.type == "new_revision":
+                filename = u"%s-%s" % (e.doc.name, e.newrevision.rev)
+                e.desc = 'New version available: <a href="http://tools.ietf.org/id/%s.txt">%s</a>' % (filename, filename)
+                if int(e.newrevision.rev) != 0:
+                    e.desc += ' (<a href="http://tools.ietf.org/rfcdiff?url2=%s">diff from -%02d</a>)' % (filename, int(e.newrevision.rev) - 1)
+                info["dontmolest"] = True
+                    
             info['text'] = e.desc
             info['by'] = e.by.get_name()
             info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
-            info['snipped'] = info['textSnippet'][-3:] == "..."
-            e.version = e.doc.rev
+            info['snipped'] = info['textSnippet'][-3:] == "..." and e.type != "new_revision"
             results.append({'comment':e, 'info':info, 'date':e.time, 'is_com':True})
+
+        prev_rev = "00"
+        for o in reversed(results):
+            e = o["comment"]
+            if e.type == "new_revision":
+                e.version = e.newrevision.rev
+            else:
+                e.version = prev_rev
+            prev_rev = e.version
     else:
         if doc.is_id_wrapper:
             comments = DocumentComment.objects.filter(document=doc.tracker_id).exclude(rfc_flag=1)

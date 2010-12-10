@@ -40,6 +40,7 @@ admin.site.register(Event, EventAdmin)
 admin.site.register(Message, EventAdmin)
 admin.site.register(Text, EventAdmin)
 admin.site.register(BallotPosition, EventAdmin)
+admin.site.register(Status, EventAdmin)
 admin.site.register(Expiration, EventAdmin)
 admin.site.register(Telechat, EventAdmin)
 

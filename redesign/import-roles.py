@@ -14,7 +14,7 @@ management.setup_environ(settings)
 from redesign.person.models import *
 from redesign.group.models import *
 from redesign.name.models import *
-from ietf.idtracker.models import IESGLogin, AreaDirector
+from ietf.idtracker.models import IESGLogin, AreaDirector, PersonOrOrgInfo
 
 # assumptions:
 #  - groups have been imported
@@ -39,7 +39,7 @@ area_director_role = name(RoleName, "ad", "Area Director")
 
 
 # helpers for creating the objects
-def get_or_create_email(o, old_person):
+def get_or_create_email(o):
     email = o.person.email()[1]
     if not email:
         print "NO EMAIL FOR %s %s" % (o.__class__, o.id)
@@ -67,10 +67,14 @@ for o in IESGLogin.objects.all():
     print "importing IESGLogin", o.id, o.first_name, o.last_name
     
     if not o.person:
-        print "NO PERSON", o.person_id
-        continue
+        persons = PersonOrOrgInfo.objects.filter(first_name=o.first_name, last_name=o.last_name)
+        if persons:
+            o.person = persons[0]
+        else:
+            print "NO PERSON", o.person_id
+            continue
 
-    email = get_or_create_email(o, o.person)
+    email = get_or_create_email(o)
 
     # FIXME: import o.user_level
     # FIXME: import o.login_name, o.user_level
@@ -80,7 +84,7 @@ for o in IESGLogin.objects.all():
 Role.objects.filter(name=area_director_role).delete()
 for o in AreaDirector.objects.all():
     print "importing AreaDirector", o.area, o.person
-    email = get_or_create_email(o, o.person)
+    email = get_or_create_email(o)
     if not o.area:
         print "NO AREA", o.area_id
         continue
