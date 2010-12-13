@@ -159,7 +159,6 @@ EVENT_TYPES = [
     # IESG events
     ("sent_ballot_announcement", "Sent ballot announcement"),
     ("deferred_ballot", "Deferred ballot"),
-    ("approved_ballot", "Approved ballot"),
     ("changed_ballot_position", "Changed ballot position"),
     ("changed_ballot_approval_text", "Changed ballot approval text"),
     ("changed_ballot_writeup_text", "Changed ballot writeup text"),
@@ -174,6 +173,7 @@ EVENT_TYPES = [
 
     ("resolved_to_do_not_publish", "Resolved to 'do not publish'"),
     ("resolved_to_no_problem", "Resolved to 'no problem'"),
+    ("iesg_approved", "IESG approved document"),
     
     ("approved_in_minute", "Approved in minute"),
     ]

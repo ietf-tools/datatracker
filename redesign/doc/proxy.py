@@ -111,7 +111,7 @@ class InternetDraft(Document):
     #b_approve_date = models.DateField(null=True, blank=True)
     @property
     def b_approve_date(self):
-        e = self.latest_event(type="approved_ballot")
+        e = self.latest_event(type="iesg_approved")
         return e.time if e else None
         
     #wgreturn_date = models.DateField(null=True, blank=True) # unused
@@ -412,18 +412,18 @@ class InternetDraft(Document):
     #an_sent = models.BooleanField()
     @property
     def an_sent(self):
-        return bool(self.latest_event(type="approved_ballot"))
+        return bool(self.latest_event(type="iesg_approved"))
 
     #an_sent_date = models.DateField(null=True, blank=True)
     @property
     def an_sent_date(self):
-        e = self.latest_event(type="approved_ballot")
+        e = self.latest_event(type="iesg_approved")
         return e.time if e else None
     
     #an_sent_by = models.ForeignKey(IESGLogin, db_column='an_sent_by', related_name='ansent', null=True)
     @property
     def an_sent_by(self):
-        e = self.latest_event(type="approved_ballot")
+        e = self.latest_event(type="iesg_approved")
         return e.by if e else None
 
     #defer = models.BooleanField()

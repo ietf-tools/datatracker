@@ -148,12 +148,16 @@ def date_in_match(match):
 re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat - %s by" % date_re_str)
 re_ballot_position = re.compile(r"\[Ballot Position Update\] (New position, (?P<position>.*), has been recorded (|for (?P<for>.*) )|Position (|for (?P<for2>.*) )has been changed to (?P<position2>.*) from .*)by (?P<by>.*)")
 re_ballot_issued = re.compile(r"Ballot has been issued by")
-re_state_changed = re.compile(r"(State (changed|Changes) to <b>(?P<to>.*)</b> from <b>(?P<from>.*)</b> by|Sub state has been changed to (?P<tosub>.*) from (?P<fromsub>.*))")
-re_note_field_cleared = re.compile(r"Note field has been cleared by")
-re_draft_added = re.compile(r"Draft [Aa]dded (by .*)? in state (?P<state>.*)")
+re_state_changed = re.compile(r"(State (has been changed|changed|Changes) to <b>(?P<to>.*)</b> from <b>(?P<from>.*)</b> by|Sub state has been changed to (?P<tosub>.*) from (?P<fromsub>.*))")
+re_note_changed = re.compile(r"(\[Note\]: .*'.*'|Note field has been cleared)")
+re_draft_added = re.compile(r"Draft [Aa]dded (by .*)?( in state (?P<state>.*))?")
 re_last_call_requested = re.compile(r"Last Call was requested")
-re_status_date_changed = re.compile(r"Status [dD]ate has been changed to (<b>)?" + date_re_str)
+re_document_approved = re.compile(r"IESG has approved and state has been changed to")
 
+re_status_date_changed = re.compile(r"Status [dD]ate has been changed to (<b>)?" + date_re_str)
+re_responsible_ad_changed = re.compile(r"(Responsible AD|Shepherding AD) has been changed to (<b>)?")
+re_intended_status_changed = re.compile(r"Intended [sS]tatus has been changed to (<b>)?")
+re_state_change_notice = re.compile(r"State Change Notice email list (have been change|has been changed) (<b>)?")
         
 all_drafts = InternetDraft.objects.all().select_related()
 if draft_name_to_import:
@@ -192,10 +196,10 @@ for o in all_drafts:
     d.internal_comments = o.comments or "" # FIXME: maybe put these somewhere else
     d.save()
 
+    # clear already imported events
+    d.event_set.all().delete()
+    
     if o.idinternal:
-        # clear already imported events
-        d.event_set.all().delete()
-        
         # extract events
         for c in o.idinternal.documentcomment_set.order_by('date', 'time', 'id'):
             handled = False
@@ -210,7 +214,6 @@ for o in all_drafts:
                 e.returning_item = bool(o.idinternal.returning_item)
                 save_event(d, e, c)
                 handled = True
-
                 
             # ballot issued
             match = re_ballot_issued.search(c.comment_text)
@@ -233,7 +236,6 @@ for o in all_drafts:
                 save_event(d, e, c)
                 handled = True
                 
-                
             # ballot positions
             match = re_ballot_position.search(c.comment_text)
             if match:
@@ -252,7 +254,6 @@ for o in all_drafts:
                 e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
                 save_event(d, e, c)
                 handled = True
-
 
             # ballot discusses/comments
             if c.ballot in (DocumentComment.BALLOT_DISCUSS, DocumentComment.BALLOT_COMMENT):
@@ -292,34 +293,80 @@ for o in all_drafts:
                 save_event(d, e, c)
                 handled = True
 
-            # note cleared
-            match = re_note_field_cleared.search(c.comment_text)
+            # note changed
+            match = re_note_changed.search(c.comment_text)
             if match:
                 e = Event(type="changed_document")
                 save_event(d, e, c)
                 handled = True
 
-            # note cleared
+            # draft added 
             match = re_draft_added.search(c.comment_text)
             if match:
                 e = Event(type="changed_document")
                 save_event(d, e, c)
                 handled = True
 
-            # status date changed
-            match = re_status_date_changed.search(c.comment_text)
-            if match:
-                # FIXME: handle multiple comments in one
-                e = Status(type="changed_status_date", date=date_in_match(match))
-                save_event(d, e, c)
-                handled = True
-                
             # new version
             if c.comment_text == "New version available":
                 e = NewRevision(type="new_revision", rev=c.version)
                 save_event(d, e, c)
                 handled = True
 
+            # approved document 
+            match = re_document_approved.search(c.comment_text)
+            if match:
+                e = Event(type="iesg_approved")
+                save_event(d, e, c)
+                handled = True
+                
+
+            # some changes can be bundled - this is not entirely
+            # convenient, especially since it makes it hard to give
+            # each a type, so unbundle them
+            if not handled:
+                unhandled_lines = []
+                for line in c.comment_text.split("<br>"):
+                    # status date changed
+                    match = re_status_date_changed.search(line)
+                    if match:
+                        e = Status(type="changed_status_date", date=date_in_match(match))
+                        e.desc = line
+                        save_event(d, e, c)
+                        handled = True
+
+                    # AD/job owner changed
+                    match = re_responsible_ad_changed.search(line)
+                    if match:
+                        e = Event(type="changed_draft")
+                        e.desc = line
+                        save_event(d, e, c)
+                        handled = True
+
+                    # intended standard level changed
+                    match = re_intended_status_changed.search(line)
+                    if match:
+                        e = Event(type="changed_draft")
+                        e.desc = line
+                        save_event(d, e, c)
+                        handled = True
+
+                    # state change notice
+                    match = re_state_change_notice.search(line)
+                    if match:
+                        e = Event(type="changed_draft")
+                        e.desc = line
+                        save_event(d, e, c)
+                        handled = True
+
+                    # multiline change bundles end with a single "by xyz" that we skip
+                    if not handled and not line.startswith("by <b>"):
+                        unhandled_lines.append(line)
+                        
+                if handled:
+                    c.comment_text = "<br>".join(unhandled_lines)
+                
+                
             # all others are added as comments
             if not handled:
                 e = Event(type="added_comment")
@@ -327,7 +374,8 @@ for o in all_drafts:
 
                 # stop typical comments from being output
                 typical_comments = ["Who is the Document Shepherd for this document",
-                                    "We understand that this document doesn't require any IANA actions"]
+                                    "We understand that this document doesn't require any IANA actions",
+                                    ]
                 for t in typical_comments:
                     if t in c.comment_text:
                         handled = True
@@ -336,22 +384,6 @@ for o in all_drafts:
             if not handled:
                 print "couldn't handle %s '%s'" % (c.id, c.comment_text.replace("\n", "").replace("\r", ""))
 
-        # import new revision changes from DraftVersions
-        known_revisions = set(e.newrevision.rev for e in d.event_set.filter(type="new_revision").select_related('newrevision'))
-        for v in DraftVersions.objects.filter(filename=d.name).order_by("revision"):
-            if v.revision not in known_revisions:
-                e = NewRevision(type="new_revision")
-                e.rev = v.revision
-                # we don't have time information in this source, so
-                # hack the seconds to include the revision to ensure
-                # they're ordered correctly
-                e.time = datetime.datetime.combine(v.revision_date, datetime.time(0, 0, int(v.revision)))
-                e.by = system_email
-                e.doc = d
-                e.desc = "New version available"
-                e.save()
-                known_revisions.add(v.revision)
-        
         # import events that might be missing, we don't know where to
         # place them but if we don't generate them, we'll be missing
         # the information completely
@@ -364,7 +396,33 @@ for o in all_drafts:
             e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (o.idinternal.status_date, status_date)
             e.save()
 
+        e = d.latest_event(Event, type="iesg_approved")
+        approved_date = e.time.date() if e else None
+        if o.b_approve_date != approved_date:
+            e = Event(type="iesg_approved")
+            e.time = o.idinternal.b_approve_date
+            e.by = system_email
+            e.doc = d
+            e.desc = "IESG has approved"
+            e.save()
+
         # FIXME: import writeups
+
+    # import missing revision changes from DraftVersions
+    known_revisions = set(e.newrevision.rev for e in d.event_set.filter(type="new_revision").select_related('newrevision'))
+    for v in DraftVersions.objects.filter(filename=d.name).order_by("revision"):
+        if v.revision not in known_revisions:
+            e = NewRevision(type="new_revision")
+            e.rev = v.revision
+            # we don't have time information in this source, so
+            # hack the seconds to include the revision to ensure
+            # they're ordered correctly
+            e.time = datetime.datetime.combine(v.revision_date, datetime.time(0, 0, int(v.revision)))
+            e.by = system_email
+            e.doc = d
+            e.desc = "New version available"
+            e.save()
+            known_revisions.add(v.revision)
             
     print "imported", d.name, "S:", d.iesg_state
 
@@ -397,7 +455,7 @@ class CheckListInternetDraft(models.Model):
     lc_expiration_date = models.DateField(null=True, blank=True)
     b_sent_date = models.DateField(null=True, blank=True)
     b_discussion_date = models.DateField(null=True, blank=True)
-    b_approve_date = models.DateField(null=True, blank=True)
+#    b_approve_date = models.DateField(null=True, blank=True)
     wgreturn_date = models.DateField(null=True, blank=True)
     rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
 #    comments = models.TextField(blank=True,null=True)
@@ -426,7 +484,7 @@ class CheckListIDInternal(models.Model):
     mark_by = models.ForeignKey('IESGLogin', db_column='mark_by', related_name='marked')
 #    job_owner = models.ForeignKey(IESGLogin, db_column='job_owner', related_name='documents')
     event_date = models.DateField(null=True)
-    area_acronym = models.ForeignKey('Area')
+#    area_acronym = models.ForeignKey('Area')
     cur_sub_state = BrokenForeignKey('IDSubState', related_name='docs', null=True, blank=True, null_values=(0, -1))
     prev_sub_state = BrokenForeignKey('IDSubState', related_name='docs_prev', null=True, blank=True, null_values=(0, -1))
 #    returning_item = models.IntegerField(null=True, blank=True)
@@ -442,9 +500,9 @@ class CheckListIDInternal(models.Model):
 class CheckListBallotInfo(models.Model):
     ballot = models.AutoField(primary_key=True, db_column='ballot_id')
     active = models.BooleanField()
-    an_sent = models.BooleanField()
-    an_sent_date = models.DateField(null=True, blank=True)
-    an_sent_by = models.ForeignKey('IESGLogin', db_column='an_sent_by', related_name='ansent', null=True)
+#    an_sent = models.BooleanField()
+#    an_sent_date = models.DateField(null=True, blank=True)
+#    an_sent_by = models.ForeignKey('IESGLogin', db_column='an_sent_by', related_name='ansent', null=True)
     defer = models.BooleanField(blank=True)
     defer_by = models.ForeignKey('IESGLogin', db_column='defer_by', related_name='deferred', null=True)
     defer_date = models.DateField(null=True, blank=True)
