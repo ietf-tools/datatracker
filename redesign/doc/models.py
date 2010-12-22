@@ -119,7 +119,7 @@ class DocAlias(models.Model):
         return "%s-->%s" % (self.name, self.document.name)
     document_link = admin_link("document")
     class Meta:
-        verbose_name_plural="Aliases"
+        verbose_name_plural = "aliases"
 
 class SendQueue(models.Model):
     time = models.DateTimeField()       # Scheduled at this time
@@ -154,6 +154,7 @@ EVENT_TYPES = [
     # misc document events
     ("added_comment", "Added comment"),
     ("added_tombstone", "Added tombstone"),
+    ("expired_document", "Expired document"),
     ("requested_resurrect", "Requested resurrect"),
     
     # IESG events
@@ -164,8 +165,8 @@ EVENT_TYPES = [
     ("changed_ballot_writeup_text", "Changed ballot writeup text"),
 
     ("changed_last_call_text", "Changed last call text"),
-    ("sent_last_call", "Sent last call"),
     ("requested_last_call", "Requested last call"),
+    ("sent_last_call", "Sent last call"),
     
     ("changed_status_date", "Changed status date"),
     
@@ -218,7 +219,7 @@ class Expiration(Event):
     expires = models.DateTimeField()
     
 class Telechat(Event):
-    telechat_date = models.DateField()
+    telechat_date = models.DateField(blank=True, null=True)
     returning_item = models.BooleanField(default=False)
 
     

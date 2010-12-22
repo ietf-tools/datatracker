@@ -36,7 +36,7 @@ if len(sys.argv) > 1:
 # IESGComment, IESGDiscuss, DocumentComment, idrfc.DraftVersions
 
 def name(name_class, slug, name, desc=""):
-    # create if it doesn't exist, set name
+    # create if it doesn't exist, set name and desc
     obj, _ = name_class.objects.get_or_create(slug=slug)
     obj.name = name
     obj.desc = desc
@@ -147,7 +147,7 @@ def date_in_match(match):
 
 re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat - %s by" % date_re_str)
 re_ballot_position = re.compile(r"\[Ballot Position Update\] (New position, (?P<position>.*), has been recorded (|for (?P<for>.*) )|Position (|for (?P<for2>.*) )has been changed to (?P<position2>.*) from .*)by (?P<by>.*)")
-re_ballot_issued = re.compile(r"Ballot has been issued by")
+re_ballot_issued = re.compile(r"Ballot has been issued(| by)")
 re_state_changed = re.compile(r"(State (has been changed|changed|Changes) to <b>(?P<to>.*)</b> from <b>(?P<from>.*)</b> by|Sub state has been changed to (?P<tosub>.*) from (?P<fromsub>.*))")
 re_note_changed = re.compile(r"(\[Note\]: .*'.*'|Note field has been cleared)")
 re_draft_added = re.compile(r"Draft [Aa]dded (by .*)?( in state (?P<state>.*))?")
@@ -158,7 +158,10 @@ re_status_date_changed = re.compile(r"Status [dD]ate has been changed to (<b>)?"
 re_responsible_ad_changed = re.compile(r"(Responsible AD|Shepherding AD) has been changed to (<b>)?")
 re_intended_status_changed = re.compile(r"Intended [sS]tatus has been changed to (<b>)?")
 re_state_change_notice = re.compile(r"State Change Notice email list (have been change|has been changed) (<b>)?")
-        
+
+
+made_up_date = datetime.datetime(2030, 1, 1, 0, 0, 0)
+
 all_drafts = InternetDraft.objects.all().select_related()
 if draft_name_to_import:
     all_drafts = all_drafts.filter(filename=draft_name_to_import)
@@ -209,7 +212,7 @@ for o in all_drafts:
             if match:
                 e = Telechat()
                 e.type = "scheduled_for_telechat"
-                e.telechat_date = date_in_match(match)
+                e.telechat_date = date_in_match(match) if "Placed on" in c.comment_text else None
                 # can't extract this from history so we just take the latest value
                 e.returning_item = bool(o.idinternal.returning_item)
                 save_event(d, e, c)
@@ -313,6 +316,12 @@ for o in all_drafts:
                 save_event(d, e, c)
                 handled = True
 
+            # document expiration
+            if c.comment_text == "Document is expired by system":
+                e = Event(type="expired_document")
+                save_event(d, e, c)
+                handled = True
+
             # approved document 
             match = re_document_approved.search(c.comment_text)
             if match:
@@ -384,13 +393,15 @@ for o in all_drafts:
             if not handled:
                 print "couldn't handle %s '%s'" % (c.id, c.comment_text.replace("\n", "").replace("\r", ""))
 
-        # import events that might be missing, we don't know where to
-        # place them but if we don't generate them, we'll be missing
-        # the information completely
+                
+        # import events that might be missing, we can't be sure where
+        # to place them but if we don't generate them, we'll be
+        # missing the information completely
         e = d.latest_event(Status, type="changed_status_date")
         status_date = e.date if e else None
         if o.idinternal.status_date != status_date:
             e = Status(type="changed_status_date", date=o.idinternal.status_date)
+            e.time = made_up_date
             e.by = system_email
             e.doc = d
             e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (o.idinternal.status_date, status_date)
@@ -406,8 +417,40 @@ for o in all_drafts:
             e.desc = "IESG has approved"
             e.save()
 
-        # FIXME: import writeups
+        if o.lc_expiration_date:
+            e = Expiration(type="sent_last_call", expires=o.lc_expiration_date)
+            e.time = o.lc_sent_date
+            # let's try to figure out who did it
+            events = d.event_set.filter(type="changed_document", desc__contains=" to <b>In Last Call</b>").order_by('-time')[:1]
+            e.by = events[0].by if events else system_email
+            e.doc = d
+            e.desc = "Last call sent"
+            e.save()
 
+        if o.idinternal:
+            e = d.latest_event(Telechat, type="scheduled_for_telechat")
+            telechat_date = e.telechat_date if e else None
+            if not o.idinternal.agenda:
+                o.idinternal.telechat_date = None # normalize
+                
+            if telechat_date != o.idinternal.telechat_date:
+                e = Telechat(type="scheduled_for_telechat",
+                             telechat_date=o.idinternal.telechat_date,
+                             returning_item=bool(o.idinternal.returning_item))
+                e.time = made_up_date
+                e.by = system_email
+                args = ("Placed on", o.idinternal.telechat_date) if o.idinternal.telechat_date else ("Removed from", telechat_date)
+                e.doc = d
+                e.desc = "%s agenda for telechat - %s by system" % args
+                e.save()
+            
+         # FIXME: import writeups
+
+    # RFC alias
+    if o.rfc_number:
+        rfc_name = "rfc%s" % o.rfc_number
+        DocAlias.objects.get_or_create(document=d, name=rfc_name)
+            
     # import missing revision changes from DraftVersions
     known_revisions = set(e.newrevision.rev for e in d.event_set.filter(type="new_revision").select_related('newrevision'))
     for v in DraftVersions.objects.filter(filename=d.name).order_by("revision"):
@@ -424,7 +467,7 @@ for o in all_drafts:
             e.save()
             known_revisions.add(v.revision)
             
-    print "imported", d.name, "S:", d.iesg_state
+    print "imported", d.name, " - ", d.iesg_state
 
     
 
@@ -439,27 +482,27 @@ class CheckListInternetDraft(models.Model):
 #    group = models.ForeignKey(Acronym, db_column='group_acronym_id')
 #    filename = models.CharField(max_length=255, unique=True)
 #    revision = models.CharField(max_length=2)
-    revision_date = models.DateField()
-    file_type = models.CharField(max_length=20)
+#    revision_date = models.DateField()
+#    file_type = models.CharField(max_length=20)
 #    txt_page_count = models.IntegerField()
-    local_path = models.CharField(max_length=255, blank=True, null=True)
-    start_date = models.DateField()
-    expiration_date = models.DateField(null=True)
+#    local_path = models.CharField(max_length=255, blank=True, null=True)
+#    start_date = models.DateField()
+#    expiration_date = models.DateField(null=True)
 #    abstract = models.TextField()
-    dunn_sent_date = models.DateField(null=True, blank=True)
-    extension_date = models.DateField(null=True, blank=True)
+#    dunn_sent_date = models.DateField(null=True, blank=True)
+#    extension_date = models.DateField(null=True, blank=True)
 #    status = models.ForeignKey(IDStatus)
 #    intended_status = models.ForeignKey(IDIntendedStatus)
-    lc_sent_date = models.DateField(null=True, blank=True)
-    lc_changes = models.CharField(max_length=3,null=True)
-    lc_expiration_date = models.DateField(null=True, blank=True)
-    b_sent_date = models.DateField(null=True, blank=True)
-    b_discussion_date = models.DateField(null=True, blank=True)
+#    lc_sent_date = models.DateField(null=True, blank=True)
+#    lc_changes = models.CharField(max_length=3,null=True)
+#    lc_expiration_date = models.DateField(null=True, blank=True)
+#    b_sent_date = models.DateField(null=True, blank=True)
+#    b_discussion_date = models.DateField(null=True, blank=True)
 #    b_approve_date = models.DateField(null=True, blank=True)
-    wgreturn_date = models.DateField(null=True, blank=True)
-    rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
+#    wgreturn_date = models.DateField(null=True, blank=True)
+#    rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
 #    comments = models.TextField(blank=True,null=True)
-    last_modified_date = models.DateField()
+#    last_modified_date = models.DateField()
     replaced_by = BrokenForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
     replaces = FKAsOneToOne('replaces', reverse=True)
     review_by_rfc_editor = models.BooleanField()

@@ -62,7 +62,8 @@ class InternetDraft(Document):
     #start_date = models.DateField()
     @property
     def start_date(self):
-        return self.dochistory_set.dates("time","day","ASC")[0]
+        e = NewRevision.objects.filter(doc=self).order_by("time")[:1]
+        return e[0].time.date() if e else None
     #expiration_date = models.DateField()
     @property
     def expiration_date(self):
@@ -119,10 +120,8 @@ class InternetDraft(Document):
     #rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
     @property
     def rfc_number(self):
-        try:
-            self.docalias_set.filter(name__startswith="rfc")[0].name[3:]
-        except IndexError:
-            return None
+        aliases = self.docalias_set.filter(name__startswith="rfc")
+        return int(aliases[0].name[3:]) if aliases else None
         
     #comments = models.TextField(blank=True) # unused
         
