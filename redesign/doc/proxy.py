@@ -133,20 +133,18 @@ class InternetDraft(Document):
     #replaced_by = models.ForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
     @property
     def replaced_by(self):
-        r = InternetDraft.objects.filter(docalias__relateddoc__relationship="replaces", docalias__relateddoc__related_document_set=self)
+        r = InternetDraft.objects.filter(related__document=self, related__relateddocument__relationship="replaces")
         return r[0] if r else None
         
     #replaces = FKAsOneToOne('replaces', reverse=True)
     @property
     def replaces(self):
-        r = InternetDraft.objects.filter(related__doc_alias__document=self, related__relationship="replaces")
-        return r[0] if r else Non
+        r = self.replaces_set()
+        return r[0] if r else None
 
-    
     @property
     def replaces_set(self):
-        # this is replaced_by
-        return InternetDraft.objects.filter(docalias__relateddoc__relationship="replaces", docalias__relateddoc__related_document_set=self)
+        return InternetDraft.objects.filter(docalias__relateddocument__relationship="replaces", docalias__relateddocument__document=self)
         
     #review_by_rfc_editor = models.BooleanField()
     @property

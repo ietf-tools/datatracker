@@ -2,12 +2,6 @@ from django.contrib import admin
 from models import *
 from person.models import *
 
-class RelatedDocAdmin(admin.ModelAdmin):
-    list_display = ["source", "relationship", "target"]
-    search_fields = ["doc_alias__name", "related_document_set__name", ]
-    list_display_links = ["relationship", ]
-admin.site.register(RelatedDoc, RelatedDocAdmin)    
-
 class DocumentAdmin(admin.ModelAdmin):
     list_display = ['name', 'rev', 'state', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
     search_fields = ['name']

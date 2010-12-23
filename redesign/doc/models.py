@@ -8,14 +8,6 @@ from redesign.util import admin_link
 
 import datetime
 
-class RelatedDoc(models.Model):
-    relationship = models.ForeignKey(DocRelationshipName)
-    doc_alias = models.ForeignKey('DocAlias')
-    def __unicode__(self):
-        return "%s %s" % (self.relationship.name, self.doc_alias.name)
-    source = admin_link("related_document_set")
-    target = admin_link("doc_alias__document")
-
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
     time = models.DateTimeField() # should probably have auto_now=True
@@ -38,7 +30,6 @@ class DocumentInfo(models.Model):
     intended_std_level = models.ForeignKey(IntendedStatusName, blank=True, null=True)
     std_level = models.ForeignKey(StdStatusName, blank=True, null=True)
     authors = models.ManyToManyField(Email, blank=True, null=True)
-    related = models.ManyToManyField(RelatedDoc, related_name='related_%(class)s_set', blank=True)
     ad = models.ForeignKey(Email, related_name='ad_%(class)s_set', blank=True, null=True)
     shepherd = models.ForeignKey(Email, related_name='shepherd_%(class)s_set', blank=True, null=True)
     notify = models.CharField(max_length=255, blank=True)
@@ -58,8 +49,16 @@ class DocumentInfo(models.Model):
         e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time')[:1]
         return e[0] if e else None
 
+class RelatedDocument(models.Model):
+    document = models.ForeignKey('Document')  # source
+    doc_alias = models.ForeignKey('DocAlias') # target
+    relationship = models.ForeignKey(DocRelationshipName)
+    def __unicode__(self):
+        return u"%s %s %s" % (self.document.name, self.relationship.name.lower(), self.doc_alias.name)
+
 class Document(DocumentInfo):
     name = models.CharField(max_length=255, primary_key=True)           # immutable
+    related = models.ManyToManyField('DocAlias', through=RelatedDocument, blank=True, related_name="reversely_related_document_set")
     def __unicode__(self):
         return self.name
     def values(self):
@@ -90,6 +89,7 @@ class Document(DocumentInfo):
             snap = DocHistory(**fields)
             snap.save()
             for m in many2many:
+                # FIXME: check that this works with related
                 #print "m2m:", m, many2many[m]
                 rel = getattr(snap, m)
                 for item in many2many[m]:
@@ -102,8 +102,16 @@ class Document(DocumentInfo):
             print "Deleted list:", snap
         super(Document, self).save(force_insert, force_update)
 
+class RelatedDocHistory(models.Model):
+    document = models.ForeignKey('DocHistory')
+    doc_alias = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
+    relationship = models.ForeignKey(DocRelationshipName)
+    def __unicode__(self):
+        return u"%s %s %s" % (self.document.name, self.relationship.name.lower(), self.doc_alias.name)
+
 class DocHistory(DocumentInfo):
     doc = models.ForeignKey(Document)   # ID of the Document this relates to
+    related = models.ManyToManyField('DocAlias', through=RelatedDocHistory, blank=True)
     def __unicode__(self):
         return unicode(self.doc.name)
 

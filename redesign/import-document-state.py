@@ -46,6 +46,8 @@ def name(name_class, slug, name, desc=""):
 type_draft = name(DocTypeName, "draft", "Draft")
 stream_ietf = name(DocStreamName, "ietf", "IETF")
 
+relationship_replaces = name(DocRelationshipName, "replaces", "Replaces")
+
 intended_status_mapping = {
     "BCP": name(IntendedStatusName, "bcp", "Best Current Practice"),
     "Draft Standard": name(IntendedStatusName, "ds", name="Draft Standard"),
@@ -145,7 +147,7 @@ date_re_str = "(?P<year>[0-9][0-9][0-9][0-9])-(?P<month>[0-9][0-9])-(?P<day>[0-9
 def date_in_match(match):
     return datetime.date(int(match.group('year')), int(match.group('month')), int(match.group('day')))
 
-re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat - %s by" % date_re_str)
+re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat(| - %s) by" % date_re_str)
 re_ballot_position = re.compile(r"\[Ballot Position Update\] (New position, (?P<position>.*), has been recorded (|for (?P<for>.*) )|Position (|for (?P<for2>.*) )has been changed to (?P<position2>.*) from .*)by (?P<by>.*)")
 re_ballot_issued = re.compile(r"Ballot has been issued(| by)")
 re_state_changed = re.compile(r"(State (has been changed|changed|Changes) to <b>(?P<to>.*)</b> from <b>(?P<from>.*)</b> by|Sub state has been changed to (?P<tosub>.*) from (?P<fromsub>.*))")
@@ -191,7 +193,7 @@ for o in all_drafts:
 #    d.std_level =
 #    d.authors =
 #    d.related =
-    d.ad = iesg_login_to_email(o.idinternal.job_owner)
+    d.ad = iesg_login_to_email(o.idinternal.job_owner) if o.idinternal else None
     d.shepherd = None
     d.notify = o.idinternal.state_change_notice_to or "" if o.idinternal else ""
     d.external_url = ""
@@ -199,6 +201,10 @@ for o in all_drafts:
     d.internal_comments = o.comments or "" # FIXME: maybe put these somewhere else
     d.save()
 
+    # make sure our alias is updated
+    DocAlias.objects.filter(name=d.name).exclude(document=d).delete()
+    d_alias, _ = DocAlias.objects.get_or_create(name=d.name, document=d)
+    
     # clear already imported events
     d.event_set.all().delete()
     
@@ -382,8 +388,10 @@ for o in all_drafts:
                 save_event(d, e, c)
 
                 # stop typical comments from being output
-                typical_comments = ["Who is the Document Shepherd for this document",
-                                    "We understand that this document doesn't require any IANA actions",
+                typical_comments = [
+                    "Document Shepherd Write-up for %s" % d.name,
+                    "Who is the Document Shepherd for this document",
+                    "We understand that this document doesn't require any IANA actions",
                                     ]
                 for t in typical_comments:
                     if t in c.comment_text:
@@ -391,66 +399,9 @@ for o in all_drafts:
                         break
             
             if not handled:
-                print "couldn't handle %s '%s'" % (c.id, c.comment_text.replace("\n", "").replace("\r", ""))
+                print "couldn't handle %s '%s'" % (c.id, c.comment_text.replace("\n", "").replace("\r", "")[0:80])
 
                 
-        # import events that might be missing, we can't be sure where
-        # to place them but if we don't generate them, we'll be
-        # missing the information completely
-        e = d.latest_event(Status, type="changed_status_date")
-        status_date = e.date if e else None
-        if o.idinternal.status_date != status_date:
-            e = Status(type="changed_status_date", date=o.idinternal.status_date)
-            e.time = made_up_date
-            e.by = system_email
-            e.doc = d
-            e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (o.idinternal.status_date, status_date)
-            e.save()
-
-        e = d.latest_event(Event, type="iesg_approved")
-        approved_date = e.time.date() if e else None
-        if o.b_approve_date != approved_date:
-            e = Event(type="iesg_approved")
-            e.time = o.idinternal.b_approve_date
-            e.by = system_email
-            e.doc = d
-            e.desc = "IESG has approved"
-            e.save()
-
-        if o.lc_expiration_date:
-            e = Expiration(type="sent_last_call", expires=o.lc_expiration_date)
-            e.time = o.lc_sent_date
-            # let's try to figure out who did it
-            events = d.event_set.filter(type="changed_document", desc__contains=" to <b>In Last Call</b>").order_by('-time')[:1]
-            e.by = events[0].by if events else system_email
-            e.doc = d
-            e.desc = "Last call sent"
-            e.save()
-
-        if o.idinternal:
-            e = d.latest_event(Telechat, type="scheduled_for_telechat")
-            telechat_date = e.telechat_date if e else None
-            if not o.idinternal.agenda:
-                o.idinternal.telechat_date = None # normalize
-                
-            if telechat_date != o.idinternal.telechat_date:
-                e = Telechat(type="scheduled_for_telechat",
-                             telechat_date=o.idinternal.telechat_date,
-                             returning_item=bool(o.idinternal.returning_item))
-                e.time = made_up_date
-                e.by = system_email
-                args = ("Placed on", o.idinternal.telechat_date) if o.idinternal.telechat_date else ("Removed from", telechat_date)
-                e.doc = d
-                e.desc = "%s agenda for telechat - %s by system" % args
-                e.save()
-            
-         # FIXME: import writeups
-
-    # RFC alias
-    if o.rfc_number:
-        rfc_name = "rfc%s" % o.rfc_number
-        DocAlias.objects.get_or_create(document=d, name=rfc_name)
-            
     # import missing revision changes from DraftVersions
     known_revisions = set(e.newrevision.rev for e in d.event_set.filter(type="new_revision").select_related('newrevision'))
     for v in DraftVersions.objects.filter(filename=d.name).order_by("revision"):
@@ -466,6 +417,71 @@ for o in all_drafts:
             e.desc = "New version available"
             e.save()
             known_revisions.add(v.revision)
+    
+    # import events that might be missing, we can't be sure where
+    # to place them but if we don't generate them, we'll be
+    # missing the information completely
+    e = d.latest_event(Event, type="iesg_approved")
+    approved_date = e.time.date() if e else None
+    if o.b_approve_date != approved_date:
+        e = Event(type="iesg_approved")
+        e.time = o.idinternal.b_approve_date
+        e.by = system_email
+        e.doc = d
+        e.desc = "IESG has approved"
+        e.save()
+
+    if o.lc_expiration_date:
+        e = Expiration(type="sent_last_call", expires=o.lc_expiration_date)
+        e.time = o.lc_sent_date
+        # let's try to figure out who did it
+        events = d.event_set.filter(type="changed_document", desc__contains=" to <b>In Last Call</b>").order_by('-time')[:1]
+        e.by = events[0].by if events else system_email
+        e.doc = d
+        e.desc = "Last call sent"
+        e.save()
+
+    if o.idinternal:
+        e = d.latest_event(Status, type="changed_status_date")
+        status_date = e.date if e else None
+        if o.idinternal.status_date != status_date:
+            e = Status(type="changed_status_date", date=o.idinternal.status_date)
+            e.time = made_up_date
+            e.by = system_email
+            e.doc = d
+            e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (o.idinternal.status_date, status_date)
+            e.save()
+
+        e = d.latest_event(Telechat, type="scheduled_for_telechat")
+        telechat_date = e.telechat_date if e else None
+        if not o.idinternal.agenda:
+            o.idinternal.telechat_date = None # normalize
+
+        if telechat_date != o.idinternal.telechat_date:
+            e = Telechat(type="scheduled_for_telechat",
+                         telechat_date=o.idinternal.telechat_date,
+                         returning_item=bool(o.idinternal.returning_item))
+            e.time = made_up_date # FIXME: this isn't good, will override new values, estimate one instead 
+            e.by = system_email
+            args = ("Placed on", o.idinternal.telechat_date) if o.idinternal.telechat_date else ("Removed from", telechat_date)
+            e.doc = d
+            e.desc = "%s agenda for telechat - %s by system" % args
+            e.save()
+            
+         # FIXME: import writeups
+
+    # import other attributes
+
+    # RFC alias
+    if o.rfc_number:
+        rfc_name = "rfc%s" % o.rfc_number
+        DocAlias.objects.get_or_create(document=d, name=rfc_name)
+        # FIXME: some RFCs seem to be called rfc1234bis?
+
+    if o.replaced_by:
+        replacement, _ = Document.objects.get_or_create(name=o.replaced_by.filename)
+        RelatedDocument.objects.get_or_create(document=replacement, doc_alias=d_alias, relationship=relationship_replaces)
+        
             
     print "imported", d.name, " - ", d.iesg_state
 
@@ -503,8 +519,8 @@ class CheckListInternetDraft(models.Model):
 #    rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
 #    comments = models.TextField(blank=True,null=True)
 #    last_modified_date = models.DateField()
-    replaced_by = BrokenForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
-    replaces = FKAsOneToOne('replaces', reverse=True)
+#    replaced_by = BrokenForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
+#    replaces = FKAsOneToOne('replaces', reverse=True)
     review_by_rfc_editor = models.BooleanField()
     expired_tombstone = models.BooleanField()
 #    idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
