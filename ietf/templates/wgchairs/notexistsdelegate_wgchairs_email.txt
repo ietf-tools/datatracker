@@ -1,5 +1,5 @@
 {{ chair }} as a WG Chair of {{ wg }} wants to add a person with email
-{{ delegate_email }} as a WG Delegate.
+{{ delegate_email }} as a {% if shepherd %}shepherd of document {{ shepherd }}{% else %}WG Delegate{% endif %}.
 
 This person don't have an user/password to log into the datatracker so
 an email has been seent to {{ delegate_email }} in order to he/she contacs the
@@ -8,4 +8,4 @@ Secretariat to request his/her credentials.
 When he/she gets her credentials then he/she will send an email to 
 {{ chair }} at {{ chair.email.1 }}. 
 
-{{ chair }} could then assign this person as WG Delegate.
+{{ chair }} could then assign this person as {% if shepherd %}shepherd of document {{ shepherd }}{% else %}WG Delegate{% endif %}.

@@ -1,4 +1,4 @@
-{{ chair }} as a WG Chair of {{ wg }} wants to add you as a {{ wg }} WG Delegate.
+{{ chair }} as a WG Chair of {{ wg }} wants to add you as a {{ wg }} {% if shepherd %}shepherd of document {{ shepherd }}{% else %}WG Delegate{% endif %}.
 
 You don't have an user/password to log into the datatracker so you must contact
 the Secretariat at iesg-secretary@ietf.org in order to get your credentials.

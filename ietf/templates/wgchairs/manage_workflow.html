@@ -2,6 +2,13 @@
 
 {% block wg_titledetail %}Manage Workflow{% endblock %}
 
+{% block pagehead %}
+{{ block.super }}
+<script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
+<script type="text/javascript" src="/js/yui/yui-20100305.js"></script>
+<script type="text/javascript" src="/js/base.js"></script>
+{% endblock pagehead %}
+
 {% block wg_content %}
 <div class="wg-workflow-management">
 <h2>Edit workflow</h2>
@@ -110,10 +117,6 @@
 </div>
 </div>
 </div>
-
-<script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
-<script type="text/javascript" src="/js/yui/yui-20100305.js"></script>
-<script type="text/javascript" src="/js/base.js"></script>
 
 <script type="text/javascript">
 //<![CDATA[

@@ -1,26 +1,39 @@
 {% extends "wginfo/wg_base.html" %}
 
-{% block morecss %}
-{{ block.super }}
-.wg-chair-management ul {
-    list-style: none;
-}
-
-.wg-chair-management input {
-    border: 1px solid green;
-}
-{% endblock %}
 
 {% block wg_titledetail %}Delegates{% endblock %}
 
 {% block wg_content %}
 <div class="wg-chair-management">
-<h2>Add new delegate</h2>
-{% if add_form.message %}
-<div class="message message-{{ add_form.message.type }}">
-    {{ add_form.message.value }}
-</div>
+
+<h2>Manage delegates</h2>
+<p><strong>Please,</strong> rembember that you only can assign a maximum of three delegates.</p>
+
+<table style="width: 100%;">
+<tr style="vertical-align: top;"><td>
+{% if delegates %}
+  <form action="" method="POST">
+  <table class="ietf-table" style="width: 100%">
+    <tr><th>Remove</th><th style="Width: 100%">Delegate name</th></tr>
+  {% for delegate in delegates %}
+    <tr class="{% cycle "oddrow" "evenrow" %}"><td><input type="checkbox" name="delete" value="{{ delegate.pk }}" /></td><td>{{ delegate.person }}</td></tr>
+  {% endfor %}
+  </table>
+  <input type="submit" value="Remove delegate(s)" name="remove" />
+  </form>
+{% else %}
+No delegates
 {% endif %}
+</td>
+<td>
+<table class="ietf-table" style="width: 100%;">
+<tr><th>Add new delegate</th></tr>
+{% if add_form.message %}
+<tr><td class="message message-{{ add_form.message.type }}">
+    {{ add_form.message.value }}
+</td></tr>
+{% endif %}
+<tr><td>
 {% if can_add %}
   <form action="" method="POST">
     {{ add_form.as_p }}
@@ -30,26 +43,11 @@
     </p>
   </form>
 {% else %}
-<p>
 You can only assign three delegates. Please remove delegates to add a new one.
-</p>
 {% endif %}
-
-<h2>Delegates</h2>
-{% if delegates %}
-  <form action="" method="POST">
-  <table>
-    <tr><th>Remove</th><th>Delegate name</th></tr>
-  {% for delegate in delegates %}
-    <tr><td><input type="checkbox" name="delete" value="{{ delegate.pk }}" /></td><td>{{ delegate.person }}</td></tr>
-  {% endfor %}
-  </table>
-  <input type="submit" value="Remove delegate(s)" name="remove" />
-  </form>
-{% else %}
-<p>
-No delegates
-</p>
-{% endif %}
+</td></tr>
+</table>
+</td></tr>
+</table>
 </div>
 {% endblock %}

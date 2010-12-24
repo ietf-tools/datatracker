@@ -178,6 +178,7 @@ class AddDelegateForm(RelatedWGForm):
     form_type = forms.CharField(widget=forms.HiddenInput, initial='single')
 
     def __init__(self, *args, **kwargs):
+        self.shepherd = kwargs.pop('shepherd', False)
         super(AddDelegateForm, self).__init__(*args, **kwargs)
         self.next_form = self
 
@@ -197,14 +198,23 @@ class AddDelegateForm(RelatedWGForm):
         try:
             person = self.get_person(email)
         except PersonOrOrgInfo.DoesNotExist:
-            self.next_form = NotExistDelegateForm(wg=self.wg, user=self.user, email=email)
+            self.next_form = NotExistDelegateForm(wg=self.wg, user=self.user, email=email, shepherd=self.shepherd)
             self.next_form.set_message('doesnotexist', 'There is no user with this email allowed to login to the system')
             return
         except PersonOrOrgInfo.MultipleObjectsReturned:
-            self.next_form = MultipleDelegateForm(wg=self.wg, user=self.user, email=email)
+            self.next_form = MultipleDelegateForm(wg=self.wg, user=self.user, email=email, shepherd=self.shepherd)
             self.next_form.set_message('multiple', 'There are multiple users with this email in the system')
             return
-        self.create_delegate(person)
+        if self.shepherd:
+            self.assign_shepherd(person)
+        else:
+            self.create_delegate(person)
+
+    def assign_shepherd(self, person):
+        self.shepherd.shepherd = person
+        self.shepherd.save()
+        self.next_form = AddDelegateForm(wg=self.wg, user=self.user, shepherd=self.shepherd)
+        self.next_form.set_message('success', 'Shepherd assigned successfully')
 
     def create_delegate(self, person):
         (delegate, created) = WGDelegate.objects.get_or_create(wg=self.wg,
@@ -234,7 +244,10 @@ class MultipleDelegateForm(AddDelegateForm):
     def save(self):
         person_id = self.cleaned_data.get('persons')
         person = PersonOrOrgInfo.objects.get(pk=person_id)
-        self.create_delegate(person)
+        if self.shepherd:
+            self.assign_shepherd(person)
+        else:
+            self.create_delegate(person)
 
 
 class NotExistDelegateForm(MultipleDelegateForm):
@@ -264,11 +277,15 @@ class NotExistDelegateForm(MultipleDelegateForm):
         return info + super(NotExistDelegateForm, self).as_p()
 
     def send_email(self, email, template):
-        subject = 'WG Delegate needs system credentials'
+        if self.shepherd:
+            subject = 'WG shepherd needs system credentials'
+        else:
+            subject = 'WG Delegate needs system credentials'
         persons = PersonOrOrgInfo.objects.filter(emailaddress__address=self.email).distinct()
         body = render_to_string(template,
                                 {'chair': get_person_for_user(self.user),
                                  'delegate_email': self.email,
+                                 'shepherd': self.shepherd,
                                  'delegate_persons': persons,
                                  'wg': self.wg,
                                 })
@@ -299,74 +316,15 @@ class NotExistDelegateForm(MultipleDelegateForm):
             self.next_form.set_message('success', 'Email sent successfully')
 
 
-def add_form_factory(request, wg, user):
-    if request.method != 'POST':
-        return AddDelegateForm(wg=wg, user=user)
+def add_form_factory(request, wg, user, shepherd=False):
+    if request.method != 'POST' or request.POST.get('update_shepehrd'):
+        return AddDelegateForm(wg=wg, user=user, shepherd=shepherd)
 
     if request.POST.get('form_type', None) == 'multiple':
-        return MultipleDelegateForm(wg=wg, user=user, data=request.POST.copy())
+        return MultipleDelegateForm(wg=wg, user=user, data=request.POST.copy(), shepherd=shepherd)
     elif request.POST.get('form_type', None) == 'notexist':
-        return NotExistDelegateForm(wg=wg, user=user, data=request.POST.copy())
+        return NotExistDelegateForm(wg=wg, user=user, data=request.POST.copy(), shepherd=shepherd)
     elif request.POST.get('form_type', None) == 'single':
-        return AddDelegateForm(wg=wg, user=user, data=request.POST.copy())
+        return AddDelegateForm(wg=wg, user=user, data=request.POST.copy(), shepherd=shepherd)
 
-    return AddDelegateForm(wg=wg, user=user)
-
-
-class ManagingShepherdForm(forms.Form):
-    email = forms.EmailField(required=False)
-    is_assign_current = forms.BooleanField(required=False)
-
-    def __init__(self, *args, **kwargs):
-        if 'current_person' in kwargs.keys():
-            self.current_person = kwargs.pop('current_person')
-        return super(ManagingShepherdForm, self).__init__(*args, **kwargs)
-
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if not email:
-            return None
-
-        try:
-            PersonOrOrgInfo.objects. \
-                  filter(emailaddress__type__in=["INET", "Prim", ],
-                        emailaddress__address=email)[:1].get()
-        except PersonOrOrgInfo.DoesNotExist:
-            if self.cleaned_data.get('is_assign_current'):
-                self._send_email(email)
-            raise forms.ValidationError("Person with such email does not exist")
-        return email
-
-    def clean(self):
-        print self.cleaned_data.get('email') and self.cleaned_data.get('is_assign_current')
-        if self.cleaned_data.get('email') and \
-                                    self.cleaned_data.get('is_assign_current'):
-            raise forms.ValidationError("You should choose to assign to current \
-                        person or input the email. Not both at te same time. ")
-
-        return self.cleaned_data
-
-    def change_shepherd(self, document, save=True):
-        email = self.cleaned_data.get('email')
-        if email:
-            person = PersonOrOrgInfo.objects. \
-                  filter(emailaddress__type__in=["INET", "Prim", ],
-                        emailaddress__address=email)[:1].get()
-        else:
-            person = self.current_person
-        document.shepherd = person
-        if save:
-            document.save()
-        return document
-
-    def _send_email(self, email,
-                        template='wgchairs/edit_management_shepherd_email.txt'):
-        subject = 'WG Delegate needs system credentials'
-        body = render_to_string(template,
-                                {'email': email,
-                                })
-        mail = EmailMessage(subject=subject,
-                            body=body,
-                            to=[email, settings.DEFAULT_FROM_EMAIL, ],
-                            from_email=settings.DEFAULT_FROM_EMAIL)
-        mail.send()
+    return AddDelegateForm(wg=wg, user=user, shepherd=shepherd)

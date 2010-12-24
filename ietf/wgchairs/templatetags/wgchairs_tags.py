@@ -1,7 +1,8 @@
 from django import template
 
 from ietf.wgchairs.accounts import (can_manage_workflow_in_group,
-                                    can_manage_delegates_in_group)
+                                    can_manage_delegates_in_group,
+                                    can_manage_shepherds_in_group)
 
 
 register = template.Library()
@@ -14,6 +15,7 @@ def wgchairs_admin_options(context, wg):
     return {'user': user,
             'can_manage_delegates': can_manage_delegates_in_group(user, wg),
             'can_manage_workflow': can_manage_workflow_in_group(user, wg),
+            'can_manage_shepherds': can_manage_shepherds_in_group(user, wg),
             'wg': wg,
             'selected': context.get('selected', None),
            }
