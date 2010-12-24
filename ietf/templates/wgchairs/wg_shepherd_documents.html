@@ -34,23 +34,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 {% block wg_titledetail %}Documents{% endblock %}
 
-{% block content %}
-<div {% if concluded %}class="ietf-concluded-bg"{% endif %}>
-
-
 {% block wg_content %}
+           
 <table class="ietf-table ietf-doctable" style="margin-top:16px;">
     <tr>       
-       <th class="title">Title</th>
+       <th class="title">Documents I shepherd</th>
        <th class="date">Date</th>
-       <th class="status" colspan="2">Status</th>
+       <th class="status">Status</th>
        <th class="ad">Area Director</th>
     </tr> 
     
-    {% for group, documents in groupped_documents.items %}     
-      <tr class="header"><td colspan="5">{{ group }}</td></tr>
-    
-      {% for doc in documents %}
+      {% for doc in my_documents %}
         <tr class="{% cycle oddrow,evenrow %}">
           <td class="title">
             <a href="{% url doc_managing_shepherd wg.group_acronym.acronym doc %}">{{ doc.title }}</a>
@@ -65,12 +59,64 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           
           </tr>
       {% endfor %}
-    {% endfor %}
         
 </table>
-           
-{% endblock wg_content %}
 
-</div>
-{% endblock content %}
+<table class="ietf-table ietf-doctable" style="margin-top:16px;">
+    <tr>       
+       <th class="title">Documents whithout shepherd</th>
+       <th class="date">Date</th>
+       <th class="status">Status</th>
+       <th class="ad">Area Director</th>
+    </tr> 
+    
+      {% for doc in no_shepherd %}
+        <tr class="{% cycle oddrow,evenrow %}">
+          <td class="title">
+            <a href="{% url doc_managing_shepherd wg.group_acronym.acronym doc %}">{{ doc.title }}</a>
+          </td>
+          <td class="date">
+             {{ doc.status.start_date|date:"Y-m" }}
+          </td>
+          <td class="status">
+              {{ doc.status.status }}
+          </td>        
+          <td class="ad">{{ doc.ad_name|default:"" }}</td>
+          
+          </tr>
+      {% endfor %}
+        
+</table>
+
+<table class="ietf-table ietf-doctable" style="margin-top:16px;">
+    <tr>       
+       <th class="title">Documents by other shepherds</th>
+       <th class="date">Date</th>
+       <th class="status">Status</th>
+       <th class="ad">Area Director</th>
+    </tr> 
+    
+      {% regroup other_shepherds by shepherd as regrouped %}
+      {% for documents in regrouped %}
+
+        <tr class="header"><td colspan="4">{{ documents.grouper }}</td></tr>
+
+        {% for doc in documents.list %}
+        <tr class="{% cycle oddrow,evenrow %}">
+          <td class="title">
+            <a href="{% url doc_managing_shepherd wg.group_acronym.acronym doc %}">{{ doc.title }}</a>
+          </td>
+          <td class="date">
+             {{ doc.status.start_date|date:"Y-m" }}
+          </td>
+          <td class="status">
+              {{ doc.status.status }}
+          </td>        
+          <td class="ad">{{ doc.ad_name|default:"" }}</td>
+          
+          </tr>
+        {% endfor %}
+      {% endfor %}
+</table>
+{% endblock wg_content %}
 
