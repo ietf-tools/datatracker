@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from workflows.models import Workflow
+from workflows.models import Workflow, State
 from permissions.models import Permission
 
 
@@ -47,6 +47,5 @@ class ObjectAnnotationTagHistoryEntry(models.Model):
 
 
 class WGWorkflow(Workflow):
-
-    class Meta:
-        proxy = True
+    selected_states = models.ManyToManyField(State)
+    selected_tags = models.ManyToManyField(AnnotationTag)
