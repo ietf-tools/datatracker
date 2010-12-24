@@ -2,11 +2,16 @@ from django import forms
 from django.db.models import Q
 from django.conf import settings
 from django.core.mail import EmailMessage
+from django.forms.models import BaseModelFormSet
 from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
 
 from ietf.wgchairs.models import WGDelegate
 from ietf.wgchairs.accounts import get_person_for_user
+from ietf.ietfworkflows.utils import get_default_workflow_for_wg, get_workflow_for_wg
 from ietf.idtracker.models import PersonOrOrgInfo
+
+from workflows.models import Transition
 
 
 class RelatedWGForm(forms.Form):
@@ -26,6 +31,131 @@ class RelatedWGForm(forms.Form):
         self.message = {'type': msg_type,
                         'value': msg_value,
                        }
+
+
+class TagForm(RelatedWGForm):
+
+    tags = forms.ModelMultipleChoiceField(get_default_workflow_for_wg().annotation_tags.all(),
+                                          widget=forms.CheckboxSelectMultiple)
+
+    def save(self):
+        workflow = get_workflow_for_wg(self.wg)
+        workflow.selected_tags.clear()
+        for tag in self.cleaned_data['tags']:
+            workflow.selected_tags.add(tag)
+        return workflow
+
+
+class StateForm(RelatedWGForm):
+
+    states = forms.ModelMultipleChoiceField(get_default_workflow_for_wg().states.all(),
+                                            widget=forms.CheckboxSelectMultiple)
+
+    def update_transitions(self, workflow):
+        for transition in workflow.transitions.all():
+            if not workflow.selected_states.filter(pk=transition.destination.pk).count():
+                transition.delete()
+                continue
+            for state in transition.states.all():
+                if not workflow.selected_states.filter(pk=state.pk).count():
+                    transition.states.remove(state)
+            if not transition.states.count():
+                transition.delete()
+                continue
+
+    def save(self):
+        workflow = get_workflow_for_wg(self.wg)
+        workflow.selected_states.clear()
+        for state in self.cleaned_data['states']:
+            workflow.selected_states.add(state)
+        self.update_transitions(workflow)
+        return workflow
+
+
+class DeleteTransitionForm(RelatedWGForm):
+
+    transitions = forms.ModelMultipleChoiceField(Transition.objects.all(),
+                                                 widget=forms.CheckboxSelectMultiple)
+
+    def __init__(self, *args, **kwargs):
+        super(DeleteTransitionForm, self).__init__(*args, **kwargs)
+        workflow = get_workflow_for_wg(self.wg)
+        self.fields['transitions'].queryset = self.fields['transitions'].queryset.filter(workflow=workflow)
+
+    def save(self):
+        for transition in self.cleaned_data['transitions']:
+            transition.delete()
+
+
+class TransitionForm(forms.ModelForm):
+
+    states = forms.ModelMultipleChoiceField(get_default_workflow_for_wg().states.all())
+
+    class Meta:
+        model = Transition
+        fields = ('DELETE', 'name', 'states', 'destination', )
+
+    def __init__(self, *args, **kwargs):
+        self.wg = kwargs.pop('wg', None)
+        self.user = kwargs.pop('user', None)
+        super(TransitionForm, self).__init__(*args, **kwargs)
+        workflow = get_workflow_for_wg(self.wg)
+        self.fields['states'].queryset = workflow.selected_states.all()
+        self.fields['destination'].queryset = workflow.selected_states.all()
+        self.fields['destination'].required = True
+        if self.instance.pk:
+            self.fields['states'].initial = [i.pk for i in self.instance.states.all()]
+        self.instance.workflow = workflow
+
+    def as_row(self):
+        return self._html_output(u'<td>%(errors)s%(field)s%(help_text)s</td>', u'<td colspan="2">%s</td>', '</td>', u'<br />%s', False)
+
+    def save(self, *args, **kwargs):
+        instance = super(TransitionForm, self).save(*args, **kwargs)
+        for state in self.cleaned_data['states']:
+            state.transitions.add(instance)
+
+
+class TransitionFormSet(BaseModelFormSet):
+
+    form = TransitionForm
+    can_delete = True
+    extra = 2
+    max_num = 0
+    can_order = False
+    model = Transition
+
+    def __init__(self, *args, **kwargs):
+        self.wg = kwargs.pop('wg', None)
+        self.user = kwargs.pop('user', None)
+        super(TransitionFormSet, self).__init__(*args, **kwargs)
+
+    def _construct_form(self, i, **kwargs):
+        kwargs = kwargs or {}
+        kwargs.update({'wg': self.wg, 'user': self.user})
+        return super(TransitionFormSet, self)._construct_form(i, **kwargs)
+
+    def as_table(self):
+        html = u''
+        csscl = 'oddrow'
+        for form in self.forms:
+            html += u'<tr class="%s">' % csscl
+            html += form.as_row()
+            html += u'</tr>'
+            if csscl == 'oddrow':
+                csscl = 'evenrow'
+            else:
+                csscl = 'oddrow'
+        return mark_safe(u'\n'.join([unicode(self.management_form), html]))
+
+
+def workflow_form_factory(request, wg, user):
+
+    if request.POST.get('update_transitions', None):
+        return TransitionFormSet(wg=wg, user=user, data=request.POST)
+    elif request.POST.get('update_states', None):
+        return StateForm(wg=wg, user=user, data=request.POST)
+    return TagForm(wg=wg, user=user, data=request.POST)
 
 
 class RemoveDelegateForm(RelatedWGForm):
@@ -148,7 +278,6 @@ class NotExistDelegateForm(MultipleDelegateForm):
                             from_email=settings.DEFAULT_FROM_EMAIL)
         mail.send()
 
-
     def send_email_to_delegate(self, email):
         self.send_email(email, 'wgchairs/notexistsdelegate_delegate_email.txt')
 
@@ -187,55 +316,52 @@ def add_form_factory(request, wg, user):
 class ManagingShepherdForm(forms.Form):
     email = forms.EmailField(required=False)
     is_assign_current = forms.BooleanField(required=False)
-    
-    
+
     def __init__(self, *args, **kwargs):
-        if kwargs.has_key('current_person'):
-            self.current_person = kwargs.pop('current_person')            
+        if 'current_person' in kwargs.keys():
+            self.current_person = kwargs.pop('current_person')
         return super(ManagingShepherdForm, self).__init__(*args, **kwargs)
-    
+
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if not email:
             return None
-        
+
         try:
             PersonOrOrgInfo.objects. \
-                  filter(emailaddress__type__in=[ "INET", "Prim",], 
-                        emailaddress__address=email) \
-                        [:1].get()
+                  filter(emailaddress__type__in=["INET", "Prim", ],
+                        emailaddress__address=email)[:1].get()
         except PersonOrOrgInfo.DoesNotExist:
             if self.cleaned_data.get('is_assign_current'):
                 self._send_email(email)
             raise forms.ValidationError("Person with such email does not exist")
         return email
-    
+
     def clean(self):
         print self.cleaned_data.get('email') and self.cleaned_data.get('is_assign_current')
         if self.cleaned_data.get('email') and \
                                     self.cleaned_data.get('is_assign_current'):
             raise forms.ValidationError("You should choose to assign to current \
                         person or input the email. Not both at te same time. ")
-        
+
         return self.cleaned_data
-    
+
     def change_shepherd(self, document, save=True):
-        email = self.cleaned_data.get('email')        
+        email = self.cleaned_data.get('email')
         if email:
             person = PersonOrOrgInfo.objects. \
-                  filter(emailaddress__type__in=[ "INET", "Prim",], 
-                        emailaddress__address=email) \
-                        [:1].get()
+                  filter(emailaddress__type__in=["INET", "Prim", ],
+                        emailaddress__address=email)[:1].get()
         else:
-            person = self.current_person        
-        document.shepherd = person 
-        if save: 
+            person = self.current_person
+        document.shepherd = person
+        if save:
             document.save()
         return document
-    
-    def _send_email(self, email, 
+
+    def _send_email(self, email,
                         template='wgchairs/edit_management_shepherd_email.txt'):
-        subject = 'WG Delegate needs system credentials'        
+        subject = 'WG Delegate needs system credentials'
         body = render_to_string(template,
                                 {'email': email,
                                 })
