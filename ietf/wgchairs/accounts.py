@@ -22,7 +22,7 @@ def can_do_wg_workflow_in_document(user, document):
     person = get_person_for_user(user)
     if not person or not document.group:
         return False
-    return can_do_wg_workflow_in_group(document.group)
+    return can_do_wg_workflow_in_group(document.group.ietfwg)
 
 
 def can_manage_workflow_in_group(user, group):
@@ -44,3 +44,10 @@ def can_manage_shepherds_in_group(user, group):
     if not person:
         return False
     return is_group_chair(person, group)
+
+
+def can_manage_shepherd_of_a_document(user, document):
+    person = get_person_for_user(user)
+    if not person or not document.group:
+        return False
+    return can_manage_shepherds_in_group(user, document.group.ietfwg)

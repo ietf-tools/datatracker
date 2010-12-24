@@ -1,14 +1,15 @@
 from ietf.idtracker.models import IETFWG, InternetDraft, IESGLogin
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, Http404
 
 from ietf.idrfc.views_search import SearchForm, search_query
 from ietf.wgchairs.forms import (RemoveDelegateForm, add_form_factory,
                                  workflow_form_factory, TransitionFormSet)
 from ietf.wgchairs.accounts import (can_manage_delegates_in_group, get_person_for_user,
                                     can_manage_shepherds_in_group,
-                                    can_manage_workflow_in_group)
+                                    can_manage_workflow_in_group,
+                                    can_manage_shepherd_of_a_document)
 from ietf.ietfworkflows.utils import (get_workflow_for_wg,
                                       get_default_workflow_for_wg)
 
@@ -87,6 +88,8 @@ def managing_shepherd(request, acronym, name):
     if not can_manage_shepherds_in_group(user, wg):
         return HttpResponseForbidden('You have no permission to access this view')
     doc = get_object_or_404(InternetDraft, filename=name)
+    if not can_manage_shepherd_of_a_document(user, doc):
+        raise Http404
     add_form = add_form_factory(request, wg, user, shepherd=doc)
     if request.method == 'POST':
         if request.POST.get('remove_shepherd'):
