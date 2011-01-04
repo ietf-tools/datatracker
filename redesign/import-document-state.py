@@ -100,6 +100,23 @@ ballot_position_mapping = {
     None: name(BallotPositionName, 'norecord', 'No record'),
     }
 
+substate_mapping = {
+    "External Party": name(DocInfoTagName, 'extpty', "External Party", 'The document is awaiting review or input from an external party (i.e, someone other than the shepherding AD, the authors, or the WG). See the "note" field for more details on who has the action.'),
+    "Revised ID Needed": name(DocInfoTagName, 'need-rev', "Revised ID Needed", 'An updated ID is needed to address the issues that have been raised.'),
+    "AD Followup": name(DocInfoTagName, 'ad-f-up', "AD Followup", """A generic substate indicating that the shepherding AD has the action item to determine appropriate next steps. In particular, the appropriate steps (and the corresponding next state or substate) depend entirely on the nature of the issues that were raised and can only be decided with active involvement of the shepherding AD. Examples include:
+
+- if another AD raises an issue, the shepherding AD may first iterate with the other AD to get a better understanding of the exact issue. Or, the shepherding AD may attempt to argue that the issue is not serious enough to bring to the attention of the authors/WG.
+
+- if a documented issue is forwarded to a WG, some further iteration may be needed before it can be determined whether a new revision is needed or whether the WG response to an issue clarifies the issue sufficiently.
+
+- when a new revision appears, the shepherding AD will first look at the changes to determine whether they believe all outstanding issues have been raised satisfactorily, prior to asking the ADs who raised the original issues to verify the changes."""),
+    "Point Raised - writeup needed": name(DocInfoTagName, 'point', "Point Raised - writeup needed", 'IESG discussions on the document have raised some issues that need to be brought to the attention of the authors/WG, but those issues have not been written down yet. (It is common for discussions during a telechat to result in such situations. An AD may raise a possible issue during a telechat and only decide as a result of that discussion whether the issue is worth formally writing up and bringing to the attention of the authors/WG). A document stays in the "Point Raised - Writeup Needed" state until *ALL* IESG comments that have been raised have been documented.')
+    }
+
+tag_review_by_rfc_editor = name(DocInfoTagName, 'rfc-rev', "Review by RFC Editor")
+tag_via_rfc_editor = name(DocInfoTagName, 'via-rfc', "Via RFC Editor")
+tag_expired_tombstone = name(DocInfoTagName, 'exp-tomb', "Expired tombstone")
+tag_approved_in_minute = name(DocInfoTagName, 'app-min', "Approved in minute")
 
 # helpers for events
 
@@ -120,6 +137,11 @@ def iesg_login_to_email(l):
     if not l:
         return system_email
     else:
+         # there's a bunch of old weird comments made by "IESG
+         # Member", transform these into "System" instead
+        if l.id == 2:
+            return system_email
+        
         # fix logins without the right person
         if not l.person:
             if l.id not in buggy_iesg_logins_cache:
@@ -138,8 +160,11 @@ def iesg_login_to_email(l):
         try:
             return Email.objects.get(address=l.person.email()[1])
         except Email.DoesNotExist:
-            print "MISSING IESG LOGIN", l.person.email()
-            return None
+            try:
+                return Email.objects.get(person__name="%s %s" % (l.person.first_name, l.person.last_name))
+            except Email.DoesNotExist:
+                print "MISSING IESG LOGIN", l.person.email()
+                return None
     
 # regexps for parsing document comments
 
@@ -148,21 +173,23 @@ def date_in_match(match):
     return datetime.date(int(match.group('year')), int(match.group('month')), int(match.group('day')))
 
 re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat(| - %s) by" % date_re_str)
+re_telechat_changed = re.compile(r"Telechat date (was|has been) changed to (<b>)?%s(</b>)? from" % date_re_str)
 re_ballot_position = re.compile(r"\[Ballot Position Update\] (New position, (?P<position>.*), has been recorded (|for (?P<for>.*) )|Position (|for (?P<for2>.*) )has been changed to (?P<position2>.*) from .*)by (?P<by>.*)")
 re_ballot_issued = re.compile(r"Ballot has been issued(| by)")
 re_state_changed = re.compile(r"(State (has been changed|changed|Changes) to <b>(?P<to>.*)</b> from <b>(?P<from>.*)</b> by|Sub state has been changed to (?P<tosub>.*) from (?P<fromsub>.*))")
-re_note_changed = re.compile(r"(\[Note\]: .*'.*'|Note field has been cleared)")
+re_note_changed = re.compile(r"(\[Note\]: .*'.*'|Note field has been cleared)", re.DOTALL)
 re_draft_added = re.compile(r"Draft [Aa]dded (by .*)?( in state (?P<state>.*))?")
 re_last_call_requested = re.compile(r"Last Call was requested")
 re_document_approved = re.compile(r"IESG has approved and state has been changed to")
+re_document_disapproved = re.compile(r"(Do Not Publish|DNP) note has been sent to RFC Editor and state has been changed to")
+re_resurrection_requested = re.compile(r"(I-D |)Resurrection was requested by")
+re_completed_resurrect = re.compile(r"(This document has been resurrected|This document has been resurrected per RFC Editor's request|Resurrection was completed)")
 
 re_status_date_changed = re.compile(r"Status [dD]ate has been changed to (<b>)?" + date_re_str)
-re_responsible_ad_changed = re.compile(r"(Responsible AD|Shepherding AD) has been changed to (<b>)?")
+re_responsible_ad_changed = re.compile(r"(Responsible AD|Shepherding AD|responsible) has been changed to (<b>)?")
 re_intended_status_changed = re.compile(r"Intended [sS]tatus has been changed to (<b>)?")
 re_state_change_notice = re.compile(r"State Change Notice email list (have been change|has been changed) (<b>)?")
-
-
-made_up_date = datetime.datetime(2030, 1, 1, 0, 0, 0)
+re_area_acronym_changed = re.compile(r"Area acronymn? has been changed to \w+ from \w+(<b>)?")
 
 all_drafts = InternetDraft.objects.all().select_related()
 if draft_name_to_import:
@@ -180,10 +207,10 @@ for o in all_drafts:
     d.title = o.title
     d.state = status_mapping[o.status.status]
     d.group = Group.objects.get(acronym=o.group.acronym)
-#    d.tags =
     d.stream = stream_ietf
     d.wg_state = None
     d.iesg_state = iesg_state_mapping[o.idinternal.cur_state.state if o.idinternal else None]
+    # we currently ignore the previous IESG state prev_state
     d.iana_state = None
 #    d.rfc_state =
     d.rev = o.revision
@@ -209,12 +236,14 @@ for o in all_drafts:
     d.event_set.all().delete()
     
     if o.idinternal:
+        last_note_change_text = ""
+        
         # extract events
         for c in o.idinternal.documentcomment_set.order_by('date', 'time', 'id'):
             handled = False
             
             # telechat agenda schedulings
-            match = re_telechat_agenda.search(c.comment_text)
+            match = re_telechat_agenda.search(c.comment_text) or re_telechat_changed.search(c.comment_text)
             if match:
                 e = Telechat()
                 e.type = "scheduled_for_telechat"
@@ -305,8 +334,11 @@ for o in all_drafts:
             # note changed
             match = re_note_changed.search(c.comment_text)
             if match:
-                e = Event(type="changed_document")
-                save_event(d, e, c)
+                # watch out for duplicates of which the old data's got many
+                if c.comment_text != last_note_change_text:
+                    last_note_change_text = c.comment_text
+                    e = Event(type="changed_document")
+                    save_event(d, e, c)
                 handled = True
 
             # draft added 
@@ -322,6 +354,20 @@ for o in all_drafts:
                 save_event(d, e, c)
                 handled = True
 
+            # resurrect requested
+            match = re_resurrection_requested.search(c.comment_text)
+            if match:
+                e = Event(type="requested_resurrect")
+                save_event(d, e, c)
+                handled = True
+                
+            # completed resurrect
+            match = re_completed_resurrect.search(c.comment_text)
+            if match:
+                e = Event(type="completed_resurrect")
+                save_event(d, e, c)
+                handled = True
+                
             # document expiration
             if c.comment_text == "Document is expired by system":
                 e = Event(type="expired_document")
@@ -332,6 +378,13 @@ for o in all_drafts:
             match = re_document_approved.search(c.comment_text)
             if match:
                 e = Event(type="iesg_approved")
+                save_event(d, e, c)
+                handled = True
+
+            # disapproved document
+            match = re_document_disapproved.search(c.comment_text)
+            if match:
+                e = Event(type="iesg_disapproved")
                 save_event(d, e, c)
                 handled = True
                 
@@ -353,7 +406,7 @@ for o in all_drafts:
                     # AD/job owner changed
                     match = re_responsible_ad_changed.search(line)
                     if match:
-                        e = Event(type="changed_draft")
+                        e = Event(type="changed_document")
                         e.desc = line
                         save_event(d, e, c)
                         handled = True
@@ -361,7 +414,7 @@ for o in all_drafts:
                     # intended standard level changed
                     match = re_intended_status_changed.search(line)
                     if match:
-                        e = Event(type="changed_draft")
+                        e = Event(type="changed_document")
                         e.desc = line
                         save_event(d, e, c)
                         handled = True
@@ -369,7 +422,15 @@ for o in all_drafts:
                     # state change notice
                     match = re_state_change_notice.search(line)
                     if match:
-                        e = Event(type="changed_draft")
+                        e = Event(type="changed_document")
+                        e.desc = line
+                        save_event(d, e, c)
+                        handled = True
+
+                    # area acronym
+                    match = re_area_acronym_changed.search(line)
+                    if match:
+                        e = Event(type="changed_document")
                         e.desc = line
                         save_event(d, e, c)
                         handled = True
@@ -380,7 +441,9 @@ for o in all_drafts:
                         
                 if handled:
                     c.comment_text = "<br>".join(unhandled_lines)
-                
+
+                    if c.comment_text:
+                        print "couldn't handle multi-line comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
                 
             # all others are added as comments
             if not handled:
@@ -392,6 +455,11 @@ for o in all_drafts:
                     "Document Shepherd Write-up for %s" % d.name,
                     "Who is the Document Shepherd for this document",
                     "We understand that this document doesn't require any IANA actions",
+                    "IANA questions",
+                    "IANA has questions",
+                    "IANA comments",
+                    "IANA Comments",
+                    "IANA Evaluation Comments",
                                     ]
                 for t in typical_comments:
                     if t in c.comment_text:
@@ -399,7 +467,7 @@ for o in all_drafts:
                         break
             
             if not handled:
-                print "couldn't handle %s '%s'" % (c.id, c.comment_text.replace("\n", "").replace("\r", "")[0:80])
+                print "couldn't handle comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
 
                 
     # import missing revision changes from DraftVersions
@@ -418,30 +486,37 @@ for o in all_drafts:
             e.save()
             known_revisions.add(v.revision)
     
-    # import events that might be missing, we can't be sure where
-    # to place them but if we don't generate them, we'll be
-    # missing the information completely
-    e = d.latest_event(Event, type="iesg_approved")
-    approved_date = e.time.date() if e else None
-    if o.b_approve_date != approved_date:
-        e = Event(type="iesg_approved")
-        e.time = o.idinternal.b_approve_date
+    # import events that might be missing, we can't be sure who did
+    # them or when but if we don't generate them, we'll be missing the
+    # information completely
+
+    # make sure last decision is recorded
+    e = d.latest_event(Event, type__in=("iesg_approved", "iesg_disapproved"))
+    decision_date = e.time.date() if e else None
+    if o.b_approve_date != decision_date:
+        disapproved = o.idinternal and o.idinternal.dnp
+        e = Event(type="iesg_disapproved" if disapproved else "iesg_approved")
+        e.time = o.b_approve_date
         e.by = system_email
         e.doc = d
-        e.desc = "IESG has approved"
+        e.desc = "Do Not Publish note has been sent to RFC Editor" if disapproved else "IESG has approved"
         e.save()
 
     if o.lc_expiration_date:
         e = Expiration(type="sent_last_call", expires=o.lc_expiration_date)
-        e.time = o.lc_sent_date
-        # let's try to figure out who did it
+        # let's try to find the actual change
         events = d.event_set.filter(type="changed_document", desc__contains=" to <b>In Last Call</b>").order_by('-time')[:1]
+        # event time is more accurate with actual time instead of just
+        # date, gives better sorting
+        e.time = events[0].time if events else o.lc_sent_date
         e.by = events[0].by if events else system_email
         e.doc = d
         e.desc = "Last call sent"
         e.save()
 
     if o.idinternal:
+        made_up_date = d.latest_event().time + datetime.timedelta(seconds=1) # datetime.datetime(2030, 1, 1, 0, 0, 0)
+
         e = d.latest_event(Status, type="changed_status_date")
         status_date = e.date if e else None
         if o.idinternal.status_date != status_date:
@@ -461,17 +536,72 @@ for o in all_drafts:
             e = Telechat(type="scheduled_for_telechat",
                          telechat_date=o.idinternal.telechat_date,
                          returning_item=bool(o.idinternal.returning_item))
-            e.time = made_up_date # FIXME: this isn't good, will override new values, estimate one instead 
+            # a common case is that it has been removed from the
+            # agenda automatically by a script without a notice in the
+            # comments, in that case the time is simply the day after
+            # the telechat
+            e.time = telechat_date + datetime.timedelta(days=1) if telechat_date and not o.idinternal.telechat_date else made_up_date
             e.by = system_email
             args = ("Placed on", o.idinternal.telechat_date) if o.idinternal.telechat_date else ("Removed from", telechat_date)
             e.doc = d
             e.desc = "%s agenda for telechat - %s by system" % args
             e.save()
+
+        if o.idinternal.ballot:
+            text_date = made_up_date
+
+            # if any of these events have happened, they're closer to
+            # the real time
+            e = d.event_set.filter(type__in=("requested_last_call", "sent_last_call", "sent_ballot_announcement", "iesg_approved", "iesg_disapproved")).order_by('time')[:1]
+            if e:
+                text_date = e[0].time - datetime.timedelta(seconds=1)
             
-         # FIXME: import writeups
+            if o.idinternal.ballot.approval_text:
+                e = Text(type="changed_ballot_approval_text", content=o.idinternal.ballot.approval_text)
+                e.time = text_date
+                e.by = system_email
+                e.doc = d
+                e.desc = "Ballot approval text was added"
+                e.save()
+
+            if o.idinternal.ballot.last_call_text:
+                e = Text(type="changed_last_call_text", content=o.idinternal.ballot.last_call_text)
+                e.time = text_date
+                e.by = system_email
+                e.doc = d
+                e.desc = "Last call text was added"
+                e.save()
+
+            if o.idinternal.ballot.ballot_writeup:
+                e = Text(type="changed_ballot_writeup_text", content=o.idinternal.ballot.ballot_writeup)
+                e.time = text_date
+                e.by = system_email
+                e.doc = d
+                e.desc = "Ballot writeup text was added"
+                e.save()
 
     # import other attributes
 
+    # tags
+    tags = d.tags.all()
+    def sync_tag(include, tag):
+        if include and tag not in tags:
+            d.tags.add(tag)
+        if not include and tag in tags:
+            d.tags.remove(tag)
+
+    sync_tag(o.review_by_rfc_editor, tag_review_by_rfc_editor)
+    sync_tag(o.expired_tombstone, tag_expired_tombstone)
+    sync_tag(o.idinternal and o.idinternal.via_rfc_editor, tag_via_rfc_editor)
+
+    n = o.idinternal and o.idinternal.cur_sub_state and o.idinternal.cur_sub_state.sub_state
+    for k, v in substate_mapping.iteritems():
+        sync_tag(k == n, v)
+        # currently we ignore prev_sub_state
+
+    sync_tag(o.idinternal and o.idinternal.approved_in_minute, tag_approved_in_minute)
+    
+    
     # RFC alias
     if o.rfc_number:
         rfc_name = "rfc%s" % o.rfc_number
@@ -491,7 +621,7 @@ for o in all_drafts:
 
 sys.exit(0)
     
-class CheckListInternetDraft(models.Model):
+#class CheckListInternetDraft(models.Model):
 #    id_document_tag = models.AutoField(primary_key=True)
 #    title = models.CharField(max_length=255, db_column='id_document_name')
 #    id_document_key = models.CharField(max_length=255, editable=False)
@@ -521,51 +651,51 @@ class CheckListInternetDraft(models.Model):
 #    last_modified_date = models.DateField()
 #    replaced_by = BrokenForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
 #    replaces = FKAsOneToOne('replaces', reverse=True)
-    review_by_rfc_editor = models.BooleanField()
-    expired_tombstone = models.BooleanField()
+#    review_by_rfc_editor = models.BooleanField()
+#    expired_tombstone = models.BooleanField()
 #    idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
     
-class CheckListIDInternal(models.Model):
+#class CheckListIDInternal(models.Model):
 #    draft = models.ForeignKey(InternetDraft, primary_key=True, unique=True, db_column='id_document_tag')
-    rfc_flag = models.IntegerField(null=True)
-    ballot = models.ForeignKey('BallotInfo', related_name='drafts', db_column="ballot_id")
-    primary_flag = models.IntegerField(blank=True, null=True)
-    group_flag = models.IntegerField(blank=True, default=0)
-    token_name = models.CharField(blank=True, max_length=25)
-    token_email = models.CharField(blank=True, max_length=255)
+#    rfc_flag = models.IntegerField(null=True)
+#    ballot = models.ForeignKey('BallotInfo', related_name='drafts', db_column="ballot_id")
+#    primary_flag = models.IntegerField(blank=True, null=True)
+#    group_flag = models.IntegerField(blank=True, default=0)
+#    token_name = models.CharField(blank=True, max_length=25)
+#    token_email = models.CharField(blank=True, max_length=255)
 #    note = models.TextField(blank=True)
 #    status_date = models.DateField(blank=True,null=True)
-    email_display = models.CharField(blank=True, max_length=50)
-    agenda = models.IntegerField(null=True, blank=True)
+#    email_display = models.CharField(blank=True, max_length=50)
+#    agenda = models.IntegerField(null=True, blank=True)
 #    cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')
-    prev_state = models.ForeignKey(IDState, db_column='prev_state', related_name='docs_prev')
-    assigned_to = models.CharField(blank=True, max_length=25)
-    mark_by = models.ForeignKey('IESGLogin', db_column='mark_by', related_name='marked')
+#    prev_state = models.ForeignKey(IDState, db_column='prev_state', related_name='docs_prev')
+#    assigned_to = models.CharField(blank=True, max_length=25)
+#    mark_by = models.ForeignKey('IESGLogin', db_column='mark_by', related_name='marked')
 #    job_owner = models.ForeignKey(IESGLogin, db_column='job_owner', related_name='documents')
-    event_date = models.DateField(null=True)
+#    event_date = models.DateField(null=True)
 #    area_acronym = models.ForeignKey('Area')
-    cur_sub_state = BrokenForeignKey('IDSubState', related_name='docs', null=True, blank=True, null_values=(0, -1))
-    prev_sub_state = BrokenForeignKey('IDSubState', related_name='docs_prev', null=True, blank=True, null_values=(0, -1))
+#    cur_sub_state = BrokenForeignKey('IDSubState', related_name='docs', null=True, blank=True, null_values=(0, -1))
+#    prev_sub_state = BrokenForeignKey('IDSubState', related_name='docs_prev', null=True, blank=True, null_values=(0, -1))
 #    returning_item = models.IntegerField(null=True, blank=True)
 #    telechat_date = models.DateField(null=True, blank=True)
-    via_rfc_editor = models.IntegerField(null=True, blank=True)
+#    via_rfc_editor = models.IntegerField(null=True, blank=True)
 #    state_change_notice_to = models.CharField(blank=True, max_length=255)
-    dnp = models.IntegerField(null=True, blank=True)
-    dnp_date = models.DateField(null=True, blank=True)
-    noproblem = models.IntegerField(null=True, blank=True)
-    resurrect_requested_by = BrokenForeignKey('IESGLogin', db_column='resurrect_requested_by', related_name='docsresurrected', null=True, blank=True)
-    approved_in_minute = models.IntegerField(null=True, blank=True)
+#    dnp = models.IntegerField(null=True, blank=True)
+#    dnp_date = models.DateField(null=True, blank=True)
+#    noproblem = models.IntegerField(null=True, blank=True)
+#    resurrect_requested_by = BrokenForeignKey('IESGLogin', db_column='resurrect_requested_by', related_name='docsresurrected', null=True, blank=True)
+#    approved_in_minute = models.IntegerField(null=True, blank=True)
 
-class CheckListBallotInfo(models.Model):
-    ballot = models.AutoField(primary_key=True, db_column='ballot_id')
-    active = models.BooleanField()
+#class CheckListBallotInfo(models.Model):
+#    ballot = models.AutoField(primary_key=True, db_column='ballot_id')
+#    active = models.BooleanField()
 #    an_sent = models.BooleanField()
 #    an_sent_date = models.DateField(null=True, blank=True)
 #    an_sent_by = models.ForeignKey('IESGLogin', db_column='an_sent_by', related_name='ansent', null=True)
-    defer = models.BooleanField(blank=True)
-    defer_by = models.ForeignKey('IESGLogin', db_column='defer_by', related_name='deferred', null=True)
-    defer_date = models.DateField(null=True, blank=True)
-    approval_text = models.TextField(blank=True)
-    last_call_text = models.TextField(blank=True)
-    ballot_writeup = models.TextField(blank=True)
+#    defer = models.BooleanField(blank=True)
+#    defer_by = models.ForeignKey('IESGLogin', db_column='defer_by', related_name='deferred', null=True)
+#    defer_date = models.DateField(null=True, blank=True)
+#    approval_text = models.TextField(blank=True)
+#    last_call_text = models.TextField(blank=True)
+#    ballot_writeup = models.TextField(blank=True)
 #    ballot_issued = models.IntegerField(null=True, blank=True)

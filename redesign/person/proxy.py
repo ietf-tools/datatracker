@@ -37,6 +37,8 @@ class IESGLogin(Email):
     
     def __str__(self):
         return self.get_name()
+    def __unicode__(self):
+        return self.get_name()
     def is_current_ad(self):
 	return self in Email.objects.filter(role__name="ad", role__group__state="active")
     @staticmethod

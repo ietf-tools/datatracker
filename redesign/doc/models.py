@@ -164,10 +164,10 @@ EVENT_TYPES = [
     ("added_tombstone", "Added tombstone"),
     ("expired_document", "Expired document"),
     ("requested_resurrect", "Requested resurrect"),
+    ("completed_resurrect", "Completed resurrect"),
     
     # IESG events
     ("sent_ballot_announcement", "Sent ballot announcement"),
-    ("deferred_ballot", "Deferred ballot"),
     ("changed_ballot_position", "Changed ballot position"),
     ("changed_ballot_approval_text", "Changed ballot approval text"),
     ("changed_ballot_writeup_text", "Changed ballot writeup text"),
@@ -180,9 +180,8 @@ EVENT_TYPES = [
     
     ("scheduled_for_telechat", "Scheduled for telechat"),
 
-    ("resolved_to_do_not_publish", "Resolved to 'do not publish'"),
-    ("resolved_to_no_problem", "Resolved to 'no problem'"),
-    ("iesg_approved", "IESG approved document"),
+    ("iesg_approved", "IESG approved document (no problem)"),
+    ("iesg_disapproved", "IESG disapproved document (do not publish)"),
     
     ("approved_in_minute", "Approved in minute"),
     ]
@@ -221,10 +220,10 @@ class BallotPosition(Event):
     comment_time = models.DateTimeField(help_text="Time optional comment was written", blank=True, null=True)
     
 class Status(Event):
-    date = models.DateField()
+    date = models.DateField(blank=True, null=True)
 
 class Expiration(Event):
-    expires = models.DateTimeField()
+    expires = models.DateTimeField(blank=True, null=True)
     
 class Telechat(Event):
     telechat_date = models.DateField(blank=True, null=True)

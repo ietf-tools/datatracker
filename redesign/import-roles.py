@@ -40,9 +40,11 @@ area_director_role = name(RoleName, "ad", "Area Director")
 
 # helpers for creating the objects
 def get_or_create_email(o):
-    email = o.person.email()[1]
+    hardcoded_emails = { 'Dinara Suleymanova': "dinaras@ietf.org" }
+    
+    email = o.person.email()[1] or hardcoded_emails.get("%s %s" % (o.person.first_name, o.person.last_name))
     if not email:
-        print "NO EMAIL FOR %s %s" % (o.__class__, o.id)
+        print "NO EMAIL FOR %s %s %s %s" % (o.__class__, o.id, o.person.first_name, o.person.last_name)
         return None
     
     e, _ = Email.objects.get_or_create(address=email)

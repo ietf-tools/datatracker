@@ -165,7 +165,8 @@ def _get_history(doc, versions):
             results.append({'comment':e, 'info':info, 'date':e.time, 'is_com':True})
 
         prev_rev = "00"
-        for o in reversed(results):
+        results.sort(key=lambda x: x['date'])
+        for o in results:
             e = o["comment"]
             if e.type == "new_revision":
                 e.version = e.newrevision.rev

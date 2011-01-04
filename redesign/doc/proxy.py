@@ -53,7 +53,7 @@ class InternetDraft(Document):
             for t in possible_types:
                 if m.endswith(t):
                     res.add(t)
-        return ",".join(res)
+        return ",".join(res) or ".txt"
     #txt_page_count = models.IntegerField()
     @property
     def txt_page_count(self):
@@ -113,7 +113,7 @@ class InternetDraft(Document):
     @property
     def b_approve_date(self):
         e = self.latest_event(type="iesg_approved")
-        return e.time if e else None
+        return e.time.date() if e else None
         
     #wgreturn_date = models.DateField(null=True, blank=True) # unused
         
@@ -148,13 +148,13 @@ class InternetDraft(Document):
         
     #review_by_rfc_editor = models.BooleanField()
     @property
-    def review_by_rfc_editor(self): raise NotImplemented # should use tag
+    def review_by_rfc_editor(self):
+        return bool(self.tags.filter(slug='rfc-rev'))
         
     #expired_tombstone = models.BooleanField()
     @property
     def expired_tombstone(self):
-        # FIXME: this is probably not perfect, what happens when we delete it again
-        return self.latest_event(type="added_tombstone")
+        return bool(self.tags.filter(slug='exp-tomb'))
         
     #idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
     @property
@@ -176,7 +176,8 @@ class InternetDraft(Document):
 	   r = max(r - 1, 0)
 	return "%02d" % r
     def expiration(self):
-        return self.revision_date + datetime.timedelta(self.DAYS_TO_EXPIRE)
+        e = self.latest_event(type__in=("completed_resurrect", "new_revision"))
+        return e.time.date() + datetime.timedelta(self.DAYS_TO_EXPIRE)
     def can_expire(self):
         # Copying the logic from expire-ids-1 without thinking
         # much about it.
@@ -234,22 +235,22 @@ class InternetDraft(Document):
     
     #primary_flag = models.IntegerField(blank=True, null=True)
     @property
-    def primary(self):
-        return True # left-over from multi-ballot documents?
+    def primary_flag(self):
+        # left-over from multi-ballot documents which we don't really
+        # support anymore, just pretend we're always primary
+        return True
     
-    #group_flag = models.IntegerField(blank=True, default=0) # unused?
+    #group_flag = models.IntegerField(blank=True, default=0) # not used anymore, contained the group acronym_id once upon a time (so it wasn't a flag)
 
     #token_name = models.CharField(blank=True, max_length=25)
     @property
     def token_name(self):
-        e = self.latest_event()
-        return e.by.person.name if e else None
+        return self.ad.get_name()
 
     #token_email = models.CharField(blank=True, max_length=255)
     @property
     def token_email(self):
-        e = self.latest_event()
-        return e.by.address if e else None
+        return self.ad.address
     
     #note = models.TextField(blank=True) # same name
     
@@ -273,7 +274,7 @@ class InternetDraft(Document):
     #prev_state = models.ForeignKey(IDState, db_column='prev_state', related_name='docs_prev')
     @property
     def prev_state(self):
-        ds = self.dochistory_set.all().order_by('-time')[:1]
+        ds = self.dochistory_set.exclude(iesg_state=self.iesg_state).order_by('-time')[:1]
         return ds[0].iesg_state if ds else None
     
     #assigned_to = models.CharField(blank=True, max_length=25) # unused
@@ -282,7 +283,8 @@ class InternetDraft(Document):
     @property
     def mark_by(self):
         e = self.latest_event()
-        return e.by if e else None
+        from person.proxy import IESGLogin as IESGLoginProxy
+        return IESGLoginProxy(e.by) if e else None
 
     # job_owner = models.ForeignKey(IESGLogin, db_column='job_owner', related_name='documents')
     @property
@@ -310,10 +312,12 @@ class InternetDraft(Document):
     #cur_sub_state = BrokenForeignKey(IDSubState, related_name='docs', null=True, blank=True, null_values=(0, -1))
     @property
     def cur_sub_state(self):
-        return ", ".join(self.tags.all())
+        s = self.tags.filter(slug__in=['extpty', 'need-rev', 'ad-f-up', 'point'])
+        return s[0] if s else None
     @property
     def cur_sub_state_id(self):
-        return 0
+        s = self.cur_sub_state
+        return 1 if s else 0 # need to return something numeric
     
     #prev_sub_state = BrokenForeignKey(IDSubState, related_name='docs_prev', null=True, blank=True, null_values=(0, -1))
     @property
@@ -339,7 +343,7 @@ class InternetDraft(Document):
     #via_rfc_editor = models.IntegerField(null=True, blank=True)
     @property
     def via_rfc_editor(self):
-        return bool(self.tags.filter(slug='viarfceditor'))
+        return bool(self.tags.filter(slug='via-rfc'))
     
     #state_change_notice_to = models.CharField(blank=True, max_length=255)
     @property
@@ -349,23 +353,27 @@ class InternetDraft(Document):
     #dnp = models.IntegerField(null=True, blank=True)
     @property
     def dnp(self):
-        return self.latest_event(type="resolved_to_do_not_publish")
+        e = self.latest_event(type__in=("iesg_disapproved", "iesg_approved"))
+        return e != None and e.type == "iesg_disapproved"
     
     #dnp_date = models.DateField(null=True, blank=True)
     @property
     def dnp_date(self):
-        e = self.latest_event(type="resolved_to_do_not_publish")
-        return e.time if e else None
+        e = self.latest_event(type__in=("iesg_disapproved", "iesg_approved"))
+        return e.time.date() if e != None and e.type == "iesg_disapproved" else None
     
     #noproblem = models.IntegerField(null=True, blank=True)
     @property
     def noproblem(self):
-        return self.latest_event(type="resolved_to_no_problem")
+        e = self.latest_event(type__in=("iesg_disapproved", "iesg_approved"))
+        return e != None and e.type == "iesg_approved"
     
     #resurrect_requested_by = BrokenForeignKey(IESGLogin, db_column='resurrect_requested_by', related_name='docsresurrected', null=True, blank=True)
     @property
     def resurrect_requested_by(self):
-        return self.latest_event(type="requested_resurrect")
+        e = self.latest_event(type__in=("requested_resurrect", "completed_resurrect"))
+        from person.proxy import IESGLogin as IESGLoginProxy
+        return IESGLoginProxy(e.by) if e and e.type == "requested_resurrect" else None
     
     #approved_in_minute = models.IntegerField(null=True, blank=True)
     @property
@@ -404,7 +412,8 @@ class InternetDraft(Document):
     #active = models.BooleanField()
     @property
     def active(self):
-        return self.iesg_state and self.iesg_state.name in ['In Last Call', 'Waiting for Writeup', 'Waiting for AD Go-Ahead', 'IESG Evaluation', 'IESG Evaluation - Defer']
+        # taken from BallotWrapper
+        return self.latest_event(type="sent_ballot_announcement") and self.iesg_state and self.iesg_state.name in ['In Last Call', 'Waiting for Writeup', 'Waiting for AD Go-Ahead', 'IESG Evaluation', 'IESG Evaluation - Defer'] and (self.state_id == "rfc" or self.state_id == "active")
 
     #an_sent = models.BooleanField()
     @property
@@ -421,42 +430,45 @@ class InternetDraft(Document):
     @property
     def an_sent_by(self):
         e = self.latest_event(type="iesg_approved")
-        return e.by if e else None
+        from person.proxy import IESGLogin as IESGLoginProxy
+        return IESGLoginProxy(e.by) if e else None
 
     #defer = models.BooleanField()
     @property
     def defer(self):
-        return bool(self.latest_event(type="deferred_ballot"))
+        # we're deferred if we're in the deferred state
+        return self.iesg_state and self.iesg_state.name == "IESG Evaluation - Defer"
 
     #defer_by = models.ForeignKey(IESGLogin, db_column='defer_by', related_name='deferred', null=True)
     @property
     def defer_by(self):
-        e = self.latest_event(type="deferred_ballot")
-        return e.by if e else None
+        e = self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
+        from person.proxy import IESGLogin as IESGLoginProxy
+        return IESGLoginProxy(e.by) if e else None
     
     #defer_date = models.DateField(null=True, blank=True)
     @property
     def defer_date(self):
-        e = self.latest_event(type="deferred_ballot")
-        return e.time if e else None
+        e = self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
+        return e.time.date() if e else None
 
     #approval_text = models.TextField(blank=True)
     @property
     def approval_text(self):
-        e = self.latest_event(type="changed_ballot_approval_text")
-        return e.text.content if e else ""
+        e = self.latest_event(Text, type="changed_ballot_approval_text")
+        return e.content if e else ""
     
     #last_call_text = models.TextField(blank=True)
     @property
     def last_call_text(self):
-        e = self.latest_event(type="changed_last_call_text")
-        return e.text.content if e else ""
+        e = self.latest_event(Text, type="changed_last_call_text")
+        return e.content if e else ""
     
     #ballot_writeup = models.TextField(blank=True)
     @property
     def ballot_writeup(self):
-        e = self.latest_event(type="changed_ballot_writeup_text")
-        return e.text.content if e else ""
+        e = self.latest_event(Text, type="changed_ballot_writeup_text")
+        return e.content if e else ""
 
     #ballot_issued = models.IntegerField(null=True, blank=True)
     @property
