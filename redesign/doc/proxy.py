@@ -10,7 +10,8 @@ import glob, os
 class InternetDraft(Document):
     objects = TranslatingManager(dict(filename="name",
                                       id_document_tag="id",
-                                      status="state"))
+                                      status="state",
+                                      rfc_number=lambda v: ("docalias__name", "rfc%s" % v)))
 
     DAYS_TO_EXPIRE=185
 
@@ -46,7 +47,7 @@ class InternetDraft(Document):
     #file_type = models.CharField(max_length=20)
     @property
     def file_type(self):
-        matches = glob.glob(os.path.join(settings.INTERNET_DRAFT_PATH, self.filename + "*.*"))
+        matches = glob.glob(os.path.join(settings.INTERNET_DRAFT_PATH, self.name + "*.*"))
         possible_types = [".txt", ".pdf", ".xml", ".ps"]
         res = set()
         for m in matches:
@@ -133,7 +134,7 @@ class InternetDraft(Document):
     #replaced_by = models.ForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
     @property
     def replaced_by(self):
-        r = InternetDraft.objects.filter(related__document=self, related__relateddocument__relationship="replaces")
+        r = InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="replaces")
         return r[0] if r else None
         
     #replaces = FKAsOneToOne('replaces', reverse=True)
@@ -144,7 +145,7 @@ class InternetDraft(Document):
 
     @property
     def replaces_set(self):
-        return InternetDraft.objects.filter(docalias__relateddocument__relationship="replaces", docalias__relateddocument__document=self)
+        return InternetDraft.objects.filter(docalias__relateddocument__document=self, docalias__relateddocument__relationship="replaces")
         
     #review_by_rfc_editor = models.BooleanField()
     @property
@@ -548,6 +549,71 @@ class InternetDraft(Document):
 
 	return answer.rstrip()
     
+
+    # things from RfcIndex
     
+    #rfc_number = models.IntegerField(primary_key=True) # already taken care of
+    #title = models.CharField(max_length=250) # same name
+    #authors = models.CharField(max_length=250) FIXME
+    #rfc_published_date = models.DateField()
+    @property
+    def rfc_published_date(self):
+        e = self.latest_event(type="published_rfc")
+        return e.time.date() if e else None
+    
+    #current_status = models.CharField(max_length=50,null=True)
+    @property
+    def current_status(self):
+        return self.std_level
+
+    #updates = models.CharField(max_length=200,blank=True,null=True)
+    @property
+    def updates(self):
+        return ",".join(sorted("RFC%s" % d.rfc_number for d in InternetDraft.objects.filter(docalias__relateddocument__document=self, docalias__relateddocument__relationship="updates")))
+
+    #updated_by = models.CharField(max_length=200,blank=True,null=True)
+    @property
+    def updated_by(self):
+        return ",".join(sorted("RFC%s" % d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="updates")))
+
+    #obsoletes = models.CharField(max_length=200,blank=True,null=True)
+    @property
+    def obsoletes(self):
+        return ",".join(sorted("RFC%s" % d.rfc_number for d in InternetDraft.objects.filter(docalias__relateddocument__document=self, docalias__relateddocument__relationship="obs")))
+
+    #obsoleted_by = models.CharField(max_length=200,blank=True,null=True)
+    @property
+    def obsoleted_by(self):
+        return ",".join(sorted("RFC%s" % d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="obs")))
+
+    #also = models.CharField(max_length=50,blank=True,null=True)
+    @property
+    def also(self):
+        aliases = self.docalias_set.filter(models.Q(name__startswith="bcp") |
+                                           models.Q(name__startswith="std") |
+                                           models.Q(name__startswith="bcp"))
+        return aliases[0].name.upper() if aliases else None
+    
+    #draft = models.CharField(max_length=200,null=True)
+    @property
+    def draft(self):
+        if not self.name.startswith("rfc"):
+            return self.name
+        else:
+            return None
+        
+    #has_errata = models.BooleanField() FIXME
+    #stream = models.CharField(max_length=15,blank=True,null=True)
+    @property
+    def stream(self):
+        return super(InternetDraft, self).stream.name
+    #wg = models.CharField(max_length=15,blank=True,null=True) FIXME
+    #file_formats = models.CharField(max_length=20,blank=True,null=True)
+    @property
+    def file_formats(self):
+        return self.file_type.replace(".", "").replace("txt", "ascii")
+
     class Meta:
         proxy = True
+
+RfcIndex = InternetDraft

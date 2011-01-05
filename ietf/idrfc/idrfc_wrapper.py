@@ -287,10 +287,10 @@ class RfcWrapper:
                 self.draft_name = self._rfcindex.draft
             
     def _rfc_doc_list(self, name):
-        if (not self._rfcindex) or (not self._rfcindex.__dict__[name]):
+        if (not self._rfcindex) or (not getattr(self._rfcindex, name)):
             return None
         else:
-            s = self._rfcindex.__dict__[name]
+            s = getattr(self._rfcindex, name)
             s = s.replace(",", ",  ")
             s = re.sub("([A-Z])([0-9])", "\\1 \\2", s)
             return s

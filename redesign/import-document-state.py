@@ -14,14 +14,14 @@ management.setup_environ(settings)
 from redesign.doc.models import *
 from redesign.group.models import *
 from redesign.name.models import *
-from ietf.idtracker.models import InternetDraft, IESGLogin, DocumentComment, PersonOrOrgInfo
-from ietf.idrfc.models import DraftVersions
+from ietf.idtracker.models import InternetDraft, IESGLogin, DocumentComment, PersonOrOrgInfo, RfcObsolete
+from ietf.idrfc.models import RfcIndex, DraftVersions
 
 import sys
 
-draft_name_to_import = None
+document_name_to_import = None
 if len(sys.argv) > 1:
-    draft_name_to_import = sys.argv[1]
+    document_name_to_import = sys.argv[1]
 
 # assumptions:
 # - groups have been imported
@@ -33,7 +33,8 @@ if len(sys.argv) > 1:
 # objects, we just import the comments as events.
 
 # imports InternetDraft, IDInternal, BallotInfo, Position,
-# IESGComment, IESGDiscuss, DocumentComment, idrfc.DraftVersions
+# IESGComment, IESGDiscuss, DocumentComment, RfcObsolete,
+# idrfc.RfcIndex, idrfc.DraftVersions
 
 def name(name_class, slug, name, desc=""):
     # create if it doesn't exist, set name and desc
@@ -43,10 +44,17 @@ def name(name_class, slug, name, desc=""):
     obj.save()
     return obj
 
+def alias_doc(name, doc):
+    DocAlias.objects.filter(name=name).exclude(document=doc).delete()
+    alias, _ = DocAlias.objects.get_or_create(name=name, document=doc)
+    return alias
+
 type_draft = name(DocTypeName, "draft", "Draft")
 stream_ietf = name(DocStreamName, "ietf", "IETF")
 
 relationship_replaces = name(DocRelationshipName, "replaces", "Replaces")
+relationship_updates = name(DocRelationshipName, "updates", "Updates")
+relationship_obsoletes = name(DocRelationshipName, "obs", "Obsoletes")
 
 intended_status_mapping = {
     "BCP": name(IntendedStatusName, "bcp", "Best Current Practice"),
@@ -165,7 +173,7 @@ def iesg_login_to_email(l):
             except Email.DoesNotExist:
                 print "MISSING IESG LOGIN", l.person.email()
                 return None
-    
+
 # regexps for parsing document comments
 
 date_re_str = "(?P<year>[0-9][0-9][0-9][0-9])-(?P<month>[0-9][0-9])-(?P<day>[0-9][0-9])"
@@ -192,8 +200,8 @@ re_state_change_notice = re.compile(r"State Change Notice email list (have been 
 re_area_acronym_changed = re.compile(r"Area acronymn? has been changed to \w+ from \w+(<b>)?")
 
 all_drafts = InternetDraft.objects.all().select_related()
-if draft_name_to_import:
-    all_drafts = all_drafts.filter(filename=draft_name_to_import)
+if document_name_to_import:
+    all_drafts = all_drafts.filter(filename=document_name_to_import)
 #all_drafts = all_drafts[all_drafts.count() - 1000:]
 
 for o in all_drafts:
@@ -212,14 +220,14 @@ for o in all_drafts:
     d.iesg_state = iesg_state_mapping[o.idinternal.cur_state.state if o.idinternal else None]
     # we currently ignore the previous IESG state prev_state
     d.iana_state = None
-#    d.rfc_state =
+#    d.rfc_state = # FIXME
     d.rev = o.revision
     d.abstract = o.abstract
     d.pages = o.txt_page_count
     d.intended_std_level = intended_status_mapping[o.intended_status.intended_status]
-#    d.std_level =
+#    d.std_level = # FIXME
 #    d.authors =
-#    d.related =
+#    d.related = # FIXME
     d.ad = iesg_login_to_email(o.idinternal.job_owner) if o.idinternal else None
     d.shepherd = None
     d.notify = o.idinternal.state_change_notice_to or "" if o.idinternal else ""
@@ -229,8 +237,7 @@ for o in all_drafts:
     d.save()
 
     # make sure our alias is updated
-    DocAlias.objects.filter(name=d.name).exclude(document=d).delete()
-    d_alias, _ = DocAlias.objects.get_or_create(name=d.name, document=d)
+    alias_doc(d.name, d)
     
     # clear already imported events
     d.event_set.all().delete()
@@ -601,101 +608,110 @@ for o in all_drafts:
 
     sync_tag(o.idinternal and o.idinternal.approved_in_minute, tag_approved_in_minute)
     
-    
     # RFC alias
     if o.rfc_number:
-        rfc_name = "rfc%s" % o.rfc_number
-        DocAlias.objects.get_or_create(document=d, name=rfc_name)
+        alias_doc("rfc%s" % o.rfc_number, d)
         # FIXME: some RFCs seem to be called rfc1234bis?
-
+            
     if o.replaced_by:
         replacement, _ = Document.objects.get_or_create(name=o.replaced_by.filename)
         RelatedDocument.objects.get_or_create(document=replacement, doc_alias=d_alias, relationship=relationship_replaces)
-        
+    
+    # the RFC-related attributes are imported when we handle the RFCs below
             
     print "imported", d.name, " - ", d.iesg_state
 
-    
 
-# checklist of attributes below: handled attributes are commented out
+# now process RFCs
+
+def get_or_create_rfc_document(rfc_number):
+    name = "rfc%s" % rfc_number
+
+    # try to find a draft that can form the base of the document
+    draft = None
+
+    ids = InternetDraft.objects.filter(rfc_number=rfc_number)[:1]
+    if ids:
+        draft = ids[0]
+    else:
+        r = RfcIndex.objects.get(rfc_number=rfc_number)
+        # rfcindex occasionally includes drafts that were not
+        # really submitted to IETF (e.g. April 1st)
+        if r.draft:
+            ids = InternetDraft.objects.filter(filename=r.draft)[:1]
+            if ids:
+                draft = ids[0]
+
+    if draft:
+        name = draft.filename
+
+    d, _ = Document.objects.get_or_create(name=name)
+    if not name.startswith('rfc'):
+        # make sure draft also got an alias
+        alias_doc(name, d)
+        
+    alias = alias_doc("rfc%s" % rfc_number, d)
+    
+    return (d, alias)
+    
+all_rfcs = RfcIndex.objects.all()
+
+if all_drafts.count() != InternetDraft.objects.count():
+    if document_name_to_import.startswith("rfc"):
+        # we wanted to import just an RFC, great
+        all_rfcs = all_rfcs.filter(rfc_number=document_name_to_import[3:])
+    else:
+        # if we didn't process all drafts, limit the RFCs to the ones we
+        # did process
+        all_rfcs = all_rfcs.filter(rfc_number__in=set(d.rfc_number for d in all_drafts if d.rfc_number))
+
+for o in all_rfcs:
+    d, d_alias = get_or_create_rfc_document(o.rfc_number)
+    
+    # import obsoletes/updates
+    def make_relation(other_rfc, rel_type, reverse):
+        other_number = int(other_rfc.replace("RFC", ""))
+        other, other_alias = get_or_create_rfc_document(other_number)
+        if reverse:
+            RelatedDocument.objects.get_or_create(document=other, doc_alias=d_alias, relationship=rel_type)
+        else:
+            RelatedDocument.objects.get_or_create(document=d, doc_alias=other_alias, relationship=rel_type)
+
+    if o.obsoletes:
+        for x in o.obsoletes.split(','):
+            make_relation(x, relationship_obsoletes, False)
+    if o.obsoleted_by:
+        for x in o.obsoleted_by.split(','):
+            make_relation(x, relationship_obsoletes, True)
+    if o.updates:
+        for x in o.updates.split(','):
+            make_relation(x, relationship_updates, False)
+    if o.updated_by:
+        for x in o.updated_by.split(','):
+            make_relation(x, relationship_updates, True)
+
+    if o.also:
+        print o.also
+        alias_doc(o.also.lower(), d)
+            
+    print "imported", d_alias.name, " - ", d.rfc_state
+
 
 sys.exit(0)
-    
-#class CheckListInternetDraft(models.Model):
-#    id_document_tag = models.AutoField(primary_key=True)
-#    title = models.CharField(max_length=255, db_column='id_document_name')
-#    id_document_key = models.CharField(max_length=255, editable=False)
-#    group = models.ForeignKey(Acronym, db_column='group_acronym_id')
-#    filename = models.CharField(max_length=255, unique=True)
-#    revision = models.CharField(max_length=2)
-#    revision_date = models.DateField()
-#    file_type = models.CharField(max_length=20)
-#    txt_page_count = models.IntegerField()
-#    local_path = models.CharField(max_length=255, blank=True, null=True)
-#    start_date = models.DateField()
-#    expiration_date = models.DateField(null=True)
-#    abstract = models.TextField()
-#    dunn_sent_date = models.DateField(null=True, blank=True)
-#    extension_date = models.DateField(null=True, blank=True)
-#    status = models.ForeignKey(IDStatus)
-#    intended_status = models.ForeignKey(IDIntendedStatus)
-#    lc_sent_date = models.DateField(null=True, blank=True)
-#    lc_changes = models.CharField(max_length=3,null=True)
-#    lc_expiration_date = models.DateField(null=True, blank=True)
-#    b_sent_date = models.DateField(null=True, blank=True)
-#    b_discussion_date = models.DateField(null=True, blank=True)
-#    b_approve_date = models.DateField(null=True, blank=True)
-#    wgreturn_date = models.DateField(null=True, blank=True)
-#    rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
-#    comments = models.TextField(blank=True,null=True)
-#    last_modified_date = models.DateField()
-#    replaced_by = BrokenForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
-#    replaces = FKAsOneToOne('replaces', reverse=True)
-#    review_by_rfc_editor = models.BooleanField()
-#    expired_tombstone = models.BooleanField()
-#    idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
-    
-#class CheckListIDInternal(models.Model):
-#    draft = models.ForeignKey(InternetDraft, primary_key=True, unique=True, db_column='id_document_tag')
-#    rfc_flag = models.IntegerField(null=True)
-#    ballot = models.ForeignKey('BallotInfo', related_name='drafts', db_column="ballot_id")
-#    primary_flag = models.IntegerField(blank=True, null=True)
-#    group_flag = models.IntegerField(blank=True, default=0)
-#    token_name = models.CharField(blank=True, max_length=25)
-#    token_email = models.CharField(blank=True, max_length=255)
-#    note = models.TextField(blank=True)
-#    status_date = models.DateField(blank=True,null=True)
-#    email_display = models.CharField(blank=True, max_length=50)
-#    agenda = models.IntegerField(null=True, blank=True)
-#    cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')
-#    prev_state = models.ForeignKey(IDState, db_column='prev_state', related_name='docs_prev')
-#    assigned_to = models.CharField(blank=True, max_length=25)
-#    mark_by = models.ForeignKey('IESGLogin', db_column='mark_by', related_name='marked')
-#    job_owner = models.ForeignKey(IESGLogin, db_column='job_owner', related_name='documents')
-#    event_date = models.DateField(null=True)
-#    area_acronym = models.ForeignKey('Area')
-#    cur_sub_state = BrokenForeignKey('IDSubState', related_name='docs', null=True, blank=True, null_values=(0, -1))
-#    prev_sub_state = BrokenForeignKey('IDSubState', related_name='docs_prev', null=True, blank=True, null_values=(0, -1))
-#    returning_item = models.IntegerField(null=True, blank=True)
-#    telechat_date = models.DateField(null=True, blank=True)
-#    via_rfc_editor = models.IntegerField(null=True, blank=True)
-#    state_change_notice_to = models.CharField(blank=True, max_length=255)
-#    dnp = models.IntegerField(null=True, blank=True)
-#    dnp_date = models.DateField(null=True, blank=True)
-#    noproblem = models.IntegerField(null=True, blank=True)
-#    resurrect_requested_by = BrokenForeignKey('IESGLogin', db_column='resurrect_requested_by', related_name='docsresurrected', null=True, blank=True)
-#    approved_in_minute = models.IntegerField(null=True, blank=True)
 
-#class CheckListBallotInfo(models.Model):
-#    ballot = models.AutoField(primary_key=True, db_column='ballot_id')
-#    active = models.BooleanField()
-#    an_sent = models.BooleanField()
-#    an_sent_date = models.DateField(null=True, blank=True)
-#    an_sent_by = models.ForeignKey('IESGLogin', db_column='an_sent_by', related_name='ansent', null=True)
-#    defer = models.BooleanField(blank=True)
-#    defer_by = models.ForeignKey('IESGLogin', db_column='defer_by', related_name='deferred', null=True)
-#    defer_date = models.DateField(null=True, blank=True)
-#    approval_text = models.TextField(blank=True)
-#    last_call_text = models.TextField(blank=True)
-#    ballot_writeup = models.TextField(blank=True)
-#    ballot_issued = models.IntegerField(null=True, blank=True)
+class RfcIndex(models.Model):
+#    rfc_number = models.IntegerField(primary_key=True)
+    title = models.CharField(max_length=250)
+    authors = models.CharField(max_length=250)
+    rfc_published_date = models.DateField()
+    current_status = models.CharField(max_length=50,null=True)
+#    updates = models.CharField(max_length=200,blank=True,null=True)
+#    updated_by = models.CharField(max_length=200,blank=True,null=True)
+#    obsoletes = models.CharField(max_length=200,blank=True,null=True)
+#    obsoleted_by = models.CharField(max_length=200,blank=True,null=True)
+#    also = models.CharField(max_length=50,blank=True,null=True)
+    draft = models.CharField(max_length=200,null=True)
+    has_errata = models.BooleanField()
+    stream = models.CharField(max_length=15,blank=True,null=True)
+    wg = models.CharField(max_length=15,blank=True,null=True)
+    file_formats = models.CharField(max_length=20,blank=True,null=True)

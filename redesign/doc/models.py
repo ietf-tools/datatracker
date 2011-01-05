@@ -10,7 +10,7 @@ import datetime
 
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
-    time = models.DateTimeField() # should probably have auto_now=True
+    time = models.DateTimeField(default=datetime.datetime.now) # should probably have auto_now=True
     # Document related
     type = models.ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
     title = models.CharField(max_length=255)
@@ -103,8 +103,8 @@ class Document(DocumentInfo):
         super(Document, self).save(force_insert, force_update)
 
 class RelatedDocHistory(models.Model):
-    document = models.ForeignKey('DocHistory')
-    doc_alias = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
+    document = models.ForeignKey('DocHistory') # source
+    doc_alias = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set") # target
     relationship = models.ForeignKey(DocRelationshipName)
     def __unicode__(self):
         return u"%s %s %s" % (self.document.name, self.relationship.name.lower(), self.doc_alias.name)
@@ -127,7 +127,8 @@ class DocAlias(models.Model):
         return "%s-->%s" % (self.name, self.document.name)
     document_link = admin_link("document")
     class Meta:
-        verbose_name_plural = "aliases"
+        verbose_name = "document alias"
+        verbose_name_plural = "document aliases"
 
 class SendQueue(models.Model):
     time = models.DateTimeField()       # Scheduled at this time
@@ -165,6 +166,7 @@ EVENT_TYPES = [
     ("expired_document", "Expired document"),
     ("requested_resurrect", "Requested resurrect"),
     ("completed_resurrect", "Completed resurrect"),
+    ("published_rfc", "Published RFC"),
     
     # IESG events
     ("sent_ballot_announcement", "Sent ballot announcement"),

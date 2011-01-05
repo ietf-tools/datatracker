@@ -4,7 +4,17 @@ from django.db.models.query import QuerySet
 class TranslatingQuerySet(QuerySet):
     def translated_kwargs(self, kwargs):
         trans = self.translated_attrs
-        return dict((trans[k], v) if k in trans else (k, v) for k, v in kwargs.iteritems())
+        res = dict()
+        for k, v in kwargs.iteritems():
+            if k in trans:
+                t = trans[k]
+                if callable(t):
+                    t, v = t(v)
+
+                res[t] = v
+            else:
+                res[k] = v
+        return res
 
     # overridden methods
     def _clone(self, *args, **kwargs):
@@ -109,6 +119,12 @@ class TranslatingQuerySet(QuerySet):
         return super(self.__class__, self)._update(values, **kwargs)
 
 class TranslatingManager(Manager):
+    """Translates keyword arguments for the ORM, for use in proxy
+    wrapping, e.g. given trans={'foo': 'bar'} it will transform a
+    lookup of the field foo to a lookup on the field bar. The right
+    hand side can either be a string or a function which is called
+    with the right-hand side to transform it."""
+    
     def __init__(self, trans):
         super(self.__class__, self).__init__()
         self.translated_attrs = trans
