@@ -44,17 +44,19 @@ class InternetDraft(Document):
     def revision_date(self):
         e = self.latest_event(type="new_revision")
         return e.time.date() if e else None
+    # helper function
+    def get_file_type_matches_from(self, glob_path):
+        possible_types = [".txt", ".pdf", ".xml", ".ps"]
+        res = []
+        for m in glob.glob(glob_path):
+            for t in possible_types:
+                if m.endswith(t):
+                    res.append(t)
+        return ",".join(res)
     #file_type = models.CharField(max_length=20)
     @property
     def file_type(self):
-        matches = glob.glob(os.path.join(settings.INTERNET_DRAFT_PATH, self.name + "*.*"))
-        possible_types = [".txt", ".pdf", ".xml", ".ps"]
-        res = set()
-        for m in matches:
-            for t in possible_types:
-                if m.endswith(t):
-                    res.add(t)
-        return ",".join(res) or ".txt"
+        return self.get_file_type_matches_from(os.path.join(settings.INTERNET_DRAFT_PATH, self.name + "-" + self.rev + ".*")) or ".txt"
     #txt_page_count = models.IntegerField()
     @property
     def txt_page_count(self):
@@ -160,8 +162,15 @@ class InternetDraft(Document):
     #idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
     @property
     def idinternal(self):
+        print self.iesg_state
         return self if self.iesg_state else None
 
+    # reverse relationship
+    @property
+    def authors(self):
+        from person.models import Person
+        return IDAuthor.objects.filter(document=self)
+    
     # methods from InternetDraft
     def displayname(self):
         return self.name
@@ -554,7 +563,7 @@ class InternetDraft(Document):
     
     #rfc_number = models.IntegerField(primary_key=True) # already taken care of
     #title = models.CharField(max_length=250) # same name
-    #authors = models.CharField(max_length=250) FIXME
+    #authors = models.CharField(max_length=250) # exists already
     #rfc_published_date = models.DateField()
     @property
     def rfc_published_date(self):
@@ -564,7 +573,7 @@ class InternetDraft(Document):
     #current_status = models.CharField(max_length=50,null=True)
     @property
     def current_status(self):
-        return self.std_level
+        return self.std_level.name
 
     #updates = models.CharField(max_length=200,blank=True,null=True)
     @property
@@ -594,26 +603,54 @@ class InternetDraft(Document):
                                            models.Q(name__startswith="bcp"))
         return aliases[0].name.upper() if aliases else None
     
-    #draft = models.CharField(max_length=200,null=True)
-    @property
-    def draft(self):
-        if not self.name.startswith("rfc"):
-            return self.name
-        else:
-            return None
+    #draft = models.CharField(max_length=200,null=True) # have to ignore this, it's already implemented
         
-    #has_errata = models.BooleanField() FIXME
+    #has_errata = models.BooleanField()
+    @property
+    def has_errata(self):
+        return bool(self.tags.filter(slug="errata"))
+
     #stream = models.CharField(max_length=15,blank=True,null=True)
     @property
     def stream(self):
         return super(InternetDraft, self).stream.name
-    #wg = models.CharField(max_length=15,blank=True,null=True) FIXME
+
+    #wg = models.CharField(max_length=15,blank=True,null=True)
+    @property
+    def wg(self):
+        return self.group.acronym
+
     #file_formats = models.CharField(max_length=20,blank=True,null=True)
     @property
     def file_formats(self):
-        return self.file_type.replace(".", "").replace("txt", "ascii")
+        return self.get_file_type_matches_from(os.path.join(settings.RFC_PATH, "rfc" + str(self.rfc_number) + ".*")).replace(".", "").replace("txt", "ascii")
 
     class Meta:
         proxy = True
 
+IDInternal = InternetDraft
+BallotInfo = InternetDraft
 RfcIndex = InternetDraft
+
+
+class IDAuthor(DocumentAuthor):
+    #document = models.ForeignKey(InternetDraft, db_column='id_document_tag', related_name='authors') # same name
+    #person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+    @property
+    def person(self):
+        return self.author.person
+    
+    #author_order = models.IntegerField()
+    @property
+    def author_order(self):
+        return self.order
+    
+    def email(self):
+        return self.author.address
+    
+    def final_author_order(self):
+        return self.order
+    
+    class Meta:
+        proxy = True
+

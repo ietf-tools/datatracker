@@ -8,7 +8,6 @@ if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
         list_display=('acronym', 'name')
     admin.site.register(Acronym, AcronymAdmin)
 
-if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     class AreaAdmin(admin.ModelAdmin):
         list_display=('area_acronym', 'status')
     admin.site.register(Area, AreaAdmin)
@@ -25,9 +24,10 @@ class AreaWGURLAdmin(admin.ModelAdmin):
     pass
 admin.site.register(AreaWGURL, AreaWGURLAdmin)
 
-class BallotInfoAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(BallotInfo, BallotInfoAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    class BallotInfoAdmin(admin.ModelAdmin):
+        pass
+    admin.site.register(BallotInfo, BallotInfoAdmin)
 
 class ChairsHistoryAdmin(admin.ModelAdmin):
     list_display=('person', 'chair_type', 'start_year', 'end_year')
@@ -52,12 +52,13 @@ class IDIntendedStatusAdmin(admin.ModelAdmin):
     pass
 admin.site.register(IDIntendedStatus, IDIntendedStatusAdmin)
 
-class IDInternalAdmin(admin.ModelAdmin):
-    ordering=['draft']
-    list_display=['draft', 'token_email', 'note']
-    search_fields=['draft__filename']
-    raw_id_fields=['draft','ballot']
-admin.site.register(IDInternal, IDInternalAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    class IDInternalAdmin(admin.ModelAdmin):
+        ordering=['draft']
+        list_display=['draft', 'token_email', 'note']
+        search_fields=['draft__filename']
+        raw_id_fields=['draft','ballot']
+    admin.site.register(IDInternal, IDInternalAdmin)
 
 class IDNextStateAdmin(admin.ModelAdmin):
     pass

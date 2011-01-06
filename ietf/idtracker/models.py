@@ -264,19 +264,12 @@ class PersonOrOrgInfo(models.Model):
 	if self.first_name == '' and self.last_name == '':
 	    return u"(Person #%s)" % self.person_or_org_tag
         return u"%s %s" % ( self.first_name or u"<nofirst>", self.last_name or u"<nolast>")
-    def email(self, priority=1, type=None):
-	name = str(self)
+    def email(self, priority=1):
+	name = unicode(self)
         email = ''
-        types = type and [ type ] or [ "INET", "Prim", None ]
-        for type in types:
-            try:
-                if type:
-                    email = self.emailaddress_set.get(priority=priority, type=type).address
-                else:
-                    email = self.emailaddress_set.get(priority=priority).address
-                break
-            except (EmailAddress.DoesNotExist, AssertionError):
-                pass
+        addresses = self.emailaddress_set.filter(address__contains="@").order_by('priority')[:1]
+        if addresses:
+            email = addresses[0].address.replace('<', '').replace('>', '')
 	return (name, email)
     # Added by Sunny Lee to display person's affiliation - 5/26/2007
     def affiliation(self, priority=1):
@@ -1088,7 +1081,12 @@ class DocumentWrapper(object):
 	self.document = document
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from redesign.doc.proxy import InternetDraft
+    InternetDraftOld = InternetDraft
+    IDInternalOld = IDInternal
+    BallotInfoOld = BallotInfo
+    AreaOld = Area
+    AcronymOld = Acronym
+    from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo
     from redesign.group.proxy import Area
     from redesign.group.proxy import Acronym
 

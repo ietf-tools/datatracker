@@ -11,7 +11,8 @@ class TranslatingQuerySet(QuerySet):
                 if callable(t):
                     t, v = t(v)
 
-                res[t] = v
+                if t:
+                    res[t] = v
             else:
                 res[k] = v
         return res

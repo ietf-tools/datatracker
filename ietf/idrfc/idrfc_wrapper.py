@@ -87,7 +87,7 @@ class IdWrapper:
     
     def __init__(self, draft):
         self.id = self
-        if isinstance(draft, IDInternal):
+        if isinstance(draft, IDInternal) and not settings.USE_DB_REDESIGN_PROXY_CLASSES:
             self._idinternal = draft
             self._draft = self._idinternal.draft
         else:
@@ -261,10 +261,16 @@ class RfcWrapper:
         self.rfc = self
 
         if not self._idinternal:
-            try:
-                self._idinternal = IDInternal.objects.get(rfc_flag=1, draft=self._rfcindex.rfc_number)
-            except IDInternal.DoesNotExist:
-                pass
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                pub = rfcindex.latest_event(type="published_rfc")
+                started = rfcindex.latest_event(type="started_iesg_process")
+                if pub and started and pub.time < started.time:
+                    self._idinternal = rfcindex
+            else:
+                try:
+                    self._idinternal = IDInternal.objects.get(rfc_flag=1, draft=self._rfcindex.rfc_number)
+                except IDInternal.DoesNotExist:
+                    pass
             
         if self._idinternal:
             self.ietf_process = IetfProcessData(self._idinternal)
@@ -275,7 +281,10 @@ class RfcWrapper:
         self.maturity_level = self._rfcindex.current_status
         if not self.maturity_level:
             self.maturity_level = "Unknown"
-            
+
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES and rfcindex.filename.startswith('rfc'):
+            return # we've already done the lookup while importing so skip the rest
+
         ids = InternetDraft.objects.filter(rfc_number=self.rfc_number)
         if len(ids) >= 1:
             self.draft_name = ids[0].filename
@@ -658,7 +667,6 @@ class BallotWrapper:
                              position="No Record",
                              )
                     positions.append(d)
-                
         self._positions = positions
         
     def old_init(self):

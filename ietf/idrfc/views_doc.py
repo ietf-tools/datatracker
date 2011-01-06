@@ -199,7 +199,7 @@ def _get_history(doc, versions):
                 results.insert(0, v)    
     if doc.is_id_wrapper and doc.draft_status == "Expired" and doc._draft.expiration_date:
         results.append({'is_text':True, 'date':doc._draft.expiration_date, 'text':'Draft expired'})
-    if doc.is_rfc_wrapper:
+    if not settings.USE_DB_REDESIGN_PROXY_CLASSES and doc.is_rfc_wrapper:
         if doc.draft_name:
             text = 'RFC Published (see <a href="/doc/%s/">%s</a> for earlier history)' % (doc.draft_name,doc.draft_name)
         else:

@@ -14,7 +14,7 @@ management.setup_environ(settings)
 from redesign.doc.models import *
 from redesign.group.models import *
 from redesign.name.models import *
-from ietf.idtracker.models import InternetDraft, IESGLogin, DocumentComment, PersonOrOrgInfo, RfcObsolete
+from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo
 from ietf.idrfc.models import RfcIndex, DraftVersions
 
 import sys
@@ -26,15 +26,14 @@ if len(sys.argv) > 1:
 # assumptions:
 # - groups have been imported
 # - IESG login emails/roles have been imported
-
-# FIXME: what about RFCs
+# - IDAuthor emails/persons have been imported
 
 # Regarding history, we currently don't try to create DocumentHistory
 # objects, we just import the comments as events.
 
 # imports InternetDraft, IDInternal, BallotInfo, Position,
-# IESGComment, IESGDiscuss, DocumentComment, RfcObsolete,
-# idrfc.RfcIndex, idrfc.DraftVersions
+# IESGComment, IESGDiscuss, DocumentComment, IDAuthor, idrfc.RfcIndex,
+# idrfc.DraftVersions
 
 def name(name_class, slug, name, desc=""):
     # create if it doesn't exist, set name and desc
@@ -50,25 +49,47 @@ def alias_doc(name, doc):
     return alias
 
 type_draft = name(DocTypeName, "draft", "Draft")
-stream_ietf = name(DocStreamName, "ietf", "IETF")
+
+stream_mapping = {
+    "Legacy": name(DocStreamName, "legacy", "Legacy"),
+    "IETF": name(DocStreamName, "ietf", "IETF"),
+    "INDEPENDENT": name(DocStreamName, "indie", "Independent Submission"),
+    "IAB": name(DocStreamName, "iab", "IAB"),
+    "IRTF": name(DocStreamName, "irtf", "IRTF"),
+    }
 
 relationship_replaces = name(DocRelationshipName, "replaces", "Replaces")
 relationship_updates = name(DocRelationshipName, "updates", "Updates")
 relationship_obsoletes = name(DocRelationshipName, "obs", "Obsoletes")
 
-intended_status_mapping = {
-    "BCP": name(IntendedStatusName, "bcp", "Best Current Practice"),
-    "Draft Standard": name(IntendedStatusName, "ds", name="Draft Standard"),
-    "Experimental": name(IntendedStatusName, "exp", name="Experimental"),
-    "Historic": name(IntendedStatusName, "hist", name="Historic"),
-    "Informational": name(IntendedStatusName, "inf", name="Informational"),
-    "Proposed Standard": name(IntendedStatusName, "ps", name="Proposed Standard"),
-    "Standard": name(IntendedStatusName, "std", name="Standard"),
+intended_std_level_mapping = {
+    "BCP": name(IntendedStdLevelName, "bcp", "Best Current Practice"),
+    "Draft Standard": name(IntendedStdLevelName, "ds", name="Draft Standard"),
+    "Experimental": name(IntendedStdLevelName, "exp", name="Experimental"),
+    "Historic": name(IntendedStdLevelName, "hist", name="Historic"),
+    "Informational": name(IntendedStdLevelName, "inf", name="Informational"),
+    "Proposed Standard": name(IntendedStdLevelName, "ps", name="Proposed Standard"),
+    "Standard": name(IntendedStdLevelName, "std", name="Standard"),
     "None": None,
-    "Request": None, # FIXME: correct? from idrfc_wrapper.py
+    "Request": None,
     }
 
-status_mapping = {
+# add aliases from rfc_intend_status 
+intended_std_level_mapping["Proposed"] = intended_std_level_mapping["Proposed Standard"]
+intended_std_level_mapping["Draft"] = intended_std_level_mapping["Draft Standard"]
+
+std_level_mapping = {
+    "Standard": name(StdLevelName, "std", "Standard"),
+    "Draft Standard": name(StdLevelName, "ds", "Draft Standard"),
+    "Proposed Standard": name(StdLevelName, "ps", "Proposed Standard"),
+    "Informational": name(StdLevelName, "inf", "Informational"),
+    "Experimental": name(StdLevelName, "exp", "Experimental"),
+    "Best Current Practice": name(StdLevelName, "bcp", "Best Current Practice"),
+    "Historic": name(StdLevelName, "hist", "Historic"),
+    "Unknown": name(StdLevelName, "unkn", "Unknown"),
+  }
+
+state_mapping = {
     'Active': name(DocStateName, "active", "Active"),
     'Expired': name(DocStateName, "expired", "Expired"),
     'RFC': name(DocStateName, "rfc", "RFC"),
@@ -125,9 +146,9 @@ tag_review_by_rfc_editor = name(DocInfoTagName, 'rfc-rev', "Review by RFC Editor
 tag_via_rfc_editor = name(DocInfoTagName, 'via-rfc', "Via RFC Editor")
 tag_expired_tombstone = name(DocInfoTagName, 'exp-tomb', "Expired tombstone")
 tag_approved_in_minute = name(DocInfoTagName, 'app-min', "Approved in minute")
+tag_has_errata = name(DocInfoTagName, 'errata', "Has errata")
 
-# helpers for events
-
+# helpers
 def save_event(doc, event, comment):
     event.time = comment.datetime()
     event.by = iesg_login_to_email(comment.created_by)
@@ -135,6 +156,12 @@ def save_event(doc, event, comment):
     if not event.desc:
         event.desc = comment.comment_text # FIXME: consider unquoting here
     event.save()
+
+def sync_tag(d, include, tag):
+    if include:
+        d.tags.add(tag)
+    else:
+        d.tags.remove(tag)
 
 buggy_iesg_logins_cache = {}
 
@@ -199,6 +226,354 @@ re_intended_status_changed = re.compile(r"Intended [sS]tatus has been changed to
 re_state_change_notice = re.compile(r"State Change Notice email list (have been change|has been changed) (<b>)?")
 re_area_acronym_changed = re.compile(r"Area acronymn? has been changed to \w+ from \w+(<b>)?")
 
+
+def import_from_idinternal(d, idinternal):
+    d.time = idinternal.event_date
+    d.iesg_state = iesg_state_mapping[idinternal.cur_state.state]    
+    d.ad = iesg_login_to_email(idinternal.job_owner)
+    d.notify = idinternal.state_change_notice_to or ""
+    d.note = idinternal.note or ""
+    d.save()
+    
+    # extract events
+    last_note_change_text = ""
+    
+    for c in idinternal.documentcomment_set.order_by('date', 'time', 'id'):
+        handled = False
+
+        # telechat agenda schedulings
+        match = re_telechat_agenda.search(c.comment_text) or re_telechat_changed.search(c.comment_text)
+        if match:
+            e = Telechat()
+            e.type = "scheduled_for_telechat"
+            e.telechat_date = date_in_match(match) if "Placed on" in c.comment_text else None
+            # can't extract this from history so we just take the latest value
+            e.returning_item = bool(idinternal.returning_item)
+            save_event(d, e, c)
+            handled = True
+
+        # ballot issued
+        match = re_ballot_issued.search(c.comment_text)
+        if match:
+            e = Text()
+            e.type = "sent_ballot_announcement"
+            save_event(d, e, c)
+
+            # when you issue a ballot, you also vote yes; add that vote
+            e = BallotPosition()
+            e.type = "changed_ballot_position"
+            e.ad = iesg_login_to_email(c.created_by)
+            e.desc = "[Ballot Position Update] New position, Yes, has been recorded by %s" % e.ad.get_name()
+            last_pos = d.latest_event(type="changed_ballot_position", ballotposition__ad=e.ad)
+            e.pos = ballot_position_mapping["Yes"]
+            e.discuss = last_pos.ballotposition.discuss if last_pos else ""
+            e.discuss_time = last_pos.ballotposition.discuss_time if last_pos else None
+            e.comment = last_pos.ballotposition.comment if last_pos else ""
+            e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
+            save_event(d, e, c)
+            handled = True
+
+        # ballot positions
+        match = re_ballot_position.search(c.comment_text)
+        if match:
+            position = match.group('position') or match.group('position2')
+            ad_name = match.group('for') or match.group('for2') or match.group('by') # some of the old positions don't specify who it's for, in that case assume it's "by", the person who entered the position
+            ad_first, ad_last = ad_name.split(' ')
+
+            e = BallotPosition()
+            e.type = "changed_ballot_position"
+            e.ad = iesg_login_to_email(IESGLogin.objects.get(first_name=ad_first, last_name=ad_last))
+            last_pos = d.latest_event(type="changed_ballot_position", ballotposition__ad=e.ad)
+            e.pos = ballot_position_mapping[position]
+            e.discuss = last_pos.ballotposition.discuss if last_pos else ""
+            e.discuss_time = last_pos.ballotposition.discuss_time if last_pos else None
+            e.comment = last_pos.ballotposition.comment if last_pos else ""
+            e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
+            save_event(d, e, c)
+            handled = True
+
+        # ballot discusses/comments
+        if c.ballot in (DocumentComment.BALLOT_DISCUSS, DocumentComment.BALLOT_COMMENT):
+            e = BallotPosition()
+            e.type = "changed_ballot_position"
+            e.ad = iesg_login_to_email(c.created_by)
+            last_pos = d.latest_event(type="changed_ballot_position", ballotposition__ad=e.ad)
+            e.pos = last_pos.ballotposition.pos if last_pos else ballot_position_mapping[None]
+            if c.ballot == DocumentComment.BALLOT_DISCUSS:
+                e.discuss = c.comment_text
+                e.discuss_time = c.datetime()
+                e.comment = last_pos.ballotposition.comment if last_pos else ""
+                e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
+                # put header into description
+                c.comment_text = "[Ballot discuss]\n" + c.comment_text
+            else:
+                e.discuss = last_pos.ballotposition.discuss if last_pos else ""
+                e.discuss_time = last_pos.ballotposition.discuss_time if last_pos else None
+                e.comment = c.comment_text
+                e.comment_time = c.datetime()
+                # put header into description
+                c.comment_text = "[Ballot comment]\n" + c.comment_text
+            save_event(d, e, c)
+            handled = True
+
+        # last call requested
+        match = re_last_call_requested.search(c.comment_text)
+        if match:
+            e = Event(type="requested_last_call")
+            save_event(d, e, c)
+            handled = True
+
+        # state changes
+        match = re_state_changed.search(c.comment_text)
+        if match:
+            e = Event(type="changed_document")
+            save_event(d, e, c)
+            handled = True
+
+        # note changed
+        match = re_note_changed.search(c.comment_text)
+        if match:
+            # watch out for duplicates of which the old data's got many
+            if c.comment_text != last_note_change_text:
+                last_note_change_text = c.comment_text
+                e = Event(type="changed_document")
+                save_event(d, e, c)
+            handled = True
+
+        # draft added 
+        match = re_draft_added.search(c.comment_text)
+        if match:
+            e = Event(type="started_iesg_process")
+            save_event(d, e, c)
+            handled = True
+
+        # new version
+        if c.comment_text == "New version available":
+            e = NewRevision(type="new_revision", rev=c.version)
+            save_event(d, e, c)
+            handled = True
+
+        # resurrect requested
+        match = re_resurrection_requested.search(c.comment_text)
+        if match:
+            e = Event(type="requested_resurrect")
+            save_event(d, e, c)
+            handled = True
+
+        # completed resurrect
+        match = re_completed_resurrect.search(c.comment_text)
+        if match:
+            e = Event(type="completed_resurrect")
+            save_event(d, e, c)
+            handled = True
+
+        # document expiration
+        if c.comment_text == "Document is expired by system":
+            e = Event(type="expired_document")
+            save_event(d, e, c)
+            handled = True
+
+        # approved document 
+        match = re_document_approved.search(c.comment_text)
+        if match:
+            e = Event(type="iesg_approved")
+            save_event(d, e, c)
+            handled = True
+
+        # disapproved document
+        match = re_document_disapproved.search(c.comment_text)
+        if match:
+            e = Event(type="iesg_disapproved")
+            save_event(d, e, c)
+            handled = True
+
+
+        # some changes can be bundled - this is not entirely
+        # convenient, especially since it makes it hard to give
+        # each a type, so unbundle them
+        if not handled:
+            unhandled_lines = []
+            for line in c.comment_text.split("<br>"):
+                # status date changed
+                match = re_status_date_changed.search(line)
+                if match:
+                    e = Status(type="changed_status_date", date=date_in_match(match))
+                    e.desc = line
+                    save_event(d, e, c)
+                    handled = True
+
+                # AD/job owner changed
+                match = re_responsible_ad_changed.search(line)
+                if match:
+                    e = Event(type="changed_document")
+                    e.desc = line
+                    save_event(d, e, c)
+                    handled = True
+
+                # intended standard level changed
+                match = re_intended_status_changed.search(line)
+                if match:
+                    e = Event(type="changed_document")
+                    e.desc = line
+                    save_event(d, e, c)
+                    handled = True
+
+                # state change notice
+                match = re_state_change_notice.search(line)
+                if match:
+                    e = Event(type="changed_document")
+                    e.desc = line
+                    save_event(d, e, c)
+                    handled = True
+
+                # area acronym
+                match = re_area_acronym_changed.search(line)
+                if match:
+                    e = Event(type="changed_document")
+                    e.desc = line
+                    save_event(d, e, c)
+                    handled = True
+
+                # multiline change bundles end with a single "by xyz" that we skip
+                if not handled and not line.startswith("by <b>"):
+                    unhandled_lines.append(line)
+
+            if handled:
+                c.comment_text = "<br>".join(unhandled_lines)
+
+                if c.comment_text:
+                    print "COULDN'T HANDLE multi-line comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
+
+        # all others are added as comments
+        if not handled:
+            e = Event(type="added_comment")
+            save_event(d, e, c)
+
+            # stop typical comments from being output
+            typical_comments = [
+                "Document Shepherd Write-up for %s" % d.name,
+                "Who is the Document Shepherd for this document",
+                "We understand that this document doesn't require any IANA actions",
+                "IANA questions",
+                "IANA has questions",
+                "IANA comments",
+                "IANA Comments",
+                "IANA Evaluation Comments",
+                "Published as RFC",
+                                ]
+            for t in typical_comments:
+                if t in c.comment_text:
+                    handled = True
+                    break
+
+        if not handled:
+            print "couldn't handle comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
+
+    made_up_date = d.latest_event().time + datetime.timedelta(seconds=1)
+
+    e = d.latest_event(Status, type="changed_status_date")
+    status_date = e.date if e else None
+    if idinternal.status_date != status_date:
+        e = Status(type="changed_status_date", date=idinternal.status_date)
+        e.time = made_up_date
+        e.by = system_email
+        e.doc = d
+        e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (idinternal.status_date, status_date)
+        e.save()
+
+    e = d.latest_event(Telechat, type="scheduled_for_telechat")
+    telechat_date = e.telechat_date if e else None
+    if not idinternal.agenda:
+        idinternal.telechat_date = None # normalize
+
+    if telechat_date != idinternal.telechat_date:
+        e = Telechat(type="scheduled_for_telechat",
+                     telechat_date=idinternal.telechat_date,
+                     returning_item=bool(idinternal.returning_item))
+        # a common case is that it has been removed from the
+        # agenda automatically by a script without a notice in the
+        # comments, in that case the time is simply the day after
+        # the telechat
+        e.time = telechat_date + datetime.timedelta(days=1) if telechat_date and not idinternal.telechat_date else made_up_date
+        e.by = system_email
+        args = ("Placed on", idinternal.telechat_date) if idinternal.telechat_date else ("Removed from", telechat_date)
+        e.doc = d
+        e.desc = "%s agenda for telechat - %s by system" % args
+        e.save()
+
+    try:
+        # sad fact: some ballots haven't been generated yet
+        ballot = idinternal.ballot
+    except BallotInfo.DoesNotExist:
+        ballot = None
+        
+    if ballot:
+        # make sure the comments and discusses are updated
+        positions = list(BallotPosition.objects.filter(doc=d).order_by("-time"))
+        for c in IESGComment.objects.filter(ballot=idinternal.ballot):
+            ad = iesg_login_to_email(c.ad)
+            for p in positions:
+                if p.ad == ad:
+                    if p.comment != c.text:
+                        p.comment = c.text
+                        p.comment_time = c.date if p.time.date() != c.date else p.time
+                        p.save()
+                    break
+                
+        for c in IESGDiscuss.objects.filter(ballot=idinternal.ballot):
+            ad = iesg_login_to_email(c.ad)
+            for p in positions:
+                if p.ad == ad:
+                    if p.discuss != c.text:
+                        p.discuss = c.text
+                        p.discuss_time = c.date if p.time.date() != c.date else p.time
+                        p.save()
+                    break
+                        
+        # if any of these events have happened, they're closer to
+        # the real time
+        e = d.event_set.filter(type__in=("requested_last_call", "sent_last_call", "sent_ballot_announcement", "iesg_approved", "iesg_disapproved")).order_by('time')[:1]
+        if e:
+            text_date = e[0].time - datetime.timedelta(seconds=1)
+        else:
+            text_date = made_up_date
+
+        if idinternal.ballot.approval_text:
+            e, _ = Text.objects.get_or_create(type="changed_ballot_approval_text", doc=d)
+            e.content = idinternal.ballot.approval_text
+            e.time = text_date
+            e.by = system_email
+            e.desc = "Ballot approval text was added"
+            e.save()
+
+        if idinternal.ballot.last_call_text:
+            e, _ = Text.objects.get_or_create(type="changed_last_call_text", doc=d)
+            e.content = idinternal.ballot.last_call_text
+            e.time = text_date
+            e.by = system_email
+            e.desc = "Last call text was added"
+            e.save()
+
+        if idinternal.ballot.ballot_writeup:
+            e, _ = Text.objects.get_or_create(type="changed_ballot_writeup_text", doc=d)
+            e.content = idinternal.ballot.ballot_writeup
+            e.time = text_date
+            e.by = system_email
+            e.desc = "Ballot writeup text was added"
+            e.save()
+
+    # fix tags
+    sync_tag(d, idinternal.via_rfc_editor, tag_via_rfc_editor)
+
+    n = idinternal.cur_sub_state and idinternal.cur_sub_state.sub_state
+    for k, v in substate_mapping.iteritems():
+        sync_tag(d, k == n, v)
+        # currently we ignore prev_sub_state
+
+    sync_tag(d, idinternal.approved_in_minute, tag_approved_in_minute)
+
+
+
 all_drafts = InternetDraft.objects.all().select_related()
 if document_name_to_import:
     all_drafts = all_drafts.filter(filename=document_name_to_import)
@@ -209,277 +584,62 @@ for o in all_drafts:
         d = Document.objects.get(name=o.filename)
     except Document.DoesNotExist:
         d = Document(name=o.filename)
-        
-    d.time = o.idinternal.event_date if o.idinternal else o.revision_date
+
+    d.time = o.revision_date
     d.type = type_draft
     d.title = o.title
-    d.state = status_mapping[o.status.status]
+    d.state = state_mapping[o.status.status]
     d.group = Group.objects.get(acronym=o.group.acronym)
-    d.stream = stream_ietf
+    if o.filename.startswith("draft-iab-"):
+        d.stream = stream_mapping["IAB"]
+    elif o.filename.startswith("draft-irtf-"):
+        d.stream = stream_mapping["IRTF"]
+    elif o.idinternal and o.idinternal.via_rfc_editor:
+        d.stream = stream_mapping["INDEPENDENT"] # FIXME: correct?
+    else:
+        d.stream = stream_mapping["IETF"] # FIXME: correct?
     d.wg_state = None
-    d.iesg_state = iesg_state_mapping[o.idinternal.cur_state.state if o.idinternal else None]
-    # we currently ignore the previous IESG state prev_state
+    d.iesg_state = iesg_state_mapping[None]
     d.iana_state = None
-#    d.rfc_state = # FIXME
+    d.rfc_state = None
     d.rev = o.revision
     d.abstract = o.abstract
     d.pages = o.txt_page_count
-    d.intended_std_level = intended_status_mapping[o.intended_status.intended_status]
-#    d.std_level = # FIXME
-#    d.authors =
-#    d.related = # FIXME
-    d.ad = iesg_login_to_email(o.idinternal.job_owner) if o.idinternal else None
+    d.intended_std_level = intended_std_level_mapping[o.intended_status.intended_status]
+    d.ad = None
     d.shepherd = None
-    d.notify = o.idinternal.state_change_notice_to or "" if o.idinternal else ""
+    d.notify = ""
     d.external_url = ""
-    d.note = o.idinternal.note or "" if o.idinternal else ""
-    d.internal_comments = o.comments or "" # FIXME: maybe put these somewhere else
+    d.note = ""
+    d.internal_comments = o.comments or ""
     d.save()
 
     # make sure our alias is updated
-    alias_doc(d.name, d)
-    
-    # clear already imported events
+    d_alias = alias_doc(d.name, d)
+
+    d.authors.clear()
+    for i, a in enumerate(o.authors.all().select_related("person").order_by('author_order', 'person')):
+        try:
+            e = Email.objects.get(address=a.person.email()[1])
+            # renumber since old numbers may be a bit borked
+            DocumentAuthor.objects.create(document=d, author=e, order=i)
+        except Email.DoesNotExist:
+            print "SKIPPED author", unicode(a.person).encode('utf-8')
+
+    # clear any already imported events as the event importer isn't
+    # clever enough to do a diff
     d.event_set.all().delete()
     
     if o.idinternal:
-        last_note_change_text = ""
-        
-        # extract events
-        for c in o.idinternal.documentcomment_set.order_by('date', 'time', 'id'):
-            handled = False
-            
-            # telechat agenda schedulings
-            match = re_telechat_agenda.search(c.comment_text) or re_telechat_changed.search(c.comment_text)
-            if match:
-                e = Telechat()
-                e.type = "scheduled_for_telechat"
-                e.telechat_date = date_in_match(match) if "Placed on" in c.comment_text else None
-                # can't extract this from history so we just take the latest value
-                e.returning_item = bool(o.idinternal.returning_item)
-                save_event(d, e, c)
-                handled = True
-                
-            # ballot issued
-            match = re_ballot_issued.search(c.comment_text)
-            if match:
-                e = Text()
-                e.type = "sent_ballot_announcement"
-                save_event(d, e, c)
+        # import attributes and events
+        import_from_idinternal(d, o.idinternal)
 
-                # when you issue a ballot, you also vote yes; add that vote
-                e = BallotPosition()
-                e.type = "changed_ballot_position"
-                e.ad = iesg_login_to_email(c.created_by)
-                e.desc = "[Ballot Position Update] New position, Yes, has been recorded by %s" % e.ad.get_name()
-                last_pos = d.latest_event(type="changed_ballot_position", ballotposition__ad=e.ad)
-                e.pos = ballot_position_mapping["Yes"]
-                e.discuss = last_pos.ballotposition.discuss if last_pos else ""
-                e.discuss_time = last_pos.ballotposition.discuss_time if last_pos else None
-                e.comment = last_pos.ballotposition.comment if last_pos else ""
-                e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
-                save_event(d, e, c)
-                handled = True
-                
-            # ballot positions
-            match = re_ballot_position.search(c.comment_text)
-            if match:
-                position = match.group('position') or match.group('position2')
-                ad_name = match.group('for') or match.group('for2') or match.group('by') # some of the old positions don't specify who it's for, in that case assume it's "by", the person who entered the position
-                ad_first, ad_last = ad_name.split(' ')
-
-                e = BallotPosition()
-                e.type = "changed_ballot_position"
-                e.ad = iesg_login_to_email(IESGLogin.objects.get(first_name=ad_first, last_name=ad_last))
-                last_pos = d.latest_event(type="changed_ballot_position", ballotposition__ad=e.ad)
-                e.pos = ballot_position_mapping[position]
-                e.discuss = last_pos.ballotposition.discuss if last_pos else ""
-                e.discuss_time = last_pos.ballotposition.discuss_time if last_pos else None
-                e.comment = last_pos.ballotposition.comment if last_pos else ""
-                e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
-                save_event(d, e, c)
-                handled = True
-
-            # ballot discusses/comments
-            if c.ballot in (DocumentComment.BALLOT_DISCUSS, DocumentComment.BALLOT_COMMENT):
-                e = BallotPosition()
-                e.type = "changed_ballot_position"
-                e.ad = iesg_login_to_email(c.created_by)
-                last_pos = d.latest_event(type="changed_ballot_position", ballotposition__ad=e.ad)
-                e.pos = last_pos.ballotposition.pos if last_pos else ballot_position_mapping[None]
-                if c.ballot == DocumentComment.BALLOT_DISCUSS:
-                    e.discuss = c.comment_text
-                    e.discuss_time = c.datetime()
-                    e.comment = last_pos.ballotposition.comment if last_pos else ""
-                    e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
-                    # put header into description
-                    c.comment_text = "[Ballot discuss]\n" + c.comment_text
-                else:
-                    e.discuss = last_pos.ballotposition.discuss if last_pos else ""
-                    e.discuss_time = last_pos.ballotposition.discuss_time if last_pos else None
-                    e.comment = c.comment_text
-                    e.comment_time = c.datetime()
-                    # put header into description
-                    c.comment_text = "[Ballot comment]\n" + c.comment_text
-                save_event(d, e, c)
-                handled = True
-
-            # last call requested
-            match = re_last_call_requested.search(c.comment_text)
-            if match:
-                e = Event(type="requested_last_call")
-                save_event(d, e, c)
-                handled = True
-
-            # state changes
-            match = re_state_changed.search(c.comment_text)
-            if match:
-                e = Event(type="changed_document")
-                save_event(d, e, c)
-                handled = True
-
-            # note changed
-            match = re_note_changed.search(c.comment_text)
-            if match:
-                # watch out for duplicates of which the old data's got many
-                if c.comment_text != last_note_change_text:
-                    last_note_change_text = c.comment_text
-                    e = Event(type="changed_document")
-                    save_event(d, e, c)
-                handled = True
-
-            # draft added 
-            match = re_draft_added.search(c.comment_text)
-            if match:
-                e = Event(type="changed_document")
-                save_event(d, e, c)
-                handled = True
-
-            # new version
-            if c.comment_text == "New version available":
-                e = NewRevision(type="new_revision", rev=c.version)
-                save_event(d, e, c)
-                handled = True
-
-            # resurrect requested
-            match = re_resurrection_requested.search(c.comment_text)
-            if match:
-                e = Event(type="requested_resurrect")
-                save_event(d, e, c)
-                handled = True
-                
-            # completed resurrect
-            match = re_completed_resurrect.search(c.comment_text)
-            if match:
-                e = Event(type="completed_resurrect")
-                save_event(d, e, c)
-                handled = True
-                
-            # document expiration
-            if c.comment_text == "Document is expired by system":
-                e = Event(type="expired_document")
-                save_event(d, e, c)
-                handled = True
-
-            # approved document 
-            match = re_document_approved.search(c.comment_text)
-            if match:
-                e = Event(type="iesg_approved")
-                save_event(d, e, c)
-                handled = True
-
-            # disapproved document
-            match = re_document_disapproved.search(c.comment_text)
-            if match:
-                e = Event(type="iesg_disapproved")
-                save_event(d, e, c)
-                handled = True
-                
-
-            # some changes can be bundled - this is not entirely
-            # convenient, especially since it makes it hard to give
-            # each a type, so unbundle them
-            if not handled:
-                unhandled_lines = []
-                for line in c.comment_text.split("<br>"):
-                    # status date changed
-                    match = re_status_date_changed.search(line)
-                    if match:
-                        e = Status(type="changed_status_date", date=date_in_match(match))
-                        e.desc = line
-                        save_event(d, e, c)
-                        handled = True
-
-                    # AD/job owner changed
-                    match = re_responsible_ad_changed.search(line)
-                    if match:
-                        e = Event(type="changed_document")
-                        e.desc = line
-                        save_event(d, e, c)
-                        handled = True
-
-                    # intended standard level changed
-                    match = re_intended_status_changed.search(line)
-                    if match:
-                        e = Event(type="changed_document")
-                        e.desc = line
-                        save_event(d, e, c)
-                        handled = True
-
-                    # state change notice
-                    match = re_state_change_notice.search(line)
-                    if match:
-                        e = Event(type="changed_document")
-                        e.desc = line
-                        save_event(d, e, c)
-                        handled = True
-
-                    # area acronym
-                    match = re_area_acronym_changed.search(line)
-                    if match:
-                        e = Event(type="changed_document")
-                        e.desc = line
-                        save_event(d, e, c)
-                        handled = True
-
-                    # multiline change bundles end with a single "by xyz" that we skip
-                    if not handled and not line.startswith("by <b>"):
-                        unhandled_lines.append(line)
-                        
-                if handled:
-                    c.comment_text = "<br>".join(unhandled_lines)
-
-                    if c.comment_text:
-                        print "couldn't handle multi-line comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
-                
-            # all others are added as comments
-            if not handled:
-                e = Event(type="added_comment")
-                save_event(d, e, c)
-
-                # stop typical comments from being output
-                typical_comments = [
-                    "Document Shepherd Write-up for %s" % d.name,
-                    "Who is the Document Shepherd for this document",
-                    "We understand that this document doesn't require any IANA actions",
-                    "IANA questions",
-                    "IANA has questions",
-                    "IANA comments",
-                    "IANA Comments",
-                    "IANA Evaluation Comments",
-                                    ]
-                for t in typical_comments:
-                    if t in c.comment_text:
-                        handled = True
-                        break
-            
-            if not handled:
-                print "couldn't handle comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
-
-                
     # import missing revision changes from DraftVersions
     known_revisions = set(e.newrevision.rev for e in d.event_set.filter(type="new_revision").select_related('newrevision'))
-    for v in DraftVersions.objects.filter(filename=d.name).order_by("revision"):
+    draft_versions = list(DraftVersions.objects.filter(filename=d.name).order_by("revision"))
+    # DraftVersions is not entirely accurate, make sure we got the current one
+    draft_versions.insert(0, DraftVersions(filename=d.name, revision=o.revision_display(), revision_date=o.revision_date))
+    for v in draft_versions:
         if v.revision not in known_revisions:
             e = NewRevision(type="new_revision")
             e.rev = v.revision
@@ -521,104 +681,22 @@ for o in all_drafts:
         e.desc = "Last call sent"
         e.save()
 
-    if o.idinternal:
-        made_up_date = d.latest_event().time + datetime.timedelta(seconds=1) # datetime.datetime(2030, 1, 1, 0, 0, 0)
-
-        e = d.latest_event(Status, type="changed_status_date")
-        status_date = e.date if e else None
-        if o.idinternal.status_date != status_date:
-            e = Status(type="changed_status_date", date=o.idinternal.status_date)
-            e.time = made_up_date
-            e.by = system_email
-            e.doc = d
-            e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (o.idinternal.status_date, status_date)
-            e.save()
-
-        e = d.latest_event(Telechat, type="scheduled_for_telechat")
-        telechat_date = e.telechat_date if e else None
-        if not o.idinternal.agenda:
-            o.idinternal.telechat_date = None # normalize
-
-        if telechat_date != o.idinternal.telechat_date:
-            e = Telechat(type="scheduled_for_telechat",
-                         telechat_date=o.idinternal.telechat_date,
-                         returning_item=bool(o.idinternal.returning_item))
-            # a common case is that it has been removed from the
-            # agenda automatically by a script without a notice in the
-            # comments, in that case the time is simply the day after
-            # the telechat
-            e.time = telechat_date + datetime.timedelta(days=1) if telechat_date and not o.idinternal.telechat_date else made_up_date
-            e.by = system_email
-            args = ("Placed on", o.idinternal.telechat_date) if o.idinternal.telechat_date else ("Removed from", telechat_date)
-            e.doc = d
-            e.desc = "%s agenda for telechat - %s by system" % args
-            e.save()
-
-        if o.idinternal.ballot:
-            text_date = made_up_date
-
-            # if any of these events have happened, they're closer to
-            # the real time
-            e = d.event_set.filter(type__in=("requested_last_call", "sent_last_call", "sent_ballot_announcement", "iesg_approved", "iesg_disapproved")).order_by('time')[:1]
-            if e:
-                text_date = e[0].time - datetime.timedelta(seconds=1)
-            
-            if o.idinternal.ballot.approval_text:
-                e = Text(type="changed_ballot_approval_text", content=o.idinternal.ballot.approval_text)
-                e.time = text_date
-                e.by = system_email
-                e.doc = d
-                e.desc = "Ballot approval text was added"
-                e.save()
-
-            if o.idinternal.ballot.last_call_text:
-                e = Text(type="changed_last_call_text", content=o.idinternal.ballot.last_call_text)
-                e.time = text_date
-                e.by = system_email
-                e.doc = d
-                e.desc = "Last call text was added"
-                e.save()
-
-            if o.idinternal.ballot.ballot_writeup:
-                e = Text(type="changed_ballot_writeup_text", content=o.idinternal.ballot.ballot_writeup)
-                e.time = text_date
-                e.by = system_email
-                e.doc = d
-                e.desc = "Ballot writeup text was added"
-                e.save()
-
     # import other attributes
 
     # tags
-    tags = d.tags.all()
-    def sync_tag(include, tag):
-        if include and tag not in tags:
-            d.tags.add(tag)
-        if not include and tag in tags:
-            d.tags.remove(tag)
-
-    sync_tag(o.review_by_rfc_editor, tag_review_by_rfc_editor)
-    sync_tag(o.expired_tombstone, tag_expired_tombstone)
-    sync_tag(o.idinternal and o.idinternal.via_rfc_editor, tag_via_rfc_editor)
-
-    n = o.idinternal and o.idinternal.cur_sub_state and o.idinternal.cur_sub_state.sub_state
-    for k, v in substate_mapping.iteritems():
-        sync_tag(k == n, v)
-        # currently we ignore prev_sub_state
-
-    sync_tag(o.idinternal and o.idinternal.approved_in_minute, tag_approved_in_minute)
+    sync_tag(d, o.review_by_rfc_editor, tag_review_by_rfc_editor)
+    sync_tag(d, o.expired_tombstone, tag_expired_tombstone)
     
     # RFC alias
     if o.rfc_number:
         alias_doc("rfc%s" % o.rfc_number, d)
-        # FIXME: some RFCs seem to be called rfc1234bis?
             
     if o.replaced_by:
         replacement, _ = Document.objects.get_or_create(name=o.replaced_by.filename)
         RelatedDocument.objects.get_or_create(document=replacement, doc_alias=d_alias, relationship=relationship_replaces)
     
     # the RFC-related attributes are imported when we handle the RFCs below
-            
+
     print "imported", d.name, " - ", d.iesg_state
 
 
@@ -653,12 +731,13 @@ def get_or_create_rfc_document(rfc_number):
     alias = alias_doc("rfc%s" % rfc_number, d)
     
     return (d, alias)
+
     
 all_rfcs = RfcIndex.objects.all()
 
 if all_drafts.count() != InternetDraft.objects.count():
-    if document_name_to_import.startswith("rfc"):
-        # we wanted to import just an RFC, great
+    if document_name_to_import and document_name_to_import.startswith("rfc"):
+        # we wanted to import an RFC
         all_rfcs = all_rfcs.filter(rfc_number=document_name_to_import[3:])
     else:
         # if we didn't process all drafts, limit the RFCs to the ones we
@@ -667,7 +746,38 @@ if all_drafts.count() != InternetDraft.objects.count():
 
 for o in all_rfcs:
     d, d_alias = get_or_create_rfc_document(o.rfc_number)
+    #if d.name.startswith('rfc'):
+    d.time = datetime.datetime.now()
+    d.title = o.title
+    d.std_level = std_level_mapping[o.current_status]
+    d.stream = stream_mapping[o.stream]
+    if not d.group and o.wg:
+        d.group = Group.objects.get(acronym=o.wg)
+
+    # get some values from the rfc table
+    rfcs = Rfc.objects.filter(rfc_number=o.rfc_number).select_related()
+    if rfcs:
+        r = rfcs[0]
+        d.intended_std_level = intended_std_level_mapping[r.intended_status.status]
+    d.save()
+
+    # a few RFCs have an IDInternal so we may have to import the
+    # events and attributes
+    internals = IDInternal.objects.filter(rfc_flag=1, draft=o.rfc_number)
+    if internals:
+        if d.name.startswith("rfc"):
+            # clear any already imported events as the event importer isn't
+            # clever enough to do a diff
+            d.event_set.all().delete()
+        import_from_idinternal(d, internals[0])
     
+    # publication date
+    e, _ = Event.objects.get_or_create(doc=d, type="published_rfc")
+    e.time = o.rfc_published_date
+    e.by = system_email
+    e.desc = "RFC published"
+    e.save()
+
     # import obsoletes/updates
     def make_relation(other_rfc, rel_type, reverse):
         other_number = int(other_rfc.replace("RFC", ""))
@@ -691,27 +801,10 @@ for o in all_rfcs:
             make_relation(x, relationship_updates, True)
 
     if o.also:
-        print o.also
         alias_doc(o.also.lower(), d)
-            
+
+    sync_tag(d, o.has_errata, tag_has_errata)
+
+    # FIXME: import RFC authors?
+    
     print "imported", d_alias.name, " - ", d.rfc_state
-
-
-sys.exit(0)
-
-class RfcIndex(models.Model):
-#    rfc_number = models.IntegerField(primary_key=True)
-    title = models.CharField(max_length=250)
-    authors = models.CharField(max_length=250)
-    rfc_published_date = models.DateField()
-    current_status = models.CharField(max_length=50,null=True)
-#    updates = models.CharField(max_length=200,blank=True,null=True)
-#    updated_by = models.CharField(max_length=200,blank=True,null=True)
-#    obsoletes = models.CharField(max_length=200,blank=True,null=True)
-#    obsoleted_by = models.CharField(max_length=200,blank=True,null=True)
-#    also = models.CharField(max_length=50,blank=True,null=True)
-    draft = models.CharField(max_length=200,null=True)
-    has_errata = models.BooleanField()
-    stream = models.CharField(max_length=15,blank=True,null=True)
-    wg = models.CharField(max_length=15,blank=True,null=True)
-    file_formats = models.CharField(max_length=20,blank=True,null=True)

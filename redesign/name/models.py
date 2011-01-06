@@ -21,7 +21,7 @@ class GroupTypeName(NameModel):
 class RoleName(NameModel):
     """AD, Chair"""
 class DocStreamName(NameModel):
-    """IETF, IAB, IRTF, Independent Submission"""
+    """IETF, IAB, IRTF, Independent Submission, Legacy"""
 class DocStateName(NameModel):
     """Active, Expired, RFC, Replaced, Withdrawn"""
 class DocRelationshipName(NameModel):
@@ -47,10 +47,10 @@ class DocTypeName(NameModel):
 class DocInfoTagName(NameModel):
     """Waiting for Reference, IANA Coordination, Revised ID Needed,
     External Party, AD Followup, Point Raised - Writeup Needed"""
-class StdStatusName(NameModel):
+class StdLevelName(NameModel):
     """Proposed Standard, Draft Standard, Standard, Experimental,
     Informational, Best Current Practice, Historic, ..."""
-class IntendedStatusName(NameModel):
+class IntendedStdLevelName(NameModel):
     """Standards Track, Experimental, Informational, Best Current
     Practice, Historic, ..."""
 class BallotPositionName(NameModel):

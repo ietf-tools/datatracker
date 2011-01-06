@@ -27,9 +27,8 @@ class DocumentInfo(models.Model):
     abstract = models.TextField()
     rev = models.CharField(max_length=16)
     pages = models.IntegerField(blank=True, null=True)
-    intended_std_level = models.ForeignKey(IntendedStatusName, blank=True, null=True)
-    std_level = models.ForeignKey(StdStatusName, blank=True, null=True)
-    authors = models.ManyToManyField(Email, blank=True, null=True)
+    intended_std_level = models.ForeignKey(IntendedStdLevelName, blank=True, null=True)
+    std_level = models.ForeignKey(StdLevelName, blank=True, null=True)
     ad = models.ForeignKey(Email, related_name='ad_%(class)s_set', blank=True, null=True)
     shepherd = models.ForeignKey(Email, related_name='shepherd_%(class)s_set', blank=True, null=True)
     notify = models.CharField(max_length=255, blank=True)
@@ -42,9 +41,10 @@ class DocumentInfo(models.Model):
     def author_list(self):
         return ", ".join(email.address for email in self.authors.all())
     def latest_event(self, *args, **filter_args):
-        """Get latest event with specific requirements, e.g.
-        d.latest_event(type="xyz") returns an Event while
-        d.latest_event(Status, type="xyz") returns a Status event."""
+        """Get latest event of optional Python type and with filter
+        arguments, e.g. d.latest_event(type="xyz") returns an Event
+        while d.latest_event(Status, type="xyz") returns a Status
+        event."""
         model = args[0] if args else Event
         e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time')[:1]
         return e[0] if e else None
@@ -56,9 +56,21 @@ class RelatedDocument(models.Model):
     def __unicode__(self):
         return u"%s %s %s" % (self.document.name, self.relationship.name.lower(), self.doc_alias.name)
 
+class DocumentAuthor(models.Model):
+    document = models.ForeignKey('Document')
+    author = models.ForeignKey(Email)
+    order = models.IntegerField()
+
+    def __unicode__(self):
+        return u"%s %s (%s)" % (self.document.name, self.email.get_name(), self.order)
+
+    class Meta:
+        ordering = ["document", "order"]
+    
 class Document(DocumentInfo):
     name = models.CharField(max_length=255, primary_key=True)           # immutable
     related = models.ManyToManyField('DocAlias', through=RelatedDocument, blank=True, related_name="reversely_related_document_set")
+    authors = models.ManyToManyField(Email, through=DocumentAuthor, blank=True)
     def __unicode__(self):
         return self.name
     def values(self):
@@ -89,7 +101,7 @@ class Document(DocumentInfo):
             snap = DocHistory(**fields)
             snap.save()
             for m in many2many:
-                # FIXME: check that this works with related
+                # FIXME: check that this works with related/authors
                 #print "m2m:", m, many2many[m]
                 rel = getattr(snap, m)
                 for item in many2many[m]:
@@ -107,11 +119,23 @@ class RelatedDocHistory(models.Model):
     doc_alias = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set") # target
     relationship = models.ForeignKey(DocRelationshipName)
     def __unicode__(self):
-        return u"%s %s %s" % (self.document.name, self.relationship.name.lower(), self.doc_alias.name)
+        return u"%s %s %s" % (self.document.doc.name, self.relationship.name.lower(), self.doc_alias.name)
 
+class DocHistoryAuthor(models.Model):
+    document = models.ForeignKey('DocHistory')
+    author = models.ForeignKey(Email)
+    order = models.IntegerField()
+
+    def __unicode__(self):
+        return u"%s %s (%s)" % (self.document.doc.name, self.email.get_name(), self.order)
+
+    class Meta:
+        ordering = ["document", "order"]
+    
 class DocHistory(DocumentInfo):
     doc = models.ForeignKey(Document)   # ID of the Document this relates to
     related = models.ManyToManyField('DocAlias', through=RelatedDocHistory, blank=True)
+    authors = models.ManyToManyField(Email, through=DocHistoryAuthor, blank=True)
     def __unicode__(self):
         return unicode(self.doc.name)
 
@@ -169,6 +193,7 @@ EVENT_TYPES = [
     ("published_rfc", "Published RFC"),
     
     # IESG events
+    ("started_iesg_process", "Started IESG process on document"),
     ("sent_ballot_announcement", "Sent ballot announcement"),
     ("changed_ballot_position", "Changed ballot position"),
     ("changed_ballot_approval_text", "Changed ballot approval text"),
