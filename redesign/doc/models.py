@@ -146,7 +146,7 @@ class DocAlias(models.Model):
     to by RFC number, primarily, after achieving RFC status.
     """
     document = models.ForeignKey(Document)
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_index=True)
     def __unicode__(self):
         return "%s-->%s" % (self.name, self.document.name)
     document_link = admin_link("document")

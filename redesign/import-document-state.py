@@ -14,7 +14,7 @@ management.setup_environ(settings)
 from redesign.doc.models import *
 from redesign.group.models import *
 from redesign.name.models import *
-from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo
+from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
 from ietf.idrfc.models import RfcIndex, DraftVersions
 
 import sys
@@ -125,9 +125,15 @@ ballot_position_mapping = {
     'Abstain': name(BallotPositionName, 'abstain', 'Abstain'),
     'Discuss': name(BallotPositionName, 'discuss', 'Discuss'),
     'Recuse': name(BallotPositionName, 'recuse', 'Recuse'),
-    'Undefined': name(BallotPositionName, 'norecord', 'No record'),
-    None: name(BallotPositionName, 'norecord', 'No record'),
+    'No Record': name(BallotPositionName, 'norecord', 'No record'),
     }
+ballot_position_mapping["no"] = ballot_position_mapping['No Objection']
+ballot_position_mapping["yes"] = ballot_position_mapping['Yes']
+ballot_position_mapping["discuss"] = ballot_position_mapping['Discuss']
+ballot_position_mapping["abstain"] = ballot_position_mapping['Abstain']
+ballot_position_mapping["recuse"] = ballot_position_mapping['Recuse']
+ballot_position_mapping[None] = ballot_position_mapping["No Record"]
+ballot_position_mapping["Undefined"] = ballot_position_mapping["No Record"]
 
 substate_mapping = {
     "External Party": name(DocInfoTagName, 'extpty', "External Party", 'The document is awaiting review or input from an external party (i.e, someone other than the shepherding AD, the authors, or the WG). See the "note" field for more details on who has the action.'),
@@ -203,9 +209,14 @@ def iesg_login_to_email(l):
 
 # regexps for parsing document comments
 
-date_re_str = "(?P<year>[0-9][0-9][0-9][0-9])-(?P<month>[0-9][0-9])-(?P<day>[0-9][0-9])"
+date_re_str = "(?P<year>[0-9][0-9][0-9][0-9])-(?P<month>[0-9][0-9]?)-(?P<day>[0-9][0-9]?)"
 def date_in_match(match):
-    return datetime.date(int(match.group('year')), int(match.group('month')), int(match.group('day')))
+    y = int(match.group('year'))
+    m = int(match.group('month'))
+    d = int(match.group('day'))
+    if d == 35: # borked status date
+        d = 25
+    return datetime.date(y, m, d)
 
 re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat(| - %s) by" % date_re_str)
 re_telechat_changed = re.compile(r"Telechat date (was|has been) changed to (<b>)?%s(</b>)? from" % date_re_str)
@@ -238,7 +249,7 @@ def import_from_idinternal(d, idinternal):
     # extract events
     last_note_change_text = ""
     
-    for c in idinternal.documentcomment_set.order_by('date', 'time', 'id'):
+    for c in DocumentComment.objects.filter(document=idinternal.draft_id).order_by('date', 'time', 'id'):
         handled = False
 
         # telechat agenda schedulings
@@ -255,7 +266,7 @@ def import_from_idinternal(d, idinternal):
         # ballot issued
         match = re_ballot_issued.search(c.comment_text)
         if match:
-            e = Text()
+            e = Event()
             e.type = "sent_ballot_announcement"
             save_event(d, e, c)
 
@@ -276,19 +287,41 @@ def import_from_idinternal(d, idinternal):
         # ballot positions
         match = re_ballot_position.search(c.comment_text)
         if match:
-            position = match.group('position') or match.group('position2')
+            position = ballot_position_mapping[match.group('position') or match.group('position2')]
             ad_name = match.group('for') or match.group('for2') or match.group('by') # some of the old positions don't specify who it's for, in that case assume it's "by", the person who entered the position
             ad_first, ad_last = ad_name.split(' ')
+            login = IESGLogin.objects.filter(first_name=ad_first, last_name=ad_last).order_by('user_level')[0]
+            if login.user_level == IESGLogin.SECRETARIAT_LEVEL:
+                # now we're in trouble, a secretariat person isn't an
+                # AD, instead try to find a position object that
+                # matches and that we haven't taken yet
+                positions = Position.objects.filter(ballot=idinternal.ballot)
+                if position.slug == "noobj":
+                    positions = positions.filter(noobj=1)
+                elif position.slug == "yes":
+                    positions = positions.filter(yes=1)
+                elif position.slug == "abstain":
+                    positions = positions.filter(models.Q(abstain=1)|models.Q(abstain=2))
+                elif position.slug == "recuse":
+                    positions = positions.filter(recuse=1)
+                elif position.slug == "discuss":
+                    positions = positions.filter(models.Q(discuss=1)|models.Q(discuss=2))
+                assert position.slug != "norecord"
+                
+                for p in positions:
+                    if not d.event_set.filter(type="changed_ballot_position", ballotposition__pos=position, ballotposition__ad=iesg_login_to_email(p.ad)):
+                        login = p.ad
+                        break
 
             e = BallotPosition()
             e.type = "changed_ballot_position"
-            e.ad = iesg_login_to_email(IESGLogin.objects.get(first_name=ad_first, last_name=ad_last))
-            last_pos = d.latest_event(type="changed_ballot_position", ballotposition__ad=e.ad)
-            e.pos = ballot_position_mapping[position]
-            e.discuss = last_pos.ballotposition.discuss if last_pos else ""
-            e.discuss_time = last_pos.ballotposition.discuss_time if last_pos else None
-            e.comment = last_pos.ballotposition.comment if last_pos else ""
-            e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
+            e.ad = iesg_login_to_email(login)
+            last_pos = d.latest_event(BallotPosition, type="changed_ballot_position", ad=e.ad)
+            e.pos = position
+            e.discuss = last_pos.discuss if last_pos else ""
+            e.discuss_time = last_pos.discuss_time if last_pos else None
+            e.comment = last_pos.comment if last_pos else ""
+            e.comment_time = last_pos.comment_time if last_pos else None
             save_event(d, e, c)
             handled = True
 
@@ -394,6 +427,7 @@ def import_from_idinternal(d, idinternal):
         if not handled:
             unhandled_lines = []
             for line in c.comment_text.split("<br>"):
+                line = line.replace("&nbsp;", " ")
                 # status date changed
                 match = re_status_date_changed.search(line)
                 if match:
@@ -442,7 +476,8 @@ def import_from_idinternal(d, idinternal):
                 c.comment_text = "<br>".join(unhandled_lines)
 
                 if c.comment_text:
-                    print "COULDN'T HANDLE multi-line comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
+                    if "Due date has been changed" not in c.comment_text:
+                        print "COULDN'T HANDLE multi-line comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
 
         # all others are added as comments
         if not handled:
@@ -458,8 +493,17 @@ def import_from_idinternal(d, idinternal):
                 "IANA has questions",
                 "IANA comments",
                 "IANA Comments",
-                "IANA Evaluation Comments",
-                "Published as RFC",
+                "IANA Evaluation Comment",
+                "IANA Last Call Comments",
+                "ublished as RFC",
+                "A new comment added",
+                "Due date has been changed",
+                "Due&nbsp;date&nbsp;has&nbsp;been&nbsp;changed",
+                "by&nbsp;<b>",
+                "AD-review comments",
+                "IANA Last Call",
+                "Subject:",
+                "Merged with",
                                 ]
             for t in typical_comments:
                 if t in c.comment_text:
@@ -467,9 +511,14 @@ def import_from_idinternal(d, idinternal):
                     break
 
         if not handled:
-            print "couldn't handle comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
+            print (u"COULDN'T HANDLE comment %s '%s' by %s" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80], c.created_by)).encode("utf-8")
 
-    made_up_date = d.latest_event().time + datetime.timedelta(seconds=1)
+    e = d.latest_event()
+    if e:
+        made_up_date = e.time
+    else:
+        made_up_date = d.time
+    made_up_date += datetime.timedelta(seconds=1)
 
     e = d.latest_event(Status, type="changed_status_date")
     status_date = e.date if e else None
@@ -508,6 +557,70 @@ def import_from_idinternal(d, idinternal):
         ballot = None
         
     if ballot:
+        e = d.event_set.filter(type__in=("changed_ballot_position", "sent_ballot_announcement", "requested_last_call")).order_by('-time')[:1]
+        if e:
+            position_date = e[0].time + datetime.timedelta(seconds=1)
+        else:
+            position_date = made_up_date
+
+        # make sure we got all the positions
+        existing = BallotPosition.objects.filter(doc=d, type="changed_ballot_position").order_by("-time")
+        
+        for p in Position.objects.filter(ballot=ballot):
+            found = False
+            ad = iesg_login_to_email(p.ad)
+            if p.noobj > 0:
+                pos = ballot_position_mapping["No Objection"]
+            elif p.yes > 0:
+                pos = ballot_position_mapping["Yes"]
+            elif p.abstain > 0:
+                pos = ballot_position_mapping["Abstain"]
+            elif p.recuse > 0:
+                pos = ballot_position_mapping["Recuse"]
+            elif p.discuss > 0:
+                pos = ballot_position_mapping["Discuss"]
+            else:
+                pos = ballot_position_mapping[None]
+            for x in existing:
+                if x.ad == ad and x.pos == pos:
+                    found = True
+                    break
+
+            if not found:
+                e = BallotPosition()
+                e.type = "changed_ballot_position"
+                e.doc = d
+                e.time = position_date
+                e.by = system_email
+                e.ad = ad
+                last_pos = d.latest_event(BallotPosition, type="changed_ballot_position", ad=e.ad)
+                e.pos = pos
+                e.discuss = last_pos.discuss if last_pos else ""
+                e.discuss_time = last_pos.discuss_time if last_pos else None
+                e.comment = last_pos.comment if last_pos else ""
+                e.comment_time = last_pos.comment_time if last_pos else None
+                if last_pos:
+                    e.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (ad.get_name(), pos.name, last_pos.pos.name)
+                else:
+                    e.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.name, ad.get_name())
+                e.save()
+
+        # make sure we got the ballot issued event
+        if ballot.ballot_issued and not d.event_set.filter(type="sent_ballot_announcement"):
+            position = d.event_set.filter(type=("changed_ballot_position")).order_by('time')[:1]
+            if position:
+                sent_date = position[0].time
+            else:
+                sent_date = made_up_date
+            
+            e = Event()
+            e.type = "sent_ballot_announcement"
+            e.doc = d
+            e.time = sent_date
+            e.by = system_email
+            e.desc = "Ballot has been issued"
+            e.save()
+            
         # make sure the comments and discusses are updated
         positions = list(BallotPosition.objects.filter(doc=d).order_by("-time"))
         for c in IESGComment.objects.filter(ballot=idinternal.ballot):
@@ -578,8 +691,17 @@ all_drafts = InternetDraft.objects.all().select_related()
 if document_name_to_import:
     all_drafts = all_drafts.filter(filename=document_name_to_import)
 #all_drafts = all_drafts[all_drafts.count() - 1000:]
+    
+# prevent memory from leaking from debug setting
+from django.db import connection
+class DummyQueries(object):
+    def append(self, x):
+        pass 
+connection.queries = DummyQueries()
 
-for o in all_drafts:
+for index, o in enumerate(all_drafts.iterator()):
+    print "importing", o.filename, index
+    
     try:
         d = Document.objects.get(name=o.filename)
     except Document.DoesNotExist:
@@ -620,14 +742,13 @@ for o in all_drafts:
     d.authors.clear()
     for i, a in enumerate(o.authors.all().select_related("person").order_by('author_order', 'person')):
         try:
-            e = Email.objects.get(address=a.person.email()[1])
+            e = Email.objects.get(address=a.person.email()[1] or u"unknown-email-%s-%s" % (a.person.first_name, a.person.last_name))
             # renumber since old numbers may be a bit borked
             DocumentAuthor.objects.create(document=d, author=e, order=i)
         except Email.DoesNotExist:
             print "SKIPPED author", unicode(a.person).encode('utf-8')
 
-    # clear any already imported events as the event importer isn't
-    # clever enough to do a diff
+    # clear any already imported events
     d.event_set.all().delete()
     
     if o.idinternal:
@@ -646,7 +767,7 @@ for o in all_drafts:
             # we don't have time information in this source, so
             # hack the seconds to include the revision to ensure
             # they're ordered correctly
-            e.time = datetime.datetime.combine(v.revision_date, datetime.time(0, 0, int(v.revision)))
+            e.time = datetime.datetime.combine(v.revision_date, datetime.time(0, 0, 0)) + datetime.timedelta(seconds=int(v.revision))
             e.by = system_email
             e.doc = d
             e.desc = "New version available"
@@ -658,7 +779,7 @@ for o in all_drafts:
     # information completely
 
     # make sure last decision is recorded
-    e = d.latest_event(Event, type__in=("iesg_approved", "iesg_disapproved"))
+    e = d.latest_event(type__in=("iesg_approved", "iesg_disapproved"))
     decision_date = e.time.date() if e else None
     if o.b_approve_date != decision_date:
         disapproved = o.idinternal and o.idinternal.dnp
@@ -696,9 +817,6 @@ for o in all_drafts:
         RelatedDocument.objects.get_or_create(document=replacement, doc_alias=d_alias, relationship=relationship_replaces)
     
     # the RFC-related attributes are imported when we handle the RFCs below
-
-    print "imported", d.name, " - ", d.iesg_state
-
 
 # now process RFCs
 
@@ -744,9 +862,10 @@ if all_drafts.count() != InternetDraft.objects.count():
         # did process
         all_rfcs = all_rfcs.filter(rfc_number__in=set(d.rfc_number for d in all_drafts if d.rfc_number))
 
-for o in all_rfcs:
+for index, o in enumerate(all_rfcs.iterator()):
+    print "importing rfc%s" % o.rfc_number, index
+    
     d, d_alias = get_or_create_rfc_document(o.rfc_number)
-    #if d.name.startswith('rfc'):
     d.time = datetime.datetime.now()
     d.title = o.title
     d.std_level = std_level_mapping[o.current_status]
@@ -758,7 +877,9 @@ for o in all_rfcs:
     rfcs = Rfc.objects.filter(rfc_number=o.rfc_number).select_related()
     if rfcs:
         r = rfcs[0]
-        d.intended_std_level = intended_std_level_mapping[r.intended_status.status]
+        l = intended_std_level_mapping[r.intended_status.status]
+        if l:
+            d.intended_std_level = l
     d.save()
 
     # a few RFCs have an IDInternal so we may have to import the
@@ -766,8 +887,8 @@ for o in all_rfcs:
     internals = IDInternal.objects.filter(rfc_flag=1, draft=o.rfc_number)
     if internals:
         if d.name.startswith("rfc"):
-            # clear any already imported events as the event importer isn't
-            # clever enough to do a diff
+            # clear any already imported events, we don't do it for
+            # drafts as they've already been cleared above
             d.event_set.all().delete()
         import_from_idinternal(d, internals[0])
     
@@ -780,6 +901,9 @@ for o in all_rfcs:
 
     # import obsoletes/updates
     def make_relation(other_rfc, rel_type, reverse):
+        if other_rfc.startswith("NIC") or other_rfc.startswith("IEN") or other_rfc.startswith("STD") or other_rfc.startswith("RTR"):
+            return # we currently have no good way of importing these
+        
         other_number = int(other_rfc.replace("RFC", ""))
         other, other_alias = get_or_create_rfc_document(other_number)
         if reverse:
@@ -806,5 +930,3 @@ for o in all_rfcs:
     sync_tag(d, o.has_errata, tag_has_errata)
 
     # FIXME: import RFC authors?
-    
-    print "imported", d_alias.name, " - ", d.rfc_state

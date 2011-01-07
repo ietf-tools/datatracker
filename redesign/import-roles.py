@@ -41,13 +41,17 @@ area_director_role = name(RoleName, "ad", "Area Director")
 
 
 # helpers for creating the objects
-def get_or_create_email(o):
+def get_or_create_email(o, create_fake):
     hardcoded_emails = { 'Dinara Suleymanova': "dinaras@ietf.org" }
     
     email = o.person.email()[1] or hardcoded_emails.get("%s %s" % (o.person.first_name, o.person.last_name))
     if not email:
-        print "NO EMAIL FOR %s %s %s %s %s" % (o.__class__, o.id, o.person.pk, o.person.first_name, o.person.last_name)
-        return None
+        if create_fake:
+            email = u"unknown-email-%s-%s" % (o.person.first_name, o.person.last_name)
+            print ("USING FAKE EMAIL %s for %s %s %s" % (email, o.person.pk, o.person.first_name, o.person.last_name)).encode('utf-8')
+        else:
+            print ("NO EMAIL FOR %s %s %s %s %s" % (o.__class__, o.id, o.person.pk, o.person.first_name, o.person.last_name)).encode('utf-8')
+            return None
     
     e, _ = Email.objects.get_or_create(address=email)
     if not e.person:
@@ -80,20 +84,20 @@ for o in IESGLogin.objects.all():
             print "NO PERSON", o.person_id
             continue
 
-    email = get_or_create_email(o)
+    email = get_or_create_email(o, create_fake=False)
 
-    # FIXME: import o.user_level
     # FIXME: import o.login_name, o.user_level
     
     
 # AreaDirector
 Role.objects.filter(name=area_director_role).delete()
 for o in AreaDirector.objects.all():
-    print "importing AreaDirector", o.area, o.person
-    email = get_or_create_email(o)
     if not o.area:
-        print "NO AREA", o.area_id
+        print "NO AREA", o.person, o.area_id
         continue
+    
+    print "importing AreaDirector", o.area, o.person
+    email = get_or_create_email(o, create_fake=False)
     
     area = Group.objects.get(acronym=o.area.area_acronym.acronym)
 
@@ -102,7 +106,5 @@ for o in AreaDirector.objects.all():
 # IDAuthor persons
 for o in IDAuthor.objects.all().order_by('id').select_related('person'):
     print "importing IDAuthor", o.id, o.person_id, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')
-    email = get_or_create_email(o)
-
-    # FIXME: we lack email addresses for some, need to do something
+    email = get_or_create_email(o, create_fake=True)
     

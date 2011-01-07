@@ -162,8 +162,9 @@ class InternetDraft(Document):
     #idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
     @property
     def idinternal(self):
-        print self.iesg_state
-        return self if self.iesg_state else None
+        # since IDInternal is now merged into the document, we try to
+        # guess here
+        return self if self.iesg_state or self.latest_event(type="changed_ballot_position") else None
 
     # reverse relationship
     @property
@@ -646,7 +647,7 @@ class IDAuthor(DocumentAuthor):
         return self.order
     
     def email(self):
-        return self.author.address
+        return None if self.author.address.startswith("unknown-email") else self.author.address
     
     def final_author_order(self):
         return self.order
