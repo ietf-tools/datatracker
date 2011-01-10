@@ -150,7 +150,7 @@ def _get_history(doc, versions):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         versions = [] # clear versions
         event_holder = doc._draft if hasattr(doc, "_draft") else doc._rfcindex
-        for e in event_holder.event_set.all().select_related('by').order_by('-time'):
+        for e in event_holder.event_set.all().select_related('by').order_by('-time', '-id'):
             info = {}
             if e.type == "new_revision":
                 filename = u"%s-%s" % (e.doc.name, e.newrevision.rev)
@@ -166,6 +166,9 @@ def _get_history(doc, versions):
             results.append({'comment':e, 'info':info, 'date':e.time, 'is_com':True})
 
         prev_rev = "00"
+        # actually, we're already sorted and this ruins the sort from
+        # the ids which is sometimes needed, so the function should be
+        # rewritten to not rely on a resort
         results.sort(key=lambda x: x['date'])
         for o in results:
             e = o["comment"]
@@ -236,6 +239,19 @@ def _get_versions(draft, include_replaced=True):
 def get_ballot(name):
     r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
+
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from doc.models import DocAlias
+        alias = get_object_or_404(DocAlias, name=name)
+        d = get_object_or_404(InternetDraft, name=alias.document.name)
+        try:
+            if not d.ballot.ballot_issued:
+                raise Http404
+        except BallotInfo.DoesNotExist:
+            raise Http404
+        
+        return (BallotWrapper(d), RfcWrapper(d) if m else IdWrapper(d))
+        
     if m:
         rfc_number = int(m.group(1))
         rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)

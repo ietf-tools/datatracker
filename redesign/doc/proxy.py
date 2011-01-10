@@ -10,8 +10,10 @@ import glob, os
 class InternetDraft(Document):
     objects = TranslatingManager(dict(filename="name",
                                       id_document_tag="id",
-                                      status="state",
-                                      rfc_number=lambda v: ("docalias__name", "rfc%s" % v)))
+                                      status=lambda v: ("state", { 1: 'active', 2: 'expired', 3: 'rfc', 4: 'auth-rm', 5: 'repl', 6: 'ietf-rm'}),
+                                      job_owner="ad",
+                                      rfc_number=lambda v: ("docalias__name", "rfc%s" % v),
+                                      ))
 
     DAYS_TO_EXPIRE=185
 
@@ -94,7 +96,7 @@ class InternetDraft(Document):
     @property
     def lc_sent_date(self):
         e = self.latest_event(type="sent_last_call")
-        return e.time if e else None
+        return e.time.date() if e else None
         
     #lc_changes = models.CharField(max_length=3) # used in DB, unused in Django code?
         
@@ -108,7 +110,7 @@ class InternetDraft(Document):
     @property
     def b_sent_date(self):
         e = self.latest_event(type="sent_ballot_announcement")
-        return e.time if e else None
+        return e.time.date() if e else None
         
     #b_discussion_date = models.DateField(null=True, blank=True) # unused
         
@@ -142,7 +144,7 @@ class InternetDraft(Document):
     #replaces = FKAsOneToOne('replaces', reverse=True)
     @property
     def replaces(self):
-        r = self.replaces_set()
+        r = self.replaces_set
         return r[0] if r else None
 
     @property
@@ -242,7 +244,12 @@ class InternetDraft(Document):
     #ballot = models.ForeignKey(BallotInfo, related_name='drafts', db_column="ballot_id")
     @property
     def ballot(self):
-        return self # FIXME: raise BallotInfo.DoesNotExist?
+        if not self.idinternal:
+            raise BallotInfo.DoesNotExist()
+        return self
+    @property
+    def ballot_id(self):
+        return self.ballot.name
     
     #primary_flag = models.IntegerField(blank=True, null=True)
     @property
@@ -402,7 +409,7 @@ class InternetDraft(Document):
         return self
     
     def comments(self):
-        return self.event_set.all().order_by('-time')
+        return DocumentComment.objects.filter(doc=self).order_by('-time')
 
     def ballot_set(self):
         return [self]
@@ -579,22 +586,22 @@ class InternetDraft(Document):
     #updates = models.CharField(max_length=200,blank=True,null=True)
     @property
     def updates(self):
-        return ",".join(sorted("RFC%s" % d.rfc_number for d in InternetDraft.objects.filter(docalias__relateddocument__document=self, docalias__relateddocument__relationship="updates")))
+        return ",".join("RFC%s" % n for n in sorted(d.rfc_number for d in InternetDraft.objects.filter(docalias__relateddocument__document=self, docalias__relateddocument__relationship="updates")))
 
     #updated_by = models.CharField(max_length=200,blank=True,null=True)
     @property
     def updated_by(self):
-        return ",".join(sorted("RFC%s" % d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="updates")))
+        return ",".join("RFC%s" % n for n in sorted(d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="updates")))
 
     #obsoletes = models.CharField(max_length=200,blank=True,null=True)
     @property
     def obsoletes(self):
-        return ",".join(sorted("RFC%s" % d.rfc_number for d in InternetDraft.objects.filter(docalias__relateddocument__document=self, docalias__relateddocument__relationship="obs")))
+        return ",".join("RFC%s" % n for n in sorted(d.rfc_number for d in InternetDraft.objects.filter(docalias__relateddocument__document=self, docalias__relateddocument__relationship="obs")))
 
     #obsoleted_by = models.CharField(max_length=200,blank=True,null=True)
     @property
     def obsoleted_by(self):
-        return ",".join(sorted("RFC%s" % d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="obs")))
+        return ",".join("RFC%s" % n for n in sorted(d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="obs")))
 
     #also = models.CharField(max_length=50,blank=True,null=True)
     @property
@@ -651,6 +658,47 @@ class IDAuthor(DocumentAuthor):
     
     def final_author_order(self):
         return self.order
+    
+    class Meta:
+        proxy = True
+
+class DocumentComment(Event):
+    objects = TranslatingManager(dict(comment_text="desc",
+                                      ))
+
+    BALLOT_DISCUSS = 1
+    BALLOT_COMMENT = 2
+    BALLOT_CHOICES = (
+	(BALLOT_DISCUSS, 'discuss'),
+	(BALLOT_COMMENT, 'comment'),
+    )
+    #document = models.ForeignKey(IDInternal)
+    @property
+    def document(self):
+        return self.doc
+    #rfc_flag = models.IntegerField(null=True, blank=True)
+    #public_flag = models.BooleanField() #unused
+    #date = models.DateField(db_column='comment_date', default=datetime.date.today)
+    @property
+    def date(self):
+        return self.time.date()
+    #time = models.CharField(db_column='comment_time', max_length=20, default=lambda: datetime.datetime.now().strftime("%H:%M:%S"))
+    #version = models.CharField(blank=True, max_length=3)
+    #comment_text = models.TextField(blank=True)
+    #created_by = BrokenForeignKey(IESGLogin, db_column='created_by', null=True, null_values=(0, 999))
+    #result_state = BrokenForeignKey(IDState, db_column='result_state', null=True, related_name="comments_leading_to_state", null_values=(0, 99))
+    #origin_state = models.ForeignKey(IDState, db_column='origin_state', null=True, related_name="comments_coming_from_state")
+    #ballot = models.IntegerField(null=True, choices=BALLOT_CHOICES)
+    def get_absolute_url(self):
+        return "/idtracker/%d/comment/%d/" % (self.doc.name, self.id)
+    def get_author(self):
+        return unicode(self.by)
+    def get_username(self):
+        return unicode(self.by)
+    def get_fullname(self):
+        return unicode(self.by)
+    def datetime(self):
+        return self.time
     
     class Meta:
         proxy = True

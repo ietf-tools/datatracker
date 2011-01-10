@@ -406,7 +406,7 @@ class IetfProcessData:
     # don't call this unless has_[active_]iesg_ballot returns True
     def iesg_ballot_needed( self ):
 	standardsTrack = 'Standard' in self.intended_maturity_level() or \
-			self.intended_maturity_level() == "BCP"
+			self.intended_maturity_level() in ("BCP", "Best Current Practice")
 	return self.iesg_ballot().ballot.needed( standardsTrack )
 
     def ad_name(self):
@@ -424,6 +424,17 @@ class IetfProcessData:
 
     def state_date(self):
         try:
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                return self._idinternal.event_set.filter(
+                    Q(desc__istartswith="Draft Added by ")|
+                    Q(desc__istartswith="Draft Added in state ")|
+                    Q(desc__istartswith="Draft added in state ")|
+                    Q(desc__istartswith="State changed to ")|
+                    Q(desc__istartswith="State Changes to ")|
+                    Q(desc__istartswith="Sub state has been changed to ")|
+                    Q(desc__istartswith="State has been changed to ")|
+                    Q(desc__istartswith="IESG has approved and state has been changed to")).order_by('-time')[0].time.date()
+                 
             return self._idinternal.comments().filter(
                 Q(comment_text__istartswith="Draft Added by ")|
                 Q(comment_text__istartswith="Draft Added in state ")|
@@ -625,8 +636,8 @@ class BallotWrapper:
         positions = []
         seen = {}
 
-	for pos in self.ballot.event_set.filter(type="changed_ballot_position").select_related('pos', 'ad').order_by("-time", '-id'):
-            pos = pos.ballotposition
+        from doc.models import BallotPosition
+	for pos in BallotPosition.objects.filter(doc=self.ballot, type="changed_ballot_position").select_related('ad').order_by("-time", '-id'):
             if pos.ad not in seen:
                 p = dict(ad_name=pos.ad.get_name(),
                          ad_username="", # FIXME: don't seem to have username at the moment

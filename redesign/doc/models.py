@@ -46,7 +46,7 @@ class DocumentInfo(models.Model):
         while d.latest_event(Status, type="xyz") returns a Status
         event."""
         model = args[0] if args else Event
-        e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time')[:1]
+        e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
 
 class RelatedDocument(models.Model):

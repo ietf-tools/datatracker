@@ -23,6 +23,14 @@ document_name_to_import = None
 if len(sys.argv) > 1:
     document_name_to_import = sys.argv[1]
 
+# prevent memory from leaking when settings.DEBUG=True
+from django.db import connection
+class DummyQueries(object):
+    def append(self, x):
+        pass 
+connection.queries = DummyQueries()
+
+
 # assumptions:
 # - groups have been imported
 # - IESG login emails/roles have been imported
@@ -207,6 +215,10 @@ def iesg_login_to_email(l):
                 print "MISSING IESG LOGIN", l.person.email()
                 return None
 
+def iesg_login_is_secretary(l):
+    # Amy has two users, for some reason
+    return l.user_level == IESGLogin.SECRETARIAT_LEVEL or l.first_name == "Amy" and l.last_name == "Vezza"
+
 # regexps for parsing document comments
 
 date_re_str = "(?P<year>[0-9][0-9][0-9][0-9])-(?P<month>[0-9][0-9]?)-(?P<day>[0-9][0-9]?)"
@@ -237,6 +249,7 @@ re_intended_status_changed = re.compile(r"Intended [sS]tatus has been changed to
 re_state_change_notice = re.compile(r"State Change Notice email list (have been change|has been changed) (<b>)?")
 re_area_acronym_changed = re.compile(r"Area acronymn? has been changed to \w+ from \w+(<b>)?")
 
+re_comment_discuss_by_tag = re.compile(r" by [\w-]+ [\w-]+$")
 
 def import_from_idinternal(d, idinternal):
     d.time = idinternal.event_date
@@ -244,12 +257,14 @@ def import_from_idinternal(d, idinternal):
     d.ad = iesg_login_to_email(idinternal.job_owner)
     d.notify = idinternal.state_change_notice_to or ""
     d.note = idinternal.note or ""
+    d.note = d.note.replace('<br>', '\n').strip().replace('\n', '<br>')
     d.save()
     
     # extract events
     last_note_change_text = ""
-    
-    for c in DocumentComment.objects.filter(document=idinternal.draft_id).order_by('date', 'time', 'id'):
+
+    document_comments = DocumentComment.objects.filter(document=idinternal.draft_id).order_by('date', 'time', 'id')
+    for c in document_comments:
         handled = False
 
         # telechat agenda schedulings
@@ -269,20 +284,23 @@ def import_from_idinternal(d, idinternal):
             e = Event()
             e.type = "sent_ballot_announcement"
             save_event(d, e, c)
-
-            # when you issue a ballot, you also vote yes; add that vote
-            e = BallotPosition()
-            e.type = "changed_ballot_position"
-            e.ad = iesg_login_to_email(c.created_by)
-            e.desc = "[Ballot Position Update] New position, Yes, has been recorded by %s" % e.ad.get_name()
-            last_pos = d.latest_event(type="changed_ballot_position", ballotposition__ad=e.ad)
-            e.pos = ballot_position_mapping["Yes"]
-            e.discuss = last_pos.ballotposition.discuss if last_pos else ""
-            e.discuss_time = last_pos.ballotposition.discuss_time if last_pos else None
-            e.comment = last_pos.ballotposition.comment if last_pos else ""
-            e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
-            save_event(d, e, c)
             handled = True
+
+            ad = iesg_login_to_email(c.created_by)
+            last_pos = d.latest_event(BallotPosition, type="changed_ballot_position", ad=ad)
+            if not last_pos and not iesg_login_is_secretary(c.created_by):
+                # when you issue a ballot, you also vote yes; add that vote
+                e = BallotPosition()
+                e.type = "changed_ballot_position"
+                e.ad = ad
+                e.desc = "[Ballot Position Update] New position, Yes, has been recorded by %s" % e.ad.get_name()
+            
+                e.pos = ballot_position_mapping["Yes"]
+                e.discuss = last_pos.discuss if last_pos else ""
+                e.discuss_time = last_pos.discuss_time if last_pos else None
+                e.comment = last_pos.comment if last_pos else ""
+                e.comment_time = last_pos.comment_time if last_pos else None
+                save_event(d, e, c)
 
         # ballot positions
         match = re_ballot_position.search(c.comment_text)
@@ -291,7 +309,7 @@ def import_from_idinternal(d, idinternal):
             ad_name = match.group('for') or match.group('for2') or match.group('by') # some of the old positions don't specify who it's for, in that case assume it's "by", the person who entered the position
             ad_first, ad_last = ad_name.split(' ')
             login = IESGLogin.objects.filter(first_name=ad_first, last_name=ad_last).order_by('user_level')[0]
-            if login.user_level == IESGLogin.SECRETARIAT_LEVEL:
+            if iesg_login_is_secretary(login):
                 # now we're in trouble, a secretariat person isn't an
                 # AD, instead try to find a position object that
                 # matches and that we haven't taken yet
@@ -307,11 +325,32 @@ def import_from_idinternal(d, idinternal):
                 elif position.slug == "discuss":
                     positions = positions.filter(models.Q(discuss=1)|models.Q(discuss=2))
                 assert position.slug != "norecord"
-                
+
+                found = False
                 for p in positions:
                     if not d.event_set.filter(type="changed_ballot_position", ballotposition__pos=position, ballotposition__ad=iesg_login_to_email(p.ad)):
                         login = p.ad
+                        found = True
                         break
+
+                if not found:
+                    # in even more trouble, we can try and see if it
+                    # belongs to a nearby discuss
+                    if position.slug == "discuss":
+                        index_c = list(document_comments).index(c)
+                        start = c.datetime()
+                        end = c.datetime() + datetime.timedelta(seconds=30 * 60)
+                        for i, x in enumerate(document_comments):
+                            if (x.ballot == DocumentComment.BALLOT_DISCUSS
+                                and (c.datetime() <= x.datetime() <= end
+                                     or abs(index_c - i) <= 2)
+                                and not iesg_login_is_secretary(x.created_by)):
+                                login = x.created_by
+                                found = True
+
+                if not found:
+                    print "BALLOT BY SECRETARIAT", login
+                
 
             e = BallotPosition()
             e.type = "changed_ballot_position"
@@ -320,6 +359,10 @@ def import_from_idinternal(d, idinternal):
             e.pos = position
             e.discuss = last_pos.discuss if last_pos else ""
             e.discuss_time = last_pos.discuss_time if last_pos else None
+            if e.pos_id == "discuss" and not e.discuss_time:
+                # in a few cases, we don't have the discuss
+                # text/time, fudge the time so it's not null
+                e.discuss_time = c.datetime()
             e.comment = last_pos.comment if last_pos else ""
             e.comment_time = last_pos.comment_time if last_pos else None
             save_event(d, e, c)
@@ -330,23 +373,35 @@ def import_from_idinternal(d, idinternal):
             e = BallotPosition()
             e.type = "changed_ballot_position"
             e.ad = iesg_login_to_email(c.created_by)
-            last_pos = d.latest_event(type="changed_ballot_position", ballotposition__ad=e.ad)
-            e.pos = last_pos.ballotposition.pos if last_pos else ballot_position_mapping[None]
+            last_pos = d.latest_event(BallotPosition, type="changed_ballot_position", ad=e.ad)
+            e.pos = last_pos.pos if last_pos else ballot_position_mapping[None]
+            c.comment_text = re_comment_discuss_by_tag.sub("", c.comment_text)
             if c.ballot == DocumentComment.BALLOT_DISCUSS:
                 e.discuss = c.comment_text
                 e.discuss_time = c.datetime()
-                e.comment = last_pos.ballotposition.comment if last_pos else ""
-                e.comment_time = last_pos.ballotposition.comment_time if last_pos else None
+                e.comment = last_pos.comment if last_pos else ""
+                e.comment_time = last_pos.comment_time if last_pos else None
                 # put header into description
                 c.comment_text = "[Ballot discuss]\n" + c.comment_text
             else:
-                e.discuss = last_pos.ballotposition.discuss if last_pos else ""
-                e.discuss_time = last_pos.ballotposition.discuss_time if last_pos else None
+                e.discuss = last_pos.discuss if last_pos else ""
+                e.discuss_time = last_pos.discuss_time if last_pos else None
+                if e.pos_id == "discuss" and not e.discuss_time:
+                    # in a few cases, we don't have the discuss
+                    # text/time, fudge the time so it's not null
+                    e.discuss_time = c.datetime()
                 e.comment = c.comment_text
                 e.comment_time = c.datetime()
                 # put header into description
                 c.comment_text = "[Ballot comment]\n" + c.comment_text
-            save_event(d, e, c)
+
+            # there are some bogus copies where a secretary has the
+            # same discuss comment as an AD, skip saving if this is
+            # one of those
+            if not (iesg_login_is_secretary(c.created_by)
+                and DocumentComment.objects.filter(ballot=c.ballot, document=c.document).exclude(created_by=c.created_by)):
+                save_event(d, e, c)
+                
             handled = True
 
         # last call requested
@@ -564,10 +619,13 @@ def import_from_idinternal(d, idinternal):
             position_date = made_up_date
 
         # make sure we got all the positions
-        existing = BallotPosition.objects.filter(doc=d, type="changed_ballot_position").order_by("-time")
+        existing = BallotPosition.objects.filter(doc=d, type="changed_ballot_position").order_by("-time", '-id')
         
         for p in Position.objects.filter(ballot=ballot):
-            found = False
+            # there are some bogus ones
+            if iesg_login_is_secretary(p.ad):
+                continue
+            
             ad = iesg_login_to_email(p.ad)
             if p.noobj > 0:
                 pos = ballot_position_mapping["No Objection"]
@@ -581,6 +639,8 @@ def import_from_idinternal(d, idinternal):
                 pos = ballot_position_mapping["Discuss"]
             else:
                 pos = ballot_position_mapping[None]
+
+            found = False
             for x in existing:
                 if x.ad == ad and x.pos == pos:
                     found = True
@@ -597,6 +657,10 @@ def import_from_idinternal(d, idinternal):
                 e.pos = pos
                 e.discuss = last_pos.discuss if last_pos else ""
                 e.discuss_time = last_pos.discuss_time if last_pos else None
+                if e.pos_id == "discuss" and not e.discuss_time:
+                    # in a few cases, we don't have the discuss
+                    # text/time, fudge the time so it's not null
+                    e.discuss_time = e.time
                 e.comment = last_pos.comment if last_pos else ""
                 e.comment_time = last_pos.comment_time if last_pos else None
                 if last_pos:
@@ -607,7 +671,7 @@ def import_from_idinternal(d, idinternal):
 
         # make sure we got the ballot issued event
         if ballot.ballot_issued and not d.event_set.filter(type="sent_ballot_announcement"):
-            position = d.event_set.filter(type=("changed_ballot_position")).order_by('time')[:1]
+            position = d.event_set.filter(type=("changed_ballot_position")).order_by('time', 'id')[:1]
             if position:
                 sent_date = position[0].time
             else:
@@ -622,8 +686,8 @@ def import_from_idinternal(d, idinternal):
             e.save()
             
         # make sure the comments and discusses are updated
-        positions = list(BallotPosition.objects.filter(doc=d).order_by("-time"))
-        for c in IESGComment.objects.filter(ballot=idinternal.ballot):
+        positions = list(BallotPosition.objects.filter(doc=d).order_by("-time", '-id'))
+        for c in IESGComment.objects.filter(ballot=ballot):
             ad = iesg_login_to_email(c.ad)
             for p in positions:
                 if p.ad == ad:
@@ -633,7 +697,7 @@ def import_from_idinternal(d, idinternal):
                         p.save()
                     break
                 
-        for c in IESGDiscuss.objects.filter(ballot=idinternal.ballot):
+        for c in IESGDiscuss.objects.filter(ballot=ballot):
             ad = iesg_login_to_email(c.ad)
             for p in positions:
                 if p.ad == ad:
@@ -689,16 +753,13 @@ def import_from_idinternal(d, idinternal):
 
 all_drafts = InternetDraft.objects.all().select_related()
 if document_name_to_import:
-    all_drafts = all_drafts.filter(filename=document_name_to_import)
+    if document_name_to_import.startswith("rfc"):
+        all_drafts = all_drafts.filter(rfc_number=document_name_to_import[3:])
+    else:
+        all_drafts = all_drafts.filter(filename=document_name_to_import)
 #all_drafts = all_drafts[all_drafts.count() - 1000:]
+#all_drafts = all_drafts.none()
     
-# prevent memory from leaking from debug setting
-from django.db import connection
-class DummyQueries(object):
-    def append(self, x):
-        pass 
-connection.queries = DummyQueries()
-
 for index, o in enumerate(all_drafts.iterator()):
     print "importing", o.filename, index
     
@@ -717,9 +778,9 @@ for index, o in enumerate(all_drafts.iterator()):
     elif o.filename.startswith("draft-irtf-"):
         d.stream = stream_mapping["IRTF"]
     elif o.idinternal and o.idinternal.via_rfc_editor:
-        d.stream = stream_mapping["INDEPENDENT"] # FIXME: correct?
+        d.stream = stream_mapping["INDEPENDENT"]
     else:
-        d.stream = stream_mapping["IETF"] # FIXME: correct?
+        d.stream = stream_mapping["IETF"]
     d.wg_state = None
     d.iesg_state = iesg_state_mapping[None]
     d.iana_state = None
@@ -738,6 +799,10 @@ for index, o in enumerate(all_drafts.iterator()):
 
     # make sure our alias is updated
     d_alias = alias_doc(d.name, d)
+
+    # RFC alias
+    if o.rfc_number:
+        alias_doc("rfc%s" % o.rfc_number, d)
 
     d.authors.clear()
     for i, a in enumerate(o.authors.all().select_related("person").order_by('author_order', 'person')):
@@ -807,13 +872,10 @@ for index, o in enumerate(all_drafts.iterator()):
     # tags
     sync_tag(d, o.review_by_rfc_editor, tag_review_by_rfc_editor)
     sync_tag(d, o.expired_tombstone, tag_expired_tombstone)
-    
-    # RFC alias
-    if o.rfc_number:
-        alias_doc("rfc%s" % o.rfc_number, d)
-            
+
+    # replacements
     if o.replaced_by:
-        replacement, _ = Document.objects.get_or_create(name=o.replaced_by.filename)
+        replacement, _ = Document.objects.get_or_create(name=o.replaced_by.filename, defaults=dict(time=datetime.datetime(1970, 1, 1, 0, 0, 0)))
         RelatedDocument.objects.get_or_create(document=replacement, doc_alias=d_alias, relationship=relationship_replaces)
     
     # the RFC-related attributes are imported when we handle the RFCs below
@@ -878,7 +940,7 @@ for index, o in enumerate(all_rfcs.iterator()):
     if rfcs:
         r = rfcs[0]
         l = intended_std_level_mapping[r.intended_status.status]
-        if l:
+        if l: # skip some bogus None values
             d.intended_std_level = l
     d.save()
 
@@ -901,9 +963,6 @@ for index, o in enumerate(all_rfcs.iterator()):
 
     # import obsoletes/updates
     def make_relation(other_rfc, rel_type, reverse):
-        if other_rfc.startswith("NIC") or other_rfc.startswith("IEN") or other_rfc.startswith("STD") or other_rfc.startswith("RTR"):
-            return # we currently have no good way of importing these
-        
         other_number = int(other_rfc.replace("RFC", ""))
         other, other_alias = get_or_create_rfc_document(other_number)
         if reverse:
@@ -911,18 +970,35 @@ for index, o in enumerate(all_rfcs.iterator()):
         else:
             RelatedDocument.objects.get_or_create(document=d, doc_alias=other_alias, relationship=rel_type)
 
-    if o.obsoletes:
-        for x in o.obsoletes.split(','):
-            make_relation(x, relationship_obsoletes, False)
-    if o.obsoleted_by:
-        for x in o.obsoleted_by.split(','):
-            make_relation(x, relationship_obsoletes, True)
-    if o.updates:
-        for x in o.updates.split(','):
-            make_relation(x, relationship_updates, False)
-    if o.updated_by:
-        for x in o.updated_by.split(','):
-            make_relation(x, relationship_updates, True)
+    def parse_relation_list(s):
+        if not s:
+            return []
+        res = []
+        for x in s.split(","):
+            if x[:3] in ("NIC", "IEN", "STD", "RTR"):
+                # try translating this to RFC numbers that we can
+                # handle sensibly; otherwise we'll have to ignore them
+                l = ["RFC%s" % y.rfc_number for y in RfcIndex.objects.filter(also=x).order_by('rfc_number')]
+                if l:
+                    print "translated", x, "to", ", ".join(l)
+                    for y in l:
+                        if y not in res:
+                            res.append(y)
+                else:
+                    print "SKIPPED relation to", x
+            else:
+                res.append(x)
+        return res
+
+    RelatedDocument.objects.filter(document=d).delete()
+    for x in parse_relation_list(o.obsoletes):
+        make_relation(x, relationship_obsoletes, False)
+    for x in parse_relation_list(o.obsoleted_by):
+        make_relation(x, relationship_obsoletes, True)
+    for x in parse_relation_list(o.updates):
+        make_relation(x, relationship_updates, False)
+    for x in parse_relation_list(o.updated_by):
+        make_relation(x, relationship_updates, True)
 
     if o.also:
         alias_doc(o.also.lower(), d)

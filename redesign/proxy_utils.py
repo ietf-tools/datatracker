@@ -2,6 +2,27 @@ from django.db.models.manager import Manager
 from django.db.models.query import QuerySet
 
 class TranslatingQuerySet(QuerySet):
+    def translated_args(self, args):
+        trans = self.translated_attrs
+        res = []
+        for a in args:
+            if a.startswith("-"):
+                prefix = "-"
+                a = a[1:]
+            else:
+                prefix = ""
+                
+            if a in trans:
+                t = trans[a]
+                if callable(t):
+                    t, _ = t(None)
+
+                if t:
+                    res.append(prefix + t)
+            else:
+                res.append(prefix + a)
+        return res
+
     def translated_kwargs(self, kwargs):
         trans = self.translated_attrs
         res = dict()
@@ -80,6 +101,7 @@ class TranslatingQuerySet(QuerySet):
         return super(self.__class__, self).latest(*args, **kwargs)
 
     def order_by(self, *args, **kwargs):
+        args = self.translated_args(args)
         kwargs = self.translated_kwargs(kwargs)
         return super(self.__class__, self).order_by(*args, **kwargs)
 
@@ -88,10 +110,12 @@ class TranslatingQuerySet(QuerySet):
         return super(self.__class__, self).select_related(*args, **kwargs)
 
     def values(self, *args, **kwargs):
+        args = self.translated_args(args)
         kwargs = self.translated_kwargs(kwargs)
         return super(self.__class__, self).values(*args, **kwargs)
 
     def values_list(self, *args, **kwargs):
+        args = self.translated_args(args)
         kwargs = self.translated_kwargs(kwargs)
         return super(self.__class__, self).values_list(*args, **kwargs)
 
