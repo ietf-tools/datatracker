@@ -900,6 +900,12 @@ def get_or_create_rfc_document(rfc_number):
             if ids:
                 draft = ids[0]
 
+    if rfc_number in (2604, 3025):
+        # prevent merge for some botched RFCs that are obsoleted by
+        # another RFC coming from the same draft, in practice this is
+        # just these two, so we hardcode rather than querying for it
+        draft = None
+                
     if draft:
         name = draft.filename
 
