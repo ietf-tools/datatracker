@@ -931,6 +931,7 @@ for index, o in enumerate(all_rfcs.iterator()):
     d.time = datetime.datetime.now()
     d.title = o.title
     d.std_level = std_level_mapping[o.current_status]
+    d.state = state_mapping['RFC']
     d.stream = stream_mapping[o.stream]
     if not d.group and o.wg:
         d.group = Group.objects.get(acronym=o.wg)
