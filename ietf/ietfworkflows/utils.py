@@ -134,6 +134,7 @@ def notify_entry(entry, template, extra_notify=[]):
     wg = doc.group.ietfwg
     mail_list = set(['%s <%s>' % i.person.email() for i in wg.wgchair_set.all() if i.person.email()])
     mail_list = mail_list.union(['%s <%s>' % i.person.email() for i in wg.wgdelegate_set.all() if i.person.email()])
+    mail_list = mail_list.union(['%s <%s>' % i.person.email() for i in doc.authors.all() if i.person.email()])
     mail_list = mail_list.union(extra_notify)
     mail_list = list(mail_list)
 
