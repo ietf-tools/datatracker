@@ -1,0 +1,65 @@
+{% extends "wginfo/wg_base.html" %}
+{% load ietf_filters wgchairs_tags %}
+
+{% block title %}Chage shepherd for {{ doc }}{% endblock %}
+
+{% block wg_content %}
+
+<p>
+<a href="{% url manage_shepherds wg.group_acronym.acronym %}">Return to shepherd list</a>
+</p>
+
+<h1>Change protocol write-up for {{ doc }}</h1>
+
+<table class="ietf-table" style="width: 100%;">
+<tr><th>Draft state</th><th>Actual protocol write-up</th><th>Last updated</th></tr>
+<tr style="vertical-align: top;"><td>{% show_state doc %}</td><td>{{ writeup.writeup|linebreaksbr }}</td><td>{% if writeup %}{{ writeup.date }} by {{ writeup.person }}{% endif %}</td></tr>
+</table>
+
+<p>
+Please, <strong>note</strong> that the <strong>'Doc Shepherd Follow-up Underway'</strong> annotation tag is {% if not followup %}<strong>NOT</strong>{% endif %} setted for {{ doc }}.
+</p>
+
+{% if can_edit %}
+<table style="width: 100%;"><tr style="vertical-align: top;"><td style="width: 75%;">
+<form action="" method="POST">
+  <table class="ietf-table" style="width: 100%;">    
+  <tr><th>Edit protocol write-up</th></tr>
+{% if form.message %}
+<tr><td class="message message-{{ form.message.type }}">
+    {{ form.message.value }}
+</td></tr>
+{% endif %}
+
+  <tr><td>
+  <textarea name="writeup" style="border: 1px solid #cccccc; width: 100%; height: 15em;">{{ form.get_writeup }}</textarea></td></tr>
+  </table>
+    <input type="submit" name="change_writeup" value="Change write-up" />
+</form>
+
+</td><td style="width: 25%;">
+
+<form action="" method="POST" enctype="multipart/form-data">
+  <table class="ietf-table" style="width: 100%;">    
+  <tr><th>Upload a new protocol write-up</th></tr>
+  <tr><td>
+  <p>Replace the current write-up with the contents of a plain ascii file:</p>
+  <input type="file" name="uploaded_writeup" /></td></tr>
+  </table>
+  <input type="submit" name="upload_writeup" value="Upload write-up" />
+</form>
+</td></tr></table>
+{% else %}
+<table class="ietf-table" style="width: 100%;">    
+  <tr><th>Edit protocol write-up</th></tr>
+  <tr><td>
+  <p>
+  You can not edit or upload the protocol write-up for {{ doc }} cause the draft is not on "WG Consensus: Waiting for Write-Up" state.
+  </p>
+  <p>
+  Please contact with the {{ wg }} Working Group chair.
+  </p>
+  </td></tr>
+</table>
+{% endif %}
+{% endblock %}

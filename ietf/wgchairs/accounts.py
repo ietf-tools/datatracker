@@ -1,7 +1,19 @@
+def is_area_director_for_group(person, group):
+    return bool(group.area.area.areadirector_set.filter(person=person).count())
+
+
 def is_group_chair(person, group):
     if group.chairs().filter(person=person):
         return True
     return False
+
+
+def is_group_delegate(person, group):
+    return bool(group.wgdelegate_set.filter(person=person).count())
+
+
+def is_document_shepherd(person, document):
+    return person == document.shepherd
 
 
 def get_person_for_user(user):
@@ -51,3 +63,22 @@ def can_manage_shepherd_of_a_document(user, document):
     if not person or not document.group:
         return False
     return can_manage_shepherds_in_group(user, document.group.ietfwg)
+
+
+def can_manage_writeup_of_a_document_no_state(user, document):
+    person = get_person_for_user(user)
+    if not person or not document.group:
+        return False
+    group = document.group.ietfwg
+    return (is_group_chair(person, group) or
+            is_areadirector_for_group(person, group) or
+            is_group_delegate(person, group))
+
+
+def can_manage_writeup_of_a_document(user, document):
+    person = get_person_for_user(user)
+    if not person or not document.group:
+        return False
+    group = document.group.ietfwg
+    return (can_manage_writeup_of_a_document_no_state(user, document) or
+            is_document_shepherd(person, doc))

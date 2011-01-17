@@ -1,0 +1,55 @@
+{% extends "wginfo/wg_base.html" %}
+{% load ietf_filters wgchairs_tags %}
+
+{% block title %}Chage shepherd for {{ doc }}{% endblock %}
+
+{% block wg_content %}
+
+<p>
+<a href="{% url manage_shepherds wg.group_acronym.acronym %}">Return to shepherd list</a>
+</p>
+
+<h1>Updatting write-up for {{ doc }}</h1>
+
+<p>
+Before you modify the protocol write-up <strong>please revise the 'Doc Shepherd Follow-up Underway' annotation tag and set or reset it if appropriate</strong>. 
+</p>
+<p>
+Remember that you must provide a comment if you change the annotation tag state.
+</p>
+
+<form action="" method="POST">
+<table style="width: 100%;"><tr style="vertical-align: top;"><td style="width: 50%;">
+  <table class="ietf-table" style="width: 100%;">    
+  <tr><th>Doc Shepherd Follow-up Underway</th></tr>
+{% if form.message %}
+<tr><td class="message message-{{ form.message.type }}">
+    {{ form.message.value }}
+</td></tr>
+{% endif %}
+
+  <tr><td>
+<input type="hidden" value="{{ form.get_writeup }}" name="writeup" />
+<input type="hidden" value="confirm" name="confirm" />
+<input type="checkbox" name="followup" id="followup_id" value="1"{% if followup %} checked="checked"{% endif %} />
+<label for="followup_id">Doc Shepherd Follow-up Underway</label>
+</td></tr><tr><td>
+{{ form.comment }}
+</td></tr>
+  </table>
+  <p>
+  <strong>Change write-up and ...</strong><br />
+  <input type="submit" name="modify_tag" value="Modify 'Doc Shepherd Follow-up Underway'" />
+  <input type="submit" name="change_writeup" value="Leave 'Doc Shepherd Follow-up Underway' untouched" /><br />
+    <a href="">Cancel, I don't want to do any change!</a>
+  </p>
+
+</td><td style="width: 50%;">
+<table class="ietf-table" style="width: 100%;">
+<tr><th>New protocol write-up</th></tr>
+<tr style="vertical-align: top;"><td>{{ form.get_writeup|linebreaksbr }}</td></tr>
+</table>
+
+</td></tr></table>
+</form>
+{% endblock %}

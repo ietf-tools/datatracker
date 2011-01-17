@@ -6,9 +6,10 @@ from django.forms.models import BaseModelFormSet
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 
-from ietf.wgchairs.models import WGDelegate
+from ietf.wgchairs.models import WGDelegate, ProtoWriteUp
 from ietf.wgchairs.accounts import get_person_for_user
-from ietf.ietfworkflows.utils import get_default_workflow_for_wg, get_workflow_for_wg
+from ietf.ietfworkflows.utils import (get_default_workflow_for_wg, get_workflow_for_wg,
+                                      update_tags, FOLLOWUP_TAG)
 from ietf.idtracker.models import PersonOrOrgInfo
 
 from workflows.models import Transition
@@ -328,3 +329,48 @@ def add_form_factory(request, wg, user, shepherd=False):
         return AddDelegateForm(wg=wg, user=user, data=request.POST.copy(), shepherd=shepherd)
 
     return AddDelegateForm(wg=wg, user=user, shepherd=shepherd)
+
+
+class WriteUpEditForm(RelatedWGForm):
+
+    writeup = forms.CharField(widget=forms.Textarea, required=False)
+    followup = forms.BooleanField(required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False)
+
+
+    def __init__(self, *args, **kwargs):
+        self.doc = kwargs.pop('doc', None)
+        self.doc_writeup = self.doc.protowriteup_set.all()
+        if self.doc_writeup.count():
+            self.doc_writeup=self.doc_writeup[0]
+        else:
+            self.doc_writeup=None
+        super(WriteUpEditForm, self).__init__(*args, **kwargs)
+
+    def get_writeup(self):
+        return self.data.get('writeup', self.doc_writeup and self.doc_writeup.writeup or '')
+
+    def save(self):
+        if not self.doc_writeup:
+            self.doc_writeup = ProtoWriteUp.objects.create(
+                person=get_person_for_user(self.user),
+                draft=self.doc,
+                writeup=self.cleaned_data['writeup'])
+        else:
+            self.doc_writeup.writeup = self.cleaned_data['writeup']
+            self.doc_writeup.save()
+        if self.data.get('modify_tag', False):
+            followup = self.cleaned_data.get('followup', False)
+            comment = self.cleaned_data.get('comment', False)
+            if followup:
+                update_tags(self.doc, comment, set_tags=[FOLLOWUP_TAG])
+            else:
+                update_tags(self.doc, comment, reset_tags=[FOLLOWUP_TAG])
+        return self.doc_writeup
+
+    def is_valid(self):
+        if self.data.get('confirm', False) and self.data.get('modify_tag', False):
+            self.fields['comment'].required = True
+        else:
+            self.fields['comment'].required = False
+        return super(WriteUpEditForm, self).is_valid()

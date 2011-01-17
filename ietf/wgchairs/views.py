@@ -5,13 +5,21 @@ from django.http import HttpResponseForbidden, Http404
 
 from ietf.idrfc.views_search import SearchForm, search_query
 from ietf.wgchairs.forms import (RemoveDelegateForm, add_form_factory,
-                                 workflow_form_factory, TransitionFormSet)
+                                 workflow_form_factory, TransitionFormSet,
+                                 WriteUpEditForm)
 from ietf.wgchairs.accounts import (can_manage_delegates_in_group, get_person_for_user,
                                     can_manage_shepherds_in_group,
                                     can_manage_workflow_in_group,
-                                    can_manage_shepherd_of_a_document)
+                                    can_manage_shepherd_of_a_document,
+                                    can_manage_writeup_of_a_document,
+                                    can_manage_writeup_of_a_document_no_state,
+                                    )
 from ietf.ietfworkflows.utils import (get_workflow_for_wg,
-                                      get_default_workflow_for_wg)
+                                      get_default_workflow_for_wg,
+                                      get_state_by_name,
+                                      get_annotation_tags_for_draft,
+                                      get_state_for_draft, WAITING_WRITEUP,
+                                      FOLLOWUP_TAG)
 
 
 def manage_delegates(request, acronym):
@@ -136,3 +144,65 @@ def wg_shepherd_documents(request, acronym):
         'wg': wg,
     }
     return render_to_response('wgchairs/wg_shepherd_documents.html', context, RequestContext(request))
+
+def managing_writeup(request, acronym, name):
+    wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
+    user = request.user
+    person = get_person_for_user(user)
+    doc = get_object_or_404(InternetDraft, filename=name)
+    if not can_manage_writeup_of_a_document(user, doc):
+        raise Http404
+    current_state = get_state_for_draft(doc)
+    can_edit = True
+    if current_state != get_state_by_name(WAITING_WRITEUP) and not can_manage_writeup_of_a_document_no_state(user,doc):
+        can_edit = False
+    writeup = doc.protowriteup_set.all()
+    if writeup.count():
+        writeup = writeup[0]
+    else:
+        writeup = None
+    error = False
+    followup_tag = get_annotation_tags_for_draft(doc).filter(annotation_tag__name=FOLLOWUP_TAG)
+    followup = bool(followup_tag.count())
+    if request.method == 'POST':
+        form = WriteUpEditForm(wg=wg, doc=doc, user=user, data=request.POST, files=request.FILES)
+        if request.FILES.get('uploaded_writeup', None):
+            try:
+                newwriteup = request.FILES['uploaded_writeup'].read().encode('ascii')
+                form.data.update({'writeup': newwriteup})
+            except:
+                form.set_message('error', 'You have try to upload a non ascii file')
+                error = True
+        valid = form.is_valid()
+        if (valid and not error and not request.POST.get('confirm', None)) or (not valid and not error):
+            if not valid:
+                form.set_message('error', 'You have to specify a comment')
+            return render_to_response('wgchairs/confirm_management_writeup.html',
+                                      dict(doc=doc,
+                                           user=user,
+                                           selected='manage_shepherds',
+                                           wg=wg,
+                                           followup=followup,
+                                           form=form,
+                                           writeup=writeup,
+                                           can_edit=can_edit,
+                                           ),
+                                      context_instance=RequestContext(request))
+        elif valid and not error:
+            writeup = form.save()
+            form = WriteUpEditForm(wg=wg, doc=doc, user=user)
+            followup_tag = get_annotation_tags_for_draft(doc).filter(annotation_tag__name=FOLLOWUP_TAG)
+            followup = bool(followup_tag.count())
+    else:
+        form = WriteUpEditForm(wg=wg, doc=doc, user=user)
+    return render_to_response('wgchairs/edit_management_writeup.html',
+                              dict(doc=doc,
+                                   user=user,
+                                   selected='manage_shepherds',
+                                   wg=wg,
+                                   form=form,
+                                   writeup=writeup,
+                                   followup=followup,
+                                   can_edit=can_edit,
+                                   ),
+                              context_instance=RequestContext(request))

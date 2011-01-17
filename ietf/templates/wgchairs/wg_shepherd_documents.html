@@ -56,25 +56,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <table class="ietf-table ietf-doctable" style="margin-top:16px; width: 100%;">
     <tr>       
        <th class="title">Document</th>
-       <th class="date">Date</th>
        <th class="status">Status</th>
-       <th class="ad">Area Director</th>
+       <th class="writeup">Protocol write-up</th>
+       <th class="writeup_date">Protocol write-up last update</th>
     </tr> 
     
       {% for doc in no_shepherd %}
-        <tr class="{% cycle oddrow,evenrow %}">
-          <td class="title">
-            <a href="{% url doc_managing_shepherd wg.group_acronym.acronym doc %}">{{ doc.title }}</a>
-          </td>
-          <td class="date">
-             {{ doc.status.start_date|date:"Y-m" }}
-          </td>
-          <td class="status">
-              {{ doc.status.status }}
-          </td>        
-          <td class="ad">{{ doc.ad_name|default:"" }}</td>
-          
-          </tr>
+        {% include "wgchairs/shepherd_document_row.html" %}
       {% endfor %}
         
 </table>
@@ -84,25 +72,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <table class="ietf-table ietf-doctable" style="margin-top:16px; width: 100%;">
     <tr>       
        <th class="title">Document</th>
-       <th class="date">Date</th>
        <th class="status">Status</th>
-       <th class="ad">Area Director</th>
+       <th class="writeup">Protocol write-up</th>
+       <th class="writeup_date">Protocol write-up last update</th>
     </tr> 
     
       {% for doc in my_documents %}
-        <tr class="{% cycle oddrow,evenrow %}">
-          <td class="title">
-            <a href="{% url doc_managing_shepherd wg.group_acronym.acronym doc %}">{{ doc.title }}</a>
-          </td>
-          <td class="date">
-             {{ doc.status.start_date|date:"Y-m" }}
-          </td>
-          <td class="status">
-              {{ doc.status.status }}
-          </td>        
-          <td class="ad">{{ doc.ad_name|default:"" }}</td>
-          
-          </tr>
+        {% include "wgchairs/shepherd_document_row.html" %}
       {% endfor %}
         
 </table>
@@ -115,23 +91,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <table class="ietf-table ietf-doctable" style="width: 100%;">
     <tr>       
        <th class="title">Document</th>
-       <th class="date">Date</th>
        <th class="status">Status</th>
-       <th class="ad">Area Director</th>
+       <th class="writeup">Protocol write-up</th>
+       <th class="writeup_date">Protocol write-up last update</th>
     </tr> 
     {% for doc in documents.list %}
-    <tr class="{% cycle oddrow,evenrow %}">
-      <td class="title">
-        <a href="{% url doc_managing_shepherd wg.group_acronym.acronym doc %}">{{ doc.title }}</a>
-      </td>
-      <td class="date">
-         {{ doc.status.start_date|date:"Y-m" }}
-      </td>
-      <td class="status">
-          {{ doc.status.status }}
-      </td>        
-      <td class="ad">{{ doc.ad_name|default:"" }}</td>
-    </tr>
+        {% include "wgchairs/shepherd_document_row.html" %}
     {% endfor %}
   </table>
 {% endfor %}
