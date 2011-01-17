@@ -346,6 +346,7 @@ class WriteUpEditForm(RelatedWGForm):
         else:
             self.doc_writeup=None
         super(WriteUpEditForm, self).__init__(*args, **kwargs)
+        self.person = get_person_for_user(self.user)
 
     def get_writeup(self):
         return self.data.get('writeup', self.doc_writeup and self.doc_writeup.writeup or '')
@@ -353,7 +354,7 @@ class WriteUpEditForm(RelatedWGForm):
     def save(self):
         if not self.doc_writeup:
             self.doc_writeup = ProtoWriteUp.objects.create(
-                person=get_person_for_user(self.user),
+                person=self.person,
                 draft=self.doc,
                 writeup=self.cleaned_data['writeup'])
         else:
@@ -362,10 +363,15 @@ class WriteUpEditForm(RelatedWGForm):
         if self.data.get('modify_tag', False):
             followup = self.cleaned_data.get('followup', False)
             comment = self.cleaned_data.get('comment', False)
-            if followup:
-                update_tags(self.doc, comment, set_tags=[FOLLOWUP_TAG])
+            shepherd = self.doc.shepherd
+            if shepherd:
+                extra_notify = ['%s <%s>' % shepherd.email()]
             else:
-                update_tags(self.doc, comment, reset_tags=[FOLLOWUP_TAG])
+                extra_notify = []
+            if followup:
+                update_tags(self.doc, comment, self.person, set_tags=[FOLLOWUP_TAG], extra_notify=extra_notify)
+            else:
+                update_tags(self.doc, comment, self.person, reset_tags=[FOLLOWUP_TAG], extra_notify=extra_notify)
         return self.doc_writeup
 
     def is_valid(self):

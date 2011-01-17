@@ -146,7 +146,6 @@ def notify_entry(entry, template, extra_notify=[]):
         to=mail_list,
         from_email=settings.DEFAULT_FROM_EMAIL)
     # Only send emails if we are not debug mode
-    print body
     if not settings.DEBUG:
         mail.send()
     return mail
