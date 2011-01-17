@@ -1,7 +1,10 @@
 import copy
 import datetime
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
 
 from workflows.models import State
 from workflows.utils import (get_workflow_for_object, set_workflow_for_object,
@@ -126,7 +129,38 @@ def reset_tag_by_name(obj, tag_name):
         return False
 
 
-def update_tags(obj, comment, person, set_tags=[], reset_tags=[]):
+def notify_entry(entry, template, extra_notify=[]):
+    doc = entry.content
+    wg = doc.group.ietfwg
+    mail_list = set(['%s <%s>' % i.person.email() for i in wg.wgchair_set.all() if i.person.email()])
+    mail_list = mail_list.union(['%s <%s>' % i.person.email() for i in wg.wgdelegate_set.all() if i.person.email()])
+    mail_list = mail_list.union(extra_notify)
+    mail_list = list(mail_list)
+
+    subject = 'Annotation tags have changed for draft %s' % doc
+    body = render_to_string(template, {'doc': doc,
+                                       'entry': entry,
+                                      })
+    mail = EmailMessage(subject=subject,
+        body=body,
+        to=mail_list,
+        from_email=settings.DEFAULT_FROM_EMAIL)
+    # Only send emails if we are not debug mode
+    print body
+    if not settings.DEBUG:
+        mail.send()
+    return mail
+
+
+def notify_tag_entry(entry, extra_notify=[]):
+    return notify_entry(entry, 'ietfworkflows/annotation_tags_updated_mail.txt', extra_notify)
+
+
+def notify_state_entry(entry, extra_notify=[]):
+    return notify_entry(entry, 'ietfworkflows/state_updated_mail.txt', extra_notify)
+
+    
+def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[]):
     ctype = ContentType.objects.get_for_model(obj)
     setted = []
     resetted = []
@@ -136,7 +170,7 @@ def update_tags(obj, comment, person, set_tags=[], reset_tags=[]):
     for name in reset_tags:
         if reset_tag_by_name(obj, name):
             resetted.append(name)
-    ObjectAnnotationTagHistoryEntry.objects.create(
+    entry = ObjectAnnotationTagHistoryEntry.objects.create(
         content_type=ctype,
         content_id=obj.pk,
         setted = ','.join(setted),
@@ -144,3 +178,4 @@ def update_tags(obj, comment, person, set_tags=[], reset_tags=[]):
         change_date = datetime.datetime.now(),
         comment = comment,
         person=person)
+    notify_tag_entry(entry, extra_notify)
