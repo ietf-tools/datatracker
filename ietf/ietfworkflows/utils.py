@@ -126,7 +126,7 @@ def reset_tag_by_name(obj, tag_name):
         return False
 
 
-def update_tags(obj, comment, set_tags=[], reset_tags=[]):
+def update_tags(obj, comment, person, set_tags=[], reset_tags=[]):
     ctype = ContentType.objects.get_for_model(obj)
     setted = []
     resetted = []
@@ -142,4 +142,5 @@ def update_tags(obj, comment, set_tags=[], reset_tags=[]):
         setted = ','.join(setted),
         unsetted = ','.join(resetted),
         change_date = datetime.datetime.now(),
-        comment = comment)
+        comment = comment,
+        person=person)

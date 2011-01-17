@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+from ietf.idtracker.models import PersonOrOrgInfo
 from workflows.models import Workflow, State
 from permissions.models import Permission
 
@@ -16,6 +17,7 @@ class ObjectWorkflowHistoryEntry(models.Model):
     to_state = models.CharField(_('To state'), max_length=100)
     transition_date = models.DateTimeField(_('Transition date'))
     comment = models.TextField(_('Comment'))
+    person = models.ForeignKey(PersonOrOrgInfo)
 
 
 class AnnotationTag(models.Model):
@@ -44,6 +46,7 @@ class ObjectAnnotationTagHistoryEntry(models.Model):
     unsetted = models.TextField(_('Unsetted tags'), blank=True, null=True)
     change_date = models.DateTimeField(_('Change date'))
     comment = models.TextField(_('Comment'))
+    person = models.ForeignKey(PersonOrOrgInfo)
 
 
 class WGWorkflow(Workflow):
