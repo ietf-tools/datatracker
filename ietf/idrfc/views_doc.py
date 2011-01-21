@@ -41,6 +41,7 @@ from django.template.defaultfilters import truncatewords_html
 from django.utils import simplejson as json
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
+from django.core.urlresolvers import reverse as urlreverse
 
 from ietf import settings
 from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, DocumentComment
@@ -157,6 +158,12 @@ def _get_history(doc, versions):
                 e.desc = 'New version available: <a href="http://tools.ietf.org/id/%s.txt">%s</a>' % (filename, filename)
                 if int(e.newrevision.rev) != 0:
                     e.desc += ' (<a href="http://tools.ietf.org/rfcdiff?url2=%s">diff from -%02d</a>)' % (filename, int(e.newrevision.rev) - 1)
+                info["dontmolest"] = True
+
+            multiset_ballot_text = "This was part of a ballot set with: "
+            if e.desc.startswith(multiset_ballot_text):
+                names = e.desc[len(multiset_ballot_text):].split(", ")
+                e.desc = multiset_ballot_text + ", ".join(u'<a href="%s">%s</a>' % (urlreverse("doc_view", kwargs={'name': n }), n) for n in names)
                 info["dontmolest"] = True
                     
             info['text'] = e.desc

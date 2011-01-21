@@ -739,6 +739,15 @@ def import_from_idinternal(d, idinternal):
             e.desc = "Ballot writeup text was added"
             e.save()
 
+    ballot_set = idinternal.ballot_set()
+    if len(ballot_set) > 1:
+        others = sorted(b.draft.filename for b in ballot_set if b != idinternal)
+        desc = u"This was part of a ballot set with: %s" % ",".join(others)
+        e, _ = Event.objects.get_or_create(type="added_comment", doc=d, desc=desc)
+        e.time = made_up_date
+        e.by = system_email
+        e.save()
+
     # fix tags
     sync_tag(d, idinternal.via_rfc_editor, tag_via_rfc_editor)
 
@@ -759,7 +768,7 @@ if document_name_to_import:
         all_drafts = all_drafts.filter(filename=document_name_to_import)
 #all_drafts = all_drafts[all_drafts.count() - 1000:]
 #all_drafts = all_drafts.none()
-    
+
 for index, o in enumerate(all_drafts.iterator()):
     print "importing", o.filename, index
     
