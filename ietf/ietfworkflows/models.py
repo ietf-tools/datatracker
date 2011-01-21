@@ -3,8 +3,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from ietf.idtracker.models import PersonOrOrgInfo
-from workflows.models import Workflow, State
+from ietf.idtracker.models import PersonOrOrgInfo, InternetDraft
+from workflows.models import Workflow, State, StateObjectRelation
 from permissions.models import Permission
 
 
@@ -49,6 +49,16 @@ class ObjectAnnotationTagHistoryEntry(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo)
 
 
+class StateObjectRelationMetadata(models.Model):
+    relation = models.ForeignKey(StateObjectRelation)
+    from_date = models.DateTimeField(_('Initial date'))
+    estimated_date = models.DateTimeField(_('Estimated date'), blank=True, null=True)
+
+
 class WGWorkflow(Workflow):
-    selected_states = models.ManyToManyField(State)
-    selected_tags = models.ManyToManyField(AnnotationTag)
+    selected_states = models.ManyToManyField(State, blank=True, null=True)
+    selected_tags = models.ManyToManyField(AnnotationTag, blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'IETF Workflow'
+        verbose_name_plural = 'IETF Workflows'
