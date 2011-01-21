@@ -79,6 +79,6 @@ class StreamedID(models.Model):
     draft = models.OneToOneField(InternetDraft)
     stream = models.ForeignKey(Stream)
     
-    content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"), related_name="annotation_tags_history", blank=True, null=True)
+    content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"), related_name="streamed_id", blank=True, null=True)
     content_id = models.PositiveIntegerField(_(u"Content id"), blank=True, null=True)
     group = generic.GenericForeignKey(ct_field="content_type", fk_field="content_id")
