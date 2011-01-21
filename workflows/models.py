@@ -125,7 +125,7 @@ class Workflow(models.Model):
 
         ctype = ContentType.objects.get_for_model(obj)
         try:
-            wor = WorkflowObjectRelation.objects.get(content_type=ctype, content_id=obj.id)
+            wor = WorkflowObjectRelation.objects.get(content_type=ctype, content_id=obj.pk)
         except WorkflowObjectRelation.DoesNotExist:
             WorkflowObjectRelation.objects.create(content = obj, workflow=self)
             workflows.utils.set_state(obj, self.initial_state)
