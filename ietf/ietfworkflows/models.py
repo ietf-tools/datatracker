@@ -62,3 +62,23 @@ class WGWorkflow(Workflow):
     class Meta:
         verbose_name = 'IETF Workflow'
         verbose_name_plural = 'IETF Workflows'
+
+
+class Stream(models.Model):
+    name = models.CharField(_(u"Name"), max_length=100)
+    with_groups = models.BooleanField(_(u'With groups'), default=False)
+    group_model = models.CharField(_(u'Group model'), max_length=100, blank=True, null=True)
+    group_chair_model = models.CharField(_(u'Group chair model'), max_length=100, blank=True, null=True)
+    workflow = models.ForeignKey(WGWorkflow)
+
+    def __unicode__(self):
+        return u'%s stream' % self.name
+
+
+class StreamedID(models.Model):
+    draft = models.OneToOneField(InternetDraft)
+    stream = models.ForeignKey(Stream)
+    
+    content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"), related_name="annotation_tags_history", blank=True, null=True)
+    content_id = models.PositiveIntegerField(_(u"Content id"), blank=True, null=True)
+    group = generic.GenericForeignKey(ct_field="content_type", fk_field="content_id")
