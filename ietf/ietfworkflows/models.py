@@ -8,22 +8,52 @@ from workflows.models import Workflow, State, StateObjectRelation
 from permissions.models import Permission
 
 
-class ObjectWorkflowHistoryEntry(models.Model):
+class ObjectHistoryEntry(models.Model):
     content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"), related_name="workflow_history", blank=True, null=True)
     content_id = models.PositiveIntegerField(_(u"Content id"), blank=True, null=True)
     content = generic.GenericForeignKey(ct_field="content_type", fk_field="content_id")
 
-    from_state = models.CharField(_('From state'), max_length=100)
-    to_state = models.CharField(_('To state'), max_length=100)
-    transition_date = models.DateTimeField(_('Transition date'))
+    date = models.DateTimeField(_('Date'), auto_now_add=True)
     comment = models.TextField(_('Comment'))
     person = models.ForeignKey(PersonOrOrgInfo)
+
+    def get_real_instance(self):
+        if hasattr(self, '_real_instance'): 
+            return self._real_instance
+        for i in ('objectworkflowhistoryentry', 'objectannotationtaghistoryentry', 'objectstreamhistoryentry'):
+            try:
+                real_instance = getattr(self, 'objectworkflowhistoryentry', None)
+                if real_instance:
+                    self._real_instance = real_instance
+                    return real_instance
+            except models.ObjectDoesNotExist:
+                continue
+        self._real_instance = self
+        return self
+
+
+class ObjectWorkflowHistoryEntry(ObjectHistoryEntry):
+    from_state = models.CharField(_('From state'), max_length=100)
+    to_state = models.CharField(_('To state'), max_length=100)
+
+
+class ObjectAnnotationTagHistoryEntry(ObjectHistoryEntry):
+    setted = models.TextField(_('Setted tags'), blank=True, null=True)
+    unsetted = models.TextField(_('Unsetted tags'), blank=True, null=True)
+
+
+class ObjectStreamHistoryEntry(ObjectHistoryEntry):
+    from_stream = models.TextField(_('From stream'), blank=True, null=True)
+    to_stream = models.TextField(_('To stream'), blank=True, null=True)
 
 
 class AnnotationTag(models.Model):
     name = models.CharField(_(u"Name"), max_length=100)
     workflow = models.ForeignKey(Workflow, verbose_name=_(u"Workflow"), related_name="annotation_tags")
     permission = models.ForeignKey(Permission, verbose_name=_(u"Permission"), blank=True, null=True)
+
+    class Meta:
+        ordering = ('name', )
 
     def __unicode__(self):
         return self.name
@@ -35,18 +65,6 @@ class AnnotationTagObjectRelation(models.Model):
     content = generic.GenericForeignKey(ct_field="content_type", fk_field="content_id")
 
     annotation_tag = models.ForeignKey(AnnotationTag, verbose_name=_(u"Annotation tag"))
-
-
-class ObjectAnnotationTagHistoryEntry(models.Model):
-    content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"), related_name="annotation_tags_history", blank=True, null=True)
-    content_id = models.PositiveIntegerField(_(u"Content id"), blank=True, null=True)
-    content = generic.GenericForeignKey(ct_field="content_type", fk_field="content_id")
-
-    setted = models.TextField(_('Setted tags'), blank=True, null=True)
-    unsetted = models.TextField(_('Unsetted tags'), blank=True, null=True)
-    change_date = models.DateTimeField(_('Change date'))
-    comment = models.TextField(_('Comment'))
-    person = models.ForeignKey(PersonOrOrgInfo)
 
 
 class StateObjectRelationMetadata(models.Model):
@@ -63,6 +81,13 @@ class WGWorkflow(Workflow):
         verbose_name = 'IETF Workflow'
         verbose_name_plural = 'IETF Workflows'
 
+    def get_tags(self):
+        tags = self.annotation_tags.all()
+        if tags.count():
+            return tags
+        else:
+            return self.selected_tags.all()
+
 
 class Stream(models.Model):
     name = models.CharField(_(u"Name"), max_length=100)
@@ -77,7 +102,7 @@ class Stream(models.Model):
 
 class StreamedID(models.Model):
     draft = models.OneToOneField(InternetDraft)
-    stream = models.ForeignKey(Stream)
+    stream = models.ForeignKey(Stream, blank=True, null=True)
     
     content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"), related_name="streamed_id", blank=True, null=True)
     content_id = models.PositiveIntegerField(_(u"Content id"), blank=True, null=True)
