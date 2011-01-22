@@ -253,14 +253,35 @@ def set_state(obj, state):
     state
         The state which should be set to the passed object.
     """
+    if not state:
+        remove_state(obj)
+    else:
+        ctype = ContentType.objects.get_for_model(obj)
+        try:
+            sor = StateObjectRelation.objects.get(content_type=ctype, content_id=obj.pk)
+        except StateObjectRelation.DoesNotExist:
+            sor = StateObjectRelation.objects.create(content=obj, state=state)
+        else:
+            sor.state = state
+            sor.save()
+        update_permissions(obj)
+
+def remove_state(obj):
+    """Removes the current state for the passed object.
+
+    **Parameters:**
+
+    obj
+        The object for which the workflow state should be set. Can be any
+        Django model instance.
+
+    """
     ctype = ContentType.objects.get_for_model(obj)
     try:
         sor = StateObjectRelation.objects.get(content_type=ctype, content_id=obj.pk)
+        sor.delete()
     except StateObjectRelation.DoesNotExist:
-        sor = StateObjectRelation.objects.create(content=obj, state=state)
-    else:
-        sor.state = state
-        sor.save()
+        pass
     update_permissions(obj)
 
 def set_initial_state(obj):
