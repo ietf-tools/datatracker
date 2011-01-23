@@ -10,8 +10,10 @@ from workflows.models import State
 from workflows.utils import (get_workflow_for_object, set_workflow_for_object,
                              get_state)
 
+from ietf.ietfworkflows.streams import get_streamed_draft
 from ietf.ietfworkflows.models import (WGWorkflow, AnnotationTagObjectRelation,
-                                       AnnotationTag, ObjectAnnotationTagHistoryEntry)
+                                       AnnotationTag, ObjectAnnotationTagHistoryEntry,
+                                       ObjectHistoryEntry)
 
 
 WAITING_WRITEUP = 'WG Consensus: Waiting for Write-Up'
@@ -24,7 +26,8 @@ def get_default_workflow_for_wg():
         return workflow
     except WGWorkflow.DoesNotExist:
         return None
-    
+
+
 def clone_transition(transition):
     new = copy.copy(transition)
     new.pk = None
@@ -34,6 +37,7 @@ def clone_transition(transition):
     for state in transition.states.all():
         new.states.add(state)
     return new
+
 
 def clone_workflow(workflow, name):
     new = WGWorkflow.objects.create(name=name, initial_state=workflow.initial_state)
@@ -51,19 +55,24 @@ def clone_workflow(workflow, name):
         new.transitions.add(clone_transition(transition))
     return new
 
-def get_workflow_for_wg(wg):
+
+def get_workflow_for_wg(wg, default=None):
     workflow = get_workflow_for_object(wg)
     try:
         workflow = workflow and workflow.wgworkflow
     except WGWorkflow.DoesNotExist:
         workflow = None
     if not workflow:
-        workflow = get_default_workflow_for_wg()
+        if default:
+            workflow = default
+        else:
+            workflow = get_default_workflow_for_wg()
         if not workflow:
             return None
         workflow = clone_workflow(workflow, name='%s workflow' % wg)
         set_workflow_for_object(wg, workflow)
     return workflow
+
 
 def get_workflow_for_draft(draft):
     workflow = get_workflow_for_object(draft)
@@ -72,9 +81,27 @@ def get_workflow_for_draft(draft):
     except WGWorkflow.DoesNotExist:
         workflow = None
     if not workflow:
-        workflow = get_workflow_for_wg(draft.group.ietfwg)
+        streamed_draft = get_streamed_draft(draft)
+        if not streamed_draft or not streamed_draft.stream:
+            return None
+        stream = streamed_draft.stream
+        if stream.with_groups:
+            if not streamed_draft.group:
+                return None
+            else:
+                workflow = get_workflow_for_wg(streamed_draft.group, streamed_draft.stream.workflow)
+        else:
+            workflow = stream.workflow
         set_workflow_for_object(draft, workflow)
     return workflow
+
+
+def get_workflow_history_for_draft(draft):
+    ctype = ContentType.objects.get_for_model(draft)
+    history = ObjectHistoryEntry.objects.filter(content_type=ctype, content_id=draft.pk).\
+        select_related('objectworkflowhistoryentry', 'objectannotationtaghistoryentry',
+                       'objectstreamhistoryentry')
+    return history
 
 
 def get_annotation_tags_for_draft(draft):
@@ -99,6 +126,7 @@ def get_annotation_tag_by_name(tag_name):
         return AnnotationTag.objects.get(name=tag_name)
     except AnnotationTag.DoesNotExist:
         return None
+
 
 def set_tag_by_name(obj, tag_name):
     ctype = ContentType.objects.get_for_model(obj)
@@ -159,7 +187,7 @@ def notify_tag_entry(entry, extra_notify=[]):
 def notify_state_entry(entry, extra_notify=[]):
     return notify_entry(entry, 'ietfworkflows/state_updated_mail.txt', extra_notify)
 
-    
+
 def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[]):
     ctype = ContentType.objects.get_for_model(obj)
     setted = []
@@ -173,9 +201,9 @@ def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[
     entry = ObjectAnnotationTagHistoryEntry.objects.create(
         content_type=ctype,
         content_id=obj.pk,
-        setted = ','.join(setted),
-        unsetted = ','.join(resetted),
-        change_date = datetime.datetime.now(),
-        comment = comment,
+        setted=','.join(setted),
+        unsetted=','.join(resetted),
+        date=datetime.datetime.now(),
+        comment=comment,
         person=person)
     notify_tag_entry(entry, extra_notify)

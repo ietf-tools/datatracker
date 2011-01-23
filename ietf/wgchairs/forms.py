@@ -363,7 +363,10 @@ class WriteUpEditForm(RelatedWGForm):
         if self.data.get('modify_tag', False):
             followup = self.cleaned_data.get('followup', False)
             comment = self.cleaned_data.get('comment', False)
-            shepherd = self.doc.shepherd
+            try:
+                shepherd = self.doc.shepherd
+            except PersonOrOrgInfo.DoesNotExist:
+                shepherd = None
             if shepherd:
                 extra_notify = ['%s <%s>' % shepherd.email()]
             else:

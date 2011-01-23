@@ -74,3 +74,53 @@ function showBallot(draftName, editPositionUrl) {
 function editBallot(editPositionUrl) {
     window.open(editPositionUrl);
 }
+function showStream(dialogTitle, infoStreamUrl) {
+    var handleClose = function() {
+        IETF.streamDialog.hide();
+    };
+    var el;
+
+    if (!IETF.streamDialog) {
+        el = document.createElement("div");
+        el.innerHTML = '<div id="stream_dialog" style="visibility:hidden;"><div class="hd"><span id="stream_title">' + dialogTitle + '</span></div><div class="bd">  <div id="stream_dialog_body" style="overflow-y:scroll; height:400px;"></div>   </div></div>';
+        document.getElementById("ietf-extras").appendChild(el);
+
+        var buttons = [{text:"Close", handler:handleClose, isDefault:true}];
+	var kl = [new YAHOO.util.KeyListener(document, {keys:27}, handleClose)]						 
+        IETF.streamDialog = new YAHOO.widget.Dialog("stream_dialog", {
+            visible:false, draggable:false, close:true, modal:true,
+            width:"860px", fixedcenter:true, constraintoviewport:true,
+            buttons: buttons, keylisteners:kl});
+        IETF.streamDialog.render();
+    }
+    document.getElementById("stream_title").innerHTML = dialogTitle;
+    IETF.streamDialog.show();
+
+    el = document.getElementById("stream_dialog_body");
+    el.innerHTML = "Loading...";
+    YAHOO.util.Connect.asyncRequest('GET', 
+          infoStreamUrl,
+          { success: function(o) { el.innerHTML = (o.responseText !== undefined) ? o.responseText : "?"; }, 
+            failure: function(o) { el.innerHTML = "Error: "+o.status+" "+o.statusText; },
+            argument: null
+   	  }, null);
+}
+(function ($) {
+
+    $.fn.StreamInfo = function() {
+        return this.each(function () {
+            var infoStreamUrl = $(this).attr('href');
+            var title = $(this).attr('title');
+
+            $(this).click(function() {
+                showStream(title, infoStreamUrl);
+                return false;
+            });
+        });
+    };
+
+    $(document).ready(function () {
+        $('a.show_stream_info').StreamInfo();
+    });
+
+})(jQuery);

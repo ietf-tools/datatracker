@@ -17,12 +17,16 @@ class ObjectHistoryEntry(models.Model):
     comment = models.TextField(_('Comment'))
     person = models.ForeignKey(PersonOrOrgInfo)
 
+    class Meta:
+        ordering = ('-date', )
+
+
     def get_real_instance(self):
         if hasattr(self, '_real_instance'): 
             return self._real_instance
         for i in ('objectworkflowhistoryentry', 'objectannotationtaghistoryentry', 'objectstreamhistoryentry'):
             try:
-                real_instance = getattr(self, 'objectworkflowhistoryentry', None)
+                real_instance = getattr(self, i, None)
                 if real_instance:
                     self._real_instance = real_instance
                     return real_instance
@@ -36,15 +40,41 @@ class ObjectWorkflowHistoryEntry(ObjectHistoryEntry):
     from_state = models.CharField(_('From state'), max_length=100)
     to_state = models.CharField(_('To state'), max_length=100)
 
+    def describe_change(self):
+        html = '<p class="describe_state_change">'
+        html += 'Changed state <i>%s</i> to <b>%s</b>' % (self.from_state, self.to_state)
+        html += '</p>'
+        return html
+
 
 class ObjectAnnotationTagHistoryEntry(ObjectHistoryEntry):
     setted = models.TextField(_('Setted tags'), blank=True, null=True)
     unsetted = models.TextField(_('Unsetted tags'), blank=True, null=True)
 
+    def describe_change(self):
+        html = ''
+        if self.setted:
+            html += '<p class="describe_tags_set">'
+            html += 'Annotation tags set: '
+            html += self.setted
+            html += '</p>'
+        if self.unsetted:
+            html += '<p class="describe_tags_reset">'
+            html += 'Annotation tags reset: '
+            html += self.unsetted
+            html += '</p>'
+        return html
+
 
 class ObjectStreamHistoryEntry(ObjectHistoryEntry):
     from_stream = models.TextField(_('From stream'), blank=True, null=True)
     to_stream = models.TextField(_('To stream'), blank=True, null=True)
+
+    def describe_change(self):
+        html = '<p class="describe_stream_change">'
+        html += 'Changed doc from stream <i>%s</i> to <b>%s</b>' % (self.from_stream, self.to_stream)
+        html += '</p>'
+        return html
 
 
 class AnnotationTag(models.Model):
