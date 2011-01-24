@@ -160,7 +160,33 @@ class InternetDraft(Document):
     @property
     def expired_tombstone(self):
         return bool(self.tags.filter(slug='exp-tomb'))
-        
+
+    def calc_process_start_end(self):
+        import datetime
+        start, end = datetime.datetime.min, datetime.datetime.max
+        e = self.ballot.latest_event(type="started_iesg_process")
+        if e:
+            start = e.time
+            if self.ballot.state_id == "rfc" and self.ballot.name.startswith("draft") and not hasattr(self.ballot, "viewing_as_rfc"):
+                previous_process = self.ballot.latest_event(type="started_iesg_process", time__lt=e.time)
+                if previous_process:
+                    start = previous_process.time
+                    end = e.time
+        self._process_start = start
+        self._process_end = end
+
+    @property
+    def process_start(self):
+        if not hasattr(self, "_process_start"):
+            self.calc_process_start_end()
+        return self._process_start
+
+    @property
+    def process_end(self):
+        if not hasattr(self, "_process_end"):
+            self.calc_process_start_end()
+        return self._process_end
+    
     #idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
     @property
     def idinternal(self):

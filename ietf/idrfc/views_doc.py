@@ -77,6 +77,7 @@ def _get_html(key, filename):
 
 def document_main_rfc(request, rfc_number):
     rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
+    rfci.viewing_as_rfc = True
     doc = RfcWrapper(rfci)
 
     info = {}

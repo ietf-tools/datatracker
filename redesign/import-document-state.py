@@ -262,6 +262,7 @@ def import_from_idinternal(d, idinternal):
     
     # extract events
     last_note_change_text = ""
+    started_iesg_process = ""
 
     document_comments = DocumentComment.objects.filter(document=idinternal.draft_id).order_by('date', 'time', 'id')
     for c in document_comments:
@@ -431,8 +432,12 @@ def import_from_idinternal(d, idinternal):
         # draft added 
         match = re_draft_added.search(c.comment_text)
         if match:
-            e = Event(type="started_iesg_process")
-            save_event(d, e, c)
+            # watch out for extraneous starts, the old data contains
+            # some phony ones
+            if not started_iesg_process:
+                started_iesg_process = c.comment_text
+                e = Event(type="started_iesg_process")
+                save_event(d, e, c)
             handled = True
 
         # new version

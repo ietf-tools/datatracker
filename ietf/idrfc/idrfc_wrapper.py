@@ -637,7 +637,7 @@ class BallotWrapper:
         seen = {}
 
         from doc.models import BallotPosition
-	for pos in BallotPosition.objects.filter(doc=self.ballot, type="changed_ballot_position").select_related('ad').order_by("-time", '-id'):
+	for pos in BallotPosition.objects.filter(doc=self.ballot, type="changed_ballot_position", time__gte=self.ballot.process_start, time__lte=self.ballot.process_end).select_related('ad').order_by("-time", '-id'):
             if pos.ad not in seen:
                 p = dict(ad_name=pos.ad.get_name(),
                          ad_username="", # FIXME: don't seem to have username at the moment
