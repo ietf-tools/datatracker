@@ -186,10 +186,10 @@ def _can_take_care(liaison, user):
 def _find_person_in_emails(liaison, person):
     if not person:
         return False
-    emails = ','.join([liaison.cc1, liaison.cc2, liaison.to_email,
+    emails = ','.join([ e for e in [liaison.cc1, liaison.cc2, liaison.to_email,
                        liaison.to_poc, liaison.submitter_email,
                        liaison.replyto, liaison.response_contact,
-                       liaison.technical_contact])
+                       liaison.technical_contact] if e ])
     for email in emails.split(','):
         name, addr = parseaddr(email)
         if email_re.search(addr) and person.emailaddress_set.filter(address=addr):
