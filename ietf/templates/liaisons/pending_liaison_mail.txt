@@ -1,5 +1,5 @@
 The following liaison statement will remain pending (and not public available) in the system until you approve it:
-
+{% autoescape off %}
 Title: {{ liaison.title }}
 Submission Date: {{ liaison.submitted_date }}
 URL of the IETF Web page: {% url liaison_approval_detail liaison.pk %}
@@ -18,6 +18,6 @@ Attachment(s):
 {% empty %}
 No document has been attached
 {% endfor %}
-
+{% endautoescape %}
 
 Please visit {% url liaison_approval_detail liaison.pk %} in order to approve the liaison statement.

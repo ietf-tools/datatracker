@@ -1,4 +1,4 @@
-Title: {{ liaison.title }}
+{% autoescape off %}Title: {{ liaison.title }}
 Submission Date: {{ liaison.submitted_date }}
 URL of the IETF Web page: {% url liaison_detail object_id=liaison.pk %}
 {% if liaison.deadline_date %}Please reply by {{ liaison.deadline_date }}{% endif %}
@@ -16,3 +16,4 @@ Attachment(s):
 {% empty %}
 No document has been attached
 {% endfor %}
+{% endautoescape %}
