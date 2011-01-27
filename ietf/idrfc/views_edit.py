@@ -130,9 +130,6 @@ class EditInfoForm(forms.Form):
         if kwargs['initial']['area_acronym'] == Acronym.INDIVIDUAL_SUBMITTER:
             # default to "gen"
             kwargs['initial']['area_acronym'] = 1008
-        else:
-            # hide area acronym if one has been assigned already
-            del self.fields['area_acronym']
         
         # returning item is rendered non-standard
         self.standard_fields = [x for x in self.visible_fields() if x.name not in ('returning_item',)]
