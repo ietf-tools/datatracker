@@ -1,0 +1,20 @@
+{% extends "submit/submit_base.html" %}
+{% block title %}Upload{% endblock %}
+
+{% block pagehead %}
+{{ form.media }}
+{% endblock %}
+
+{% block submit_content %}
+<p>This page is used to submit IETF Internet-Drafts to the Internet-Draft repository. The list of current Internet-Drafts can be accessed at <a href="http://www.ietf.org/ietf/1id-abstracts.txt">http://www.ietf.org/ietf/1id-abstracts.txt</a></p>
+<p>Internet-Drafts are working documents of the Internet Engineering Task Force (IETF), its areas, and its working groups. Note that other groups may also distribute working documents as Internet-Drafts.</p>
+<p>Internet-Drafts are draft documents, and are valid for a maximum of six months. They may be updated, replaced, or obsoleted by other documents at any time.</p>
+<p>If you run into problems when submitting an Internet-Draft using this and the following pages, you may alternatively submit your draft by email to <a href="mailto:internet-drafts@ietf.org">internet-drafts@ietf.org</a>. However, be advised that manual processing always takes additional time.</p>
+
+{{ form }}
+
+<p>
+The IETF is an organized activity of the <a href="http://www.isoc.org">Internet Society</a>
+<br>Please send problem reports to <a href="mailto:ietf-action@ietf.org">ietf-action@ietf.org</a>.
+</p>
+{% endblock %}
