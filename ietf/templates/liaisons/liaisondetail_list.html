@@ -16,13 +16,9 @@
 {% block management-links %}
 {% if can_manage %}
 <ul>
-  {% if deployed_liaison_tool %}
   {% if can_send_incoming %}<li><a href="{% url add_liaison %}?incoming">Add new incoming liaison</a></li>{% endif %}
   {% if can_send_outgoing %}<li><a href="{% url add_liaison %}">Add new outgoing liaison</a></li>{% endif %}
   {% if can_approve %}<li><a href="{% url liaison_approval_list %}">You have {{ can_approve }} pending liaison statement{{ can_approve|pluralize }} that need{{ can_approve|pluralize:"s," }} your approval</a></li>{% endif %}
-  {% else %}
-  <p><a href="https://datatracker.ietf.org/cgi-bin/ls/liaison_manager.cgi">Liaison Statement Manager</a> (for liaison contacts only; password required)</p>
-  {% endif %}
 </ul>
 {% endif %}
 {% endblock %}
