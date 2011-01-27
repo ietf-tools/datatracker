@@ -146,7 +146,6 @@ def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=N
         msg = MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
     else:
         msg = MIMEText(txt)
-
     send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc)
         
 def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=None, bcc=None):
@@ -166,7 +165,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=N
     msg['X-Test-IDTracker'] = (settings.SERVER_MODE == 'production') and 'no' or 'yes'
     msg['X-IETF-IDTracker'] = ietf.__version__
     if extra:
-	for k, v in extra.iteritems():
+	for k, v in extra.items():
 	    msg[k] = v
     if test_mode or settings.SERVER_MODE == 'production':
 	send_smtp(msg, bcc)
@@ -187,7 +186,6 @@ def send_mail_preformatted(request, preformatted):
     """Parse preformatted string containing mail with From:, To:, ...,
     and send it through the standard IETF mail interface (inserting
     extra headers as needed)."""
-
     msg = message_from_string(preformatted.encode("utf-8"))
 
-    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], msg.get_payload(), cc=msg["Cc"], bcc=msg["Bcc"])
+    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], msg.get_payload(), extra=msg)
