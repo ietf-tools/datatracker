@@ -104,6 +104,7 @@ class InternetDraftAdmin(admin.ModelAdmin):
 admin.site.register(InternetDraft, InternetDraftAdmin)
 
 class PersonOrOrgInfoAdmin(admin.ModelAdmin):
+    list_display = ['person_or_org_tag', 'last_name', 'first_name', ]
     fieldsets=((None, {'fields': (('first_name', 'middle_initial', 'last_name'), ('name_suffix', 'modified_by'))}), ('Obsolete Info', {'fields': ('record_type', 'created_by', 'address_type'), 'classes': 'collapse'}))
     search_fields=['first_name', 'last_name']
 admin.site.register(PersonOrOrgInfo, PersonOrOrgInfoAdmin)
