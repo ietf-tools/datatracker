@@ -219,7 +219,7 @@ def edit_info(request, name):
                     doc.idinternal.area_acronym = r['area_acronym']
                 
                 replaces = doc.replaces_set.all()
-                if replaces:
+                if replaces and replaces[0].idinternal:
                     c = "Earlier history may be found in the Comment Log for <a href=\"%s\">%s</a>" % (replaces[0], replaces[0].idinternal.get_absolute_url())
                     add_document_comment(request, doc, c)
                     
