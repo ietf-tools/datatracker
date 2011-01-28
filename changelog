@@ -1,3 +1,45 @@
+ietfdb (3.11)
+
+  * Fixed a bug in the IPR Search, where searches against the IPR notice
+    content would fail (Only try to open a legacy url if it leads to a
+    file; not if it leads to a directory).
+
+  * For a new IESG tracker document, only add a history comment about
+    previous history if some previous history exists (i.e., if the replaced 
+    document also existed in the IESG tracker).
+
+  * Show status of Dead Expired documents appropriately; just 'Expired' is 
+    insufficient.
+
+  * Restore, for the secretariat only, the re-scheduling functionality of 
+    the /iesg/agenda/documents/ page which was removed in [2366] as the ADs 
+    felt that it made the page too busy.
+
+  * Propagate all extra fields on to the final email sending function, not 
+    only the Cc and Bcc fields.  Restores previously missing Reply-To: headers.
+
+  * Turn autoescaping off for everything in text/plain email templates.  Fixes
+    multiple problems with '<' and '>' in emails showing up as '&lt;' and
+    '&gt;', and related problems.
+
+  * The liaison tool is deployed.  Show the links to the new tool.
+
+  * Prevent things from crashing if some of the email fields are null for a 
+    liaison.
+
+  * It should be possible to edit the area of a draft even if it's been set 
+    before.  Re-enabled the area list box on the document/edit/info/ page.
+
+  * Corrected spelling error in list_display specification for the 
+    PersonOrOrgInfo Admin page.
+
+  * Corrected the path to the draft archive in the settings file.
+
+    (Some of the fixes above has been deployed already before this release
+    by patching the previous release on the server.)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jan 2011 13:12:49 +0100
+
 ietfdb (3.10)
 
   * Fix css for IPR header (status column was included by mistake).  Fixes 
