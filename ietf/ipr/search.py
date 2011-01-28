@@ -41,7 +41,7 @@ def patent_file_search(url, q):
         fname = url.split("/")[-1]
         fpath = os.path.join(settings.IPR_DOCUMENT_PATH, fname)
         #print "*** Checking file", fpath
-        if os.path.exists(fpath):
+        if os.path.isfile(fpath):
             #print "*** Found file", fpath            
             file = codecs.open(fpath, mode='r', encoding='utf-8', errors='replace')
             text = file.read()
