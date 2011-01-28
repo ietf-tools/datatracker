@@ -219,6 +219,8 @@ class IdWrapper:
             else:
                 return "I-D Exists"
         else:
+            if self.in_ietf_process() and self.ietf_process.main_state == "Dead":
+                return self.draft_status+" (IESG: "+self.ietf_process.state+")"
             # Expired/Withdrawn by Submitter/IETF
             return self.draft_status
 
