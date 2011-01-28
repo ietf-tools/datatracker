@@ -38,7 +38,7 @@ ietfdb (3.11)
     (Some of the fixes above has been deployed already before this release
     by patching the previous release on the server.)
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jan 2011 13:12:49 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jan 2011 13:15:40 +0100
 
 ietfdb (3.10)
 
