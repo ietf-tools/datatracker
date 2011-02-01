@@ -53,7 +53,7 @@ def get_info(request):
     to_entity_id = request.GET.get('to_entity_id', None)
     from_entity_id = request.GET.get('from_entity_id', None)
 
-    result = {'poc': [], 'cc': [], 'needs_approval': False}
+    result = {'poc': [], 'cc': [], 'needs_approval': False, 'post_only': False}
 
     to_error = 'Invalid TO entity id'
     if to_entity_id:
@@ -74,7 +74,8 @@ def get_info(request):
                        'cc': [i.email() for i in to_entity.get_cc(person=person)] +\
                              [i.email() for i in from_entity.get_from_cc(person=person)],
                        'poc': [i.email() for i in to_entity.get_poc()],
-                       'needs_approval': from_entity.needs_approval(person=person)})
+                       'needs_approval': from_entity.needs_approval(person=person),
+                       'post_only': from_entity.post_only(person=person)})
     json_result = simplejson.dumps(result)
     return HttpResponse(json_result, mimetype='text/javascript')
 

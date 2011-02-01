@@ -172,6 +172,14 @@
                 }
             };
 
+            var checkPostOnly = function(post_only) {
+                if (post_only) {
+                    $("input[name=send]").hide();
+                } else {
+                    $("input[name=send]").show();
+                }
+            };
+
             var updateInfo = function() {
                 var entity = organization;
                 var to_entity = from;
@@ -189,6 +197,7 @@
                             render_mails_into(cc, response.cc);
                             render_mails_into(poc, response.poc);
                             toggleApproval(response.needs_approval);
+                            checkPostOnly(response.post_only);
                         }
                     }
                 });

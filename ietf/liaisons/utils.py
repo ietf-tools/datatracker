@@ -47,6 +47,9 @@ class Entity(object):
     def can_approve(self):
         return []
 
+    def post_only(self, person):
+        return False
+
 
 class IETFEntity(Entity):
 
@@ -162,6 +165,9 @@ class SDOEntity(Entity):
         if manager and manager.person!=person:
             return [manager.person]
         return []
+
+    def post_only(self, person):
+        return bool(self.obj.liaisonmanagers_set.filter(person=person))
 
 
 class EntityManager(object):
