@@ -321,6 +321,8 @@ class IETFHierarchyManager(object):
                         }
 
     def get_entity_by_key(self, entity_id):
+        if not entity_id:
+            return None
         id_list = entity_id.split('_', 1)
         key = id_list[0]
         pk = None

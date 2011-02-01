@@ -3,6 +3,7 @@ from ietf.idtracker.models import Role, PersonOrOrgInfo
 
 LIAISON_EDIT_GROUPS = ['Secretariat']
 
+
 def get_ietf_chair():
     person = PersonOrOrgInfo.objects.filter(role=Role.IETF_CHAIR)
     return person and person[0] or None
@@ -96,3 +97,44 @@ def can_add_incoming_liaison(user):
 
 def can_add_liaison(user):
     return can_add_incoming_liaison(user) or can_add_outgoing_liaison(user)
+
+
+def is_sdo_manager_for_outgoing_liaison(person, liaison):
+    from ietf.liaisons.utils import IETFHM, SDOEntity
+    from ietf.liaisons.models import SDOs
+    from_entity = IETFHM.get_entity_by_key(liaison.from_raw_code)
+    sdo = None
+    if not from_entity:
+        sdo = SDOs.objects.get(sdo_name=liaison.from_body())
+    elif isinstance(from_entity, SDOEntity):
+        sdo = from_entity.obj
+    if sdo:
+        return bool(sdo.liaisonmanagers_set.filter(person=person))
+    return False
+
+
+def is_sdo_manager_for_incoming_liaison(person, liaison):
+    from ietf.liaisons.utils import IETFHM, SDOEntity
+    from ietf.liaisons.models import SDOs
+    to_entity = IETFHM.get_entity_by_key(liaison.to_raw_code)
+    sdo = None
+    if not to_entity:
+        try:
+            sdo = SDOs.objects.get(sdo_name=liaison.to_body)
+        except SDOs.DoesNotExist:
+            pass
+    elif isinstance(to_entity, SDOEntity):
+        sdo = to_entity.obj
+    if sdo:
+        return bool(sdo.liaisonmanagers_set.filter(person=person))
+    return False
+
+
+def can_edit_liaison(user, liaison):
+    if is_secretariat(user):
+        return True
+    person = get_person_for_user(user)
+    if is_sdo_liaison_manager(person):
+        return (is_sdo_manager_for_outgoing_liaison(person, liaison) or
+                is_sdo_manager_for_incoming_liaison(person, liaison))
+    return False

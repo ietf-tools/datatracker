@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.fields import email_re
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
@@ -14,7 +14,8 @@ from django.views.generic.list_detail import object_list, object_detail
 
 from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaison,
                                     can_add_incoming_liaison, LIAISON_EDIT_GROUPS,
-                                    is_ietfchair, is_iabchair, is_iab_executive_director)
+                                    is_ietfchair, is_iabchair, is_iab_executive_director,
+                                    can_edit_liaison)
 from ietf.liaisons.decorators import can_submit_liaison
 from ietf.liaisons.forms import liaison_form_factory
 from ietf.liaisons.models import LiaisonDetail, OutgoingLiaisonApproval
@@ -210,7 +211,7 @@ def liaison_detail(request, object_id):
     can_edit = False
     user = request.user
     can_take_care = _can_take_care(liaison, user)
-    if user.is_authenticated() and user.groups.filter(name__in=LIAISON_EDIT_GROUPS):
+    if user.is_authenticated() and can_edit_liaison(user, liaison):
         can_edit = True
     if request.method == 'POST' and request.POST.get('do_taken_care', None) and can_take_care:
         liaison.taken_care = True
@@ -227,6 +228,9 @@ def liaison_detail(request, object_id):
 
 def liaison_edit(request, object_id):
     liaison = get_object_or_404(LiaisonDetail, pk=object_id)
+    user = request.user
+    if not (user.is_authenticated() and can_edit_liaison(user, liaison)):
+        return HttpResponseForbidden('You have no permission to edit this liaison')
     return add_liaison(request, liaison=liaison)
 
 def ajax_liaison_list(request):
