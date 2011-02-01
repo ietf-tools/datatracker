@@ -43,7 +43,16 @@ def find_person(username):
         return person
     except IESGLogin.DoesNotExist, PersonOrOrgInfo.DoesNotExist:
         pass
-    # TODO: try LegacyWgPassword next
+    # try LegacyWgPassword next
+    try:
+        return LegacyWgPassword.objects.get(login_name=username).person
+    except LegacyWgPassword.DoesNotExist, PersonOrOrgInfo.DoesNotExist:
+        pass
+    # try LegacyLiaisonUser next
+    try:
+        return LegacyLiaisonUser.objects.get(login_name=username).person
+    except LegacyLiaisonUser.DoesNotExist, PersonOrOrgInfo.DoesNotExist:
+        pass
     return None
 
 class IetfUserProfile(models.Model):
