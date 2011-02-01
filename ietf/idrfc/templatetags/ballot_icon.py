@@ -32,6 +32,7 @@
 
 from django import template
 from django.core.urlresolvers import reverse as urlreverse
+from django.conf import settings
 from ietf.idtracker.models import IDInternal, BallotInfo
 from ietf.idrfc.idrfc_wrapper import position_to_string, BALLOT_ACTIVE_STATES
 from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
