@@ -30,7 +30,7 @@ def add_liaison(request, liaison=None):
             liaison = form.save()
             if request.POST.get('send', None):
                 if not settings.DEBUG:
-                    liaison.send_by_mail()
+                    liaison.send_by_email()
                 else:
                     return _fake_email_view(request, liaison)
             return HttpResponseRedirect(reverse('liaison_list'))
@@ -158,7 +158,7 @@ def liaison_approval_detail(request, object_id):
                 approval.approved=True
                 approval.save()
             if not settings.DEBUG:
-                liaison.send_by_mail()
+                liaison.send_by_email()
             else:
                 return _fake_email_view(request, liaison)
         except LiaisonDetail.DoesNotExist:
