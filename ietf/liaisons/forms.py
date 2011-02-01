@@ -186,6 +186,7 @@ class LiaisonForm(forms.ModelForm):
         liaison.from_raw_body = from_entity.name
         liaison.from_raw_code = self.cleaned_data.get('from_field')
         organization = self.get_to_entity()
+        liaison.to_raw_code = self.cleaned_data.get('organization')
         liaison.to_body = organization.name
         liaison.to_poc = self.get_poc(organization)
         liaison.submitter_name, liaison.submitter_email = self.person.email()
