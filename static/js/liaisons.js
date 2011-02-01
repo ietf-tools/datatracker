@@ -188,7 +188,7 @@
             }
 
             var userSelect = function(user_list) {
-                if (!user_list) {
+                if (!user_list || !user_list.length) {
                     return;
                 }
                 var link = form.find('a.from_mailto');
