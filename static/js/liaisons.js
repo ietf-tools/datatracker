@@ -180,6 +180,30 @@
                 }
             };
 
+            var updateReplyTo = function() {
+                var select = form.find('select[name=from_fake_user]');
+                var option = select.find('option:selected');
+                reply.val(option.attr('title'));
+                updateFrom();
+            }
+
+            var userSelect = function(user_list) {
+                if (!user_list) {
+                    return;
+                }
+                var link = form.find('a.from_mailto');
+                var select = form.find('select[name=from_fake_user]');
+                var options = '';
+                link.hide();
+                $.each(user_list, function(index, person) {
+                    options += '<option value="' + person[0] + '" title="' + person[1][1] + '">'+ person[1][0] + ' &lt;' + person[1][1] + '&gt;</option>';
+                });
+                select.remove();
+                link.after('<select name="from_fake_user">' + options +'</select>')
+                form.find('select[name=from_fake_user]').change(updateReplyTo);
+                updateReplyTo();
+            };
+
             var updateInfo = function() {
                 var entity = organization;
                 var to_entity = from;
@@ -198,6 +222,7 @@
                             render_mails_into(poc, response.poc);
                             toggleApproval(response.needs_approval);
                             checkPostOnly(response.post_only);
+                            userSelect(response.full_list);
                         }
                     }
                 });

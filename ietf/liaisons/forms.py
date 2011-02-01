@@ -8,6 +8,7 @@ from django.forms.util import ErrorList
 from django.forms.fields import email_re
 from django.template.loader import render_to_string
 
+from ietf.idtracker.models import PersonOrOrgInfo
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
                                     get_person_for_user, is_secretariat, is_sdo_liaison_manager)
 from ietf.liaisons.models import LiaisonDetail, Uploads, OutgoingLiaisonApproval, SDOs
@@ -61,6 +62,9 @@ class LiaisonForm(forms.ModelForm):
         self.person = get_person_for_user(user)
         if kwargs.get('data', None):
             kwargs['data'].update({'person': self.person.pk})
+            if is_secretariat(self.user) and 'from_fake_user' in kwargs['data'].keys():
+                fake_person = PersonOrOrgInfo.objects.get(pk=kwargs['data']['from_fake_user'])
+                kwargs['data'].update({'person': fake_person.pk})
         super(LiaisonForm, self).__init__(*args, **kwargs)
         self.hm = IETFHM
         self.set_from_field()

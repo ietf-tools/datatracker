@@ -15,7 +15,7 @@ from django.views.generic.list_detail import object_list, object_detail
 from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaison,
                                     can_add_incoming_liaison, LIAISON_EDIT_GROUPS,
                                     is_ietfchair, is_iabchair, is_iab_executive_director,
-                                    can_edit_liaison)
+                                    can_edit_liaison, is_secretariat)
 from ietf.liaisons.decorators import can_submit_liaison
 from ietf.liaisons.forms import liaison_form_factory
 from ietf.liaisons.models import LiaisonDetail, OutgoingLiaisonApproval
@@ -53,7 +53,7 @@ def get_info(request):
     to_entity_id = request.GET.get('to_entity_id', None)
     from_entity_id = request.GET.get('from_entity_id', None)
 
-    result = {'poc': [], 'cc': [], 'needs_approval': False, 'post_only': False}
+    result = {'poc': [], 'cc': [], 'needs_approval': False, 'post_only': False, 'full_list': []}
 
     to_error = 'Invalid TO entity id'
     if to_entity_id:
@@ -76,6 +76,11 @@ def get_info(request):
                        'poc': [i.email() for i in to_entity.get_poc()],
                        'needs_approval': from_entity.needs_approval(person=person),
                        'post_only': from_entity.post_only(person=person)})
+    if is_secretariat(request.user):
+        full_list = [(i.pk, i.email()) for i in from_entity.full_user_list()]
+        full_list.sort(lambda x,y: cmp(x[1], y[1]))
+        full_list = [(person.pk, person.email())] + full_list
+        result.update({'full_list': full_list})
     json_result = simplejson.dumps(result)
     return HttpResponse(json_result, mimetype='text/javascript')
 
