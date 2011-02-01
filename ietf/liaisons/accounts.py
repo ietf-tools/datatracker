@@ -1,7 +1,7 @@
 from ietf.idtracker.models import Role, PersonOrOrgInfo
 
 
-LIAISON_EDIT_GROUPS = ['Liaison_Manager', 'Secretariat']
+LIAISON_EDIT_GROUPS = ['Secretariat']
 
 def get_ietf_chair():
     person = PersonOrOrgInfo.objects.filter(role=Role.IETF_CHAIR)
@@ -65,7 +65,7 @@ def can_add_outgoing_liaison(user):
     if (is_areadirector(person) or is_wgchair(person) or
         is_wgsecretary(person) or is_ietfchair(person) or
         is_iabchair(person) or is_iab_executive_director(person) or
-        is_ietf_liaison_manager(user)):
+        is_sdo_liaison_manager(person) or is_secretariat(user)):
         return True
     return False
 
@@ -78,8 +78,8 @@ def is_sdo_authorized_individual(person):
     return bool(person.sdoauthorizedindividual_set.all())
 
 
-def is_ietf_liaison_manager(user):
-    return bool(user.groups.filter(name='Liaison_Manager'))
+def is_secretariat(user):
+    return bool(user.groups.filter(name='Secretariat'))
 
 
 def can_add_incoming_liaison(user):
@@ -89,7 +89,7 @@ def can_add_incoming_liaison(user):
 
     if (is_sdo_liaison_manager(person) or
         is_sdo_authorized_individual(person) or
-        is_ietf_liaison_manager(user)):
+        is_secretariat(user)):
         return True
     return False
 

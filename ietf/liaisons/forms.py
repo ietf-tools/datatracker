@@ -9,7 +9,7 @@ from django.forms.fields import email_re
 from django.template.loader import render_to_string
 
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
-                                    get_person_for_user, is_ietf_liaison_manager)
+                                    get_person_for_user, is_secretariat, is_sdo_liaison_manager)
 from ietf.liaisons.models import LiaisonDetail, Uploads, OutgoingLiaisonApproval, SDOs
 from ietf.liaisons.utils import IETFHM
 from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
@@ -228,7 +228,7 @@ class LiaisonForm(forms.ModelForm):
 class IncomingLiaisonForm(LiaisonForm):
 
     def set_from_field(self):
-        if is_ietf_liaison_manager(self.user):
+        if is_secretariat(self.user):
             sdos = SDOs.objects.all()
         else:
             sdo_managed = [i.sdo for i in self.person.liaisonmanagers_set.all()]
@@ -241,7 +241,8 @@ class IncomingLiaisonForm(LiaisonForm):
         self.fields['organization'].choices = self.hm.get_all_incoming_entities()
 
     def get_post_only(self):
-        if self.user.groups.filter(name='Liaison_Manager'):
+        from_entity = self.get_from_entity()
+        if self.person.liaisonmanagers_set.filter(sdo=from_entity.obj):
             return True
         return False
 
@@ -265,7 +266,7 @@ class OutgoingLiaisonForm(LiaisonForm):
         return organization
 
     def set_from_field(self):
-        if is_ietf_liaison_manager(self.user):
+        if is_secretariat(self.user) or is_sdo_liaison_manager(self.person):
             self.fields['from_field'].choices = self.hm.get_all_incoming_entities()
         else:
             self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
@@ -273,7 +274,11 @@ class OutgoingLiaisonForm(LiaisonForm):
         self.fieldsets[0] = ('From', ('from_field', 'replyto', 'approved'))
 
     def set_organization_field(self):
-        self.fields['organization'].choices = self.hm.get_all_outgoing_entities()
+        if is_sdo_liaison_manager(self.person):
+            sdos = [i.sdo for i in self.person.liaisonmanagers_set.all().distinct()]
+            self.fields['organization'].choices = [('sdo_%s' % i.pk, i.sdo_name) for i in sdos]
+        else:
+            self.fields['organization'].choices = self.hm.get_all_outgoing_entities()
         self.fieldsets[1] = ('To', ('organization', 'other_organization', 'to_poc'))
 
     def set_required_fields(self):
