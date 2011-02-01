@@ -53,41 +53,44 @@ def send_smtp(msg, bcc=None):
     if bcc:
         addrlist += [bcc]
     to = [addr for name, addr in getaddresses(addrlist)]
-    if test_mode:
-        outbox.append((msg, to, msg.as_string()))
-        return
-    server = None
-    try:
-	server = smtplib.SMTP()
-	if settings.DEBUG:
-	    server.set_debuglevel(1)
-	server.connect(settings.EMAIL_HOST, settings.EMAIL_PORT)
-	if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
-	    server.ehlo()
-	    if 'starttls' not in server.esmtp_features:
-		raise ImproperlyConfigured('password configured but starttls not supported')
-	    (retval, retmsg) = server.starttls()
-	    if retval != 220:
-		raise ImproperlyConfigured('password configured but tls failed: %d %s' % ( retval, retmsg ))
-	    # Send a new EHLO, since without TLS the server might not
-	    # advertise the AUTH capability.
-	    server.ehlo()
-	    server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
-	server.sendmail(frm, to, msg.as_string())
-	# note: should pay attention to the return code, as it may
-	# indicate that someone didn't get the email.
-    except:
-	if server:
-	    server.quit()
-	# need to improve log message
-	log("got exception '%s' (%s) trying to send email from '%s' to %s subject '%s'" % (sys.exc_info()[0], sys.exc_info()[1], frm, to, msg.get('Subject', '[no subject]')))
-	if isinstance(sys.exc_info()[0], smtplib.SMTPException):
-	    raise
-	else:
-	    raise smtplib.SMTPException({'really': sys.exc_info()[0], 'value': sys.exc_info()[1], 'tb': sys.exc_info()[2]})
-    server.quit()
-    log("sent email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
-
+    if not to:
+        log("No addressees for email from '%s', subject '%s'.  Nothing sent." % (frm, msg.get('Subject', '[no subject]')))
+    else:
+        if test_mode:
+            outbox.append((msg, to, msg.as_string()))
+            return
+        server = None
+        try:
+            server = smtplib.SMTP()
+            if settings.DEBUG:
+                server.set_debuglevel(1)
+            server.connect(settings.EMAIL_HOST, settings.EMAIL_PORT)
+            if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
+                server.ehlo()
+                if 'starttls' not in server.esmtp_features:
+                    raise ImproperlyConfigured('password configured but starttls not supported')
+                (retval, retmsg) = server.starttls()
+                if retval != 220:
+                    raise ImproperlyConfigured('password configured but tls failed: %d %s' % ( retval, retmsg ))
+                # Send a new EHLO, since without TLS the server might not
+                # advertise the AUTH capability.
+                server.ehlo()
+                server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            server.sendmail(frm, to, msg.as_string())
+            # note: should pay attention to the return code, as it may
+            # indicate that someone didn't get the email.
+        except:
+            if server:
+                server.quit()
+            # need to improve log message
+            log("got exception '%s' (%s) trying to send email from '%s' to %s subject '%s'" % (sys.exc_info()[0], sys.exc_info()[1], frm, to, msg.get('Subject', '[no subject]')))
+            if isinstance(sys.exc_info()[0], smtplib.SMTPException):
+                raise
+            else:
+                raise smtplib.SMTPException({'really': sys.exc_info()[0], 'value': sys.exc_info()[1], 'tb': sys.exc_info()[2]})
+        server.quit()
+        log("sent email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
+    
 def copy_email(msg, to, toUser=False):
     '''
     Send a copy of the given email message to the given recipient.

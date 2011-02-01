@@ -12,7 +12,8 @@ from ietf.idtracker.models import *
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.idinternal.state_change_notice_to.replace(';', ',').split(',')]
-    send_mail(request, to, None,
+    if to:
+        send_mail(request, to, None,
               "ID Tracker State Update Notice: %s" % doc.file_tag(),
               "idrfc/state_changed_email.txt",
               dict(text=text,
