@@ -48,11 +48,11 @@ class Area(Group):
     #def additional_urls(self):
     #    return AreaWGURL.objects.filter(name=self.area_acronym.name)
     def active_wgs(self):
-        return IETFWG.objects.filter(type="wg", state="active", parent=self).order_by("acronym")
+        return IETFWG.objects.filter(type="wg", state="active", parent=self).select_related('type', 'state', 'parent').order_by("acronym")
     
     @staticmethod
     def active_areas():
-        return Area.objects.filter(type="area", state="active").order_by('acronym')
+        return Area.objects.filter(type="area", state="active").select_related('type', 'state', 'parent').order_by('acronym')
     
     class Meta:
         proxy = True

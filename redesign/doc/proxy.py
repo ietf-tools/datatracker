@@ -10,7 +10,7 @@ import glob, os
 class InternetDraft(Document):
     objects = TranslatingManager(dict(filename="name",
                                       id_document_tag="id",
-                                      status=lambda v: ("state", { 1: 'active', 2: 'expired', 3: 'rfc', 4: 'auth-rm', 5: 'repl', 6: 'ietf-rm'}),
+                                      status=lambda v: ("state", { 1: 'active', 2: 'expired', 3: 'rfc', 4: 'auth-rm', 5: 'repl', 6: 'ietf-rm'}[v]),
                                       job_owner="ad",
                                       rfc_number=lambda v: ("docalias__name", "rfc%s" % v),
                                       ))
@@ -32,7 +32,8 @@ class InternetDraft(Document):
     @property
     def group(self):
         from group.proxy import Acronym as AcronymProxy
-        return AcronymProxy(super(self.__class__, self).group)
+        g = super(self.__class__, self).group
+        return AcronymProxy(g) if g else None
     #filename = models.CharField(max_length=255, unique=True)
     @property
     def filename(self):
@@ -44,7 +45,10 @@ class InternetDraft(Document):
     #revision_date = models.DateField()
     @property
     def revision_date(self):
-        e = self.latest_event(type="new_revision")
+        if hasattr(self, "new_revision"):
+            e = self.new_revision
+        else:
+            e = self.latest_event(type="new_revision")
         return e.time.date() if e else None
     # helper function
     def get_file_type_matches_from(self, glob_path):
@@ -80,11 +84,10 @@ class InternetDraft(Document):
     @property
     def status(self):
         from redesign.name.proxy import IDStatus
-        return IDStatus(self.state)
+        return IDStatus(self.state) if self.state else None
 
     @property
     def status_id(self):
-        from redesign.name.proxy import IDStatus
         return { 'active': 1, 'repl': 5, 'expired': 2, 'rfc': 3, 'auth-rm': 4, 'ietf-rm': 6 }[self.state_id]
         
     #intended_status = models.ForeignKey(IDIntendedStatus)
@@ -125,6 +128,10 @@ class InternetDraft(Document):
     #rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
     @property
     def rfc_number(self):
+        # simple optimization for search results
+        if hasattr(self, "canonical_name"):
+            return int(self.canonical_name[3:]) if self.canonical_name.startswith('rfc') else None
+        
         aliases = self.docalias_set.filter(name__startswith="rfc")
         return int(aliases[0].name[3:]) if aliases else None
         
@@ -192,7 +199,11 @@ class InternetDraft(Document):
     def idinternal(self):
         # since IDInternal is now merged into the document, we try to
         # guess here
-        return self if self.iesg_state or self.latest_event(type="changed_ballot_position") else None
+        if hasattr(self, "changed_ballot_position"):
+            e = self.changed_ballot_position
+        else:
+            e = self.latest_event(type="changed_ballot_position")
+        return self if self.iesg_state or e else None
 
     # reverse relationship
     @property
@@ -216,7 +227,7 @@ class InternetDraft(Document):
 	return "%02d" % r
     def expiration(self):
         e = self.latest_event(type__in=("completed_resurrect", "new_revision"))
-        return e.time.date() + datetime.timedelta(self.DAYS_TO_EXPIRE)
+        return e.time.date() + datetime.timedelta(days=self.DAYS_TO_EXPIRE)
     def can_expire(self):
         # Copying the logic from expire-ids-1 without thinking
         # much about it.
@@ -315,6 +326,11 @@ class InternetDraft(Document):
     def cur_state(self):
         return self.iesg_state
     
+    @property
+    def cur_state_id(self):
+        # FIXME: results in wrong sort order
+        return abs(hash(self.iesg_state.slug))
+    
     #prev_state = models.ForeignKey(IDState, db_column='prev_state', related_name='docs_prev')
     @property
     def prev_state(self):
@@ -334,7 +350,7 @@ class InternetDraft(Document):
     @property
     def job_owner(self):
         from person.proxy import IESGLogin as IESGLoginProxy
-        return IESGLoginProxy(self.ad)
+        return IESGLoginProxy(self.ad) if self.ad else None
     
     #event_date = models.DateField(null=True)
     @property
@@ -528,14 +544,14 @@ class InternetDraft(Document):
 
 	res = []
         def add(ad, pos):
-            # FIXME: ad and pos don't emulate old interface
-            res.append(dict(ad=ad, pos=pos))
+            from person.proxy import IESGLogin as IESGLoginProxy
+            res.append(dict(ad=IESGLoginProxy(ad), pos=Position(pos) if pos else None))
         
         found = set()
-	for pos in self.event_set.filter(type="changed_ballot_position", ballotposition__ad__in=active_ads).select_related('ad').order_by("-time"):
-            if not pos.ballotposition.ad in found:
-                found.add(pos.ballotposition.ad)
-                add(pos.ballotposition.ad, pos)
+	for pos in BallotPosition.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads).select_related('ad').order_by("-time", "-id"):
+            if pos.ad not in found:
+                found.add(pos.ad)
+                add(pos.ad, pos)
 
         for ad in active_ads:
             if ad not in found:
@@ -553,7 +569,7 @@ class InternetDraft(Document):
         
 	yes = noobj = discuss = recuse = 0
 	for position in positions:
-            p = position.ballotposition.pos_id
+            p = position.pos_id
             if p == "yes":
                 yes += 1
             if p == "noobj":
@@ -601,7 +617,10 @@ class InternetDraft(Document):
     #rfc_published_date = models.DateField()
     @property
     def rfc_published_date(self):
-        e = self.latest_event(type="published_rfc")
+        if hasattr(self, 'published_rfc'):
+            e = self.published_rfc
+        else:
+            e = self.latest_event(type="published_rfc")
         return e.time.date() if e else None
     
     #current_status = models.CharField(max_length=50,null=True)
@@ -617,7 +636,9 @@ class InternetDraft(Document):
     #updated_by = models.CharField(max_length=200,blank=True,null=True)
     @property
     def updated_by(self):
-        return ",".join("RFC%s" % n for n in sorted(d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="updates")))
+        if not hasattr(self, "updated_by_list"):
+            self.updated_by_list = [d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="updates")]
+        return ",".join("RFC%s" % n for n in sorted(self.updated_by_list))
 
     #obsoletes = models.CharField(max_length=200,blank=True,null=True)
     @property
@@ -627,7 +648,9 @@ class InternetDraft(Document):
     #obsoleted_by = models.CharField(max_length=200,blank=True,null=True)
     @property
     def obsoleted_by(self):
-        return ",".join("RFC%s" % n for n in sorted(d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="obs")))
+        if not hasattr(self, "obsoleted_by_list"):
+            self.obsoleted_by_list = [d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="obs")]
+        return ",".join("RFC%s" % n for n in sorted(self.obsoleted_by_list))
 
     #also = models.CharField(max_length=50,blank=True,null=True)
     @property
@@ -729,3 +752,48 @@ class DocumentComment(Event):
     class Meta:
         proxy = True
 
+
+class Position(BallotPosition):
+    def __init__(self, base):
+        for f in base._meta.fields:
+            if not f.name in ('discuss',): # don't overwrite properties
+                setattr(self, f.name, getattr(base, f.name))
+    
+    #ballot = models.ForeignKey(BallotInfo, related_name='positions')
+    @property
+    def ballot(self):
+        return self.doc # FIXME: doesn't emulate old interface
+    
+    # ad = models.ForeignKey(IESGLogin) # same name
+    #yes = models.IntegerField(db_column='yes_col')
+    @property
+    def yes(self):
+        return self.pos_id == "yes"
+    #noobj = models.IntegerField(db_column='no_col')
+    @property
+    def noobj(self):
+        return self.pos_id == "noobj"
+    #abstain = models.IntegerField()
+    @property
+    def abstain(self):
+        return self.pos_id == "abstain"
+    #approve = models.IntegerField(default=0) # unused
+    #discuss = models.IntegerField()
+    @property
+    def discuss(self):
+        return self.pos_id == "discuss"
+    #recuse = models.IntegerField()
+    @property
+    def recuse(self):
+        return self.pos_id == "recuse"
+    def __str__(self):
+	return "Position for %s on %s" % ( self.ad, self.ballot )
+    def abstain_ind(self):
+        if self.recuse:
+            return 'R'
+        if self.abstain:
+            return 'X'
+        else:
+            return ' '
+    class Meta:
+        proxy = True

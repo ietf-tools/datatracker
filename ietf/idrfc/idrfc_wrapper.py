@@ -262,9 +262,9 @@ class RfcWrapper:
 
         if not self._idinternal:
             if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                pub = rfcindex.latest_event(type="published_rfc")
-                started = rfcindex.latest_event(type="started_iesg_process")
-                if pub and started and pub.time < started.time:
+                pub = rfcindex.rfc_published_date
+                started = rfcindex.started_iesg_process if hasattr(rfcindex, 'started_iesg_process') else rfcindex.latest_event(type="started_iesg_process")
+                if pub and started and pub < started.time.date():
                     self._idinternal = rfcindex
             else:
                 try:
@@ -282,7 +282,9 @@ class RfcWrapper:
         if not self.maturity_level:
             self.maturity_level = "Unknown"
 
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES and rfcindex.filename.startswith('rfc'):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            if not rfcindex.name.startswith('rfc'):
+                self.draft_name = rfcindex.name
             return # we've already done the lookup while importing so skip the rest
 
         ids = InternetDraft.objects.filter(rfc_number=self.rfc_number)
@@ -779,7 +781,7 @@ def position_to_string(position):
         return "No Record"
     p = None
     for k,v in positions.iteritems():
-        if position.__dict__[k] > 0:
+        if getattr(position, k) > 0:
             p = v
     if not p:
         p = "No Record"

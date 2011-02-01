@@ -10,8 +10,8 @@ from django.template.loader import render_to_string
 from django.template import RequestContext
 from django import forms
 from django.utils.html import strip_tags
+from django.conf import settings
 
-from ietf import settings
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.ietfauth.decorators import group_required
 from ietf.idtracker.templatetags.ietf_filters import in_group

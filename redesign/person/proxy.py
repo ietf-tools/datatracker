@@ -4,10 +4,14 @@ class IESGLogin(Email):
     def __init__(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
+            
     SECRETARIAT_LEVEL = 0
     AD_LEVEL = 1
     INACTIVE_AD_LEVEL = 2
 
+    @property
+    def id(self):
+        return self.pk # this is not really backwards-compatible
     #login_name = models.CharField(blank=True, max_length=255)
     @property
     def login_name(self): raise NotImplemented

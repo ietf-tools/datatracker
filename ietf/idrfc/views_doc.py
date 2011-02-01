@@ -42,8 +42,8 @@ from django.utils import simplejson as json
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.core.urlresolvers import reverse as urlreverse
-
-from ietf import settings
+from django.conf import settings
+ 
 from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, DocumentComment
 from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
 from ietf.idrfc import markup_txt

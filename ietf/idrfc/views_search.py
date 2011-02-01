@@ -41,6 +41,7 @@ from ietf.idrfc.models import RfcIndex
 from django.http import Http404, HttpResponse, HttpResponsePermanentRedirect
 from ietf.idrfc.idrfc_wrapper import IdWrapper,RfcWrapper,IdRfcWrapper
 from ietf.utils import normalize_draftname
+from django.conf import settings
 
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
@@ -252,6 +253,206 @@ def search_query(query_original):
         meta['advanced'] = True
     return (results,meta)
 
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from doc.models import *
+    from person.models import *
+    from group.models import *
+
+    class SearchForm(forms.Form):
+        name = forms.CharField(required=False)
+        rfcs = forms.BooleanField(required=False,initial=True)
+        activeDrafts = forms.BooleanField(required=False,initial=True)
+        oldDrafts = forms.BooleanField(required=False,initial=False)
+        lucky = forms.BooleanField(required=False,initial=False)
+
+        by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state')], required=False, initial='wg', label='Foobar')
+        author = forms.CharField(required=False)
+        group = forms.CharField(required=False)
+        area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), empty_label="any area", required=False)
+        ad = forms.ChoiceField(choices=(), required=False)
+        # FIXME: state needs a sort
+        state = forms.ModelChoiceField(IesgDocStateName.objects.all(), empty_label="any state", required=False)
+        subState = forms.ChoiceField(choices=(), required=False)
+
+        def __init__(self, *args, **kwargs):
+            super(SearchForm, self).__init__(*args, **kwargs)
+            responsible = Document.objects.values_list('ad', flat=True).distinct()
+            active_ads = list(Email.objects.filter(role__name="ad",
+                                                   role__group__type="area",
+                                                   role__group__state="active")
+                              .select_related('person'))
+            inactive_ads = list(Email.objects.filter(pk__in=responsible)
+                                .exclude(pk__in=[x.pk for x in active_ads])
+                                .select_related('person'))
+            extract_last_name = lambda x: x.get_name().split(' ')[-1]
+            active_ads.sort(key=extract_last_name)
+            inactive_ads.sort(key=extract_last_name)
+
+            # FIXME: -99
+            self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.get_name()) for ad in active_ads] + [('-99', '------------------')] + [(ad.pk, ad.get_name()) for ad in inactive_ads]
+            self.fields['subState'].choices = [('', 'any substate'), ('0', 'no substate')] + [(n.slug, n.name) for n in DocInfoTagName.objects.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))]
+        def clean_name(self):
+            value = self.cleaned_data.get('name','')
+            return normalize_draftname(value)
+        def clean(self):
+            q = self.cleaned_data
+            # Reset query['by'] if needed
+            for k in ('author','group','area','ad'):
+                if (q['by'] == k) and not q[k]:
+                    q['by'] = None
+            if (q['by'] == 'state') and not (q['state'] or q['subState']):
+                q['by'] = None
+            # Reset other fields
+            for k in ('author','group','area','ad'):
+                if q['by'] != k:
+                    self.data[k] = ""
+                    q[k] = ""
+            if q['by'] != 'state':
+                self.data['state'] = ""
+                self.data['subState'] = ""
+                q['state'] = ""
+                q['subState'] = ""
+            return q
+
+    def search_query(query_original):
+        query = dict(query_original.items())
+        drafts = query['activeDrafts'] or query['oldDrafts']
+        if (not drafts) and (not query['rfcs']):
+            return ([], {})
+
+        # Non-ASCII strings don't match anything; this check
+        # is currently needed to avoid complaints from MySQL.
+        # FIXME: this should be fixed if it's still a problem
+        for k in ['name','author','group']:
+            try:
+                tmp = str(query.get(k, ''))
+            except:
+                query[k] = '*NOSUCH*'
+
+        # Start by search InternetDrafts
+        idresults = []
+        rfcresults = []
+        MAX = 500
+
+        docs = InternetDraft.objects.all()
+
+        # name
+        if query["name"]:
+            docs = docs.filter(Q(docalias__name__icontains=query["name"]) |
+                               Q(title__icontains=query["name"])).distinct()
+
+        # rfc/active/old check buttons
+        allowed = []
+        disallowed = []
+
+        def add(allow, states):
+            l = allowed if allow else disallowed
+            l.extend(states)
+
+        add(query["rfcs"], ['rfc'])
+        add(query["activeDrafts"], ['active'])
+        add(query["oldDrafts"], ['repl', 'expired', 'auth-rm', 'ietf-rm'])
+
+        docs = docs.filter(state__in=allowed).exclude(state__in=disallowed)
+
+        # radio choices
+        by = query["by"]
+        if by == "author":
+            # FIXME: this is full name, not last name as hinted in the HTML
+            docs = docs.filter(authors__person__name__icontains=query["author"])
+        elif by == "group":
+            docs = docs.filter(group__acronym=query["group"])
+        elif by == "area":
+            docs = docs.filter(Q(group__parent=query["area"]) |
+                               Q(ad__role__name="ad",
+                                 ad__role__group=query["area"]))
+        elif by == "ad":
+            docs = docs.filter(ad=query["ad"])
+        elif by == "state":
+            if query["state"]:
+                docs = docs.filter(iesg_state=query["state"])
+            if query["subState"]:
+                docs = docs.filter(tags=query["subState"])
+
+        # evaluate and fill in values with aggregate queries to avoid
+        # too many individual queries
+        results = list(docs.select_related("state", "iesg_state", "ad", "ad__person", "std_level", "intended_std_level", "group")[:MAX])
+
+        rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=[r.pk for r in results]).values_list("document_id", "name"))
+        # canonical name
+        for r in results:
+            if r.pk in rfc_aliases:
+                r.canonical_name = rfc_aliases[r.pk]
+            else:
+                r.canonical_name = r.name
+
+        result_map = dict((r.pk, r) for r in results)
+
+        # events
+        event_types = ("published_rfc",
+                       "changed_ballot_position",
+                       "started_iesg_process",
+                       "new_revision")
+        for d in rfc_aliases.keys():
+            for e in event_types:
+                setattr(result_map[d], e, None)
+        
+        for e in Event.objects.filter(doc__in=rfc_aliases.keys(), type__in=event_types).order_by('-time'):
+            r = result_map[e.doc_id]
+            if not getattr(r, e.type):
+                # sets e.g. r.published_date = e for use in proxy wrapper
+                setattr(r, e.type, e)
+
+        # obsoleted/updated by
+        for d in rfc_aliases:
+            r = result_map[d]
+            r.obsoleted_by_list = []
+            r.updated_by_list = []
+            
+        xed_by = RelatedDocument.objects.filter(doc_alias__name__in=rfc_aliases.values(), relationship__in=("obs", "updates")).select_related('doc_alias__document_id')
+        rel_rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=[rel.document_id for rel in xed_by]).values_list('document_id', 'name'))
+        for rel in xed_by:
+            r = result_map[rel.doc_alias.document_id]
+            if rel.relationship_id == "obs":
+                attr = "obsoleted_by_list"
+            else:
+                attr = "updated_by_list"
+                
+            getattr(r, attr).append(int(rel_rfc_aliases[rel.document_id][3:]))
+
+        
+        # sort
+        def sort_key(d):
+            if d.canonical_name.startswith('rfc'):
+                return (2, "%06d" % int(d.canonical_name[3:]))
+            elif d.state_id == "active":
+                return (1, d.canonical_name)
+            else:
+                return (3, d.canonical_name)
+
+        results.sort(key=sort_key)
+
+        meta = {}
+        if len(docs) == MAX:
+            meta['max'] = MAX
+        if query['by']:
+            meta['advanced'] = True
+
+        # finally wrap in old wrappers
+
+        wrapped_results = []
+        for r in results:
+            draft = None
+            rfc = None
+            if not r.name.startswith('rfc'):
+                draft = IdWrapper(r)
+            if r.name.startswith('rfc') or r.pk in rfc_aliases:
+                rfc = RfcWrapper(r)
+            wrapped_results.append(IdRfcWrapper(draft, rfc))
+
+        return (wrapped_results, meta)
+    
+
 def search_results(request):
     if len(request.REQUEST.items()) == 0:
         return search_main(request)
@@ -288,6 +489,8 @@ def by_ad(request, name):
             break
     if not ad_id:
         raise Http404
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        ad_id = i.person.email()[1]
     form = SearchForm({'by':'ad','ad':ad_id,
                        'rfcs':'on', 'activeDrafts':'on', 'oldDrafts':'on'})
     if not form.is_valid():
@@ -298,11 +501,17 @@ def by_ad(request, name):
 
 @cache_page(15*60) # 15 minutes
 def all(request):
-    active = InternetDraft.objects.all().filter(status=1).order_by("filename").values('filename')
-    rfc1 = InternetDraft.objects.all().filter(status=3).order_by("filename").values('filename','rfc_number')
-    rfc_numbers1 = InternetDraft.objects.all().filter(status=3).values_list('rfc_number', flat=True)
-    rfc2 = RfcIndex.objects.all().exclude(rfc_number__in=rfc_numbers1).order_by('rfc_number').values('rfc_number','draft')
-    dead = InternetDraft.objects.all().exclude(status__in=[1,3]).order_by("filename").select_related('status__status')
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        active = (dict(filename=n) for n in InternetDraft.objects.filter(state="active").order_by("name").values_list('name', flat=True))
+        rfc1 = (dict(filename=d, rfc_number=int(n[3:])) for d, n in DocAlias.objects.filter(document__state="rfc", name__startswith="rfc").exclude(document__name__startswith="rfc").order_by("document__name").values_list('document__name','name').distinct())
+        rfc2 = (dict(rfc_number=r, draft=None) for r in sorted(int(n[3:]) for n in Document.objects.filter(name__startswith="rfc").values_list('name', flat=True)))
+        dead = InternetDraft.objects.exclude(state__in=("active", "rfc")).select_related("state").order_by("name")
+    else:
+        active = InternetDraft.objects.all().filter(status=1).order_by("filename").values('filename')
+        rfc1 = InternetDraft.objects.all().filter(status=3).order_by("filename").values('filename','rfc_number')
+        rfc_numbers1 = InternetDraft.objects.all().filter(status=3).values_list('rfc_number', flat=True)
+        rfc2 = RfcIndex.objects.all().exclude(rfc_number__in=rfc_numbers1).order_by('rfc_number').values('rfc_number','draft')
+        dead = InternetDraft.objects.all().exclude(status__in=[1,3]).order_by("filename").select_related('status__status')
     return render_to_response('idrfc/all.html', {'active':active, 'rfc1':rfc1, 'rfc2':rfc2, 'dead':dead}, context_instance=RequestContext(request))
 
 @cache_page(15*60) # 15 minutes

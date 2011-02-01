@@ -40,6 +40,11 @@ register = template.Library()
 
 def get_user_adid(context):
     if 'user' in context and in_group(context['user'], "Area_Director"):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            # with the new design, we need the email address (FIXME:
+            # we shouldn't go through the old classes though,
+            # IESGLogin needs revamping)
+            return context['user'].get_profile().person().email()[1]
         return context['user'].get_profile().iesg_login_id()
     else:
         return None
