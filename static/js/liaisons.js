@@ -319,6 +319,10 @@
 
             var checkFrom = function() {
                 var reduce_options = form.find('.reducedToOptions');
+                if (!reduce_options.length) {
+                    updateInfo();
+                    return;
+                }
                 var to_select = organization;
                 var from_entity = from.val();
                 if (!reduce_options.find('.full_power_on_' + from_entity).length) {
