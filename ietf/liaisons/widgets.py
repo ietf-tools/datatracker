@@ -7,6 +7,11 @@ from django.utils.safestring import mark_safe
 
 class FromWidget(Select):
 
+    def __init__(self, *args, **kwargs):
+        super(FromWidget, self).__init__(*args, **kwargs)
+        self.full_power_on = []
+        self.reduced_to_set = []
+
     def render(self, name, value, attrs=None, choices=()):
         all_choices = list(self.choices) + list(choices)
         if len(all_choices)!=1 or \
@@ -21,6 +26,13 @@ class FromWidget(Select):
             text = option[1]
             base = u'<input type="hidden" value="%s" id="id_%s" name="%s" />%s' % (value, name, name, text)
         base += u' (<a class="from_mailto" href="">' + self.submitter + u'</a>)'
+        if self.full_power_on:
+            base += '<div style="display: none;" class="reducedToOptions">'
+            for from_code in self.full_power_on:
+                base += '<span class="full_power_on_%s"></span>' % from_code
+            for to_code in self.reduced_to_set:
+                base += '<span class="reduced_to_set_%s"></span>' % to_code
+            base += '</div>'
         return mark_safe(base)
 
 

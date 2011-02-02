@@ -1,7 +1,8 @@
 from ietf.idtracker.models import Area, IETFWG
 from ietf.liaisons.models import SDOs, LiaisonManagers
 from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
-                                    get_ietf_chair, get_iab_chair, get_iab_executive_director)
+                                    get_ietf_chair, get_iab_chair, get_iab_executive_director,
+                                    is_secretariat)
 
 IETFCHAIR = {'name': u'The IETF Chair', 'address': u'chair@ietf.org'}
 IESG = {'name': u'The IESG', 'address': u'iesg@ietf.org'}
@@ -194,8 +195,10 @@ class SDOEntity(Entity):
             return [manager.person]
         return []
 
-    def post_only(self, person):
-        return bool(self.obj.liaisonmanagers_set.filter(person=person))
+    def post_only(self, person, user):
+        if is_secretariat(user) or person.sdoauthorizedindividual_set.filter(sdo=self.obj):
+            return False
+        return True
 
     def full_user_list(self):
         result = [i.person for i in self.obj.liaisonmanagers_set.all().distinct()]
