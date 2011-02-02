@@ -9,6 +9,7 @@ from django.db import models
 from ietf.utils import FKAsOneToOne
 from ietf.utils.broken_foreign_key import BrokenForeignKey
 from ietf.utils.cached_lookup_field import CachedLookupField
+from ietf.utils.admin import admin_link
 
 class Acronym(models.Model):
     INDIVIDUAL_SUBMITTER = 1027
@@ -824,6 +825,7 @@ class EmailAddress(models.Model):
     comment = models.CharField(blank=True, null=True, max_length=255, db_column='email_comment')
     def __str__(self):
 	return self.address
+    person_link = admin_link('person_or_org')
     class Meta:
         db_table = 'email_addresses'
 	#unique_together = (('email_priority', 'person_or_org'), )

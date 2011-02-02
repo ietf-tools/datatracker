@@ -35,7 +35,7 @@ class DocumentCommentAdmin(admin.ModelAdmin):
 admin.site.register(DocumentComment, DocumentCommentAdmin)
 
 class EmailAddressAdmin(admin.ModelAdmin):
-    list_display=('person_or_org', 'address', 'type', 'priority')
+    list_display=('id', 'person_link', 'address', 'type', 'priority')
     search_fields=['address']
 admin.site.register(EmailAddress, EmailAddressAdmin)
 
