@@ -1,6 +1,6 @@
 The following liaison statement will remain pending (and not public available) in the system until you approve it:
-{% autoescape off %}
-Title: {{ liaison.title }}
+{% load ietf_filters %}{% autoescape off %}
+Title: {{ liaison.title|clean_whitespace }}
 Submission Date: {{ liaison.submitted_date }}
 URL of the IETF Web page: {% url liaison_approval_detail liaison.pk %}
 {% if liaison.deadline_date %}Please reply by {{ liaison.deadline_date }}{% endif %}
