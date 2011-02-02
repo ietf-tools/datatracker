@@ -247,9 +247,9 @@ class IncomingLiaisonForm(LiaisonForm):
 
     def get_post_only(self):
         from_entity = self.get_from_entity()
-        if self.person.liaisonmanagers_set.filter(sdo=from_entity.obj):
-            return True
-        return False
+        if is_secretariat(self.user) or self.person.sdoauthorizedindividual_set.filter(sdo=from_entity.obj):
+            return False
+        return True
 
     def clean(self):
         if 'send' in self.data.keys() and self.get_post_only():
@@ -271,15 +271,24 @@ class OutgoingLiaisonForm(LiaisonForm):
         return organization
 
     def set_from_field(self):
-        if is_secretariat(self.user) or is_sdo_liaison_manager(self.person):
+        if is_secretariat(self.user): 
             self.fields['from_field'].choices = self.hm.get_all_incoming_entities()
+        elif is_sdo_liaison_manager(self.person):
+            self.fields['from_field'].choices = self.hm.get_all_incoming_entities()
+            all_entities = []
+            for i in self.hm.get_entities_for_person(self.person):
+                all_entities += i[1]
+            if all_entities:
+                self.fields['from_field'].widget.full_power_on = [i[0] for i in all_entities]
+                self.fields['from_field'].widget.reduced_to_set = ['sdo_%s' % i.sdo.pk for i in self.person.liaisonmanagers_set.all().distinct()]
         else:
             self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
         self.fields['from_field'].widget.submitter = unicode(self.person)
         self.fieldsets[0] = ('From', ('from_field', 'replyto', 'approved'))
 
     def set_organization_field(self):
-        if is_sdo_liaison_manager(self.person):
+        # If the user is a liaison manager and is nothing more, reduce the To field to his SDOs
+        if not self.hm.get_entities_for_person(self.person) and is_sdo_liaison_manager(self.person):
             sdos = [i.sdo for i in self.person.liaisonmanagers_set.all().distinct()]
             self.fields['organization'].choices = [('sdo_%s' % i.pk, i.sdo_name) for i in sdos]
         else:
@@ -321,6 +330,24 @@ class OutgoingLiaisonForm(LiaisonForm):
         value = self.cleaned_data.get('to_poc', None)
         self.check_email(value)
         return value
+
+    def clean_organization(self):
+        to_code = self.cleaned_data.get('organization', None)
+        from_code = self.cleaned_data.get('from_field', None)
+        if not to_code or not from_code:
+            return to_code
+        all_entities = []
+        for i in self.hm.get_entities_for_person(self.person):
+            all_entities += i[1]
+        # If the from entity is one in wich the user has full privileges the to entity could be anyone
+        if from_code in [i[0] for i in all_entities]:
+            return to_code
+        sdo_codes = ['sdo_%s' % i.sdo.pk for i in self.person.liaisonmanagers_set.all().distinct()]
+        if to_code in sdo_codes:
+            return to_code
+        entity = self.get_to_entity()
+        entity_name = entity and entity.name or to_code
+        raise forms.ValidationError('You are not allowed to send a liaison to: %s' % entity_name)
 
 
 class EditLiaisonForm(LiaisonForm):

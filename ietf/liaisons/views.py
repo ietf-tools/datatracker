@@ -75,7 +75,7 @@ def get_info(request):
                              [i.email() for i in from_entity.get_from_cc(person=person)],
                        'poc': [i.email() for i in to_entity.get_poc()],
                        'needs_approval': from_entity.needs_approval(person=person),
-                       'post_only': from_entity.post_only(person=person)})
+                       'post_only': from_entity.post_only(person=person, user=request.user)})
     if is_secretariat(request.user):
         full_list = [(i.pk, i.email()) for i in from_entity.full_user_list()]
         full_list.sort(lambda x,y: cmp(x[1], y[1]))

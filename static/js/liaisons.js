@@ -317,10 +317,33 @@
                 return false;
             };
 
+            var checkFrom = function() {
+                var reduce_options = form.find('.reducedToOptions');
+                var to_select = organization;
+                var from_entity = from.val();
+                if (!reduce_options.find('.full_power_on_' + from_entity).length) {
+                    to_select.find('optgroup').eq(1).hide();
+                    to_select.find('option').each(function() {
+                        if (!reduce_options.find('.reduced_to_set_' + $(this).val()).length) {
+                            $(this).hide();
+                        } else {
+                            $(this).show();
+                        }
+                    });
+                    if (!to_select.find('option:selected').is(':visible')) {
+                        to_select.find('option:selected').removeAttr('selected');
+                    }
+                } else {
+                    to_select.find('optgroup').show();
+                    to_select.find('option').show();
+                }
+                updateInfo();
+            };
+
             var initTriggers = function() {
                 organization.change(updateInfo);
                 organization.change(checkOtherSDO);
-                from.change(updateInfo);
+                from.change(checkFrom);
                 reply.keyup(updateFrom);
                 purpose.change(updatePurpose);
                 cancel.click(cancelForm);
@@ -330,7 +353,7 @@
 
             var updateOnInit = function() {
                 updateFrom();
-                updateInfo();
+                checkFrom();
                 updatePurpose();
                 checkOtherSDO();
             };
