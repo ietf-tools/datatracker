@@ -1,8 +1,22 @@
 ietfdb (3.12)
 
-  * Merged [2782] from esanchez@yaco.es: Retrieve the person from the 
+  Note: Deploying this release requires a database schema update, see below.
+
+  From esanches@yaco.es:
+
+  * Allow an SDO Liason Manager to send outgoing liaison from any IETF
+    Entity to his SDO.
+
+  * Allow the secretariat to send liaisons on behalf of another user.
+
+  * On login, retrieve the person record related to the login from the 
     legacy tables of non IESG logins. Provides the link between login name
     and person listed in the liaison manager table.  Fixes #576.
+
+  * Refined handling of the To: and From: address lists when the Liaison
+    Manager is also a WG Chair or AD.
+
+  From henrik@levkowetz.com:
 
   * Add a clean_whitespace filter in some places to get rid of any newlines 
     embedded in document titles.  Fixes a problem with bad email headers
@@ -18,13 +32,9 @@ ietfdb (3.12)
   * Renamed 'LiaisonDetail.taken_care' field to 'action_taken'.  
     Miscellaneous associated fixes.  Enhanced liaison-related admin pages.
 
-  Note: Deploying this release requires additional steps; to verify
-  that liaison related settings in settings.py are correct, and to create
-  new tables and update existing tables and table content.  The latter
-  is done as South migrations (see http://south.aeracode.org/ for more
-  info on the South app).  More extensiive documentation about the actions
-  needed are provided in the user manual (doc/LSMT_user_manual.pdf in
-  the release).  The brief version follows:
+  Note: Deploying this release requires an additional steps to create
+    a new column in a table.  This is done as a South migration
+    (see http://south.aeracode.org/ for more info on South):
 
     # 8<----------
     # First the regular checkout and prepare:
@@ -46,7 +56,7 @@ ietfdb (3.12)
 
     # 8<----------
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jan 2011 13:15:40 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  02 Feb 2011 18:34:58 +0100
 
 ietfdb (3.11)
 
