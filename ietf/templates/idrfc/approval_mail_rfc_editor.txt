@@ -1,7 +1,7 @@
-From: The IESG <iesg-secretary@ietf.org>
+{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
 To: RFC Editor <rfc-editor@rfc-editor.org>
 Cc: The IESG <iesg@ietf.org>, <iana@iana.org>, <ietf-announce@ietf.org>
-Subject: Re: {{ status }} to be: {{ doc.file_tag|safe }}
+Subject: Re: {{ status }} to be: {{ doc.file_tag }}
 {% filter wordwrap:73 %}{% if disapproved %}
 The IESG recommends that '{{ doc.title }}' {{ doc.file_tag|safe }} NOT be published as {{ full_status }}.
 {% else %}
@@ -18,3 +18,4 @@ Thank you,
 
 The IESG Secretary
 {% endfilter %}
+{% endautoescape %}
