@@ -1,3 +1,25 @@
+ietfdb (3.12)
+
+  * Merged [2782] from esanchez@yaco.es: Retrieve the person from the 
+    legacy tables of non IESG logins. Provides the link between login name
+    and person listed in the liaison manager table.  Fixes #576.
+
+  * Add a clean_whitespace filter in some places to get rid of any newlines 
+    embedded in document titles.  Fixes a problem with bad email headers
+    in announcements related to documents with newlines embedded in the title.
+
+  * Don't try to send out mail which has no recipients.  Fixes a crash when
+    trying to send announcements related to drafts which have an empty
+    'email notes to' field.
+
+  * Fix typo in method calls to send email, fixes a crash when submitting
+    liaison statements.
+
+  * Renamed 'LiaisonDetail.taken_care' field to 'action_taken'.  
+    Miscellaneous associated fixes.  Enhanced liaison-related admin pages.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jan 2011 13:15:40 +0100
+
 ietfdb (3.11)
 
   * Fixed a bug in the IPR Search, where searches against the IPR notice
