@@ -18,6 +18,34 @@ ietfdb (3.12)
   * Renamed 'LiaisonDetail.taken_care' field to 'action_taken'.  
     Miscellaneous associated fixes.  Enhanced liaison-related admin pages.
 
+  Note: Deploying this release requires additional steps; to verify
+  that liaison related settings in settings.py are correct, and to create
+  new tables and update existing tables and table content.  The latter
+  is done as South migrations (see http://south.aeracode.org/ for more
+  info on the South app).  More extensiive documentation about the actions
+  needed are provided in the user manual (doc/LSMT_user_manual.pdf in
+  the release).  The brief version follows:
+
+    # 8<----------
+    # First the regular checkout and prepare:
+
+       cd /a/www/ietf-datatracker
+       svn co http://svn.tools.ietf.org/svn/tools/ietfdb/tags/3.12
+       cp web/ietf/settings_local.py 3.12/ietf/
+       cd 3.12
+
+    # Next, apply the migrations:
+ 
+       PYTHONPATH=$PWD ietf/manage.py migrate liaisons
+
+    # Then carry on with the usual actions:
+
+       cd ../
+       rm ./web; ln -s 3.12 web
+       sudo /etc/init.d/apache restart
+
+    # 8<----------
+
  -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jan 2011 13:15:40 +0100
 
 ietfdb (3.11)

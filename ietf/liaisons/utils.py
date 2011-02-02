@@ -1,12 +1,17 @@
 from ietf.idtracker.models import Area, IETFWG
-from ietf.liaisons.models import SDOs
-from ietf.liaisons.accounts import is_ietfchair, is_iabchair, is_iab_executive_director
+from ietf.liaisons.models import SDOs, LiaisonManagers
+from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
+                                    get_ietf_chair, get_iab_chair, get_iab_executive_director)
 
 IETFCHAIR = {'name': u'The IETF Chair', 'address': u'chair@ietf.org'}
 IESG = {'name': u'The IESG', 'address': u'iesg@ietf.org'}
 IAB = {'name': u'The IAB', 'address': u'iab@iab.org'}
 IABCHAIR = {'name': u'The IAB Chair', 'address': u'iab-chair@iab.org'}
 IABEXECUTIVEDIRECTOR = {'name': u'The IAB Executive Director', 'address': u'execd@iab.org'}
+
+
+def get_all_sdo_managers():
+    return [i.person for i in LiaisonManagers.objects.all().distinct()]
 
 
 class FakePerson(object):
@@ -47,6 +52,12 @@ class Entity(object):
     def can_approve(self):
         return []
 
+    def post_only(self, person):
+        return False
+
+    def full_user_list(self):
+        return False
+
 
 class IETFEntity(Entity):
 
@@ -67,6 +78,11 @@ class IETFEntity(Entity):
 
     def can_approve(self):
         return [self.poc]
+
+    def full_user_list(self):
+        result = get_all_sdo_managers()
+        result.append(get_ietf_chair())
+        return result
 
 
 class IABEntity(Entity):
@@ -92,6 +108,11 @@ class IABEntity(Entity):
     def can_approve(self):
         return [self.chair]
 
+    def full_user_list(self):
+        result = get_all_sdo_managers()
+        result += [get_iab_chair(), get_iab_executive_director()]
+        return result
+
 
 class AreaEntity(Entity):
 
@@ -114,6 +135,11 @@ class AreaEntity(Entity):
 
     def can_approve(self):
         return self.get_poc()
+
+    def full_user_list(self):
+        result = get_all_sdo_managers()
+        result += self.get_poc()
+        return result
 
 
 class WGEntity(Entity):
@@ -145,6 +171,11 @@ class WGEntity(Entity):
     def can_approve(self):
         return [i.person for i in self.obj.area.area.areadirector_set.all()]
 
+    def full_user_list(self):
+        result = get_all_sdo_managers()
+        result += self.get_poc()
+        return result
+
 
 class SDOEntity(Entity):
 
@@ -162,6 +193,14 @@ class SDOEntity(Entity):
         if manager and manager.person!=person:
             return [manager.person]
         return []
+
+    def post_only(self, person):
+        return bool(self.obj.liaisonmanagers_set.filter(person=person))
+
+    def full_user_list(self):
+        result = [i.person for i in self.obj.liaisonmanagers_set.all().distinct()]
+        result += [i.person for i in self.obj.sdoauthorizedindividual_set.all().distinct()]
+        return result
 
 
 class EntityManager(object):
@@ -321,6 +360,8 @@ class IETFHierarchyManager(object):
                         }
 
     def get_entity_by_key(self, entity_id):
+        if not entity_id:
+            return None
         id_list = entity_id.split('_', 1)
         key = id_list[0]
         pk = None

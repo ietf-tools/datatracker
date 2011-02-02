@@ -64,6 +64,7 @@ class LiaisonDetail(models.Model):
     replyto = models.CharField(blank=True, null=True, max_length=255)
     from_raw_body = models.CharField(blank=True, null=True, max_length=255)
     from_raw_code = models.CharField(blank=True, null=True, max_length=255)
+    to_raw_code = models.CharField(blank=True, null=True, max_length=255)
     approval = models.ForeignKey(OutgoingLiaisonApproval, blank=True, null=True)
     action_taken = models.BooleanField(default=False, db_column='taken_care')
     related_to = models.ForeignKey('LiaisonDetail', blank=True, null=True)

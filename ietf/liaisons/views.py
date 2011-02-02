@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.fields import email_re
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
@@ -14,7 +14,8 @@ from django.views.generic.list_detail import object_list, object_detail
 
 from ietf.liaisons.accounts import (get_person_for_user, can_add_outgoing_liaison,
                                     can_add_incoming_liaison, LIAISON_EDIT_GROUPS,
-                                    is_ietfchair, is_iabchair, is_iab_executive_director)
+                                    is_ietfchair, is_iabchair, is_iab_executive_director,
+                                    can_edit_liaison, is_secretariat)
 from ietf.liaisons.decorators import can_submit_liaison
 from ietf.liaisons.forms import liaison_form_factory
 from ietf.liaisons.models import LiaisonDetail, OutgoingLiaisonApproval
@@ -52,7 +53,7 @@ def get_info(request):
     to_entity_id = request.GET.get('to_entity_id', None)
     from_entity_id = request.GET.get('from_entity_id', None)
 
-    result = {'poc': [], 'cc': [], 'needs_approval': False}
+    result = {'poc': [], 'cc': [], 'needs_approval': False, 'post_only': False, 'full_list': []}
 
     to_error = 'Invalid TO entity id'
     if to_entity_id:
@@ -73,7 +74,13 @@ def get_info(request):
                        'cc': [i.email() for i in to_entity.get_cc(person=person)] +\
                              [i.email() for i in from_entity.get_from_cc(person=person)],
                        'poc': [i.email() for i in to_entity.get_poc()],
-                       'needs_approval': from_entity.needs_approval(person=person)})
+                       'needs_approval': from_entity.needs_approval(person=person),
+                       'post_only': from_entity.post_only(person=person)})
+    if is_secretariat(request.user):
+        full_list = [(i.pk, i.email()) for i in from_entity.full_user_list()]
+        full_list.sort(lambda x,y: cmp(x[1], y[1]))
+        full_list = [(person.pk, person.email())] + full_list
+        result.update({'full_list': full_list})
     json_result = simplejson.dumps(result)
     return HttpResponse(json_result, mimetype='text/javascript')
 
@@ -210,7 +217,7 @@ def liaison_detail(request, object_id):
     can_edit = False
     user = request.user
     can_take_care = _can_take_care(liaison, user)
-    if user.is_authenticated() and user.groups.filter(name__in=LIAISON_EDIT_GROUPS):
+    if user.is_authenticated() and can_edit_liaison(user, liaison):
         can_edit = True
     if request.method == 'POST' and request.POST.get('do_action_taken', None) and can_take_care:
         liaison.action_taken = True
@@ -227,6 +234,9 @@ def liaison_detail(request, object_id):
 
 def liaison_edit(request, object_id):
     liaison = get_object_or_404(LiaisonDetail, pk=object_id)
+    user = request.user
+    if not (user.is_authenticated() and can_edit_liaison(user, liaison)):
+        return HttpResponseForbidden('You have no permission to edit this liaison')
     return add_liaison(request, liaison=liaison)
 
 def ajax_liaison_list(request):
