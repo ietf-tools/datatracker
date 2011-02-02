@@ -55,7 +55,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         today = datetime.date.today()
-        query = LiaisonDetail.objects.filter(deadline_date__isnull=False, taken_care=False, deadline_date__gte=today - datetime.timedelta(14))
+        query = LiaisonDetail.objects.filter(deadline_date__isnull=False, action_taken=False, deadline_date__gte=today - datetime.timedelta(14))
         for liaison in query:
             delta = liaison.deadline_date - today
             if delta.days < 0 or delta.days in PREVIOUS_DAYS.keys():

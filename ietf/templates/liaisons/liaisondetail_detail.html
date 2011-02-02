@@ -15,7 +15,6 @@
 
 {% block content %}
 <h1>Liaison Statement: {% include 'liaisons/liaison_title.html' %}</h1>
-
 <table class="ietf-liaison-details">
 <tr>
 <td style="width:18ex;">Submission Date:</td><td>{{ object.submitted_date }}</td></tr>
@@ -55,12 +54,12 @@
 {% if can_take_care %}
 <td><form method="post" action="">
 {{ object.deadline_date }}
-{% if object.taken_care %}<span class="takedCare">Action Taken</span>{% else %}<span class="noTakedCare">Action Required</span>{% endif %}
-<input type="submit" value="Take care of" name='do_taken_care' />
+{% if object.action_taken %}<span class="actionTaken">Action Taken</span>{% else %}<span class="noActionTaken">Action Required</span>{% endif %}
+<input type="submit" value="Mark as Action Taken" name='do_action_taken' />
 </form></td>
 {% else %}
 <td>{{ object.deadline_date }}
-{% if object.taken_care %}<span class="takedCare">Action Taken</span>{% else %}<span class="noTakedCare">Action Needed</span>{% endif %}
+{% if object.action_taken %}<span class="actionTaken">Action Taken</span>{% else %}<span class="noActionTaken">Action Needed</span>{% endif %}
 </td>
 {% endif %}
 </tr>

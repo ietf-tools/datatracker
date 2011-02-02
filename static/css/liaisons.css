@@ -120,14 +120,14 @@ th.orderFieldActive a {
     padding-left: 20px;
 }
 
-.noTakedCare,
-.takedCare {
+.noActionTaken,
+.actionTaken {
     border: 1px solid green;
     padding: 2px 5px;
     background-color: #ccffbb;
 }
 
-.noTakedCare {
+.noActionTaken {
     border: 1px solid red;
     background-color: #ffccbb;
 }

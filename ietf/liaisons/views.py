@@ -172,7 +172,7 @@ def liaison_approval_detail(request, object_id):
 
 
 def _can_take_care(liaison, user):
-    if not liaison.deadline_date or liaison.taken_care:
+    if not liaison.deadline_date or liaison.action_taken:
         return False
 
     if user.is_authenticated():
@@ -212,8 +212,8 @@ def liaison_detail(request, object_id):
     can_take_care = _can_take_care(liaison, user)
     if user.is_authenticated() and user.groups.filter(name__in=LIAISON_EDIT_GROUPS):
         can_edit = True
-    if request.method == 'POST' and request.POST.get('do_taken_care', None) and can_take_care:
-        liaison.taken_care = True
+    if request.method == 'POST' and request.POST.get('do_action_taken', None) and can_take_care:
+        liaison.action_taken = True
         liaison.save()
         can_take_care = False
     relations = liaison.liaisondetail_set.filter(qfilter)

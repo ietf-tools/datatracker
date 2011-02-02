@@ -20,11 +20,12 @@ class FromBodiesAdmin(admin.ModelAdmin):
 
 
 class LiaisonDetailAdmin(admin.ModelAdmin):
+    list_display = ['detail_id', 'title', 'legacy_from_body', 'to_body', 'submitted_date', 'purpose', 'related_to']
     ordering = ('title', )
-    fields = ('title', 'body','submitted_date', 'last_modified_date', 'to_email', 'cc1', 'cc2', 'to_poc',
-              'response_contact', 'technical_contact', 'purpose', 'purpose_text', 'deadline_date', 'taken_care',
-              'related_to')
-    raw_id_fields=['related_to']
+#     fields = ('title', 'body','submitted_date', 'last_modified_date', 'to_email', 'cc1', 'cc2', 'to_poc',
+#               'response_contact', 'technical_contact', 'purpose', 'purpose_text', 'deadline_date', 'action_taken',
+#               'related_to')
+    raw_id_fields=['person', 'related_to']
 
 class LiaisonPurposeAdmin(admin.ModelAdmin):
     ordering = ('purpose_text', )
@@ -41,16 +42,19 @@ class SDOAuthorizedIndividualInline(admin.TabularInline):
 
 
 class LiaisonManagersAdmin(admin.ModelAdmin):
+    list_display = ['id', '__unicode__', 'person_link', 'user_name', 'groups', 'sdo_link', ]
     ordering = ('person__first_name', 'person__last_name' )
-    fields = ('person', 'sdo')
+#    fields = ('person', 'sdo')
     raw_id_fields=['person']
 
 
 class SDOAuthorizedIndividualAdmin(admin.ModelAdmin):
+    list_display = ['id', 'person_link', 'user_name', 'groups', 'sdo_link']
     raw_id_fields=['person']
 
 
 class SDOsAdmin(admin.ModelAdmin):
+    list_display = ['sdo_id', 'sdo_name', 'liaisonmanager_link', 'sdo_contact_link']
     inlines = [LiaisonManagersInline, SDOAuthorizedIndividualInline]
 
     def get_urls(self):

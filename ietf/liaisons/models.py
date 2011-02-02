@@ -4,8 +4,11 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.template.loader import render_to_string
-from ietf.idtracker.models import Acronym,PersonOrOrgInfo, Area
+from django.contrib.auth.models import User
+from ietf.idtracker.models import Acronym, PersonOrOrgInfo, Area, IESGLogin
 from ietf.liaisons.mail import IETFEmailMessage
+from ietf.ietfauth.models import LegacyLiaisonUser
+from ietf.utils.admin import admin_link
 
 class LiaisonPurpose(models.Model):
     purpose_id = models.AutoField(primary_key=True)
@@ -62,7 +65,7 @@ class LiaisonDetail(models.Model):
     from_raw_body = models.CharField(blank=True, null=True, max_length=255)
     from_raw_code = models.CharField(blank=True, null=True, max_length=255)
     approval = models.ForeignKey(OutgoingLiaisonApproval, blank=True, null=True)
-    taken_care = models.BooleanField(default=False)
+    action_taken = models.BooleanField(default=False, db_column='taken_care')
     related_to = models.ForeignKey('LiaisonDetail', blank=True, null=True)
     def __str__(self):
 	return self.title or "<no title>"
@@ -76,7 +79,13 @@ class LiaisonDetail(models.Model):
         if not self.from_raw_body:
             return self.legacy_from_body()
         return self.from_raw_body
-
+    def from_sdo(self):
+	try:
+	    name = FromBodies.objects.get(pk=self.from_id).body_name
+            sdo = SDOs.objects.get(sdo_name=name)
+            return sdo
+	except ObjectDoesNotExist:
+            return None
     def legacy_from_body(self):
 	"""The from_id field is a foreign key for either
 	FromBodies or Acronyms, depending on whether it's
@@ -101,7 +110,7 @@ class LiaisonDetail(models.Model):
 	    return "IETF %s %s" % (acronym.acronym.upper(), kind)
 	except ObjectDoesNotExist:
 	    pass
-	return "<unknown body %d>" % self.from_id
+	return "<unknown body %s>" % self.from_id
     def from_email(self):
 	"""If there is an entry in from_bodies, it has
 	the desired email priority.  However, if it's from
@@ -170,8 +179,8 @@ class LiaisonDetail(models.Model):
 
 
 class SDOs(models.Model):
-    sdo_id = models.AutoField(primary_key=True)
-    sdo_name = models.CharField(blank=True, max_length=255)
+    sdo_id = models.AutoField(primary_key=True, verbose_name='ID')
+    sdo_name = models.CharField(blank=True, max_length=255, verbose_name='SDO Name')
     def __str__(self):
 	return self.sdo_name
     def liaisonmanager(self):
@@ -179,36 +188,76 @@ class SDOs(models.Model):
 	    return self.liaisonmanagers_set.all()[0]
 	except:
 	    return None
+    def sdo_contact(self):
+	try:
+	    return self.sdoauthorizedindividual_set.all()[0]
+	except:
+	    return None
     class Meta:
         verbose_name = 'SDO'
         verbose_name_plural = 'SDOs'
         db_table = 'sdos'
         ordering = ('sdo_name', )
+    liaisonmanager_link = admin_link('liaisonmanager', label='Liaison')
+    sdo_contact_link = admin_link('sdo_contact')
 
-class LiaisonManagers(models.Model):
+class LiaisonStatementManager(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+    sdo = models.ForeignKey(SDOs, verbose_name='SDO')
+    def __unicode__(self):
+        return '%s (%s)' % (self.person, self.sdo)
+    class Meta:
+        abstract = True
+    # Helper functions, for use in the admin interface
+    def login_name(self):
+        login_name = None
+        try:
+            login_name = IESGLogin.objects.get(person=self.person).login_name
+            if User.objects.filter(username=login_name).count():
+                return login_name            
+        except IESGLogin.DoesNotExist:
+            pass
+        try:
+            login_name = LegacyLiaisonUser.objects.get(person=self.person).login_name
+        except LegacyLiaisonUser.DoesNotExist:
+            pass
+        return login_name
+    def user(self):
+        login_name = self.login_name()
+        user = None
+        if login_name:
+            try:
+                return User.objects.get(username=login_name), login_name
+            except User.DoesNotExist:
+                pass
+        return None, login_name
+    def user_name(self):
+        user, login_name = self.user()
+        if user:
+            return u'<a href="/admin/auth/user/%s/">%s</a>' % (user.id, login_name)
+        else:
+            return u'<a href="/admin/auth/user/"><span style="color: red">%s</span></a>' % (login_name)
+    user_name.allow_tags = True
+    def groups(self):
+        user, login_name = self.user()
+        return ", ".join([ group.name for group in user.groups.all()])
+    person_link = admin_link('person')
+    sdo_link = admin_link('sdo', label='SDO')
+        
+class LiaisonManagers(LiaisonStatementManager):
     email_priority = models.IntegerField(null=True, blank=True)
-    sdo = models.ForeignKey(SDOs)
     def email(self):
 	try:
 	    return self.person.emailaddress_set.get(priority=self.email_priority)
 	except ObjectDoesNotExist:
 	    return None
-    def __unicode__(self):
-        return '%s (%s)' % (self.person, self.sdo)
     class Meta:
         verbose_name = 'SDO Liaison Manager'
         verbose_name_plural = 'SDO Liaison Managers'
         db_table = 'liaison_managers'
         ordering = ('sdo__sdo_name', )
 
-class SDOAuthorizedIndividual(models.Model):
-    person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
-    sdo = models.ForeignKey(SDOs)
-
-    def __unicode__(self):
-        return '%s (%s)' % (self.person, self.sdo)
-
+class SDOAuthorizedIndividual(LiaisonStatementManager):
     class Meta:
         verbose_name = 'SDO Authorized Individual'
         verbose_name_plural = 'SDO Authorized Individuals'
