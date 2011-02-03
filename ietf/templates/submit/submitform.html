@@ -42,9 +42,11 @@
   {% endif %}
 {% endfor %}
 
+{% if not form.shutdown %}
   <div class="submitrow">
     <input type="submit" value="Upload" name="upload" />
   </div>
+{% endif %}
 </div>
 
 </form>

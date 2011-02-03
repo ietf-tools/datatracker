@@ -18,6 +18,8 @@ from ietf.submit.forms import UploadForm
 def submit_index(request):
     if request.method == 'POST':
         form = UploadForm(data=request.POST, files=request.FILES)
+        if form.is_valid():
+            pass
     else:
         form = UploadForm()
     return render_to_response('submit/submit_index.html', 
