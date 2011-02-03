@@ -41,8 +41,12 @@ from django.conf import settings
 
 from pyquery import PyQuery
 
-from ietf.idrfc.models import *
-from ietf.idtracker.models import *
+#from ietf.idrfc.models import *
+from ietf.idtracker.models import IESGLogin, PersonOrOrgInfo, EmailAddress
+from doc.models import *
+from name.models import *
+from group.models import *
+from person.models import *
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, login_testing_unauthorized
 from ietf.utils.test_runner import mail_outbox
 
@@ -50,92 +54,237 @@ class IdRfcUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
         self.doTestUrls(__file__)
 
+def make_test_data():
+    # groups
+    area = Group.objects.create(
+        name="Far Future",
+        acronym="farfut",
+        state_id="active",
+        type_id="area",
+        parent=None)
+    group = Group.objects.create(
+        name="Martian Special Interest Group",
+        acronym="mars",
+        state_id="active",
+        type_id="wg",
+        parent=area,
+        )
+    
+    # persons
+    p = Person.objects.create(
+        name="Aread Irector",
+        ascii="Aread Irector",
+        )
+    ad = Email.objects.create(
+        address="aread@ietf.org",
+        person=p)
+    Role.objects.create(
+        name_id="ad",
+        group=area,
+        email=ad)
+    porg = PersonOrOrgInfo.objects.create(
+        first_name="Aread",
+        last_name="Irector",
+        middle_initial="",
+        )
+    EmailAddress.objects.create(
+        person_or_org=porg,
+        priority=1,
+        address=ad.address,
+        )
+    IESGLogin.objects.create(
+        login_name="ad",
+        password="foo",
+        user_level=1,
+        first_name="Aread",
+        last_name="Irector",
+        person=porg,
+        )
+
+    p = Person.objects.create(
+        name="Ano Therdir",
+        ascii="Ano Therdir",
+        )
+    ad = Email.objects.create(
+        address="ano@ietf.org",
+        person=p)
+    Role.objects.create(
+        name_id="ad",
+        group=area,
+        email=ad)
+    porg = PersonOrOrgInfo.objects.create(
+        first_name="Ano",
+        last_name="Therdir",
+        middle_initial="",
+        )
+    EmailAddress.objects.create(
+        person_or_org=porg,
+        priority=1,
+        address=ad.address,
+        )
+    IESGLogin.objects.create(
+        login_name="ad2",
+        password="foo",
+        user_level=1,
+        first_name="Ano",
+        last_name="Therdir",
+        person=porg,
+        )
+
+    p = Person.objects.create(
+        name="Sec Retary",
+        ascii="Sec Retary",
+        )
+    Email.objects.create(
+        address="sec.retary@ietf.org",
+        person=p)
+    porg = PersonOrOrgInfo.objects.create(
+        first_name="Sec",
+        last_name="Retary",
+        middle_initial="",
+        )
+    EmailAddress.objects.create(
+        person_or_org=porg,
+        priority=1,
+        address="sec.retary@ietf.org",
+        )
+    IESGLogin.objects.create(
+        login_name="secretary",
+        password="foo",
+        user_level=0,
+        first_name="Sec",
+        last_name="Retary",
+        person=porg,
+        )
+    
+    # draft
+    draft = Document.objects.create(
+        name="ietf-test",
+        time=datetime.datetime.now(),
+        type_id="draft",
+        title="Optimizing Martian Network Topologies",
+        state_id="active",
+        stream_id="ietf",
+        group=group,
+        abstract="Techniques for achieving near-optimal Martian networks.",
+        rev="01",
+        pages=2,
+        intended_std_level_id="ps",
+        ad=ad,
+        notify="aliens@example.mars"
+        )
+
+    DocAlias.objects.create(
+        document=draft,
+        name=draft.name,
+        )
+
+    Event.objects.create(
+        type="started_iesg_process",
+        by=ad,
+        doc=draft,
+        desc="Added draft",
+        )
+    
+    return draft
+        
 class ChangeStateTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft']
+    fixtures = ['names']
 
     def test_change_state(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_change_state', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+        draft = make_test_data()
+        draft.iesg_state = IesgDocStateName.objects.get(slug="ad-eval")
+        draft.save()
+        
+        url = urlreverse('doc_change_state', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
 
-        state = draft.idinternal.cur_state
-        substate = draft.idinternal.cur_sub_state
-        next_states = IDNextState.objects.filter(cur_state=draft.idinternal.cur_state)
+        first_state = draft.iesg_state
+        next_states = get_next_iesg_states(first_state)
 
         # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEquals(len(q('form select[name=state]')), 1)
-        self.assertEquals(len(q('form select[name=substate]')), 1)
-
+        
         if next_states:
             self.assertTrue(len(q('.next-states form input[type=hidden]')) > 0)
 
             
         # faulty post
-        r = self.client.post(url,
-                             dict(state="123456789", substate="987654531"))
+        r = self.client.post(url, dict(state="foobarbaz"))
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertEquals(draft.idinternal.cur_state, state)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.iesg_state, first_state)
 
         
         # change state
-        comments_before = draft.idinternal.comments().count()
+        history_before = draft.event_set.count()
         mailbox_before = len(mail_outbox)
         
-        r = self.client.post(url,
-                             dict(state="12", substate=""))
+        r = self.client.post(url, dict(state="review-e"))
         self.assertEquals(r.status_code, 302)
 
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertEquals(draft.idinternal.prev_state, state)
-        self.assertEquals(draft.idinternal.prev_sub_state, substate)
-        self.assertEquals(draft.idinternal.cur_state.document_state_id, 12)
-        self.assertEquals(draft.idinternal.cur_sub_state, None)
-        self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
-        self.assertTrue("State changed" in draft.idinternal.comments()[0].comment_text)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.iesg_state_id, "review-e")
+        self.assertEquals(draft.event_set.count(), history_before + 1)
+        self.assertTrue("State changed" in draft.event_set.all()[0].desc)
         self.assertEquals(len(mail_outbox), mailbox_before + 2)
         self.assertTrue("State Update Notice" in mail_outbox[-2]['Subject'])
-        self.assertTrue(draft.filename in mail_outbox[-1]['Subject'])
+        self.assertTrue(draft.name in mail_outbox[-1]['Subject'])
+
+        
+        # check that we got a previous state now
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('.prev-state form input[name="state"][value="ad-eval"]')), 1)
 
         
     def test_request_last_call(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft = make_test_data()
+        draft.iesg_state = IesgDocStateName.objects.get(slug="ad-eval")
+        draft.save()
 
-        self.client.login(remote_user="klm")
-        url = urlreverse('doc_change_state', kwargs=dict(name=draft.filename))
+        self.client.login(remote_user="secretary")
+        url = urlreverse('doc_change_state', kwargs=dict(name=draft.name))
 
         mailbox_before = len(mail_outbox)
         
-        self.assertRaises(BallotInfo.DoesNotExist, lambda: draft.idinternal.ballot)
-        r = self.client.post(url,
-                             dict(state=str(IDState.LAST_CALL_REQUESTED),
-                                  substate=""))
+        self.assertTrue(not draft.latest_event(type="changed_ballot_writeup_text"))
+        r = self.client.post(url, dict(state="lc-req"))
         self.assertContains(r, "Your request to issue the Last Call")
 
         # last call text
-        self.assertTrue("The IESG has received" in draft.idinternal.ballot.last_call_text)
-        self.assertTrue(draft.title in draft.idinternal.ballot.last_call_text)
-        self.assertTrue(draft.idinternal.get_absolute_url() in draft.idinternal.ballot.last_call_text)
+        e = draft.latest_event(Text, type="changed_last_call_text")
+        self.assertTrue(e)
+        self.assertTrue("The IESG has received" in e.content)
+        self.assertTrue(draft.title in e.content)
+        self.assertTrue(draft.get_absolute_url() in e.content)
 
         # approval text
-        self.assertTrue("The IESG has approved" in draft.idinternal.ballot.approval_text)
-        self.assertTrue(draft.title in draft.idinternal.ballot.approval_text)
-        self.assertTrue(draft.idinternal.get_absolute_url() in draft.idinternal.ballot.approval_text)
+        e = draft.latest_event(Text, type="changed_ballot_approval_text")
+        self.assertTrue(e)
+        self.assertTrue("The IESG has approved" in e.content)
+        self.assertTrue(draft.title in e.content)
+        self.assertTrue(draft.get_absolute_url() in e.content)
 
         # ballot writeup
-        self.assertTrue("Technical Summary" in draft.idinternal.ballot.ballot_writeup)
+        e = draft.latest_event(Text, type="changed_ballot_writeup_text")
+        self.assertTrue(e)
+        self.assertTrue("Technical Summary" in e.content)
 
         # mail notice
         self.assertTrue(len(mail_outbox) > mailbox_before)
         self.assertTrue("Last Call:" in mail_outbox[-1]['Subject'])
 
         # comment
-        self.assertTrue("Last Call was requested" in draft.idinternal.comments()[0].comment_text)
+        self.assertTrue("Last call was requested" in draft.event_set.all()[0].desc)
+
+        # FIXME: test regeneration of announcement when it's not approved/via rfc editor
         
 
 class EditInfoTestCase(django.test.TestCase):
@@ -163,7 +312,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.idinternal.job_owner, prev_job_owner)
 
         # edit info
-        comments_before = draft.idinternal.comments().count()
+        history_before = draft.idinternal.comments().count()
         mailbox_before = len(mail_outbox)
         draft.group = Acronym.objects.get(acronym_id=Acronym.INDIVIDUAL_SUBMITTER)
         draft.save()
@@ -188,7 +337,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.idinternal.job_owner, new_job_owner)
         self.assertEquals(draft.idinternal.note, "")
         self.assertTrue(not draft.idinternal.agenda)
-        self.assertEquals(draft.idinternal.comments().count(), comments_before + 3)
+        self.assertEquals(draft.idinternal.comments().count(), history_before + 3)
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue(draft.filename in mail_outbox[-1]['Subject'])
 
@@ -301,7 +450,7 @@ class ResurrectTestCase(django.test.TestCase):
 
 
         # request resurrect
-        comments_before = draft.idinternal.comments().count()
+        history_before = draft.idinternal.comments().count()
         mailbox_before = len(mail_outbox)
         
         r = self.client.post(url, dict())
@@ -309,7 +458,7 @@ class ResurrectTestCase(django.test.TestCase):
 
         draft = InternetDraft.objects.get(filename="draft-ietf-mip6-cn-ipsec")
         self.assertEquals(draft.idinternal.resurrect_requested_by, IESGLogin.objects.get(login_name=login_as))
-        self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
         self.assertTrue("Resurrection" in draft.idinternal.comments()[0].comment_text)
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue("Resurrection" in mail_outbox[-1]['Subject'])
@@ -331,7 +480,7 @@ class ResurrectTestCase(django.test.TestCase):
         self.assertEquals(len(q('form input[type=submit]')), 1)
 
         # request resurrect
-        comments_before = draft.idinternal.comments().count()
+        history_before = draft.idinternal.comments().count()
         mailbox_before = len(mail_outbox)
         
         r = self.client.post(url, dict())
@@ -339,7 +488,7 @@ class ResurrectTestCase(django.test.TestCase):
 
         draft = InternetDraft.objects.get(filename="draft-ietf-mip6-cn-ipsec")
         self.assertEquals(draft.idinternal.resurrect_requested_by, None)
-        self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
         self.assertTrue("completed" in draft.idinternal.comments()[0].comment_text)
         self.assertEquals(draft.status.status, "Active")
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
@@ -359,13 +508,13 @@ class AddCommentTestCase(django.test.TestCase):
         self.assertEquals(len(q('form textarea[name=comment]')), 1)
 
         # request resurrect
-        comments_before = draft.idinternal.comments().count()
+        history_before = draft.idinternal.comments().count()
         mailbox_before = len(mail_outbox)
         
         r = self.client.post(url, dict(comment="This is a test."))
         self.assertEquals(r.status_code, 302)
 
-        self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
         self.assertTrue("This is a test." in draft.idinternal.comments()[0].comment_text)
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue("updated" in mail_outbox[-1]['Subject'])
@@ -387,7 +536,7 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertEquals(len(q('form textarea[name=comment_text]')), 1)
 
         # vote
-        comments_before = draft.idinternal.comments().count()
+        history_before = draft.idinternal.comments().count()
         self.assertTrue(not Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley"))
         
         r = self.client.post(url, dict(position="discuss",
@@ -401,11 +550,11 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertTrue(pos.discuss)
         self.assertTrue(not (pos.yes or pos.noobj or pos.abstain or pos.recuse))
         
-        self.assertEquals(draft.idinternal.comments().count(), comments_before + 3)
+        self.assertEquals(draft.idinternal.comments().count(), history_before + 3)
         self.assertTrue("New position" in draft.idinternal.comments()[2].comment_text)
 
         # recast vote
-        comments_before = draft.idinternal.comments().count()
+        history_before = draft.idinternal.comments().count()
         r = self.client.post(url, dict(position="noobj"))
         self.assertEquals(r.status_code, 302)
 
@@ -413,17 +562,17 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertTrue(pos.noobj)
         self.assertTrue(not (pos.yes or pos.abstain or pos.recuse))
         self.assertTrue(pos.discuss == -1)
-        self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
         self.assertTrue("Position" in draft.idinternal.comments()[0].comment_text)
         
         # clear vote
-        comments_before = draft.idinternal.comments().count()
+        history_before = draft.idinternal.comments().count()
         r = self.client.post(url, dict(position=""))
         self.assertEquals(r.status_code, 302)
 
         pos = Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley")
         self.assertEquals(len(pos), 0)
-        self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
         self.assertTrue("Position" in draft.idinternal.comments()[0].comment_text)
     def test_edit_position_as_secretary(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
@@ -438,7 +587,7 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertTrue(len(q('form input[name=position]')) > 0)
 
         # vote for rhousley
-        comments_before = draft.idinternal.comments().count()
+        history_before = draft.idinternal.comments().count()
         self.assertTrue(not Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley"))
         
         r = self.client.post(url, dict(position="discuss"))
@@ -933,13 +1082,13 @@ class ExpireLastCallTestCase(django.test.TestCase):
         self.assertEquals(len(drafts), 1)
 
         mailbox_before = len(mail_outbox)
-        comments_before = draft.idinternal.comments().count()
+        history_before = draft.idinternal.comments().count()
         
         expire_last_call(drafts[0])
 
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         self.assertEquals(draft.idinternal.cur_state.document_state_id, IDState.WAITING_FOR_WRITEUP)
-        self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue("Last Call Expired" in mail_outbox[-1]["Subject"])
         
@@ -1277,5 +1426,3 @@ class MirrorScriptTestCases(unittest.TestCase,RealDatabaseTest):
         self.assertEquals(len(refs), 3)
         print "OK"
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from testsREDESIGN import *

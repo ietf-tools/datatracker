@@ -55,3 +55,31 @@ class IntendedStdLevelName(NameModel):
     Practice, Historic, ..."""
 class BallotPositionName(NameModel):
     """ Yes, NoObjection, Abstain, Discuss, Recuse """
+
+
+def get_next_iesg_states(iesg_state):
+    if not iesg_state:
+        return ()
+    
+    next = {
+        "pub-req": ("ad-eval", "watching", "dead"),
+        "ad-eval": ("watching", "lc-req", "review-e", "iesg-eva"),
+        "review-e": ("ad-eval", ),
+        "lc-req": ("lc", ),
+        "lc": ("writeupw", "goaheadw"),
+        "writeupw": ("goaheadw", ),
+        "goaheadw": ("iesg-eva", ),
+        "iesg-eva": ("nopubadw", "defer", "ann"),
+        "defer": ("iesg-eva", ),
+        "ann": ("approved", ),
+        "approved": ("rfcqueue", ),
+        "rfcqueue": ("pub", ),
+        "pub": ("dead", ),
+        "nopubadw": ("nopubanw", ),
+        "nopubanw": ("dead", ),
+        "watching": ("pub-req", ),
+        "dead": ("pub-req", ),
+    }
+
+    return IesgDocStateName.objects.filter(slug__in=next.get(iesg_state.slug, ()))
+    

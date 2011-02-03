@@ -65,3 +65,10 @@ class Email(models.Model):
 
     def get_name(self):
         return self.person.name if self.person else self.address
+
+    def formatted_email(self):
+        if self.person and self.person.name:
+            return u"%s <%s>" % (self.person.name, self.address)
+        else:
+            return self.address
+            

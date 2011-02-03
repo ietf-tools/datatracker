@@ -22,6 +22,8 @@ from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
+from doc.models import Document, Event, save_document_in_history, DocHistory
+from name.models import IesgDocStateName, get_next_iesg_states
     
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(IDState.objects.all(), empty_label=None, required=True)
@@ -56,7 +58,8 @@ def change_state(request, name):
                     request_last_call(request, doc)
 
                     return render_to_response('idrfc/last_call_requested.html',
-                                              dict(doc=doc),
+                                              dict(doc=doc,
+                                                   url=doc.idinternal.get_absolute_url()),
                                               context_instance=RequestContext(request))
                 
             return HttpResponseRedirect(internal.get_absolute_url())
@@ -76,6 +79,79 @@ def change_state(request, name):
                                    prev_state_formatted=prev_state_formatted,
                                    next_states=next_states),
                               context_instance=RequestContext(request))
+
+class ChangeStateFormREDESIGN(forms.Form):
+    state = forms.ModelChoiceField(IesgDocStateName.objects.all(), empty_label=None, required=True)
+    # FIXME: no tags yet
+    #substate = forms.ModelChoiceField(IDSubState.objects.all(), required=False)
+
+@group_required('Area_Director','Secretariat')
+def change_stateREDESIGN(request, name):
+    """Change state of Internet Draft, notifying parties as necessary
+    and logging the change as a comment."""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.latest_event(type="started_iesg_process") or doc.state_id == "expired":
+        raise Http404()
+
+    login = request.user.get_profile().email()
+
+    if request.method == 'POST':
+        form = ChangeStateForm(request.POST)
+        if form.is_valid():
+            state = form.cleaned_data['state']
+            if state != doc.iesg_state:
+                save_document_in_history(doc)
+                
+                prev_state = doc.iesg_state
+                doc.iesg_state = state
+                
+                e = Event()
+                e.type = "changed_document"
+                e.by = login
+                e.doc = doc
+                e.desc = u"State changed to <b>%s</b> from <b>%s</b> by %s" % (
+                    doc.iesg_state.name,
+                    prev_state.name if prev_state else "None",
+                    login.get_name())
+                e.save()
+                
+                doc.time = e.time
+                doc.save()
+
+                email_state_changed(request, doc, strip_tags(e.desc))
+                email_owner(request, doc, doc.ad, login, e.desc)
+
+                if doc.iesg_state_id == "lc-req":
+                    request_last_call(request, doc)
+
+                    return render_to_response('idrfc/last_call_requested.html',
+                                              dict(doc=doc,
+                                                   url=doc.get_absolute_url()),
+                                              context_instance=RequestContext(request))
+                
+            return HttpResponseRedirect(doc.get_absolute_url())
+
+    else:
+        form = ChangeStateForm(initial=dict(state=doc.iesg_state_id))
+
+    next_states = get_next_iesg_states(doc.iesg_state)
+    prev_state = None
+    
+    hists = DocHistory.objects.filter(doc=doc).exclude(iesg_state=doc.iesg_state).order_by("-time")[:1]
+    if hists:
+        prev_state = hists[0].iesg_state
+
+    return render_to_response('idrfc/change_stateREDESIGN.html',
+                              dict(form=form,
+                                   doc=doc,
+                                   prev_state=prev_state,
+                                   next_states=next_states),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    change_state = change_stateREDESIGN
+    ChangeStateForm = ChangeStateFormREDESIGN
+
 
 def dehtmlify_textarea_text(s):
     return s.replace("<br>", "\n").replace("<b>", "").replace("</b>", "").replace("  ", " ")

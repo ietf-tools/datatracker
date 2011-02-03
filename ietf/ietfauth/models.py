@@ -61,6 +61,11 @@ class IetfUserProfile(models.Model):
         except:
             return None
 
+    def email(self):
+        # quick hack to bind new and old schema together for the time being
+        from person.models import Email
+        return Email.objects.get(address=self.person().email()[1])
+
     def __str__(self):
 	return "IetfUserProfile(%s)" % (self.user,)
 

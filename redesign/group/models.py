@@ -49,5 +49,5 @@ class Role(models.Model):
     email = models.ForeignKey(Email)
     auth = models.CharField(max_length=255, blank=True)
     def __unicode__(self):
-        return self.name
+        return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.grop.acronym)
     

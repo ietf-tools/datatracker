@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
+from django.core.urlresolvers import reverse as urlreverse
+
 from redesign.group.models import *
 from redesign.name.models import *
 from redesign.person.models import Email
@@ -19,17 +21,17 @@ class DocumentInfo(models.Model):
     tags = models.ManyToManyField(DocInfoTagName, blank=True, null=True) # Revised ID Needed, ExternalParty, AD Followup, ...
     stream = models.ForeignKey(DocStreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
     group = models.ForeignKey(Group, blank=True, null=True) # WG, RG, IAB, IESG, Edu, Tools
-    wg_state  = models.ForeignKey(WgDocStateName, blank=True, null=True) # Not/Candidate/Active/Parked/LastCall/WriteUp/Submitted/Dead
-    iesg_state = models.ForeignKey(IesgDocStateName, blank=True, null=True) # 
-    iana_state = models.ForeignKey(IanaDocStateName, blank=True, null=True)
-    rfc_state = models.ForeignKey(RfcDocStateName, blank=True, null=True)
+    wg_state  = models.ForeignKey(WgDocStateName, verbose_name="WG state", blank=True, null=True) # Not/Candidate/Active/Parked/LastCall/WriteUp/Submitted/Dead
+    iesg_state = models.ForeignKey(IesgDocStateName, verbose_name="IESG state", blank=True, null=True) # 
+    iana_state = models.ForeignKey(IanaDocStateName, verbose_name="IANA state", blank=True, null=True)
+    rfc_state = models.ForeignKey(RfcDocStateName, verbose_name="RFC state", blank=True, null=True)
     # Other
     abstract = models.TextField()
-    rev = models.CharField(max_length=16)
+    rev = models.CharField(verbose_name="revision", max_length=16)
     pages = models.IntegerField(blank=True, null=True)
     intended_std_level = models.ForeignKey(IntendedStdLevelName, blank=True, null=True)
     std_level = models.ForeignKey(StdLevelName, blank=True, null=True)
-    ad = models.ForeignKey(Email, related_name='ad_%(class)s_set', blank=True, null=True)
+    ad = models.ForeignKey(Email, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)
     shepherd = models.ForeignKey(Email, related_name='shepherd_%(class)s_set', blank=True, null=True)
     notify = models.CharField(max_length=255, blank=True)
     external_url = models.URLField(blank=True) # Should be set for documents with type 'External'.
@@ -50,11 +52,11 @@ class DocumentInfo(models.Model):
         return e[0] if e else None
 
 class RelatedDocument(models.Model):
-    document = models.ForeignKey('Document')  # source
-    doc_alias = models.ForeignKey('DocAlias') # target
+    source = models.ForeignKey('Document')
+    target = models.ForeignKey('DocAlias')
     relationship = models.ForeignKey(DocRelationshipName)
     def __unicode__(self):
-        return u"%s %s %s" % (self.document.name, self.relationship.name.lower(), self.doc_alias.name)
+        return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 
 class DocumentAuthor(models.Model):
     document = models.ForeignKey('Document')
@@ -62,7 +64,7 @@ class DocumentAuthor(models.Model):
     order = models.IntegerField()
 
     def __unicode__(self):
-        return u"%s %s (%s)" % (self.document.name, self.email.get_name(), self.order)
+        return u"%s %s (%s)" % (self.document.name, self.author.get_name(), self.order)
 
     class Meta:
         ordering = ["document", "order"]
@@ -71,55 +73,28 @@ class Document(DocumentInfo):
     name = models.CharField(max_length=255, primary_key=True)           # immutable
     related = models.ManyToManyField('DocAlias', through=RelatedDocument, blank=True, related_name="reversely_related_document_set")
     authors = models.ManyToManyField(Email, through=DocumentAuthor, blank=True)
+
     def __unicode__(self):
         return self.name
-    def values(self):
-        try:
-            fields = dict([(field.name, getattr(self, field.name))
-                            for field in self._meta.fields
-                                if field is not self._meta.pk])
-        except:
-            for field in self._meta.fields:
-                print "* %24s"%field.name,
-                print getattr(self, field.name)
-            raise
-        many2many = dict([(field.name, getattr(self, field.name).all())
-                            for field in self._meta.many_to_many ])
-        return fields, many2many
-        
-    def save_with_history(self, force_insert=False, force_update=False):
-        fields, many2many = self.values()
-        fields["doc"] = self
-        try:
-            snap = DocHistory.objects.get(**dict((k,v) for k,v in fields.items() if k != 'time'))
-            # FIXME: what if there are two with the same set of values
-            # at different points in time?
-            if snap.time > fields["time"]:
-                snap.time = fields["time"]
-                snap.save()
-        except DocHistory.DoesNotExist:
-            snap = DocHistory(**fields)
-            snap.save()
-            for m in many2many:
-                # FIXME: check that this works with related/authors
-                #print "m2m:", m, many2many[m]
-                rel = getattr(snap, m)
-                for item in many2many[m]:
-                    rel.add(item)
-        except DocHistory.MultipleObjectsReturned:
-            list = DocHistory.objects.filter(**dict((k,v) for k,v in fields.items() if k != 'time'))
-            list.delete()
-            snap = DocHistory(**fields)
-            snap.save()
-            print "Deleted list:", snap
-        super(Document, self).save(force_insert, force_update)
+
+    def get_absolute_url(self):
+        name = self.name
+        if self.state == "rfc":
+            aliases = self.docalias_set.filter(name__startswith="rfc")
+            if aliases:
+                name = aliases[0].name
+        return urlreverse('doc_view', kwargs={ 'name': name })
+
+    def file_tag(self):
+        # FIXME: compensate for tombstones?
+        return u"<%s-%s.txt>" % (self.name, self.rev)
 
 class RelatedDocHistory(models.Model):
-    document = models.ForeignKey('DocHistory') # source
-    doc_alias = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set") # target
+    source = models.ForeignKey('DocHistory')
+    target = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
     relationship = models.ForeignKey(DocRelationshipName)
     def __unicode__(self):
-        return u"%s %s %s" % (self.document.doc.name, self.relationship.name.lower(), self.doc_alias.name)
+        return u"%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
 
 class DocHistoryAuthor(models.Model):
     document = models.ForeignKey('DocHistory')
@@ -127,18 +102,58 @@ class DocHistoryAuthor(models.Model):
     order = models.IntegerField()
 
     def __unicode__(self):
-        return u"%s %s (%s)" % (self.document.doc.name, self.email.get_name(), self.order)
+        return u"%s %s (%s)" % (self.document.doc.name, self.author.get_name(), self.order)
 
     class Meta:
         ordering = ["document", "order"]
-    
+
 class DocHistory(DocumentInfo):
     doc = models.ForeignKey(Document)   # ID of the Document this relates to
+    # Django won't let us define these in the base class, so we have
+    # to repeat them
     related = models.ManyToManyField('DocAlias', through=RelatedDocHistory, blank=True)
     authors = models.ManyToManyField(Email, through=DocHistoryAuthor, blank=True)
     def __unicode__(self):
         return unicode(self.doc.name)
 
+def save_document_in_history(doc):
+    def get_model_fields_as_dict(obj):
+        return dict((field.name, getattr(obj, field.name))
+                    for field in obj._meta.fields
+                    if field is not obj._meta.pk)
+
+    # copy fields
+    fields = get_model_fields_as_dict(doc)
+    fields["doc"] = doc
+    
+    dochist = DocHistory(**fields)
+    dochist.save()
+
+    # copy many to many
+    for field in doc._meta.many_to_many:
+        if not field.rel.through:
+            # just add the attributes
+            rel = getattr(dochist, field.name)
+            for item in getattr(doc, field.name).all():
+                rel.add(item)
+
+    # copy remaining tricky many to many
+    def transfer_fields(obj, HistModel):
+        mfields = get_model_fields_as_dict(item)
+        # map doc -> dochist
+        for k, v in mfields.iteritems():
+            if v == doc:
+                mfields[k] = dochist
+        HistModel.objects.create(**mfields)
+
+    for item in RelatedDocument.objects.filter(source=doc):
+        transfer_fields(item, RelatedDocHistory)
+
+    for item in DocumentAuthor.objects.filter(document=doc):
+        transfer_fields(item, DocHistoryAuthor)
+                
+    return dochist
+        
 class DocAlias(models.Model):
     """This is used for documents that may appear under multiple names,
     and in particular for RFCs, which for continuity still keep the
@@ -194,8 +209,10 @@ EVENT_TYPES = [
     
     # IESG events
     ("started_iesg_process", "Started IESG process on document"),
+
     ("sent_ballot_announcement", "Sent ballot announcement"),
     ("changed_ballot_position", "Changed ballot position"),
+    
     ("changed_ballot_approval_text", "Changed ballot approval text"),
     ("changed_ballot_writeup_text", "Changed ballot writeup text"),
 

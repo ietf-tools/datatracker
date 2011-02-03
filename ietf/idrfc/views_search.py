@@ -409,16 +409,16 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             r.obsoleted_by_list = []
             r.updated_by_list = []
             
-        xed_by = RelatedDocument.objects.filter(doc_alias__name__in=rfc_aliases.values(), relationship__in=("obs", "updates")).select_related('doc_alias__document_id')
-        rel_rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=[rel.document_id for rel in xed_by]).values_list('document_id', 'name'))
+        xed_by = RelatedDocument.objects.filter(target__name__in=rfc_aliases.values(), relationship__in=("obs", "updates")).select_related('target__document_id')
+        rel_rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=[rel.source_id for rel in xed_by]).values_list('document_id', 'name'))
         for rel in xed_by:
-            r = result_map[rel.doc_alias.document_id]
+            r = result_map[rel.target.document_id]
             if rel.relationship_id == "obs":
                 attr = "obsoleted_by_list"
             else:
                 attr = "updated_by_list"
                 
-            getattr(r, attr).append(int(rel_rfc_aliases[rel.document_id][3:]))
+            getattr(r, attr).append(int(rel_rfc_aliases[rel.source_id][3:]))
 
         
         # sort

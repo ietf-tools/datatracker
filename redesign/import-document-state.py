@@ -890,7 +890,7 @@ for index, o in enumerate(all_drafts.iterator()):
     # replacements
     if o.replaced_by:
         replacement, _ = Document.objects.get_or_create(name=o.replaced_by.filename, defaults=dict(time=datetime.datetime(1970, 1, 1, 0, 0, 0)))
-        RelatedDocument.objects.get_or_create(document=replacement, doc_alias=d_alias, relationship=relationship_replaces)
+        RelatedDocument.objects.get_or_create(source=replacement, target=d_alias, relationship=relationship_replaces)
     
     # the RFC-related attributes are imported when we handle the RFCs below
 
@@ -987,9 +987,9 @@ for index, o in enumerate(all_rfcs.iterator()):
         other_number = int(other_rfc.replace("RFC", ""))
         other, other_alias = get_or_create_rfc_document(other_number)
         if reverse:
-            RelatedDocument.objects.get_or_create(document=other, doc_alias=d_alias, relationship=rel_type)
+            RelatedDocument.objects.get_or_create(source=other, target=d_alias, relationship=rel_type)
         else:
-            RelatedDocument.objects.get_or_create(document=d, doc_alias=other_alias, relationship=rel_type)
+            RelatedDocument.objects.get_or_create(source=d, target=other_alias, relationship=rel_type)
 
     def parse_relation_list(s):
         if not s:

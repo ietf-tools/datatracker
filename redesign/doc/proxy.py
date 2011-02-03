@@ -145,7 +145,7 @@ class InternetDraft(Document):
     #replaced_by = models.ForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
     @property
     def replaced_by(self):
-        r = InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="replaces")
+        r = InternetDraft.objects.filter(relateddocument__target__document=self, relateddocument__relationship="replaces")
         return r[0] if r else None
         
     #replaces = FKAsOneToOne('replaces', reverse=True)
@@ -156,7 +156,7 @@ class InternetDraft(Document):
 
     @property
     def replaces_set(self):
-        return InternetDraft.objects.filter(docalias__relateddocument__document=self, docalias__relateddocument__relationship="replaces")
+        return InternetDraft.objects.filter(docalias__relateddocument__source=self, docalias__relateddocument__relationship="replaces")
         
     #review_by_rfc_editor = models.BooleanField()
     @property
@@ -631,25 +631,25 @@ class InternetDraft(Document):
     #updates = models.CharField(max_length=200,blank=True,null=True)
     @property
     def updates(self):
-        return ",".join("RFC%s" % n for n in sorted(d.rfc_number for d in InternetDraft.objects.filter(docalias__relateddocument__document=self, docalias__relateddocument__relationship="updates")))
+        return ",".join("RFC%s" % n for n in sorted(d.rfc_number for d in InternetDraft.objects.filter(docalias__relateddocument__source=self, docalias__relateddocument__relationship="updates")))
 
     #updated_by = models.CharField(max_length=200,blank=True,null=True)
     @property
     def updated_by(self):
         if not hasattr(self, "updated_by_list"):
-            self.updated_by_list = [d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="updates")]
+            self.updated_by_list = [d.rfc_number for d in InternetDraft.objects.filter(relateddocument__target__document=self, relateddocument__relationship="updates")]
         return ",".join("RFC%s" % n for n in sorted(self.updated_by_list))
 
     #obsoletes = models.CharField(max_length=200,blank=True,null=True)
     @property
     def obsoletes(self):
-        return ",".join("RFC%s" % n for n in sorted(d.rfc_number for d in InternetDraft.objects.filter(docalias__relateddocument__document=self, docalias__relateddocument__relationship="obs")))
+        return ",".join("RFC%s" % n for n in sorted(d.rfc_number for d in InternetDraft.objects.filter(docalias__relateddocument__source=self, docalias__relateddocument__relationship="obs")))
 
     #obsoleted_by = models.CharField(max_length=200,blank=True,null=True)
     @property
     def obsoleted_by(self):
         if not hasattr(self, "obsoleted_by_list"):
-            self.obsoleted_by_list = [d.rfc_number for d in InternetDraft.objects.filter(relateddocument__doc_alias__document=self, relateddocument__relationship="obs")]
+            self.obsoleted_by_list = [d.rfc_number for d in InternetDraft.objects.filter(relateddocument__target__document=self, relateddocument__relationship="obs")]
         return ",".join("RFC%s" % n for n in sorted(self.obsoleted_by_list))
 
     #also = models.CharField(max_length=50,blank=True,null=True)

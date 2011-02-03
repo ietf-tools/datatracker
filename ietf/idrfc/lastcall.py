@@ -2,9 +2,12 @@
 
 import datetime
 
+from django.conf import settings
+
 from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo, IESGLogin
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
+from doc.models import Event
 
 def request_last_call(request, doc):
     try:
@@ -14,6 +17,26 @@ def request_last_call(request, doc):
 
     send_last_call_request(request, doc, ballot)
     add_document_comment(request, doc, "Last Call was requested")
+
+def request_last_callREDESIGN(request, doc):
+    if not doc.latest_event(type="changed_ballot_writeup_text"):
+        generate_ballot_writeup(request, doc)
+    if not doc.latest_event(type="changed_ballot_approval_text"):
+        generate_approval_mail(request, doc)
+    if not doc.latest_event(type="changed_last_call_text"):
+        generate_last_call_announcement(request, doc)
+    
+    send_last_call_request(request, doc)
+    
+    e = Event()
+    e.type = "requested_last_call"
+    e.by = request.user.get_profile().email()
+    e.doc = doc
+    e.desc = "Last call was requested by %s" % e.by.get_name()
+    e.save()
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    request_last_call = request_last_callREDESIGN
 
 def get_expired_last_calls():
     return InternetDraft.objects.filter(lc_expiration_date__lte=datetime.date.today(),
