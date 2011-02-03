@@ -68,8 +68,9 @@ for o in Area.objects.all():
     group.state = s
     group.type = type_names["area"]
     group.parent = iesg_group
+    group.comments = o.comments.strip() if o.comments else ""
 
-    # FIXME: missing fields from old: concluded_date, comments, last_modified_date, extra_email_addresses
+    # FIXME: missing fields from old: concluded_date, last_modified_date, extra_email_addresses
 
     group.save()
     
@@ -125,8 +126,10 @@ for o in IETFWG.objects.all():
         group.parent = Group.objects.get(acronym=o.area.area.area_acronym.acronym)
     elif not group.parent:
         print "no area/parent for", group.acronym, group.name, group.type, group.state
-        
-    # FIXME: missing fields from old: proposed_date, start_date, dormant_date, concluded_date, meeting_scheduled, email_address, email_subscribe, email_keyword, email_archive, comments, last_modified_date, meeting_scheduled_old
+
+    group.list_email = o.email_address if o.email_address else ""
+    group.comments = o.comments.strip() if o.comments else ""
+    # FIXME: missing fields from old: proposed_date, start_date, dormant_date, concluded_date, meeting_scheduled, email_subscribe, email_keyword, email_archive, last_modified_date, meeting_scheduled_old
     
     group.save()
 
