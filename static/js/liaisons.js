@@ -207,6 +207,9 @@
             var updateInfo = function() {
                 var entity = organization;
                 var to_entity = from;
+                if (!entity.is('select') || !to_entity.is('select')) {
+                    return false;
+                }
                 var url = config.info_update_url;
                 $.ajax({
                     url: url,
