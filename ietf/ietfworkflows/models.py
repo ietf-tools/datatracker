@@ -20,9 +20,8 @@ class ObjectHistoryEntry(models.Model):
     class Meta:
         ordering = ('-date', )
 
-
     def get_real_instance(self):
-        if hasattr(self, '_real_instance'): 
+        if hasattr(self, '_real_instance'):
             return self._real_instance
         for i in ('objectworkflowhistoryentry', 'objectannotationtaghistoryentry', 'objectstreamhistoryentry'):
             try:
@@ -118,6 +117,13 @@ class WGWorkflow(Workflow):
         else:
             return self.selected_tags.all()
 
+    def get_states(self):
+        states = self.states.all()
+        if states.count():
+            return states
+        else:
+            return self.selected_states.all()
+
 
 class Stream(models.Model):
     name = models.CharField(_(u"Name"), max_length=100)
@@ -133,7 +139,7 @@ class Stream(models.Model):
 class StreamedID(models.Model):
     draft = models.OneToOneField(InternetDraft)
     stream = models.ForeignKey(Stream, blank=True, null=True)
-    
+
     content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"), related_name="streamed_id", blank=True, null=True)
     content_id = models.PositiveIntegerField(_(u"Content id"), blank=True, null=True)
     group = generic.GenericForeignKey(ct_field="content_type", fk_field="content_id")

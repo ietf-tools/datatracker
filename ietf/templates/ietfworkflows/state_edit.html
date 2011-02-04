@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load ietf_streams %}
+
+{% block morecss %}
+table.state-history p { margin: 0px; }
+table.edit-form ul { padding: 0px; list-style-type: none; margin: 0px; margin-bottom: 2em; border-bottom: 1px dashed #cccccc; }
+table.edit-form ul li, table.edit-form div.free-change { padding: 10px 2em; }
+table.edit-form ul li.evenrow { background-color: #edf5ff; }
+table.edit-form textarea { width: 95%; height: 120px; }
+table.edit-form span.required { color: red; }
+table.edit-form ul.errorlist { border-width: 0px; padding: 0px; margin: 0px;}
+table.edit-form ul.errorlist li { color: red; margin: 0px; padding: 0px;}
+table.edit-form div.field { margin-bottom: 1em; }
+table.edit-form div.error { border: 1px solid red; background-color: #ffeebb; padding: 5px 10px; }
+{% endblock morecss %}
+
+{% block title %}Change state for {{ draft }}{% endblock %}
+
+{% block content %}
+<h1>Change state for {{ draft }}</h1>
+
+<table class="ietf-table" style="width: 100%;">
+<tr>
+<th>Current stream</th>
+<th>Current state</th>
+<th>Annotation tags</th>
+</tr>
+<tr><td style="width: 25%;">
+ {{ state.name|default:"None" }}
+</td>
+<td style="width: 25%;">
+ {{ state.name|default:"None" }}
+</td><td>
+<ul style="list-style-type: none; padding: 0px;">
+  {% for tag in tags%}
+    <li>{{ tag.annotation_tag }}</li>
+  {% endfor %}
+</ul>
+</td></tr></table>
+<br />
+
+<form action="" method="post">
+<table class="ietf-table edit-form" style="width: 100%;">
+<tr>
+  <th>1. Input information about change</th>
+  <th>2. Select the new state</th>
+</tr>
+<tr><td style="width: 50%;">
+    <div class="field{% if form.errors.comment %} error{% endif %}">
+    {{ form.errors.comment }}
+    Comment: <span class="required">*</span><br />
+    <textarea name="comment">{{ form.data.comment }}</textarea>
+    </div>
+    <div class="field{% if form.errors.weeks %} error{% endif %}">
+    {{ form.errors.weeks }}
+    Estimated time in next status:<br />
+    <input type="text" name="weeks" value="{{ form.data.weeks }}" /> (in weeks)
+    </div>
+</td><td style="padding: 0px; vertical-align: top;">
+  {% with form.get_transitions as transitions %}
+  {% if transitions %}
+  <ul>
+    {% for transition in transitions %}
+    <li class="{% cycle oddrow,evenrow %}">
+    <input type="submit" name="transition_{{ transition.pk }}" value="{{ transition.name }}" />
+    Changes state to: <strong>{{ transition.destination.name }}</strong>
+    </li>
+    {% endfor %}
+  {% endif %}
+  </ul>
+  {% endwith %}
+    <div class="free-change field{% if form.errors.new_state %} error{% endif %}">
+      {{ form.errors.new_state }}
+      <select name="new_state">
+        {% for value, name in form.get_states %}
+          <option value="{{ value }}">{{ name }}</option>
+        {% endfor %}
+      </select>
+      <input type="submit" name="change" value="State change" />
+    </div>
+</td></tr>
+</table>
+</form>
+
+<br />
+<strong>State history</strong>
+<table class="ietf-table state-history" style="width: 100%">
+    {% if history %}
+    <tr><th>Date</th><th>Person</th><th>Change</th><th>Comment</th></tr>
+    {% for baseentry in history %}
+    {% with baseentry.get_real_instance as entry %}
+    <tr class="{% cycle oddrow,evenrow %}"><td>{{ entry.date }}</td><td>{{ entry.person }}</td>
+        <td>{{ entry.describe_change|safe }}</td><td>{{ entry.comment }}</td>
+    </tr>
+    {% endwith %}
+    {% endfor %}
+    {% else %}
+    <tr><td>There is no state history for this document.</td></th>
+    {% endif %}
+</table>
+{% endblock %}

@@ -10,7 +10,7 @@ from workflows.models import State
 from workflows.utils import (get_workflow_for_object, set_workflow_for_object,
                              get_state)
 
-from ietf.ietfworkflows.streams import get_streamed_draft
+from ietf.ietfworkflows.streams import get_streamed_draft, get_stream_from_draft
 from ietf.ietfworkflows.models import (WGWorkflow, AnnotationTagObjectRelation,
                                        AnnotationTag, ObjectAnnotationTagHistoryEntry,
                                        ObjectHistoryEntry)
@@ -96,9 +96,13 @@ def get_workflow_for_draft(draft):
     return workflow
 
 
-def get_workflow_history_for_draft(draft):
+def get_workflow_history_for_draft(draft, entry_type=None):
     ctype = ContentType.objects.get_for_model(draft)
-    history = ObjectHistoryEntry.objects.filter(content_type=ctype, content_id=draft.pk).\
+    filter_param = {'content_type': ctype,
+                    'content_id': draft.pk}
+    if entry_type:
+        filter_param.update({'%s__isnull' % entry_type: False})
+    history = ObjectHistoryEntry.objects.filter(**filter_param).\
         select_related('objectworkflowhistoryentry', 'objectannotationtaghistoryentry',
                        'objectstreamhistoryentry')
     return history
@@ -207,3 +211,14 @@ def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[
         comment=comment,
         person=person)
     notify_tag_entry(entry, extra_notify)
+
+
+def get_full_info_for_draft(draft):
+    return dict(
+        streamed = get_streamed_draft(draft),
+        stream = get_stream_from_draft(draft),
+        workflow = get_workflow_for_draft(draft),
+        tags = [i.annotation_tag for i in get_annotation_tags_for_draft(draft)],
+        state = get_state_for_draft(draft),
+        shepherd = draft.shepherd,
+    )

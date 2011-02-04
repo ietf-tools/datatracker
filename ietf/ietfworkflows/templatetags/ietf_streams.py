@@ -12,7 +12,6 @@ register = template.Library()
 @register.inclusion_tag('ietfworkflows/stream_state.html', takes_context=True)
 def stream_state(context, doc):
     request = context.get('request', None)
-    user = request and request.user
     data = {}
     stream = get_stream_from_wrapper(doc)
     data.update({'stream': stream})
