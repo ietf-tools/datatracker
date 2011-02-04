@@ -14,6 +14,7 @@ import ietf
 from ietf.utils import log
 import sys
 import time
+import copy
 
 # Testing mode:
 # import ietf.utils.mail
@@ -190,5 +191,7 @@ def send_mail_preformatted(request, preformatted):
     and send it through the standard IETF mail interface (inserting
     extra headers as needed)."""
     msg = message_from_string(preformatted.encode("utf-8"))
-
-    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], msg.get_payload(), extra=msg)
+    extra = copy.copy(msg)
+    for key in ['To', 'From', 'Subject', ]:
+        del extra[key]
+    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], msg.get_payload(), extra=extra)
