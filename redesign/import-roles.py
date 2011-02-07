@@ -15,7 +15,7 @@ management.setup_environ(settings)
 from redesign.person.models import *
 from redesign.group.models import *
 from redesign.name.models import *
-from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrgInfo
+from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrgInfo, WGEditor
 
 # assumptions:
 #  - groups have been imported
@@ -23,9 +23,9 @@ from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrg
 # PersonOrOrgInfo/PostalAddress/EmailAddress/PhoneNumber are not
 # imported, although some information is retrieved from those
 
-# imports IESGLogin, AreaDirector and persons from IDAuthor
+# imports IESGLogin, AreaDirector, WGEditor and persons from IDAuthor
 
-# should probably import WGChair, WGEditor, WGSecretary,
+# should probably import WGChair, WGSecretary,
 #  WGTechAdvisor, Role, ChairsHistory, IRTFChair
 
 # make sure names exist
@@ -38,7 +38,8 @@ def name(name_class, slug, name, desc=""):
     return obj
 
 area_director_role = name(RoleName, "ad", "Area Director")
-
+inactive_area_director_role = name(RoleName, "ex-ad", "Ex-Area Director", desc="In-active Area Director")
+wg_editor_role = name(RoleName, "wgeditor", "Working Group Editor")
 
 # helpers for creating the objects
 def get_or_create_email(o, create_fake):
@@ -86,11 +87,14 @@ for o in IESGLogin.objects.all():
 
     email = get_or_create_email(o, create_fake=False)
 
+    if o.user_level == IESGLogin.INACTIVE_AD_LEVEL:
+        if not Role.objects.filter(name=inactive_area_director_role, email=email):
+            # connect them directly to the IESG as we don't really know where they belong
+            Role.objects.create(name=inactive_area_director_role, group=Group.objects.get(acronym="iesg"), email=email)
+    
     # FIXME: import o.login_name, o.user_level
     
-    
 # AreaDirector
-Role.objects.filter(name=area_director_role).delete()
 for o in AreaDirector.objects.all():
     if not o.area:
         print "NO AREA", o.person, o.area_id
@@ -101,8 +105,34 @@ for o in AreaDirector.objects.all():
     
     area = Group.objects.get(acronym=o.area.area_acronym.acronym)
 
-    Role.objects.get_or_create(name=area_director_role, group=area, email=email)
+    if area.state_id == "active":
+        role_type = area_director_role
+    else:
+         # can't be active area director in an inactive area
+        role_type = inactive_area_director_role
     
+    r = Role.objects.filter(name__in=(area_director_role, inactive_area_director_role),
+                            email=email)
+    if r and r[0].group == "iesg":
+        r[0].group = area
+        r[0].name = role_type
+        r[0].save()
+    else:
+        Role.objects.get_or_create(name=role_type, group=area, email=email)
+
+# WGEditor
+for o in WGEditor.objects.all():
+    # if not o.group_acronym:
+    #     print "NO GROUP", o.person, o.group_acronym_id
+    #     continue
+    
+    print "importing WGEditor", o.group_acronym, o.person
+    email = get_or_create_email(o, create_fake=False)
+    
+    group = Group.objects.get(acronym=o.group_acronym.group_acronym.acronym)
+
+    Role.objects.get_or_create(name=wg_editor_role, group=group, email=email)
+
 # IDAuthor persons
 for o in IDAuthor.objects.all().order_by('id').select_related('person'):
     print "importing IDAuthor", o.id, o.person_id, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')
