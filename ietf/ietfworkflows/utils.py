@@ -6,14 +6,15 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 
-from workflows.models import State
+from workflows.models import State, StateObjectRelation
 from workflows.utils import (get_workflow_for_object, set_workflow_for_object,
-                             get_state)
+                             get_state, set_state)
 
 from ietf.ietfworkflows.streams import get_streamed_draft, get_stream_from_draft
 from ietf.ietfworkflows.models import (WGWorkflow, AnnotationTagObjectRelation,
                                        AnnotationTag, ObjectAnnotationTagHistoryEntry,
-                                       ObjectHistoryEntry)
+                                       ObjectHistoryEntry, StateObjectRelationMetadata,
+                                       ObjectWorkflowHistoryEntry)
 
 
 WAITING_WRITEUP = 'WG Consensus: Waiting for Write-Up'
@@ -161,6 +162,21 @@ def reset_tag_by_name(obj, tag_name):
         return False
 
 
+def set_state_for_draft(draft, state, estimated_date=None):
+    workflow = get_workflow_for_draft(draft)
+    if state in workflow.get_states():
+        set_state(draft, state)
+        relation = StateObjectRelation.objects.get(
+            content_type=ContentType.objects.get_for_model(draft),
+            content_id=draft.pk)
+        metadata = StateObjectRelationMetadata.objects.get_or_create(relation=relation)[0]
+        metadata.from_date = datetime.date.today()
+        metadata.to_date = estimated_date
+        metadata.save()
+        return state
+    return False
+
+
 def notify_entry(entry, template, extra_notify=[]):
     doc = entry.content
     wg = doc.group.ietfwg
@@ -213,12 +229,29 @@ def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[
     notify_tag_entry(entry, extra_notify)
 
 
+def update_state(obj, comment, person, to_state, estimated_date=None, extra_notify=[]):
+    ctype = ContentType.objects.get_for_model(obj)
+    from_state = get_state_for_draft(obj)
+    to_state = set_state_for_draft(obj, to_state, estimated_date)
+    if not to_state:
+        return False
+    entry = ObjectWorkflowHistoryEntry.objects.create(
+        content_type=ctype,
+        content_id=obj.pk,
+        from_state=from_state.name,
+        to_state=to_state.name,
+        date=datetime.datetime.now(),
+        comment=comment,
+        person=person)
+    notify_state_entry(entry, extra_notify)
+
+
 def get_full_info_for_draft(draft):
     return dict(
-        streamed = get_streamed_draft(draft),
-        stream = get_stream_from_draft(draft),
-        workflow = get_workflow_for_draft(draft),
-        tags = [i.annotation_tag for i in get_annotation_tags_for_draft(draft)],
-        state = get_state_for_draft(draft),
-        shepherd = draft.shepherd,
+        streamed=get_streamed_draft(draft),
+        stream=get_stream_from_draft(draft),
+        workflow=get_workflow_for_draft(draft),
+        tags=[i.annotation_tag for i in get_annotation_tags_for_draft(draft)],
+        state=get_state_for_draft(draft),
+        shepherd=draft.shepherd,
     )
