@@ -98,7 +98,7 @@ class AnnotationTagObjectRelation(models.Model):
 
 class StateObjectRelationMetadata(models.Model):
     relation = models.ForeignKey(StateObjectRelation)
-    from_date = models.DateTimeField(_('Initial date'))
+    from_date = models.DateTimeField(_('Initial date'), blank=True, null=True)
     estimated_date = models.DateTimeField(_('Estimated date'), blank=True, null=True)
 
 

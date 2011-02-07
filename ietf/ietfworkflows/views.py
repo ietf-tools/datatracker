@@ -2,7 +2,8 @@ from ietf.idtracker.models import InternetDraft
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 
-from ietf.ietfworkflows.forms import DraftStateForm
+from ietf.ietfworkflows.forms import (DraftStateForm, DraftTagsForm,
+                                      DraftStreamForm)
 from ietf.ietfworkflows.streams import (get_stream_from_draft,
                                         get_streamed_draft)
 from ietf.ietfworkflows.utils import (get_workflow_history_for_draft,
@@ -43,18 +44,21 @@ def stream_history(request, name):
                               context_instance=RequestContext(request))
 
 
-def edit_state(request, name):
+def edit_state(request, name, form_class=DraftStateForm):
     user = request.user
     draft = get_object_or_404(InternetDraft, filename=name)
+    if request.method == 'POST':
+        form = form_class(user=user, draft=draft, data=request.POST)
+        if form.is_valid():
+            form.save()
+            form = form_class(user=user, draft=draft)
+    else:
+        form = form_class(user=user, draft=draft)
     state = get_state_for_draft(draft)
     stream = get_stream_from_draft(draft)
     workflow = get_workflow_for_draft(draft)
     history = get_workflow_history_for_draft(draft, 'objectworkflowhistoryentry')
     tags = get_annotation_tags_for_draft(draft)
-    if request.method == 'POST':
-        form = DraftStateForm(user=user, draft=draft, data=request.POST)
-    else:
-        form = DraftStateForm(user=user, draft=draft)
     return render_to_response('ietfworkflows/state_edit.html',
                               {'draft': draft,
                                'state': state,
@@ -68,8 +72,8 @@ def edit_state(request, name):
 
 
 def edit_tags(request, name):
-    pass
+    return edit_state(request, name, DraftTagsForm)
 
 
 def edit_stream(request, name):
-    pass
+    return edit_state(request, name, DraftStreamForm)

@@ -11,7 +11,12 @@ table.edit-form span.required { color: red; }
 table.edit-form ul.errorlist { border-width: 0px; padding: 0px; margin: 0px;}
 table.edit-form ul.errorlist li { color: red; margin: 0px; padding: 0px;}
 table.edit-form div.field { margin-bottom: 1em; }
+table.edit-form div.submit-row { margin: 1em 2em; }
 table.edit-form div.error { border: 1px solid red; background-color: #ffeebb; padding: 5px 10px; }
+table.edit-form-tags tr { vertical-align: top; }
+table.edit-form-tags textarea { height: 200px; }
+table.edit-form-tags ul { border-width: 0px; padding: 1em 2em; }
+table.edit-form-tags ul li { padding: 0px; }
 {% endblock morecss %}
 
 {% block title %}Change state for {{ draft }}{% endblock %}
@@ -26,7 +31,7 @@ table.edit-form div.error { border: 1px solid red; background-color: #ffeebb; pa
 <th>Annotation tags</th>
 </tr>
 <tr><td style="width: 25%;">
- {{ state.name|default:"None" }}
+ {{ stream.name|default:"None" }}
 </td>
 <td style="width: 25%;">
  {{ state.name|default:"None" }}
@@ -39,48 +44,7 @@ table.edit-form div.error { border: 1px solid red; background-color: #ffeebb; pa
 </td></tr></table>
 <br />
 
-<form action="" method="post">
-<table class="ietf-table edit-form" style="width: 100%;">
-<tr>
-  <th>1. Input information about change</th>
-  <th>2. Select the new state</th>
-</tr>
-<tr><td style="width: 50%;">
-    <div class="field{% if form.errors.comment %} error{% endif %}">
-    {{ form.errors.comment }}
-    Comment: <span class="required">*</span><br />
-    <textarea name="comment">{{ form.data.comment }}</textarea>
-    </div>
-    <div class="field{% if form.errors.weeks %} error{% endif %}">
-    {{ form.errors.weeks }}
-    Estimated time in next status:<br />
-    <input type="text" name="weeks" value="{{ form.data.weeks }}" /> (in weeks)
-    </div>
-</td><td style="padding: 0px; vertical-align: top;">
-  {% with form.get_transitions as transitions %}
-  {% if transitions %}
-  <ul>
-    {% for transition in transitions %}
-    <li class="{% cycle oddrow,evenrow %}">
-    <input type="submit" name="transition_{{ transition.pk }}" value="{{ transition.name }}" />
-    Changes state to: <strong>{{ transition.destination.name }}</strong>
-    </li>
-    {% endfor %}
-  {% endif %}
-  </ul>
-  {% endwith %}
-    <div class="free-change field{% if form.errors.new_state %} error{% endif %}">
-      {{ form.errors.new_state }}
-      <select name="new_state">
-        {% for value, name in form.get_states %}
-          <option value="{{ value }}">{{ name }}</option>
-        {% endfor %}
-      </select>
-      <input type="submit" name="change" value="State change" />
-    </div>
-</td></tr>
-</table>
-</form>
+{{ form }}
 
 <br />
 <strong>State history</strong>

@@ -48,6 +48,7 @@ from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
 from ietf.idrfc import markup_txt
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
+from ietf.ietfworkflows.utils import get_full_info_for_draft
 
 def document_debug(request, name):
     r = re.compile("^rfc([1-9][0-9]*)$")
@@ -109,25 +110,6 @@ def document_main(request, name):
     doc = IdWrapper(id) 
     
     info = {}
-    stream_id = doc.stream_id()
-    if stream_id == 2:
-        stream = " (IAB document)"
-    elif stream_id == 3:
-        stream = " (IRTF document)"
-    elif stream_id == 4:
-        stream = " (Independent submission via RFC Editor)"
-    elif doc.group_acronym():
-        stream = " ("+doc.group_acronym().upper()+" WG document)"
-    else:
-        stream = " (Individual document)"
-        
-    if id.status.status == "Active":
-        info['is_active_draft'] = True
-        info['type'] = "Active Internet-Draft"+stream
-    else:
-        info['is_active_draft'] = False
-        info['type'] = "Old Internet-Draft"+stream
-
     info['has_pdf'] = (".pdf" in doc.file_types())
     info['is_rfc'] = False
     
@@ -141,6 +123,7 @@ def document_main(request, name):
     return render_to_response('idrfc/doc_main_id.html',
                               {'content1':content1, 'content2':content2,
                                'doc':doc, 'info':info, 
+                               'stream_info': get_full_info_for_draft(id),
                                'versions':versions, 'history':history},
                               context_instance=RequestContext(request));
 

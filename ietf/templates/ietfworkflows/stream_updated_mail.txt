@@ -1,0 +1,9 @@
+The stream of document {{ doc }} has been updated. See more information below.
+
+Previous stream: {{ entry.from_stream }}
+Current stream: {{ entry.to_stream }}
+Transition date: {{ entry.transition_date }}
+Author of the change: {{ entry.person }}
+
+Comment:
+{{ entry.comment }}

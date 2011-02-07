@@ -10,11 +10,12 @@ from workflows.models import State, StateObjectRelation
 from workflows.utils import (get_workflow_for_object, set_workflow_for_object,
                              get_state, set_state)
 
-from ietf.ietfworkflows.streams import get_streamed_draft, get_stream_from_draft
+from ietf.ietfworkflows.streams import (get_streamed_draft, get_stream_from_draft,
+                                        set_stream_for_draft)
 from ietf.ietfworkflows.models import (WGWorkflow, AnnotationTagObjectRelation,
                                        AnnotationTag, ObjectAnnotationTagHistoryEntry,
                                        ObjectHistoryEntry, StateObjectRelationMetadata,
-                                       ObjectWorkflowHistoryEntry)
+                                       ObjectWorkflowHistoryEntry, ObjectStreamHistoryEntry)
 
 
 WAITING_WRITEUP = 'WG Consensus: Waiting for Write-Up'
@@ -133,23 +134,25 @@ def get_annotation_tag_by_name(tag_name):
         return None
 
 
-def set_tag_by_name(obj, tag_name):
+def set_tag(obj, tag):
     ctype = ContentType.objects.get_for_model(obj)
-    try:
-        tag = AnnotationTag.objects.get(name=tag_name)
-        (relation, created) = AnnotationTagObjectRelation.objects.get_or_create(
-            content_type=ctype,
-            content_id=obj.pk,
-            annotation_tag=tag)
-    except AnnotationTag.DoesNotExist:
-        return None
+    (relation, created) = AnnotationTagObjectRelation.objects.get_or_create(
+        content_type=ctype,
+        content_id=obj.pk,
+        annotation_tag=tag)
     return relation
 
-
-def reset_tag_by_name(obj, tag_name):
-    ctype = ContentType.objects.get_for_model(obj)
+def set_tag_by_name(obj, tag_name):
     try:
         tag = AnnotationTag.objects.get(name=tag_name)
+        return set_tag(obj, tag)
+    except AnnotationTag.DoesNotExist:
+        return None
+
+
+def reset_tag(obj, tag):
+    ctype = ContentType.objects.get_for_model(obj)
+    try:
         tag_relation = AnnotationTagObjectRelation.objects.get(
             content_type=ctype,
             content_id=obj.pk,
@@ -158,6 +161,12 @@ def reset_tag_by_name(obj, tag_name):
         return True
     except AnnotationTagObjectRelation.DoesNotExist:
         return False
+
+
+def reset_tag_by_name(obj, tag_name):
+    try:
+        tag = AnnotationTag.objects.get(name=tag_name)
+        return reset_tag(obj, tag)
     except AnnotationTag.DoesNotExist:
         return False
 
@@ -208,16 +217,28 @@ def notify_state_entry(entry, extra_notify=[]):
     return notify_entry(entry, 'ietfworkflows/state_updated_mail.txt', extra_notify)
 
 
+def notify_stream_entry(entry, extra_notify=[]):
+    return notify_entry(entry, 'ietfworkflows/stream_updated_mail.txt', extra_notify)
+
+
 def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[]):
     ctype = ContentType.objects.get_for_model(obj)
     setted = []
     resetted = []
-    for name in set_tags:
-        if set_tag_by_name(obj, name):
-            setted.append(name)
-    for name in reset_tags:
-        if reset_tag_by_name(obj, name):
-            resetted.append(name)
+    for tag in set_tags:
+        if isinstance(tag, basestring):
+            if set_tag_by_name(obj, tag):
+                setted.append(tag)
+        else:
+            if set_tag(obj, tag):
+                setted.append(tag.name)
+    for tag in reset_tags:
+        if isinstance(tag, basestring):
+            if reset_tag_by_name(obj, tag):
+                resetted.append(tag)
+        else:
+            if reset_tag(obj, tag):
+                resetted.append(tag.name)
     entry = ObjectAnnotationTagHistoryEntry.objects.create(
         content_type=ctype,
         content_id=obj.pk,
@@ -238,12 +259,27 @@ def update_state(obj, comment, person, to_state, estimated_date=None, extra_noti
     entry = ObjectWorkflowHistoryEntry.objects.create(
         content_type=ctype,
         content_id=obj.pk,
-        from_state=from_state.name,
-        to_state=to_state.name,
+        from_state=from_state and from_state.name or '',
+        to_state=to_state and to_state.name or '',
         date=datetime.datetime.now(),
         comment=comment,
         person=person)
     notify_state_entry(entry, extra_notify)
+
+
+def update_stream(obj, comment, person, to_stream, extra_notify=[]):
+    ctype = ContentType.objects.get_for_model(obj)
+    from_stream = get_stream_from_draft(obj)
+    to_stream = set_stream_for_draft(obj, to_stream)
+    entry = ObjectStreamHistoryEntry.objects.create(
+        content_type=ctype,
+        content_id=obj.pk,
+        from_stream=from_stream and from_stream.name or '',
+        to_stream=to_stream and to_stream.name or '',
+        date=datetime.datetime.now(),
+        comment=comment,
+        person=person)
+    notify_stream_entry(entry, extra_notify)
 
 
 def get_full_info_for_draft(draft):
