@@ -16,7 +16,7 @@ from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
                                    ShowAttachmentsWidget, RelatedLiaisonWidget)
 
 
-from ietf.submit.models import IdSubmitDateConfig
+from ietf.proceedings.models import Meeting
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.ps_parser import PSParser
@@ -46,12 +46,9 @@ class UploadForm(forms.Form):
 
     def read_dates(self):
         now = datetime.datetime.now()
-        first_cut_off = IdSubmitDateConfig.get_first_cut_off()
-        second_cut_off = IdSubmitDateConfig.get_second_cut_off()
-        ietf_monday = IdSubmitDateConfig.get_ietf_monday()
-        processed_ids_date = IdSubmitDateConfig.get_processed_ids_date()
-        monday_after_ietf = IdSubmitDateConfig.get_monday_after_ietf()
-        list_aproved_date = IdSubmitDateConfig.get_list_aproved_date()
+        first_cut_off = Meeting.get_first_cut_off()
+        second_cut_off = Meeting.get_second_cut_off()
+        ietf_monday = Meeting.get_ietf_monday()
 
         if now.date() >= first_cut_off and now.date() < second_cut_off:  # We are in the first_cut_off
             if now.date() == first_cut_off and now.hour < CUTOFF_HOUR:
