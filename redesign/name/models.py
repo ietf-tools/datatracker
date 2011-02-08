@@ -7,12 +7,14 @@ class NameModel(models.Model):
     name = models.CharField(max_length=32)
     desc = models.TextField(blank=True)
     used = models.BooleanField(default=True)
+    order = models.IntegerField(default=0)
 
     def __unicode__(self):
         return self.name
     
     class Meta:
         abstract = True
+        ordering = ['order']
 
 class GroupStateName(NameModel):
     """BOF, Proposed, Active, Dormant, Concluded"""
