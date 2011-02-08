@@ -5,11 +5,18 @@ import re
 CUTOFF_HOUR = 17
 
 
+class MetaDataDraft(object):
+    revision = None
+    filename = None
+    group = None
+
+
 class ParseInfo(object):
 
     def __init__(self):
         self.errors = []
         self.warnings = {}
+        self.metadraft = MetaDataDraft()
 
     def add_error(self, error_str):
         self.errors.append(error_str)
@@ -25,7 +32,7 @@ class FileParser(object):
         self.fd = fd
         self.parsed_info = ParseInfo()
 
-    def parse_critical(self):
+    def parse(self):
         if not self.fd:
             return self.parsed_info
         for attr in dir(self):
@@ -33,9 +40,19 @@ class FileParser(object):
                 method = getattr(self, attr, None)
                 if callable(method):
                     method()
-        return self.parsed_info
+        # If some critical parsing has returned an error do not continue
+        if self.parsed_info.errors:
+            return self.parsed_info
+        # Continue with non critical parsing, note that they also can return errors
+        for attr in dir(self):
+            if attr.startswith('parse_normal_'):
+                method = getattr(self, attr, None)
+                if callable(method):
+                    method()
+        if self.parsed_info.errors:
+            return self.parsed_info
 
-    def parse_critical_invalid_chars_in_filename(self):
+    def parse_critical_000_invalid_chars_in_filename(self):
         name = self.fd.name
         regexp = re.compile(r'&|\|\/|;|\*|\s|\$')
         chars = regexp.findall(name)

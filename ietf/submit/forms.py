@@ -1,20 +1,7 @@
 import datetime
-from email.utils import parseaddr
 
 from django import forms
-from django.conf import settings
-from django.db.models import Q
-from django.forms.util import ErrorList
-from django.forms.fields import email_re
 from django.template.loader import render_to_string
-
-from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
-                                    get_person_for_user, is_ietf_liaison_manager)
-from ietf.liaisons.models import LiaisonDetail, Uploads, OutgoingLiaisonApproval, SDOs
-from ietf.liaisons.utils import IETFHM
-from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
-                                   ShowAttachmentsWidget, RelatedLiaisonWidget)
-
 
 from ietf.proceedings.models import Meeting
 from ietf.submit.parsers.plain_parser import PlainParser
@@ -85,22 +72,22 @@ class UploadForm(forms.Form):
                 yield fieldset_dict
 
     def clean_txt(self):
-        parsed_info = PlainParser(self.cleaned_data['txt']).parse_critical()
+        parsed_info = PlainParser(self.cleaned_data['txt']).parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
 
     def clean_pdf(self):
-        parsed_info = PDFParser(self.cleaned_data['pdf']).parse_critical()
+        parsed_info = PDFParser(self.cleaned_data['pdf']).parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
 
     def clean_ps(self):
-        parsed_info = PSParser(self.cleaned_data['ps']).parse_critical()
+        parsed_info = PSParser(self.cleaned_data['ps']).parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
 
     def clean_xml(self):
-        parsed_info = XMLParser(self.cleaned_data['xml']).parse_critical()
+        parsed_info = XMLParser(self.cleaned_data['xml']).parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
 

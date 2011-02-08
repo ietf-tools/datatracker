@@ -1,6 +1,4 @@
 from django.conf.urls.defaults import patterns, url
-from django.db.models import Q
-from ietf.liaisons.models import LiaisonDetail
 
 
 urlpatterns = patterns('ietf.submit.views',
