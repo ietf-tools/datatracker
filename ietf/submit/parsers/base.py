@@ -1,4 +1,3 @@
-import datetime
 import re
 
 
@@ -9,8 +8,12 @@ class MetaDataDraft(object):
     revision = None
     filename = None
     group = None
+    filesize = None
+    first_two_pages = None
+    page_count = None
+    submission_date = None
+    creation_date = None
     authors = None
-
 
 class ParseInfo(object):
 
@@ -50,8 +53,6 @@ class FileParser(object):
                 method = getattr(self, attr, None)
                 if callable(method):
                     method()
-        if self.parsed_info.errors:
-            return self.parsed_info
         return self.parsed_info
 
     def parse_critical_000_invalid_chars_in_filename(self):

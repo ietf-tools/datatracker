@@ -1,6 +1,7 @@
+import datetime
 import re
 
-from ietf.idtracker.models import InternetDraft
+from ietf.idtracker.models import InternetDraft, IETFWG
 from ietf.submit.error_manager import MainErrorManager
 from ietf.submit.parsers.base import FileParser
 
@@ -10,9 +11,24 @@ NONE_WG_PK = 1027
 
 class PlainParser(FileParser):
 
-    def parse_critical_max_size(self):
+    def __init__(self, fd):
+        super(PlainParser, self).__init__(fd)
+        self.lines = fd.file.readlines()
+        fd.file.seek(0)
+        self.full_text= self.normalize_text(''.join(self.lines))
+
+    def normalize_text(self, text):
+        text = re.sub(".\x08", "", text)    # Get rid of inkribbon backspace-emphasis
+        text = text.replace("\r\n", "\n")   # Convert DOS to unix
+        text = text.replace("\r", "\n")     # Convert MAC to unix
+        text = text.strip()
+        return text
+
+    def parse_critical_000_max_size(self):
         if self.fd.size > MAX_PLAIN_FILE_SIZE:
             self.parsed_info.add_error(MainErrorManager.get_error_str('EXCEEDED_SIZE'))
+        self.parsed_info.metadraft.filesize = self.fd.size
+        self.parsed_info.metadraft.submission_date = datetime.date.today()
 
     def parse_critical_001_file_charset(self):
         import magic
@@ -34,7 +50,7 @@ class PlainParser(FileParser):
             match = draftre.search(line)
             if not match:
                 continue
-            filename = match.group(0)
+            filename = match.group(1)
             filename = re.sub('^[^\w]+', '', filename)
             filename = re.sub('[^\w]+$', '', filename)
             filename = re.sub('\.txt$', '', filename)
@@ -43,7 +59,7 @@ class PlainParser(FileParser):
                 self.parsed_info.add_error('Filename contains non alpha-numeric character: %s' % ', '.join(set(extra_chars)))
             match_revision = revisionre.match(filename)
             if match_revision:
-                self.parsed_info.metadraft.revision = match_revision.group(0)
+                self.parsed_info.metadraft.revision = match_revision.group(1)
             filename = re.sub('-\d+$', '', filename)
             self.parsed_info.metadraft.filename = filename
             return
@@ -69,7 +85,65 @@ class PlainParser(FileParser):
             else:
                 self.parsed_info.metadraft.wg = IETFWG.objects.get(pk=NONE_WG_PK)
 
-    def parse_critical_authors(self):
+    def parse_normal_000_first_two_pages(self):
+        first_pages = ''
+        for line in self.lines:
+            first_pages += line
+            if re.search('\[[Pp]age 2', line):
+                break
+        self.parsed_info.metadraft.first_two_pages = self.normalize_text(first_pages)
+
+    def parse_normal_001_title(self):
+        pages = self.parsed_info.metadraft.first_two_pages or self.full_text
+        title_re = re.compile('(.+\n){1,3}(\s+<?draft-\S+\s*\n)')
+        match = title_re.search(pages)
+        if match:
+            title = match.group(1)
+            title = title.strip()
+            self.parsed_info.metadraft.title = title
+            return
+        # unusual title extract
+        unusual_title_re = re.compile('(.+\n|.+\n.+\n)(\s*status of this memo\s*\n)', re.I)
+        match = unusual_title_re.search(pages)
+        if match:
+            title = match.group(1)
+            title = title.strip()
+            self.parsed_info.metadraft.title = title
+
+    def parse_normal_002_num_pages(self):
+        pagecount = len(re.findall("\[[Pp]age [0-9ixldv]+\]", self.full_text)) or len(self.lines)/58
+        self.parsed_info.metadraft.pagecount = pagecount
+
+    def parse_normal_003_creation_date(self):
+        month_names = [ 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec' ]
+        date_regexes = [
+            r'\s{3,}(?P<month>\w+)\s+(?P<day>\d{1,2}),?\s+(?P<year>\d{4})',
+            r'\s{3,}(?P<day>\d{1,2}),?\s+(?P<month>\w+)\s+(?P<year>\d{4})',
+            r'\s{3,}(?P<day>\d{1,2})-(?P<month>\w+)-(?P<year>\d{4})',
+            # 'October 2008' - default day to today's.
+            r'\s{3,}(?P<month>\w+)\s+(?P<year>\d{4})',
+            ]
+
+        first = self.parsed_info.metadraft.first_two_pages or self.full_text
+        for regex in date_regexes:
+            match = re.search(regex, first)
+            if match:
+                md = match.groupdict()
+                mon = md['month'][0:3].lower()
+                day = int( md.get( 'day', datetime.date.today().day ) )
+                year = int( md['year'] )
+                try:
+                    month = month_names.index( mon ) + 1
+                    self.parsed_info.metadraft.creation_date = datetime.date(year, month, day)
+                    return
+                except ValueError:
+                    # mon abbreviation not in _MONTH_NAMES
+                    # or month or day out of range
+                    continue
+            self.parsed_info.add_warning('creation_date', 'Creation Date field is empty or the creation date is not in a proper format.')
+
+
+    def parse_normal_004_authors(self):
         """
         comes from http://svn.tools.ietf.org/svn/tools/ietfdb/branch/idsubmit/ietf/utils/draft.py
         """
@@ -333,3 +407,7 @@ class PlainParser(FileParser):
             self.parsed_info.errors.append("Draft authors could not be found.")
 
         return authors
+
+
+    def parse_normal_005_abstract(self):
+        pass
