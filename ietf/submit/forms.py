@@ -72,22 +72,30 @@ class UploadForm(forms.Form):
                 yield fieldset_dict
 
     def clean_txt(self):
-        parsed_info = PlainParser(self.cleaned_data['txt']).parse()
+        if not self.cleaned_data['txt']:
+            return None
+        parsed_info = PlainParser(self.cleaned_data['txt']).critical_parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
 
     def clean_pdf(self):
-        parsed_info = PDFParser(self.cleaned_data['pdf']).parse()
+        if not self.cleaned_data['pdf']:
+            return None
+        parsed_info = PDFParser(self.cleaned_data['pdf']).critical_parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
 
     def clean_ps(self):
-        parsed_info = PSParser(self.cleaned_data['ps']).parse()
+        if not self.cleaned_data['ps']:
+            return None
+        parsed_info = PSParser(self.cleaned_data['ps']).critical_parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
 
     def clean_xml(self):
-        parsed_info = XMLParser(self.cleaned_data['xml']).parse()
+        if not self.cleaned_data['xml']:
+            return None
+        parsed_info = XMLParser(self.cleaned_data['xml']).critical_parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
 

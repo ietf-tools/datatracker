@@ -36,26 +36,13 @@ class FileParser(object):
         self.fd = fd
         self.parsed_info = ParseInfo()
 
-    def parse(self):
-        if not self.fd:
-            return self.parsed_info
-        for attr in dir(self):
-            if attr.startswith('parse_critical_'):
-                method = getattr(self, attr, None)
-                if callable(method):
-                    method()
-        # If some critical parsing has returned an error do not continue
-        if self.parsed_info.errors:
-            return self.parsed_info
-        # Continue with non critical parsing, note that they also can return errors
-        for attr in dir(self):
-            if attr.startswith('parse_normal_'):
-                method = getattr(self, attr, None)
-                if callable(method):
-                    method()
+    # If some error is found after this method invocation
+    # no other file parsing is recommended
+    def critical_parse(self):
+        self.parse_invalid_chars_in_filename()
         return self.parsed_info
 
-    def parse_critical_000_invalid_chars_in_filename(self):
+    def parse_invalid_chars_in_filename(self):
         name = self.fd.name
         regexp = re.compile(r'&|\|\/|;|\*|\s|\$')
         chars = regexp.findall(name)
