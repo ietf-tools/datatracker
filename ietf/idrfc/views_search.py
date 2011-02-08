@@ -270,7 +270,6 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         group = forms.CharField(required=False)
         area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), empty_label="any area", required=False)
         ad = forms.ChoiceField(choices=(), required=False)
-        # FIXME: state needs a sort
         state = forms.ModelChoiceField(IesgDocStateName.objects.all(), empty_label="any state", required=False)
         subState = forms.ChoiceField(choices=(), required=False)
 
@@ -288,8 +287,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             active_ads.sort(key=extract_last_name)
             inactive_ads.sort(key=extract_last_name)
 
-            # FIXME: -99
-            self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.get_name()) for ad in active_ads] + [('-99', '------------------')] + [(ad.pk, ad.get_name()) for ad in inactive_ads]
+            self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.get_name()) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.get_name()) for ad in inactive_ads]
             self.fields['subState'].choices = [('', 'any substate'), ('0', 'no substate')] + [(n.slug, n.name) for n in DocInfoTagName.objects.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))]
         def clean_name(self):
             value = self.cleaned_data.get('name','')
@@ -322,7 +320,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
         # Non-ASCII strings don't match anything; this check
         # is currently needed to avoid complaints from MySQL.
-        # FIXME: this should be fixed if it's still a problem
+        # FIXME: this should be fixed with MySQL if it's still a problem?
         for k in ['name','author','group']:
             try:
                 tmp = str(query.get(k, ''))
