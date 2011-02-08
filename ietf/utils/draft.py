@@ -127,6 +127,7 @@ class Draft():
         self._pagecount = None
         self._status = None
         self._creation_date = None
+        self._title = None
 
     # ------------------------------------------------------------------
     def _parse_draftname(self):
@@ -502,6 +503,28 @@ class Draft():
 
         return self._authors
 
+    # ------------------------------------------------------------------
+    def get_title(self):
+        if self._title:
+            return self._title
+        title_re = re.compile('(.+\n){1,3}(\s+<?draft-\S+\s*\n)')
+        match = title_re.search(self.pages[0])
+        if match:
+            title = match.group(1)
+            title = title.strip()
+            self._title = title
+            return self._title
+        # unusual title extract
+        unusual_title_re = re.compile('(.+\n|.+\n.+\n)(\s*status of this memo\s*\n)', re.I)
+        match = unusual_title_re.search(self.pages[0])
+        if match:
+            title = match.group(1)
+            title = title.strip()
+            self._title = title
+            return self._title
+        self.errors["title"] = "Could not find the title on the first page."
+
+
 # ----------------------------------------------------------------------
 def _output(fields):
     if opt_timestamp:
@@ -546,6 +569,7 @@ def _printmeta(timestamp, fn):
     fields["doctag"] = draft.filename or fn[:-7]
     fields["docrev"] = draft.revision
 
+    fields["doctitle"] = draft.get_title()
     fields["docpages"] = str(draft.get_pagecount())
     fields["docauthors"] = ", ".join(draft.get_authors())
     deststatus = draft.get_status()
