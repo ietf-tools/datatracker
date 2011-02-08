@@ -364,6 +364,19 @@ def email_resurrect_requested(request, doc, by):
                    by=frm,
                    url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
 
+def email_resurrect_requestedREDESIGN(request, doc, by):
+    to = "I-D Administrator <internet-drafts@ietf.org>"
+    frm = by.formatted_email()
+    send_mail(request, to, frm,
+              "I-D Resurrection Request",
+              "idrfc/resurrect_request_email.txt",
+              dict(doc=doc,
+                   by=frm,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    email_resurrect_requested = email_resurrect_requestedREDESIGN
+
 def email_resurrection_completed(request, doc):
     to = u"%s <%s>" % doc.idinternal.resurrect_requested_by.person.email()
     frm = "I-D Administrator <internet-drafts-reply@ietf.org>"
@@ -373,6 +386,19 @@ def email_resurrection_completed(request, doc):
               dict(doc=doc,
                    by=frm,
                    url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
+
+def email_resurrection_completedREDESIGN(request, doc, requester):
+    to = requester.formatted_email()
+    frm = "I-D Administrator <internet-drafts-reply@ietf.org>"
+    send_mail(request, to, frm,
+              "I-D Resurrection Completed - %s" % doc.file_tag(),
+              "idrfc/resurrect_completed_email.txt",
+              dict(doc=doc,
+                   by=frm,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    email_resurrection_completed = email_resurrection_completedREDESIGN
 
 def email_ballot_deferred(request, doc, by, telechat_date):
     to = "iesg@ietf.org"

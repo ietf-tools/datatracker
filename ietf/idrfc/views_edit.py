@@ -23,7 +23,7 @@ from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
 from doc.models import Document, Event, Status, Telechat, save_document_in_history, DocHistory
-from name.models import IesgDocStateName, IntendedStdLevelName, DocInfoTagName, get_next_iesg_states
+from name.models import IesgDocStateName, IntendedStdLevelName, DocInfoTagName, get_next_iesg_states, DocStateName
     
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(IDState.objects.all(), empty_label=None, required=True)
@@ -105,10 +105,8 @@ def change_stateREDESIGN(request, name):
                 prev_state = doc.iesg_state
                 doc.iesg_state = state
                 
-                e = Event()
+                e = Event(doc=doc, by=login)
                 e.type = "changed_document"
-                e.by = login
-                e.doc = doc
                 e.desc = u"State changed to <b>%s</b> from <b>%s</b> by %s" % (
                     doc.iesg_state.name,
                     prev_state.name if prev_state else "None",
@@ -541,10 +539,8 @@ def edit_infoREDESIGN(request, name):
                 doc.note = r['note']
 
             for c in changes:
-                e = Event()
+                e = Event(doc=doc, by=login)
                 e.type = "changed_document"
-                e.by = login
-                e.doc = doc
                 e.desc = c + " by %s" % login.get_name()
                 e.save()
 
@@ -554,10 +550,8 @@ def edit_infoREDESIGN(request, name):
             e = doc.latest_event(Status, type="changed_status_date")
             status_date = e.date if e else None
             if r["status_date"] != status_date:
-                e = Status()
+                e = Status(doc=doc, by=login)
                 e.type ="changed_status_date"
-                e.by = login
-                e.doc = doc
                 d = desc("Status date", r["status_date"], status_date)
                 changes.append(d)
                 e.desc = d + " by %s" % login.get_name()
@@ -628,8 +622,36 @@ def request_resurrect(request, name):
         return HttpResponseRedirect(doc.idinternal.get_absolute_url())
   
     return render_to_response('idrfc/request_resurrect.html',
-                              dict(doc=doc),
+                              dict(doc=doc,
+                                   back_url=doc.idinternal.get_absolute_url()),
                               context_instance=RequestContext(request))
+
+@group_required('Area_Director','Secretariat')
+def request_resurrectREDESIGN(request, name):
+    """Request resurrect of expired Internet Draft."""
+    doc = get_object_or_404(Document, name=name)
+    if doc.state_id != "expired":
+        raise Http404()
+
+    login = request.user.get_profile().email()
+
+    if request.method == 'POST':
+        email_resurrect_requested(request, doc, login)
+        
+        e = Event(doc=doc, by=login)
+        e.type = "requested_resurrect"
+        e.desc = "Resurrection was requested by %s" % login.get_name()
+        e.save()
+        
+        return HttpResponseRedirect(doc.get_absolute_url())
+  
+    return render_to_response('idrfc/request_resurrect.html',
+                              dict(doc=doc,
+                                   back_url=doc.get_absolute_url()),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+     request_resurrect = request_resurrectREDESIGN
 
 @group_required('Secretariat')
 def resurrect(request, name):
@@ -655,8 +677,42 @@ def resurrect(request, name):
         return HttpResponseRedirect(doc.idinternal.get_absolute_url())
   
     return render_to_response('idrfc/resurrect.html',
-                              dict(doc=doc),
+                              dict(doc=doc,
+                                   back_url=doc.idinternal.get_absolute_url()),
                               context_instance=RequestContext(request))
+
+@group_required('Secretariat')
+def resurrectREDESIGN(request, name):
+    """Resurrect expired Internet Draft."""
+    doc = get_object_or_404(Document, name=name)
+    if doc.state_id != "expired":
+        raise Http404()
+
+    login = request.user.get_profile().email()
+
+    if request.method == 'POST':
+        e = doc.latest_event(type__in=('requested_resurrect', "completed_resurrect"))
+        if e and e.type == 'requested_resurrect':
+            email_resurrection_completed(request, doc, requester=e.by)
+            
+        e = Event(doc=doc, by=login)
+        e.type = "completed_resurrect"
+        e.desc = "Resurrection was completed by %s" % login.get_name()
+        e.save()
+        
+        doc.state = DocStateName.objects.get(slug="active")
+        doc.time = datetime.datetime.now()
+        doc.save()
+        return HttpResponseRedirect(doc.get_absolute_url())
+  
+    return render_to_response('idrfc/resurrect.html',
+                              dict(doc=doc,
+                                   back_url=doc.get_absolute_url()),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+     resurrect = resurrectREDESIGN
+
 
 class AddCommentForm(forms.Form):
     comment = forms.CharField(required=True, widget=forms.Textarea)
@@ -683,7 +739,40 @@ def add_comment(request, name):
   
     return render_to_response('idrfc/add_comment.html',
                               dict(doc=doc,
-                                   form=form),
+                                   form=form,
+                                   back_url=doc.idinternal.get_absolute_url()),
                               context_instance=RequestContext(request))
 
+@group_required('Area_Director','Secretariat')
+def add_commentREDESIGN(request, name):
+    """Add comment to Internet Draft."""
+    doc = get_object_or_404(Document, name=name)
+    if not doc.iesg_state:
+        raise Http404()
 
+    login = request.user.get_profile().email()
+
+    if request.method == 'POST':
+        form = AddCommentForm(request.POST)
+        if form.is_valid():
+            c = form.cleaned_data['comment']
+            
+            e = Event(doc=doc, by=login)
+            e.type = "added_comment"
+            e.desc = c
+            e.save()
+
+            email_owner(request, doc, doc.ad, login,
+                        "A new comment added by %s" % login.get_name())
+            return HttpResponseRedirect(doc.get_absolute_url())
+    else:
+        form = AddCommentForm()
+  
+    return render_to_response('idrfc/add_comment.html',
+                              dict(doc=doc,
+                                   form=form,
+                                   back_url=doc.get_absolute_url()),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+     add_comment = add_commentREDESIGN
