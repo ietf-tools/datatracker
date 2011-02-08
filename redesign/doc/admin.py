@@ -28,12 +28,17 @@ admin.site.register(SendQueue, SendQueueAdmin)
 # events
 
 class EventAdmin(admin.ModelAdmin):
-    list_display = ["doc", "type", "by", "time"]
+    list_display = ["doc", "type", "by_raw", "time"]
     raw_id_fields = ["doc", "by"]
+
+    def by_raw(self, instance):
+        return instance.by_id
+    
 admin.site.register(Event, EventAdmin)
 
 admin.site.register(Message, EventAdmin)
 admin.site.register(Text, EventAdmin)
+admin.site.register(NewRevision, EventAdmin)
 admin.site.register(BallotPosition, EventAdmin)
 admin.site.register(Status, EventAdmin)
 admin.site.register(Expiration, EventAdmin)
