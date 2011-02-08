@@ -63,8 +63,17 @@ class IetfUserProfile(models.Model):
 
     def email(self):
         # quick hack to bind new and old schema together for the time being
+        try:
+            l = IESGLogin.objects.get(login_name=self.user.username)
+            if l.person:
+                person = l.person
+            else:
+                person = PersonOrOrgInfo.objects.get(first_name=l.first_name,
+                                                     last_name=l.last_name)
+        except IESGLogin.DoesNotExist, PersonOrOrgInfo.DoesNotExist:
+            person = None
         from person.models import Email
-        return Email.objects.get(address=self.person().email()[1])
+        return Email.objects.get(address=person.email()[1])
 
     def __str__(self):
 	return "IetfUserProfile(%s)" % (self.user,)
