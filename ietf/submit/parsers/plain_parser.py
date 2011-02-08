@@ -15,7 +15,7 @@ class PlainParser(FileParser):
         super(PlainParser, self).__init__(fd)
         self.lines = fd.file.readlines()
         fd.file.seek(0)
-        self.full_text= self.normalize_text(''.join(self.lines))
+        self.full_text = self.normalize_text(''.join(self.lines))
 
     def normalize_text(self, text):
         text = re.sub(".\x08", "", text)    # Get rid of inkribbon backspace-emphasis
@@ -111,18 +111,18 @@ class PlainParser(FileParser):
             self.parsed_info.metadraft.title = title
 
     def parse_normal_002_num_pages(self):
-        pagecount = len(re.findall("\[[Pp]age [0-9ixldv]+\]", self.full_text)) or len(self.lines)/58
+        pagecount = len(re.findall("\[[Pp]age [0-9ixldv]+\]", self.full_text)) or len(self.lines) / 58
         self.parsed_info.metadraft.pagecount = pagecount
 
     def parse_normal_003_creation_date(self):
-        month_names = [ 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec' ]
+        month_names = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
         date_regexes = [
             r'\s{3,}(?P<month>\w+)\s+(?P<day>\d{1,2}),?\s+(?P<year>\d{4})',
             r'\s{3,}(?P<day>\d{1,2}),?\s+(?P<month>\w+)\s+(?P<year>\d{4})',
             r'\s{3,}(?P<day>\d{1,2})-(?P<month>\w+)-(?P<year>\d{4})',
             # 'October 2008' - default day to today's.
             r'\s{3,}(?P<month>\w+)\s+(?P<year>\d{4})',
-            ]
+        ]
 
         first = self.parsed_info.metadraft.first_two_pages or self.full_text
         for regex in date_regexes:
@@ -130,10 +130,10 @@ class PlainParser(FileParser):
             if match:
                 md = match.groupdict()
                 mon = md['month'][0:3].lower()
-                day = int( md.get( 'day', datetime.date.today().day ) )
-                year = int( md['year'] )
+                day = int(md.get('day', datetime.date.today().day))
+                year = int(md['year'])
                 try:
-                    month = month_names.index( mon ) + 1
+                    month = month_names.index(mon) + 1
                     self.parsed_info.metadraft.creation_date = datetime.date(year, month, day)
                     return
                 except ValueError:
@@ -142,12 +142,11 @@ class PlainParser(FileParser):
                     continue
             self.parsed_info.add_warning('creation_date', 'Creation Date field is empty or the creation date is not in a proper format.')
 
-
     def parse_normal_004_authors(self):
         """
         comes from http://svn.tools.ietf.org/svn/tools/ietfdb/branch/idsubmit/ietf/utils/draft.py
         """
-        
+
         def _stripheaders(rawlines):
             stripped = []
             pages = []
@@ -160,15 +159,16 @@ class PlainParser(FileParser):
 
             def endpage(pages, page, line):
                 if line:
-                    page += [ line ]
+                    page += [line]
                 return begpage(pages, page)
+
             def begpage(pages, page, line=None):
                 if page and len(page) > 5:
-                    pages += [ "\n".join(page) ]
+                    pages += ["\n".join(page)]
                     page = []
                     newpage = True
                 if line:
-                    page += [ line ]
+                    page += [line]
                 return pages, page
 
             for line in rawlines:
@@ -213,13 +213,13 @@ class PlainParser(FileParser):
                     sentence = True
                 if re.search("^[ \t]*$", line):
                     haveblank = True
-                    page += [ line ]
+                    page += [line]
                     continue
-                page += [ line ]
-                stripped += [ line ]
+                page += [line]
+                stripped += [line]
             pages, page = begpage(pages, page)
             return stripped, pages
-            
+
         self.fd.file.seek(0)
         raw_lines = self.fd.file.read().split("\n")
         draft_lines, draft_pages = _stripheaders(raw_lines)
@@ -233,15 +233,15 @@ class PlainParser(FileParser):
             "Jerry": "Gerald",
             "Liz": "Elizabeth",
             "Lynn": "Carolyn",
-            "Ned": "Edward" ,
-            "Ted":"Edward",
+            "Ned": "Edward",
+            "Ted": "Edward",
         }
         aux = {
-            "honor" : r"(?:Dr\.?|Prof(?:\.?|essor)|Sir|Lady|Dame)",
+            "honor": r"(?:Dr\.?|Prof(?:\.?|essor)|Sir|Lady|Dame)",
             "prefix": r"([Dd]e|Hadi|van|van de|van der|Ver|von)",
             "suffix": r"(jr|II|2nd|III|3rd|IV|4th)",
-            "first" : r"([A-Z][-A-Za-z]*)((\.?[- ]{1,2}[A-Za-z]+)*)",
-            "last"  : r"([-A-Za-z']{2,})",
+            "first": r"([A-Z][-A-Za-z]*)((\.?[- ]{1,2}[A-Za-z]+)*)",
+            "last": r"([-A-Za-z']{2,})",
         }
         authformats = [
             r" {6}(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)([, ]?(.+\.?|\(.+\.?|\)))?$" % aux,
@@ -272,7 +272,7 @@ class PlainParser(FileParser):
                     match = re.search(authformat, line)
                     if match:
                         author = match.group(1)
-                        authors += [ author ]
+                        authors += [author]
             if line.strip() == "":
                 if prev_blankline:
                     break
@@ -291,7 +291,7 @@ class PlainParser(FileParser):
             if author == None:
                 continue
             if "," in author:
-                last, first = author.split(",",1)
+                last, first = author.split(",", 1)
                 author = "%s %s" % (first.strip(), last.strip())
             if not " " in author:
                 if "." in author:
@@ -303,7 +303,7 @@ class PlainParser(FileParser):
             else:
                 first, last = author.rsplit(" ", 1)
 
-            for author in [ "%s %s"%(first,last), "%s %s"%(last,first), ]:
+            for author in ["%s %s" % (first, last), "%s %s" % (last, first)]:
                 # Pattern for full author information search, based on first page author name:
                 authpat = author
                 # Permit expansion of first name
@@ -315,7 +315,7 @@ class PlainParser(FileParser):
                 authpat = re.sub("-", ".*?-", authpat)
                 # Some chinese names are shown with double-letter(latin) abbreviated given names, rather than
                 # a single-letter(latin) abbreviation:
-                authpat = re.sub("^([A-Z])[A-Z]+\.\*", r"\1[-\w]+", authpat) 
+                authpat = re.sub("^([A-Z])[A-Z]+\.\*", r"\1[-\w]+", authpat)
                 authpat = "^(?:%s ?)?(%s)( *\(.*\)|,( [A-Z][-A-Za-z0-9]*)?)?" % (aux["honor"], authpat)
                 start = 0
                 col = None
@@ -323,24 +323,24 @@ class PlainParser(FileParser):
                 # Find start of author info for this author (if any).
                 # Scan from the end of the file, looking for a match to  authpath
                 try:
-                    for j in range(len(draft_lines)-1, 15, -1):
+                    for j in range(len(draft_lines) - 1, 15, -1):
                         line = draft_lines[j].strip()
-                        forms = [ line ] + [ line.replace(short, longform[short]) for short in longform if short in line ]
+                        forms = [line] + [line.replace(short, longform[short]) for short in longform if short in line]
                         for line in forms:
                             if re.search(authpat, line):
                                 start = j
                                 columns = re.split("(    +)", line)
                                 # Find which column:
-                                cols = [ c for c in range(len(columns)) if re.search(authpat+r"$", columns[c].strip()) ]
+                                cols = [c for c in range(len(columns)) if re.search(authpat + r"$", columns[c].strip())]
                                 if cols:
                                     col = cols[0]
                                     if not (start, col) in found_pos:
-                                        found_pos += [ (start, col) ]
+                                        found_pos += [(start, col)]
                                         beg = len("".join(columns[:col]))
-                                        if col == len(columns) or col == len(columns)-1:
+                                        if col == len(columns) or col == len(columns) - 1:
                                             end = None
                                         else:
-                                            end = beg + len("".join(columns[col:col+2]))
+                                            end = beg + len("".join(columns[col:col + 2]))
                                         author = re.search(authpat, columns[col].strip()).group(1)
                                         if author in companies:
                                             authors[i] = None
@@ -360,7 +360,7 @@ class PlainParser(FileParser):
                 count = 0
                 keyword = False
                 blanklines = 0
-                for line in draft_lines[start+1:]:
+                for line in draft_lines[start + 1:]:
                     # Break on the second blank line
                     if not line:
                         blanklines += 1
@@ -370,14 +370,14 @@ class PlainParser(FileParser):
                             continue
                     else:
                         count += 1
-                    authmatch = [ a for a in authors[i+1:] if a and not a in companies and re.search((r"(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"), line.strip()) ]
+                    authmatch = [a for a in authors[i + 1:] if a and not a in companies and re.search((r"(^|\W)" + re.sub("\.? ", ".* ", a) + "(\W|$)"), line.strip())]
                     if authmatch:
                         if count == 1 or (count == 2 and not blanklines):
                             # First line after an author -- this is a company
                             companies += authmatch
-                            companies += [ line.strip() ] # XXX fix this for columnized author list
+                            companies += [line.strip()]  # XXX fix this for columnized author list
                             companies = list(set(companies))
-                            for k in range(i+1, len(authors)):
+                            for k in range(i + 1, len(authors)):
                                 if authors[k] in companies:
                                     authors[k] = None
                         elif not "@" in line:
@@ -399,7 +399,7 @@ class PlainParser(FileParser):
             else:
                 authors[i] = None
 
-        authors = [ re.sub(r" +"," ", a) for a in authors if a != None ]
+        authors = [re.sub(r" +", " ", a) for a in authors if a != None]
         if authors:
             authors.sort()
             self.parsed_info.metadraft.authors = authors
@@ -407,7 +407,6 @@ class PlainParser(FileParser):
             self.parsed_info.errors.append("Draft authors could not be found.")
 
         return authors
-
 
     def parse_normal_005_abstract(self):
         pass
