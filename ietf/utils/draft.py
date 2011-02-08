@@ -31,6 +31,7 @@ COPYRIGHT
 
 """
 
+import datetime
 import getopt
 import os
 import os.path
@@ -242,7 +243,11 @@ class Draft():
         if self._creation_date:
             return self._creation_date
         month_names = [ 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec' ]
-	date_regexes = [
+        date_regexes = [
+            r'^(?P<month>\w+)\s+(?P<day>\d{1,2}),?\s+(?P<year>\d{4})',
+            r'^(?P<day>\d{1,2}),?\s+(?P<month>\w+)\s+(?P<year>\d{4})',
+            r'^(?P<day>\d{1,2})-(?P<month>\w+)-(?P<year>\d{4})',
+            r'^(?P<month>\w+)\s+(?P<year>\d{4})',
             r'\s{3,}(?P<month>\w+)\s+(?P<day>\d{1,2}),?\s+(?P<year>\d{4})',
             r'\s{3,}(?P<day>\d{1,2}),?\s+(?P<month>\w+)\s+(?P<year>\d{4})',
             r'\s{3,}(?P<day>\d{1,2})-(?P<month>\w+)-(?P<year>\d{4})',
@@ -251,20 +256,20 @@ class Draft():
         ]
 
         for regex in date_regexes:
-            match = re.search(regex, self.pages[0])
+            match = re.search(regex, self.pages[0], re.MULTILINE)
             if match:
-		md = match.groupdict()
-		mon = md['month'][0:3].lower()
-		day = int( md.get( 'day', date.today().day ) )
-		year = int( md['year'] )
-		try:
-		    month = month_names.index( mon ) + 1
-		    self._creation_date = date(year, month, day)
+                md = match.groupdict()
+                mon = md['month'][0:3].lower()
+                day = int( md.get( 'day', datetime.date.today().day ) )
+                year = int( md['year'] )
+                try:
+                    month = month_names.index( mon ) + 1
+                    self._creation_date = datetime.date(year, month, day)
                     return self._creation_date
-		except ValueError:
-		    # mon abbreviation not in _MONTH_NAMES
-		    # or month or day out of range
-		    pass
+                except ValueError:
+                    # mon abbreviation not in _MONTH_NAMES
+                    # or month or day out of range
+                    pass
         self.errors['creation_date'] = 'Creation Date field is empty or the creation date is not in a proper format.'
         return self._creation_date
 
@@ -572,6 +577,7 @@ def _printmeta(timestamp, fn):
     fields["doctitle"] = draft.get_title()
     fields["docpages"] = str(draft.get_pagecount())
     fields["docauthors"] = ", ".join(draft.get_authors())
+    fields["doccreationdate"] = str(draft.get_creation_date())
     deststatus = draft.get_status()
     if deststatus:
         fields["docdeststatus"] = deststatus
