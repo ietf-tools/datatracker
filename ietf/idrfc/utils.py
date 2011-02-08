@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo, IESGLogin
 from ietf.idrfc.mails import *
 
@@ -92,3 +94,57 @@ def update_telechat(request, idinternal, new_telechat_date, new_returning_item=N
                              (new_telechat_date,
                               idinternal.telechat_date))
         idinternal.telechat_date = new_telechat_date
+
+def update_telechatREDESIGN(request, doc, by, new_telechat_date, new_returning_item=None):
+    on_agenda = bool(new_telechat_date)
+
+    from doc.models import Telechat
+    prev = doc.latest_event(Telechat, type="scheduled_for_telechat")
+    prev_returning = bool(prev and prev.returning_item)
+    prev_telechat = prev.telechat_date if prev else None
+    prev_agenda = bool(prev_telechat)
+    
+    returning_item_changed = bool(new_returning_item != None and new_returning_item != prev_returning)
+
+    if new_returning_item == None:
+        returning = prev_returning
+    else:
+        returning = new_returning_item
+
+    if returning == prev_returning and new_telechat_date == prev_telechat:
+        # fully updated, nothing to do
+        return
+
+    # auto-update returning item
+    if (not returning_item_changed and on_agenda and prev_agenda
+        and new_telechat_date != prev_telechat):
+        returning = True
+
+    e = Telechat()
+    e.type = "scheduled_for_telechat"
+    e.by = by
+    e.doc = doc
+    e.returning_item = returning
+    e.telechat_date = new_telechat_date
+    
+    if on_agenda != prev_agenda:
+        if on_agenda:
+            e.desc = "Placed on agenda for telechat - %s by %s" % (
+                new_telechat_date, by.get_name())
+        else:
+            e.desc = "Removed from agenda for telechat by %s" % by.get_name()
+    elif on_agenda and new_telechat_date != prev_telechat:
+        e.desc = "Telechat date has been changed to <b>%s</b> from <b>%s</b> by %s" % (
+            new_telechat_date, prev_telechat, by.get_name())
+    else:
+        # we didn't reschedule but flipped returning item bit - let's
+        # just explain that
+        if returning:
+            e.desc = "Added as returning item on telechat by %s" % by.get_name()
+        else:
+            e.desc = "Removed as returning item on telechat by %s" % by.get_name()
+
+    e.save()
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    update_telechat = update_telechatREDESIGN

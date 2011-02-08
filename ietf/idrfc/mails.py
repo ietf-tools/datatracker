@@ -54,7 +54,7 @@ def email_ownerREDESIGN(request, doc, owner, changed_by, text, subject=None):
     to = owner.formatted_email()
     send_mail(request, to,
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
-              "%s updated by %s" % (doc.file_tag(), changed_by),
+              "%s updated by %s" % (doc.file_tag(), changed_by.get_name()),
               "idrfc/change_notice.txt",
               dict(text=html_to_text(text),
                    doc=doc,

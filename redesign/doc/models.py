@@ -242,7 +242,7 @@ class Event(models.Model):
         return u"%s %s at %s" % (self.by.get_name(), self.get_type_display().lower(), self.time)
 
     class Meta:
-        ordering = ['-time']
+        ordering = ['-time', 'id']
         
 class Message(Event):
     subj = models.CharField(max_length=255)

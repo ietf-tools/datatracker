@@ -28,6 +28,7 @@ admin.site.register(SendQueue, SendQueueAdmin)
 # events
 
 class EventAdmin(admin.ModelAdmin):
+    list_display = ["doc", "type", "by", "time"]
     raw_id_fields = ["doc", "by"]
 admin.site.register(Event, EventAdmin)
 

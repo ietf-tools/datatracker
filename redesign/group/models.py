@@ -6,7 +6,7 @@ from redesign.person.models import Email
 
 class Group(models.Model):
     name = models.CharField(max_length=80)
-    acronym = models.CharField(max_length=16)
+    acronym = models.CharField(max_length=16, db_index=True)
     state = models.ForeignKey(GroupStateName, null=True)
     type = models.ForeignKey(GroupTypeName, null=True)
     charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
@@ -49,5 +49,5 @@ class Role(models.Model):
     email = models.ForeignKey(Email)
     auth = models.CharField(max_length=255, blank=True)
     def __unicode__(self):
-        return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.grop.acronym)
+        return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym)
     

@@ -152,7 +152,7 @@ def _get_history(doc, versions):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         versions = [] # clear versions
         event_holder = doc._draft if hasattr(doc, "_draft") else doc._rfcindex
-        for e in event_holder.event_set.all().select_related('by').order_by('-time', '-id'):
+        for e in event_holder.event_set.all().select_related('by').order_by('-time', 'id'):
             info = {}
             if e.type == "new_revision":
                 filename = u"%s-%s" % (e.doc.name, e.newrevision.rev)

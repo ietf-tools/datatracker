@@ -47,6 +47,7 @@ from doc.models import *
 from name.models import *
 from group.models import *
 from person.models import *
+from ietf.iesg.models import TelechatDates
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, login_testing_unauthorized
 from ietf.utils.test_runner import mail_outbox
 
@@ -105,13 +106,13 @@ def make_test_data():
         name="Ano Therdir",
         ascii="Ano Therdir",
         )
-    ad = Email.objects.create(
+    email = Email.objects.create(
         address="ano@ietf.org",
         person=p)
     Role.objects.create(
         name_id="ad",
         group=area,
-        email=ad)
+        email=email)
     porg = PersonOrOrgInfo.objects.create(
         first_name="Ano",
         last_name="Therdir",
@@ -164,6 +165,7 @@ def make_test_data():
         type_id="draft",
         title="Optimizing Martian Network Topologies",
         state_id="active",
+        iesg_state_id="pub-req",
         stream_id="ietf",
         group=group,
         abstract="Techniques for achieving near-optimal Martian networks.",
@@ -171,7 +173,8 @@ def make_test_data():
         pages=2,
         intended_std_level_id="ps",
         ad=ad,
-        notify="aliens@example.mars"
+        notify="aliens@example.mars",
+        note="",
         )
 
     DocAlias.objects.create(
@@ -179,12 +182,21 @@ def make_test_data():
         name=draft.name,
         )
 
+    # draft has only one event
     Event.objects.create(
         type="started_iesg_process",
         by=ad,
         doc=draft,
         desc="Added draft",
         )
+
+    t = datetime.date.today()
+    dates = TelechatDates(date1=t,
+                          date2=t + datetime.timedelta(days=7),
+                          date3=t + datetime.timedelta(days=14),
+                          date4=t + datetime.timedelta(days=21),
+                          )
+    super(dates.__class__, dates).save(force_insert=True)
     
     return draft
         
@@ -222,7 +234,7 @@ class ChangeStateTestCase(django.test.TestCase):
 
         
         # change state
-        history_before = draft.event_set.count()
+        events_before = draft.event_set.count()
         mailbox_before = len(mail_outbox)
         
         r = self.client.post(url, dict(state="review-e"))
@@ -230,7 +242,7 @@ class ChangeStateTestCase(django.test.TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.iesg_state_id, "review-e")
-        self.assertEquals(draft.event_set.count(), history_before + 1)
+        self.assertEquals(draft.event_set.count(), events_before + 1)
         self.assertTrue("State changed" in draft.event_set.all()[0].desc)
         self.assertEquals(len(mail_outbox), mailbox_before + 2)
         self.assertTrue("State Update Notice" in mail_outbox[-2]['Subject'])
@@ -288,149 +300,147 @@ class ChangeStateTestCase(django.test.TestCase):
         
 
 class EditInfoTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft']
+    fixtures = ['names']
 
     def test_edit_info(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_edit_info', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+        draft = make_test_data()
+        url = urlreverse('doc_edit_info', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form select[name=intended_status]')), 1)
+        self.assertEquals(len(q('form select[name=intended_std_level]')), 1)
         self.assertEquals(len(q('form input[name=via_rfc_editor]')), 1)
 
-        prev_job_owner = draft.idinternal.job_owner
+        prev_ad = draft.ad
         # faulty post
-        r = self.client.post(url, dict(job_owner="123456789"))
+        r = self.client.post(url, dict(ad="123456789"))
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertEquals(draft.idinternal.job_owner, prev_job_owner)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.ad, prev_ad)
 
         # edit info
-        history_before = draft.idinternal.comments().count()
+        events_before = draft.event_set.all().count()
         mailbox_before = len(mail_outbox)
-        draft.group = Acronym.objects.get(acronym_id=Acronym.INDIVIDUAL_SUBMITTER)
-        draft.save()
-        new_job_owner = IESGLogin.objects.exclude(id__in=[IESGLogin.objects.get(login_name="klm").id, draft.idinternal.job_owner_id])[0]
-        new_area = Area.active_areas()[0]
+
+        new_ad = Email.objects.get(address="ano@ietf.org")
 
         r = self.client.post(url,
-                             dict(intended_status=str(draft.intended_status_id),
+                             dict(intended_std_level=str(draft.intended_std_level.pk),
                                   status_date=str(date.today() + timedelta(2)),
-                                  area_acronym=str(new_area.area_acronym_id),
                                   via_rfc_editor="1",
-                                  job_owner=new_job_owner.id,
-                                  state_change_notice_to="test@example.com",
-                                  note="",
+                                  ad=str(new_ad.pk),
+                                  notify="test@example.com",
+                                  note="New note",
                                   telechat_date="",
                                   ))
         self.assertEquals(r.status_code, 302)
 
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertEquals(draft.idinternal.area_acronym, new_area)
-        self.assertTrue(draft.idinternal.via_rfc_editor)
-        self.assertEquals(draft.idinternal.job_owner, new_job_owner)
-        self.assertEquals(draft.idinternal.note, "")
-        self.assertTrue(not draft.idinternal.agenda)
-        self.assertEquals(draft.idinternal.comments().count(), history_before + 3)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue(draft.tags.filter(slug="via-rfc"))
+        self.assertEquals(draft.ad, new_ad)
+        self.assertEquals(draft.note, "New note")
+        self.assertTrue(not draft.latest_event(Telechat, type="telechat_date"))
+        self.assertEquals(draft.event_set.count(), events_before + 4)
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue(draft.filename in mail_outbox[-1]['Subject'])
+        self.assertTrue(draft.name in mail_outbox[-1]['Subject'])
 
     def test_edit_telechat_date(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        draft.idinternal.agenda = False
-        draft.idinternal.save()
-        url = urlreverse('doc_edit_info', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+        draft = make_test_data()
+        
+        url = urlreverse('doc_edit_info', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
 
-        data = dict(intended_status=str(draft.intended_status_id),
+        data = dict(intended_std_level=str(draft.intended_std_level_id),
                     status_date=str(date.today() + timedelta(2)),
-                    area_acronym=str(draft.idinternal.area_acronym_id),
                     via_rfc_editor="1",
-                    job_owner=str(draft.idinternal.job_owner_id),
-                    state_change_notice_to="test@example.com",
+                    ad=str(draft.ad_id),
+                    notify="test@example.com",
                     note="",
                     )
 
         from ietf.iesg.models import TelechatDates
 
         # add to telechat
+        self.assertTrue(not draft.latest_event(Telechat, "scheduled_for_telechat"))
         data["telechat_date"] = TelechatDates.objects.all()[0].date1.isoformat()
         r = self.client.post(url, data)
         self.assertEquals(r.status_code, 302)
 
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertTrue(draft.idinternal.agenda)
-        self.assertEquals(draft.idinternal.telechat_date, TelechatDates.objects.all()[0].date1)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue(draft.latest_event(Telechat, "scheduled_for_telechat"))
+        self.assertEquals(draft.latest_event(Telechat, "scheduled_for_telechat").telechat_date, TelechatDates.objects.all()[0].date1)
 
         # change telechat
         data["telechat_date"] = TelechatDates.objects.all()[0].date2.isoformat()
         r = self.client.post(url, data)
         self.assertEquals(r.status_code, 302)
 
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertTrue(draft.idinternal.agenda)
-        self.assertEquals(draft.idinternal.telechat_date, TelechatDates.objects.all()[0].date2)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.latest_event(Telechat, "scheduled_for_telechat").telechat_date, TelechatDates.objects.all()[0].date2)
 
         # remove from agenda
         data["telechat_date"] = ""
         r = self.client.post(url, data)
         self.assertEquals(r.status_code, 302)
 
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertTrue(not draft.idinternal.agenda)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue(not draft.latest_event(Telechat, "scheduled_for_telechat").telechat_date)
+
+        for e in draft.event_set.all():
+            print e.desc
         
 
-    def test_add_draft(self):
-        draft = InternetDraft.objects.get(filename="draft-ah-rfc2141bis-urn")
-        url = urlreverse('doc_edit_info', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+    def test_start_iesg_process_on_draft(self):
+        draft = make_test_data()
+        draft.ad = None
+        draft.iesg_state = None
+        draft.save()
+        draft.event_set.all().delete()
+        
+        url = urlreverse('doc_edit_info', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('form select[name=intended_status]')), 1)
+        self.assertEquals(len(q('form select[name=intended_std_level]')), 1)
         self.assertEquals(len(q('form input[name=via_rfc_editor]')), 1)
-        self.assertTrue('@' in q('form input[name=state_change_notice_to]')[0].get('value'))
+        self.assertTrue('@' in q('form input[name=notify]')[0].get('value'))
 
         # add
         mailbox_before = len(mail_outbox)
 
-        job_owner = IESGLogin.objects.filter(user_level=1)[0]
-        area = Area.active_areas()[0]
+        ad = Email.objects.get(address="aread@ietf.org")
 
         r = self.client.post(url,
-                             dict(intended_status=str(draft.intended_status_id),
+                             dict(intended_std_level=str(draft.intended_std_level_id),
                                   status_date=str(date.today() + timedelta(2)),
-                                  area_acronym=str(area.area_acronym_id),
                                   via_rfc_editor="1",
-                                  job_owner=job_owner.id,
-                                  state_change_notice_to="test@example.com",
+                                  ad=ad,
+                                  notify="test@example.com",
                                   note="This is a note",
                                   telechat_date="",
                                   ))
         self.assertEquals(r.status_code, 302)
 
-        draft = InternetDraft.objects.get(filename="draft-ah-rfc2141bis-urn")
-        self.assertEquals(draft.idinternal.area_acronym, area)
-        self.assertTrue(draft.idinternal.via_rfc_editor)
-        self.assertEquals(draft.idinternal.job_owner, job_owner)
-        self.assertEquals(draft.idinternal.note, "This is a note")
-        self.assertTrue(not draft.idinternal.agenda)
-        self.assertEquals(draft.idinternal.comments().count(), 2)
-        self.assertTrue("Draft added" in draft.idinternal.comments()[0].comment_text)
-        self.assertTrue("This is a note" in draft.idinternal.comments()[1].comment_text)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue(draft.tags.filter(slug="via-rfc"))
+        self.assertEquals(draft.ad, ad)
+        self.assertEquals(draft.note, "This is a note")
+        self.assertTrue(not draft.latest_event(Telechat, type="scheduled_for_telechat"))
+        self.assertEquals(draft.event_set.count(), 4)
+        self.assertEquals(draft.event_set.order_by('time', '-id')[0].type, "started_iesg_process")
         self.assertEquals(len(mail_outbox), mailbox_before)
 
 
 class ResurrectTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft']
+    fixtures = ['names']
 
     def test_request_resurrect(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mip6-cn-ipsec")
@@ -450,7 +460,7 @@ class ResurrectTestCase(django.test.TestCase):
 
 
         # request resurrect
-        history_before = draft.idinternal.comments().count()
+        events_before = draft.idinternal.comments().count()
         mailbox_before = len(mail_outbox)
         
         r = self.client.post(url, dict())
@@ -458,7 +468,7 @@ class ResurrectTestCase(django.test.TestCase):
 
         draft = InternetDraft.objects.get(filename="draft-ietf-mip6-cn-ipsec")
         self.assertEquals(draft.idinternal.resurrect_requested_by, IESGLogin.objects.get(login_name=login_as))
-        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), events_before + 1)
         self.assertTrue("Resurrection" in draft.idinternal.comments()[0].comment_text)
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue("Resurrection" in mail_outbox[-1]['Subject'])
@@ -471,7 +481,7 @@ class ResurrectTestCase(django.test.TestCase):
         
         url = urlreverse('doc_resurrect', kwargs=dict(name=draft.filename))
         
-        login_testing_unauthorized(self, "klm", url)
+        login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
@@ -480,7 +490,7 @@ class ResurrectTestCase(django.test.TestCase):
         self.assertEquals(len(q('form input[type=submit]')), 1)
 
         # request resurrect
-        history_before = draft.idinternal.comments().count()
+        events_before = draft.idinternal.comments().count()
         mailbox_before = len(mail_outbox)
         
         r = self.client.post(url, dict())
@@ -488,18 +498,18 @@ class ResurrectTestCase(django.test.TestCase):
 
         draft = InternetDraft.objects.get(filename="draft-ietf-mip6-cn-ipsec")
         self.assertEquals(draft.idinternal.resurrect_requested_by, None)
-        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), events_before + 1)
         self.assertTrue("completed" in draft.idinternal.comments()[0].comment_text)
         self.assertEquals(draft.status.status, "Active")
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         
 class AddCommentTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft']
+    fixtures = ['names']
 
     def test_add_comment(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         url = urlreverse('doc_add_comment', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+        login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
@@ -508,13 +518,13 @@ class AddCommentTestCase(django.test.TestCase):
         self.assertEquals(len(q('form textarea[name=comment]')), 1)
 
         # request resurrect
-        history_before = draft.idinternal.comments().count()
+        events_before = draft.idinternal.comments().count()
         mailbox_before = len(mail_outbox)
         
         r = self.client.post(url, dict(comment="This is a test."))
         self.assertEquals(r.status_code, 302)
 
-        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), events_before + 1)
         self.assertTrue("This is a test." in draft.idinternal.comments()[0].comment_text)
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue("updated" in mail_outbox[-1]['Subject'])
@@ -536,7 +546,7 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertEquals(len(q('form textarea[name=comment_text]')), 1)
 
         # vote
-        history_before = draft.idinternal.comments().count()
+        events_before = draft.idinternal.comments().count()
         self.assertTrue(not Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley"))
         
         r = self.client.post(url, dict(position="discuss",
@@ -550,11 +560,11 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertTrue(pos.discuss)
         self.assertTrue(not (pos.yes or pos.noobj or pos.abstain or pos.recuse))
         
-        self.assertEquals(draft.idinternal.comments().count(), history_before + 3)
+        self.assertEquals(draft.idinternal.comments().count(), events_before + 3)
         self.assertTrue("New position" in draft.idinternal.comments()[2].comment_text)
 
         # recast vote
-        history_before = draft.idinternal.comments().count()
+        events_before = draft.idinternal.comments().count()
         r = self.client.post(url, dict(position="noobj"))
         self.assertEquals(r.status_code, 302)
 
@@ -562,23 +572,23 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertTrue(pos.noobj)
         self.assertTrue(not (pos.yes or pos.abstain or pos.recuse))
         self.assertTrue(pos.discuss == -1)
-        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), events_before + 1)
         self.assertTrue("Position" in draft.idinternal.comments()[0].comment_text)
         
         # clear vote
-        history_before = draft.idinternal.comments().count()
+        events_before = draft.idinternal.comments().count()
         r = self.client.post(url, dict(position=""))
         self.assertEquals(r.status_code, 302)
 
         pos = Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley")
         self.assertEquals(len(pos), 0)
-        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), events_before + 1)
         self.assertTrue("Position" in draft.idinternal.comments()[0].comment_text)
     def test_edit_position_as_secretary(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         url = urlreverse('doc_edit_position', kwargs=dict(name=draft.filename))
         url += "?ad=rhousley"
-        login_testing_unauthorized(self, "klm", url)
+        login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
@@ -587,7 +597,7 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertTrue(len(q('form input[name=position]')) > 0)
 
         # vote for rhousley
-        history_before = draft.idinternal.comments().count()
+        events_before = draft.idinternal.comments().count()
         self.assertTrue(not Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley"))
         
         r = self.client.post(url, dict(position="discuss"))
@@ -679,7 +689,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
     def test_edit_last_call_text(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+        login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
@@ -716,7 +726,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
     def test_request_last_call(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+        login_testing_unauthorized(self, "secretary", url)
 
         mailbox_before = len(mail_outbox)
         
@@ -733,7 +743,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
     def test_edit_ballot_writeup(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+        login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
@@ -788,7 +798,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
     def test_edit_approval_text(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         url = urlreverse('doc_ballot_approvaltext', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+        login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
@@ -828,7 +838,7 @@ class ApproveBallotTestCase(django.test.TestCase):
     def test_approve_ballot(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         url = urlreverse('doc_approve_ballot', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+        login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
@@ -863,7 +873,7 @@ class MakeLastCallTestCase(django.test.TestCase):
         draft.save()
         
         url = urlreverse('doc_make_last_call', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "klm", url)
+        login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
@@ -1082,13 +1092,13 @@ class ExpireLastCallTestCase(django.test.TestCase):
         self.assertEquals(len(drafts), 1)
 
         mailbox_before = len(mail_outbox)
-        history_before = draft.idinternal.comments().count()
+        events_before = draft.idinternal.comments().count()
         
         expire_last_call(drafts[0])
 
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         self.assertEquals(draft.idinternal.cur_state.document_state_id, IDState.WAITING_FOR_WRITEUP)
-        self.assertEquals(draft.idinternal.comments().count(), history_before + 1)
+        self.assertEquals(draft.idinternal.comments().count(), events_before + 1)
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue("Last Call Expired" in mail_outbox[-1]["Subject"])
         

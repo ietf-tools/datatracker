@@ -371,6 +371,11 @@
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
     </object>
+    <object pk="ex-ad" model="name.rolename">
+        <field type="CharField" name="name">Ex-Area Director</field>
+        <field type="TextField" name="desc">In-active Area Director</field>
+        <field type="BooleanField" name="used">1</field>
+    </object>
     <object pk="std" model="name.stdlevelname">
         <field type="CharField" name="name">Standard</field>
         <field type="TextField" name="desc"></field>
