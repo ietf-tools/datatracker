@@ -9,6 +9,7 @@ class MetaDataDraft(object):
     revision = None
     filename = None
     group = None
+    authors = None
 
 
 class ParseInfo(object):
@@ -51,6 +52,7 @@ class FileParser(object):
                     method()
         if self.parsed_info.errors:
             return self.parsed_info
+        return self.parsed_info
 
     def parse_critical_000_invalid_chars_in_filename(self):
         name = self.fd.name
