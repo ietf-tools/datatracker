@@ -457,7 +457,7 @@ def get_initial_notify(doc):
 def edit_infoREDESIGN(request, name):
     """Edit various Internet Draft attributes, notifying parties as
     necessary and logging changes as document events."""
-    doc = get_object_or_404(Document, name=name)
+    doc = get_object_or_404(Document, docalias__name=name)
     if doc.state_id == "expired":
         raise Http404()
 
@@ -629,7 +629,7 @@ def request_resurrect(request, name):
 @group_required('Area_Director','Secretariat')
 def request_resurrectREDESIGN(request, name):
     """Request resurrect of expired Internet Draft."""
-    doc = get_object_or_404(Document, name=name)
+    doc = get_object_or_404(Document, docalias__name=name)
     if doc.state_id != "expired":
         raise Http404()
 
@@ -684,13 +684,15 @@ def resurrect(request, name):
 @group_required('Secretariat')
 def resurrectREDESIGN(request, name):
     """Resurrect expired Internet Draft."""
-    doc = get_object_or_404(Document, name=name)
+    doc = get_object_or_404(Document, docalias__name=name)
     if doc.state_id != "expired":
         raise Http404()
 
     login = request.user.get_profile().email()
 
     if request.method == 'POST':
+        save_document_in_history(doc)
+        
         e = doc.latest_event(type__in=('requested_resurrect', "completed_resurrect"))
         if e and e.type == 'requested_resurrect':
             email_resurrection_completed(request, doc, requester=e.by)
@@ -746,7 +748,7 @@ def add_comment(request, name):
 @group_required('Area_Director','Secretariat')
 def add_commentREDESIGN(request, name):
     """Add comment to Internet Draft."""
-    doc = get_object_or_404(Document, name=name)
+    doc = get_object_or_404(Document, docalias__name=name)
     if not doc.iesg_state:
         raise Http404()
 
