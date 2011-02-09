@@ -1,11 +1,11 @@
 import datetime
 import re
 
+from django.conf import settings
 from ietf.idtracker.models import InternetDraft, IETFWG
-from ietf.submit.error_manager import MainErrorManager
+from django.template.defaultfilters import filesizeformat
 from ietf.submit.parsers.base import FileParser
 
-MAX_PLAIN_FILE_SIZE = 6000000
 NONE_WG_PK = 1027
 
 
@@ -24,8 +24,8 @@ class PlainParser(FileParser):
         return self.parsed_info
 
     def parse_max_size(self):
-        if self.fd.size > MAX_PLAIN_FILE_SIZE:
-            self.parsed_info.add_error(MainErrorManager.get_error_str('EXCEEDED_SIZE'))
+        if self.fd.size > settings.MAX_PLAIN_DRAFT_SIZE:
+            self.parsed_info.add_error('File size is larger than %s' % filesizeformat(settings.MAX_PLAIN_DRAFT_SIZE))
         self.parsed_info.metadraft.filesize = self.fd.size
         self.parsed_info.metadraft.submission_date = datetime.date.today()
 
@@ -62,7 +62,7 @@ class PlainParser(FileParser):
             filename = re.sub('-\d+$', '', filename)
             self.parsed_info.metadraft.filename = filename
             return
-        self.parsed_info.add_error(MainErrorManager.get_error_str('INVALID_FILENAME'))
+        self.parsed_info.add_error('The document does not contain a legitimate filename that start with draft-*')
 
     def parse_wg(self):
         filename = self.parsed_info.metadraft.filename

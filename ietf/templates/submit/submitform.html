@@ -13,6 +13,7 @@
    <div class="formErrors">
      Please correct the errors below.
    </div>
+   {{ form.non_field_errors }}
   {% endif %}
 {% for fieldset in form.get_fieldsets %}
   {% if fieldset.name %}

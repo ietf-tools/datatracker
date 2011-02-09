@@ -188,9 +188,16 @@ LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAI
 LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'
 LIAISON_ATTACH_URL = '/documents/LIAISON/'
 
+# ID Submission Tool settings
 # Days from meeting to cut off dates on submit
 FIRST_CUTOFF_DAYS = 5
 SECOND_CUTOFF_DAYS = 3
+
+STAGING_PATH = '/a/www/www6s/staging/'
+IDNITS_PATH = '/a/www/ietf-datatracker/release/idnits'
+MAX_PLAIN_DRAFT_SIZE = 6291456  # Max size of the txt draft in bytes
+
+# End of ID Submission Tool settings
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

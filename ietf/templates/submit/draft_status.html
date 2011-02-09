@@ -1,0 +1,70 @@
+{% extends "submit/submit_base.html" %}
+{% block title %}Submission status{% endblock %}
+
+{% block pagehead %}
+<script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
+<script type="text/javascript">
+(function ($) {
+
+    $.fn.IdnitsInfo = function() {
+        return this.each(function () {
+            var title = $(this).attr('title');
+
+            var handleClose = function() {
+                idnitsDialog.hide();
+            };
+
+            var buttons = [{text:"Close", handler:handleClose, isDefault:true}];
+            var kl = [new YAHOO.util.KeyListener(document, {keys:27}, handleClose)]
+            var idnitsDialog = new YAHOO.widget.Dialog("idnits_results", {
+                visible:false, draggable:false, close:true, modal:true,
+                width:"860px", fixedcenter:true, constraintoviewport:true,
+                buttons: buttons, keylisteners:kl});
+            idnitsDialog.render();
+
+            var showIdnits = function() {
+                idnitsDialog.show();
+            }
+
+            $(this).click(function() {
+                showIdnits();
+                return false;
+            });
+        });
+    };
+
+    $(document).ready(function () {
+        $('a.idnits_trigger').IdnitsInfo();
+    });
+
+})(jQuery);
+</script>
+{% endblock %}
+
+{% block submit_content %}
+<h2>Check Page</h2>
+<p>
+{% if idnits_success %}
+Your draft has been verified to meet IDNITS requirements.
+{% else %}
+Your draft has NOT been verified to meet IDNITS requirements.
+{% endif %}
+<a class="idnits_trigger" href="#">(View IDNITS Results)</a>
+</p>
+<div id="idnits_results" style="visibility:hidden;">
+  <div class="hd"><span id="idnits_title">Idnits results</span></div>
+  <div class="bd"> 
+    <div id="stream_dialog_body" style="padding: 0em 5em; height: 400px; overflow: auto;">
+      <pre>{{ detail.idnits_message }}</pre>
+    </div>
+  </div>
+</div>
+
+
+<h2>Meta-Data from the Draft</h2>
+
+<p>
+The IETF is an organized activity of the <a href="http://www.isoc.org">Internet Society</a>
+<br>Please send problem reports to <a href="mailto:ietf-action@ietf.org">ietf-action@ietf.org</a>.
+</p>
+{% endblock %}

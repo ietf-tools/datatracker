@@ -1,13 +1,18 @@
+import os
+import subprocess
 import datetime
 
 from django import forms
+from django.conf import settings
 from django.template.loader import render_to_string
 
 from ietf.proceedings.models import Meeting
-from ietf.submit.parsers.plain_parser import PlainParser
+from ietf.submit.models import IdSubmissionDetail
 from ietf.submit.parsers.pdf_parser import PDFParser
+from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
+from ietf.utils.draft import Draft
 
 
 CUTOFF_HOUR = 17
@@ -28,7 +33,9 @@ class UploadForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(UploadForm, self).__init__(*args, **kwargs)
         self.in_first_cut_off = False
+        self.idnits_message = None
         self.shutdown = False
+        self.draft = None
         self.read_dates()
 
     def read_dates(self):
@@ -72,34 +79,102 @@ class UploadForm(forms.Form):
                 yield fieldset_dict
 
     def clean_txt(self):
-        if not self.cleaned_data['txt']:
-            return None
-        parsed_info = PlainParser(self.cleaned_data['txt']).critical_parse()
+        txt_file = self.cleaned_data['txt']
+        if not txt_file:
+            return txt_file
+        parsed_info = PlainParser(txt_file).critical_parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
+        return txt_file
 
     def clean_pdf(self):
-        if not self.cleaned_data['pdf']:
-            return None
-        parsed_info = PDFParser(self.cleaned_data['pdf']).critical_parse()
+        pdf_file = self.cleaned_data['pdf']
+        if not pdf_file: 
+            return pdf_file
+        parsed_info = PDFParser(pdf_file).critical_parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
+        return pdf_file
 
     def clean_ps(self):
-        if not self.cleaned_data['ps']:
-            return None
-        parsed_info = PSParser(self.cleaned_data['ps']).critical_parse()
+        ps_file = self.cleaned_data['ps']
+        if not ps_file: 
+            return ps_file
+        parsed_info = PSParser(ps_file).critical_parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
+        return ps_file
 
     def clean_xml(self):
-        if not self.cleaned_data['xml']:
-            return None
-        parsed_info = XMLParser(self.cleaned_data['xml']).critical_parse()
+        xml_file = self.cleaned_data['xml']
+        if not xml_file: 
+            return xml_file
+        parsed_info = XMLParser(xml_file).critical_parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
+        return xml_file
 
     def clean(self):
         if self.shutdown:
             raise forms.ValidationError('The tool is shut down')
+        self.staging_path = getattr(settings, 'STAGING_PATH', None)
+        self.idnits = getattr(settings, 'IDNITS_PATH', None)
+        if not self.staging_path:
+            raise forms.ValidationError('STAGING_PATH not defined on settings.py')
+        if not os.path.exists(self.staging_path):
+            raise forms.ValidationError('STAGING_PATH defined on settings.py does not exist')
+        if not self.idnits:
+            raise forms.ValidationError('IDNITS_PATH not defined on settings.py')
+        if not os.path.exists(self.idnits):
+            raise forms.ValidationError('IDNITS_PATH defined on settings.py does not exist')
+        if self.cleaned_data.get('txt', None):
+            self.get_draft()
+            self.check_previous_submission()
         return super(UploadForm, self).clean()
+
+    def check_previous_submission(self):
+        filename = self.draft.filename
+        revision = self.draft.revision
+        existing = IdSubmissionDetail.objects.filter(filename=filename, revision=revision,
+                                                     status__pk__gte=0, status__pk__lt=100)
+        if existing:
+            raise forms.ValidationError('Duplicate Internet-Draft submission is currently in process.')
+
+    def get_draft(self):
+        if self.draft:
+            return self.draft
+        txt_file = self.cleaned_data['txt']
+        txt_file.seek(0)
+        self.draft = Draft(txt_file.read())
+        txt_file.seek(0)
+        return self.draft
+    
+    def save(self):
+        for fd in [self.cleaned_data['txt'], self.cleaned_data['pdf'],
+                   self.cleaned_data['xml'], self.cleaned_data['ps']]:
+            if not fd:
+                continue
+            filename = os.path.join(self.staging_path, fd.name)
+            destination = open(filename, 'wb+')
+            for chunk in fd.chunks():
+                destination.write(chunk)
+                destination.close()
+        self.check_idnits()
+        return self.save_draft_info(self.draft)
+
+    def check_idnits(self):
+        filepath = os.path.join(self.staging_path, self.cleaned_data['txt'].name)
+        p = subprocess.Popen([self.idnits, '--submitcheck', '--nitcount', filepath], stdout=subprocess.PIPE)
+        self.idnits_message = p.stdout.read()
+
+    def save_draft_info(self, draft):
+        detail = IdSubmissionDetail.objects.create(
+            id_document_name=draft.get_title(),
+            filename=draft.filename,
+            revision=draft.revision,
+            txt_page_count=draft.get_pagecount(),
+            creation_date=draft.get_creation_date(),
+            idnits_message=self.idnits_message,
+            status_id=1,  # Status 1 - upload
+            )
+        return detail
