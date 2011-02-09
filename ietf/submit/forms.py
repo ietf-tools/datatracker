@@ -6,8 +6,9 @@ from django import forms
 from django.conf import settings
 from django.template.loader import render_to_string
 
+from ietf.idtracker.models import InternetDraft
 from ietf.proceedings.models import Meeting
-from ietf.submit.models import IdSubmissionDetail
+from ietf.submit.models import IdSubmissionDetail, TempIdAuthors
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
@@ -36,6 +37,7 @@ class UploadForm(forms.Form):
         self.idnits_message = None
         self.shutdown = False
         self.draft = None
+        self.filesize = None
         self.read_dates()
 
     def read_dates(self):
@@ -85,6 +87,7 @@ class UploadForm(forms.Form):
         parsed_info = PlainParser(txt_file).critical_parse()
         if parsed_info.errors:
             raise forms.ValidationError(parsed_info.errors)
+        self.filesize=txt_file.size
         return txt_file
 
     def clean_pdf(self):
@@ -168,13 +171,57 @@ class UploadForm(forms.Form):
         self.idnits_message = p.stdout.read()
 
     def save_draft_info(self, draft):
+        document_id = 0
+        existing_draft = InternetDraft.objects.filter(filename=draft.filename)
+        if existing_draft:
+            document_id = existing_draft[0].id_document_tag
         detail = IdSubmissionDetail.objects.create(
             id_document_name=draft.get_title(),
             filename=draft.filename,
             revision=draft.revision,
             txt_page_count=draft.get_pagecount(),
+            filesize=self.filesize,
             creation_date=draft.get_creation_date(),
+            submission_date=datetime.date.today(),
             idnits_message=self.idnits_message,
+            temp_id_document_tag=document_id,
+            first_two_pages=''.join(draft.pages[:2]),
             status_id=1,  # Status 1 - upload
             )
+        order = 0
+        for author in draft.get_authors():
+            name, email = author.rsplit(' ', 1)
+            first_name, last_name = name.split(' ', 1)
+            email = email.replace('<', '').replace('>', '')
+            order += 1
+            TempIdAuthors.objects.create(
+                id_document_tag=document_id,
+                first_name=first_name,
+                last_name=last_name,
+                email_address=email,
+                author_order=order,
+                submission=detail)
         return detail
+
+
+class AutoPostForm(forms.Form):
+
+    first_name = forms.CharField(label=u'Given name', required=True)
+    last_name = forms.CharField(label=u'Last name', required=True)
+    email = forms.EmailField(label=u'Email address', required=True)
+
+    def __init__(self, *args, **kwargs):
+        self.draft = kwargs.pop('draft', None)
+        self.validation = kwargs.pop('validation', None)
+        super(AutoPostForm, self).__init__(*args, **kwargs)
+
+    def get_author_buttons(self):
+        button_template = '<input type="button" onclick="jQuery(\'#id_first_name\').val(\'%(first_name)s\');jQuery(\'#id_last_name\').val(\'%(last_name)s\');jQuery(\'#id_email\').val(\'%(email)s\');" value="%(full_name)s" />'
+        buttons = []
+        for i in self.validation.authors:
+            full_name = '%s. %s' % (i.first_name[0], i.last_name)
+            buttons.append(button_template % {'first_name': i.first_name,
+                                              'last_name': i.last_name,
+                                              'email': i.email()[1],
+                                              'full_name': full_name})
+        return ''.join(buttons)

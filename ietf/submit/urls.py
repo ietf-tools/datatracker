@@ -5,6 +5,7 @@ urlpatterns = patterns('ietf.submit.views',
     url(r'^$', 'submit_index', name='submit_index'),
     url(r'^status/$', 'submit_status', name='submit_status'),
     url(r'^status/(?P<submission_id>\d+)/$', 'draft_status', name='draft_status'),
+    url(r'^status/(?P<submission_id>\d+)/edit/$', 'draft_edit', name='draft_edit'),
 )
 
 urlpatterns += patterns('django.views.generic.simple',

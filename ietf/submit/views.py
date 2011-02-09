@@ -6,8 +6,8 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 from ietf.submit.models import IdSubmissionDetail
-from ietf.submit.forms import UploadForm
-from ietf.submit.utils import check_idnits_success
+from ietf.submit.forms import UploadForm, AutoPostForm
+from ietf.submit.utils import DraftValidation
 
 
 def submit_index(request):
@@ -43,10 +43,24 @@ def submit_status(request):
 
 def draft_status(request, submission_id):
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
-    idnits_success = check_idnits_success(detail.idnits_message)
+    validation = DraftValidation(detail)
+    is_valid = validation.is_valid()
+    if request.method=='POST':
+        if request.POST.get('autopost', False):
+            auto_post_form = AutoPostForm(draft=detail, validation=validation, data=request.POST)
+        else:
+            return HttpResponseRedirect(reverse(draft_edit, None, kwargs={'submission_id': detail.submission_id}))
+    else:
+        auto_post_form = AutoPostForm(draft=detail, validation=validation)
     return render_to_response('submit/draft_status.html', 
                               {'selected': 'status',
                                'detail': detail,
-                               'idnits_success': idnits_success,
+                               'validation': validation,
+                               'auto_post_form': auto_post_form,
+                               'is_valid': is_valid,
                               },
                               context_instance=RequestContext(request))
+
+
+def draft_edit(request, submission_id):
+    pass

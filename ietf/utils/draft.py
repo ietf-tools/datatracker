@@ -501,7 +501,7 @@ class Draft():
                         _debug("Not an author? '%s'" % (author))
 
             authors = [ re.sub(r" +"," ", a) for a in authors if a != None ]
-            authors.sort()
+            # authors.sort() 
             _debug(" * Final author list: " + ", ".join(authors))
             _debug("-"*72)
             self._authors = authors

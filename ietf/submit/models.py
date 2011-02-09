@@ -40,3 +40,20 @@ class IdSubmissionDetail(models.Model):
 
     class Meta:
         db_table = 'id_submission_detail'
+
+class TempIdAuthors(models.Model):
+    id = models.AutoField(primary_key=True)
+    id_document_tag = models.IntegerField()
+    first_name = models.CharField(blank=True, max_length=255)
+    last_name = models.CharField(blank=True, max_length=255)
+    email_address = models.CharField(blank=True, max_length=255)
+    last_modified_date = models.DateField(null=True, blank=True)
+    last_modified_time = models.CharField(blank=True, max_length=100)
+    author_order = models.IntegerField(null=True, blank=True)
+    submission = models.ForeignKey(IdSubmissionDetail)
+
+    class Meta:
+        db_table = 'temp_id_authors'
+
+    def email(self):
+        return ('%s %s' % (self.first_name, self.last_name), self.email_address)
