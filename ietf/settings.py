@@ -197,6 +197,15 @@ STAGING_PATH = '/a/www/www6s/staging/'
 IDNITS_PATH = '/a/www/ietf-datatracker/release/idnits'
 MAX_PLAIN_DRAFT_SIZE = 6291456  # Max size of the txt draft in bytes
 
+# DOS THRESHOLDS PER DAY (Sizes are in MB)
+MAX_SAME_DRAFT_NAME = 20
+MAX_SAME_DRAFT_NAME_SIZE = 50
+MAX_SAME_SUBMITTER = 50
+MAX_SAME_SUBMITTER_SIZE = 150
+MAX_SAME_WG_DRAFT = 150
+MAX_SAME_WG_DRAFT_SIZE = 450
+MAX_DAILY_SUBMISSION = 1000
+MAX_DAILY_SUBMISSION_SIZE = 2000
 # End of ID Submission Tool settings
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific

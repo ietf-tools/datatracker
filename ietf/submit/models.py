@@ -1,11 +1,15 @@
 from django.db import models
 
+from ietf.idtracker.models import IETFWG
+
+
 class IdSubmissionStatus(models.Model):
     status_id = models.IntegerField(primary_key=True)
     status_value = models.CharField(blank=True, max_length=255)
 
     class Meta:
         db_table = 'id_submission_status'
+
 
 class IdSubmissionDetail(models.Model):
     submission_id = models.AutoField(primary_key=True)
@@ -14,7 +18,7 @@ class IdSubmissionDetail(models.Model):
     last_updated_date = models.DateField(null=True, blank=True)
     last_updated_time = models.CharField(blank=True, max_length=25)
     id_document_name = models.CharField(blank=True, max_length=255)
-    group_acronym_id = models.IntegerField(null=True, blank=True)
+    group_acronym = models.ForeignKey(IETFWG, null=True, blank=True)
     filename = models.CharField(blank=True, max_length=255)
     creation_date = models.DateField(null=True, blank=True)
     submission_date = models.DateField(null=True, blank=True)
@@ -40,6 +44,7 @@ class IdSubmissionDetail(models.Model):
 
     class Meta:
         db_table = 'id_submission_detail'
+
 
 class TempIdAuthors(models.Model):
     id = models.AutoField(primary_key=True)

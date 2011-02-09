@@ -5,8 +5,9 @@ import datetime
 from django import forms
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils.html import mark_safe
 
-from ietf.idtracker.models import InternetDraft
+from ietf.idtracker.models import InternetDraft, IETFWG
 from ietf.proceedings.models import Meeting
 from ietf.submit.models import IdSubmissionDetail, TempIdAuthors
 from ietf.submit.parsers.pdf_parser import PDFParser
@@ -32,16 +33,19 @@ class UploadForm(forms.Form):
         css = {'all': ("/css/liaisons.css", )}
 
     def __init__(self, *args, **kwargs):
+        self.request=kwargs.pop('request', None)
+        self.remote_ip=self.request.META.get('REMOTE_ADDR', None)
         super(UploadForm, self).__init__(*args, **kwargs)
         self.in_first_cut_off = False
         self.idnits_message = None
         self.shutdown = False
         self.draft = None
         self.filesize = None
+        self.group = None
         self.read_dates()
 
     def read_dates(self):
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         first_cut_off = Meeting.get_first_cut_off()
         second_cut_off = Meeting.get_second_cut_off()
         ietf_monday = Meeting.get_ietf_monday()
@@ -120,6 +124,51 @@ class UploadForm(forms.Form):
     def clean(self):
         if self.shutdown:
             raise forms.ValidationError('The tool is shut down')
+        self.check_paths()
+        if self.cleaned_data.get('txt', None):
+            self.get_draft()
+            self.group=self.get_working_group()
+            self.check_previous_submission()
+        self.check_tresholds()
+        return super(UploadForm, self).clean()
+
+    def check_tresholds(self):
+        filename = self.draft.filename
+        revision = self.draft.revision
+        remote_ip = self.remote_ip
+        today = datetime.date.today()
+
+        # Same draft by name
+        same_name = IdSubmissionDetail.objects.filter(filename=filename, revision=revision, submission_date=today)
+        if same_name.count() > settings.MAX_SAME_DRAFT_NAME:
+            raise forms.ValidationError('A same I-D cannot be submitted more than %s times a day' % settings.MAX_SAME_DRAFT_NAME)
+        if sum([i.filesize for i in same_name]) > (settings.MAX_SAME_DRAFT_NAME_SIZE * 1048576):
+            raise forms.ValidationError('A same I-D submission cannot exceed more than %s MByte a day' % settings.MAX_SAME_DRAFT_NAME_SIZE)
+
+        # Total from same ip
+        same_ip = IdSubmissionDetail.objects.filter(remote_ip=remote_ip, submission_date=today)
+        if same_ip.count() > settings.MAX_SAME_SUBMITTER:
+            raise forms.ValidationError('The same submitter cannot submit more than %s I-Ds a day' % settings.MAX_SAME_SUBMITTER)
+        if sum([i.filesize for i in same_ip]) > (settings.MAX_SAME_SUBMITTER_SIZE * 1048576):
+            raise forms.ValidationError('The same submitter cannot exceed more than %s MByte a day' % settings.MAX_SAME_SUBMITTER_SIZE)
+
+        # Total in same group
+        if self.group:
+            same_group = IdSubmissionDetail.objects.filter(group_acronym=self.group, submission_date=today)
+            if same_group.count() > settings.MAX_SAME_WG_DRAFT:
+                raise forms.ValidationError('A same working group I-Ds cannot be submitted more than %s times a day' % settings.MAX_SAME_WG_DRAFT)
+            if sum([i.filesize for i in same_group]) > (settings.MAX_SAME_WG_DRAFT_SIZE * 1048576):
+                raise forms.ValidationError('Total size of same working group I-Ds cannot exceed %s MByte a day' % settings.MAX_SAME_WG_DRAFT_SIZE)
+
+
+        # Total drafts for today
+        total_today = IdSubmissionDetail.objects.filter(submission_date=today)
+        if total_today.count() > settings.MAX_DAILY_SUBMISSION:
+            raise forms.ValidationError('The total number of today\'s submission has reached the maximum number of submission per day')
+        if sum([i.filesize for i in total_today]) > (settings.MAX_DAILY_SUBMISSION_SIZE * 1048576):
+            raise forms.ValidationError('The total size of today\'s submission has reached the maximum size of submission per day')
+
+    def check_paths(self):
         self.staging_path = getattr(settings, 'STAGING_PATH', None)
         self.idnits = getattr(settings, 'IDNITS_PATH', None)
         if not self.staging_path:
@@ -130,10 +179,6 @@ class UploadForm(forms.Form):
             raise forms.ValidationError('IDNITS_PATH not defined on settings.py')
         if not os.path.exists(self.idnits):
             raise forms.ValidationError('IDNITS_PATH defined on settings.py does not exist')
-        if self.cleaned_data.get('txt', None):
-            self.get_draft()
-            self.check_previous_submission()
-        return super(UploadForm, self).clean()
 
     def check_previous_submission(self):
         filename = self.draft.filename
@@ -141,7 +186,7 @@ class UploadForm(forms.Form):
         existing = IdSubmissionDetail.objects.filter(filename=filename, revision=revision,
                                                      status__pk__gte=0, status__pk__lt=100)
         if existing:
-            raise forms.ValidationError('Duplicate Internet-Draft submission is currently in process.')
+            raise forms.ValidationError('Duplicate Internet-Draft submission is currently in process')
 
     def get_draft(self):
         if self.draft:
@@ -170,6 +215,29 @@ class UploadForm(forms.Form):
         p = subprocess.Popen([self.idnits, '--submitcheck', '--nitcount', filepath], stdout=subprocess.PIPE)
         self.idnits_message = p.stdout.read()
 
+    def get_working_group(self):
+        filename = self.draft.filename
+        existing_draft = InternetDraft.objects.filter(filename=filename)
+        if existing_draft:
+            group = existing_draft[0].group and existing_draft[0].group.ietfwg or None
+            if group and group.pk != 1027:
+                return group
+            else:
+                return None
+        else:
+            if filename.startswith('draft-ietf-'):
+                # Extra check for WG that contains dashes
+                for group in IETFWG.objects.filter(group_acronym__acronym__contains='-'):
+                    if filename.startswith('draft-ietf-%s-' % group.group_acronym.acronym):
+                        return group
+                group_acronym = filename.split('-')[2]
+                try:
+                    return IETFWG.objects.get(group_acronym__acronym=group_acronym)
+                except IETFWG.DoesNotExist:
+                    raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % group_acronym)
+            else:
+                return None
+
     def save_draft_info(self, draft):
         document_id = 0
         existing_draft = InternetDraft.objects.filter(filename=draft.filename)
@@ -185,6 +253,8 @@ class UploadForm(forms.Form):
             submission_date=datetime.date.today(),
             idnits_message=self.idnits_message,
             temp_id_document_tag=document_id,
+            group_acronym=self.group,
+            remote_ip=self.remote_ip,
             first_two_pages=''.join(draft.pages[:2]),
             status_id=1,  # Status 1 - upload
             )

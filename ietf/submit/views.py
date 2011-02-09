@@ -12,12 +12,12 @@ from ietf.submit.utils import DraftValidation
 
 def submit_index(request):
     if request.method == 'POST':
-        form = UploadForm(data=request.POST, files=request.FILES)
+        form = UploadForm(request=request, data=request.POST, files=request.FILES)
         if form.is_valid():
             submit = form.save()
             return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submit.submission_id}))
     else:
-        form = UploadForm()
+        form = UploadForm(request=request)
     return render_to_response('submit/submit_index.html', 
                               {'selected': 'index',
                                'form': form},

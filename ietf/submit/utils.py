@@ -1,4 +1,5 @@
 import re
+import datetime
 
 from ietf.idtracker.models import InternetDraft, EmailAddress
 
@@ -17,24 +18,9 @@ class DraftValidation(object):
         return passes_idnits
 
     def get_working_group(self):
-        filename = self.draft.filename
-        existing_draft = InternetDraft.objects.filter(filename=filename)
-        if existing_draft:
-            return existing_draft[0].group and existing_draft[0].group.ietfwg or None
-        else:
-            if filename.startswith('draft-ietf-'):
-                # Extra check for WG that contains dashes
-                for group in IETFWG.objects.filter(group_acronym__acronym__contains='-'):
-                    if filename.startswith('draft-ietf-%s-' % group.group_acronym.acronym):
-                        return group
-                group_acronym = filename.split('-')[2]
-                try:
-                    return IETFWG.objects.get(group_acronym__acronym=group_acronym)
-                except IETFWG.DoesNotExist:
-                    self.add_warning('group', 'Invalid WG ID: %s' % group_acronym)
-                    return None
-            else:
-                return None
+        if self.draft.group_acronym and self.draft.group_acronym.pk == 1027:
+            return None
+        return self.draft.group_acronym
 
     def check_idnits_success(self, idnits_message):
         success_re = re.compile('\s+Summary:\s+0\s+|No nits found')
@@ -54,6 +40,7 @@ class DraftValidation(object):
     def validate_metadata(self):
         self.validate_revision()
         self.validate_authors()
+        self.validate_creation_date()
 
     def add_warning(self, key, value):
         self.warnings.update({key: value})
@@ -70,6 +57,15 @@ class DraftValidation(object):
     def validate_authors(self):
         if not self.authors:
             self.add_warning('authors', 'No authors found')
+
+    def validate_creation_date(self):
+        date = self.draft.creation_date
+        if not date:
+            self.add_warning('creation_date', 'Creation Date field is empty or the creation date is not in a proper format.')
+            return
+        submit_date = self.draft.submission_date
+        if date + datetime.timedelta(days=3) > submit_date:
+            self.add_warning('creation_date', 'Creation Date must be within 3 days of submission date.')
 
     def get_authors(self):
         tmpauthors = self.draft.tempidauthors_set.all().order_by('author_order')
