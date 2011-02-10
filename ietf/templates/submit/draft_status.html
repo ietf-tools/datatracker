@@ -68,11 +68,12 @@ function confirmCancelation(){
 
 {% block submit_content %}
 
-{% if canceled %}
-<h2>Submission Canceled</h2>
-<div class="metadata-errors">
-  <p>This submission has been canceled, modification is no longer possible.</p>
-</div>
+{% if status %} 
+<h2>Status of the submission: {{ status.status_value }}</h2> 
+{% endif %} 
+
+{% if message %} 
+<div class="info-message-{{ message.0 }}">{{ message.1 }}</div> 
 {% endif %}
 
 <h2>Check Page</h2>
@@ -143,29 +144,40 @@ returned to the submitter.
 <tr{% if validation.warnings.pages %} class="warning"{% endif %}><th>Pages</th><td>{{ detail.txt_page_count }}<div class="warn_message">{{ validation.warnings.pages }}</div></td></tr>
 <tr{% if validation.warnings.abstract %} class="warning"{% endif %}><th>Abstract</th><td>{{ detail.abstract|linebreaksbr }}<div class="warn_message">{{ validation.warnings.abstract }}</div></td></tr>
 </table>
-{% if not canceled %}
-  <form method="post" action="" name="auto_post_form">
-    <input type="submit" value="Adjust Meta-Data" value="adjust" /> (Leads to manual post by the Secretariat)
-  </form>
-  {% if is_valid %}
-  <h2>Please edit the following meta-data before proceeding to Auto-Post</h2>
-  <p>
-  If you are one of the authors of this document, then please click the button with your name on it to automatically fill in the submitter information as requested below. Otherwise, please manually enter your information.
-  </p>
-  <form method="post" action="">
-  {{ auto_post_form.get_author_buttons|safe }}
-  <table class="metadata-table">
-  {{ auto_post_form }}
-  </table>
-  <input type="submit" value="Post" name="autopost" />
-  </form>
-  {% endif %}
-  
-  <h2>Cancel submission</h2>
-  <p>
-    <input type="button" onclick="confirmCancelation();" value="Cancel Submission" /><br>
-     This submission will be canceled, and its uploaded document(s) permanently deleted.
-  </p>
+
+{% if allow_edit %} 
+<form method="post" action="" name="auto_post_form"> 
+<input type="submit" value="Adjust Meta-Data" value="adjust" /> (Leads to manual post by the Secretariat) 
+</form> 
+{% if is_valid %} 
+<h2>Please edit the following meta-data before proceeding to Auto-Post</h2> 
+<p> 
+If you are one of the authors of this document, then please click the button with your name on it to automatically fill in the submitter information as requested below. Otherwise, please manually enter your information. 
+</p> 
+<form method="post" action=""> 
+{{ auto_post_form.get_author_buttons|safe }} 
+<table class="metadata-table"> 
+{{ auto_post_form }} 
+</table> 
+<input type="submit" value="Post" name="autopost" /> 
+</form> 
+{% endif %} 
+
+<h2>Cancel submission</h2>
+<p>
+  <input type="button" onclick="confirmCancelation();" value="Cancel Submission" /><br>
+   This submission will be canceled, and its uploaded document(s) permanently deleted.
+</p>
+{% else %}
+{% if validation.submitter %} 
+<h3>Submitter information</h3> 
+<table class="metadata-table"> 
+<tr><th>First name</th><td>{{ validation.submitter.first_name }}</td></tr> 
+<tr><th>Last name</th><td>{{ validation.submitter.last_name }}</td></tr> 
+<tr><th>Email address</th><td>{{ validation.submitter.email_address|default:validation.submitter.email.1 }}</td></tr> 
+</table> 
+{% endif %} 
+ 
 {% endif %}
 
 <p>

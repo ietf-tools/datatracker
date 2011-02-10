@@ -49,6 +49,8 @@ def draft_status(request, submission_id, message=None):
     status = None
     allow_edit = True
     if detail.status_id != UPLOADED:
+        if detail.status_id == CANCELED:
+            message=('error', 'This submission has been canceled, modification is no longer possible')
         status = detail.status
         allow_edit = None
     if request.method=='POST' and allow_edit:
@@ -67,7 +69,9 @@ def draft_status(request, submission_id, message=None):
                                'validation': validation,
                                'auto_post_form': auto_post_form,
                                'is_valid': is_valid,
-                               'canceled': detail.status_id == CANCELED
+                               'status': status,
+                               'message': message,
+                               'allow_edit': allow_edit,
                               },
                               context_instance=RequestContext(request))
 

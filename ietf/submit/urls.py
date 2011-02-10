@@ -6,6 +6,7 @@ urlpatterns = patterns('ietf.submit.views',
     url(r'^status/$', 'submit_status', name='submit_status'),
     url(r'^status/(?P<submission_id>\d+)/$', 'draft_status', name='draft_status'),
     url(r'^status/(?P<submission_id>\d+)/edit/$', 'draft_edit', name='draft_edit'),
+    url(r'^status/(?P<submission_id>\d+)/confirm/(?P<auth_key>[a-f\d]+)/$', 'draft_confirm', name='draft_confirm'),
     url(r'^status/(?P<submission_id>\d+)/cancel/$', 'draft_cancel', name='draft_cancel'),
 )
 
