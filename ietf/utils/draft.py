@@ -125,6 +125,7 @@ class Draft():
         self.filename, self.revision = self._parse_draftname()
         
         self._authors = None
+        self._abstract = None
         self._pagecount = None
         self._status = None
         self._creation_date = None
@@ -272,6 +273,77 @@ class Draft():
                     pass
         self.errors['creation_date'] = 'Creation Date field is empty or the creation date is not in a proper format.'
         return self._creation_date
+
+
+    # ------------------------------------------------------------------
+    def get_abstract(self):
+        """Extract abstract from draft text.
+        based on: http://wiki.tools.ietf.org/tools/ietfdb/browser/branch/legacy/idst/validate.cgi
+        """
+        if self._abstract:
+            return self._abstract
+        draft_text = "\n".join(self.lines[:len(self.lines)/2])
+
+        abstract_patterns = [
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Status of this Memo\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Editorial Note\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Sub-IP ID Summary\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Table of Contents?\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Conventions used in this document\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Introduction\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Terminology\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Definitions\s\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Background( and Intended Usage)?\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Conventions\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*Requirements\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*motivation\s{0,2}\n)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\s*translation\s{0,2}\n)',
+            r'((Abstract|Summary):?\n+)([\s|\S]+?)(\n\s*Contents?)',
+            r'((Abstract|Summary):?\n+)([\s|\S]+?)(\n\s*0. meta information on this)',
+            r'((Abstract|Summary):?\n+)([\s|\S]+?)(\n\s*0. introduction)',
+            r'((Abstract|Summary):?\s*\n+)(( {3,}.+\n+)+)',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+?)((\d\.?)?\n{4,})',
+            r'((Abstract|Summary):?\s*\n+)([\s|\S]+)((\d\.?)[^\n]{10,50}\n{0,2})',
+        ]
+
+        abstract = None
+        for ap in abstract_patterns:
+            match = re.search(ap, draft_text, re.IGNORECASE)
+            if match:
+                abstract = match.group(3)
+                break
+
+        # Remove possible missed sections
+        match = re.search(r'([\s|\S]+?)(\n+\s{0,10}(\d\.?)\s{0,10}[^\n]{10,50}\s{0,2}\n)', abstract or '')
+        if match:
+            abstract = match.group(1)
+
+        if abstract:
+            cleanup_patterns = [
+                (r"\n{3,}", "\n\n"), (r"\f[\n ]*[^\n]*\n", ""),
+                (r"(?s)(\d{1,3}\.\s*)?(Conventions used in this document|Requirements language).*", ""),
+                (r"(?sm)[\n ]*The key words [\'\"]MUST[\'\"], [\'\"]MUST NOT[\'\"],\n.*$", ""),
+                (r"(?s)\nStatus of [tT]his Memo\n\s{1,2}\n.*$", ""),
+                (r"(?s)(\d{1,3}\.?\s*)?Table of Contents\s{0,2}.*$", ""),
+                (r"(?s)(\d{1,3}\.?\s*)?Status of this memo\s{1,2}\n.*$", ""),
+                (r"(?s)(\d{1,3}\.?\s*)?Editorial note.\n*$", ""),
+                (r"(?s)(\d{1,3}\.?\s*)?Terminology\s{1,2}\n.*$", ""),
+                (r"(?s)(\d{1,3}\.?\s*)?Specification of Requirements\s{1,2}\n.*$", ""),
+                (r"(?s)\s*\d\.?(Abstract|Introduction)?\.{15,}", ""),
+                (r"\n\s*\d\.?\s*[\s|\S]+?\n.*", ""),
+                (r"(?sm)(\(|\[)?to be (deleted|removed) (by|when).*", ""),
+                (r"(?s)\n.$", ""), (r"(?m)^[^\n]+\.{10,}\d{1,3}", "")
+            ]
+            for cp, sub in cleanup_patterns:
+                e = re.compile(cp, re.IGNORECASE)
+                abstract = e.sub(sub, abstract)
+
+            # wrap long lines without messing up formatting
+            while re.match("([^\n]{72,}?) +", abstract):
+                abstract = re.sub("([^\n]{72,}?) +([^\n ]*)(\n|$)", "\\1\n\\2 ", abstract)
+
+            return abstract.strip()
+        return None
 
 
     # ------------------------------------------------------------------
@@ -581,6 +653,9 @@ def _printmeta(timestamp, fn):
     deststatus = draft.get_status()
     if deststatus:
         fields["docdeststatus"] = deststatus
+    abstract = draft.get_abstract()
+    if abstract:
+        fields["docabstract"] = abstract
 
     _output(fields)
 
