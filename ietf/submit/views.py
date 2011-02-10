@@ -7,7 +7,7 @@ from django.template import RequestContext
 
 from ietf.submit.models import IdSubmissionDetail
 from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm
-from ietf.submit.utils import (DraftValidation, UPLOADED, WAITING_AUTHENTICATION,
+from ietf.submit.utils import (DraftValidation, UPLOADED, WAITING_AUTHENTICATION, CANCELED,
                                perform_post)
 
 
@@ -67,11 +67,16 @@ def draft_status(request, submission_id, message=None):
                                'validation': validation,
                                'auto_post_form': auto_post_form,
                                'is_valid': is_valid,
-                               'status': status,
-                               'allow_edit': allow_edit,
-                               'message': message,
+                               'canceled': detail.status_id == CANCELED
                               },
                               context_instance=RequestContext(request))
+
+
+def draft_cancel(request, submission_id):
+    detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
+    detail.status_id = CANCELED
+    detail.save()
+    return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submission_id}))
 
 
 def draft_edit(request, submission_id):
