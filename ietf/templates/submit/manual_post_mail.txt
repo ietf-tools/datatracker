@@ -1,0 +1,21 @@
+Manual Posting Requested for following Internet-Draft:
+
+I-D Submission Tool URL: /submit/status/{{ draft.submission_id }}/
+
+File name: {{ draft.filename }}
+Submission date: {{ draft.submission_date }}
+WG: {{ draft.wg|default:"Individual Submission" }}
+File size: {{ draft.filesize }}
+
+Title: {{ draft.id_document_name }}
+Version: {{ draft.revision }}
+Creation date: {{ draft.id_document_name }}
+Pages: {{ draft.txt_page_count }}
+Abstract: {{ draft.abstract }}
+Submitter: {{ form.cleaned_data.first_name }} {{ form.cleaned_data.last_name }} <{{ form.cleaned_data.email }}>
+
+Author(s):
+{% for author in form.get_authors %}{{ author.first_name }} {{ author.last_name }} <{{ author.email.1 }}>
+{% endfor %}
+
+{{ draft.comment_to_sec }}

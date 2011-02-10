@@ -4,6 +4,8 @@
 {% block morecss %}
 {{ block.super }}
 div.metadata-errors { border: 1px solid red; background-color: #ffeebb; padding: 5px 10px; margin: 1em 0px; }
+div.info-message-error { border: 1px solid red; background-color: #ffeebb; padding: 5px 10px; margin: 1em 0px; color: red; }
+div.info-message-success { border: 1px solid green; background-color: #eeffbb; padding: 5px 10px; margin: 1em 0px; color: green; }
 table.metadata-table th { white-space: nowrap; font-weight: bold; }
 table.metadata-table #id_first_name, table.metadata-table #id_last_name { width: 200px; }
 table.metadata-table #id_email { width: 400px; }
@@ -60,6 +62,14 @@ table.metadata-table ul.errorlist { color: red; padding: 0px; margin: 0px; list-
 {% endblock %}
 
 {% block submit_content %}
+{% if status %}
+<h2>Status of the submission: {{ status.status_value }}</h2>
+{% endif %}
+
+{% if message %}
+<div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+{% endif %}
+
 <h2>Check Page</h2>
 <p>
 {% if validation.passes_idnits %}
@@ -114,9 +124,9 @@ returned to the submitter.
 <tr{% if validation.warnings.revision %} class="warning"{% endif %}><th>Revision</th><td>{{ detail.revision }}<div class="warn_message">{{ validation.warnings.revision }}</div></td></tr>
 <tr><th>Submission date</th><td>{{ detail.submission_date }}</td></tr>
 <tr><th>Title</th><td>{{ detail.id_document_name }}</td></tr>
-<tr{% if validation.warnings.group %} class="warning"{% endif %}><th>WG</th><td>{{ validation.wg|default:"Individual Submission" }}<div class="warn_message">{{ validation.warnings.group }}</td></tr>
+<tr{% if validation.warnings.group %} class="warning"{% endif %}><th>WG</th><td>{{ validation.wg|default:"Individual Submission" }}<div class="warn_message">{{ validation.warnings.group }}</div></td></tr>
 <tr><th>File size</th><td>{{ detail.filesize|filesizeformat }}</td></tr>
-<tr{% if validation.warnings.creation_date %} class="warning"{% endif %}><th>Creation date</th><td>{{ detail.creation_date }}<div class="warn_message">{{ validation.warnings.creation_date }}</td></tr>
+<tr{% if validation.warnings.creation_date %} class="warning"{% endif %}><th>Creation date</th><td>{{ detail.creation_date }}<div class="warn_message">{{ validation.warnings.creation_date }}</div></td></tr>
 <tr{% if validation.warnings.authors %} class="warning"{% endif %}><th colspan="2">Author(s) information</th></tr>
 {% if not validation.authors %}
 <tr class="warning"><td colspan="2"><div class="warn_message">{{ validation.warning.authors }}</div></td></tr>
@@ -125,9 +135,20 @@ returned to the submitter.
 <tr><th class="author">Author {{ forloop.counter }}</th><td>{{ author.email.0 }} &lt;{{ author.email.1 }}&gt;</td></tr>
 {% endfor %}
 {% endif %}
-<tr{% if validation.warnings.pages %} class="warning"{% endif %}><th>Pages</th><td>{{ detail.txt_page_count }}<div class="warn_message">{{ validation.warnings.pages }}</td></tr>
-<tr><th>Abstract</th><td>{{ detail.abstract|linebreaksbr }}</td></tr>
+<tr{% if validation.warnings.pages %} class="warning"{% endif %}><th>Pages</th><td>{{ detail.txt_page_count }}<div class="warn_message">{{ validation.warnings.pages }}</div></td></tr>
+<tr{% if validation.warnings.abstract %} class="warning"{% endif %}><th>Abstract</th><td>{{ detail.abstract|linebreaksbr }}<div class="warn_message">{{ validation.warnings.abstract }}</div></td></tr>
 </table>
+
+{% if validation.submitter %}
+<h3>Submitter information</h3>
+<table class="metadata-table">
+<tr><th>First name</th><td>{{ validation.submitter.first_name }}</td></tr>
+<tr><th>Last name</th><td>{{ validation.submitter.last_name }}</td></tr>
+<tr><th>Email addres</th><td>{{ validation.submitter.email_address }}</td></tr>
+</table>
+{% endif %}
+
+{% if allow_edit %}
 <form method="post" action="" name="auto_post_form">
 <input type="submit" value="Adjust Meta-Data" value="adjust" /> (Leads to manual post by the Secretariat)
 </form>
@@ -144,6 +165,8 @@ If you are one of the authors of this document, then please click the button wit
 <input type="submit" value="Post" name="autopost" />
 </form>
 {% endif %}
+{% endif %}
+
 <p>
 The IETF is an organized activity of the <a href="http://www.isoc.org">Internet Society</a>
 <br>Please send problem reports to <a href="mailto:ietf-action@ietf.org">ietf-action@ietf.org</a>.

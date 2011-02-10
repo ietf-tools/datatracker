@@ -1,8 +1,11 @@
+import sha
+import random
 import os
 import subprocess
 import datetime
 
 from django import forms
+from django.forms.fields import email_re
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import mark_safe
@@ -10,10 +13,12 @@ from django.utils.html import mark_safe
 from ietf.idtracker.models import InternetDraft, IETFWG
 from ietf.proceedings.models import Meeting
 from ietf.submit.models import IdSubmissionDetail, TempIdAuthors
+from ietf.submit.utils import MANUAL_POST_REQUESTED, NONE_WG, UPLOADED, WAITING_AUTHENTICATION
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
+from ietf.utils.mail import send_mail
 from ietf.utils.draft import Draft
 
 
@@ -42,6 +47,7 @@ class UploadForm(forms.Form):
         self.draft = None
         self.filesize = None
         self.group = None
+        self.file_type = []
         self.read_dates()
 
     def read_dates(self):
@@ -200,15 +206,16 @@ class UploadForm(forms.Form):
         return self.draft
     
     def save(self):
-        for fd in [self.cleaned_data['txt'], self.cleaned_data['pdf'],
-                   self.cleaned_data['xml'], self.cleaned_data['ps']]:
+        for ext in ['txt', 'pdf', 'xml', 'ps']:
+            fd = self.cleaned_data[ext]
             if not fd:
                 continue
-            filename = os.path.join(self.staging_path, fd.name)
+            self.file_type.append('.%s' % ext)
+            filename = os.path.join(self.staging_path, '%s-%s.%s' % (self.draft.filename, self.draft.revision, ext))
             destination = open(filename, 'wb+')
             for chunk in fd.chunks():
                 destination.write(chunk)
-                destination.close()
+            destination.close()
         self.check_idnits()
         return self.save_draft_info(self.draft)
 
@@ -222,7 +229,7 @@ class UploadForm(forms.Form):
         existing_draft = InternetDraft.objects.filter(filename=filename)
         if existing_draft:
             group = existing_draft[0].group and existing_draft[0].group.ietfwg or None
-            if group and group.pk != 1027:
+            if group and group.pk != NONE_WG:
                 return group
             else:
                 return None
@@ -258,7 +265,9 @@ class UploadForm(forms.Form):
             group_acronym=self.group,
             remote_ip=self.remote_ip,
             first_two_pages=''.join(draft.pages[:2]),
-            status_id=1,  # Status 1 - upload
+            status_id=UPLOADED,
+            abstract=draft.get_abstract(),
+            file_type=','.join(self.file_type),
             )
         order = 0
         for author in draft.get_authors():
@@ -297,3 +306,163 @@ class AutoPostForm(forms.Form):
                                               'email': i.email()[1],
                                               'full_name': full_name})
         return ''.join(buttons)
+
+    def save(self, request):
+        self.save_submitter_info()
+        self.save_new_draft_info()
+        self.send_confirmation_mail(request)
+
+    def send_confirmation_mail(self, request):
+        subject = 'Confirmation for Auto-Post of I-D %s' % self.draft.filename
+        from_email = settings.IDST_FROM_EMAIL
+        to_email = self.cleaned_data['email']
+        send_mail(request, from_email, to_email, subject, 'submit/confirm_autopost.txt',
+                  {'draft': self.draft })
+
+    def save_submitter_info(self):
+        TempIdAuthors.objects.create(
+            id_document_tag=self.draft.temp_id_document_tag,
+            first_name=self.cleaned_data['first_name'],
+            last_name=self.cleaned_data['last_name'],
+            email_address=self.cleaned_data['email'],
+            author_order=0,
+            submission=self.draft)
+
+    def save_new_draft_info(self):
+        salt = sha.new(str(random.random())).hexdigest()[:5]
+        self.draft.auth_key = sha.new(salt+self.cleaned_data['email']).hexdigest()
+        self.draft.status_id = WAITING_AUTHENTICATION
+        self.draft.save()
+
+
+class MetaDataForm(AutoPostForm):
+
+    title = forms.CharField(label=u'Title', required=True)
+    version = forms.CharField(label=u'Version', required=True)
+    creation_date = forms.DateField(label=u'Creation date', required=True)
+    pages = forms.IntegerField(label=u'Pages', required=True)
+    abstract = forms.CharField(label=u'Abstract', widget=forms.Textarea, required=True)
+    first_name = forms.CharField(label=u'Given name', required=True)
+    last_name = forms.CharField(label=u'Last name', required=True)
+    email = forms.EmailField(label=u'Email address', required=True)
+    comments = forms.CharField(label=u'Comments to the secretariat', widget=forms.Textarea, required=False)
+    fields = ['title', 'version', 'creation_date', 'pages', 'abstract', 'first_name', 'last_name', 'email', 'comments']
+
+    def __init__(self, *args, **kwargs):
+        super(MetaDataForm, self).__init__(*args, **kwargs)
+        self.set_initials()
+        self.authors = self.get_initial_authors()
+
+    def get_initial_authors(self):
+        authors=[]
+        if self.is_bound:
+            for key, value in self.data.items():
+                if key.startswith('first_name_'):
+                    author = {'errors': {}}
+                    index = key.replace('first_name_', '')
+                    first_name = value.strip()
+                    if not first_name:
+                        author['errors']['first_name'] = 'This field is required'
+                    last_name = self.data.get('last_name_%s' % index, '').strip()
+                    if not last_name:
+                        author['errors']['last_name'] = 'This field is required'
+                    email = self.data.get('email_%s' % index, '').strip()
+                    if not email:
+                        author['errors']['email'] = 'This field is required'
+                    elif not email_re.search(email):
+                        author['errors']['email'] = 'Enter a valid e-mail address'
+                    if first_name or last_name or email:
+                        author.update({'first_name': first_name,
+                                       'last_name': last_name,
+                                       'email': ('%s %s' % (first_name, last_name), email),
+                                       'index': index,
+                                       })
+                        authors.append(author)
+            authors.sort(lambda x,y: cmp(int(x['index']), int(y['index'])))
+        return authors
+
+    def set_initials(self):
+        self.fields['pages'].initial=self.draft.txt_page_count
+        self.fields['creation_date'].initial=self.draft.creation_date
+        self.fields['version'].initial=self.draft.revision
+        self.fields['abstract'].initial=self.draft.abstract
+        self.fields['title'].initial=self.draft.id_document_name
+
+    def clean_creation_date(self):
+        creation_date = self.cleaned_data.get('creation_date', None)
+        if not creation_date:
+            return None
+        submit_date = self.draft.submission_date
+        if creation_date > submit_date:
+            raise forms.ValidationError('Creation Date must not be set after submission date')
+        if creation_date + datetime.timedelta(days=3) < submit_date:
+            raise forms.ValidationError('Creation Date must be within 3 days of submission date')
+        return creation_date
+
+    def clean_version(self):
+        version = self.cleaned_data.get('version', None)
+        if not version:
+            return None
+        if len(version) > 2:
+            raise forms.ValidationError('Version field is not in NN format')
+        try:
+            version_int = int(version)
+        except ValueError:
+            raise forms.ValidationError('Version field is not in NN format')
+        if version_int > 99 or version_int < 0:
+            raise forms.ValidationError('Version must be set between 00 and 99')
+        existing_revisions = [int(i.revision) for i in InternetDraft.objects.filter(filename=self.draft.filename)]
+        expected = 0
+        if existing_revisions:
+            expected = max(existing_revisions) + 1
+        if version_int != expected:
+            raise forms.ValidationError('Invalid Version Number (Version %00d is expected)' % expected)
+        return version
+
+    def clean(self):
+        if bool([i for i in self.authors if i['errors']]):
+            raise forms.ValidationError('Please fix errors in author list')
+        return super(MetaDataForm, self).clean()
+
+    def get_authors(self):
+        if not self.is_bound:
+            return self.validation.get_authors()
+        else:
+            return self.authors
+
+    def move_docs(self, draft, revision):
+        old_revision = draft.revision
+        for ext in draft.file_type.split(','):
+            source = os.path.join(settings.STAGING_PATH, '%s-%s%s' % (draft.filename, old_revision, ext))
+            dest = os.path.join(settings.STAGING_PATH, '%s-%s%s' % (draft.filename, revision, ext))
+            os.rename(source, dest)
+
+    def save_new_draft_info(self):
+        draft = self.draft
+        draft.id_documen_name = self.cleaned_data['title']
+        if draft.revision != self.cleaned_data['version']:
+            self.move_docs(draft, self.cleaned_data['version'])
+            draft.revision = self.cleaned_data['version']
+        draft.creation_date = self.cleaned_data['creation_date']
+        draft.txt_page_count = self.cleaned_data['pages']
+        draft.abstract = self.cleaned_data['abstract']
+        draft.comment_to_sec = self.cleaned_data['comments']
+        draft.status_id = MANUAL_POST_REQUESTED
+        draft.save()
+        self.save_submitter_info()
+
+    def save(self, request):
+        self.save_new_draft_info()
+        self.send_mail_to_secretariat(request)
+
+    def send_mail_to_secretariat(self, request):
+        subject = 'Manual Post Requested for %s' % self.draft.filename
+        from_email = settings.IDST_FROM_EMAIL
+        to_email = settings.IDST_TO_EMAIL
+        cc = [self.cleaned_data['email']]
+        cc += [i['email'][1] for i in self.authors]
+        if self.draft.group_acronym:
+            cc += [i.person.email()[1] for i in self.draft.group_acronym.wgchair_set.all()]
+        cc = list(set(cc))
+        send_mail(request, from_email, to_email, subject, 'submit/manual_post_mail.txt',
+                  {'form': self, 'draft': self.draft }, cc=cc)

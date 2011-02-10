@@ -1,0 +1,3 @@
+Follow this link to confirm you Auto-Post of I-D {{ draft.filename }}-{{ draft.revision }}
+
+I-D Submission Tool URL: /submit/status/{{ draft.submission_id }}/confirm/{{ draft.auth_key }}/
