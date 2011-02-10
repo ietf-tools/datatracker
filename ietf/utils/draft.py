@@ -292,6 +292,8 @@ class Draft():
             if begin:
                 if line and not line.startswith('  '):
                     break
+                if not line and not abstract:
+                    continue
                 new_identation = len(identation_re.match(line).group(0))
                 if new_identation < identation:
                     break
