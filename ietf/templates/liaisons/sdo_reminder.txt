@@ -1,3 +1,4 @@
+{% autoescape off %}
 Dear {{ manager_name }}
 
 This is an automatic reminder, please do not reply to this email.
@@ -19,3 +20,4 @@ For any questions please contact statments@ietf.org.
 Thank you,
 
 The IETF Secretariat (statements@ietf.org)
+{% endautoescape %}

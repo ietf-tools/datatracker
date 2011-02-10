@@ -2,7 +2,7 @@
 Submission Date: {{ liaison.submitted_date }}
 URL of the IETF Web page: {% url liaison_detail object_id=liaison.pk %}
 {% if liaison.deadline_date %}Please reply by {{ liaison.deadline_date }}{% endif %}
-From: {{ liaison.from_body }} ({{ liaison.person }} &lt;{{ liaison.replyto|default:liaison.from_email|fix_ampersands }}&gt;)
+From: {{ liaison.from_body }} ({{ liaison.person }} <{{ liaison.replyto|default:liaison.from_email }}>)
 To: {{ liaison.to_body }} ({{ liaison.to_poc }})
 Cc: {{ liaison.cc1 }}
 Reponse Contact: {{ liaison.response_contact }}
