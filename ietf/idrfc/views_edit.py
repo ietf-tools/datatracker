@@ -102,21 +102,15 @@ def change_stateREDESIGN(request, name):
             if state != doc.iesg_state:
                 save_document_in_history(doc)
                 
-                prev_state = doc.iesg_state
+                prev = doc.iesg_state
                 doc.iesg_state = state
-                
-                e = Event(doc=doc, by=login)
-                e.type = "changed_document"
-                e.desc = u"State changed to <b>%s</b> from <b>%s</b> by %s" % (
-                    doc.iesg_state.name,
-                    prev_state.name if prev_state else "None",
-                    login.get_name())
-                e.save()
+
+                e = log_state_changed(request, doc, login, prev)
                 
                 doc.time = e.time
                 doc.save()
 
-                email_state_changed(request, doc, strip_tags(e.desc))
+                email_state_changed(request, doc, e.desc)
                 email_owner(request, doc, doc.ad, login, e.desc)
 
                 if doc.iesg_state_id == "lc-req":

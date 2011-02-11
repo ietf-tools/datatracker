@@ -22,6 +22,7 @@ def email_state_changed(request, doc, text):
 
 def email_state_changedREDESIGN(request, doc, text):
     to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
+    text = strip_tags(text)
     send_mail(request, to, None,
               "ID Tracker State Update Notice: %s" % doc.file_tag(),
               "idrfc/state_changed_email.txt",

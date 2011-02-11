@@ -655,53 +655,51 @@ class EditPositionTestCase(django.test.TestCase):
         
         
 class DeferBallotTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft', 'ballot']
+    fixtures = ['names']
 
     def test_defer_ballot(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft = make_test_data()
+        draft.iesg_state_id = "iesg-eva"
+        draft.save()
+        
         url = urlreverse('doc_defer_ballot', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "rhousley", url)
+        login_testing_unauthorized(self, "ad", url)
 
         # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
 
         # defer
-        self.assertTrue(not draft.idinternal.ballot.defer)
         mailbox_before = len(mail_outbox)
         
         r = self.client.post(url, dict())
         self.assertEquals(r.status_code, 302)
 
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertTrue(draft.idinternal.ballot.defer)
-        self.assertTrue(draft.idinternal.cur_state_id == IDState.IESG_EVALUATION_DEFER)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.iesg_state_id, "defer")
         
         self.assertEquals(len(mail_outbox), mailbox_before + 2)
         self.assertTrue("Deferred" in mail_outbox[-2]['Subject'])
         self.assertTrue(draft.file_tag() in mail_outbox[-2]['Subject'])
 
     def test_undefer_ballot(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_undefer_ballot', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "rhousley", url)
-
-        draft.idinternal.ballot.defer = True
-        draft.idinternal.ballot.save()
+        draft = make_test_data()
+        draft.iesg_state_id = "defer"
+        draft.save()
         
+        url = urlreverse('doc_undefer_ballot', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "ad", url)
+
         # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
 
         # undefer
-        self.assertTrue(draft.idinternal.ballot.defer)
-        
         r = self.client.post(url, dict())
         self.assertEquals(r.status_code, 302)
 
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertTrue(not draft.idinternal.ballot.defer)
-        self.assertEquals(draft.idinternal.cur_state_id, IDState.IESG_EVALUATION)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.iesg_state_id, "iesg-eva")
 
 class BallotWriteupsTestCase(django.test.TestCase):
     fixtures = ['base', 'draft', 'ballot']
@@ -783,7 +781,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
     def test_issue_ballot(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "rhousley", url)
+        login_testing_unauthorized(self, "ad", url)
 
         draft.idinternal.ballot.ballot_issued = False
         draft.idinternal.ballot.save()

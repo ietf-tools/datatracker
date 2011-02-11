@@ -23,7 +23,7 @@ from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
 from doc.models import Document, Event, BallotPosition, save_document_in_history
-from name.models import BallotPositionName
+from name.models import BallotPositionName, IesgDocStateName
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -488,8 +488,45 @@ def defer_ballot(request, name):
   
     return render_to_response('idrfc/defer_ballot.html',
                               dict(doc=doc,
-                                   telechat_date=telechat_date),
+                                   telechat_date=telechat_date,
+                                   back_url=doc.idinternal.get_absolute_url()),
                               context_instance=RequestContext(request))
+
+@group_required('Area_Director','Secretariat')
+def defer_ballotREDESIGN(request, name):
+    """Signal post-pone of Internet Draft ballot, notifying relevant parties."""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.iesg_state:
+        raise Http404()
+
+    login = request.user.get_profile().email()
+    telechat_date = TelechatDates.objects.all()[0].date2
+
+    if request.method == 'POST':
+        save_document_in_history(doc)
+
+        prev = doc.iesg_state
+        doc.iesg_state = IesgDocStateName.objects.get(slug='defer')
+        e = log_state_changed(request, doc, login, prev)
+        
+        doc.time = e.time
+        doc.save()
+
+        email_state_changed(request, doc, e.desc)
+
+        update_telechat(request, doc, login, telechat_date)
+        email_ballot_deferred(request, doc, login.get_name(), telechat_date)
+
+        return HttpResponseRedirect(doc.get_absolute_url())
+  
+    return render_to_response('idrfc/defer_ballot.html',
+                              dict(doc=doc,
+                                   telechat_date=telechat_date,
+                                   back_url=doc.get_absolute_url()),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    defer_ballot = defer_ballotREDESIGN
 
 @group_required('Area_Director','Secretariat')
 def undefer_ballot(request, name):
@@ -513,8 +550,41 @@ def undefer_ballot(request, name):
         return HttpResponseRedirect(doc.idinternal.get_absolute_url())
   
     return render_to_response('idrfc/undefer_ballot.html',
-                              dict(doc=doc),
+                              dict(doc=doc,
+                                   back_url=doc.idinternal.get_absolute_url()),
                               context_instance=RequestContext(request))
+
+@group_required('Area_Director','Secretariat')
+def undefer_ballotREDESIGN(request, name):
+    """Delete deferral of Internet Draft ballot."""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.iesg_state:
+        raise Http404()
+
+    login = request.user.get_profile().email()
+    
+    if request.method == 'POST':
+        save_document_in_history(doc)
+
+        prev = doc.iesg_state
+        doc.iesg_state = IesgDocStateName.objects.get(slug='iesg-eva')
+        e = log_state_changed(request, doc, login, prev)
+        
+        doc.time = e.time
+        doc.save()
+
+        email_state_changed(request, doc, e.desc)
+        
+        return HttpResponseRedirect(doc.get_absolute_url())
+  
+    return render_to_response('idrfc/undefer_ballot.html',
+                              dict(doc=doc,
+                                   back_url=doc.get_absolute_url()),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    undefer_ballot = undefer_ballotREDESIGN
+
 
 class LastCallTextForm(forms.ModelForm):
     def clean_last_call_text(self):

@@ -3,6 +3,8 @@ from django.conf import settings
 from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo, IESGLogin
 from ietf.idrfc.mails import *
 
+from doc.models import Telechat, Event
+
 def add_document_comment(request, doc, text, include_by=True, ballot=None):
     if request:
         login = IESGLogin.objects.get(login_name=request.user.username)
@@ -59,6 +61,20 @@ def log_state_changed(request, doc, by, email_watch_list=True):
 
     return change
 
+def log_state_changedREDESIGN(request, doc, by, prev_iesg_state):
+    e = Event(doc=doc, by=by)
+    e.type = "changed_document"
+    e.desc = u"State changed to <b>%s</b> from <b>%s</b> by %s" % (
+        doc.iesg_state.name,
+        prev_iesg_state.name if prev_iesg_state else "None",
+        by.get_name())
+    e.save()
+    return e
+
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    log_state_changed = log_state_changedREDESIGN
+
        
 def update_telechat(request, idinternal, new_telechat_date, new_returning_item=None):
     on_agenda = bool(new_telechat_date)
@@ -98,7 +114,6 @@ def update_telechat(request, idinternal, new_telechat_date, new_returning_item=N
 def update_telechatREDESIGN(request, doc, by, new_telechat_date, new_returning_item=None):
     on_agenda = bool(new_telechat_date)
 
-    from doc.models import Telechat
     prev = doc.latest_event(Telechat, type="scheduled_for_telechat")
     prev_returning = bool(prev and prev.returning_item)
     prev_telechat = prev.telechat_date if prev else None
