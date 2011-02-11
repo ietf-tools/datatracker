@@ -642,7 +642,7 @@ class BallotWrapper:
 	for pos in BallotPosition.objects.filter(doc=self.ballot, type="changed_ballot_position", time__gte=self.ballot.process_start, time__lte=self.ballot.process_end).select_related('ad').order_by("-time", '-id'):
             if pos.ad not in seen:
                 p = dict(ad_name=pos.ad.get_name(),
-                         ad_username="", # FIXME: don't seem to have username at the moment
+                         ad_username=pos.ad.pk, # ought to rename this in doc_ballot_list
                          position=pos.pos.name,
                          is_old_ad=pos.ad not in active_ads,
                          old_positions=[])
@@ -676,7 +676,7 @@ class BallotWrapper:
             for ad in active_ads:
                 if ad not in seen:
                     d = dict(ad_name=ad.get_name(),
-                             ad_username="", # FIXME: don't seem to have username at the moment
+                             ad_username=pos.ad.pk,
                              position="No Record",
                              )
                     positions.append(d)

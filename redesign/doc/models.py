@@ -257,7 +257,7 @@ class NewRevision(Event):
 # IESG events
 class BallotPosition(Event):
     ad = models.ForeignKey(Email)
-    pos = models.ForeignKey(BallotPositionName, verbose_name="position", default="norec")
+    pos = models.ForeignKey(BallotPositionName, verbose_name="position", default="norecord")
     discuss = models.TextField(help_text="Discuss text if position is discuss", blank=True)
     discuss_time = models.DateTimeField(help_text="Time discuss text was written", blank=True, null=True)
     comment = models.TextField(help_text="Optional comment", blank=True)

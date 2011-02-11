@@ -1,6 +1,6 @@
 {% if discuss %}Discuss:
-{{ discuss|safe }}
+{{ discuss|safe|wordwrap:73 }}
 
 {% endif %}{% if comment %}Comment:
-{{ comment|safe }}
+{{ comment|safe|wordwrap:73 }}
 {% endif %}

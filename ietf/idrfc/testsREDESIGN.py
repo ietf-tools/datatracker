@@ -534,63 +534,74 @@ class AddCommentTestCase(django.test.TestCase):
         self.assertTrue(draft.name in mail_outbox[-1]['Subject'])
 
 class EditPositionTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft', 'ballot']
+    fixtures = ['names']
 
     def test_edit_position(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.filename))
-        login_testing_unauthorized(self, "rhousley", url)
+        draft = make_test_data()
+        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "ad", url)
 
+        ad = Email.objects.get(address="aread@ietf.org")
+        
         # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form input[name=position]')) > 0)
-        self.assertEquals(len(q('form textarea[name=comment_text]')), 1)
+        self.assertEquals(len(q('form textarea[name=comment]')), 1)
 
         # vote
         events_before = draft.event_set.count()
-        self.assertTrue(not Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley"))
         
         r = self.client.post(url, dict(position="discuss",
-                                       discuss_text="This is a discussion test.",
-                                       comment_text="This is a test."))
+                                       discuss="This is a discussion test.",
+                                       comment="This is a test."))
         self.assertEquals(r.status_code, 302)
 
-        pos = Position.objects.get(ballot=draft.idinternal.ballot, ad__login_name="rhousley")
-        self.assertTrue("This is a discussion test." in IESGDiscuss.objects.get(ballot=draft.idinternal.ballot, ad__login_name="rhousley").text)
-        self.assertTrue("This is a test." in IESGComment.objects.get(ballot=draft.idinternal.ballot, ad__login_name="rhousley").text)
-        self.assertTrue(pos.discuss)
-        self.assertTrue(not (pos.yes or pos.noobj or pos.abstain or pos.recuse))
-        
+        pos = draft.latest_event(BallotPosition, ad=ad)
+        self.assertEquals(pos.pos.slug, "discuss")
+        self.assertTrue("This is a discussion test." in pos.discuss)
+        self.assertTrue(pos.discuss_time != None)
+        self.assertTrue("This is a test." in pos.comment)
+        self.assertTrue(pos.comment_time != None)
+        self.assertTrue("New position" in pos.desc)
         self.assertEquals(draft.event_set.count(), events_before + 3)
-        self.assertTrue("New position" in draft.idinternal.comments()[2].comment_text)
 
         # recast vote
         events_before = draft.event_set.count()
         r = self.client.post(url, dict(position="noobj"))
         self.assertEquals(r.status_code, 302)
 
-        pos = Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley")[0]
-        self.assertTrue(pos.noobj)
-        self.assertTrue(not (pos.yes or pos.abstain or pos.recuse))
-        self.assertTrue(pos.discuss == -1)
+        pos = draft.latest_event(BallotPosition, ad=ad)
+        self.assertEquals(pos.pos.slug, "noobj")
         self.assertEquals(draft.event_set.count(), events_before + 1)
-        self.assertTrue("Position" in draft.idinternal.comments()[0].comment_text)
+        self.assertTrue("Position for" in pos.desc)
         
         # clear vote
         events_before = draft.event_set.count()
-        r = self.client.post(url, dict(position=""))
+        r = self.client.post(url, dict(position="norecord"))
         self.assertEquals(r.status_code, 302)
 
-        pos = Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley")
-        self.assertEquals(len(pos), 0)
+        pos = draft.latest_event(BallotPosition, ad=ad)
+        self.assertEquals(pos.pos.slug, "norecord")
         self.assertEquals(draft.event_set.count(), events_before + 1)
-        self.assertTrue("Position" in draft.idinternal.comments()[0].comment_text)
+        self.assertTrue("Position for" in pos.desc)
+
+        # change comment
+        events_before = draft.event_set.count()
+        r = self.client.post(url, dict(position="norecord", comment="New comment."))
+        self.assertEquals(r.status_code, 302)
+
+        pos = draft.latest_event(BallotPosition, ad=ad)
+        self.assertEquals(pos.pos.slug, "norecord")
+        self.assertEquals(draft.event_set.count(), events_before + 2)
+        self.assertTrue("Ballot comment text updated" in pos.desc)
+        
     def test_edit_position_as_secretary(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.filename))
-        url += "?ad=rhousley"
+        draft = make_test_data()
+        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name))
+        ad = Email.objects.get(address="aread@ietf.org")
+        url += "?ad=%s" % ad.pk
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -599,23 +610,30 @@ class EditPositionTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertTrue(len(q('form input[name=position]')) > 0)
 
-        # vote for rhousley
+        # vote on behalf of AD
         events_before = draft.event_set.count()
-        self.assertTrue(not Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley"))
-        
         r = self.client.post(url, dict(position="discuss"))
         self.assertEquals(r.status_code, 302)
 
-        pos = Position.objects.get(ballot=draft.idinternal.ballot, ad__login_name="rhousley")
-        self.assertTrue(pos.discuss)
-        self.assertTrue(not (pos.yes or pos.noobj or pos.abstain or pos.recuse))
-
+        pos = draft.latest_event(BallotPosition, ad=ad)
+        self.assertEquals(pos.pos.slug, "discuss")
+        self.assertTrue("New position" in pos.desc)
+        self.assertTrue("by Sec" in pos.desc)
         
     def test_send_ballot_comment(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_send_ballot_comment', kwargs=dict(name=draft.filename))
-        login_as = "rhousley"
-        login_testing_unauthorized(self, login_as, url)
+        draft = make_test_data()
+        draft.notify = "somebody@example.com"
+        draft.save()
+
+        ad = Email.objects.get(address="aread@ietf.org")
+        
+        BallotPosition.objects.create(doc=draft, type="changed_ballot_position",
+                                      by=ad, ad=ad, pos=BallotPositionName.objects.get(slug="yes"),
+                                      comment="Test!",
+                                      comment_time=datetime.datetime.now())
+        
+        url = urlreverse('doc_send_ballot_comment', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "ad", url)
 
         # normal get
         r = self.client.get(url)
@@ -625,16 +643,15 @@ class EditPositionTestCase(django.test.TestCase):
 
         # send
         mailbox_before = len(mail_outbox)
-        IESGComment.objects.create(ballot=draft.idinternal.ballot,
-                                   ad=IESGLogin.objects.get(login_name=login_as),
-                                   text="Test!", date=date.today(),
-                                   revision=draft.revision_display(), active=1)
-        
+
         r = self.client.post(url, dict(cc="test@example.com", cc_state_change="1"))
         self.assertEquals(r.status_code, 302)
 
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("COMMENT" in mail_outbox[-1]['Subject'])
+        m = mail_outbox[-1]
+        self.assertTrue("COMMENT" in m['Subject'])
+        self.assertTrue(draft.name in m['Subject'])
+        self.assertTrue("Test!" in str(m))
         
         
 class DeferBallotTestCase(django.test.TestCase):
@@ -642,7 +659,7 @@ class DeferBallotTestCase(django.test.TestCase):
 
     def test_defer_ballot(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_defer_ballot', kwargs=dict(name=draft.filename))
+        url = urlreverse('doc_defer_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "rhousley", url)
 
         # normal get
@@ -666,7 +683,7 @@ class DeferBallotTestCase(django.test.TestCase):
 
     def test_undefer_ballot(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_undefer_ballot', kwargs=dict(name=draft.filename))
+        url = urlreverse('doc_undefer_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "rhousley", url)
 
         draft.idinternal.ballot.defer = True
@@ -691,7 +708,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
 
     def test_edit_last_call_text(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.filename))
+        url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -728,7 +745,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
 
     def test_request_last_call(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.filename))
+        url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         mailbox_before = len(mail_outbox)
@@ -745,7 +762,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
 
     def test_edit_ballot_writeup(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.filename))
+        url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -765,7 +782,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
 
     def test_issue_ballot(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.filename))
+        url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "rhousley", url)
 
         draft.idinternal.ballot.ballot_issued = False
@@ -800,7 +817,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
 
     def test_edit_approval_text(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_ballot_approvaltext', kwargs=dict(name=draft.filename))
+        url = urlreverse('doc_ballot_approvaltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -840,7 +857,7 @@ class ApproveBallotTestCase(django.test.TestCase):
 
     def test_approve_ballot(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        url = urlreverse('doc_approve_ballot', kwargs=dict(name=draft.filename))
+        url = urlreverse('doc_approve_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -875,7 +892,7 @@ class MakeLastCallTestCase(django.test.TestCase):
         draft.lc_expiration_date = None
         draft.save()
         
-        url = urlreverse('doc_make_last_call', kwargs=dict(name=draft.filename))
+        url = urlreverse('doc_make_last_call', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -984,7 +1001,7 @@ class ExpireIDsTestCase(django.test.TestCase):
             self.assertEquals(int(draft.revision), int(revision_before) + 1)
             self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
             self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
-            new_txt = "%s-%s.txt" % (draft.filename, draft.revision)
+            new_txt = "%s-%s.txt" % (draft.name, draft.revision)
             self.assertTrue(os.path.exists(os.path.join(self.id_dir, new_txt)))
 
     def test_clean_up_id_files(self):
@@ -1015,9 +1032,9 @@ class ExpireIDsTestCase(django.test.TestCase):
         draft.status_id = 3
         draft.save()
 
-        txt = "%s-%s.txt" % (draft.filename, draft.revision)
+        txt = "%s-%s.txt" % (draft.name, draft.revision)
         self.write_id_file(txt, 5000)
-        pdf = "%s-%s.pdf" % (draft.filename, draft.revision)
+        pdf = "%s-%s.pdf" % (draft.name, draft.revision)
         self.write_id_file(pdf, 5000)
 
         clean_up_id_files()
@@ -1035,7 +1052,7 @@ class ExpireIDsTestCase(django.test.TestCase):
         draft.expiration_date = datetime.date.today() - datetime.timedelta(days=InternetDraft.DAYS_TO_EXPIRE + 1)
         draft.save()
 
-        txt = "%s-%s.txt" % (draft.filename, draft.revision)
+        txt = "%s-%s.txt" % (draft.name, draft.revision)
         self.write_id_file(txt, 5000)
 
         clean_up_id_files()
@@ -1053,7 +1070,7 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         revision_before = draft.revision
 
-        txt = "%s-%s.txt" % (draft.filename, draft.revision)
+        txt = "%s-%s.txt" % (draft.name, draft.revision)
         self.write_id_file(txt, 1000)
 
         clean_up_id_files()

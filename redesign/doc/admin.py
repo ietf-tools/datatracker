@@ -18,6 +18,7 @@ admin.site.register(DocHistory, DocHistoryAdmin)
 class DocAliasAdmin(admin.ModelAdmin):
     list_display = [ 'name', 'document_link', ]
     search_fields = [ 'name', 'document__name', ]
+    raw_id_fields = ['document']
 admin.site.register(DocAlias, DocAliasAdmin)
 
 class SendQueueAdmin(admin.ModelAdmin):
@@ -33,14 +34,19 @@ class EventAdmin(admin.ModelAdmin):
 
     def by_raw(self, instance):
         return instance.by_id
+    by_raw.short_description = "By"
     
 admin.site.register(Event, EventAdmin)
 
 admin.site.register(Message, EventAdmin)
 admin.site.register(Text, EventAdmin)
 admin.site.register(NewRevision, EventAdmin)
-admin.site.register(BallotPosition, EventAdmin)
 admin.site.register(Status, EventAdmin)
 admin.site.register(Expiration, EventAdmin)
 admin.site.register(Telechat, EventAdmin)
 
+class BallotPositionAdmin(EventAdmin):
+    raw_id_fields = ["doc", "by", "ad"]
+
+admin.site.register(BallotPosition, BallotPositionAdmin)
+    

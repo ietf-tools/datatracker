@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Change position for {{ ad.get_name }}{% endblock %}
+
+{% block morecss %}
+form.position-form .position ul {
+  padding: 0;
+  margin: 0;
+}
+form.position-form .position li {
+  list-style-type: none;
+  float: left;
+  padding-right: 10px;
+}
+form.position-form .last-edited {
+  font-style: italic;
+}
+form.position-form .discuss-text {
+  padding-top: 20px
+}
+form.position-form #id_discuss_text,
+form.position-form #id_comment_text {
+  width: 700px;
+  height: 250px;
+}
+form.position-form .comment-text {
+  margin-top: 20px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Change position for {{ ad.get_name }}</h1>
+
+<form class="position-form" action="" method="POST">
+  <div class="position">{{ form.position }}</div>
+
+  <div style="clear:left"></div>
+  
+  <div class="discuss-widgets" {% ifnotequal form.position.initial "discuss" %}style="display:none"{% endifnotequal %}>
+  <div class="discuss-text">
+    {{ form.discuss.label_tag }}:
+    {% if old_pos and old_pos.discuss_time %}<span class="last-edited">(last edited {{ old_pos.discuss_time }})</span>{% endif %}
+  </div>
+  {{ form.discuss }}
+  </div>
+  
+  <div class="comment-text">
+    {{ form.comment.label_tag }}:
+    {% if old_pos and old_pos.comment_time %}<span class="last-edited">(last edited {{ old_pos.comment_time }}){% endif %}</span>
+  </div>
+  {{ form.comment }}
+
+  <div class="actions">
+    <a href="{{ return_to_url }}">Back</a>
+    <input type="submit" name="send_mail" value="Save and send email"/>
+    <input type="submit" value="Save"/>
+  </div>
+  
+  {{ form.return_to_url }}
+
+</form>
+{% endblock %}
+
+{% block content_end %}
+<script type="text/javascript" src="/js/doc-edit-position.js"></script>
+{% endblock %}

@@ -22,6 +22,9 @@ from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
+from doc.models import Document, Event, BallotPosition, save_document_in_history
+from name.models import BallotPositionName
+
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
                   ("discuss", "Discuss"),
@@ -78,14 +81,13 @@ def edit_position(request, name):
         if not ad_username:
             raise Http404()
         ad = get_object_or_404(IESGLogin, login_name=ad_username)
-        
-    pos, discuss, comment = get_ballot_info(doc.idinternal.ballot, ad)
+
+    doc.latest_event(BallotPosition, type='changed_ballot_position', ad=ad)
 
     if request.method == 'POST':
         form = EditPositionForm(request.POST)
         if form.is_valid():
- 
-            # save the vote
+             # save the vote
             clean = form.cleaned_data
 
             if clean['return_to_url']:
@@ -189,6 +191,139 @@ def edit_position(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
+class EditPositionFormREDESIGN(forms.Form):
+    position = forms.ModelChoiceField(queryset=BallotPositionName.objects.all(), widget=forms.RadioSelect, initial="norecord", required=True)
+    discuss = forms.CharField(required=False, widget=forms.Textarea)
+    comment = forms.CharField(required=False, widget=forms.Textarea)
+    return_to_url = forms.CharField(required=False, widget=forms.HiddenInput)
+
+@group_required('Area_Director','Secretariat')
+def edit_positionREDESIGN(request, name):
+    """Vote and edit discuss and comment on Internet Draft as Area Director."""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.iesg_state:
+        raise Http404()
+
+    ad = login = request.user.get_profile().email()
+
+    if 'HTTP_REFERER' in request.META:
+        return_to_url = request.META['HTTP_REFERER']
+    else:
+        return_to_url = doc.get_absolute_url()
+
+    # if we're in the Secretariat, we can select an AD to act as stand-in for
+    if not in_group(request.user, "Area_Director"):
+        ad_id = request.GET.get('ad')
+        if not ad_id:
+            raise Http404()
+        ad = get_object_or_404(Email, pk=ad_id)
+
+    old_pos = doc.latest_event(BallotPosition, type="changed_ballot_position", ad=ad)
+
+    if request.method == 'POST':
+        form = EditPositionForm(request.POST)
+        if form.is_valid():
+ 
+            # save the vote
+            clean = form.cleaned_data
+
+            if clean['return_to_url']:
+              return_to_url = clean['return_to_url']
+
+            pos = BallotPosition(doc=doc, by=login)
+            pos.type = "changed_ballot_position"
+            pos.ad = ad
+            pos.pos = clean["position"]
+            pos.comment = clean["comment"].strip()
+            pos.comment_time = old_pos.comment_time if old_pos else None
+            pos.discuss = clean["discuss"].strip()
+            pos.discuss_time = old_pos.discuss_time if old_pos else None
+
+            changes = []
+            added_events = []
+            # possibly add discuss/comment comments to history trail
+            # so it's easy to see
+            old_comment = old_pos.comment if old_pos else ""
+            if pos.comment != old_comment:
+                pos.comment_time = pos.time
+                changes.append("comment")
+
+                if pos.comment:
+                    e = Event(doc=doc)
+                    e.by = ad # otherwise we can't see who's saying it
+                    e.type = "added_comment"
+                    e.desc = "[Ballot comment]\n" + pos.comment
+                    added_events.append(e)
+
+            old_discuss = old_pos.discuss if old_pos else ""
+            if pos.discuss != old_discuss:
+                pos.discuss_time = pos.time
+                changes.append("discuss")
+
+                if pos.discuss:
+                    e = Event(doc=doc, by=login)
+                    e.by = ad # otherwise we can't see who's saying it
+                    e.type = "added_comment"
+                    e.desc = "[Ballot discuss]\n" + pos.discuss
+                    added_events.append(e)
+
+            # figure out a description
+            if not old_pos and pos.pos.slug != "norecord":
+                pos.desc = u"[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.get_name())
+            elif old_pos and pos.pos != old_pos.pos:
+                pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad.get_name(), pos.pos.name, old_pos.pos.name)
+
+            if not pos.desc and changes:
+                pos.desc = u"Ballot %s text updated for %s" % (u" and ".join(changes), ad.get_name())
+
+            # only add new event if we actually got a change
+            if pos.desc:
+                if login != ad:
+                    pos.desc += u" by %s" % login.get_name()
+
+                pos.save()
+
+                for e in added_events:
+                    e.save() # save them after the position is saved to get later id
+                        
+                doc.time = pos.time
+                doc.save()
+
+            # FIXME: test
+            if request.POST.get("send_mail"):
+                qstr = "?return_to_url=%s" % return_to_url
+                if request.GET.get('ad'):
+                    qstr += "&ad=%s" % request.GET.get('ad')
+                return HttpResponseRedirect(urlreverse("doc_send_ballot_comment", kwargs=dict(name=doc.name)) + qstr)
+            else:
+                return HttpResponseRedirect(return_to_url)
+    else:
+        initial = {}
+        if old_pos:
+            initial['position'] = old_pos.pos.slug
+            initial['discuss'] = old_pos.discuss
+            initial['comment'] = old_pos.comment
+            
+        if return_to_url:
+            initial['return_to_url'] = return_to_url
+            
+        form = EditPositionForm(initial=initial)
+  
+
+    return render_to_response('idrfc/edit_positionREDESIGN.html',
+                              dict(doc=doc,
+                                   form=form,
+                                   ad=ad,
+                                   return_to_url=return_to_url,
+                                   old_pos=old_pos,
+                                   ),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    edit_position = edit_positionREDESIGN
+    EditPositionForm = EditPositionFormREDESIGN
+
+
 @group_required('Area_Director','Secretariat')
 def send_ballot_comment(request, name):
     """Email Internet Draft ballot discuss/comment for area director."""
@@ -254,6 +389,73 @@ def send_ballot_comment(request, name):
                                    back_url=back_url,
                                   ),
                               context_instance=RequestContext(request))
+
+@group_required('Area_Director','Secretariat')
+def send_ballot_commentREDESIGN(request, name):
+    """Email Internet Draft ballot discuss/comment for area director."""
+    doc = get_object_or_404(Document, docalias__name=name)
+
+    ad = login = request.user.get_profile().email()
+
+    return_to_url = request.GET.get('return_to_url')
+    if not return_to_url:
+        return_to_url = doc.get_absolute_url()
+
+    if 'HTTP_REFERER' in request.META:
+        back_url = request.META['HTTP_REFERER']
+    else:
+        back_url = doc.get_absolute_url()
+
+    # if we're in the Secretariat, we can select an AD to act as stand-in for
+    if not in_group(request.user, "Area_Director"):
+        ad_id = request.GET.get('ad')
+        if not ad_id:
+            raise Http404()
+        ad = get_object_or_404(Email, pk=ad_id)
+
+    pos = doc.latest_event(BallotPosition, type="changed_ballot_position", ad=ad)
+    if not pos:
+        raise Http404()
+    
+    subj = []
+    d = ""
+    if pos.pos == "discuss" and pos.discuss:
+        d = pos.discuss
+        subj.append("DISCUSS")
+    c = ""
+    if pos.comment:
+        c = pos.comment
+        subj.append("COMMENT")
+
+    subject = "%s: %s" % (" and ".join(subj), doc.file_tag())
+    body = render_to_string("idrfc/ballot_comment_mail.txt",
+                            dict(discuss=d, comment=c))
+    frm = ad.formatted_email()
+    to = "iesg@ietf.org"
+        
+    if request.method == 'POST':
+        cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
+        if request.POST.get("cc_state_change") and doc.notify:
+            cc.extend(doc.notify.split(','))
+
+        send_mail_text(request, to, frm, subject, body, cc=", ".join(cc))
+            
+        return HttpResponseRedirect(return_to_url)
+  
+    return render_to_response('idrfc/send_ballot_commentREDESIGN.html',
+                              dict(doc=doc,
+                                   subject=subject,
+                                   body=body,
+                                   frm=frm,
+                                   to=to,
+                                   ad=ad,
+                                   can_send=d or c,
+                                   back_url=back_url,
+                                  ),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    send_ballot_comment = send_ballot_commentREDESIGN
 
 
 @group_required('Area_Director','Secretariat')
