@@ -299,7 +299,8 @@ class Draft():
                     break
                 identation = new_identation
                 abstract.append(line)
-        return '\n'.join(abstract)
+        self._abstract = '\n'.join(abstract)
+        return self._abstract
 
 
     # ------------------------------------------------------------------
