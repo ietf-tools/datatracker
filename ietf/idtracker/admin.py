@@ -35,8 +35,9 @@ class DocumentCommentAdmin(admin.ModelAdmin):
 admin.site.register(DocumentComment, DocumentCommentAdmin)
 
 class EmailAddressAdmin(admin.ModelAdmin):
-    list_display=('id', 'person_link', 'address', 'type', 'priority')
+    list_display=('id', 'person_link', 'address', 'type', 'priority_link')
     search_fields=['address']
+    raw_id_fields=['person_or_org', ]
 admin.site.register(EmailAddress, EmailAddressAdmin)
 
 class GoalMilestoneAdmin(admin.ModelAdmin):

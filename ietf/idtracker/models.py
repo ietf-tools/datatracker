@@ -826,6 +826,12 @@ class EmailAddress(models.Model):
     def __str__(self):
 	return self.address
     person_link = admin_link('person_or_org')
+    def priority_link(self):
+        if self.type=="I-D":
+            return '<a href="/admin/idtracker/internetdraft/%s/">%s</a>' % (self.priority, self.priority)
+        else:
+            return self.priority
+    priority_link.allow_tags = True
     class Meta:
         db_table = 'email_addresses'
 	#unique_together = (('email_priority', 'person_or_org'), )
