@@ -1,14 +1,18 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.core.exceptions import ObjectDoesNotExist
 
-from ietf.submit.models import IdSubmissionDetail
+from ietf.submit.models import IdSubmissionDetail, IdApprovedDetail
 from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm
-from ietf.submit.utils import (DraftValidation, UPLOADED, WAITING_AUTHENTICATION, CANCELED,
-                               perform_post)
+from ietf.submit.utils import (DraftValidation, perform_post,
+                               UPLOADED, WAITING_AUTHENTICATION, CANCELED, INITIAL_VERSION_APPROVAL_REQUESTED)
+from ietf.utils.mail import send_mail
+
 
 
 def submit_index(request):
@@ -53,12 +57,33 @@ def draft_status(request, submission_id, message=None):
             message=('error', 'This submission has been canceled, modification is no longer possible')
         status = detail.status
         allow_edit = None
+
     if request.method=='POST' and allow_edit:
         if request.POST.get('autopost', False):
-            auto_post_form = AutoPostForm(draft=detail, validation=validation, data=request.POST)
-            if auto_post_form.is_valid():
-                auto_post_form.save(request)
-                return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
+            try:
+                approved_detail = IdApprovedDetail.objects.get(filename=detail.filename)
+            except ObjectDoesNotExist:
+                approved_detail = None
+                detail.status_id = INITIAL_VERSION_APPROVAL_REQUESTED
+                detail.save()
+
+            if detail.revision == '00' and not approved_detail:
+                subject = 'New draft waiting for approval: %s' % detail.filename
+                from_email = settings.IDST_FROM_EMAIL
+                to_email = []
+                if detail.group_acronym:
+                    to_email += [i.person.email()[1] for i in detail.group_acronym.wgchair_set.all()]
+                to_email = list(set(to_email))
+                if to_email:
+                    metadata_form = MetaDataForm(draft=detail, validation=validation)
+                    send_mail(request, to_email, from_email, subject, 'submit/manual_post_mail.txt',
+                              {'form': metadata_form, 'draft': detail})
+            else:
+                auto_post_form = AutoPostForm(draft=detail, validation=validation, data=request.POST)
+                if auto_post_form.is_valid():
+                    auto_post_form.save(request)
+            return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
+
         else:
             return HttpResponseRedirect(reverse(draft_edit, None, kwargs={'submission_id': detail.submission_id}))
     else:
@@ -114,3 +139,12 @@ def draft_confirm(request, submission_id, auth_key):
         message = ('success', 'Authorization key accepted. Auto-Post complete')
         perform_post(detail)
     return draft_status(request, submission_id, message)
+
+
+def draft_approve(request, submission_id):
+    detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
+    if detail.status_id == INITIAL_VERSION_APPROVAL_REQUESTED:
+        validation = DraftValidation(detail)
+        approved_detail = IdApprovedDetail()
+        perform_post(detail)
+    return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submission_id}))

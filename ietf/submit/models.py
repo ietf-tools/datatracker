@@ -46,6 +46,18 @@ class IdSubmissionDetail(models.Model):
         db_table = 'id_submission_detail'
 
 
+class IdApprovedDetail(models.Model):
+    id = models.AutoField(primary_key=True)
+    filename = models.CharField(null=True, blank=True, max_length=255)
+    approved_status = models.IntegerField(null=True, blank=True)
+    approved_person_tag = models.IntegerField(null=True, blank=True)
+    approved_date = models.DateField(null=True, blank=True)
+    recorded_by = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'id_approved_detail'
+
+
 class TempIdAuthors(models.Model):
     id = models.AutoField(primary_key=True)
     id_document_tag = models.IntegerField()

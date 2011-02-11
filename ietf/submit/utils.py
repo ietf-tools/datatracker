@@ -2,6 +2,7 @@ import os
 import re
 import datetime
 
+from django.conf import settings
 from ietf.idtracker.models import InternetDraft, EmailAddress, PersonOrOrgInfo
 
 
@@ -12,6 +13,7 @@ MANUAL_POST_REQUESTED = 5
 POSTED = -1
 POSTED_BY_SECRETARIAT = -2
 CANCELED = -4
+INITIAL_VERSION_APPROVAL_REQUESTED = 10
 
 
 # Not a real WG

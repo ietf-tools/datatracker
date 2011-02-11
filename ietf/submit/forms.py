@@ -464,5 +464,5 @@ class MetaDataForm(AutoPostForm):
         if self.draft.group_acronym:
             cc += [i.person.email()[1] for i in self.draft.group_acronym.wgchair_set.all()]
         cc = list(set(cc))
-        send_mail(request, from_email, to_email, subject, 'submit/manual_post_mail.txt',
+        send_mail(request, to_email, from_email, subject, 'submit/manual_post_mail.txt',
                   {'form': self, 'draft': self.draft }, cc=cc)

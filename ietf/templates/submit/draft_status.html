@@ -22,7 +22,7 @@ table.metadata-table ul.errorlist { color: red; padding: 0px; margin: 0px; list-
 <script type="text/javascript">
 function confirmCancelation(){
   if (confirm("Cancel this submission?"))
-    document.location = "cancel";
+    document.location = "/submit/status/{{ detail.submission_id }}/cancel/";
 }
 
 (function ($) {
@@ -146,40 +146,49 @@ returned to the submitter.
 </table>
 
 {% if allow_edit %} 
-<form method="post" action="" name="auto_post_form"> 
-<input type="submit" value="Adjust Meta-Data" value="adjust" /> (Leads to manual post by the Secretariat) 
-</form> 
-{% if is_valid %} 
-<h2>Please edit the following meta-data before proceeding to Auto-Post</h2> 
-<p> 
-If you are one of the authors of this document, then please click the button with your name on it to automatically fill in the submitter information as requested below. Otherwise, please manually enter your information. 
-</p> 
-<form method="post" action=""> 
-{{ auto_post_form.get_author_buttons|safe }} 
-<table class="metadata-table"> 
-{{ auto_post_form }} 
-</table> 
-<input type="submit" value="Post" name="autopost" /> 
-</form> 
-{% endif %} 
+  <form method="post" action="" name="auto_post_form"> 
+  <input type="submit" value="Adjust Meta-Data" value="adjust" /> (Leads to manual post by the Secretariat) 
+  </form>
 
-<h2>Cancel submission</h2>
-<p>
-  <input type="button" onclick="confirmCancelation();" value="Cancel Submission" /><br>
-   This submission will be canceled, and its uploaded document(s) permanently deleted.
-</p>
+  {% if is_valid %} 
+    <h2>Please edit the following meta-data before proceeding to Auto-Post</h2> 
+    <p> 
+    If you are one of the authors of this document, then please click the button with your name on it to automatically fill in the submitter information as requested below. Otherwise, please manually enter your information. 
+    </p> 
+    <form method="post" action=""> 
+    {{ auto_post_form.get_author_buttons|safe }} 
+    <table class="metadata-table"> 
+    {{ auto_post_form }} 
+    </table> 
+    <input type="submit" value="Post" name="autopost" /> 
+    </form> 
+  {% endif %} 
+
+  <h2>Cancel submission</h2>
+  <p>
+    <input type="button" onclick="confirmCancelation();" value="Cancel Submission" /><br>
+     This submission will be canceled, and its uploaded document(s) permanently deleted.
+  </p>
+
 {% else %}
-{% if validation.submitter %} 
-<h3>Submitter information</h3> 
-<table class="metadata-table"> 
-<tr><th>First name</th><td>{{ validation.submitter.first_name }}</td></tr> 
-<tr><th>Last name</th><td>{{ validation.submitter.last_name }}</td></tr> 
-<tr><th>Email address</th><td>{{ validation.submitter.email_address|default:validation.submitter.email.1 }}</td></tr> 
-</table> 
-{% endif %} 
- 
+  {% if validation.submitter %} 
+    <h3>Submitter information</h3> 
+    <table class="metadata-table"> 
+    <tr><th>First name</th><td>{{ validation.submitter.first_name }}</td></tr> 
+    <tr><th>Last name</th><td>{{ validation.submitter.last_name }}</td></tr> 
+    <tr><th>Email address</th><td>{{ validation.submitter.email_address|default:validation.submitter.email.1 }}</td></tr> 
+    </table> 
+  {% endif %} 
 {% endif %}
 
+{% ifequal status.status_value "Initial Version Approval Requested" %}
+<p>
+  <form method="post" action="/submit/status/{{ detail.submission_id }}/approve/">
+    <input type="submit" value="Approve this submission" />
+  </form>
+</p>
+{% endifequal %}
+ 
 <p>
 The IETF is an organized activity of the <a href="http://www.isoc.org">Internet Society</a>
 <br>Please send problem reports to <a href="mailto:ietf-action@ietf.org">ietf-action@ietf.org</a>.
