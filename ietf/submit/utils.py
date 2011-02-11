@@ -3,7 +3,7 @@ import re
 import datetime
 
 from django.conf import settings
-from ietf.idtracker.models import InternetDraft, EmailAddress, PersonOrOrgInfo
+from ietf.idtracker.models import InternetDraft, PersonOrOrgInfo
 
 
 # Some usefull states
@@ -38,22 +38,36 @@ def perform_post(submission):
         updated = True
     except InternetDraft.DoesNotExist:
         draft = InternetDraft.objects.create(
-            title = submission.id_document_name,
-            group_id = group_id,
-            filename = submission.filename,
-            revision = submission.revision,
-            revision_date = submission.creation_date,
-            file_type = submission.file_type,
-            txt_page_count = submission.txt_page_count,
-            start_date = datetime.date.today(),
-            last_modified_date = datetime.date.today(),
-            abstract = submission.abstract,
-            status_id = 1,  # Active
-            intended_status_id = 8,  # None
+            title=submission.id_document_name,
+            group_id=group_id,
+            filename=submission.filename,
+            revision=submission.revision,
+            revision_date=submission.creation_date,
+            file_type=submission.file_type,
+            txt_page_count=submission.txt_page_count,
+            start_date=datetime.date.today(),
+            last_modified_date=datetime.date.today(),
+            abstract=submission.abstract,
+            status_id=1,  # Active
+            intended_status_id=8,  # None
         )
     move_docs(submission)
     submission.status_id = POSTED
     submission.save()
+
+
+def get_person_for_user(user):
+    try:
+        return user.get_profile().person()
+    except:
+        return None
+
+
+def is_secretariat(user):
+    if not user or not user.is_authenticated():
+        return False
+    return bool(user.groups.filter(name='Secretariat'))
+
 
 def move_docs(submission):
     for ext in submission.file_type.split(','):
@@ -118,7 +132,7 @@ class DraftValidation(object):
         if existing_revisions:
             expected = max(existing_revisions) + 1
         if int(revision) != expected:
-            self.add_warning('revision', 'Invalid Version Number (Version %00d is expected)' % expected)
+            self.add_warning('revision', 'Invalid Version Number (Version %02d is expected)' % expected)
 
     def validate_authors(self):
         if not self.authors:

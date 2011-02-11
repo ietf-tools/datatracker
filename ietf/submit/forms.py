@@ -416,7 +416,7 @@ class MetaDataForm(AutoPostForm):
         if existing_revisions:
             expected = max(existing_revisions) + 1
         if version_int != expected:
-            raise forms.ValidationError('Invalid Version Number (Version %00d is expected)' % expected)
+            raise forms.ValidationError('Invalid Version Number (Version %02d is expected)' % expected)
         return version
 
     def clean(self):

@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -10,7 +10,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from ietf.submit.models import IdSubmissionDetail, IdApprovedDetail
 from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm
 from ietf.submit.utils import (DraftValidation, perform_post,
-                               UPLOADED, WAITING_AUTHENTICATION, CANCELED, INITIAL_VERSION_APPROVAL_REQUESTED)
+                               get_person_for_user, is_secretariat,
+                               UPLOADED, WAITING_AUTHENTICATION, CANCELED,
+                               INITIAL_VERSION_APPROVAL_REQUESTED,
+                               MANUAL_POST_REQUESTED)
 from ietf.utils.mail import send_mail
 
 
@@ -46,12 +49,30 @@ def submit_status(request):
     
 
 
+def _can_approve(user, detail):
+    person = get_person_for_user(user)
+    if detail.status_id != INITIAL_VERSION_APPROVAL_REQUESTED or not detail.group_acronym:
+        return None
+    if person in [i.person for i in detail.group_acronym.wgchair_set.all()] or is_secretariat(user):
+        return True
+    return False
+
+def _can_force_post(user, detail):
+    person = get_person_for_user(user)
+    if detail.status_id != MANUAL_POST_REQUESTED:
+        return None
+    if is_secretariat(user):
+        return True
+    return False
+
 def draft_status(request, submission_id, message=None):
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
     validation = DraftValidation(detail)
     is_valid = validation.is_valid()
     status = None
     allow_edit = True
+    can_force_post = _can_force_post(request.user, detail)
+    can_approve = _can_approve(request.user, detail)
     if detail.status_id != UPLOADED:
         if detail.status_id == CANCELED:
             message=('error', 'This submission has been canceled, modification is no longer possible')
@@ -60,30 +81,29 @@ def draft_status(request, submission_id, message=None):
 
     if request.method=='POST' and allow_edit:
         if request.POST.get('autopost', False):
-            try:
-                approved_detail = IdApprovedDetail.objects.get(filename=detail.filename)
-            except ObjectDoesNotExist:
-                approved_detail = None
-                detail.status_id = INITIAL_VERSION_APPROVAL_REQUESTED
-                detail.save()
+            auto_post_form = AutoPostForm(draft=detail, validation=validation, data=request.POST)
+            if auto_post_form.is_valid():
+                try:
+                    approved_detail = IdApprovedDetail.objects.get(filename=detail.filename)
+                except ObjectDoesNotExist:
+                    approved_detail = None
+                    detail.status_id = INITIAL_VERSION_APPROVAL_REQUESTED
+                    detail.save()
 
-            if detail.revision == '00' and not approved_detail:
-                subject = 'New draft waiting for approval: %s' % detail.filename
-                from_email = settings.IDST_FROM_EMAIL
-                to_email = []
-                if detail.group_acronym:
-                    to_email += [i.person.email()[1] for i in detail.group_acronym.wgchair_set.all()]
-                to_email = list(set(to_email))
-                if to_email:
-                    metadata_form = MetaDataForm(draft=detail, validation=validation)
-                    send_mail(request, to_email, from_email, subject, 'submit/manual_post_mail.txt',
-                              {'form': metadata_form, 'draft': detail})
-            else:
-                auto_post_form = AutoPostForm(draft=detail, validation=validation, data=request.POST)
-                if auto_post_form.is_valid():
+                if detail.revision == '00' and not approved_detail:
+                    subject = 'New draft waiting for approval: %s' % detail.filename
+                    from_email = settings.IDST_FROM_EMAIL
+                    to_email = []
+                    if detail.group_acronym:
+                        to_email += [i.person.email()[1] for i in detail.group_acronym.wgchair_set.all()]
+                    to_email = list(set(to_email))
+                    if to_email:
+                        metadata_form = MetaDataForm(draft=detail, validation=validation)
+                        send_mail(request, to_email, from_email, subject, 'submit/manual_post_mail.txt',
+                                  {'form': metadata_form, 'draft': detail})
+                    return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
+                else:
                     auto_post_form.save(request)
-            return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
-
         else:
             return HttpResponseRedirect(reverse(draft_edit, None, kwargs={'submission_id': detail.submission_id}))
     else:
@@ -97,6 +117,8 @@ def draft_status(request, submission_id, message=None):
                                'status': status,
                                'message': message,
                                'allow_edit': allow_edit,
+                               'can_force_post': can_force_post,
+                               'can_approve': can_approve,
                               },
                               context_instance=RequestContext(request))
 
@@ -117,6 +139,7 @@ def draft_edit(request, submission_id):
         form = MetaDataForm(draft=detail, validation=validation, data=request.POST)
         if form.is_valid():
             form.save(request)
+            return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
     else:
         form = MetaDataForm(draft=detail, validation=validation)
     return render_to_response('submit/draft_edit.html', 
@@ -141,10 +164,17 @@ def draft_confirm(request, submission_id, auth_key):
     return draft_status(request, submission_id, message)
 
 
-def draft_approve(request, submission_id):
+def draft_approve(request, submission_id, check_function=_can_approve):
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
-    if detail.status_id == INITIAL_VERSION_APPROVAL_REQUESTED:
-        validation = DraftValidation(detail)
-        approved_detail = IdApprovedDetail()
-        perform_post(detail)
+    person = get_person_for_user(request.user)
+    can_perform = check_function(request.user, detail)
+    if not can_perform:
+        if can_perform == None:
+            raise Http404
+        return HttpResponseForbidden('You have no permission to perform this action')
+    perform_post(detail)
     return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submission_id}))
+
+
+def draft_force(request, submission_id):
+    return draft_approve(request, submission_id, check_function=_can_force_post)
