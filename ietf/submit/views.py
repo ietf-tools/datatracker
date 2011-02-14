@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from ietf.submit.models import IdSubmissionDetail, IdApprovedDetail
 from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm
-from ietf.submit.utils import (DraftValidation, perform_post,
+from ietf.submit.utils import (DraftValidation, perform_post, remove_docs,
                                get_person_for_user, is_secretariat,
                                UPLOADED, WAITING_AUTHENTICATION, CANCELED,
                                INITIAL_VERSION_APPROVAL_REQUESTED,
@@ -127,6 +127,7 @@ def draft_cancel(request, submission_id):
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
     detail.status_id = CANCELED
     detail.save()
+    remove_docs(detail)
     return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submission_id}))
 
 

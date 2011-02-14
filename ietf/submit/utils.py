@@ -76,6 +76,13 @@ def move_docs(submission):
         os.rename(source, dest)
 
 
+def remove_docs(submission):
+    for ext in submission.file_type.split(','):
+        source = os.path.join(settings.STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
+        if os.path.exists(source):
+            os.unlink(source)
+
+
 class DraftValidation(object):
 
     def __init__(self, draft):
