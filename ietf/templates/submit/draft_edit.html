@@ -1,4 +1,5 @@
 {% extends "submit/draft_status.html" %}
+{% load submit_tags %}
 {% block title %}Adjust Meta-Data{% endblock %}
 
 {% block morecss %}
@@ -87,7 +88,9 @@ table.ietf-table span.field-error { display: block; color: red; }
 </div>
 
 <table class="metadata-table">
-<tr><th>Document</th><td>{{ detail.filename }} <a class="twopages_trigger" href="#">[View first two pages]</a></td></tr>
+<tr><th>Document</th><td>{{ detail.filename }} <a class="twopages_trigger" href="#">[View first two pages]</a>
+{% show_submission_files detail %}
+</td></tr>
 <tr><th>Submission date</th><td>{{ detail.submission_date }}</td></tr>
 <tr><th>WG</th><td>{{ validation.wg|default:"Individual Submission" }}</td></tr>
 <tr><th>File size</th><td>{{ detail.filesize|filesizeformat }}</td></tr>

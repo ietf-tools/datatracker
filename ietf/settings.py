@@ -197,6 +197,7 @@ FIRST_CUTOFF_DAYS = 5
 SECOND_CUTOFF_DAYS = 3
 
 STAGING_PATH = '/a/www/www6s/staging/'
+STAGING_URL = 'http://www.ietf.org/staging/'
 IDNITS_PATH = '/a/www/ietf-datatracker/release/idnits'
 MAX_PLAIN_DRAFT_SIZE = 6291456  # Max size of the txt draft in bytes
 

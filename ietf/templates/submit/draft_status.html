@@ -1,4 +1,5 @@
 {% extends "submit/submit_base.html" %}
+{% load submit_tags %}
 {% block title %}Submission status{% endblock %}
 
 {% block morecss %}
@@ -130,7 +131,9 @@ returned to the submitter.
 {% endif %}
 
 <table class="metadata-table">
-<tr><th>Document</th><td>{{ detail.filename }} <a class="twopages_trigger" href="#">[View first two pages]</a></td></tr>
+<tr><th>Document</th><td>{{ detail.filename }} <a class="twopages_trigger" href="#">[View first two pages]</a>
+{% show_submission_files detail %}
+</td></tr>
 <tr{% if validation.warnings.revision %} class="warning"{% endif %}><th>Revision</th><td>{{ detail.revision }}<div class="warn_message">{{ validation.warnings.revision }}</div></td></tr>
 <tr><th>Submission date</th><td>{{ detail.submission_date }}</td></tr>
 <tr><th>Title</th><td>{{ detail.id_document_name }}</td></tr>
