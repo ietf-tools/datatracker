@@ -279,28 +279,63 @@ class Draft():
     def get_abstract(self):
         if self._abstract:
             return self._abstract
-        abstract_re = re.compile('^\s*abstract', re.I)
-        identation_re = re.compile('^(\s)*')
-
+        abstract_re = re.compile('^(\s*)abstract', re.I)
+        header_re = re.compile("^(\s*)(1\.|A\.|Appendix|Status of|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index).*", re.I)
         begin = False
-        identation = 0
         abstract = []
+        abstract_indent = 0
         for line in self.lines:
-            if abstract_re.match(line):
+            if not begin and abstract_re.match(line):
                 begin=True
+                abstract_indent = len(abstract_re.match(line).group(0))
                 continue
             if begin:
-                if line and not line.startswith('  '):
+                if header_re.match(line):
                     break
                 if not line and not abstract:
                     continue
-                new_identation = len(identation_re.match(line).group(0))
-                if new_identation < identation:
-                    break
-                identation = new_identation
                 abstract.append(line)
-        self._abstract = '\n'.join(abstract)
+        abstract = '\n'.join(abstract)
+        abstract = self._clean_abstract(abstract)
+        self._abstract = self._check_abstract_indent(abstract, abstract_indent)
         return self._abstract
+
+
+    def _check_abstract_indent(self, abstract, indent):
+        indentation_re = re.compile('^(\s)*')
+        indent_lines = []
+        for line in abstract.split('\n'):
+            if line:
+                indent = len(indentation_re.match(line).group(0))
+                indent_lines.append(indent)
+        percents = {}
+        total = float(len(indent_lines))
+        formated = False
+        for indent in set(indent_lines):
+            count = indent_lines.count(indent)/total
+            percents[indent] = count
+            if count > 0.9:
+                formated = True
+        if not formated:
+            return abstract
+        new_abstract = []
+        for line in abstract.split('\n'):
+            if line:
+                indent = len(indentation_re.match(line).group(0))
+                if percents[indent] < 0.9:
+                    break
+            new_abstract.append(line)
+        return '\n'.join(new_abstract)
+
+
+    def _clean_abstract(self, text):
+        text = re.sub("(?s)(Conventions [Uu]sed in this [Dd]ocument|Requirements [Ll]anguage)?[\n ]*The key words \"MUST\", \"MUST NOT\",.*$", "", text)
+        # Get rid of status/copyright boilerplate
+        text = re.sub("(?s)\nStatus of [tT]his Memo\n.*$", "", text)
+        # wrap long lines without messing up formatting of Ok paragraphs:
+        while re.match("([^\n]{72,}?) +", text):
+            text = re.sub("([^\n]{72,}?) +([^\n ]*)(\n|$)", "\\1\n\\2 ", text)
+        return text
 
 
     # ------------------------------------------------------------------
