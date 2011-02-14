@@ -135,8 +135,8 @@ class UploadForm(forms.Form):
             self.get_draft()
             self.group=self.get_working_group()
             self.check_previous_submission()
-        if self.draft.revision == '00' and self.in_first_cut_off:
-            raise forms.ValidationError(mark_safe(self.cutoff_warning))
+            if self.draft.revision == '00' and self.in_first_cut_off:
+                raise forms.ValidationError(mark_safe(self.cutoff_warning))
         self.check_tresholds()
         return super(UploadForm, self).clean()
 
