@@ -48,7 +48,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr><td>Published:</td><td> {{ doc.publication_date|date:"Y-m"|default:"(data missing)" }}</td></tr>
 {% if doc.in_ietf_process %}
 <tr class="post-rfc"><td colspan="2">* This information refers to IESG processing after the RFC was initially published</td></tr>
-<tr class="post-rfc"><td>State:</td><td> 
+<tr class="post-rfc"><td><a href="/idtracker/help/state/">State</a>:</td><td> 
 {{ doc.friendly_state|safe }} (IESG: {{ doc.ietf_process.state}})
 {% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}
 </td></tr>

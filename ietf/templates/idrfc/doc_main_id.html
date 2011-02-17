@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% with doc.replaces as r %}{% if r %}<br />Replaces {% filter urlize_ietf_docs %}{{ r|join:", "}}{% endfilter %}{% endif %}{% endwith %}
 </td></tr>
 <tr><td>Last updated:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
-<tr><td>State:</td><td> 
+<tr><td><a href="/idtracker/help/state/">State</>:</td><td> 
 {{ doc.friendly_state|safe }}
 {% if doc.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.draft_name}}">{{ doc.rfc_editor_state|escape }}</a>{% endif %}
 {% ifequal doc.draft_status "Expired" %}
