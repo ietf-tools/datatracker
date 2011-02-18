@@ -97,40 +97,42 @@ def make_test_data():
         login_name="ad",
         password="foo",
         user_level=1,
-        first_name="Aread",
-        last_name="Irector",
+        first_name=porg.first_name,
+        last_name=porg.last_name,
         person=porg,
         )
 
-    p = Person.objects.create(
-        name="Ano Therdir",
-        ascii="Ano Therdir",
-        )
-    email = Email.objects.create(
-        address="ano@ietf.org",
-        person=p)
-    Role.objects.create(
-        name_id="ad",
-        group=area,
-        email=email)
-    porg = PersonOrOrgInfo.objects.create(
-        first_name="Ano",
-        last_name="Therdir",
-        middle_initial="",
-        )
-    EmailAddress.objects.create(
-        person_or_org=porg,
-        priority=1,
-        address=ad.address,
-        )
-    IESGLogin.objects.create(
-        login_name="ad2",
-        password="foo",
-        user_level=1,
-        first_name="Ano",
-        last_name="Therdir",
-        person=porg,
-        )
+    # create a bunch of ads for swarm tests
+    for i in range(1, 10):
+        p = Person.objects.create(
+            name="Ad No%s" % i,
+            ascii="Ad No%s" % i,
+            )
+        email = Email.objects.create(
+            address="ad%s@ietf.org" % i,
+            person=p)
+        Role.objects.create(
+            name_id="ad" if i <= 5 else "ex-ad",
+            group=area,
+            email=email)
+        porg = PersonOrOrgInfo.objects.create(
+            first_name="Ad",
+            last_name="No%s" % i,
+            middle_initial="",
+            )
+        EmailAddress.objects.create(
+            person_or_org=porg,
+            priority=1,
+            address=ad.address,
+            )
+        IESGLogin.objects.create(
+            login_name="ad%s" % i,
+            password="foo",
+            user_level=1,
+            first_name=porg.first_name,
+            last_name=porg.last_name,
+            person=porg,
+            )
 
     p = Person.objects.create(
         name="Sec Retary",
@@ -153,8 +155,8 @@ def make_test_data():
         login_name="secretary",
         password="foo",
         user_level=0,
-        first_name="Sec",
-        last_name="Retary",
+        first_name=porg.first_name,
+        last_name=porg.last_name,
         person=porg,
         )
     
@@ -295,8 +297,6 @@ class ChangeStateTestCase(django.test.TestCase):
 
         # comment
         self.assertTrue("Last call was requested" in draft.event_set.all()[0].desc)
-
-        # FIXME: test regeneration of announcement when it's not approved/via rfc editor
         
 
 class EditInfoTestCase(django.test.TestCase):
@@ -327,7 +327,7 @@ class EditInfoTestCase(django.test.TestCase):
         events_before = draft.event_set.count()
         mailbox_before = len(mail_outbox)
 
-        new_ad = Email.objects.get(address="ano@ietf.org")
+        new_ad = Email.objects.get(address="ad1@ietf.org")
 
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level.pk),
@@ -702,10 +702,10 @@ class DeferBallotTestCase(django.test.TestCase):
         self.assertEquals(draft.iesg_state_id, "iesg-eva")
 
 class BallotWriteupsTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft', 'ballot']
+    fixtures = ['names']
 
     def test_edit_last_call_text(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft = make_test_data()
         url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -715,7 +715,9 @@ class BallotWriteupsTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertEquals(len(q('textarea[name=last_call_text]')), 1)
         self.assertEquals(len(q('input[type=submit][value*="Save Last Call"]')), 1)
-
+        # we're secretariat, so we got The Link 
+        self.assertEquals(len(q('a:contains("Make Last Call")')), 1)
+        
         # subject error
         r = self.client.post(url, dict(
                 last_call_text="Subject: test\r\nhello\r\n\r\n",
@@ -729,8 +731,8 @@ class BallotWriteupsTestCase(django.test.TestCase):
                 last_call_text="This is a simple test.",
                 save_last_call_text="1"))
         self.assertEquals(r.status_code, 200)
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertTrue("This is a simple test" in draft.idinternal.ballot.last_call_text)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue("This is a simple test" in draft.latest_event(Text, type="changed_last_call_text").content)
 
         # test regenerate
         r = self.client.post(url, dict(
@@ -738,28 +740,33 @@ class BallotWriteupsTestCase(django.test.TestCase):
                 regenerate_last_call_text="1"))
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertTrue("Subject: Last Call" in draft.idinternal.ballot.last_call_text)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue("Subject: Last Call" in draft.latest_event(Text, type="changed_last_call_text").content)
+
 
     def test_request_last_call(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft = make_test_data()
         url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
-        mailbox_before = len(mail_outbox)
+        # give us an announcement to send
+        r = self.client.post(url, dict(regenerate_last_call_text="1"))
+        self.assertEquals(r.status_code, 200)
         
+        mailbox_before = len(mail_outbox)
+
+        # send
         r = self.client.post(url, dict(
-                last_call_text=draft.idinternal.ballot.last_call_text,
+                last_call_text=draft.latest_event(Text, type="changed_last_call_text").content,
                 send_last_call_request="1"))
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertEquals(draft.idinternal.cur_state_id, IDState.LAST_CALL_REQUESTED)
-
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.iesg_state_id, "lc-req")
         self.assertEquals(len(mail_outbox), mailbox_before + 3)
-
         self.assertTrue("Last Call" in mail_outbox[-1]['Subject'])
+        self.assertTrue(draft.name in mail_outbox[-1]['Subject'])
 
     def test_edit_ballot_writeup(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft = make_test_data()
         url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -775,43 +782,66 @@ class BallotWriteupsTestCase(django.test.TestCase):
                 ballot_writeup="This is a simple test.",
                 save_ballot_writeup="1"))
         self.assertEquals(r.status_code, 200)
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertTrue("This is a simple test" in draft.idinternal.ballot.ballot_writeup)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue("This is a simple test" in draft.latest_event(Text, type="changed_ballot_writeup_text").content)
 
     def test_issue_ballot(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft = make_test_data()
         url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
 
-        draft.idinternal.ballot.ballot_issued = False
-        draft.idinternal.ballot.save()
-        active = IESGLogin.objects.filter(user_level=1)
-        Position.objects.create(ad=active[0], yes=1, noobj=0, discuss=0, abstain=0, recuse=0, ballot=draft.idinternal.ballot)
-        Position.objects.create(ad=active[1], yes=0, noobj=1, discuss=0, abstain=0, recuse=0, ballot=draft.idinternal.ballot)
-        Position.objects.create(ad=active[2], yes=0, noobj=1, discuss=-1, abstain=0, recuse=0, ballot=draft.idinternal.ballot)
-        Position.objects.create(ad=active[3], yes=0, noobj=0, discuss=1, abstain=0, recuse=0, ballot=draft.idinternal.ballot)        
-        Position.objects.create(ad=active[4], yes=0, noobj=0, discuss=0, abstain=1, recuse=0, ballot=draft.idinternal.ballot)
-        Position.objects.create(ad=active[5], yes=0, noobj=0, discuss=0, abstain=0, recuse=1, ballot=draft.idinternal.ballot)
-        inactive = IESGLogin.objects.filter(user_level=2)
-        Position.objects.create(ad=inactive[0], yes=1, noobj=0, discuss=0, abstain=0, recuse=0, ballot=draft.idinternal.ballot)
-        IESGDiscuss.objects.create(ad=active[1], active=True, date=datetime.date.today(), text="test " * 20, ballot=draft.idinternal.ballot)
-        IESGComment.objects.create(ad=active[2], active=True, date=datetime.date.today(), text="test " * 20, ballot=draft.idinternal.ballot)        
-        IESGDiscuss.objects.create(ad=active[3], active=True, date=datetime.date.today(), text="test " * 20, ballot=draft.idinternal.ballot)
-        IESGComment.objects.create(ad=active[3], active=True, date=datetime.date.today(), text="test " * 20, ballot=draft.idinternal.ballot)
+        def create_pos(num, vote, comment="", discuss=""):
+            ad = Email.objects.get(address="ad%s@ietf.org" % num)
+            e = BallotPosition()
+            e.doc = draft
+            e.by = ad
+            e.ad = ad
+            e.pos = BallotPositionName.objects.get(slug=vote)
+            e.type = "changed_ballot_position"
+            e.comment = comment
+            if e.comment:
+                e.comment_time = datetime.datetime.now()
+            e.discuss = discuss
+            if e.discuss:
+                e.discuss_time = datetime.datetime.now()
+            e.save()
 
+        # active
+        create_pos(1, "yes", discuss="discuss1 " * 20)
+        create_pos(2, "noobj", comment="comment2 " * 20)
+        create_pos(3, "discuss", discuss="discuss3 " * 20, comment="comment3 " * 20)
+        create_pos(4, "abstain")
+        create_pos(5, "recuse")
+
+        # inactive
+        create_pos(9, "yes")
+
+        # we need approval text to be able to submit
+        e = Text()
+        e.doc = draft
+        e.by = Email.objects.get(address="aread@ietf.org")
+        e.type = "changed_ballot_approval_text"
+        e.content = "The document has been approved."
+        e.save()
+        
         mailbox_before = len(mail_outbox)
         
         r = self.client.post(url, dict(
-                ballot_writeup=draft.idinternal.ballot.ballot_writeup,
-                approval_text=draft.idinternal.ballot.approval_text,
+                ballot_writeup="This is a test.",
                 issue_ballot="1"))
         self.assertEquals(r.status_code, 200)
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft = Document.objects.get(name=draft.name)
 
-        self.assertTrue(draft.idinternal.ballot.ballot_issued)
+        self.assertTrue(draft.latest_event(type="sent_ballot_announcement"))
         self.assertEquals(len(mail_outbox), mailbox_before + 2)
-        self.assertTrue("Evaluation:" in mail_outbox[-2]['Subject'])
-
+        issue_email = mail_outbox[-2]
+        self.assertTrue("Evaluation:" in issue_email['Subject'])
+        self.assertTrue("comment1" not in str(issue_email))
+        self.assertTrue("comment2" in str(issue_email))
+        self.assertTrue("comment3" in str(issue_email))
+        self.assertTrue("discuss3" in str(issue_email))
+        self.assertTrue("This is a test" in str(issue_email))
+        self.assertTrue("The document has been approved" in str(issue_email))
 
     def test_edit_approval_text(self):
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
@@ -849,6 +879,8 @@ class BallotWriteupsTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
         self.assertTrue("Subject: Protocol Action" in draft.idinternal.ballot.approval_text)
+        
+        # FIXME: test regeneration of announcement when it's not approved/via rfc editor
         
 class ApproveBallotTestCase(django.test.TestCase):
     fixtures = ['base', 'draft', 'ballot']

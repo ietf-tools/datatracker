@@ -179,6 +179,9 @@ class InternetDraft(models.Model):
         return self.filename
     def file_tag(self):
         return "<%s-%s.txt>" % (self.filename, self.revision_display())
+    def name(self):
+        # small hack to make model forward-compatible with new schema
+        return self.filename
     def group_acronym(self):
 	return self.group.acronym
     def idstate(self):
@@ -397,6 +400,9 @@ class Rfc(models.Model):
         return "%s.txt" % ( self.filename() )
     def filename(self):
 	return "rfc%d" % ( self.rfc_number )
+    def name(self):
+        # small hack to make model forward-compatible with new schema
+        return self.filename()
     def revision(self):
 	return "RFC"
     def revision_display(self):

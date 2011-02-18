@@ -670,6 +670,7 @@ def lastcalltext(request, name):
 
     return render_to_response('idrfc/ballot_lastcalltext.html',
                               dict(doc=doc,
+                                   back_url=doc.idinternal.get_absolute_url(),
                                    ballot=ballot,
                                    last_call_form=last_call_form,
                                    can_request_last_call=can_request_last_call,
@@ -677,6 +678,101 @@ def lastcalltext(request, name):
                                    need_intended_status=need_intended_status,
                                    ),
                               context_instance=RequestContext(request))
+
+
+class LastCallTextFormREDESIGN(forms.Form):
+    last_call_text = forms.CharField(widget=forms.Textarea, required=True)
+    
+    def clean_last_call_text(self):
+        lines = self.cleaned_data["last_call_text"].split("\r\n")
+        for l, next in zip(lines, lines[1:]):
+            if l.startswith('Subject:') and next.strip():
+                raise forms.ValidationError("Subject line appears to have a line break, please make sure there is no line breaks in the subject line and that it is followed by an empty line.")
+        
+        return self.cleaned_data["last_call_text"].replace("\r", "")
+
+@group_required('Area_Director','Secretariat')
+def lastcalltextREDESIGN(request, name):
+    """Editing of the last call text"""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.iesg_state:
+        raise Http404()
+
+    login = request.user.get_profile().email()
+
+    existing = doc.latest_event(Text, type="changed_last_call_text")
+    if not existing:
+        existing = generate_last_call_announcement(request, doc)
+        
+    form = LastCallTextForm(initial=dict(last_call_text=existing.content))
+
+    if request.method == 'POST':
+        if "save_last_call_text" in request.POST or "send_last_call_request" in request.POST:
+            form = LastCallTextForm(request.POST)
+            if form.is_valid():
+                t = form.cleaned_data['last_call_text']
+                if t != existing.content:
+                    e = Text(doc=doc, by=login)
+                    e.by = login
+                    e.type = "changed_last_call_text"
+                    e.desc = "Last call announcement was changed by %s" % login.get_name()
+                    e.content = t
+                    e.save()
+                
+                    doc.time = e.time
+                    doc.save()
+
+                if "send_last_call_request" in request.POST:
+                    save_document_in_history(doc)
+
+                    prev = doc.iesg_state
+                    doc.iesg_state = IesgDocStateName.objects.get(slug='lc-req')
+                    e = log_state_changed(request, doc, login, prev)
+                    
+                    doc.time = e.time
+                    doc.save()
+
+                    email_state_changed(request, doc, e.desc)
+                    email_owner(request, doc, doc.ad, login, e.desc)
+
+                    request_last_call(request, doc)
+                    
+                    return render_to_response('idrfc/last_call_requested.html',
+                                              dict(doc=doc),
+                                              context_instance=RequestContext(request))
+        
+        if "regenerate_last_call_text" in request.POST:
+            e = generate_last_call_announcement(request, doc)
+            
+            doc.time = e.time
+            doc.save()
+            
+            # make sure form has the updated text
+            form = LastCallTextForm(initial=dict(last_call_text=e.content))
+
+        
+    can_request_last_call = doc.iesg_state.order < 27
+    can_make_last_call = doc.iesg_state.order < 20
+    can_announce = doc.iesg_state.order > 19
+    
+    need_intended_status = ""
+    if not doc.intended_std_level:
+        need_intended_status = doc.file_tag()
+
+    return render_to_response('idrfc/ballot_lastcalltext.html',
+                              dict(doc=doc,
+                                   back_url=doc.get_absolute_url(),
+                                   last_call_form=form,
+                                   can_request_last_call=can_request_last_call,
+                                   can_make_last_call=can_make_last_call,
+                                   need_intended_status=need_intended_status,
+                                   ),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    LastCallTextForm = LastCallTextFormREDESIGN
+    lastcalltext = lastcalltextREDESIGN
+
 
 @group_required('Area_Director','Secretariat')
 def ballot_writeupnotes(request, name):
@@ -734,7 +830,8 @@ def ballot_writeupnotes(request, name):
                 doc.idinternal.save()
                     
                 return render_to_response('idrfc/ballot_issued.html',
-                                          dict(doc=doc),
+                                          dict(doc=doc,
+                                               back_url=doc.idinternal.get_absolute_url()),
                                           context_instance=RequestContext(request))
                 
 
@@ -751,6 +848,93 @@ def ballot_writeupnotes(request, name):
                                    need_intended_status=need_intended_status,
                                    ),
                               context_instance=RequestContext(request))
+
+class BallotWriteupFormREDESIGN(forms.Form):
+    ballot_writeup = forms.CharField(widget=forms.Textarea, required=True)
+
+    def clean_ballot_writeup(self):
+        return self.cleaned_data["ballot_writeup"].replace("\r", "")
+        
+@group_required('Area_Director','Secretariat')
+def ballot_writeupnotesREDESIGN(request, name):
+    """Editing of ballot write-up and notes"""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.iesg_state:
+        raise Http404()
+
+    login = request.user.get_profile().email()
+
+    approval = doc.latest_event(Text, type="changed_ballot_approval_text")
+    
+    existing = doc.latest_event(Text, type="changed_ballot_writeup_text")
+    if not existing:
+        existing = generate_ballot_writeup(request, doc)
+        
+    form = BallotWriteupForm(initial=dict(ballot_writeup=existing.content))
+
+    if request.method == 'POST' and "save_ballot_writeup" in request.POST or "issue_ballot" in request.POST:
+        form = BallotWriteupForm(request.POST)
+        if form.is_valid():
+            t = form.cleaned_data["ballot_writeup"]
+            if t != existing.content:
+                e = Text(doc=doc, by=login)
+                e.by = login
+                e.type = "changed_ballot_writeup_text"
+                e.desc = "Ballot writeup was changed by %s" % login.get_name()
+                e.content = t
+                e.save()
+
+                doc.time = e.time
+                doc.save()
+
+            if "issue_ballot" in request.POST and approval:
+                if in_group(request.user, "Area_Director") and not doc.latest_event(BallotPosition, ad=login):
+                    # sending the ballot counts as a yes
+                    pos = BallotPosition(doc=doc, by=login)
+                    pos.type = "changed_ballot_position"
+                    pos.ad = login
+                    pos.pos_id = "yes"
+                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.get_name())
+                    pos.save()
+
+                msg = generate_issue_ballot_mail(request, doc)
+                send_mail_preformatted(request, msg)
+
+                email_iana(request, doc, 'drafts-eval@icann.org', msg)
+
+                e = Event(doc=doc, by=login)
+                e.by = login
+                e.type = "sent_ballot_announcement"
+                e.desc = "Ballot has been issued by %s" % login.get_name()
+                e.save()
+
+                doc.time = e.time
+                doc.save()
+
+                return render_to_response('idrfc/ballot_issued.html',
+                                          dict(doc=doc,
+                                               back_url=doc.get_absolute_url()),
+                                          context_instance=RequestContext(request))
+                        
+
+    need_intended_status = ""
+    if not doc.intended_std_level:
+        need_intended_status = doc.file_tag()
+
+    return render_to_response('idrfc/ballot_writeupnotesREDESIGN.html',
+                              dict(doc=doc,
+                                   back_url=doc.get_absolute_url(),
+                                   ballot_issued=bool(doc.latest_event(type="sent_ballot_announcement")),
+                                   ballot_writeup_form=form,
+                                   need_intended_status=need_intended_status,
+                                   approval=approval,
+                                   ),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    BallotWriteupForm = BallotWriteupFormREDESIGN
+    ballot_writeupnotes = ballot_writeupnotesREDESIGN
+
 
 @group_required('Area_Director','Secretariat')
 def ballot_approvaltext(request, name):

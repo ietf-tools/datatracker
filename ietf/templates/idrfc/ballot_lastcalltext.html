@@ -25,7 +25,7 @@ form #id_last_call_text {
   {% endif %}
     
   <div class="actions">
-    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <a href="{{ back_url }}">Back</a>
     <input type="submit" name="save_last_call_text" value="Save Last Call Text" />
     <input type="submit" name="regenerate_last_call_text" value="Regenerate Last Call Text" />
     {% if can_request_last_call and not need_intended_status %}
@@ -38,7 +38,7 @@ form #id_last_call_text {
 {% if user|in_group:"Secretariat" %}
 <p>
 {% if can_make_last_call %}
-<a href="{% url doc_make_last_call name=doc.filename %}">Make Last Call</a>
+<a href="{% url doc_make_last_call name=doc.name %}">Make Last Call</a>
 {% endif %}
 
 </p>

@@ -106,8 +106,8 @@ class InternetDraft(Document):
     #lc_expiration_date = models.DateField(null=True, blank=True)
     @property
     def lc_expiration_date(self):
-        e = self.latest_event(type="sent_last_call")
-        return e.expiration.expires if e else None
+        e = self.latest_event(Expiration, type="sent_last_call")
+        return e.expires if e else None
         
     #b_sent_date = models.DateField(null=True, blank=True)
     @property
@@ -171,11 +171,11 @@ class InternetDraft(Document):
     def calc_process_start_end(self):
         import datetime
         start, end = datetime.datetime.min, datetime.datetime.max
-        e = self.ballot.latest_event(type="started_iesg_process")
+        e = self.latest_event(type="started_iesg_process")
         if e:
             start = e.time
-            if self.ballot.state_id == "rfc" and self.ballot.name.startswith("draft") and not hasattr(self.ballot, "viewing_as_rfc"):
-                previous_process = self.ballot.latest_event(type="started_iesg_process", time__lt=e.time)
+            if self.state_id == "rfc" and self.name.startswith("draft") and not hasattr(self, "viewing_as_rfc"):
+                previous_process = self.latest_event(type="started_iesg_process", time__lt=e.time)
                 if previous_process:
                     start = previous_process.time
                     end = e.time
