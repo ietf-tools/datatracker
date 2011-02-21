@@ -183,6 +183,9 @@ else:
     CACHE_BACKEND = 'dummy:///'
 
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
+DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
+
+
 
 # Liaison Statement Tool settings
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'

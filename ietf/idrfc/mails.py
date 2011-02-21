@@ -97,7 +97,7 @@ def generate_approval_mail(request, doc):
     else:
         action_type = "Protocol"
     
-    cc = ["Internet Architecture Board <iab@iab.org>", "RFC Editor <rfc-editor@rfc-editor.org>"]
+    cc = settings.DOC_APPROVAL_EMAIL_CC
 
     if doc.group.ietfwg.group_type.type != "AG" and not doc.group.name.endswith("Working Group"):
         doc.group.name_with_wg = doc.group.name + " Working Group"
