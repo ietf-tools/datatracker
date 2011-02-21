@@ -976,6 +976,7 @@ def ballot_approvaltext(request, name):
 
     return render_to_response('idrfc/ballot_approvaltext.html',
                               dict(doc=doc,
+                                   back_url=doc.idinternal.get_absolute_url(),
                                    ballot=ballot,
                                    approval_text_form=approval_text_form,
                                    can_announce=can_announce,
@@ -983,6 +984,69 @@ def ballot_approvaltext(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
+class ApprovalTextFormREDESIGN(forms.Form):
+    approval_text = forms.CharField(widget=forms.Textarea, required=True)
+
+    def clean_approval_text(self):
+        return self.cleaned_data["approval_text"].replace("\r", "")
+
+@group_required('Area_Director','Secretariat')
+def ballot_approvaltextREDESIGN(request, name):
+    """Editing of approval text"""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.iesg_state:
+        raise Http404()
+
+    login = request.user.get_profile().email()
+
+    existing = doc.latest_event(Text, type="changed_ballot_approval_text")
+    if not existing:
+        existing = generate_approval_mail(request, doc)
+
+    form = ApprovalTextForm(initial=dict(approval_text=existing.content))
+
+    if request.method == 'POST':
+        if "save_approval_text" in request.POST:
+            form = ApprovalTextForm(request.POST)
+            if form.is_valid():
+                t = form.cleaned_data['approval_text']
+                if t != existing.content:
+                    e = Text(doc=doc, by=login)
+                    e.by = login
+                    e.type = "changed_ballot_approval_text"
+                    e.desc = "Ballot approval text was changed by %s" % login.get_name()
+                    e.content = t
+                    e.save()
+                
+                    doc.time = e.time
+                    doc.save()
+                
+        if "regenerate_approval_text" in request.POST:
+            e = generate_approval_mail(request, doc)
+
+            doc.time = e.time
+            doc.save()
+
+            # make sure form has the updated text
+            form = ApprovalTextForm(initial=dict(approval_text=existing.content))
+
+    can_announce = doc.iesg_state.order > 19
+    need_intended_status = ""
+    if not doc.intended_std_level:
+        need_intended_status = doc.file_tag()
+
+    return render_to_response('idrfc/ballot_approvaltext.html',
+                              dict(doc=doc,
+                                   back_url=doc.get_absolute_url(),
+                                   approval_text_form=form,
+                                   can_announce=can_announce,
+                                   need_intended_status=need_intended_status,
+                                   ),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    ApprovalTextForm = ApprovalTextFormREDESIGN
+    ballot_approvaltext = ballot_approvaltextREDESIGN
 
 @group_required('Secretariat')
 def approve_ballot(request, name):
@@ -1054,6 +1118,83 @@ def approve_ballot(request, name):
                                    action=action,
                                    announcement=announcement),
                               context_instance=RequestContext(request))
+
+@group_required('Secretariat')
+def approve_ballotREDESIGN(request, name):
+    """Approve ballot, sending out announcement, changing state."""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.iesg_state:
+        raise Http404()
+
+    login = request.user.get_profile().email()
+
+    e = doc.latest_event(Text, type="changed_ballot_approval_text")
+    if not e:
+        e = generate_approval_mail(request, doc)
+    approval_text = e.content
+
+    e = doc.latest_event(Text, type="changed_ballot_writeup_text")
+    if not e:
+        e = generate_ballot_writeup(request, doc)
+    ballot_writeup = e.content
+    
+    if "NOT be published" in approval_text:
+        action = "do_not_publish"
+    elif "To: RFC Editor" in approval_text:
+        action = "to_rfc_editor"
+    else:
+        action = "to_announcement_list"
+
+    announcement = approval_text + "\n\n" + ballot_writeup
+        
+    if request.method == 'POST':
+        if action == "do_not_publish":
+            new_state = IesgDocStateName.objects.get(slug="dead")
+        else:
+            new_state = IesgDocStateName.objects.get(slug="ann")
+
+        # fixup document
+        save_document_in_history(doc)
+
+        prev = doc.iesg_state
+        doc.iesg_state = new_state
+
+        e = Event(doc=doc, by=login)
+        if action == "do_not_publish":
+            e.type = "iesg_disapproved"
+            e.desc = "Do Not Publish note has been sent to RFC Editor"
+        else:
+            e.type = "iesg_approved"
+            e.desc = "IESG has approved the document"
+
+        e.save()
+        
+        change_description = e.desc + " and state has been changed to %s" % doc.iesg_state.name
+        
+        e = log_state_changed(request, doc, login, prev)
+                    
+        doc.time = e.time
+        doc.save()
+
+        email_state_changed(request, doc, change_description)
+        email_owner(request, doc, doc.ad, login, change_description)
+
+        # send announcement
+        send_mail_preformatted(request, announcement)
+
+        if action == "to_announcement_list":
+            email_iana(request, doc, "drafts-approval@icann.org", announcement)
+
+        return HttpResponseRedirect(doc.get_absolute_url())
+  
+    return render_to_response('idrfc/approve_ballot.html',
+                              dict(doc=doc,
+                                   action=action,
+                                   announcement=announcement),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    approve_ballot = approve_ballotREDESIGN
 
 
 class MakeLastCallForm(forms.Form):

@@ -317,12 +317,12 @@ def generate_approval_mail_approved(request, doc):
 def generate_approval_mail_rfc_editorREDESIGN(request, doc):
     full_status = full_intended_status(doc.intended_std_level.name)
     status = full_status.replace("a ", "").replace("an ", "")
-    disapproved = doc.iesg_state in DO_NOT_PUBLISH_IESG_STATES
+    disapproved = doc.iesg_state_id in DO_NOT_PUBLISH_IESG_STATES
     doc_type = "RFC" if doc.state_id == "rfc" else "Internet Draft"
     
     return render_to_string("idrfc/approval_mail_rfc_editor.txt",
                             dict(doc=doc,
-                                 doc_url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url(),
+                                 doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  doc_type=doc_type,
                                  status=status,
                                  full_status=full_status,

@@ -844,7 +844,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         self.assertTrue("The document has been approved" in str(issue_email))
 
     def test_edit_approval_text(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft = make_test_data()
         url = urlreverse('doc_ballot_approvaltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -855,38 +855,36 @@ class BallotWriteupsTestCase(django.test.TestCase):
         self.assertEquals(len(q('textarea[name=approval_text]')), 1)
         self.assertEquals(len(q('input[type=submit][value*="Save Approval"]')), 1)
 
-        # subject error
-        r = self.client.post(url, dict(
-                last_call_text="Subject: test\r\nhello\r\n\r\n",
-                save_last_call_text="1"))
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('ul.errorlist')) > 0)
-
         # save
         r = self.client.post(url, dict(
                 approval_text="This is a simple test.",
                 save_approval_text="1"))
         self.assertEquals(r.status_code, 200)
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertTrue("This is a simple test" in draft.idinternal.ballot.approval_text)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue("This is a simple test" in draft.latest_event(Text, type="changed_ballot_approval_text").content)
 
         # test regenerate
-        r = self.client.post(url, dict(
-                approval_text="This is a simple test.",
-                regenerate_approval_text="1"))
+        r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertTrue("Subject: Protocol Action" in draft.idinternal.ballot.approval_text)
-        
-        # FIXME: test regeneration of announcement when it's not approved/via rfc editor
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue("Subject: Protocol Action" in draft.latest_event(Text, type="changed_ballot_approval_text").content)
+
+        # test regenerate when it's a disapprove
+        draft.iesg_state_id = "nopubadw"
+        draft.save()
+
+        r = self.client.post(url, dict(regenerate_approval_text="1"))
+        self.assertEquals(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue("NOT be published" in draft.latest_event(Text, type="changed_ballot_approval_text").content)
         
 class ApproveBallotTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft', 'ballot']
+    fixtures = ['names']
 
     def test_approve_ballot(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft = make_test_data()
+        draft.iesg_state_id = "iesg-eva" # make sure it's approvable
+        draft.save()
         url = urlreverse('doc_approve_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -894,8 +892,8 @@ class ApproveBallotTestCase(django.test.TestCase):
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue("Send out the announcement" in q('input[type=submit]')[0].get('value'))
-        self.assertEquals(len(q('pre')), 1)
+        self.assertTrue("Send out the announcement" in q('.actions input[type=submit]')[0].get('value'))
+        self.assertEquals(len(q('.announcement pre:contains("Subject: Protocol Action")')), 1)
 
         # approve
         mailbox_before = len(mail_outbox)
@@ -903,14 +901,31 @@ class ApproveBallotTestCase(django.test.TestCase):
         r = self.client.post(url, dict())
         self.assertEquals(r.status_code, 302)
 
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertEquals(draft.idinternal.cur_state_id, IDState.APPROVED_ANNOUNCEMENT_SENT)
-        
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.iesg_state_id, "ann")
         self.assertEquals(len(mail_outbox), mailbox_before + 4)
-
         self.assertTrue("Protocol Action" in mail_outbox[-2]['Subject'])
         # the IANA copy
         self.assertTrue("Protocol Action" in mail_outbox[-1]['Subject'])
+
+    def test_disapprove_ballot(self):
+        draft = make_test_data()
+        draft.iesg_state_id = "nopubadw"
+        draft.save()
+
+        url = urlreverse('doc_approve_ballot', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # disapprove (the Martians aren't going to be happy)
+        mailbox_before = len(mail_outbox)
+
+        r = self.client.post(url, dict())
+        self.assertEquals(r.status_code, 302)
+
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.iesg_state_id, "dead")
+        self.assertEquals(len(mail_outbox), mailbox_before + 3)
+        self.assertTrue("NOT be published" in str(mail_outbox[-1]))
 
 class MakeLastCallTestCase(django.test.TestCase):
     fixtures = ['base', 'draft', 'ballot']
