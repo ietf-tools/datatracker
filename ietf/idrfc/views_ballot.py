@@ -1268,3 +1268,81 @@ def make_last_call(request, name):
                                    form=form),
                               context_instance=RequestContext(request))
 
+
+@group_required('Secretariat')
+def make_last_callREDESIGN(request, name):
+    """Make last call for Internet Draft, sending out announcement."""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.iesg_state:
+        raise Http404()
+
+    login = request.user.get_profile().email()
+
+    e = doc.latest_event(Text, type="changed_last_call_text")
+    if not e:
+        e = generate_last_call_announcement(request, doc)
+    announcement = e.content
+
+    # why cut -4 off name? a better question is probably why these
+    # tables aren't linked together properly
+    filename_fragment = doc.name[:-4]
+    iprs = IprDetail.objects.filter(title__icontains=filename_fragment)
+    if iprs:
+        links = [urlreverse("ietf.ipr.views.show", kwargs=dict(ipr_id=i.ipr_id))
+                 for i in iprs]
+        
+        announcement += "\n\n"
+        announcement += "The following IPR Declarations may be related to this I-D:"
+        announcement += "\n\n"
+        announcement += "\n".join(links)
+    else:
+        announcement += "\n\n"
+        announcement += "No IPR declarations were found that appear related to this I-D."
+    
+    if request.method == 'POST':
+        form = MakeLastCallForm(request.POST)
+        if form.is_valid():
+            send_mail_preformatted(request, announcement)
+            email_iana(request, doc, "drafts-lastcall@icann.org", announcement)
+
+            save_document_in_history(doc)
+
+            prev = doc.iesg_state
+            doc.iesg_state = IesgDocStateName.objects.get(slug='lc')
+            e = log_state_changed(request, doc, login, prev)
+                    
+            doc.time = e.time
+            doc.save()
+
+            change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, doc.iesg_state.name)
+            email_state_changed(request, doc, change_description)
+            email_owner(request, doc, doc.ad, login, change_description)
+            
+            e = Expiration(doc=doc, by=login)
+            e.type = "sent_last_call"
+            e.desc = "Last call sent by %s" % login.get_name()
+            if form.cleaned_data['last_call_sent_date'] != e.time.date():
+                e.time = datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time())
+            e.expires = form.cleaned_data['last_call_expiration_date']
+            e.save()
+            
+            return HttpResponseRedirect(doc.get_absolute_url())
+    else:
+        initial = {}
+        initial["last_call_sent_date"] = date.today()
+        expire_days = 14
+        if doc.group.type_id == "individ":
+            expire_days = 28
+
+        initial["last_call_expiration_date"] = date.today() + timedelta(days=expire_days)
+        
+        form = MakeLastCallForm(initial=initial)
+  
+    return render_to_response('idrfc/make_last_callREDESIGN.html',
+                              dict(doc=doc,
+                                   form=form),
+                              context_instance=RequestContext(request))
+
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    make_last_call = make_last_callREDESIGN

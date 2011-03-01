@@ -928,13 +928,11 @@ class ApproveBallotTestCase(django.test.TestCase):
         self.assertTrue("NOT be published" in str(mail_outbox[-1]))
 
 class MakeLastCallTestCase(django.test.TestCase):
-    fixtures = ['base', 'draft', 'ballot']
+    fixtures = ['names']
 
     def test_make_last_call(self):
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        draft.idinternal.cur_state = IDState.objects.get(document_state_id=IDState.LAST_CALL_REQUESTED)
-        draft.idinternal.save()
-        draft.lc_expiration_date = None
+        draft = make_test_data()
+        draft.iesg_state_id = "lc-req"
         draft.save()
         
         url = urlreverse('doc_make_last_call', kwargs=dict(name=draft.name))
@@ -957,9 +955,9 @@ class MakeLastCallTestCase(django.test.TestCase):
                                   ))
         self.assertEquals(r.status_code, 302)
 
-        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
-        self.assertEquals(draft.idinternal.cur_state_id, IDState.IN_LAST_CALL)
-        self.assertEquals(draft.lc_expiration_date.strftime("%Y-%m-%d"), expire_date)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.iesg_state.slug, "lc")
+        self.assertEquals(draft.latest_event(Expiration, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
         self.assertEquals(len(mail_outbox), mailbox_before + 4)
 
         self.assertTrue("Last Call" in mail_outbox[-4]['Subject'])
