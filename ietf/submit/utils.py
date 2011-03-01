@@ -103,6 +103,8 @@ class DraftValidation(object):
         return self.draft.group_acronym
 
     def check_idnits_success(self, idnits_message):
+        if not idnits_message:
+            return False
         success_re = re.compile('\s+Summary:\s+0\s+|No nits found')
         if success_re.search(idnits_message):
             return True
