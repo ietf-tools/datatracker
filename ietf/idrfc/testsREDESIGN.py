@@ -391,10 +391,6 @@ class EditInfoTestCase(django.test.TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(not draft.latest_event(Telechat, "scheduled_for_telechat").telechat_date)
 
-        for e in draft.event_set.all():
-            print e.desc
-        
-
     def test_start_iesg_process_on_draft(self):
         draft = make_test_data()
         draft.ad = None
@@ -679,8 +675,9 @@ class DeferBallotTestCase(django.test.TestCase):
         self.assertEquals(draft.iesg_state_id, "defer")
         
         self.assertEquals(len(mail_outbox), mailbox_before + 2)
-        self.assertTrue("Deferred" in mail_outbox[-2]['Subject'])
-        self.assertTrue(draft.file_tag() in mail_outbox[-2]['Subject'])
+        self.assertTrue("State Update" in mail_outbox[-2]['Subject'])
+        self.assertTrue("Deferred" in mail_outbox[-1]['Subject'])
+        self.assertTrue(draft.file_tag() in mail_outbox[-1]['Subject'])
 
     def test_undefer_ballot(self):
         draft = make_test_data()
