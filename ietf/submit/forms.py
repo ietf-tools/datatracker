@@ -194,7 +194,7 @@ class UploadForm(forms.Form):
         existing = IdSubmissionDetail.objects.filter(filename=filename, revision=revision,
                                                      status__pk__gte=0, status__pk__lt=100)
         if existing:
-            raise forms.ValidationError('Duplicate Internet-Draft submission is currently in process')
+            raise forms.ValidationError(mark_safe('Duplicate Internet-Draft submission is currently in process. <a href="/submit/status/%s/">Check it here</a>' % existing[0].pk))
 
     def get_draft(self):
         if self.draft:
