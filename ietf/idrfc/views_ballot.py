@@ -82,7 +82,7 @@ def edit_position(request, name):
             raise Http404()
         ad = get_object_or_404(IESGLogin, login_name=ad_username)
 
-    doc.latest_event(BallotPosition, type='changed_ballot_position', ad=ad)
+    pos, discuss, comment = get_ballot_info(doc.idinternal.ballot, ad)
 
     if request.method == 'POST':
         form = EditPositionForm(request.POST)
@@ -201,7 +201,8 @@ class EditPositionFormREDESIGN(forms.Form):
 def edit_positionREDESIGN(request, name):
     """Vote and edit discuss and comment on Internet Draft as Area Director."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.iesg_state:
+    started_process = doc.latest_event(type="started_iesg_process")
+    if not doc.iesg_state or not started_process:
         raise Http404()
 
     ad = login = request.user.get_profile().email()
@@ -218,7 +219,7 @@ def edit_positionREDESIGN(request, name):
             raise Http404()
         ad = get_object_or_404(Email, pk=ad_id)
 
-    old_pos = doc.latest_event(BallotPosition, type="changed_ballot_position", ad=ad)
+    old_pos = doc.latest_event(BallotPosition, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
 
     if request.method == 'POST':
         form = EditPositionForm(request.POST)
@@ -394,6 +395,9 @@ def send_ballot_comment(request, name):
 def send_ballot_commentREDESIGN(request, name):
     """Email Internet Draft ballot discuss/comment for area director."""
     doc = get_object_or_404(Document, docalias__name=name)
+    started_process = doc.latest_event(type="started_iesg_process")
+    if not started_process:
+        raise Http404()
 
     ad = login = request.user.get_profile().email()
 
@@ -413,7 +417,7 @@ def send_ballot_commentREDESIGN(request, name):
             raise Http404()
         ad = get_object_or_404(Email, pk=ad_id)
 
-    pos = doc.latest_event(BallotPosition, type="changed_ballot_position", ad=ad)
+    pos = doc.latest_event(BallotPosition, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
     if not pos:
         raise Http404()
     
