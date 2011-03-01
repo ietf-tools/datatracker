@@ -53,7 +53,8 @@ from ietf.utils.test_runner import mail_outbox
 
 class IdRfcUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
-        self.doTestUrls(__file__)
+        #self.doTestUrls(__file__)
+        self.doTestUrls(os.path.join(os.path.dirname(os.path.abspath(__file__)), "testurlREDESIGN.list"))
 
 def make_test_data():
     # groups

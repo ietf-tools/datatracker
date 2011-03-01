@@ -38,7 +38,7 @@ from django.template import RequestContext
 from django.views.decorators.cache import cache_page
 from ietf.idtracker.models import IDState, IESGLogin, IDSubState, Area, InternetDraft, Rfc, IDInternal, IETFWG
 from ietf.idrfc.models import RfcIndex
-from django.http import Http404, HttpResponse, HttpResponsePermanentRedirect
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponsePermanentRedirect
 from ietf.idrfc.idrfc_wrapper import IdWrapper,RfcWrapper,IdRfcWrapper
 from ietf.utils import normalize_draftname
 from django.conf import settings
@@ -296,9 +296,9 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             q = self.cleaned_data
             # Reset query['by'] if needed
             for k in ('author','group','area','ad'):
-                if (q['by'] == k) and not q[k]:
+                if (q['by'] == k) and (k not in q or not q[k]):
                     q['by'] = None
-            if (q['by'] == 'state') and not (q['state'] or q['subState']):
+            if (q['by'] == 'state') and (not 'state' in q or not 'subState' in q or not (q['state'] or q['subState'])):
                 q['by'] = None
             # Reset other fields
             for k in ('author','group','area','ad'):
@@ -456,7 +456,7 @@ def search_results(request):
         return search_main(request)
     form = SearchForm(dict(request.REQUEST.items()))
     if not form.is_valid():
-        return HttpResponse("form not valid?", mimetype="text/plain")
+        return HttpResponseBadRequest("form not valid?", mimetype="text/plain")
     (results,meta) = search_query(form.cleaned_data)
     meta['searching'] = True
     meta['by'] = form.cleaned_data['by']
