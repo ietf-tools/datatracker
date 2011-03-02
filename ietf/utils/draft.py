@@ -152,53 +152,46 @@ class Draft():
         sentence = False
         haveblank = False
         # two functions with side effects
-        def endpage(pages, page, line):
+        def endpage(pages, page, newpage, line):
             if line:
                 page += [ line ]
-            return begpage(pages, page)
-        def begpage(pages, page, line=None):
+            return begpage(pages, page, newpage)
+        def begpage(pages, page, newpage, line=None):
             if page and len(page) > 5:
                 pages += [ "\n".join(page) ]
                 page = []
                 newpage = True
             if line:
                 page += [ line ]
-            return pages, page
+            return pages, page, newpage
         for line in self.rawlines:
-    #         if re.search("^ *Curtis King", line):
-    #             debug = True
-    #         if re.search("^Intellectual", line):
-    #             debug = False
-    #         if debug:
-    #             _debug( "* newpage: %s; sentence: %s; haveblank: %s" % (newpage, sentence, haveblank))
-    #             _debug( "    " + line)
             line = line.rstrip()
             if re.search("\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I):
-                pages, page = endpage(pages, page, line)
+                pages, page, newpage = endpage(pages, page, newpage, line)
                 continue
             if re.search("\f", line, re.I):
-                pages, page = begpage(pages, page)
+                pages, page, newpage = begpage(pages, page, newpage)
                 continue
             if re.search("^ *Internet.Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
-                pages, page = begpage(pages, page, line)
+                pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
     #        if re.search("^ *Internet.Draft  +", line, re.I):
     #            newpage = True
     #            continue
             if re.search("^ *Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
-                pages, page = begpage(pages, page, line)
+                pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
             if re.search("^RFC[ -]?[0-9]+.*(  +)[12][0-9][0-9][0-9]$", line, re.I):
-                pages, page = begpage(pages, page, line)
+                pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
             if re.search("^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$", line, re.I):
-                pages, page = endpage(pages, page, line)
+                pages, page, newpage = endpage(pages, page, newpage, line)
                 continue
             if re.search(".{60,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec) (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
-                pages, page = begpage(pages, page, line)
+                pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
             if newpage and re.search("^ *draft-[-a-z0-9_.]+ *$", line, re.I):
-                pages, page = begpage(pages, page, line)
+                pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
             if re.search("^[^ \t]+", line):
                 sentence = True
@@ -220,7 +213,7 @@ class Draft():
                 continue
             page += [ line ]
             stripped += [ line ]
-        pages, page = begpage(pages, page)
+        pages, page, newpage = begpage(pages, page, newpage)
         return stripped, pages
 
     # ----------------------------------------------------------------------
