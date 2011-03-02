@@ -155,10 +155,10 @@ def _get_history(doc, versions):
         for e in event_holder.event_set.all().select_related('by').order_by('-time', 'id'):
             info = {}
             if e.type == "new_revision":
-                filename = u"%s-%s" % (e.doc.name, e.newrevision.rev)
+                filename = u"%s-%s" % (e.doc.name, e.newrevisionevent.rev)
                 e.desc = 'New version available: <a href="http://tools.ietf.org/id/%s.txt">%s</a>' % (filename, filename)
-                if int(e.newrevision.rev) != 0:
-                    e.desc += ' (<a href="http://tools.ietf.org/rfcdiff?url2=%s">diff from -%02d</a>)' % (filename, int(e.newrevision.rev) - 1)
+                if int(e.newrevisionevent.rev) != 0:
+                    e.desc += ' (<a href="http://tools.ietf.org/rfcdiff?url2=%s">diff from -%02d</a>)' % (filename, int(e.newrevisionevent.rev) - 1)
                 info["dontmolest"] = True
 
             multiset_ballot_text = "This was part of a ballot set with: "
@@ -181,7 +181,7 @@ def _get_history(doc, versions):
         for o in results:
             e = o["comment"]
             if e.type == "new_revision":
-                e.version = e.newrevision.rev
+                e.version = e.newrevisionevent.rev
             else:
                 e.version = prev_rev
             prev_rev = e.version

@@ -3,7 +3,7 @@ from django.conf import settings
 from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo, IESGLogin
 from ietf.idrfc.mails import *
 
-from doc.models import Telechat, Event
+from doc.models import Event, TelechatEvent
 
 def add_document_comment(request, doc, text, include_by=True, ballot=None):
     if request:
@@ -114,7 +114,7 @@ def update_telechat(request, idinternal, new_telechat_date, new_returning_item=N
 def update_telechatREDESIGN(request, doc, by, new_telechat_date, new_returning_item=None):
     on_agenda = bool(new_telechat_date)
 
-    prev = doc.latest_event(Telechat, type="scheduled_for_telechat")
+    prev = doc.latest_event(TelechatEvent, type="scheduled_for_telechat")
     prev_returning = bool(prev and prev.returning_item)
     prev_telechat = prev.telechat_date if prev else None
     prev_agenda = bool(prev_telechat)
@@ -135,7 +135,7 @@ def update_telechatREDESIGN(request, doc, by, new_telechat_date, new_returning_i
         and new_telechat_date != prev_telechat):
         returning = True
 
-    e = Telechat()
+    e = TelechatEvent()
     e.type = "scheduled_for_telechat"
     e.by = by
     e.doc = doc

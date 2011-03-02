@@ -22,7 +22,7 @@ from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
-from doc.models import Document, Event, Status, Telechat, save_document_in_history, DocHistory
+from doc.models import Document, Event, StatusDateEvent, TelechatEvent, save_document_in_history, DocHistory
 from name.models import IesgDocStateName, IntendedStdLevelName, DocInfoTagName, get_next_iesg_states, DocStateName
     
 class ChangeStateForm(forms.Form):
@@ -463,7 +463,7 @@ def edit_infoREDESIGN(request, name):
         doc.iesg_state = IesgDocStateName.objects.get(slug="pub-req")
         doc.notify = get_initial_notify(doc)
 
-    e = doc.latest_event(Telechat, type="scheduled_for_telechat")
+    e = doc.latest_event(TelechatEvent, type="scheduled_for_telechat")
     initial_telechat_date = e.telechat_date if e else None
     initial_returning_item = bool(e and e.returning_item)
 
@@ -541,10 +541,10 @@ def edit_infoREDESIGN(request, name):
             update_telechat(request, doc, login,
                             r['telechat_date'], r['returning_item'])
 
-            e = doc.latest_event(Status, type="changed_status_date")
+            e = doc.latest_event(StatusDateEvent, type="changed_status_date")
             status_date = e.date if e else None
             if r["status_date"] != status_date:
-                e = Status(doc=doc, by=login)
+                e = StatusDateEvent(doc=doc, by=login)
                 e.type ="changed_status_date"
                 d = desc("Status date", r["status_date"], status_date)
                 changes.append(d)
@@ -567,7 +567,7 @@ def edit_infoREDESIGN(request, name):
             doc.save()
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
-        e = doc.latest_event(Status)
+        e = doc.latest_event(StatusDateEvent)
         status = e.date if e else None
         init = dict(intended_std_level=doc.intended_std_level,
                     status_date=status,

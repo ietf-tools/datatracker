@@ -1,4 +1,4 @@
-from models import *
+from redesign.doc.models import *
 from redesign.person.models import Email 
 from redesign.proxy_utils import TranslatingManager
 
@@ -71,7 +71,7 @@ class InternetDraft(Document):
     #start_date = models.DateField()
     @property
     def start_date(self):
-        e = NewRevision.objects.filter(doc=self).order_by("time")[:1]
+        e = NewRevisionEvent.objects.filter(doc=self).order_by("time")[:1]
         return e[0].time.date() if e else None
     #expiration_date = models.DateField()
     @property
@@ -106,7 +106,7 @@ class InternetDraft(Document):
     #lc_expiration_date = models.DateField(null=True, blank=True)
     @property
     def lc_expiration_date(self):
-        e = self.latest_event(Expiration, type="sent_last_call")
+        e = self.latest_event(LastCallEvent, type="sent_last_call")
         return e.expires if e else None
         
     #b_sent_date = models.DateField(null=True, blank=True)
@@ -312,7 +312,7 @@ class InternetDraft(Document):
     #status_date = models.DateField(blank=True,null=True)
     @property
     def status_date(self):
-        e = self.latest_event(Status, type="changed_status_date")
+        e = self.latest_event(StatusDateEvent, type="changed_status_date")
         return e.date if e else None
 
     #email_display = models.CharField(blank=True, max_length=50) # unused
@@ -391,14 +391,14 @@ class InternetDraft(Document):
     #returning_item = models.IntegerField(null=True, blank=True)
     @property
     def returning_item(self):
-        e = self.latest_event(type="scheduled_for_telechat")
-        return e.telechat.returning_item if e else None
+        e = self.latest_event(TelechatEvent, type="scheduled_for_telechat")
+        return e.returning_item if e else None
 
     #telechat_date = models.DateField(null=True, blank=True)
     @property
     def telechat_date(self):
-        e = self.latest_event(type="scheduled_for_telechat")
-        return e.telechat.telechat_date if e else None
+        e = self.latest_event(TelechatEvent, type="scheduled_for_telechat")
+        return e.telechat_date if e else None
 
     #via_rfc_editor = models.IntegerField(null=True, blank=True)
     @property
@@ -515,20 +515,20 @@ class InternetDraft(Document):
     #approval_text = models.TextField(blank=True)
     @property
     def approval_text(self):
-        e = self.latest_event(Text, type="changed_ballot_approval_text")
-        return e.content if e else ""
+        e = self.latest_event(WriteupEvent, type="changed_ballot_approval_text")
+        return e.text if e else ""
     
     #last_call_text = models.TextField(blank=True)
     @property
     def last_call_text(self):
-        e = self.latest_event(Text, type="changed_last_call_text")
-        return e.content if e else ""
+        e = self.latest_event(WriteupEvent, type="changed_last_call_text")
+        return e.text if e else ""
     
     #ballot_writeup = models.TextField(blank=True)
     @property
     def ballot_writeup(self):
-        e = self.latest_event(Text, type="changed_ballot_writeup_text")
-        return e.content if e else ""
+        e = self.latest_event(WriteupEvent, type="changed_ballot_writeup_text")
+        return e.text if e else ""
 
     #ballot_issued = models.IntegerField(null=True, blank=True)
     @property
@@ -548,7 +548,7 @@ class InternetDraft(Document):
             res.append(dict(ad=IESGLoginProxy(ad), pos=Position(pos) if pos else None))
         
         found = set()
-	for pos in BallotPosition.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads).select_related('ad').order_by("-time", "-id"):
+	for pos in BallotPositionEvent.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads).select_related('ad').order_by("-time", "-id"):
             if pos.ad not in found:
                 found.add(pos.ad)
                 add(pos.ad, pos)
@@ -753,7 +753,7 @@ class DocumentComment(Event):
         proxy = True
 
 
-class Position(BallotPosition):
+class Position(BallotPositionEvent):
     def __init__(self, base):
         for f in base._meta.fields:
             if not f.name in ('discuss',): # don't overwrite properties

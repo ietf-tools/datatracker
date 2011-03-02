@@ -272,7 +272,7 @@ def import_from_idinternal(d, idinternal):
         # telechat agenda schedulings
         match = re_telechat_agenda.search(c.comment_text) or re_telechat_changed.search(c.comment_text)
         if match:
-            e = Telechat()
+            e = TelechatEvent()
             e.type = "scheduled_for_telechat"
             e.telechat_date = date_in_match(match) if "Placed on" in c.comment_text else None
             # can't extract this from history so we just take the latest value
@@ -289,10 +289,10 @@ def import_from_idinternal(d, idinternal):
             handled = True
 
             ad = iesg_login_to_email(c.created_by)
-            last_pos = d.latest_event(BallotPosition, type="changed_ballot_position", ad=ad)
+            last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=ad)
             if not last_pos and not iesg_login_is_secretary(c.created_by):
                 # when you issue a ballot, you also vote yes; add that vote
-                e = BallotPosition()
+                e = BallotPositionEvent()
                 e.type = "changed_ballot_position"
                 e.ad = ad
                 e.desc = "[Ballot Position Update] New position, Yes, has been recorded by %s" % e.ad.get_name()
@@ -354,10 +354,10 @@ def import_from_idinternal(d, idinternal):
                     print "BALLOT BY SECRETARIAT", login
                 
 
-            e = BallotPosition()
+            e = BallotPositionEvent()
             e.type = "changed_ballot_position"
             e.ad = iesg_login_to_email(login)
-            last_pos = d.latest_event(BallotPosition, type="changed_ballot_position", ad=e.ad)
+            last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=e.ad)
             e.pos = position
             e.discuss = last_pos.discuss if last_pos else ""
             e.discuss_time = last_pos.discuss_time if last_pos else None
@@ -372,10 +372,10 @@ def import_from_idinternal(d, idinternal):
 
         # ballot discusses/comments
         if c.ballot in (DocumentComment.BALLOT_DISCUSS, DocumentComment.BALLOT_COMMENT):
-            e = BallotPosition()
+            e = BallotPositionEvent()
             e.type = "changed_ballot_position"
             e.ad = iesg_login_to_email(c.created_by)
-            last_pos = d.latest_event(BallotPosition, type="changed_ballot_position", ad=e.ad)
+            last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=e.ad)
             e.pos = last_pos.pos if last_pos else ballot_position_mapping[None]
             c.comment_text = re_comment_discuss_by_tag.sub("", c.comment_text)
             if c.ballot == DocumentComment.BALLOT_DISCUSS:
@@ -443,7 +443,7 @@ def import_from_idinternal(d, idinternal):
 
         # new version
         if c.comment_text == "New version available":
-            e = NewRevision(type="new_revision", rev=c.version)
+            e = NewRevisionEvent(type="new_revision", rev=c.version)
             save_event(d, e, c)
             handled = True
 
@@ -492,7 +492,7 @@ def import_from_idinternal(d, idinternal):
                 # status date changed
                 match = re_status_date_changed.search(line)
                 if match:
-                    e = Status(type="changed_status_date", date=date_in_match(match))
+                    e = StatusDateEvent(type="changed_status_date", date=date_in_match(match))
                     e.desc = line
                     save_event(d, e, c)
                     handled = True
@@ -581,25 +581,25 @@ def import_from_idinternal(d, idinternal):
         made_up_date = d.time
     made_up_date += datetime.timedelta(seconds=1)
 
-    e = d.latest_event(Status, type="changed_status_date")
+    e = d.latest_event(StatusDateEvent, type="changed_status_date")
     status_date = e.date if e else None
     if idinternal.status_date != status_date:
-        e = Status(type="changed_status_date", date=idinternal.status_date)
+        e = StatusDateEvent(type="changed_status_date", date=idinternal.status_date)
         e.time = made_up_date
         e.by = system_email
         e.doc = d
         e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (idinternal.status_date, status_date)
         e.save()
 
-    e = d.latest_event(Telechat, type="scheduled_for_telechat")
+    e = d.latest_event(TelechatEvent, type="scheduled_for_telechat")
     telechat_date = e.telechat_date if e else None
     if not idinternal.agenda:
         idinternal.telechat_date = None # normalize
 
     if telechat_date != idinternal.telechat_date:
-        e = Telechat(type="scheduled_for_telechat",
-                     telechat_date=idinternal.telechat_date,
-                     returning_item=bool(idinternal.returning_item))
+        e = TelechatEvent(type="scheduled_for_telechat",
+                          telechat_date=idinternal.telechat_date,
+                          returning_item=bool(idinternal.returning_item))
         # a common case is that it has been removed from the
         # agenda automatically by a script without a notice in the
         # comments, in that case the time is simply the day after
@@ -625,7 +625,7 @@ def import_from_idinternal(d, idinternal):
             position_date = made_up_date
 
         # make sure we got all the positions
-        existing = BallotPosition.objects.filter(doc=d, type="changed_ballot_position").order_by("-time", '-id')
+        existing = BallotPositionEvent.objects.filter(doc=d, type="changed_ballot_position").order_by("-time", '-id')
         
         for p in Position.objects.filter(ballot=ballot):
             # there are some bogus ones
@@ -653,13 +653,13 @@ def import_from_idinternal(d, idinternal):
                     break
 
             if not found:
-                e = BallotPosition()
+                e = BallotPositionEvent()
                 e.type = "changed_ballot_position"
                 e.doc = d
                 e.time = position_date
                 e.by = system_email
                 e.ad = ad
-                last_pos = d.latest_event(BallotPosition, type="changed_ballot_position", ad=e.ad)
+                last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=e.ad)
                 e.pos = pos
                 e.discuss = last_pos.discuss if last_pos else ""
                 e.discuss_time = last_pos.discuss_time if last_pos else None
@@ -692,7 +692,7 @@ def import_from_idinternal(d, idinternal):
             e.save()
             
         # make sure the comments and discusses are updated
-        positions = list(BallotPosition.objects.filter(doc=d).order_by("-time", '-id'))
+        positions = list(BallotPositionEvent.objects.filter(doc=d).order_by("-time", '-id'))
         for c in IESGComment.objects.filter(ballot=ballot):
             ad = iesg_login_to_email(c.ad)
             for p in positions:
@@ -722,24 +722,24 @@ def import_from_idinternal(d, idinternal):
             text_date = made_up_date
 
         if idinternal.ballot.approval_text:
-            e, _ = Text.objects.get_or_create(type="changed_ballot_approval_text", doc=d)
-            e.content = idinternal.ballot.approval_text
+            e, _ = WriteupEvent.objects.get_or_create(type="changed_ballot_approval_text", doc=d)
+            e.text = idinternal.ballot.approval_text
             e.time = text_date
             e.by = system_email
             e.desc = "Ballot approval text was added"
             e.save()
 
         if idinternal.ballot.last_call_text:
-            e, _ = Text.objects.get_or_create(type="changed_last_call_text", doc=d)
-            e.content = idinternal.ballot.last_call_text
+            e, _ = WriteupEvent.objects.get_or_create(type="changed_last_call_text", doc=d)
+            e.text = idinternal.ballot.last_call_text
             e.time = text_date
             e.by = system_email
             e.desc = "Last call text was added"
             e.save()
 
         if idinternal.ballot.ballot_writeup:
-            e, _ = Text.objects.get_or_create(type="changed_ballot_writeup_text", doc=d)
-            e.content = idinternal.ballot.ballot_writeup
+            e, _ = WriteupEvent.objects.get_or_create(type="changed_ballot_writeup_text", doc=d)
+            e.text = idinternal.ballot.ballot_writeup
             e.time = text_date
             e.by = system_email
             e.desc = "Ballot writeup text was added"
@@ -836,13 +836,13 @@ for index, o in enumerate(all_drafts.iterator()):
         import_from_idinternal(d, o.idinternal)
 
     # import missing revision changes from DraftVersions
-    known_revisions = set(e.newrevision.rev for e in d.event_set.filter(type="new_revision").select_related('newrevision'))
+    known_revisions = set(e.rev for e in NewRevisionEvent.objects.filter(doc=d, type="new_revision"))
     draft_versions = list(DraftVersions.objects.filter(filename=d.name).order_by("revision"))
     # DraftVersions is not entirely accurate, make sure we got the current one
     draft_versions.insert(0, DraftVersions(filename=d.name, revision=o.revision_display(), revision_date=o.revision_date))
     for v in draft_versions:
         if v.revision not in known_revisions:
-            e = NewRevision(type="new_revision")
+            e = NewRevisionEvent(type="new_revision")
             e.rev = v.revision
             # we don't have time information in this source, so
             # hack the seconds to include the revision to ensure
@@ -871,7 +871,7 @@ for index, o in enumerate(all_drafts.iterator()):
         e.save()
 
     if o.lc_expiration_date:
-        e = Expiration(type="sent_last_call", expires=o.lc_expiration_date)
+        e = LastCallEvent(type="sent_last_call", expires=o.lc_expiration_date)
         # let's try to find the actual change
         events = d.event_set.filter(type="changed_document", desc__contains=" to <b>In Last Call</b>").order_by('-time')[:1]
         # event time is more accurate with actual time instead of just

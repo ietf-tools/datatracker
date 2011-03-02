@@ -39,14 +39,14 @@ class EventAdmin(admin.ModelAdmin):
 admin.site.register(Event, EventAdmin)
 
 admin.site.register(Message, EventAdmin)
-admin.site.register(Text, EventAdmin)
-admin.site.register(NewRevision, EventAdmin)
-admin.site.register(Status, EventAdmin)
-admin.site.register(Expiration, EventAdmin)
-admin.site.register(Telechat, EventAdmin)
+admin.site.register(NewRevisionEvent, EventAdmin)
+admin.site.register(WriteupEvent, EventAdmin)
+admin.site.register(StatusDateEvent, EventAdmin)
+admin.site.register(LastCallEvent, EventAdmin)
+admin.site.register(TelechatEvent, EventAdmin)
 
-class BallotPositionAdmin(EventAdmin):
+class BallotPositionEventAdmin(EventAdmin):
     raw_id_fields = ["doc", "by", "ad"]
 
-admin.site.register(BallotPosition, BallotPositionAdmin)
+admin.site.register(BallotPositionEvent, BallotPositionEventAdmin)
     

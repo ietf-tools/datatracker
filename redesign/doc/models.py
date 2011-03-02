@@ -45,8 +45,8 @@ class DocumentInfo(models.Model):
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter
         arguments, e.g. d.latest_event(type="xyz") returns an Event
-        while d.latest_event(Status, type="xyz") returns a Status
-        event."""
+        while d.latest_event(WriteupEvent, type="xyz") returns a
+        WriteupEvent event."""
         model = args[0] if args else Event
         e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
@@ -231,7 +231,7 @@ EVENT_TYPES = [
     ]
 
 class Event(models.Model):
-    """An occurrence in connection with a document."""
+    """An occurrence for a document, used for tracking who, when and what."""
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
     by = models.ForeignKey(Email, blank=True, null=True) # FIXME: make NOT NULL?
@@ -248,14 +248,11 @@ class Message(Event):
     subj = models.CharField(max_length=255)
     body = models.TextField()
 
-class Text(Event):
-    content = models.TextField(blank=True)
-
-class NewRevision(Event):
+class NewRevisionEvent(Event):
     rev = models.CharField(max_length=16)
    
 # IESG events
-class BallotPosition(Event):
+class BallotPositionEvent(Event):
     ad = models.ForeignKey(Email)
     pos = models.ForeignKey(BallotPositionName, verbose_name="position", default="norecord")
     discuss = models.TextField(help_text="Discuss text if position is discuss", blank=True)
@@ -263,15 +260,16 @@ class BallotPosition(Event):
     comment = models.TextField(help_text="Optional comment", blank=True)
     comment_time = models.DateTimeField(help_text="Time optional comment was written", blank=True, null=True)
     
-class Status(Event):
+class WriteupEvent(Event):
+    text = models.TextField(blank=True)
+
+class StatusDateEvent(Event):
     date = models.DateField(blank=True, null=True)
 
-class Expiration(Event):
+class LastCallEvent(Event):
     expires = models.DateTimeField(blank=True, null=True)
     
-class Telechat(Event):
+class TelechatEvent(Event):
     telechat_date = models.DateField(blank=True, null=True)
     returning_item = models.BooleanField(default=False)
 
-    
-    

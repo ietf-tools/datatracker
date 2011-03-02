@@ -274,30 +274,30 @@ class ChangeStateTestCase(django.test.TestCase):
         self.assertContains(r, "Your request to issue the Last Call")
 
         # last call text
-        e = draft.latest_event(Text, type="changed_last_call_text")
+        e = draft.latest_event(WriteupEvent, type="changed_last_call_text")
         self.assertTrue(e)
-        self.assertTrue("The IESG has received" in e.content)
-        self.assertTrue(draft.title in e.content)
-        self.assertTrue(draft.get_absolute_url() in e.content)
+        self.assertTrue("The IESG has received" in e.text)
+        self.assertTrue(draft.title in e.text)
+        self.assertTrue(draft.get_absolute_url() in e.text)
 
         # approval text
-        e = draft.latest_event(Text, type="changed_ballot_approval_text")
+        e = draft.latest_event(WriteupEvent, type="changed_ballot_approval_text")
         self.assertTrue(e)
-        self.assertTrue("The IESG has approved" in e.content)
-        self.assertTrue(draft.title in e.content)
-        self.assertTrue(draft.get_absolute_url() in e.content)
+        self.assertTrue("The IESG has approved" in e.text)
+        self.assertTrue(draft.title in e.text)
+        self.assertTrue(draft.get_absolute_url() in e.text)
 
         # ballot writeup
-        e = draft.latest_event(Text, type="changed_ballot_writeup_text")
+        e = draft.latest_event(WriteupEvent, type="changed_ballot_writeup_text")
         self.assertTrue(e)
-        self.assertTrue("Technical Summary" in e.content)
+        self.assertTrue("Technical Summary" in e.text)
 
         # mail notice
         self.assertTrue(len(mail_outbox) > mailbox_before)
         self.assertTrue("Last Call:" in mail_outbox[-1]['Subject'])
 
         # comment
-        self.assertTrue("Last call was requested" in draft.event_set.all()[0].desc)
+        self.assertTrue("Last call was requested" in draft.latest_event().desc)
         
 
 class EditInfoTestCase(django.test.TestCase):
@@ -345,7 +345,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertTrue(draft.tags.filter(slug="via-rfc"))
         self.assertEquals(draft.ad, new_ad)
         self.assertEquals(draft.note, "New note")
-        self.assertTrue(not draft.latest_event(Telechat, type="telechat_date"))
+        self.assertTrue(not draft.latest_event(TelechatEvent, type="telechat_date"))
         self.assertEquals(draft.event_set.count(), events_before + 4)
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue(draft.name in mail_outbox[-1]['Subject'])
@@ -367,14 +367,14 @@ class EditInfoTestCase(django.test.TestCase):
         from ietf.iesg.models import TelechatDates
 
         # add to telechat
-        self.assertTrue(not draft.latest_event(Telechat, "scheduled_for_telechat"))
+        self.assertTrue(not draft.latest_event(TelechatEvent, "scheduled_for_telechat"))
         data["telechat_date"] = TelechatDates.objects.all()[0].date1.isoformat()
         r = self.client.post(url, data)
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue(draft.latest_event(Telechat, "scheduled_for_telechat"))
-        self.assertEquals(draft.latest_event(Telechat, "scheduled_for_telechat").telechat_date, TelechatDates.objects.all()[0].date1)
+        self.assertTrue(draft.latest_event(TelechatEvent, "scheduled_for_telechat"))
+        self.assertEquals(draft.latest_event(TelechatEvent, "scheduled_for_telechat").telechat_date, TelechatDates.objects.all()[0].date1)
 
         # change telechat
         data["telechat_date"] = TelechatDates.objects.all()[0].date2.isoformat()
@@ -382,7 +382,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.latest_event(Telechat, "scheduled_for_telechat").telechat_date, TelechatDates.objects.all()[0].date2)
+        self.assertEquals(draft.latest_event(TelechatEvent, "scheduled_for_telechat").telechat_date, TelechatDates.objects.all()[0].date2)
 
         # remove from agenda
         data["telechat_date"] = ""
@@ -390,7 +390,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue(not draft.latest_event(Telechat, "scheduled_for_telechat").telechat_date)
+        self.assertTrue(not draft.latest_event(TelechatEvent, "scheduled_for_telechat").telechat_date)
 
     def test_start_iesg_process_on_draft(self):
         draft = make_test_data()
@@ -411,6 +411,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertTrue('@' in q('form input[name=notify]')[0].get('value'))
 
         # add
+        events_before = draft.event_set.count()
         mailbox_before = len(mail_outbox)
 
         ad = Email.objects.get(address="aread@ietf.org")
@@ -430,9 +431,10 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertTrue(draft.tags.filter(slug="via-rfc"))
         self.assertEquals(draft.ad, ad)
         self.assertEquals(draft.note, "This is a note")
-        self.assertTrue(not draft.latest_event(Telechat, type="scheduled_for_telechat"))
-        self.assertEquals(draft.event_set.count(), 4)
-        self.assertEquals(draft.event_set.order_by('time', '-id')[0].type, "started_iesg_process")
+        self.assertTrue(not draft.latest_event(TelechatEvent, type="scheduled_for_telechat"))
+        self.assertEquals(draft.event_set.count(), events_before + 4)
+        events = list(draft.event_set.order_by('time', 'id'))
+        self.assertEquals(events[-4].type, "started_iesg_process")
         self.assertEquals(len(mail_outbox), mailbox_before)
 
 
@@ -555,7 +557,7 @@ class EditPositionTestCase(django.test.TestCase):
                                        comment="This is a test."))
         self.assertEquals(r.status_code, 302)
 
-        pos = draft.latest_event(BallotPosition, ad=ad)
+        pos = draft.latest_event(BallotPositionEvent, ad=ad)
         self.assertEquals(pos.pos.slug, "discuss")
         self.assertTrue("This is a discussion test." in pos.discuss)
         self.assertTrue(pos.discuss_time != None)
@@ -569,7 +571,7 @@ class EditPositionTestCase(django.test.TestCase):
         r = self.client.post(url, dict(position="noobj"))
         self.assertEquals(r.status_code, 302)
 
-        pos = draft.latest_event(BallotPosition, ad=ad)
+        pos = draft.latest_event(BallotPositionEvent, ad=ad)
         self.assertEquals(pos.pos.slug, "noobj")
         self.assertEquals(draft.event_set.count(), events_before + 1)
         self.assertTrue("Position for" in pos.desc)
@@ -579,7 +581,7 @@ class EditPositionTestCase(django.test.TestCase):
         r = self.client.post(url, dict(position="norecord"))
         self.assertEquals(r.status_code, 302)
 
-        pos = draft.latest_event(BallotPosition, ad=ad)
+        pos = draft.latest_event(BallotPositionEvent, ad=ad)
         self.assertEquals(pos.pos.slug, "norecord")
         self.assertEquals(draft.event_set.count(), events_before + 1)
         self.assertTrue("Position for" in pos.desc)
@@ -589,7 +591,7 @@ class EditPositionTestCase(django.test.TestCase):
         r = self.client.post(url, dict(position="norecord", comment="New comment."))
         self.assertEquals(r.status_code, 302)
 
-        pos = draft.latest_event(BallotPosition, ad=ad)
+        pos = draft.latest_event(BallotPositionEvent, ad=ad)
         self.assertEquals(pos.pos.slug, "norecord")
         self.assertEquals(draft.event_set.count(), events_before + 2)
         self.assertTrue("Ballot comment text updated" in pos.desc)
@@ -612,7 +614,7 @@ class EditPositionTestCase(django.test.TestCase):
         r = self.client.post(url, dict(position="discuss"))
         self.assertEquals(r.status_code, 302)
 
-        pos = draft.latest_event(BallotPosition, ad=ad)
+        pos = draft.latest_event(BallotPositionEvent, ad=ad)
         self.assertEquals(pos.pos.slug, "discuss")
         self.assertTrue("New position" in pos.desc)
         self.assertTrue("by Sec" in pos.desc)
@@ -624,7 +626,7 @@ class EditPositionTestCase(django.test.TestCase):
 
         ad = Email.objects.get(address="aread@ietf.org")
         
-        BallotPosition.objects.create(doc=draft, type="changed_ballot_position",
+        BallotPositionEvent.objects.create(doc=draft, type="changed_ballot_position",
                                       by=ad, ad=ad, pos=BallotPositionName.objects.get(slug="yes"),
                                       comment="Test!",
                                       comment_time=datetime.datetime.now())
@@ -730,7 +732,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
                 save_last_call_text="1"))
         self.assertEquals(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue("This is a simple test" in draft.latest_event(Text, type="changed_last_call_text").content)
+        self.assertTrue("This is a simple test" in draft.latest_event(WriteupEvent, type="changed_last_call_text").text)
 
         # test regenerate
         r = self.client.post(url, dict(
@@ -739,7 +741,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue("Subject: Last Call" in draft.latest_event(Text, type="changed_last_call_text").content)
+        self.assertTrue("Subject: Last Call" in draft.latest_event(WriteupEvent, type="changed_last_call_text").text)
 
 
     def test_request_last_call(self):
@@ -755,7 +757,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
 
         # send
         r = self.client.post(url, dict(
-                last_call_text=draft.latest_event(Text, type="changed_last_call_text").content,
+                last_call_text=draft.latest_event(WriteupEvent, type="changed_last_call_text").text,
                 send_last_call_request="1"))
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.iesg_state_id, "lc-req")
@@ -781,7 +783,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
                 save_ballot_writeup="1"))
         self.assertEquals(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue("This is a simple test" in draft.latest_event(Text, type="changed_ballot_writeup_text").content)
+        self.assertTrue("This is a simple test" in draft.latest_event(WriteupEvent, type="changed_ballot_writeup_text").text)
 
     def test_issue_ballot(self):
         draft = make_test_data()
@@ -790,7 +792,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
 
         def create_pos(num, vote, comment="", discuss=""):
             ad = Email.objects.get(address="ad%s@ietf.org" % num)
-            e = BallotPosition()
+            e = BallotPositionEvent()
             e.doc = draft
             e.by = ad
             e.ad = ad
@@ -815,11 +817,11 @@ class BallotWriteupsTestCase(django.test.TestCase):
         create_pos(9, "yes")
 
         # we need approval text to be able to submit
-        e = Text()
+        e = WriteupEvent()
         e.doc = draft
         e.by = Email.objects.get(address="aread@ietf.org")
         e.type = "changed_ballot_approval_text"
-        e.content = "The document has been approved."
+        e.text = "The document has been approved."
         e.save()
         
         mailbox_before = len(mail_outbox)
@@ -859,13 +861,13 @@ class BallotWriteupsTestCase(django.test.TestCase):
                 save_approval_text="1"))
         self.assertEquals(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue("This is a simple test" in draft.latest_event(Text, type="changed_ballot_approval_text").content)
+        self.assertTrue("This is a simple test" in draft.latest_event(WriteupEvent, type="changed_ballot_approval_text").text)
 
         # test regenerate
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEquals(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue("Subject: Protocol Action" in draft.latest_event(Text, type="changed_ballot_approval_text").content)
+        self.assertTrue("Subject: Protocol Action" in draft.latest_event(WriteupEvent, type="changed_ballot_approval_text").text)
 
         # test regenerate when it's a disapprove
         draft.iesg_state_id = "nopubadw"
@@ -874,7 +876,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEquals(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue("NOT be published" in draft.latest_event(Text, type="changed_ballot_approval_text").content)
+        self.assertTrue("NOT be published" in draft.latest_event(WriteupEvent, type="changed_ballot_approval_text").text)
         
 class ApproveBallotTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -955,7 +957,7 @@ class MakeLastCallTestCase(django.test.TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.iesg_state.slug, "lc")
-        self.assertEquals(draft.latest_event(Expiration, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
+        self.assertEquals(draft.latest_event(LastCallEvent, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
         self.assertEquals(len(mail_outbox), mailbox_before + 4)
 
         self.assertTrue("Last Call" in mail_outbox[-4]['Subject'])

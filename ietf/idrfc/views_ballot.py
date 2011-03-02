@@ -22,7 +22,7 @@ from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
-from doc.models import Document, Event, BallotPosition, save_document_in_history
+from doc.models import Document, Event, BallotPositionEvent, LastCallEvent, save_document_in_history
 from name.models import BallotPositionName, IesgDocStateName
 
 BALLOT_CHOICES = (("yes", "Yes"),
@@ -219,7 +219,7 @@ def edit_positionREDESIGN(request, name):
             raise Http404()
         ad = get_object_or_404(Email, pk=ad_id)
 
-    old_pos = doc.latest_event(BallotPosition, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
+    old_pos = doc.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
 
     if request.method == 'POST':
         form = EditPositionForm(request.POST)
@@ -231,7 +231,7 @@ def edit_positionREDESIGN(request, name):
             if clean['return_to_url']:
               return_to_url = clean['return_to_url']
 
-            pos = BallotPosition(doc=doc, by=login)
+            pos = BallotPositionEvent(doc=doc, by=login)
             pos.type = "changed_ballot_position"
             pos.ad = ad
             pos.pos = clean["position"]
@@ -417,7 +417,7 @@ def send_ballot_commentREDESIGN(request, name):
             raise Http404()
         ad = get_object_or_404(Email, pk=ad_id)
 
-    pos = doc.latest_event(BallotPosition, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
+    pos = doc.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
     if not pos:
         raise Http404()
     
@@ -704,23 +704,23 @@ def lastcalltextREDESIGN(request, name):
 
     login = request.user.get_profile().email()
 
-    existing = doc.latest_event(Text, type="changed_last_call_text")
+    existing = doc.latest_event(WriteupEvent, type="changed_last_call_text")
     if not existing:
         existing = generate_last_call_announcement(request, doc)
         
-    form = LastCallTextForm(initial=dict(last_call_text=existing.content))
+    form = LastCallTextForm(initial=dict(last_call_text=existing.text))
 
     if request.method == 'POST':
         if "save_last_call_text" in request.POST or "send_last_call_request" in request.POST:
             form = LastCallTextForm(request.POST)
             if form.is_valid():
                 t = form.cleaned_data['last_call_text']
-                if t != existing.content:
-                    e = Text(doc=doc, by=login)
+                if t != existing.text:
+                    e = WriteupEvent(doc=doc, by=login)
                     e.by = login
                     e.type = "changed_last_call_text"
                     e.desc = "Last call announcement was changed by %s" % login.get_name()
-                    e.content = t
+                    e.text = t
                     e.save()
                 
                     doc.time = e.time
@@ -752,7 +752,7 @@ def lastcalltextREDESIGN(request, name):
             doc.save()
             
             # make sure form has the updated text
-            form = LastCallTextForm(initial=dict(last_call_text=e.content))
+            form = LastCallTextForm(initial=dict(last_call_text=e.text))
 
         
     can_request_last_call = doc.iesg_state.order < 27
@@ -863,38 +863,39 @@ class BallotWriteupFormREDESIGN(forms.Form):
 def ballot_writeupnotesREDESIGN(request, name):
     """Editing of ballot write-up and notes"""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.iesg_state:
+    started_process = doc.latest_event(type="started_iesg_process")
+    if not started_process:
         raise Http404()
 
     login = request.user.get_profile().email()
 
-    approval = doc.latest_event(Text, type="changed_ballot_approval_text")
+    approval = doc.latest_event(WriteupEvent, type="changed_ballot_approval_text")
     
-    existing = doc.latest_event(Text, type="changed_ballot_writeup_text")
+    existing = doc.latest_event(WriteupEvent, type="changed_ballot_writeup_text")
     if not existing:
         existing = generate_ballot_writeup(request, doc)
         
-    form = BallotWriteupForm(initial=dict(ballot_writeup=existing.content))
+    form = BallotWriteupForm(initial=dict(ballot_writeup=existing.text))
 
     if request.method == 'POST' and "save_ballot_writeup" in request.POST or "issue_ballot" in request.POST:
         form = BallotWriteupForm(request.POST)
         if form.is_valid():
             t = form.cleaned_data["ballot_writeup"]
-            if t != existing.content:
-                e = Text(doc=doc, by=login)
+            if t != existing.text:
+                e = WriteupEvent(doc=doc, by=login)
                 e.by = login
                 e.type = "changed_ballot_writeup_text"
                 e.desc = "Ballot writeup was changed by %s" % login.get_name()
-                e.content = t
+                e.text = t
                 e.save()
 
                 doc.time = e.time
                 doc.save()
 
             if "issue_ballot" in request.POST and approval:
-                if in_group(request.user, "Area_Director") and not doc.latest_event(BallotPosition, ad=login):
+                if in_group(request.user, "Area_Director") and not doc.latest_event(BallotPositionEvent, ad=login, time__gte=started_process.time):
                     # sending the ballot counts as a yes
-                    pos = BallotPosition(doc=doc, by=login)
+                    pos = BallotPositionEvent(doc=doc, by=login)
                     pos.type = "changed_ballot_position"
                     pos.ad = login
                     pos.pos_id = "yes"
@@ -1003,23 +1004,23 @@ def ballot_approvaltextREDESIGN(request, name):
 
     login = request.user.get_profile().email()
 
-    existing = doc.latest_event(Text, type="changed_ballot_approval_text")
+    existing = doc.latest_event(WriteupEvent, type="changed_ballot_approval_text")
     if not existing:
         existing = generate_approval_mail(request, doc)
 
-    form = ApprovalTextForm(initial=dict(approval_text=existing.content))
+    form = ApprovalTextForm(initial=dict(approval_text=existing.text))
 
     if request.method == 'POST':
         if "save_approval_text" in request.POST:
             form = ApprovalTextForm(request.POST)
             if form.is_valid():
                 t = form.cleaned_data['approval_text']
-                if t != existing.content:
-                    e = Text(doc=doc, by=login)
+                if t != existing.text:
+                    e = WriteupEvent(doc=doc, by=login)
                     e.by = login
                     e.type = "changed_ballot_approval_text"
                     e.desc = "Ballot approval text was changed by %s" % login.get_name()
-                    e.content = t
+                    e.text = t
                     e.save()
                 
                     doc.time = e.time
@@ -1032,7 +1033,7 @@ def ballot_approvaltextREDESIGN(request, name):
             doc.save()
 
             # make sure form has the updated text
-            form = ApprovalTextForm(initial=dict(approval_text=existing.content))
+            form = ApprovalTextForm(initial=dict(approval_text=existing.text))
 
     can_announce = doc.iesg_state.order > 19
     need_intended_status = ""
@@ -1132,15 +1133,15 @@ def approve_ballotREDESIGN(request, name):
 
     login = request.user.get_profile().email()
 
-    e = doc.latest_event(Text, type="changed_ballot_approval_text")
+    e = doc.latest_event(WriteupEvent, type="changed_ballot_approval_text")
     if not e:
         e = generate_approval_mail(request, doc)
-    approval_text = e.content
+    approval_text = e.text
 
-    e = doc.latest_event(Text, type="changed_ballot_writeup_text")
+    e = doc.latest_event(WriteupEvent, type="changed_ballot_writeup_text")
     if not e:
         e = generate_ballot_writeup(request, doc)
-    ballot_writeup = e.content
+    ballot_writeup = e.text
     
     if "NOT be published" in approval_text:
         action = "do_not_publish"
@@ -1282,10 +1283,10 @@ def make_last_callREDESIGN(request, name):
 
     login = request.user.get_profile().email()
 
-    e = doc.latest_event(Text, type="changed_last_call_text")
+    e = doc.latest_event(WriteupEvent, type="changed_last_call_text")
     if not e:
         e = generate_last_call_announcement(request, doc)
-    announcement = e.content
+    announcement = e.text
 
     # why cut -4 off name? a better question is probably why these
     # tables aren't linked together properly
@@ -1322,7 +1323,7 @@ def make_last_callREDESIGN(request, name):
             email_state_changed(request, doc, change_description)
             email_owner(request, doc, doc.ad, login, change_description)
             
-            e = Expiration(doc=doc, by=login)
+            e = LastCallEvent(doc=doc, by=login)
             e.type = "sent_last_call"
             e.desc = "Last call sent by %s" % login.get_name()
             if form.cleaned_data['last_call_sent_date'] != e.time.date():
