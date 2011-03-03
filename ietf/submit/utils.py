@@ -3,7 +3,7 @@ import re
 import datetime
 
 from django.conf import settings
-from ietf.idtracker.models import InternetDraft, PersonOrOrgInfo
+from ietf.idtracker.models import InternetDraft, PersonOrOrgInfo, IETFWG
 
 
 # Some usefull states
@@ -124,6 +124,11 @@ class DraftValidation(object):
         self.validate_authors()
         self.validate_abstract()
         self.validate_creation_date()
+        self.validate_wg()
+
+    def validate_wg(self):
+        if self.wg and not self.wg.status.pk == IETFWG.ACTIVE:
+            self.add_warning('group', 'Working Group exists but is not an active WG')
 
     def validate_abstract(self):
         if not self.draft.abstract:

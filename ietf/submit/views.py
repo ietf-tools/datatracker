@@ -18,7 +18,6 @@ from ietf.submit.utils import (DraftValidation, perform_post, remove_docs,
 from ietf.utils.mail import send_mail
 
 
-
 def submit_index(request):
     if request.method == 'POST':
         form = UploadForm(request=request, data=request.POST, files=request.FILES)
@@ -27,7 +26,7 @@ def submit_index(request):
             return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submit.submission_id}))
     else:
         form = UploadForm(request=request)
-    return render_to_response('submit/submit_index.html', 
+    return render_to_response('submit/submit_index.html',
                               {'selected': 'index',
                                'form': form},
                               context_instance=RequestContext(request))
@@ -42,12 +41,11 @@ def submit_status(request):
         if detail:
             return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail[0].submission_id}))
         error = 'No valid history found for %s' % filename
-    return render_to_response('submit/submit_status.html', 
+    return render_to_response('submit/submit_status.html',
                               {'selected': 'status',
                                'error': error,
                                'filename': filename},
                               context_instance=RequestContext(request))
-    
 
 
 def _can_approve(user, detail):
@@ -58,13 +56,14 @@ def _can_approve(user, detail):
         return True
     return False
 
+
 def _can_force_post(user, detail):
-    person = get_person_for_user(user)
     if detail.status_id != MANUAL_POST_REQUESTED:
         return None
     if is_secretariat(user):
         return True
     return False
+
 
 def draft_status(request, submission_id, message=None):
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
@@ -76,11 +75,11 @@ def draft_status(request, submission_id, message=None):
     can_approve = _can_approve(request.user, detail)
     if detail.status_id != UPLOADED:
         if detail.status_id == CANCELED:
-            message=('error', 'This submission has been canceled, modification is no longer possible')
+            message = ('error', 'This submission has been canceled, modification is no longer possible')
         status = detail.status
         allow_edit = None
 
-    if request.method=='POST' and allow_edit:
+    if request.method == 'POST' and allow_edit:
         if request.POST.get('autopost', False):
             auto_post_form = AutoPostForm(draft=detail, validation=validation, data=request.POST)
             if auto_post_form.is_valid():
@@ -111,7 +110,7 @@ def draft_status(request, submission_id, message=None):
             return HttpResponseRedirect(reverse(draft_edit, None, kwargs={'submission_id': detail.submission_id}))
     else:
         auto_post_form = AutoPostForm(draft=detail, validation=validation)
-    return render_to_response('submit/draft_status.html', 
+    return render_to_response('submit/draft_status.html',
                               {'selected': 'status',
                                'detail': detail,
                                'validation': validation,
@@ -139,14 +138,15 @@ def draft_edit(request, submission_id):
     if detail.status_id != UPLOADED:
         raise Http404
     validation = DraftValidation(detail)
-    if request.method=='POST':
+    validation.validate_wg()
+    if request.method == 'POST':
         form = MetaDataForm(draft=detail, validation=validation, data=request.POST)
         if form.is_valid():
             form.save(request)
             return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
     else:
         form = MetaDataForm(draft=detail, validation=validation)
-    return render_to_response('submit/draft_edit.html', 
+    return render_to_response('submit/draft_edit.html',
                               {'selected': 'status',
                                'detail': detail,
                                'validation': validation,
@@ -170,7 +170,6 @@ def draft_confirm(request, submission_id, auth_key):
 
 def draft_approve(request, submission_id, check_function=_can_approve):
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
-    person = get_person_for_user(request.user)
     can_perform = check_function(request.user, detail)
     if not can_perform:
         if can_perform == None:
