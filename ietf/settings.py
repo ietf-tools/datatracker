@@ -156,7 +156,7 @@ SERVER_MODE = 'development'
 TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
 
 # WG Chair configuration
-MAX_WG_DELEGATES = 5
+MAX_WG_DELEGATES = 3
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
