@@ -7,6 +7,7 @@ import datetime
 from django import forms
 from django.forms.fields import email_re
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 from django.utils.html import mark_safe
 
@@ -320,7 +321,7 @@ class AutoPostForm(forms.Form):
                   {'draft': self.draft })
 
     def save_submitter_info(self):
-        TempIdAuthors.objects.create(
+        return TempIdAuthors.objects.create(
             id_document_tag=self.draft.temp_id_document_tag,
             first_name=self.cleaned_data['first_name'],
             last_name=self.cleaned_data['last_name'],
@@ -465,4 +466,4 @@ class MetaDataForm(AutoPostForm):
             cc += [i.person.email()[1] for i in self.draft.group_acronym.wgchair_set.all()]
         cc = list(set(cc))
         send_mail(request, to_email, from_email, subject, 'submit/manual_post_mail.txt',
-                  {'form': self, 'draft': self.draft }, cc=cc)
+                  {'form': self, 'draft': self.draft, 'domain': Site.objects.get_current().domain }, cc=cc)

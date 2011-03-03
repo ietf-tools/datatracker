@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.contrib.sites.models import Site
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
@@ -91,6 +92,7 @@ def draft_status(request, submission_id, message=None):
                     detail.save()
 
                 if detail.revision == '00' and not approved_detail:
+                    submitter = auto_post_form.save_submitter_info()
                     subject = 'New draft waiting for approval: %s' % detail.filename
                     from_email = settings.IDST_FROM_EMAIL
                     to_email = []
@@ -99,8 +101,9 @@ def draft_status(request, submission_id, message=None):
                     to_email = list(set(to_email))
                     if to_email:
                         metadata_form = MetaDataForm(draft=detail, validation=validation)
-                        send_mail(request, to_email, from_email, subject, 'submit/manual_post_mail.txt',
-                                  {'form': metadata_form, 'draft': detail})
+                        send_mail(request, to_email, from_email, subject, 'submit/submission_approval.txt',
+                                  {'submitter': submitter, 'form': metadata_form,
+                                   'draft': detail, 'domain': Site.objects.get_current().domain})
                     return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
                 else:
                     auto_post_form.save(request)
