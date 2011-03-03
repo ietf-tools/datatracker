@@ -8,9 +8,9 @@
 
 {% if can_manage_delegates %}
   {% ifequal selected "manage_delegates" %}
-    <span class="selected">Manage delegates</span>
+    <span class="selected">Manage delegations</span>
   {% else %}
-    <a href="{% url manage_delegates wg.group_acronym.acronym %}">Manage delegates</a>
+    <a href="{% url manage_delegates wg.group_acronym.acronym %}">Manage delegations</a>
   {% endifequal %} |
 {% endif %}
 

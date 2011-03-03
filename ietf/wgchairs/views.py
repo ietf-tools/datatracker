@@ -1,4 +1,5 @@
-from ietf.idtracker.models import IETFWG, InternetDraft, IESGLogin
+from django.conf import settings
+from ietf.idtracker.models import IETFWG, InternetDraft
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.http import HttpResponseForbidden, Http404
@@ -37,11 +38,13 @@ def manage_delegates(request, acronym):
         elif add_form.is_valid():
             add_form.save()
             add_form = add_form.get_next_form()
+    max_delegates = getattr(settings, 'MAX_WG_DELEGATES', 3)
     return render_to_response('wgchairs/manage_delegates.html',
                               {'wg': wg,
                                'delegates': delegates,
                                'selected': 'manage_delegates',
-                               'can_add': delegates.count() < 3,
+                               'can_add': delegates.count() < max_delegates,
+                               'max_delegates': max_delegates,
                                'add_form': add_form,
                               }, RequestContext(request))
 
@@ -145,16 +148,16 @@ def wg_shepherd_documents(request, acronym):
     }
     return render_to_response('wgchairs/wg_shepherd_documents.html', context, RequestContext(request))
 
+
 def managing_writeup(request, acronym, name):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
     user = request.user
-    person = get_person_for_user(user)
     doc = get_object_or_404(InternetDraft, filename=name)
     if not can_manage_writeup_of_a_document(user, doc):
         raise Http404
     current_state = get_state_for_draft(doc)
     can_edit = True
-    if current_state != get_state_by_name(WAITING_WRITEUP) and not can_manage_writeup_of_a_document_no_state(user,doc):
+    if current_state != get_state_by_name(WAITING_WRITEUP) and not can_manage_writeup_of_a_document_no_state(user, doc):
         can_edit = False
     writeup = doc.protowriteup_set.all()
     if writeup.count():

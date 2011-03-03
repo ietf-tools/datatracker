@@ -40,6 +40,6 @@ class ProtoWriteUp(models.Model):
         )
 
     writeup = models.TextField(
-        blank = False,
-        null = False,
+        blank=False,
+        null=False,
         )

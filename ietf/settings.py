@@ -155,6 +155,9 @@ SERVER_MODE = 'development'
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
 
+# WG Chair configuration
+MAX_WG_DELEGATES = 5
+
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'

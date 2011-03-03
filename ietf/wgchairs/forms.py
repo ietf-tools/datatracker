@@ -1,5 +1,4 @@
 from django import forms
-from django.db.models import Q
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.forms.models import BaseModelFormSet
@@ -337,14 +336,13 @@ class WriteUpEditForm(RelatedWGForm):
     followup = forms.BooleanField(required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
-
     def __init__(self, *args, **kwargs):
         self.doc = kwargs.pop('doc', None)
         self.doc_writeup = self.doc.protowriteup_set.all()
         if self.doc_writeup.count():
-            self.doc_writeup=self.doc_writeup[0]
+            self.doc_writeup = self.doc_writeup[0]
         else:
-            self.doc_writeup=None
+            self.doc_writeup = None
         super(WriteUpEditForm, self).__init__(*args, **kwargs)
         self.person = get_person_for_user(self.user)
 

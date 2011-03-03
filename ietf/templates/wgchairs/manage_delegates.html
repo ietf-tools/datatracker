@@ -7,7 +7,14 @@
 <div class="wg-chair-management">
 
 <h2>Manage delegates</h2>
-<p><strong>Please,</strong> rembember that you only can assign a maximum of three delegates.</p>
+<p>
+Sometimes, a WG has one (or more) WG Secretaries, in addition to the WG Chairs. 
+This page lets the WG Chairs delegate the authority to do updates to the WG state of WG documents in the datatracker.
+</p>
+
+<p>
+You may at most delegate the datatracker update rights to {{ max_delegates }} persons at any given time.
+</p>
 
 <table style="width: 100%;">
 <tr style="vertical-align: top;"><td>
@@ -43,7 +50,7 @@ No delegates
     </p>
   </form>
 {% else %}
-You can only assign three delegates. Please remove delegates to add a new one.
+You can only assign {{ max_delegates }} delegates. Please remove delegates to add a new one.
 {% endif %}
 </td></tr>
 </table>

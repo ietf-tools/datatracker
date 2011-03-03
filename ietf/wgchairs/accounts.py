@@ -71,7 +71,7 @@ def can_manage_writeup_of_a_document_no_state(user, document):
         return False
     group = document.group.ietfwg
     return (is_group_chair(person, group) or
-            is_areadirector_for_group(person, group) or
+            is_area_director_for_group(person, group) or
             is_group_delegate(person, group))
 
 
@@ -79,6 +79,5 @@ def can_manage_writeup_of_a_document(user, document):
     person = get_person_for_user(user)
     if not person or not document.group:
         return False
-    group = document.group.ietfwg
     return (can_manage_writeup_of_a_document_no_state(user, document) or
-            is_document_shepherd(person, doc))
+            is_document_shepherd(person, document))
