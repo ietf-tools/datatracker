@@ -15,6 +15,6 @@ if not in_id_expire_freeze():
     for doc in get_expired_ids():
         send_expire_notice_for_id(doc)
         expire_id(doc)
-        syslog.syslog("Expired %s (id=%s)%s" % (doc.file_tag(), doc.id_document_tag, " in the ID Tracker" if doc.idinternal else ""))
+        syslog.syslog("Expired %s (id=%s)%s" % (doc.file_tag(), doc.pk, " in the ID Tracker" if doc.latest_event(type="started_iesg_process") else ""))
 
 clean_up_id_files()

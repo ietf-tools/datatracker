@@ -76,7 +76,8 @@ class InternetDraft(Document):
     #expiration_date = models.DateField()
     @property
     def expiration_date(self):
-        return self.expiration()
+        e = self.latest_event(type__in=('expired_document', 'new_revision', "completed_resurrect"))
+        return e.time.date() if e and e.type == "expired_document" else None
     #abstract = models.TextField() # same name
     #dunn_sent_date = models.DateField(null=True, blank=True) # unused
     #extension_date = models.DateField(null=True, blank=True) # unused

@@ -201,7 +201,6 @@ EVENT_TYPES = [
     
     # misc document events
     ("added_comment", "Added comment"),
-    ("added_tombstone", "Added tombstone"),
     ("expired_document", "Expired document"),
     ("requested_resurrect", "Requested resurrect"),
     ("completed_resurrect", "Completed resurrect"),

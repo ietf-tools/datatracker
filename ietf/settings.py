@@ -196,7 +196,7 @@ LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'
 LIAISON_ATTACH_URL = '/documents/LIAISON/'
 
 # DB redesign
-USE_DB_REDESIGN_PROXY_CLASSES=True
+USE_DB_REDESIGN_PROXY_CLASSES = True
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

@@ -593,3 +593,19 @@ def email_last_call_expired(doc):
                    url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()),
               cc="iesg-secretary@ietf.org")
 
+def email_last_call_expiredREDESIGN(doc):
+    text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.iesg_state.name
+    
+    send_mail(None,
+              "iesg@ietf.org",
+              "DraftTracker Mail System <iesg-secretary@ietf.org>",
+              "Last Call Expired: %s" % doc.file_tag(),
+              "idrfc/change_notice.txt",
+              dict(text=text,
+                   doc=doc,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc="iesg-secretary@ietf.org")
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    email_last_call_expired = email_last_call_expiredREDESIGN
+

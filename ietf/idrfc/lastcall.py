@@ -7,7 +7,10 @@ from django.conf import settings
 from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo, IESGLogin
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
-from doc.models import Event
+
+from doc.models import Document, Event, LastCallEvent, WriteupEvent, save_document_in_history
+from name.models import IesgDocStateName
+from person.models import Email
 
 def request_last_call(request, doc):
     try:
@@ -42,6 +45,13 @@ def get_expired_last_calls():
     return InternetDraft.objects.filter(lc_expiration_date__lte=datetime.date.today(),
                                         idinternal__cur_state__document_state_id=IDState.IN_LAST_CALL)
 
+def get_expired_last_callsREDESIGN():
+    today = datetime.date.today()
+    for d in Document.objects.filter(iesg_state="lc"):
+        e = d.latest_event(LastCallEvent, type="sent_last_call")
+        if e and e.expires.date() <= today:
+            yield d
+
 def expire_last_call(doc):
     state = IDState.WAITING_FOR_WRITEUP
 
@@ -59,3 +69,28 @@ def expire_last_call(doc):
     log_state_changed(None, doc, by="system", email_watch_list=False)
 
     email_last_call_expired(doc)
+
+def expire_last_callREDESIGN(doc):
+    state = IesgDocStateName.objects.get(slug="writeupw")
+
+    e = doc.latest_event(WriteupEvent, type="changed_ballot_writeup_text")
+    if e and "What does this protocol do and why" not in e.text:
+        # if it boiler-plate text has been removed, we assume the
+        # write-up has been written
+        state = IesgDocStateName.objects.get(slug="goaheadw")
+
+    save_document_in_history(doc)
+
+    prev = doc.iesg_state
+    doc.iesg_state = state
+    e = log_state_changed(None, doc, Email.objects.get(address="(System)"), prev)
+                    
+    doc.time = e.time
+    doc.save()
+
+    email_last_call_expired(doc)
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    get_expired_last_calls = get_expired_last_callsREDESIGN
+    expire_last_call = expire_last_callREDESIGN
+
