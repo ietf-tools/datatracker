@@ -14,7 +14,7 @@ from ietf.submit.utils import (DraftValidation, perform_post, remove_docs,
                                get_person_for_user, is_secretariat,
                                UPLOADED, WAITING_AUTHENTICATION, CANCELED,
                                INITIAL_VERSION_APPROVAL_REQUESTED,
-                               MANUAL_POST_REQUESTED)
+                               MANUAL_POST_REQUESTED, POSTED)
 from ietf.utils.mail import send_mail
 
 
@@ -68,7 +68,7 @@ def _can_force_post(user, detail):
 def _can_cancel(user, detail):
     if detail.status_id == UPLOADED:
         return True
-    if is_secretariat(user) and detail.status_id != CANCELED:
+    if is_secretariat(user) and detail.status_id not in [CANCELED, POSTED]:
         return True
     return False
 
