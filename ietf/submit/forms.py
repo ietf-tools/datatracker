@@ -221,7 +221,7 @@ class UploadForm(forms.Form):
         return self.save_draft_info(self.draft)
 
     def check_idnits(self):
-        filepath = os.path.join(self.staging_path, self.cleaned_data['txt'].name)
+        filepath = os.path.join(self.staging_path, '%s-%s.txt' % (self.draft.filename, self.draft.revision))
         p = subprocess.Popen([self.idnits, '--submitcheck', '--nitcount', filepath], stdout=subprocess.PIPE)
         self.idnits_message = p.stdout.read()
 
