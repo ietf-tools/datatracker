@@ -42,6 +42,7 @@ function confirmCancelation(){
         idnitsDialog.render();
     
         var showIdnits = function() {
+            $('#idnits_results').show();
             $('#idnits_title').show();
             $('#twopages_title').hide();
             $('pre.idnits_message').show();
@@ -90,7 +91,7 @@ Your draft has NOT been verified to meet IDNITS requirements.
 {% endif %}
 <a class="idnits_trigger" href="#">(View IDNITS Results)</a>
 </p>
-<div id="idnits_results" style="visibility:hidden;">
+<div id="idnits_results" style="visibility:hidden; display: none;">
   <div class="hd">
     <span style="display: none;" id="idnits_title">Idnits results</span>
     <span style="display: none;" id="twopages_title">First two pages</span>
