@@ -58,12 +58,19 @@ def _can_approve(user, detail):
 
 
 def _can_force_post(user, detail):
-    if detail.status_id != MANUAL_POST_REQUESTED:
+    if detail.status_id not in [MANUAL_POST_REQUESTED,
+            WAITING_AUTHENTICATION, INITIAL_VERSION_APPROVAL_REQUESTED]:
         return None
     if is_secretariat(user):
         return True
     return False
 
+def _can_cancel(user, detail):
+    if detail.status_id == UPLOADED:
+        return True
+    if is_secretariat(user) and detail.status_id != CANCELED:
+        return True
+    return False
 
 def draft_status(request, submission_id, message=None):
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
@@ -73,6 +80,7 @@ def draft_status(request, submission_id, message=None):
     allow_edit = True
     can_force_post = _can_force_post(request.user, detail)
     can_approve = _can_approve(request.user, detail)
+    can_cancel = _can_cancel(request.user, detail)
     if detail.status_id != UPLOADED:
         if detail.status_id == CANCELED:
             message = ('error', 'This submission has been canceled, modification is no longer possible')
@@ -106,6 +114,15 @@ def draft_status(request, submission_id, message=None):
                     return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
                 else:
                     auto_post_form.save(request)
+                    detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
+                    validation = DraftValidation(detail)
+                    is_valid = validation.is_valid()
+                    status = detail.status
+                    can_force_post = _can_force_post(request.user, detail)
+                    can_approve = _can_approve(request.user, detail)
+                    can_cancel = _can_cancel(request.user, detail)
+                    allow_edit = False
+                    message = ('success', 'Your submission is pending of email authentication. An email has been sent you with instructions')
         else:
             return HttpResponseRedirect(reverse(draft_edit, None, kwargs={'submission_id': detail.submission_id}))
     else:
@@ -121,6 +138,7 @@ def draft_status(request, submission_id, message=None):
                                'allow_edit': allow_edit,
                                'can_force_post': can_force_post,
                                'can_approve': can_approve,
+                               'can_cancel': can_cancel,
                               },
                               context_instance=RequestContext(request))
 

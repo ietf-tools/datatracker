@@ -55,7 +55,7 @@ class PlainParser(FileParser):
             filename = re.sub('\.txt$', '', filename)
             extra_chars = re.sub('[0-9a-z\-]', '', filename)
             if extra_chars:
-                self.parsed_info.add_error('Filename contains non alpha-numeric character: %s' % ', '.join(set(extra_chars)))
+                self.parsed_info.add_error(u'Filename contains non alpha-numeric character: %s' % (', '.join(set(extra_chars))).decode('ascii','replace'))
             match_revision = revisionre.match(filename)
             if match_revision:
                 self.parsed_info.metadraft.revision = match_revision.group(1)

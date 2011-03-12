@@ -171,11 +171,6 @@ returned to the submitter.
     </form> 
   {% endif %} 
 
-  <h2>Cancel submission</h2>
-  <p>
-    <input type="button" onclick="confirmCancelation();" value="Cancel Submission" /><br>
-     This submission will be canceled, and its uploaded document(s) permanently deleted.
-  </p>
 
 {% else %}
   {% if validation.submitter %} 
@@ -186,6 +181,14 @@ returned to the submitter.
     <tr><th>Email address</th><td>{{ validation.submitter.email_address|default:validation.submitter.email.1 }}</td></tr> 
     </table> 
   {% endif %} 
+{% endif %}
+
+{% if can_cancel %}
+  <h2>Cancel submission</h2>
+  <p>
+    <input type="button" onclick="confirmCancelation();" value="Cancel Submission" /><br>
+     This submission will be canceled, and its uploaded document(s) permanently deleted.
+  </p>
 {% endif %}
 
 {% if can_approve %}
