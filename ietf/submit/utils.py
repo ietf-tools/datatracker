@@ -145,8 +145,11 @@ class DraftValidation(object):
         expected = 0
         if existing_revisions:
             expected = max(existing_revisions) + 1
-        if int(revision) != expected:
-            self.add_warning('revision', 'Invalid Version Number (Version %02d is expected)' % expected)
+        try:
+            if int(revision) != expected:
+                self.add_warning('revision', 'Invalid Version Number (Version %02d is expected)' % expected)
+        except ValueError:
+            self.add_warning('revision', 'Revision not found')
 
     def validate_authors(self):
         if not self.authors:

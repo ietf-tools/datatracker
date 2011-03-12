@@ -16,6 +16,7 @@ table.metadata-table tr { vertical-align: top; }
 table.metadata-table tr.warning td, table.metadata-table tr.warning th { background-color: #ffaaaa; }
 table.metadata-table div.warn_message { color: red; }
 table.metadata-table ul.errorlist { color: red; padding: 0px; margin: 0px; list-style-type: none; }
+pre.twopages { margin: 0px; }
 {% endblock morecss %}
 
 {% block pagehead %}
@@ -100,7 +101,7 @@ Your draft has NOT been verified to meet IDNITS requirements.
   <div class="bd"> 
     <div id="stream_dialog_body" style="padding: 0em 5em; height: 400px; overflow: auto;">
       <pre class="idnits_message" style="display: none;">{{ detail.idnits_message }}</pre>
-      <pre class="twopages" style="display: none;">{{ detail.first_two_pages }}</pre>
+      {{ detail|two_pages_decorated_with_validation:validation }}
     </div>
   </div>
 </div>
@@ -136,7 +137,7 @@ returned to the submitter.
 <tr><th>Document</th><td>{{ detail.filename }} <a class="twopages_trigger" href="#">[View first two pages]</a>
 {% show_submission_files detail %}
 </td></tr>
-<tr{% if validation.warnings.revision %} class="warning"{% endif %}><th>Revision</th><td>{{ detail.revision }}<div class="warn_message">{{ validation.warnings.revision }}</div></td></tr>
+<tr{% if validation.warnings.revision %} class="warning"{% endif %}><th>Revision</th><td>{{ detail.revision }}<div class="warn_message">{{ validation.warnings.revision }}{% if validation.warnings.revision %}<br /><a class="twopages_trigger" href="#">[View error]</a>{% endif %}</div></td></tr>
 <tr><th>Submission date</th><td>{{ detail.submission_date }}</td></tr>
 <tr><th>Title</th><td>{{ detail.id_document_name }}</td></tr>
 <tr{% if validation.warnings.group %} class="warning"{% endif %}><th>WG</th><td>{{ validation.wg|default:"Individual Submission" }}<div class="warn_message">{{ validation.warnings.group }}</div></td></tr>
