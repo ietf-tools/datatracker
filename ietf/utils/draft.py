@@ -575,11 +575,12 @@ class Draft():
     def get_title(self):
         if self._title:
             return self._title
-        title_re = re.compile('(.+\n){1,3}(\s+<?draft-\S+\s*\n)')
+        title_re = re.compile('(?:\n\s*\n\s*)((.+\n){1,3})(\s+<?draft-\S+\s*\n)\s*\n')
         match = title_re.search(self.pages[0])
         if match:
             title = match.group(1)
             title = title.strip()
+            title = re.sub('\s*\n\s*', ' ', title)
             self._title = title
             return self._title
         # unusual title extract
