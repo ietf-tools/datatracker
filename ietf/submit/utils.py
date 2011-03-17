@@ -166,6 +166,16 @@ class DraftValidation(object):
     def validate_authors(self):
         if not self.authors:
             self.add_warning('authors', 'No authors found')
+            return
+        index = 1
+        message = ''
+        for author in self.authors:
+            if not author.last_name:
+                message += 'Author %s has no last name<br />' % index
+            if not author.email:
+                message += 'Author %s has no email<br />' % index
+        if message:
+            self.add_warning('authors', message)
 
     def validate_creation_date(self):
         date = self.draft.creation_date

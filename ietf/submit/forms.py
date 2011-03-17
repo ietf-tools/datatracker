@@ -272,8 +272,18 @@ class UploadForm(forms.Form):
             )
         order = 0
         for author in draft.get_authors():
-            name, email = author.rsplit(' ', 1)
-            first_name, last_name = name.split(' ', 1)
+            try:
+                name, email = author.rsplit(' ', 1)
+            except ValueError:
+                first_name = author
+                last_name = ''
+                email = ''
+            else:
+                try:
+                    first_name, last_name = name.split(' ', 1)
+                except ValueError:
+                    first_name = name
+                    last_name = ''
             email = email.replace('<', '').replace('>', '')
             order += 1
             TempIdAuthors.objects.create(
