@@ -21,12 +21,20 @@ pre.twopages { margin: 0px; }
 
 {% block pagehead %}
 <script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
+{% if can_cancel %}
 <script type="text/javascript">
 function confirmCancelation(){
   {% if is_valid %}if (confirm("Cancel this submission?")){% endif %}
-    document.location = "/submit/status/{{ detail.submission_id }}/cancel/";
+    {% if submission_hash %}
+    document.location = "{% url draft_cancel_by_hash detail.submission_id submission_hash %}";
+    {% else %}
+    document.location = "{% url draft_cancel detail.submission_id %}";
+    {% endif %}
 }
+</script>
+{% endif %}
 
+<script type="text/javascript">
 (function ($) {
 
     $(document).ready(function () {

@@ -23,7 +23,7 @@ def submit_index(request):
         form = UploadForm(request=request, data=request.POST, files=request.FILES)
         if form.is_valid():
             submit = form.save()
-            return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submit.submission_id}))
+            return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submit.submission_id, 'submission_hash': submit.get_hash()}))
     else:
         form = UploadForm(request=request)
     return render_to_response('submit/submit_index.html',
@@ -37,7 +37,7 @@ def submit_status(request):
     filename = None
     if request.method == 'POST':
         filename = request.POST.get('filename', '')
-        detail = IdSubmissionDetail.objects.filter(filename=filename)
+        detail = IdSubmissionDetail.objects.filter(filename=filename).order_by('-pk')
         if detail:
             return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail[0].submission_id}))
         error = 'No valid history found for %s' % filename
@@ -65,22 +65,35 @@ def _can_force_post(user, detail):
         return True
     return False
 
-def _can_cancel(user, detail):
-    if detail.status_id == UPLOADED:
+def _can_cancel(user, detail, submission_hash):
+    if detail.status_id in [CANCELED, POSTED]:
+        return None
+    if is_secretariat(user):
         return True
-    if is_secretariat(user) and detail.status_id not in [CANCELED, POSTED]:
+    if submission_hash and detail.get_hash() == submission_hash:
         return True
     return False
 
-def draft_status(request, submission_id, message=None):
+def _can_edit(user, detail, submission_hash):
+    if detail.status_id != 'UPLOADED':
+        return None
+    if is_secretariat(user):
+        return True
+    if submission_hash and detail.get_hash() == submission_hash:
+        return True
+    return False
+
+def draft_status(request, submission_id, submission_hash=None, message=None):
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
+    if submission_hash and not detail.get_hash() == submission_hash:
+        raise Http404
     validation = DraftValidation(detail)
     is_valid = validation.is_valid()
     status = None
-    allow_edit = True
+    allow_edit = _can_edit(request.user, detail, submission_hash)
     can_force_post = _can_force_post(request.user, detail)
     can_approve = _can_approve(request.user, detail)
-    can_cancel = _can_cancel(request.user, detail)
+    can_cancel = _can_cancel(request.user, detail, submission_hash)
     if detail.status_id != UPLOADED:
         if detail.status_id == CANCELED:
             message = ('error', 'This submission has been canceled, modification is no longer possible')
@@ -120,7 +133,7 @@ def draft_status(request, submission_id, message=None):
                     status = detail.status
                     can_force_post = _can_force_post(request.user, detail)
                     can_approve = _can_approve(request.user, detail)
-                    can_cancel = _can_cancel(request.user, detail)
+                    can_cancel = _can_cancel(request.user, detail, submission_hash)
                     allow_edit = False
                     message = ('success', 'Your submission is pending of email authentication. An email has been sent you with instructions')
         else:
@@ -139,22 +152,31 @@ def draft_status(request, submission_id, message=None):
                                'can_force_post': can_force_post,
                                'can_approve': can_approve,
                                'can_cancel': can_cancel,
+                               'submission_hash': submission_hash,
                               },
                               context_instance=RequestContext(request))
 
 
-def draft_cancel(request, submission_id):
+def draft_cancel(request, submission_id, submission_hash=None):
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
+    can_cancel = _can_cancel(request.user, detail, submission_hash)
+    if not can_cancel:
+        if can_cancel == None:
+            raise Http404
+        return HttpResponseForbidden('You have no permission to perform this action')
     detail.status_id = CANCELED
     detail.save()
     remove_docs(detail)
     return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submission_id}))
 
 
-def draft_edit(request, submission_id):
+def draft_edit(request, submission_id, submission_hash=None):
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
-    if detail.status_id != UPLOADED:
-        raise Http404
+    can_edit = _can_edit(request.user, detail, submission_hash)
+    if not can_edit:
+        if can_edit == None:
+            raise Http404
+        return HttpResponseForbidden('You have no permission to perform this action')
     validation = DraftValidation(detail)
     validation.validate_wg()
     if request.method == 'POST':
@@ -183,7 +205,7 @@ def draft_confirm(request, submission_id, auth_key):
     else:
         message = ('success', 'Authorization key accepted. Auto-Post complete')
         perform_post(detail)
-    return draft_status(request, submission_id, message)
+    return draft_status(request, submission_id, message=message)
 
 
 def draft_approve(request, submission_id, check_function=_can_approve):

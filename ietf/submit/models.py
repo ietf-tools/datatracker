@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.db import models
+from django.utils.hashcompat import md5_constructor
 
 from ietf.idtracker.models import IETFWG
 
@@ -46,6 +48,19 @@ class IdSubmissionDetail(models.Model):
     class Meta:
         db_table = 'id_submission_detail'
 
+    def create_hash(self):
+        self.submission_hash = md5_constructor(settings.SECRET_KEY + self.filename).hexdigest()
+
+    def get_hash(self):
+        if not self.submission_hash:
+            create_hash()
+            self.save()
+        return self.submission_hash
+
+def create_submission_hash(sender, instance, **kwargs):
+    instance.create_hash()
+
+models.signals.pre_save.connect(create_submission_hash, sender=IdSubmissionDetail)
 
 class IdApprovedDetail(models.Model):
     id = models.AutoField(primary_key=True)
