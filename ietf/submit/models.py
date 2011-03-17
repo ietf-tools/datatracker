@@ -41,6 +41,7 @@ class IdSubmissionDetail(models.Model):
     sub_email_priority = models.IntegerField(null=True, blank=True)
     invalid_version = models.IntegerField(null=True, blank=True)
     idnits_failed = models.IntegerField(null=True, blank=True)
+    submission_hash = models.CharField(null=True, blank=True, max_length=255)
 
     class Meta:
         db_table = 'id_submission_detail'
