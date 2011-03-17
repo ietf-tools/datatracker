@@ -136,7 +136,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                     can_approve = _can_approve(request.user, detail)
                     can_cancel = _can_cancel(request.user, detail, submission_hash)
                     allow_edit = None
-                    message = ('success', 'Your submission is pending of email authentication. An email has been sent you with instructions')
+                    message = ('success', 'Your submission is pending email authentication. An email has been sent you with instructions.')
         else:
             return HttpResponseRedirect(reverse(draft_edit, None, kwargs={'submission_id': detail.submission_id}))
     else:
