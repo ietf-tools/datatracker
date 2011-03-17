@@ -218,6 +218,22 @@ returned to the submitter.
 </p>
 {% endif %}
  
+{% if show_notify_button %}
+<div class="metadata-errors">
+<p>
+You are not allowed to modify or cancel this submission. You only can modify or cancel this submission from the same url you were redirected after the submission.
+</p>
+<p>
+If you are the submitter check your browser history to find this url. You can share it with any person you need.
+</p>
+<p>
+If you are one of the authors you can request the url from wich you can modify or cancel this submission by clicking the next button. An email will be sent to the draft authors and to the submitter (if its email is available).
+</p>
+<form method="post" action="{% url full_url_request detail.submission_id %}">
+<input type="submit" value="Request full access url" />
+</form>
+</div>
+{% endif %}
 <p>
 The IETF is an organized activity of the <a href="http://www.isoc.org">Internet Society</a>
 <br>Please send problem reports to <a href="mailto:ietf-action@ietf.org">ietf-action@ietf.org</a>.

@@ -3,7 +3,10 @@ import re
 import datetime
 
 from django.conf import settings
+from django.contrib.sites.models import Site
+
 from ietf.idtracker.models import InternetDraft, PersonOrOrgInfo, IETFWG
+from ietf.utils.mail import send_mail
 
 
 # Some usefull states
@@ -18,6 +21,15 @@ INITIAL_VERSION_APPROVAL_REQUESTED = 10
 
 # Not a real WG
 NONE_WG = 1027
+
+
+def request_full_url(request, submission):
+    subject = 'Full url for managing submission of draft %s' % submission.filename
+    from_email = settings.IDST_FROM_EMAIL
+    to_email = ['%s <%s>' % i.email() for i in submission.tempidauthors_set.all()]
+    send_mail(request, to_email, from_email, subject, 'submit/request_full_url.txt',
+        {'submission': submission,
+         'domain': Site.objects.get_current().domain})
 
 
 def perform_post(submission):

@@ -12,7 +12,8 @@ from ietf.submit.models import IdSubmissionDetail, IdApprovedDetail
 from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm
 from ietf.submit.utils import (DraftValidation, perform_post, remove_docs,
                                get_person_for_user, is_secretariat,
-                               UPLOADED, WAITING_AUTHENTICATION, CANCELED,
+                               request_full_url, UPLOADED,
+                               WAITING_AUTHENTICATION, CANCELED,
                                INITIAL_VERSION_APPROVAL_REQUESTED,
                                MANUAL_POST_REQUESTED, POSTED)
 from ietf.utils.mail import send_mail
@@ -75,7 +76,7 @@ def _can_cancel(user, detail, submission_hash):
     return False
 
 def _can_edit(user, detail, submission_hash):
-    if detail.status_id != 'UPLOADED':
+    if detail.status_id != UPLOADED:
         return None
     if is_secretariat(user):
         return True
@@ -134,12 +135,16 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                     can_force_post = _can_force_post(request.user, detail)
                     can_approve = _can_approve(request.user, detail)
                     can_cancel = _can_cancel(request.user, detail, submission_hash)
-                    allow_edit = False
+                    allow_edit = None
                     message = ('success', 'Your submission is pending of email authentication. An email has been sent you with instructions')
         else:
             return HttpResponseRedirect(reverse(draft_edit, None, kwargs={'submission_id': detail.submission_id}))
     else:
         auto_post_form = AutoPostForm(draft=detail, validation=validation)
+
+    show_notify_button = False
+    if allow_edit == False or can_cancel == False:
+        show_notify_button = True
     return render_to_response('submit/draft_status.html',
                               {'selected': 'status',
                                'detail': detail,
@@ -153,6 +158,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                                'can_approve': can_approve,
                                'can_cancel': can_cancel,
                                'submission_hash': submission_hash,
+                               'show_notify_button': show_notify_button,
                               },
                               context_instance=RequestContext(request))
 
@@ -221,3 +227,10 @@ def draft_approve(request, submission_id, check_function=_can_approve):
 
 def draft_force(request, submission_id):
     return draft_approve(request, submission_id, check_function=_can_force_post)
+
+
+def full_url_request(request, submission_id):
+    detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
+    request_full_url(request, detail)
+    message = ('success', 'An email has been sent to draft authors to inform them of the full access url')
+    return draft_status(request, submission_id, message=message)

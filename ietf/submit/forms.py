@@ -317,7 +317,7 @@ class AutoPostForm(forms.Form):
         subject = 'Confirmation for Auto-Post of I-D %s' % self.draft.filename
         from_email = settings.IDST_FROM_EMAIL
         to_email = self.cleaned_data['email']
-        send_mail(request, from_email, to_email, subject, 'submit/confirm_autopost.txt',
+        send_mail(request, to_email, from_email, subject, 'submit/confirm_autopost.txt',
                   {'draft': self.draft, 'domain': Site.objects.get_current().domain })
 
     def save_submitter_info(self):
