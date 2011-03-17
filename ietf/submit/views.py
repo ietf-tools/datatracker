@@ -109,8 +109,11 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                     approved_detail = IdApprovedDetail.objects.get(filename=detail.filename)
                 except ObjectDoesNotExist:
                     approved_detail = None
+                if detail.group_acronym and not approved_detail:
                     detail.status_id = INITIAL_VERSION_APPROVAL_REQUESTED
                     detail.save()
+                else:
+                    approved_detail = True
 
                 if detail.revision == '00' and not approved_detail:
                     submitter = auto_post_form.save_submitter_info()
