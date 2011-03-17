@@ -53,7 +53,7 @@ class IdSubmissionDetail(models.Model):
 
     def get_hash(self):
         if not self.submission_hash:
-            create_hash()
+            self.create_hash()
             self.save()
         return self.submission_hash
 
