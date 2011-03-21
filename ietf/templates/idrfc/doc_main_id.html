@@ -32,7 +32,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
-{% load ietf_filters %}
+{% load ietf_filters ietf_streams %}
 
 {% block title %}{{ doc.draft_name_and_revision }}{% endblock %}
 {% block doc_meta_description %}{{ doc.title }} ({{info.type}}; {{doc.publication_date|date:"Y"}}){% endblock %}
@@ -81,6 +81,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endblock doc_metatable %}
 
 {% block doc_metalinks %}
+{% edit_actions doc %}
 <div>
   <a href="mailto:{{doc.draft_name}}@tools.ietf.org?subject=Mail%20regarding%20{{doc.draft_name}}" rel="nofollow">Email Authors</a>
 | <a href="/ipr/search/?option=document_search&amp;id_document_tag={{doc.tracker_id}}" rel="nofollow">IPR Disclosures</a>

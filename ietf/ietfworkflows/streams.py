@@ -29,6 +29,20 @@ def get_stream_from_id(stream_id):
         return None
 
 
+def get_chair_model(stream):
+    model_str = stream.group_chair_model
+    if not model_str:
+        return None
+    try:
+        app, model = model_str.split('.', 1)
+    except ValueError:
+        return None
+    chair_model = models.get_model(app, model)
+    if not chair_model:
+        return
+    return chair_model
+
+
 def _get_group_from_acronym(group_model_str, acronym):
     try:
         app, model = group_model_str.split('.', 1)
