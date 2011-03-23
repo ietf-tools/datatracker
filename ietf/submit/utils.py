@@ -5,7 +5,8 @@ import datetime
 from django.conf import settings
 from django.contrib.sites.models import Site
 
-from ietf.idtracker.models import InternetDraft, PersonOrOrgInfo, IETFWG
+from ietf.idtracker.models import (InternetDraft, PersonOrOrgInfo, IETFWG,
+                                   IDAuthor, EmailAddress)
 from ietf.utils.mail import send_mail
 
 
@@ -34,7 +35,6 @@ def request_full_url(request, submission):
 
 def perform_post(submission):
     group_id = submission.group_acronym and submission.group_acronym.pk or NONE_WG
-    updated = False
     try:
         draft = InternetDraft.objects.get(filename=submission.filename)
         draft.title = submission.id_document_name
@@ -47,7 +47,6 @@ def perform_post(submission):
         draft.last_modified_date = datetime.date.today()
         draft.abstract = submission.abstract
         draft.save()
-        updated = True
     except InternetDraft.DoesNotExist:
         draft = InternetDraft.objects.create(
             title=submission.id_document_name,
@@ -63,9 +62,69 @@ def perform_post(submission):
             status_id=1,  # Active
             intended_status_id=8,  # None
         )
+    update_authors(draft, submission)
     move_docs(submission)
     submission.status_id = POSTED
     submission.save()
+
+
+def find_person(first_name, last_name, middle_initial, name_suffix, email):
+    person_list = None
+    if email:
+        person_list = PersonOrOrgInfo.objects.filter(emailaddress__address=email).distinct()
+        if person_list and len(person_list) == 1:
+            return person_list[0]
+    if not person_list:
+        person_list = PersonOrOrgInfo.objects.all()
+    person_list = person_list.filter(first_name=first_name,
+                                     last_name=last_name)
+    if middle_initial:
+        person_list = person_list.filter(middle_initial=middle_initial)
+    if name_suffix:
+        person_list = person_list.filter(name_suffix=name_suffix)
+    if person_list:
+        return person_list[0]
+    return None
+
+
+def update_authors(draft, submission):
+    # TempAuthor of order 0 is submitter
+    new_authors = list(submission.tempidauthors_set.filter(author_order__gt=0))
+    person_pks = []
+    for author in new_authors:
+        person = find_person(author.first_name, author.last_name,
+                             author.middle_initial, author.name_suffix,
+                             author.email_address)
+        if not person:
+            person = PersonOrOrgInfo(
+                first_name=author.first_name,
+                last_name=author.last_name,
+                middle_initial=author.middle_initial or '',
+                name_suffix=author.name_suffix or '',
+                )
+            person.save()
+            if author.email:
+                EmailAddress.objects.create(
+                    address=author.email,
+                    priority=1,
+                    type='INET',
+                    person_or_org=person,
+                    )
+        person_pks.append(person.pk)
+        try:
+            idauthor = IDAuthor.objects.get(
+                document=draft,
+                person=person,
+                )
+            idauthor.author_order = author.author_order
+        except IDAuthor.DoesNotExist:
+            idauthor = IDAuthor(
+                document=draft,
+                person=person,
+                author_order=author.author_order,
+                )
+        idauthor.save()
+    draft.authors.exclude(person__pk__in=person_pks).delete()
 
 
 def get_person_for_user(user):

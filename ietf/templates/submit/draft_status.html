@@ -157,7 +157,7 @@ returned to the submitter.
 {% endif %}
 {% if validation.authors %}
 {% for author in validation.authors %}
-<tr{% if validation.warnings.authors %} class="warning"{% endif %}><th class="author">Author {{ forloop.counter }}</th><td>{{ author.email.0 }} {% if author.email.1 %}&lt;{{ author.email.1 }}&gt;{% endif %}</td></tr>
+<tr{% if validation.warnings.authors %} class="warning"{% endif %}><th class="author">Author {{ forloop.counter }}</th><td>{{ author.get_full_name }} {% if author.email.1 %}&lt;{{ author.email.1 }}&gt;{% endif %}</td></tr>
 {% endfor %}
 {% endif %}
 <tr{% if validation.warnings.pages %} class="warning"{% endif %}><th>Pages</th><td>{{ detail.txt_page_count }}<div class="warn_message">{{ validation.warnings.pages }}</div></td></tr>

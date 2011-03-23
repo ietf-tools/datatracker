@@ -272,12 +272,14 @@ class UploadForm(forms.Form):
             )
         order = 0
         for author in draft.get_author_info():
-            first_name, last_name, email = author
+            full_name, first_name, middle_initial, last_name, name_suffix, email = author
             order += 1
             TempIdAuthors.objects.create(
                 id_document_tag=document_id,
                 first_name=first_name,
+                middle_initial=middle_initial,
                 last_name=last_name,
+                name_suffix=name_suffix,
                 email_address=email,
                 author_order=order,
                 submission=detail)
@@ -302,7 +304,7 @@ class AutoPostForm(forms.Form):
             full_name = '%s. %s' % (i.first_name[0], i.last_name)
             buttons.append(button_template % {'first_name': i.first_name,
                                               'last_name': i.last_name,
-                                              'email': i.email()[1],
+                                              'email': i.email()[1] or '',
                                               'full_name': full_name})
         return ''.join(buttons)
 
