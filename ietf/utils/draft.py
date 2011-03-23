@@ -131,6 +131,7 @@ class Draft():
         self.filename, self.revision = self._parse_draftname()
         
         self._authors = None
+        self._author_info = None
         self._abstract = None
         self._pagecount = None
         self._status = None
