@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.db import models
 from django.utils.hashcompat import md5_constructor
@@ -84,9 +86,17 @@ class TempIdAuthors(models.Model):
     last_modified_time = models.CharField(blank=True, max_length=100)
     author_order = models.IntegerField(null=True, blank=True)
     submission = models.ForeignKey(IdSubmissionDetail)
+    middle_initial = models.CharField(blank=True, max_length=255, null=True)
+    name_suffix = models.CharField(blank=True, max_length=255, null=True)
 
     class Meta:
         db_table = 'temp_id_authors'
 
     def email(self):
         return ('%s %s' % (self.first_name, self.last_name), self.email_address)
+
+    def get_full_name(self):
+        full_name = ('%s %s %s %s') % (self.first_name, self.middle_initial or '',
+            self.last_name, self.name_suffix or '')
+        full_name = re.sub(' +', ' ', full_name).strip()
+        return full_name
