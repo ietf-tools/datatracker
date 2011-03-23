@@ -271,20 +271,8 @@ class UploadForm(forms.Form):
             file_type=','.join(self.file_type),
             )
         order = 0
-        for author in draft.get_authors():
-            try:
-                name, email = author.rsplit(' ', 1)
-            except ValueError:
-                first_name = author
-                last_name = ''
-                email = ''
-            else:
-                try:
-                    first_name, last_name = name.split(' ', 1)
-                except ValueError:
-                    first_name = name
-                    last_name = ''
-            email = email.replace('<', '').replace('>', '')
+        for author in draft.get_author_info():
+            first_name, last_name, email = author
             order += 1
             TempIdAuthors.objects.create(
                 id_document_tag=document_id,
@@ -378,9 +366,7 @@ class MetaDataForm(AutoPostForm):
                     if not last_name:
                         author['errors']['last_name'] = 'This field is required'
                     email = self.data.get('email_%s' % index, '').strip()
-                    if not email:
-                        author['errors']['email'] = 'This field is required'
-                    elif not email_re.search(email):
+                    if email and not email_re.search(email):
                         author['errors']['email'] = 'Enter a valid e-mail address'
                     if first_name or last_name or email:
                         author.update({'first_name': first_name,

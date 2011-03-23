@@ -141,7 +141,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                     allow_edit = None
                     message = ('success', 'Your submission is pending email authentication. An email has been sent you with instructions.')
         else:
-            return HttpResponseRedirect(reverse(draft_edit, None, kwargs={'submission_id': detail.submission_id}))
+            return HttpResponseRedirect(reverse(draft_edit, None, kwargs={'submission_id': detail.submission_id, 'submission_hash': submission_hash}))
     else:
         auto_post_form = AutoPostForm(draft=detail, validation=validation)
 

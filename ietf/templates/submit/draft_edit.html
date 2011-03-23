@@ -132,9 +132,9 @@ If you are one of the authors, then please click a button by your name to automa
   <tbody>
 {% for author in form.get_authors %}
   <tr class="editable {% cycle oddrow,evenrow %}{% if author.errors %} error{% endif %}">
-    <td name="first_name"><span class="fieldValue">{{ author.first_name }}</span><span class="field-error">{{ author.errors.first_name }}</span></td>
-    <td name="last_name"><span class="fieldValue">{{ author.last_name }}</span><span class="field-error">{{ author.errors.last_name }}</span></td>
-    <td name="email"><span class="fieldValue">{{ author.email.1 }}</span><span class="field-error">{{ author.errors.email }}</span></td>
+    <td name="first_name"><span class="fieldValue">{{ author.first_name|default:"" }}</span><span class="field-error">{{ author.errors.first_name }}</span></td>
+    <td name="last_name"><span class="fieldValue">{{ author.last_name|default:"" }}</span><span class="field-error">{{ author.errors.last_name }}</span></td>
+    <td name="email"><span class="fieldValue">{{ author.email.1|default:"" }}</span><span class="field-error">{{ author.errors.email }}</span></td>
   </tr>
 {% endfor %}
   </tbody>
