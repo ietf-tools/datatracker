@@ -464,6 +464,12 @@ class Draft():
             author = authors[i]
             if author == None:
                 continue
+            suffix_match = re.search(" %(suffix)s$" % aux, author)
+            if suffix_match:
+                suffix = suffix_match.group(1)
+                author = author[:-len(suffix)].strip()
+            else:
+                suffix = None
             if "," in author:
                 last, first = author.split(",",1)
                 author = "%s %s" % (first.strip(), last.strip())
@@ -548,11 +554,20 @@ class Draft():
                                                 fullname = author_match
                                             fullname = re.sub(" +", " ", fullname)
                                             if fullname.endswith(surname):
-                                                authors[i] = ( fullname.replace(surname, "").strip(), surname )
+                                                given_names = fullname.replace(surname, "").strip()
                                             else:
-                                                authors[i] = tuple(fullname.rsplit(None, 1))
-                                            if not " ".join(authors[i]) == fullname:
+                                                given_names, surname = fullname.rsplit(None, 1)
+                                            if " " in given_names:
+                                                first, middle = given_names.split(None, 1)
+                                            else:
+                                                first = given_names
+                                                middle = None
+                                            names = (first, middle, surname, suffix)
+                                            if suffix:
+                                                fullname = fullname+" "+suffix
+                                            if not " ".join([ n for n in names if n ]) == fullname:
                                                 _err("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
+                                            authors[i] = (fullname, first, middle, surname, suffix)
                                         #_debug( "Author: %s: %s" % (author_match, authors[author_match]))
                                         break
                         except AssertionError, e:
@@ -644,7 +659,7 @@ class Draft():
         authors = [ a for a in authors if a != None ]
         _debug(" * Final author tuples: %s" % (authors,))
         self._author_info = authors        
-        self._authors = [ "%s %s <%s>"%(first,last,email) if email else "%s %s"%(first, last) for first,last,email in authors ]
+        self._authors = [ "%s <%s>"%(full,email) if email else full for full,first,middle,last,suffix,email in authors ]
         self._authors.sort()
         _debug(" * Final author list: " + ", ".join(self._authors))
         _debug("-"*72)
@@ -759,7 +774,7 @@ def _printmeta(timestamp, fn):
     fields["doctitle"] = draft.get_title()
     fields["docpages"] = str(draft.get_pagecount())
     fields["docauthors"] = ", ".join(draft.get_authors())
-    fields["docauthinfo"] = str(draft.get_author_info())
+#    fields["docauthinfo"] = str(draft.get_author_info())
     normrefs, rfcrefs, refs = draft.get_refs()
     fields["docrfcrefs"] = ", ".join(rfcrefs)
     fields["doccreationdate"] = str(draft.get_creation_date())
