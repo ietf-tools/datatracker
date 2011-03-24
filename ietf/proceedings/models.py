@@ -141,7 +141,7 @@ class Meeting(models.Model):
     overview1 = models.TextField(blank=True)
     overview2 = models.TextField(blank=True)
     def __str__(self):
-	return "IETF %s" % (self.meeting_num)
+	return "IETF-%s" % (self.meeting_num)
     def get_meeting_date (self,offset):
         return self.start_date + datetime.timedelta(days=offset) 
     def num(self):
@@ -157,6 +157,8 @@ class MeetingVenue(models.Model):
 	return "IETF %s" % (self.meeting_num_id)
     class Meta:
         db_table = 'meeting_venues'
+        verbose_name = "Meeting public areas"
+        verbose_name_plural = "Meeting public areas"
 
 class NonSessionRef(models.Model):
     name = models.CharField(max_length=255)
@@ -164,6 +166,7 @@ class NonSessionRef(models.Model):
 	return self.name
     class Meta:
         db_table = 'non_session_ref'
+        verbose_name = "Non-session slot name"
 
 class NonSession(models.Model):
     non_session_id = models.AutoField(primary_key=True)
@@ -177,8 +180,14 @@ class NonSession(models.Model):
 	    return "%s %s %s @%s" % ((self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A'), self.time_desc, self.non_session_ref, self.meeting_id)
 	else:
 	    return "** %s %s @%s" % (self.time_desc, self.non_session_ref, self.meeting_id)
+    def day(self):
+        if self.day_id:
+            return (self.meeting.start_date + datetime.timedelta(self.day_id)).strftime('%A')
+        else:
+            return "All"
     class Meta:
 	db_table = 'non_session'
+        verbose_name = "Meeting non-session slot"
 
 class Proceeding(models.Model):
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True, primary_key=True)
@@ -211,15 +220,19 @@ class SessionName(models.Model):
 	return self.session_name
     class Meta:
         db_table = 'session_names'
+        verbose_name = "Slot name"
+
 
 class IESGHistory(models.Model):
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     area = models.ForeignKey(Area, db_column='area_acronym_id')
     person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
     def __str__(self):
-        return "%s (%s)" % (self.person,self.area)
+        return "IESG%s: %s (%s)" % (self.meeting_id, self.person,self.area)
     class Meta:
         db_table = 'iesg_history'
+        verbose_name = "Meeting AD info"
+        verbose_name_plural = "Meeting AD info"
     
 class MeetingTime(models.Model):
     time_id = models.AutoField(primary_key=True)
@@ -281,6 +294,7 @@ class MeetingTime(models.Model):
         return self.session_name_id in [9, 10]
     class Meta:
         db_table = 'meeting_times'
+        verbose_name = "Meeting slot time"
 
 class MeetingRoom(models.Model):
     room_id = models.AutoField(primary_key=True)
@@ -290,6 +304,7 @@ class MeetingRoom(models.Model):
 	return "[%d] %s" % (self.meeting_id, self.room_name)
     class Meta:
         db_table = 'meeting_rooms'
+        verbose_name = "Meeting room name"
 
 class WgMeetingSession(models.Model, ResolveAcronym):
     session_id = models.AutoField(primary_key=True)
@@ -398,6 +413,8 @@ class WgMeetingSession(models.Model, ResolveAcronym):
             return False
     class Meta:
         db_table = 'wg_meeting_sessions'
+        verbose_name = "WG meeting session"
+        
     _dirs = {}
 
 class WgAgenda(models.Model, ResolveAcronym):
@@ -410,6 +427,8 @@ class WgAgenda(models.Model, ResolveAcronym):
 	return "Agenda for %s at IETF %s" % (self.acronym(), self.meeting_id)
     class Meta:
         db_table = 'wg_agenda'
+        verbose_name = "WG agenda info"
+        verbose_name_plural = "WG agenda info"
 
 class Minute(models.Model, ResolveAcronym):
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
@@ -421,6 +440,8 @@ class Minute(models.Model, ResolveAcronym):
 	return "Minutes for %s at IETF %s" % (self.acronym(), self.meeting_id)
     class Meta:
         db_table = 'minutes'
+        verbose_name = "WG minutes info"
+
 
 # It looks like Switches was meant for something bigger, but
 # is only used for the agenda generation right now so we'll
@@ -436,6 +457,8 @@ class Switches(models.Model):
 	return self.name
     class Meta:
         db_table = 'switches'
+        verbose_name = "Switch"
+        verbose_name_plural = "Switches"
 
 # Empty table, don't pretend that it exists.
 #class SlideTypes(models.Model):
@@ -501,12 +524,10 @@ class WgProceedingsActivities(models.Model, ResolveAcronym):
     irtf = None
 
     def __str__(self):
-	#return "IETF%d: %s slides (%s)" % (self.meeting_id, self.acronym(), self.activity)
-        return "this is WgProceedingsActivities.__str__"
+        return "IETF%d: %s %s" % (self.meeting_id, self.acronym(), self.activity)
     class Meta:
         db_table = 'wg_proceedings_activities'
-        verbose_name = "WG Proceedings Activity"
-        verbose_name_plural = "WG Proceedings Activities"
+        verbose_name = "WG material upload"
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core
