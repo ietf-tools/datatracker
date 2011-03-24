@@ -18,6 +18,7 @@ from ietf.announcements.sitemaps import NOMCOMAnnouncementsMap
 from django.conf import settings
 
 admin.autodiscover()
+admin.site.disable_action('delete_selected')
 
 feeds = {
     'iesg-agenda': IESGAgenda,
