@@ -108,7 +108,7 @@ def is_sdo_manager_for_outgoing_liaison(person, liaison):
         try:
             sdo = SDOs.objects.get(sdo_name=liaison.from_body())
         except SDOs.DoesNotExist:
-            pas
+            pass
     elif isinstance(from_entity, SDOEntity):
         sdo = from_entity.obj
     if sdo:
