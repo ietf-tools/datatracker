@@ -633,8 +633,10 @@ def make_last_call(request, name):
     filename_fragment = doc.filename[:-4]
     iprs = IprDetail.objects.filter(title__icontains=filename_fragment)
     if iprs:
-        links = [urlreverse("ietf.ipr.views.show", kwargs=dict(ipr_id=i.ipr_id))
+        links = [ urlreverse("ietf.ipr.views.show", kwargs=dict(ipr_id=i.ipr_id))
                  for i in iprs]
+
+        links = [ settings.IDTRACKER_BASE_URL+url if not url.startswith("http") else url for url in links ]
         
         announcement += "\n\n"
         announcement += "The following IPR Declarations may be related to this I-D:"
