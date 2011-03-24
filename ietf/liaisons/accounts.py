@@ -105,7 +105,10 @@ def is_sdo_manager_for_outgoing_liaison(person, liaison):
     from_entity = IETFHM.get_entity_by_key(liaison.from_raw_code)
     sdo = None
     if not from_entity:
-        sdo = SDOs.objects.get(sdo_name=liaison.from_body())
+        try:
+            sdo = SDOs.objects.get(sdo_name=liaison.from_body())
+        except SDOs.DoesNotExist:
+            pas
     elif isinstance(from_entity, SDOEntity):
         sdo = from_entity.obj
     if sdo:
