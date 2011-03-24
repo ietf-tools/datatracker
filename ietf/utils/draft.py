@@ -586,6 +586,8 @@ class Draft():
                             column = line
                         column = re.sub(" *\(at\) *", "@", column)
                         column = re.sub(" *\(dot\) *", ".", column)
+                        column = re.sub(" +at +", "@", column)
+                        column = re.sub(" +dot +", ".", column)
 
 
         #                 if re.search("^\w+: \w+", column):
