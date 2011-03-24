@@ -273,20 +273,26 @@ class Draft():
         if self._abstract:
             return self._abstract
         abstract_re = re.compile('^(\s*)abstract', re.I)
-        header_re = re.compile("^(\s*)(1\.|A\.|Appendix|Status of|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index).*", re.I)
+        header_re = re.compile("^(\s*)([0-9]+\.? |Appendix|Status of|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index).*", re.I)
         begin = False
         abstract = []
         abstract_indent = 0
+        look_for_header = False
         for line in self.lines:
             if not begin and abstract_re.match(line):
                 begin=True
                 abstract_indent = len(abstract_re.match(line).group(0))
                 continue
             if begin:
-                if header_re.match(line):
-                    break
                 if not line and not abstract:
                     continue
+                if not line:
+                    look_for_header=True
+                    abstract.append(line)
+                    continue
+                if look_for_header and header_re.match(line):
+                    break
+                look_for_header = False
                 abstract.append(line)
         abstract = '\n'.join(abstract)
         abstract = self._clean_abstract(abstract)
