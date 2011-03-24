@@ -31,6 +31,8 @@ class FromBodies(models.Model):
         db_table = 'from_bodies'
         verbose_name = "From body"
         verbose_name_plural = "From bodies"
+    contact_link = admin_link('poc', label='Contact')
+    
 
 
 class OutgoingLiaisonApproval(models.Model):
@@ -237,7 +239,11 @@ class LiaisonStatementManager(models.Model):
         if user:
             return u'<a href="/admin/auth/user/%s/">%s</a>' % (user.id, login_name)
         else:
-            return u'<a href="/admin/auth/user/"><span style="color: red">%s</span></a>' % (login_name)
+            if login_name:
+                return u'Add login: <a href="/admin/auth/user/add/?username=%s"><span style="color: red">%s</span></a>' % (login_name, login_name)
+            else:
+                return u'Add liaison user: <a href="/admin/ietfauth/legacyliaisonuser/add/?person=%s&login_name=%s&user_level=3"><span style="color: red">%s</span></a>' % (self.person.pk, self.person.email()[1], self.person, )
+                
     user_name.allow_tags = True
     def groups(self):
         user, login_name = self.user()
