@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.13"
+version = "0.16"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -65,7 +65,7 @@ longform = {
     "Jerry": "Gerald",
     "Liz": "Elizabeth",
     "Lynn": "Carolyn",
-    "Ned": "Edward" ,
+    "Ned": "Edward",
     "Ted":"Edward",
 }
 longform = dict([ (short+" ", longform[short]+" ") for short in longform ])
@@ -100,6 +100,7 @@ def _gettext(file):
     text = re.sub(".\x08", "", text)    # Get rid of inkribbon backspace-emphasis
     text = text.replace("\r\n", "\n")   # Convert DOS to unix
     text = text.replace("\r", "\n")     # Convert MAC to unix
+    text = text.expandtabs()
     text = text.strip()
 
     return text
@@ -150,7 +151,8 @@ class Draft():
         debug = False
         newpage = False
         sentence = False
-        haveblank = False
+        blankcount = 0
+        linecount = 0
         # two functions with side effects
         def endpage(pages, page, newpage, line):
             if line:
@@ -165,6 +167,7 @@ class Draft():
                 page += [ line ]
             return pages, page, newpage
         for line in self.rawlines:
+            linecount += 1
             line = line.rstrip()
             if re.search("\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I):
                 pages, page, newpage = endpage(pages, page, newpage, line)
@@ -187,7 +190,7 @@ class Draft():
             if re.search("^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$", line, re.I):
                 pages, page, newpage = endpage(pages, page, newpage, line)
                 continue
-            if re.search(".{60,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec) (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
+            if linecount > 15 and re.search(".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec) (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
             if newpage and re.search("^ *draft-[-a-z0-9_.]+ *$", line, re.I):
@@ -200,15 +203,15 @@ class Draft():
                     if sentence:
                         stripped += [""]
                 else:
-                    if haveblank:
-                        stripped += [""]
-                haveblank = False
+                    if blankcount:
+                        stripped += [""]*blankcount
+                blankcount = 0
                 sentence = False
                 newpage = False
             if re.search("[.:]$", line):
                 sentence = True
             if re.search("^[ \t]*$", line):
-                haveblank = True
+                blankcount += 1
                 page += [ line ]
                 continue
             page += [ line ]
@@ -273,7 +276,7 @@ class Draft():
         if self._abstract:
             return self._abstract
         abstract_re = re.compile('^(\s*)abstract', re.I)
-        header_re = re.compile("^(\s*)([0-9]+\.? |Appendix|Status of|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index).*", re.I)
+        header_re = re.compile("^(\s*)([0-9]+\.? |Appendix|Status of|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index|Disclaimer).*", re.I)
         begin = False
         abstract = []
         abstract_indent = 0
@@ -339,21 +342,35 @@ class Draft():
 
     # ------------------------------------------------------------------
     def get_authors(self):
+        def acronym_match(s, l):
+            acronym = re.sub("[^A-Z]", "", l)
+            #_debug(" s:%s; l:%s => %s; %s" % (s, l, acronym, s==acronym)) 
+            return s == acronym
+
         """Extract author information from draft text.
 
         """
         if self._authors == None:
             aux = {
-                "honor" : r"(?:Dr\.?|Prof(?:\.?|essor)|Sir|Lady|Dame)",
+                "honor" : r"(?:Dr\.?|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
                 "prefix": r"([Dd]e|Hadi|van|van de|van der|Ver|von)",
-                "suffix": r"(jr|II|2nd|III|3rd|IV|4th)",
+                "suffix": r"(jr.?|Jr.?|II|2nd|III|3rd|IV|4th)",
                 "first" : r"([A-Z][-A-Za-z]*)((\.?[- ]{1,2}[A-Za-z]+)*)",
                 "last"  : r"([-A-Za-z']{2,})",
                 }
             authformats = [
                 r" {6}(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)([, ]?(.+\.?|\(.+\.?|\)))?$" % aux,
-                r" {6}(((%(prefix)s )?%(last)s)( %(suffix)s)?, %(first)s)([, ]([Ee]d\.?|\([Ee]d\.?\)))?$" % aux,
+                r" {6}(((%(prefix)s )?%(last)s)( %(suffix)s)?, %(first)s)?$" % aux,
                 r" {6}(%(last)s)$" % aux,
+                ]
+            multiauthformats = [
+                (
+                    r" {6}(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)(, ?%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)+$" % aux,
+                    r"(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)" % aux
+                ),
+            ]
+            editorformats = [
+                r"(?:, | )([Ee]d\.?|\([Ee]d\.?\)|[Ee]ditor)$",
                 ]
 
             ignore = [
@@ -380,17 +397,34 @@ class Draft():
                 if line_len > 60:
                     # Look for centered title, break if found:
                     if (leading_space > 5 and abs(leading_space - trailing_space) < 5):
+                        _debug("Breaking for centered line")
                         break
-                    for authformat in authformats:
-                        match = re.search(authformat, line)
+                    for editorformat in editorformats:
+                        if re.search(editorformat, line):
+                            line = re.sub(editorformat, "", line)
+                            break
+                    for lineformat, authformat in multiauthformats:
+                        match = re.search(lineformat, line)
                         if match:
-                            author = match.group(1)
-                            authors += [ author ]
+                            _debug("Multiauth format: '%s'" % lineformat)
+                            author_list = re.findall(authformat, line)
+                            authors += [ a[0] for a in author_list ]
                             #_debug("\nLine:   " + line)
                             #_debug("Format: " + authformat)
-                            _debug("Author: '%s'" % author)
+                            for author in author_list:
+                                _debug("Author: '%s'" % author[0])
+                    else:
+                        for authformat in authformats:                        
+                            match = re.search(authformat, line)
+                            if match:
+                                _debug("Auth format: '%s'" % authformat)
+                                author = match.group(1)
+                                authors += [ author ]
+                                #_debug("\nLine:   " + line)
+                                #_debug("Format: " + authformat)
+                                _debug("Author: '%s'" % author)
                 if line.strip() == "":
-                    if prev_blankline:
+                    if prev_blankline and authors:
                         break
                     have_blankline = True
                     prev_blankline = True
@@ -419,8 +453,13 @@ class Draft():
                         first, last = author.rsplit(" ", 1)
                 else:
                     first, last = author.rsplit(" ", 1)
+                prefix_match = re.search(" %(prefix)s$" % aux, first)
+                if prefix_match:
+                    prefix = prefix_match.group(1)
+                    first = first[:-len(prefix)].strip()
+                    last = prefix+" "+last
                 _debug("First, Last: '%s' '%s'" % (first, last))
-                for author in [ "%s %s"%(first,last), "%s %s"%(last,first), ]:
+                for author in [ "%s %s"%(first,last), "%s %s"%(last,first), "%s %s"%(first,last.upper()), "%s %s"%(last,first.upper()), ]:
                     _debug("\nAuthors: "+str(authors))
                     _debug("Author: "+author)
                     # Pattern for full author information search, based on first page author name:
@@ -431,61 +470,67 @@ class Draft():
                     # Permit insertsion of middle name or initial
                     authpat = re.sub(" ", "\S*( +[^ ]+)* +", authpat)
                     # Permit expansion of double-name initials
-                    authpat = re.sub("-", ".*?-", authpat)
+                    if not "[A-Z]" in authpat:
+                        authpat = re.sub("-", ".*?-", authpat)
                     # Some chinese names are shown with double-letter(latin) abbreviated given names, rather than
                     # a single-letter(latin) abbreviation:
                     authpat = re.sub("^([A-Z])[A-Z]+\.\*", r"\1[-\w]+", authpat) 
-                    authpat = "^(?:%s ?)?(%s)( *\(.*\)|,( [A-Z][-A-Za-z0-9]*)?)?" % (aux["honor"], authpat)
+                    authpat = "(?:^| and )(?:%s ?)?(%s)( *\(.*\)|,( [A-Z][-A-Za-z0-9]*)?| %s| [A-Z][a-z]+)?" % (aux["honor"], authpat, aux["suffix"])
                     _debug("Authpat: " + authpat)
                     start = 0
                     col = None
                     # Find start of author info for this author (if any).
                     # Scan from the end of the file, looking for a match to  authpath
-                    try:
-                        for j in range(len(self.lines)-1, 15, -1):
-                            line = self.lines[j].strip()
-                            forms = [ line ] + [ line.replace(short, longform[short]) for short in longform if short in line ]
-                            for line in forms:
-                                try:
-                                    if re.search(authpat, line):
-                                        start = j
-                                        _debug( " ==>   " + line.strip())
-                                        # The author info could be formatted in multiple columns...
-                                        columns = re.split("(    +)", line)
-                                        # _debug( "Columns:" + columns; sys.stdout.flush())
-                                        # Find which column:
-                                        #_debug( "Col range:" + range(len(columns)); sys.stdout.flush())
+                    # Scan towards the front from the end of the file, looking for a match to authpath
+                    for j in range(len(self.lines)-1, 15, -1):
+                        line = self.lines[j]
+                        forms = [ line ] + [ line.replace(short, longform[short]) for short in longform if short in line ]
+                        for form in forms:
+                            try:
+                                if re.search(authpat, form.strip()) and not j in found_pos:
+                                    start = j
+                                    found_pos += [ start ]
+                                    _debug( " ==> start %s, normalized '%s'" % (start, form.strip()))
+                                    # The author info could be formatted in multiple columns...
+                                    columns = re.split("(    +| and )", form)
+                                    # _debug( "Columns:" + columns; sys.stdout.flush())
+                                    # Find which column:
+                                    #_debug( "Col range:" + range(len(columns)); sys.stdout.flush())
 
-                                        cols = [ c for c in range(len(columns)) if re.search(authpat+r"$", columns[c].strip()) ]
-                                        if cols:
-                                            col = cols[0]
-                                            if not (start, col) in found_pos:
-                                                found_pos += [ (start, col) ]
-                                                _debug( "Col:   %d" % col)
-                                                beg = len("".join(columns[:col]))
-                                                _debug( "Beg:   %d '%s'" % (beg, "".join(columns[:col])))
-                                                _debug( "Len:   %d" % len(columns))
-                                                if col == len(columns) or col == len(columns)-1:
-                                                    end = None
-                                                    _debug( "End1:  %s" % end)
-                                                else:
-                                                    end = beg + len("".join(columns[col:col+2]))
-                                                    _debug( "End2:  %d '%s'" % (end, "".join(columns[col:col+2])))
-                                                _debug( "Cut:   '%s'" % line[beg:end])
-                                                author = re.search(authpat, columns[col].strip()).group(1)
-                                                if author in companies:
-                                                    authors[i] = None
-                                                else:
-                                                    authors[i] = author
-                                                #_debug( "Author: %s: %s" % (author, authors[author]))
-                                                # We need to exit 2 for loops -- a break isn't sufficient:
-                                                raise StopIteration("Found Author")
-                                except AssertionError, e:
-                                    sys.stderr.write("filename: "+self.filename+"\n")
-                                    sys.stderr.write("authpat: "+authpat+"\n")
-                                    raise
-                    except StopIteration:
-                        pass
+                                    cols = [ c for c in range(len(columns)) if re.search(authpat+r"( and |, |$)", columns[c].strip()) ]
+                                    if cols:
+                                        col = cols[0]
+                                        if not (start, col) in found_pos:
+                                            found_pos += [ (start, col) ]
+                                            _debug( "Col:   %d" % col)
+                                            beg = len("".join(columns[:col]))
+                                            _debug( "Beg:   %d '%s'" % (beg, "".join(columns[:col])))
+                                            _debug( "Len:   %d" % len(columns))
+                                            if col == len(columns) or col == len(columns)-1:
+                                                end = None
+                                                _debug( "End1:  %s" % end)
+                                            else:
+                                                end = beg + len("".join(columns[col:col+2]))
+                                                _debug( "End2:  %d '%s'" % (end, "".join(columns[col:col+2])))
+                                            _debug( "Cut:   '%s'" % form[beg:end])
+                                            author_match = re.search(authpat, columns[col].strip()).group(1)
+                                            _debug( "AuthMatch: '%s'" % (author_match,))
+                                            if author_match in companies:
+                                                authors[i] = None
+                                            else:
+                                                for name in [first, last]:
+                                                    if name.upper() in author_match:
+                                                        author_match = author_match.replace(name.upper(), name)
+                                                        break
+                                                authors[i] = author_match
+                                            #_debug( "Author: %s: %s" % (author_match, authors[author_match]))
+                                            break
+                            except AssertionError, e:
+                                sys.stderr.write("filename: "+self.filename+"\n")
+                                sys.stderr.write("authpat: "+authpat+"\n")
+                                raise
+                        if start and col != None:
+                            break
                     if start and col != None:
                         break
                 if not authors[i]:
@@ -494,7 +539,7 @@ class Draft():
                 if start and col != None:
                     _debug("\n *" + authors[i])
                     done = False
-                    count = 0
+                    nonblank_count = 0
                     keyword = False
                     blanklines = 0
                     for line in self.lines[start+1:]:
@@ -508,25 +553,25 @@ class Draft():
                             else:
                                 continue
                         else:
-                            count += 1                    
+                            nonblank_count += 1                    
 
                         # Maybe break on author name
         #                 _debug("Line: %s"%line.strip())
         #                 for a in authors:
         #                     if a and a not in companies:
         #                         _debug("Search for: %s"%(r"(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"))
-                        authmatch = [ a for a in authors[i+1:] if a and not a in companies and re.search((r"(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"), line.strip()) ]
+                        authmatch = [ a for a in authors[i+1:] if a and not a.lower() in companies and (re.search((r"(?i)(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"), line.strip()) or acronym_match(a, line.strip()) )]
                         if authmatch:
                             _debug("     ? Other author or company ?  : %s" % authmatch)
                             _debug("     Line: "+line.strip())
-                            if count == 1 or (count == 2 and not blanklines):
+                            if nonblank_count == 1 or (nonblank_count == 2 and not blanklines):
                                 # First line after an author -- this is a company
-                                companies += authmatch
-                                companies += [ line.strip() ] # XXX fix this for columnized author list
+                                companies += [ c.lower() for c in authmatch ]
+                                companies += [ line.strip().lower() ] # XXX fix this for columnized author list
                                 companies = list(set(companies))
                                 _debug("       -- Companies: " + ", ".join(companies))
                                 for k in range(i+1, len(authors)):
-                                    if authors[k] in companies:
+                                    if authors[k] and authors[k].lower() in companies:
                                         authors[k] = None
                             elif not "@" in line:
                                 # Break on an author name
@@ -564,7 +609,7 @@ class Draft():
                         _debug("Not an author? '%s'" % (author))
 
             authors = [ re.sub(r" +"," ", a) for a in authors if a != None ]
-            # authors.sort() 
+            authors.sort() 
             _debug(" * Final author list: " + ", ".join(authors))
             _debug("-"*72)
             self._authors = authors
@@ -575,23 +620,58 @@ class Draft():
     def get_title(self):
         if self._title:
             return self._title
-        title_re = re.compile('(?:\n\s*\n\s*)((.+\n){1,3})(\s+<?draft-\S+\s*\n)\s*\n')
-        match = title_re.search(self.pages[0])
+        match = re.search('(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s+<?draft-\S+\s*\n)\s*\n', self.pages[0])
+        if not match:
+            match = re.search('(?:\n\s*\n\s*)<?draft-\S+\s*\n*((.+\n){1,3})\s*\n', self.pages[0])
+        if not match:
+            match = re.search('(?i)(.+\n|.+\n.+\n)(\s*status of this memo\s*\n)', self.pages[0])
         if match:
             title = match.group(1)
             title = title.strip()
             title = re.sub('\s*\n\s*', ' ', title)
-            self._title = title
-            return self._title
-        # unusual title extract
-        unusual_title_re = re.compile('(.+\n|.+\n.+\n)(\s*status of this memo\s*\n)', re.I)
-        match = unusual_title_re.search(self.pages[0])
-        if match:
-            title = match.group(1)
-            title = title.strip()
+            title = re.sub(' +', ' ', title)
             self._title = title
             return self._title
         self.errors["title"] = "Could not find the title on the first page."
+
+    # ------------------------------------------------------------------
+    def get_refs(self):
+        refs = []
+        normrefs = []
+        rfcrefs = []
+        refline = None
+        for i in range(len(self.lines)-1, 15, -1):
+            if re.search(r"(?i)^ *[0-9.]+ *(((normative|informative|informational|non-normative) )?references|references\W+(normative|informative))", self.lines[i]):
+                refline = i
+                break
+        if refline:
+            for i in range(refline, len(self.lines)):
+                line = self.lines[i].strip()
+                ref_match = re.search(r"(?i)^\[[a-z0-9.-]+( [a-z0-9.-]+)?\].+", line)
+                if ref_match:
+                    para = line
+                    while True:
+                        i += 1
+                        if i >= len(self.lines):
+                            break
+                        line = self.lines[i].strip()
+                        if not line:
+                            break
+                        if para[-1] not in ["-", "/"]:
+                            para += " "
+                        para += line
+                    refs += [ para ]
+                    rfc_match = re.search("(?i)rfc ?\d+", para)
+                    if rfc_match:
+                        rfc = rfc_match.group(0).replace(" ","").lower()
+                        rfcrefs += [ rfc ]
+        normrefs = list(set(normrefs))
+        normrefs.sort()
+        rfcrefs = list(set(rfcrefs))
+        rfcrefs.sort()
+        refs = list(set(refs))
+        refs.sort()
+        return normrefs, rfcrefs, refs
 
 
 # ----------------------------------------------------------------------
@@ -621,7 +701,11 @@ def _printmeta(timestamp, fn):
         _warn("Skipping unexpected draft name: '%s'" % (fn))
         return
 
-    filename = os.path.join("/www/tools.ietf.org/id", fn)
+    if os.path.exists(fn):
+        filename = fn
+        fn = os.path.basename(fn)
+    else:
+        filename = os.path.join("/www/tools.ietf.org/id", fn)
     if not os.path.exists(filename):
         _warn("Could not find file: '%s'" % (filename))
         return
@@ -633,6 +717,7 @@ def _printmeta(timestamp, fn):
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(filename)[stat.ST_MTIME]))
     text = _gettext(filename)
     draft = Draft(text)
+    #_debug("\n".join(draft.lines))
 
     fields["eventdate"] = timestamp
     fields["doctag"] = draft.filename or fn[:-7]
@@ -641,6 +726,8 @@ def _printmeta(timestamp, fn):
     fields["doctitle"] = draft.get_title()
     fields["docpages"] = str(draft.get_pagecount())
     fields["docauthors"] = ", ".join(draft.get_authors())
+    normrefs, rfcrefs, refs = draft.get_refs()
+    fields["docrfcrefs"] = ", ".join(rfcrefs)
     fields["doccreationdate"] = str(draft.get_creation_date())
     deststatus = draft.get_status()
     if deststatus:
@@ -728,8 +815,9 @@ def _main():
                 draft = line.strip()
                 if draft.startswith("#"):
                     continue
-                _debug( "** Processing '%s'" % draft)
-                _printmeta(timestamp, draft)
+                if draft:
+                    _debug( "** Processing '%s'" % draft)
+                    _printmeta(timestamp, draft)
 
 if __name__ == "__main__":
     try:
