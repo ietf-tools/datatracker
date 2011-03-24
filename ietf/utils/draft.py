@@ -105,6 +105,11 @@ def _gettext(file):
 
     return text
 
+def acronym_match(s, l):
+    acronym = re.sub("[^A-Z]", "", l)
+    #_debug(" s:%s; l:%s => %s; %s" % (s, l, acronym, s==acronym)) 
+    return s == acronym
+
 # ----------------------------------------------------------------------
 
 class Draft():
@@ -126,6 +131,7 @@ class Draft():
         self.filename, self.revision = self._parse_draftname()
         
         self._authors = None
+        self._author_info = None
         self._abstract = None
         self._pagecount = None
         self._status = None
@@ -257,10 +263,20 @@ class Draft():
             if match:
                 md = match.groupdict()
                 mon = md['month'][0:3].lower()
-                day = int( md.get( 'day', datetime.date.today().day ) )
+                day = int( md.get( 'day', 0 ) )
                 year = int( md['year'] )
                 try:
                     month = month_names.index( mon ) + 1
+                    today = datetime.date.today()
+                    if day==0:
+                        # if the date was given with only month and year, use
+                        # today's date if month and year is today's month and
+                        # year, otherwise pick the middle of the month.
+                        # Don't use today's day for month and year in the past
+                        if month==today.month and year==today.year:
+                            day = today.day
+                        else:
+                            day = 15
                     self._creation_date = datetime.date(year, month, day)
                     return self._creation_date
                 except ValueError:
@@ -342,281 +358,311 @@ class Draft():
 
     # ------------------------------------------------------------------
     def get_authors(self):
-        def acronym_match(s, l):
-            acronym = re.sub("[^A-Z]", "", l)
-            #_debug(" s:%s; l:%s => %s; %s" % (s, l, acronym, s==acronym)) 
-            return s == acronym
+        """Returns a list of strings with author name and email within angle brackets"""
+        if self._authors == None:
+            self.extract_authors()
+        return self._authors
 
+    def get_author_info(self):
+        """Returns a list of tuples, with each tuple containing (given_names, surname, email).  Email will be None if unknown."""
+        if self._author_info == None:
+            self.extract_authors()
+        return self._author_info
+
+    def extract_authors(self):
         """Extract author information from draft text.
 
         """
-        if self._authors == None:
-            aux = {
-                "honor" : r"(?:Dr\.?|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
-                "prefix": r"([Dd]e|Hadi|van|van de|van der|Ver|von)",
-                "suffix": r"(jr.?|Jr.?|II|2nd|III|3rd|IV|4th)",
-                "first" : r"([A-Z][-A-Za-z]*)((\.?[- ]{1,2}[A-Za-z]+)*)",
-                "last"  : r"([-A-Za-z']{2,})",
-                }
-            authformats = [
-                r" {6}(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)([, ]?(.+\.?|\(.+\.?|\)))?$" % aux,
-                r" {6}(((%(prefix)s )?%(last)s)( %(suffix)s)?, %(first)s)?$" % aux,
-                r" {6}(%(last)s)$" % aux,
-                ]
-            multiauthformats = [
-                (
-                    r" {6}(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)(, ?%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)+$" % aux,
-                    r"(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)" % aux
-                ),
+        aux = {
+            "honor" : r"(?:Dr\.?|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
+            "prefix": r"([Dd]e|Hadi|van|van de|van der|Ver|von|[Ee]l)",
+            "suffix": r"(jr.?|Jr.?|II|2nd|III|3rd|IV|4th)",
+            "first" : r"([A-Z][-A-Za-z]*)((\.?[- ]{1,2}[A-Za-z]+)*)",
+            "last"  : r"([-A-Za-z']{2,})",
+            }
+        authformats = [
+            r" {6}(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)([, ]?(.+\.?|\(.+\.?|\)))?$" % aux,
+            r" {6}(((%(prefix)s )?%(last)s)( %(suffix)s)?, %(first)s)?$" % aux,
+            r" {6}(%(last)s)$" % aux,
             ]
-            editorformats = [
-                r"(?:, | )([Ee]d\.?|\([Ee]d\.?\)|[Ee]ditor)$",
-                ]
+        multiauthformats = [
+            (
+                r" {6}(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)(, ?%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)+$" % aux,
+                r"(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)" % aux
+            ),
+        ]
+        editorformats = [
+            r"(?:, | )([Ee]d\.?|\([Ee]d\.?\)|[Ee]ditor)$",
+            ]
 
-            ignore = [
-                "Standards Track", "Current Practice", "Internet Draft", "Working Group",
-                "No Affiliation", 
-                ]
-            # group       12                   34            5            6
-            authors = []
-            companies = []
+        ignore = [
+            "Standards Track", "Current Practice", "Internet Draft", "Working Group",
+            "No Affiliation", 
+            ]
+        # group       12                   34            5            6
+        authors = []
+        author_info = []
+        companies = []
 
-            # Collect first-page author information first
-            have_blankline = False
-            have_draftline = False
-            prev_blankline = False
-            for line in self.lines[:15]:
-                #_debug( "**" + line)
-                leading_space = len(re.findall("^ *", line)[0])
-                line_len = len(line.rstrip())
-                trailing_space = line_len <= 72 and 72 - line_len or 0
-                # Truncate long lines at the first space past column 80:
-                trunc_space = line.find(" ", 80)
-                if line_len > 80 and  trunc_space > -1:
-                    line = line[:trunc_space]
-                if line_len > 60:
-                    # Look for centered title, break if found:
-                    if (leading_space > 5 and abs(leading_space - trailing_space) < 5):
-                        _debug("Breaking for centered line")
+        # Collect first-page author information first
+        have_blankline = False
+        have_draftline = False
+        prev_blankline = False
+        for line in self.lines[:15]:
+            #_debug( "**" + line)
+            leading_space = len(re.findall("^ *", line)[0])
+            line_len = len(line.rstrip())
+            trailing_space = line_len <= 72 and 72 - line_len or 0
+            # Truncate long lines at the first space past column 80:
+            trunc_space = line.find(" ", 80)
+            if line_len > 80 and  trunc_space > -1:
+                line = line[:trunc_space]
+            if line_len > 60:
+                # Look for centered title, break if found:
+                if (leading_space > 5 and abs(leading_space - trailing_space) < 5):
+                    _debug("Breaking for centered line")
+                    break
+                for editorformat in editorformats:
+                    if re.search(editorformat, line):
+                        line = re.sub(editorformat, "", line)
                         break
-                    for editorformat in editorformats:
-                        if re.search(editorformat, line):
-                            line = re.sub(editorformat, "", line)
-                            break
-                    for lineformat, authformat in multiauthformats:
-                        match = re.search(lineformat, line)
+                for lineformat, authformat in multiauthformats:
+                    match = re.search(lineformat, line)
+                    if match:
+                        #_debug("Multiauth format: '%s'" % lineformat)
+                        author_list = re.findall(authformat, line)
+                        authors += [ a[0] for a in author_list ]
+                        #_debug("\nLine:   " + line)
+                        #_debug("Format: " + authformat)
+                        for author in author_list:
+                            _debug("Author: '%s'" % author[0])
+                else:
+                    for authformat in authformats:                        
+                        match = re.search(authformat, line)
                         if match:
-                            _debug("Multiauth format: '%s'" % lineformat)
-                            author_list = re.findall(authformat, line)
-                            authors += [ a[0] for a in author_list ]
+                            #_debug("Auth format: '%s'" % authformat)
+                            author = match.group(1)
+                            authors += [ author ]
                             #_debug("\nLine:   " + line)
                             #_debug("Format: " + authformat)
-                            for author in author_list:
-                                _debug("Author: '%s'" % author[0])
-                    else:
-                        for authformat in authformats:                        
-                            match = re.search(authformat, line)
-                            if match:
-                                _debug("Auth format: '%s'" % authformat)
-                                author = match.group(1)
-                                authors += [ author ]
-                                #_debug("\nLine:   " + line)
-                                #_debug("Format: " + authformat)
-                                _debug("Author: '%s'" % author)
-                if line.strip() == "":
-                    if prev_blankline and authors:
-                        break
-                    have_blankline = True
-                    prev_blankline = True
-                else:
-                    prev_blankline = False
-                if "draft-" in line:
-                    have_draftline = True
-                if have_blankline and have_draftline:
+                            _debug("Author: '%s'" % author)
+            if line.strip() == "":
+                if prev_blankline and authors:
                     break
+                have_blankline = True
+                prev_blankline = True
+            else:
+                prev_blankline = False
+            if "draft-" in line:
+                have_draftline = True
+            if have_blankline and have_draftline:
+                break
 
-            found_pos = []
-            for i in range(len(authors)):
-                _debug("1: authors[%s]: %s" % (i, authors[i]))
-                author = authors[i]
-                if author == None:
-                    continue
-                if "," in author:
-                    last, first = author.split(",",1)
-                    author = "%s %s" % (first.strip(), last.strip())
-                if not " " in author:
-                    if "." in author:
-                        first, last = author.rsplit(".", 1)
-                        first += "."
-                    else:
-                        author = "[A-Z].+ " + author
-                        first, last = author.rsplit(" ", 1)
+        found_pos = []
+        for i in range(len(authors)):
+            _debug("1: authors[%s]: %s" % (i, authors[i]))
+            author = authors[i]
+            if author == None:
+                continue
+            suffix_match = re.search(" %(suffix)s$" % aux, author)
+            if suffix_match:
+                suffix = suffix_match.group(1)
+                author = author[:-len(suffix)].strip()
+            else:
+                suffix = None
+            if "," in author:
+                last, first = author.split(",",1)
+                author = "%s %s" % (first.strip(), last.strip())
+            if not " " in author:
+                if "." in author:
+                    first, last = author.rsplit(".", 1)
+                    first += "."
                 else:
+                    author = "[A-Z].+ " + author
                     first, last = author.rsplit(" ", 1)
-                prefix_match = re.search(" %(prefix)s$" % aux, first)
-                if prefix_match:
-                    prefix = prefix_match.group(1)
-                    first = first[:-len(prefix)].strip()
-                    last = prefix+" "+last
-                _debug("First, Last: '%s' '%s'" % (first, last))
-                for author in [ "%s %s"%(first,last), "%s %s"%(last,first), "%s %s"%(first,last.upper()), "%s %s"%(last,first.upper()), ]:
-                    _debug("\nAuthors: "+str(authors))
-                    _debug("Author: "+author)
-                    # Pattern for full author information search, based on first page author name:
-                    authpat = author
-                    # Permit expansion of first name
-                    authpat = re.sub("\. ", ".* ", authpat)
-                    authpat = re.sub("\.$", ".*", authpat)
-                    # Permit insertsion of middle name or initial
-                    authpat = re.sub(" ", "\S*( +[^ ]+)* +", authpat)
-                    # Permit expansion of double-name initials
-                    if not "[A-Z]" in authpat:
-                        authpat = re.sub("-", ".*?-", authpat)
-                    # Some chinese names are shown with double-letter(latin) abbreviated given names, rather than
-                    # a single-letter(latin) abbreviation:
-                    authpat = re.sub("^([A-Z])[A-Z]+\.\*", r"\1[-\w]+", authpat) 
-                    authpat = "(?:^| and )(?:%s ?)?(%s)( *\(.*\)|,( [A-Z][-A-Za-z0-9]*)?| %s| [A-Z][a-z]+)?" % (aux["honor"], authpat, aux["suffix"])
-                    _debug("Authpat: " + authpat)
-                    start = 0
-                    col = None
-                    # Find start of author info for this author (if any).
-                    # Scan from the end of the file, looking for a match to  authpath
-                    # Scan towards the front from the end of the file, looking for a match to authpath
-                    for j in range(len(self.lines)-1, 15, -1):
-                        line = self.lines[j]
-                        forms = [ line ] + [ line.replace(short, longform[short]) for short in longform if short in line ]
-                        for form in forms:
-                            try:
-                                if re.search(authpat, form.strip()) and not j in found_pos:
-                                    start = j
-                                    found_pos += [ start ]
-                                    _debug( " ==> start %s, normalized '%s'" % (start, form.strip()))
-                                    # The author info could be formatted in multiple columns...
-                                    columns = re.split("(    +| and )", form)
-                                    # _debug( "Columns:" + columns; sys.stdout.flush())
-                                    # Find which column:
-                                    #_debug( "Col range:" + range(len(columns)); sys.stdout.flush())
+            else:
+                first, last = author.rsplit(" ", 1)
+            prefix_match = re.search(" %(prefix)s$" % aux, first)
+            if prefix_match:
+                prefix = prefix_match.group(1)
+                first = first[:-len(prefix)].strip()
+                last = prefix+" "+last
+            _debug("First, Last: '%s' '%s'" % (first, last))
+            for firstname, surname, casefixname in [ (first,last,last), (last,first,first), (first,last,last.upper()), (last,first,first.upper()), ]:
+                author = "%s %s" % (firstname, casefixname)
+                _debug("\nAuthors: "+str(authors))
+                _debug("Author: "+author)
+                # Pattern for full author information search, based on first page author name:
+                authpat = author
+                # Permit expansion of first name
+                authpat = re.sub("\. ", ".* ", authpat)
+                authpat = re.sub("\.$", ".*", authpat)
+                # Permit insertsion of middle name or initial
+                authpat = re.sub(" ", "\S*( +[^ ]+)* +", authpat)
+                # Permit expansion of double-name initials
+                if not "[A-Z]" in authpat:
+                    authpat = re.sub("-", ".*?-", authpat)
+                # Some chinese names are shown with double-letter(latin) abbreviated given names, rather than
+                # a single-letter(latin) abbreviation:
+                authpat = re.sub("^([A-Z])[A-Z]+\.\*", r"\1[-\w]+", authpat) 
+                authpat = "(?:^| and )(?:%s ?)?(%s)( *\(.*\)|,( [A-Z][-A-Za-z0-9]*)?| %s| [A-Z][a-z]+)?" % (aux["honor"], authpat, aux["suffix"])
+                _debug("Authpat: " + authpat)
+                start = 0
+                col = None
+                # Find start of author info for this author (if any).
+                # Scan from the end of the file, looking for a match to  authpath
+                # Scan towards the front from the end of the file, looking for a match to authpath
+                for j in range(len(self.lines)-1, 15, -1):
+                    line = self.lines[j]
+                    forms = [ line ] + [ line.replace(short, longform[short]) for short in longform if short in line ]
+                    for form in forms:
+                        try:
+                            if re.search(authpat, form.strip()) and not j in found_pos:
+                                start = j
+                                found_pos += [ start ]
+                                _debug( " ==> start %s, normalized '%s'" % (start, form.strip()))
+                                # The author info could be formatted in multiple columns...
+                                columns = re.split("(    +| and )", form)
+                                # _debug( "Columns:" + columns; sys.stdout.flush())
+                                # Find which column:
+                                #_debug( "Col range:" + range(len(columns)); sys.stdout.flush())
 
-                                    cols = [ c for c in range(len(columns)) if re.search(authpat+r"( and |, |$)", columns[c].strip()) ]
-                                    if cols:
-                                        col = cols[0]
-                                        if not (start, col) in found_pos:
-                                            found_pos += [ (start, col) ]
-                                            _debug( "Col:   %d" % col)
-                                            beg = len("".join(columns[:col]))
-                                            _debug( "Beg:   %d '%s'" % (beg, "".join(columns[:col])))
-                                            _debug( "Len:   %d" % len(columns))
-                                            if col == len(columns) or col == len(columns)-1:
-                                                end = None
-                                                _debug( "End1:  %s" % end)
+                                cols = [ c for c in range(len(columns)) if re.search(authpat+r"( and |, |$)", columns[c].strip()) ]
+                                if cols:
+                                    col = cols[0]
+                                    if not (start, col) in found_pos:
+                                        found_pos += [ (start, col) ]
+                                        _debug( "Col:   %d" % col)
+                                        beg = len("".join(columns[:col]))
+                                        _debug( "Beg:   %d '%s'" % (beg, "".join(columns[:col])))
+                                        _debug( "Len:   %d" % len(columns))
+                                        if col == len(columns) or col == len(columns)-1:
+                                            end = None
+                                            _debug( "End1:  %s" % end)
+                                        else:
+                                            end = beg + len("".join(columns[col:col+2]))
+                                            _debug( "End2:  %d '%s'" % (end, "".join(columns[col:col+2])))
+                                        _debug( "Cut:   '%s'" % form[beg:end])
+                                        author_match = re.search(authpat, columns[col].strip()).group(1)
+                                        _debug( "AuthMatch: '%s'" % (author_match,))
+                                        if author_match in companies:
+                                            authors[i] = None
+                                        else:
+                                            if casefixname in author_match:
+                                                fullname = author_match.replace(casefixname, surname)
                                             else:
-                                                end = beg + len("".join(columns[col:col+2]))
-                                                _debug( "End2:  %d '%s'" % (end, "".join(columns[col:col+2])))
-                                            _debug( "Cut:   '%s'" % form[beg:end])
-                                            author_match = re.search(authpat, columns[col].strip()).group(1)
-                                            _debug( "AuthMatch: '%s'" % (author_match,))
-                                            if author_match in companies:
-                                                authors[i] = None
+                                                fullname = author_match
+                                            fullname = re.sub(" +", " ", fullname)
+                                            if fullname.endswith(surname):
+                                                given_names = fullname.replace(surname, "").strip()
                                             else:
-                                                for name in [first, last]:
-                                                    if name.upper() in author_match:
-                                                        author_match = author_match.replace(name.upper(), name)
-                                                        break
-                                                authors[i] = author_match
-                                            #_debug( "Author: %s: %s" % (author_match, authors[author_match]))
-                                            break
-                            except AssertionError, e:
-                                sys.stderr.write("filename: "+self.filename+"\n")
-                                sys.stderr.write("authpat: "+authpat+"\n")
-                                raise
-                        if start and col != None:
-                            break
+                                                given_names, surname = fullname.rsplit(None, 1)
+                                            if " " in given_names:
+                                                first, middle = given_names.split(None, 1)
+                                            else:
+                                                first = given_names
+                                                middle = None
+                                            names = (first, middle, surname, suffix)
+                                            if suffix:
+                                                fullname = fullname+" "+suffix
+                                            if not " ".join([ n for n in names if n ]) == fullname:
+                                                _err("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
+                                            authors[i] = (fullname, first, middle, surname, suffix)
+                                        #_debug( "Author: %s: %s" % (author_match, authors[author_match]))
+                                        break
+                        except AssertionError, e:
+                            sys.stderr.write("filename: "+self.filename+"\n")
+                            sys.stderr.write("authpat: "+authpat+"\n")
+                            raise
                     if start and col != None:
                         break
-                if not authors[i]:
-                    continue
-                _debug("2: authors[%s]: %s" % (i, authors[i]))
                 if start and col != None:
-                    _debug("\n *" + authors[i])
-                    done = False
-                    nonblank_count = 0
-                    keyword = False
-                    blanklines = 0
-                    for line in self.lines[start+1:]:
-                        _debug( "       " + line.strip())
-                        # Break on the second blank line
-                        if not line:
-                            blanklines += 1
-                            if blanklines >= 3:
-                                _debug( " - Break on blanklines")
-                                break
-                            else:
-                                continue
+                    break
+            if not authors[i]:
+                continue
+            _debug("2: authors[%s]: %s" % (i, authors[i]))
+            if start and col != None:
+                _debug("\n * %s" % (authors[i], ))
+                done = False
+                nonblank_count = 0
+                keyword = False
+                blanklines = 0
+                email = None
+                for line in self.lines[start+1:]:
+                    _debug( "       " + line.strip())
+                    # Break on the second blank line
+                    if not line:
+                        blanklines += 1
+                        if blanklines >= 3:
+                            _debug( " - Break on blanklines")
+                            break
                         else:
-                            nonblank_count += 1                    
+                            continue
+                    else:
+                        nonblank_count += 1                    
 
-                        # Maybe break on author name
-        #                 _debug("Line: %s"%line.strip())
-        #                 for a in authors:
-        #                     if a and a not in companies:
-        #                         _debug("Search for: %s"%(r"(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"))
-                        authmatch = [ a for a in authors[i+1:] if a and not a.lower() in companies and (re.search((r"(?i)(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"), line.strip()) or acronym_match(a, line.strip()) )]
-                        if authmatch:
-                            _debug("     ? Other author or company ?  : %s" % authmatch)
-                            _debug("     Line: "+line.strip())
-                            if nonblank_count == 1 or (nonblank_count == 2 and not blanklines):
-                                # First line after an author -- this is a company
-                                companies += [ c.lower() for c in authmatch ]
-                                companies += [ line.strip().lower() ] # XXX fix this for columnized author list
-                                companies = list(set(companies))
-                                _debug("       -- Companies: " + ", ".join(companies))
-                                for k in range(i+1, len(authors)):
-                                    if authors[k] and authors[k].lower() in companies:
-                                        authors[k] = None
-                            elif not "@" in line:
-                                # Break on an author name
-                                _debug( " - Break on other author name")
-                                break
-                            else:
-                                pass
+                    # Maybe break on author name
+    #                 _debug("Line: %s"%line.strip())
+    #                 for a in authors:
+    #                     if a and a not in companies:
+    #                         _debug("Search for: %s"%(r"(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"))
+                    authmatch = [ a for a in authors[i+1:] if a and not a.lower() in companies and (re.search((r"(?i)(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"), line.strip()) or acronym_match(a, line.strip()) )]
+                    if authmatch:
+                        _debug("     ? Other author or company ?  : %s" % authmatch)
+                        _debug("     Line: "+line.strip())
+                        if nonblank_count == 1 or (nonblank_count == 2 and not blanklines):
+                            # First line after an author -- this is a company
+                            companies += [ c.lower() for c in authmatch ]
+                            companies += [ line.strip().lower() ] # XXX fix this for columnized author list
+                            companies = list(set(companies))
+                            _debug("       -- Companies: " + ", ".join(companies))
+                            for k in range(i+1, len(authors)):
+                                if authors[k] and authors[k].lower() in companies:
+                                    authors[k] = None
+                        elif not "@" in line:
+                            # Break on an author name
+                            _debug( " - Break on other author name")
+                            break
+                        else:
+                            pass
 
-                        try:
-                            column = line[beg:end].strip()
-                        except:
-                            column = line
-                        column = re.sub(" *\(at\) *", "@", column)
-                        column = re.sub(" *\(dot\) *", ".", column)
-                        column = re.sub(" +at +", "@", column)
-                        column = re.sub(" +dot +", ".", column)
+                    try:
+                        column = line[beg:end].strip()
+                    except:
+                        column = line
+                    column = re.sub(" *\(at\) *", "@", column)
+                    column = re.sub(" *\(dot\) *", ".", column)
+                    column = re.sub(" +at +", "@", column)
+                    column = re.sub(" +dot +", ".", column)
 
+    #                 if re.search("^\w+: \w+", column):
+    #                     keyword = True
+    #                 else:
+    #                     if keyword:
+    #                         # Break on transition from keyword line to something else
+    #                         _debug( " - Break on end of keywords")
+    #                         break
 
-        #                 if re.search("^\w+: \w+", column):
-        #                     keyword = True
-        #                 else:
-        #                     if keyword:
-        #                         # Break on transition from keyword line to something else
-        #                         _debug( " - Break on end of keywords")
-        #                         break
+                    #_debug( "  Column text :: " + column)
+                    _debug("3: authors[%s]: %s" % (i, authors[i]))
 
-                        #_debug( "  Column text :: " + column)
-                        _debug("3: authors[%s]: %s" % (i, authors[i]))
-                        
-                        emailmatch = re.search("[-A-Za-z0-9_.+]+@[-A-Za-z0-9_.]+", column)
-                        if emailmatch and not "@" in authors[i]:
-                            email = emailmatch.group(0).lower()
-                            authors[i] = "%s <%s>" % (authors[i], email)
-                else:
-                    authors[i] = None
-                    if not author in ignore:
-                        _debug("Not an author? '%s'" % (author))
+                    emailmatch = re.search("[-A-Za-z0-9_.+]+@[-A-Za-z0-9_.]+", column)
+                    if emailmatch and not "@" in author:
+                        email = emailmatch.group(0).lower()
+                        break
+                authors[i] = authors[i] + ( email, )
+            else:
+                authors[i] = None
+                if not author in ignore:
+                    _debug("Not an author? '%s'" % (author))
 
-            authors = [ re.sub(r" +"," ", a) for a in authors if a != None ]
-            authors.sort() 
-            _debug(" * Final author list: " + ", ".join(authors))
-            _debug("-"*72)
-            self._authors = authors
-
-        return self._authors
+        authors = [ a for a in authors if a != None ]
+        _debug(" * Final author tuples: %s" % (authors,))
+        self._author_info = authors        
+        self._authors = [ "%s <%s>"%(full,email) if email else full for full,first,middle,last,suffix,email in authors ]
+        self._authors.sort()
+        _debug(" * Final author list: " + ", ".join(self._authors))
+        _debug("-"*72)
 
     # ------------------------------------------------------------------
     def get_title(self):
@@ -728,6 +774,7 @@ def _printmeta(timestamp, fn):
     fields["doctitle"] = draft.get_title()
     fields["docpages"] = str(draft.get_pagecount())
     fields["docauthors"] = ", ".join(draft.get_authors())
+#    fields["docauthinfo"] = str(draft.get_author_info())
     normrefs, rfcrefs, refs = draft.get_refs()
     fields["docrfcrefs"] = ", ".join(rfcrefs)
     fields["doccreationdate"] = str(draft.get_creation_date())
