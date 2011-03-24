@@ -88,10 +88,14 @@ class IESGLoginAdmin(admin.ModelAdmin):
 admin.site.register(IESGLogin, IESGLoginAdmin)
 
 class IETFWGAdmin(admin.ModelAdmin):
-    list_display=('group_acronym', 'group_type', 'status', 'area_acronym', 'start_date', 'concluded_date')
+    list_display=('group_acronym', 'group_type', 'status', 'area_acronym', 'start_date', 'concluded_date', 'chairs_link')
     search_fields=['group_acronym__acronym', 'group_acronym__name']
     list_filter=['status', 'group_type']
 admin.site.register(IETFWG, IETFWGAdmin)
+
+class WGChairAdmin(admin.ModelAdmin):
+    list_display = ('person_link', 'group_link')
+admin.site.register(WGChair, WGChairAdmin)
 
 class IRTFAdmin(admin.ModelAdmin):
     pass

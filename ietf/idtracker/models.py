@@ -926,7 +926,6 @@ class IETFWG(models.Model):
         except BaseException:    
             desc =  'Error Loading Work Group Description'
         return desc
-
     def additional_urls(self):
         return AreaWGURL.objects.filter(name=self.group_acronym.acronym)        
     def clean_email_archive(self):
@@ -934,6 +933,7 @@ class IETFWG(models.Model):
         # remove "current/" and "maillist.html"
         x = re.sub("^(http://www\.ietf\.org/mail-archive/web/)([^/]+/)(current/)?([a-z]+\.html)?$", "\\1\\2", x)
         return x
+    chairs_link = admin_link('chairs')
     class Meta:
         db_table = 'groups_ietf'
 	ordering = ['?']	# workaround django wanting to sort by acronym but not joining with it
@@ -946,6 +946,8 @@ class WGChair(models.Model):
 	return "%s (%s)" % ( self.person, self.role() )
     def role(self):
 	return "%s %s Chair" % ( self.group_acronym, self.group_acronym.group_type )
+    person_link = admin_link('person')
+    group_link = admin_link('group_acronym')
     class Meta:
         db_table = 'g_chairs'
 	verbose_name = "WG Chair"
