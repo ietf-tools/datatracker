@@ -53,7 +53,7 @@ class Entity(object):
     def can_approve(self):
         return []
 
-    def post_only(self, person):
+    def post_only(self, person, user):
         return False
 
     def full_user_list(self):
