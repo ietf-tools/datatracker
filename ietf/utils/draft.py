@@ -31,6 +31,7 @@ COPYRIGHT
 
 """
 
+import datetime
 import getopt
 import os
 import os.path
@@ -124,9 +125,11 @@ class Draft():
         self.filename, self.revision = self._parse_draftname()
         
         self._authors = None
+        self._abstract = None
         self._pagecount = None
         self._status = None
         self._creation_date = None
+        self._title = None
 
     # ------------------------------------------------------------------
     def _parse_draftname(self):
@@ -241,7 +244,11 @@ class Draft():
         if self._creation_date:
             return self._creation_date
         month_names = [ 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec' ]
-	date_regexes = [
+        date_regexes = [
+            r'^(?P<month>\w+)\s+(?P<day>\d{1,2}),?\s+(?P<year>\d{4})',
+            r'^(?P<day>\d{1,2}),?\s+(?P<month>\w+)\s+(?P<year>\d{4})',
+            r'^(?P<day>\d{1,2})-(?P<month>\w+)-(?P<year>\d{4})',
+            r'^(?P<month>\w+)\s+(?P<year>\d{4})',
             r'\s{3,}(?P<month>\w+)\s+(?P<day>\d{1,2}),?\s+(?P<year>\d{4})',
             r'\s{3,}(?P<day>\d{1,2}),?\s+(?P<month>\w+)\s+(?P<year>\d{4})',
             r'\s{3,}(?P<day>\d{1,2})-(?P<month>\w+)-(?P<year>\d{4})',
@@ -250,22 +257,85 @@ class Draft():
         ]
 
         for regex in date_regexes:
-            match = re.search(regex, self.pages[0])
+            match = re.search(regex, self.pages[0], re.MULTILINE)
             if match:
-		md = match.groupdict()
-		mon = md['month'][0:3].lower()
-		day = int( md.get( 'day', date.today().day ) )
-		year = int( md['year'] )
-		try:
-		    month = month_names.index( mon ) + 1
-		    self._creation_date = date(year, month, day)
+                md = match.groupdict()
+                mon = md['month'][0:3].lower()
+                day = int( md.get( 'day', datetime.date.today().day ) )
+                year = int( md['year'] )
+                try:
+                    month = month_names.index( mon ) + 1
+                    self._creation_date = datetime.date(year, month, day)
                     return self._creation_date
-		except ValueError:
-		    # mon abbreviation not in _MONTH_NAMES
-		    # or month or day out of range
-		    pass
+                except ValueError:
+                    # mon abbreviation not in _MONTH_NAMES
+                    # or month or day out of range
+                    pass
         self.errors['creation_date'] = 'Creation Date field is empty or the creation date is not in a proper format.'
         return self._creation_date
+
+
+    # ------------------------------------------------------------------
+    def get_abstract(self):
+        if self._abstract:
+            return self._abstract
+        abstract_re = re.compile('^(\s*)abstract', re.I)
+        header_re = re.compile("^(\s*)(1\.|A\.|Appendix|Status of|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index).*", re.I)
+        begin = False
+        abstract = []
+        abstract_indent = 0
+        for line in self.lines:
+            if not begin and abstract_re.match(line):
+                begin=True
+                abstract_indent = len(abstract_re.match(line).group(0))
+                continue
+            if begin:
+                if header_re.match(line):
+                    break
+                if not line and not abstract:
+                    continue
+                abstract.append(line)
+        abstract = '\n'.join(abstract)
+        abstract = self._clean_abstract(abstract)
+        self._abstract = self._check_abstract_indent(abstract, abstract_indent)
+        return self._abstract
+
+
+    def _check_abstract_indent(self, abstract, indent):
+        indentation_re = re.compile('^(\s)*')
+        indent_lines = []
+        for line in abstract.split('\n'):
+            if line:
+                indent = len(indentation_re.match(line).group(0))
+                indent_lines.append(indent)
+        percents = {}
+        total = float(len(indent_lines))
+        formated = False
+        for indent in set(indent_lines):
+            count = indent_lines.count(indent)/total
+            percents[indent] = count
+            if count > 0.9:
+                formated = True
+        if not formated:
+            return abstract
+        new_abstract = []
+        for line in abstract.split('\n'):
+            if line:
+                indent = len(indentation_re.match(line).group(0))
+                if percents[indent] < 0.9:
+                    break
+            new_abstract.append(line)
+        return '\n'.join(new_abstract)
+
+
+    def _clean_abstract(self, text):
+        text = re.sub("(?s)(Conventions [Uu]sed in this [Dd]ocument|Requirements [Ll]anguage)?[\n ]*The key words \"MUST\", \"MUST NOT\",.*$", "", text)
+        # Get rid of status/copyright boilerplate
+        text = re.sub("(?s)\nStatus of [tT]his Memo\n.*$", "", text)
+        # wrap long lines without messing up formatting of Ok paragraphs:
+        while re.match("([^\n]{72,}?) +", text):
+            text = re.sub("([^\n]{72,}?) +([^\n ]*)(\n|$)", "\\1\n\\2 ", text)
+        return text
 
 
     # ------------------------------------------------------------------
@@ -495,12 +565,34 @@ class Draft():
                         _debug("Not an author? '%s'" % (author))
 
             authors = [ re.sub(r" +"," ", a) for a in authors if a != None ]
-            authors.sort()
+            # authors.sort() 
             _debug(" * Final author list: " + ", ".join(authors))
             _debug("-"*72)
             self._authors = authors
 
         return self._authors
+
+    # ------------------------------------------------------------------
+    def get_title(self):
+        if self._title:
+            return self._title
+        title_re = re.compile('(.+\n){1,3}(\s+<?draft-\S+\s*\n)')
+        match = title_re.search(self.pages[0])
+        if match:
+            title = match.group(1)
+            title = title.strip()
+            self._title = title
+            return self._title
+        # unusual title extract
+        unusual_title_re = re.compile('(.+\n|.+\n.+\n)(\s*status of this memo\s*\n)', re.I)
+        match = unusual_title_re.search(self.pages[0])
+        if match:
+            title = match.group(1)
+            title = title.strip()
+            self._title = title
+            return self._title
+        self.errors["title"] = "Could not find the title on the first page."
+
 
 # ----------------------------------------------------------------------
 def _output(fields):
@@ -546,11 +638,16 @@ def _printmeta(timestamp, fn):
     fields["doctag"] = draft.filename or fn[:-7]
     fields["docrev"] = draft.revision
 
+    fields["doctitle"] = draft.get_title()
     fields["docpages"] = str(draft.get_pagecount())
     fields["docauthors"] = ", ".join(draft.get_authors())
+    fields["doccreationdate"] = str(draft.get_creation_date())
     deststatus = draft.get_status()
     if deststatus:
         fields["docdeststatus"] = deststatus
+    abstract = draft.get_abstract()
+    if abstract:
+        fields["docabstract"] = abstract
 
     _output(fields)
 
