@@ -37,9 +37,5 @@ def can_edit_state(user, draft):
            )
 
 
-def can_edit_tags(user, draft):
-    return can_edit_state(user, draft)
-
-
 def can_edit_stream(user, draft):
     return is_secretariat(user)

@@ -2,7 +2,7 @@ from ietf.idtracker.models import InternetDraft
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 
-from ietf.ietfworkflows.forms import (DraftStateForm, DraftTagsForm,
+from ietf.ietfworkflows.forms import (DraftTagsStateForm,
                                       DraftStreamForm)
 from ietf.ietfworkflows.streams import (get_stream_from_draft,
                                         get_streamed_draft)
@@ -44,7 +44,7 @@ def stream_history(request, name):
                               context_instance=RequestContext(request))
 
 
-def edit_state(request, name, form_class=DraftStateForm):
+def edit_state(request, name, form_class=DraftTagsStateForm):
     user = request.user
     draft = get_object_or_404(InternetDraft, filename=name)
     if request.method == 'POST':
@@ -69,10 +69,6 @@ def edit_state(request, name, form_class=DraftStateForm):
                                'form': form,
                               },
                               context_instance=RequestContext(request))
-
-
-def edit_tags(request, name):
-    return edit_state(request, name, DraftTagsForm)
 
 
 def edit_stream(request, name):

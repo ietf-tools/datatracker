@@ -1,6 +1,5 @@
 <div>
 {% if can_edit_state %}  <a href="{% url edit_state doc.draft_name %}">Change state</a> {% endif %}
-{% if can_edit_tags %}{% if can_edit_state %} | {% endif %} <a href="{% url edit_tags doc.draft_name %}">Change annotation tags</a> {% endif %}
-{% if can_edit_stream %}{% if can_edit_state or can_edit_tags %} | {% endif %} <a href="{% url edit_stream doc.draft_name %}">Change draft stream</a>{% endif %}
+{% if can_edit_stream %}{% if can_edit_state %} | {% endif %} <a href="{% url edit_stream doc.draft_name %}">Change draft stream</a>{% endif %}
 </div>
 

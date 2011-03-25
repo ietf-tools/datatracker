@@ -41,16 +41,17 @@ class StreamDraftForm(forms.Form):
         return render_to_string(self.template, {'form': self})
 
 
-class DraftStateForm(StreamDraftForm):
+class DraftTagsStateForm(StreamDraftForm):
 
     comment = forms.CharField(widget=forms.Textarea)
     new_state = forms.ChoiceField()
     weeks = forms.IntegerField(required=False)
+    tags = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple, required=False)
 
     template = 'ietfworkflows/state_form.html'
 
     def __init__(self, *args, **kwargs):
-        super(DraftStateForm, self).__init__(*args, **kwargs)
+        super(DraftTagsStateForm, self).__init__(*args, **kwargs)
         self.state = get_state_for_draft(self.draft)
         self.fields['new_state'].choices = self.get_states()
         if self.is_bound:
@@ -60,6 +61,10 @@ class DraftStateForm(StreamDraftForm):
                     if new_state:
                         self.data = self.data.copy()
                         self.data.update({'new_state': new_state.id})
+        self.available_tags = self.workflow.get_tags()
+        self.tags = [i.annotation_tag for i in get_annotation_tags_for_draft(self.draft)]
+        self.fields['tags'].choices = [(i.pk, i.name) for i in self.available_tags]
+        self.fields['tags'].initial = [i.pk for i in self.tags]
 
     def get_new_state(self, key):
         transition_id = key.replace('transition_', '')
@@ -74,36 +79,7 @@ class DraftStateForm(StreamDraftForm):
     def get_states(self):
         return [(i.pk, i.name) for i in self.workflow.get_states()]
 
-    def save(self):
-        comment = self.cleaned_data.get('comment')
-        state = State.objects.get(pk=self.cleaned_data.get('new_state'))
-        weeks = self.cleaned_data.get('weeks')
-        estimated_date = None
-        if weeks:
-            now = datetime.date.today()
-            estimated_date = now + datetime.timedelta(weeks=weeks)
-        update_state(obj=self.draft,
-                     comment=comment,
-                     person=self.person,
-                     to_state=state,
-                     estimated_date=estimated_date)
-
-
-class DraftTagsForm(StreamDraftForm):
-
-    comment = forms.CharField(widget=forms.Textarea)
-    tags = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple, required=False)
-
-    template = 'ietfworkflows/tags_form.html'
-
-    def __init__(self, *args, **kwargs):
-        super(DraftTagsForm, self).__init__(*args, **kwargs)
-        self.available_tags = self.workflow.get_tags()
-        self.tags = [i.annotation_tag for i in get_annotation_tags_for_draft(self.draft)]
-        self.fields['tags'].choices = [(i.pk, i.name) for i in self.available_tags]
-        self.fields['tags'].initial = [i.pk for i in self.tags]
-
-    def save(self):
+    def save_tags(self):
         comment = self.cleaned_data.get('comment')
         new_tags = self.cleaned_data.get('tags')
 
@@ -118,12 +94,34 @@ class DraftTagsForm(StreamDraftForm):
                     extra_notify = ['%s <%s>' % shepherd.email()]
             except PersonOrOrgInfo.DoesNotExist:
                 pass
+        if not set_tags and not reset_tags:
+            return
         update_tags(self.draft,
                     comment=comment,
                     person=self.person,
                     set_tags=set_tags,
                     reset_tags=reset_tags,
                     extra_notify=extra_notify)
+
+    def save_state(self):
+        comment = self.cleaned_data.get('comment')
+        state = State.objects.get(pk=self.cleaned_data.get('new_state'))
+        weeks = self.cleaned_data.get('weeks')
+        estimated_date = None
+        if weeks:
+            now = datetime.date.today()
+            estimated_date = now + datetime.timedelta(weeks=weeks)
+        update_state(obj=self.draft,
+                     comment=comment,
+                     person=self.person,
+                     to_state=state,
+                     estimated_date=estimated_date)
+
+    def save(self):
+        self.save_tags()
+        if 'only_tags' in self.data.keys():
+            return
+        self.save_state()
 
 
 class DraftStreamForm(StreamDraftForm):

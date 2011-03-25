@@ -4,8 +4,7 @@ from ietf.idrfc.idrfc_wrapper import IdRfcWrapper, IdWrapper
 from ietf.ietfworkflows.utils import (get_workflow_for_draft,
                                       get_state_for_draft)
 from ietf.ietfworkflows.streams import get_stream_from_wrapper
-from ietf.ietfworkflows.accounts import (can_edit_state, can_edit_tags,
-                                         can_edit_stream)
+from ietf.ietfworkflows.accounts import (can_edit_state, can_edit_stream)
 
 
 register = template.Library()
@@ -65,7 +64,6 @@ def edit_actions(context, wrapper):
     draft = idwrapper._draft
     return {
         'can_edit_state': can_edit_state(user, draft),
-        'can_edit_tags': can_edit_tags(user, draft),
         'can_edit_stream': can_edit_stream(user, draft),
         'doc': wrapper,
     }
