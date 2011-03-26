@@ -310,3 +310,7 @@ def active(request):
     groups = IETFWG.objects.exclude(group_acronym=1027)
     individual = IETFWG.objects.get(group_acronym=1027)
     return render_to_response("idrfc/active.html", {'groups':groups,'individual':individual}, context_instance=RequestContext(request))
+
+def in_last_call(request):
+    lcdocs = [IdWrapper(p) for p in InternetDraft.objects.all().filter(idinternal__primary_flag=1).filter(idinternal__cur_state__state='In Last Call')]
+    return render_to_response("idrfc/in_last_call.html", {'lcdocs':lcdocs}, context_instance=RequestContext(request))

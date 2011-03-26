@@ -38,6 +38,7 @@ urlpatterns = patterns('',
     (r'^search/$', views_search.search_results),
     (r'^all/$', views_search.all),
     (r'^active/$', views_search.active),
+    (r'^in-last-call/$', views_search.in_last_call),
     url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad, name="doc_search_by_ad"),
                        
     url(r'^(?P<name>[A-Za-z0-9.-]+)/((?P<tab>ballot|writeup|history)/)?$', views_doc.document_main, name="doc_view"),
