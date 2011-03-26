@@ -312,5 +312,13 @@ def active(request):
     return render_to_response("idrfc/active.html", {'groups':groups,'individual':individual}, context_instance=RequestContext(request))
 
 def in_last_call(request):
-    lcdocs = [IdWrapper(p) for p in InternetDraft.objects.all().filter(idinternal__primary_flag=1).filter(idinternal__cur_state__state='In Last Call')]
+    
+    lcdocs = []
+
+    for p in InternetDraft.objects.all().filter(idinternal__primary_flag=1).filter(idinternal__cur_state__state='In Last Call'):
+      if (p.idinternal.rfc_flag):
+        lcdocs.append(IdRfcWrapper(None,RfCWrapper(p))) 
+      else:
+        lcdocs.append(IdRfcWrapper(IdWrapper(p),None))
+
     return render_to_response("idrfc/in_last_call.html", {'lcdocs':lcdocs}, context_instance=RequestContext(request))
