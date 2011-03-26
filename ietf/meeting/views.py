@@ -103,8 +103,16 @@ def agenda_info(num=None):
 @decorator_from_middleware(GZipMiddleware)
 def html_agenda(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
-    rgs = IRTF.objects.all().order_by('acronym')
+
+
+    groups_meeting = [];
+    for slot in timeslots:
+        for session in slot.sessions():
+            groups_meeting.append(session.acronym())
+    groups_meeting = set(groups_meeting);
+
+    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).filter(group_acronym__acronym__in = groups_meeting).order_by('group_acronym__acronym')
+    rgs = IRTF.objects.all().filter(acronym__in = groups_meeting).order_by('acronym')
     areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
 
     if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
