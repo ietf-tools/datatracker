@@ -35,7 +35,7 @@ def new_enough(request, days="14"):
     if days == 0:
         days = 14
     response = settings(request, days, -1)
-    response.set_cookie("new_enough", days)
+    response.set_cookie("new_enough", days, 315360000)
     return response
 
 def expires_soon(request, days="14"):
@@ -46,12 +46,12 @@ def expires_soon(request, days="14"):
     if days == 0:
         days = 14
     response = settings(request, -1, days)
-    response.set_cookie("expires_soon", days)
+    response.set_cookie("expires_soon", days, 315360000)
     return response
 
 def full_draft(request, enabled="off"):
     if enabled != "on" and enabled != "off":
             enabled = "off"
     response = settings(request, -1, -1, enabled)
-    response.set_cookie("full_draft", enabled)
+    response.set_cookie("full_draft", enabled, 315360000)
     return response
