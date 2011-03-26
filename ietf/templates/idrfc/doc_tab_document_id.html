@@ -83,9 +83,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </div>
 {% if user|in_group:"Area_Director,Secretariat" %}
 <div>
+{% if doc.in_ietf_process %}
   <a href="{% url doc_ballot_lastcall name=doc.draft_name %}">Last Call Text</a>
 | <a href="{% url doc_ballot_writeupnotes name=doc.draft_name %}">Ballot Text</a>
 | <a href="{% url doc_ballot_approvaltext name=doc.draft_name %}">Announcement Text</a>
+{% endif %}
 </div>
 {% endif %}
 {% endblock %}
