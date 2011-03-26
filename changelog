@@ -1,3 +1,37 @@
+ietfdb (3.13)
+
+  * Provide a full URL to IPR issues in the last call email, rather than just
+    the local url path.  Fixes an issue reported by Russ.
+
+  * Tweak the admin interface for WGs and Chairs, adding some useful links 
+    to the tabular displays.
+
+  * Add refinements for the liaison admin interface.  Show contact link and 
+    coloured Login/User links to show broken entries.
+
+  * Wrap the sdo name query in a try clause to avoid server 500 errors.
+
+  * Only try to populate the liaison user/email list from the from_entity 
+    if it's set.
+
+  * Make the document announcement default Cc: somewhat configurable.  
+    Remove iab@iab.org (on request).
+
+  * Link to the State help page from the 'State:' label.
+
+  * Don't use '&lt;' and '&gt;' in text/plain email text.
+
+  * Don't permit just any characters in the document name; limit this to 
+    characters we currently permit in the names, or which has occurred in 
+    posted documents.  Fixes a problem where non-ascii characters were 
+    propagated to the database search and caused collation sequence exceptions, 
+    instead of giving 404 errors.
+
+  * Remove the To/From/Subject headers from extra headers to prevent 
+    duplicate headers.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Mar 2011 09:27:14 +0100
+
 ietfdb (3.12)
 
   Note: Deploying this release requires a database schema update, see below.
