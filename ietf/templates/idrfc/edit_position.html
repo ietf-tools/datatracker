@@ -32,7 +32,17 @@ form.position-form .comment-text {
 <h1>Change position for {{ ad }} on {{ doc }}</h1>
 
 <form class="position-form" action="" method="POST">
+
+<div>
   <div class="position">{{ form.position }}</div>
+
+    {% if ballot.was_deferred %}
+      <div style="margin-top:8px; margin-bottom:8px;"><span id="doc_undefer_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url doc_undefer_ballot name=doc %}">Undefer ballot</a></span></span></div>
+      <div style="margin-top:8px; margin-bottom:8px;">Ballot deferred by {{ ballot.deferred_by }} on {{ ballot.deferred_date }}.</div>
+    {% else %}
+      <div style="margin-top:8px; margin-bottom:8px;"><span id="doc_defer_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url doc_defer_ballot name=doc %}">Defer ballot</a></span></span></div>
+    {% endif %}
+</div>
 
   <div style="clear:left"></div>
   
