@@ -4,6 +4,7 @@ from django.db import models
 #from django import newforms as forms
 from ietf.idtracker.views import InternetDraft
 from ietf.idtracker.models import Rfc
+from ietf.utils.lazy import reverse_lazy
 
 # ------------------------------------------------------------------------
 # Models
@@ -115,8 +116,9 @@ class IprDetail(models.Model):
 	return self.title
     def docs(self):
         return list(self.drafts.all()) + list(self.rfcs.all())
+    @models.permalink
     def get_absolute_url(self):
-        return "/ipr/%d/" % self.ipr_id
+        return ('ietf.ipr.views.show', [str(self.ipr_id)])
     def get_submitter(self):
 	try:
 	    return self.contact.get(contact_type=3)

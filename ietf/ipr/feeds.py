@@ -3,12 +3,13 @@
 from django.contrib.syndication.feeds import Feed
 from django.utils.feedgenerator import Atom1Feed
 from ietf.ipr.models import IprDetail
+from ietf.utils.lazy import reverse_lazy
 from datetime import datetime, time
 
 class LatestIprDisclosures(Feed):
     feed_type = Atom1Feed
     title = "IPR Disclosures to the IETF"
-    link = "/ipr/"
+    link = reverse_lazy('ipr_showlist')
     description = "Updates on new IPR Disclosures made to the IETF."
     language = "en"
     feed_url = "/feed/ipr/"
