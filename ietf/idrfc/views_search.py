@@ -42,8 +42,16 @@ from django.http import Http404, HttpResponse, HttpResponsePermanentRedirect
 from ietf.idrfc.idrfc_wrapper import IdWrapper,RfcWrapper,IdRfcWrapper
 from ietf.utils import normalize_draftname
 
+def addInputEvents(widget):
+    widget.attrs["oninput"] = 'inputEvent()'
+    widget.attrs["onpropertychange"] = 'propertyChange()'
+
+def addChangeEvent(widget):
+    widget.attrs["onchange"] = 'changeEvent()'
+
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
+    addInputEvents(name.widget)
     rfcs = forms.BooleanField(required=False,initial=True)
     activeDrafts = forms.BooleanField(required=False,initial=True)
     oldDrafts = forms.BooleanField(required=False,initial=False)
@@ -51,11 +59,17 @@ class SearchForm(forms.Form):
 
     by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state')], required=False, initial='wg', label='Foobar')
     author = forms.CharField(required=False)
+    addInputEvents(author.widget)
     group = forms.CharField(required=False)
+    addInputEvents(group.widget)
     area = forms.ModelChoiceField(Area.active_areas(), empty_label="any area", required=False)
+    addChangeEvent(area.widget)
     ad = forms.ChoiceField(choices=(), required=False)
+    addChangeEvent(ad.widget)
     state = forms.ModelChoiceField(IDState.objects.all(), empty_label="any state", required=False)
+    addChangeEvent(state.widget)
     subState = forms.ChoiceField(choices=(), required=False)
+    addChangeEvent(subState.widget)
         
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)

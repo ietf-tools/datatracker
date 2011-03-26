@@ -77,10 +77,8 @@ Additional search criteria:
 
 <div style="padding-top:0.5em;">
 {# <input type="hidden" name="ajax" value="" /> #}
-<span id="search_submit_button" class="yui-button yui-submit-button">
 <span class="first-child">
-<button type="submit" id="search_submit">Search</button>
-</span>
+<button type="submit" name="search_submit" id="id_search_submit">Search</button>
 </span>
 </div>
 
@@ -88,28 +86,33 @@ Additional search criteria:
 
 <script type="text/javascript">
 //<![CDATA[
-{% comment %}
-function searchResult(o) {
-    var el = document.getElementById("search_results");
-    el.innerHTML = (o.responseText !== undefined) ? o.responseText : "?";
+// we want to disable our submit button if we have no search text, 
+// and we have no advanced options selected
+function toggleSubmit() {
+    var button = document.getElementById("id_search_submit");
+    var by = findCheckedSearchBy();
+    var value = findSearchByValue(by);
+    var text = document.getElementById("id_name");
+    if ((value == "") && (text.value == "")) {
+        button.disabled = true;
+    } else {
+        button.disabled = false;
+    }
 }
 
-function searchFailure(o) {
-    var el = document.getElementById("search_results");
-    el.innerHTML = "Error: "+o.status+" "+o.statusText;
+// check our button status after every change to text fields
+// Internet Explorer uses 'onpropertychange', everyone else 'oninput'
+function inputEvent(event) {
+    toggleSubmit();
+}
+function propertyChange() {
+    toggleSubmit();
 }
 
-function submitSearch() {
-    document.getElementById("search_results").innerHTML = "Searching...";
-    document.search_form.ajax.value = "1";
-    YAHOO.util.Connect.setForm("search_form");
-    YAHOO.util.Connect.asyncRequest('POST', '/doc/search/',
-        { success: searchResult,
-          failure: searchFailure,
-          argument: null
-	}, null);
+// check our button status after every change to selection pulldowns
+function changeEvent(event) {
+    toggleSubmit();
 }
-{% endcomment %}
 
 function togglePlusMinus(id) {
     var el = document.getElementById(id);
@@ -123,7 +126,7 @@ function togglePlusMinus(id) {
     }
 }
 
-function changeBy() {
+function findCheckedSearchBy() {
     var by=''; 
     var f = document.search_form;
     for (var i = 0; i < f.by.length; i++) {
@@ -132,6 +135,27 @@ function changeBy() {
             break; 
         }
     }
+    return by;
+}
+
+function findSearchByValue(by) {
+    if (by == 'author') { return document.getElementById("id_author").value; }
+    if (by == 'group') { return document.getElementById("id_group").value; }
+    if (by == 'area') { return document.getElementById("id_area").value; }
+    if (by == 'ad') { return document.getElementById("id_ad").value; }
+    if (by == 'state') { 
+        // state might be state...
+        state_value = document.getElementById("id_state").value;
+        if (state_value) { return state_value; }
+        // ...or sub-state
+        return document.getElementById("id_subState").value;
+    }
+    return '';
+}
+
+function changeBy() {
+    var by=findCheckedSearchBy();
+    var f = document.search_form;
     f.author.disabled=true;  
     f.group.disabled=true;
     f.area.disabled=true;
@@ -142,6 +166,8 @@ function changeBy() {
     if (by=='area') { f.area.disabled=false;}
     if (by=='ad') { f.ad.disabled=false; }
     if (by=='state') { f.state.disabled=false; f.subState.disabled=false; }
+ 
+    toggleSubmit();
 }
 
 function toggleAdvanced() {
