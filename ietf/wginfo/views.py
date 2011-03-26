@@ -83,9 +83,15 @@ def wg_documents(request, acronym):
         if ( len(parts) >= 3):
             if parts[1] != "ietf" and parts[2].startswith(wg.group_acronym.acronym+"-"):
                 docs_related_pruned.append(d)
-  
-    return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs,  'meta':meta, 
-                                                           'docs_related':docs_related_pruned, 'meta_related':meta_related}, RequestContext(request))
+    return wg, concluded, docs, meta, docs_related_pruned, meta_related
+
+def wg_documents_txt(request, acronym):
+    wg, concluded, docs, meta, docs_related, meta_related = wg_documents(request, acronym)
+    return HttpResponse(loader.render_to_string('wginfo/wg_documents.txt', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs,  'meta':meta, 'docs_related':docs_related, 'meta_related':meta_related}),mimetype='text/plain; charset=UTF-8')
+
+def wg_documents_html(request, acronym):
+    wg, concluded, docs, meta, docs_related, meta_related = wg_documents(request, acronym)
+    return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs,  'meta':meta, 'docs_related':docs_related, 'meta_related':meta_related}, RequestContext(request))
 
 def wg_charter(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
