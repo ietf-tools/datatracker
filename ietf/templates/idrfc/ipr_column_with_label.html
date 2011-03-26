@@ -31,31 +31,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
-
-{% load ballot_icon %}
-{% load ietf_filters %}
-<tr 
-{% if user|in_group:"Area_Director" %}
-{% if doc|my_position:user|equal:"Discuss" %}style="background:#ffa0a0;"{% endif %}
-{% if doc|my_position:user|equal:"Abstain" %}style="background:#ffff00;"{% endif %}
-{% if doc|my_position:user|equal:"Yes"  or  doc|my_position:user|slugify|equal:"no-objection" %}style="background:#a0ffa0;"{% endif %}
-{% if doc|my_position:user|equal:"Recuse" %}style="background:#c0c0c0;"{% endif %}
-{% endif %}
->
-<td class="doc">
-<div>{{ doc.displayname_with_link|safe }}</div>
-{% if doc.ietf_process.iesg_ballot.was_deferred %}
-<div><b title="deferred by {{ doc.ietf_process.iesg_ballot.deferred_by}}">(deferred on {{ doc.ietf_process.iesg_ballot.deferred_date }})</b></div>
-{% endif %}
-{% if user|in_group:"Secretariat" %}
-<div class="reschedule"><label>Reschedule: {{ doc.reschedule_form.telechat_date }}</label></div> 
-{% if doc.reschedule_form.show_clear %} 
-<div class="clear-returning-item"><label>{{ doc.reschedule_form.clear_returning_item }} Clear returning item</label></div> 
-{% endif %} 
-{% endif %} 
+{% load ietf_filters %}<td class="ipr"> 
+{% if doc.iprCount %}<a href="{{ doc.iprUrl }}"  rel="nofollow"> IPR:{{ doc.iprCount }} </a>{% endif %}
 </td>
-<td class="title">{{ doc.title }}</td>
-{% include "iesg/agenda_documents_row_status.html" %}
-{% include "idrfc/ipr_column_with_label.html" %}
-<td class="ad">{{ doc.ad_name|default:"" }}</td>
-</tr>

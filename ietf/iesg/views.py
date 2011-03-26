@@ -49,6 +49,7 @@ from ietf.idrfc.models import RfcIndex
 from ietf.idrfc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
+from ietf.ipr.models import IprRfc, IprDraft, IprDetail
 import datetime 
 import tarfile
 
@@ -287,11 +288,17 @@ def agenda_documents(request):
             section_key = "s" + get_doc_section(i)
             if section_key not in res:
                 res[section_key] = []
+            # PM - add code to fill in IPR details. (Would be better to use IdRfc_Wrapper - but this breaks other code
             if not i.rfc_flag:
                 w = IdWrapper(draft=i)
+                w.iprUrl = "/ipr/search?option=document_search&id_document_tag=" + str(w.id.tracker_id)
+                iprs = IprDraft.objects.filter(document=w.id.tracker_id)
             else:
                 ri = RfcIndex.objects.get(rfc_number=i.draft_id)
                 w = RfcWrapper(ri)
+                w.iprUrl = "/ipr/search?option=rfc_search&rfc_search=" + str(w.rfc.rfc_number)
+                iprs = IprRfc.objects.filter(document=w.rfc.rfc_number) 
+            w.iprCount = len(iprs)
             w.reschedule_form = i.reschedule_form
             res[section_key].append(w)
         telechats.append({'date':date, 'docs':res})

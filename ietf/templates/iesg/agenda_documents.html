@@ -73,59 +73,59 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% for t in telechats %}
 
 {% if not forloop.first %}
-<tr class="header"><td colspan="5">&nbsp;</td></tr>
+<tr class="header"><td colspan="6">&nbsp;</td></tr>
 {% endif %}
 
-<tr class="header telechat_date"><td colspan="5">IESG telechat {{t.date}}</td></tr>
+<tr class="header telechat_date"><td colspan="6">IESG telechat {{t.date}}</td></tr>
 
 {% if forloop.first %}
-<tr class="header"><td colspan="5"><a href="/iesg/agenda/">Full IESG Agenda</a></td></tr>
+<tr class="header"><td colspan="6"><a href="/iesg/agenda/">Full IESG Agenda</a></td></tr>
 {% endif %}
 
-<tr class="header"><td colspan="5"><a href="/iesg/agenda/telechat-{{t.date|date:"Y"}}-{{t.date|date:"m"}}-{{t.date|date:"d"}}-docs.tgz">Download Documents</a></td></tr>
+<tr class="header"><td colspan="6"><a href="/iesg/agenda/telechat-{{t.date|date:"Y"}}-{{t.date|date:"m"}}-{{t.date|date:"d"}}-docs.tgz">Download Documents</a></td></tr>
 
-<tr class="header"><td colspan="5">2. Protocol Actions</td></tr>
+<tr class="header"><td colspan="6">2. Protocol Actions</td></tr>
 
-<tr class="header"><td colspan="5">2.1 WG Submissions</td></tr>
+<tr class="header"><td colspan="6">2.1 WG Submissions</td></tr>
 
     {% for doc in t.docs.s211 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
-    {% if t.docs.s212 %}<tr class="header"><td colspan="5">2.1.2 Returning Item</td></tr>{% endif %}
+    {% if t.docs.s212 %}<tr class="header"><td colspan="6">2.1.2 Returning Item</td></tr>{% endif %}
     {% for doc in t.docs.s212 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
-    {% if t.docs.s213 %}<tr class="header"><td colspan="5">2.1.3 For Action</td></tr>{% endif %}
+    {% if t.docs.s213 %}<tr class="header"><td colspan="6">2.1.3 For Action</td></tr>{% endif %}
     {% for doc in t.docs.s213 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
-<tr class="header"><td colspan="5">2.2 Individual Submissions</td></tr>
+<tr class="header"><td colspan="6">2.2 Individual Submissions</td></tr>
 
     {% for doc in t.docs.s221 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
-    {% if t.docs.s222 %}<tr class="header"><td colspan="5">2.2.2 Returning Item</td></tr>{% endif %}
+    {% if t.docs.s222 %}<tr class="header"><td colspan="6">2.2.2 Returning Item</td></tr>{% endif %}
     {% for doc in t.docs.s222 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
-    {% if t.docs.s223 %}<tr class="header"><td colspan="5">2.2.3 For Action</td></tr>{% endif %}
+    {% if t.docs.s223 %}<tr class="header"><td colspan="6">2.2.3 For Action</td></tr>{% endif %}
     {% for doc in t.docs.s223 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
-<tr class="header"><td colspan="5">3. Document Actions</td></tr>
+<tr class="header"><td colspan="6">3. Document Actions</td></tr>
 
-<tr class="header"><td colspan="5">3.1 WG Submissions</td></tr>
+<tr class="header"><td colspan="6">3.1 WG Submissions</td></tr>
 
     {% for doc in t.docs.s311 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
-    {% if t.docs.s312 %}<tr class="header"><td colspan="5">3.1.2 Returning Item</td></tr>{% endif %}
+    {% if t.docs.s312 %}<tr class="header"><td colspan="6">3.1.2 Returning Item</td></tr>{% endif %}
     {% for doc in t.docs.s312 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
-    {% if t.docs.s313 %}<tr class="header"><td colspan="5">3.1.3 For Action</td></tr>{% endif %}
+    {% if t.docs.s313 %}<tr class="header"><td colspan="6">3.1.3 For Action</td></tr>{% endif %}
     {% for doc in t.docs.s313 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
-<tr class="header"><td colspan="5">3.2 Individual Submissions Via AD</td></tr>
+<tr class="header"><td colspan="6">3.2 Individual Submissions Via AD</td></tr>
 
     {% for doc in t.docs.s321 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
-    {% if t.docs.s322 %}<tr class="header"><td colspan="5">3.2.2 Returning Item</td></tr>{% endif %}
+    {% if t.docs.s322 %}<tr class="header"><td colspan="6">3.2.2 Returning Item</td></tr>{% endif %}
     {% for doc in t.docs.s322 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
-    {% if t.docs.s323 %}<tr class="header"><td colspan="5">3.2.3 For Action</td></tr>{% endif %}
+    {% if t.docs.s323 %}<tr class="header"><td colspan="6">3.2.3 For Action</td></tr>{% endif %}
     {% for doc in t.docs.s323 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
-<tr class="header"><td colspan="5">3.3 IRTF and Independent Submission Stream Documents</td></tr>
+<tr class="header"><td colspan="6">3.3 IRTF and Independent Submission Stream Documents</td></tr>
 
     {% for doc in t.docs.s331 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
-    {% if t.docs.s332 %}<tr class="header"><td colspan="5">3.3.2 Returning Item</td></tr>{% endif %}
+    {% if t.docs.s332 %}<tr class="header"><td colspan="6">3.3.2 Returning Item</td></tr>{% endif %}
     {% for doc in t.docs.s332 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
-    {% if t.docs.s333 %}<tr class="header"><td colspan="5">3.3.3 For Action</td></tr>{% endif %}
+    {% if t.docs.s333 %}<tr class="header"><td colspan="6">3.3.3 For Action</td></tr>{% endif %}
     {% for doc in t.docs.s333 %}{% include "iesg/agenda_documents_row.html" %}{%endfor%}
 
 {% endfor %}
