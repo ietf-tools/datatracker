@@ -44,9 +44,13 @@ var day = [
   'Friday'
 ];
 
+var divlist = [];
+
 var lastfrag;
 var lastheight;
 var lastwidth;
+
+setInterval("animate()",50);
 
 function draw_calendar()
 {
@@ -123,6 +127,9 @@ function draw_calendar()
 
   for (i = 0; i < num_days; i++)
   {
+    //-----------------------------------------------------------------
+    // Draw weekday name
+    //-----------------------------------------------------------------
     var e = document.createElement("div");
 
     e.style.border="solid";
@@ -155,6 +162,8 @@ function draw_calendar()
     body.appendChild(e);
 
     //-----------------------------------------------------------------
+    // Draw weekday column border
+    //-----------------------------------------------------------------
     e = document.createElement("div");
 
     e.style.border="solid";
@@ -180,6 +189,11 @@ function draw_calendar()
     body.appendChild(e);
   }
 
+  //-----------------------------------------------------------------
+  // Draw a block for each meeting
+  //-----------------------------------------------------------------
+  var resize_func = function(div,t,l,w,h,to_fit)
+    { return function(){resize(div,t,l,w,h,to_fit);} }
 
   for (i = 0; i < items.length; i++)
   {
@@ -194,8 +208,8 @@ function draw_calendar()
       var sess_width = day_width / sessions[items[i].time_id];
       var sess_height = ((end_time - start_time) * minute_height) 
                         - 2 * (padding + border);
-      var sess_left = ((items[i].day - start_day) * day_width 
-                      + sess_width * used[items[i].time_id]);
+      var day_left = ((items[i].day - start_day) * day_width);
+      var sess_left = day_left + sess_width * used[items[i].time_id];
       var sess_top = ((start_time - day_start) * minute_height) + header_height;
 
       sess_width = sess_width - 2 * (padding + border);
@@ -230,6 +244,13 @@ function draw_calendar()
       e.style.padding=padding;
       e.style.fontFamily="sans-serif";
       e.style.fontSize="8pt";
+      e.id=i;
+
+      e.onmouseover=resize_func(e,sess_top,day_left,
+                                day_width-2*(padding+border),
+                                sess_height, true);
+
+      e.onmouseout=resize_func(e,sess_top,sess_left,sess_width,sess_height,false);
 
       var div = document.createElement("div");
       div.appendChild(document.createTextNode(items[i].time));
@@ -252,7 +273,10 @@ function draw_calendar()
       div.appendChild(italics);
 
       e.appendChild(div);
+
       body.appendChild(e);
+
+      e=undefined;
 
     }
   }
@@ -261,6 +285,83 @@ function draw_calendar()
   lastwidth = width;
   lastfrag = window.location.hash;
 }
+
+function resize(div,t2,l2,w2,h2,to_fit)
+{
+  // Move the element to the front
+  document.body.removeChild(div);
+  document.body.appendChild(div);
+
+  div.t2 = t2;
+  div.l2 = l2;
+  div.w2 = w2;
+  div.h2 = h2;
+  div.to_fit = to_fit;
+  div.percent = 0;
+  divlist.push(div);
+}
+
+function animate()
+{
+  var i;
+  for (i = divlist.length - 1; i >= 0; i--)
+  {
+    var div = divlist[i];
+    if (div.percent < 100)
+    {
+      div.percent += 5;
+      var t1 = parseFloat(div.style.top.replace("px",""));
+      var l1 = parseFloat(div.style.left.replace("px",""));
+      var w1 = parseFloat(div.style.width.replace("px",""));
+      var h1 = parseFloat(div.style.height.replace("px",""));
+
+      div.style.top = wavg(t1,div.t2,div.percent);
+      div.style.left = wavg(l1,div.l2,div.percent);
+      div.style.width = wavg(w1,div.w2,div.percent);
+      div.style.height = wavg(h1,div.h2,div.percent);
+
+      if (t1 == div.t2 && l1 == div.l2 &&
+          w1 == div.w2 && h1 == div.h2) { div.percent = 100; }
+
+    }
+    else
+    {
+      if (div.to_fit)
+      {
+        var tmp = div.style.height;
+        div.style.removeProperty("height");
+        if (div.h2 < div.clientHeight)
+        {
+          div.h2 = div.clientHeight;
+          div.percent = 0;
+        }
+        else
+        {
+          divlist.remove(i);
+        }
+        div.style.height = tmp;
+      }
+      else
+      {
+          divlist.remove(i);
+      }
+    }
+  }
+
+}
+
+function wavg(x1,x2,percent)
+{
+  var res = x2 * (percent / 100) + x1 * ((100 - percent) / 100);
+  return res;
+}
+
+// Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
 
 </script>
 </head>
