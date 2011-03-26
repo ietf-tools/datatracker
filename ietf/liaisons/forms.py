@@ -50,12 +50,12 @@ class LiaisonForm(forms.ModelForm):
         model = LiaisonDetail
 
     class Media:
-        js = ("/js/jquery-1.4.2.min.js",
-              "/js/jquery-ui-1.8.2.custom.min.js",
+        js = ("/js/jquery-1.5.1.min.js",
+              "/js/jquery-ui-1.8.11.custom.min.js",
               "/js/liaisons.js", )
 
         css = {'all': ("/css/liaisons.css",
-                       "/css/jquery-ui-themes/jquery-ui-1.8.2.custom.css")}
+                       "/css/jquery-ui-themes/jquery-ui-1.8.11.custom.css")}
 
     def __init__(self, user, *args, **kwargs):
         self.user = user
