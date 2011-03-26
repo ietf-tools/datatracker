@@ -1,1 +1,1 @@
-{{doc_group.grouper}}	{% if doc.rfc %}{{doc.rfc.rfc_number}}	{{doc.rfc.title}}{% else %}{{doc.id.draft_name_and_revision}}	{{doc.id.title}}{% endif %}
+{% load ietf_filters %}{{doc_group.grouper}}	{% if doc.rfc %}{{doc.rfc.rfc_number}}	{{doc.rfc.title|clean_whitespace}}{% else %}{{doc.id.draft_name_and_revision}}	{{doc.id.title|clean_whitespace}}{% endif %}
