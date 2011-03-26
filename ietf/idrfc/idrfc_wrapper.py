@@ -755,6 +755,8 @@ def create_position_object(ballot, position, all_comments):
              position=p)
     if not position.ad.is_current_ad():
         r['is_old_ad'] = True
+    else:
+        r['is_old_ad'] = False
         
     was = [v for k,v in positions.iteritems() if position.__dict__[k] < 0]
     if len(was) > 0:

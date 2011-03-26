@@ -77,8 +77,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <p>Summary: <i>{{ doc.ietf_process.iesg_ballot_needed }}</i></p>
 {% endif %}
 
-{% for pos in ballot.get_texts %}
-<h2 class="ballot_ad"><a name="{{pos.ad_name|slugify}}">{{pos.ad_name|escape}}</a></h2>
+{% for pos in ballot.get_texts|dictsort:"is_old_ad" %}
+<h2 class="ballot_ad"><a name="{{pos.ad_name|slugify}}">{% if pos.is_old_ad %}[{%endif%}{{pos.ad_name|escape}}{% if pos.is_old_ad %}]{%endif%}</a></h2>
 
 {% ifequal pos.position "Discuss" %}
 <p><b>Discuss ({{pos.discuss_date}})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
