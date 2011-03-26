@@ -19,7 +19,13 @@ table#wg-selector { border:1px solid black; border-collapse:collapse; }
 #wg-selector-triangle-down { vertical-align: text-top; }
 
 #weekview.hidden { display: none; }
-#weekview { border: none; margin: 10px 0 0 0;}
+#weekview { border: none; margin: 0 0 0 0;}
+#ical-link.hidden { display: none; }
+#ical-link { margin: 10px 0 0 0; padding: 10px; text-align: center; background-color: #2647a0; color: #FFFFFF }
+#ical-link A:link { color: #FFFFFF; }
+#ical-link A:visited { color: #FFFFFF; }
+#ical-link A:active { color: #FF00FF; }
+#ical-link A:hover { color: #FF0000; }
 
 img.hidden { display: none; }
 
@@ -61,6 +67,8 @@ img.hidden { display: none; }
     if (frag == lastfrag) { return; }
 
     var weekview = document.getElementById('weekview');
+    var ical_link = document.getElementById('ical-link');
+    var ical_href = document.getElementById('ical-href');
 
     lastfrag = frag;
 
@@ -70,10 +78,13 @@ img.hidden { display: none; }
     {
       weekview.setAttribute("src","week-view.html#"+frag);
       weekview.className = '';
+      ical_href.setAttribute("href","agenda.ics?"+frag);
+      ical_link.className = '';
     }
     else
     {
       weekview.className = 'hidden';
+      ical_link.className = 'hidden';
     }
 
     var selectors = document.getElementsByTagName('div');
@@ -243,6 +254,8 @@ You can customize the agenda below to show only selected working group sessions.
 
   </tr>
 </table>
+
+<div id="ical-link" class="hidden"><span style="font-size:150%">Week View</span><br/><a id="ical-href" href="agenda.ics"><em>Download as an ical file</em></a></div>
 
 <iframe id="weekview" class="hidden" width="100%" height="600px" src="about:blank"></iframe>
 

@@ -255,16 +255,22 @@ class MeetingTime(models.Model):
 	for s in sessions:
 	    if s.sched_time_id1_id == self.time_id:
 		s.room_id = s.sched_room_id1
+                s.ordinality = 1
 	    elif s.sched_time_id2_id == self.time_id:
 		s.room_id = s.sched_room_id2
+                s.ordinality = 2
 	    elif s.sched_time_id3_id == self.time_id:
 		s.room_id = s.sched_room_id3
+                s.ordinality = 3
             elif s.combined_time_id1_id == self.time_id:
                 s.room_id = s.combined_room_id1
+                s.ordinality = 4
             elif s.combined_time_id2_id == self.time_id:
                 s.room_id = s.combined_room_id2
+                s.ordinality = 5
 	    else:
 		s.room_id = 0
+                s.ordinality = 0
 	return sessions
     def sessions_by_area(self):
         return [ {"area":session.area()+session.acronym(), "info":session} for session in self.sessions() ]

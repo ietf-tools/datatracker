@@ -1,0 +1,44 @@
+{% load humanize %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
+VERSION:2.0
+METHOD:PUBLISH
+BEGIN:VTIMEZONE
+TZID:{% now "T" %}
+BEGIN:STANDARD
+TZOFFSETFROM:{% now "O" %}
+TZOFFSETTO:{% now "O" %}
+TZNAME:{% now "T" %}
+DTSTART:19700101T000000
+END:STANDARD
+END:VTIMEZONE
+{% if meeting.time_zone %}BEGIN:VTIMEZONE
+TZID:{{meeting.city}}
+BEGIN:STANDARD
+TZOFFSETFROM:{{meeting.time_zone|stringformat:"+02.2d"}}00
+TZOFFSETTO:{{meeting.time_zone|stringformat:"+02.2d"}}00
+TZNAME:{{meeting.city}}
+DTSTART:19700101T000000
+END:STANDARD
+END:VTIMEZONE
+{% endif %}{% for slot in timeslots %}{% ifchanged %}{% if slot.session_name and slot.break_info %}BEGIN:VEVENT
+UID:ietf-{{meeting.num}}-break-{{slot.time_id}}
+SUMMARY:{{slot.break_info.name}}
+{% if venue.break_area_name and slot.break_info.show_break_location %}LOCATION:{{venue.break_area_name}}
+{% endif %}STATUS:TENTATIVE
+CLASS:PUBLIC
+DTSTART{% if meeting.time_zone %};TZID="{{meeting.city}}"{%endif%}:{{ slot.meeting_date|date:"Ymd" }}T{{slot.break_info.time_desc|slice:":4"}}00
+DTEND{% if meeting.time_zone %};TZID="{{meeting.city}}"{%endif%}:{{ slot.meeting_date|date:"Ymd" }}T{{slot.break_info.time_desc|slice:"5:9"}}00
+DTSTAMP;TZID="{% now "T" %}":{% now "Ymd" %}T{% now "Gis" %}
+END:VEVENT
+{% endif %}{% endifchanged %}{% for session in slot.sessions %}{%for f in filter%}{%ifequal f session.acronym%}BEGIN:VEVENT
+UID:ietf-{{meeting.num}}-{{session.acronym}}-{{session.ordinality}}
+SUMMARY:{% if session.area %}{% ifnotequal session.area "1plenary" %}{{session.acronym|upper}} - {% endifnotequal %}{% endif %}{{session.acronym_name}}
+LOCATION:{{session.room_id.room_name}}
+STATUS:TENTATIVE
+CLASS:PUBLIC
+DTSTART{% if meeting.time_zone %};TZID="{{meeting.city}}"{%endif%}:{{ slot.meeting_date|date:"Ymd" }}T{{slot.time_desc|slice:":4"}}00
+DTEND{% if meeting.time_zone %};TZID="{{meeting.city}}"{%endif%}:{{ slot.meeting_date|date:"Ymd" }}T{{slot.time_desc|slice:"5:9"}}00
+DTSTAMP;TZID="{% now "T" %}":{% now "Ymd" %}T{% now "Gis" %}
+{% if session.description %}DESCRIPTION:
+ {{ session.description|escapejs }}
+{% endif %}END:VEVENT
+{%endifequal%}{%endfor%}{% endfor %}{% endfor %}END:VCALENDAR{% endautoescape %}

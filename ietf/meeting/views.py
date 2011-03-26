@@ -321,3 +321,20 @@ def week_view(request, num=None):
              "rg_list" : rgs, "area_list" : areas},
              context_instance=RequestContext(request))
 
+def ical_agenda(request, num=None):
+    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
+    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
+    rgs = IRTF.objects.all().order_by('acronym')
+    areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
+    filter = (request.META['QUERY_STRING']).lower().split(',');
+    include = set(filter)
+
+    for slot in timeslots:
+        for session in slot.sessions():
+            if session.area() == '' or session.area().find('plenary') > 0 or (session.area().lower() in include):
+                filter.append(session.acronym())
+
+    return HttpResponse(render_to_string("meeting/agenda.ics",
+        {"filter":set(filter), "timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
+            "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
+        RequestContext(request)), mimetype="text/calendar")
