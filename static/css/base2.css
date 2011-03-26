@@ -94,7 +94,7 @@ form#search_form { padding-top: 4px; padding-bottom: 4px; }
 table.ietf-table { border-collapse:collapse; border:1px solid #7f7f7f; }
 .ietf-table tr.evenrow { background-color: #EDF5FF; }
 .ietf-table tr.oddrow { background-color: white; }
-.ietf-table td { border-right: 1px solid #cbcbcb; padding:3px 6px; }
+.ietf-table td { border-right: 1px solid #cbcbcb; padding:3px 6px; vertical-align: top; }
 .ietf-table th { color:white; background: #2647A0; text-align:left; padding:3px 6px; border-right: 1px solid #7f7f7f; }
 
 .ietf-doctable tr.header { border-top: 1px solid #7f7f7f; border-bottom: 1px solid #7f7f7f; border-left: 1px solid white; border-right:2px solid white;}

@@ -1,3 +1,58 @@
+ietfdb (3.14)
+
+  * From peter.musgrave@magorcorp.com: 
+    Fix typo. Fixes #566.
+
+  * From jelte@nlnetlabs.nl: 
+    Make search result table headers clickable; clicking will sort on said 
+    column, fixes #484.
+
+  * From peter.musgrave@magorcorp.com: 
+    Don't show AD/Secretariat links for Last Call etc. if they will 404.
+    Fixes #550.
+
+  * From adam@nostrum.com: 
+    Meeting boxes now expand to reveal all text when users hover over them.
+    Fixes ticket #602. 
+
+  * From kivinen@iki.fi: 
+    Added an URL to retrieve a text/plain version of the list of drafts for
+    a given WG.  Useful for building WG-speific ePub documents of a WG's
+    drafts.
+
+  * From shane@time-travellers.org:
+    Updated the JavaScript associated with the search page to 
+    control whether the 'search' button is enabled or not. It is
+    now enabled if either the main search box has input, or if
+    any of the sub-options have input, or both.
+
+  * From rjsparks@nostrum.com: 
+    Adds a view of documents currently in IETF Last Call.  Fixes #630.
+
+  * From bmheight@gmail.com:
+    Remove explicit URLs in the code, using reverse() and the newly created
+    helper function reverse_lazy().  Fixes #628.
+
+  * From rjsparks@nostrum.com: 
+    Changed the way ballot discuss/comment texts are displayed to
+    put the text from current ADs first, and mark ex-ADs with []
+    following the convention on the left bar.  This fixes issue #608 
+
+  * From adam@nostrum.com: 
+    Added ical-format agenda.  Fixes issue #601.
+
+  * From peter.musgrave@magorcorp.com: 
+    Add IPR column to IESG Telechat Agenda.  Fixes issue #552.
+
+  * From rjsparks@nostrum.com: 
+    Add a defer/undefer button to the edit_position dialog.  Fixes issue #627.
+
+  * From kivinen@iki.fi: 
+    Changed cookie settings to be valid for 10 years, they used to be valid
+    until the end of session.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Mar 2011 18:01:50 +0100
+
 ietfdb (3.13)
 
   * Provide a full URL to IPR issues in the last call email, rather than just
