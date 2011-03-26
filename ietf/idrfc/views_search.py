@@ -98,7 +98,7 @@ class SearchForm(forms.Form):
             q['subState'] = ""
         return q
                                                                         
-def search_query(query_original):
+def search_query(query_original, sort_by=None):
     query = dict(query_original.items())
     drafts = query['activeDrafts'] or query['oldDrafts']
     if (not drafts) and (not query['rfcs']):
@@ -258,7 +258,8 @@ def search_query(query_original):
             if d or r:
                 doc = IdRfcWrapper(d, r)
                 results.append(doc)
-    results.sort(key=lambda obj: obj.view_sort_key())
+    results.sort(key=lambda obj: obj.view_sort_key(sort_by))
+    
     meta = {}
     if maxReached:
         meta['max'] = MAX
@@ -266,15 +267,49 @@ def search_query(query_original):
         meta['advanced'] = True
     return (results,meta)
 
+def genParamURL(request, ignore_list):
+    """Recreates the parameter string from the given request, and
+       returns it as a string.
+       Any parameter names present in ignore_list shall not be put
+       in the result string.
+    """
+    params = []
+    for i in request.GET:
+        if not i in ignore_list:
+            params.append(i + "=" + request.GET[i])
+    return "?" + "&".join(params)
+
 def search_results(request):
     if len(request.REQUEST.items()) == 0:
         return search_main(request)
     form = SearchForm(dict(request.REQUEST.items()))
     if not form.is_valid():
         return HttpResponse("form not valid?", mimetype="text/plain")
-    (results,meta) = search_query(form.cleaned_data)
+
+    sort_by = None
+    if "sortBy" in request.GET:
+        sort_by = request.GET["sortBy"]
+
+    (results,meta) = search_query(form.cleaned_data, sort_by)
+
     meta['searching'] = True
     meta['by'] = form.cleaned_data['by']
+    meta['rqps'] = genParamURL(request, ['sortBy'])
+    # With a later Django we can do this from the template (incude with tag)
+    # Pass the headers and their sort key names
+    meta['hdrs'] = [{'htitle': 'Document', 'htype':'doc'},
+                    {'htitle': 'Title', 'htype':'title'},
+                    {'htitle': 'Date', 'htype':'date'},
+                    {'htitle': 'Status', 'htype':'status', 'colspan':'2'},
+                    {'htitle': 'IPR', 'htype':'ipr'},
+                    {'htitle': 'Ad', 'htype':'ad'}]
+
+    # Make sure we know which one is selected (for visibility later)
+    if sort_by:
+        for hdr in meta['hdrs']:
+            if hdr['htype'] == sort_by:
+                hdr['selected'] = True
+
     if 'ajax' in request.REQUEST and request.REQUEST['ajax']:
         return render_to_response('idrfc/search_results.html', {'docs':results, 'meta':meta}, context_instance=RequestContext(request))
     elif form.cleaned_data['lucky'] and len(results)==1:

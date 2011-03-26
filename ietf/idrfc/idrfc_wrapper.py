@@ -576,13 +576,47 @@ class IdRfcWrapper:
             return 'Active Internet-Draft'
         else:
             return 'Old Internet-Draft'
-    def view_sort_key(self):
-        if self.rfc:
-            return "2%04d" % self.rfc.rfc_number
-        elif self.id.draft_status == "Active":
-            return "1"+self.id.draft_name
+
+    def view_sort_key(self, sort_by=None):
+        if sort_by is None:
+            if self.rfc:
+                return "2%04d" % self.rfc.rfc_number
+            elif self.id.draft_status == "Active":
+                return "1"+self.id.draft_name
+            else:
+                return "3"+self.id.draft_name
         else:
-            return "3"+self.id.draft_name
+            if self.rfc:
+                sort_key = "2"
+            elif self.id.draft_status == "Active":
+                sort_key = "1"
+            else:
+                sort_key = "3"
+
+            # Depending on what we're sorting on, we may
+            # need to do some conversion.
+            if sort_by == "title":
+                sort_key += self.title()
+            elif sort_by == "date":
+                sort_key = sort_key + str(self.publication_date())
+            elif sort_by == "status":
+                if self.rfc:
+                    sort_key += "%04d" % self.rfc.rfc_number
+                else:
+                    sort_key += self.id.draft_status
+            elif sort_by == "ipr":
+                sort_key += self.iprUrl
+            elif sort_by == "ad":
+                return self.view_sort_key_byad()
+            else:
+                # sort default or unknown sort value, revert to default
+                if self.rfc:
+                    sort_key += "%04d" % self.rfc.rfc_number
+                else:
+                    sort_key += self.id.draft_name
+            
+            return sort_key
+            
     def view_sort_key_byad(self):
         if self.rfc:
             return "2%04d" % self.rfc.rfc_number
