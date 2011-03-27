@@ -7,7 +7,7 @@
 var items = new Array();
 {% autoescape off %}
 {% for slot in timeslots %}{% for session in slot.sessions %}
-items.push({day:{{slot.day_id}}, time:"{{slot.time_desc}}", time_id:{{slot.time_id}}, name:"{{session.acronym_name}}", wg:"{{session.acronym}}", area:"{{session.area}}", room:"{{session.room_id.room_name}}"});{% endfor %}{% endfor %}
+items.push({day:{{slot.day_id}}, time:"{{slot.time_desc}}", time_id:{{slot.time_id}}, name:"{{session.acronym_name}}", wg:"{{session.acronym}}", area:"{{session.area}}", room:"{{session.room_id.room_name}}", dayname:"{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}"{% if session.agenda_file %}, agenda:"/meeting/{{session.agenda_file}}"{% endif %}});{% endfor %}{% endfor %}
 {% endautoescape %}
 
 var fg = {
@@ -49,6 +49,9 @@ var divlist = [];
 var lastfrag;
 var lastheight;
 var lastwidth;
+
+var padding = 2;
+var border = 1;
 
 setInterval("animate()",50);
 
@@ -122,8 +125,6 @@ function draw_calendar()
   var minute_height = (height - header_height)/num_minutes;
   var body = document.body;
   while (body.childNodes.length) { body.removeChild(body.childNodes[0]); }
-  var padding = 2;
-  var border = 1;
 
   for (i = 0; i < num_days; i++)
   {
@@ -194,6 +195,7 @@ function draw_calendar()
   //-----------------------------------------------------------------
   var resize_func = function(div,t,l,w,h,to_fit)
     { return function(){resize(div,t,l,w,h,to_fit);} }
+  var click_func = function (e) { return function(){handle_click(e);}}
 
   for (i = 0; i < items.length; i++)
   {
@@ -252,6 +254,12 @@ function draw_calendar()
 
       e.onmouseout=resize_func(e,sess_top,sess_left,sess_width,sess_height,false);
 
+      if (items[i].agenda)
+      {
+        e.onclick=click_func(e);
+        e.style.cursor="pointer";
+      }
+
       var div = document.createElement("div");
       div.appendChild(document.createTextNode(items[i].time));
       div.appendChild(document.createElement("br"));
@@ -275,9 +283,6 @@ function draw_calendar()
       e.appendChild(div);
 
       body.appendChild(e);
-
-      e=undefined;
-
     }
   }
 
@@ -338,16 +343,106 @@ function animate()
         else
         {
           divlist.remove(i);
+          if (div.callback)
+          {
+            var tmp = div.callback;
+            div.callback = undefined;
+            tmp();
+          }
         }
         div.style.height = tmp;
       }
       else
       {
           divlist.remove(i);
+          if (div.callback)
+          {
+            var tmp = div.callback;
+            div.callback = undefined;
+            tmp();
+          }
       }
     }
   }
 
+}
+
+function finish_maximize(e)
+{
+  if (!items[e.id].agenda)
+  {
+    return;
+  }
+
+  var child = e.firstChild;
+
+  var tmp = e.style.height;
+  e.style.removeProperty("height");
+  var used_height = e.clientHeight;
+  e.style.height = tmp;
+
+  var frame = document.createElement("iframe");
+  frame.setAttribute("src",items[e.id].agenda);
+
+  frame.style.position = "absolute";
+  frame.style.left = 8;
+  frame.style.width = e.clientWidth - 16 - 2 * (padding + border);
+  frame.style.top = used_height + 8;
+  frame.style.height = e.clientHeight - used_height - 16 - 2*(padding+border);
+
+  frame.style.background = "#fff";
+  frame.style.overflow="auto";
+  frame.id="agenda";
+
+  frame.style.border = e.style.border;
+  frame.style.borderWidth = border;
+  frame.style.padding = padding;
+  frame.style.borderColor = e.style.borderColor;
+  e.appendChild(frame);
+}
+
+function handle_click(e)
+{
+  if (e.onmouseover)
+  {
+     e.oldmouseover = e.onmouseover;
+     e.oldmouseout = e.onmouseout;
+     e.onmouseover = undefined;
+     e.onmouseout = undefined;
+
+     var callback_func = function (e) { return function(){finish_maximize(e);}}
+     e.callback = callback_func(e);
+
+     resize(e,0,0,
+            document.body.clientWidth-2*(padding + border),
+            document.body.clientHeight-2*(padding + border));
+
+     
+     e.insertBefore(document.createElement("br"),e.firstChild);
+
+     var h = document.createElement("span");
+     h.appendChild(document.createTextNode(items[e.id].dayname));
+     h.style.fontWeight="bold";
+     e.insertBefore(h,e.firstChild);
+     e.style.fontSize="10pt";
+  }
+  else
+  {
+     var agenda = document.getElementById("agenda");
+     if (agenda)
+     {
+       e.removeChild(agenda);
+     }
+     e.onmouseover = e.oldmouseover;
+     e.onmouseout = e.oldmouseout;
+     e.oldmouseover = undefined;
+     e.oldmouseout = undefined;
+     e.onmouseout();
+
+     e.removeChild(e.firstChild);
+     e.removeChild(e.firstChild);
+     e.style.fontSize="8pt";
+  }
 }
 
 function wavg(x1,x2,percent)

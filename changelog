@@ -1,5 +1,20 @@
 ietfdb (3.14)
 
+  * From lars.eggert@nokia.com: 
+    Update jQuery to 1.5.1 and jQuery UI to 1.8.11.
+
+  * From adam@nostrum.com: 
+    On the agenda page, for the custom agenda display, now only displays groups
+    that are actually meeting.
+
+  * From lars.eggert@nokia.com: 
+    Remove unused images. Convert GIFs to smaller PNGs.
+    Optimize all images with http://www.smushit.com/ysmush.it/ 
+
+  * From lars.eggert@nokia.com: 
+    Change default vertical alignment of various datatracker tables
+    for better readability.
+
   * From peter.musgrave@magorcorp.com: 
     Fix typo. Fixes #566.
 
