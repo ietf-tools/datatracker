@@ -25,7 +25,7 @@ from ietf.idtracker.models import InternetDraft
 from ietf.idrfc.idrfc_wrapper import IdWrapper
 from ietf.utils.pipe import pipe
 
-from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches, WgProceedingsActivities
+from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches, WgProceedingsActivities, SessionConflict
 
 
 @decorator_from_middleware(GZipMiddleware)
@@ -103,7 +103,6 @@ def agenda_info(num=None):
 @decorator_from_middleware(GZipMiddleware)
 def html_agenda(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-
 
     groups_meeting = [];
     for slot in timeslots:
@@ -321,12 +320,13 @@ def week_view(request, num=None):
     wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
     rgs = IRTF.objects.all().order_by('acronym')
     areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
+    conflicts = SessionConflict.objects.filter(meeting_num=meeting.meeting_num)
     template = "meeting/week-view.html"
     return render_to_response(template,
             {"timeslots":timeslots, "update":update, "meeting":meeting, 
              "venue":venue, "ads":ads, "plenaryw_agenda":plenaryw_agenda,
              "plenaryt_agenda":plenaryt_agenda, "wg_list" : wgs, 
-             "rg_list" : rgs, "area_list" : areas},
+             "rg_list" : rgs, "area_list" : areas, "conflicts":conflicts},
              context_instance=RequestContext(request))
 
 def ical_agenda(request, num=None):

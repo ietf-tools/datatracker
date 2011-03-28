@@ -1,6 +1,7 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 
+
 <html> <head>
 <script type="text/javascript" src='/js/agenda2.js'></script>
 <script type="text/javascript">
@@ -9,6 +10,7 @@ var items = new Array();
 {% for slot in timeslots %}{% for session in slot.sessions %}
 items.push({day:{{slot.day_id}}, time:"{{slot.time_desc}}", time_id:{{slot.time_id}}, name:"{{session.acronym_name}}", wg:"{{session.acronym}}", area:"{{session.area}}", room:"{{session.room_id.room_name}}", dayname:"{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}"{% if session.agenda_file %}, agenda:"/meeting/{{session.agenda_file}}"{% endif %}});{% endfor %}{% endfor %}
 {% endautoescape %}
+
 
 var fg = {
   'app': "#008",
@@ -195,7 +197,7 @@ function draw_calendar()
   //-----------------------------------------------------------------
   var resize_func = function(div,t,l,w,h,to_fit)
     { return function(){resize(div,t,l,w,h,to_fit);} }
-  var click_func = function (e) { return function(){handle_click(e);}}
+  var maximize_func = function (e) { return function(){maximize(e);}}
 
   for (i = 0; i < items.length; i++)
   {
@@ -256,7 +258,7 @@ function draw_calendar()
 
       if (items[i].agenda)
       {
-        e.onclick=click_func(e);
+        e.onclick=maximize_func(e);
         e.style.cursor="pointer";
       }
 
@@ -374,7 +376,21 @@ function finish_maximize(e)
     return;
   }
 
-  var child = e.firstChild;
+  e.insertBefore(document.createElement("br"),e.firstChild);
+
+  var minimize_func = function (e) { return function(){minimize(e);} }
+  var img = document.createElement("img");
+  img.src = "/images/close.png";
+  img.style.cssFloat="right";
+  img.onclick = minimize_func(e);
+  img.style.cursor="pointer";
+  e.insertBefore(img,e.firstChild);
+
+  var h = document.createElement("span");
+  h.appendChild(document.createTextNode(items[e.id].dayname));
+  h.style.fontWeight="bold";
+  e.insertBefore(h,e.firstChild);
+  e.style.fontSize="10pt";
 
   var tmp = e.style.height;
   e.style.removeProperty("height");
@@ -401,52 +417,55 @@ function finish_maximize(e)
   e.appendChild(frame);
 }
 
-function handle_click(e)
+function finish_minimize(e)
+{
+  e.onmouseover = e.oldmouseover;
+  e.onmouseout = e.oldmouseout;
+  e.oldmouseover = undefined;
+  e.oldmouseout = undefined;
+  e.style.cursor="pointer";
+}
+
+function maximize(e)
 {
   if (e.onmouseover)
   {
-     e.oldmouseover = e.onmouseover;
-     e.oldmouseout = e.onmouseout;
-     e.onmouseover = undefined;
-     e.onmouseout = undefined;
+    e.oldmouseover = e.onmouseover;
+    e.oldmouseout = e.onmouseout;
+    e.onmouseover = undefined;
+    e.onmouseout = undefined;
+    e.style.cursor="auto";
 
-     var callback_func = function (e) { return function(){finish_maximize(e);}}
-     e.callback = callback_func(e);
+    var callback_func = function (e) { return function(){finish_maximize(e);}}
+    e.callback = callback_func(e);
 
-     resize(e,0,0,
-            document.body.clientWidth-2*(padding + border),
-            document.body.clientHeight-2*(padding + border));
-
-     
-     e.insertBefore(document.createElement("br"),e.firstChild);
-
-     var h = document.createElement("span");
-     h.appendChild(document.createTextNode(items[e.id].dayname));
-     h.style.fontWeight="bold";
-     e.insertBefore(h,e.firstChild);
-     e.style.fontSize="10pt";
+    resize(e,0,0,
+           document.body.clientWidth-2*(padding + border),
+           document.body.clientHeight-2*(padding + border));
   }
-  else
-  {
-     var agenda = document.getElementById("agenda");
-     if (agenda)
-     {
-       e.removeChild(agenda);
-     }
-     e.onmouseover = e.oldmouseover;
-     e.onmouseout = e.oldmouseout;
-     e.oldmouseover = undefined;
-     e.oldmouseout = undefined;
-     e.onmouseout();
+}
 
-     e.removeChild(e.firstChild);
-     e.removeChild(e.firstChild);
-     e.style.fontSize="8pt";
-  }
+function minimize(e)
+{
+   var agenda = document.getElementById("agenda");
+   if (agenda)
+   {
+     e.removeChild(agenda);
+   }
+
+   var callback_func = function (e) { return function(){finish_minimize(e);}}
+   e.callback = callback_func(e);
+   e.oldmouseout();
+
+   e.removeChild(e.firstChild);
+   e.removeChild(e.firstChild);
+   e.removeChild(e.firstChild);
+   e.style.fontSize="8pt";
 }
 
 function wavg(x1,x2,percent)
 {
+  if (percent == 100) { return x2; }
   var res = x2 * (percent / 100) + x1 * ((100 - percent) / 100);
   return res;
 }

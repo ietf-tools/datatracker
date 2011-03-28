@@ -209,7 +209,11 @@ class SessionConflict(models.Model):
     conflict_gid = models.ForeignKey(Acronym, related_name='conflicts_with_set', db_column='conflict_gid')
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num')
     def __str__(self):
-	return "At IETF %s, %s conflicts with %s" % ( self.meeting_num_id, self.group_acronym.acronym, self.conflict_gid.acronym)
+        try:
+            return "At IETF %s, %s conflicts with %s" % ( self.meeting_num_id, self.group_acronym.acronym, self.conflict_gid.acronym)
+        except BaseException:
+	    return "At IETF %s, something conflicts with something" % ( self.meeting_num_id )
+
     class Meta:
         db_table = 'session_conflicts'
 
