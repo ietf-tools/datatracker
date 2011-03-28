@@ -66,7 +66,7 @@ ietfdb (3.14)
     Changed cookie settings to be valid for 10 years, they used to be valid
     until the end of session.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 Mar 2011 19:03:45 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Mar 2011 19:43:25 +0200
 
 ietfdb (3.13)
 
