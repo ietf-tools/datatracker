@@ -151,12 +151,15 @@ def session_agenda(request, num, session, ext=None):
     for wg in [session, session.upper(), session.lower()]:
         for e in extensions:
             path = settings.AGENDA_PATH_PATTERN % {"meeting":num, "wg":wg, "ext":e}
+            print path
             if os.path.exists(path):
                 file = open(path)
                 text = file.read()
                 file.close()
                 if e.lower() == "txt":
                     return HttpResponse(text, mimetype="text/plain")
+                elif e.lower() == "pdf":
+                    return HttpResponse(text, mimetype="application/pdf")
                 else:
                     return HttpResponse(text)
     if ext:
