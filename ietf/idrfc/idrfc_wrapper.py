@@ -204,7 +204,7 @@ class IdWrapper:
         elif self.draft_status == "Replaced":
             rs = self.replaced_by()
             if rs:
-                return "Replaced by <a href=\"%s\">%s</a>" % (reverse('ipr_show', args=[rs[0]]),rs[0]) 
+                return "Replaced by <a href=\"%s\">%s</a>" % (reverse('doc_view', args=[rs[0]]),rs[0], ) 
             else:
                 return "Replaced"
         elif self.draft_status == "Active":
