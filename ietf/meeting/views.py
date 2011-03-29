@@ -151,7 +151,6 @@ def session_agenda(request, num, session, ext=None):
     for wg in [session, session.upper(), session.lower()]:
         for e in extensions:
             path = settings.AGENDA_PATH_PATTERN % {"meeting":num, "wg":wg, "ext":e}
-            print path
             if os.path.exists(path):
                 file = open(path)
                 text = file.read()
