@@ -3,6 +3,8 @@ from django import template
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper, IdWrapper
 from ietf.ietfworkflows.utils import (get_workflow_for_draft,
                                       get_state_for_draft)
+from ietf.wgchairs.accounts import (can_manage_shepherd_of_a_document,
+                                    can_manage_writeup_of_a_document)
 from ietf.ietfworkflows.streams import get_stream_from_wrapper
 from ietf.ietfworkflows.accounts import (can_edit_state, can_edit_stream)
 
@@ -65,5 +67,8 @@ def edit_actions(context, wrapper):
     return {
         'can_edit_state': can_edit_state(user, draft),
         'can_edit_stream': can_edit_stream(user, draft),
+        'can_writeup': can_manage_writeup_of_a_document(user, draft),
+        'can_shepherd': can_manage_shepherd_of_a_document(user, draft),
+        'draft': draft,
         'doc': wrapper,
     }

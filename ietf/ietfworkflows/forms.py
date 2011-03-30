@@ -60,7 +60,7 @@ class NoWorkflowStateForm(StreamDraftForm):
             self.wgs = list(wgs)
             self.fields['wg'].choices = [(i.group_acronym.pk, i.group_acronym.group_acronym.name) for i in self.wgs]
         else:
-            self.onlywg = wgs[0].group_acronym
+            self.onlywg = list(wgs)[0].group_acronym
 
     def save(self):
         comment = self.cleaned_data.get('comment')

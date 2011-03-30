@@ -2,10 +2,10 @@
 
         <tr class="{% cycle oddrow,evenrow %}">
           <td class="title">
-            <a href="{% url doc_managing_shepherd wg.group_acronym.acronym doc %}">{{ doc.title }}</a>
+            <a href="{% url doc_view doc.filename %}">{{ doc.title }}</a>
           </td>
-          <td class="status">
-              {{ doc.status.status }}
+          <td class="shepherd">
+            <a href="{% url doc_managing_shepherd wg.group_acronym.acronym doc %}">Change shepherd</a>
           </td>        
           <td class="writeup">
              {% writeup doc %}

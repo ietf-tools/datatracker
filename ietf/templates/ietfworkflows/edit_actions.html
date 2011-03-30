@@ -1,5 +1,7 @@
-<div>
+<div style="margin-bottom: 1em;">
 {% if can_edit_state %}  <a href="{% url edit_state doc.draft_name %}">Change state</a> {% endif %}
-{% if can_edit_stream %}{% if can_edit_state %} | {% endif %} <a href="{% url edit_stream doc.draft_name %}">Change draft stream</a>{% endif %}
+{% if can_edit_stream %}{% if can_edit_state %} | {% endif %}<a href="{% url edit_stream doc.draft_name %}">Change draft stream</a>{% endif %}
+{% if can_shepherd %}{% if can_edit_state or can_edit_stream %} | {% endif %}<a href="{% url doc_managing_shepherd draft.group.acronym draft.filename %}">Change draft shepherd</a>{% endif %}
+{% if can_writeup %}{% if can_edit_state or can_edit_stream or can_writeup %} | {% endif %}<a href="{% url doc_managing_writeup draft.group.acronym draft.filename %}">Change draft writeup</a>{% endif %}
 </div>
 

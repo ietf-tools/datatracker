@@ -1,4 +1,4 @@
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 
@@ -12,6 +12,7 @@ from ietf.ietfworkflows.utils import (get_workflow_history_for_draft,
                                       get_workflow_for_draft,
                                       get_annotation_tags_for_draft,
                                       get_state_for_draft)
+from ietf.ietfworkflows.accounts import (can_edit_state, can_edit_stream)
 
 
 REDUCED_HISTORY_LEN = 20
@@ -46,9 +47,8 @@ def stream_history(request, name):
                               context_instance=RequestContext(request))
 
 
-def edit_state(request, name, form_class=DraftTagsStateForm):
+def _edit_draft_stream(request, draft, form_class=DraftTagsStateForm):
     user = request.user
-    draft = get_object_or_404(InternetDraft, filename=name)
     workflow = get_workflow_for_draft(draft)
     if not workflow:
         form_class = NoWorkflowStateForm
@@ -75,5 +75,14 @@ def edit_state(request, name, form_class=DraftTagsStateForm):
                               context_instance=RequestContext(request))
 
 
+def edit_state(request, name):
+    draft = get_object_or_404(InternetDraft, filename=name)
+    if not can_edit_state(request.user, draft):
+        return HttpResponseForbidden('You have no permission to access this view')
+    return _edit_draft_stream(request, draft, DraftTagsStateForm)
+
 def edit_stream(request, name):
-    return edit_state(request, name, DraftStreamForm)
+    draft = get_object_or_404(InternetDraft, filename=name)
+    if not can_edit_stream(request.user, draft):
+        return HttpResponseForbidden('You have no permission to access this view')
+    return _edit_draft_stream(request, draft, DraftStreamForm)
