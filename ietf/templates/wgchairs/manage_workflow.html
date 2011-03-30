@@ -71,15 +71,23 @@
 </div>
 
 <div id="states">
+<p>
+Please note that the states you can not uncheck are needed in all IETF WG.
+</p>
 <form action="#info" method="POST">
 <table class="ietf-table">
   <tr> 
-    <th>Used in {{ wg }}</th><th>Available states</th>
+    <th>Used in {{ wg }}</th><th>Available states</th><th>Definition</th>
   </tr>
   {% for state in default_states %}
-  <tr class="{% cycle "oddrow" "evenrow" %}">
+  <tr class="{% cycle "oddrow" "evenrow" %}" style="vertical-align: top;">
     <td><input type="checkbox" id="id_states_{{ state.pk }}" name="states" value="{{ state.pk }}" {% if state.used %}checked="checked" {% endif %}{% if state.freeze %} disabled="disabled"{% endif %}/></td>
     <td><label for="id_states_{{ state.pk }}">{{ state.name }}</label></td>
+    <td>
+    <div class="statedefinition" style="height: 1em; overflow: hidden;">
+       <pre style="margin-top: 0px;"><a class="showDefinition" href="#">[+]</a><a class="hideDefinition" style="display: none;" href="#">[-]</a> {{ state.statedescription_set.all.0.definition|safe }}</pre>
+    </div>
+    </td>
   </tr>
 {% endfor %}
 </table>
@@ -132,6 +140,19 @@ if (url[1]) {
      } 
   } 
 } 
+
+jQuery('.showDefinition').click(function() {
+    jQuery(this).parent().parent().css('height', 'auto');
+    jQuery(this).hide();
+    jQuery(this).next().show();
+    return false;
+});
+jQuery('.hideDefinition').click(function() {
+    jQuery(this).parent().parent().css('height', '1em');
+    jQuery(this).hide();
+    jQuery(this).prev().show();
+    return false;
+});
 //]]>
 </script>
 

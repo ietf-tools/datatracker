@@ -66,8 +66,8 @@ def manage_workflow(request, acronym):
             formset = form
     tags = workflow.selected_tags.all()
     default_tags = default_workflow.annotation_tags.all()
-    states = workflow.selected_states.all()
-    default_states = default_workflow.states.all()
+    states = workflow.selected_states.all().order_by('statedescription__order')
+    default_states = default_workflow.states.all().order_by('statedescription__order')
     for i in default_states:
         if states.filter(name=i.name).count() == 1:
             i.used = True

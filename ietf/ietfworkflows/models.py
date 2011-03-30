@@ -76,6 +76,18 @@ class ObjectStreamHistoryEntry(ObjectHistoryEntry):
         return html
 
 
+class StateDescription(models.Model):
+    state = models.ForeignKey(State)
+    definition = models.TextField()
+    order = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ('order', )
+
+    def __unicode__(self):
+        return unicode(self.state)
+
+
 class AnnotationTag(models.Model):
     name = models.CharField(_(u"Name"), max_length=100)
     workflow = models.ForeignKey(Workflow, verbose_name=_(u"Workflow"), related_name="annotation_tags")
