@@ -278,7 +278,7 @@ class NotExistDelegateForm(MultipleDelegateForm):
 
     def as_p(self):
         email_list = self.get_email_list()
-        info = render_to_string('wgchairs/notexistdelegate.html', {'email_list': email_list})
+        info = render_to_string('wgchairs/notexistdelegate.html', {'email_list': email_list, 'shepherd': self.shepherd})
         return info + super(NotExistDelegateForm, self).as_p()
 
     def send_email(self, email, template):
