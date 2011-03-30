@@ -4,16 +4,19 @@ import datetime
 from django import forms
 from django.template.loader import render_to_string
 from workflows.models import State
+from workflows.utils import set_workflow_for_object
 
-from ietf.idtracker.models import PersonOrOrgInfo
+from ietf.idtracker.models import PersonOrOrgInfo, IETFWG
 from ietf.wgchairs.accounts import get_person_for_user
 from ietf.ietfworkflows.models import Stream
-from ietf.ietfworkflows.utils import (get_workflow_for_draft,
-                                      get_state_for_draft,
+from ietf.ietfworkflows.utils import (get_workflow_for_draft, get_workflow_for_wg,
+                                      get_state_for_draft, get_state_by_name,
                                       update_state, FOLLOWUP_TAG,
                                       get_annotation_tags_for_draft,
                                       update_tags, update_stream)
-from ietf.ietfworkflows.streams import get_stream_from_draft
+from ietf.ietfworkflows.streams import (get_stream_from_draft, get_streamed_draft,
+                                        get_stream_by_name, set_stream_for_draft)
+from ietf.ietfworkflows.constants import CALL_FOR_ADOPTION, IETF_STREAM
 
 
 class StreamDraftForm(forms.Form):
@@ -39,6 +42,52 @@ class StreamDraftForm(forms.Form):
 
     def __unicode__(self):
         return render_to_string(self.template, {'form': self})
+
+
+class NoWorkflowStateForm(StreamDraftForm):
+    comment = forms.CharField(widget=forms.Textarea)
+    weeks = forms.IntegerField(required=False)
+    wg = forms.ChoiceField(required=False)
+
+    template = 'ietfworkflows/noworkflow_state_form.html'
+
+    def __init__(self, *args, **kwargs):
+        super(NoWorkflowStateForm, self).__init__(*args, **kwargs)
+        self.wgs = None
+        self.onlywg = None
+        wgs = set(self.person.wgchair_set.all()).union(set(self.person.wgdelegate_set.all()))
+        if len(wgs) > 1:
+            self.wgs = list(wgs)
+            self.fields['wg'].choices = [(i.group_acronym.pk, i.group_acronym.group_acronym.name) for i in self.wgs]
+        else:
+            self.onlywg = wgs[0].group_acronym
+
+    def save(self):
+        comment = self.cleaned_data.get('comment')
+        weeks = self.cleaned_data.get('weeks')
+        if self.onlywg:
+            wg = self.onlywg
+        else:
+            wg = IETFWG.objects.get(pk=self.cleaned_data.get('wg'))
+        estimated_date = None
+        if weeks:
+            now = datetime.date.today()
+            estimated_date = now + datetime.timedelta(weeks=weeks)
+        workflow = get_workflow_for_wg(wg)
+        set_workflow_for_object(self.draft, workflow)
+        stream = get_stream_by_name(IETF_STREAM)
+        streamed = get_streamed_draft(self.draft)
+        if not streamed:
+            set_stream_for_draft(self.draft, stream)
+            streamed = get_streamed_draft(self.draft)
+        streamed.stream = stream
+        streamed.group = wg
+        streamed.save()
+        update_state(obj=self.draft,
+                     comment=comment,
+                     person=self.person,
+                     to_state=get_state_by_name(CALL_FOR_ADOPTION),
+                     estimated_date=estimated_date)
 
 
 class DraftTagsStateForm(StreamDraftForm):

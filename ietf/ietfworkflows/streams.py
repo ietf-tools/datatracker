@@ -1,7 +1,5 @@
 from django.db import models
 
-from workflows.utils import set_workflow_for_object
-
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper, IdWrapper
 from ietf.ietfworkflows.models import StreamedID, Stream
 
@@ -20,6 +18,13 @@ def get_stream_from_draft(draft):
     if streamedid:
         return streamedid.stream
     return False
+
+
+def get_stream_by_name(stream_name):
+    try:
+        return Stream.objects.get(name=stream_name)
+    except Stream.DoesNotExist:
+        return None
 
 
 def get_stream_from_id(stream_id):
@@ -106,5 +111,4 @@ def set_stream_for_draft(draft, stream):
         streamed.stream = stream
         streamed.group = None
         streamed.save()
-        set_workflow_for_object(draft, stream.workflow)
     return streamed.stream

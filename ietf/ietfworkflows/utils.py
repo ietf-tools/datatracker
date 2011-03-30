@@ -142,6 +142,7 @@ def set_tag(obj, tag):
         annotation_tag=tag)
     return relation
 
+
 def set_tag_by_name(obj, tag_name):
     try:
         tag = AnnotationTag.objects.get(name=tag_name)
