@@ -15,6 +15,7 @@ from ietf.wgchairs.accounts import (can_manage_delegates_in_group, get_person_fo
                                     can_manage_writeup_of_a_document,
                                     can_manage_writeup_of_a_document_no_state,
                                     )
+from ietf.ietfworkflows.constants import REQUIRED_STATES
 from ietf.ietfworkflows.utils import (get_workflow_for_wg,
                                       get_default_workflow_for_wg,
                                       get_state_by_name,
@@ -70,6 +71,8 @@ def manage_workflow(request, acronym):
     for i in default_states:
         if states.filter(name=i.name).count() == 1:
             i.used = True
+        if i.name in REQUIRED_STATES:
+            i.freeze = True
     for i in default_tags:
         if tags.filter(name=i.name).count() == 1:
             i.used = True

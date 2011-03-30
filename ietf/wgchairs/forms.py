@@ -7,8 +7,9 @@ from django.utils.safestring import mark_safe
 
 from ietf.wgchairs.models import WGDelegate, ProtoWriteUp
 from ietf.wgchairs.accounts import get_person_for_user
+from ietf.ietfworkflows.constants import REQUIRED_STATES
 from ietf.ietfworkflows.utils import (get_default_workflow_for_wg, get_workflow_for_wg,
-                                      update_tags, FOLLOWUP_TAG)
+                                      update_tags, FOLLOWUP_TAG, get_state_by_name)
 from ietf.idtracker.models import PersonOrOrgInfo
 
 from workflows.models import Transition
@@ -36,7 +37,7 @@ class RelatedWGForm(forms.Form):
 class TagForm(RelatedWGForm):
 
     tags = forms.ModelMultipleChoiceField(get_default_workflow_for_wg().annotation_tags.all(),
-                                          widget=forms.CheckboxSelectMultiple)
+                                          widget=forms.CheckboxSelectMultiple, required=False)
 
     def save(self):
         workflow = get_workflow_for_wg(self.wg)
@@ -49,7 +50,7 @@ class TagForm(RelatedWGForm):
 class StateForm(RelatedWGForm):
 
     states = forms.ModelMultipleChoiceField(get_default_workflow_for_wg().states.all(),
-                                            widget=forms.CheckboxSelectMultiple)
+                                            widget=forms.CheckboxSelectMultiple, required=False)
 
     def update_transitions(self, workflow):
         for transition in workflow.transitions.all():
@@ -68,6 +69,10 @@ class StateForm(RelatedWGForm):
         workflow.selected_states.clear()
         for state in self.cleaned_data['states']:
             workflow.selected_states.add(state)
+        for name in REQUIRED_STATES:
+            rstate = get_state_by_name(name)
+            if rstate:
+                workflow.selected_states.add(rstate)
         self.update_transitions(workflow)
         return workflow
 

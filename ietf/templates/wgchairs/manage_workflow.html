@@ -78,7 +78,7 @@
   </tr>
   {% for state in default_states %}
   <tr class="{% cycle "oddrow" "evenrow" %}">
-    <td><input type="checkbox" id="id_states_{{ state.pk }}" name="states" value="{{ state.pk }}" {% if state.used %}checked="checked" {% endif %}/></td>
+    <td><input type="checkbox" id="id_states_{{ state.pk }}" name="states" value="{{ state.pk }}" {% if state.used %}checked="checked" {% endif %}{% if state.freeze %} disabled="disabled"{% endif %}/></td>
     <td><label for="id_states_{{ state.pk }}">{{ state.name }}</label></td>
   </tr>
 {% endfor %}
