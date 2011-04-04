@@ -14,6 +14,7 @@ from ietf.ietfworkflows.utils import (get_workflow_for_draft, get_workflow_for_w
                                       update_state, FOLLOWUP_TAG,
                                       get_annotation_tags_for_draft,
                                       update_tags, update_stream)
+from ietf.ietfworkflows.accounts import is_secretariat
 from ietf.ietfworkflows.streams import (get_stream_from_draft, get_streamed_draft,
                                         get_stream_by_name, set_stream_for_draft)
 from ietf.ietfworkflows.constants import CALL_FOR_ADOPTION, IETF_STREAM
@@ -55,10 +56,14 @@ class NoWorkflowStateForm(StreamDraftForm):
         super(NoWorkflowStateForm, self).__init__(*args, **kwargs)
         self.wgs = None
         self.onlywg = None
-        wgs = set(self.person.wgchair_set.all()).union(set(self.person.wgdelegate_set.all()))
+        if is_secretariat(self.user):
+            wgs = IETFWG.objects.all()
+        else:
+            wgs = set([i.group_acronym for i in self.person.wgchair_set.all()]).union(set([i.wg for i in self.person.wgdelegate_set.all()]))
         if len(wgs) > 1:
             self.wgs = list(wgs)
-            self.fields['wg'].choices = [(i.group_acronym.pk, i.group_acronym.group_acronym.name) for i in self.wgs]
+            self.wgs.sort(lambda x,y: cmp(x.group_acronym.acronym, y.group_acronym.acronym))
+            self.fields['wg'].choices = [(i.pk, '%s - %s' % (i.group_acronym.acronym, i.group_acronym.name)) for i in self.wgs]
         else:
             self.onlywg = list(wgs)[0].group_acronym
 
