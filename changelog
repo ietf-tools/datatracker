@@ -1,3 +1,21 @@
+ietfdb (3.15)
+
+  This is a minor bugfix release.
+
+  * Fix the weekday-dependent plenary information in the materials list.
+
+  * In urls under /wg/, only accept wgnames which adhere to the constraints
+    currently practiced.  (Before this change, the URL patterns would match wg
+    names containing non-ascii characters, which later would bomb due to mix of
+    collations when accessing the database. Might as well return a 404 at once
+    instead).
+
+  * Don't return 500 if the /meeting/agenda/agenda.ics URL is without query part.
+
+  * Get rid of a print statement used during testing.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Apr 2011 15:17:11 +0200
+
 ietfdb (3.14)
 
   * From lars.eggert@nokia.com: 
