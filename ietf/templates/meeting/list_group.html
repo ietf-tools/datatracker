@@ -1,6 +1,6 @@
 {% load ietf_filters %}<table class="ietf-materials">
 <tr>
-<td style="width:12em;"><a name="wg-{{ wg.acronym }}"></a><b>{% ifequal wg.acronym "plenaryw" %}Wednesday<br/>Plenary{%else%}{% ifequal wg.acronym "plenaryt" %}Thursday<br/>Plenary{%else%}{{ wg.acronym|upper }}{%endifequal%}{%endifequal%}
+<td style="width:12em;"><a name="wg-{{ wg.acronym }}"></a><b>{% ifequal wg.acronym "plenaryw" %}Operations and Administration<br/>Plenary{%else%}{% ifequal wg.acronym "plenaryt" %}Technical<br/>Plenary{%else%}{{ wg.acronym|upper }}{%endifequal%}{%endifequal%}
 {% ifequal wg.group_type_str "BOF" %} <font color="red">({{ wg.group_type_str }})</font> {% endifequal %}</b><br/>
 </td>
 <td>
