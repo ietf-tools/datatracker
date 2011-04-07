@@ -23,7 +23,7 @@ class LiaisonForm(forms.ModelForm):
     replyto = forms.CharField(label=u'Reply to')
     organization = forms.ChoiceField()
     to_poc = forms.CharField(widget=ReadOnlyWidget, label="POC", required=False)
-    cc1 = forms.CharField(widget=ReadOnlyWidget, label="CC", required=False)
+    cc1 = forms.CharField(widget=forms.Textarea, label="CC", required=False, help_text='Please insert one email address per line')
     purpose_text = forms.CharField(widget=forms.Textarea, label='Other purpose')
     deadline_date = forms.DateField(label='Deadline')
     title = forms.CharField(label=u'Title')
@@ -171,10 +171,30 @@ class LiaisonForm(forms.ModelForm):
     def get_poc(self, organization):
         return ', '.join([i.email()[1] for i in organization.get_poc()])
 
+    def clean_cc1(self):
+        value = self.cleaned_data.get('cc1', '')
+        result = []
+        errors = []
+        for address in value.split('\n'):
+            address = address.strip();
+            if not address:
+                continue
+            try:
+                self.check_email(address)
+            except forms.ValidationError:
+                errors.append(address)
+            result.append(address)
+        if errors:
+            raise forms.ValidationError('Invalid email addresses: %s' % ', '.join(errors))
+        return ','.join(result)
+
     def get_cc(self, from_entity, to_entity):
-        persons = to_entity.get_cc(self.person)
-        persons += from_entity.get_from_cc(self.person)
-        return ', '.join(['%s <%s>' % i.email() for i in persons])
+        #Old automatic Cc code, now we retrive it from cleaned_data
+        #persons = to_entity.get_cc(self.person)
+        #persons += from_entity.get_from_cc(self.person)
+        #return ', '.join(['%s <%s>' % i.email() for i in persons])
+        cc = self.cleaned_data.get('cc1', '')
+        return cc
 
     def save(self, *args, **kwargs):
         liaison = super(LiaisonForm, self).save(*args, **kwargs)

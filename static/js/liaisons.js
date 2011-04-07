@@ -150,11 +150,15 @@
                 config.info_update_url = confcontainer.find('.info_update_url').text();
             };
 
-            var render_mails_into = function(container, person_list) {
+            var render_mails_into = function(container, person_list, as_html) {
                 var html='';
 
                 $.each(person_list, function(index, person) {
-                    html += person[0] + ' &lt;<a href="mailto:'+person[1]+'">'+person[1]+'</a>&gt;<br />';
+                    if (as_html) {
+                        html += person[0] + ' &lt;<a href="mailto:'+person[1]+'">'+person[1]+'</a>&gt;<br />';
+                    } else {
+                        html += person[0] + ' &lt;'+person[1]+'&gt;\n';
+                    }
                 });
                 container.html(html);
             };
@@ -204,7 +208,7 @@
                 updateReplyTo();
             };
 
-            var updateInfo = function() {
+            var updateInfo = function(first_time) {
                 var entity = organization;
                 var to_entity = from;
                 if (!entity.is('select') || !to_entity.is('select')) {
@@ -221,8 +225,10 @@
                            from_entity_id: to_entity.val()},
                     success: function(response){
                         if (!response.error) {
-                            render_mails_into(cc, response.cc);
-                            render_mails_into(poc, response.poc);
+                            if (!first_time || !cc.text()) {
+                                render_mails_into(cc, response.cc, false);
+                            }
+                            render_mails_into(poc, response.poc, true);
                             toggleApproval(response.needs_approval);
                             checkPostOnly(response.post_only);
                             userSelect(response.full_list);
@@ -320,10 +326,10 @@
                 return false;
             };
 
-            var checkFrom = function() {
+            var checkFrom = function(first_time) {
                 var reduce_options = form.find('.reducedToOptions');
                 if (!reduce_options.length) {
-                    updateInfo();
+                    updateInfo(first_time);
                     return;
                 }
                 var to_select = organization;
@@ -344,13 +350,13 @@
                     to_select.find('optgroup').show();
                     to_select.find('option').show();
                 }
-                updateInfo();
+                updateInfo(first_time);
             };
 
             var initTriggers = function() {
-                organization.change(updateInfo);
+                organization.change(function() {updateInfo(false);});
                 organization.change(checkOtherSDO);
-                from.change(checkFrom);
+                from.change(function() {checkFrom(false);});
                 reply.keyup(updateFrom);
                 purpose.change(updatePurpose);
                 cancel.click(cancelForm);
@@ -360,7 +366,7 @@
 
             var updateOnInit = function() {
                 updateFrom();
-                checkFrom();
+                checkFrom(true);
                 updatePurpose();
                 checkOtherSDO();
             };
