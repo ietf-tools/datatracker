@@ -1,3 +1,24 @@
+ietfdb (3.16)
+
+  This is a minor bugfix release.
+
+  * Merged in [3029] from esanchez@yaco.es.  Make the Cc: field of new 
+    liaisons editable.
+
+  * Set the 'person' field of the LegacyLiaisonUser in the admin interface 
+    to be handled as a raw id field with search button, rather than as a choice 
+    list.  This should make admin updates involving the LegacyLiaisonUser table
+    much speedier.
+
+  * Added a new fix for empty query strings to /meeting/agenda/agenda.ics.  
+    (The QUERY_STRING in request.META is not set the same way under the builtin
+    server as under Apache; under apache there will be a QUERY_STRING entry wich
+    is explicitly Null.  Handles this.)
+
+  * Included a javascript change not previsously merged in from branch/yaco/liaison/.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Apr 2011 17:15:41 +0200
+
 ietfdb (3.15)
 
   This is a minor bugfix release.
