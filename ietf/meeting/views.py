@@ -336,7 +336,8 @@ def ical_agenda(request, num=None):
     wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
     rgs = IRTF.objects.all().order_by('acronym')
     areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
-    filter = (request.META.get('QUERY_STRING','')).lower().split(',');
+    q = request.META.get('QUERY_STRING','') or ""
+    filter = q.lower().split(',');
     include = set(filter)
 
     for slot in timeslots:
