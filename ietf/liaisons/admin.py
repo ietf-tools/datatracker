@@ -132,4 +132,5 @@ admin.site.register(LegacyWgPassword, LegacyWgPasswordAdmin)
 
 class LegacyLiaisonUserAdmin(admin.ModelAdmin):
     list_display = ['pk', 'person_link', 'login_name', 'user_level', 'comment', ]
+    raw_id_fields = [ 'person', ]
 admin.site.register(LegacyLiaisonUser, LegacyLiaisonUserAdmin)
