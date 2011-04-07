@@ -132,6 +132,7 @@ INSTALLED_APPS = (
     'ietf.redirects',
     'ietf.idrfc',
     'ietf.wginfo',
+    'ietf.submit',
 )
 
 INTERNAL_IPS = (
@@ -191,6 +192,30 @@ DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
 LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'
 LIAISON_ATTACH_URL = '/documents/LIAISON/'
+
+# ID Submission Tool settings
+IDST_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
+IDST_TO_EMAIL = 'internet-drafts@ietf.org'
+
+# Days from meeting to cut off dates on submit
+FIRST_CUTOFF_DAYS = 5
+SECOND_CUTOFF_DAYS = 3
+
+STAGING_PATH = '/a/www/www6s/staging/'
+STAGING_URL = 'http://www.ietf.org/staging/'
+IDNITS_PATH = '/a/www/ietf-datatracker/release/idnits'
+MAX_PLAIN_DRAFT_SIZE = 6291456  # Max size of the txt draft in bytes
+
+# DOS THRESHOLDS PER DAY (Sizes are in MB)
+MAX_SAME_DRAFT_NAME = 20
+MAX_SAME_DRAFT_NAME_SIZE = 50
+MAX_SAME_SUBMITTER = 50
+MAX_SAME_SUBMITTER_SIZE = 150
+MAX_SAME_WG_DRAFT = 150
+MAX_SAME_WG_DRAFT_SIZE = 450
+MAX_DAILY_SUBMISSION = 1000
+MAX_DAILY_SUBMISSION_SIZE = 2000
+# End of ID Submission Tool settings
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

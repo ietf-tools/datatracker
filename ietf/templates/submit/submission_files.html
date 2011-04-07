@@ -1,0 +1,7 @@
+{% if files %}
+<ul>
+{% for file in files %}
+  <li><a href="{{ file.url }}" target="_blank">{{ file.name }}</a></li>
+{% endfor %}
+</ul>
+{% endif %}

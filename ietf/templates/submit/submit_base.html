@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block morecss %}
+.ietf-navset {
+    background:#214197 url(/images/yui/sprite.png) repeat-x left -1400px;
+    color:white;
+    border:1px solid black;
+    padding:4px;
+}
+.ietf-navset .selected { font-weight:bold; padding: 0 3px; }
+.ietf-navset a, .ietf-navset a:visited { color: white; padding:0 3px; }
+.cutoff-warning { border: 1px dashed red; background-color: #ffeeaa; padding: 1em 2em; margin: 1em 0px; }
+{% endblock %}
+
+{% block content %}
+<h1>IETF Internet-Draft Submission </h1>
+
+<div class="ietf-navset">
+{% ifequal selected "index" %}<span class="selected">Upload</span>{% else %}<a href="{% url submit_index %}">Upload</a>{% endifequal %} |
+{% ifequal selected "status" %}<span class="selected">Status</span>{% else %}<a href="{% url submit_status %}">Status</a>{% endifequal %} |
+{% ifequal selected "instructions" %}<span class="selected">Tool Instructions</span>{% else %}<a href="{% url submit_tool_instructions %}">Tool Instructions</a>{% endifequal %} |
+{% ifequal selected "notewell" %}<span class="selected">NOTE WELL</span>{% else %}<a href="{% url submit_note_well %}">NOTE WELL</a>{% endifequal %} 
+</div>
+
+{% if form.cutoff_warning %}
+<div class="cutoff-warning">
+{{ form.cutoff_warning|safe }}
+</div>
+{% endif %}
+
+{% block submit_content %}
+{% endblock %}
+{% endblock %}

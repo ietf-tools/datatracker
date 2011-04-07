@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
+from django.conf import settings
 from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup, Area, IETFWG
 import datetime
 #from ietf.utils import log
@@ -148,6 +149,23 @@ class Meeting(models.Model):
         return self.meeting_num
     class Meta:
         db_table = 'meetings'
+
+    @classmethod
+    def get_first_cut_off(cls):
+        start_date = cls.objects.all().order_by('-start_date')[0].start_date
+        offset = datetime.timedelta(days=settings.FIRST_CUTOFF_DAYS)
+        return start_date - offset
+
+    @classmethod
+    def get_second_cut_off(cls):
+        start_date = cls.objects.all().order_by('-start_date')[0].start_date
+        offset = datetime.timedelta(days=settings.SECOND_CUTOFF_DAYS)
+        return start_date - offset
+
+    @classmethod
+    def get_ietf_monday(cls):
+        start_date = cls.objects.all().order_by('-start_date')[0].start_date
+        return start_date + datetime.timedelta(days=-start_date.weekday(), weeks=1)
 
 class MeetingVenue(models.Model):
     meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True)

@@ -173,9 +173,9 @@ class InternetDraft(models.Model):
     idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
     def __str__(self):
         return self.filename
-    def save(self):
+    def save(self, *args, **kwargs):
         self.id_document_key = self.title.upper()
-        super(InternetDraft, self).save()
+        super(InternetDraft, self).save(*args, **kwargs)
     def displayname(self):
         return self.filename
     def file_tag(self):
