@@ -1,3 +1,35 @@
+ietfdb (3.50)
+
+  * For this release, the idsubmit port from esanchez@yaco.es has been merged
+    in, which constitute substantial added functionality.  This integrates the
+    draft upload functionality with the python/django datatracker; it improves
+    draft submission handling and security, and fixes problems with database
+    breakage and inconsistency caused by the old implementation.  With this also
+    comes a major improvement of author extraction from draft text, provided by
+    the ietf/utils/draft.py module from henrik@levkowetz.com.
+
+  * Deployment note:  Once the new release has been placed in its deployment
+    directory, and the correct settings_local.py has been copied in, a command
+    needs to be run in order to update the database tables to work with the new
+    code.  In the directory containing the ietf/ directory, run this command:
+
+        $ PYTHONPATH=$PWD ietf/manage.py migrate
+
+    The output should be as follows:
+
+	Running migrations for liaisons:
+	- Nothing to migrate.
+	Running migrations for submit:
+	 - Migrating forwards to 0003_add_extra_name_fields.
+	 > submit: 0001_initial
+	 > submit: 0002_add_submission_hash
+	 > submit: 0003_add_extra_name_fields
+	 - Loading initial data for submit.
+
+    Once this is done, the regular deployment routine should be continued.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Apr 2011 17:15:41 +0200
+
 ietfdb (3.16)
 
   This is a minor bugfix release.
