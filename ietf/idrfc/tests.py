@@ -754,7 +754,7 @@ class ExpireIDsTestCase(django.test.TestCase):
         os.mkdir(os.path.join(self.archive_dir, "deleted_tombstones"))
         os.mkdir(os.path.join(self.archive_dir, "expired_without_tombstone"))
         
-        settings.INTERNET_DRAFT_PATH = self.id_dir
+        settings.IDSUBMIT_REPOSITORY_PATH = self.id_dir
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
 
     def tearDown(self):

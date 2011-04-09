@@ -49,7 +49,7 @@ def send_expire_notice_for_id(doc):
 
 def expire_id(doc):
     def move_file(f):
-        src = os.path.join(settings.INTERNET_DRAFT_PATH, f)
+        src = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, f)
         dst = os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, f)
 
         if os.path.exists(src):
@@ -62,7 +62,7 @@ def expire_id(doc):
 
     new_revision = "%02d" % (int(doc.revision) + 1)
 
-    new_file = open(os.path.join(settings.INTERNET_DRAFT_PATH, "%s-%s.txt" % (doc.filename, new_revision)), 'w')
+    new_file = open(os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, "%s-%s.txt" % (doc.filename, new_revision)), 'w')
     txt = render_to_string("idrfc/expire_text.txt",
                            dict(doc=doc,
                                 authors=[a.person.email() for a in doc.authors.all()],
@@ -87,7 +87,7 @@ def clean_up_id_files():
     """Move unidentified and old files out of the Internet Draft directory."""
     cut_off = datetime.date.today() - datetime.timedelta(days=InternetDraft.DAYS_TO_EXPIRE)
 
-    pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
+    pattern = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, "draft-*.*")
     files = []
     filename_re = re.compile('^(.*)-(\d\d)$')
 

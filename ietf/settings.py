@@ -194,16 +194,18 @@ LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'
 LIAISON_ATTACH_URL = '/documents/LIAISON/'
 
 # ID Submission Tool settings
-IDST_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
-IDST_TO_EMAIL = 'internet-drafts@ietf.org'
+IDSUBMIT_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
+IDSUBMIT_TO_EMAIL = 'internet-drafts@ietf.org'
 
 # Days from meeting to cut off dates on submit
 FIRST_CUTOFF_DAYS = 5
 SECOND_CUTOFF_DAYS = 3
 
-STAGING_PATH = '/a/www/www6s/staging/'
-STAGING_URL = 'http://www.ietf.org/staging/'
-IDNITS_PATH = '/a/www/ietf-datatracker/release/idnits'
+IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
+IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
+IDSUBMIT_STAGING_URL = 'http://www.ietf.org/staging/'
+IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
+
 MAX_PLAIN_DRAFT_SIZE = 6291456  # Max size of the txt draft in bytes
 
 # DOS THRESHOLDS PER DAY (Sizes are in MB)

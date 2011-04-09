@@ -147,7 +147,7 @@ def document_main(request, name, tab):
     
     (content1, content2) = _get_html(
         str(name)+","+str(id.revision)+",html",
-        os.path.join(settings.INTERNET_DRAFT_PATH, name+"-"+id.revision+".txt"))
+        os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, name+"-"+id.revision+".txt"))
 
     versions = _get_versions(id)
     history = _get_history(doc, versions)

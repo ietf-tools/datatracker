@@ -168,7 +168,7 @@ def session_agenda(request, num, session, ext=None):
 
 def convert_to_pdf(doc_name):
     import subprocess
-    inpath = os.path.join(settings.INTERNET_DRAFT_PATH, doc_name + ".txt")
+    inpath = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, doc_name + ".txt")
     outpath = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, doc_name + ".pdf")
 
     try:

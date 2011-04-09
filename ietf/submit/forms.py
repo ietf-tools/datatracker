@@ -178,16 +178,16 @@ class UploadForm(forms.Form):
             raise forms.ValidationError('The total size of today\'s submission has reached the maximum size of submission per day')
 
     def check_paths(self):
-        self.staging_path = getattr(settings, 'STAGING_PATH', None)
-        self.idnits = getattr(settings, 'IDNITS_PATH', None)
+        self.staging_path = getattr(settings, 'IDSUBMIT_STAGING_PATH', None)
+        self.idnits = getattr(settings, 'IDSUBMIT_IDNITS_BINARY', None)
         if not self.staging_path:
-            raise forms.ValidationError('STAGING_PATH not defined on settings.py')
+            raise forms.ValidationError('IDSUBMIT_STAGING_PATH not defined on settings.py')
         if not os.path.exists(self.staging_path):
-            raise forms.ValidationError('STAGING_PATH defined on settings.py does not exist')
+            raise forms.ValidationError('IDSUBMIT_STAGING_PATH defined on settings.py does not exist')
         if not self.idnits:
-            raise forms.ValidationError('IDNITS_PATH not defined on settings.py')
+            raise forms.ValidationError('IDSUBMIT_IDNITS_BINARY not defined on settings.py')
         if not os.path.exists(self.idnits):
-            raise forms.ValidationError('IDNITS_PATH defined on settings.py does not exist')
+            raise forms.ValidationError('IDSUBMIT_IDNITS_BINARY defined on settings.py does not exist')
 
     def check_previous_submission(self):
         filename = self.draft.filename
@@ -315,7 +315,7 @@ class AutoPostForm(forms.Form):
 
     def send_confirmation_mail(self, request):
         subject = 'Confirmation for Auto-Post of I-D %s' % self.draft.filename
-        from_email = settings.IDST_FROM_EMAIL
+        from_email = settings.IDSUBMIT_FROM_EMAIL
         to_email = self.cleaned_data['email']
         send_mail(request, to_email, from_email, subject, 'submit/confirm_autopost.txt',
                   {'draft': self.draft, 'domain': Site.objects.get_current().domain })
@@ -432,8 +432,8 @@ class MetaDataForm(AutoPostForm):
     def move_docs(self, draft, revision):
         old_revision = draft.revision
         for ext in draft.file_type.split(','):
-            source = os.path.join(settings.STAGING_PATH, '%s-%s%s' % (draft.filename, old_revision, ext))
-            dest = os.path.join(settings.STAGING_PATH, '%s-%s%s' % (draft.filename, revision, ext))
+            source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (draft.filename, old_revision, ext))
+            dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (draft.filename, revision, ext))
             os.rename(source, dest)
 
     def save_new_draft_info(self):
@@ -456,8 +456,8 @@ class MetaDataForm(AutoPostForm):
 
     def send_mail_to_secretariat(self, request):
         subject = 'Manual Post Requested for %s' % self.draft.filename
-        from_email = settings.IDST_FROM_EMAIL
-        to_email = settings.IDST_TO_EMAIL
+        from_email = settings.IDSUBMIT_FROM_EMAIL
+        to_email = settings.IDSUBMIT_TO_EMAIL
         cc = [self.cleaned_data['email']]
         cc += [i['email'][1] for i in self.authors]
         if self.draft.group_acronym:

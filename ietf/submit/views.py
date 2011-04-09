@@ -118,7 +118,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                 if detail.revision == '00' and not approved_detail:
                     submitter = auto_post_form.save_submitter_info()
                     subject = 'New draft waiting for approval: %s' % detail.filename
-                    from_email = settings.IDST_FROM_EMAIL
+                    from_email = settings.IDSUBMIT_FROM_EMAIL
                     to_email = []
                     if detail.group_acronym:
                         to_email += [i.person.email()[1] for i in detail.group_acronym.wgchair_set.all()]

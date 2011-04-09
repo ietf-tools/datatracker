@@ -11,10 +11,10 @@ register = template.Library()
 def show_submission_files(context, submission):
     result = []
     for ext in submission.file_type.split(','):
-        source = os.path.join(settings.STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
         if os.path.exists(source):
             result.append({'name': '[%s version ]' % ext[1:].capitalize(),
-                           'url': '%s%s-%s%s' % (settings.STAGING_URL, submission.filename, submission.revision, ext)})
+                           'url': '%s%s-%s%s' % (settings.IDSUBMIT_STAGING_URL, submission.filename, submission.revision, ext)})
     return {'files': result}
 
 def show_two_pages(context, two_pages, validation):

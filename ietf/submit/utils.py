@@ -26,7 +26,7 @@ NONE_WG = 1027
 
 def request_full_url(request, submission):
     subject = 'Full url for managing submission of draft %s' % submission.filename
-    from_email = settings.IDST_FROM_EMAIL
+    from_email = settings.IDSUBMIT_FROM_EMAIL
     to_email = ['%s <%s>' % i.email() for i in submission.tempidauthors_set.all()]
     send_mail(request, to_email, from_email, subject, 'submit/request_full_url.txt',
         {'submission': submission,
@@ -142,14 +142,14 @@ def is_secretariat(user):
 
 def move_docs(submission):
     for ext in submission.file_type.split(','):
-        source = os.path.join(settings.STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
-        dest = os.path.join(settings.INTERNET_DRAFT_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
+        dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
         os.rename(source, dest)
 
 
 def remove_docs(submission):
     for ext in submission.file_type.split(','):
-        source = os.path.join(settings.STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
+        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
         if os.path.exists(source):
             os.unlink(source)
 
