@@ -59,12 +59,13 @@ class LiaisonForm(forms.ModelForm):
 
     def __init__(self, user, *args, **kwargs):
         self.user = user
+        self.fake_person = None
         self.person = get_person_for_user(user)
         if kwargs.get('data', None):
             kwargs['data'].update({'person': self.person.pk})
             if is_secretariat(self.user) and 'from_fake_user' in kwargs['data'].keys():
-                fake_person = PersonOrOrgInfo.objects.get(pk=kwargs['data']['from_fake_user'])
-                kwargs['data'].update({'person': fake_person.pk})
+                self.fake_person = PersonOrOrgInfo.objects.get(pk=kwargs['data']['from_fake_user'])
+                kwargs['data'].update({'person': self.fake_person.pk})
         super(LiaisonForm, self).__init__(*args, **kwargs)
         self.hm = IETFHM
         self.set_from_field()
@@ -357,17 +358,21 @@ class OutgoingLiaisonForm(LiaisonForm):
         if not to_code or not from_code:
             return to_code
         all_entities = []
-        for i in self.hm.get_entities_for_person(self.person):
+        person = self.fake_person or self.person
+        for i in self.hm.get_entities_for_person(person):
             all_entities += i[1]
         # If the from entity is one in wich the user has full privileges the to entity could be anyone
         if from_code in [i[0] for i in all_entities]:
             return to_code
-        sdo_codes = ['sdo_%s' % i.sdo.pk for i in self.person.liaisonmanagers_set.all().distinct()]
+        sdo_codes = ['sdo_%s' % i.sdo.pk for i in person.liaisonmanagers_set.all().distinct()]
         if to_code in sdo_codes:
             return to_code
         entity = self.get_to_entity()
         entity_name = entity and entity.name or to_code
-        raise forms.ValidationError('You are not allowed to send a liaison to: %s' % entity_name)
+        if self.fake_person:
+            raise forms.ValidationError('%s is not allowed to send a liaison to: %s' % (self.fake_person, entity_name))
+        else:
+            raise forms.ValidationError('You are not allowed to send a liaison to: %s' % entity_name)
 
 
 class EditLiaisonForm(LiaisonForm):
