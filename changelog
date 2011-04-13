@@ -1,3 +1,11 @@
+ietfdb (3.51)
+
+  * A very small bugfix release, providing the ability for secretariat staff
+    to post liaisons on behalf of others, and when doing so assuming the
+    powers of the liaison manager they are posting for.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Apr 2011 16:20:21 +0200
+
 ietfdb (3.50)
 
   * For this release, the idsubmit port from esanchez@yaco.es has been merged
