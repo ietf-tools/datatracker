@@ -15,7 +15,7 @@ management.setup_environ(settings)
 from redesign.person.models import *
 from redesign.group.models import *
 from redesign.name.models import *
-from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrgInfo, WGEditor
+from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrgInfo, WGEditor, ChairsHistory, Role as OldRole
 
 # assumptions:
 #  - groups have been imported
@@ -23,10 +23,11 @@ from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrg
 # PersonOrOrgInfo/PostalAddress/EmailAddress/PhoneNumber are not
 # imported, although some information is retrieved from those
 
-# imports IESGLogin, AreaDirector, WGEditor and persons from IDAuthor
+# imports IESGLogin, AreaDirector, WGEditor, persons from IDAuthor,
+# NomCom chairs from ChairsHistory
 
 # should probably import WGChair, WGSecretary,
-#  WGTechAdvisor, Role, ChairsHistory, IRTFChair
+#  WGTechAdvisor, Role, IRTFChair
 
 # make sure names exist
 def name(name_class, slug, name, desc=""):
@@ -38,8 +39,9 @@ def name(name_class, slug, name, desc=""):
     return obj
 
 area_director_role = name(RoleName, "ad", "Area Director")
-inactive_area_director_role = name(RoleName, "ex-ad", "Ex-Area Director", desc="In-active Area Director")
+inactive_area_director_role = name(RoleName, "ex-ad", "Ex-Area Director", desc="Inactive Area Director")
 wg_editor_role = name(RoleName, "wgeditor", "Working Group Editor")
+chair_role = name(RoleName, "chair", "Chair")
 
 # helpers for creating the objects
 def get_or_create_email(o, create_fake):
@@ -73,6 +75,18 @@ def get_or_create_email(o, create_fake):
 
     return e
 
+nomcom_groups = list(Group.objects.filter(acronym="nomcom"))
+for o in ChairsHistory.objects.filter(chair_type=OldRole.NOMCOM_CHAIR):
+    print "importing NOMCOM chair", o
+    for g in nomcom_groups:
+        if ("%s/%s" % (o.start_year, o.end_year)) in g.name:
+            break
+
+    email = get_or_create_email(o, create_fake=False)
+    
+    Role.objects.get_or_create(name=chair_role, group=g, email=email)
+
+    
 # IESGLogin
 for o in IESGLogin.objects.all():
     print "importing IESGLogin", o.id, o.first_name, o.last_name

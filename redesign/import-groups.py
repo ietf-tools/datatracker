@@ -14,9 +14,11 @@ management.setup_environ(settings)
 
 from redesign.group.models import *
 from redesign.name.models import *
-from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF
+from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role
 
 # imports IETFWG, Area, AreaGroup, Acronym
+
+# also creates nomcom groups
 
 # FIXME: should also import IRTF
 
@@ -54,7 +56,38 @@ iesg_group.state = state_names["active"]
 iesg_group.type = type_names["ietf"]
 iesg_group.save()
 
+system_email, _ = Email.objects.get_or_create(address="(System)")
 
+
+# NomCom
+Group.objects.filter(acronym="nomcom").delete()
+
+for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("start_year"):
+    group = Group()
+    group.acronym = "nomcom"
+    group.name = "IAB/IESG Nominating Committee %s/%s" % (o.start_year, o.end_year)
+    if o.chair_type.person == o.person:
+        s = state_names["active"]
+    else:
+        s = state_names["conclude"]
+    group.state = s
+    group.type = type_names["ietf"]
+    group.parent = None
+    group.save()
+
+    # we need start/end year so fudge events
+    e = GroupEvent(group=group, type="started")
+    e.time = datetime.datetime(o.start_year, 5, 1, 12, 0, 0)
+    e.by = system_email
+    e.desc = e.get_type_display()
+    e.save()
+
+    e = GroupEvent(group=group, type="concluded")
+    e.time = datetime.datetime(o.end_year, 5, 1, 12, 0, 0)
+    e.by = system_email
+    e.desc = e.get_type_display()
+    e.save()
+    
 # Area
 for o in Area.objects.all():
     group, _ = Group.objects.get_or_create(acronym=o.area_acronym.acronym)
@@ -70,9 +103,20 @@ for o in Area.objects.all():
     group.parent = iesg_group
     group.comments = o.comments.strip() if o.comments else ""
 
-    # FIXME: missing fields from old: concluded_date, last_modified_date, extra_email_addresses
-
     group.save()
+
+    # import events
+    group.groupevent_set.all().delete()
+    
+    if o.concluded_date:
+        e = GroupEvent(group=group, type="concluded")
+        e.time = datetime.datetime.combine(o.concluded_date, datetime.time(12, 0, 0))
+        e.by = system_email
+        e.desc = e.get_type_display()
+        e.save()
+
+    # FIXME: missing fields from old: last_modified_date, extra_email_addresses
+
     
 # IETFWG, AreaGroup
 for o in IETFWG.objects.all():
@@ -129,8 +173,24 @@ for o in IETFWG.objects.all():
 
     group.list_email = o.email_address if o.email_address else ""
     group.comments = o.comments.strip() if o.comments else ""
-    # FIXME: missing fields from old: proposed_date, start_date, dormant_date, concluded_date, meeting_scheduled, email_subscribe, email_keyword, email_archive, last_modified_date, meeting_scheduled_old
     
     group.save()
 
-# FIXME: IRTF
+    # import events
+    group.groupevent_set.all().delete()
+
+    def import_date_event(name):
+        d = getattr(o, "%s_date" % name)
+        if d:
+            e = GroupEvent(group=group, type=name)
+            e.time = datetime.datetime.combine(d, datetime.time(12, 0, 0))
+            e.by = system_email
+            e.desc = e.get_type_display()
+            e.save()
+
+    import_date_event("proposed")
+    import_date_event("start")
+    import_date_event("concluded")
+    # dormant_date is empty on all so don't bother with that
+            
+    # FIXME: missing fields from old: meeting_scheduled, email_subscribe, email_keyword, email_archive, last_modified_date, meeting_scheduled_old
