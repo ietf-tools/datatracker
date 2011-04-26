@@ -214,8 +214,13 @@ def draft_confirm(request, submission_id, auth_key):
     elif detail.status_id != WAITING_AUTHENTICATION:
         message = ('error', 'The submission can not be autoposted because it is in state: %s' % detail.status.status_value)
     else:
-        message = ('success', 'Authorization key accepted. Auto-Post complete')
-        perform_post(detail)
+        if request.method=='POST':
+            message = ('success', 'Authorization key accepted. Auto-Post complete')
+            perform_post(detail)
+        else:
+            return render_to_response('submit/last_confirmation_step.html',
+                               {'detail': detail, },
+                               context_instance=RequestContext(request))
     return draft_status(request, submission_id, message=message)
 
 
