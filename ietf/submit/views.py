@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.sites.models import Site
-from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
+from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -167,6 +167,8 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
 
 
 def draft_cancel(request, submission_id, submission_hash=None):
+    if request.method!='POST':
+        return HttpResponseNotAllowed(['POST'])
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
     can_cancel = _can_cancel(request.user, detail, submission_hash)
     if not can_cancel:
