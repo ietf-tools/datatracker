@@ -233,9 +233,8 @@ class DraftValidation(object):
             self.add_warning('creation_date', 'Creation Date field is empty or the creation date is not in a proper format')
             return
         submit_date = self.draft.submission_date
-        if date > submit_date:
-            self.add_warning('creation_date', 'Creation Date must not be set after submission date')
-        if date + datetime.timedelta(days=3) < submit_date:
+        if (date + datetime.timedelta(days=3) < submit_date or
+            date - datetime.timedelta(days=3) > submit_date):
             self.add_warning('creation_date', 'Creation Date must be within 3 days of submission date')
 
     def get_authors(self):
