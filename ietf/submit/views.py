@@ -220,6 +220,8 @@ def draft_confirm(request, submission_id, auth_key):
 
 
 def draft_approve(request, submission_id, check_function=_can_approve):
+    if request.method!='POST':
+        return HttpResponseNotAllowed(['POST'])
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
     can_perform = check_function(request.user, detail)
     if not can_perform:
@@ -231,10 +233,14 @@ def draft_approve(request, submission_id, check_function=_can_approve):
 
 
 def draft_force(request, submission_id):
+    if request.method!='POST':
+        return HttpResponseNotAllowed(['POST'])
     return draft_approve(request, submission_id, check_function=_can_force_post)
 
 
 def full_url_request(request, submission_id):
+    if request.method!='POST':
+        return HttpResponseNotAllowed(['POST'])
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
     request_full_url(request, detail)
     message = ('success', 'An email has been sent to draft authors to inform them of the full access url')
