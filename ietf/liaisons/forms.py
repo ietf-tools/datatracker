@@ -26,6 +26,7 @@ class LiaisonForm(forms.ModelForm):
     cc1 = forms.CharField(widget=forms.Textarea, label="CC", required=False, help_text='Please insert one email address per line')
     purpose_text = forms.CharField(widget=forms.Textarea, label='Other purpose')
     deadline_date = forms.DateField(label='Deadline')
+    submitted_date = forms.DateField(label='Submission date', initial=datetime.date.today())
     title = forms.CharField(label=u'Title')
     attachments = forms.CharField(label='Attachments', widget=ShowAttachmentsWidget, required=False)
     attach_title = forms.CharField(label='Title', required=False)
@@ -42,7 +43,7 @@ class LiaisonForm(forms.ModelForm):
                  ('Other email addresses', ('response_contact', 'technical_contact', 'cc1')),
                  ('Purpose', ('purpose', 'purpose_text', 'deadline_date')),
                  ('References', ('related_to', )),
-                 ('Liaison Statement', ('title', 'body', 'attachments')),
+                 ('Liaison Statement', ('title', 'submitted_date', 'body', 'attachments')),
                  ('Add attachment', ('attach_title', 'attach_file', 'attach_button')),
                 ]
 
@@ -205,7 +206,6 @@ class LiaisonForm(forms.ModelForm):
 
     def save_extra_fields(self, liaison):
         now = datetime.datetime.now()
-        liaison.submitted_date = now
         liaison.last_modified_date = now
         from_entity = self.get_from_entity()
         liaison.from_raw_body = from_entity.name
@@ -393,6 +393,7 @@ class EditLiaisonForm(LiaisonForm):
         super(EditLiaisonForm, self).__init__(*args, **kwargs)
         self.edit = True
         self.initial.update({'attachments': self.instance.uploads_set.all()})
+        self.fields['submitted_date'].initial = self.instance.submitted_date
 
     def set_from_field(self):
         self.fields['from_field'].initial = self.instance.from_body

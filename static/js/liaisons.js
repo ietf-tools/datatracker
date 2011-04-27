@@ -135,6 +135,7 @@
             var purpose = form.find('#id_purpose');
             var other_purpose = form.find('#id_purpose_text');
             var deadline = form.find('#id_deadline_date');
+            var submission_date = form.find('#id_submitted_date');
             var other_organization = form.find('#id_other_organization');
             var approval = form.find('#id_approved');
             var cancel = form.find('#id_cancel');
@@ -350,6 +351,17 @@
                 updateInfo(first_time);
             };
 
+            var checkSubmissionDate = function() {
+                var date_str = submission_date.val();
+                if (date_str) {
+                    var sdate = new Date(date_str);
+                    var today = new Date();
+                    if (Math.abs(today-sdate) > 2592000000) {  // 2592000000 = 30 days in milliseconds
+                        return confirm('Submission date ' + date_str + ' differ more than 30 days.\n\nDo you want to continue and post this liaison using that submission date?\n');
+                    }
+                }
+            };
+
             var initTriggers = function() {
                 organization.change(function() {updateInfo(false);});
                 organization.change(checkOtherSDO);
@@ -359,6 +371,7 @@
                 cancel.click(cancelForm);
                 related_trigger.click(selectRelated);
                 unrelate_trigger.click(selectNoRelated);
+                form.submit(checkSubmissionDate);
             };
 
             var updateOnInit = function() {
@@ -370,6 +383,10 @@
 
             var initDatePicker = function() {
                 deadline.datepicker({
+                    dateFormat: $.datepicker.ATOM,
+                    changeYear: true
+                });
+                submission_date.datepicker({
                     dateFormat: $.datepicker.ATOM,
                     changeYear: true
                 });
