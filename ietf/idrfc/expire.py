@@ -6,8 +6,8 @@ from django.db.models import Q
 
 import datetime, os, shutil, glob, re
 
-from ietf.idtracker.models import InternetDraft, IDDates, IDStatus, IDState, DocumentComment
-from ietf.utils.mail import send_mail
+from ietf.idtracker.models import InternetDraft, IDDates, IDStatus, IDState, DocumentComment, IDAuthor,WGChair
+from ietf.utils.mail import send_mail, send_mail_subj
 from ietf.idrfc.utils import log_state_changed, add_document_comment
 from doc.models import Document, Event, save_document_in_history
 from name.models import IesgDocStateName, DocStateName, DocInfoTagName
@@ -28,6 +28,33 @@ def in_id_expire_freeze(when=None):
     
     return second_cut_off <= when < ietf_monday
 
+def document_expires(doc):
+    e = doc.latest_event(type__in=("completed_resurrect", "new_revision"))
+    if e:
+        return e.time + datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    else:
+        return None
+
+def expirable_documents():
+    return Document.objects.filter(state="active").exclude(tags="rfc-rev").filter(Q(iesg_state=None) | Q(iesg_state__order__gte=42))
+
+def get_soon_to_expire_ids(days):
+    start_date = datetime.date.today() - datetime.timedelta(InternetDraft.DAYS_TO_EXPIRE - 1)
+    end_date = start_date + datetime.timedelta(days - 1)
+    
+    for d in InternetDraft.objects.filter(revision_date__gte=start_date,revision_date__lte=end_date,status__status='Active'):
+        if d.can_expire():
+            yield d
+
+def get_soon_to_expire_idsREDESIGN(days):
+    start_date = datetime.date.today() - datetime.timedelta(1)
+    end_date = start_date + datetime.timedelta(days - 1)
+    
+    for d in expirable_documents():
+        e = document_expires(d)
+        if e and start_date <= e.date() <= end_date:
+            yield d
+
 def get_expired_ids():
     cut_off = datetime.date.today() - datetime.timedelta(days=InternetDraft.DAYS_TO_EXPIRE)
 
@@ -38,13 +65,58 @@ def get_expired_ids():
         Q(idinternal=None) | Q(idinternal__cur_state__document_state_id__gte=42))
 
 def get_expired_idsREDESIGN():
-    cut_off = datetime.date.today() - datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    today = datetime.date.today()
 
-    docs = Document.objects.filter(state="active").exclude(tags="rfc-rev").filter(Q(iesg_state=None) | Q(iesg_state__order__gte=42))
-    for d in docs:
-        e = d.latest_event(type="new_revision")
-        if e and e.time.date() <= cut_off:
+    for d in expirable_documents():
+        e = document_expires(d)
+        if e and e.time.date() <= today:
             yield d
+
+def send_expire_warning_for_id(doc):
+    expiration = doc.expiration()
+    # Todo:
+    #second_cutoff = IDDates.objects.get(date_id=2)
+    #ietf_monday = IDDates.objects.get(date_id=3)
+    #freeze_delta = ietf_monday - second_cutoff
+    #   # The I-D expiration job doesn't run while submissions are frozen.
+    #   if ietf_monday > expiration > second_cutoff:
+    #       expiration += freeze_delta
+    
+    authors = doc.authors.all()
+    to_addrs = [author.email() for author in authors if author.email()]
+    cc_addrs = None
+    if doc.group.acronym != 'none':
+        cc_addrs = [chair.person.email() for chair in WGChair.objects.filter(group_acronym=doc.group)]
+
+    if to_addrs or cc_addrs:
+        send_mail_subj(None, to_addrs, None, 'notify_expirations/subject.txt', 'notify_expirations/body.txt', 
+                   {
+                      'draft':doc,
+                      'expiration':expiration,
+                   },
+                   cc_addrs)
+
+def send_expire_warning_for_idREDESIGN(doc):
+    expiration = document_expires(doc).date()
+
+    to = [e.formatted_email() for e in doc.authors.all() if not e.address.startswith("unknown-email")]
+    cc = None
+    if doc.group.type_id != "individ":
+        cc = [e.formatted_email() for e in Email.objects.filter(role__group=doc.group, role__name="chair") if not e.address.startswith("unknown-email")]
+
+    state = doc.iesg_state.name if doc.iesg_state else "I-D Exists"
+        
+    frm = None
+    request = None
+    if to or cc:
+        send_mail(request, to, frm,
+                  u"Expiration impending: %s" % doc.file_tag(),
+                  "idrfc/expire_warning_email.txt",
+                  dict(doc=doc,
+                       state=state,
+                       expiration=expiration
+                       ),
+                  cc=cc)
 
 def send_expire_notice_for_id(doc):
     doc.dunn_sent_date = datetime.date.today()
@@ -242,7 +314,9 @@ def clean_up_id_filesREDESIGN():
             move_file_to("unknown_ids")
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    get_soon_to_expire_ids = get_soon_to_expire_idsREDESIGN
     get_expired_ids = get_expired_idsREDESIGN
+    send_expire_warning_for_id = send_expire_warning_for_idREDESIGN
     send_expire_notice_for_id = send_expire_notice_for_idREDESIGN
     expire_id = expire_idREDESIGN
     clean_up_id_files = clean_up_id_filesREDESIGN

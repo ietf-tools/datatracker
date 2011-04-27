@@ -446,12 +446,30 @@
     </object>
     <object pk="ex-ad" model="name.rolename">
         <field type="CharField" name="name">Ex-Area Director</field>
-        <field type="TextField" name="desc">In-active Area Director</field>
+        <field type="TextField" name="desc">Inactive Area Director</field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="wgeditor" model="name.rolename">
-        <field type="CharField" name="name">Working Group Editor</field>
+    <object pk="chair" model="name.rolename">
+        <field type="CharField" name="name">Chair</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="editor" model="name.rolename">
+        <field type="CharField" name="name">Editor</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="secr" model="name.rolename">
+        <field type="CharField" name="name">Secretary</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="techadv" model="name.rolename">
+        <field type="CharField" name="name">Tech Advisor</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>

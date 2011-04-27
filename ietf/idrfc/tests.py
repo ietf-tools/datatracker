@@ -774,6 +774,34 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertTrue(in_id_expire_freeze(datetime.datetime(2010, 7, 12, 10, 0)))
         self.assertTrue(in_id_expire_freeze(datetime.datetime(2010, 7, 25, 0, 0)))
         self.assertTrue(not in_id_expire_freeze(datetime.datetime(2010, 7, 26, 0, 0)))
+
+    def test_warn_expirable_ids(self):
+        from ietf.idrfc.expire import get_soon_to_expire_ids, send_expire_warning_for_id
+
+        # hack into almost expirable state
+        draft = InternetDraft.objects.get(filename="draft-ietf-mipshop-pfmipv6")
+        draft.status = IDStatus.objects.get(status="Active")
+        draft.review_by_rfc_editor = 0
+        draft.revision_date = datetime.date.today() - datetime.timedelta(days=InternetDraft.DAYS_TO_EXPIRE - 7)
+        draft.idinternal.cur_state_id = IDState.AD_WATCHING
+        draft.idinternal.save()
+        draft.save()
+
+        author = PersonOrOrgInfo.objects.all()[0]
+        IDAuthor.objects.create(document=draft, person=author, author_order=1)
+        EmailAddress.objects.create(person_or_org=author, type="I-D", priority=draft.pk, address="author@example.com")
+
+        # test query
+        documents = list(get_soon_to_expire_ids(14))
+        self.assertEquals(len(documents), 1)
+
+        # test send warning
+        mailbox_before = len(mail_outbox)
+
+        send_expire_warning_for_id(documents[0])
+
+        self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        self.assertTrue("author@example.com" in str(mail_outbox[-1]))
         
     def test_expire_ids(self):
         from ietf.idrfc.expire import get_expired_ids, send_expire_notice_for_id, expire_id

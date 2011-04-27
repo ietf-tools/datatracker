@@ -74,7 +74,8 @@ def make_test_data():
     
     # persons
     Email.objects.get_or_create(address="(System)")
-    
+
+    # ad
     p = Person.objects.create(
         name="Aread Irector",
         ascii="Aread Irector",
@@ -137,6 +138,21 @@ def make_test_data():
             person=porg,
             )
 
+    # group chair
+    p = Person.objects.create(
+        name="WG Chair Man",
+        ascii="WG Chair Man",
+        )
+    wgchair = Email.objects.create(
+        address="wgchairman@ietf.org",
+        person=p)
+    Role.objects.create(
+        name=RoleName.objects.get(slug="chair"),
+        group=group,
+        email=wgchair,
+        )
+    
+    # secretary
     p = Person.objects.create(
         name="Sec Retary",
         ascii="Sec Retary",
@@ -187,6 +203,12 @@ def make_test_data():
         name=draft.name,
         )
 
+    DocumentAuthor.objects.create(
+        document=draft,
+        author=Email.objects.get(address="aread@ietf.org"),
+        order=1
+        )
+
     # draft has only one event
     Event.objects.create(
         type="started_iesg_process",
@@ -194,7 +216,7 @@ def make_test_data():
         doc=draft,
         desc="Added draft",
         )
-
+    
     # telechat dates
     t = datetime.date.today()
     dates = TelechatDates(date1=t,
@@ -1001,6 +1023,38 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertTrue(in_id_expire_freeze(datetime.datetime(2010, 7, 12, 10, 0)))
         self.assertTrue(in_id_expire_freeze(datetime.datetime(2010, 7, 25, 0, 0)))
         self.assertTrue(not in_id_expire_freeze(datetime.datetime(2010, 7, 26, 0, 0)))
+        
+    def test_warn_expirable_ids(self):
+        from ietf.idrfc.expire import get_soon_to_expire_ids, send_expire_warning_for_id, INTERNET_DRAFT_DAYS_TO_EXPIRE
+
+        draft = make_test_data()
+
+        self.assertEquals(len(list(get_soon_to_expire_ids(14))), 0)
+
+        # hack into expirable state
+        draft.iesg_state = None
+        draft.save()
+
+        NewRevisionEvent.objects.create(
+            type="new_revision",
+            by=Email.objects.get(address="aread@ietf.org"),
+            doc=draft,
+            desc="New revision",
+            time=datetime.datetime.now() - datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE - 7),
+            rev="01"
+        )
+
+        self.assertEquals(len(list(get_soon_to_expire_ids(14))), 1)
+        
+        # test send warning
+        mailbox_before = len(mail_outbox)
+
+        send_expire_warning_for_id(draft)
+
+        print mail_outbox[-1]
+        self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        self.assertTrue("aread@ietf.org" in str(mail_outbox[-1])) # author
+        self.assertTrue("wgchairman@ietf.org" in str(mail_outbox[-1]))
         
     def test_expire_ids(self):
         from ietf.idrfc.expire import get_expired_ids, send_expire_notice_for_id, expire_id, INTERNET_DRAFT_DAYS_TO_EXPIRE

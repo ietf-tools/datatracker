@@ -128,7 +128,7 @@ def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=N
     else:
         msg = MIMEText(txt)
 
-    send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=None, bcc=None)
+    send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc)
         
 def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=None, bcc=None):
     """Send MIME message with content already filled in."""
@@ -143,6 +143,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=N
     msg['To'] = to
     if cc:
 	msg['Cc'] = cc
+    print cc
     msg['Subject'] = subject
     msg['X-Test-IDTracker'] = (settings.SERVER_MODE == 'production') and 'no' or 'yes'
     if extra:

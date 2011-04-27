@@ -209,7 +209,6 @@ class InternetDraft(Document):
     # reverse relationship
     @property
     def authors(self):
-        from person.models import Person
         return IDAuthor.objects.filter(document=self)
     
     # methods from InternetDraft

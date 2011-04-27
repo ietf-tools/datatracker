@@ -441,7 +441,7 @@ def get_initial_notify(doc):
             receivers.append(e.address)
     else:
         receivers.append("%s-chairs@%s" % (doc.group.acronym, settings.TOOLS_SERVER))
-        for editor in Email.objects.filter(role__name="wgeditor", role__group=doc.group):
+        for editor in Email.objects.filter(role__name="editor", role__group=doc.group):
             receivers.append(e.address)
 
     receivers.append("%s@%s" % (doc.name, settings.TOOLS_SERVER))

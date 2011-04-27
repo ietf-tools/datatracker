@@ -15,7 +15,7 @@ management.setup_environ(settings)
 from redesign.person.models import *
 from redesign.group.models import *
 from redesign.name.models import *
-from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrgInfo, WGEditor, ChairsHistory, Role as OldRole
+from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
 
 # assumptions:
 #  - groups have been imported
@@ -24,10 +24,10 @@ from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrg
 # imported, although some information is retrieved from those
 
 # imports IESGLogin, AreaDirector, WGEditor, persons from IDAuthor,
-# NomCom chairs from ChairsHistory
+# NomCom chairs from ChairsHistory, WGChair, IRTFChair, WGSecretary,
+# WGTechAdvisor
 
-# should probably import WGChair, WGSecretary,
-#  WGTechAdvisor, Role, IRTFChair
+# FIXME: should probably import Role
 
 # make sure names exist
 def name(name_class, slug, name, desc=""):
@@ -40,8 +40,10 @@ def name(name_class, slug, name, desc=""):
 
 area_director_role = name(RoleName, "ad", "Area Director")
 inactive_area_director_role = name(RoleName, "ex-ad", "Ex-Area Director", desc="Inactive Area Director")
-wg_editor_role = name(RoleName, "wgeditor", "Working Group Editor")
 chair_role = name(RoleName, "chair", "Chair")
+editor_role = name(RoleName, "editor", "Editor")
+secretary_role = name(RoleName, "secr", "Secretary")
+techadvisor_role = name(RoleName, "techadv", "Tech Advisor")
 
 # helpers for creating the objects
 def get_or_create_email(o, create_fake):
@@ -75,7 +77,74 @@ def get_or_create_email(o, create_fake):
 
     return e
 
-nomcom_groups = list(Group.objects.filter(acronym="nomcom"))
+# WGEditor
+for o in WGEditor.objects.all():
+    acronym = Acronym.objects.get(acronym_id=o.group_acronym_id).acronym
+    print "importing WGEditor", acronym, o.person
+
+    email = get_or_create_email(o, create_fake=True)
+    group = Group.objects.get(acronym=acronym)
+
+    Role.objects.get_or_create(name=editor_role, group=group, email=email)
+
+# WGSecretary
+for o in WGSecretary.objects.all():
+    acronym = Acronym.objects.get(acronym_id=o.group_acronym_id).acronym
+    print "importing WGSecretary", acronym, o.person
+
+    email = get_or_create_email(o, create_fake=True)
+    group = Group.objects.get(acronym=acronym)
+
+    Role.objects.get_or_create(name=secretary_role, group=group, email=email)
+
+# WGTechAdvisor
+for o in WGTechAdvisor.objects.all():
+    acronym = Acronym.objects.get(acronym_id=o.group_acronym_id).acronym
+    print "importing WGTechAdvisor", acronym, o.person
+
+    email = get_or_create_email(o, create_fake=True)
+    group = Group.objects.get(acronym=acronym)
+
+    Role.objects.get_or_create(name=techadvisor_role, group=group, email=email)
+
+# WGChair
+for o in WGChair.objects.all():
+    # there's some garbage in this table, so wear double safety belts
+    try:
+        acronym = Acronym.objects.get(acronym_id=o.group_acronym_id).acronym
+    except Acronym.DoesNotExist:
+        print "SKIPPING WGChair with unknown acronym id", o.group_acronym_id
+        continue
+
+    try:
+        person = o.person
+    except PersonOrOrgInfo.DoesNotExist:
+        print "SKIPPING WGChair", acronym, "with invalid person id", o.person_id
+        continue
+    
+    if acronym in ("apples", "apptsv", "usac", "null", "dirdir"):
+        print "SKIPPING WGChair", acronym, o.person
+        continue
+
+    print "importing WGChair", acronym, o.person
+
+    email = get_or_create_email(o, create_fake=True)
+    group = Group.objects.get(acronym=acronym)
+
+    Role.objects.get_or_create(name=chair_role, group=group, email=email)
+
+# IRTFChair
+for o in IRTFChair.objects.all():
+    acronym = o.irtf.acronym.lower()
+    print "importing IRTFChair", acronym, o.person
+
+    email = get_or_create_email(o, create_fake=True)
+    group = Group.objects.get(acronym=acronym)
+
+    Role.objects.get_or_create(name=chair_role, group=group, email=email)
+
+# NomCom chairs
+nomcom_groups = list(Group.objects.filter(acronym="nominatingcom"))
 for o in ChairsHistory.objects.filter(chair_type=OldRole.NOMCOM_CHAIR):
     print "importing NOMCOM chair", o
     for g in nomcom_groups:
@@ -86,7 +155,6 @@ for o in ChairsHistory.objects.filter(chair_type=OldRole.NOMCOM_CHAIR):
     
     Role.objects.get_or_create(name=chair_role, group=g, email=email)
 
-    
 # IESGLogin
 for o in IESGLogin.objects.all():
     print "importing IESGLogin", o.id, o.first_name, o.last_name
@@ -134,18 +202,6 @@ for o in AreaDirector.objects.all():
     else:
         Role.objects.get_or_create(name=role_type, group=area, email=email)
 
-# WGEditor
-for o in WGEditor.objects.all():
-    # if not o.group_acronym:
-    #     print "NO GROUP", o.person, o.group_acronym_id
-    #     continue
-    
-    print "importing WGEditor", o.group_acronym, o.person
-    email = get_or_create_email(o, create_fake=False)
-    
-    group = Group.objects.get(acronym=o.group_acronym.group_acronym.acronym)
-
-    Role.objects.get_or_create(name=wg_editor_role, group=group, email=email)
 
 # IDAuthor persons
 for o in IDAuthor.objects.all().order_by('id').select_related('person'):

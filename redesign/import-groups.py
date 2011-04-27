@@ -16,11 +16,9 @@ from redesign.group.models import *
 from redesign.name.models import *
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role
 
-# imports IETFWG, Area, AreaGroup, Acronym
+# imports IETFWG, Area, AreaGroup, Acronym, IRTF
 
 # also creates nomcom groups
-
-# FIXME: should also import IRTF
 
 # make sure we got the names
 def name(name_class, slug, name, desc=""):
@@ -60,11 +58,11 @@ system_email, _ = Email.objects.get_or_create(address="(System)")
 
 
 # NomCom
-Group.objects.filter(acronym="nomcom").delete()
+Group.objects.filter(acronym="nominatingcom").delete()
 
 for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("start_year"):
     group = Group()
-    group.acronym = "nomcom"
+    group.acronym = "nominatingcom"
     group.name = "IAB/IESG Nominating Committee %s/%s" % (o.start_year, o.end_year)
     if o.chair_type.person == o.person:
         s = state_names["active"]
@@ -118,6 +116,28 @@ for o in Area.objects.all():
     # FIXME: missing fields from old: last_modified_date, extra_email_addresses
 
     
+# IRTF
+for o in IRTF.objects.all():
+    try:
+        group = Group.objects.get(acronym=o.acronym.lower())
+    except Group.DoesNotExist:
+        group = Group(acronym=o.acronym.lower())
+        
+    group.name = o.name
+    group.state = state_names["active"] # we assume all to be active
+    group.type = type_names["rg"]
+
+    # FIXME: who is the parent?
+    # group.parent = Group.objects.get(acronym=)
+    print "no parent for", group.acronym, group.name, group.type, group.state
+
+    group.comments = o.charter_text or ""
+    
+    group.save()
+
+    # FIXME: missing fields from old: meeting_scheduled
+
+
 # IETFWG, AreaGroup
 for o in IETFWG.objects.all():
     try:

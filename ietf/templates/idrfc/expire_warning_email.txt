@@ -1,0 +1,6 @@
+The following draft will expire soon:
+
+Name:     {{ doc.name }}
+Title:    {{ doc.title}}
+State:    {{ state }}
+Expires:  {{ expiration }} (in {{ expiration|timeuntil }})
