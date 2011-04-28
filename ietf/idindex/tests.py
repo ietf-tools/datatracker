@@ -39,34 +39,34 @@ class IdIndexUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
         self.doTestUrls(__file__)
 
-class IndexTestCase(unittest.TestCase, RealDatabaseTest):
-    def setUp(self):
-        self.setUpRealDatabase()
-    def tearDown(self):
-        self.tearDownRealDatabase()
+# class IndexTestCase(unittest.TestCase, RealDatabaseTest):
+#     def setUp(self):
+#         self.setUpRealDatabase()
+#     def tearDown(self):
+#         self.tearDownRealDatabase()
 
-    def testAllId(self):
-        print "     Testing all_id.txt generation"
-        c = Client()
-        response = c.get('/drafts/_test/all_id.txt')
-        self.assertEquals(response.status_code, 200)
-        content = response.content
-        # Test that correct version number is shown for couple of old drafts
-        self.assert_(content.find("draft-ietf-tls-psk-09") >= 0)
-        self.assert_(content.find("draft-eronen-eap-sim-aka-80211-00") >= 0)
-        # Since all_id.txt contains all old drafts, it should never shrink
-        lines = content.split("\n")
-        self.assert_(len(lines) > 18000)
-        # Test that the lines look OK and have correct number of tabs
-        r = re.compile(r'^(draft-\S*-\d\d)\t(\d\d\d\d-\d\d-\d\d)\t([^\t]+)\t([^\t]*)$')
-        for line in lines:
-            if ((line == "") or 
-                (line == "Internet-Drafts Status Summary") or
-                (line == "Web version is available at") or 
-                (line == "https://datatracker.ietf.org/public/idindex.cgi")):
-                pass
-            elif r.match(line):
-                pass
-            else:
-                self.fail("Unexpected line \""+line+"\"")
-        print "OK   (all_id.txt)"
+#     def testAllId(self):
+#         print "     Testing all_id.txt generation"
+#         c = Client()
+#         response = c.get('/drafts/_test/all_id.txt')
+#         self.assertEquals(response.status_code, 200)
+#         content = response.content
+#         # Test that correct version number is shown for couple of old drafts
+#         self.assert_(content.find("draft-ietf-tls-psk-09") >= 0)
+#         self.assert_(content.find("draft-eronen-eap-sim-aka-80211-00") >= 0)
+#         # Since all_id.txt contains all old drafts, it should never shrink
+#         lines = content.split("\n")
+#         self.assert_(len(lines) > 18000)
+#         # Test that the lines look OK and have correct number of tabs
+#         r = re.compile(r'^(draft-\S*-\d\d)\t(\d\d\d\d-\d\d-\d\d)\t([^\t]+)\t([^\t]*)$')
+#         for line in lines:
+#             if ((line == "") or 
+#                 (line == "Internet-Drafts Status Summary") or
+#                 (line == "Web version is available at") or 
+#                 (line == "https://datatracker.ietf.org/public/idindex.cgi")):
+#                 pass
+#             elif r.match(line):
+#                 pass
+#             else:
+#                 self.fail("Unexpected line \""+line+"\"")
+#         print "OK   (all_id.txt)"
