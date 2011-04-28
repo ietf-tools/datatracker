@@ -144,7 +144,7 @@ for o in IRTFChair.objects.all():
     Role.objects.get_or_create(name=chair_role, group=group, email=email)
 
 # NomCom chairs
-nomcom_groups = list(Group.objects.filter(acronym="nominatingcom"))
+nomcom_groups = list(Group.objects.filter(acronym__startswith="nomcom").exclude(acronym="nomcom"))
 for o in ChairsHistory.objects.filter(chair_type=OldRole.NOMCOM_CHAIR):
     print "importing NOMCOM chair", o
     for g in nomcom_groups:

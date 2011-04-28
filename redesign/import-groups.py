@@ -54,15 +54,22 @@ iesg_group.state = state_names["active"]
 iesg_group.type = type_names["ietf"]
 iesg_group.save()
 
+# make sure we got the IRTF as parent for RGs
+irtf_group, _ = Group.objects.get_or_create(acronym="irtf")
+irtf_group.name = "IRTF"
+irtf_group.state = state_names["active"]
+irtf_group.type = type_names["ietf"]
+irtf_group.save()
+
 system_email, _ = Email.objects.get_or_create(address="(System)")
 
 
 # NomCom
-Group.objects.filter(acronym="nominatingcom").delete()
+Group.objects.filter(acronym__startswith="nomcom").exclude(acronym="nomcom").delete()
 
 for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("start_year"):
     group = Group()
-    group.acronym = "nominatingcom"
+    group.acronym = "nomcom%s" % o.start_year
     group.name = "IAB/IESG Nominating Committee %s/%s" % (o.start_year, o.end_year)
     if o.chair_type.person == o.person:
         s = state_names["active"]
@@ -126,10 +133,7 @@ for o in IRTF.objects.all():
     group.name = o.name
     group.state = state_names["active"] # we assume all to be active
     group.type = type_names["rg"]
-
-    # FIXME: who is the parent?
-    # group.parent = Group.objects.get(acronym=)
-    print "no parent for", group.acronym, group.name, group.type, group.state
+    group.parent = irtf_group
 
     group.comments = o.charter_text or ""
     
@@ -137,13 +141,13 @@ for o in IRTF.objects.all():
 
     # FIXME: missing fields from old: meeting_scheduled
 
-
 # IETFWG, AreaGroup
 for o in IETFWG.objects.all():
     try:
         group = Group.objects.get(acronym=o.group_acronym.acronym)
     except Group.DoesNotExist:
         group = Group(acronym=o.group_acronym.acronym)
+        group.id = o.group_acronym_id # transfer id
         
     group.name = o.group_acronym.name
     # state
