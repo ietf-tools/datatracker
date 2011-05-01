@@ -6,8 +6,9 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 
 from ietf.idtracker.models import (InternetDraft, PersonOrOrgInfo, IETFWG,
-                                   IDAuthor, EmailAddress)
+                                   IDAuthor, EmailAddress, IDState)
 from ietf.utils.mail import send_mail
+from ietf.idrfc.utils import add_document_comment
 
 
 # Some usefull states
@@ -47,6 +48,11 @@ def perform_post(submission):
         draft.last_modified_date = datetime.date.today()
         draft.abstract = submission.abstract
         draft.save()
+        if draft.idinternal.cur_sub_state_id == 5 and draft.idinternal.rfc_flag == 0:  # Substate 5 Revised ID Needed
+            draft.idinternal.prev_sub_state_id = draft.idinternal.cur_sub_state_id
+            draft.idinternal.cur_sub_state_id = 2  # Substate 2 AD Followup
+            draft.idinternal.save()
+            add_document_comment(None, draft, "Sub state has been changed to AD Follow up from New Id Needed")
     except InternetDraft.DoesNotExist:
         draft = InternetDraft.objects.create(
             title=submission.id_document_name,
