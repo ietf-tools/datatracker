@@ -169,15 +169,6 @@ class DocAlias(models.Model):
         verbose_name = "document alias"
         verbose_name_plural = "document aliases"
 
-class SendQueue(models.Model):
-    time = models.DateTimeField()       # Scheduled at this time
-    agent  = models.ForeignKey(Email)     # Scheduled by this person
-    comment = models.TextField()
-    # 
-    msg  = models.ForeignKey('Message')
-    to   = models.ForeignKey(Email, related_name='to_messages')
-    cc   = models.ManyToManyField(Email, related_name='cc_messages')
-    send = models.DateTimeField()       # Send message at this time
 
 # class Ballot(models.Model):             # A collection of ballot positions
 #     """A collection of ballot positions, and the actions taken during the
@@ -243,10 +234,6 @@ class Event(models.Model):
     class Meta:
         ordering = ['-time', 'id']
         
-class Message(Event):
-    subj = models.CharField(max_length=255)
-    body = models.TextField()
-
 class NewRevisionEvent(Event):
     rev = models.CharField(max_length=16)
    

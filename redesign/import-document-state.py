@@ -17,6 +17,8 @@ from redesign.name.models import *
 from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
 from ietf.idrfc.models import RfcIndex, DraftVersions
 
+from importing.utils import *
+
 import sys
 
 document_name_to_import = None
@@ -42,15 +44,6 @@ connection.queries = DummyQueries()
 # imports InternetDraft, IDInternal, BallotInfo, Position,
 # IESGComment, IESGDiscuss, DocumentComment, IDAuthor, idrfc.RfcIndex,
 # idrfc.DraftVersions
-
-def name(name_class, slug, name, desc="", order=0):
-    # create if it doesn't exist, set name and desc
-    obj, _ = name_class.objects.get_or_create(slug=slug)
-    obj.name = name
-    obj.desc = desc
-    obj.order = order
-    obj.save()
-    return obj
 
 def alias_doc(name, doc):
     DocAlias.objects.filter(name=name).exclude(document=doc).delete()
@@ -208,7 +201,7 @@ def iesg_login_to_email(l):
             l = buggy_iesg_logins_cache[l.id]
             
         try:
-            return Email.objects.get(address=l.person.email()[1])
+            return Email.objects.get(address=person_email(l.person))
         except Email.DoesNotExist:
             try:
                 return Email.objects.get(person__name="%s %s" % (l.person.first_name, l.person.last_name))

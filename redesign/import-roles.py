@@ -17,26 +17,21 @@ from redesign.group.models import *
 from redesign.name.models import *
 from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
 
+from importing.utils import *
+
 # assumptions:
 #  - groups have been imported
 
 # PersonOrOrgInfo/PostalAddress/EmailAddress/PhoneNumber are not
 # imported, although some information is retrieved from those
 
-# imports IESGLogin, AreaDirector, WGEditor, persons from IDAuthor,
-# NomCom chairs from ChairsHistory, WGChair, IRTFChair, WGSecretary,
-# WGTechAdvisor
+# imports IESGLogin, AreaDirector, WGEditor, WGChair, IRTFChair,
+# WGSecretary, WGTechAdvisor, NomCom chairs from ChairsHistory,
+#
+# also imports persons from IDAuthor, announcement originators from
+# Announcements
 
 # FIXME: should probably import Role
-
-# make sure names exist
-def name(name_class, slug, name, desc=""):
-    # create if it doesn't exist, set name
-    obj, _ = name_class.objects.get_or_create(slug=slug)
-    obj.name = name
-    obj.desc = desc
-    obj.save()
-    return obj
 
 area_director_role = name(RoleName, "ad", "Area Director")
 inactive_area_director_role = name(RoleName, "ex-ad", "Ex-Area Director", desc="Inactive Area Director")
@@ -47,18 +42,16 @@ techadvisor_role = name(RoleName, "techadv", "Tech Advisor")
 
 # helpers for creating the objects
 def get_or_create_email(o, create_fake):
-    hardcoded_emails = { 'Dinara Suleymanova': "dinaras@ietf.org" }
-    
-    email = o.person.email()[1] or hardcoded_emails.get("%s %s" % (o.person.first_name, o.person.last_name))
+    email = person_email(o.person)
     if not email:
         if create_fake:
             email = u"unknown-email-%s-%s" % (o.person.first_name, o.person.last_name)
             print ("USING FAKE EMAIL %s for %s %s %s" % (email, o.person.pk, o.person.first_name, o.person.last_name)).encode('utf-8')
         else:
-            print ("NO EMAIL FOR %s %s %s %s %s" % (o.__class__, o.id, o.person.pk, o.person.first_name, o.person.last_name)).encode('utf-8')
+            print ("NO EMAIL FOR %s %s %s %s %s" % (o.__class__, o.pk, o.person.pk, o.person.first_name, o.person.last_name)).encode('utf-8')
             return None
     
-    e, _ = Email.objects.get_or_create(address=email)
+    e, _ = Email.objects.select_related("person").get_or_create(address=email)
     if not e.person:
         n = u"%s %s" % (o.person.first_name, o.person.last_name)
         asciified = unaccent.asciify(n)
@@ -66,7 +59,7 @@ def get_or_create_email(o, create_fake):
         if aliases:
             p = aliases[0].person
         else:
-            p = Person.objects.create(name=n, ascii=asciified)
+            p = Person.objects.create(id=o.person.pk, name=n, ascii=asciified)
             # FIXME: fill in address?
             Alias.objects.create(name=n, person=p)
             if asciified != n:
@@ -203,6 +196,14 @@ for o in AreaDirector.objects.all():
         Role.objects.get_or_create(name=role_type, group=area, email=email)
 
 
+# Announcement persons
+for o in PersonOrOrgInfo.objects.filter(announcement__announcement_id__gte=1).distinct():
+    print "importing Announcement originator", o.person_or_org_tag, o.first_name.encode('utf-8'), o.last_name.encode('utf-8')
+
+    o.person = o # satisfy the get_or_create_email interface
+    
+    email = get_or_create_email(o, create_fake=False)
+    
 # IDAuthor persons
 for o in IDAuthor.objects.all().order_by('id').select_related('person'):
     print "importing IDAuthor", o.id, o.person_id, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')

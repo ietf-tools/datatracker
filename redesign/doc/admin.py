@@ -21,10 +21,6 @@ class DocAliasAdmin(admin.ModelAdmin):
     raw_id_fields = ['document']
 admin.site.register(DocAlias, DocAliasAdmin)
 
-class SendQueueAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(SendQueue, SendQueueAdmin)
-
 
 # events
 
@@ -38,7 +34,6 @@ class EventAdmin(admin.ModelAdmin):
     
 admin.site.register(Event, EventAdmin)
 
-admin.site.register(Message, EventAdmin)
 admin.site.register(NewRevisionEvent, EventAdmin)
 admin.site.register(WriteupEvent, EventAdmin)
 admin.site.register(StatusDateEvent, EventAdmin)
