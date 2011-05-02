@@ -47,8 +47,10 @@ def perform_post(submission):
         draft.txt_page_count = submission.txt_page_count
         draft.last_modified_date = datetime.date.today()
         draft.abstract = submission.abstract
+        draft.status_id=1  # Active
+        draft.expired_tombstone=0
         draft.save()
-        if draft.idinternal.cur_sub_state_id == 5 and draft.idinternal.rfc_flag == 0:  # Substate 5 Revised ID Needed
+        if draft.idinternal and draft.idinternal.cur_sub_state_id == 5 and draft.idinternal.rfc_flag == 0:  # Substate 5 Revised ID Needed
             draft.idinternal.prev_sub_state_id = draft.idinternal.cur_sub_state_id
             draft.idinternal.cur_sub_state_id = 2  # Substate 2 AD Followup
             draft.idinternal.save()
