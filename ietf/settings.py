@@ -191,6 +191,8 @@ LIAISON_ATTACH_URL = '/documents/LIAISON/'
 # ID Submission Tool settings
 IDST_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
 IDST_TO_EMAIL = 'internet-drafts@ietf.org'
+IDST_ID_EMAIL = 'Internet-Drafts@ietf.org'
+IDST_ID_ANNOUNCE_LIST = 'i-d-announce@ietf.org'
 
 # Days from meeting to cut off dates on submit
 FIRST_CUTOFF_DAYS = 5

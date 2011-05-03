@@ -1,0 +1,15 @@
+A new version of I-D, {{ submission.filename }}-{{ submission.revision }}.txt has been successfully submitted by {{ submitter }} and posted to the IETF repository.
+
+Filename:	 {{ submission.filename }}
+Revision:	 {{ submission.revision }}
+Title:		 {{ submission.id_document_name }}
+Creation date:	 {{ submission.creation_date|date:"Y-m-d" }}
+WG ID:		 {{ wg }}
+Number of pages: {{ submission.txt_page_count }}
+
+Abstract:
+{{ submission.abstract }}
+                                                                                  
+{{ submission.comment_to_sec|default:"" }}
+
+The IETF Secretariat

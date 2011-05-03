@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 
 from ietf.idtracker.models import (InternetDraft, PersonOrOrgInfo, IETFWG,
-                                   IDAuthor, EmailAddress, IDState)
+                                   IDAuthor, EmailAddress, IESGLogin)
 from ietf.utils.mail import send_mail
 from ietf.idrfc.utils import add_document_comment
 
@@ -36,32 +36,34 @@ def request_full_url(request, submission):
 
 def perform_post(submission):
     group_id = submission.group_acronym and submission.group_acronym.pk or NONE_WG
+    state_change_msg = ''
     try:
         draft = InternetDraft.objects.get(filename=submission.filename)
         draft.title = submission.id_document_name
         draft.group_id = group_id
         draft.filename = submission.filename
         draft.revision = submission.revision
-        draft.revision_date = submission.creation_date
+        draft.revision_date = submission.submission_date
         draft.file_type = submission.file_type
         draft.txt_page_count = submission.txt_page_count
         draft.last_modified_date = datetime.date.today()
         draft.abstract = submission.abstract
-        draft.status_id=1  # Active
-        draft.expired_tombstone=0
+        draft.status_id = 1  # Active
+        draft.expired_tombstone = 0
         draft.save()
         if draft.idinternal and draft.idinternal.cur_sub_state_id == 5 and draft.idinternal.rfc_flag == 0:  # Substate 5 Revised ID Needed
             draft.idinternal.prev_sub_state_id = draft.idinternal.cur_sub_state_id
             draft.idinternal.cur_sub_state_id = 2  # Substate 2 AD Followup
             draft.idinternal.save()
-            add_document_comment(None, draft, "Sub state has been changed to AD Follow up from New Id Needed")
+            state_change_msg = "Sub state has been changed to AD Follow up from New Id Needed"
+            add_document_comment(None, draft, state_change_msg)
     except InternetDraft.DoesNotExist:
         draft = InternetDraft.objects.create(
             title=submission.id_document_name,
             group_id=group_id,
             filename=submission.filename,
             revision=submission.revision,
-            revision_date=submission.creation_date,
+            revision_date=submission.submission_date,
             file_type=submission.file_type,
             txt_page_count=submission.txt_page_count,
             start_date=datetime.date.today(),
@@ -71,9 +73,71 @@ def perform_post(submission):
             intended_status_id=8,  # None
         )
     update_authors(draft, submission)
+    add_document_comment(None, draft, "New version available")
     move_docs(submission)
     submission.status_id = POSTED
+    send_announcements(submission, draft, state_change_msg)
     submission.save()
+
+
+def send_announcements(submission, draft, state_change_msg):
+    announce_to_lists(submission)
+    if draft.idinternal and not draft.idinternal.rfc_flag:
+        announce_new_version(submission, draft, state_change_msg)
+    announce_to_authors(submission)
+
+
+def announce_to_lists(submission):
+    subject = 'I-D Action: %s-%s.txt' % (submission.filename, submission.revision)
+    from_email = settings.IDST_ID_EMAIL
+    to_email = [settings.IDST_ID_ANNOUNCE_LIST]
+    authors = []
+    for i in submission.tempidauthors_set.order_by('author_order'):
+        if not i.author_order:
+            continue
+        authors.append(i.get_full_name())
+    if submission.group_acronym:
+        cc = [submission.group_acronym.email_address]
+    else:
+        cc = None
+    send_mail(None, to_email, from_email, subject, 'submit/announce_to_lists.txt',
+              {'submission': submission,
+               'authors': authors}, cc=cc)
+
+
+def announce_new_version(submission, draft, state_change_msg):
+    to_email = []
+    if draft.idinternal.state_change_notice_to:
+        to_email.append(draft.idinternal.state_change_notice_to)
+    if draft.idinternal.job_owner:
+        to_email.append(draft.idinternal.job_owner.person.email()[1])
+    if draft.idinternal.ballot:
+        for p in draft.idinternal.ballot.positions.all():
+            if p.discuss == 1 and p.ad.user_level == IESGLogin.AD_LEVEL:
+                to_email.append(p.ad.person.email()[1])
+    subject = 'New Version Notification - %s-%s.txt' % (submission.filename, submission.revision)
+    from_email = settings.IDST_ID_EMAIL
+    send_mail(None, to_email, from_email, subject, 'submit/announce_new_version.txt',
+              {'submission': submission,
+               'msg': state_change_msg})
+
+
+def announce_to_authors(submission):
+    authors = submission.tempidauthors_set.order_by('author_order')
+    cc = list(set([i.email()[1] for i in authors]))
+    to_email = [authors[0].email()[1]]  # First TempIdAuthor is submitter
+    from_email = settings.IDST_ID_EMAIL
+    subject = 'New Version Notification for %s-%s.txt' % (submission.filename, submission.revision)
+    if submission.group_acronym:
+        wg = submission.group_acronym.group_acronym.acronym
+    elif submission.filename.startswith('draft-iesg'):
+        wg = 'IESG'
+    else:
+        wg = 'Individual Submission'
+    send_mail(None, to_email, from_email, subject, 'submit/announce_to_authors.txt',
+              {'submission': submission,
+               'submitter': authors[0].get_full_name(),
+               'wg': wg}, cc=cc)
 
 
 def find_person(first_name, last_name, middle_initial, name_suffix, email):
