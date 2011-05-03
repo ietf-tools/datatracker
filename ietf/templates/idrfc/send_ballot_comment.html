@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load ietf_filters %}
 {% block title %}Send ballot position email for {{ ad }}{% endblock %}
 
 {% block morecss %}
@@ -33,7 +33,7 @@ form.send-ballot pre {
     <tr><th>Subject:</th> <td>{{ subject }}</td></tr>
     <tr>
       <th>Body:</th>
-      <td><pre>{{ body }}</pre></td>
+      <td><pre>{{ body|wrap_text }}</pre></td>
     </tr>
     <tr>
       <td></td>

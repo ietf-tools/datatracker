@@ -268,6 +268,35 @@ def wrap_long_lines(text):
         filled += [ line.rstrip() ]
     return "\n".join(filled)
 
+@register.filter(name="wrap_text")
+def wrap_text(text, width=72):
+    """Wraps long lines without loosing the formatting and indentation
+       of short lines"""
+    if not isinstance(text, (types.StringType,types.UnicodeType)):
+        return text
+    text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
+    text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings
+    text = re.sub("( *\n){3,}", "\n\n", text) # get rid of excessive vertical whitespace
+    lines = text.split("\n")
+    filled = []
+    wrapped = False
+    for line in lines:
+        expanded = line.expandtabs()
+        indent = " " * (len(expanded) - len(expanded.lstrip()))
+        if wrapped and line.strip() != "" and indent == prev_indent:
+            line = filled[-1] + " " + line.lstrip()
+            filled = filled[:-1]
+        else:
+            wrapped = False
+        while (len(line) > width) and (" " in line[:width]):
+            wrapped = True
+            breakpoint = line.rfind(" ",0,width)
+            filled += [ line[:breakpoint] ]
+            line = indent + line[breakpoint+1:]
+        filled += [ line.rstrip() ]
+        prev_indent = indent
+    return "\n".join(filled)
+
 @register.filter(name="id_index_file_types")
 def id_index_file_types(text):
     r = ".txt"
