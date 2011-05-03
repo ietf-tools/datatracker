@@ -1,3 +1,43 @@
+ietfdb (3.53)
+
+  From esanches@yaco.es:
+
+  * Do not allow cancellation of submissions with GET requests, and Ensure
+    that 'get full url', 'approve' and 'force' views are called via POST
+    request. Insert a button to perform the last step of autopost via POST
+    request. Fixes #650  
+
+  * Do not assume that the two_pages_field field is not None. Fixes #651
+
+  * Allow creation dates that are 3 days after or 3 days before the current
+    date. Fixes #652
+
+  * Change substate from Revised ID Needed to AD Followup if needed. Fixes #654
+
+  * Fix expected revision for expired drafts. Fixes #656
+
+  * Send announcements when posting new version of a draft. Fixes #649
+
+  From henrik@levkowetz.com:
+
+  * Previous IPR information in last call announcements could be 
+    incomplete.  Use a better search for IPR declarations related to a 
+    document, and include the IPR information in the last call preview.
+    Fixes an AD request and a request from the IESG
+
+  * When extracting meta-information from drafts, it is required that some 
+    data reside on the first page.  Split unpaginated drafts into chunks so we 
+    can adhere better to this.  Fixes a bug where submission filename was
+    picked up (incorrectly) later in a document.
+
+  * Wrap long lines in the 'save and send email' view of AD ballot comments 
+    and discusses.  Fixes a request from the IESG
+
+  * Give development and test deployment a /robots.txt which doesn't permit 
+    robots.  Avoids indexing of development servers by web spiders.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  04 May 2011 00:37:33 +0200
+
 ietfdb (3.52)
 
   * A very small bugfix release, providing the ability for secretariat staff
