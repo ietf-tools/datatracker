@@ -19,4 +19,13 @@ http://www.ietf.org/iesg/implementation.html
 {% endif %}
 IESG discussion can be tracked via
 {{ doc_url }}
+
+{% if ipr_links %}
+The following IPR Declarations may be related to this I-D:
+
+{% for link in ipr_links %}   {{ link }}
+{% endfor %}
+{% else %}
+No IPR declarations have been submitted directly on this I-D.
+{% endif %}
 {% endautoescape %}

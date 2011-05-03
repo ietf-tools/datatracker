@@ -6,9 +6,11 @@ from datetime import datetime, date, time, timedelta
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
+from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
+from ietf.ipr.search import iprs_from_docs
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.idinternal.state_change_notice_to.replace(';', ',').split(',')]
@@ -74,6 +76,13 @@ def generate_last_call_announcement(request, doc):
         d.filled_title = textwrap.fill(d.title, width=70, subsequent_indent=" " * 3)
         urls.append(settings.IDTRACKER_BASE_URL + d.idinternal.get_absolute_url())
     
+    iprs, docs = iprs_from_docs(docs)
+    if iprs:
+        ipr_links = [ urlreverse("ietf.ipr.views.show", kwargs=dict(ipr_id=i.ipr_id)) for i in iprs]
+        ipr_links = [ settings.IDTRACKER_BASE_URL+url if not url.startswith("http") else url for url in ipr_links ]
+    else:
+        ipr_links = None
+
     return render_to_string("idrfc/last_call_announcement.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url(),
@@ -84,6 +93,7 @@ def generate_last_call_announcement(request, doc):
                                  urls=urls,
                                  status=status,
                                  impl_report="Draft" in status or "Full" in status,
+                                 ipr_links=ipr_links,
                                  )
                             )
 

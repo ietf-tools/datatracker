@@ -18,6 +18,7 @@ from ietf.idtracker.templatetags.ietf_filters import in_group
 from ietf.idtracker.models import *
 from ietf.iesg.models import *
 from ietf.ipr.models import IprDetail
+from ietf.ipr.search import iprs_from_docs
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
@@ -631,24 +632,6 @@ def make_last_call(request, name):
     
     announcement = ballot.last_call_text
 
-    # why cut -4 off filename? a better question is probably why these
-    # tables aren't linked together properly
-    filename_fragment = doc.filename[:-4]
-    iprs = IprDetail.objects.filter(title__icontains=filename_fragment)
-    if iprs:
-        links = [ urlreverse("ietf.ipr.views.show", kwargs=dict(ipr_id=i.ipr_id))
-                 for i in iprs]
-
-        links = [ settings.IDTRACKER_BASE_URL+url if not url.startswith("http") else url for url in links ]
-        
-        announcement += "\n\n"
-        announcement += "The following IPR Declarations may be related to this I-D:"
-        announcement += "\n\n"
-        announcement += "\n".join(links)
-    else:
-        announcement += "\n\n"
-        announcement += "No IPR declarations have been submitted directly on this I-D."
-    
     if request.method == 'POST':
         form = MakeLastCallForm(request.POST)
         if form.is_valid():
