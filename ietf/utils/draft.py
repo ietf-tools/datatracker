@@ -126,8 +126,16 @@ class Draft():
 
         self.rawlines = self.text.split("\n")
         self.lines, self.pages = self._stripheaders()
-        if not self.pages:
-            self.pages = [ self.text ]
+
+        # Some things (such as the filename) has to be on the first page.  If
+        # we didn't get back a set of pages, only one single page with the
+        # whole document, then we need to do an enforced page split in order
+        # to limit later searches to the first page.
+        if len(self.pages) <= 1:
+            self.pages = []
+            for pagestart in range(0, len(self.lines), 58):
+                self.pages += [ "\n".join(self.lines[pagestart:pagestart+54]) ]
+
         self.filename, self.revision = self._parse_draftname()
         
         self._authors = None
@@ -723,10 +731,10 @@ class Draft():
 
 
 # ----------------------------------------------------------------------
-def _output(fields):
+def _output(docname, fields):
     if opt_timestamp:
         sys.stdout.write("%s " % (fields["eventdate"]))
-    sys.stdout.write("%s" % (fields["doctag"].strip()))
+    sys.stdout.write("%s" % (docname.strip()))
 
     def outputkey(key, fields):
         sys.stdout.write(" %s='%s'" % ( key.lower(), fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" ).replace("\n", "\\n")))
@@ -734,7 +742,7 @@ def _output(fields):
     keys = fields.keys()
     keys.sort()
     for key in keys:
-        if fields[key] and not key in ["doctag", "eventdate"]:
+        if fields[key] and not key in ["eventdate", ]:
             outputkey(key, fields)
     sys.stdout.write("\n")
 
@@ -768,7 +776,8 @@ def _printmeta(timestamp, fn):
     #_debug("\n".join(draft.lines))
 
     fields["eventdate"] = timestamp
-    fields["doctag"] = draft.filename or fn[:-7]
+    if draft.filename:
+        fields["doctag"] = draft.filename
     fields["docrev"] = draft.revision
 
     fields["doctitle"] = draft.get_title()
@@ -785,7 +794,7 @@ def _printmeta(timestamp, fn):
     if abstract:
         fields["docabstract"] = abstract
 
-    _output(fields)
+    _output(fields.get("doctag", fn[:-7]), fields)
 
     if opt_trace:
         sys.stderr.write("%5.1f\n" % ((time.time() - t)))
