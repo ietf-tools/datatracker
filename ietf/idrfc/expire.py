@@ -125,10 +125,12 @@ def clean_up_id_files():
         try:
             doc = InternetDraft.objects.get(filename=filename, revision=revision)
 
-            if doc.status_id == 3:
+            if doc.status_id == 3:      # RFC
                 if ext != ".txt":
                     move_file_to("unknown_ids")
             elif doc.status_id in (2, 4, 5, 6) and doc.expiration_date and doc.expiration_date < cut_off:
+                # Expired, Withdrawn by Auth, Replaced, Withdrawn by IETF,
+                # and expired more than DAYS_TO_EXPIRE ago
                 if os.path.getsize(path) < 1500:
                     move_file_to("deleted_tombstones")
                     # revert version after having deleted tombstone
