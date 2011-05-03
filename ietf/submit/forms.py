@@ -409,7 +409,7 @@ class MetaDataForm(AutoPostForm):
             raise forms.ValidationError('Version field is not in NN format')
         if version_int > 99 or version_int < 0:
             raise forms.ValidationError('Version must be set between 00 and 99')
-        existing_revisions = [int(i.revision) for i in InternetDraft.objects.filter(filename=self.draft.filename)]
+        existing_revisions = [int(i.revision_display()) for i in InternetDraft.objects.filter(filename=self.draft.filename)]
         expected = 0
         if existing_revisions:
             expected = max(existing_revisions) + 1

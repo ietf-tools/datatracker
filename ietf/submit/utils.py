@@ -220,7 +220,7 @@ class DraftValidation(object):
         if self.draft.status_id in [POSTED, POSTED_BY_SECRETARIAT]:
             return
         revision = self.draft.revision
-        existing_revisions = [int(i.revision) for i in InternetDraft.objects.filter(filename=self.draft.filename)]
+        existing_revisions = [int(i.revision_display()) for i in InternetDraft.objects.filter(filename=self.draft.filename)]
         expected = 0
         if existing_revisions:
             expected = max(existing_revisions) + 1
