@@ -24,12 +24,8 @@ pre.twopages { margin: 0px; }
 {% if can_cancel %}
 <script type="text/javascript">
 function confirmCancelation(){
-  {% if is_valid %}if (confirm("Cancel this submission?")){% endif %}
-    {% if submission_hash %}
-    document.location = "{% url draft_cancel_by_hash detail.submission_id submission_hash %}";
-    {% else %}
-    document.location = "{% url draft_cancel detail.submission_id %}";
-    {% endif %}
+  {% if is_valid %}if (!confirm("Cancel this submission?")) return false;{% endif %}
+  return true;
 }
 </script>
 {% endif %}
@@ -198,7 +194,9 @@ returned to the submitter.
 {% if can_cancel %}
   <h2>Cancel submission</h2>
   <p>
-    <input type="button" onclick="confirmCancelation();" value="Cancel Submission" /><br>
+    <form method="post" onsubmit="return confirmCancelation();" action="{% url draft_cancel_by_hash detail.submission_id submission_hash %}">
+      <input type="submit" value="Cancel Submission" /><br>
+    </form>
      This submission will be canceled, and its uploaded document(s) permanently deleted.
   </p>
 {% endif %}

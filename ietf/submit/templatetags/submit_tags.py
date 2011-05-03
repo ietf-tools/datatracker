@@ -23,7 +23,7 @@ def show_two_pages(context, two_pages, validation):
 
 @register.filter
 def two_pages_decorated_with_validation(value, validation):
-    pages = value.first_two_pages
+    pages = value.first_two_pages or ''
     if not 'revision' in validation.warnings.keys():
         return mark_safe('<pre class="twopages" style="display: none;">%s</pre>' % pages)
     result = '<pre class="twopages" style="display: none;">\n'

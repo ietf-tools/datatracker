@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.sites.models import Site
-from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
+from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -167,6 +167,8 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
 
 
 def draft_cancel(request, submission_id, submission_hash=None):
+    if request.method!='POST':
+        return HttpResponseNotAllowed(['POST'])
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
     can_cancel = _can_cancel(request.user, detail, submission_hash)
     if not can_cancel:
@@ -212,12 +214,19 @@ def draft_confirm(request, submission_id, auth_key):
     elif detail.status_id != WAITING_AUTHENTICATION:
         message = ('error', 'The submission can not be autoposted because it is in state: %s' % detail.status.status_value)
     else:
-        message = ('success', 'Authorization key accepted. Auto-Post complete')
-        perform_post(detail)
+        if request.method=='POST':
+            message = ('success', 'Authorization key accepted. Auto-Post complete')
+            perform_post(detail)
+        else:
+            return render_to_response('submit/last_confirmation_step.html',
+                               {'detail': detail, },
+                               context_instance=RequestContext(request))
     return draft_status(request, submission_id, message=message)
 
 
 def draft_approve(request, submission_id, check_function=_can_approve):
+    if request.method!='POST':
+        return HttpResponseNotAllowed(['POST'])
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
     can_perform = check_function(request.user, detail)
     if not can_perform:
@@ -229,10 +238,14 @@ def draft_approve(request, submission_id, check_function=_can_approve):
 
 
 def draft_force(request, submission_id):
+    if request.method!='POST':
+        return HttpResponseNotAllowed(['POST'])
     return draft_approve(request, submission_id, check_function=_can_force_post)
 
 
 def full_url_request(request, submission_id):
+    if request.method!='POST':
+        return HttpResponseNotAllowed(['POST'])
     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
     request_full_url(request, detail)
     message = ('success', 'An email has been sent to draft authors to inform them of the full access url')

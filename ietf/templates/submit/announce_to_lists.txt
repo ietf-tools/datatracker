@@ -1,0 +1,19 @@
+A New Internet-Draft is available from the on-line Internet-Drafts directories.{% if submission.group_acronym %} This draft is a work item of the {{ submission.group_acronym.group_acronym.name }} Working Group of the IETF.{% endif %}
+
+	Title           : {{ submission.id_document_name }}
+	Author(s)       : {% for author in authors %}{{ author }}{% if not forloop.last %}
+                          {% endif %}{% endfor %}
+	Filename        : {{ submission.filename }}-{{ submission.revision }}.txt
+	Pages           : {{ submission.txt_page_count }}
+	Date            : {{ submission.submission_date|date:"Y-m-d" }}
+
+{{ submission.abstract }}
+
+A URL for this Internet-Draft is:
+http://www.ietf.org/internet-drafts/{{ submission.filename }}-{{ submission.revision }}.txt
+
+Internet-Drafts are also available by anonymous FTP at:
+ftp://ftp.ietf.org/internet-drafts/
+
+This Internet-Draft can be retrieved at:
+ftp://ftp.ietf.org/internet-drafts/{{ submission.filename }}-{{ submission.revision }}.txt

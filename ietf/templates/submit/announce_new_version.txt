@@ -1,0 +1,8 @@
+New version (-{{ submission.revision }}) has been submitted for {{ submission.filename }}-{{ submission.revision }}.txt.
+http://www.ietf.org/internet-drafts/{{ submission.filename }}-{{ submission.revision }}.txt
+{{ msg }}
+
+Diff from previous version:
+http://tools.ietf.org/rfcdiff?url2={{ submission.filename }}-{{ submission.revision }}
+
+IETF Secretariat.

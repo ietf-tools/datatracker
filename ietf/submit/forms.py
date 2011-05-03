@@ -392,9 +392,8 @@ class MetaDataForm(AutoPostForm):
         if not creation_date:
             return None
         submit_date = self.draft.submission_date
-        if creation_date > submit_date:
-            raise forms.ValidationError('Creation Date must not be set after submission date')
-        if creation_date + datetime.timedelta(days=3) < submit_date:
+        if (creation_date + datetime.timedelta(days=3) < submit_date or
+            creation_date - datetime.timedelta(days=3) > submit_date):
             raise forms.ValidationError('Creation Date must be within 3 days of submission date')
         return creation_date
 
@@ -410,7 +409,7 @@ class MetaDataForm(AutoPostForm):
             raise forms.ValidationError('Version field is not in NN format')
         if version_int > 99 or version_int < 0:
             raise forms.ValidationError('Version must be set between 00 and 99')
-        existing_revisions = [int(i.revision) for i in InternetDraft.objects.filter(filename=self.draft.filename)]
+        existing_revisions = [int(i.revision_display()) for i in InternetDraft.objects.filter(filename=self.draft.filename)]
         expected = 0
         if existing_revisions:
             expected = max(existing_revisions) + 1
