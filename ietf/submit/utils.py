@@ -51,12 +51,6 @@ def perform_post(submission):
         draft.status_id = 1  # Active
         draft.expired_tombstone = 0
         draft.save()
-        if draft.idinternal and draft.idinternal.cur_sub_state_id == 5 and draft.idinternal.rfc_flag == 0:  # Substate 5 Revised ID Needed
-            draft.idinternal.prev_sub_state_id = draft.idinternal.cur_sub_state_id
-            draft.idinternal.cur_sub_state_id = 2  # Substate 2 AD Followup
-            draft.idinternal.save()
-            state_change_msg = "Sub state has been changed to AD Follow up from New Id Needed"
-            add_document_comment(None, draft, state_change_msg)
     except InternetDraft.DoesNotExist:
         draft = InternetDraft.objects.create(
             title=submission.id_document_name,
@@ -73,7 +67,14 @@ def perform_post(submission):
             intended_status_id=8,  # None
         )
     update_authors(draft, submission)
-    add_document_comment(None, draft, "New version available")
+    if draft.idinternal:
+        add_document_comment(None, draft, "New version available")
+        if draft.idinternal.cur_sub_state_id == 5 and draft.idinternal.rfc_flag == 0:  # Substate 5 Revised ID Needed
+            draft.idinternal.prev_sub_state_id = draft.idinternal.cur_sub_state_id
+            draft.idinternal.cur_sub_state_id = 2  # Substate 2 AD Followup
+            draft.idinternal.save()
+            state_change_msg = "Sub state has been changed to AD Follow up from New Id Needed"
+            add_document_comment(None, draft, state_change_msg)
     move_docs(submission)
     submission.status_id = POSTED
     send_announcements(submission, draft, state_change_msg)
@@ -89,8 +90,8 @@ def send_announcements(submission, draft, state_change_msg):
 
 def announce_to_lists(submission):
     subject = 'I-D Action: %s-%s.txt' % (submission.filename, submission.revision)
-    from_email = settings.IDST_ID_EMAIL
-    to_email = [settings.IDST_ID_ANNOUNCE_LIST]
+    from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
+    to_email = [settings.IDSUBMIT_ANNOUNCE_LIST_EMAIL]
     authors = []
     for i in submission.tempidauthors_set.order_by('author_order'):
         if not i.author_order:
@@ -116,7 +117,7 @@ def announce_new_version(submission, draft, state_change_msg):
             if p.discuss == 1 and p.ad.user_level == IESGLogin.AD_LEVEL:
                 to_email.append(p.ad.person.email()[1])
     subject = 'New Version Notification - %s-%s.txt' % (submission.filename, submission.revision)
-    from_email = settings.IDST_ID_EMAIL
+    from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     send_mail(None, to_email, from_email, subject, 'submit/announce_new_version.txt',
               {'submission': submission,
                'msg': state_change_msg})
@@ -126,7 +127,7 @@ def announce_to_authors(submission):
     authors = submission.tempidauthors_set.order_by('author_order')
     cc = list(set([i.email()[1] for i in authors]))
     to_email = [authors[0].email()[1]]  # First TempIdAuthor is submitter
-    from_email = settings.IDST_ID_EMAIL
+    from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     subject = 'New Version Notification for %s-%s.txt' % (submission.filename, submission.revision)
     if submission.group_acronym:
         wg = submission.group_acronym.group_acronym.acronym
