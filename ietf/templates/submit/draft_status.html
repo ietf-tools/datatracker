@@ -138,16 +138,17 @@ returned to the submitter.
 {% endif %}
 
 <table class="metadata-table">
-<tr><th>Document</th><td>{{ detail.filename }} <a class="twopages_trigger" href="#">[View first two pages]</a>
+<tr><th>Document</th><td>
+   {% ifequal status.status_value "Posted" %}<a href="http://www.ietf.org/id/{{ detail.filename }}-{{detail.revision}}.txt">{{ detail.filename }}</a>{% else %}{{ detail.filename }}{% endifequal %}
+   <br/><a class="twopages_trigger" href="#">[View first two pages]</a>
 {% show_submission_files detail %}
 </td></tr>
 <tr{% if validation.warnings.revision %} class="warning"{% endif %}><th>Revision</th><td>{{ detail.revision }}<div class="warn_message">{{ validation.warnings.revision }}{% if validation.warnings.revision %}<br /><a class="twopages_trigger" href="#">[View error]</a>{% endif %}</div></td></tr>
+<tr{% if validation.warnings.group %} class="warning"{% endif %}><th>WG</th><td>{{ validation.wg|default:"Individual Submission" }}<div class="warn_message">{{ validation.warnings.group }}</div></td></tr>
+<tr{% if validation.warnings.creation_date %} class="warning"{% endif %}><th>Document date</th><td>{{ detail.creation_date }}<div class="warn_message">{{ validation.warnings.creation_date }}</div></td></tr>
 <tr><th>Submission date</th><td>{{ detail.submission_date }}</td></tr>
 <tr><th>Title</th><td>{{ detail.id_document_name }}</td></tr>
-<tr{% if validation.warnings.group %} class="warning"{% endif %}><th>WG</th><td>{{ validation.wg|default:"Individual Submission" }}<div class="warn_message">{{ validation.warnings.group }}</div></td></tr>
-<tr><th>File size</th><td>{{ detail.filesize|filesizeformat }}</td></tr>
-<tr{% if validation.warnings.creation_date %} class="warning"{% endif %}><th>Creation date</th><td>{{ detail.creation_date }}<div class="warn_message">{{ validation.warnings.creation_date }}</div></td></tr>
-<tr{% if validation.warnings.authors %} class="warning"{% endif %}><th colspan="2">Author(s) information</th></tr>
+<tr{% if validation.warnings.authors %} class="warning"{% endif %}><th colspan="2">Author information</th></tr>
 {% if validation.warnings.authors %}
 <tr class="warning"><td colspan="2"><div class="warn_message">{{ validation.warnings.authors|safe }}</div></td></tr>
 {% endif %}
@@ -156,8 +157,9 @@ returned to the submitter.
 <tr{% if validation.warnings.authors %} class="warning"{% endif %}><th class="author">Author {{ forloop.counter }}</th><td>{{ author.get_full_name }} {% if author.email.1 %}&lt;{{ author.email.1 }}&gt;{% endif %}</td></tr>
 {% endfor %}
 {% endif %}
-<tr{% if validation.warnings.pages %} class="warning"{% endif %}><th>Pages</th><td>{{ detail.txt_page_count }}<div class="warn_message">{{ validation.warnings.pages }}</div></td></tr>
 <tr{% if validation.warnings.abstract %} class="warning"{% endif %}><th>Abstract</th><td>{{ detail.abstract|linebreaksbr }}<div class="warn_message">{{ validation.warnings.abstract }}</div></td></tr>
+<tr{% if validation.warnings.pages %} class="warning"{% endif %}><th>Pages</th><td>{{ detail.txt_page_count }}<div class="warn_message">{{ validation.warnings.pages }}</div></td></tr>
+<tr><th>File size</th><td>{{ detail.filesize|filesizeformat }}</td></tr>
 </table>
 
 {% if allow_edit %} 

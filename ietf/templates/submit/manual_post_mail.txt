@@ -1,17 +1,18 @@
-Manual Posting Requested for the following Internet-Draft:
+Manual posting has been requested for the following Internet-Draft:
 
 I-D Submission Tool URL: http://{{ domain }}/submit/status/{{ draft.submission_id }}/
 
 File name: {{ draft.filename }}
+Version: {{ draft.revision }}
 Submission date: {{ draft.submission_date }}
 WG: {{ draft.group_acronym|default:"Individual Submission" }} {% if form.validation.warnings.group %}*Please note that this WG is not an active one*{% endif %}
-File size: {{ draft.filesize|filesizeformat }}
 
 Title: {{ draft.id_document_name }}
-Version: {{ draft.revision }}
-Creation date: {{ draft.creation_date }}
-Pages: {{ draft.txt_page_count }}
+Document date: {{ draft.creation_date }}
 Abstract: {{ draft.abstract }}
+Pages: {{ draft.txt_page_count }}
+File size: {{ draft.filesize|filesizeformat }}
+
 Submitter: {{ form.cleaned_data.first_name }} {{ form.cleaned_data.last_name }} <{{ form.cleaned_data.email }}>
 
 Author(s):
