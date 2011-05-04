@@ -112,10 +112,13 @@ def announce_new_version(submission, draft, state_change_msg):
         to_email.append(draft.idinternal.state_change_notice_to)
     if draft.idinternal.job_owner:
         to_email.append(draft.idinternal.job_owner.person.email()[1])
-    if draft.idinternal.ballot:
-        for p in draft.idinternal.ballot.positions.all():
-            if p.discuss == 1 and p.ad.user_level == IESGLogin.AD_LEVEL:
-                to_email.append(p.ad.person.email()[1])
+    try:
+        if draft.idinternal.ballot:
+            for p in draft.idinternal.ballot.positions.all():
+                if p.discuss == 1 and p.ad.user_level == IESGLogin.AD_LEVEL:
+                    to_email.append(p.ad.person.email()[1])
+    except BallotInfo.DoesNotExist:
+        pass
     subject = 'New Version Notification - %s-%s.txt' % (submission.filename, submission.revision)
     from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     send_mail(None, to_email, from_email, subject, 'submit/announce_new_version.txt',
