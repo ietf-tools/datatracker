@@ -281,8 +281,8 @@ def wrap_text(text, width=72):
     filled = []
     wrapped = False
     for line in lines:
-        expanded = line.expandtabs()
-        indent = " " * (len(expanded) - len(expanded.lstrip()))
+        line = line.expandtabs()
+        indent = " " * (len(line) - len(line.lstrip()))
         if wrapped and line.strip() != "" and indent == prev_indent:
             line = filled[-1] + " " + line.lstrip()
             filled = filled[:-1]
