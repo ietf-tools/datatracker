@@ -8,6 +8,8 @@
 <form action="" method="POST">
   <p>Undefer the ballot for {{ doc.file_tag }}?</p>
   
+  <p>The ballot will then be on the IESG agenda of {{ telechat_date }}.</p>
+
   <div class="actions">
     <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
     <input type="submit" value="Undefer ballot"/>
