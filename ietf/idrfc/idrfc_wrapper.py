@@ -116,6 +116,15 @@ class IdWrapper:
             self.publication_date = date(1990,1,1)
 
     def rfc_editor_state(self):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            if self._draft.rfc_state:
+                # extract possible extra states
+                tags = self._draft.tags.filter(slug__in=("iana-crd", "ref", "missref"))
+                s = [self._draft.rfc_state.name] + [t.slug.replace("-crd", "").upper() for t in tags]
+                return " ".join(s)
+            else:
+                return None
+        
         try:
             qs = self._draft.rfc_editor_queue_state
             return qs.state
