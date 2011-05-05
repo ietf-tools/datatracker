@@ -3,7 +3,7 @@
 import sys, os, re, datetime
 import unaccent
 
-basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
 
 from ietf import settings
@@ -15,9 +15,10 @@ management.setup_environ(settings)
 from redesign.person.models import *
 from redesign.group.models import *
 from redesign.name.models import *
+from redesign.name.utils import name
+from redesign.importing.utils import person_email
 from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
 
-from importing.utils import *
 
 # assumptions:
 #  - groups have been imported

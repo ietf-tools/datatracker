@@ -2,7 +2,7 @@
 
 import sys, os, re, datetime
 
-basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
 
 from ietf import settings
@@ -14,10 +14,10 @@ management.setup_environ(settings)
 from redesign.doc.models import *
 from redesign.group.models import *
 from redesign.name.models import *
+from redesign.importing.utils import person_email
+from redesign.name.utils import name
 from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
 from ietf.idrfc.models import RfcIndex, DraftVersions
-
-from importing.utils import *
 
 import sys
 

@@ -2,7 +2,7 @@
 
 import sys, os
 
-basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
 
 from ietf import settings
@@ -14,20 +14,12 @@ management.setup_environ(settings)
 
 from redesign.group.models import *
 from redesign.name.models import *
+from redesign.name.utils import name
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role
 
 # imports IETFWG, Area, AreaGroup, Acronym, IRTF
 
 # also creates nomcom groups
-
-# make sure we got the names
-def name(name_class, slug, name, desc=""):
-    # create if it doesn't exist, set name and desc
-    obj, _ = name_class.objects.get_or_create(slug=slug)
-    obj.name = name
-    obj.desc = desc
-    obj.save()
-    return obj
 
 state_names = dict(
     bof=name(GroupStateName, slug="bof", name="BOF"),
