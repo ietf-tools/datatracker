@@ -324,18 +324,17 @@ class InternetDraft(Document):
     #cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')
     @property
     def cur_state(self):
-        return self.iesg_state
+        return IDState().from_old_object(self.iesg_state)
     
     @property
     def cur_state_id(self):
-        # FIXME: results in wrong sort order
-        return abs(hash(self.iesg_state.slug))
+        return self.iesg_state.order if self.iesg_state else None
     
     #prev_state = models.ForeignKey(IDState, db_column='prev_state', related_name='docs_prev')
     @property
     def prev_state(self):
         ds = self.dochistory_set.exclude(iesg_state=self.iesg_state).order_by('-time')[:1]
-        return ds[0].iesg_state if ds else None
+        return IDState().from_old_object(ds[0].iesg_state) if ds else None
     
     #assigned_to = models.CharField(blank=True, max_length=25) # unused
 
@@ -373,20 +372,22 @@ class InternetDraft(Document):
     @property
     def cur_sub_state(self):
         s = self.tags.filter(slug__in=['extpty', 'need-rev', 'ad-f-up', 'point'])
-        return s[0] if s else None
+        return IDSubState().from_old_object(s[0]) if s else None
     @property
     def cur_sub_state_id(self):
         s = self.cur_sub_state
-        return 1 if s else 0 # need to return something numeric
+        return s.order if s else None
     
     #prev_sub_state = BrokenForeignKey(IDSubState, related_name='docs_prev', null=True, blank=True, null_values=(0, -1))
     @property
     def prev_sub_state(self):
         ds = self.dochistory_set.all().order_by('-time')[:1]
-        return "|".join(ds[0].tags.all()) if ds else None
+        substates = ds[0].tags.filter(slug__in=['extpty', 'need-rev', 'ad-f-up', 'point']) if ds else None
+        return IDSubState().from_old_object(substates[0]) if substates else None
     @property
     def prev_sub_state_id(self):
-        return 0
+        s = self.prev_sub_state
+        return s.order if s else None
     
     #returning_item = models.IntegerField(null=True, blank=True)
     @property
@@ -545,7 +546,7 @@ class InternetDraft(Document):
 	res = []
         def add(ad, pos):
             from person.proxy import IESGLogin as IESGLoginProxy
-            res.append(dict(ad=IESGLoginProxy(ad), pos=Position(pos) if pos else None))
+            res.append(dict(ad=IESGLoginProxy(ad), pos=Position().from_old_object(pos) if pos else None))
         
         found = set()
 	for pos in BallotPositionEvent.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads).select_related('ad').order_by("-time", "-id"):
@@ -754,10 +755,11 @@ class DocumentComment(Event):
 
 
 class Position(BallotPositionEvent):
-    def __init__(self, base):
+    def from_old_object(self, base):
         for f in base._meta.fields:
             if not f.name in ('discuss',): # don't overwrite properties
                 setattr(self, f.name, getattr(base, f.name))
+        return self
     
     #ballot = models.ForeignKey(BallotInfo, related_name='positions')
     @property
@@ -779,9 +781,12 @@ class Position(BallotPositionEvent):
         return self.pos_id == "abstain"
     #approve = models.IntegerField(default=0) # unused
     #discuss = models.IntegerField()
-    @property
-    def discuss(self):
+    # needs special treatment because of clash with attribute on base class
+    def get_discuss(self):
         return self.pos_id == "discuss"
+    def set_discuss(self, x):
+        pass
+    discuss = property(get_discuss, set_discuss)
     #recuse = models.IntegerField()
     @property
     def recuse(self):
@@ -795,5 +800,94 @@ class Position(BallotPositionEvent):
             return 'X'
         else:
             return ' '
+    class Meta:
+        proxy = True
+
+class IDState(IesgDocStateName):
+    PUBLICATION_REQUESTED = 10
+    LAST_CALL_REQUESTED = 15
+    IN_LAST_CALL = 16
+    WAITING_FOR_WRITEUP = 18
+    WAITING_FOR_AD_GO_AHEAD = 19
+    IESG_EVALUATION = 20
+    IESG_EVALUATION_DEFER = 21
+    APPROVED_ANNOUNCEMENT_SENT = 30
+    AD_WATCHING = 42
+    DEAD = 99
+    DO_NOT_PUBLISH_STATES = (33, 34)
+    
+    def from_old_object(self, base):
+        for f in base._meta.fields:
+            setattr(self, f.name, getattr(base, f.name))
+        return self
+                
+    #document_state_id = models.AutoField(primary_key=True)
+    @property
+    def document_state_id(self):
+        return self.order
+        
+    #state = models.CharField(max_length=50, db_column='document_state_val')
+    @property
+    def state(self):
+        return self.name
+    
+    #equiv_group_flag = models.IntegerField(null=True, blank=True) # unused
+    #description = models.TextField(blank=True, db_column='document_desc')
+    @property
+    def description(self):
+        return self.desc
+
+    @property
+    def nextstate(self):
+        # simulate related queryset
+        from name.models import get_next_iesg_states
+        return IDState.objects.filter(pk__in=[x.pk for x in get_next_iesg_states(self)])
+    
+    @property
+    def next_state(self):
+        # simulate IDNextState
+        return self
+
+    def __str__(self):
+        return self.state
+
+    @staticmethod
+    def choices():
+	return [(state.slug, state.name) for state in IDState.objects.all()]
+    
+    class Meta:
+        proxy = True
+        
+
+class IDSubStateManager(models.Manager):
+    def all(self):
+        return self.filter(slug__in=['extpty', 'need-rev', 'ad-f-up', 'point'])
+        
+class IDSubState(DocInfoTagName):
+    objects = IDSubStateManager()
+    
+    def from_old_object(self, base):
+        for f in base._meta.fields:
+            setattr(self, f.name, getattr(base, f.name))
+        return self
+                 
+    #sub_state_id = models.AutoField(primary_key=True)
+    @property
+    def sub_state_id(self):
+        return self.order
+    
+    #sub_state = models.CharField(max_length=55, db_column='sub_state_val')
+    @property
+    def sub_state(self):
+        return self.name
+    
+    #description = models.TextField(blank=True, db_column='sub_state_desc')
+    @property
+    def description(self):
+        return self.desc
+    
+    def __str__(self):
+        return self.sub_state
+    
     class Meta:
         proxy = True

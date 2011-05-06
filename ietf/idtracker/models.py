@@ -1090,11 +1090,12 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     InternetDraftOld = InternetDraft
     IDInternalOld = IDInternal
     BallotInfoOld = BallotInfo
+    IDStateOld = IDState
+    IDSubStateOld = IDSubState
     AreaOld = Area
     AcronymOld = Acronym
-    from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo
-    from redesign.group.proxy import Area
-    from redesign.group.proxy import Acronym
+    from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo, IDState, IDSubState
+    from redesign.group.proxy import Area, Acronym
 
 
 # changes done by convert-096.py:changed maxlength to max_length
