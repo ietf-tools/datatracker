@@ -38,7 +38,7 @@ from django import db
 from xml.dom import pulldom, Node
 import re
 import urllib2
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import socket
 import sys
 
@@ -147,6 +147,173 @@ def insert_to_database(data):
     db.connection._commit()
     db.connection.close()
 
+def get_std_level_mapping():
+    from name.models import StdLevelName
+    from name.utils import name
+    return {
+        "Standard": name(StdLevelName, "std", "Standard"),
+        "Draft Standard": name(StdLevelName, "ds", "Draft Standard"),
+        "Proposed Standard": name(StdLevelName, "ps", "Proposed Standard"),
+        "Informational": name(StdLevelName, "inf", "Informational"),
+        "Experimental": name(StdLevelName, "exp", "Experimental"),
+        "Best Current Practice": name(StdLevelName, "bcp", "Best Current Practice"),
+        "Historic": name(StdLevelName, "hist", "Historic"),
+        "Unknown": name(StdLevelName, "unkn", "Unknown"),
+        }
+
+def get_stream_mapping():
+    from name.models import DocStreamName
+    from name.utils import name
+
+    return {
+        "Legacy": name(DocStreamName, "legacy", "Legacy"),
+        "IETF": name(DocStreamName, "ietf", "IETF"),
+        "INDEPENDENT": name(DocStreamName, "indie", "Independent Submission"),
+        "IAB": name(DocStreamName, "iab", "IAB"),
+        "IRTF": name(DocStreamName, "irtf", "IRTF"),
+    }
+
+
+import django.db.transaction
+
+@django.db.transaction.commit_on_success
+def insert_to_databaseREDESIGN(data):
+    from person.models import Email
+    from doc.models import Document, DocAlias, Event, RelatedDocument
+    from group.models import Group
+    from name.models import DocInfoTagName, DocRelationshipName
+    from name.utils import name
+    
+    system_email = Email.objects.get(address="(System)")
+    std_level_mapping = get_std_level_mapping()
+    stream_mapping = get_stream_mapping()
+    tag_has_errata = name(DocInfoTagName, 'errata', "Has errata")
+    relationship_obsoletes = name(DocRelationshipName, "obs", "Obsoletes")
+    relationship_updates = name(DocRelationshipName, "updates", "Updates")
+
+    skip_older_than_date = (date.today() - timedelta(days=365)).strftime("%Y-%m-%d")
+
+    log("updating data...")
+    for d in data:
+        rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats = d
+
+        if rfc_published_date < skip_older_than_date:
+            # speed up the process by skipping old entries
+            continue
+
+        # we assume two things can happen: we get a new RFC, or an
+        # attribute has been updated at the RFC Editor (RFC Editor
+        # attributes currently take precedence)
+
+        # make sure we got the document and alias
+        created = False
+        doc = None
+        name = "rfc%s" % rfc_number
+        a = DocAlias.objects.filter(name=name)
+        if a:
+            doc = a[0].document
+        else:
+            if draft:
+                try:
+                    doc = Document.objects.get(name=draft)
+                except Document.DoesNotExist:
+                    pass
+
+            if not doc:
+                created = True
+                log("created document %s" % name)
+                doc = Document.objects.create(name=name)
+
+            # add alias
+            DocAlias.objects.create(name=name, document=doc)
+            if not created:
+                created = True
+                log("created alias %s to %s" % (name, doc.name))
+
+                
+        # check attributes
+        changed = False
+        if title != doc.title:
+            doc.title = title
+            changed = True
+
+        if std_level_mapping[current_status] != doc.std_level:
+            doc.std_level = std_level_mapping[current_status]
+            changed = True
+
+        if doc.state_id != "rfc":
+            doc.state_id = "rfc"
+            changed = True
+
+        if doc.stream != stream_mapping[stream]:
+            doc.stream = stream_mapping[stream]
+            changed = True
+
+        if not doc.group and wg:
+            doc.group = Group.objects.get(acronym=wg)
+            changed = True
+
+        pubdate = datetime.strptime(rfc_published_date, "%Y-%m-%d")
+        if not doc.latest_event(type="published_rfc", time=pubdate):
+            e = Event(doc=doc, type="published_rfc")
+            e.time = pubdate
+            e.by = system_email
+            e.desc = "RFC published"
+            e.save()
+            changed = True
+
+        def parse_relation_list(s):
+            if not s:
+                return []
+            res = []
+            for x in s.split(","):
+                if x[:3] in ("NIC", "IEN", "STD", "RTR"):
+                    # try translating this to RFCs that we can handle
+                    # sensibly; otherwise we'll have to ignore them
+                    l = DocAlias.objects.filter(name__startswith="rfc", document__docalias__name=x.lower())
+                else:
+                    l = DocAlias.objects.filter(name=x.lower())
+
+                for a in l:
+                    if a not in res:
+                        res.append(a)
+            return res
+
+        for x in parse_relation_list(obsoletes):
+            if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_obsoletes):
+                RelatedDocument.objects.create(source=doc, target=x, relationship=relationship_obsoletes)
+                changed = True
+        
+        for x in parse_relation_list(updates):
+            if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_updates):
+                RelatedDocument.objects.create(source=doc, target=x, relationship=relationship_updates)
+                changed = True
+        
+        if also:
+            for a in also.lower().split(","):
+                if not DocAlias.objects.filter(name=a):
+                    DocAlias.objects.create(name=a, document=doc)
+                    changed = True
+
+        if has_errata:
+            if not doc.tags.filter(pk=tag_has_errata.pk):
+                doc.tags.add(tag_has_errata)
+                changed = True
+        else:
+            if doc.tags.filter(pk=tag_has_errata.pk):
+                doc.tags.remove(tag_has_errata)
+                changed = True
+
+        if changed:
+            if not created:
+                log("%s changed" % name)
+            doc.time = datetime.now()
+            doc.save()
+            
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    insert_to_database = insert_to_databaseREDESIGN
+    
 if __name__ == '__main__':
     try:
         log("output from mirror_rfc_index.py:\n")

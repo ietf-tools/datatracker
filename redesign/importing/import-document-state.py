@@ -18,6 +18,7 @@ from redesign.importing.utils import person_email
 from redesign.name.utils import name
 from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
 from ietf.idrfc.models import RfcIndex, DraftVersions
+from ietf.idrfc.mirror_rfc_index import get_std_level_mapping, get_stream_mapping
 
 import sys
 
@@ -52,13 +53,7 @@ def alias_doc(name, doc):
 
 type_draft = name(DocTypeName, "draft", "Draft")
 
-stream_mapping = {
-    "Legacy": name(DocStreamName, "legacy", "Legacy"),
-    "IETF": name(DocStreamName, "ietf", "IETF"),
-    "INDEPENDENT": name(DocStreamName, "indie", "Independent Submission"),
-    "IAB": name(DocStreamName, "iab", "IAB"),
-    "IRTF": name(DocStreamName, "irtf", "IRTF"),
-    }
+stream_mapping = get_stream_mapping()
 
 relationship_replaces = name(DocRelationshipName, "replaces", "Replaces")
 relationship_updates = name(DocRelationshipName, "updates", "Updates")
@@ -80,16 +75,7 @@ intended_std_level_mapping = {
 intended_std_level_mapping["Proposed"] = intended_std_level_mapping["Proposed Standard"]
 intended_std_level_mapping["Draft"] = intended_std_level_mapping["Draft Standard"]
 
-std_level_mapping = {
-    "Standard": name(StdLevelName, "std", "Standard"),
-    "Draft Standard": name(StdLevelName, "ds", "Draft Standard"),
-    "Proposed Standard": name(StdLevelName, "ps", "Proposed Standard"),
-    "Informational": name(StdLevelName, "inf", "Informational"),
-    "Experimental": name(StdLevelName, "exp", "Experimental"),
-    "Best Current Practice": name(StdLevelName, "bcp", "Best Current Practice"),
-    "Historic": name(StdLevelName, "hist", "Historic"),
-    "Unknown": name(StdLevelName, "unkn", "Unknown"),
-  }
+std_level_mapping = get_std_level_mapping()
 
 state_mapping = {
     'Active': name(DocStateName, "active", "Active"),
@@ -1016,7 +1002,8 @@ for index, o in enumerate(all_rfcs.iterator()):
         make_relation(x, relationship_updates, True)
 
     if o.also:
-        alias_doc(o.also.lower(), d)
+        for a in o.also.lower().split(","):
+            alias_doc(a, d)
 
     sync_tag(d, o.has_errata, tag_has_errata)
 
