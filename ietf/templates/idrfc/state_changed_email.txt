@@ -1,2 +1,3 @@
-{{ text }}
+{% autoescape off %}{{ text }}
 ID Tracker URL: {{ url }}
+{% endautoescape %}

@@ -1,6 +1,6 @@
 WG chair approval is needed for posting of {{ draft.filename }}-{{ draft.revision }} draft 
 
-I-D Submission Tool URL: http://{{ domain }}/submit/status/{{ draft.submission_id }}/
+I-D Submission Tool URL: http://{{ domain }}/submit/status/{{ draft.submission_id }}/{{ draft.submission_hash }}/
 
 File name: {{ draft.filename }}
 Version: {{ draft.revision }}

@@ -1,3 +1,4 @@
-I-D that is requested to be resurrected: {{ doc.file_tag|safe }}
+{% autoescape off %}I-D that is requested to be resurrected: {{ doc.file_tag|safe }}
 Requested by: {{ by|safe }}
 ID Tracker URL: {{ url|safe }}
+{% endautoescape %}

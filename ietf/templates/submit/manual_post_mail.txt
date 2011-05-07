@@ -1,4 +1,4 @@
-Manual posting has been requested for the following Internet-Draft:
+{% autoescape off %}Manual posting has been requested for the following Internet-Draft:
 
 I-D Submission Tool URL: http://{{ domain }}/submit/status/{{ draft.submission_id }}/
 
@@ -20,3 +20,4 @@ Author(s):
 {% endfor %}
 
 {{ draft.comment_to_sec }}
+{% endautoescape %}

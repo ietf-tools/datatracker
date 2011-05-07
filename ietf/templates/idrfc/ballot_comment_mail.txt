@@ -1,4 +1,4 @@
-{{ ad }} has entered the following ballot position for
+{% autoescape off %}{{ ad }} has entered the following ballot position for
 {{ doc.filename }}-{{ doc.revision_display }}: {{ pos.name }}
 
 When responding, please keep the subject line intact and reply to all
@@ -25,3 +25,4 @@ COMMENT:
 
 {{ comment|safe }}
 {% endif %}
+{% endautoescape %}
