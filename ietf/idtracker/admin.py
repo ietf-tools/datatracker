@@ -31,7 +31,8 @@ class ChairsHistoryAdmin(admin.ModelAdmin):
 admin.site.register(ChairsHistory, ChairsHistoryAdmin)
 
 class DocumentCommentAdmin(admin.ModelAdmin):
-    list_display=('document', 'date', 'time', 'comment_text')
+    ordering=['-date']
+    list_display=('pk', 'doc_id', 'date', 'time', 'comment_text')
 admin.site.register(DocumentComment, DocumentCommentAdmin)
 
 class EmailAddressAdmin(admin.ModelAdmin):

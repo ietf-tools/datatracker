@@ -690,6 +690,8 @@ class DocumentComment(models.Model):
 	# this is just a straightforward combination, except that the time is
 	# stored incorrectly in the database.
 	return datetime.datetime.combine( self.date, datetime.time( * [int(s) for s in self.time.split(":")] ) )
+    def doc_id(self):
+        return self.document_id
     class Meta:
         db_table = 'document_comments'
         

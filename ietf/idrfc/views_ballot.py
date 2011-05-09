@@ -59,6 +59,13 @@ class EditPositionForm(forms.Form):
     discuss_text = forms.CharField(required=False, widget=forms.Textarea)
     comment_text = forms.CharField(required=False, widget=forms.Textarea)
     return_to_url = forms.CharField(required=False, widget=forms.HiddenInput)
+    def clean_discuss_text(self):
+       entered_discuss = self.cleaned_data["discuss_text"]
+       entered_pos = self.cleaned_data["position"]
+       if entered_pos == "discuss" and not entered_discuss:
+         print "Raising discuss ",entered_pos," ",entered_discuss
+         raise forms.ValidationError("You must enter a non-empty discuss")
+       return entered_discuss
 
 @group_required('Area_Director','Secretariat')
 def edit_position(request, name):
@@ -164,7 +171,13 @@ def edit_position(request, name):
                     qstr += "&ad=%s" % request.GET.get('ad')
                 return HttpResponseRedirect(urlreverse("doc_send_ballot_comment", kwargs=dict(name=doc.filename)) + qstr)
             else:
-                return HttpResponseRedirect(return_to_url)
+              if request.POST.get("Defer"):
+                  return HttpResponseRedirect(urlreverse("doc_defer_ballot", kwargs=dict(name=doc)))
+              else:
+                  if request.POST.get("Undefer"):
+                      return HttpResponseRedirect(urlreverse("doc_undefer_ballot", kwargs=dict(name=doc)))
+                  else:
+                      return HttpResponseRedirect(return_to_url)
     else:
         initial = {}
         if pos:
@@ -307,12 +320,14 @@ def undefer_ballot(request, name):
         raise Http404()
 
     login = IESGLogin.objects.get(login_name=request.user.username)
+    telechat_date = TelechatDates.objects.all()[0].date1
     
     if request.method == 'POST':
         doc.idinternal.ballot.defer = False
         doc.idinternal.ballot.save()
         
         doc.idinternal.change_state(IDState.objects.get(document_state_id=IDState.IESG_EVALUATION), None)
+        doc.idinternal.telechat_date = telechat_date
         doc.idinternal.event_date = date.today()
         doc.idinternal.save()
 
@@ -321,7 +336,7 @@ def undefer_ballot(request, name):
         return HttpResponseRedirect(doc.idinternal.get_absolute_url())
   
     return render_to_response('idrfc/undefer_ballot.html',
-                              dict(doc=doc),
+                              dict(doc=doc,telechat_date=telechat_date),
                               context_instance=RequestContext(request))
 
 class LastCallTextForm(forms.ModelForm):

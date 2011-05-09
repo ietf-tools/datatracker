@@ -11,6 +11,13 @@ The IESG has received a request from {{ group }} to consider the following docum
 
 The IESG plans to make a decision in the next few weeks, and solicits final comments on this action. Please send substantive comments to the ietf@ietf.org mailing lists by {{ expiration_date }}. Exceptionally, comments may be sent to iesg@ietf.org instead. In either case, please retain the beginning of the Subject line to allow automated sorting.{% endfilter %}
 
+Abstract{{ docs|pluralize }}
+
+{% for d in docs %}
+{{ d.abstract}}
+
+{% endfor %}
+
 The file{{ urls|pluralize }} can be obtained via
 {% for u in urls %}{{ u }}
 {% endfor %}{% if impl_report %}

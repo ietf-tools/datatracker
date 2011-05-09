@@ -31,26 +31,29 @@ form.position-form .comment-text {
 {% block content %}
 <h1>Change position for {{ ad }} on {{ doc }}</h1>
 
+    {% if ballot.was_deferred %}
+      <div style="margin-top:8px; margin-bottom:8px;">Ballot deferred by {{ ballot.deferred_by }} on {{ ballot.deferred_date }}.</div>
+    {% endif %}
+
 <form class="position-form" action="" method="POST">
 
 <div>
-  <div class="position">{{ form.position }}</div>
-
-    {% if ballot.was_deferred %}
-      <div style="margin-top:8px; margin-bottom:8px;"><span id="doc_undefer_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url doc_undefer_ballot name=doc %}">Undefer ballot</a></span></span></div>
-      <div style="margin-top:8px; margin-bottom:8px;">Ballot deferred by {{ ballot.deferred_by }} on {{ ballot.deferred_date }}.</div>
-    {% else %}
-      <div style="margin-top:8px; margin-bottom:8px;"><span id="doc_defer_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url doc_defer_ballot name=doc %}">Defer ballot</a></span></span></div>
-    {% endif %}
+  <span class="position">{{ form.position }}</span>
+  <span class="actions">
+    <input type="submit" name="send_mail" value="Save and send email"/>
+    <input type="submit" value="Save"/>
+    {% if ballot.was_deferred %}<input type="submit" name="Undefer" value="Undefer"/>{% else %}<input type="submit" name="Defer" value="Defer"/>{% endif %}
+  </span>
 </div>
 
   <div style="clear:left"></div>
-  
+
   <div class="discuss-widgets">
   <div class="discuss-text">
     {{ form.discuss_text.label_tag }}:
     {% if discuss %}<span class="last-edited">(last edited {{ discuss.date }})</span>{% endif %}
   </div>
+  {{ form.discuss_text.errors }}
   {{ form.discuss_text }}
   </div>
   
@@ -62,12 +65,10 @@ form.position-form .comment-text {
 
   <div class="actions">
     <a href="{{ return_to_url }}">Back</a>
-    <input type="submit" name="send_mail" value="Save and send email"/>
-    <input type="submit" value="Save"/>
   </div>
-  
-  {{ form.return_to_url }}
 
+   {{ form.return_to_url }}
+  
 </form>
 {% endblock %}
 
