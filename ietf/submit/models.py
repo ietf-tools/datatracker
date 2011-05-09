@@ -14,6 +14,8 @@ class IdSubmissionStatus(models.Model):
     class Meta:
         db_table = 'id_submission_status'
 
+    def __unicode__(self):
+        return self.status_value
 
 class IdSubmissionDetail(models.Model):
     submission_id = models.AutoField(primary_key=True)
@@ -58,6 +60,10 @@ class IdSubmissionDetail(models.Model):
             self.create_hash()
             self.save()
         return self.submission_hash
+    def status_link(self):
+        return '<a href="http://datatracker.ietf.org/submit/status/%s/%s/">%s</a>' % (self.submission_id, self.submission_hash, self.status)
+    status_link.allow_tags = True
+
 
 def create_submission_hash(sender, instance, **kwargs):
     instance.create_hash()
@@ -65,7 +71,6 @@ def create_submission_hash(sender, instance, **kwargs):
 models.signals.pre_save.connect(create_submission_hash, sender=IdSubmissionDetail)
 
 class IdApprovedDetail(models.Model):
-    id = models.AutoField(primary_key=True)
     filename = models.CharField(null=True, blank=True, max_length=255)
     approved_status = models.IntegerField(null=True, blank=True)
     approved_person_tag = models.IntegerField(null=True, blank=True)
@@ -75,9 +80,11 @@ class IdApprovedDetail(models.Model):
     class Meta:
         db_table = 'id_approved_detail'
 
+    def __unicode__(self):
+        return "%s (%s)" % (self.filename, self.approved_status)
+
 
 class TempIdAuthors(models.Model):
-    id = models.AutoField(primary_key=True)
     id_document_tag = models.IntegerField()
     first_name = models.CharField(blank=True, max_length=255)
     last_name = models.CharField(blank=True, max_length=255)
@@ -100,3 +107,6 @@ class TempIdAuthors(models.Model):
             self.last_name, self.name_suffix or '')
         full_name = re.sub(' +', ' ', full_name).strip()
         return full_name
+
+    def __unicode__(self):
+        return u"%s <%s>" % self.email()
