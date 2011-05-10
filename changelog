@@ -1,3 +1,63 @@
+ietfdb (3.54)
+
+  From rjsparks@nostrum.com:
+
+  * Restructured the position editing page to better integrate the defer button.
+    Fixes bug #659
+
+  * Copied the jquery-1.5.1.min.js library into /static/js/lib (from
+    /static/js) because that's where the main document template was looking for
+    it. There have probably been several problems since the change that left
+    this dangling that showed up as things not behaving, but not as errors. The
+    one that clued me in was the discuss text-box not being hidden when the
+    position wasn't DISCUSS.  They should all behave better now.
+
+  * Added a django form validator to the discuss text field to not allow
+    actions when the position is Discuss, but the discuss-text is empty.  2 and
+    3 together fix bug #660
+
+  * Added logic to the undefer fuction to put the document back on the
+    previous telechat (if that hasn't already passed). That is, date1 from
+    telechat dates, and not date2.  Fixes bug #661
+
+  * Changed the last_call_announcement generation function's template to
+    include the abstracts from the document sets (which with modern usage means
+    the abstract of the document) reflecting the IESGs decision of a few months
+    back.  Fixes bug #662
+
+  * Removed the old tracker link from the document's main page. Fixes bug #663 
+
+  From henrik@levkowetz.com:
+
+  * Handle email recipient lists which contain 'None' elements correctly.
+    Fixes an instance of failure to send notifications about a submitted
+    draft where an author email address was missing.
+
+  * Add an admin interface to the I-D submission app, to make it easier to
+    handle manual tasks related to submissions.
+
+  * Add the submission hash to initial-revision-approval emails to WG chairs,
+    so their approvals will take effect.  Fixes a problem where WG Chair
+    approvals of WG draft submissions didn't take effect
+
+  * Apply 'autoescape off' to all email templates which don'have it but 
+    might need it, to avoid html entity escapes in emails.  Fixes another
+    set of instances where this potentially could occur.
+
+  * We cannot currently assume that BallotInfo entries matching 
+    IDInternal.ballot exists. It seems ballot may be set to a value before the 
+    actual ballot entry is created, possibly by some old secretariat tool. Very 
+    broken, but we need to survive it :-(  Fixes a crash in the admin
+    interface.
+
+  * Reordered entries of submission forms and notification emails to be
+    more appropriate.
+
+  * Changed wrapping of formatted text to expand tabs during text wrapping, in
+    order to get consistent indentation handling.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 May 2011 14:57:09 +0200
+
 ietfdb (3.53)
 
   From esanches@yaco.es:
