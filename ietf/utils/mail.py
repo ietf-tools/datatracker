@@ -157,9 +157,9 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=N
     if isinstance(frm, tuple):
 	frm = formataddr(frm)
     if isinstance(to, list) or isinstance(to, tuple):
-        to = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in to])
+        to = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in to if addr])
     if isinstance(cc, list) or isinstance(cc, tuple):
-        cc = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in cc])
+        cc = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in cc if addr])
     if frm:
 	msg['From'] = frm
     msg['To'] = to
