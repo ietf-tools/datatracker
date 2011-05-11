@@ -1,0 +1,60 @@
+<form action="" method="post">
+<table class="ietf-table edit-form" style="width: 100%;">
+<tr>
+  <th>1. Input information about change</th>
+  <th>2. Change annotation tags if needed</th>
+</tr>
+<tr style="vertical-align: top;"><td style="width: 50%;">
+    <div class="field{% if form.errors.comment %} error{% endif %}">
+    {{ form.errors.comment }}
+    Comment: <span class="required">*</span><br />
+    <textarea name="comment">{{ form.data.comment }}</textarea>
+    </div>
+    <div class="field{% if form.errors.weeks %} error{% endif %}">
+    {{ form.errors.weeks }}
+    Estimated time in next status:<br />
+    <input type="text" name="weeks" value="{{ form.data.weeks }}" /> (in weeks)
+    </div>
+</td><td>
+  <div class="field">
+    {{ form.tags }}
+  </div>
+</td></tr>
+</table>
+
+<br />
+
+<table class="ietf-table edit-form edit-form-tags" style="width: 100%;">
+<tr>
+  <th>3. Select one action</th>
+</tr>
+<tr><td>
+    <div class="only-tags field">
+      <ul>
+      <li><input type="submit" name="only_tags" value="Update annotation tags" /> State remains unchanged: <strong>{{ form.state.name }}</strong></li>
+      </ul>
+    </div>
+  {% with form.get_transitions as transitions %}
+  {% if transitions %}
+  <ul>
+    {% for transition in transitions %}
+    <li class="{% cycle oddrow,evenrow %}">
+    <input type="submit" name="transition_{{ transition.pk }}" value="{{ transition.name }}" />
+    Changes state to: <strong>{{ transition.destination.name }}</strong>
+    </li>
+    {% endfor %}
+  {% endif %}
+  </ul>
+  {% endwith %}
+    <div class="free-change field{% if form.errors.new_state %} error{% endif %}">
+      {{ form.errors.new_state }}
+      <select name="new_state">
+        {% for value, name in form.get_states %}
+          <option value="{{ value }}">{{ name }}</option>
+        {% endfor %}
+      </select>
+      <input type="submit" name="change" value="State change" />
+    </div>
+</td></tr>
+</table>
+</form>

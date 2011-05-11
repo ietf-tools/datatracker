@@ -1,0 +1,23 @@
+{% if can_manage_workflow %}
+  {% ifequal selected "manage_workflow" %}
+    <span class="selected">Manage workflow</span>
+  {% else %}
+    <a href="{% url manage_workflow wg.group_acronym.acronym %}">Manage workflow</a>
+  {% endifequal %} |
+{% endif %}
+
+{% if can_manage_delegates %}
+  {% ifequal selected "manage_delegates" %}
+    <span class="selected">Manage delegations</span>
+  {% else %}
+    <a href="{% url manage_delegates wg.group_acronym.acronym %}">Manage delegations</a>
+  {% endifequal %} |
+{% endif %}
+
+{% if can_manage_shepherds %}
+  {% ifequal selected "manage_shepherds" %}
+    <span class="selected">Manage shepherds</span>
+  {% else %}
+    <a href="{% url manage_shepherds wg.group_acronym.acronym %}">Manage shepherds</a>
+  {% endifequal %} |
+{% endif %}

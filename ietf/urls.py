@@ -58,6 +58,7 @@ urlpatterns = patterns('',
     (r'^wg/', include('ietf.wginfo.urls')),
     (r'^cookies/', include('ietf.cookies.urls')),
     (r'^submit/', include('ietf.submit.urls')),
+    (r'^streams/', include('ietf.ietfworkflows.urls')),
 
     (r'^$', 'ietf.idrfc.views.main'),
     (r'^admin/doc/', include('django.contrib.admindocs.urls')),

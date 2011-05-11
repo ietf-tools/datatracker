@@ -1,0 +1,10 @@
+{% if draft %}
+<div class="stream_state" style="border: 1px solid black; padding: 0px 5px; margin: 5px 0px;">
+<div class="stream_state_more" style="float: right; margin-left: 2em;"><a href="{% url stream_history draft.filename %}" class="show_stream_info" title="Stream information for {{ draft.filename }}" style="text-decoration: none; color: black;">+</a></div>
+{% if stream %}
+  {{ stream }} {% if state %}:: {{ state }}{% endif %}
+{% else %}
+  No stream asigned
+{% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load ietf_streams %}
+
+{% block morecss %}
+table.state-history p { margin: 0px; }
+table.edit-form ul { padding: 0px; list-style-type: none; margin: 0px; margin-bottom: 2em; }
+table.edit-form ul li, table.edit-form div.free-change { padding: 0px 2em; }
+table.edit-form ul li.evenrow { background-color: #edf5ff; }
+table.edit-form textarea { width: 95%; height: 120px; }
+table.edit-form span.required { color: red; }
+table.edit-form ul.errorlist { border-width: 0px; padding: 0px; margin: 0px;}
+table.edit-form ul.errorlist li { color: red; margin: 0px; padding: 0px;}
+table.edit-form div.field { margin: 1em 0px; }
+table.edit-form div.submit-row { margin: 0px 2em; }
+table.edit-form div.error { border: 1px solid red; background-color: #ffeebb; padding: 5px 10px; }
+table.edit-form-tags tr { vertical-align: top; }
+table.edit-form-tags textarea { height: 200px; }
+table.edit-form-tags ul { border-width: 0px; padding: 0px 2em; }
+table.edit-form-tags ul li { padding: 0px; }
+{% endblock morecss %}
+
+{% block title %}Change state for {{ draft }}{% endblock %}
+
+{% block content %}
+<h1>Change state for {{ draft }}</h1>
+
+<div class="return-to-document">
+<p>
+<a href="{% url doc_view draft.filename %}">Return to document view</a>
+</p>
+</div>
+<table class="ietf-table" style="width: 100%;">
+<tr>
+<th>Current stream</th>
+<th>Current state</th>
+<th>Annotation tags</th>
+</tr>
+<tr><td style="width: 25%;">
+ {{ stream.name|default:"None" }}
+</td>
+<td style="width: 25%;">
+ {{ state.name|default:"None" }}
+</td><td>
+<ul style="list-style-type: none; padding: 0px;">
+  {% for tag in tags%}
+    <li>{{ tag.annotation_tag }}</li>
+  {% endfor %}
+</ul>
+</td></tr></table>
+<br />
+
+{{ form }}
+
+<br />
+<strong>State history</strong>
+<table class="ietf-table state-history" style="width: 100%">
+    {% if history %}
+    <tr><th>Date</th><th>Person</th><th>Change</th><th>Comment</th></tr>
+    {% for baseentry in history %}
+    {% with baseentry.get_real_instance as entry %}
+    <tr class="{% cycle oddrow,evenrow %}"><td>{{ entry.date }}</td><td>{{ entry.person }}</td>
+        <td>{{ entry.describe_change|safe }}</td><td>{{ entry.comment }}</td>
+    </tr>
+    {% endwith %}
+    {% endfor %}
+    {% else %}
+    <tr><td>There is no state history for this document.</td></th>
+    {% endif %}
+</table>
+{% endblock %}

@@ -1,0 +1,26 @@
+<form action="" method="post">
+<table class="ietf-table edit-form" style="width: 100%;">
+<tr>
+  <th>Adopt this draft in your WG</th>
+</tr>
+<tr style="vertical-align: top;"><td style="width: 50%;">
+    <div class="field{% if form.errors.comment %} error{% endif %}">
+    {{ form.errors.comment }}
+    Comment: <span class="required">*</span><br />
+    <textarea name="comment">{{ form.data.comment }}</textarea>
+    </div>
+    <div class="field{% if form.errors.weeks %} error{% endif %}">
+    {{ form.errors.weeks }}
+    Estimated time in 'Call for Adoption by WG Issued': <input type="text" name="weeks" value="{{ form.data.weeks }}" /> (in weeks)
+    </div>
+    <div class="field{% if form.errors.wg %} error{% endif %}">
+    <p>
+    You can manage different WGs, please select the WG in wich you want to call for adoption this draft
+    </p>
+    {{ form.errors.wg }}
+    Select a WG: {{ form.wg }}
+    </div>
+    <input type="submit" name="change" value="Call for adoption" />
+</td></tr>
+</table>
+</form>

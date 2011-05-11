@@ -1,0 +1,21 @@
+<form action="" method="post">
+<table class="ietf-table edit-form" style="width: 100%;">
+<tr>
+  <th>Select the new stream</th>
+</tr>
+<tr><td>
+    <div class="field{% if form.errors.comment %} error{% endif %}">
+    {{ form.errors.comment }}
+    Comment: <span class="required">*</span><br />
+    <textarea name="comment">{{ form.data.comment }}</textarea>
+    </div>
+</td>
+</tr>
+<td>
+    <div class="field{% if form.errors.stream %} error{% endif %}">
+    {{ form.errors.stream }}
+    {{ form.stream }} <input type="submit" value="Change stream" />
+    </div>
+</td></tr>
+</table>
+</form>

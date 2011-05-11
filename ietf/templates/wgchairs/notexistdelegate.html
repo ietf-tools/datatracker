@@ -1,0 +1,28 @@
+{% if shepherd %}
+<p>
+The shepherd you are trying to designate does not have a personal user-id and password to log-on to the Datatracker.
+</p>
+<p>
+An email will be sent to the following addresses to inform that
+the person you have designated to be one of your document shepherds
+currently does not have login credentials for the Datatracker
+and should contact the Secretariat to obtain their own user-id and
+password for the Datatracker.
+</p>
+{% else %}
+<p>
+The delegate you are trying to designate does not have a personal user-id and password to log-on to the Datatracker.
+</p>
+<p>
+An email will be sent to the following addresses to inform that
+the person you have designated to be one of your delegates
+currently does not have login credentials for the Datatracker
+and should contact the Secretariat to obtain their own user-id and
+password for the Datatracker.
+</p>
+{% endif %}
+<ul>
+{% for email in email_list %}
+<li>{{ email }}</li>
+{% endfor %}
+</ul>

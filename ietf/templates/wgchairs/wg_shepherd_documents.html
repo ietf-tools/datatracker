@@ -1,0 +1,122 @@
+{% extends "wginfo/wg_base.html" %}
+{% comment %}
+Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}
+{% block wg_titledetail %}Documents{% endblock %}
+
+{% block pagehead %}
+{{ block.super }}
+<script type="text/javascript" src="/js/lib/jquery-1.4.2.min.js"></script>
+<script type="text/javascript" src="/js/yui/yui-20100305.js"></script>
+<script type="text/javascript" src="/js/base.js"></script>
+{% endblock pagehead %}
+
+{% block wg_content %}
+           
+<h2>Documents by its shepherd</h2>
+<div id="mytabs" class="yui-navset">
+<ul class="yui-nav">
+  <li class="selected"><a href="#noshepherd"><em>Without shepherd</em></a></li>
+  <li><a href="#mydocs"><em>Shepherded by me</em></a></li>
+  <li><a href="#othershepherds"><em>Shepherded by others</em></a></li>
+</ul>
+
+<div class="yui-content">
+<div id="noshepherd">
+<table class="ietf-table ietf-doctable" style="margin-top:16px; width: 100%;">
+    <tr>       
+       <th class="title">Document</th>
+       <th class="shepherd">Change shepherd</th>
+       <th class="writeup">Protocol write-up</th>
+       <th class="writeup_date">Protocol write-up last update</th>
+    </tr> 
+    
+      {% for doc in no_shepherd %}
+        {% include "wgchairs/shepherd_document_row.html" %}
+      {% endfor %}
+        
+</table>
+</div>
+
+<div id="mydocs">
+<table class="ietf-table ietf-doctable" style="margin-top:16px; width: 100%;">
+    <tr>       
+       <th class="title">Document</th>
+       <th class="status">Status</th>
+       <th class="writeup">Protocol write-up</th>
+       <th class="writeup_date">Protocol write-up last update</th>
+    </tr> 
+    
+      {% for doc in my_documents %}
+        {% include "wgchairs/shepherd_document_row.html" %}
+      {% endfor %}
+        
+</table>
+</div>
+
+<div id="othershepherds">
+{% regroup other_shepherds by shepherd as regrouped %}
+{% for documents in regrouped %}
+  <h3 style="margin-bottom: 0px;">{{ documents.grouper }}</h3>
+  <table class="ietf-table ietf-doctable" style="width: 100%;">
+    <tr>       
+       <th class="title">Document</th>
+       <th class="status">Status</th>
+       <th class="writeup">Protocol write-up</th>
+       <th class="writeup_date">Protocol write-up last update</th>
+    </tr> 
+    {% for doc in documents.list %}
+        {% include "wgchairs/shepherd_document_row.html" %}
+    {% endfor %}
+  </table>
+{% endfor %}
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var tabView = new YAHOO.widget.TabView('mytabs');
+var url = location.href.split('#'); 
+if (url[1]) { 
+  url[1] = "#"+url[1];
+  var tabs = tabView.get('tabs'); 
+  for (var i = 0; i < tabs.length; i++) { 
+    if (url[1].indexOf(tabs[i].get('href')) == 0) {
+      tabView.set('activeIndex', i);
+      break; 
+     } 
+  } 
+} 
+//]]>
+</script>
+{% endblock wg_content %}
+

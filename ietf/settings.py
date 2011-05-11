@@ -119,6 +119,8 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'django.contrib.humanize',
     'south',
+    'workflows',
+    'permissions',
     'ietf.announcements',
     'ietf.idindex',
     'ietf.idtracker',
@@ -133,6 +135,8 @@ INSTALLED_APPS = (
     'ietf.idrfc',
     'ietf.wginfo',
     'ietf.submit',
+    'ietf.ietfworkflows',
+    'ietf.wgchairs',
 )
 
 INTERNAL_IPS = (
@@ -155,6 +159,9 @@ SERVER_MODE = 'development'
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
+
+# WG Chair configuration
+MAX_WG_DELEGATES = 3
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .

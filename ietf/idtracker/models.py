@@ -171,6 +171,7 @@ class InternetDraft(models.Model):
     review_by_rfc_editor = models.BooleanField()
     expired_tombstone = models.BooleanField()
     idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))
+    shepherd = models.ForeignKey('PersonOrOrgInfo', null=True, blank=True)
     def __str__(self):
         return self.filename
     def save(self, *args, **kwargs):
@@ -270,7 +271,7 @@ class PersonOrOrgInfo(models.Model):
 	    return u"(Person #%s)" % self.person_or_org_tag
         return u"%s %s" % ( self.first_name or u"<nofirst>", self.last_name or u"<nolast>")
     def email(self, priority=1, type=None):
-	name = str(self)
+        name = str(self)
         email = ''
         types = type and [ type ] or [ "INET", "Prim", None ]
         for type in types:
@@ -1073,6 +1074,8 @@ class IRTF(models.Model):
     meeting_scheduled = models.BooleanField(blank=True)
     def __str__(self):
 	return self.acronym
+    def chairs(self): # return a set of IRTFChair objects for this work group
+        return IRTFChair.objects.filter(irtf=self)
     class Meta:
         db_table = 'irtf'
         verbose_name="IRTF Research Group"

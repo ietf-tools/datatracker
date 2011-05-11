@@ -1,0 +1,17 @@
+{% load wgchairs_tags %}
+
+        <tr class="{% cycle oddrow,evenrow %}">
+          <td class="title">
+            <a href="{% url doc_view doc.filename %}">{{ doc.title }}</a>
+          </td>
+          <td class="shepherd">
+            <a href="{% url doc_managing_shepherd wg.group_acronym.acronym doc %}">Change shepherd</a>
+          </td>        
+          <td class="writeup">
+             {% writeup doc %}
+             <a href="{% url doc_managing_writeup wg.group_acronym.acronym doc %}" style="display: block;" href="">[Edit]</a>
+          </td>
+          <td class="writeup_date">
+             {% writeupdate doc %}
+          </td>
+          </tr>

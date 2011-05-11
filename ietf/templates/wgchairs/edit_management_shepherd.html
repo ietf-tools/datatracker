@@ -1,0 +1,40 @@
+{% extends "wginfo/wg_base.html" %}
+{% load ietf_filters %}
+
+{% block title %}Chage shepherd for {{ doc }}{% endblock %}
+
+{% block wg_content %}
+
+<p>
+<a href="{% url manage_shepherds wg.group_acronym.acronym %}">Return to shepherd list</a>
+</p>
+
+<h1>Change shepherd for {{ doc }}</h1>
+
+<table style="width: 100%;"><tr style="vertical-align: top;"><td style="width: 50%;">
+<form action="" method="POST">
+<table class="ietf-table" style="width: 100%;">
+<tr><th>Actual shepherd</th></tr>
+<tr><td>{% if doc.shepherd %}{{ doc.shepherd }}{% else %}No shephered assigned{% endif %}</td></tr>
+</table>
+    <input type="hidden" name="update_shepherd" value="1" />
+    <input type="submit" name="remove_shepherd" value="Unassign shepherd" />
+    <input type="submit" name="setme" value="Set me as shepherd of this document" />
+</form>
+</td><td style="width: 50%;">
+<form action="" method="POST">
+  <table class="ietf-table" style="width: 100%;">    
+  <tr><th>Change shepherd</th></tr>
+{% if form.message %}
+<tr><td class="message message-{{ form.message.type }}">
+    {{ form.message.value }}
+</td></tr>
+{% endif %}
+
+  <tr><td>{{ form.as_p }}</td></tr>
+  </table>
+    <input type="submit" name="change_sheperd" value="Change shepherd" />
+    {% if form.can_cancel %}<a href="">No! I don't want to continue</a>{% endif %}
+</form>
+</td></tr></table>
+{% endblock %}

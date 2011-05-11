@@ -380,5 +380,3 @@ def add_comment(request, name):
                               dict(doc=doc,
                                    form=form),
                               context_instance=RequestContext(request))
-
-

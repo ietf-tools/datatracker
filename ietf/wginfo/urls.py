@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2008, All Rights Reserved
 
-from django.conf.urls.defaults import patterns
+from django.conf.urls.defaults import patterns, include
 from ietf.wginfo import views
 from django.views.generic.simple import redirect_to
 
@@ -16,4 +16,5 @@ urlpatterns = patterns('',
      (r'^(?P<acronym>[a-z0-9-]+)/documents/txt/$', views.wg_documents_txt),
      (r'^(?P<acronym>[a-z0-9-]+)/$', views.wg_documents_html),
      (r'^(?P<acronym>[a-z0-9-]+)/charter/$', views.wg_charter),
+     (r'^(?P<acronym>[^/]+)/management/', include('ietf.wgchairs.urls')),
 )

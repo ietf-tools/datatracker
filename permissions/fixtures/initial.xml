@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<django-objects version="1.0">
+    <object pk="1" model="permissions.permission">
+        <field type="CharField" name="name">View</field>
+        <field type="CharField" name="codename">view</field>
+    </object>
+    <object pk="2" model="permissions.permission">
+        <field type="CharField" name="name">Edit</field>
+        <field type="CharField" name="codename">edit</field>
+    </object>
+    <object pk="3" model="permissions.permission">
+        <field type="CharField" name="name">Delete</field>
+        <field type="CharField" name="codename">delete</field>
+    </object>
+    <object pk="4" model="permissions.permission">
+        <field type="CharField" name="name">Cut</field>
+        <field type="CharField" name="codename">cut</field>
+    </object>
+    <object pk="5" model="permissions.permission">
+        <field type="CharField" name="name">Copy</field>
+        <field type="CharField" name="codename">copy</field>
+    </object>
+</django-objects>
