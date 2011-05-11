@@ -40,100 +40,100 @@ class TranslatingQuerySet(QuerySet):
 
     # overridden methods
     def _clone(self, *args, **kwargs):
-        c = super(self.__class__, self)._clone(*args, **kwargs)
+        c = super(TranslatingQuerySet, self)._clone(*args, **kwargs)
         c.translated_attrs = self.translated_attrs
         return c
 
     def dates(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).dates(*args, **kwargs)
+        return super(TranslatingQuerySet, self).dates(*args, **kwargs)
 
     def distinct(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).distinct(*args, **kwargs)
+        return super(TranslatingQuerySet, self).distinct(*args, **kwargs)
 
     def extra(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).extra(*args, **kwargs)
+        return super(TranslatingQuerySet, self).extra(*args, **kwargs)
 
     def get(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).get(*args, **kwargs)
+        return super(TranslatingQuerySet, self).get(*args, **kwargs)
 
     def get_or_create(self, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).get_or_create(**kwargs)
+        return super(TranslatingQuerySet, self).get_or_create(**kwargs)
 
     def create(self, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).create(**kwargs)
+        return super(TranslatingQuerySet, self).create(**kwargs)
 
     def filter(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).filter(*args, **kwargs)
+        return super(TranslatingQuerySet, self).filter(*args, **kwargs)
 
     def aggregate(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).aggregate(*args, **kwargs)
+        return super(TranslatingQuerySet, self).aggregate(*args, **kwargs)
 
     def annotate(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).annotate(*args, **kwargs)
+        return super(TranslatingQuerySet, self).annotate(*args, **kwargs)
 
     def complex_filter(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).complex_filter(*args, **kwargs)
+        return super(TranslatingQuerySet, self).complex_filter(*args, **kwargs)
 
     def exclude(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).exclude(*args, **kwargs)
+        return super(TranslatingQuerySet, self).exclude(*args, **kwargs)
 
     def in_bulk(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).in_bulk(*args, **kwargs)
+        return super(TranslatingQuerySet, self).in_bulk(*args, **kwargs)
 
     def iterator(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).iterator(*args, **kwargs)
+        return super(TranslatingQuerySet, self).iterator(*args, **kwargs)
 
     def latest(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).latest(*args, **kwargs)
+        return super(TranslatingQuerySet, self).latest(*args, **kwargs)
 
     def order_by(self, *args, **kwargs):
         args = self.translated_args(args)
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).order_by(*args, **kwargs)
+        return super(TranslatingQuerySet, self).order_by(*args, **kwargs)
 
     def select_related(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).select_related(*args, **kwargs)
+        return super(TranslatingQuerySet, self).select_related(*args, **kwargs)
 
     def values(self, *args, **kwargs):
         args = self.translated_args(args)
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).values(*args, **kwargs)
+        return super(TranslatingQuerySet, self).values(*args, **kwargs)
 
     def values_list(self, *args, **kwargs):
         args = self.translated_args(args)
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).values_list(*args, **kwargs)
+        return super(TranslatingQuerySet, self).values_list(*args, **kwargs)
 
     def update(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).update(*args, **kwargs)
+        return super(TranslatingQuerySet, self).update(*args, **kwargs)
 
     def reverse(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).reverse(*args, **kwargs)
+        return super(TranslatingQuerySet, self).reverse(*args, **kwargs)
 
     def defer(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).defer(*args, **kwargs)
+        return super(TranslatingQuerySet, self).defer(*args, **kwargs)
 
     def only(self, *args, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self).only(*args, **kwargs)
+        return super(TranslatingQuerySet, self).only(*args, **kwargs)
 
     def _insert(self, values, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
@@ -141,7 +141,7 @@ class TranslatingQuerySet(QuerySet):
 
     def _update(self, values, **kwargs):
         kwargs = self.translated_kwargs(kwargs)
-        return super(self.__class__, self)._update(values, **kwargs)
+        return super(TranslatingQuerySet, self)._update(values, **kwargs)
 
 class TranslatingManager(Manager):
     """Translates keyword arguments for the ORM, for use in proxy
@@ -151,7 +151,7 @@ class TranslatingManager(Manager):
     with the right-hand side to transform it."""
     
     def __init__(self, trans):
-        super(self.__class__, self).__init__()
+        super(TranslatingManager, self).__init__()
         self.translated_attrs = trans
 
     def get_query_set(self):

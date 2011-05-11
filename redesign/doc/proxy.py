@@ -13,6 +13,7 @@ class InternetDraft(Document):
                                       status=lambda v: ("state", { 1: 'active', 2: 'expired', 3: 'rfc', 4: 'auth-rm', 5: 'repl', 6: 'ietf-rm'}[v]),
                                       job_owner="ad",
                                       rfc_number=lambda v: ("docalias__name", "rfc%s" % v),
+                                      cur_state="iesg_state__order",
                                       ))
 
     DAYS_TO_EXPIRE=185
@@ -324,7 +325,7 @@ class InternetDraft(Document):
     #cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')
     @property
     def cur_state(self):
-        return IDState().from_old_object(self.iesg_state)
+        return IDState().from_object(self.iesg_state) if self.iesg_state else None
     
     @property
     def cur_state_id(self):
@@ -334,7 +335,7 @@ class InternetDraft(Document):
     @property
     def prev_state(self):
         ds = self.dochistory_set.exclude(iesg_state=self.iesg_state).order_by('-time')[:1]
-        return IDState().from_old_object(ds[0].iesg_state) if ds else None
+        return IDState().from_object(ds[0].iesg_state) if ds else None
     
     #assigned_to = models.CharField(blank=True, max_length=25) # unused
 
@@ -360,11 +361,17 @@ class InternetDraft(Document):
     #area_acronym = models.ForeignKey(Area)
     @property
     def area_acronym(self):
-        if self.group:
-            return self.group.parent
+        from group.proxy import Area
+        g = super(self.__class__, self).group # be careful with group which is proxied
+        if g and g.type_id != "individ":
+            return Area().from_object(g.parent)
         elif self.ad:
             # return area for AD
-            return ad.role_set.get(type="ad", group__state="active").group
+            try:
+                area = Group.objects.get(role__name="ad", role__email=self.ad, state="active")
+                return Area().from_object(area)
+            except Group.DoesNotExist:
+                return None
         else:
             return None
         
@@ -372,7 +379,7 @@ class InternetDraft(Document):
     @property
     def cur_sub_state(self):
         s = self.tags.filter(slug__in=['extpty', 'need-rev', 'ad-f-up', 'point'])
-        return IDSubState().from_old_object(s[0]) if s else None
+        return IDSubState().from_object(s[0]) if s else None
     @property
     def cur_sub_state_id(self):
         s = self.cur_sub_state
@@ -383,7 +390,7 @@ class InternetDraft(Document):
     def prev_sub_state(self):
         ds = self.dochistory_set.all().order_by('-time')[:1]
         substates = ds[0].tags.filter(slug__in=['extpty', 'need-rev', 'ad-f-up', 'point']) if ds else None
-        return IDSubState().from_old_object(substates[0]) if substates else None
+        return IDSubState().from_object(substates[0]) if substates else None
     @property
     def prev_sub_state_id(self):
         s = self.prev_sub_state
@@ -546,7 +553,7 @@ class InternetDraft(Document):
 	res = []
         def add(ad, pos):
             from person.proxy import IESGLogin as IESGLoginProxy
-            res.append(dict(ad=IESGLoginProxy(ad), pos=Position().from_old_object(pos) if pos else None))
+            res.append(dict(ad=IESGLoginProxy(ad), pos=Position().from_object(pos) if pos else None))
         
         found = set()
 	for pos in BallotPositionEvent.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads).select_related('ad').order_by("-time", "-id"):
@@ -755,7 +762,7 @@ class DocumentComment(Event):
 
 
 class Position(BallotPositionEvent):
-    def from_old_object(self, base):
+    def from_object(self, base):
         for f in base._meta.fields:
             if not f.name in ('discuss',): # don't overwrite properties
                 setattr(self, f.name, getattr(base, f.name))
@@ -816,7 +823,9 @@ class IDState(IesgDocStateName):
     DEAD = 99
     DO_NOT_PUBLISH_STATES = (33, 34)
     
-    def from_old_object(self, base):
+    objects = TranslatingManager(dict(pk="order"))
+    
+    def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
         return self
@@ -859,14 +868,17 @@ class IDState(IesgDocStateName):
         proxy = True
         
 
-class IDSubStateManager(models.Manager):
+class IDSubStateManager(TranslatingManager):
+    def __init__(self, *args):
+        super(IDSubStateManager, self).__init__(*args)
+        
     def all(self):
         return self.filter(slug__in=['extpty', 'need-rev', 'ad-f-up', 'point'])
         
 class IDSubState(DocInfoTagName):
-    objects = IDSubStateManager()
+    objects = IDSubStateManager(dict(pk="order"))
     
-    def from_old_object(self, base):
+    def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
         return self

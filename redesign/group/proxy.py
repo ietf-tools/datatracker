@@ -7,9 +7,10 @@ class Acronym(Group):
     
     INDIVIDUAL_SUBMITTER = LazyIndividualSubmitter()
     
-    def __init__(self, base):
+    def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
+        return self
     
     #acronym_id = models.AutoField(primary_key=True)
     @property
@@ -32,11 +33,16 @@ class Acronym(Group):
         proxy = True
 
 class Area(Group):
+    def from_object(self, base):
+        for f in base._meta.fields:
+            setattr(self, f.name, getattr(base, f.name))
+        return self
+
     ACTIVE=1
     #area_acronym = models.OneToOneField(Acronym, primary_key=True)
     @property
     def area_acronym(self):
-        return Acronym(self)
+        return Acronym().from_object(self)
     
     #start_date = models.DateField(auto_now_add=True)
     #concluded_date = models.DateField(null=True, blank=True)
@@ -63,7 +69,7 @@ class IETFWG(Group):
     #group_acronym = models.OneToOneField(Acronym, primary_key=True, editable=False)
     @property
     def group_acronym(self):
-        return Acronym(self)
+        return Acronym().from_object(self)
     
     #group_type = models.ForeignKey(WGType)
     #proposed_date = models.DateField(null=True, blank=True)

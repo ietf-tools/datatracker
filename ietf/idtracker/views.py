@@ -2,11 +2,12 @@
 
 # Create your views here.
 from django.http import HttpResponsePermanentRedirect, Http404
+from django.conf import settings
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 from django.views.generic.list_detail import object_detail, object_list
 from ietf.idtracker.models import InternetDraft, IDInternal, IDState, IDSubState, BallotInfo, DocumentComment
-import re
+import re, datetime
 
 def state_desc(request, state, is_substate=0):
     if int(state) == 100:
@@ -27,15 +28,30 @@ IESG to do anything with the document.
 	context_instance=RequestContext(request))
 
 def status(request):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        drafts = list(IDInternal.objects.exclude(iesg_state=None).exclude(iesg_state__in=('pub', 'dead', 'watching', 'rfcqueue')).order_by('iesg_state__order'))
+        drafts.sort(key=lambda d: (d.cur_state_id, d.status_date or datetime.date.min, d.b_sent_date or datetime.date.min))
+        # sadly we can't use the generic view because it only works with a queryset...
+        return render_to_response('idtracker/status_of_items.html', dict(object_list=drafts, title="IESG Status of Items"), context_instance=RequestContext(request))
+    
     queryset = IDInternal.objects.filter(primary_flag=1).exclude(cur_state__state__in=('RFC Ed Queue', 'RFC Published', 'AD is watching', 'Dead')).order_by('cur_state', 'status_date', 'ballot')
     return object_list(request, template_name="idtracker/status_of_items.html", queryset=queryset, extra_context={'title': 'IESG Status of Items'})
 
 def last_call(request):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        drafts = list(IDInternal.objects.exclude(iesg_state=None).filter(iesg_state__in=('lc', 'writeupw', 'goaheadw')).order_by('iesg_state__order'))
+        drafts.sort(key=lambda d: (d.cur_state_id, d.status_date or datetime.date.min, d.b_sent_date or datetime.date.min))
+        # sadly we can't use the generic view because it only works with a queryset...
+        return render_to_response('idtracker/status_of_items.html', dict(object_list=drafts, title="Documents in Last Call", lastcall=1), context_instance=RequestContext(request))
+
     queryset = IDInternal.objects.filter(primary_flag=1).filter(cur_state__state__in=('In Last Call', 'Waiting for Writeup', 'Waiting for AD Go-Ahead')).order_by('cur_state', 'status_date', 'ballot')
     return object_list(request, template_name="idtracker/status_of_items.html", queryset=queryset, extra_context={'title': 'Documents in Last Call', 'lastcall': 1})
 
 def redirect_id(request, object_id):
     '''Redirect from historical document ID to preferred filename url.'''
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        raise Http404() # we don't store the numbers anymore
+
     doc = get_object_or_404(InternetDraft, id_document_tag=object_id)
     return HttpResponsePermanentRedirect("/doc/"+doc.filename+"/")
 
@@ -46,6 +62,9 @@ def redirect_filename(request, filename):
     return HttpResponsePermanentRedirect("/doc/"+filename+"/")
 
 def redirect_ballot(request, object_id):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        raise Http404() # we don't store the numbers anymore
+
     ballot = get_object_or_404(BallotInfo, pk=object_id)
     ids = ballot.drafts.filter(primary_flag=1)
     if len(ids) == 0:
@@ -57,6 +76,9 @@ def redirect_ballot(request, object_id):
         return HttpResponsePermanentRedirect("/doc/"+id.draft.filename+"/#ballot")
 
 def redirect_comment(request, object_id):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        raise Http404() # we don't store the numbers anymore
+
     comment = get_object_or_404(DocumentComment, pk=object_id)
     id = comment.document
     if id.rfc_flag:

@@ -755,7 +755,7 @@ if document_name_to_import:
 #all_drafts = all_drafts.none()
 
 for index, o in enumerate(all_drafts.iterator()):
-    print "importing", o.id_document_tag, o.filename, index
+    print "importing", o.id_document_tag, o.filename, index, "ballot %s" % o.idinternal.ballot_id if o.idinternal and o.idinternal.ballot_id else ""
     
     try:
         d = Document.objects.get(name=o.filename)
