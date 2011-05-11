@@ -334,6 +334,15 @@ class MeetingRoom(models.Model):
         db_table = 'meeting_rooms'
         verbose_name = "Meeting room name"
 
+class SessionStatus(models.Model):
+    id = models.AutoField(primary_key=True, db_column='status_id')
+    name = models.CharField(max_length=32, db_column='status')
+    def __str__(self):
+        return self.name
+    class Meta:
+        db_table = 'session_status'
+
+
 class WgMeetingSession(models.Model, ResolveAcronym):
     session_id = models.AutoField(primary_key=True)
     meeting = models.ForeignKey(Meeting, db_column='meeting_num')
@@ -350,7 +359,7 @@ class WgMeetingSession(models.Model, ResolveAcronym):
     special_req = models.TextField(blank=True)
     number_attendee = models.IntegerField(null=True, blank=True)
     approval_ad = models.IntegerField(null=True, blank=True)
-    status_id = models.IntegerField(null=True, blank=True)
+    status = models.ForeignKey(SessionStatus, null=True, blank=True)
     ts_status_id = models.IntegerField(null=True, blank=True)
     requested_date = models.DateField(null=True, blank=True)
     approved_date = models.DateField(null=True, blank=True)
