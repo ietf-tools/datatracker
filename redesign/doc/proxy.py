@@ -33,7 +33,7 @@ class InternetDraft(Document):
     @property
     def group(self):
         from group.proxy import Acronym as AcronymProxy
-        g = super(self.__class__, self).group
+        g = super(InternetDraft, self).group
         return AcronymProxy(g) if g else None
     #filename = models.CharField(max_length=255, unique=True)
     @property
@@ -138,7 +138,7 @@ class InternetDraft(Document):
         return int(aliases[0].name[3:]) if aliases else None
         
     #comments = models.TextField(blank=True) # unused
-        
+
     #last_modified_date = models.DateField()
     @property
     def last_modified_date(self):
@@ -362,7 +362,7 @@ class InternetDraft(Document):
     @property
     def area_acronym(self):
         from group.proxy import Area
-        g = super(self.__class__, self).group # be careful with group which is proxied
+        g = super(InternetDraft, self).group # be careful with group which is proxied
         if g and g.type_id != "individ":
             return Area().from_object(g.parent)
         elif self.ad:
@@ -461,6 +461,9 @@ class InternetDraft(Document):
     def comments(self):
         return DocumentComment.objects.filter(doc=self).order_by('-time')
 
+    def public_comments(self):
+        return self.comments()
+    
     def ballot_set(self):
         return [self]
     def ballot_primary(self):
@@ -721,6 +724,7 @@ class IDAuthor(DocumentAuthor):
 
 class DocumentComment(Event):
     objects = TranslatingManager(dict(comment_text="desc",
+                                      date="time"
                                       ))
 
     BALLOT_DISCUSS = 1
@@ -741,21 +745,30 @@ class DocumentComment(Event):
         return self.time.date()
     #time = models.CharField(db_column='comment_time', max_length=20, default=lambda: datetime.datetime.now().strftime("%H:%M:%S"))
     #version = models.CharField(blank=True, max_length=3)
+    @property
+    def version(self):
+        e = self.doc.latest_event(NewRevisionEvent, type="new_revision", time__lte=self.time)
+        return e.rev if e else "0"
     #comment_text = models.TextField(blank=True)
+    @property
+    def comment_text(self):
+        return self.desc
     #created_by = BrokenForeignKey(IESGLogin, db_column='created_by', null=True, null_values=(0, 999))
     #result_state = BrokenForeignKey(IDState, db_column='result_state', null=True, related_name="comments_leading_to_state", null_values=(0, 99))
     #origin_state = models.ForeignKey(IDState, db_column='origin_state', null=True, related_name="comments_coming_from_state")
     #ballot = models.IntegerField(null=True, choices=BALLOT_CHOICES)
     def get_absolute_url(self):
-        return "/idtracker/%d/comment/%d/" % (self.doc.name, self.id)
+        return "/doc/%s/" % self.doc.name
     def get_author(self):
-        return unicode(self.by)
+        return self.by.get_name()
     def get_username(self):
         return unicode(self.by)
     def get_fullname(self):
-        return unicode(self.by)
+        return self.by.get_name()
     def datetime(self):
         return self.time
+    def __str__(self):
+        return "\"%s...\" by %s" % (self.comment_text[:20], self.get_author())
     
     class Meta:
         proxy = True
