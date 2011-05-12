@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 
 from ietf.idtracker.models import (InternetDraft, PersonOrOrgInfo, IETFWG,
-                                   IDAuthor, EmailAddress, IESGLogin)
+                                   IDAuthor, EmailAddress, IESGLogin, BallotInfo)
 from ietf.utils.mail import send_mail
 from ietf.idrfc.utils import add_document_comment
 
