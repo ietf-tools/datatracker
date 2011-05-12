@@ -290,5 +290,5 @@ def get_full_info_for_draft(draft):
         workflow=get_workflow_for_draft(draft),
         tags=[i.annotation_tag for i in get_annotation_tags_for_draft(draft)],
         state=get_state_for_draft(draft),
-        shepherd=draft.shepherd,
+        shepherd=draft.shepherd if draft.shepherd_id else None,
     )
