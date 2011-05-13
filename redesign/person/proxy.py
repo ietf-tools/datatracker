@@ -1,7 +1,7 @@
 from models import *
 
 class IESGLogin(Email):
-    def __init__(self, base):
+    def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
             

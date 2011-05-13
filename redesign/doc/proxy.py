@@ -344,13 +344,13 @@ class InternetDraft(Document):
     def mark_by(self):
         e = self.latest_event()
         from person.proxy import IESGLogin as IESGLoginProxy
-        return IESGLoginProxy(e.by) if e else None
+        return IESGLoginProxy().from_object(e.by) if e else None
 
     # job_owner = models.ForeignKey(IESGLogin, db_column='job_owner', related_name='documents')
     @property
     def job_owner(self):
         from person.proxy import IESGLogin as IESGLoginProxy
-        return IESGLoginProxy(self.ad) if self.ad else None
+        return IESGLoginProxy().from_object(self.ad) if self.ad else None
     
     #event_date = models.DateField(null=True)
     @property
@@ -441,7 +441,7 @@ class InternetDraft(Document):
     def resurrect_requested_by(self):
         e = self.latest_event(type__in=("requested_resurrect", "completed_resurrect"))
         from person.proxy import IESGLogin as IESGLoginProxy
-        return IESGLoginProxy(e.by) if e and e.type == "requested_resurrect" else None
+        return IESGLoginProxy().from_object(e.by) if e and e.type == "requested_resurrect" else None
     
     #approved_in_minute = models.IntegerField(null=True, blank=True)
     @property
@@ -450,7 +450,7 @@ class InternetDraft(Document):
         
     
     def get_absolute_url(self):
-	if self.rfc_flag:
+	if self.rfc_flag and self.rfc_number:
 	    return "/doc/rfc%d/" % self.rfc_number
 	else:
 	    return "/doc/%s/" % self.name
@@ -502,7 +502,7 @@ class InternetDraft(Document):
     def an_sent_by(self):
         e = self.latest_event(type="iesg_approved")
         from person.proxy import IESGLogin as IESGLoginProxy
-        return IESGLoginProxy(e.by) if e else None
+        return IESGLoginProxy().from_object(e.by) if e else None
 
     #defer = models.BooleanField()
     @property
@@ -515,7 +515,7 @@ class InternetDraft(Document):
     def defer_by(self):
         e = self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
         from person.proxy import IESGLogin as IESGLoginProxy
-        return IESGLoginProxy(e.by) if e else None
+        return IESGLoginProxy().from_object(e.by) if e else None
     
     #defer_date = models.DateField(null=True, blank=True)
     @property
@@ -556,7 +556,7 @@ class InternetDraft(Document):
 	res = []
         def add(ad, pos):
             from person.proxy import IESGLogin as IESGLoginProxy
-            res.append(dict(ad=IESGLoginProxy(ad), pos=Position().from_object(pos) if pos else None))
+            res.append(dict(ad=IESGLoginProxy().from_object(ad), pos=Position().from_object(pos) if pos else None))
         
         found = set()
 	for pos in BallotPositionEvent.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads).select_related('ad').order_by("-time", "-id"):

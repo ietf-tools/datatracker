@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2007, 2008, All Rights Reserved
 
+from django.conf import settings
 from django.contrib.syndication.feeds import Feed
 from django.utils.feedgenerator import Atom1Feed
 from ietf.idtracker.models import IDInternal
@@ -11,12 +12,24 @@ class IESGAgenda(Feed):
     feed_type = Atom1Feed
 
     def items(self):
-	return IDInternal.objects.filter(agenda=1).order_by('telechat_date')
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            from doc.models import TelechatEvent
+            drafts = IDInternal.objects.filter(event__telechatevent__telechat_date__gte=datetime.date.min).distinct()
+            for d in drafts:
+                d.latest_telechat_event = d.latest_event(TelechatEvent, type="scheduled_for_telechat")
+            drafts = [d for d in drafts if d.latest_telechat_event.telechat_date]
+            drafts.sort(key=lambda d: d.latest_telechat_event.telechat_date)
+            return drafts
+
+        return IDInternal.objects.filter(agenda=1).order_by('telechat_date')
 
     def item_categories(self, item):
 	return [ str(item.telechat_date) ]
 
     def item_pubdate(self, item):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            return item.latest_telechat_event.time
+        
 	f = item.comments().filter(comment_text__startswith='Placed on agenda for telechat')
 	try:
 	   comment = f[0]
@@ -28,4 +41,7 @@ class IESGAgenda(Feed):
     def item_author_name(self, item):
 	return str( item.job_owner )
     def item_author_email(self, item):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            return item.ad.address
+        
 	return item.job_owner.person.email()[1]
