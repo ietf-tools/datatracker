@@ -59,6 +59,18 @@ def date_threshold():
     return ret
 
 def inddocs(request):
+   if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+      queryset_list_ind = [d for d in InternetDraft.objects.filter(tags__slug="via-rfc", event__type="iesg_approved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_approved"]
+      queryset_list_ind.sort(key=lambda d: d.b_approve_date, reverse=True)
+
+      queryset_list_ind_dnp = [d for d in IDInternal.objects.filter(tags__slug="via-rfc", event__type="iesg_disapproved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_disapproved"]
+      queryset_list_ind_dnp.sort(key=lambda d: d.dnp_date, reverse=True)
+
+      return render_to_response('iesg/independent_doc.html',
+                                dict(object_list=queryset_list_ind,
+                                     object_list_dnp=queryset_list_ind_dnp),
+                                context_instance=RequestContext(request))
+   
    queryset_list_ind = InternetDraft.objects.filter(idinternal__via_rfc_editor=1, idinternal__rfc_flag=0, idinternal__noproblem=1, idinternal__dnp=0).order_by('-b_approve_date')
    queryset_list_ind_dnp = IDInternal.objects.filter(via_rfc_editor = 1,rfc_flag=0,dnp=1).order_by('-dnp_date')
    return object_list(request, queryset=queryset_list_ind, template_name='iesg/independent_doc.html', allow_empty=True, extra_context={'object_list_dnp':queryset_list_ind_dnp })
