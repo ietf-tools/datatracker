@@ -36,6 +36,9 @@ sitemaps = {
     'nomcom-announcements': NOMCOMAnnouncementsMap,
 }
 
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    del sitemaps['drafts'] # not needed, overlaps sitemaps['idtracker']
+
 urlpatterns = patterns('',
     (r'^feed/(?P<url>.*)/$', 'django.contrib.syndication.views.feed',
               { 'feed_dict': feeds}),
