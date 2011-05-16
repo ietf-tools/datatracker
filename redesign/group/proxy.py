@@ -59,6 +59,11 @@ class Area(Group):
     @staticmethod
     def active_areas():
         return Area.objects.filter(type="area", state="active").select_related('type', 'state', 'parent').order_by('acronym')
+
+    def __str__(self):
+        return self.acronym
+    def __unicode__(self):
+        return self.acronym
     
     class Meta:
         proxy = True

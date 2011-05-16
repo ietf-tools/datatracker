@@ -67,7 +67,7 @@ def render_ballot_icon(context, doc):
             return ""
         if str(doc.cur_state) not in BALLOT_ACTIVE_STATES:
             return ""
-        if doc.rfc_flag:
+        if doc.rfc_flag and not settings.USE_DB_REDESIGN_PROXY_CLASSES:
             name = doc.document().filename()
         else:
             name = doc.document().filename

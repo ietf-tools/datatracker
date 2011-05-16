@@ -106,6 +106,61 @@ def wgdocs(request,cat):
          queryset_list_doc.append(sub_item2)
    return render_to_response( 'iesg/ietf_doc.html', {'object_list': queryset_list, 'object_list_doc':queryset_list_doc, 'is_recent':is_recent}, context_instance=RequestContext(request) )
 
+def wgdocsREDESIGN(request,cat):
+    is_recent = 0
+    proto_actions = []
+    doc_actions = []
+    threshold = date_threshold()
+    
+    proto_levels = ["bcp", "ds", "ps", "std"]
+    doc_levels = ["exp", "inf"]
+    
+    if cat == 'new':
+        is_recent = 1
+        
+        drafts = InternetDraft.objects.filter(event__type="iesg_approved", event__time__gte=threshold, intended_std_level__in=proto_levels + doc_levels).exclude(tags__slug="via-rfc").distinct()
+        for d in drafts:
+            if d.b_approve_date and d.b_approve_date >= threshold:
+                if d.intended_std_level_id in proto_levels:
+                    proto_actions.append(d)
+                elif d.intended_std_level_id in doc_levels:
+                    doc_actions.append(d)
+
+    elif cat == 'prev':
+        # proto
+        start_date = datetime.date(1997, 12, 1)
+        
+        drafts = InternetDraft.objects.filter(event__type="iesg_approved", event__time__lt=threshold, event__time__gte=start_date, intended_std_level__in=proto_levels).exclude(tags__slug="via-rfc").distinct()
+
+        for d in drafts:
+            if d.b_approve_date and start_date <= d.b_approve_date < threshold:
+                proto_actions.append(d)
+
+        # doc
+        start_date = datetime.date(1998, 10, 15)
+        
+        drafts = InternetDraft.objects.filter(event__type="iesg_approved", event__time__lt=threshold, event__time__gte=start_date, intended_std_level__in=doc_levels).exclude(tags__slug="via-rfc").distinct()
+
+        for d in drafts:
+            if d.b_approve_date and start_date <= d.b_approve_date < threshold:
+                doc_actions.append(d)
+    else:
+        raise Http404
+
+    proto_actions.sort(key=lambda d: d.b_approve_date, reverse=True)
+    doc_actions.sort(key=lambda d: d.b_approve_date, reverse=True)
+    
+    return render_to_response('iesg/ietf_doc.html',
+                              dict(object_list=proto_actions,
+                                   object_list_doc=doc_actions,
+                                   is_recent=is_recent,
+                                   title_prefix="Recent" if is_recent else "Previous"),
+                              context_instance=RequestContext(request))
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    wgdocs = wgdocsREDESIGN
+    
+
 def get_doc_section(id):
     states = [16,17,18,19,20,21]
     if id.document().intended_status.intended_status_id in [1,2,6,7]:
@@ -130,14 +185,63 @@ def get_doc_section(id):
         s = s + "1"
     return s
 
-def agenda_docs(date, next_agenda):
-    if next_agenda:
-        matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
+def get_doc_sectionREDESIGN(id):
+    states = [16,17,18,19,20,21]
+    if id.intended_std_level_id in ["bcp", "ds", "ps", "std"]:
+        s = "2"
     else:
-        matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1)
-    idmatches = matches.filter(rfc_flag=0).order_by('ballot')
-    rfcmatches = matches.filter(rfc_flag=1).order_by('ballot')
-    res = {}
+        s = "3"
+
+    g = id.document().group_acronym()
+    if g and str(g) != 'none':
+        s = s + "1"
+    elif (s == "3") and id.via_rfc_editor:
+        s = s + "3"
+    else:
+        s = s + "2"
+    if not id.rfc_flag and id.cur_state.document_state_id not in states:
+        s = s + "3"
+    elif id.returning_item:
+        s = s + "2"
+    else:
+        s = s + "1"
+    return s
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    get_doc_section = get_doc_sectionREDESIGN
+    
+def agenda_docs(date, next_agenda):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from doc.models import TelechatEvent
+        
+        matches = IDInternal.objects.filter(event__telechatevent__telechat_date=date)
+
+        idmatches = []
+        rfcmatches = []
+        
+        for m in matches:
+            if m.latest_event(TelechatEvent, type="scheduled_for_telechat").telechat_date != date:
+                continue
+            
+            if next_agenda and not m.agenda:
+                continue
+            
+            if m.docalias_set.filter(name__startswith="rfc"):
+                rfcmatches.append(m)
+            else:
+                idmatches.append(m)
+
+        idmatches.sort(key=lambda d: d.start_date or datetime.date.min)
+        rfcmatches.sort(key=lambda d: d.start_date or datetime.date.min)
+    else:
+        if next_agenda:
+            matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
+        else:
+            matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1)
+        idmatches = matches.filter(rfc_flag=0).order_by('ballot')
+        rfcmatches = matches.filter(rfc_flag=1).order_by('ballot')
+    
+    res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
     for id in list(idmatches)+list(rfcmatches):
         section_key = "s"+get_doc_section(id)
         if section_key not in res:
@@ -200,7 +304,7 @@ def agenda_txt(request):
 def agenda_scribe_template(request):
     date = TelechatDates.objects.all()[0].date1
     docs = agenda_docs(date, True)
-    return render_to_response('iesg/scribe_template.html', {'date':str(date), 'docs':docs}, context_instance=RequestContext(request) )
+    return render_to_response('iesg/scribe_template.html', {'date':str(date), 'docs':docs, 'USE_DB_REDESIGN_PROXY_CLASSES': settings.USE_DB_REDESIGN_PROXY_CLASSES}, context_instance=RequestContext(request) )
 
 def _agenda_moderator_package(request):
     data = _agenda_data(request)
@@ -235,7 +339,13 @@ def agenda_documents_txt(request):
     dates = TelechatDates.objects.all()[0].dates()
     docs = []
     for date in dates:
-        docs.extend(IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1))
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            from doc.models import TelechatEvent
+            for d in IDInternal.objects.filter(event__telechatevent__telechat_date=date):
+                if d.latest_event(TelechatEvent, type="scheduled_for_telechat").telechat_date == date:
+                    docs.append(d)
+        else:
+            docs.extend(IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1))
     t = loader.get_template('iesg/agenda_documents.txt')
     c = Context({'docs':docs})
     return HttpResponse(t.render(c), mimetype='text/plain')
@@ -284,8 +394,18 @@ def handle_reschedule_form(request, idinternal, dates):
 
 def agenda_documents(request):
     dates = TelechatDates.objects.all()[0].dates()
-    idinternals = list(IDInternal.objects.filter(telechat_date__in=dates,primary_flag=1,agenda=1).order_by('rfc_flag', 'ballot'))
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from doc.models import TelechatEvent
+        idinternals = []
+        for d in IDInternal.objects.filter(event__telechatevent__telechat_date__in=dates):
+            if d.latest_event(TelechatEvent, type="scheduled_for_telechat").telechat_date in dates:
+                idinternals.append(d)
+
+        idinternals.sort(key=lambda d: (d.rfc_flag, d.start_date))
+    else:
+        idinternals = list(IDInternal.objects.filter(telechat_date__in=dates,primary_flag=1,agenda=1).order_by('rfc_flag', 'ballot'))
     for i in idinternals:
+        # FIXME: this isn't ported, apparently disabled
         i.reschedule_form = handle_reschedule_form(request, i, dates)
 
     # some may have been taken off the schedule by the reschedule form
@@ -302,7 +422,10 @@ def agenda_documents(request):
             if not i.rfc_flag:
                 w = IdWrapper(draft=i)
             else:
-                ri = RfcIndex.objects.get(rfc_number=i.draft_id)
+                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                    ri = i
+                else:
+                    ri = RfcIndex.objects.get(rfc_number=i.draft_id)
                 w = RfcWrapper(ri)
             w.reschedule_form = i.reschedule_form
             res[section_key].append(w)

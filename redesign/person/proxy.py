@@ -4,6 +4,7 @@ class IESGLogin(Email):
     def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
+        return self
             
     SECRETARIAT_LEVEL = 0
     AD_LEVEL = 1
@@ -30,7 +31,7 @@ class IESGLogin(Email):
     #last_name = models.CharField(blank=True, max_length=25)
     @property
     def last_name(self):
-        return self.get_name().split(" ")[1]
+        return self.get_name().split(" ")[-1]
 
     # FIXME: person isn't wrapped yet
     #person = BrokenForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', unique=True, null_values=(0, 888888), null=True)

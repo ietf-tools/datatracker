@@ -109,7 +109,7 @@ class InternetDraft(Document):
     @property
     def lc_expiration_date(self):
         e = self.latest_event(LastCallEvent, type="sent_last_call")
-        return e.expires if e else None
+        return e.expires.date() if e else None
         
     #b_sent_date = models.DateField(null=True, blank=True)
     @property
@@ -142,7 +142,7 @@ class InternetDraft(Document):
     #last_modified_date = models.DateField()
     @property
     def last_modified_date(self):
-        return self.time
+        return self.time.date()
         
     #replaced_by = models.ForeignKey('self', db_column='replaced_by', blank=True, null=True, related_name='replaces_set')
     @property
@@ -218,7 +218,7 @@ class InternetDraft(Document):
     def file_tag(self):
         return "<%s-%s.txt>" % (self.name, self.revision_display())
     def group_acronym(self):
-	return self.group.acronym
+	return super(Document, self).group.acronym
     def idstate(self):
 	return self.docstate()
     def revision_display(self):
@@ -273,6 +273,10 @@ class InternetDraft(Document):
     @property
     def draft(self):
         return self
+
+    @property
+    def draft_id(self):
+        return self.name
         
     #rfc_flag = models.IntegerField(null=True)
     @property
@@ -320,7 +324,8 @@ class InternetDraft(Document):
     #agenda = models.IntegerField(null=True, blank=True)
     @property
     def agenda(self):
-        return bool(self.latest_event(type="scheduled_for_telechat"))
+        e = self.latest_event(TelechatEvent, type="scheduled_for_telechat")
+        return bool(e and e.telechat_date)
     
     #cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')
     @property
@@ -552,7 +557,6 @@ class InternetDraft(Document):
     def active_positions(self):
         """Returns a list of dicts, with AD and Position tuples"""
         active_ads = Email.objects.filter(role__name="ad", role__group__state="active")
-
 	res = []
         def add(ad, pos):
             from person.proxy import IESGLogin as IESGLoginProxy
@@ -567,7 +571,9 @@ class InternetDraft(Document):
         for ad in active_ads:
             if ad not in found:
                 add(ad, None)
-                
+
+        res.sort(key=lambda x: x["ad"].last_name)
+        
 	return res
     
     def needed(self, standardsTrack=True):
@@ -693,6 +699,20 @@ class InternetDraft(Document):
     def file_formats(self):
         return self.get_file_type_matches_from(os.path.join(settings.RFC_PATH, "rfc" + str(self.rfc_number) + ".*")).replace(".", "").replace("txt", "ascii")
 
+    @property
+    def positions(self):
+	res = []
+        found = set()
+	for pos in Position.objects.filter(doc=self, type="changed_ballot_position").select_related('ad').order_by("-time", "-id"):
+            if pos.ad not in found:
+                found.add(pos.ad)
+                res.append(pos)
+
+        class Dummy: pass
+        d = Dummy()
+        d.all = res
+        return d
+    
     class Meta:
         proxy = True
 
