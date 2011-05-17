@@ -475,7 +475,6 @@ def discusses(request):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         res = []
 
-        print IDInternal.objects.filter(iesg_state__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), event__ballotpositionevent__pos="discuss").distinct().count()
         for d in IDInternal.objects.filter(iesg_state__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), event__ballotpositionevent__pos="discuss").distinct():
             found = False
             for p in d.positions.all():
