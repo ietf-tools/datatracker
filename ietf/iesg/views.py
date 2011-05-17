@@ -472,6 +472,30 @@ def telechat_docs_tarfile(request,year,month,day):
     return response
 
 def discusses(request):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        res = []
+
+        print IDInternal.objects.filter(iesg_state__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), event__ballotpositionevent__pos="discuss").distinct().count()
+        for d in IDInternal.objects.filter(iesg_state__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), event__ballotpositionevent__pos="discuss").distinct():
+            found = False
+            for p in d.positions.all():
+                if p.discuss:
+                    found = True
+                    break
+
+            if not found:
+                continue
+
+            if d.rfc_flag:
+                doc = RfcWrapper(d)
+            else:
+                doc = IdWrapper(draft=d)
+
+            if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
+                res.append(doc)
+
+        return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
+    
     positions = Position.objects.filter(discuss=1)
     res = []
     try:

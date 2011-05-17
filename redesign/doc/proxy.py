@@ -708,9 +708,11 @@ class InternetDraft(Document):
                 found.add(pos.ad)
                 res.append(pos)
 
-        class Dummy: pass
+        class Dummy:
+            def all(self):
+                return self.res
         d = Dummy()
-        d.all = res
+        d.res = res
         return d
     
     class Meta:
