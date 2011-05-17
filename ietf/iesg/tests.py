@@ -61,6 +61,62 @@ class RescheduleOnAgendaTestCase(django.test.TestCase):
         self.assertEquals(draft.idinternal.comments().count(), comments_before + 1)
         self.assertTrue("Telechat" in draft.idinternal.comments()[0].comment_text)
 
+class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_reschedule(self):
+        from ietf.utils.test_data import make_test_data
+        from redesign.person.models import Email
+        from doc.models import TelechatEvent
+        
+        draft = make_test_data()
+
+        # add to schedule
+        e = TelechatEvent(type="scheduled_for_telechat")
+        e.doc = draft
+        e.by = Email.objects.get(address="aread@ietf.org")
+        e.telechat_date = TelechatDates.objects.all()[0].date1
+        e.returning_item = True
+        e.save()
+        
+        form_id = draft.pk
+        telechat_date_before = e.telechat_date
+        
+        url = urlreverse('ietf.iesg.views.agenda_documents')
+        
+        self.client.login(remote_user="secretary")
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        # FIXME
+        #self.assertEquals(len(q('form select[name=%s-telechat_date]' % form_id)), 1)
+        #self.assertEquals(len(q('form input[name=%s-clear_returning_item]' % form_id)), 1)
+
+        # reschedule
+        events_before = draft.event_set.count()
+        d = TelechatDates.objects.all()[0].dates()[2]
+
+        r = self.client.post(url, { '%s-telechat_date' % form_id: d.strftime("%Y-%m-%d"),
+                                    '%s-clear_returning_item' % form_id: "1" })
+
+        self.assertEquals(r.status_code, 200)
+
+        # check that it moved below the right header in the DOM on the
+        # agenda docs page
+        d_header_pos = r.content.find("IESG telechat %s" % d.strftime("%Y-%m-%d"))
+        draft_pos = r.content.find(draft.name)
+        self.assertTrue(d_header_pos < draft_pos)
+
+        self.assertTrue(draft.latest_event(TelechatEvent, "scheduled_for_telechat"))
+        self.assertEquals(draft.latest_event(TelechatEvent, "scheduled_for_telechat").telechat_date, d)
+        self.assertTrue(not draft.latest_event(TelechatEvent, "scheduled_for_telechat").returning_item)
+        self.assertEquals(draft.event_set.count(), events_before + 1)
+
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    RescheduleOnAgendaTestCase = RescheduleOnAgendaTestCaseREDESIGN
 
 class ManageTelechatDatesTestCase(django.test.TestCase):
     fixtures = ['base', 'draft']
@@ -212,7 +268,152 @@ class WorkingGroupActionsTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
 
         self.assertTrue('(sieve)' not in r.content)
+
+class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
+    fixtures = ['names']
+
+    def setUp(self):
+        super(self.__class__, self).setUp()
+
+        curdir = os.path.dirname(os.path.abspath(__file__))
+        self.evaldir = os.path.join(curdir, "tmp-testdir")
+        os.mkdir(self.evaldir)
         
+        src = os.path.join(curdir, "fixtures", "sieve-charter.txt")
+        shutil.copy(src, self.evaldir)
+        
+        settings.IESG_WG_EVALUATION_DIR = self.evaldir
+
+    def tearDown(self):
+        super(self.__class__, self).tearDown()
+        shutil.rmtree(self.evaldir)
+        
+    
+    def test_working_group_actions(self):
+        from ietf.utils.test_data import make_test_data
+        
+        make_test_data()
+        
+        url = urlreverse('iesg_working_group_actions')
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        for wga in WGAction.objects.all():
+            self.assertTrue(wga.group_acronym.name in r.content)
+
+        self.assertTrue('(sieve)' in r.content)
+
+    def test_delete_wgaction(self):
+        from ietf.utils.test_data import make_test_data
+
+        make_test_data()
+        
+        wga = WGAction.objects.all()[0]
+        url = urlreverse('iesg_edit_working_group_action', kwargs=dict(wga_id=wga.pk))
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.post(url, dict(delete="1"))
+        self.assertEquals(r.status_code, 302)
+        self.assertTrue(not WGAction.objects.filter(pk=wga.pk))
+
+    def test_edit_wgaction(self):
+        from ietf.utils.test_data import make_test_data
+        from redesign.person.models import Email
+        
+        make_test_data()
+        
+        wga = WGAction.objects.all()[0]
+        url = urlreverse('iesg_edit_working_group_action', kwargs=dict(wga_id=wga.pk))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form select[name=token_name]')), 1)
+        self.assertEquals(len(q('form select[name=telechat_date]')), 1)
+
+        # change
+        dates = TelechatDates.objects.all()[0]
+        token_name = Email.objects.get(address="ad1@ietf.org").get_name().split(" ")[0]
+        old = wga.pk
+        r = self.client.post(url, dict(status_date=dates.date1.isoformat(),
+                                       token_name=token_name,
+                                       category="23",
+                                       note="Testing.",
+                                       telechat_date=dates.date4.isoformat()))
+        self.assertEquals(r.status_code, 302)
+
+        wga = WGAction.objects.get(pk=old)
+        self.assertEquals(wga.status_date, dates.date1)
+        self.assertEquals(wga.token_name, token_name)
+        self.assertEquals(wga.category, 23)
+        self.assertEquals(wga.note, "Testing.")
+        self.assertEquals(wga.telechat_date, dates.date4)
+        
+    def test_add_possible_wg(self):
+        from ietf.utils.test_data import make_test_data
+        from redesign.person.models import Email
+        from redesign.group.models import Group
+        
+        make_test_data()
+        
+        url = urlreverse('iesg_working_group_actions')
+        login_testing_unauthorized(self, "secretary", url)
+        
+        r = self.client.post(url, dict(add="1",
+                                       filename='sieve-charter.txt'))
+        self.assertEquals(r.status_code, 302)
+
+        # now we got back a URL we can use for adding, but first make
+        # sure we got a proposed group with the acronym
+        group = Group.objects.create(
+            name="Sieve test test",
+            acronym="sieve",
+            state_id="proposed",
+            type_id="wg",
+            parent=None
+            )
+        
+        add_url = r['Location']
+        r = self.client.get(add_url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue('(sieve)' in r.content)
+        self.assertEquals(len(q('form select[name=token_name]')), 1)
+        self.assertEquals(q('form input[name=status_date]')[0].get("value"), "2010-05-07")
+        self.assertEquals(len(q('form select[name=telechat_date]')), 1)
+
+        wgas_before = WGAction.objects.all().count()
+        dates = TelechatDates.objects.all()[0]
+        token_name = Email.objects.get(address="ad1@ietf.org").get_name().split(" ")[0]
+        r = self.client.post(add_url,
+                             dict(status_date=dates.date1.isoformat(),
+                                  token_name=token_name,
+                                  category="23",
+                                  note="Testing.",
+                                  telechat_date=dates.date4.isoformat()))
+        self.assertEquals(r.status_code, 302)
+        self.assertEquals(wgas_before + 1, WGAction.objects.all().count())
+        
+    def test_delete_possible_wg(self):
+        from ietf.utils.test_data import make_test_data
+
+        make_test_data()
+        
+        url = urlreverse('iesg_working_group_actions')
+        login_testing_unauthorized(self, "secretary", url)
+        
+        r = self.client.post(url, dict(delete="1",
+                                       filename='sieve-charter.txt'))
+        self.assertEquals(r.status_code, 200)
+
+        self.assertTrue('(sieve)' not in r.content)
+        
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    WorkingGroupActionsTestCase = WorkingGroupActionsTestCaseREDESIGN
 
 
 class IesgUrlTestCase(SimpleUrlTestCase):

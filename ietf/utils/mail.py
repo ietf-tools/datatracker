@@ -143,7 +143,6 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=N
     msg['To'] = to
     if cc:
 	msg['Cc'] = cc
-    print cc
     msg['Subject'] = subject
     msg['X-Test-IDTracker'] = (settings.SERVER_MODE == 'production') and 'no' or 'yes'
     if extra:

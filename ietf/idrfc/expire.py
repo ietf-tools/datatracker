@@ -51,8 +51,8 @@ def get_soon_to_expire_idsREDESIGN(days):
     end_date = start_date + datetime.timedelta(days - 1)
     
     for d in expirable_documents():
-        e = document_expires(d)
-        if e and start_date <= e.date() <= end_date:
+        t = document_expires(d)
+        if t and start_date <= t.date() <= end_date:
             yield d
 
 def get_expired_ids():
@@ -68,8 +68,8 @@ def get_expired_idsREDESIGN():
     today = datetime.date.today()
 
     for d in expirable_documents():
-        e = document_expires(d)
-        if e and e.time.date() <= today:
+        t = document_expires(d)
+        if t and t.date() <= today:
             yield d
 
 def send_expire_warning_for_id(doc):

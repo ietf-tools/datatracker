@@ -380,12 +380,20 @@ def handle_reschedule_form(request, idinternal, dates):
     if request.method == 'POST':
         form = RescheduleForm(request.POST, **formargs)
         if form.is_valid():
-            update_telechat(request, idinternal,
-                            form.cleaned_data['telechat_date'])
-            if form.cleaned_data['clear_returning_item']:
-                idinternal.returning_item = False
-            idinternal.event_date = datetime.date.today()
-            idinternal.save()
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                login = request.user.get_profile().email()
+                update_telechat(request, idinternal, login,
+                                form.cleaned_data['telechat_date'],
+                                False if form.cleaned_data['clear_returning_item'] else None)
+                idinternal.time = datetime.datetime.now()
+                idinternal.save()
+            else:
+                update_telechat(request, idinternal,
+                                form.cleaned_data['telechat_date'])
+                if form.cleaned_data['clear_returning_item']:
+                    idinternal.returning_item = False
+                idinternal.event_date = datetime.date.today()
+                idinternal.save()
     else:
         form = RescheduleForm(**formargs)
 
@@ -405,7 +413,6 @@ def agenda_documents(request):
     else:
         idinternals = list(IDInternal.objects.filter(telechat_date__in=dates,primary_flag=1,agenda=1).order_by('rfc_flag', 'ballot'))
     for i in idinternals:
-        # FIXME: this isn't ported, apparently disabled
         i.reschedule_form = handle_reschedule_form(request, i, dates)
 
     # some may have been taken off the schedule by the reschedule form
@@ -435,7 +442,14 @@ def agenda_documents(request):
 def telechat_docs_tarfile(request,year,month,day):
     from tempfile import mkstemp
     date=datetime.date(int(year),int(month),int(day))
-    docs= IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from doc.models import TelechatEvent
+        docs = []
+        for d in IDInternal.objects.filter(event__telechatevent__telechat_date=date):
+            if d.latest_event(TelechatEvent, type="scheduled_for_telechat").telechat_date == date:
+                docs.append(d)
+    else:
+        docs= IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
     response = HttpResponse(mimetype='application/octet-stream')
     response['Content-Disposition'] = 'attachment; filename=telechat-%s-%s-%s-docs.tgz'%(year, month, day)
     tarstream = tarfile.open('','w:gz',response)

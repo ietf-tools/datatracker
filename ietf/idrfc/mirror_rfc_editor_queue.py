@@ -247,7 +247,6 @@ def insert_into_databaseREDESIGN(drafts, refs):
     for name, date_received, state, stream_id in drafts:
         try:
             d = Document.objects.get(name=name)
-            print "known document", name
         except Document.DoesNotExist:
             log("unknown document %s" % name)
             continue

@@ -13,9 +13,9 @@ management.setup_environ(settings)
 
 from redesign.person.models import *
 from redesign.group.models import *
-from redesign.announcements.models import *
 from redesign.name.utils import name
 from redesign.importing.utils import person_email
+from ietf.announcements.models import Message
 from ietf.announcements.models import Announcement, PersonOrOrgInfo, AnnouncedTo, AnnouncedFrom
 
 # assumptions:

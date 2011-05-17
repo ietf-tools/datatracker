@@ -37,7 +37,7 @@ def nomcom(request):
 def nomcomREDESIGN(request):
     from person.models import Email
     from group.models import Group
-    from redesign.announcements.models import Message
+    from ietf.announcements.models import Message
 
     address_re = re.compile("<.*>")
     
@@ -77,7 +77,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 def message_detail(request, object_id, queryset):
     from person.models import Email
     from group.models import Group
-    from redesign.announcements.models import Message
+    from ietf.announcements.models import Message
 
     # restrict to nomcom announcements for the time being
     nomcoms = Group.objects.filter(acronym__startswith="nomcom").exclude(acronym="nomcom")

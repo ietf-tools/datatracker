@@ -125,7 +125,6 @@ INSTALLED_APPS = (
     'redesign.name',
     'redesign.group',
     'redesign.doc',
-    'redesign.announcements',
     'redesign.issue',
     'ietf.announcements',
     'ietf.idindex',
