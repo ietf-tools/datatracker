@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.16"
+version = "0.19"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -561,10 +561,7 @@ class Draft():
                                             else:
                                                 fullname = author_match
                                             fullname = re.sub(" +", " ", fullname)
-                                            if fullname.endswith(surname):
-                                                given_names = fullname.replace(surname, "").strip()
-                                            else:
-                                                given_names, surname = fullname.rsplit(None, 1)
+                                            given_names, surname = fullname.rsplit(None, 1)
                                             if " " in given_names:
                                                 first, middle = given_names.split(None, 1)
                                             else:
@@ -574,7 +571,7 @@ class Draft():
                                             if suffix:
                                                 fullname = fullname+" "+suffix
                                             if not " ".join([ n for n in names if n ]) == fullname:
-                                                _err("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
+                                                _err("Author tuple doesn't match text in draft: %s: %s %s" % (authors[i], names, fullname))
                                             authors[i] = (fullname, first, middle, surname, suffix)
                                         #_debug( "Author: %s: %s" % (author_match, authors[author_match]))
                                         break
@@ -731,26 +728,10 @@ class Draft():
 
 
 # ----------------------------------------------------------------------
-def _output(docname, fields):
-    if opt_timestamp:
-        sys.stdout.write("%s " % (fields["eventdate"]))
-    sys.stdout.write("%s" % (docname.strip()))
 
-    def outputkey(key, fields):
-        sys.stdout.write(" %s='%s'" % ( key.lower(), fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" ).replace("\n", "\\n")))
-
-    keys = fields.keys()
-    keys.sort()
-    for key in keys:
-        if fields[key] and not key in ["eventdate", ]:
-            outputkey(key, fields)
-    sys.stdout.write("\n")
-
-# ----------------------------------------------------------------------
-def _printmeta(timestamp, fn):
+def getmeta(fn):
     # Initial values
     fields = {}
-    fields["eventdate"] = timestamp
     fields["eventsource"] = "draft"
 
     if " " in fn or not fn.endswith(".txt"):
@@ -760,15 +741,13 @@ def _printmeta(timestamp, fn):
     if os.path.exists(fn):
         filename = fn
         fn = os.path.basename(fn)
+    elif fn.lower().startswith('rfc'):
+        filename = os.path.join("/www/tools.ietf.org/rfc", fn)
     else:
         filename = os.path.join("/www/tools.ietf.org/id", fn)
     if not os.path.exists(filename):
         _warn("Could not find file: '%s'" % (filename))
         return
-
-    if opt_trace:
-        t = time.time()
-        sys.stderr.write("%-58s" % fn[:-4])
 
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(filename)[stat.ST_MTIME]))
     text = _gettext(filename)
@@ -794,16 +773,43 @@ def _printmeta(timestamp, fn):
     if abstract:
         fields["docabstract"] = abstract
 
-    _output(fields.get("doctag", fn[:-7]), fields)
+    return fields
+
+
+# ----------------------------------------------------------------------
+def _output(docname, fields, outfile=sys.stdout):
+    if opt_timestamp:
+        outfile.write("%s " % (fields["eventdate"]))
+    outfile.write("%s" % (os.path.basename(docname.strip())))
+
+    def outputkey(key, fields):
+        outfile.write(" %s='%s'" % ( key.lower(), fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" ).replace("\n", "\\n")))
+
+    keys = fields.keys()
+    keys.sort()
+    for key in keys:
+        if fields[key] and not key in ["eventdate", ]:
+            outputkey(key, fields)
+    outfile.write("\n")
+
+# ----------------------------------------------------------------------
+def _printmeta(timestamp, fn, outfile=sys.stdout):
+    if opt_trace:
+        t = time.time()
+        sys.stderr.write("%-58s" % fn[:-4])
+
+    fields = getmeta(fn)
+    _output(fields.get("doctag", fn[:-7]), fields, outfile)
 
     if opt_trace:
         sys.stderr.write("%5.1f\n" % ((time.time() - t)))
+
 
 # ----------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------
 
-def _main():
+def _main(outfile=sys.stdout):
     global opt_debug, opt_timestamp, opt_trace, files
     # set default values, if any
     # ----------------------------------------------------------------------
@@ -867,7 +873,7 @@ def _main():
         if basename.startswith("draft-"):
             draft = basename
             _debug( "** Processing '%s'" % draft)
-            _printmeta(timestamp, draft)
+            _printmeta(timestamp, file.name, outfile)
         else:
             for line in file:
                 draft = line.strip()
@@ -875,7 +881,7 @@ def _main():
                     continue
                 if draft:
                     _debug( "** Processing '%s'" % draft)
-                    _printmeta(timestamp, draft)
+                    _printmeta(timestamp, draft, outfile)
 
 if __name__ == "__main__":
     try:
