@@ -78,14 +78,14 @@ class Migration:
         
         # Adding model 'objectannotationtaghistoryentry'
         db.create_table('ietfworkflows_objectannotationtaghistoryentry', (
-            ('comment', orm['ietfworkflows.objectworkflowhistoryentry:comment']),
-            ('person', orm['ietfworkflows.objectworkflowhistoryentry:person']),
-            ('unsetted', orm['ietfworkflows.objectworkflowhistoryentry:unsetted']),
-            ('content_type', orm['ietfworkflows.objectworkflowhistoryentry:content_type']),
-            ('change_date', orm['ietfworkflows.objectworkflowhistoryentry:change_date']),
-            ('setted', orm['ietfworkflows.objectworkflowhistoryentry:setted']),
-            ('content_id', orm['ietfworkflows.objectworkflowhistoryentry:content_id']),
-            ('id', orm['ietfworkflows.objectworkflowhistoryentry:id']),
+            ('comment', orm['ietfworkflows.objectannotationtaghistoryentry:comment']),
+            ('person', orm['ietfworkflows.objectannotationtaghistoryentry:person']),
+            ('unsetted', orm['ietfworkflows.objectannotationtaghistoryentry:unsetted']),
+            ('content_type', orm['ietfworkflows.objectannotationtaghistoryentry:content_type']),
+            ('change_date', orm['ietfworkflows.objectannotationtaghistoryentry:change_date']),
+            ('setted', orm['ietfworkflows.objectannotationtaghistoryentry:setted']),
+            ('content_id', orm['ietfworkflows.objectannotationtaghistoryentry:content_id']),
+            ('id', orm['ietfworkflows.objectannotationtaghistoryentry:id']),
         ))
         db.send_create_signal('ietfworkflows', ['objectannotationtaghistoryentry'])
         

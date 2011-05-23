@@ -2,7 +2,7 @@
 <django-objects version="1.0">
     <object pk="1" model="workflows.workflow">
         <field type="CharField" name="name">Default WG Workflow</field>
-        <field to="workflows.state" name="initial_state" rel="ManyToOneRel">11</field>
+        <field to="workflows.state" name="initial_state" rel="ManyToOneRel">14</field>
     </object>
     <object pk="2" model="workflows.workflow">
         <field type="CharField" name="name">IAB Workflow</field>
