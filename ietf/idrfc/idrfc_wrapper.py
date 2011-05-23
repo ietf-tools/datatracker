@@ -151,9 +151,10 @@ class IdWrapper:
         
         a = self.group_acronym()
         if a:
-            return "WG <%s>" % a
+            return "<a href='/wg/%s/'>%s WG</a>" % (a, a)
 
         return ""
+    submission.allow_tags = True
         
     def search_archive(self):
 
