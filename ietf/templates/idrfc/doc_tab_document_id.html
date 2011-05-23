@@ -33,28 +33,21 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
 
-{% load ietf_filters %}
+{% load ietf_filters ietf_streams %}
 
 {% block doc_metatable %}
-<tr><td style="width:18ex;">Document type:</td><td>{{ info.type|escape }}
-{% with doc.replaces as r %}{% if r %}<br />Replaces {% filter urlize_ietf_docs %}{{ r|join:", "}}{% endfilter %}{% endif %}{% endwith %}
-</td></tr>
+<tr><td colspan='2'>{{ doc.draft_status }} {% ifnotequal doc.draft_status "RFC" %}Internet-Draft ({{ doc.submission|safe }}){% endifnotequal %}
+{% ifequal doc.draft_status "Expired" %} 
+{% if doc.resurrect_requested_by %}(resurrect requested by {{ doc.resurrect_requested_by }}){% endif %} 
+{% endifequal %} </td>
+
+<tr><td>Document Stream:</td><td> {{ stream_info.stream.name|default:"No stream defined" }}</td></tr> 
+
 <tr><td>Last updated:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
-<tr><td><a href="/idtracker/help/state/">State</a>:</td><td> 
-{{ doc.friendly_state|safe }}
-{% if doc.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.draft_name}}">{{ doc.rfc_editor_state|escape }}</a>{% endif %}
-{% ifequal doc.draft_status "Expired" %}
-{% if doc.resurrect_requested_by %}(resurrect requested by {{ doc.resurrect_requested_by }}){% endif %}
-{% endifequal %}
-{% if doc.in_ietf_process %}{% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}{% if doc.ietf_process.has_active_iesg_ballot %}<br/><i>({{ doc.ietf_process.iesg_ballot_needed }})</i>{%endif%}{%endif%}
-</td></tr>
-<tr><td>Intended status:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.intended_maturity_level|default:"-"  }}{% else %}-{%endif%}</td></tr>
-<tr><td>Submission:</td><td>{{ doc.submission }}</td></tr>
-<tr><td>Responsible AD:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.ad_name|default:"-"|escape }}{%else%}-{%endif%}</td></tr>
-{% if doc.in_ietf_process and doc.ietf_process.iesg_note %}<tr><td>IESG Note:</td><td>{{ doc.ietf_process.iesg_note|format_textarea|safe }}</td></tr>{% endif %}
-{% if user|in_group:"Area_Director,Secretariat" %}
-{% if doc.in_ietf_process %}<tr><td>Send notices to:</td><td>{{ doc.ietf_process.state_change_notice_to}}</td></tr>{% endif %}
-{% endif %}{# if user|in_group:... #}
+
+{% with doc.replaces as r %}{% if r %}<tr><td>Replaces:</td><td> {% filter urlize_ietf_docs %}{{ r|join:", "}}{% endfilter %}</td></tr>{% endif %}{% endwith %}
+
+<tr><td>Intended RFC status:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.intended_maturity_level|default:"-"  }}{% else %}-{%endif%}</td></tr> 
 
 {% ifequal doc.draft_status "Active" %}
 <tr><td>Other versions:</td><td>
@@ -70,9 +63,54 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <a href="http://tools.ietf.org/html/{{doc.draft_name_and_revision}}">html</a>
 </td></tr>
 {% endifequal %}
+
+
+<tr><td colspan='2'><hr size='1' noshade /></td></tr>
+
+{% ifequal stream_info.stream.name "IETF" %}
+  <tr>
+     <td>IETF WG State:</td>
+     <td>{{ stream_info.state.name }} ({{ stream_info.streamed.group }}) 
+	{% if stream_info.tags %}<br /><i>{% for tag in stream_info.tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+     </td>
+  </tr>
+{% else %}
+   {% if stream_info.stream %}
+   <tr>
+      <td>{{ stream_info.stream.name }} status:</td>
+      <td>
+	 {{ stream_info.state.name }} {% if stream_info.streamed.group %}({{ stream_info.streamed.group }}) {% endif %}
+	 {% if stream_info.tags %}<br /><i>{% for tag in stream_info.tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+      </td>
+   </tr>
+   {% endif %}
+{% endifequal %}
+<tr><td>Document shepherd:</td><td>{{ stream_info.shepherd|default:"" }}</td></tr> 
+
+<tr><td colspan='2'><hr size='1' noshade /></td></tr>
+
+
+<tr><td><a href="/idtracker/help/state/">IESG State</>:</td><td> {{ doc.friendly_state|safe }} 
+{% if doc.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.draft_name}}">{{ doc.rfc_editor_state|escape }}</a>{% endif %}
+{% ifequal doc.draft_status "Expired" %}
+{% if doc.resurrect_requested_by %}(resurrect requested by {{ doc.resurrect_requested_by }}){% endif %}
+{% endifequal %}
+{% if doc.in_ietf_process %}{% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}{% if doc.ietf_process.has_active_iesg_ballot %}<br/><i>({{ doc.ietf_process.iesg_ballot_needed }})</i>{%endif%}{%endif%}
+</td></tr>
+{# <tr><td>Submission:</td><td>{{ doc.submission|safe }}</td></tr> #}
+<tr><td>Responsible AD:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.ad_name|default:"-"|escape }}{%else%}-{%endif%}</td></tr>
+{% if doc.in_ietf_process and doc.ietf_process.iesg_note %}<tr><td>IESG Note:</td><td>{{ doc.ietf_process.iesg_note|format_textarea|safe }}</td></tr>{% endif %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+{% if doc.in_ietf_process %}<tr><td>Send notices to:</td><td>{{ doc.ietf_process.state_change_notice_to}}</td></tr>{% endif %}
+{% endif %}{# if user|in_group:... #}
+
+<tr><td colspan='2'><hr size='1' noshade /></td></tr>
+
+
 {% endblock doc_metatable %}
 
 {% block doc_metalinks %}
+{% edit_actions doc %}
 <div>
   <a href="mailto:{{doc.draft_name}}@tools.ietf.org?subject=Mail%20regarding%20{{doc.draft_name}}" rel="nofollow">Email Authors</a>
 | <a href="/ipr/search/?option=document_search&amp;id_document_tag={{doc.tracker_id}}" rel="nofollow">IPR Disclosures</a>
