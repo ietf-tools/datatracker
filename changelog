@@ -1,3 +1,45 @@
+ietfdb (3.55)
+
+  This release adds the wgchair tracker functionality, and also contains
+  some bugfixes.
+
+  Feature:
+
+  * Merged in branch branch/yaco/wgchairs from esanchez@yaco.es.  This 
+    provides the WG Chair Tracker functionality.
+
+  Fixes:
+
+  * Changed the default initial state for a WG document to 'WG Document', 
+    instead of 'Call for Adoption ...'.
+
+  * Labelled the link to edit a document's WG state 'Change WG State', in 
+    order to not confuse it with changing the IESG state.
+
+  * Reordered the state information for a document into related groups, 
+    separated by rulers.  Add some indentation to the template code to make it 
+    a bit easier to read in some places.
+
+  * Made the WG a draft belongs to into a link to the WG page.
+
+  * Corrected an inappropriate use of the idsubmission repository location 
+    instead of the ID repository.  Reported by Robert Sparks.
+
+  * Correct the text (add an omitted word 'press').  Reported by Tomas Narten.
+
+  * Fixed a problem with author extraction when a given name is the same as 
+    the surname.
+
+  * Only try to return a shepherd for a document if one has been assigned 
+    to the document.
+
+  * Merged in changes from esanchez@yaco.es, changeset [3067].  Makes 
+    Liaisons' Date field editable.
+
+  * Added a bit of admin goodness for MeetingSessions.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 May 2011 22:56:51 +0200
+
 ietfdb (3.54)
 
   From rjsparks@nostrum.com:
