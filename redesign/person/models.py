@@ -1,14 +1,18 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
+from django.contrib.auth.models import User
 
 class Person(models.Model):
     time = models.DateTimeField(auto_now_add=True)      # When this Person record entered the system
-    name = models.CharField(max_length=255)             # The normal unicode form of the name.  This must be
+    name = models.CharField(max_length=255, db_index=True) # The normal unicode form of the name.  This must be
                                                         # set to the same value as the ascii-form if equal.
     ascii = models.CharField(max_length=255)            # The normal ascii-form of the name.
     ascii_short = models.CharField(max_length=32, null=True, blank=True)      # The short ascii-form of the name.  Also in alias table if non-null
     address = models.TextField(max_length=255, blank=True)
+
+    user = models.OneToOneField(User, blank=True, null=True)
+    
     def __unicode__(self):
         return self.name
     def _parts(self, name):
@@ -40,6 +44,23 @@ class Person(models.Model):
         else:
             prefix, first, middle, last, suffix = self.ascii_parts()
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
+    def email_address(self):
+        e = self.email_set.filter(active=True)
+        if e:
+            return e[0]
+        else:
+            return ""
+    def formatted_email(self):
+        e = self.email_set.order_by("-active")
+        if e:
+            return e[0].formatted_email()
+        else:
+            return ""
+    def person(self): # little temporary wrapper to help porting
+        return self
+    def full_name_as_key(self):
+        return self.name.lower().replace(" ", ".")
+        
 
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
@@ -48,7 +69,7 @@ class Alias(models.Model):
     recorded in the Person record.
     """
     person = models.ForeignKey(Person)
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_index=True)
     def __unicode__(self):
         return self.name
     class Meta:

@@ -1,4 +1,5 @@
-from ietf.idtracker.models import IESGLogin, PersonOrOrgInfo, EmailAddress
+from django.contrib.auth.models import User
+
 from ietf.iesg.models import TelechatDates, WGAction
 from redesign.doc.models import *
 from redesign.name.models import *
@@ -7,6 +8,12 @@ from redesign.person.models import *
 
 def make_test_data():
     # groups
+    secretariat = Group.objects.create(
+        name="Secretariat",
+        acronym="secretariat",
+        state_id="active",
+        type_id="ietf",
+        parent=None)
     area = Group.objects.create(
         name="Far Future",
         acronym="farfut",
@@ -22,45 +29,43 @@ def make_test_data():
         )
     
     # persons
-    Email.objects.get_or_create(address="(System)")
+
+    # system
+    system_person = Person.objects.create(
+        id=0, # special value
+        name="(System)",
+        ascii="(System)",
+        address="",
+        )
+    
+    if system_person.id != 0: # work around bug in Django
+        Person.objects.filter(id=system_person.id).update(id=0)
+        system_person = Person.objects.get(id=0)
+
+    Alias.objects.get_or_create(person=system_person, name=system_person.name)
+    Email.objects.get_or_create(address="", person=system_person)
 
     # ad
-    p = Person.objects.create(
+    u = User.objects.create(username="ad")
+    ad = p = Person.objects.create(
         name="Aread Irector",
         ascii="Aread Irector",
-        )
-    ad = Email.objects.create(
+        user=u)
+    email = Email.objects.create(
         address="aread@ietf.org",
         person=p)
     Role.objects.create(
         name_id="ad",
         group=area,
-        email=ad)
-    porg = PersonOrOrgInfo.objects.create(
-        first_name="Aread",
-        last_name="Irector",
-        middle_initial="",
-        )
-    EmailAddress.objects.create(
-        person_or_org=porg,
-        priority=1,
-        address=ad.address,
-        )
-    IESGLogin.objects.create(
-        login_name="ad",
-        password="foo",
-        user_level=1,
-        first_name=porg.first_name,
-        last_name=porg.last_name,
-        person=porg,
-        )
+        email=email)
 
     # create a bunch of ads for swarm tests
     for i in range(1, 10):
+        u = User.objects.create(username="ad%s" % i)
         p = Person.objects.create(
             name="Ad No%s" % i,
             ascii="Ad No%s" % i,
-            )
+            user=u)
         email = Email.objects.create(
             address="ad%s@ietf.org" % i,
             person=p)
@@ -68,24 +73,6 @@ def make_test_data():
             name_id="ad" if i <= 5 else "ex-ad",
             group=area,
             email=email)
-        porg = PersonOrOrgInfo.objects.create(
-            first_name="Ad",
-            last_name="No%s" % i,
-            middle_initial="",
-            )
-        EmailAddress.objects.create(
-            person_or_org=porg,
-            priority=1,
-            address=ad.address,
-            )
-        IESGLogin.objects.create(
-            login_name="ad%s" % i,
-            password="foo",
-            user_level=1,
-            first_name=porg.first_name,
-            last_name=porg.last_name,
-            person=porg,
-            )
 
     # group chair
     p = Person.objects.create(
@@ -96,36 +83,24 @@ def make_test_data():
         address="wgchairman@ietf.org",
         person=p)
     Role.objects.create(
-        name=RoleName.objects.get(slug="chair"),
+        name_id="chair",
         group=group,
         email=wgchair,
         )
     
     # secretary
+    u = User.objects.create(username="secretary")
     p = Person.objects.create(
         name="Sec Retary",
         ascii="Sec Retary",
-        )
-    Email.objects.create(
+        user=u)
+    email = Email.objects.create(
         address="sec.retary@ietf.org",
         person=p)
-    porg = PersonOrOrgInfo.objects.create(
-        first_name="Sec",
-        last_name="Retary",
-        middle_initial="",
-        )
-    EmailAddress.objects.create(
-        person_or_org=porg,
-        priority=1,
-        address="sec.retary@ietf.org",
-        )
-    IESGLogin.objects.create(
-        login_name="secretary",
-        password="foo",
-        user_level=0,
-        first_name=porg.first_name,
-        last_name=porg.last_name,
-        person=porg,
+    Role.objects.create(
+        name_id="secr",
+        group=secretariat,
+        email=email,
         )
     
     # draft

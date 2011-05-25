@@ -276,18 +276,16 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         def __init__(self, *args, **kwargs):
             super(SearchForm, self).__init__(*args, **kwargs)
             responsible = Document.objects.values_list('ad', flat=True).distinct()
-            active_ads = list(Email.objects.filter(role__name="ad",
-                                                   role__group__type="area",
-                                                   role__group__state="active")
-                              .select_related('person'))
-            inactive_ads = list(Email.objects.filter(pk__in=responsible)
-                                .exclude(pk__in=[x.pk for x in active_ads])
-                                .select_related('person'))
-            extract_last_name = lambda x: x.get_name().split(' ')[-1]
+            active_ads = list(Person.objects.filter(email__role__name="ad",
+                                                    email__role__group__type="area",
+                                                    email__role__group__state="active").distinct())
+            inactive_ads = list(Person.objects.filter(pk__in=responsible)
+                                .exclude(pk__in=[x.pk for x in active_ads]))
+            extract_last_name = lambda x: x.name_parts()[3]
             active_ads.sort(key=extract_last_name)
             inactive_ads.sort(key=extract_last_name)
 
-            self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.get_name()) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.get_name()) for ad in inactive_ads]
+            self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.name) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
             self.fields['subState'].choices = [('', 'any substate'), ('0', 'no substate')] + [(n.slug, n.name) for n in DocInfoTagName.objects.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))]
         def clean_name(self):
             value = self.cleaned_data.get('name','')
@@ -479,16 +477,21 @@ def search_main(request):
 def by_ad(request, name):
     ad_id = None
     ad_name = None
-    for i in IESGLogin.objects.filter(user_level__in=[1,2]):
-        iname = str(i).lower().replace(' ','.')
-        if name == iname:
-            ad_id = i.id
-            ad_name = str(i)
-            break
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        for p in Person.objects.filter(email__role__name__in=("ad", "ex-ad")):
+            if name == p.name.lower().replace(" ", "."):
+                ad_id = p.id
+                ad_name = p.name
+                break
+    else:
+        for i in IESGLogin.objects.filter(user_level__in=[1,2]):
+            iname = str(i).lower().replace(' ','.')
+            if name == iname:
+                ad_id = i.id
+                ad_name = str(i)
+                break
     if not ad_id:
         raise Http404
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        ad_id = i.person.email()[1]
     form = SearchForm({'by':'ad','ad':ad_id,
                        'rfcs':'on', 'activeDrafts':'on', 'oldDrafts':'on'})
     if not form.is_valid():

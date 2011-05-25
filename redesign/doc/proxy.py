@@ -305,12 +305,12 @@ class InternetDraft(Document):
     #token_name = models.CharField(blank=True, max_length=25)
     @property
     def token_name(self):
-        return self.ad.get_name()
+        return self.ad.name
 
     #token_email = models.CharField(blank=True, max_length=255)
     @property
     def token_email(self):
-        return self.ad.address
+        return self.ad.email_address()
     
     #note = models.TextField(blank=True) # same name
     
@@ -556,7 +556,7 @@ class InternetDraft(Document):
     #     return remarks
     def active_positions(self):
         """Returns a list of dicts, with AD and Position tuples"""
-        active_ads = Email.objects.filter(role__name="ad", role__group__state="active")
+        active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active")
 	res = []
         def add(ad, pos):
             from person.proxy import IESGLogin as IESGLoginProxy
@@ -638,7 +638,7 @@ class InternetDraft(Document):
             e = self.published_rfc
         else:
             e = self.latest_event(type="published_rfc")
-        return e.time.date() if e else None
+        return e.time.date() if e else datetime.date(1990,1,1)
     
     #current_status = models.CharField(max_length=50,null=True)
     @property
@@ -782,11 +782,11 @@ class DocumentComment(Event):
     def get_absolute_url(self):
         return "/doc/%s/" % self.doc.name
     def get_author(self):
-        return self.by.get_name()
+        return self.by.name
     def get_username(self):
         return unicode(self.by)
     def get_fullname(self):
-        return self.by.get_name()
+        return self.by.name
     def datetime(self):
         return self.time
     def __str__(self):

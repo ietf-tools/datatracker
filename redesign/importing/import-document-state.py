@@ -14,7 +14,7 @@ management.setup_environ(settings)
 from redesign.doc.models import *
 from redesign.group.models import *
 from redesign.name.models import *
-from redesign.importing.utils import person_email
+from redesign.importing.utils import old_person_to_person
 from redesign.name.utils import name
 from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
 from ietf.idrfc.models import RfcIndex, DraftVersions
@@ -145,7 +145,7 @@ tag_has_errata = name(DocInfoTagName, 'errata', "Has errata")
 # helpers
 def save_event(doc, event, comment):
     event.time = comment.datetime()
-    event.by = iesg_login_to_email(comment.created_by)
+    event.by = iesg_login_to_person(comment.created_by)
     event.doc = doc
     if not event.desc:
         event.desc = comment.comment_text # FIXME: consider unquoting here
@@ -159,17 +159,16 @@ def sync_tag(d, include, tag):
 
 buggy_iesg_logins_cache = {}
 
-# make sure system email exists
-system_email, _ = Email.objects.get_or_create(address="(System)")
+system = Person.objects.get(name="(System)")
 
-def iesg_login_to_email(l):
+def iesg_login_to_person(l):
     if not l:
-        return system_email
+        return system
     else:
          # there's a bunch of old weird comments made by "IESG
          # Member", transform these into "System" instead
         if l.id == 2:
-            return system_email
+            return system
         
         # fix logins without the right person
         if not l.person:
@@ -185,19 +184,22 @@ def iesg_login_to_email(l):
                     else:
                         buggy_iesg_logins_cache[l.id] = None
             l = buggy_iesg_logins_cache[l.id]
+
+        if not l:
+            return system
             
         try:
-            return Email.objects.get(address=person_email(l.person))
+            return old_person_to_person(l.person)
         except Email.DoesNotExist:
             try:
-                return Email.objects.get(person__name="%s %s" % (l.person.first_name, l.person.last_name))
-            except Email.DoesNotExist:
-                print "MISSING IESG LOGIN", l.person.email()
+                return Person.objects.get(name="%s %s" % (l.person.first_name, l.person.last_name))
+            except Person.DoesNotExist:
+                print "MISSING IESG LOGIN", l.person, l.person.email()
                 return None
 
 def iesg_login_is_secretary(l):
-    # Amy has two users, for some reason
-    return l.user_level == IESGLogin.SECRETARIAT_LEVEL or l.first_name == "Amy" and l.last_name == "Vezza"
+    # Amy has two users, for some reason, we sometimes get the wrong one
+    return l.user_level == IESGLogin.SECRETARIAT_LEVEL or (l.first_name == "Amy" and l.last_name == "Vezza")
 
 # regexps for parsing document comments
 
@@ -234,10 +236,9 @@ re_comment_discuss_by_tag = re.compile(r" by [\w-]+ [\w-]+$")
 def import_from_idinternal(d, idinternal):
     d.time = idinternal.event_date
     d.iesg_state = iesg_state_mapping[idinternal.cur_state.state]    
-    d.ad = iesg_login_to_email(idinternal.job_owner)
+    d.ad = iesg_login_to_person(idinternal.job_owner)
     d.notify = idinternal.state_change_notice_to or ""
-    d.note = idinternal.note or ""
-    d.note = d.note.replace('<br>', '\n').strip().replace('\n', '<br>')
+    d.note = (idinternal.note or "").replace('<br>', '\n').strip().replace('\n', '<br>')
     d.save()
     
     # extract events
@@ -267,14 +268,14 @@ def import_from_idinternal(d, idinternal):
             save_event(d, e, c)
             handled = True
 
-            ad = iesg_login_to_email(c.created_by)
+            ad = iesg_login_to_person(c.created_by)
             last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=ad)
             if not last_pos and not iesg_login_is_secretary(c.created_by):
                 # when you issue a ballot, you also vote yes; add that vote
                 e = BallotPositionEvent()
                 e.type = "changed_ballot_position"
                 e.ad = ad
-                e.desc = "[Ballot Position Update] New position, Yes, has been recorded by %s" % e.ad.get_name()
+                e.desc = "[Ballot Position Update] New position, Yes, has been recorded by %s" % e.ad.name
             
                 e.pos = ballot_position_mapping["Yes"]
                 e.discuss = last_pos.discuss if last_pos else ""
@@ -309,7 +310,7 @@ def import_from_idinternal(d, idinternal):
 
                 found = False
                 for p in positions:
-                    if not d.event_set.filter(type="changed_ballot_position", ballotposition__pos=position, ballotposition__ad=iesg_login_to_email(p.ad)):
+                    if not d.event_set.filter(type="changed_ballot_position", ballotposition__pos=position, ballotposition__ad=iesg_login_to_person(p.ad)):
                         login = p.ad
                         found = True
                         break
@@ -335,7 +336,7 @@ def import_from_idinternal(d, idinternal):
 
             e = BallotPositionEvent()
             e.type = "changed_ballot_position"
-            e.ad = iesg_login_to_email(login)
+            e.ad = iesg_login_to_person(login)
             last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=e.ad)
             e.pos = position
             e.discuss = last_pos.discuss if last_pos else ""
@@ -353,7 +354,7 @@ def import_from_idinternal(d, idinternal):
         if c.ballot in (DocumentComment.BALLOT_DISCUSS, DocumentComment.BALLOT_COMMENT):
             e = BallotPositionEvent()
             e.type = "changed_ballot_position"
-            e.ad = iesg_login_to_email(c.created_by)
+            e.ad = iesg_login_to_person(c.created_by)
             last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=e.ad)
             e.pos = last_pos.pos if last_pos else ballot_position_mapping[None]
             c.comment_text = re_comment_discuss_by_tag.sub("", c.comment_text)
@@ -565,7 +566,7 @@ def import_from_idinternal(d, idinternal):
     if idinternal.status_date != status_date:
         e = StatusDateEvent(type="changed_status_date", date=idinternal.status_date)
         e.time = made_up_date
-        e.by = system_email
+        e.by = system
         e.doc = d
         e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (idinternal.status_date, status_date)
         e.save()
@@ -584,7 +585,7 @@ def import_from_idinternal(d, idinternal):
         # comments, in that case the time is simply the day after
         # the telechat
         e.time = telechat_date + datetime.timedelta(days=1) if telechat_date and not idinternal.telechat_date else made_up_date
-        e.by = system_email
+        e.by = system
         args = ("Placed on", idinternal.telechat_date) if idinternal.telechat_date else ("Removed from", telechat_date)
         e.doc = d
         e.desc = "%s agenda for telechat - %s by system" % args
@@ -611,7 +612,7 @@ def import_from_idinternal(d, idinternal):
             if iesg_login_is_secretary(p.ad):
                 continue
             
-            ad = iesg_login_to_email(p.ad)
+            ad = iesg_login_to_person(p.ad)
             if p.noobj > 0:
                 pos = ballot_position_mapping["No Objection"]
             elif p.yes > 0:
@@ -636,7 +637,7 @@ def import_from_idinternal(d, idinternal):
                 e.type = "changed_ballot_position"
                 e.doc = d
                 e.time = position_date
-                e.by = system_email
+                e.by = system
                 e.ad = ad
                 last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=e.ad)
                 e.pos = pos
@@ -649,9 +650,9 @@ def import_from_idinternal(d, idinternal):
                 e.comment = last_pos.comment if last_pos else ""
                 e.comment_time = last_pos.comment_time if last_pos else None
                 if last_pos:
-                    e.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (ad.get_name(), pos.name, last_pos.pos.name)
+                    e.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (ad.name, pos.name, last_pos.pos.name)
                 else:
-                    e.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.name, ad.get_name())
+                    e.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.name, ad.name)
                 e.save()
 
         # make sure we got the ballot issued event
@@ -666,14 +667,14 @@ def import_from_idinternal(d, idinternal):
             e.type = "sent_ballot_announcement"
             e.doc = d
             e.time = sent_date
-            e.by = system_email
+            e.by = system
             e.desc = "Ballot has been issued"
             e.save()
             
         # make sure the comments and discusses are updated
         positions = list(BallotPositionEvent.objects.filter(doc=d).order_by("-time", '-id'))
         for c in IESGComment.objects.filter(ballot=ballot):
-            ad = iesg_login_to_email(c.ad)
+            ad = iesg_login_to_person(c.ad)
             for p in positions:
                 if p.ad == ad:
                     if p.comment != c.text:
@@ -683,7 +684,7 @@ def import_from_idinternal(d, idinternal):
                     break
                 
         for c in IESGDiscuss.objects.filter(ballot=ballot):
-            ad = iesg_login_to_email(c.ad)
+            ad = iesg_login_to_person(c.ad)
             for p in positions:
                 if p.ad == ad:
                     if p.discuss != c.text:
@@ -701,26 +702,26 @@ def import_from_idinternal(d, idinternal):
             text_date = made_up_date
 
         if idinternal.ballot.approval_text:
-            e, _ = WriteupEvent.objects.get_or_create(type="changed_ballot_approval_text", doc=d)
+            e, _ = WriteupEvent.objects.get_or_create(type="changed_ballot_approval_text", doc=d,
+                                                      defaults=dict(by=system))
             e.text = idinternal.ballot.approval_text
             e.time = text_date
-            e.by = system_email
             e.desc = "Ballot approval text was added"
             e.save()
 
         if idinternal.ballot.last_call_text:
-            e, _ = WriteupEvent.objects.get_or_create(type="changed_last_call_text", doc=d)
+            e, _ = WriteupEvent.objects.get_or_create(type="changed_last_call_text", doc=d,
+                                                      defaults=dict(by=system))
             e.text = idinternal.ballot.last_call_text
             e.time = text_date
-            e.by = system_email
             e.desc = "Last call text was added"
             e.save()
 
         if idinternal.ballot.ballot_writeup:
-            e, _ = WriteupEvent.objects.get_or_create(type="changed_ballot_writeup_text", doc=d)
+            e, _ = WriteupEvent.objects.get_or_create(type="changed_ballot_writeup_text", doc=d,
+                                                      defaults=dict(by=system))
             e.text = idinternal.ballot.ballot_writeup
             e.time = text_date
-            e.by = system_email
             e.desc = "Ballot writeup text was added"
             e.save()
 
@@ -728,10 +729,9 @@ def import_from_idinternal(d, idinternal):
     if len(ballot_set) > 1:
         others = sorted(b.draft.filename for b in ballot_set if b != idinternal)
         desc = u"This was part of a ballot set with: %s" % ",".join(others)
-        e, _ = Event.objects.get_or_create(type="added_comment", doc=d, desc=desc)
-        e.time = made_up_date
-        e.by = system_email
-        e.save()
+        Event.objects.get_or_create(type="added_comment", doc=d, desc=desc,
+                                    defaults=dict(time=made_up_date,
+                                                  by=system))
 
     # fix tags
     sync_tag(d, idinternal.via_rfc_editor, tag_via_rfc_editor)
@@ -798,10 +798,11 @@ for index, o in enumerate(all_drafts.iterator()):
     if o.rfc_number:
         alias_doc("rfc%s" % o.rfc_number, d)
 
+    # authors
     d.authors.clear()
     for i, a in enumerate(o.authors.all().select_related("person").order_by('author_order', 'person')):
         try:
-            e = Email.objects.get(address=a.person.email()[1] or u"unknown-email-%s-%s" % (a.person.first_name, a.person.last_name))
+            e = Email.objects.get(address__iexact=a.email() or a.person.email()[1] or u"unknown-email-%s-%s" % (a.person.first_name, a.person.last_name))
             # renumber since old numbers may be a bit borked
             DocumentAuthor.objects.create(document=d, author=e, order=i)
         except Email.DoesNotExist:
@@ -827,7 +828,7 @@ for index, o in enumerate(all_drafts.iterator()):
             # hack the seconds to include the revision to ensure
             # they're ordered correctly
             e.time = datetime.datetime.combine(v.revision_date, datetime.time(0, 0, 0)) + datetime.timedelta(seconds=int(v.revision))
-            e.by = system_email
+            e.by = system
             e.doc = d
             e.desc = "New version available"
             e.save()
@@ -844,7 +845,7 @@ for index, o in enumerate(all_drafts.iterator()):
         disapproved = o.idinternal and o.idinternal.dnp
         e = Event(type="iesg_disapproved" if disapproved else "iesg_approved")
         e.time = o.b_approve_date
-        e.by = system_email
+        e.by = system
         e.doc = d
         e.desc = "Do Not Publish note has been sent to RFC Editor" if disapproved else "IESG has approved"
         e.save()
@@ -856,7 +857,7 @@ for index, o in enumerate(all_drafts.iterator()):
         # event time is more accurate with actual time instead of just
         # date, gives better sorting
         e.time = events[0].time if events else o.lc_sent_date
-        e.by = events[0].by if events else system_email
+        e.by = events[0].by if events else system
         e.doc = d
         e.desc = "Last call sent"
         e.save()
@@ -956,9 +957,9 @@ for index, o in enumerate(all_rfcs.iterator()):
         import_from_idinternal(d, internals[0])
     
     # publication date
-    e, _ = Event.objects.get_or_create(doc=d, type="published_rfc")
+    e, _ = Event.objects.get_or_create(doc=d, type="published_rfc",
+                                       defaults=dict(by=system))
     e.time = o.rfc_published_date
-    e.by = system_email
     e.desc = "RFC published"
     e.save()
 

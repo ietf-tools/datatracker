@@ -1,6 +1,12 @@
+from redesign.proxy_utils import TranslatingManager
+
 from models import *
 
-class IESGLogin(Email):
+class IESGLogin(Person):
+    objects = TranslatingManager(dict(user_level__in=None,
+                                      first_name="name"
+                                      ))
+
     def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
@@ -10,9 +16,6 @@ class IESGLogin(Email):
     AD_LEVEL = 1
     INACTIVE_AD_LEVEL = 2
 
-    @property
-    def id(self):
-        return self.pk # this is not really backwards-compatible
     #login_name = models.CharField(blank=True, max_length=255)
     @property
     def login_name(self): raise NotImplemented
@@ -26,12 +29,12 @@ class IESGLogin(Email):
     #first_name = models.CharField(blank=True, max_length=25)
     @property
     def first_name(self):
-        return self.get_name().split(" ")[0]
+        return self.name_parts()[1]
     
     #last_name = models.CharField(blank=True, max_length=25)
     @property
     def last_name(self):
-        return self.get_name().split(" ")[-1]
+        return self.name_parts()[3]
 
     # FIXME: person isn't wrapped yet
     #person = BrokenForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag', unique=True, null_values=(0, 888888), null=True)
@@ -41,15 +44,14 @@ class IESGLogin(Email):
     #default_search = models.NullBooleanField()
     
     def __str__(self):
-        return self.get_name()
+        return self.name
     def __unicode__(self):
-        return self.get_name()
+        return self.name
     def is_current_ad(self):
-	return self in Email.objects.filter(role__name="ad", role__group__state="active")
+	return self in Person.objects.filter(email__role__name="ad", email__role__group__state="active").distinct()
     @staticmethod
     def active_iesg():
-        raise NotImplemented
-	#return IESGLogin.objects.filter(user_level=1,id__gt=1).order_by('last_name')
+	return IESGLogin.objects.filter(email__role__name="ad", email__role__group__state="active").distinct().order_by('name')
     
     class Meta:
         proxy = True

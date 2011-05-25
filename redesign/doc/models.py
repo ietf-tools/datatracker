@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from redesign.group.models import *
 from redesign.name.models import *
-from redesign.person.models import Email
+from redesign.person.models import Email, Person
 from redesign.util import admin_link
 
 import datetime
@@ -31,8 +31,8 @@ class DocumentInfo(models.Model):
     pages = models.IntegerField(blank=True, null=True)
     intended_std_level = models.ForeignKey(IntendedStdLevelName, blank=True, null=True)
     std_level = models.ForeignKey(StdLevelName, blank=True, null=True)
-    ad = models.ForeignKey(Email, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)
-    shepherd = models.ForeignKey(Email, related_name='shepherd_%(class)s_set', blank=True, null=True)
+    ad = models.ForeignKey(Person, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)
+    shepherd = models.ForeignKey(Person, related_name='shepherd_%(class)s_set', blank=True, null=True)
     notify = models.CharField(max_length=255, blank=True)
     external_url = models.URLField(blank=True) # Should be set for documents with type 'External'.
     note = models.TextField(blank=True)
@@ -60,8 +60,8 @@ class RelatedDocument(models.Model):
 
 class DocumentAuthor(models.Model):
     document = models.ForeignKey('Document')
-    author = models.ForeignKey(Email)
-    order = models.IntegerField()
+    author = models.ForeignKey(Email, help_text="Email address used by author for submission")
+    order = models.IntegerField(default=1)
 
     def __unicode__(self):
         return u"%s %s (%s)" % (self.document.name, self.author.get_name(), self.order)
@@ -224,12 +224,12 @@ class Event(models.Model):
     """An occurrence for a document, used for tracking who, when and what."""
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
-    by = models.ForeignKey(Email, blank=True, null=True) # FIXME: make NOT NULL?
+    by = models.ForeignKey(Person)
     doc = models.ForeignKey('doc.Document')
     desc = models.TextField()
 
     def __unicode__(self):
-        return u"%s %s at %s" % (self.by.get_name(), self.get_type_display().lower(), self.time)
+        return u"%s %s at %s" % (self.by.name, self.get_type_display().lower(), self.time)
 
     class Meta:
         ordering = ['-time', 'id']
@@ -239,7 +239,7 @@ class NewRevisionEvent(Event):
    
 # IESG events
 class BallotPositionEvent(Event):
-    ad = models.ForeignKey(Email)
+    ad = models.ForeignKey(Person)
     pos = models.ForeignKey(BallotPositionName, verbose_name="position", default="norecord")
     discuss = models.TextField(help_text="Discuss text if position is discuss", blank=True)
     discuss_time = models.DateTimeField(help_text="Time discuss text was written", blank=True, null=True)

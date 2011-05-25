@@ -178,13 +178,13 @@ import django.db.transaction
 
 @django.db.transaction.commit_on_success
 def insert_to_databaseREDESIGN(data):
-    from person.models import Email
+    from person.models import Person
     from doc.models import Document, DocAlias, Event, RelatedDocument
     from group.models import Group
     from name.models import DocInfoTagName, DocRelationshipName
     from name.utils import name
     
-    system_email = Email.objects.get(address="(System)")
+    system = Person.objects.get(name="(System)")
     std_level_mapping = get_std_level_mapping()
     stream_mapping = get_stream_mapping()
     tag_has_errata = name(DocInfoTagName, 'errata', "Has errata")
@@ -203,7 +203,8 @@ def insert_to_databaseREDESIGN(data):
 
         # we assume two things can happen: we get a new RFC, or an
         # attribute has been updated at the RFC Editor (RFC Editor
-        # attributes currently take precedence)
+        # attributes currently take precedence over our local
+        # attributes)
 
         # make sure we got the document and alias
         created = False
@@ -257,7 +258,7 @@ def insert_to_databaseREDESIGN(data):
         if not doc.latest_event(type="published_rfc", time=pubdate):
             e = Event(doc=doc, type="published_rfc")
             e.time = pubdate
-            e.by = system_email
+            e.by = system
             e.desc = "RFC published"
             e.save()
             changed = True

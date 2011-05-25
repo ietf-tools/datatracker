@@ -20,7 +20,7 @@ class AliasInline(admin.StackedInline):
     model = Alias
 
 class PersonAdmin(admin.ModelAdmin):
-    list_display = ["name", "short", "time", ]
+    list_display = ["name", "short", "time", "user", ]
     search_fields = ["name", "ascii"]
     inlines = [ EmailInline, AliasInline, ]
 #    actions = None

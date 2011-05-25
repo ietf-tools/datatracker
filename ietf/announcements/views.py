@@ -35,7 +35,6 @@ def nomcom(request):
                                 'regimes' : regimes })
 
 def nomcomREDESIGN(request):
-    from person.models import Email
     from group.models import Group
     from ietf.announcements.models import Message
 
@@ -75,7 +74,6 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
 
 def message_detail(request, object_id, queryset):
-    from person.models import Email
     from group.models import Group
     from ietf.announcements.models import Message
 

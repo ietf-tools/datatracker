@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Email Discuss and Comment text for {{ ad.get_name }} to IESG list{% endblock %}
+{% block title %}Email Discuss and Comment text for {{ ad.name }} to IESG list{% endblock %}
 
 {% block morecss %}
 form.send-ballot pre {
@@ -12,7 +12,7 @@ form.send-ballot pre {
 {% endblock %}
 
 {% block content %}
-<h1>Email Discuss and Comment text for {{ ad.get_name }} to IESG list</h1>
+<h1>Email Discuss and Comment text for {{ ad.name }} to IESG list</h1>
 
 <form class="send-ballot" action="" method="POST">
   <table>

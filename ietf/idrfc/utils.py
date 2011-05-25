@@ -67,7 +67,7 @@ def log_state_changedREDESIGN(request, doc, by, prev_iesg_state):
     e.desc = u"State changed to <b>%s</b> from <b>%s</b> by %s" % (
         doc.iesg_state.name,
         prev_iesg_state.name if prev_iesg_state else "None",
-        by.get_name())
+        by.name)
     e.save()
     return e
 
@@ -145,19 +145,19 @@ def update_telechatREDESIGN(request, doc, by, new_telechat_date, new_returning_i
     if on_agenda != prev_agenda:
         if on_agenda:
             e.desc = "Placed on agenda for telechat - %s by %s" % (
-                new_telechat_date, by.get_name())
+                new_telechat_date, by.name)
         else:
-            e.desc = "Removed from agenda for telechat by %s" % by.get_name()
+            e.desc = "Removed from agenda for telechat by %s" % by.name
     elif on_agenda and new_telechat_date != prev_telechat:
         e.desc = "Telechat date has been changed to <b>%s</b> from <b>%s</b> by %s" % (
-            new_telechat_date, prev_telechat, by.get_name())
+            new_telechat_date, prev_telechat, by.name)
     else:
         # we didn't reschedule but flipped returning item bit - let's
         # just explain that
         if returning:
-            e.desc = "Added as returning item on telechat by %s" % by.get_name()
+            e.desc = "Added as returning item on telechat by %s" % by.name
         else:
-            e.desc = "Removed as returning item on telechat by %s" % by.get_name()
+            e.desc = "Removed as returning item on telechat by %s" % by.name
 
     e.save()
 

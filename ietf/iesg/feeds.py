@@ -42,6 +42,6 @@ class IESGAgenda(Feed):
 	return str( item.job_owner )
     def item_author_email(self, item):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            return item.ad.address
+            return item.ad.email_address()
         
 	return item.job_owner.person.email()[1]

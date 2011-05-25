@@ -641,8 +641,8 @@ class BallotWrapper:
             self.old_init()
             return
 
-        from redesign.person.models import Email
-        active_ads = Email.objects.filter(role__name="ad", role__group__state="active")
+        from redesign.person.models import Person
+        active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active").distinct()
         
         positions = []
         seen = {}
@@ -650,7 +650,7 @@ class BallotWrapper:
         from doc.models import BallotPositionEvent
 	for pos in BallotPositionEvent.objects.filter(doc=self.ballot, type="changed_ballot_position", time__gte=self.ballot.process_start, time__lte=self.ballot.process_end).select_related('ad').order_by("-time", '-id'):
             if pos.ad not in seen:
-                p = dict(ad_name=pos.ad.get_name(),
+                p = dict(ad_name=pos.ad.name,
                          ad_username=pos.ad.pk, # ought to rename this in doc_ballot_list
                          position=pos.pos.name,
                          is_old_ad=pos.ad not in active_ads,
@@ -684,7 +684,7 @@ class BallotWrapper:
         if self.ballot_active:
             for ad in active_ads:
                 if ad not in seen:
-                    d = dict(ad_name=ad.get_name(),
+                    d = dict(ad_name=ad.name,
                              ad_username=ad.pk,
                              position="No Record",
                              )

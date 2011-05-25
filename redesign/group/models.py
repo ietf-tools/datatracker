@@ -2,7 +2,7 @@
 
 from django.db import models
 from redesign.name.models import *
-from redesign.person.models import Email
+from redesign.person.models import Email, Person
 
 import datetime
 
@@ -35,11 +35,11 @@ class GroupEvent(models.Model):
     group = models.ForeignKey(Group)
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=GROUP_EVENT_CHOICES)
-    by = models.ForeignKey(Email)
+    by = models.ForeignKey(Person)
     desc = models.TextField()
 
     def __unicode__(self):
-        return u"%s %s at %s" % (self.by.get_name(), self.get_type_display().lower(), self.time)
+        return u"%s %s at %s" % (self.by.name, self.get_type_display().lower(), self.time)
 
     class Meta:
         ordering = ['-time', 'id']
@@ -73,8 +73,8 @@ class GroupHistory(models.Model):
 class Role(models.Model):
     name = models.ForeignKey(RoleName)
     group = models.ForeignKey(Group)
-    email = models.ForeignKey(Email)
-    auth = models.CharField(max_length=255, blank=True)
+    email = models.ForeignKey(Email, help_text="Email address used by person for this role")
+    auth = models.CharField(max_length=255, blank=True) # unused?
     def __unicode__(self):
         return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym)
     

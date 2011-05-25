@@ -88,7 +88,8 @@ class IESGLoginAdmin(admin.ModelAdmin):
     ordering=['user_level', 'last_name']
     list_display=('login_name', 'first_name', 'last_name', 'user_level')
     raw_id_fields=['person']
-admin.site.register(IESGLogin, IESGLoginAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(IESGLogin, IESGLoginAdmin)
 
 class IETFWGAdmin(admin.ModelAdmin):
     list_display=('group_acronym', 'group_type', 'status', 'area_acronym', 'start_date', 'concluded_date')

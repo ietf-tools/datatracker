@@ -41,7 +41,7 @@ from django.conf import settings
 
 from pyquery import PyQuery
 
-from ietf.idtracker.models import IESGLogin, PersonOrOrgInfo, EmailAddress, IDDates
+from ietf.idtracker.models import IDDates
 from doc.models import *
 from name.models import *
 from group.models import *
@@ -182,7 +182,7 @@ class EditInfoTestCase(django.test.TestCase):
         events_before = draft.event_set.count()
         mailbox_before = len(mail_outbox)
 
-        new_ad = Email.objects.get(address="ad1@ietf.org")
+        new_ad = Person.objects.get(name="Ad No1")
 
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level.pk),
@@ -266,13 +266,13 @@ class EditInfoTestCase(django.test.TestCase):
         events_before = draft.event_set.count()
         mailbox_before = len(mail_outbox)
 
-        ad = Email.objects.get(address="aread@ietf.org")
+        ad = Person.objects.get(name="Aread Irector")
 
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level_id),
                                   status_date=str(date.today() + timedelta(2)),
                                   via_rfc_editor="1",
-                                  ad=ad,
+                                  ad=ad.pk,
                                   notify="test@example.com",
                                   note="This is a note",
                                   telechat_date="",
@@ -320,7 +320,7 @@ class ResurrectTestCase(django.test.TestCase):
         self.assertEquals(draft.event_set.count(), events_before + 1)
         e = draft.latest_event(type="requested_resurrect")
         self.assertTrue(e)
-        self.assertEquals(e.by, Email.objects.get(address="aread@ietf.org"))
+        self.assertEquals(e.by, Person.objects.get(name="Aread Irector"))
         self.assertTrue("Resurrection" in e.desc)
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue("Resurrection" in mail_outbox[-1]['Subject'])
@@ -331,7 +331,7 @@ class ResurrectTestCase(django.test.TestCase):
         draft.save()
         Event.objects.create(doc=draft,
                              type="requested_resurrect",
-                             by=Email.objects.get(address="aread@ietf.org"))
+                             by=Person.objects.get(name="Aread Irector"))
 
         url = urlreverse('doc_resurrect', kwargs=dict(name=draft.name))
         
@@ -392,7 +392,7 @@ class EditPositionTestCase(django.test.TestCase):
         url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
 
-        ad = Email.objects.get(address="aread@ietf.org")
+        ad = Person.objects.get(name="Aread Irector")
         
         # normal get
         r = self.client.get(url)
@@ -451,7 +451,7 @@ class EditPositionTestCase(django.test.TestCase):
     def test_edit_position_as_secretary(self):
         draft = make_test_data()
         url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name))
-        ad = Email.objects.get(address="aread@ietf.org")
+        ad = Person.objects.get(name="Aread Irector")
         url += "?ad=%s" % ad.pk
         login_testing_unauthorized(self, "secretary", url)
 
@@ -476,7 +476,7 @@ class EditPositionTestCase(django.test.TestCase):
         draft.notify = "somebody@example.com"
         draft.save()
 
-        ad = Email.objects.get(address="aread@ietf.org")
+        ad = Person.objects.get(name="Aread Irector")
         
         BallotPositionEvent.objects.create(doc=draft, type="changed_ballot_position",
                                       by=ad, ad=ad, pos=BallotPositionName.objects.get(slug="yes"),
@@ -643,7 +643,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         login_testing_unauthorized(self, "ad", url)
 
         def create_pos(num, vote, comment="", discuss=""):
-            ad = Email.objects.get(address="ad%s@ietf.org" % num)
+            ad = Person.objects.get(name="Ad No%s" % num)
             e = BallotPositionEvent()
             e.doc = draft
             e.by = ad
@@ -671,7 +671,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         # we need approval text to be able to submit
         e = WriteupEvent()
         e.doc = draft
-        e.by = Email.objects.get(address="aread@ietf.org")
+        e.by = Person.objects.get(name="Aread Irector")
         e.type = "changed_ballot_approval_text"
         e.text = "The document has been approved."
         e.save()
@@ -866,7 +866,7 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         NewRevisionEvent.objects.create(
             type="new_revision",
-            by=Email.objects.get(address="aread@ietf.org"),
+            by=Person.objects.get(name="Aread Irector"),
             doc=draft,
             desc="New revision",
             time=datetime.datetime.now() - datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE - 7),
@@ -897,7 +897,7 @@ class ExpireIDsTestCase(django.test.TestCase):
         
         NewRevisionEvent.objects.create(
             type="new_revision",
-            by=Email.objects.get(address="aread@ietf.org"),
+            by=Person.objects.get(name="Aread Irector"),
             doc=draft,
             desc="New revision",
             time=datetime.datetime.now() - datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE + 1),
@@ -986,7 +986,7 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         e = Event()
         e.doc = draft
-        e.by = Email.objects.get(address="(System)")
+        e.by = Person.objects.get(name="(System)")
         e.type = "expired_document"
         e.text = "Document has expired"
         e.time = datetime.date.today() - datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE + 1)
@@ -1028,12 +1028,14 @@ class ExpireLastCallTestCase(django.test.TestCase):
         draft = make_test_data()
         draft.iesg_state_id = "lc"
         draft.save()
+
+        secretary = Person.objects.get(name="Sec Retary")
         
         self.assertEquals(len(list(get_expired_last_calls())), 0)
 
         e = LastCallEvent()
         e.doc = draft
-        e.by = Email.objects.get(address="sec.retary@ietf.org")
+        e.by = secretary
         e.type = "sent_last_call"
         e.text = "Last call sent"
         e.expires = datetime.datetime.now() + datetime.timedelta(days=14)
@@ -1044,7 +1046,7 @@ class ExpireLastCallTestCase(django.test.TestCase):
         # test expired
         e = LastCallEvent()
         e.doc = draft
-        e.by = Email.objects.get(address="sec.retary@ietf.org")
+        e.by = secretary
         e.type = "sent_last_call"
         e.text = "Last call sent"
         e.expires = datetime.datetime.now()

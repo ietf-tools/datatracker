@@ -4,13 +4,13 @@ import datetime
 
 from django.conf import settings
 
-from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo, IESGLogin
+from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 
 from doc.models import Document, Event, LastCallEvent, WriteupEvent, save_document_in_history
 from name.models import IesgDocStateName
-from person.models import Email
+from person.models import Person
 
 def request_last_call(request, doc):
     try:
@@ -33,9 +33,9 @@ def request_last_callREDESIGN(request, doc):
     
     e = Event()
     e.type = "requested_last_call"
-    e.by = request.user.get_profile().email()
+    e.by = request.user.get_profile()
     e.doc = doc
-    e.desc = "Last call was requested by %s" % e.by.get_name()
+    e.desc = "Last call was requested by %s" % e.by.name
     e.save()
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
@@ -83,7 +83,7 @@ def expire_last_callREDESIGN(doc):
 
     prev = doc.iesg_state
     doc.iesg_state = state
-    e = log_state_changed(None, doc, Email.objects.get(address="(System)"), prev)
+    e = log_state_changed(None, doc, Person.objects.get(name="(System)"), prev)
                     
     doc.time = e.time
     doc.save()

@@ -309,6 +309,7 @@ def agenda_scribe_template(request):
 def _agenda_moderator_package(request):
     data = _agenda_data(request)
     data['ad_names'] = [str(x) for x in IESGLogin.active_iesg()]
+    data['ad_names'].sort(key=lambda x: x.split(' ')[-1])
     return render_to_response("iesg/moderator_package.html", data, context_instance=RequestContext(request))
 
 @group_required('Area_Director','Secretariat')
@@ -381,7 +382,7 @@ def handle_reschedule_form(request, idinternal, dates):
         form = RescheduleForm(request.POST, **formargs)
         if form.is_valid():
             if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                login = request.user.get_profile().email()
+                login = request.user.get_profile()
                 update_telechat(request, idinternal, login,
                                 form.cleaned_data['telechat_date'],
                                 False if form.cleaned_data['clear_returning_item'] else None)

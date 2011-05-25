@@ -66,7 +66,7 @@ class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
 
     def test_reschedule(self):
         from ietf.utils.test_data import make_test_data
-        from redesign.person.models import Email
+        from redesign.person.models import Person
         from doc.models import TelechatEvent
         
         draft = make_test_data()
@@ -74,7 +74,7 @@ class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
         # add to schedule
         e = TelechatEvent(type="scheduled_for_telechat")
         e.doc = draft
-        e.by = Email.objects.get(address="aread@ietf.org")
+        e.by = Person.objects.get(name="Aread Irector")
         e.telechat_date = TelechatDates.objects.all()[0].date1
         e.returning_item = True
         e.save()
@@ -159,6 +159,56 @@ class ManageTelechatDatesTestCase(django.test.TestCase):
         self.assertTrue(dates.date4 == new_date)
         self.assertTrue(dates.date1 == old_date2)
 
+class ManageTelechatDatesTestCaseREDESIGN(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_set_dates(self):
+        from ietf.utils.test_data import make_test_data
+        make_test_data()
+        
+        dates = TelechatDates.objects.all()[0]
+        url = urlreverse('ietf.iesg.views.telechat_dates')
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form input[name=date1]')), 1)
+
+        # post
+        new_date = dates.date1 + timedelta(days=7)
+        
+        r = self.client.post(url, dict(date1=new_date.isoformat(),
+                                       date2=new_date.isoformat(),
+                                       date3=new_date.isoformat(),
+                                       date4=new_date.isoformat(),
+                                       ))
+        self.assertEquals(r.status_code, 200)
+
+        dates = TelechatDates.objects.all()[0]
+        self.assertTrue(dates.date1 == new_date)
+
+    def test_rollup_dates(self):
+        from ietf.utils.test_data import make_test_data
+        make_test_data()
+        
+        dates = TelechatDates.objects.all()[0]
+        url = urlreverse('ietf.iesg.views.telechat_dates')
+        login_testing_unauthorized(self, "secretary", url)
+
+        old_date2 = dates.date2
+        new_date = dates.date4 + timedelta(days=14)
+        r = self.client.post(url, dict(rollup_dates="1"))
+        self.assertEquals(r.status_code, 200)
+
+        dates = TelechatDates.objects.all()[0]
+        self.assertTrue(dates.date4 == new_date)
+        self.assertTrue(dates.date1 == old_date2)
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    ManageTelechatDatesTestCase = ManageTelechatDatesTestCaseREDESIGN
+        
 class WorkingGroupActionsTestCase(django.test.TestCase):
     fixtures = ['base', 'wgactions']
 
@@ -320,7 +370,7 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
 
     def test_edit_wgaction(self):
         from ietf.utils.test_data import make_test_data
-        from redesign.person.models import Email
+        from redesign.person.models import Person
         
         make_test_data()
         
@@ -337,7 +387,7 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
 
         # change
         dates = TelechatDates.objects.all()[0]
-        token_name = Email.objects.get(address="ad1@ietf.org").get_name().split(" ")[0]
+        token_name = Person.objects.get(name="Ad No1").name_parts()[1]
         old = wga.pk
         r = self.client.post(url, dict(status_date=dates.date1.isoformat(),
                                        token_name=token_name,
@@ -355,7 +405,7 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
         
     def test_add_possible_wg(self):
         from ietf.utils.test_data import make_test_data
-        from redesign.person.models import Email
+        from redesign.person.models import Person
         from redesign.group.models import Group
         
         make_test_data()
@@ -388,7 +438,7 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
 
         wgas_before = WGAction.objects.all().count()
         dates = TelechatDates.objects.all()[0]
-        token_name = Email.objects.get(address="ad1@ietf.org").get_name().split(" ")[0]
+        token_name = Person.objects.get(name="Ad No1").name_parts()[1]
         r = self.client.post(add_url,
                              dict(status_date=dates.date1.isoformat(),
                                   token_name=token_name,

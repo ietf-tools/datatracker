@@ -7,6 +7,7 @@ sys.path = [ basedir ] + sys.path
 
 from ietf import settings
 settings.USE_DB_REDESIGN_PROXY_CLASSES = False
+settings.IMPORTING_ANNOUNCEMENTS = True
 
 from django.core import management
 management.setup_environ(settings)
@@ -14,7 +15,7 @@ management.setup_environ(settings)
 from redesign.person.models import *
 from redesign.group.models import *
 from redesign.name.utils import name
-from redesign.importing.utils import person_email
+from redesign.importing.utils import old_person_to_person
 from ietf.announcements.models import Message
 from ietf.announcements.models import Announcement, PersonOrOrgInfo, AnnouncedTo, AnnouncedFrom
 
@@ -26,7 +27,7 @@ from ietf.announcements.models import Announcement, PersonOrOrgInfo, AnnouncedTo
 
 # FIXME: should import ScheduledAnnouncements
 
-system_email, _ = Email.objects.get_or_create(address="(System)")
+system = Person.objects.get(name="(System)")
 
 # Announcement
 for o in Announcement.objects.all().select_related('announced_to', 'announced_from').order_by('announcement_id').iterator():
@@ -41,12 +42,12 @@ for o in Announcement.objects.all().select_related('announced_to', 'announced_fr
     try:
         x = o.announced_by
     except PersonOrOrgInfo.DoesNotExist:
-        message.by = system_email
+        message.by = system
     else:
         if not o.announced_by.first_name and o.announced_by.last_name == 'None':
-            message.by = system_email
+            message.by = system
         else:
-            message.by = Email.objects.get(address=person_email(o.announced_by))
+            message.by = old_person_to_person(o.announced_by)
 
     message.subject = o.subject.strip()
     if o.announced_from_id == 99:

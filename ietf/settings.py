@@ -198,6 +198,10 @@ LIAISON_ATTACH_URL = '/documents/LIAISON/'
 # DB redesign
 USE_DB_REDESIGN_PROXY_CLASSES = True
 
+if USE_DB_REDESIGN_PROXY_CLASSES:
+    AUTH_PROFILE_MODULE = 'person.Person'
+    AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
+
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *

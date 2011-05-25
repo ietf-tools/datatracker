@@ -1094,8 +1094,10 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     IDSubStateOld = IDSubState
     AreaOld = Area
     AcronymOld = Acronym
+    IESGLoginOld = IESGLogin
     from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo, IDState, IDSubState
     from redesign.group.proxy import Area, Acronym
+    from redesign.person.proxy import IESGLogin
 
 
 # changes done by convert-096.py:changed maxlength to max_length

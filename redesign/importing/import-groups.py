@@ -21,6 +21,8 @@ from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, A
 
 # also creates nomcom groups
 
+# assumptions: persons have been imported
+
 state_names = dict(
     bof=name(GroupStateName, slug="bof", name="BOF"),
     proposed=name(GroupStateName, slug="proposed", name="Proposed"),
@@ -33,6 +35,7 @@ state_names = dict(
 type_names = dict(
     ietf=name(GroupTypeName, slug="ietf", name="IETF"),
     area=name(GroupTypeName, slug="area", name="Area"),
+    ag=name(GroupTypeName, slug="ag", name="AG"),
     wg=name(GroupTypeName, slug="wg", name="WG"),
     rg=name(GroupTypeName, slug="rg", name="RG"),
     team=name(GroupTypeName, slug="team", name="Team"),
@@ -53,7 +56,14 @@ irtf_group.state = state_names["active"]
 irtf_group.type = type_names["ietf"]
 irtf_group.save()
 
-system_email, _ = Email.objects.get_or_create(address="(System)")
+# create Secretariat for use with roles
+secretariat_group, _ = Group.objects.get_or_create(acronym="secretariat")
+secretariat_group.name = "IETF Secretariat"
+secretariat_group.state = state_names["active"]
+secretariat_group.type = type_names["ietf"]
+secretariat_group.save()
+
+system = Person.objects.get(name="(System)")
 
 
 # NomCom
@@ -75,13 +85,13 @@ for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("st
     # we need start/end year so fudge events
     e = GroupEvent(group=group, type="started")
     e.time = datetime.datetime(o.start_year, 5, 1, 12, 0, 0)
-    e.by = system_email
+    e.by = system
     e.desc = e.get_type_display()
     e.save()
 
     e = GroupEvent(group=group, type="concluded")
     e.time = datetime.datetime(o.end_year, 5, 1, 12, 0, 0)
-    e.by = system_email
+    e.by = system
     e.desc = e.get_type_display()
     e.save()
     
@@ -108,7 +118,7 @@ for o in Area.objects.all():
     if o.concluded_date:
         e = GroupEvent(group=group, type="concluded")
         e.time = datetime.datetime.combine(o.concluded_date, datetime.time(12, 0, 0))
-        e.by = system_email
+        e.by = system
         e.desc = e.get_type_display()
         e.save()
 
@@ -164,15 +174,15 @@ for o in IETFWG.objects.all():
         elif o.group_acronym.acronym == "iab":
             group.type = type_names["ietf"]
             group.parent = None
-        elif o.group_acronym.acronym in ("tsvdir", "secdir", "saag"):
+        elif o.group_acronym.acronym in ("tsvdir", "secdir", "saag", "usac"):
             group.type = type_names["team"]
         elif o.group_acronym.acronym == "iesg":
             pass # we already treated iesg
-        elif o.group_acronym.acronym in ('apparea', 'opsarea', 'rtgarea', 'usvarea', 'genarea', 'tsvarea', 'raiarea'):
-            pass # we already treated areas
+        elif o.group_acronym.acronym in ("apparea", "opsarea", "rtgarea", "usvarea", "genarea", "tsvarea", "raiarea", "apptsv"):
+            group.type = type_names["ag"]
         else:
             # the remaining groups are
-            #  apptsv, apples, usac, null, dirdir
+            #  apples, null, dirdir
             # for now, we don't transfer them
             if group.id:
                 group.delete()
@@ -200,7 +210,7 @@ for o in IETFWG.objects.all():
         if d:
             e = GroupEvent(group=group, type=name)
             e.time = datetime.datetime.combine(d, datetime.time(12, 0, 0))
-            e.by = system_email
+            e.by = system
             e.desc = e.get_type_display()
             e.save()
 

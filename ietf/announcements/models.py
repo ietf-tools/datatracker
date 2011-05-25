@@ -88,15 +88,15 @@ class ScheduledAnnouncement(models.Model):
         db_table = 'scheduled_announcements'
 
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_ANNOUNCEMENTS"):
     import datetime
 
-    from person.models import Email
+    from person.models import Email, Person
     from group.models import Group
 
     class Message(models.Model):
         time = models.DateTimeField(default=datetime.datetime.now)
-        by = models.ForeignKey(Email)
+        by = models.ForeignKey(Person)
 
         subject = models.CharField(max_length=255)
         frm = models.CharField(max_length=255)
@@ -116,7 +116,8 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
     class SendQueue(models.Model):
         time = models.DateTimeField(default=datetime.datetime.now)
-        by = models.ForeignKey(Email)
+        by = models.ForeignKey(Person)
+        
         comment = models.TextField()
         message = models.ForeignKey(Message)
         send_at = models.DateTimeField(blank=True, null=True)

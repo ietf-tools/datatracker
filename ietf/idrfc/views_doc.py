@@ -109,7 +109,7 @@ def document_main(request, name):
         return document_main_rfc(request, int(m.group(1)))
     id = get_object_or_404(InternetDraft, filename=name)
     doc = IdWrapper(id) 
-    
+
     info = {}
     stream_id = doc.stream_id()
     if stream_id == 2:
@@ -168,7 +168,7 @@ def _get_history(doc, versions):
                 info["dontmolest"] = True
                     
             info['text'] = e.desc
-            info['by'] = e.by.get_name()
+            info['by'] = e.by.name
             info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
             info['snipped'] = info['textSnippet'][-3:] == "..." and e.type != "new_revision"
             results.append({'comment':e, 'info':info, 'date':e.time, 'is_com':True})

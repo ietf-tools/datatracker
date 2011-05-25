@@ -11,7 +11,7 @@ from ietf.utils.mail import send_mail, send_mail_subj
 from ietf.idrfc.utils import log_state_changed, add_document_comment
 from doc.models import Document, Event, save_document_in_history
 from name.models import IesgDocStateName, DocStateName, DocInfoTagName
-from person.models import Email
+from person.models import Person, Email
 
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
@@ -186,7 +186,7 @@ def expire_id(doc):
         add_document_comment(None, doc, "Document is expired by system")
 
 def expire_idREDESIGN(doc):
-    system_email = Email.objects.get(address="(System)")
+    system = Person.objects.get(name="(System)")
 
     # clean up files
     def move_file(f):
@@ -219,9 +219,9 @@ def expire_idREDESIGN(doc):
         if doc.iesg_state != dead_state:
             prev = doc.iesg_state
             doc.iesg_state = dead_state
-            log_state_changed(None, doc, system_email, prev)
+            log_state_changed(None, doc, system, prev)
 
-        e = Event(doc=doc, by=system_email)
+        e = Event(doc=doc, by=system)
         e.type = "expired_document"
         e.desc = "Document has expired"
         e.save()
