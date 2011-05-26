@@ -27,9 +27,11 @@ except Person.DoesNotExist:
         address="",
         )
     
-    if system_person.id != 0: # work around bug in Django
-        Person.objects.filter(id=system_person.id).update(id=0)
-        system_person = Person.objects.get(id=0)
+    system_person = Person.objects.get(name="(System)")
+    
+if system_person.id != 0: # work around bug in Django
+    Person.objects.filter(id=system_person.id).update(id=0)
+    system_person = Person.objects.get(id=0)
     
 
 system_alias = Alias.objects.get_or_create(
