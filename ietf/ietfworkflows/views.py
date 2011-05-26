@@ -50,7 +50,7 @@ def stream_history(request, name):
 def _edit_draft_stream(request, draft, form_class=DraftTagsStateForm):
     user = request.user
     workflow = get_workflow_for_draft(draft)
-    if not workflow:
+    if not workflow and form_class == DraftTagsStateForm:
         form_class = NoWorkflowStateForm
     if request.method == 'POST':
         form = form_class(user=user, draft=draft, data=request.POST)
