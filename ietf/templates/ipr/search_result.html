@@ -24,7 +24,7 @@
 			   <td colspan="3">
 			      {% block intro_prefix %}IPR that was submitted by <b><i>{{ q }}</i></b>, and{% endblock %}
 			      {% block related %}
-				 {% if not ipr.drafts.count and not ipr.rfcs.count %}
+				 {% if not ipr.docs %}
 				    is not related to a specific IETF contribution.
 				 {% else %}
 				    is related to

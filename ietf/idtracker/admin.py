@@ -122,7 +122,8 @@ class RfcAdmin(admin.ModelAdmin):
     fieldsets=((None, {'fields': ('rfc_number', 'title', 'group_acronym', 'area_acronym', 'status', 'comments', 'last_modified_date')}), ('Metadata', {'fields': (('online_version', 'txt_page_count'), ('fyi_number', 'std_number')), 'classes': 'collapse'}), ('Standards Track Dates', {'fields': ('rfc_published_date', ('proposed_date', 'draft_date'), ('standard_date', 'historic_date')), 'classes': 'collapse'}), ('Last Call / Ballot Info', {'fields': ('intended_status', ('lc_sent_date', 'lc_expiration_date'), ('b_sent_date', 'b_approve_date')), 'classes': 'collapse'}))
     list_display=['rfc_number', 'title']
     search_fields=['title']
-admin.site.register(Rfc, RfcAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(Rfc, RfcAdmin)
 
 class RfcIntendedStatusAdmin(admin.ModelAdmin):
     pass

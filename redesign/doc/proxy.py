@@ -9,7 +9,8 @@ import glob, os
 
 class InternetDraft(Document):
     objects = TranslatingManager(dict(filename="name",
-                                      id_document_tag="id",
+                                      filename__contains="name__contains",
+                                      id_document_tag="pk",
                                       status=lambda v: ("state", { 1: 'active', 2: 'expired', 3: 'rfc', 4: 'auth-rm', 5: 'repl', 6: 'ietf-rm'}[v]),
                                       job_owner="ad",
                                       rfc_number=lambda v: ("docalias__name", "rfc%s" % v),
@@ -149,6 +150,11 @@ class InternetDraft(Document):
     def replaced_by(self):
         r = InternetDraft.objects.filter(relateddocument__target__document=self, relateddocument__relationship="replaces")
         return r[0] if r else None
+
+    @property
+    def replaced_by_id(self):
+        r = self.replaced_by
+        return r.id_document_tag if r else None
         
     #replaces = FKAsOneToOne('replaces', reverse=True)
     @property
@@ -714,6 +720,11 @@ class InternetDraft(Document):
         d = Dummy()
         d.res = res
         return d
+
+    @property
+    def ipr(self):
+        from ipr.models import IprDraftProxy
+        return IprDraftProxy.objects.filter(doc_alias__document=self.pk)
     
     class Meta:
         proxy = True
@@ -721,6 +732,7 @@ class InternetDraft(Document):
 IDInternal = InternetDraft
 BallotInfo = InternetDraft
 RfcIndex = InternetDraft
+Rfc = InternetDraft
 
 
 class IDAuthor(DocumentAuthor):
@@ -935,6 +947,38 @@ class IDSubState(DocInfoTagName):
     
     def __str__(self):
         return self.sub_state
+    
+    class Meta:
+        proxy = True
+
+class DraftLikeDocAlias(DocAlias):
+    # this class is mostly useful for the IPR part
+
+    def __str__(self):
+        return str(unicode(self))
+    
+    def __unicode__(self):
+        if self.name.startswith("rfc"):
+            return "RFC%04d" % int(self.name[3:])
+        else:
+            return self.name
+
+    @property
+    def id_document_tag(self):
+        return self.name
+        
+    @property
+    def title(self):
+        return self.document.title
+
+    @property
+    def filename(self):
+        return self.name
+
+    @property
+    def ipr(self):
+        from ipr.models import IprDraftProxy
+        return IprDraftProxy.objects.filter(doc_alias=self.pk)
     
     class Meta:
         proxy = True

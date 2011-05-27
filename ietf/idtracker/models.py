@@ -1089,13 +1089,14 @@ class DocumentWrapper(object):
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     InternetDraftOld = InternetDraft
     IDInternalOld = IDInternal
+    RfcOld = Rfc
     BallotInfoOld = BallotInfo
     IDStateOld = IDState
     IDSubStateOld = IDSubState
     AreaOld = Area
     AcronymOld = Acronym
     IESGLoginOld = IESGLogin
-    from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo, IDState, IDSubState
+    from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo, IDState, IDSubState, Rfc
     from redesign.group.proxy import Area, Acronym
     from redesign.person.proxy import IESGLogin
 

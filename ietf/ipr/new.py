@@ -134,7 +134,11 @@ def new(request, type, update=None, submitter=None):
                 rfclist = rfclist.strip().split()
                 for rfc in rfclist:
                     try:
-                        Rfc.objects.get(rfc_number=int(rfc))
+                        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                            from doc.models import DocAlias
+                            DocAlias.objects.get(name="rfc%s" % int(rfc))
+                        else:
+                            Rfc.objects.get(rfc_number=int(rfc))
                     except:
                         raise forms.ValidationError("Unknown RFC number: %s - please correct this." % rfc)
                 rfclist = " ".join(rfclist)
@@ -155,7 +159,13 @@ def new(request, type, update=None, submitter=None):
                         filename = draft
                         rev = None
                     try:
-                        id = InternetDraft.objects.get(filename=filename)
+                        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                            from doc.models import DocAlias
+                            id = DocAlias.objects.get(name=filename)
+                            # proxy attribute for code below
+                            id.revision = id.document.rev
+                        else:
+                            id = InternetDraft.objects.get(filename=filename)
                     except Exception, e:
                         log("Exception: %s" % e)
                         raise forms.ValidationError("Unknown Internet-Draft: %s - please correct this." % filename)
@@ -263,15 +273,32 @@ def new(request, type, update=None, submitter=None):
 
             # Save IprDraft(s)
             for draft in form.cleaned_data["draftlist"].split():
-                id = InternetDraft.objects.get(filename=draft[:-3])
-                iprdraft = models.IprDraft(document=id, ipr=instance, revision=draft[-2:])
-                iprdraft.save()
+                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                    name = draft[:-3]
+                    rev = draft[-2:]
+                    
+                    from doc.models import DocAlias
+                    models.IprDocAlias.objects.create(
+                        doc_alias=DocAlias.objects.get(name=name),
+                        ipr=instance,
+                        rev=rev)
+                else:
+                    id = InternetDraft.objects.get(filename=draft[:-3])
+                    iprdraft = models.IprDraft(document=id, ipr=instance, revision=draft[-2:])
+                    iprdraft.save()
 
             # Save IprRfc(s)
             for rfcnum in form.cleaned_data["rfclist"].split():
-                rfc = Rfc.objects.get(rfc_number=int(rfcnum))
-                iprrfc = models.IprRfc(document=rfc, ipr=instance)
-                iprrfc.save()
+                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                    from doc.models import DocAlias
+                    models.IprDocAlias.objects.create(
+                        doc_alias=DocAlias.objects.get(name="rfc%s" % int(rfcnum)),
+                        ipr=instance,
+                        rev="")
+                else:
+                    rfc = Rfc.objects.get(rfc_number=int(rfcnum))
+                    iprrfc = models.IprRfc(document=rfc, ipr=instance)
+                    iprrfc.save()
 
             send_mail(request, settings.IPR_EMAIL_TO, ('IPR Submitter App', 'ietf-ipr@ietf.org'), 'New IPR Submission Notification', "ipr/new_update_email.txt", {"ipr": instance, "update": update})
             return render("ipr/submitted.html", {"update": update}, context_instance=RequestContext(request))

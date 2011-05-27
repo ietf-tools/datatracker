@@ -24,7 +24,11 @@ def mark_last_doc(iprs):
 def iprs_from_docs(docs):
     iprs = []
     for doc in docs:
-        if isinstance(doc, InternetDraft):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            from ietf.ipr.models import IprDocAlias
+            disclosures = [ x.ipr for x in IprDocAlias.objects.filter(doc_alias=doc, ipr__status__in=[1,3]) ]
+            
+        elif isinstance(doc, InternetDraft):
             disclosures = [ item.ipr for item in IprDraft.objects.filter(document=doc, ipr__status__in=[1,3]) ]
         elif isinstance(doc, Rfc):
             disclosures = [ item.ipr for item in IprRfc.objects.filter(document=doc, ipr__status__in=[1,3]) ]
@@ -50,7 +54,11 @@ def patent_file_search(url, q):
     return False
 
 def search(request, type="", q="", id=""):
-    wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from group.models import Group
+        wgs = Group.objects.filter(type="wg").exclude(acronym="2000").select_related().order_by("acronym")
+    else:
+        wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
     args = request.REQUEST.items()
     if args:
         for key, value in args:
@@ -70,20 +78,32 @@ def search(request, type="", q="", id=""):
                 if type == "document_search":
                     if q:
                         q = normalize_draftname(q)
-                        start = InternetDraft.objects.filter(filename__contains=q)
+                        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                            from redesign.doc.proxy import DraftLikeDocAlias
+                            start = DraftLikeDocAlias.objects.filter(name__contains=q, name__startswith="draft")
+                        else:
+                            start = InternetDraft.objects.filter(filename__contains=q)
                     if id:
-                        try:
-                            id = int(id,10)
-                        except:
-                            id = -1
-                        start = InternetDraft.objects.filter(id_document_tag=id)
+                        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                            from redesign.doc.proxy import DraftLikeDocAlias
+                            start = DraftLikeDocAlias.objects.filter(name=id)
+                        else:
+                            try:
+                                id = int(id,10)
+                            except:
+                                id = -1
+                            start = InternetDraft.objects.filter(id_document_tag=id)
                 if type == "rfc_search":
                     if q:
                         try:
                             q = int(q, 10)
                         except:
                             q = -1
-                        start = Rfc.objects.filter(rfc_number=q)
+                        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                            from redesign.doc.proxy import DraftLikeDocAlias
+                            start = DraftLikeDocAlias.objects.filter(name__contains=q, name__startswith="rfc")
+                        else:
+                            start = Rfc.objects.filter(rfc_number=q)
                 if start.count() == 1:
                     first = start[0]
                     doc = str(first)
@@ -142,12 +162,20 @@ def search(request, type="", q="", id=""):
             # Search by wg acronym
             # Document list with IPRs
             elif type == "wg_search":
-                try:
-                    docs = list(InternetDraft.objects.filter(group__acronym=q))
-                except:
-                    docs = []
-                docs += [ draft.replaced_by for draft in docs if draft.replaced_by_id ]
-                docs += list(Rfc.objects.filter(group_acronym=q))
+                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                    from redesign.doc.proxy import DraftLikeDocAlias
+                    try:
+                        docs = list(DraftLikeDocAlias.objects.filter(document__group__acronym=q))
+                        docs += list(DraftLikeDocAlias.objects.filter(document__relateddocument__target__in=docs, document__relateddocument__relationship="replaces"))
+                    except:
+                        docs = []
+                else:
+                    try:
+                        docs = list(InternetDraft.objects.filter(group__acronym=q))
+                    except:
+                        docs = []
+                    docs += [ draft.replaced_by for draft in docs if draft.replaced_by_id ]
+                    docs += list(Rfc.objects.filter(group_acronym=q))
 
                 docs = [ doc for doc in docs if doc.ipr.count() ]
                 iprs, docs = iprs_from_docs(docs)
@@ -158,11 +186,18 @@ def search(request, type="", q="", id=""):
             # Search by rfc and id title
             # Document list with IPRs
             elif type == "title_search":
-                try:
-                    docs = list(InternetDraft.objects.filter(title__icontains=q))
-                except:
-                    docs = []
-                docs += list(Rfc.objects.filter(title__icontains=q))
+                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                    from redesign.doc.proxy import DraftLikeDocAlias
+                    try:
+                        docs = list(DraftLikeDocAlias.objects.filter(document__title__icontains=q))
+                    except:
+                        docs = []
+                else:
+                    try:
+                        docs = list(InternetDraft.objects.filter(title__icontains=q))
+                    except:
+                        docs = []
+                    docs += list(Rfc.objects.filter(title__icontains=q))
 
                 docs = [ doc for doc in docs if doc.ipr.count() ]
                 iprs, docs = iprs_from_docs(docs)

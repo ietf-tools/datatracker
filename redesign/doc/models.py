@@ -27,7 +27,7 @@ class DocumentInfo(models.Model):
     rfc_state = models.ForeignKey(RfcDocStateName, verbose_name="RFC state", blank=True, null=True)
     # Other
     abstract = models.TextField()
-    rev = models.CharField(verbose_name="revision", max_length=16)
+    rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
     pages = models.IntegerField(blank=True, null=True)
     intended_std_level = models.ForeignKey(IntendedStdLevelName, blank=True, null=True)
     std_level = models.ForeignKey(StdLevelName, blank=True, null=True)
