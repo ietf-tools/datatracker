@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, os
+import sys, os, datetime
 
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
@@ -15,9 +15,10 @@ management.setup_environ(settings)
 from redesign.group.models import *
 from redesign.name.models import *
 from redesign.name.utils import name
-from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role
+from redesign.importing.utils import old_person_to_person
+from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role, AreaDirector
 
-# imports IETFWG, Area, AreaGroup, Acronym, IRTF
+# imports IETFWG, Area, AreaGroup, Acronym, IRTF, AreaWGURL
 
 # also creates nomcom groups
 
@@ -67,8 +68,6 @@ system = Person.objects.get(name="(System)")
 
 
 # NomCom
-#Group.objects.filter(acronym__startswith="nomcom").exclude(acronym="nomcom").delete()
-
 for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("start_year"):
     print "importing ChairsHistory/Nomcom", o.pk, "nomcom%s" % o.start_year
     group, _ = Group.objects.get_or_create(acronym="nomcom%s" % o.start_year)
@@ -83,6 +82,8 @@ for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("st
     group.save()
 
     # we need start/end year so fudge events
+    group.groupevent_set.all().delete()
+    
     e = GroupEvent(group=group, type="started")
     e.time = datetime.datetime(o.start_year, 5, 1, 12, 0, 0)
     e.by = system
@@ -104,7 +105,9 @@ for o in Area.objects.all():
     except Group.DoesNotExist:
         group = Group(acronym=o.area_acronym.acronym)
         group.id = o.area_acronym_id # transfer id
-        
+
+    if o.last_modified_date:
+        group.time = datetime.datetime.combine(o.last_modified_date, datetime.time(12, 0, 0)) 
     group.name = o.area_acronym.name
     if o.status.status == "Active":
         s = state_names["active"]
@@ -119,6 +122,11 @@ for o in Area.objects.all():
 
     group.save()
 
+    for u in o.additional_urls():
+        url, _ = GroupURL.objects.get_or_create(group=group, url=u.url)
+        url.name = u.description.strip()
+        url.save()
+    
     # import events
     group.groupevent_set.all().delete()
     
@@ -129,7 +137,7 @@ for o in Area.objects.all():
         e.desc = e.get_type_display()
         e.save()
 
-    # FIXME: missing fields from old: last_modified_date, extra_email_addresses
+    # FIXME: missing fields from old: extra_email_addresses
 
     
 # IRTF
@@ -162,6 +170,8 @@ for o in IETFWG.objects.all().order_by("pk"):
         group = Group(acronym=o.group_acronym.acronym)
         group.id = o.group_acronym_id # transfer id
         
+    if o.last_modified_date:
+        group.time = datetime.datetime.combine(o.last_modified_date, datetime.time(12, 0, 0))
     group.name = o.group_acronym.name
     # state
     if o.group_type.type == "BOF":
@@ -208,30 +218,57 @@ for o in IETFWG.objects.all().order_by("pk"):
     elif not group.parent:
         print "no area/parent for", group.acronym, group.name, group.type, group.state
 
+    try:
+        area_director = o.area_director
+    except AreaDirector.DoesNotExist:
+        area_director = None
+    if area_director and not area_director.area_id:
+        area_director = None # fake TBD guy
+        
+    group.ad = old_person_to_person(area_director.person) if area_director else None
     group.list_email = o.email_address if o.email_address else ""
-    l = o.email_archive.strip() if o.email_archive else ""
+    group.list_subscribe = (o.email_subscribe or "").replace("//listinfo", "/listinfo").strip()
+    l = o.clean_email_archive().strip() if o.email_archive else ""
     if l in ("none", "not available"):
         l = ""
-    group.list_pages = l
+    group.list_archive = l
     group.comments = o.comments.strip() if o.comments else ""
     
     group.save()
 
+    for u in o.additional_urls():
+        url, _ = GroupURL.objects.get_or_create(group=group, url=u.url)
+        url.name = u.description.strip()
+        url.save()
+
+    for m in o.milestones():
+        desc = m.description.strip()
+        try:
+            milestone = GroupMilestone.objects.get(group=group, desc=desc)
+        except GroupMilestone.DoesNotExist:
+            milestone = GroupMilestone(group=group, desc=desc)
+            
+        milestone.expected_due_date = m.expected_due_date
+        milestone.done = m.done == "Done"
+        milestone.done_date = m.done_date
+        milestone.time = datetime.datetime.combine(m.last_modified_date, datetime.time(12, 0, 0))
+        milestone.save()
+        
     # import events
     group.groupevent_set.all().delete()
 
-    def import_date_event(name):
+    def import_date_event(name, type_name):
         d = getattr(o, "%s_date" % name)
         if d:
-            e = GroupEvent(group=group, type=name)
+            e = GroupEvent(group=group, type=type_name)
             e.time = datetime.datetime.combine(d, datetime.time(12, 0, 0))
             e.by = system
             e.desc = e.get_type_display()
             e.save()
 
-    import_date_event("proposed")
-    import_date_event("start")
-    import_date_event("concluded")
+    import_date_event("proposed", "proposed")
+    import_date_event("start", "started")
+    import_date_event("concluded", "concluded")
     # dormant_date is empty on all so don't bother with that
             
-    # FIXME: missing fields from old: meeting_scheduled, email_subscribe, email_keyword, last_modified_date, meeting_scheduled_old
+    # FIXME: missing fields from old: meeting_scheduled, email_keyword, meeting_scheduled_old

@@ -11,12 +11,12 @@ settings.USE_DB_REDESIGN_PROXY_CLASSES = False
 from django.core import management
 management.setup_environ(settings)
 
-from redesign import unaccent
 from redesign.person.models import *
 from redesign.group.models import *
 from redesign.name.models import *
 from redesign.name.utils import name
-from redesign.importing.utils import old_person_to_email, clean_email_address
+from redesign.importing.utils import old_person_to_email, clean_email_address, get_or_create_email
+
 from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
 
 
@@ -41,36 +41,6 @@ editor_role = name(RoleName, "editor", "Editor")
 secretary_role = name(RoleName, "secr", "Secretary")
 techadvisor_role = name(RoleName, "techadv", "Tech Advisor")
 
-# helpers for creating the objects
-def get_or_create_email(o, create_fake):
-    email = old_person_to_email(o.person)
-    if not email:
-        if create_fake:
-            email = u"unknown-email-%s-%s" % (o.person.first_name, o.person.last_name)
-            print ("USING FAKE EMAIL %s for %s %s %s" % (email, o.person.pk, o.person.first_name, o.person.last_name)).encode('utf-8')
-        else:
-            print ("NO EMAIL FOR %s %s %s %s %s" % (o.__class__, o.pk, o.person.pk, o.person.first_name, o.person.last_name)).encode('utf-8')
-            return None
-    
-    e, _ = Email.objects.select_related("person").get_or_create(address=email)
-    if not e.person:
-        n = u"%s %s" % (o.person.first_name, o.person.last_name)
-        asciified = unaccent.asciify(n)
-        aliases = Alias.objects.filter(name__in=(n, asciified))
-        if aliases:
-            p = aliases[0].person
-        else:
-            p = Person.objects.create(id=o.person.pk, name=n, ascii=asciified)
-            # FIXME: fill in address?
-            
-            Alias.objects.create(name=n, person=p)
-            if asciified != n:
-                Alias.objects.create(name=asciified, person=p)
-        
-        e.person = p
-        e.save()
-
-    return e
 
 # WGEditor
 for o in WGEditor.objects.all():

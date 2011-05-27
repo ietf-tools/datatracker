@@ -44,6 +44,14 @@ class Person(models.Model):
         else:
             prefix, first, middle, last, suffix = self.ascii_parts()
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
+    def role_email(self, role_name, group):
+        e = Email.objects.filter(person=self, role__group=group, role__name=role_name)
+        if e:
+            return e[0]
+        e = self.email_set.order("-active")
+        if e:
+            return e[0]
+        return None
     def email_address(self):
         e = self.email_set.filter(active=True)
         if e:

@@ -378,9 +378,10 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         # canonical name
         for r in results:
             if r.pk in rfc_aliases:
-                r.canonical_name = rfc_aliases[r.pk]
+                # lambda weirdness works around lambda binding in local for loop scope 
+                r.canonical_name = (lambda x: lambda: x)(rfc_aliases[r.pk])
             else:
-                r.canonical_name = r.name
+                r.canonical_name = (lambda x: lambda: x)(r.name)
 
         result_map = dict((r.pk, r) for r in results)
 
@@ -419,12 +420,13 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         
         # sort
         def sort_key(d):
-            if d.canonical_name.startswith('rfc'):
-                return (2, "%06d" % int(d.canonical_name[3:]))
+            n = d.canonical_name()
+            if n.startswith('rfc'):
+                return (2, "%06d" % int(n[3:]))
             elif d.state_id == "active":
-                return (1, d.canonical_name)
+                return (1, n)
             else:
-                return (3, d.canonical_name)
+                return (3, n)
 
         results.sort(key=sort_key)
 

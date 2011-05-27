@@ -95,7 +95,8 @@ class IETFWGAdmin(admin.ModelAdmin):
     list_display=('group_acronym', 'group_type', 'status', 'area_acronym', 'start_date', 'concluded_date')
     search_fields=['group_acronym__acronym', 'group_acronym__name']
     list_filter=['status', 'group_type']
-admin.site.register(IETFWG, IETFWGAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(IETFWG, IETFWGAdmin)
 
 class IRTFAdmin(admin.ModelAdmin):
     pass

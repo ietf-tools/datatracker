@@ -150,13 +150,16 @@ class TranslatingManager(Manager):
     hand side can either be a string or a function which is called
     with the right-hand side to transform it."""
     
-    def __init__(self, trans):
+    def __init__(self, trans, always_filter=None):
         super(TranslatingManager, self).__init__()
         self.translated_attrs = trans
+        self.always_filter = always_filter
 
     def get_query_set(self):
         qs = TranslatingQuerySet(self.model)
         qs.translated_attrs = self.translated_attrs
+        if self.always_filter:
+            qs = qs.filter(**self.always_filter)
         return qs
     
     # def dates(self, *args, **kwargs):

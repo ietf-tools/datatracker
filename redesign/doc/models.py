@@ -42,19 +42,16 @@ class DocumentInfo(models.Model):
         abstract = True
     def author_list(self):
         return ", ".join(email.address for email in self.authors.all())
-    def latest_event(self, *args, **filter_args):
-        """Get latest event of optional Python type and with filter
-        arguments, e.g. d.latest_event(type="xyz") returns an Event
-        while d.latest_event(WriteupEvent, type="xyz") returns a
-        WriteupEvent event."""
-        model = args[0] if args else Event
-        e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time', '-id')[:1]
-        return e[0] if e else None
 
 class RelatedDocument(models.Model):
     source = models.ForeignKey('Document')
     target = models.ForeignKey('DocAlias')
     relationship = models.ForeignKey(DocRelationshipName)
+    def action(self):
+        return self.relationship.name
+    def inverse_action():
+        infinitive = self.relationship.name[:-1]
+        return u"%sd by" % infinitive
     def __unicode__(self):
         return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 
@@ -88,6 +85,21 @@ class Document(DocumentInfo):
     def file_tag(self):
         # FIXME: compensate for tombstones?
         return u"<%s-%s.txt>" % (self.name, self.rev)
+
+    def latest_event(self, *args, **filter_args):
+        """Get latest event of optional Python type and with filter
+        arguments, e.g. d.latest_event(type="xyz") returns an Event
+        while d.latest_event(WriteupEvent, type="xyz") returns a
+        WriteupEvent event."""
+        model = args[0] if args else Event
+        e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time', '-id')[:1]
+        return e[0] if e else None
+
+    def canonical_name(self):
+        if self.type_id == "draft" and self.state_id == "rfc":
+            return self.docalias_set.get(name__startswith="rfc").name
+        else:
+            return self.name
 
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')

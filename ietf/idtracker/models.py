@@ -1096,8 +1096,9 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     AreaOld = Area
     AcronymOld = Acronym
     IESGLoginOld = IESGLogin
+    IETFWGOld = IETFWG
     from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo, IDState, IDSubState, Rfc
-    from redesign.group.proxy import Area, Acronym
+    from redesign.group.proxy import Area, Acronym, IETFWG
     from redesign.person.proxy import IESGLogin
 
 

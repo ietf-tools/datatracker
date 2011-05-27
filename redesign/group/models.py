@@ -7,14 +7,17 @@ from redesign.person.models import Email, Person
 import datetime
 
 class Group(models.Model):
+    time = models.DateTimeField(default=datetime.datetime.now) # should probably have auto_now=True
     name = models.CharField(max_length=80)
     acronym = models.CharField(max_length=16, db_index=True)
     state = models.ForeignKey(GroupStateName, null=True)
     type = models.ForeignKey(GroupTypeName, null=True)
     charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)
+    ad = models.ForeignKey(Person, blank=True, null=True)
     list_email = models.CharField(max_length=64, blank=True)
-    list_pages = models.CharField(max_length=255, blank=True)
+    list_subscribe = models.CharField(max_length=255, blank=True)
+    list_archive = models.CharField(max_length=255, blank=True)
     comments = models.TextField(blank=True)
     def __unicode__(self):
         return self.name
@@ -24,6 +27,22 @@ class Group(models.Model):
         e = GroupEvent.objects.filter(group=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
 
+class GroupURL(models.Model):
+    group = models.ForeignKey(Group)
+    name = models.CharField(max_length=255)
+    url = models.URLField(verify_exists=False)
+
+class GroupMilestone(models.Model):
+    group = models.ForeignKey(Group)
+    desc = models.TextField()
+    expected_due_date = models.DateField()
+    done = models.BooleanField()
+    done_date = models.DateField(null=True, blank=True)
+    time = models.DateTimeField(auto_now=True)
+    def __unicode__(self):
+	return self.desc[:20] + "..."
+    class Meta:
+	ordering = ['expected_due_date']
 
 GROUP_EVENT_CHOICES = [("proposed", "Proposed group"),
                        ("started", "Started group"),
@@ -48,6 +67,7 @@ class GroupEvent(models.Model):
 # This will record the new state and the date it occurred for any changes
 # to a group.  The group acronym must be unique and is the invariant used
 # to select group history from this table.
+# FIXME: this class needs to be updated 
 class GroupHistory(models.Model):
     group = models.ForeignKey('Group', related_name='group_history')
     # Event related
