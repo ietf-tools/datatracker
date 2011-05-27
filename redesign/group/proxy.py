@@ -85,9 +85,15 @@ class IETFWG(Group):
     #area_director = models.ForeignKey(AreaDirector, null=True)
     #meeting_scheduled = models.CharField(blank=True, max_length=3)
     #email_address = models.CharField(blank=True, max_length=60)
+    @property
+    def email_address(self):
+        return self.list_email
     #email_subscribe = models.CharField(blank=True, max_length=120)
     #email_keyword = models.CharField(blank=True, max_length=50)
     #email_archive = models.CharField(blank=True, max_length=95)
+    @property
+    def email_archive(self):
+        return self.list_pages
     #comments = models.TextField(blank=True)
     #last_modified_date = models.DateField()
     #meeting_scheduled_old = models.CharField(blank=True, max_length=3)

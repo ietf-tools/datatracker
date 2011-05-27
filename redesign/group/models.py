@@ -14,7 +14,7 @@ class Group(models.Model):
     charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)
     list_email = models.CharField(max_length=64, blank=True)
-    list_pages = models.CharField(max_length=64, blank=True)
+    list_pages = models.CharField(max_length=255, blank=True)
     comments = models.TextField(blank=True)
     def __unicode__(self):
         return self.name

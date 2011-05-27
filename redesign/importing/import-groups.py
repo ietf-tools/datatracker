@@ -67,11 +67,11 @@ system = Person.objects.get(name="(System)")
 
 
 # NomCom
-Group.objects.filter(acronym__startswith="nomcom").exclude(acronym="nomcom").delete()
+#Group.objects.filter(acronym__startswith="nomcom").exclude(acronym="nomcom").delete()
 
 for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("start_year"):
-    group = Group()
-    group.acronym = "nomcom%s" % o.start_year
+    print "importing ChairsHistory/Nomcom", o.pk, "nomcom%s" % o.start_year
+    group, _ = Group.objects.get_or_create(acronym="nomcom%s" % o.start_year)
     group.name = "IAB/IESG Nominating Committee %s/%s" % (o.start_year, o.end_year)
     if o.chair_type.person == o.person:
         s = state_names["active"]
@@ -97,7 +97,14 @@ for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("st
     
 # Area
 for o in Area.objects.all():
-    group, _ = Group.objects.get_or_create(acronym=o.area_acronym.acronym)
+    print "importing Area", o.pk, o.area_acronym.acronym
+    
+    try:
+        group = Group.objects.get(acronym=o.area_acronym.acronym)
+    except Group.DoesNotExist:
+        group = Group(acronym=o.area_acronym.acronym)
+        group.id = o.area_acronym_id # transfer id
+        
     group.name = o.area_acronym.name
     if o.status.status == "Active":
         s = state_names["active"]
@@ -127,6 +134,8 @@ for o in Area.objects.all():
     
 # IRTF
 for o in IRTF.objects.all():
+    print "importing IRTF", o.pk, o.acronym
+    
     try:
         group = Group.objects.get(acronym=o.acronym.lower())
     except Group.DoesNotExist:
@@ -144,7 +153,9 @@ for o in IRTF.objects.all():
     # FIXME: missing fields from old: meeting_scheduled
 
 # IETFWG, AreaGroup
-for o in IETFWG.objects.all():
+for o in IETFWG.objects.all().order_by("pk"):
+    print "importing IETFWG", o.pk, o.group_acronym.acronym
+    
     try:
         group = Group.objects.get(acronym=o.group_acronym.acronym)
     except Group.DoesNotExist:
@@ -198,6 +209,10 @@ for o in IETFWG.objects.all():
         print "no area/parent for", group.acronym, group.name, group.type, group.state
 
     group.list_email = o.email_address if o.email_address else ""
+    l = o.email_archive.strip() if o.email_archive else ""
+    if l in ("none", "not available"):
+        l = ""
+    group.list_pages = l
     group.comments = o.comments.strip() if o.comments else ""
     
     group.save()
@@ -219,4 +234,4 @@ for o in IETFWG.objects.all():
     import_date_event("concluded")
     # dormant_date is empty on all so don't bother with that
             
-    # FIXME: missing fields from old: meeting_scheduled, email_subscribe, email_keyword, email_archive, last_modified_date, meeting_scheduled_old
+    # FIXME: missing fields from old: meeting_scheduled, email_subscribe, email_keyword, last_modified_date, meeting_scheduled_old
