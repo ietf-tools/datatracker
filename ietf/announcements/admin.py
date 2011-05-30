@@ -26,7 +26,7 @@ admin.site.register(ScheduledAnnouncement, ScheduledAnnouncementAdmin)
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     class MessageAdmin(admin.ModelAdmin):
         list_display = ["time", "by", "subject", "groups"]
-        search_fields = ["text"]
+        search_fields = ["body"]
         raw_id_fields = ["by"]
 
         def groups(self, instance):
@@ -37,7 +37,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     class SendQueueAdmin(admin.ModelAdmin):
         list_display = ["time", "by", "message", "send_at", "sent_at"]
         list_filter = ["time", "send_at", "sent_at"]
-        search_fields = ["message__text"]
+        search_fields = ["message__body"]
         raw_id_fields = ["by"]
 
     admin.site.register(SendQueue, SendQueueAdmin)

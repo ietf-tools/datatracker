@@ -185,21 +185,6 @@ class DocAlias(models.Model):
         verbose_name_plural = "document aliases"
 
 
-# class Ballot(models.Model):             # A collection of ballot positions
-#     """A collection of ballot positions, and the actions taken during the
-#     lifetime of the ballot.
-
-#     The actual ballot positions are found by searching Messages for
-#     BallotPositions for this document between the dates indicated by
-#     self.initiated.time and (self.closed.time or now)
-#     """
-#     initiated = models.ForeignKey(Message,                        related_name="initiated_ballots")
-#     deferred  = models.ForeignKey(Message, null=True, blank=True, related_name="deferred_ballots")
-#     last_call = models.ForeignKey(Message, null=True, blank=True, related_name="lastcalled_ballots")
-#     closed    = models.ForeignKey(Message, null=True, blank=True, related_name="closed_ballots")
-#     announced = models.ForeignKey(Message, null=True, blank=True, related_name="announced_ballots")
-
-
 EVENT_TYPES = [
     # core events
     ("new_revision", "Added new revision"),

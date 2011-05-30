@@ -292,7 +292,6 @@ def edit_positionREDESIGN(request, name):
                 doc.time = pos.time
                 doc.save()
 
-            # FIXME: test
             if request.POST.get("send_mail"):
                 qstr = "?return_to_url=%s" % return_to_url
                 if request.GET.get('ad'):
