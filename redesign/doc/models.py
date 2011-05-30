@@ -96,10 +96,13 @@ class Document(DocumentInfo):
         return e[0] if e else None
 
     def canonical_name(self):
+        name = self.name
         if self.type_id == "draft" and self.state_id == "rfc":
-            return self.docalias_set.get(name__startswith="rfc").name
-        else:
-            return self.name
+            a = self.docalias_set.filter(name__startswith="rfc")
+            if a:
+                name = a[0].name
+        return name
+            
 
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')
@@ -244,7 +247,7 @@ class Event(models.Model):
         return u"%s %s at %s" % (self.by.name, self.get_type_display().lower(), self.time)
 
     class Meta:
-        ordering = ['-time', 'id']
+        ordering = ['-time', '-id']
         
 class NewRevisionEvent(Event):
     rev = models.CharField(max_length=16)

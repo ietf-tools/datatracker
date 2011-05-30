@@ -102,11 +102,19 @@ def new(request, type, update=None, submitter=None):
                     setattr(self, contact, ContactForm(prefix=contact[:4], initial=contact_initial.get(contact, {}), *args, **kwnoinit))
             rfclist_initial = ""
             if update:
-                rfclist_initial = " ".join(["RFC%d" % rfc.document_id for rfc in update.rfcs.all()])
+                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                    from ietf.ipr.models import IprDocAlias
+                    rfclist_initial = " ".join(a.doc_alias.name.upper() for a in IprDocAlias.objects.filter(doc_alias__name__startswith="rfc", ipr=update))
+                else:
+                    rfclist_initial = " ".join(["RFC%d" % rfc.document_id for rfc in update.rfcs.all()])
             self.base_fields["rfclist"] = forms.CharField(required=False, initial=rfclist_initial)
             draftlist_initial = ""
             if update:
-                draftlist_initial = " ".join([draft.document.filename + (draft.revision and "-%s" % draft.revision or "") for draft in update.drafts.all()])
+                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                    from ietf.ipr.models import IprDocAlias
+                    draftlist_initial = " ".join(a.doc_alias.name + ("-%s" % a.rev if a.rev else "") for a in IprDocAlias.objects.filter(ipr=update).exclude(doc_alias__name__startswith="rfc"))
+                else:
+                    draftlist_initial = " ".join([draft.document.filename + (draft.revision and "-%s" % draft.revision or "") for draft in update.drafts.all()])
             self.base_fields["draftlist"] = forms.CharField(required=False, initial=draftlist_initial)
             if section_list.get("holder_contact", False):
                 self.base_fields["hold_contact_is_submitter"] = forms.BooleanField(required=False)
@@ -135,7 +143,7 @@ def new(request, type, update=None, submitter=None):
                 for rfc in rfclist:
                     try:
                         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                            from doc.models import DocAlias
+                            from redesign.doc.models import DocAlias
                             DocAlias.objects.get(name="rfc%s" % int(rfc))
                         else:
                             Rfc.objects.get(rfc_number=int(rfc))
@@ -160,7 +168,7 @@ def new(request, type, update=None, submitter=None):
                         rev = None
                     try:
                         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                            from doc.models import DocAlias
+                            from redesign.doc.models import DocAlias
                             id = DocAlias.objects.get(name=filename)
                             # proxy attribute for code below
                             id.revision = id.document.rev
@@ -277,7 +285,7 @@ def new(request, type, update=None, submitter=None):
                     name = draft[:-3]
                     rev = draft[-2:]
                     
-                    from doc.models import DocAlias
+                    from redesign.doc.models import DocAlias
                     models.IprDocAlias.objects.create(
                         doc_alias=DocAlias.objects.get(name=name),
                         ipr=instance,
@@ -290,7 +298,7 @@ def new(request, type, update=None, submitter=None):
             # Save IprRfc(s)
             for rfcnum in form.cleaned_data["rfclist"].split():
                 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    from doc.models import DocAlias
+                    from redesign.doc.models import DocAlias
                     models.IprDocAlias.objects.create(
                         doc_alias=DocAlias.objects.get(name="rfc%s" % int(rfcnum)),
                         ipr=instance,

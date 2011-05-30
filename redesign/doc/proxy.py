@@ -131,7 +131,6 @@ class InternetDraft(Document):
     #rfc_number = models.IntegerField(null=True, blank=True, db_index=True)
     @property
     def rfc_number(self):
-        # simple optimization for search results
         n = self.canonical_name()
         return int(n[3:]) if n.startswith("rfc") else None
         
