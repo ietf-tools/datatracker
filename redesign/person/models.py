@@ -48,7 +48,7 @@ class Person(models.Model):
         e = Email.objects.filter(person=self, role__group=group, role__name=role_name)
         if e:
             return e[0]
-        e = self.email_set.order("-active")
+        e = self.email_set.order_by("-active")
         if e:
             return e[0]
         return None
