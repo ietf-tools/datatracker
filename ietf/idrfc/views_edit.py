@@ -85,7 +85,7 @@ def dehtmlify_textarea_text(s):
 class EditInfoForm(forms.Form):
     intended_status = forms.ModelChoiceField(IDIntendedStatus.objects.all(), empty_label=None, required=True)
     status_date = forms.DateField(required=False, help_text="Format is YYYY-MM-DD")
-    area_acronym = forms.ModelChoiceField(Area.active_areas(), required=True, empty_label=None)
+    area_acronym = forms.ModelChoiceField(Area.active_areas(), required=True, empty_label='None Selected')
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
     job_owner = forms.ModelChoiceField(IESGLogin.objects.filter(user_level__in=(IESGLogin.AD_LEVEL, IESGLogin.INACTIVE_AD_LEVEL)).order_by('user_level', 'last_name'), label="Responsible AD", empty_label=None, required=True)
     state_change_notice_to = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
@@ -108,12 +108,16 @@ class EditInfoForm(forms.Form):
                     choices.append(("", "----------------"))
                     separated = True
                 choices.append(t)
+            choices.insert(0,("","None Selected"))
             self.fields['job_owner'].choices = choices
         else:
             # remove old ones
-            self.fields['job_owner'].choices = filter(
-                lambda t: job_owners[t[0]].user_level == IESGLogin.AD_LEVEL,
-                self.fields['job_owner'].choices)
+            choices = []
+            choices.append(("","None Selected"))
+            for t in self.fields['job_owner'].choices:
+               if job_owners[t[0]].user_level==IESGLogin.AD_LEVEL:
+                 choices.append(t)
+            self.fields['job_owner'].choices = choices
         
         # telechat choices
         dates = TelechatDates.objects.all()[0].dates()
@@ -127,9 +131,9 @@ class EditInfoForm(forms.Form):
 
         self.fields['telechat_date'].choices = choices
 
-        if kwargs['initial']['area_acronym'] == Acronym.INDIVIDUAL_SUBMITTER:
-            # default to "gen"
-            kwargs['initial']['area_acronym'] = 1008
+#        if kwargs['initial']['area_acronym'] == Acronym.INDIVIDUAL_SUBMITTER:
+#            # default to "gen"
+#            kwargs['initial']['area_acronym'] = 1008
         
         # returning item is rendered non-standard
         self.standard_fields = [x for x in self.visible_fields() if x.name not in ('returning_item',)]
