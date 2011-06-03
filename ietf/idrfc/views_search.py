@@ -507,7 +507,7 @@ def all(request):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         active = (dict(filename=n) for n in InternetDraft.objects.filter(state="active").order_by("name").values_list('name', flat=True))
         rfc1 = (dict(filename=d, rfc_number=int(n[3:])) for d, n in DocAlias.objects.filter(document__state="rfc", name__startswith="rfc").exclude(document__name__startswith="rfc").order_by("document__name").values_list('document__name','name').distinct())
-        rfc2 = (dict(rfc_number=r, draft=None) for r in sorted(int(n[3:]) for n in Document.objects.filter(name__startswith="rfc").values_list('name', flat=True)))
+        rfc2 = (dict(rfc_number=r, draft=None) for r in sorted(int(n[3:]) for n in Document.objects.filter(type="draft", name__startswith="rfc").values_list('name', flat=True)))
         dead = InternetDraft.objects.exclude(state__in=("active", "rfc")).select_related("state").order_by("name")
     else:
         active = InternetDraft.objects.all().filter(status=1).order_by("filename").values('filename')

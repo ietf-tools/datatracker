@@ -173,6 +173,8 @@ class IETFWG(Group):
     # def drafts(self): # return a set of Rfc objects for this group
     #     return InternetDraft.objects.filter(group__exact=self.group_acronym)
     def charter_text(self): # return string containing WG description read from file
+        import os
+        from django.conf import settings
         # get file path from settings. Syntesize file name from path, acronym, and suffix
         try:
             filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, self.acronym) + ".desc.txt"

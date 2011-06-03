@@ -16,7 +16,7 @@ class InternetDraft(Document):
                                       job_owner="ad",
                                       rfc_number=lambda v: ("docalias__name", "rfc%s" % v),
                                       cur_state="iesg_state__order",
-                                      ))
+                                      ), always_filter=dict(type="draft"))
 
     DAYS_TO_EXPIRE=185
 
