@@ -90,7 +90,7 @@ class IETFWG(Group):
                                       areagroup__area__status=lambda v: ("parent__state", { 1: "active" }[v]),
                                       start_date__isnull=lambda v: None if v else ("groupevent__type", "started")
                                       ),
-                                 always_filter=dict(type="wg"))
+                                 always_filter=dict(type__in=("wg", "individ")))
 
     ACTIVE=1
     #group_acronym = models.OneToOneField(Acronym, primary_key=True, editable=False)
