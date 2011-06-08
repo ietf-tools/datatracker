@@ -179,9 +179,9 @@ def update_authors(draft, submission):
                 name_suffix=author.name_suffix or '',
                 )
             person.save()
-            if author.email:
+            if author.email_address:
                 EmailAddress.objects.create(
-                    address=author.email,
+                    address=author.email_address,
                     priority=1,
                     type='INET',
                     person_or_org=person,
