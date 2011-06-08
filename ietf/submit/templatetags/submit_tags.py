@@ -2,7 +2,7 @@ import os
 
 from django import template
 from django.conf import settings
-from django.utils.html import mark_safe
+from django.utils.html import mark_safe, escape
 
 register = template.Library()
 
@@ -25,15 +25,15 @@ def show_two_pages(context, two_pages, validation):
 def two_pages_decorated_with_validation(value, validation):
     pages = value.first_two_pages or ''
     if not 'revision' in validation.warnings.keys():
-        return mark_safe('<pre class="twopages" style="display: none;">%s</pre>' % pages)
+        return mark_safe('<pre class="twopages" style="display: none;">%s</pre>' % escape(pages))
     result = '<pre class="twopages" style="display: none;">\n'
     for line in pages.split('\n'):
         if line.find('%s-%s' % (value.filename, value.revision)) > -1:
             result += '</pre><pre class="twopages" style="display: none; background: red;">'
-            result += line
+            result += escape(line)
             result += '\n'
             result += '</pre><pre class="twopages" style="display: none;">\n'
         else:
-            result += line
+            result += escape(line)
             result += '\n'
     return mark_safe(result)
