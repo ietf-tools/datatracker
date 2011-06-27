@@ -23,7 +23,7 @@ from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
-from doc.models import Document, Event, BallotPositionEvent, LastCallEvent, save_document_in_history
+from doc.models import Document, DocEvent, BallotPositionDocEvent, LastCallDocEvent, save_document_in_history
 from name.models import BallotPositionName, IesgDocStateName
 
 BALLOT_CHOICES = (("yes", "Yes"),
@@ -221,7 +221,7 @@ def edit_positionREDESIGN(request, name):
         from person.models import Person
         ad = get_object_or_404(Person, pk=ad_id)
 
-    old_pos = doc.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
+    old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
 
     if request.method == 'POST':
         form = EditPositionForm(request.POST)
@@ -233,7 +233,7 @@ def edit_positionREDESIGN(request, name):
             if clean['return_to_url']:
               return_to_url = clean['return_to_url']
 
-            pos = BallotPositionEvent(doc=doc, by=login)
+            pos = BallotPositionDocEvent(doc=doc, by=login)
             pos.type = "changed_ballot_position"
             pos.ad = ad
             pos.pos = clean["position"]
@@ -252,7 +252,7 @@ def edit_positionREDESIGN(request, name):
                 changes.append("comment")
 
                 if pos.comment:
-                    e = Event(doc=doc)
+                    e = DocEvent(doc=doc)
                     e.by = ad # otherwise we can't see who's saying it
                     e.type = "added_comment"
                     e.desc = "[Ballot comment]\n" + pos.comment
@@ -264,7 +264,7 @@ def edit_positionREDESIGN(request, name):
                 changes.append("discuss")
 
                 if pos.discuss:
-                    e = Event(doc=doc, by=login)
+                    e = DocEvent(doc=doc, by=login)
                     e.by = ad # otherwise we can't see who's saying it
                     e.type = "added_comment"
                     e.desc = "[Ballot discuss]\n" + pos.discuss
@@ -419,7 +419,7 @@ def send_ballot_commentREDESIGN(request, name):
         from person.models import Person
         ad = get_object_or_404(Person, pk=ad_id)
 
-    pos = doc.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
+    pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
     if not pos:
         raise Http404()
     
@@ -706,7 +706,7 @@ def lastcalltextREDESIGN(request, name):
 
     login = request.user.get_profile()
 
-    existing = doc.latest_event(WriteupEvent, type="changed_last_call_text")
+    existing = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
     if not existing:
         existing = generate_last_call_announcement(request, doc)
         
@@ -718,7 +718,7 @@ def lastcalltextREDESIGN(request, name):
             if form.is_valid():
                 t = form.cleaned_data['last_call_text']
                 if t != existing.text:
-                    e = WriteupEvent(doc=doc, by=login)
+                    e = WriteupDocEvent(doc=doc, by=login)
                     e.by = login
                     e.type = "changed_last_call_text"
                     e.desc = "Last call announcement was changed by %s" % login.name
@@ -871,9 +871,9 @@ def ballot_writeupnotesREDESIGN(request, name):
 
     login = request.user.get_profile()
 
-    approval = doc.latest_event(WriteupEvent, type="changed_ballot_approval_text")
+    approval = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
     
-    existing = doc.latest_event(WriteupEvent, type="changed_ballot_writeup_text")
+    existing = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     if not existing:
         existing = generate_ballot_writeup(request, doc)
         
@@ -884,7 +884,7 @@ def ballot_writeupnotesREDESIGN(request, name):
         if form.is_valid():
             t = form.cleaned_data["ballot_writeup"]
             if t != existing.text:
-                e = WriteupEvent(doc=doc, by=login)
+                e = WriteupDocEvent(doc=doc, by=login)
                 e.by = login
                 e.type = "changed_ballot_writeup_text"
                 e.desc = "Ballot writeup was changed by %s" % login.name
@@ -895,9 +895,9 @@ def ballot_writeupnotesREDESIGN(request, name):
                 doc.save()
 
             if "issue_ballot" in request.POST and approval:
-                if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionEvent, ad=login, time__gte=started_process.time):
+                if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, ad=login, time__gte=started_process.time):
                     # sending the ballot counts as a yes
-                    pos = BallotPositionEvent(doc=doc, by=login)
+                    pos = BallotPositionDocEvent(doc=doc, by=login)
                     pos.type = "changed_ballot_position"
                     pos.ad = login
                     pos.pos_id = "yes"
@@ -909,7 +909,7 @@ def ballot_writeupnotesREDESIGN(request, name):
 
                 email_iana(request, doc, 'drafts-eval@icann.org', msg)
 
-                e = Event(doc=doc, by=login)
+                e = DocEvent(doc=doc, by=login)
                 e.by = login
                 e.type = "sent_ballot_announcement"
                 e.desc = "Ballot has been issued by %s" % login.name
@@ -1006,7 +1006,7 @@ def ballot_approvaltextREDESIGN(request, name):
 
     login = request.user.get_profile()
 
-    existing = doc.latest_event(WriteupEvent, type="changed_ballot_approval_text")
+    existing = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
     if not existing:
         existing = generate_approval_mail(request, doc)
 
@@ -1018,7 +1018,7 @@ def ballot_approvaltextREDESIGN(request, name):
             if form.is_valid():
                 t = form.cleaned_data['approval_text']
                 if t != existing.text:
-                    e = WriteupEvent(doc=doc, by=login)
+                    e = WriteupDocEvent(doc=doc, by=login)
                     e.by = login
                     e.type = "changed_ballot_approval_text"
                     e.desc = "Ballot approval text was changed by %s" % login.name
@@ -1135,12 +1135,12 @@ def approve_ballotREDESIGN(request, name):
 
     login = request.user.get_profile()
 
-    e = doc.latest_event(WriteupEvent, type="changed_ballot_approval_text")
+    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
     if not e:
         e = generate_approval_mail(request, doc)
     approval_text = e.text
 
-    e = doc.latest_event(WriteupEvent, type="changed_ballot_writeup_text")
+    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     if not e:
         e = generate_ballot_writeup(request, doc)
     ballot_writeup = e.text
@@ -1166,7 +1166,7 @@ def approve_ballotREDESIGN(request, name):
         prev = doc.iesg_state
         doc.iesg_state = new_state
 
-        e = Event(doc=doc, by=login)
+        e = DocEvent(doc=doc, by=login)
         if action == "do_not_publish":
             e.type = "iesg_disapproved"
             e.desc = "Do Not Publish note has been sent to RFC Editor"
@@ -1285,7 +1285,7 @@ def make_last_callREDESIGN(request, name):
 
     login = request.user.get_profile()
 
-    e = doc.latest_event(WriteupEvent, type="changed_last_call_text")
+    e = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
     if not e:
         e = generate_last_call_announcement(request, doc)
     announcement = e.text
@@ -1325,7 +1325,7 @@ def make_last_callREDESIGN(request, name):
             email_state_changed(request, doc, change_description)
             email_owner(request, doc, doc.ad, login, change_description)
             
-            e = LastCallEvent(doc=doc, by=login)
+            e = LastCallDocEvent(doc=doc, by=login)
             e.type = "sent_last_call"
             e.desc = "Last call sent by %s" % login.name
             if form.cleaned_data['last_call_sent_date'] != e.time.date():

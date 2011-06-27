@@ -67,12 +67,12 @@ class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
     def test_reschedule(self):
         from ietf.utils.test_data import make_test_data
         from redesign.person.models import Person
-        from doc.models import TelechatEvent
+        from doc.models import TelechatDocEvent
         
         draft = make_test_data()
 
         # add to schedule
-        e = TelechatEvent(type="scheduled_for_telechat")
+        e = TelechatDocEvent(type="scheduled_for_telechat")
         e.doc = draft
         e.by = Person.objects.get(name="Aread Irector")
         e.telechat_date = TelechatDates.objects.all()[0].date1
@@ -95,7 +95,7 @@ class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
         #self.assertEquals(len(q('form input[name=%s-clear_returning_item]' % form_id)), 1)
 
         # reschedule
-        events_before = draft.event_set.count()
+        events_before = draft.docevent_set.count()
         d = TelechatDates.objects.all()[0].dates()[2]
 
         r = self.client.post(url, { '%s-telechat_date' % form_id: d.strftime("%Y-%m-%d"),
@@ -109,10 +109,10 @@ class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
         draft_pos = r.content.find(draft.name)
         self.assertTrue(d_header_pos < draft_pos)
 
-        self.assertTrue(draft.latest_event(TelechatEvent, "scheduled_for_telechat"))
-        self.assertEquals(draft.latest_event(TelechatEvent, "scheduled_for_telechat").telechat_date, d)
-        self.assertTrue(not draft.latest_event(TelechatEvent, "scheduled_for_telechat").returning_item)
-        self.assertEquals(draft.event_set.count(), events_before + 1)
+        self.assertTrue(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
+        self.assertEquals(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, d)
+        self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").returning_item)
+        self.assertEquals(draft.docevent_set.count(), events_before + 1)
 
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:

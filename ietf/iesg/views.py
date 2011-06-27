@@ -60,10 +60,10 @@ def date_threshold():
 
 def inddocs(request):
    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-      queryset_list_ind = [d for d in InternetDraft.objects.filter(tags__slug="via-rfc", event__type="iesg_approved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_approved"]
+      queryset_list_ind = [d for d in InternetDraft.objects.filter(tags__slug="via-rfc", docevent__type="iesg_approved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_approved"]
       queryset_list_ind.sort(key=lambda d: d.b_approve_date, reverse=True)
 
-      queryset_list_ind_dnp = [d for d in IDInternal.objects.filter(tags__slug="via-rfc", event__type="iesg_disapproved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_disapproved"]
+      queryset_list_ind_dnp = [d for d in IDInternal.objects.filter(tags__slug="via-rfc", docevent__type="iesg_disapproved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_disapproved"]
       queryset_list_ind_dnp.sort(key=lambda d: d.dnp_date, reverse=True)
 
       return render_to_response('iesg/independent_doc.html',
@@ -118,7 +118,7 @@ def wgdocsREDESIGN(request,cat):
     if cat == 'new':
         is_recent = 1
         
-        drafts = InternetDraft.objects.filter(event__type="iesg_approved", event__time__gte=threshold, intended_std_level__in=proto_levels + doc_levels).exclude(tags__slug="via-rfc").distinct()
+        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__gte=threshold, intended_std_level__in=proto_levels + doc_levels).exclude(tags__slug="via-rfc").distinct()
         for d in drafts:
             if d.b_approve_date and d.b_approve_date >= threshold:
                 if d.intended_std_level_id in proto_levels:
@@ -130,7 +130,7 @@ def wgdocsREDESIGN(request,cat):
         # proto
         start_date = datetime.date(1997, 12, 1)
         
-        drafts = InternetDraft.objects.filter(event__type="iesg_approved", event__time__lt=threshold, event__time__gte=start_date, intended_std_level__in=proto_levels).exclude(tags__slug="via-rfc").distinct()
+        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__lt=threshold, docevent__time__gte=start_date, intended_std_level__in=proto_levels).exclude(tags__slug="via-rfc").distinct()
 
         for d in drafts:
             if d.b_approve_date and start_date <= d.b_approve_date < threshold:
@@ -139,7 +139,7 @@ def wgdocsREDESIGN(request,cat):
         # doc
         start_date = datetime.date(1998, 10, 15)
         
-        drafts = InternetDraft.objects.filter(event__type="iesg_approved", event__time__lt=threshold, event__time__gte=start_date, intended_std_level__in=doc_levels).exclude(tags__slug="via-rfc").distinct()
+        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__lt=threshold, docevent__time__gte=start_date, intended_std_level__in=doc_levels).exclude(tags__slug="via-rfc").distinct()
 
         for d in drafts:
             if d.b_approve_date and start_date <= d.b_approve_date < threshold:
@@ -212,15 +212,15 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     
 def agenda_docs(date, next_agenda):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from doc.models import TelechatEvent
+        from doc.models import TelechatDocEvent
         
-        matches = IDInternal.objects.filter(event__telechatevent__telechat_date=date)
+        matches = IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date)
 
         idmatches = []
         rfcmatches = []
         
         for m in matches:
-            if m.latest_event(TelechatEvent, type="scheduled_for_telechat").telechat_date != date:
+            if m.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
                 continue
             
             if next_agenda and not m.agenda:
@@ -341,9 +341,9 @@ def agenda_documents_txt(request):
     docs = []
     for date in dates:
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from doc.models import TelechatEvent
-            for d in IDInternal.objects.filter(event__telechatevent__telechat_date=date):
-                if d.latest_event(TelechatEvent, type="scheduled_for_telechat").telechat_date == date:
+            from doc.models import TelechatDocEvent
+            for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date):
+                if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
                     docs.append(d)
         else:
             docs.extend(IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1))
@@ -404,10 +404,10 @@ def handle_reschedule_form(request, idinternal, dates):
 def agenda_documents(request):
     dates = TelechatDates.objects.all()[0].dates()
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from doc.models import TelechatEvent
+        from doc.models import TelechatDocEvent
         idinternals = []
-        for d in IDInternal.objects.filter(event__telechatevent__telechat_date__in=dates):
-            if d.latest_event(TelechatEvent, type="scheduled_for_telechat").telechat_date in dates:
+        for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date__in=dates):
+            if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date in dates:
                 idinternals.append(d)
 
         idinternals.sort(key=lambda d: (d.rfc_flag, d.start_date))
@@ -444,10 +444,10 @@ def telechat_docs_tarfile(request,year,month,day):
     from tempfile import mkstemp
     date=datetime.date(int(year),int(month),int(day))
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from doc.models import TelechatEvent
+        from doc.models import TelechatDocEvent
         docs = []
-        for d in IDInternal.objects.filter(event__telechatevent__telechat_date=date):
-            if d.latest_event(TelechatEvent, type="scheduled_for_telechat").telechat_date == date:
+        for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date):
+            if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
                 docs.append(d)
     else:
         docs= IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
@@ -476,7 +476,7 @@ def discusses(request):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         res = []
 
-        for d in IDInternal.objects.filter(iesg_state__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), event__ballotpositionevent__pos="discuss").distinct():
+        for d in IDInternal.objects.filter(iesg_state__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), docevent__ballotpositiondocevent__pos="discuss").distinct():
             found = False
             for p in d.positions.all():
                 if p.discuss:

@@ -23,7 +23,7 @@ from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
-from doc.models import Document, Event, StatusDateEvent, TelechatEvent, save_document_in_history, DocHistory
+from doc.models import Document, DocEvent, StatusDateDocEvent, TelechatDocEvent, save_document_in_history, DocHistory
 from name.models import IesgDocStateName, IntendedStdLevelName, DocInfoTagName, get_next_iesg_states, DocStateName
 from person.models import Person, Email
     
@@ -461,7 +461,7 @@ def edit_infoREDESIGN(request, name):
         doc.iesg_state = IesgDocStateName.objects.get(slug="pub-req")
         doc.notify = get_initial_notify(doc)
 
-    e = doc.latest_event(TelechatEvent, type="scheduled_for_telechat")
+    e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     initial_telechat_date = e.telechat_date if e else None
     initial_returning_item = bool(e and e.returning_item)
 
@@ -482,14 +482,14 @@ def edit_infoREDESIGN(request, name):
                 if replaces:
                     # this should perhaps be somewhere else, e.g. the
                     # place where the replace relationship is established
-                    e = Event()
+                    e = DocEvent()
                     e.type = "added_comment"
                     e.by = Person.objects.get(name="(System)")
                     e.doc = doc
                     e.desc = "Earlier history may be found in the Comment Log for <a href=\"%s\">%s</a>" % (replaces[0], replaces[0].get_absolute_url())
                     e.save()
 
-                e = Event()
+                e = DocEvent()
                 e.type = "started_iesg_process"
                 e.by = login
                 e.doc = doc
@@ -531,7 +531,7 @@ def edit_infoREDESIGN(request, name):
                 doc.note = r['note']
 
             for c in changes:
-                e = Event(doc=doc, by=login)
+                e = DocEvent(doc=doc, by=login)
                 e.type = "changed_document"
                 e.desc = c + " by %s" % login.name
                 e.save()
@@ -539,10 +539,10 @@ def edit_infoREDESIGN(request, name):
             update_telechat(request, doc, login,
                             r['telechat_date'], r['returning_item'])
 
-            e = doc.latest_event(StatusDateEvent, type="changed_status_date")
+            e = doc.latest_event(StatusDateDocEvent, type="changed_status_date")
             status_date = e.date if e else None
             if r["status_date"] != status_date:
-                e = StatusDateEvent(doc=doc, by=login)
+                e = StatusDateDocEvent(doc=doc, by=login)
                 e.type ="changed_status_date"
                 d = desc("Status date", r["status_date"], status_date)
                 changes.append(d)
@@ -565,7 +565,7 @@ def edit_infoREDESIGN(request, name):
             doc.save()
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
-        e = doc.latest_event(StatusDateEvent)
+        e = doc.latest_event(StatusDateDocEvent)
         status = e.date if e else None
         init = dict(intended_std_level=doc.intended_std_level,
                     status_date=status,
@@ -630,7 +630,7 @@ def request_resurrectREDESIGN(request, name):
     if request.method == 'POST':
         email_resurrect_requested(request, doc, login)
         
-        e = Event(doc=doc, by=login)
+        e = DocEvent(doc=doc, by=login)
         e.type = "requested_resurrect"
         e.desc = "Resurrection was requested by %s" % login.name
         e.save()
@@ -689,7 +689,7 @@ def resurrectREDESIGN(request, name):
         if e and e.type == 'requested_resurrect':
             email_resurrection_completed(request, doc, requester=e.by)
             
-        e = Event(doc=doc, by=login)
+        e = DocEvent(doc=doc, by=login)
         e.type = "completed_resurrect"
         e.desc = "Resurrection was completed by %s" % login.name
         e.save()
@@ -751,7 +751,7 @@ def add_commentREDESIGN(request, name):
         if form.is_valid():
             c = form.cleaned_data['comment']
             
-            e = Event(doc=doc, by=login)
+            e = DocEvent(doc=doc, by=login)
             e.type = "added_comment"
             e.desc = c
             e.save()

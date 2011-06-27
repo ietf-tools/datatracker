@@ -74,7 +74,7 @@ class InternetDraft(Document):
     #start_date = models.DateField()
     @property
     def start_date(self):
-        e = NewRevisionEvent.objects.filter(doc=self).order_by("time")[:1]
+        e = NewRevisionDocEvent.objects.filter(doc=self).order_by("time")[:1]
         return e[0].time.date() if e else None
     #expiration_date = models.DateField()
     @property
@@ -109,7 +109,7 @@ class InternetDraft(Document):
     #lc_expiration_date = models.DateField(null=True, blank=True)
     @property
     def lc_expiration_date(self):
-        e = self.latest_event(LastCallEvent, type="sent_last_call")
+        e = self.latest_event(LastCallDocEvent, type="sent_last_call")
         return e.expires.date() if e else None
         
     #b_sent_date = models.DateField(null=True, blank=True)
@@ -319,14 +319,14 @@ class InternetDraft(Document):
     #status_date = models.DateField(blank=True,null=True)
     @property
     def status_date(self):
-        e = self.latest_event(StatusDateEvent, type="changed_status_date")
+        e = self.latest_event(StatusDateDocEvent, type="changed_status_date")
         return e.date if e else None
 
     #email_display = models.CharField(blank=True, max_length=50) # unused
     #agenda = models.IntegerField(null=True, blank=True)
     @property
     def agenda(self):
-        e = self.latest_event(TelechatEvent, type="scheduled_for_telechat")
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
         return bool(e and e.telechat_date)
     
     #cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')
@@ -406,13 +406,13 @@ class InternetDraft(Document):
     #returning_item = models.IntegerField(null=True, blank=True)
     @property
     def returning_item(self):
-        e = self.latest_event(TelechatEvent, type="scheduled_for_telechat")
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
         return e.returning_item if e else None
 
     #telechat_date = models.DateField(null=True, blank=True)
     @property
     def telechat_date(self):
-        e = self.latest_event(TelechatEvent, type="scheduled_for_telechat")
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
         return e.telechat_date if e else None
 
     #via_rfc_editor = models.IntegerField(null=True, blank=True)
@@ -533,19 +533,19 @@ class InternetDraft(Document):
     #approval_text = models.TextField(blank=True)
     @property
     def approval_text(self):
-        e = self.latest_event(WriteupEvent, type="changed_ballot_approval_text")
+        e = self.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
         return e.text if e else ""
     
     #last_call_text = models.TextField(blank=True)
     @property
     def last_call_text(self):
-        e = self.latest_event(WriteupEvent, type="changed_last_call_text")
+        e = self.latest_event(WriteupDocEvent, type="changed_last_call_text")
         return e.text if e else ""
     
     #ballot_writeup = models.TextField(blank=True)
     @property
     def ballot_writeup(self):
-        e = self.latest_event(WriteupEvent, type="changed_ballot_writeup_text")
+        e = self.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
         return e.text if e else ""
 
     #ballot_issued = models.IntegerField(null=True, blank=True)
@@ -565,7 +565,7 @@ class InternetDraft(Document):
             res.append(dict(ad=IESGLoginProxy().from_object(ad), pos=Position().from_object(pos) if pos else None))
         
         found = set()
-	for pos in BallotPositionEvent.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads).select_related('ad').order_by("-time", "-id"):
+	for pos in BallotPositionDocEvent.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads).select_related('ad').order_by("-time", "-id"):
             if pos.ad not in found:
                 found.add(pos.ad)
                 add(pos.ad, pos)
@@ -752,7 +752,7 @@ class IDAuthor(DocumentAuthor):
     class Meta:
         proxy = True
 
-class DocumentComment(Event):
+class DocumentComment(DocEvent):
     objects = TranslatingManager(dict(comment_text="desc",
                                       date="time"
                                       ))
@@ -777,7 +777,7 @@ class DocumentComment(Event):
     #version = models.CharField(blank=True, max_length=3)
     @property
     def version(self):
-        e = self.doc.latest_event(NewRevisionEvent, type="new_revision", time__lte=self.time)
+        e = self.doc.latest_event(NewRevisionDocEvent, type="new_revision", time__lte=self.time)
         return e.rev if e else "0"
     #comment_text = models.TextField(blank=True)
     @property
@@ -804,7 +804,7 @@ class DocumentComment(Event):
         proxy = True
 
 
-class Position(BallotPositionEvent):
+class Position(BallotPositionDocEvent):
     def from_object(self, base):
         for f in base._meta.fields:
             if not f.name in ('discuss',): # don't overwrite properties

@@ -394,7 +394,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             for e in event_types:
                 setattr(result_map[d], e, None)
         
-        for e in Event.objects.filter(doc__in=rfc_aliases.keys(), type__in=event_types).order_by('-time'):
+        for e in DocEvent.objects.filter(doc__in=rfc_aliases.keys(), type__in=event_types).order_by('-time'):
             r = result_map[e.doc_id]
             if not getattr(r, e.type):
                 # sets e.g. r.published_date = e for use in proxy wrapper

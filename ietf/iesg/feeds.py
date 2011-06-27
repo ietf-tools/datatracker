@@ -13,10 +13,10 @@ class IESGAgenda(Feed):
 
     def items(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from doc.models import TelechatEvent
-            drafts = IDInternal.objects.filter(event__telechatevent__telechat_date__gte=datetime.date.min).distinct()
+            from doc.models import TelechatDocEvent
+            drafts = IDInternal.objects.filter(docevent__telechatdocevent__telechat_date__gte=datetime.date.min).distinct()
             for d in drafts:
-                d.latest_telechat_event = d.latest_event(TelechatEvent, type="scheduled_for_telechat")
+                d.latest_telechat_event = d.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
             drafts = [d for d in drafts if d.latest_telechat_event.telechat_date]
             drafts.sort(key=lambda d: d.latest_telechat_event.telechat_date)
             return drafts

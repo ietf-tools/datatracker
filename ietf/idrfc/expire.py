@@ -9,7 +9,7 @@ import datetime, os, shutil, glob, re
 from ietf.idtracker.models import InternetDraft, IDDates, IDStatus, IDState, DocumentComment, IDAuthor,WGChair
 from ietf.utils.mail import send_mail, send_mail_subj
 from ietf.idrfc.utils import log_state_changed, add_document_comment
-from doc.models import Document, Event, save_document_in_history
+from doc.models import Document, DocEvent, save_document_in_history
 from name.models import IesgDocStateName, DocStateName, DocInfoTagName
 from person.models import Person, Email
 
@@ -221,7 +221,7 @@ def expire_idREDESIGN(doc):
             doc.iesg_state = dead_state
             log_state_changed(None, doc, system, prev)
 
-        e = Event(doc=doc, by=system)
+        e = DocEvent(doc=doc, by=system)
         e.type = "expired_document"
         e.desc = "Document has expired"
         e.save()

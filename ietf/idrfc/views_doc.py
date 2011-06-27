@@ -152,13 +152,13 @@ def _get_history(doc, versions):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         versions = [] # clear versions
         event_holder = doc._draft if hasattr(doc, "_draft") else doc._rfcindex
-        for e in event_holder.event_set.all().select_related('by').order_by('-time', 'id'):
+        for e in event_holder.docevent_set.all().select_related('by').order_by('-time', 'id'):
             info = {}
             if e.type == "new_revision":
-                filename = u"%s-%s" % (e.doc.name, e.newrevisionevent.rev)
+                filename = u"%s-%s" % (e.doc.name, e.newrevisiondocevent.rev)
                 e.desc = 'New version available: <a href="http://tools.ietf.org/id/%s.txt">%s</a>' % (filename, filename)
-                if int(e.newrevisionevent.rev) != 0:
-                    e.desc += ' (<a href="http://tools.ietf.org/rfcdiff?url2=%s">diff from -%02d</a>)' % (filename, int(e.newrevisionevent.rev) - 1)
+                if int(e.newrevisiondocevent.rev) != 0:
+                    e.desc += ' (<a href="http://tools.ietf.org/rfcdiff?url2=%s">diff from -%02d</a>)' % (filename, int(e.newrevisiondocevent.rev) - 1)
                 info["dontmolest"] = True
 
             multiset_ballot_text = "This was part of a ballot set with: "
@@ -181,7 +181,7 @@ def _get_history(doc, versions):
         for o in results:
             e = o["comment"]
             if e.type == "new_revision":
-                e.version = e.newrevisionevent.rev
+                e.version = e.newrevisiondocevent.rev
             else:
                 e.version = prev_rev
             prev_rev = e.version

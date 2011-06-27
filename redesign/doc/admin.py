@@ -24,7 +24,7 @@ admin.site.register(DocAlias, DocAliasAdmin)
 
 # events
 
-class EventAdmin(admin.ModelAdmin):
+class DocEventAdmin(admin.ModelAdmin):
     list_display = ["doc", "type", "by_raw", "time"]
     raw_id_fields = ["doc", "by"]
 
@@ -32,16 +32,16 @@ class EventAdmin(admin.ModelAdmin):
         return instance.by_id
     by_raw.short_description = "By"
     
-admin.site.register(Event, EventAdmin)
+admin.site.register(DocEvent, DocEventAdmin)
 
-admin.site.register(NewRevisionEvent, EventAdmin)
-admin.site.register(WriteupEvent, EventAdmin)
-admin.site.register(StatusDateEvent, EventAdmin)
-admin.site.register(LastCallEvent, EventAdmin)
-admin.site.register(TelechatEvent, EventAdmin)
+admin.site.register(NewRevisionDocEvent, DocEventAdmin)
+admin.site.register(WriteupDocEvent, DocEventAdmin)
+admin.site.register(StatusDateDocEvent, DocEventAdmin)
+admin.site.register(LastCallDocEvent, DocEventAdmin)
+admin.site.register(TelechatDocEvent, DocEventAdmin)
 
-class BallotPositionEventAdmin(EventAdmin):
+class BallotPositionDocEventAdmin(DocEventAdmin):
     raw_id_fields = ["doc", "by", "ad"]
 
-admin.site.register(BallotPositionEvent, BallotPositionEventAdmin)
+admin.site.register(BallotPositionDocEvent, BallotPositionDocEventAdmin)
     

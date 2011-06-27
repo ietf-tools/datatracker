@@ -9,7 +9,7 @@ from django.conf import settings
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
-from doc.models import WriteupEvent, BallotPositionEvent, LastCallEvent
+from doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent
 from person.models import Person
 
 def email_state_changed(request, doc, text):
@@ -86,7 +86,7 @@ def full_intended_status(intended_status):
         return "a %s" % s
     
 def generate_ballot_writeup(request, doc):
-    e = WriteupEvent()
+    e = WriteupDocEvent()
     e.type = "changed_ballot_writeup_text"
     e.by = request.user.get_profile()
     e.doc = doc
@@ -158,7 +158,7 @@ def generate_last_call_announcementREDESIGN(request, doc):
                                  )
                             )
     
-    e = WriteupEvent()
+    e = WriteupDocEvent()
     e.type = "changed_last_call_text"
     e.by = request.user.get_profile()
     e.doc = doc
@@ -253,7 +253,7 @@ def generate_approval_mailREDESIGN(request, doc):
     else:
         mail = generate_approval_mail_approved(request, doc)
 
-    e = WriteupEvent()
+    e = WriteupDocEvent()
     e.type = "changed_ballot_approval_text"
     e.by = request.user.get_profile()
     e.doc = doc
@@ -479,7 +479,7 @@ def generate_issue_ballot_mailREDESIGN(request, doc):
     active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active").distinct()
     
     e = doc.latest_event(type="started_iesg_process")
-    positions = BallotPositionEvent.objects.filter(doc=doc, type="changed_ballot_position", time__gte=e.time).order_by("-time", '-id').select_related('ad')
+    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", time__gte=e.time).order_by("-time", '-id').select_related('ad')
 
     # format positions and setup discusses and comments
     ad_feedback = []
@@ -519,13 +519,13 @@ def generate_issue_ballot_mailREDESIGN(request, doc):
     inactive_ad_positions.sort()
     ad_feedback.sort(key=lambda p: p.ad.name)
 
-    e = doc.latest_event(LastCallEvent, type="sent_last_call")
+    e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
     last_call_expires = e.expires if e else None
 
-    e = doc.latest_event(WriteupEvent, type="changed_ballot_approval_text")
+    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
     approval_text = e.text if e else ""
 
-    e = doc.latest_event(WriteupEvent, type="changed_ballot_writeup_text")
+    e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     ballot_writeup = e.text if e else ""
 
     return render_to_string("idrfc/issue_ballot_mailREDESIGN.txt",

@@ -179,7 +179,7 @@ import django.db.transaction
 @django.db.transaction.commit_on_success
 def insert_to_databaseREDESIGN(data):
     from person.models import Person
-    from doc.models import Document, DocAlias, Event, RelatedDocument
+    from doc.models import Document, DocAlias, DocEvent, RelatedDocument
     from group.models import Group
     from name.models import DocInfoTagName, DocRelationshipName
     from name.utils import name
@@ -256,7 +256,7 @@ def insert_to_databaseREDESIGN(data):
 
         pubdate = datetime.strptime(rfc_published_date, "%Y-%m-%d")
         if not doc.latest_event(type="published_rfc", time=pubdate):
-            e = Event(doc=doc, type="published_rfc")
+            e = DocEvent(doc=doc, type="published_rfc")
             e.time = pubdate
             e.by = system
             e.desc = "RFC published"

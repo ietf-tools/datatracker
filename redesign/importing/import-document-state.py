@@ -143,7 +143,7 @@ tag_approved_in_minute = name(DocInfoTagName, 'app-min', "Approved in minute")
 tag_has_errata = name(DocInfoTagName, 'errata', "Has errata")
 
 # helpers
-def save_event(doc, event, comment):
+def save_docevent(doc, event, comment):
     event.time = comment.datetime()
     event.by = iesg_login_to_person(comment.created_by)
     event.doc = doc
@@ -252,27 +252,27 @@ def import_from_idinternal(d, idinternal):
         # telechat agenda schedulings
         match = re_telechat_agenda.search(c.comment_text) or re_telechat_changed.search(c.comment_text)
         if match:
-            e = TelechatEvent()
+            e = TelechatDocEvent()
             e.type = "scheduled_for_telechat"
             e.telechat_date = date_in_match(match) if "Placed on" in c.comment_text else None
             # can't extract this from history so we just take the latest value
             e.returning_item = bool(idinternal.returning_item)
-            save_event(d, e, c)
+            save_docevent(d, e, c)
             handled = True
 
         # ballot issued
         match = re_ballot_issued.search(c.comment_text)
         if match:
-            e = Event()
+            e = DocEvent()
             e.type = "sent_ballot_announcement"
-            save_event(d, e, c)
+            save_docevent(d, e, c)
             handled = True
 
             ad = iesg_login_to_person(c.created_by)
-            last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=ad)
+            last_pos = d.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad)
             if not last_pos and not iesg_login_is_secretary(c.created_by):
                 # when you issue a ballot, you also vote yes; add that vote
-                e = BallotPositionEvent()
+                e = BallotPositionDocEvent()
                 e.type = "changed_ballot_position"
                 e.ad = ad
                 e.desc = "[Ballot Position Update] New position, Yes, has been recorded by %s" % e.ad.name
@@ -282,7 +282,7 @@ def import_from_idinternal(d, idinternal):
                 e.discuss_time = last_pos.discuss_time if last_pos else None
                 e.comment = last_pos.comment if last_pos else ""
                 e.comment_time = last_pos.comment_time if last_pos else None
-                save_event(d, e, c)
+                save_docevent(d, e, c)
 
         # ballot positions
         match = re_ballot_position.search(c.comment_text)
@@ -310,7 +310,7 @@ def import_from_idinternal(d, idinternal):
 
                 found = False
                 for p in positions:
-                    if not d.event_set.filter(type="changed_ballot_position", ballotposition__pos=position, ballotposition__ad=iesg_login_to_person(p.ad)):
+                    if not d.docevent_set.filter(type="changed_ballot_position", ballotposition__pos=position, ballotposition__ad=iesg_login_to_person(p.ad)):
                         login = p.ad
                         found = True
                         break
@@ -334,10 +334,10 @@ def import_from_idinternal(d, idinternal):
                     print "BALLOT BY SECRETARIAT", login
                 
 
-            e = BallotPositionEvent()
+            e = BallotPositionDocEvent()
             e.type = "changed_ballot_position"
             e.ad = iesg_login_to_person(login)
-            last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=e.ad)
+            last_pos = d.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=e.ad)
             e.pos = position
             e.discuss = last_pos.discuss if last_pos else ""
             e.discuss_time = last_pos.discuss_time if last_pos else None
@@ -347,15 +347,15 @@ def import_from_idinternal(d, idinternal):
                 e.discuss_time = c.datetime()
             e.comment = last_pos.comment if last_pos else ""
             e.comment_time = last_pos.comment_time if last_pos else None
-            save_event(d, e, c)
+            save_docevent(d, e, c)
             handled = True
 
         # ballot discusses/comments
         if c.ballot in (DocumentComment.BALLOT_DISCUSS, DocumentComment.BALLOT_COMMENT):
-            e = BallotPositionEvent()
+            e = BallotPositionDocEvent()
             e.type = "changed_ballot_position"
             e.ad = iesg_login_to_person(c.created_by)
-            last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=e.ad)
+            last_pos = d.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=e.ad)
             e.pos = last_pos.pos if last_pos else ballot_position_mapping[None]
             c.comment_text = re_comment_discuss_by_tag.sub("", c.comment_text)
             if c.ballot == DocumentComment.BALLOT_DISCUSS:
@@ -382,22 +382,22 @@ def import_from_idinternal(d, idinternal):
             # one of those
             if not (iesg_login_is_secretary(c.created_by)
                 and DocumentComment.objects.filter(ballot=c.ballot, document=c.document).exclude(created_by=c.created_by)):
-                save_event(d, e, c)
+                save_docevent(d, e, c)
                 
             handled = True
 
         # last call requested
         match = re_last_call_requested.search(c.comment_text)
         if match:
-            e = Event(type="requested_last_call")
-            save_event(d, e, c)
+            e = DocEvent(type="requested_last_call")
+            save_docevent(d, e, c)
             handled = True
 
         # state changes
         match = re_state_changed.search(c.comment_text)
         if match:
-            e = Event(type="changed_document")
-            save_event(d, e, c)
+            e = DocEvent(type="changed_document")
+            save_docevent(d, e, c)
             handled = True
 
         # note changed
@@ -406,8 +406,8 @@ def import_from_idinternal(d, idinternal):
             # watch out for duplicates of which the old data's got many
             if c.comment_text != last_note_change_text:
                 last_note_change_text = c.comment_text
-                e = Event(type="changed_document")
-                save_event(d, e, c)
+                e = DocEvent(type="changed_document")
+                save_docevent(d, e, c)
             handled = True
 
         # draft added 
@@ -417,48 +417,48 @@ def import_from_idinternal(d, idinternal):
             # some phony ones
             if not started_iesg_process:
                 started_iesg_process = c.comment_text
-                e = Event(type="started_iesg_process")
-                save_event(d, e, c)
+                e = DocEvent(type="started_iesg_process")
+                save_docevent(d, e, c)
             handled = True
 
         # new version
         if c.comment_text == "New version available":
-            e = NewRevisionEvent(type="new_revision", rev=c.version)
-            save_event(d, e, c)
+            e = NewRevisionDocEvent(type="new_revision", rev=c.version)
+            save_docevent(d, e, c)
             handled = True
 
         # resurrect requested
         match = re_resurrection_requested.search(c.comment_text)
         if match:
-            e = Event(type="requested_resurrect")
-            save_event(d, e, c)
+            e = DocEvent(type="requested_resurrect")
+            save_docevent(d, e, c)
             handled = True
 
         # completed resurrect
         match = re_completed_resurrect.search(c.comment_text)
         if match:
-            e = Event(type="completed_resurrect")
-            save_event(d, e, c)
+            e = DocEvent(type="completed_resurrect")
+            save_docevent(d, e, c)
             handled = True
 
         # document expiration
         if c.comment_text == "Document is expired by system":
-            e = Event(type="expired_document")
-            save_event(d, e, c)
+            e = DocEvent(type="expired_document")
+            save_docevent(d, e, c)
             handled = True
 
         # approved document 
         match = re_document_approved.search(c.comment_text)
         if match:
-            e = Event(type="iesg_approved")
-            save_event(d, e, c)
+            e = DocEvent(type="iesg_approved")
+            save_docevent(d, e, c)
             handled = True
 
         # disapproved document
         match = re_document_disapproved.search(c.comment_text)
         if match:
-            e = Event(type="iesg_disapproved")
-            save_event(d, e, c)
+            e = DocEvent(type="iesg_disapproved")
+            save_docevent(d, e, c)
             handled = True
 
 
@@ -472,41 +472,41 @@ def import_from_idinternal(d, idinternal):
                 # status date changed
                 match = re_status_date_changed.search(line)
                 if match:
-                    e = StatusDateEvent(type="changed_status_date", date=date_in_match(match))
+                    e = StatusDateDocEvent(type="changed_status_date", date=date_in_match(match))
                     e.desc = line
-                    save_event(d, e, c)
+                    save_docevent(d, e, c)
                     handled = True
 
                 # AD/job owner changed
                 match = re_responsible_ad_changed.search(line)
                 if match:
-                    e = Event(type="changed_document")
+                    e = DocEvent(type="changed_document")
                     e.desc = line
-                    save_event(d, e, c)
+                    save_docevent(d, e, c)
                     handled = True
 
                 # intended standard level changed
                 match = re_intended_status_changed.search(line)
                 if match:
-                    e = Event(type="changed_document")
+                    e = DocEvent(type="changed_document")
                     e.desc = line
-                    save_event(d, e, c)
+                    save_docevent(d, e, c)
                     handled = True
 
                 # state change notice
                 match = re_state_change_notice.search(line)
                 if match:
-                    e = Event(type="changed_document")
+                    e = DocEvent(type="changed_document")
                     e.desc = line
-                    save_event(d, e, c)
+                    save_docevent(d, e, c)
                     handled = True
 
                 # area acronym
                 match = re_area_acronym_changed.search(line)
                 if match:
-                    e = Event(type="changed_document")
+                    e = DocEvent(type="changed_document")
                     e.desc = line
-                    save_event(d, e, c)
+                    save_docevent(d, e, c)
                     handled = True
 
                 # multiline change bundles end with a single "by xyz" that we skip
@@ -522,8 +522,8 @@ def import_from_idinternal(d, idinternal):
 
         # all others are added as comments
         if not handled:
-            e = Event(type="added_comment")
-            save_event(d, e, c)
+            e = DocEvent(type="added_comment")
+            save_docevent(d, e, c)
 
             # stop typical comments from being output
             typical_comments = [
@@ -561,23 +561,23 @@ def import_from_idinternal(d, idinternal):
         made_up_date = d.time
     made_up_date += datetime.timedelta(seconds=1)
 
-    e = d.latest_event(StatusDateEvent, type="changed_status_date")
+    e = d.latest_event(StatusDateDocEvent, type="changed_status_date")
     status_date = e.date if e else None
     if idinternal.status_date != status_date:
-        e = StatusDateEvent(type="changed_status_date", date=idinternal.status_date)
+        e = StatusDateDocEvent(type="changed_status_date", date=idinternal.status_date)
         e.time = made_up_date
         e.by = system
         e.doc = d
         e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (idinternal.status_date, status_date)
         e.save()
 
-    e = d.latest_event(TelechatEvent, type="scheduled_for_telechat")
+    e = d.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     telechat_date = e.telechat_date if e else None
     if not idinternal.agenda:
         idinternal.telechat_date = None # normalize
 
     if telechat_date != idinternal.telechat_date:
-        e = TelechatEvent(type="scheduled_for_telechat",
+        e = TelechatDocEvent(type="scheduled_for_telechat",
                           telechat_date=idinternal.telechat_date,
                           returning_item=bool(idinternal.returning_item))
         # a common case is that it has been removed from the
@@ -598,14 +598,14 @@ def import_from_idinternal(d, idinternal):
         ballot = None
         
     if ballot:
-        e = d.event_set.filter(type__in=("changed_ballot_position", "sent_ballot_announcement", "requested_last_call")).order_by('-time')[:1]
+        e = d.docevent_set.filter(type__in=("changed_ballot_position", "sent_ballot_announcement", "requested_last_call")).order_by('-time')[:1]
         if e:
             position_date = e[0].time + datetime.timedelta(seconds=1)
         else:
             position_date = made_up_date
 
         # make sure we got all the positions
-        existing = BallotPositionEvent.objects.filter(doc=d, type="changed_ballot_position").order_by("-time", '-id')
+        existing = BallotPositionDocEvent.objects.filter(doc=d, type="changed_ballot_position").order_by("-time", '-id')
         
         for p in Position.objects.filter(ballot=ballot):
             # there are some bogus ones
@@ -633,13 +633,13 @@ def import_from_idinternal(d, idinternal):
                     break
 
             if not found:
-                e = BallotPositionEvent()
+                e = BallotPositionDocEvent()
                 e.type = "changed_ballot_position"
                 e.doc = d
                 e.time = position_date
                 e.by = system
                 e.ad = ad
-                last_pos = d.latest_event(BallotPositionEvent, type="changed_ballot_position", ad=e.ad)
+                last_pos = d.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=e.ad)
                 e.pos = pos
                 e.discuss = last_pos.discuss if last_pos else ""
                 e.discuss_time = last_pos.discuss_time if last_pos else None
@@ -656,14 +656,14 @@ def import_from_idinternal(d, idinternal):
                 e.save()
 
         # make sure we got the ballot issued event
-        if ballot.ballot_issued and not d.event_set.filter(type="sent_ballot_announcement"):
-            position = d.event_set.filter(type=("changed_ballot_position")).order_by('time', 'id')[:1]
+        if ballot.ballot_issued and not d.docevent_set.filter(type="sent_ballot_announcement"):
+            position = d.docevent_set.filter(type=("changed_ballot_position")).order_by('time', 'id')[:1]
             if position:
                 sent_date = position[0].time
             else:
                 sent_date = made_up_date
             
-            e = Event()
+            e = DocEvent()
             e.type = "sent_ballot_announcement"
             e.doc = d
             e.time = sent_date
@@ -672,7 +672,7 @@ def import_from_idinternal(d, idinternal):
             e.save()
             
         # make sure the comments and discusses are updated
-        positions = list(BallotPositionEvent.objects.filter(doc=d).order_by("-time", '-id'))
+        positions = list(BallotPositionDocEvent.objects.filter(doc=d).order_by("-time", '-id'))
         for c in IESGComment.objects.filter(ballot=ballot):
             ad = iesg_login_to_person(c.ad)
             for p in positions:
@@ -695,14 +695,14 @@ def import_from_idinternal(d, idinternal):
                         
         # if any of these events have happened, they're closer to
         # the real time
-        e = d.event_set.filter(type__in=("requested_last_call", "sent_last_call", "sent_ballot_announcement", "iesg_approved", "iesg_disapproved")).order_by('time')[:1]
+        e = d.docevent_set.filter(type__in=("requested_last_call", "sent_last_call", "sent_ballot_announcement", "iesg_approved", "iesg_disapproved")).order_by('time')[:1]
         if e:
             text_date = e[0].time - datetime.timedelta(seconds=1)
         else:
             text_date = made_up_date
 
         if idinternal.ballot.approval_text:
-            e, _ = WriteupEvent.objects.get_or_create(type="changed_ballot_approval_text", doc=d,
+            e, _ = WriteupDocEvent.objects.get_or_create(type="changed_ballot_approval_text", doc=d,
                                                       defaults=dict(by=system))
             e.text = idinternal.ballot.approval_text
             e.time = text_date
@@ -710,7 +710,7 @@ def import_from_idinternal(d, idinternal):
             e.save()
 
         if idinternal.ballot.last_call_text:
-            e, _ = WriteupEvent.objects.get_or_create(type="changed_last_call_text", doc=d,
+            e, _ = WriteupDocEvent.objects.get_or_create(type="changed_last_call_text", doc=d,
                                                       defaults=dict(by=system))
             e.text = idinternal.ballot.last_call_text
             e.time = text_date
@@ -718,7 +718,7 @@ def import_from_idinternal(d, idinternal):
             e.save()
 
         if idinternal.ballot.ballot_writeup:
-            e, _ = WriteupEvent.objects.get_or_create(type="changed_ballot_writeup_text", doc=d,
+            e, _ = WriteupDocEvent.objects.get_or_create(type="changed_ballot_writeup_text", doc=d,
                                                       defaults=dict(by=system))
             e.text = idinternal.ballot.ballot_writeup
             e.time = text_date
@@ -729,7 +729,7 @@ def import_from_idinternal(d, idinternal):
     if len(ballot_set) > 1:
         others = sorted(b.draft.filename for b in ballot_set if b != idinternal)
         desc = u"This was part of a ballot set with: %s" % ",".join(others)
-        Event.objects.get_or_create(type="added_comment", doc=d, desc=desc,
+        DocEvent.objects.get_or_create(type="added_comment", doc=d, desc=desc,
                                     defaults=dict(time=made_up_date,
                                                   by=system))
 
@@ -809,20 +809,20 @@ for index, o in enumerate(all_drafts.iterator()):
             print "SKIPPED author", unicode(a.person).encode('utf-8')
 
     # clear any already imported events
-    d.event_set.all().delete()
+    d.docevent_set.all().delete()
     
     if o.idinternal:
         # import attributes and events
         import_from_idinternal(d, o.idinternal)
 
     # import missing revision changes from DraftVersions
-    known_revisions = set(e.rev for e in NewRevisionEvent.objects.filter(doc=d, type="new_revision"))
+    known_revisions = set(e.rev for e in NewRevisionDocEvent.objects.filter(doc=d, type="new_revision"))
     draft_versions = list(DraftVersions.objects.filter(filename=d.name).order_by("revision"))
     # DraftVersions is not entirely accurate, make sure we got the current one
     draft_versions.insert(0, DraftVersions(filename=d.name, revision=o.revision_display(), revision_date=o.revision_date))
     for v in draft_versions:
         if v.revision not in known_revisions:
-            e = NewRevisionEvent(type="new_revision")
+            e = NewRevisionDocEvent(type="new_revision")
             e.rev = v.revision
             # we don't have time information in this source, so
             # hack the seconds to include the revision to ensure
@@ -843,7 +843,7 @@ for index, o in enumerate(all_drafts.iterator()):
     decision_date = e.time.date() if e else None
     if o.b_approve_date != decision_date:
         disapproved = o.idinternal and o.idinternal.dnp
-        e = Event(type="iesg_disapproved" if disapproved else "iesg_approved")
+        e = DocEvent(type="iesg_disapproved" if disapproved else "iesg_approved")
         e.time = o.b_approve_date
         e.by = system
         e.doc = d
@@ -851,9 +851,9 @@ for index, o in enumerate(all_drafts.iterator()):
         e.save()
 
     if o.lc_expiration_date:
-        e = LastCallEvent(type="sent_last_call", expires=o.lc_expiration_date)
+        e = LastCallDocEvent(type="sent_last_call", expires=o.lc_expiration_date)
         # let's try to find the actual change
-        events = d.event_set.filter(type="changed_document", desc__contains=" to <b>In Last Call</b>").order_by('-time')[:1]
+        events = d.docevent_set.filter(type="changed_document", desc__contains=" to <b>In Last Call</b>").order_by('-time')[:1]
         # event time is more accurate with actual time instead of just
         # date, gives better sorting
         e.time = events[0].time if events else o.lc_sent_date
@@ -953,11 +953,11 @@ for index, o in enumerate(all_rfcs.iterator()):
         if d.name.startswith("rfc"):
             # clear any already imported events, we don't do it for
             # drafts as they've already been cleared above
-            d.event_set.all().delete()
+            d.docevent_set.all().delete()
         import_from_idinternal(d, internals[0])
     
     # publication date
-    e, _ = Event.objects.get_or_create(doc=d, type="published_rfc",
+    e, _ = DocEvent.objects.get_or_create(doc=d, type="published_rfc",
                                        defaults=dict(by=system))
     e.time = o.rfc_published_date
     e.desc = "RFC published"

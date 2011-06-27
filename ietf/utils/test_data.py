@@ -134,7 +134,7 @@ def make_test_data():
         )
 
     # draft has only one event
-    Event.objects.create(
+    DocEvent.objects.create(
         type="started_iesg_process",
         by=ad,
         doc=draft,

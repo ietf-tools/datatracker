@@ -436,7 +436,7 @@ class IetfProcessData:
     def state_date(self):
         try:
             if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                return self._idinternal.event_set.filter(
+                return self._idinternal.docevent_set.filter(
                     Q(desc__istartswith="Draft Added by ")|
                     Q(desc__istartswith="Draft Added in state ")|
                     Q(desc__istartswith="Draft added in state ")|
@@ -647,8 +647,8 @@ class BallotWrapper:
         positions = []
         seen = {}
 
-        from doc.models import BallotPositionEvent
-	for pos in BallotPositionEvent.objects.filter(doc=self.ballot, type="changed_ballot_position", time__gte=self.ballot.process_start, time__lte=self.ballot.process_end).select_related('ad').order_by("-time", '-id'):
+        from doc.models import BallotPositionDocEvent
+	for pos in BallotPositionDocEvent.objects.filter(doc=self.ballot, type="changed_ballot_position", time__gte=self.ballot.process_start, time__lte=self.ballot.process_end).select_related('ad').order_by("-time", '-id'):
             if pos.ad not in seen:
                 p = dict(ad_name=pos.ad.name,
                          ad_username=pos.ad.pk, # ought to rename this in doc_ballot_list
