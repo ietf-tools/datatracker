@@ -128,6 +128,7 @@ function draw_calendar()
   var body = document.body;
   while (body.childNodes.length) { body.removeChild(body.childNodes[0]); }
 
+  var j = start_day;
   for (i = 0; i < num_days; i++)
   {
     //-----------------------------------------------------------------
@@ -160,7 +161,8 @@ function draw_calendar()
     e.style.textAlign="center";
 
     var div = document.createElement("div");
-    div.appendChild(document.createTextNode(day[i]));
+    div.appendChild(document.createTextNode(day[j+1]));
+    j++;
     e.appendChild(div);
     body.appendChild(e);
 
