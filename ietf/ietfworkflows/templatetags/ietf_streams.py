@@ -14,6 +14,8 @@ register = template.Library()
 
 @register.inclusion_tag('ietfworkflows/stream_state.html', takes_context=True)
 def stream_state(context, doc):
+    from django.conf import settings
+    return settings.TEMPLATE_STRING_IF_INVALID # FIXME: temporary work-around
     request = context.get('request', None)
     data = {}
     stream = get_stream_from_wrapper(doc)
@@ -52,6 +54,8 @@ def workflow_history_entry(context, entry):
 
 @register.inclusion_tag('ietfworkflows/edit_actions.html', takes_context=True)
 def edit_actions(context, wrapper):
+    return None    # FIXME: temporary work-around
+
     request = context.get('request', None)
     user = request and request.user
     if not user:

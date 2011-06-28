@@ -2,6 +2,7 @@
 
 import textwrap
 from django import template
+from django.conf import settings
 from django.utils.html import escape, fix_ampersands
 from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter
 from django.template import resolve_variable
@@ -404,7 +405,17 @@ def startswith(x, y):
 # based on http://www.djangosnippets.org/snippets/847/ by 'whiteinge'
 @register.filter
 def in_group(user, groups):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        return has_role(user, groups.replace("Area_Director", "Area Director"))
+
     return user and user.is_authenticated() and bool(user.groups.filter(name__in=groups.split(',')).values('name'))
+
+@register.filter
+def has_role(user, role_names):
+    from ietf.ietfauth.decorators import has_role
+    if not user:
+        return False
+    return has_role(user, role_names.split(','))
 
 @register.filter
 def stable_dictsort(value, arg):

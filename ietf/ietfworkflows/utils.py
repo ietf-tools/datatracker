@@ -284,6 +284,15 @@ def update_stream(obj, comment, person, to_stream, extra_notify=[]):
 
 
 def get_full_info_for_draft(draft):
+    return dict(# FIXME: temporary work-around
+        streamed=settings.TEMPLATE_STRING_IF_INVALID,
+        stream=settings.TEMPLATE_STRING_IF_INVALID,
+        workflow=settings.TEMPLATE_STRING_IF_INVALID,
+        tags=[settings.TEMPLATE_STRING_IF_INVALID],
+        state=settings.TEMPLATE_STRING_IF_INVALID,
+        shepherd=draft.shepherd,
+        )
+
     return dict(
         streamed=get_streamed_draft(draft),
         stream=get_stream_from_draft(draft),

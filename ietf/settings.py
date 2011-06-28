@@ -8,8 +8,11 @@ import os
 import syslog
 syslog.openlog("django", syslog.LOG_PID, syslog.LOG_LOCAL0)
 
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+import sys
+sys.path.append(os.path.abspath(BASE_DIR + "/.."))
+sys.path.append(os.path.abspath(BASE_DIR + "/../redesign"))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -121,6 +124,11 @@ INSTALLED_APPS = (
     'south',
     'workflows',
     'permissions',
+    'redesign.person',
+    'redesign.name',
+    'redesign.group',
+    'redesign.doc',
+    'redesign.issue',
     'ietf.announcements',
     'ietf.idindex',
     'ietf.idtracker',
@@ -227,6 +235,13 @@ MAX_SAME_WG_DRAFT_SIZE = 450
 MAX_DAILY_SUBMISSION = 1000
 MAX_DAILY_SUBMISSION_SIZE = 2000
 # End of ID Submission Tool settings
+
+# DB redesign
+USE_DB_REDESIGN_PROXY_CLASSES = True
+
+if USE_DB_REDESIGN_PROXY_CLASSES:
+    AUTH_PROFILE_MODULE = 'person.Person'
+    AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

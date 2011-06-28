@@ -14,7 +14,7 @@ from ietf.announcements.models import ScheduledAnnouncement
 from ietf.announcements.send_scheduled import *
 from django.db.models import Q
 
-if not len(sys.argv) == 2 or sys.argv[1] not in ('all', 'rsync', 'specific'):
+if len(sys.argv) != 2 or sys.argv[1] not in ('all', 'rsync', 'specific'):
     print "USAGE: %s <all | rsync | specific>" % os.path.basename(__file__)
     print "'all' means all not sent"
     print "'rsync' means all not sent where to-be-sent-date is null"
@@ -24,19 +24,28 @@ if not len(sys.argv) == 2 or sys.argv[1] not in ('all', 'rsync', 'specific'):
 mode = sys.argv[1]
 
 now = datetime.datetime.now()
-now = datetime.datetime(2010, 8, 5)
 
-announcements = ScheduledAnnouncement.objects.filter(mail_sent=False)
-if mode == "rsync":
-    # include bogus 0000-00-00 entries
-    announcements = announcements.filter(Q(to_be_sent_date=None) | Q(to_be_sent_date__lte=datetime.date.min))
-elif mode == "specific":
-    # exclude null/bogus entries
-    announcements = announcements.exclude(Q(to_be_sent_date=None) | Q(to_be_sent_date__lte=datetime.date.min))
-    announcements = announcements.filter(to_be_sent_date__lte=now.date(),
-                                         to_be_sent_time__lte=now.time())
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from ietf.announcements.models import SendQueue
+    announcements = SendQueue.objects.filter(sent_at=None)
+    if mode == "rsync":
+        announcements = announcements.filter(send_at=None)
+    elif mode == "specific":
+        announcements = announcements.exclude(send_at=None).filter(send_at__lte=now)
+else:
+    announcements = ScheduledAnnouncement.objects.filter(mail_sent=False)
+    if mode == "rsync":
+        # include bogus 0000-00-00 entries
+        announcements = announcements.filter(Q(to_be_sent_date=None) | Q(to_be_sent_date__lte=datetime.date.min))
+    elif mode == "specific":
+        # exclude null/bogus entries
+        announcements = announcements.exclude(Q(to_be_sent_date=None) | Q(to_be_sent_date__lte=datetime.date.min))
+
+        announcements = announcements.filter(to_be_sent_date__lte=now.date(),
+                                             to_be_sent_time__lte=now.time())
     
 for announcement in announcements:
     send_scheduled_announcement(announcement)
-    
-    syslog.syslog('Sent scheduled announcement %s "%s"' % (announcement.id, announcement.subject))
+
+    subject = announcement.message.subject if settings.USE_DB_REDESIGN_PROXY_CLASSES else announcement.subject
+    syslog.syslog(u'Sent scheduled announcement %s "%s"' % (announcement.id, subject))

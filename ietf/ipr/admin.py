@@ -1,5 +1,6 @@
 #coding: utf-8
 from django.contrib import admin
+from django.conf import settings
 from ietf.ipr.models import *
                 
 class IprContactAdmin(admin.ModelAdmin):
@@ -12,7 +13,8 @@ admin.site.register(IprDetail, IprDetailAdmin)
 
 class IprDraftAdmin(admin.ModelAdmin):
     pass
-admin.site.register(IprDraft, IprDraftAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(IprDraft, IprDraftAdmin)
 
 class IprLicensingAdmin(admin.ModelAdmin):
     pass
@@ -24,7 +26,8 @@ admin.site.register(IprNotification, IprNotificationAdmin)
 
 class IprRfcAdmin(admin.ModelAdmin):
     pass
-admin.site.register(IprRfc, IprRfcAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(IprRfc, IprRfcAdmin)
 
 class IprSelecttypeAdmin(admin.ModelAdmin):
     pass

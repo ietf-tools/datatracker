@@ -69,8 +69,7 @@ def parse(response):
             events.expandNode(node)
             node.normalize()
             draft_name = getChildText(node, "draft").strip()
-            if re.search("-\d\d\.txt$", draft_name):
-                draft_name = draft_name[0:-7]
+            draft_name = re.sub("(-\d\d)?(.txt){1,2}$", "", draft_name)
             date_received = getChildText(node, "date-received")
             
             states = []
@@ -169,6 +168,9 @@ def parse_all(response):
     refs.extend(indirect_refs)
     del(indirect_refs)
 
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES: # note: return before id lookup
+        return (drafts, refs)
+
     # convert filenames to id_document_tags
     log("connecting to database...")
     cursor = db.connection.cursor()
@@ -190,7 +192,79 @@ def insert_into_database(drafts, refs):
     cursor.close()
     db.connection._commit()
     db.connection.close()
+
+import django.db.transaction
+
+def get_rfc_tag_mapping():
+    """Return dict with RFC Editor state name -> DocInfoTagName"""
+    from name.models import DocInfoTagName
+    from name.utils import name
     
+    return {
+        'IANA': name(DocInfoTagName, 'iana-crd', 'IANA coordination', "RFC-Editor/IANA Registration Coordination"),
+        'REF': name(DocInfoTagName, 'ref', 'Holding for references', "Holding for normative reference"),
+        'MISSREF': name(DocInfoTagName, 'missref', 'Missing references', "Awaiting missing normative reference"),
+    }
+
+def get_rfc_state_mapping():
+    """Return dict with RFC Editor state name -> RfcDocStateName"""
+    from name.models import RfcDocStateName
+    from name.utils import name
+    
+    return {
+        'AUTH': name(RfcDocStateName, 'auth', 'AUTH', "Awaiting author action"),
+        'AUTH48': name(RfcDocStateName, 'auth48', "AUTH48", "Awaiting final author approval"),
+        'EDIT': name(RfcDocStateName, 'edit', 'EDIT', "Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing"),
+        'IANA': name(RfcDocStateName, 'iana-crd', 'IANA', "RFC-Editor/IANA Registration Coordination"),
+        'IESG': name(RfcDocStateName, 'iesg', 'IESG', "Holding for IESG action"),
+        'ISR': name(RfcDocStateName, 'isr', 'ISR', "Independent Submission Review by the ISE "),
+        'ISR-AUTH': name(RfcDocStateName, 'isr-auth', 'ISR-AUTH', "Independent Submission awaiting author update, or in discussion between author and ISE"),
+        'REF': name(RfcDocStateName, 'ref', 'REF', "Holding for normative reference"),
+        'RFC-EDITOR': name(RfcDocStateName, 'rfc-edit', 'RFC-EDITOR', "Awaiting final RFC Editor review before AUTH48"),
+        'TO': name(RfcDocStateName, 'timeout', 'TO', "Time-out period during which the IESG reviews document for conflict/concurrence with other IETF working group work"),
+        'MISSREF': name(RfcDocStateName, 'missref', 'MISSREF', "Awaiting missing normative reference"),
+    }
+
+
+@django.db.transaction.commit_on_success
+def insert_into_databaseREDESIGN(drafts, refs):
+    from doc.models import Document
+    from name.models import DocInfoTagName
+
+    tags = get_rfc_tag_mapping()
+    states = get_rfc_state_mapping()
+
+    rfc_editor_tags = tags.values()
+    
+    log("removing old data...")
+    for d in Document.objects.exclude(rfc_state=None).filter(tags__in=rfc_editor_tags):
+        d.tags.remove(*rfc_editor_tags)
+
+    Document.objects.exclude(rfc_state=None).update(rfc_state=None)
+
+    log("inserting new data...")
+
+    for name, date_received, state, stream_id in drafts:
+        try:
+            d = Document.objects.get(name=name)
+        except Document.DoesNotExist:
+            log("unknown document %s" % name)
+            continue
+
+        s = state.split(" ")
+        if s:
+            # first is state
+            d.rfc_state = states[s[0]]
+            d.save()
+
+            # remainding are tags
+            for x in s[1:]:
+                d.tags.add(tags[x])
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    insert_into_database = insert_into_databaseREDESIGN
+
+
 if __name__ == '__main__':
     try:
         log("output from mirror_rfc_editor_queue.py:\n")

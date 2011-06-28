@@ -1,12 +1,16 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 #
 from django.contrib.sitemaps import Sitemap
+from django.conf import settings
 from ietf.idtracker.models import IDInternal, InternetDraft
 
 class IDTrackerMap(Sitemap):
     changefreq = "always"
     def items(self):
-        return IDInternal.objects.exclude(draft=999999)
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            return IDInternal.objects.all()
+        else:
+            return IDInternal.objects.exclude(draft=999999)
 
 class DraftMap(Sitemap):
     changefreq = "always"

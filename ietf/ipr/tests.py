@@ -48,6 +48,8 @@ class IprUrlTestCase(SimpleUrlTestCase):
         else:
             return content
 
+# this test should be ported to run on a test database instead of the
+# real database, and possibly expanded
 class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
     SPECIFIC_DISCLOSURE = {
         'legal_name':'Testing Only Please Ignore',
@@ -58,6 +60,7 @@ class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
         'ietf_telephone':'555-555-0101',
         'ietf_email':'test.participant@example.com',
         'rfclist':'1149',
+        'draftlist':'draft-burdis-http-sasl-00',
         'patents':'none',
         'date_applied':'never',
         'country':'nowhere',
