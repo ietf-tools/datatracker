@@ -1,0 +1,100 @@
+# Copyright The IETF Trust 2007, All Rights Reserved
+
+from django.db import models
+from redesign.name.models import *
+from redesign.person.models import Email, Person
+
+import datetime
+
+class Group(models.Model):
+    time = models.DateTimeField(default=datetime.datetime.now) # should probably have auto_now=True
+    name = models.CharField(max_length=80)
+    acronym = models.CharField(max_length=16, db_index=True)
+    state = models.ForeignKey(GroupStateName, null=True)
+    type = models.ForeignKey(GroupTypeName, null=True)
+    charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
+    parent = models.ForeignKey('Group', blank=True, null=True)
+    ad = models.ForeignKey(Person, blank=True, null=True)
+    list_email = models.CharField(max_length=64, blank=True)
+    list_subscribe = models.CharField(max_length=255, blank=True)
+    list_archive = models.CharField(max_length=255, blank=True)
+    comments = models.TextField(blank=True)
+    def __unicode__(self):
+        return self.name
+    def latest_event(self, *args, **filter_args):
+        """Get latest group event with filter arguments, e.g.
+        d.latest_event(type="xyz")."""
+        e = GroupEvent.objects.filter(group=self).filter(**filter_args).order_by('-time', '-id')[:1]
+        return e[0] if e else None
+
+class GroupURL(models.Model):
+    group = models.ForeignKey(Group)
+    name = models.CharField(max_length=255)
+    url = models.URLField(verify_exists=False)
+
+class GroupMilestone(models.Model):
+    group = models.ForeignKey(Group)
+    desc = models.TextField()
+    expected_due_date = models.DateField()
+    done = models.BooleanField()
+    done_date = models.DateField(null=True, blank=True)
+    time = models.DateTimeField(auto_now=True)
+    def __unicode__(self):
+	return self.desc[:20] + "..."
+    class Meta:
+	ordering = ['expected_due_date']
+
+GROUP_EVENT_CHOICES = [("proposed", "Proposed group"),
+                       ("started", "Started group"),
+                       ("concluded", "Concluded group"),
+                       ]
+    
+class GroupEvent(models.Model):
+    """An occurrence for a group, used for tracking who, when and what."""
+    group = models.ForeignKey(Group)
+    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    type = models.CharField(max_length=50, choices=GROUP_EVENT_CHOICES)
+    by = models.ForeignKey(Person)
+    desc = models.TextField()
+
+    def __unicode__(self):
+        return u"%s %s at %s" % (self.by.name, self.get_type_display().lower(), self.time)
+
+    class Meta:
+        ordering = ['-time', 'id']
+
+# This will actually be extended from Groups, but that requires Django 1.0
+# This will record the new state and the date it occurred for any changes
+# to a group.  The group acronym must be unique and is the invariant used
+# to select group history from this table.
+# FIXME: this class needs to be updated 
+class GroupHistory(models.Model):
+    group = models.ForeignKey('Group', related_name='group_history')
+    # Event related
+    time = models.DateTimeField()
+    comment = models.TextField()
+    who = models.ForeignKey(Email, related_name='group_changes')
+    # inherited from Group:
+    name = models.CharField(max_length=64)
+    acronym = models.CharField(max_length=16)
+    state = models.ForeignKey(GroupStateName)
+    type = models.ForeignKey(GroupTypeName)
+    charter = models.ForeignKey('doc.Document', related_name='chartered_group_history')
+    parent = models.ForeignKey('Group')
+    chairs = models.ManyToManyField(Email, related_name='chaired_groups_history')
+    list_email = models.CharField(max_length=64)
+    list_pages = models.CharField(max_length=64)
+    comments = models.TextField(blank=True)
+    def __unicode__(self):
+        return self.group.name
+    class Meta:
+        verbose_name_plural="Doc histories"
+
+class Role(models.Model):
+    name = models.ForeignKey(RoleName)
+    group = models.ForeignKey(Group)
+    email = models.ForeignKey(Email, help_text="Email address used by person for this role")
+    auth = models.CharField(max_length=255, blank=True) # unused?
+    def __unicode__(self):
+        return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym)
+    
