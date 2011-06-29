@@ -11,8 +11,8 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
 from ietf.ipr.search import iprs_from_docs
-from doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent
-from person.models import Person
+from redesign.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias
+from redesign.person.models import Person
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.idinternal.state_change_notice_to.replace(';', ',').split(',')]
@@ -157,9 +157,8 @@ def generate_last_call_announcementREDESIGN(request, doc):
             cc.append(doc.group.list_email)
 
     doc.filled_title = textwrap.fill(doc.title, width=70, subsequent_indent=" " * 3)
-    url = settings.IDTRACKER_BASE_URL + doc.get_absolute_url()
     
-    iprs, docs = iprs_from_docs([ doc ])
+    iprs, _ = iprs_from_docs([ DocAlias.objects.get(name=doc.canonical_name()) ])
     if iprs:
         ipr_links = [ urlreverse("ietf.ipr.views.show", kwargs=dict(ipr_id=i.ipr_id)) for i in iprs]
         ipr_links = [ settings.IDTRACKER_BASE_URL+url if not url.startswith("http") else url for url in ipr_links ]
@@ -168,18 +167,18 @@ def generate_last_call_announcementREDESIGN(request, doc):
 
     mail = render_to_string("idrfc/last_call_announcement.txt",
                             dict(doc=doc,
-                                 doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                                 doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url() + "ballot/",
                                  expiration_date=expiration_date.strftime("%Y-%m-%d"), #.strftime("%B %-d, %Y"),
                                  cc=", ".join("<%s>" % e for e in cc),
                                  group=group,
-                                 docs=docs,
-                                 urls=[url],
+                                 docs=[ doc ],
+                                 urls=[ settings.IDTRACKER_BASE_URL + doc.get_absolute_url() ],
                                  status=status,
                                  impl_report="Draft" in status or "Full" in status,
                                  ipr_links=ipr_links,
                                  )
                             )
-    
+
     e = WriteupDocEvent()
     e.type = "changed_last_call_text"
     e.by = request.user.get_profile()

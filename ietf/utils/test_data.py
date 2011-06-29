@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 
 from ietf.iesg.models import TelechatDates, WGAction
+from ietf.ipr.models import IprDetail, IprDocAlias
 from redesign.doc.models import *
 from redesign.name.models import *
 from redesign.group.models import *
@@ -122,7 +123,7 @@ def make_test_data():
         note="",
         )
 
-    DocAlias.objects.create(
+    doc_alias = DocAlias.objects.create(
         document=draft,
         name=draft.name,
         )
@@ -139,6 +140,29 @@ def make_test_data():
         by=ad,
         doc=draft,
         desc="Added draft",
+        )
+
+    # IPR
+    ipr = IprDetail.objects.create(
+        title="Statement regarding rights",
+        legal_name="Native Martians United",
+        is_pending=0,
+        applies_to_all=1,
+        licensing_option=1,
+        lic_opt_a_sub=2,
+        lic_opt_b_sub=2,
+        lic_opt_c_sub=2,
+        comments="",
+        lic_checkbox=True,
+        other_notes="",
+        status=1,
+        submitted_date=datetime.date.today(),
+        )
+
+    IprDocAlias.objects.create(
+        ipr=ipr,
+        doc_alias=doc_alias,
+        rev="00",
         )
     
     # telechat dates

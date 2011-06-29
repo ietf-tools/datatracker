@@ -471,16 +471,15 @@ def send_ballot_commentREDESIGN(request, name):
         c = pos.comment
         subj.append("COMMENT")
 
-    ad_name = ad.get_name()
-    ad_name_genitive = ad_name + "'" if ad_name.endswith('s') else ad_name + "'s"
-    subject = "%s %s on %s" % (ad_name_genitive, pos.pos.name if pos.pos else "No Position", "%s-%02d" % (doc.name, doc.rev))
+    ad_name_genitive = ad.name + "'" if ad.name.endswith('s') else ad.name + "'s"
+    subject = "%s %s on %s" % (ad_name_genitive, pos.pos.name if pos.pos else "No Position", doc.name + "-" + doc.rev)
     if subj:
         subject += ": (with %s)" % " and ".join(subj)
 
     doc.filename = doc.name # compatibility attributes
     doc.revision_display = doc.rev
     body = render_to_string("idrfc/ballot_comment_mail.txt",
-                            dict(discuss=d, comment=c, ad=ad.get_name(), doc=doc, pos=pos.pos))
+                            dict(discuss=d, comment=c, ad=ad.name, doc=doc, pos=pos.pos))
     frm = ad.formatted_email()
     to = "The IESG <iesg@ietf.org>"
         

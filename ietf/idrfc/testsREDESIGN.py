@@ -463,11 +463,12 @@ class EditPositionTestCase(django.test.TestCase):
 
         # vote on behalf of AD
         events_before = draft.docevent_set.count()
-        r = self.client.post(url, dict(position="discuss"))
+        r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
         self.assertEquals(r.status_code, 302)
 
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
         self.assertEquals(pos.pos.slug, "discuss")
+        self.assertEquals(pos.discuss, "Test discuss text")
         self.assertTrue("New position" in pos.desc)
         self.assertTrue("by Sec" in pos.desc)
         

@@ -49,13 +49,13 @@ def send_scheduled_announcementREDESIGN(send_queue):
     # announcement.content_type can contain a case-sensitive parts separator,
     # so we need to keep it as is, not lowercased, but we want a lowercased
     # version for the coming comparisons.
-    content_type_lowercase = announcement.content_type.lower()
+    content_type_lowercase = message.content_type.lower()
     if not content_type_lowercase or 'text/plain' in content_type_lowercase:
         send_mail_text(None, message.to, message.frm, message.subject,
                        body, cc=message.cc, bcc=message.bcc)
     elif 'multipart' in content_type_lowercase:
         # make body a real message so we can parse it
-        body = ("MIME-Version: 1.0\r\nContent-Type: %s\r\n" % announcement.content_type) + body
+        body = ("MIME-Version: 1.0\r\nContent-Type: %s\r\n" % message.content_type) + body
         
         msg = email.message_from_string(body.encode("utf-8"))
         send_mail_mime(None, message.to, message.frm, message.subject,
