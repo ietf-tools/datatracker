@@ -48,7 +48,7 @@ system_email = Email.objects.get_or_create(
     defaults=dict(active=True, person=system_person)
     )
 
-for o in AreaDirector.objects.filter(ietfwg__in=IETFWG.objects.all()).exclude(area_acronym=None).distinct().order_by("pk").iterator():
+for o in AreaDirector.objects.filter(ietfwg__in=IETFWG.objects.all()).exclude(area=None).distinct().order_by("pk").iterator():
     print "importing AreaDirector (from IETFWG) persons", o.pk
     
     get_or_create_email(o, create_fake=False)
