@@ -1,6 +1,7 @@
 from django import forms
 from django.conf import settings
 from django.core.mail import EmailMessage
+from django.db.models import Q
 from django.forms.models import BaseModelFormSet
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
@@ -191,7 +192,10 @@ class AddDelegateForm(RelatedWGForm):
         return self.next_form
 
     def get_person(self, email):
-        persons = PersonOrOrgInfo.objects.filter(emailaddress__address=email, iesglogin__isnull=False).distinct()
+        persons = PersonOrOrgInfo.objects.filter(emailaddress__address=email).filter(
+            Q(iesglogin__isnull=False)|
+            Q(legacywgpassword__isnull=False)|
+            Q(legacyliaisonuser__isnull=False)).distinct()
         if not persons:
             raise PersonOrOrgInfo.DoesNotExist
         if len(persons) > 1:
@@ -244,7 +248,10 @@ class MultipleDelegateForm(AddDelegateForm):
         if not self.email:
             self.email = self.data.get('email', None)
         self.fields['email'].initial = self.email
-        self.fields['persons'].choices = [(i.pk, unicode(i)) for i in PersonOrOrgInfo.objects.filter(emailaddress__address=self.email, iesglogin__isnull=False).distinct().order_by('first_name')]
+        self.fields['persons'].choices = [(i.pk, unicode(i)) for i in PersonOrOrgInfo.objects.filter(emailaddress__address=self.email).filter(
+            Q(iesglogin__isnull=False)|
+            Q(legacywgpassword__isnull=False)|
+            Q(legacyliaisonuser__isnull=False)).distinct().order_by('first_name')]
 
     def save(self):
         person_id = self.cleaned_data.get('persons')
