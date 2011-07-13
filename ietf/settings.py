@@ -195,6 +195,10 @@ LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAI
 LIAISON_ATTACH_PATH = '/a/www/ietf-datatracker/documents/LIAISON/'
 LIAISON_ATTACH_URL = '/documents/LIAISON/'
 
+# Registration configuration
+DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
+DAYS_TO_EXPIRE_RECOVER_LINK = 3
+
 # DB redesign
 USE_DB_REDESIGN_PROXY_CLASSES = True
 

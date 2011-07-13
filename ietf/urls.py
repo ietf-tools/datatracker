@@ -58,6 +58,7 @@ urlpatterns = patterns('',
     (r'^accounts/', include('ietf.ietfauth.urls')),
     (r'^doc/', include('ietf.idrfc.urls')),
     (r'^wg/', include('ietf.wginfo.urls')),
+    (r'^registration/', include('ietf.registration.urls')),
 
     (r'^$', 'ietf.idrfc.views.main'),
     ('^admin/', include(admin.site.urls)),

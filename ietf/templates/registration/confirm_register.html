@@ -1,0 +1,23 @@
+{% extends "registration/base.html" %}
+
+{% block title %}Confirm registration{% endblock %}
+
+{% block content %}
+<div id="confirm_register_page">
+<h1>Confirm registration</h1>
+{% if success %}
+<p>Your email {{ email }} has been registered using the password you have select.</p>
+<p>Now you can <a href="{% url ietfauth.views.ietf_login %}">sign in</a></p>
+{% else %}
+<p>Hello, the registration for {{ email }} is almost complete. Please, select a password.</p>
+<form action="" method="POST">
+  <table class="register-form">
+  {{ form }}
+  </table>
+  <div class="submit_row">
+    <input type="submit" value="Register" />
+  </div>
+</form>
+{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "registration/base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+
+(function($) {
+    var checkUsername = function() {
+        var field = $(this);
+        var url = $("#check_user_name_url").val();
+        var error = field.next('.username-error');
+
+        $.ajax({
+            url: url,
+            data: {username: field.val()},
+            dataType: 'json',
+            success: function(response) {
+                if (response.error) {
+                   error.text(response.error);
+                   error.show();
+                } else {
+                   error.hide();
+                }
+            }
+        });
+    }
+
+    $(document).ready(function(){
+        $('#id_email').after(' <span class="username-error" style="display: none;"></span>');
+        $('#id_email').keyup(checkUsername).blur(checkUsername);
+    });
+})(jQuery);
+{% endblock %}
+
+{% block content %}
+<div id="register_page">
+<h1>Register</h1>
+{% if success %}
+<p>Your registration request has been received successfully. We have sent you an email with instructions on how to finish the registration process.</p>
+<p>Thank you.</p>
+{% else %}
+<form action="" method="POST">
+  <p>Please enter your email addres in order to register a new account.</p>
+  <table class="register-form">
+  {{ form }}
+  </table>
+  <div class="submit_row">
+    <input type="hidden" id="check_user_name_url" value="{% url ajax_check_username %}" />
+    <input type="submit" value="Register" />
+  </div>
+</form>
+<p class="recover_password_description">
+I'm already registered but I forgot my password. <a href="{% url password_recovery_view %}">Please, help me recover my password.</a>
+</p>
+{% endif %}
+</div>
+{% endblock %}
