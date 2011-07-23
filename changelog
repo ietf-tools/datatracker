@@ -33,7 +33,7 @@ ietfdb (3.56)
   * Some IPR admin tweaks.  Provide a __unicode__ method and show a contact 
     even if multiple have been set for an IPR declaration.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jul 2011 15:26:16 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jul 2011 15:27:36 +0200
 
 ietfdb (3.55)
 
