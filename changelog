@@ -1,3 +1,40 @@
+ietfdb (3.56)
+
+  This is a minor release with various bugfixes and minor admin enhancements.
+  The most long-term noticable enhancement is added support for app- and
+  module-specific admin email addresses which will receive stack traces on
+  uncaught exceptions.
+
+  Details:
+
+  * Change the cutoff-settings to match what's desired.  Move CUTOFF_HOUR 
+    to settings.  Change the submission page template to not show the form 
+    during the down period.
+
+  * Set up app-specific email addresses so the respective developers will 
+    be notified about failures in code they have worked with.  Make django
+    pick up app- and module-specific admin email addresses for stack trace
+    messages.
+
+  * Make admin form lists work a bit better with non-ascii content in 
+    non-unicode tables.
+
+  * Admin support for StreamedID, so one can look at it.
+
+  * Get person info without limiting hits to iesglogins.  WG Chairs will have 
+    logins but not IESG logins ...
+
+  * Tweak ipr search to only look for IPRs in the appropriate state.
+
+  * Tweak PersonOrOrgName.email() to handle non-ascii names a bit better.
+
+  * Don't let the linewrapping algorithm churn infinitely.
+
+  * Some IPR admin tweaks.  Provide a __unicode__ method and show a contact 
+    even if multiple have been set for an IPR declaration.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jul 2011 15:26:16 +0200
+
 ietfdb (3.55)
 
   This release adds the wgchair tracker functionality, and also contains
