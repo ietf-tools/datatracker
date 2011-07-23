@@ -339,6 +339,7 @@ def ical_agenda(request, num=None):
     q = request.META.get('QUERY_STRING','') or ""
     filter = q.lower().split(',');
     include = set(filter)
+    now = datetime.datetime.utcnow()
 
     for slot in timeslots:
         for session in slot.sessions():
@@ -347,5 +348,6 @@ def ical_agenda(request, num=None):
 
     return HttpResponse(render_to_string("meeting/agenda.ics",
         {"filter":set(filter), "timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
-            "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
+            "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, 
+            "now":now},
         RequestContext(request)), mimetype="text/calendar")
