@@ -15,6 +15,7 @@ class IETFWorkflowAdmin(admin.ModelAdmin):
 class StreamedIdAdmin(admin.ModelAdmin):
     list_display = [ 'id', 'draft', 'stream', 'content_type', 'content_id', 'group', ]
     search_fields = [ 'draft__filename', ]
+    raw_id_fields = [ 'draft', ]
     pass
 admin.site.register(StreamedID, StreamedIdAdmin)
 
