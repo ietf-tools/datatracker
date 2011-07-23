@@ -965,7 +965,7 @@ class ModelChoiceField(ChoiceField):
         generate the labels for the choices presented by this object. Subclasses
         can override this method to customize the display of the choices.
         """
-        return smart_unicode(obj)
+        return smart_unicode(obj, errors='ignore')
 
     def _get_choices(self):
         # If self._choices is set, then somebody must have manually set
