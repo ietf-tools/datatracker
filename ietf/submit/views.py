@@ -151,6 +151,8 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
     show_notify_button = False
     if allow_edit == False or can_cancel == False:
         show_notify_button = True
+    if submission_hash is None and is_secretariat(request.user):
+        submission_hash = detail.get_hash() # we'll need this when rendering the cancel button in the form
     return render_to_response('submit/draft_status.html',
                               {'selected': 'status',
                                'detail': detail,
