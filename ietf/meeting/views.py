@@ -349,3 +349,14 @@ def ical_agenda(request, num=None):
         {"filter":set(filter), "timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
             "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
         RequestContext(request)), mimetype="text/calendar")
+
+def csv_agenda(request, num=None):
+    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
+    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
+    rgs = IRTF.objects.all().order_by('acronym')
+    areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
+
+    return HttpResponse(render_to_string("meeting/agenda.csv",
+        {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
+         "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
+        RequestContext(request)), mimetype="text/csv")
