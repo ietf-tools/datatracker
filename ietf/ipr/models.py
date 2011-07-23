@@ -114,6 +114,8 @@ class IprDetail(models.Model):
 
     def __str__(self):
 	return self.title
+    def __unicode__(self):
+        return self.title.decode("latin-1", 'replace')
     def docs(self):
         return list(self.drafts.all()) + list(self.rfcs.all())
     @models.permalink
@@ -124,6 +126,8 @@ class IprDetail(models.Model):
 	    return self.contact.get(contact_type=3)
 	except IprContact.DoesNotExist:
 	    return None
+        except IprContact.MultipleObjectsReturned:
+            return self.contact.filter(contact_type=3)[0]
     class Meta:
         db_table = 'ipr_detail'
 

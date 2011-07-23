@@ -7,6 +7,8 @@ class IprContactAdmin(admin.ModelAdmin):
 admin.site.register(IprContact, IprContactAdmin)
 
 class IprDetailAdmin(admin.ModelAdmin):
+    list_display = ['title', 'submitted_date', 'docs', ]
+    search_fields = ['title', 'legal_name', ]
     pass
 admin.site.register(IprDetail, IprDetailAdmin)
 
