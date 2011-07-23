@@ -90,7 +90,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
 
-<tr><td><a href="/idtracker/help/state/">IESG State</>:</td><td> {{ doc.friendly_state|safe }} 
+<tr><td><a href="/idtracker/help/state/">IESG State</>:</td><td>
+{% if user|in_group:"Area_Director,Secretariat" %}
+<a href="{% url doc_change_state name=doc.draft_name %}"> {{ doc.friendly_state|safe }} </a>
+{% else %}
+ {{ doc.friendly_state|safe }} 
+{% endif %}
 {% if doc.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.draft_name}}">{{ doc.rfc_editor_state|escape }}</a>{% endif %}
 {% ifequal doc.draft_status "Expired" %}
 {% if doc.resurrect_requested_by %}(resurrect requested by {{ doc.resurrect_requested_by }}){% endif %}

@@ -57,8 +57,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endif %}
 {% else %}
 {% if doc.in_ietf_process %}
-<span id="doc_edit_state_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_change_state name=doc.draft_name %}">Change state</a></span></span>
-
 <span id="doc_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;">{% url doc_edit_info name=doc.draft_name as doc_edit_url %}{% if doc_edit_url %}<span class="first-child"><a href="{{doc_edit_url}}">Edit</a></span>{% endif %}</span>
 {% else %}
 <span id="doc_add_button" class="yui-button yui-link-button" style="margin-left:2px;">{% url doc_edit_info name=doc.draft_name as doc_edit_url %}{% if doc_edit_url %}<span class="first-child"><a href="{{doc_edit_url}}">Add</a></span>{% endif %}</span>
