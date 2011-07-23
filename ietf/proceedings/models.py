@@ -448,6 +448,15 @@ class WgMeetingSession(models.Model, ResolveAcronym):
             return True
         else:
             return False
+    def length_session1_desc (self):
+        mh = MeetingHour.objects.get(hour_id=self.length_session1)
+        return mh.hour_desc
+    def length_session2_desc (self):
+        mh = MeetingHour.objects.get(hour_id=self.length_session2)
+        return mh.hour_desc
+    def length_session3_desc (self):
+        mh = MeetingHour.objects.get(hour_id=self.length_session3)
+        return mh.hour_desc
     class Meta:
         db_table = 'wg_meeting_sessions'
         verbose_name = "WG meeting session"
@@ -565,6 +574,14 @@ class WgProceedingsActivities(models.Model, ResolveAcronym):
     class Meta:
         db_table = 'wg_proceedings_activities'
         verbose_name = "WG material upload"
+
+class MeetingHour(models.Model):
+    hour_id = models.IntegerField(primary_key=True)
+    hour_desc = models.CharField(max_length=60, blank=True)
+    def __unicode__(self):
+        return self.hour_desc
+    class Meta:
+        db_table = u'meeting_hours'
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core
