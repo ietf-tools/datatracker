@@ -289,10 +289,13 @@ def wrap_text(text, width=72):
         else:
             wrapped = False
         while (len(line) > width) and (" " in line[:width]):
+            linelength = len(line)
             wrapped = True
             breakpoint = line.rfind(" ",0,width)
             filled += [ line[:breakpoint] ]
             line = indent + line[breakpoint+1:]
+            if len(line) >= linelength:
+                break
         filled += [ line.rstrip() ]
         prev_indent = indent
     return "\n".join(filled)
