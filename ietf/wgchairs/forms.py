@@ -191,7 +191,7 @@ class AddDelegateForm(RelatedWGForm):
         return self.next_form
 
     def get_person(self, email):
-        persons = PersonOrOrgInfo.objects.filter(emailaddress__address=email, iesglogin__isnull=False).distinct()
+        persons = PersonOrOrgInfo.objects.filter(emailaddress__address=email).distinct()
         if not persons:
             raise PersonOrOrgInfo.DoesNotExist
         if len(persons) > 1:
