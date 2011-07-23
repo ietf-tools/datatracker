@@ -23,9 +23,6 @@ from ietf.utils.mail import send_mail
 from ietf.utils.draft import Draft
 
 
-CUTOFF_HOUR = 17
-
-
 class UploadForm(forms.Form):
 
     txt = forms.FileField(label=u'.txt format', required=True)
@@ -54,17 +51,20 @@ class UploadForm(forms.Form):
     def read_dates(self):
         now = datetime.datetime.utcnow()
         first_cut_off = Meeting.get_first_cut_off()
+        print "first_cut_off:", first_cut_off
         second_cut_off = Meeting.get_second_cut_off()
+        print "second_cut_off:", second_cut_off
         ietf_monday = Meeting.get_ietf_monday()
+        print "ietf_monday:", ietf_monday
 
         if now.date() >= first_cut_off and now.date() < second_cut_off:  # We are in the first_cut_off
-            if now.date() == first_cut_off and now.hour < CUTOFF_HOUR:
+            if now.date() == first_cut_off and now.hour < settings.CUTOFF_HOUR:
                 self.cutoff_warning = 'The pre-meeting cutoff date for new documents (i.e., version -00 Internet-Drafts) is %s at 5 PM (PT). You will not be able to submit a new document after this time until %s, at midnight' % (first_cut_off, ietf_monday)
             else:  # No 00 version allowed
                 self.cutoff_warning = 'The pre-meeting cutoff date for new documents (i.e., version -00 Internet-Drafts) was %s at 5 PM (PT). You will not be able to submit a new document until %s, at midnight.<br>You can still submit a version -01 or higher Internet-Draft until 5 PM (PT), %s' % (first_cut_off, ietf_monday, second_cut_off)
                 self.in_first_cut_off = True
         elif now.date() >= second_cut_off and now.date() < ietf_monday:
-            if now.date() == second_cut_off and now.hour < CUTOFF_HOUR:  # We are in the first_cut_off yet
+            if now.date() == second_cut_off and now.hour < settings.CUTOFF_HOUR:  # We are in the first_cut_off yet
                 self.cutoff_warning = 'The pre-meeting cutoff date for new documents (i.e., version -00 Internet-Drafts) was %s at 5 PM (PT). You will not be able to submit a new document until %s, at midnight.<br>The I-D submission tool will be shut down at 5 PM (PT) today, and reopened at midnight (PT), %s' % (first_cut_off, ietf_monday, ietf_monday)
                 self.in_first_cut_off = True
             else:  # Completely shut down of the tool

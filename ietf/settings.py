@@ -207,8 +207,9 @@ IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 
 # Days from meeting to cut off dates on submit
-FIRST_CUTOFF_DAYS = 5
-SECOND_CUTOFF_DAYS = 3
+FIRST_CUTOFF_DAYS = 20
+SECOND_CUTOFF_DAYS = 13
+CUTOFF_HOUR = 17
 
 IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
