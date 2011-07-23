@@ -88,6 +88,7 @@ class EditInfoForm(forms.Form):
     area_acronym = forms.ModelChoiceField(Area.active_areas(), required=True, empty_label='None Selected')
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
     job_owner = forms.ModelChoiceField(IESGLogin.objects.filter(user_level__in=(IESGLogin.AD_LEVEL, IESGLogin.INACTIVE_AD_LEVEL)).order_by('user_level', 'last_name'), label="Responsible AD", empty_label=None, required=True)
+    create_in_state = forms.ModelChoiceField(IDState.objects.filter(document_state_id__in=(IDState.PUBLICATION_REQUESTED, IDState.AD_WATCHING)), empty_label=None, required=True)
     state_change_notice_to = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
@@ -213,6 +214,8 @@ def edit_info(request, name):
             r = form.cleaned_data
             entry = "%s has been changed to <b>%s</b> from <b>%s</b>"
             if new_document:
+                doc.idinternal.cur_state_id=r['create_in_state'].document_state_id
+                doc.idinternal.prev_state_id=r['create_in_state'].document_state_id
                 # Django barfs in the diff below because these fields
                 # can't be NULL
                 doc.idinternal.job_owner = r['job_owner']
