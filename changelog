@@ -1,3 +1,52 @@
+ietfdb (3.57)
+
+  * Merged [3254] from suresh.krishnan@ericsson.com: 
+    Added a link to the ARO search including the IESG lists 
+
+  * Merged [3249] from suresh.krishnan@ericsson.com: 
+    Allowing adding documents in AD is watching state in addition to the 
+    default Publication Requested state. Fixes issue #684 
+
+  * Merged [3245] from rjsparks@nostrum.com: 
+    Removes the "Change State" button and makes changing state a link 
+    further up on the form.  This fixes bug 683, but creates a new one that
+    we will need to address later - editing the state of an RFC that is going
+    through the iesg process again (for going to draft in place for example)
+    will need followup once the changes to get an rfc into that state easily
+    are made.
+
+  * Merged [3246] from adam@nostrum.com: 
+    Adding page to allow viewing meeting slot requests as they are made. 
+    There's no link to these yet. 
+
+  * Merged [3240] from adam@nostrum.com: 
+    Added csv output format for meeting agenda information, to assist
+    external applications (e.g., Android app, iPhone app) in harvesting
+    and displaying meeting agenda info. 
+
+  * Merged [3182] from adam@nostrum.com: 
+    Fix for bug 677 -- no longer assume that code sprint will always be 
+    scheduled. 
+
+  * Merged [3181] from adam@nostrum.com: 
+    Fix for bug 676 
+
+  * Merged [3166] from rjsparks@nostrum.com: 
+    Simple changes to EditInfoForm field initialization 
+
+  * Various bugfixes and admin enhancements from henrik@levkowetz.com:
+    - Some enhancements to the admin for IDInternal
+    - Fix a bug where the wrong text was shown for IPR declarations which 
+      specified that licensing terms would be announced later (option d).
+    - Fix a bug where the plenary entries in the html agenda didn't have 
+      links to the room map.
+    - Enhance the admin list page for Stream a bit.
+    - Add some debug output utility functions.
+    - Tweak the admin list for WgMeetingSession to show wg acronym instead of 
+      group id.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Jul 2011 23:13:30 +0200
+
 ietfdb (3.56)
 
   This is a minor release with various bugfixes and minor admin enhancements.
