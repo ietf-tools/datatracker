@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from ietf.idtracker.models import PersonOrOrgInfo, InternetDraft
+from ietf.utils.admin import admin_link
 from workflows.models import Workflow, State, StateObjectRelation
 from permissions.models import Permission
 
@@ -146,6 +147,7 @@ class Stream(models.Model):
 
     def __unicode__(self):
         return u'%s stream' % self.name
+    workflow_link = admin_link('workflow')
 
 
 class StreamedID(models.Model):

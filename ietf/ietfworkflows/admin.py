@@ -11,6 +11,7 @@ class AnnotationTagInline(admin.TabularInline):
 
 class IETFWorkflowAdmin(admin.ModelAdmin):
     inlines = [StateInline, AnnotationTagInline]
+admin.site.register(WGWorkflow, IETFWorkflowAdmin)
 
 class StreamedIdAdmin(admin.ModelAdmin):
     list_display = [ 'id', 'draft', 'stream', 'content_type', 'content_id', 'group', ]
@@ -19,5 +20,6 @@ class StreamedIdAdmin(admin.ModelAdmin):
     pass
 admin.site.register(StreamedID, StreamedIdAdmin)
 
-admin.site.register(WGWorkflow, IETFWorkflowAdmin)
-admin.site.register(Stream, admin.ModelAdmin)
+class StreamAdmin(admin.ModelAdmin):
+    list_display = ['name', 'with_groups', 'group_model', 'group_chair_model', 'workflow_link', ]
+admin.site.register(Stream, StreamAdmin)
