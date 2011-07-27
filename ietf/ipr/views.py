@@ -78,7 +78,7 @@ def show(request, ipr_id=None, removed=None):
         # Very hacky way to get rid of the last part of option 'd':
         cut = text.find(" (")
         if cut > 0:
-            text = text[cut:] + "."
+            text = text[:cut] + "."
         # get rid of the "a) ", "b) ", etc. 
         ipr.licensing_option = text[3:]
     if ipr.is_pending:
