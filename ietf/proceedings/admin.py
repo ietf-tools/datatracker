@@ -72,7 +72,7 @@ class SessionStatusAdmin(admin.ModelAdmin):
 admin.site.register(SessionStatus, SessionStatusAdmin)
 
 class WgMeetingSessionAdmin(admin.ModelAdmin):
-    list_display = ['session_id', 'meeting', 'group_acronym_id', 'number_attendee', 'status', 'approval_ad', 'scheduled_date', 'last_modified_date', 'special_req', 'ad_comments']
+    list_display = ['session_id', 'meeting', 'acronym', 'number_attendee', 'status', 'approval_ad', 'scheduled_date', 'last_modified_date', 'special_req', 'ad_comments']
     list_filter = ['meeting', ]
     pass
 admin.site.register(WgMeetingSession, WgMeetingSessionAdmin)
