@@ -258,10 +258,10 @@ class EditInfoTestCase(django.test.TestCase):
 
         r = self.client.post(url,
                              dict(intended_status=str(draft.intended_status_id),
-                                  status_date=str(date.today() + timedelta(2)),
                                   area_acronym=str(area.area_acronym_id),
                                   via_rfc_editor="1",
                                   job_owner=job_owner.id,
+                                  create_in_state=IDState.PUBLICATION_REQUESTED,
                                   state_change_notice_to="test@example.com",
                                   note="This is a note",
                                   telechat_date="",
@@ -441,7 +441,7 @@ class EditPositionTestCase(django.test.TestCase):
         comments_before = draft.idinternal.comments().count()
         self.assertTrue(not Position.objects.filter(ballot=draft.idinternal.ballot, ad__login_name="rhousley"))
         
-        r = self.client.post(url, dict(position="discuss"))
+        r = self.client.post(url, dict(position="discuss",discuss_text="A non-empty discuss"))
         self.assertEquals(r.status_code, 302)
 
         pos = Position.objects.get(ballot=draft.idinternal.ballot, ad__login_name="rhousley")
@@ -647,14 +647,6 @@ class BallotWriteupsTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertEquals(len(q('textarea[name=approval_text]')), 1)
         self.assertEquals(len(q('input[type=submit][value*="Save Approval"]')), 1)
-
-        # subject error
-        r = self.client.post(url, dict(
-                last_call_text="Subject: test\r\nhello\r\n\r\n",
-                save_last_call_text="1"))
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('ul.errorlist')) > 0)
 
         # save
         r = self.client.post(url, dict(
