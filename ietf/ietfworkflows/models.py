@@ -139,19 +139,46 @@ class WGWorkflow(Workflow):
 
 class Stream(models.Model):
     name = models.CharField(_(u"Name"), max_length=100)
-    with_groups = models.BooleanField(_(u'With groups'), default=False)
-    group_model = models.CharField(_(u'Group model'), max_length=100, blank=True, null=True)
-    group_chair_model = models.CharField(_(u'Group chair model'), max_length=100, blank=True, null=True)
+    document_group_attribute = models.CharField(_(u'Document group attribute'), max_length=255, blank=True, null=True)
+    group_chair_attribute = models.CharField(_(u'Group chair attribute'), max_length=255, blank=True, null=True)
     workflow = models.ForeignKey(WGWorkflow)
 
     def __unicode__(self):
         return u'%s stream' % self.name
+
+    def get_group_for_document(self, document):
+        if not self.document_group_attribute:
+            return None
+        attr = None
+        obj = document
+        for attr_name in self.document_group_attribute.split('.'):
+            attr = getattr(obj, attr_name, None)
+            if not attr:
+                return None
+            if callable(attr):
+                attr = attr()
+            obj = attr
+        return attr
+
+    def get_chairs_for_document(self, document):
+        group = self.get_group_for_document(document)
+        if not group or not self.group_chair_attribute:
+            return []
+        attr = None
+        obj = group
+        for attr_name in self.group_chair_attribute.split('.'):
+            attr = getattr(obj, attr_name, None)
+            if not attr:
+                return None
+            if callable(attr):
+                attr = attr()
+            obj = attr
+        return attr
 
 
 class StreamedID(models.Model):
     draft = models.OneToOneField(InternetDraft)
     stream = models.ForeignKey(Stream, blank=True, null=True)
 
-    content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"), related_name="streamed_id", blank=True, null=True)
-    content_id = models.PositiveIntegerField(_(u"Content id"), blank=True, null=True)
-    group = generic.GenericForeignKey(ct_field="content_type", fk_field="content_id")
+    def get_group(self):
+        return self.stream.get_group_for_document(self.draft)
