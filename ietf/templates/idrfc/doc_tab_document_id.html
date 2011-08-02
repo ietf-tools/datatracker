@@ -44,11 +44,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% with doc.replaces as r %}{% if r %}<br />Replaces {% filter urlize_ietf_docs %}{{ r|join:", "}}{% endfilter %}{% endif %}{% endwith %}
 </td></tr>
 <tr><td>Last updated:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
-{% ifequal stream_info.stream.name "IETF" %}<tr><td>IETF WG status:</td><td>{{ stream_info.state.name }} ({{ stream_info.streamed.group }}) 
+{% ifequal stream_info.stream.name "IETF" %}<tr><td>IETF WG status:</td><td>{{ stream_info.state.name }} ({{ stream_info.streamed.get_group }}) 
 {% if stream_info.tags %}<br /><i>{% for tag in stream_info.tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
 </td></tr>
 {% else %}
-{% if stream_info.stream %}<tr><td>{{ stream_info.stream.name }} status:</td><td>{{ stream_info.state.name }} {% if stream_info.streamed.group %}({{ stream_info.streamed.group }}) {% endif %}
+{% if stream_info.stream %}<tr><td>{{ stream_info.stream.name }} status:</td><td>{{ stream_info.state.name }} {% if stream_info.streamed.get_group %}({{ stream_info.streamed.get_group }}) {% endif %}
 {% if stream_info.tags %}<br /><i>{% for tag in stream_info.tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
 </td></tr>{% endif %}
 {% endifequal %}

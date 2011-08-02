@@ -29,10 +29,10 @@ def is_chair_of_draft(user, draft):
     streamed = get_streamed_draft(draft)
     if not streamed or not streamed.stream:
         return False
-    group = streamed.group
-    if not group or not hasattr(group, 'chairs'):
+    chairs = streamed.stream.get_chairs_for_document(draft)
+    if not chairs:
         return False
-    return bool(group.chairs().filter(person=person).count())
+    return bool(chairs.filter(person=person).count())
 
 
 def can_edit_state(user, draft):
