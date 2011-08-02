@@ -1,3 +1,5 @@
+from django.db.models.query import QuerySet
+
 from ietf.ietfworkflows.streams import get_streamed_draft
 
 
@@ -32,7 +34,10 @@ def is_chair_of_draft(user, draft):
     chairs = streamed.stream.get_chairs_for_document(draft)
     if not chairs:
         return False
-    return bool(chairs.filter(person=person).count())
+    if isinstance(chairs, QuerySet):
+        return bool(chairs.filter(person=person).count())
+    else:
+        return person in chairs
 
 
 def can_edit_state(user, draft):

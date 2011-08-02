@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from ietf.idtracker.models import PersonOrOrgInfo, InternetDraft
+from ietf.idtracker.models import PersonOrOrgInfo, InternetDraft, Role, IRTF
 from workflows.models import Workflow, State, StateObjectRelation
 from permissions.models import Permission
 
@@ -146,7 +146,27 @@ class Stream(models.Model):
     def __unicode__(self):
         return u'%s stream' % self.name
 
+    def _irtf_group(self, document):
+        filename = document.filename.split('-')
+        if len(filename) > 2 and filename[0] == 'draft' and filename[1] =='irtf':
+            try:
+                return IRTF.objects.get(acronym=filename[2])
+            except IRTF.DoesNotExist:
+                return None
+        return None
+
+    def _irtf_chairs(self, document):
+        group = self._irtf_group(document)
+        if not group:
+            return []
+        chairs = [i.person for i in group.chairs()]
+        chairs.append(Role.objects.get(pk=Role.IRTF_CHAIR).person)
+        return chairs
+
     def get_group_for_document(self, document):
+        if hasattr(self, '_%s_group' % self.name.lower()):
+            return getattr(self, '_%s_group' % self.name.lower())(document)
+
         if not self.document_group_attribute:
             return None
         attr = None
@@ -161,6 +181,9 @@ class Stream(models.Model):
         return attr
 
     def get_chairs_for_document(self, document):
+        if hasattr(self, '_%s_chairs' % self.name.lower()):
+            return getattr(self, '_%s_chairs' % self.name.lower())(document)
+
         group = self.get_group_for_document(document)
         if not group or not self.group_chair_attribute:
             return []
