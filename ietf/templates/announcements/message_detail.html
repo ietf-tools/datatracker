@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load ietf_filters %}
+
+{% block title %}Announcement: {{ message.time|date:"F j, Y" }} -- {{ message.subject|escape }}{% endblock %}
+
+{% block content %}
+<h1>NomCom Message</h1>
+<p>
+From: {{ message.frm|escape }}<br/>
+To: {{ message.to|escape }}<br/>
+Date: {{ message.time|date:"F j, Y" }}<br/>
+Subject: {{ message.subject|escape }}
+</p>
+<hr width="400" align="left" />
+<pre>
+{{ message.body|escape }}
+</pre>
+{% endblock %}

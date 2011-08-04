@@ -1,0 +1,5 @@
+{% for chair in wg.wgchair_set.all %}{% if forloop.first %}   Chair{{ forloop.revcounter|pluralize:": ,s:" }}     {% else %}               {% endif %}{{ chair.person|safe }} <{{ chair.person.email.1 }}>
+{% endfor %}   WG Mail:    {{ wg.email_address }}
+   To Join:    {{ wg.email_subscribe }}{%if wg.email_keyword %}
+   In Body:    {{ wg.email_keyword|safe }}{% endif %}
+   Archive:    {{ wg.email_archive }}

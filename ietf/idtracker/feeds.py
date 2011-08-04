@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+from django.conf import settings
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from ietf.idtracker.models import IDInternal
@@ -12,6 +13,9 @@ class DocumentComments(Feed):
 	if len(bits) != 1:
 	    raise IDInternal.DoesNotExist
 	rfc = re.match('rfc(\d+)', bits[0])
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            return IDInternal.objects.get(docalias__name=bits[0])
+
 	if rfc:
 	    return IDInternal.objects.get(draft=int(rfc.group(1)), rfc_flag=1)
 	else:
@@ -21,6 +25,9 @@ class DocumentComments(Feed):
 	# filename is a function for RFCs and an attribute for I-Ds.
 	# This works transparently for templates but is not transparent
 	# for python.
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            return "I-D Tracker comments for %s" % obj.filename
+        
 	if obj.rfc_flag:
 	    filename = obj.document().filename()
 	else:
@@ -39,8 +46,7 @@ class DocumentComments(Feed):
 	return obj.public_comments().order_by("-date","-id")
 
     def item_pubdate(self, item):
-        time = datetime.time(*[(t and int(t) or 0) for t in item.time.split(":")])
-	return datetime.datetime.combine(item.date, time)
+	return item.datetime()
 
     def item_author_name(self, item):
 	return item.get_author()
@@ -52,7 +58,10 @@ class InLastCall(Feed):
     link = "/idtracker/status/last-call/"
 
     def items(self):
-	ret = list(IDInternal.objects.filter(primary_flag=1).filter(cur_state__state='In Last Call'))
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            ret = list(IDInternal.objects.filter(iesg_state='lc'))
+        else:
+            ret = list(IDInternal.objects.filter(primary_flag=1).filter(cur_state__state='In Last Call'))
 	ret.sort(key=lambda item: (item.document().lc_expiration_date or datetime.date.today()))
 	return ret
 

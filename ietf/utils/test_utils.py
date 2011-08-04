@@ -38,7 +38,7 @@ import django
 from django.db import connection
 from django.test import TestCase
 from django.test.client import Client
-import ietf
+import ietf.settings
 from django.conf import settings
 from datetime import datetime
 import urllib2 as urllib
@@ -117,7 +117,10 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
         self.tearDownRealDatabase()
 
     def doTestUrls(self, test_filename):
-        filename = os.path.dirname(os.path.abspath(test_filename))+"/testurl.list"
+        if test_filename.endswith(".list"):
+            filename = test_filename
+        else:
+            filename = os.path.dirname(os.path.abspath(test_filename))+"/testurl.list"
         print "     Reading "+filename
         tuples = read_testurls(filename)
         failures = 0

@@ -41,9 +41,9 @@ from django.template.defaultfilters import truncatewords_html
 from django.utils import simplejson as json
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
-from django.core.urlresolvers import reverse, NoReverseMatch
+from django.core.urlresolvers import reverse as urlreverse, NoReverseMatch
+from django.conf import settings
 
-from ietf import settings
 from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, DocumentComment
 from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
 from ietf.idrfc import markup_txt
@@ -85,6 +85,7 @@ def include_text(request):
 
 def document_main_rfc(request, rfc_number, tab):
     rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
+    rfci.viewing_as_rfc = True
     doc = RfcWrapper(rfci)
 
     info = {}
@@ -122,7 +123,7 @@ def document_main(request, name, tab):
         return document_main_rfc(request, int(m.group(1)), tab)
     id = get_object_or_404(InternetDraft, filename=name)
     doc = IdWrapper(id) 
-    
+
     info = {}
     info['has_pdf'] = (".pdf" in doc.file_types())
     info['is_rfc'] = False
@@ -148,21 +149,59 @@ def document_main(request, name, tab):
 # doc is either IdWrapper or RfcWrapper
 def _get_history(doc, versions):
     results = []
-    if doc.is_id_wrapper:
-        comments = DocumentComment.objects.filter(document=doc.tracker_id).exclude(rfc_flag=1)
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        versions = [] # clear versions
+        event_holder = doc._draft if hasattr(doc, "_draft") else doc._rfcindex
+        for e in event_holder.docevent_set.all().select_related('by').order_by('-time', 'id'):
+            info = {}
+            if e.type == "new_revision":
+                filename = u"%s-%s" % (e.doc.name, e.newrevisiondocevent.rev)
+                e.desc = 'New version available: <a href="http://tools.ietf.org/id/%s.txt">%s</a>' % (filename, filename)
+                if int(e.newrevisiondocevent.rev) != 0:
+                    e.desc += ' (<a href="http://tools.ietf.org/rfcdiff?url2=%s">diff from -%02d</a>)' % (filename, int(e.newrevisiondocevent.rev) - 1)
+                info["dontmolest"] = True
+
+            multiset_ballot_text = "This was part of a ballot set with: "
+            if e.desc.startswith(multiset_ballot_text):
+                names = e.desc[len(multiset_ballot_text):].split(", ")
+                e.desc = multiset_ballot_text + ", ".join(u'<a href="%s">%s</a>' % (urlreverse("doc_view", kwargs={'name': n }), n) for n in names)
+                info["dontmolest"] = True
+                    
+            info['text'] = e.desc
+            info['by'] = e.by.name
+            info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
+            info['snipped'] = info['textSnippet'][-3:] == "..." and e.type != "new_revision"
+            results.append({'comment':e, 'info':info, 'date':e.time, 'is_com':True})
+
+        prev_rev = "00"
+        # actually, we're already sorted and this ruins the sort from
+        # the ids which is sometimes needed, so the function should be
+        # rewritten to not rely on a resort
+        results.sort(key=lambda x: x['date'])
+        for o in results:
+            e = o["comment"]
+            if e.type == "new_revision":
+                e.version = e.newrevisiondocevent.rev
+            else:
+                e.version = prev_rev
+            prev_rev = e.version
     else:
-        comments = DocumentComment.objects.filter(document=doc.rfc_number,rfc_flag=1)
-        if len(comments) > 0:
-            # also include rfc_flag=NULL, but only if at least one
-            # comment with rfc_flag=1 exists (usually NULL means same as 0)
-            comments = DocumentComment.objects.filter(document=doc.rfc_number).exclude(rfc_flag=0)
-    for comment in comments.order_by('-date','-time','-id').filter(public_flag=1).select_related('created_by'):
-        info = {}
-        info['text'] = comment.comment_text
-        info['by'] = comment.get_fullname()
-        info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
-        info['snipped'] = info['textSnippet'][-3:] == "..."
-        results.append({'comment':comment, 'info':info, 'date':comment.datetime(), 'is_com':True})
+        if doc.is_id_wrapper:
+            comments = DocumentComment.objects.filter(document=doc.tracker_id).exclude(rfc_flag=1)
+        else:
+            comments = DocumentComment.objects.filter(document=doc.rfc_number,rfc_flag=1)
+            if len(comments) > 0:
+                # also include rfc_flag=NULL, but only if at least one
+                # comment with rfc_flag=1 exists (usually NULL means same as 0)
+                comments = DocumentComment.objects.filter(document=doc.rfc_number).exclude(rfc_flag=0)
+        for comment in comments.order_by('-date','-time','-id').filter(public_flag=1).select_related('created_by'):
+            info = {}
+            info['text'] = comment.comment_text
+            info['by'] = comment.get_fullname()
+            info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
+            info['snipped'] = info['textSnippet'][-3:] == "..."
+            results.append({'comment':comment, 'info':info, 'date':comment.datetime(), 'is_com':True})
+    
     if doc.is_id_wrapper and versions:
         for v in versions:
             if v['draft_name'] == doc.draft_name:
@@ -171,11 +210,11 @@ def _get_history(doc, versions):
                 results.insert(0, v)    
     if doc.is_id_wrapper and doc.draft_status == "Expired" and doc._draft.expiration_date:
         results.append({'is_text':True, 'date':doc._draft.expiration_date, 'text':'Draft expired'})
-    if doc.is_rfc_wrapper:
+    if not settings.USE_DB_REDESIGN_PROXY_CLASSES and doc.is_rfc_wrapper:
         text = 'RFC Published'
         if doc.draft_name:
             try:
-                text = 'RFC Published (see <a href="%s">%s</a> for earlier history)' % (reverse('doc_view', args=[doc.draft_name]),doc.draft_name)
+                text = 'RFC Published (see <a href="%s">%s</a> for earlier history)' % (urlreverse('doc_view', args=[doc.draft_name]),doc.draft_name)
             except NoReverseMatch:
                 pass
         results.append({'is_text':True, 'date':doc.publication_date, 'text':text})
@@ -210,6 +249,19 @@ def _get_versions(draft, include_replaced=True):
 def get_ballot(name):
     r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
+
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from doc.models import DocAlias
+        alias = get_object_or_404(DocAlias, name=name)
+        d = get_object_or_404(InternetDraft, name=alias.document.name)
+        try:
+            if not d.ballot.ballot_issued:
+                raise Http404
+        except BallotInfo.DoesNotExist:
+            raise Http404
+        
+        return (BallotWrapper(d), RfcWrapper(d) if m else IdWrapper(d))
+        
     if m:
         rfc_number = int(m.group(1))
         rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)

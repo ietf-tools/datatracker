@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
+from django.conf import settings
 #from django import newforms as forms
 from ietf.idtracker.views import InternetDraft
 from ietf.idtracker.models import Rfc
@@ -117,6 +118,8 @@ class IprDetail(models.Model):
     def __unicode__(self):
         return self.title.decode("latin-1", 'replace')
     def docs(self):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            return list(IprDraftProxy.objects.filter(ipr=self))
         return list(self.drafts.all()) + list(self.rfcs.all())
     @models.permalink
     def get_absolute_url(self):
@@ -155,8 +158,8 @@ class IprContact(models.Model):
 
 
 class IprDraft(models.Model):
-    ipr = models.ForeignKey(IprDetail, related_name='drafts')
-    document = models.ForeignKey(InternetDraft, db_column='id_document_tag', related_name="ipr")
+    ipr = models.ForeignKey(IprDetail, related_name='drafts_old' if settings.USE_DB_REDESIGN_PROXY_CLASSES else 'drafts')
+    document = models.ForeignKey(InternetDraft, db_column='id_document_tag', related_name="ipr_draft_old" if settings.USE_DB_REDESIGN_PROXY_CLASSES else "ipr")
     revision = models.CharField(max_length=2)
     def __str__(self):
 	return "%s which applies to %s-%s" % ( self.ipr, self.document, self.revision )
@@ -174,8 +177,8 @@ class IprNotification(models.Model):
         db_table = 'ipr_notifications'
 
 class IprRfc(models.Model):
-    ipr = models.ForeignKey(IprDetail, related_name='rfcs')
-    document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
+    ipr = models.ForeignKey(IprDetail, related_name='rfcs_old' if settings.USE_DB_REDESIGN_PROXY_CLASSES else 'rfcs')
+    document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr_rfc_old" if settings.USE_DB_REDESIGN_PROXY_CLASSES else "ipr")
     def __str__(self):
 	return "%s applies to RFC%04d" % ( self.ipr, self.document_id )
     class Meta:
@@ -189,6 +192,68 @@ class IprUpdate(models.Model):
     processed = models.IntegerField(null=True, blank=True)
     class Meta:
         db_table = 'ipr_updates'
+
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_IPR"):
+    from doc.models import DocAlias
+    
+    class IprDocAlias(models.Model):
+        ipr = models.ForeignKey(IprDetail, related_name='documents')
+        doc_alias = models.ForeignKey(DocAlias)
+        rev = models.CharField(max_length=2, blank=True)
+        def __unicode__(self):
+            if self.rev:
+                return u"%s which applies to %s-%s" % (self.ipr, self.document, self.revision)
+            else:
+                return u"%s which applies to %s" % (self.ipr, self.document)
+
+    # proxy stuff
+    IprDraftOld = IprDraft
+    IprRfcOld = IprRfc
+
+    from redesign.proxy_utils import TranslatingManager
+    
+    class IprDraftProxy(IprDocAlias):
+        objects = TranslatingManager(dict(document="doc_alias__name"))
+                                          
+        # document = models.ForeignKey(InternetDraft, db_column='id_document_tag', "ipr")
+        # document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
+        @property
+        def document(self):
+            from redesign.doc.proxy import DraftLikeDocAlias
+            return DraftLikeDocAlias.objects.get(pk=self.doc_alias_id)
+        
+        #revision = models.CharField(max_length=2)
+        @property
+        def revision(self):
+            return self.rev
+        
+        class Meta:
+            proxy = True
+
+    IprDraft = IprDraftProxy
+
+    class IprRfcProxy(IprDocAlias):
+        objects = TranslatingManager(dict(document=lambda v: ("doc_alias__name", "rfc%s" % v)))
+                                          
+        # document = models.ForeignKey(InternetDraft, db_column='id_document_tag', "ipr")
+        # document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
+        @property
+        def document(self):
+            from redesign.doc.proxy import DraftLikeDocAlias
+            return DraftLikeDocAlias.objects.get(pk=self.doc_alias_id)
+        
+        #revision = models.CharField(max_length=2)
+        @property
+        def revision(self):
+            return self.rev
+        
+        class Meta:
+            proxy = True
+
+    IprRfc = IprRfcProxy
+                
+
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core

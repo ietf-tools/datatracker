@@ -35,6 +35,8 @@
 from django.http import HttpResponse, HttpResponsePermanentRedirect
 from django.template import loader
 from django.shortcuts import get_object_or_404
+from django.conf import settings
+
 from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, IDInternal,PersonOrOrgInfo, Area
 from ietf.idtracker.templatetags.ietf_filters import clean_whitespace
 import re
@@ -156,6 +158,9 @@ def test_id_abstracts_txt(request):
 
 def redirect_id(request, object_id):
     '''Redirect from historical document ID to preferred filename url.'''
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        return HttpResponsePermanentRedirect("/doc/")
+
     doc = get_object_or_404(InternetDraft, id_document_tag=object_id)
     return HttpResponsePermanentRedirect("/doc/"+doc.filename+"/")
 
@@ -163,6 +168,11 @@ def redirect_filename(request, filename):
     return HttpResponsePermanentRedirect("/doc/"+filename+"/")
 
 def wgdocs_redirect_id(request, id):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from group.models import Group
+        group = get_object_or_404(Group, id=id)
+        return HttpResponsePermanentRedirect("/wg/%s/" % group.acronym)
+
     group = get_object_or_404(Acronym, acronym_id=id)
     return HttpResponsePermanentRedirect("/wg/"+group.acronym+"/")
 

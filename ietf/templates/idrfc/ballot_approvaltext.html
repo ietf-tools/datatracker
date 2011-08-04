@@ -19,7 +19,7 @@ form #id_approval_text {
   {{ approval_text_form.approval_text }}
 
   <div class="actions">
-    <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+    <a href="{{ back_url }}">Back</a>
     <input type="submit" name="save_approval_text" value="Save Approval Announcement Text" />
     <input type="submit" name="regenerate_approval_text" value="Regenerate Approval Announcement Text" />
   </div>
@@ -29,7 +29,7 @@ form #id_approval_text {
 {% if user|in_group:"Secretariat" %}
 <p>
 {% if can_announce %}
-<a href="{% url doc_approve_ballot name=doc.filename %}">Approve ballot</a>
+<a href="{% url doc_approve_ballot name=doc.name %}">Approve ballot</a>
 {% endif %}
 </p>
 {% endif %}

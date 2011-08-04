@@ -48,6 +48,34 @@ def list_drafts(request):
                     context_instance=RequestContext(request)),
                     mimetype="text/plain")
 
+def list_draftsREDESIGN(request):
+    from ipr.models import IprDocAlias
+    
+    docipr = {}
+
+    for o in IprDocAlias.objects.filter(ipr__status=1).select_related("doc_alias"):
+        name = o.doc_alias.name
+        if name.startswith("rfc"):
+            name = name.upper()
+
+        if not name in docipr:
+            docipr[name] = []
+
+        docipr[name].append(o.ipr_id)
+            
+    docs = [ dict(name=name, iprs=sorted(iprs)) for name, iprs in docipr.iteritems() ]
+    
+    # drafts.html is not an HTML file
+    return HttpResponse(render_to_string("ipr/drafts.html",
+                                         dict(docs=docs),
+                                         context_instance=RequestContext(request)),
+                        mimetype="text/plain")
+    
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    list_drafts = list_draftsREDESIGN
+
+
 # Details views
 
 def show(request, ipr_id=None, removed=None):
@@ -93,6 +121,12 @@ def show(request, ipr_id=None, removed=None):
         except:
             # if file does not exist, iframe is used instead
             pass
+
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from ietf.ipr.models import IprDraft, IprRfc
+        ipr.drafts = IprDraft.objects.filter(ipr=ipr).exclude(doc_alias__name__startswith="rfc").order_by("id")
+        ipr.rfcs = IprRfc.objects.filter(ipr=ipr).filter(doc_alias__name__startswith="rfc").order_by("id")
+    
     return render("ipr/details.html",  {"ipr": ipr, "section_list": section_list},
                     context_instance=RequestContext(request))
 

@@ -16,7 +16,7 @@ form.add-comment .actions {
 {% block content %}
 <h1>Add comment on {{ doc }}</h1>
 
-<p>The comment will be added to the comment trail.</p>
+<p>The comment will be added to the history trail.</p>
 
 <form class="add-comment" action="" method="POST">
   <table>
@@ -24,7 +24,7 @@ form.add-comment .actions {
   <tr>
     <td></td>
     <td class="actions">
-      <a href="{{ doc.idinternal.get_absolute_url }}">Back</a>
+      <a href="{{ back_url }}">Back</a>
       <input type="submit" value="Add comment"/>
     </td>
   </tr>
