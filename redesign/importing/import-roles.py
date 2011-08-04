@@ -15,24 +15,19 @@ from redesign.person.models import *
 from redesign.group.models import *
 from redesign.name.models import *
 from redesign.name.utils import name
-from redesign.importing.utils import old_person_to_email, clean_email_address, get_or_create_email
+from redesign.importing.utils import get_or_create_email
 
-from ietf.idtracker.models import IESGLogin, AreaDirector, IDAuthor, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
+from ietf.idtracker.models import IESGLogin, AreaDirector, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
 
 
 # assumptions:
+#  - persons have been imported
 #  - groups have been imported
-
-# PersonOrOrgInfo/PostalAddress/EmailAddress/PhoneNumber are not
-# imported, although some information is retrieved from those
 
 # imports IESGLogin, AreaDirector, WGEditor, WGChair, IRTFChair,
 # WGSecretary, WGTechAdvisor, NomCom chairs from ChairsHistory,
-#
-# also imports persons from IDAuthor, announcement originators from
-# Announcements
 
-# FIXME: should probably import Role
+# FIXME: should probably import Role, LegacyWgPassword, LegacyLiaisonUser
 
 area_director_role = name(RoleName, "ad", "Area Director")
 inactive_area_director_role = name(RoleName, "ex-ad", "Ex-Area Director", desc="Inactive Area Director")
@@ -176,29 +171,3 @@ for o in AreaDirector.objects.all():
         Role.objects.get_or_create(name=role_type, group=area, email=email)
 
 
-# Announcement persons
-for o in PersonOrOrgInfo.objects.filter(announcement__announcement_id__gte=1).distinct():
-    print "importing Announcement originator", o.person_or_org_tag, o.first_name.encode('utf-8'), o.last_name.encode('utf-8')
-
-    o.person = o # satisfy the get_or_create_email interface
-    
-    email = get_or_create_email(o, create_fake=False)
-    
-# IDAuthor persons
-for o in IDAuthor.objects.all().order_by('id').select_related('person').iterator():
-    print "importing IDAuthor", o.id, o.person_id, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')
-    email = get_or_create_email(o, create_fake=True)
-
-    # we may also need to import email address used specifically for
-    # the document
-    addr = clean_email_address(o.email() or "")
-    if addr and addr.lower() != email.address.lower():
-        try:
-            e = Email.objects.get(address=addr)
-            if e.person != email.person or e.active != False:
-                e.person = email.person
-                e.active = False
-                e.save()
-        except Email.DoesNotExist:
-            Email.objects.create(address=addr, person=email.person, active=False)
-    

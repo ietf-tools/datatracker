@@ -11,7 +11,10 @@ def clean_email_address(addr):
         return addr
 
 def old_person_to_person(person):
-    return Person.objects.get(id=person.pk)
+    try:
+        return Person.objects.get(id=person.pk)
+    except Person.DoesNotExist:
+        return Person.objects.get(alias__name=u"%s %s" % (person.first_name, person.last_name))
 
 def old_person_to_email(person):
     hardcoded_emails = { 'Dinara Suleymanova': "dinaras@ietf.org" }
@@ -19,25 +22,27 @@ def old_person_to_email(person):
     return clean_email_address(person.email()[1] or hardcoded_emails.get("%s %s" % (person.first_name, person.last_name)) or "")
 
 def get_or_create_email(o, create_fake):
-    # take person on o and get or create new Email and Person objects
-    email = old_person_to_email(o.person)
+    # take o.person (or o) and get or create new Email and Person objects
+    person = o.person if hasattr(o, "person") else o
+    
+    email = old_person_to_email(person)
     if not email:
         if create_fake:
-            email = u"unknown-email-%s-%s" % (o.person.first_name, o.person.last_name)
-            print ("USING FAKE EMAIL %s for %s %s %s" % (email, o.person.pk, o.person.first_name, o.person.last_name)).encode('utf-8')
+            email = u"unknown-email-%s-%s" % (person.first_name, person.last_name)
+            print ("USING FAKE EMAIL %s for %s %s %s" % (email, person.pk, person.first_name, person.last_name)).encode('utf-8')
         else:
-            print ("NO EMAIL FOR %s %s %s %s %s" % (o.__class__, o.pk, o.person.pk, o.person.first_name, o.person.last_name)).encode('utf-8')
+            print ("NO EMAIL FOR %s %s %s %s %s" % (o.__class__, o.pk, person.pk, person.first_name, person.last_name)).encode('utf-8')
             return None
     
     e, _ = Email.objects.select_related("person").get_or_create(address=email)
     if not e.person:
-        n = u"%s %s" % (o.person.first_name, o.person.last_name)
+        n = u"%s %s" % (person.first_name, person.last_name)
         asciified = unaccent.asciify(n)
         aliases = Alias.objects.filter(name__in=(n, asciified))
         if aliases:
             p = aliases[0].person
         else:
-            p = Person.objects.create(id=o.person.pk, name=n, ascii=asciified)
+            p = Person.objects.create(id=person.pk, name=n, ascii=asciified)
             # FIXME: fill in address?
             
             Alias.objects.create(name=n, person=p)

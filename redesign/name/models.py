@@ -62,6 +62,12 @@ class IntendedStdLevelName(NameModel):
     Practice, Historic, ..."""
 class BallotPositionName(NameModel):
     """ Yes, NoObjection, Abstain, Discuss, Recuse """
+class SessionStatusName(NameModel):
+    """ Waiting for Approval, Approved, Waiting for Scheduling, Scheduled, Cancelled, Disapproved"""
+class TimeSlotTypeName(NameModel):
+    """Session, Break, Registration"""
+class ConstraintName(NameModel):
+    """Conflict"""
 
 
 def get_next_iesg_states(iesg_state):
