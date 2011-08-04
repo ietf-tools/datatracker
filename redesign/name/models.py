@@ -4,7 +4,7 @@ from django.db import models
 
 class NameModel(models.Model):
     slug = models.CharField(max_length=8, primary_key=True)
-    name = models.CharField(max_length=32)
+    name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
     used = models.BooleanField(default=True)
     order = models.IntegerField(default=0)
@@ -20,6 +20,11 @@ class GroupStateName(NameModel):
     """BOF, Proposed, Active, Dormant, Concluded"""
 class GroupTypeName(NameModel):
     """IETF, Area, WG, RG, Team, etc."""
+class IesgGroupStateName(NameModel):
+    """Informal IESG review, Internal review, External review, IESG review,
+    WG exists, Not currently under review, Informal IESG recharter review,
+    Internal recharter review, External recharter review, IESG recharter 
+    review """
 class RoleName(NameModel):
     """AD, Chair"""
 class DocStreamName(NameModel):

@@ -13,6 +13,7 @@ class GroupInfo(models.Model):
     state = models.ForeignKey(GroupStateName, null=True)
     type = models.ForeignKey(GroupTypeName, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)
+    iesg_state = models.ForeignKey(IesgGroupStateName, verbose_name="IESG state", blank=True, null=True)
     ad = models.ForeignKey(Person, blank=True, null=True)
     list_email = models.CharField(max_length=64, blank=True)
     list_subscribe = models.CharField(max_length=255, blank=True)
