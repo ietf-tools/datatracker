@@ -62,6 +62,7 @@ def current_materials(request):
     return HttpResponseRedirect( reverse(show_html_materials, args=[meeting.meeting_num]) )
 
 def get_plenary_agenda(meeting_num, id):
+    # FIXME: fix
     try:
         plenary_agenda_file = settings.AGENDA_PATH + WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=id).agenda_file()
         try:
@@ -84,7 +85,7 @@ def agenda_info(num=None):
     for n in meetings:
         try:
             timeslots = MeetingTime.objects.select_related().filter(meeting=n).order_by("day_id", "time_desc")
-            update = Switches.objects.get(id=1)
+            update = Switches.objects.get(id=1) # FIXME
             meeting= Meeting.objects.get(meeting_num=n)
             venue  = MeetingVenue.objects.get(meeting_num=n)
             break
@@ -92,7 +93,7 @@ def agenda_info(num=None):
             continue
     else:
         raise Http404("No meeting information for meeting %s available" % num)
-    ads = list(IESGHistory.objects.select_related().filter(meeting=n))
+    ads = list(IESGHistory.objects.select_related().filter(meeting=n)) # FIXME
     if not ads:
         ads = list(IESGHistory.objects.select_related().filter(meeting=str(int(n)-1)))
     ads.sort(key=(lambda item: item.area.area_acronym.acronym))
@@ -100,10 +101,44 @@ def agenda_info(num=None):
     plenaryt_agenda = get_plenary_agenda(n, -2)
     return timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda
 
+def agenda_infoREDESIGN(num=None):
+    try:
+        if num != None:
+            meeting = Meeting.objects.get(number=num)
+        else:
+            meeting = Meeting.objects.all().order_by('-date')[:1].get()
+    except Meeting.DoesNotExist:
+        raise Http404("No meeting information for meeting %s available" % num)
+
+    # now go through the timeslots, only keeping those that are
+    # sessions/plenary/training and don't occur at the same time
+    timeslots = []
+    time_seen = set()
+    for t in MeetingTime.objects.filter(meeting=meeting, type__in=("session", "plenary", "other")).order_by("time").select_related():
+        if not t.time in time_seen:
+            time_seen.add(t.time)
+            timeslots.append(t)
+
+    update = Switches.objects.get(id=1) # FIXME
+    venue = meeting.meeting_venue
+        
+    ads = list(IESGHistory.objects.select_related().filter(meeting=meeting.number)) # FIXME
+    if not ads:
+        ads = list(IESGHistory.objects.select_related().filter(meeting=str(int(meeting.number)-1)))
+    ads.sort(key=(lambda item: item.area.area_acronym.acronym))
+    plenaryw_agenda = get_plenary_agenda(meeting.number, -1)
+    plenaryt_agenda = get_plenary_agenda(meeting.number, -2)
+    return timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    agenda_info = agenda_infoREDESIGN
+
 @decorator_from_middleware(GZipMiddleware)
 def html_agenda(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
 
+    #timeslots = timeslots[:10]
+    
     groups_meeting = [];
     for slot in timeslots:
         for session in slot.sessions():

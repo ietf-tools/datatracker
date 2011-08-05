@@ -41,7 +41,9 @@ session_status_mapping[0] = session_status_mapping[1] # assume broken statuses o
 session_slot = name(TimeSlotTypeName, "session", "Session")
 break_slot = name(TimeSlotTypeName, "break", "Break")
 registration_slot = name(TimeSlotTypeName, "reg", "Registration")
+plenary_slot = name(TimeSlotTypeName, "plenary", "Plenary")
 other_slot = name(TimeSlotTypeName, "other", "Other")
+
 conflict_constraint = name(ConstraintName, "conflict", "Conflicts with")
 
 system_person = Person.objects.get(name="(System)")
@@ -168,10 +170,11 @@ for o in WgMeetingSession.objects.all().order_by("pk"):
     print "importing WgMeetingSession", o.pk, "subsessions", sessions
 
     for i in range(1, 1 + sessions):
+        pk = o.pk + (i - 1) * 10000 # move extra session out of the way
         try:
-            s = Session.objects.get(pk=o.pk + (i - 1) * 10000)
+            s = Session.objects.get(pk=pk)
         except:
-            s = Session(pk=o.pk)
+            s = Session(pk=pk)
 
         s.meeting = Meeting.objects.get(number=o.meeting_id)
         sched_time_id = getattr(o, "sched_time_id%s" % i)
@@ -191,8 +194,15 @@ for o in WgMeetingSession.objects.all().order_by("pk"):
                 if not s.timeslot:
                     print "IGNORING unscheduled non-WG-session", acronym.name
                     continue
-                s.timeslot.name = acronym.name
-                s.timeslot.type = other_slot
+                if sched_time_id.session_name_id:
+                    s.timeslot.name = sched_time_id.session_name.session_name
+                else:
+                    s.timeslot.name = acronym.name
+
+                if "Plenary" in s.timeslot.name:
+                    s.timeslot.type = plenary_slot
+                else:
+                    s.timeslot.type = other_slot
                 s.timeslot.save()
                 continue
 

@@ -35,6 +35,9 @@ class Acronym(Group):
         proxy = True
 
 class Area(Group):
+    objects = TranslatingManager(dict(area_acronym__acronym="acronym",
+                                      status=lambda v: ("state", {1: "active", 2: "dormant", 3: "conclude"}[v] )))
+    
     def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
@@ -84,6 +87,7 @@ def proxied_role_emails(emails):
 class IETFWG(Group):
     objects = TranslatingManager(dict(group_acronym="id",
                                       group_acronym__acronym="acronym",
+                                      group_acronym__acronym__in="acronym__in",
                                       email_archive__startswith="list_archive__startswith",
                                       group_type=lambda v: ("type", { 1: "wg" }[int(v)]),
                                       status=lambda v: ("state", { 1: "active" }[int(v)]),

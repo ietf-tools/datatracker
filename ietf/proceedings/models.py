@@ -584,6 +584,14 @@ class MeetingHour(models.Model):
     class Meta:
         db_table = u'meeting_hours'
 
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    MeetingOld = Meeting
+    MeetingVenueOld = MeetingVenue
+    MeetingTimeOld = MeetingTime
+    WgMeetingSessionOld = WgMeetingSession
+    from ietf.meeting.proxy import MeetingProxy as Meeting, MeetingVenueProxy as MeetingVenue, MeetingTimeProxy as MeetingTime, WgMeetingSessionProxy as WgMeetingSession
+
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core
 # removed raw_id_admin

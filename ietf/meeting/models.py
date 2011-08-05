@@ -132,6 +132,9 @@ class Session(models.Model):
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(null=True, blank=True)
 
+    def __unicode__(self):
+        return u"%s: %s %s" % (self.meeting, self.group.acronym, self.timeslot.time.strftime("%H%M") if self.timeslot else "(unscheduled)")
+    
 # Agendas, Minutes and Slides are all mapped to Document.
 
 # IESG history is extracted from GroupHistory, rather than hand coded in a
