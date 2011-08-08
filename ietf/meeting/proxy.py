@@ -132,7 +132,10 @@ class MeetingTimeProxy(TimeSlot):
     def __str__(self):
 	return "[%d] |%s| %s" % (self.meeting.number, self.time.strftime('%A'), self.time_desc)
     def sessions(self):
-        return WgMeetingSessionProxy.objects.filter(meeting=self.meeting, time=self.time, type__in=("session", "plenary", "other"))
+        if not hasattr(self, "sessions_cache"):
+            self.sessions_cache = WgMeetingSessionProxy.objects.filter(meeting=self.meeting, time=self.time, type__in=("session", "plenary", "other"))
+
+        return self.sessions_cache
     def sessions_by_area(self):
         return [ {"area":session.area()+session.acronym(), "info":session} for session in self.sessions() ]
     def meeting_date(self):
@@ -225,8 +228,7 @@ class WgMeetingSessionProxy(TimeSlot):
     #number_attendee = models.IntegerField(null=True, blank=True)
     @property
     def number_attendee(self):
-        s = self.get_session()
-        return s.attendees if s else 0
+        return self.get_session().attendees if self.get_session() else 0
     #approval_ad = models.IntegerField(null=True, blank=True)
     #status = models.ForeignKey(SessionStatus, null=True, blank=True) # same name
     #ts_status_id = models.IntegerField(null=True, blank=True)
@@ -234,7 +236,13 @@ class WgMeetingSessionProxy(TimeSlot):
     #approved_date = models.DateField(null=True, blank=True)
     #requested_by = BrokenForeignKey(PersonOrOrgInfo, db_column='requested_by', null=True, null_values=(0, 888888))
     #scheduled_date = models.DateField(null=True, blank=True)
+    @property
+    def scheduled_date(self):
+        return self.get_session().scheduled.date() if self.get_session() else ""
     #last_modified_date = models.DateField(null=True, blank=True)
+    @property
+    def last_modified_date(self):
+        return self.get_session().modified.date() if self.get_session() else ""
     #ad_comments = models.TextField(blank=True,null=True)
     #sched_room_id1 = models.ForeignKey(MeetingRoom, db_column='sched_room_id1', null=True, blank=True, related_name='here1')
     #sched_time_id1 = BrokenForeignKey(MeetingTime, db_column='sched_time_id1', null=True, blank=True, related_name='now1')
@@ -246,6 +254,9 @@ class WgMeetingSessionProxy(TimeSlot):
     #sched_time_id3 = BrokenForeignKey(MeetingTime, db_column='sched_time_id3', null=True, blank=True, related_name='now3')
     #sched_date3 = models.DateField(null=True, blank=True)
     #special_agenda_note = models.CharField(blank=True, max_length=255)
+    @property
+    def special_agenda_note(self):
+        return self.get_session().agenda_note if self.get_session() else ""
     #combined_room_id1 = models.ForeignKey(MeetingRoom, db_column='combined_room_id1', null=True, blank=True, related_name='here4')
     #combined_time_id1 = models.ForeignKey(MeetingTime, db_column='combined_time_id1', null=True, blank=True, related_name='now4')
     #combined_room_id2 = models.ForeignKey(MeetingRoom, db_column='combined_room_id2', null=True, blank=True, related_name='here5')
@@ -254,46 +265,25 @@ class WgMeetingSessionProxy(TimeSlot):
 	return "%s at %s" % (self.acronym(), self.meeting)
     def agenda_file(self,interimvar=0):
         if not hasattr(self, '_agenda_file'):
-            # FIXME
-            irtfvar = 0
-            if self.irtf:
-                irtfvar = self.group_acronym_id 
-            if interimvar == 0:
-                try:
-                    if self.interim:
-                        interimvar = 1
-                except AttributeError:
-                        interimvar = 0
-            try:
-                filename = WgAgenda.objects.get(meeting=self.meeting, group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=interimvar).filename
-                if self.meeting_id in WgMeetingSession._dirs:
-                    dir = WgMeetingSession._dirs[self.meeting_id]
-                else:
-                    dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
-                    WgMeetingSession._dirs[self.meeting_id]=dir
-                retvar = "%s/agenda/%s" % (dir,filename) 
-            except WgAgenda.DoesNotExist:
-                retvar = ""
-            self._agenda_file = retvar
+            docs = self.materials.filter(type="agenda")
+            if not docs:
+                return ""
+
+            # we use external_url at the moment, should probably regularize
+            # the filenames to match the document name instead
+            filename = docs[0].external_url
+            self._agenda_file = "%s/agenda/%s" % (self.meeting.number, filename)
+            
         return self._agenda_file
     def minute_file(self,interimvar=0):
-        # FIXME
-        irtfvar = 0
-        if self.irtf:
-            irtfvar = self.group_acronym_id
-        if interimvar == 0:
-            try:
-                if self.interim:
-                    interimvar = 1
-            except AttributeError:
-                    interimvar = 0
-        try:
-            filename = Minute.objects.get(meeting=self.meeting, group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=interimvar).filename
-            dir = Proceeding.objects.get(meeting_num=self.meeting).dir_name
-            retvar = "%s/minutes/%s" % (dir,filename)
-        except Minute.DoesNotExist:
-            retvar = ""
-        return retvar
+        docs = self.materials.filter(type="minutes")
+        if not docs:
+            return ""
+
+        # we use external_url at the moment, should probably regularize
+        # the filenames to match the document name instead
+        filename = docs[0].external_url
+        return "%s/minutes/%s" % (self.meeting.number, filename)
     def slides(self,interimvar=0):
         """
         Get all slides of this session.
@@ -337,12 +327,16 @@ class WgMeetingSessionProxy(TimeSlot):
         d.room_name = self.location.name
         return d
     
-    _dirs = {}
-
     # from ResolveAcronym:
     def acronym(self):
         s = self.get_session()
         if not s:
+            if self.type_id == "plenary":
+                for m in self.materials.filter(type="agenda"):
+                    if "plenaryw" in m.name:
+                        return "plenaryw"
+                    if "plenaryt" in m.name:
+                        return "plenaryt"
             return ""
         if hasattr(self, "interim"):
             return "i" + s.group.acronym

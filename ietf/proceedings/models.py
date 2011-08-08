@@ -379,9 +379,9 @@ class WgMeetingSession(models.Model, ResolveAcronym):
     sched_date3 = models.DateField(null=True, blank=True)
     special_agenda_note = models.CharField(blank=True, max_length=255)
     combined_room_id1 = models.ForeignKey(MeetingRoom, db_column='combined_room_id1', null=True, blank=True, related_name='here4')
-    combined_time_id1 = models.ForeignKey(MeetingTime, db_column='combined_time_id1', null=True, blank=True, related_name='now4')
+    combined_time_id1 = BrokenForeignKey(MeetingTime, db_column='combined_time_id1', null=True, blank=True, related_name='now4')
     combined_room_id2 = models.ForeignKey(MeetingRoom, db_column='combined_room_id2', null=True, blank=True, related_name='here5')
-    combined_time_id2 = models.ForeignKey(MeetingTime, db_column='combined_time_id2', null=True, blank=True, related_name='now5')
+    combined_time_id2 = BrokenForeignKey(MeetingTime, db_column='combined_time_id2', null=True, blank=True, related_name='now5')
     def __str__(self):
 	return "%s at %s" % (self.acronym(), self.meeting)
     def agenda_file(self,interimvar=0):

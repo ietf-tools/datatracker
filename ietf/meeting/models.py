@@ -7,6 +7,7 @@ from timedeltafield import TimedeltaField
 
 from redesign.group.models import Group
 from redesign.person.models import Person
+from redesign.doc.models import Document
 from redesign.name.models import TimeSlotTypeName, SessionStatusName, ConstraintName
 
 countries = pytz.country_names.items()
@@ -82,6 +83,7 @@ class TimeSlot(models.Model):
     duration = TimedeltaField()
     location = models.ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True)
+    materials = models.ManyToManyField(Document, blank=True)
 
     def __unicode__(self):
         location = self.get_location()
@@ -132,9 +134,13 @@ class Session(models.Model):
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(null=True, blank=True)
 
+    # contains the materials while the session is being requested,
+    # when it is scheduled, timeslot.materials should be used (FIXME: ask Henrik)
+    materials = models.ManyToManyField(Document, blank=True)
+
     def __unicode__(self):
         return u"%s: %s %s" % (self.meeting, self.group.acronym, self.timeslot.time.strftime("%H%M") if self.timeslot else "(unscheduled)")
-    
+
 # Agendas, Minutes and Slides are all mapped to Document.
 
 # IESG history is extracted from GroupHistory, rather than hand coded in a

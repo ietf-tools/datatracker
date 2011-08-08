@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-# Create your views here.
 #import models
 import datetime
 import os
@@ -62,7 +61,6 @@ def current_materials(request):
     return HttpResponseRedirect( reverse(show_html_materials, args=[meeting.meeting_num]) )
 
 def get_plenary_agenda(meeting_num, id):
-    # FIXME: fix
     try:
         plenary_agenda_file = settings.AGENDA_PATH + WgMeetingSession.objects.get(meeting=meeting_num,group_acronym_id=id).agenda_file()
         try:
@@ -126,8 +124,26 @@ def agenda_infoREDESIGN(num=None):
     if not ads:
         ads = list(IESGHistory.objects.select_related().filter(meeting=str(int(meeting.number)-1)))
     ads.sort(key=(lambda item: item.area.area_acronym.acronym))
-    plenaryw_agenda = get_plenary_agenda(meeting.number, -1)
-    plenaryt_agenda = get_plenary_agenda(meeting.number, -2)
+    
+    from redesign.doc.models import Document
+    plenary_agendas = Document.objects.filter(timeslot__meeting=meeting, timeslot__type="plenary", type="agenda").distinct()
+    plenaryw_agenda = plenaryt_agenda = "The Plenary has not been scheduled"
+    for agenda in plenary_agendas:
+        # we use external_url at the moment, should probably regularize
+        # the filenames to match the document name instead
+        path = os.path.join(settings.AGENDA_PATH, meeting.number, "agenda", agenda.external_url)
+        try:
+            f = open(path)
+            s = f.read()
+            f.close()
+        except IOError:
+             s = "THE AGENDA HAS NOT BEEN UPLOADED YET"
+        
+        if "plenaryw" in agenda.name:
+            plenaryw_agenda = s
+        elif "plenaryt" in agenda.name:
+            plenaryt_agenda = s
+                               
     return timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
