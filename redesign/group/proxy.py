@@ -36,7 +36,8 @@ class Acronym(Group):
 
 class Area(Group):
     objects = TranslatingManager(dict(area_acronym__acronym="acronym",
-                                      status=lambda v: ("state", {1: "active", 2: "dormant", 3: "conclude"}[v] )))
+                                      status=lambda v: ("state", {1: "active", 2: "dormant", 3: "conclude"}[v] )),
+                                 always_filter=dict(type="area"))
     
     def from_object(self, base):
         for f in base._meta.fields:
@@ -199,5 +200,24 @@ class IETFWG(Group):
         d.all = self.chairs()
         return d
     
+    class Meta:
+        proxy = True
+
+class IRTF(Group):
+    objects = TranslatingManager(dict(),
+                                 always_filter=dict(type="rg"))
+
+    #irtf_id = models.AutoField(primary_key=True)
+    @property
+    def irtf_id(self):
+        return self.pk
+    #acronym = models.CharField(blank=True, max_length=25, db_column='irtf_acronym') # same name
+    #name = models.CharField(blank=True, max_length=255, db_column='irtf_name') # same name
+    #charter_text = models.TextField(blank=True,null=True)
+    #meeting_scheduled = models.BooleanField(blank=True)
+    def __str__(self):
+	return self.acronym
+    #def chairs(self): # return a set of IRTFChair objects for this work group
+    #    return IRTFChair.objects.filter(irtf=self)
     class Meta:
         proxy = True
