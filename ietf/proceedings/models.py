@@ -587,10 +587,13 @@ class MeetingHour(models.Model):
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     MeetingOld = Meeting
+    ProceedingOld = Proceeding
     MeetingVenueOld = MeetingVenue
     MeetingTimeOld = MeetingTime
     WgMeetingSessionOld = WgMeetingSession
-    from ietf.meeting.proxy import MeetingProxy as Meeting, MeetingVenueProxy as MeetingVenue, MeetingTimeProxy as MeetingTime, WgMeetingSessionProxy as WgMeetingSession
+    SlideOld = Slide
+    SwitchesOld = Switches
+    from ietf.meeting.proxy import MeetingProxy as Meeting, ProceedingProxy as Proceeding, MeetingVenueProxy as MeetingVenue, MeetingTimeProxy as MeetingTime, WgMeetingSessionProxy as WgMeetingSession, SlideProxy as Slide, SwitchesProxy as Switches
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core

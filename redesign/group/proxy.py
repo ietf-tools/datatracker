@@ -119,6 +119,11 @@ class IETFWG(Group):
         return { "active": 1, "dormant": 2, "conclude": 3 }[self.state_id]
     #area_director = models.ForeignKey(AreaDirector, null=True)
     #meeting_scheduled = models.CharField(blank=True, max_length=3)
+    @property
+    def meeting_scheduled(self):
+        from meeting.models import Meeting
+        latest_meeting = Meeting.objects.order_by('-date')[0]
+        return "YES" if self.session_set.filter(meeting=latest_meeting) else "NO"
     #email_address = models.CharField(blank=True, max_length=60)
     @property
     def email_address(self):

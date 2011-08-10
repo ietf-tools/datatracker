@@ -29,6 +29,7 @@ class DocumentInfo(models.Model):
     abstract = models.TextField()
     rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
     pages = models.IntegerField(blank=True, null=True)
+    order = models.IntegerField(default=1)
     intended_std_level = models.ForeignKey(IntendedStdLevelName, blank=True, null=True)
     std_level = models.ForeignKey(StdLevelName, blank=True, null=True)
     ad = models.ForeignKey(Person, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)

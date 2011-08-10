@@ -1,6 +1,6 @@
 # old meeting models can be found in ../proceedings/models.py
 
-import pytz
+import pytz, datetime
 
 from django.db import models
 from timedeltafield import TimedeltaField
@@ -8,7 +8,7 @@ from timedeltafield import TimedeltaField
 from redesign.group.models import Group
 from redesign.person.models import Person
 from redesign.doc.models import Document
-from redesign.name.models import TimeSlotTypeName, SessionStatusName, ConstraintName
+from redesign.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName
 
 countries = pytz.country_names.items()
 countries.sort(lambda x,y: cmp(x[1], y[1]))
@@ -17,9 +17,10 @@ timezones = [(name, name) for name in pytz.common_timezones]
 timezones.sort()
 
 class Meeting(models.Model):
-    # Number is not an integer any more, in order to be able to accomodate
-    # interim meetings (and other variations?)
+    # number is either the number for IETF meetings, or some other
+    # identifier for interim meetings/IESG retreats/liaison summits/...
     number = models.CharField(max_length=64)
+    type = models.ForeignKey(MeetingTypeName)
     # Date is useful when generating a set of timeslot for this meeting, but
     # is not used to determine date for timeslot instances thereafter, as
     # they have their own datetime field.
@@ -37,11 +38,10 @@ class Meeting(models.Model):
     
     def __str__(self):
 	return "IETF-%s" % (self.number)
+    def time_zone_offset(self):
+        return pytz.timezone(self.time_zone).localize(datetime.datetime.combine(self.date, datetime.time(0, 0))).strftime("%z")
     def get_meeting_date (self,offset):
         return self.date + datetime.timedelta(days=offset)
-    # cut-off dates (draft submission cut-of, wg agenda cut-off, minutes
-    # submission cut-off), and more, are probably methods of this class,
-    # rather than fields on a Proceedings class.
 
     @classmethod
     def get_first_cut_off(cls):
@@ -60,6 +60,13 @@ class Meeting(models.Model):
         date = cls.objects.all().order_by('-date')[0].date
         return date + datetime.timedelta(days=-date.weekday(), weeks=1)
 
+    # the various dates are currently computed
+    def get_submission_start_date(self):
+        return self.date + datetime.timedelta(days=-90)
+    def get_submission_cut_off_date(self):
+        return self.date + datetime.timedelta(days=33)
+    def get_submission_correction_date(self):
+        return self.date + datetime.timedelta(days=59)
 
 class Room(models.Model):
     meeting = models.ForeignKey(Meeting)
@@ -82,8 +89,10 @@ class TimeSlot(models.Model):
     time = models.DateTimeField()
     duration = TimedeltaField()
     location = models.ForeignKey(Room, blank=True, null=True)
-    show_location = models.BooleanField(default=True)
+    show_location = models.BooleanField(default=True, help_text="Show location in agenda")
     materials = models.ManyToManyField(Document, blank=True)
+    session = models.ForeignKey('Session', null=True, blank=True, help_text=u"Scheduled group session, if any")
+    modified = models.DateTimeField(default=datetime.datetime.now)
 
     def __unicode__(self):
         location = self.get_location()
@@ -120,7 +129,6 @@ class Constraint(models.Model):
 
 class Session(models.Model):
     meeting = models.ForeignKey(Meeting)
-    timeslot = models.ForeignKey(TimeSlot, null=True, blank=True) # Null until session has been scheduled
     group = models.ForeignKey(Group)    # The group type determines the session type.  BOFs also need to be added as a group.
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)
@@ -132,16 +140,15 @@ class Session(models.Model):
     #
     status = models.ForeignKey(SessionStatusName)
     scheduled = models.DateTimeField(null=True, blank=True)
-    modified = models.DateTimeField(null=True, blank=True)
+    modified = models.DateTimeField(default=datetime.datetime.now)
 
     # contains the materials while the session is being requested,
-    # when it is scheduled, timeslot.materials should be used (FIXME: ask Henrik)
+    # when it is scheduled, timeslot.materials should be used
     materials = models.ManyToManyField(Document, blank=True)
 
     def __unicode__(self):
-        return u"%s: %s %s" % (self.meeting, self.group.acronym, self.timeslot.time.strftime("%H%M") if self.timeslot else "(unscheduled)")
-
-# Agendas, Minutes and Slides are all mapped to Document.
+        timeslots = self.timeslot_set.order_by('time')
+        return u"%s: %s %s" % (self.meeting, self.group.acronym, timeslots[0].time.strftime("%H%M") if timeslots else "(unscheduled)")
 
 # IESG history is extracted from GroupHistory, rather than hand coded in a
 # separate table.

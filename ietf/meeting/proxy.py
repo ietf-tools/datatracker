@@ -39,15 +39,12 @@ class MeetingProxy(Meeting):
     def get_meeting_date (self,offset):
         return self.start_date + datetime.timedelta(days=offset) 
     def num(self):
-        return self.meeting_num
+        return self.number
 
     @property
     def meeting_venue(self):
         return MeetingVenueProxy().from_object(self)
     
-    class Meta:
-        proxy = True
-
     @classmethod
     def get_first_cut_off(cls):
         start_date = cls.objects.all().order_by('-date')[0].start_date
@@ -64,6 +61,60 @@ class MeetingProxy(Meeting):
     def get_ietf_monday(cls):
         start_date = cls.objects.all().order_by('-date')[0].start_date
         return start_date + datetime.timedelta(days=-start_date.weekday(), weeks=1)
+
+    class Meta:
+        proxy = True
+
+class ProceedingProxy(Meeting):
+    objects = TranslatingManager(dict(meeting_num="number"))
+                                      
+    #meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True, primary_key=True)
+    @property
+    def meeting_num(self):
+        return MeetingProxy().from_object(self)
+    @property
+    def meeting_num_id(self):
+        return self.number
+    #dir_name = models.CharField(blank=True, max_length=25)
+    @property
+    def dir_name(self):
+        return self.number
+    #sub_begin_date = models.DateField(null=True, blank=True)
+    @property
+    def sub_begin_date(self):
+        return self.get_submission_start_date()
+    #sub_cut_off_date = models.DateField(null=True, blank=True)
+    @property
+    def sub_cut_off_date(self):
+        return self.get_submission_cut_off_date()
+    #frozen = models.IntegerField(null=True, blank=True)
+    #c_sub_cut_off_date = models.DateField(null=True, blank=True)
+    @property
+    def c_sub_cut_off_date(self):
+        return self.get_submission_correction_date()
+    #pr_from_date = models.DateField(null=True, blank=True)
+    #pr_to_date = models.DateField(null=True, blank=True)
+    def __str__(self):
+	return "IETF %s" % (self.meeting_num_id)
+    class Meta:
+        proxy = True
+    
+class SwitchesProxy(Meeting):
+    def from_object(self, base):
+        for f in base._meta.fields:
+            setattr(self, f.name, getattr(base, f.name))
+        return self
+    
+    #name = models.CharField(max_length=100)
+    #val = models.IntegerField(null=True, blank=True)
+    #updated_date = models.DateField(null=True, blank=True)
+    #updated_time = models.TimeField(null=True, blank=True)
+    def updated(self):
+        from django.db.models import Max
+	return max(self.timeslot_set.aggregate(Max('modified'))["modified__max"],
+                   self.session_set.aggregate(Max('modified'))["modified__max"])
+    class Meta:
+        proxy = True
 
 class MeetingVenueProxy(Meeting):
     objects = TranslatingManager(dict(meeting_num="number"))
@@ -191,58 +242,100 @@ class WgMeetingSessionProxy(TimeSlot):
     # because some previous sessions are now really time slots, to
     # make the illusion complete we thus have to forward all the
     # session stuff to the real session
-    objects = TranslatingManager(dict(group_acronym_id="session__group"))
+    objects = TranslatingManager(dict(group_acronym_id="session__group",
+                                      status__id=lambda v: ("state", {4: "sched"}[v])))
 
     def from_object(self, base):
         for f in base._meta.fields:
             setattr(self, f.name, getattr(base, f.name))
         return self
 
-    def get_session(self):
-        if not hasattr(self, "_session_cache"):
-            s = self.session_set.all()
-            self._session_cache = s[0] if s else None
-
-        return self._session_cache
-    
-    #session_id = models.AutoField(primary_key=True)
-    @property
-    def session_id(self):
-        return self.id
+    #session_id = models.AutoField(primary_key=True) # same name
     #meeting = models.ForeignKey(Meeting, db_column='meeting_num') # same name
     #group_acronym_id = models.IntegerField()
     @property
     def group_acronym_id(self):
-        s = self.get_session()
-        return s.group_id if s else -1
+        return self.session.group_id if self.session else -1
     #irtf = models.NullBooleanField()
+    @property
+    def irtf(self):
+        return 1 if self.session and self.session.group and self.session.group.type == "rg" else 0
     #num_session = models.IntegerField()
+    @property
+    def num_session(self):
+        return 1 if self.session else 0
     #length_session1 = models.CharField(blank=True, max_length=100)
+    @property
+    def length_session1(self):
+        if not self.session:
+            return "0"
+        
+        secs = self.session.requested_duration.seconds
+        if secs == 0:
+            return "0"
+        return str((secs / 60 - 30) / 30)
     #length_session2 = models.CharField(blank=True, max_length=100)
+    @property
+    def length_session2(self):
+        return "0"
     #length_session3 = models.CharField(blank=True, max_length=100)
+    @property
+    def length_session3(self):
+        return "0"
+
+    def conflicting_group_acronyms(self, level):
+        if not self.session:
+            return ""
+        
+        conflicts = Constraint.objects.filter(meeting=self.meeting_id,
+                                              target=self.session.group,
+                                              name=level)
+        return " ".join(c.source.acronym for c in conflicts)
+        
     #conflict1 = models.CharField(blank=True, max_length=255)
+    @property
+    def conflict1(self):
+        return self.conflicting_group_acronyms("conflict")
     #conflict2 = models.CharField(blank=True, max_length=255)
+    @property
+    def conflict2(self):
+        return self.conflicting_group_acronyms("conflic2")
     #conflict3 = models.CharField(blank=True, max_length=255)
+    @property
+    def conflict3(self):
+        return self.conflicting_group_acronyms("conflic3")
     #conflict_other = models.TextField(blank=True)
+    @property
+    def conflict_other(self):
+        return ""
     #special_req = models.TextField(blank=True)
+    @property
+    def special_req(self):
+        return self.session.comments if self.session else ""
     #number_attendee = models.IntegerField(null=True, blank=True)
     @property
     def number_attendee(self):
-        return self.get_session().attendees if self.get_session() else 0
+        return self.session.attendees if self.session else 0
     #approval_ad = models.IntegerField(null=True, blank=True)
     #status = models.ForeignKey(SessionStatus, null=True, blank=True) # same name
     #ts_status_id = models.IntegerField(null=True, blank=True)
     #requested_date = models.DateField(null=True, blank=True)
+    @property
+    def requested_date(self):
+        return self.session.requested.date() if self.session else None
     #approved_date = models.DateField(null=True, blank=True)
     #requested_by = BrokenForeignKey(PersonOrOrgInfo, db_column='requested_by', null=True, null_values=(0, 888888))
+    @property
+    def requested_by(self):
+        return self.session.requested_by if self.session else None
     #scheduled_date = models.DateField(null=True, blank=True)
     @property
     def scheduled_date(self):
-        return self.get_session().scheduled.date() if self.get_session() else ""
+        return self.session.scheduled.date() if self.session else ""
     #last_modified_date = models.DateField(null=True, blank=True)
     @property
     def last_modified_date(self):
-        return self.get_session().modified.date() if self.get_session() else ""
+        return self.session.modified.date() if self.session else ""
     #ad_comments = models.TextField(blank=True,null=True)
     #sched_room_id1 = models.ForeignKey(MeetingRoom, db_column='sched_room_id1', null=True, blank=True, related_name='here1')
     #sched_time_id1 = BrokenForeignKey(MeetingTime, db_column='sched_time_id1', null=True, blank=True, related_name='now1')
@@ -256,7 +349,7 @@ class WgMeetingSessionProxy(TimeSlot):
     #special_agenda_note = models.CharField(blank=True, max_length=255)
     @property
     def special_agenda_note(self):
-        return self.get_session().agenda_note if self.get_session() else ""
+        return self.session.agenda_note if self.session else ""
     #combined_room_id1 = models.ForeignKey(MeetingRoom, db_column='combined_room_id1', null=True, blank=True, related_name='here4')
     #combined_time_id1 = models.ForeignKey(MeetingTime, db_column='combined_time_id1', null=True, blank=True, related_name='now4')
     #combined_room_id2 = models.ForeignKey(MeetingRoom, db_column='combined_room_id2', null=True, blank=True, related_name='here5')
@@ -285,41 +378,21 @@ class WgMeetingSessionProxy(TimeSlot):
         filename = docs[0].external_url
         return "%s/minutes/%s" % (self.meeting.number, filename)
     def slides(self,interimvar=0):
-        """
-        Get all slides of this session.
-        """
-        # FIXME
-        irtfvar = 0
-        if self.irtf:
-            irtfvar = self.group_acronym_id
-        if interimvar == 0:
-            try:
-                if self.interim:
-                    interimvar = 1
-            except AttributeError:
-                    interimvar = 0
-        slides = Slide.objects.filter(meeting=self.meeting,group_acronym_id=self.group_acronym_id,irtf=irtfvar,interim=interimvar).order_by("order_num")
-        return slides
-    def interim_meeting (self):
-        # FIXME
-        if self.minute_file(1):
-            return True
-        elif self.agenda_file(1):
-            return True
-        elif self.slides(1):
-            return True
-        else:
-            return False
-    def length_session1_desc (self):
-        if self.requested_duration.seconds == 60 * 60:
-            return "1 hour"
-        else:
-            return "%.1f hours" % (float(self.requested_duration.seconds) / (60 * 60))
-    def length_session2_desc (self):
+        return SlideProxy.objects.filter(timeslot=self).order_by("order")
+    def interim_meeting(self):
+        return False
+    def length_session1_desc(self):
+        l = self.length_session1
+        return { "0": "", "1": "1 hour", "2": "1.5 hours", "3": "2 hours", "4": "2.5 hours"}[l]
+    def length_session2_desc(self):
         return ""
-    def length_session3_desc (self):
+    def length_session3_desc(self):
         return ""
 
+    @property
+    def ordinality(self):
+        return 1
+    
     @property
     def room_id(self):
         class Dummy: pass
@@ -329,51 +402,53 @@ class WgMeetingSessionProxy(TimeSlot):
     
     # from ResolveAcronym:
     def acronym(self):
-        s = self.get_session()
-        if not s:
+        if not self.session:
             if self.type_id == "plenary":
+                if "Operations and Administration" in self.name:
+                    return "plenaryw"
+                if "Technical" in self.name:
+                    return "plenaryt"
                 for m in self.materials.filter(type="agenda"):
                     if "plenaryw" in m.name:
                         return "plenaryw"
                     if "plenaryt" in m.name:
                         return "plenaryt"
-            return ""
+            return "%s" % self.pk
         if hasattr(self, "interim"):
-            return "i" + s.group.acronym
+            return "i" + self.session.group.acronym
         else:
-            return s.group.acronym
+            return self.session.group.acronym
     def acronym_lower(self):
         return self.acronym().lower()
     def acronym_name(self):
-        s = self.get_session()
-        if not s:
+        if not self.session:
             return self.name
         if hasattr(self, "interim"):
-            return s.group.name + " (interim)"
+            return self.session.group.name + " (interim)"
         else:
-            return s.group.name
+            return self.session.group.name
     def area(self):
-        s = self.get_session()
-        if not s:
+        if not self.session:
             return ""
-        return s.group.parent.acronym
+        return self.session.group.parent.acronym
     def area_name(self):
-        s = self.get_session()
-        if not s:
+        if self.type_id == "plenary":
+            return "Plenary Sessions"
+        elif self.type_id == "other":
+            return "Training"
+        elif not self.session:
             return ""
-        return s.group.parent.name
+        return self.session.group.parent.name
     def isWG(self):
-        s = self.get_session()
-        if not s or not s.group:
+        if not self.session or not self.session.group:
             return False
-        if s.group.type_id == "wg" and s.group.state_id != "bof":
+        if self.session.group.type_id == "wg" and self.session.group.state_id != "bof":
             return True
     def group_type_str(self):
-        s = self.get_session()
-        if not s or not s.group:
+        if not self.session or not self.session.group:
             return ""
-        if s.group and s.group.type_id == "wg":
-            if s.group.state_id == "bof":
+        if self.session.group and self.session.group.type_id == "wg":
+            if self.session.group.state_id == "bof":
                 return "BOF"
             else:
                 return "WG"
@@ -383,3 +458,43 @@ class WgMeetingSessionProxy(TimeSlot):
     class Meta:
         proxy = True
         
+class SlideProxy(Document):
+    objects = TranslatingManager(dict(), always_filter=dict(type="slides"))
+
+    SLIDE_TYPE_CHOICES=(
+	('1', '(converted) HTML'),
+	('2', 'PDF'),
+	('3', 'Text'),
+	('4', 'PowerPoint -2003 (PPT)'),
+	('5', 'Microsoft Word'),
+	('6', 'PowerPoint 2007- (PPTX)'),
+    )
+    #meeting = models.ForeignKey(Meeting, db_column='meeting_num')
+    @property
+    def meeting_id(self):
+        return self.name.split("-")[1]
+    #group_acronym_id = models.IntegerField(null=True, blank=True)
+    #slide_num = models.IntegerField(null=True, blank=True)
+    @property
+    def slide_name(self):
+        return int(self.name.split("-")[3])
+    #slide_type_id = models.IntegerField(choices=SLIDE_TYPE_CHOICES)
+    #slide_name = models.CharField(blank=True, max_length=255)
+    @property
+    def slide_name(self):
+        return self.title
+    #irtf = models.IntegerField()
+    #interim = models.BooleanField()
+    #order_num = models.IntegerField(null=True, blank=True)
+    @property
+    def order_num(self):
+        return self.order
+    #in_q = models.IntegerField(null=True, blank=True)
+    def acronym():
+        return self.name.split("-")[2]
+    def __str__(self):
+	return "IETF%d: %s slides (%s)" % (self.meeting_id, self.acronym(), self.slide_name)
+    def file_loc(self):
+        return "%s/slides/%s" % (self.meeting_id, self.external_url)
+    class Meta:
+        proxy = True

@@ -59,7 +59,8 @@ admin.site.register(SessionName, SessionNameAdmin)
 class SlideAdmin(admin.ModelAdmin):
     list_filter = ['meeting', ]
     pass
-admin.site.register(Slide, SlideAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(Slide, SlideAdmin)
 
 class SwitchesAdmin(admin.ModelAdmin):
     pass

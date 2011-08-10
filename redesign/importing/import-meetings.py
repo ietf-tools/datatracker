@@ -15,7 +15,7 @@ from django.template.defaultfilters import slugify
 
 from ietf.idtracker.models import AreaDirector, IETFWG, Acronym, IRTF
 from ietf.meeting.models import *
-from ietf.proceedings.models import Meeting as MeetingOld, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda
+from ietf.proceedings.models import Meeting as MeetingOld, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda, Minute, Slide
 from redesign.person.models import *
 from redesign.doc.models import Document, DocAlias
 from redesign.importing.utils import get_or_create_email, old_person_to_person
@@ -23,12 +23,14 @@ from redesign.name.models import *
 from redesign.name.utils import name
 
 
-# imports Meeting, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda
+# imports Meeting, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda, Minute, Slide
 
 # assumptions:
 #  - persons have been imported
 #  - groups have been imported
 
+ietf_meeting = name(MeetingTypeName, "ietf", "IETF")
+interim_meeting = name(MeetingTypeName, "interim", "Interim")
 
 session_status_mapping = {
     1: name(SessionStatusName, "schedw", "Waiting for Scheduling"),
@@ -47,9 +49,15 @@ registration_slot = name(TimeSlotTypeName, "reg", "Registration")
 plenary_slot = name(TimeSlotTypeName, "plenary", "Plenary")
 other_slot = name(TimeSlotTypeName, "other", "Other")
 
-conflict_constraint = name(ConstraintName, "conflict", "Conflicts with")
+conflict_constraints = {
+    1: name(ConstraintName, "conflict", "Conflicts with"),
+    2: name(ConstraintName, "conflic2", "Conflicts with (secondary)"),
+    3: name(ConstraintName, "conflic3", "Conflicts with (tertiary)"),
+    }
 
 agenda_doctype = name(DocTypeName, "agenda", "Agenda")
+minutes_doctype = name(DocTypeName, "minutes", "Minutes")
+slides_doctype = name(DocTypeName, "slides", "Slides")
 
 system_person = Person.objects.get(name="(System)")
 obviously_bogus_date = datetime.date(1970, 1, 1)
@@ -63,6 +71,7 @@ for o in MeetingOld.objects.all():
         m = Meeting(number="%s" % o.meeting_num)
         m.pk = o.pk
 
+    m.type = ietf_meeting
     m.date = o.start_date
     m.city = o.city
 
@@ -141,22 +150,6 @@ def parse_time_desc(o):
 
     return (datetime.datetime.combine(d, start_time), datetime.datetime.combine(d, end_time))
     
-def get_or_create_session_timeslot(meeting_time, room):
-    meeting = Meeting.objects.get(number=s.meeting_id)
-    starts, ends = parse_time_desc(meeting_time)
-    
-    try:
-        slot = TimeSlot.objects.get(meeting=meeting, time=starts, location=room)
-    except TimeSlot.DoesNotExist:
-        slot = TimeSlot(meeting=meeting, time=starts, location=room)
-
-        slot.type = session_slot
-        slot.name = meeting_time.session_name.session_name if meeting_time.session_name_id else "Unknown"
-        slot.duration = ends - starts
-        slot.save()
-        
-    return slot
-
 requested_length_mapping = {
     None: 0, # assume NULL to mean nothing particular requested
     "1": 60 * 60,
@@ -165,42 +158,53 @@ requested_length_mapping = {
     "4": 150 * 60,
     }
 
-def import_materials_for_timeslot(timeslot, session=None, wg_meeting_session=None):
+def import_materials(wg_meeting_session, timeslot=None, session=None):
     if timeslot:
         meeting = timeslot.meeting
         materials = timeslot.materials
     else:
         meeting = session.meeting
         materials = session.materials
-    
-    if wg_meeting_session:
+
+    def import_material_kind(kind, doctype):
         # import agendas
         irtf = 0
         if wg_meeting_session.irtf:
             irtf = wg_meeting_session.group_acronym_id
-        agendas = WgAgenda.objects.filter(meeting=wg_meeting_session.meeting_id,
-                                          group_acronym_id=wg_meeting_session.group_acronym_id,
-                                          irtf=irtf)
+        found = kind.objects.filter(meeting=wg_meeting_session.meeting_id,
+                                    group_acronym_id=wg_meeting_session.group_acronym_id,
+                                    irtf=irtf,
+                                    interim=0)
 
-        for o in agendas:
+        for o in found:
             if session:
                 acronym = session.group.acronym
             else:
-                acronym = os.path.splitext(o.filename)[0].lower()
-            rev = "01"
-            name = ("agenda-%s-%s-%s" % (meeting.number, acronym, rev))
+                acronym = wg_meeting_session.acronym()
+            name = "%s-%s-%s" % (doctype.slug, meeting.number, acronym)
+            if kind == Slide:
+                name += "-%s" % o.slide_num
 
             try:
-                d = Document.objects.get(type=agenda_doctype, docalias__name=name)
+                d = Document.objects.get(type=doctype, docalias__name=name)
             except Document.DoesNotExist:
-                d = Document(type=agenda_doctype, name=name)
+                d = Document(type=doctype, name=name)
                 
             if session:
                 session_name = session.group.acronym.upper()
             else:
                 session_name = timeslot.name
-            d.title = u"Agenda for %s at %s" % (session_name, meeting)
-            d.external_url = o.filename # save filenames for now as they don't appear to be quite regular
+
+            if kind == Slide:
+                d.title = o.slide_name
+                l = o.file_loc()
+                d.external_url = l[l.find("slides/") + len("slides/"):]
+                d.order = o.order_num or 1
+            else:
+                d.title = u"%s for %s at %s" % (doctype.name, session_name, meeting)
+                d.external_url = o.filename # save filenames for now as they don't appear to be quite regular
+            d.rev = "01"
+            d.group = session.group if session else None
 
             d.save()
                 
@@ -208,7 +212,11 @@ def import_materials_for_timeslot(timeslot, session=None, wg_meeting_session=Non
 
             materials.add(d)
 
-for o in WgMeetingSession.objects.all().order_by("pk").filter(pk=1699):
+    import_material_kind(WgAgenda, agenda_doctype)
+    import_material_kind(Minute, minutes_doctype)
+    import_material_kind(Slide, slides_doctype)
+
+for o in WgMeetingSession.objects.all().order_by("pk"):
     # num_session is unfortunately not quite reliable, seems to be
     # right for 1 or 2 but not 3 and it's sometimes null
     sessions = o.num_session or 1
@@ -217,22 +225,35 @@ for o in WgMeetingSession.objects.all().order_by("pk").filter(pk=1699):
     
     print "importing WgMeetingSession", o.pk, "subsessions", sessions
 
-    print o.sched_time_id1,  o.sched_time_id2,  o.sched_time_id3
-    
     for i in range(1, 1 + sessions):
         pk = o.pk + (i - 1) * 10000 # move extra session out of the way
         try:
             s = Session.objects.get(pk=pk)
         except:
             s = Session(pk=pk)
-
         s.meeting = Meeting.objects.get(number=o.meeting_id)
-        sched_time_id = getattr(o, "sched_time_id%s" % i)
-        if sched_time_id:
-            room = Room.objects.get(pk=getattr(o, "sched_room_id%s_id" % i))
-            s.timeslot = get_or_create_session_timeslot(sched_time_id, room)
-        else:
-            s.timeslot = None
+
+        def get_timeslot(attr):
+            meeting_time = getattr(o, attr)
+            if not meeting_time:
+                return None
+            room = Room.objects.get(pk=getattr(o, attr.replace("time", "room") + "_id"))
+
+            starts, ends = parse_time_desc(meeting_time)
+    
+            slots = TimeSlot.objects.filter(meeting=s.meeting, time=starts, location=room).filter(models.Q(session=s) | models.Q(session=None))
+            if slots:
+                slot = slots[0]
+            else:
+                slot = TimeSlot(meeting=s.meeting, time=starts, location=room)
+
+                slot.type = session_slot
+                slot.name = meeting_time.session_name.session_name if meeting_time.session_name_id else "Unknown"
+                slot.duration = ends - starts
+
+            return slot
+
+        timeslot = get_timeslot("sched_time_id%s" % i)
         if o.irtf:
             s.group = Group.objects.get(acronym=IRTF.objects.get(pk=o.group_acronym_id).acronym.lower())
         else:
@@ -241,22 +262,24 @@ for o in WgMeetingSession.objects.all().order_by("pk").filter(pk=1699):
                 # this wasn't actually a WG session, but rather a tutorial
                 # or similar, don't create a session but instead modify
                 # the time slot appropriately
-                if not s.timeslot:
+                if not timeslot:
                     print "IGNORING unscheduled non-WG-session", acronym.name
                     continue
                 
-                if sched_time_id.session_name_id:
-                    s.timeslot.name = sched_time_id.session_name.session_name
+                meeting_time = getattr(o, "sched_time_id%s" % i)
+                if meeting_time.session_name_id:
+                    timeslot.name = meeting_time.session_name.session_name
                 else:
-                    s.timeslot.name = acronym.name
+                    timeslot.name = acronym.name
 
-                if "Plenary" in s.timeslot.name:
-                    s.timeslot.type = plenary_slot
+                if "Plenary" in timeslot.name:
+                    timeslot.type = plenary_slot
                 else:
-                    s.timeslot.type = other_slot
-                s.timeslot.save()
+                    timeslot.type = other_slot
+                timeslot.modified = o.last_modified_date
+                timeslot.save()
                 
-                import_materials_for_timeslot(s.timeslot, wg_meeting_session=o)
+                import_materials(o, timeslot=timeslot)
                 
                 continue
 
@@ -266,14 +289,12 @@ for o in WgMeetingSession.objects.all().order_by("pk").filter(pk=1699):
         s.requested = o.requested_date or obviously_bogus_date
         s.requested_by = old_person_to_person(o.requested_by) if o.requested_by else system_person
         s.requested_duration = requested_length_mapping[getattr(o, "length_session%s" % i)]
-        comments = []
-        special_req = (o.special_req or "").strip()
-        if special_req:
-            comments.append(u"Special requests:\n" + special_req)
+        s.comments = (o.special_req or "").strip()
         conflict_other = (o.conflict_other or "").strip()
         if conflict_other:
-            comments.append(u"Other conflicts:\n" + conflict_other)
-        s.comments = u"\n\n".join(comments)
+            if s.comments:
+                s.comments += " "
+            s.comments += u"(other conflicts: %s)" % conflict_other
         s.status = session_status_mapping[o.status_id or 5]
 
         s.scheduled = o.scheduled_date
@@ -281,8 +302,24 @@ for o in WgMeetingSession.objects.all().order_by("pk").filter(pk=1699):
 
         s.save()
 
-        import_materials_for_timeslot(s.timeslot, session=s, wg_meeting_session=o)
+        if timeslot:
+            timeslot.session = s
+            timeslot.modified = s.modified
+            timeslot.save()
+            
+        import_materials(o, timeslot=timeslot, session=s)
 
+        # some sessions have been scheduled over multiple time slots
+        if i < 3:
+            timeslot = get_timeslot("combined_time_id%s" % i)
+            if timeslot:
+                timeslot.session = s
+                timeslot.modified = s.modified
+                timeslot.save()
+                import_materials(o, timeslot=timeslot, session=s)
+
+
+    for i in (1, 2, 3):
         conflict = (getattr(o, "conflict%s" % i) or "").replace(",", " ").lower()
         conflicting_groups = [g for g in conflict.split() if g]
         for target in Group.objects.filter(acronym__in=conflicting_groups):
@@ -290,7 +327,7 @@ for o in WgMeetingSession.objects.all().order_by("pk").filter(pk=1699):
                 meeting=s.meeting,
                 source=target,
                 target=s.group,
-                name=conflict_constraint)
+                name=conflict_constraints[i])
 
 
     # missing following fields from old: ts_status_id (= third session

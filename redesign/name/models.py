@@ -62,8 +62,10 @@ class IntendedStdLevelName(NameModel):
     Practice, Historic, ..."""
 class BallotPositionName(NameModel):
     """ Yes, NoObjection, Abstain, Discuss, Recuse """
+class MeetingTypeName(NameModel):
+    """IETF, Interim"""
 class SessionStatusName(NameModel):
-    """ Waiting for Approval, Approved, Waiting for Scheduling, Scheduled, Cancelled, Disapproved"""
+    """Waiting for Approval, Approved, Waiting for Scheduling, Scheduled, Cancelled, Disapproved"""
 class TimeSlotTypeName(NameModel):
     """Session, Break, Registration"""
 class ConstraintName(NameModel):
