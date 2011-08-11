@@ -155,13 +155,20 @@ class Stream(models.Model):
                 return None
         return None
 
-    def _irtf_chairs(self, document):
+    def _irtf_chairs_for_document(self, document):
         group = self._irtf_group(document)
         if not group:
             return []
         chairs = [i.person for i in group.chairs()]
         chairs.append(Role.objects.get(pk=Role.IRTF_CHAIR).person)
         return chairs
+
+
+    def _ietf_delegates_for_document(self, document):
+        group = self.get_group_for_document(document)
+        if not group:
+            return False
+        return [i.person for i in group.wgdelegate_set.all()]
 
     def get_group_for_document(self, document):
         if hasattr(self, '_%s_group' % self.name.lower()):
@@ -181,8 +188,8 @@ class Stream(models.Model):
         return attr
 
     def get_chairs_for_document(self, document):
-        if hasattr(self, '_%s_chairs' % self.name.lower()):
-            return getattr(self, '_%s_chairs' % self.name.lower())(document)
+        if hasattr(self, '_%s_chairs_for_document' % self.name.lower()):
+            return getattr(self, '_%s_chairs_for_document' % self.name.lower())(document)
 
         group = self.get_group_for_document(document)
         if not group or not self.group_chair_attribute:
@@ -198,6 +205,39 @@ class Stream(models.Model):
             obj = attr
         return attr
 
+    def get_delegates_for_document(self, document):
+        delegates = []
+        if hasattr(self, '_%s_delegates_for_document' % self.name.lower()):
+            delegates = getattr(self, '_%s_delegates_for_document' % self.name.lower())(document)
+        delegates += [i.person for i in self.streamdelegate_set.all()]
+        return delegates
+
+    def get_chairs(self):
+        chairs = []
+        if hasattr(self, '_%s_stream_chairs' % self.name.lower()):
+            chairs += list(getattr(self, '_%s_stream_chairs' % self.name.lower())(person))
+       
+        role_key = getattr(Role, '%s_CHAIR' % self.name.upper(), None)
+        if role_key:
+            try:
+                chairs.append(Role.objects.get(pk=role_key).person)
+            except Role.DoesNotExist:
+                pass
+        return list(set(chairs))
+
+    def get_delegates(self):
+        delegates = []
+        if hasattr(self, '_%s_stream_delegates' % self.name.lower()):
+            delegates += list(getattr(self, '_%s_stream_delegates' % self.name.lower())(person))
+        delegates += [i.person for i in StreamDelegate.objects.filter(stream=self)]
+        return list(set(delegates))
+
+    def check_chair(self, person):
+        return person in self.get_chairs()
+
+    def check_delegate(self, person):
+        return person in self.get_delegates()
+
 
 class StreamedID(models.Model):
     draft = models.OneToOneField(InternetDraft)
@@ -205,3 +245,8 @@ class StreamedID(models.Model):
 
     def get_group(self):
         return self.stream.get_group_for_document(self.draft)
+
+
+class StreamDelegate(models.Model):
+    stream = models.ForeignKey(Stream)
+    person = models.ForeignKey(PersonOrOrgInfo)
