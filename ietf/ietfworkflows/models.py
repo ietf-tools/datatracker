@@ -148,7 +148,7 @@ class Stream(models.Model):
 
     def _irtf_group(self, document):
         filename = document.filename.split('-')
-        if len(filename) > 2 and filename[0] == 'draft' and filename[1] =='irtf':
+        if len(filename) > 2 and filename[0] == 'draft' and filename[1] == 'irtf':
             try:
                 return IRTF.objects.get(acronym=filename[2])
             except IRTF.DoesNotExist:
@@ -162,7 +162,6 @@ class Stream(models.Model):
         chairs = [i.person for i in group.chairs()]
         chairs.append(Role.objects.get(pk=Role.IRTF_CHAIR).person)
         return chairs
-
 
     def _ietf_delegates_for_document(self, document):
         group = self.get_group_for_document(document)
@@ -215,8 +214,8 @@ class Stream(models.Model):
     def get_chairs(self):
         chairs = []
         if hasattr(self, '_%s_stream_chairs' % self.name.lower()):
-            chairs += list(getattr(self, '_%s_stream_chairs' % self.name.lower())(person))
-       
+            chairs += list(getattr(self, '_%s_stream_chairs' % self.name.lower())())
+
         role_key = getattr(Role, '%s_CHAIR' % self.name.upper(), None)
         if role_key:
             try:
@@ -228,7 +227,7 @@ class Stream(models.Model):
     def get_delegates(self):
         delegates = []
         if hasattr(self, '_%s_stream_delegates' % self.name.lower()):
-            delegates += list(getattr(self, '_%s_stream_delegates' % self.name.lower())(person))
+            delegates += list(getattr(self, '_%s_stream_delegates' % self.name.lower())())
         delegates += [i.person for i in StreamDelegate.objects.filter(stream=self)]
         return list(set(delegates))
 

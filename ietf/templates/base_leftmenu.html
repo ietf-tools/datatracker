@@ -33,7 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% endcomment %}
 {% load wg_menu %} 
-{% load ietf_filters %}
+{% load ietf_filters ietf_streams %}
 <ul>
 {% if user|in_group:"Area_Director" %}
 <li class="sect first">AD Dashboard</li>
@@ -46,6 +46,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <li class="sect first">Secretariat</li>
   <li><a href="{% url ietf.iesg.views.telechat_dates %}">Telechat Dates</a></li>
   <li><a href="{% url iesg_working_group_actions %}">Working Groups</a></li>
+{% endif %}
+{% get_user_managed_streams user as stream_list %}
+{% if stream_list %}
+<li class="sect{% if not user|in_group:"Area_Director,Secretariat" %} first{% endif %}">Streams</li>
+  {% for stream in stream_list %}
+  <li{% if forloop.last %} style="margin-bottom: 2px;"{% endif %}><a href="{% url stream_delegates stream.name %}">{{ stream.name }} stream</a></li>
+  {% endfor %}
 {% endif %}
 <li class="sect{% if not user|in_group:"Area_Director,Secretariat" %} first{% endif %}">Working Groups</li>
 

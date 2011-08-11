@@ -6,7 +6,9 @@ from ietf.ietfworkflows.utils import (get_workflow_for_draft,
 from ietf.wgchairs.accounts import (can_manage_shepherd_of_a_document,
                                     can_manage_writeup_of_a_document)
 from ietf.ietfworkflows.streams import get_stream_from_wrapper
-from ietf.ietfworkflows.accounts import (can_edit_state, can_edit_stream)
+from ietf.ietfworkflows.models import Stream
+from ietf.ietfworkflows.accounts import (can_edit_state, can_edit_stream,
+                                         is_chair_of_stream)
 
 
 register = template.Library()
@@ -14,7 +16,6 @@ register = template.Library()
 
 @register.inclusion_tag('ietfworkflows/stream_state.html', takes_context=True)
 def stream_state(context, doc):
-    request = context.get('request', None)
     data = {}
     stream = get_stream_from_wrapper(doc)
     data.update({'stream': stream})
@@ -72,3 +73,33 @@ def edit_actions(context, wrapper):
         'draft': draft,
         'doc': wrapper,
     }
+
+
+class StreamListNode(template.Node):
+
+    def __init__(self, user, var_name):
+        self.user = user
+        self.var_name = var_name
+
+    def render(self, context):
+        user = self.user.resolve(context)
+        streams = []
+        for i in Stream.objects.all():
+            if is_chair_of_stream(user, i):
+                streams.append(i)
+        context.update({self.var_name: streams})
+        return ''
+
+
+@register.tag
+def get_user_managed_streams(parser, token):
+    firstbits = token.contents.split(None, 2)
+    if len(firstbits) != 3:
+        raise template.TemplateSyntaxError("'get_user_managed_streams' tag takes three arguments")
+    user = parser.compile_filter(firstbits[1])
+    lastbits_reversed = firstbits[2][::-1].split(None, 2)
+    if lastbits_reversed[1][::-1] != 'as':
+        raise template.TemplateSyntaxError("next-to-last argument to 'get_user_managed_stream' tag must"
+                                  " be 'as'")
+    var_name = lastbits_reversed[0][::-1]
+    return StreamListNode(user, var_name)
