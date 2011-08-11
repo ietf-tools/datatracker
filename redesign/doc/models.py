@@ -2,13 +2,14 @@
 
 from django.db import models
 from django.core.urlresolvers import reverse as urlreverse
+from django.conf import settings
 
 from redesign.group.models import *
 from redesign.name.models import *
 from redesign.person.models import Email, Person
 from redesign.util import admin_link
 
-import datetime
+import datetime, os
 
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
@@ -39,6 +40,15 @@ class DocumentInfo(models.Model):
     note = models.TextField(blank=True)
     internal_comments = models.TextField(blank=True)
 
+    def get_file_path(self):
+        if self.type_id == "draft":
+            return settings.INTERNET_DRAFT_PATH
+        elif self.type_id in ("agenda", "minutes", "slides"):
+            meeting = self.name.split("-")[1]
+            return os.path.join(settings.AGENDA_PATH, meeting, self.type_id) + "/"
+        else:
+            raise NotImplemented
+    
     class Meta:
         abstract = True
     def author_list(self):
