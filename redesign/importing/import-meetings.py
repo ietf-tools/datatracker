@@ -185,6 +185,8 @@ def import_materials(wg_meeting_session, timeslot=None, session=None):
             if kind == Slide:
                 name += "-%s" % o.slide_num
 
+            name = name.lower()
+
             try:
                 d = Document.objects.get(type=doctype, docalias__name=name)
             except Document.DoesNotExist:
