@@ -498,3 +498,26 @@ class SlideProxy(Document):
         return "%s/slides/%s" % (self.meeting_id, self.external_url)
     class Meta:
         proxy = True
+
+class IESGHistoryProxy(Person):
+    def from_object(self, base):
+        for f in base._meta.fields:
+            setattr(self, f.name, getattr(base, f.name))
+        return self
+
+    #meeting = models.ForeignKey(Meeting, db_column='meeting_num')
+    def from_role(self, role):
+        self.from_object(role.email.person)
+        from redesign.group.proxy import Area
+        self.area = Area().from_object(role.group)
+        self.affiliation = "" #role.email.affiliation
+        return self
+    #area = models.ForeignKey(Area, db_column='area_acronym_id')
+    #person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+    @property
+    def person(self):
+        return self
+    #def __str__(self):
+    #    return "IESG%s: %s (%s)" % (self.meeting_id, self.person,self.area)
+    class Meta:
+        proxy = True

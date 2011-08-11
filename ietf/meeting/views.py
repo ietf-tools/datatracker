@@ -138,11 +138,18 @@ def agenda_infoREDESIGN(num=None):
 
     update = Switches().from_object(meeting)
     venue = meeting.meeting_venue
-        
-    ads = list(IESGHistory.objects.select_related().filter(meeting=int(meeting.number)))
-    if not ads:
-        ads = list(IESGHistory.objects.select_related().filter(meeting=int(meeting.number)-1))
-    ads.sort(key=(lambda item: item.area.area_acronym.acronym))
+
+    ads = []
+    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
+    from redesign.group.models import Group, find_group_history_active_at
+    for g in Group.objects.filter(type="area").order_by("acronym"):
+        history = find_group_history_active_at(g, meeting_time)
+        if history:
+            if history.state_id == "active":
+                ads.extend(IESGHistory().from_role(x) for x in history.rolehistory_set.filter(name="ad"))
+        else:
+            if g.state_id == "active":
+                ads.extend(IESGHistory().from_role(x) for x in g.role_set.filter(name="ad"))
     
     from redesign.doc.models import Document
     plenary_agendas = Document.objects.filter(timeslot__meeting=meeting, timeslot__type="plenary", type="agenda").distinct()

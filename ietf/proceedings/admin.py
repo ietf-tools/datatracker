@@ -7,7 +7,8 @@ class IESGHistoryAdmin(admin.ModelAdmin):
     list_display = ['meeting', 'area', 'person']
     list_filter = ['meeting', ]
     raw_id_fields = ["person", ]
-admin.site.register(IESGHistory, IESGHistoryAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(IESGHistory, IESGHistoryAdmin)
 
 class MeetingAdmin(admin.ModelAdmin):
     list_display=('meeting_num', 'start_date', 'city', 'state', 'country', 'time_zone')

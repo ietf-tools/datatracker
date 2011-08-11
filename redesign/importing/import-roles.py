@@ -18,6 +18,7 @@ from redesign.name.utils import name
 from redesign.importing.utils import get_or_create_email
 
 from ietf.idtracker.models import IESGLogin, AreaDirector, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
+from ietf.proceedings.models import IESGHistory
 
 
 # assumptions:
@@ -25,7 +26,7 @@ from ietf.idtracker.models import IESGLogin, AreaDirector, PersonOrOrgInfo, WGCh
 #  - groups have been imported
 
 # imports IESGLogin, AreaDirector, WGEditor, WGChair, IRTFChair,
-# WGSecretary, WGTechAdvisor, NomCom chairs from ChairsHistory,
+# WGSecretary, WGTechAdvisor, NomCom chairs from ChairsHistory, IESGHistory
 
 # FIXME: should probably import Role, LegacyWgPassword, LegacyLiaisonUser
 
@@ -81,15 +82,16 @@ for o in WGChair.objects.all():
     except PersonOrOrgInfo.DoesNotExist:
         print "SKIPPING WGChair", acronym, "with invalid person id", o.person_id
         continue
-    
-    if acronym in ("apples", "apptsv", "usac", "null", "dirdir"):
-        print "SKIPPING WGChair", acronym, o.person
+
+    try:
+        group = Group.objects.get(acronym=acronym)
+    except Group.DoesNotExist:
+        print "SKIPPING WGChair", o.person, "with non-existing group", acronym
         continue
 
     print "importing WGChair", acronym, o.person
 
     email = get_or_create_email(o, create_fake=True)
-    group = Group.objects.get(acronym=acronym)
 
     Role.objects.get_or_create(name=chair_role, group=group, email=email)
 
@@ -170,4 +172,59 @@ for o in AreaDirector.objects.all():
     else:
         Role.objects.get_or_create(name=role_type, group=area, email=email)
 
+# IESGHistory
+emails_for_time = {}
+for o in IESGHistory.objects.all().order_by('meeting__start_date', 'pk'):
+    print "importing IESGHistory", o.pk, o.area, o.person, o.meeting
+    email = get_or_create_email(o, create_fake=False)
+    if not email:
+        "SKIPPING IESGHistory with unknown email"
+        continue
 
+    # our job here is to make sure we either have the same AD today or
+    # got proper GroupHistory and RoleHistory objects in the database;
+    # there's only incomplete information available in the database so
+    # the reconstructed history will necessarily not be entirely
+    # accurate, just good enough to conclude who was AD
+    area = Group.objects.get(acronym=o.area.area_acronym.acronym, type="area")
+    meeting_time = datetime.datetime.combine(o.meeting.start_date, datetime.time(0, 0, 0))
+
+    key = (area, meeting_time)
+    if not key in emails_for_time:
+        emails_for_time[key] = []
+        
+    emails_for_time[key].append(email)
+    
+    history = find_group_history_active_at(area, meeting_time)
+    if (history and history.rolehistory_set.filter(email__person=email.person) or
+        not history and area.role_set.filter(email__person=email.person)):
+        continue
+
+    if history and history.time == meeting_time:
+        # add to existing GroupHistory
+        RoleHistory.objects.create(name=area_director_role, group=history, email=email)
+    else:
+        existing = history if history else area
+        
+        h = GroupHistory(group=area,
+                         charter=existing.charter,
+                         time=meeting_time,
+                         name=existing.name,
+                         acronym=existing.acronym,
+                         state=existing.state,
+                         type=existing.type,
+                         parent=existing.parent,
+                         iesg_state=existing.iesg_state,
+                         ad=existing.ad,
+                         list_email=existing.list_email,
+                         list_subscribe=existing.list_subscribe,
+                         list_archive=existing.list_archive,
+                         comments=existing.comments,
+                         )
+        h.save()
+
+        # we need to add all emails for this area at this time
+        # because the new GroupHistory resets the known roles
+        for e in emails_for_time[key]:
+            RoleHistory.objects.get_or_create(name=area_director_role, group=h, email=e)
+        

@@ -58,6 +58,12 @@ for o in AreaDirector.objects.filter(ietfwg__in=IETFWG.objects.all()).exclude(ar
     
     get_or_create_email(o, create_fake=False)
 
+# IESGHistory persons
+for o in PersonOrOrgInfo.objects.filter(iesghistory__id__gte=1).order_by("pk").distinct():
+    print "importing IESGHistory person", o.pk, o.first_name.encode('utf-8'), o.last_name.encode('utf-8')
+
+    email = get_or_create_email(o, create_fake=False)
+    
 # WgMeetingSession persons
 for o in PersonOrOrgInfo.objects.filter(wgmeetingsession__pk__gte=1).distinct().order_by("pk").iterator():
     print "importing WgMeetingSession persons", o.pk, o.first_name.encode('utf-8'), o.last_name.encode('utf-8')

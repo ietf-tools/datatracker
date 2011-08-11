@@ -97,4 +97,18 @@ class RoleHistory(models.Model):
     auth = models.CharField(max_length=255, blank=True) # unused?
     def __unicode__(self):
         return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym)
-    
+
+
+def find_group_history_active_at(group, time):
+    """Return the GroupHistory object active at time, or None if the
+    group itself was active at the time."""
+    if group.time <= time:
+        return None
+
+    histories = group.group_history.order_by('-time')
+
+    for h in histories:
+        if h.time <= time:
+            return h
+
+    return None

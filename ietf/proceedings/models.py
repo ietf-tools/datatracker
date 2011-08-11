@@ -593,7 +593,8 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     WgMeetingSessionOld = WgMeetingSession
     SlideOld = Slide
     SwitchesOld = Switches
-    from ietf.meeting.proxy import MeetingProxy as Meeting, ProceedingProxy as Proceeding, MeetingVenueProxy as MeetingVenue, MeetingTimeProxy as MeetingTime, WgMeetingSessionProxy as WgMeetingSession, SlideProxy as Slide, SwitchesProxy as Switches
+    IESGHistoryOld = IESGHistory
+    from ietf.meeting.proxy import MeetingProxy as Meeting, ProceedingProxy as Proceeding, MeetingVenueProxy as MeetingVenue, MeetingTimeProxy as MeetingTime, WgMeetingSessionProxy as WgMeetingSession, SlideProxy as Slide, SwitchesProxy as Switches, IESGHistoryProxy as IESGHistory
 
 # changes done by convert-096.py:changed maxlength to max_length
 # removed core

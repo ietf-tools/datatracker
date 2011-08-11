@@ -106,8 +106,11 @@ for o in Area.objects.all():
         group = Group(acronym=o.area_acronym.acronym)
         group.id = o.area_acronym_id # transfer id
 
-    if o.last_modified_date:
-        group.time = datetime.datetime.combine(o.last_modified_date, datetime.time(12, 0, 0)) 
+    # we could use last_modified_date for group.time, but in the new
+    # schema, group.time is supposed to change when the roles change
+    # too and some of the history logic depends on this, so it's going
+    # to cause us too much trouble
+
     group.name = o.area_acronym.name
     if o.status.status == "Active":
         s = state_names["active"]
