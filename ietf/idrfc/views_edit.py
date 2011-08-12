@@ -84,11 +84,10 @@ def dehtmlify_textarea_text(s):
 
 class EditInfoForm(forms.Form):
     intended_status = forms.ModelChoiceField(IDIntendedStatus.objects.all(), empty_label=None, required=True)
-    status_date = forms.DateField(required=False, help_text="Format is YYYY-MM-DD")
     area_acronym = forms.ModelChoiceField(Area.active_areas(), required=True, empty_label='None Selected')
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
     job_owner = forms.ModelChoiceField(IESGLogin.objects.filter(user_level__in=(IESGLogin.AD_LEVEL, IESGLogin.INACTIVE_AD_LEVEL)).order_by('user_level', 'last_name'), label="Responsible AD", empty_label=None, required=True)
-    create_in_state = forms.ModelChoiceField(IDState.objects.filter(document_state_id__in=(IDState.PUBLICATION_REQUESTED, IDState.AD_WATCHING)), empty_label=None, required=True)
+    create_in_state = forms.ModelChoiceField(IDState.objects.filter(document_state_id__in=(IDState.PUBLICATION_REQUESTED, IDState.AD_WATCHING)), empty_label=None, required=False)
     state_change_notice_to = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
@@ -135,16 +134,6 @@ class EditInfoForm(forms.Form):
         
         # returning item is rendered non-standard
         self.standard_fields = [x for x in self.visible_fields() if x.name not in ('returning_item',)]
-
-    def clean_status_date(self):
-        d = self.cleaned_data['status_date']
-        if d:
-            if d < date.today():
-                raise forms.ValidationError("Date must not be in the past.")
-            if d >= date.today() + timedelta(days=365 * 2):
-                raise forms.ValidationError("Date must be within two years.")
-        
-        return d
 
     def clean_note(self):
         # note is stored munged in the database
@@ -209,6 +198,7 @@ def edit_info(request, name):
                             old_ads=False,
                             initial=dict(telechat_date=initial_telechat_date,
                                          area_acronym=doc.idinternal.area_acronym_id))
+
         if form.is_valid():
             changes = []
             r = form.cleaned_data
@@ -239,7 +229,6 @@ def edit_info(request, name):
                     setattr(obj, attr, r[attr])
 
             diff(doc, 'intended_status', "Intended Status")
-            diff(doc.idinternal, 'status_date', "Status Date")
             if 'area_acronym' in r and r['area_acronym']:
                 diff(doc.idinternal, 'area_acronym', 'Area acronym')
             diff(doc.idinternal, 'job_owner', 'Responsible AD')
@@ -273,6 +262,7 @@ def edit_info(request, name):
             doc.idinternal.token_email = doc.idinternal.job_owner.person.email()[1]
             doc.idinternal.mark_by = login
             doc.idinternal.event_date = date.today()
+            doc.idinternal.status_date = date.today()
 
             if changes and not new_document:
                 email_owner(request, doc, orig_job_owner, login, "\n".join(changes))
@@ -284,7 +274,6 @@ def edit_info(request, name):
             return HttpResponseRedirect(doc.idinternal.get_absolute_url())
     else:
         init = dict(intended_status=doc.intended_status_id,
-                    status_date=doc.idinternal.status_date,
                     area_acronym=doc.idinternal.area_acronym_id,
                     job_owner=doc.idinternal.job_owner_id,
                     state_change_notice_to=doc.idinternal.state_change_notice_to,
@@ -298,6 +287,8 @@ def edit_info(request, name):
     if not in_group(request.user, 'Secretariat'):
         form.standard_fields = [x for x in form.standard_fields if x.name != "via_rfc_editor"]
 
+    if not new_document:
+        form.standard_fields = [x for x in form.standard_fields if x.name != "create_in_state"]
         
     return render_to_response('idrfc/edit_info.html',
                               dict(doc=doc,
