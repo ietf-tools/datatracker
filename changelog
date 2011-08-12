@@ -1,3 +1,12 @@
+ietfdb (3.58)
+
+  * Merged [3272] from rjsparks@nostrum.com:
+    Fixed errors with the edit state link, the new ability to set an initial
+    state when adding a document, the status date on the edit state form, and
+    brought several tests up to date.  Fixes issues 695, 696, 697, and 698.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Aug 2011 22:42:14 +0200
+
 ietfdb (3.57)
 
   * Merged [3254] from suresh.krishnan@ericsson.com: 
