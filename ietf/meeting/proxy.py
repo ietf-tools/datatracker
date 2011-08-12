@@ -501,16 +501,18 @@ class SlideProxy(Document):
 
 class IESGHistoryProxy(Person):
     def from_object(self, base):
-        for f in base._meta.fields:
+        for f in self._meta.fields: # self here to enable us to copy a history object
             setattr(self, f.name, getattr(base, f.name))
         return self
 
     #meeting = models.ForeignKey(Meeting, db_column='meeting_num')
-    def from_role(self, role):
-        self.from_object(role.email.person)
+    def from_role(self, role, time):
+        from ietf.utils.history import find_history_active_at
+        personhistory = find_history_active_at(role.email.person, time)
+        print personhistory
+        self.from_object(personhistory or role.email.person)
         from redesign.group.proxy import Area
         self.area = Area().from_object(role.group)
-        self.affiliation = "" #role.email.affiliation
         return self
     #area = models.ForeignKey(Area, db_column='area_acronym_id')
     #person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')

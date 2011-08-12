@@ -147,10 +147,10 @@ def agenda_infoREDESIGN(num=None):
         history = find_history_active_at(g, meeting_time)
         if history:
             if history.state_id == "active":
-                ads.extend(IESGHistory().from_role(x) for x in history.rolehistory_set.filter(name="ad"))
+                ads.extend(IESGHistory().from_role(x, meeting_time) for x in history.rolehistory_set.filter(name="ad"))
         else:
             if g.state_id == "active":
-                ads.extend(IESGHistory().from_role(x) for x in g.role_set.filter(name="ad"))
+                ads.extend(IESGHistory().from_role(x, meeting_time) for x in g.role_set.filter(name="ad"))
     
     from redesign.doc.models import Document
     plenary_agendas = Document.objects.filter(timeslot__meeting=meeting, timeslot__type="plenary", type="agenda").distinct()
