@@ -313,9 +313,6 @@ def edit_positionREDESIGN(request, name):
                 for e in added_events:
                     e.save() # save them after the position is saved to get later id
                         
-                doc.time = pos.time
-                doc.save()
-
             if request.POST.get("send_mail"):
                 qstr = "?return_to_url=%s" % return_to_url
                 if request.GET.get('ad'):
@@ -775,9 +772,6 @@ def lastcalltextREDESIGN(request, name):
                     e.text = t
                     e.save()
                 
-                    doc.time = e.time
-                    doc.save()
-
                 if "send_last_call_request" in request.POST:
                     save_document_in_history(doc)
 
@@ -799,9 +793,6 @@ def lastcalltextREDESIGN(request, name):
         
         if "regenerate_last_call_text" in request.POST:
             e = generate_last_call_announcement(request, doc)
-            
-            doc.time = e.time
-            doc.save()
             
             # make sure form has the updated text
             form = LastCallTextForm(initial=dict(last_call_text=e.text))
@@ -942,9 +933,6 @@ def ballot_writeupnotesREDESIGN(request, name):
                 e.text = t
                 e.save()
 
-                doc.time = e.time
-                doc.save()
-
             if "issue_ballot" in request.POST and approval:
                 if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, ad=login, time__gte=started_process.time):
                     # sending the ballot counts as a yes
@@ -965,9 +953,6 @@ def ballot_writeupnotesREDESIGN(request, name):
                 e.type = "sent_ballot_announcement"
                 e.desc = "Ballot has been issued by %s" % login.name
                 e.save()
-
-                doc.time = e.time
-                doc.save()
 
                 return render_to_response('idrfc/ballot_issued.html',
                                           dict(doc=doc,
@@ -1078,14 +1063,8 @@ def ballot_approvaltextREDESIGN(request, name):
                     e.text = t
                     e.save()
                 
-                    doc.time = e.time
-                    doc.save()
-                
         if "regenerate_approval_text" in request.POST:
             e = generate_approval_mail(request, doc)
-
-            doc.time = e.time
-            doc.save()
 
             # make sure form has the updated text
             form = ApprovalTextForm(initial=dict(approval_text=existing.text))
