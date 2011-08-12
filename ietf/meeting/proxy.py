@@ -509,7 +509,6 @@ class IESGHistoryProxy(Person):
     def from_role(self, role, time):
         from ietf.utils.history import find_history_active_at
         personhistory = find_history_active_at(role.email.person, time)
-        print personhistory
         self.from_object(personhistory or role.email.person)
         from redesign.group.proxy import Area
         self.area = Area().from_object(role.group)
