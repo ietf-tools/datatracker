@@ -3,16 +3,15 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-class Person(models.Model):
+class PersonInfo(models.Model):
     time = models.DateTimeField(auto_now_add=True)      # When this Person record entered the system
     name = models.CharField(max_length=255, db_index=True) # The normal unicode form of the name.  This must be
                                                         # set to the same value as the ascii-form if equal.
     ascii = models.CharField(max_length=255)            # The normal ascii-form of the name.
     ascii_short = models.CharField(max_length=32, null=True, blank=True)      # The short ascii-form of the name.  Also in alias table if non-null
     address = models.TextField(max_length=255, blank=True)
+    affiliation = models.CharField(max_length=255, blank=True)
 
-    user = models.OneToOneField(User, blank=True, null=True)
-    
     def __unicode__(self):
         return self.name
     def _parts(self, name):
@@ -64,12 +63,21 @@ class Person(models.Model):
             return e[0].formatted_email()
         else:
             return ""
-    def person(self): # little temporary wrapper to help porting
-        return self
     def full_name_as_key(self):
         return self.name.lower().replace(" ", ".")
-        
+    class Meta:
+        abstract = True
 
+class Person(PersonInfo):
+    user = models.OneToOneField(User, blank=True, null=True)
+    
+    def person(self): # little temporary wrapper to help porting to new schema
+        return self
+        
+class PersonHistory(PersonInfo):
+    person = models.ForeignKey(Person, related_name="history_set")
+    user = models.ForeignKey(User, blank=True, null=True)
+    
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
     primary lookup point for names, and should always contain the
