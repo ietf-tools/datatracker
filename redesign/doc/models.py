@@ -137,7 +137,7 @@ class DocHistoryAuthor(models.Model):
         ordering = ["document", "order"]
 
 class DocHistory(DocumentInfo):
-    doc = models.ForeignKey(Document)   # ID of the Document this relates to
+    doc = models.ForeignKey(Document, related_name="history_set")
     # Django 1.2 won't let us define these in the base class, so we have
     # to repeat them
     related = models.ManyToManyField('DocAlias', through=RelatedDocHistory, blank=True)

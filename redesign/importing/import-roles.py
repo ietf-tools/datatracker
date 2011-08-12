@@ -19,6 +19,7 @@ from redesign.importing.utils import get_or_create_email
 
 from ietf.idtracker.models import IESGLogin, AreaDirector, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
 from ietf.proceedings.models import IESGHistory
+from ietf.utils.history import *
 
 
 # assumptions:
@@ -195,7 +196,7 @@ for o in IESGHistory.objects.all().order_by('meeting__start_date', 'pk'):
         
     emails_for_time[key].append(email)
     
-    history = find_group_history_active_at(area, meeting_time)
+    history = find_history_active_at(area, meeting_time)
     if (history and history.rolehistory_set.filter(email__person=email.person) or
         not history and area.role_set.filter(email__person=email.person)):
         continue

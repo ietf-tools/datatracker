@@ -39,7 +39,7 @@ class Group(GroupInfo):
 # to a group.  The group acronym must be unique and is the invariant used
 # to select group history from this table.
 class GroupHistory(GroupInfo):
-    group = models.ForeignKey('Group', related_name='group_history')
+    group = models.ForeignKey(Group, related_name='history_set')
     charter = models.ForeignKey('doc.Document', related_name='chartered_group_history_set', blank=True, null=True)
     
     class Meta:
@@ -91,24 +91,13 @@ class Role(models.Model):
 
     
 class RoleHistory(models.Model):
+    # RoleHistory doesn't have a time field as it's not supposed to be
+    # used on its own - there should always be a GroupHistory
+    # accompanying a change in roles, so lookup the appropriate
+    # GroupHistory instead
     name = models.ForeignKey(RoleName)
     group = models.ForeignKey(GroupHistory)
     email = models.ForeignKey(Email, help_text="Email address used by person for this role")
     auth = models.CharField(max_length=255, blank=True) # unused?
     def __unicode__(self):
         return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym)
-
-
-def find_group_history_active_at(group, time):
-    """Return the GroupHistory object active at time, or None if the
-    group itself was active at the time."""
-    if group.time <= time:
-        return None
-
-    histories = group.group_history.order_by('-time')
-
-    for h in histories:
-        if h.time <= time:
-            return h
-
-    return None

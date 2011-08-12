@@ -349,7 +349,7 @@ class InternetDraft(Document):
     #prev_state = models.ForeignKey(IDState, db_column='prev_state', related_name='docs_prev')
     @property
     def prev_state(self):
-        ds = self.dochistory_set.exclude(iesg_state=self.iesg_state).order_by('-time')[:1]
+        ds = self.history_set.exclude(iesg_state=self.iesg_state).order_by('-time')[:1]
         return IDState().from_object(ds[0].iesg_state) if ds else None
     
     #assigned_to = models.CharField(blank=True, max_length=25) # unused
@@ -403,7 +403,7 @@ class InternetDraft(Document):
     #prev_sub_state = BrokenForeignKey(IDSubState, related_name='docs_prev', null=True, blank=True, null_values=(0, -1))
     @property
     def prev_sub_state(self):
-        ds = self.dochistory_set.all().order_by('-time')[:1]
+        ds = self.history_set.all().order_by('-time')[:1]
         substates = ds[0].tags.filter(slug__in=['extpty', 'need-rev', 'ad-f-up', 'point']) if ds else None
         return IDSubState().from_object(substates[0]) if substates else None
     @property

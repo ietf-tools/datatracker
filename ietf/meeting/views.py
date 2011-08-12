@@ -141,9 +141,10 @@ def agenda_infoREDESIGN(num=None):
 
     ads = []
     meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
-    from redesign.group.models import Group, find_group_history_active_at
+    from redesign.group.models import Group
+    from ietf.utils.history import find_history_active_at
     for g in Group.objects.filter(type="area").order_by("acronym"):
-        history = find_group_history_active_at(g, meeting_time)
+        history = find_history_active_at(g, meeting_time)
         if history:
             if history.state_id == "active":
                 ads.extend(IESGHistory().from_role(x) for x in history.rolehistory_set.filter(name="ad"))
