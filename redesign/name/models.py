@@ -70,6 +70,8 @@ class TimeSlotTypeName(NameModel):
     """Session, Break, Registration"""
 class ConstraintName(NameModel):
     """Conflict"""
+class LiaisonStatementPurposeName(NameModel):
+    """For action, For comment, For information, In response, Other"""
 
 
 def get_next_iesg_states(iesg_state):

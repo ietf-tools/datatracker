@@ -7,7 +7,7 @@ sys.path = [ basedir ] + sys.path
 
 from ietf import settings
 settings.USE_DB_REDESIGN_PROXY_CLASSES = False
-settings.IMPORTING_ANNOUNCEMENTS = True
+settings.IMPORTING_FROM_OLD_SCHEMA = True
 
 from django.core import management
 management.setup_environ(settings)

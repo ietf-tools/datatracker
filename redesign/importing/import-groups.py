@@ -17,8 +17,9 @@ from redesign.name.models import *
 from redesign.name.utils import name
 from redesign.importing.utils import old_person_to_person
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role, AreaDirector
+from ietf.liaisons.models import SDOs
 
-# imports IETFWG, Area, AreaGroup, Acronym, IRTF, AreaWGURL
+# imports IETFWG, Area, AreaGroup, Acronym, IRTF, AreaWGURL, SDOs
 
 # also creates nomcom groups
 
@@ -41,13 +42,22 @@ type_names = dict(
     rg=name(GroupTypeName, slug="rg", name="RG"),
     team=name(GroupTypeName, slug="team", name="Team"),
     individ=name(GroupTypeName, slug="individ", name="Individual"),
+    sdo=name(GroupTypeName, slug="sdo", name="Standards Organization"),
     )
+
+# make sure we got the IETF as high-level parent
+ietf_group, _ = Group.objects.get_or_create(acronym="ietf")
+ietf_group.name = "IETF"
+ietf_group.state = state_names["active"]
+ietf_group.type = type_names["ietf"]
+ietf_group.save()
 
 # make sure we got the IESG so we can use it as parent for areas
 iesg_group, _ = Group.objects.get_or_create(acronym="iesg")
 iesg_group.name = "IESG"
 iesg_group.state = state_names["active"]
 iesg_group.type = type_names["ietf"]
+iesg_group.parent = ietf_group
 iesg_group.save()
 
 # make sure we got the IRTF as parent for RGs
@@ -275,3 +285,12 @@ for o in IETFWG.objects.all().order_by("pk"):
     # dormant_date is empty on all so don't bother with that
             
     # FIXME: missing fields from old: meeting_scheduled, email_keyword, meeting_scheduled_old
+
+# SDOs
+for o in SDOs.objects.all().order_by("pk"):
+    # we import SDOs as groups, this makes it easy to take advantage
+    # of the rest of the role/person models for authentication and
+    # authorization
+    print "importing SDOs", o.pk, o.sdo_name
+    Group.objects.get_or_create(name=o.sdo_name, type=type_names["sdo"])
+

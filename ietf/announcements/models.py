@@ -88,7 +88,7 @@ class ScheduledAnnouncement(models.Model):
         db_table = 'scheduled_announcements'
 
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_ANNOUNCEMENTS"):
+if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_FROM_OLD_SCHEMA"):
     import datetime
 
     from person.models import Email, Person

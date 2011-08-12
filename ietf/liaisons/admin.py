@@ -1,5 +1,6 @@
 #coding: utf-8
 from django import template
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.util import unquote
 from django.core.exceptions import PermissionDenied
@@ -18,7 +19,8 @@ from ietf.ietfauth.models import LegacyWgPassword, LegacyLiaisonUser
 
 class FromBodiesAdmin(admin.ModelAdmin):
     list_display = ['body_name', 'contact_link', 'other_sdo']
-admin.site.register(FromBodies, FromBodiesAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(FromBodies, FromBodiesAdmin)
 
 
 class LiaisonDetailAdmin(admin.ModelAdmin):

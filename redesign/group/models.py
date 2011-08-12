@@ -7,9 +7,9 @@ from redesign.person.models import Email, Person
 import datetime
 
 class GroupInfo(models.Model):
-    time = models.DateTimeField(default=datetime.datetime.now) # should probably have auto_now=True
+    time = models.DateTimeField(default=datetime.datetime.now)
     name = models.CharField(max_length=80)
-    acronym = models.CharField(max_length=16, db_index=True)
+    acronym = models.CharField(max_length=16, blank=True, db_index=True)
     state = models.ForeignKey(GroupStateName, null=True)
     type = models.ForeignKey(GroupTypeName, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)

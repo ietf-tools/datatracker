@@ -305,3 +305,41 @@ class Uploads(models.Model):
 # removed edit_inline
 # removed num_in_admin
 # removed raw_id_admin
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_FROM_OLD_SCHEMA"):
+    from redesign.name.models import LiaisonStatementPurposeName
+    from redesign.person.models import Person
+    from redesign.group.models import Group
+    
+    class LiaisonStatement(models.Model):
+        title = models.CharField(blank=True, max_length=255)
+        purpose = models.ForeignKey(LiaisonStatementPurposeName)
+        body = models.TextField(blank=True)
+        deadline = models.DateField(null=True, blank=True)
+        
+        related_to = models.ForeignKey('LiaisonDetail', blank=True, null=True)
+        
+        from_body = models.ForeignKey(Group, related_name="liaisonstatement_from_set", null=True, blank=True, help_text="From body, if it exists")
+        from_name = models.CharField(max_length=255, help_text="Name of the sender body")
+        to_body = models.ForeignKey(Group, related_name="liaisonstatement_to_set", null=True, blank=True, help_text="to body, if it exists")
+        to_name = models.CharField(max_length=255, help_text="Name of the recipient body")
+        to_contact = models.CharField(blank=True, max_length=255)
+        
+        reply_to = models.CharField(blank=True, max_length=255)
+        
+        response_contact = models.CharField(blank=True, max_length=255)
+        technical_contact = models.CharField(blank=True, max_length=255)
+        cc = models.TextField(blank=True)
+        
+        submitted = models.DateTimeField(null=True, blank=True)
+        submitted_by = models.ForeignKey(Person)
+        modified = models.DateTimeField(null=True, blank=True)
+        approved = models.DateTimeField(null=True, blank=True)
+
+        action_taken = models.BooleanField(default=False)
+
+        #submitter_name = models.CharField(blank=True, null=True, max_length=255)
+        #submitter_email = models.CharField(blank=True, null=True, max_length=255)
+
+        def __unicode__(self):
+            return self.title or "<no title>"
