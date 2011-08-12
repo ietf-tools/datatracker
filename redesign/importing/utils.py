@@ -3,7 +3,11 @@ from redesign.person.models import Person, Email, Alias
 
 def clean_email_address(addr):
     addr = addr.replace("!", "@").replace("(at)", "@") # some obvious @ replacements
-    addr = addr[addr.rfind('<') + 1:addr.find('>')] # whack surrounding <...>
+    # whack surrounding <...>    
+    addr = addr[addr.rfind('<') + 1:]
+    end = addr.find('>')
+    if end != -1:
+        addr = addr[:end]
     addr = addr.strip()
     if not "@" in addr:
         return ""
@@ -42,8 +46,15 @@ def get_or_create_email(o, create_fake):
         if aliases:
             p = aliases[0].person
         else:
-            p = Person.objects.create(id=person.pk, name=n, ascii=asciified)
-            # FIXME: fill in address?
+            p = Person(id=person.pk, name=n, ascii=asciified)
+            
+            from ietf.idtracker.models import PostalAddress
+            addresses = person.postaladdress_set.filter(address_priority=1)
+            if addresses:
+                p.affiliation = (addresses[0].affiliated_company or "").strip()
+                # should probably import p.address here
+
+            p.save()
             
             Alias.objects.create(name=n, person=p)
             if asciified != n:
