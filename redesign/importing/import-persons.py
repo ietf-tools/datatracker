@@ -76,6 +76,12 @@ for o in PersonOrOrgInfo.objects.filter(announcement__announcement_id__gte=1).or
 
     email = get_or_create_email(o, create_fake=False)
     
+# Liaison submitter persons
+for o in PersonOrOrgInfo.objects.filter(liaisondetail__pk__gte=1).order_by("pk").distinct():
+    print "importing LiaisonDetail originator", o.pk, o.first_name.encode('utf-8'), o.last_name.encode('utf-8')
+
+    email = get_or_create_email(o, create_fake=True)
+    
 # IDAuthor persons
 for o in IDAuthor.objects.all().order_by('id').select_related('person').iterator():
     print "importing IDAuthor", o.id, o.person_id, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')

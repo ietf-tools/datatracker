@@ -46,25 +46,64 @@ obviously_bogus_date = datetime.date(1970, 1, 1)
 bodies = {
     'IESG': Group.objects.get(acronym="iesg"),
     'IETF': Group.objects.get(acronym="ietf"),
+    'IETF IESG': Group.objects.get(acronym="iesg"),
+    'The IETF': Group.objects.get(acronym="ietf"),
     'IAB/ISOC': Group.objects.get(acronym="iab"),
+    'ISOC/IAB': Group.objects.get(acronym="iab"),
     'IAB/IESG': Group.objects.get(acronym="iab"),
     'IAB': Group.objects.get(acronym="iab"),
+    'IETF IAB': Group.objects.get(acronym="iab"),
     'IETF Transport Directorate': Group.objects.get(acronym="tsvdir"),
     'Sigtran': Group.objects.get(acronym="sigtran", type="wg"),
     'IETF RAI WG': Group.objects.get(acronym="rai", type="area"),
+    'IETF RAI': Group.objects.get(acronym="rai", type="area"),
     'IETF Mobile IP WG': Group.objects.get(acronym="mobileip", type="wg"),
+    "IETF Operations and Management Area": Group.objects.get(acronym="ops", type="area"),
+    "IETF/Operations and Management Area": Group.objects.get(acronym="ops", type="area"),
+    "IETF OAM Area": Group.objects.get(acronym="ops", type="area"),
+    "IETF O&M Area": Group.objects.get(acronym="ops", type="area"),
+    "IETF O&M area": Group.objects.get(acronym="ops", type="area"),
+    "IETF O&M": Group.objects.get(acronym="ops", type="area"),
+    "IETF O&M Area Directors": Group.objects.get(acronym="ops", type="area"),
+    "PWE3 Working Greoup": Group.objects.get(acronym="pwe3", type="wg"),
+    "IETF PWE 3 WG": Group.objects.get(acronym="pwe3", type="wg"),
+    "IETF/Routing Area": Group.objects.get(acronym="rtg", type="area"),
+    "IRTF Internet Area": Group.objects.get(acronym="int", type="area"),
+    "IETF Sub IP Area": Group.objects.get(acronym="sub", type="area"),
     }
 
-def get_from_body(name):
+def get_body(name, raw_code):
+    if raw_code:
+        # new tool is storing some group info directly, try decoding it
+        b = None
+        t = raw_code.split("_")
+        if len(t) == 2:
+            if t[0] == "area":
+                b = lookup_group(acronym=Acronym.objects.get(pk=t[1]), type="area")
+            elif t[0] == "group":
+                b = lookup_group(acronym=Acronym.objects.get(pk=t[1]), type="wg")
+
+        if not b:
+            b = lookup_group(acronym=raw_code)
+
+        return b
+    
     # the from body name is a nice case study in how inconsistencies
     # build up over time
+    name = (name.replace("(", "").replace(")", "").replace(" Chairs", "")
+            .replace("Working Group", "WG").replace("working group", "WG"))
     b = bodies.get(name)
     t = name.split()
     if not b and name.startswith("IETF"):
-        if len(t) < 3 or t[2].lower() == "wg":
+        if len(t) == 1:
+            if "-" in name:
+                t = name.split("-")
+            elif "/" in name:
+                t = name.split("/")
+            b = lookup_group(acronym=t[1].lower(), type="wg")
+        elif len(t) < 3 or t[2].lower() == "wg":
             b = lookup_group(acronym=t[1].lower(), type="wg")
         elif t[2].lower() in ("area", "ad"):
-            print "inside AREA"
             b = lookup_group(acronym=t[1].lower(), type="area")
             if not b:
                 b = lookup_group(name=u"%s %s" % (t[1], t[2]), type="area")
@@ -77,7 +116,7 @@ def get_from_body(name):
 
     return b
 
-for o in LiaisonDetail.objects.all().order_by("pk"):#[:10]:
+for o in LiaisonDetail.objects.all().order_by("pk"):
     print "importing LiaisonDetail", o.pk
 
     try:
@@ -100,12 +139,17 @@ for o in LiaisonDetail.objects.all().order_by("pk"):#[:10]:
         except Group.DoesNotExist:
             return None
 
-    l.from_name = o.from_body()
-    l.from_body = get_from_body(l.from_name) # try to establish link
-    continue
-    
-    l.to_body = o.to_raw_body
-    l.to_name = o.to_raw_body
+    l.from_name = o.from_body().strip()
+    l.from_body = get_body(l.from_name, o.from_raw_code) # try to establish link
+
+    if o.by_secretariat:
+        l.to_name = o.submitter_name
+        if o.submitter_email:
+            l.to_name += " " + o.submitter_email
+    else:
+        l.to_name = o.to_body
+    l.to_name = l.to_name.strip()
+    l.to_body = get_body(l.to_name, o.to_raw_code) # try to establish link
     l.to_contact = (o.to_poc or "").strip()
 
     l.reply_to = (o.replyto or "").strip()
@@ -115,7 +159,7 @@ for o in LiaisonDetail.objects.all().order_by("pk"):#[:10]:
     l.cc = (o.cc1 or "").strip()
     
     l.submitted = o.submitted_date
-    l.submitted_by = old_person_to_person(o.person)
+    l.submitted_by = old_person_to_person(o.person) if o.person else system_person
     l.modified = o.last_modified_date
     l.approved = o.approval and o.approval.approved and (o.approval.approval_date or l.modified or datetime.datetime.now())
 
