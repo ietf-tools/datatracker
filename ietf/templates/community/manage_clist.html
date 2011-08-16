@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}{{ cl.long_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ cl.long_name }}</h1>
+<p>Feel free to share the following links if you need it.</p>
+<ul>
+ <li><a href="">Read only view for {{ cl.long_name }}</a></li>
+ <li><a href="">Feed for {{ cl.long_name }}</a></li>
+</ul>
+
+<h2>Rules added to this list</h2>
+
+<h2>Documents added to this list</h2>
+{% for doc in cl.added_ids.all %}
+  {{ doc }}
+{% endfor %}
+
+{% endblock %}
