@@ -28,7 +28,7 @@ see <a href="{{ "4053"|rfcurl }}">RFC 4053 (BCP 103) "Procedures for Handling Li
     <td><b>Description</b></td>
     <td><b>Comments</b></td></tr>
   <tr>
-    <td rowspan="2">From:</td>
+    <td rowspan="3">From:</td>
     <td>Organization:</td>
     <td>The organization submitting the liaison statement.</td>
     <td>The field is filled in automatically.</td></tr>
@@ -37,55 +37,67 @@ see <a href="{{ "4053"|rfcurl }}">RFC 4053 (BCP 103) "Procedures for Handling Li
     <td>The name and e-mail address of the person submitting the liaison statement.</td>  
     <td>The field is filled in automatically.</td></tr>
   <tr>
-    <td>Reply-To:</td>
-    <td>&nbsp</td>
+    <td>Reply To:</td>
     <td>The e-mail address(es) that will be inserted in the "To:" field when a recipient hits the "Reply" button on the message.
 </td>
-    <td>Mandatory<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr
+    <td>Mandatory<br>Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr
   <tr>
     <td rowspan="2">To:</td>
     <td>Organization:</td>
     <td>The name of the organization (and sub-group, if applicable) to which the liaison statement is being sent.</td>
-    <td>Mandatory <br>Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp;SDO/Sub-group</td></tr>
+    <td>Drop Down Menu with available choices.  If an SDO is not listed please contact statements@ietf.org</td></tr>
   <tr>
     <td>POC(s):</td>
     <td>The e-mail address(es) of the recipient(s) of the liaison statement, separated by commas.</td>  
-    <td>Mandatory<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr>
+    <td>The field is filled in automatically.</td></tr>
   <tr>
-    <td>Cc:</td>
-    <td>&nbsp</td>
-    <td>The e-mail address(es) of the copy recipient(s) of the liaison statement, separated by commas.</td>
-    <td>Optional<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr>
-  <tr>
-    <td>Title:</td>
-    <td>&nbsp</td>
-    <td>The title of the liaison statement.</td>
-    <td>Mandatory</td></tr>
-  <tr>
+    <td rowspan="3">Other Email Addresses:</td>
     <td>Response Contact:</td>
-    <td>&nbsp</td>
     <td>The e-mail address(es) to which any response should be sent, separated by commas.</td>
     <td>Optional<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr>
   <tr>
     <td>Technical Contact:</td>
-    <td>&nbsp</td>
     <td>The e-mail address(es) of individuals or lists that may be contacted for clarification of the liaison statement, separated by commas.</td>
     <td>Optional<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr>
   <tr>
+    <td>Cc:</td>
+    <td>The e-mail address(es) of the copy recipient(s) of the liaison statement, one on each line.</td>
+    <td>Optional<br> Suggested Format:<br>&nbsp;&nbsp;&nbsp;&nbsp; Name &lt;e-mail address&gt</td></tr>
+  <tr>
+    <td rowspan="2">Purpose:</td>
     <td>Purpose:</td>
-    <td>&nbsp</td>
-    <td>The intent of the liaison statement.  Normally, one of four choices: (a) For action, (b) For comment, (c) For information, (d) Response.</td>
-    <td>Optional<br>The submitter selects one of the four choices, or selects "Other," and indicates the intent.</td></tr>  <tr>
+    <td>The intent of the liaison statement.  Normally, one of four choices: (a) For action, (b) For comment, (c) For information, (d) In Response.</td>
+    <td>The submitter selects one of the four choices, or selects "Other," and indicates the intent.</td></tr>
+  <tr>
     <td>Deadline:</td>
-    <td>&nbsp</td>
     <td>The date by which a comment or action is required.</td>
     <td>Mandatory if the purpose is "For comment" or "For action." Otherwise, optional. </td></tr>
- <tr>
+
+  <tr>
+    <td rowspan="3">Liaison Statement:</td>
+    <td>Title:</td>
+    <td>The title of the liaison statement.</td>
+    <td>Mandatory.</td></tr>
+  <tr>
+    <td>Submission Date:</td>
+    <td>The date the liaison was originally submitted.</td>
+    <td>Mandatory.</td></tr>
+  <tr>
     <td>Body:</td>
-    <td>&nbsp</td>
     <td>The text of the liaison statement.</td>
     <td>Mandatory if there are no attachments.
 <br>Optional if the text of the liaison statement is provided in an attachment.</td></tr>
+
+  <tr>
+    <td rowspan="3">Add Attachment:</td>
+    <td>Title:</td>
+    <td>The title of the attachment.</td>
+    <td>Optional if there is text in the body, Mandatory if there is not.</td></tr>
+  <tr>
+    <td>File:</td>
+    <td>Browse to find the attachment.</td>
+    <td>Optional if there is text in the body, Mandatory if there is not.</td></tr>
+
 
 </table>
 {% endblock %}
