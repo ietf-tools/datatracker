@@ -308,7 +308,8 @@ class Uploads(models.Model):
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_FROM_OLD_SCHEMA"):
     from redesign.name.models import LiaisonStatementPurposeName
-    from redesign.person.models import Person
+    from redesign.doc.models import Document
+    from redesign.person.models import Email
     from redesign.group.models import Group
     
     class LiaisonStatement(models.Model):
@@ -317,13 +318,14 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_FROM_O
         body = models.TextField(blank=True)
         deadline = models.DateField(null=True, blank=True)
         
-        related_to = models.ForeignKey('LiaisonDetail', blank=True, null=True)
+        related_to = models.ForeignKey('LiaisonStatement', blank=True, null=True)
         
-        from_body = models.ForeignKey(Group, related_name="liaisonstatement_from_set", null=True, blank=True, help_text="From body, if it exists")
+        from_group = models.ForeignKey(Group, related_name="liaisonstatement_from_set", null=True, blank=True, help_text="From body, if it exists")
         from_name = models.CharField(max_length=255, help_text="Name of the sender body")
-        to_body = models.ForeignKey(Group, related_name="liaisonstatement_to_set", null=True, blank=True, help_text="to body, if it exists")
+        from_contact = models.ForeignKey(Email)
+        to_group = models.ForeignKey(Group, related_name="liaisonstatement_to_set", null=True, blank=True, help_text="To body, if it exists")
         to_name = models.CharField(max_length=255, help_text="Name of the recipient body")
-        to_contact = models.CharField(blank=True, max_length=255)
+        to_contact = models.CharField(blank=True, max_length=255, help_text="Contacts at to body")
         
         reply_to = models.CharField(blank=True, max_length=255)
         
@@ -332,14 +334,26 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_FROM_O
         cc = models.TextField(blank=True)
         
         submitted = models.DateTimeField(null=True, blank=True)
-        submitted_by = models.ForeignKey(Person)
         modified = models.DateTimeField(null=True, blank=True)
         approved = models.DateTimeField(null=True, blank=True)
 
         action_taken = models.BooleanField(default=False)
 
-        #submitter_name = models.CharField(blank=True, null=True, max_length=255)
-        #submitter_email = models.CharField(blank=True, null=True, max_length=255)
+        attachments = models.ManyToManyField(Document, blank=True)
 
+        def name(self):
+            from django.template.defaultfilters import slugify
+            if self.from_group:
+                frm = self.from_group.acronym or self.from_group.name
+            else:
+                frm = self.from_name
+            if self.to_group:
+                to = self.to_group.acronym or self.to_group.name
+            else:
+                to = self.to_name
+            return slugify("liaison" + " " + self.submitted.strftime("%Y-%m-%d") + " " + frm[:50] + " " + to[:50] + " " + self.title[:115])
+        
         def __unicode__(self):
             return self.title or "<no title>"
+
+        LiaisonDetailOld = LiaisonDetail

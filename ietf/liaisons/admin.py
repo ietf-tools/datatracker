@@ -30,12 +30,14 @@ class LiaisonDetailAdmin(admin.ModelAdmin):
 #               'response_contact', 'technical_contact', 'purpose', 'purpose_text', 'deadline_date', 'action_taken',
 #               'related_to')
     raw_id_fields=['person', 'related_to']
-admin.site.register(LiaisonDetail, LiaisonDetailAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(LiaisonDetail, LiaisonDetailAdmin)
 
 
 class LiaisonPurposeAdmin(admin.ModelAdmin):
     ordering = ('purpose_text', )
-admin.site.register(LiaisonPurpose, LiaisonPurposeAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(LiaisonPurpose, LiaisonPurposeAdmin)
 
 
 class LiaisonManagersAdmin(admin.ModelAdmin):

@@ -14,10 +14,11 @@ management.setup_environ(settings)
 
 from django.template.defaultfilters import slugify
 
-from ietf.idtracker.models import AreaDirector, IETFWG, Acronym, IRTF
+from ietf.idtracker.models import Acronym, EmailAddress
 from ietf.liaisons.models import *
+from redesign.doc.models import Document, DocAlias
 from redesign.person.models import *
-from redesign.importing.utils import get_or_create_email, old_person_to_person
+from redesign.importing.utils import old_person_to_person
 from redesign.name.models import *
 from redesign.name.utils import name
 
@@ -38,9 +39,11 @@ purpose_mapping = {
     5: name(LiaisonStatementPurposeName, "other", "Other"),
     }
 
+liaison_attachment_doctype = name(DocTypeName, "liai-att", "Liaison Attachment")
+
 purpose_mapping[None] = purpose_mapping[3] # map unknown to "For information"
 
-system_person = Person.objects.get(name="(System)")
+system_email = Email.objects.get(person__name="(System)")
 obviously_bogus_date = datetime.date(1970, 1, 1)
 
 bodies = {
@@ -140,7 +143,14 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
             return None
 
     l.from_name = o.from_body().strip()
-    l.from_body = get_body(l.from_name, o.from_raw_code) # try to establish link
+    l.from_group = get_body(l.from_name, o.from_raw_code) # try to establish link
+    if not o.person:
+        l.from_contact = system_email
+    else:
+        try:
+            l.from_contact = Email.objects.get(address__iexact=o.from_email().address)
+        except EmailAddress.DoesNotExist:
+            l.from_contact = old_person_to_person(o.person).email_address()
 
     if o.by_secretariat:
         l.to_name = o.submitter_name
@@ -149,7 +159,7 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
     else:
         l.to_name = o.to_body
     l.to_name = l.to_name.strip()
-    l.to_body = get_body(l.to_name, o.to_raw_code) # try to establish link
+    l.to_group = get_body(l.to_name, o.to_raw_code) # try to establish link
     l.to_contact = (o.to_poc or "").strip()
 
     l.reply_to = (o.replyto or "").strip()
@@ -159,10 +169,26 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
     l.cc = (o.cc1 or "").strip()
     
     l.submitted = o.submitted_date
-    l.submitted_by = old_person_to_person(o.person) if o.person else system_person
     l.modified = o.last_modified_date
-    l.approved = o.approval and o.approval.approved and (o.approval.approval_date or l.modified or datetime.datetime.now())
+    l.approved = o.approval.approval_date or l.modified or datetime.datetime.now() if o.approval and o.approval.approved else None
 
     l.action_taken = o.action_taken
     
-    #l.save()
+    l.save()
+
+    l.attachments.all().delete()
+    for i, u in enumerate(o.uploads_set.order_by("pk")):
+        attachment = Document()
+        attachment.title = u.file_title
+        attachment.type = liaison_attachment_doctype
+        attachment.name = l.name() + ("-attachment-%s" % (i + 1))
+        attachment.time = l.submitted
+        # we should fixup the filenames, but meanwhile, store it here
+        attachment.external_url = "%s.%s" % (u.file_id, u.file_extension)
+        attachment.save()
+
+        DocAlias.objects.get_or_create(document=attachment, name=attachment.name)
+
+        l.attachments.add(attachment)
+        
+    

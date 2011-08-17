@@ -64,3 +64,15 @@ def get_or_create_email(o, create_fake):
         e.save()
 
     return e
+
+def possibly_import_other_priority_email(email, addr):
+    addr = clean_email_address(addr or "")
+    if addr and addr.lower() != email.address.lower():
+        try:
+            e = Email.objects.get(address=addr)
+            if e.person != email.person or e.active != False:
+                e.person = email.person
+                e.active = False
+                e.save()
+        except Email.DoesNotExist:
+            Email.objects.create(address=addr, person=email.person, active=False)

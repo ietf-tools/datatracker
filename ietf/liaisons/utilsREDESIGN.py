@@ -1,7 +1,3 @@
-from django.conf import settings
-
-from ietf.idtracker.models import Area, IETFWG
-from ietf.liaisons.models import SDOs, LiaisonManagers
 from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
                                     get_ietf_chair, get_iab_chair, get_iab_executive_director,
                                     is_secretariat)
@@ -14,7 +10,7 @@ IABEXECUTIVEDIRECTOR = {'name': u'The IAB Executive Director', 'address': u'exec
 
 
 def get_all_sdo_managers():
-    return [i.person for i in LiaisonManagers.objects.all().distinct()]
+    return list(Person.objects.filter(email__role__name="liaiman", email__role__group__state="active").distinct())
 
 
 class FakePerson(object):
@@ -26,7 +22,19 @@ class FakePerson(object):
     def email(self):
         return (self.name, self.address)
 
+# the following is a biggish object hierarchy modeling the entity
+# names and auth rules for posting liaison statements in a sort of
+# semi-declarational way
 
+def role_persons_with_fixed_email(group, role_name):
+    res = []
+    for r in Role.objects.filter(group=group, name=role_name).select_related("email"):
+        p = r.email.person
+        # evil hack to make email() return the right address
+        p.email = (lambda email: (lambda x: (x.name, email.address)))(r.email)
+        res.append(p)
+    return res
+    
 class Entity(object):
 
     poc = []
@@ -126,13 +134,13 @@ class AreaEntity(Entity):
         return [FakePerson(**IETFCHAIR)]
 
     def get_from_cc(self, person):
-        result = [i.person for i in self.obj.areadirector_set.all() if i.person!=person]
+        result = [p for p in role_persons_with_fixed_email(self.obj, "ad") if p != person]
         result.append(FakePerson(**IETFCHAIR))
         return result
 
     def needs_approval(self, person=None):
         # Check if person is an area director
-        if self.obj.areadirector_set.filter(person=person):
+        if self.obj.role_set.filter(email__person=person, name="ad"):
             return False
         return True
 
@@ -148,31 +156,34 @@ class AreaEntity(Entity):
 class WGEntity(Entity):
 
     def get_poc(self):
-        return [i.person for i in self.obj.wgchair_set.all()]
+        return role_persons_with_fixed_email(self.obj, "chair")
 
     def get_cc(self, person=None):
-        result = [i.person for i in self.obj.area_directors()]
-        if self.obj.email_address:
-            result.append(FakePerson(name ='%s Discussion List' % self.obj.group_acronym.name,
-                                     address = self.obj.email_address))
+        if self.obj.parent:
+            result = [p for p in role_persons_with_fixed_email(self.obj.parent, "ad") if p != person]
+        else:
+            result = []
+        if self.obj.list_subscribe:
+            result.append(FakePerson(name ='%s Discussion List' % self.obj.name,
+                                     address = self.obj.list_subscribe))
         return result
 
     def get_from_cc(self, person):
-        result = [i.person for i in self.obj.wgchair_set.all() if i.person!=person]
-        result += [i.person for i in self.obj.area_directors()]
-        if self.obj.email_address:
-            result.append(FakePerson(name ='%s Discussion List' % self.obj.group_acronym.name,
-                                     address = self.obj.email_address))
+        result = [p for p in role_persons_with_fixed_email(self.obj, "chair") if p != person]
+        result += role_persons_with_fixed_email(self.obj.parent, "ad") if self.obj.parent else []
+        if self.obj.list_subscribe:
+            result.append(FakePerson(name ='%s Discussion List' % self.obj.name,
+                                     address = self.obj.list_subscribe))
         return result
 
     def needs_approval(self, person=None):
         # Check if person is director of this wg area
-        if self.obj.area.area.areadirector_set.filter(person=person):
+        if self.obj.parent and self.obj.parent.role_set.filter(email__person=person, name="ad"):
             return False
         return True
 
     def can_approve(self):
-        return [i.person for i in self.obj.area.area.areadirector_set.all()]
+        return role_persons_with_fixed_email(self.obj.parent, "ad") if self.obj.parent else []
 
     def full_user_list(self):
         result = get_all_sdo_managers()
@@ -186,25 +197,19 @@ class SDOEntity(Entity):
         return []
 
     def get_cc(self, person=None):
-        manager = self.obj.liaisonmanager()
-        if manager:
-            return [manager.person]
-        return []
+        return role_persons_with_fixed_email(self.obj, "liaiman")
 
     def get_from_cc(self, person=None):
-        manager = self.obj.liaisonmanager()
-        if manager and manager.person!=person:
-            return [manager.person]
-        return []
+        return [p for p in role_persons_with_fixed_email(self.obj, "liaiman") if p != person]
 
     def post_only(self, person, user):
-        if is_secretariat(user) or person.sdoauthorizedindividual_set.filter(sdo=self.obj):
+        if is_secretariat(user) or self.obj.role_set.filter(email__person=person, name="auth"):
             return False
         return True
 
     def full_user_list(self):
-        result = [i.person for i in self.obj.liaisonmanagers_set.all().distinct()]
-        result += [i.person for i in self.obj.sdoauthorizedindividual_set.all().distinct()]
+        result = role_persons_with_fixed_email(self.obj, "liaiman")
+        result += role_persons_with_fixed_email(self.obj, "auth")
         return result
 
 
@@ -274,6 +279,7 @@ class AreaEntityManager(EntityManager):
 
     def __init__(self, pk=None, name=None, queryset=None):
         super(AreaEntityManager, self).__init__(pk, name, queryset)
+        from redesign.group.proxy import Area
         if self.queryset == None:
             self.queryset = Area.active_areas()
 
@@ -292,11 +298,11 @@ class AreaEntityManager(EntityManager):
         return AreaEntity(name=obj.area_acronym.name, obj=obj)
 
     def can_send_on_behalf(self, person):
-        query_filter = {'areadirector__in': person.areadirector_set.all()}
+        query_filter = dict(role__email__person=person, role__name="ad")
         return self.get_managed_list(query_filter)
 
     def can_approve_list(self, person):
-        query_filter = {'areadirector__in': person.areadirector_set.all()}
+        query_filter = dict(role__email__person=person, role__name="ad")
         return self.get_managed_list(query_filter)
 
 
@@ -305,6 +311,7 @@ class WGEntityManager(EntityManager):
     def __init__(self, pk=None, name=None, queryset=None):
         super(WGEntityManager, self).__init__(pk, name, queryset)
         if self.queryset == None:
+            from redesign.group.proxy import IETFWG, Area
             self.queryset = IETFWG.objects.filter(group_type=1, status=IETFWG.ACTIVE, areagroup__area__status=Area.ACTIVE)
 
     def get_managed_list(self, query_filter=None):
@@ -328,7 +335,7 @@ class WGEntityManager(EntityManager):
         return self.get_managed_list(query_filter)
 
     def can_approve_list(self, person):
-        query_filter = {'areagroup__area__areadirector__in': person.areadirector_set.all()}
+        query_filter = dict(parent__role__email__person=person, parent__role__name="ad")
         return self.get_managed_list(query_filter)
 
 
@@ -337,10 +344,11 @@ class SDOEntityManager(EntityManager):
     def __init__(self, pk=None, name=None, queryset=None):
         super(SDOEntityManager, self).__init__(pk, name, queryset)
         if self.queryset == None:
-            self.queryset = SDOs.objects.all()
+            from redesign.group.models import Group
+            self.queryset = Group.objects.filter(type="sdo")
 
     def get_managed_list(self):
-        return [(u'%s_%s' % (self.pk, i.pk), i.sdo_name) for i in self.queryset.order_by('sdo_name')]
+        return [(u'%s_%s' % (self.pk, i.pk), i.name) for i in self.queryset.order_by('name')]
 
     def get_entity(self, pk=None):
         if not pk:
@@ -349,7 +357,7 @@ class SDOEntityManager(EntityManager):
             obj = self.queryset.get(pk=pk)
         except self.queryset.model.DoesNotExist:
             return None
-        return SDOEntity(name=obj.sdo_name, obj=obj)
+        return SDOEntity(name=obj.name, obj=obj)
 
 
 class IETFHierarchyManager(object):
@@ -422,6 +430,3 @@ class IETFHierarchyManager(object):
 
 
 IETFHM = IETFHierarchyManager()
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from utilsREDESIGN import * 

@@ -12,14 +12,16 @@ from django.core import management
 management.setup_environ(settings)
 
 from ietf.idtracker.models import AreaDirector, IETFWG, PersonOrOrgInfo, IDAuthor
+from ietf.liaisons.models import LiaisonDetail, LiaisonManagers, SDOAuthorizedIndividual
 from redesign.person.models import *
-from redesign.importing.utils import clean_email_address, get_or_create_email
+from redesign.importing.utils import *
 
 # creates system person and email
 
 # imports AreaDirector persons that are connected to an IETFWG,
 # persons from IDAuthor, announcement originators from Announcements,
-# requesters from WgMeetingSession
+# requesters from WgMeetingSession, LiaisonDetail persons,
+# LiaisonManagers/SDOAuthorizedIndividual persons
 
 # should probably import
 # PersonOrOrgInfo/PostalAddress/EmailAddress/PhoneNumber fully
@@ -48,7 +50,7 @@ system_alias = Alias.objects.get_or_create(
     )
 
 system_email = Email.objects.get_or_create(
-    address="",
+    address="(System)",
     defaults=dict(active=True, person=system_person)
     )
 
@@ -76,11 +78,30 @@ for o in PersonOrOrgInfo.objects.filter(announcement__announcement_id__gte=1).or
 
     email = get_or_create_email(o, create_fake=False)
     
-# Liaison submitter persons
-for o in PersonOrOrgInfo.objects.filter(liaisondetail__pk__gte=1).order_by("pk").distinct():
-    print "importing LiaisonDetail originator", o.pk, o.first_name.encode('utf-8'), o.last_name.encode('utf-8')
+# LiaisonManagers persons
+for o in LiaisonManagers.objects.order_by("pk"):
+    print "importing LiaisonManagers person", o.pk, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')
+
+    email = get_or_create_email(o, create_fake=False)
+    possibly_import_other_priority_email(email, o.person.email(priority=o.email_priority)[1])
+    
+# SDOAuthorizedIndividual persons
+for o in PersonOrOrgInfo.objects.filter(sdoauthorizedindividual__pk__gte=1).order_by("pk").distinct():
+    print "importing SDOAuthorizedIndividual person", o.pk, o.first_name.encode('utf-8'), o.last_name.encode('utf-8')
+
+    email = get_or_create_email(o, create_fake=False)
+    
+# Liaison persons (these are used as from contacts)
+for o in LiaisonDetail.objects.exclude(person=None).order_by("pk"):
+    print "importing LiaisonDetail person", o.pk, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')
 
     email = get_or_create_email(o, create_fake=True)
+
+    # we may also need to import email address used specifically for
+    # the document
+    if "@" in email.address:
+        addr = o.from_email().address
+        possibly_import_other_priority_email(email, addr)
     
 # IDAuthor persons
 for o in IDAuthor.objects.all().order_by('id').select_related('person').iterator():
@@ -89,14 +110,4 @@ for o in IDAuthor.objects.all().order_by('id').select_related('person').iterator
 
     # we may also need to import email address used specifically for
     # the document
-    addr = clean_email_address(o.email() or "")
-    if addr and addr.lower() != email.address.lower():
-        try:
-            e = Email.objects.get(address=addr)
-            if e.person != email.person or e.active != False:
-                e.person = email.person
-                e.active = False
-                e.save()
-        except Email.DoesNotExist:
-            Email.objects.create(address=addr, person=email.person, active=False)
-    
+    possibly_import_other_priority_email(email, o.email())

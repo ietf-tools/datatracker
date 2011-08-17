@@ -36,6 +36,7 @@ class Acronym(Group):
 
 class Area(Group):
     objects = TranslatingManager(dict(area_acronym__acronym="acronym",
+                                      area_acronym__name="name",
                                       status=lambda v: ("state", {1: "active", 2: "dormant", 3: "conclude"}[v] )),
                                  always_filter=dict(type="area"))
     
@@ -67,6 +68,10 @@ class Area(Group):
     #    return AreaWGURL.objects.filter(name=self.area_acronym.name)
     def active_wgs(self):
         return IETFWG.objects.filter(type="wg", state="active", parent=self).select_related('type', 'state', 'parent').order_by("acronym")
+
+    @property
+    def areadirector_set(self):
+        return proxied_role_emails(Email.objects.filter(role__group=self, role__name="ad"))
     
     @staticmethod
     def active_areas():

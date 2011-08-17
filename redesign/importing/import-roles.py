@@ -18,6 +18,7 @@ from redesign.name.utils import name
 from redesign.importing.utils import get_or_create_email
 
 from ietf.idtracker.models import IESGLogin, AreaDirector, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
+from ietf.liaisons.models import LiaisonManagers, SDOAuthorizedIndividual
 from ietf.proceedings.models import IESGHistory
 from ietf.utils.history import *
 
@@ -27,9 +28,10 @@ from ietf.utils.history import *
 #  - groups have been imported
 
 # imports IESGLogin, AreaDirector, WGEditor, WGChair, IRTFChair,
-# WGSecretary, WGTechAdvisor, NomCom chairs from ChairsHistory, IESGHistory
+# WGSecretary, WGTechAdvisor, NomCom chairs from ChairsHistory,
+# IESGHistory, Role, LiaisonManagers, SDOAuthorizedIndividual
 
-# FIXME: should probably import Role, LegacyWgPassword, LegacyLiaisonUser
+# FIXME: should probably import LegacyWgPassword, LegacyLiaisonUser
 
 area_director_role = name(RoleName, "ad", "Area Director")
 inactive_area_director_role = name(RoleName, "ex-ad", "Ex-Area Director", desc="Inactive Area Director")
@@ -37,7 +39,51 @@ chair_role = name(RoleName, "chair", "Chair")
 editor_role = name(RoleName, "editor", "Editor")
 secretary_role = name(RoleName, "secr", "Secretary")
 techadvisor_role = name(RoleName, "techadv", "Tech Advisor")
+exec_director_role = name(RoleName, "execdir", "Executive Director")
+adm_director_role = name(RoleName, "admdir", "Administrative Director")
+liaison_manager_role = name(RoleName, "liaiman", "Liaison Manager")
+authorized_role = name(RoleName, "auth", "Authorized Individual")
 
+# SDOAuthorizedIndividual
+for o in SDOAuthorizedIndividual.objects.all().order_by("pk"):
+    print "importing SDOAuthorizedIndividual", o.pk, o.sdo, o.person
+
+    group = Group.objects.get(name=o.sdo.sdo_name, type="sdo")
+    email = get_or_create_email(o, create_fake=False)
+
+    Role.objects.get_or_create(name=authorized_role, group=group, email=email)
+
+# LiaisonManagers
+for o in LiaisonManagers.objects.all().order_by("pk"):
+    print "importing LiaisonManagers", o.pk, o.sdo, o.person
+
+    group = Group.objects.get(name=o.sdo.sdo_name, type="sdo")
+    email = Email.objects.get(address__iexact=o.person.email(priority=o.email_priority)[1])
+
+    Role.objects.get_or_create(name=liaison_manager_role, group=group, email=email)
+
+# Role
+for o in OldRole.objects.all().order_by('pk'):
+    acronym = o.role_name.lower()
+    role = chair_role
+
+    if o.id == OldRole.NOMCOM_CHAIR:
+        continue # handled elsewhere
+
+    print "importing Role", o.id, o.role_name
+    
+    if o.role_name.endswith("Executive Director"):
+        acronym = acronym[:-(len("Executive Director") + 1)]
+        role = exec_director_role
+
+    if o.id == OldRole.IAD_CHAIR:
+        acronym = "ietf"
+        role = adm_director_role
+
+    group = Group.objects.get(acronym=acronym)
+    email = get_or_create_email(o, create_fake=False)
+
+    Role.objects.get_or_create(name=role, group=group, email=email)
 
 # WGEditor
 for o in WGEditor.objects.all():

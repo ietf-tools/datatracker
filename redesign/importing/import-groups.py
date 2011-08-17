@@ -106,6 +106,34 @@ for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("st
     e.desc = e.get_type_display()
     e.save()
     
+# IRTF
+for o in IRTF.objects.all():
+    print "importing IRTF", o.pk, o.acronym
+    
+    try:
+        group = Group.objects.get(acronym=o.acronym.lower())
+    except Group.DoesNotExist:
+        group = Group(acronym=o.acronym.lower())
+        
+    group.name = o.name
+    group.state = state_names["active"] # we assume all to be active
+    group.type = type_names["rg"]
+    group.parent = irtf_group
+
+    group.comments = o.charter_text or ""
+    
+    group.save()
+
+    # FIXME: missing fields from old: meeting_scheduled
+
+# SDOs
+for o in SDOs.objects.all().order_by("pk"):
+    # we import SDOs as groups, this makes it easy to take advantage
+    # of the rest of the role/person models for authentication and
+    # authorization
+    print "importing SDOs", o.pk, o.sdo_name
+    Group.objects.get_or_create(name=o.sdo_name, type=type_names["sdo"])
+
 # Area
 for o in Area.objects.all():
     print "importing Area", o.pk, o.area_acronym.acronym
@@ -153,26 +181,6 @@ for o in Area.objects.all():
     # FIXME: missing fields from old: extra_email_addresses
 
     
-# IRTF
-for o in IRTF.objects.all():
-    print "importing IRTF", o.pk, o.acronym
-    
-    try:
-        group = Group.objects.get(acronym=o.acronym.lower())
-    except Group.DoesNotExist:
-        group = Group(acronym=o.acronym.lower())
-        
-    group.name = o.name
-    group.state = state_names["active"] # we assume all to be active
-    group.type = type_names["rg"]
-    group.parent = irtf_group
-
-    group.comments = o.charter_text or ""
-    
-    group.save()
-
-    # FIXME: missing fields from old: meeting_scheduled
-
 # IETFWG, AreaGroup
 for o in IETFWG.objects.all().order_by("pk"):
     print "importing IETFWG", o.pk, o.group_acronym.acronym
@@ -285,12 +293,4 @@ for o in IETFWG.objects.all().order_by("pk"):
     # dormant_date is empty on all so don't bother with that
             
     # FIXME: missing fields from old: meeting_scheduled, email_keyword, meeting_scheduled_old
-
-# SDOs
-for o in SDOs.objects.all().order_by("pk"):
-    # we import SDOs as groups, this makes it easy to take advantage
-    # of the rest of the role/person models for authentication and
-    # authorization
-    print "importing SDOs", o.pk, o.sdo_name
-    Group.objects.get_or_create(name=o.sdo_name, type=type_names["sdo"])
 
