@@ -7,6 +7,12 @@
 
 <p>Ballot has been sent out.</p>
 
+{% if doc.idinternal.telechat_date %}
+<p>The document is currently on the {{ doc.idinternal.telechat_date }} telechat agenda.</p>
+{% else %}
+<p>The document is not on any telechat agenda.</p>
+{% endif %}
+
 <div class="actions">
   <a href="{{ doc.idinternal.get_absolute_url }}">Back to document</a>
 </div>

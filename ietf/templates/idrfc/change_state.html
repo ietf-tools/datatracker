@@ -10,10 +10,12 @@ form.change-state .actions {
   text-align: right;
   padding-top: 10px;
 }
+.warn-states,
 .next-states,
 .prev-state {
   margin-bottom: 30px;
 }
+.warn-states form,
 .next-states form,
 .prev-state form {
   display: inline;
@@ -49,6 +51,21 @@ form.change-state .actions {
     <input type="submit" value="{{ n.next_state.state }}" />
   </form>
   {% endfor %}
+</div>
+{% endif %}
+
+{% if to_iesg_eval %}
+<h3>You could also jump directly to</h3>
+<div class="warn-states">
+  <form action="" method="post">
+    <input type="hidden" name="state" value="{{ to_iesg_eval.next_state.document_state_id }}" />
+    <input type="hidden" name="substate" value="" />
+    <input type="submit" value="{{ to_iesg_eval.next_state.state }}" />
+  </form>
+  <p> 
+     But the ballot for this document has not yet been issued. 
+     <a href="{% url doc_ballot_writeupnotes name=doc.filename %}">Edit Ballot Text</a>
+  </p>
 </div>
 {% endif %}
 

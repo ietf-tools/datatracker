@@ -2,6 +2,16 @@
 
 {% block title %}Edit info on {{ doc }}{% endblock %}
 
+{% block scripts %}
+
+function make_bold()
+{
+  var e = document.getElementById("ballotwarn");
+  e.setAttribute("class","warning");
+}
+
+{% endblock %}
+
 {% block morecss %}
 form.edit-info #id_state_change_notice_to {
   width: 600px;
@@ -12,6 +22,10 @@ form.edit-info #id_note {
 }
 form.edit-info .actions {
   padding-top: 20px;
+}
+.warning {
+  font-weight:bold;
+  color:red;
 }
 {% endblock %}
 
@@ -25,7 +39,12 @@ form.edit-info .actions {
     <tr>
       <th>{{ field.label_tag }}:</th>
       <td>{{ field }}
-      {% ifequal field.name "telechat_date" %}{{ form.returning_item }} {{ form.returning_item.label_tag }} {{ form.returning_item.errors }}{% endifequal %}
+      {% ifequal field.name "telechat_date" %}
+        {% if not ballot_issued %}
+         <span id="ballotwarn"> A ballot for this document has not been issued: <a href="{% url doc_ballot_writeupnotes name=doc.filename %}">Edit Ballot Text</a></span>
+        {% endif %}
+        {{ form.returning_item }} {{ form.returning_item.label_tag }} {{ form.returning_item.errors }}
+      {% endifequal %}
       {% ifequal field.name "job_owner" %}
       {% if user|in_group:"Area_Director" %}
       <label><input type="checkbox" name="job_owner" value="{{ login.id }}" /> Assign to me</label>

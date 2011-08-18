@@ -72,11 +72,26 @@ def change_state(request, name):
     prev_state_formatted = format_document_state(doc.idinternal.prev_state,
                                                  doc.idinternal.prev_sub_state)
 
+    try:
+       ballot_issued = doc.idinternal.ballot.ballot_issued
+    except BallotInfo.DoesNotExist:
+       ballot_issued = False
+
+    to_iesg_eval = None
+    if not ballot_issued:
+       try:
+         to_iesg_eval = next_states.filter(next_state=IDState.IESG_EVALUATION)[0]
+       except IndexError:
+         pass
+       if to_iesg_eval:
+          next_states = next_states.exclude(next_state=IDState.IESG_EVALUATION)
+
     return render_to_response('idrfc/change_state.html',
                               dict(form=form,
                                    doc=doc,
                                    prev_state_formatted=prev_state_formatted,
-                                   next_states=next_states),
+                                   next_states=next_states,
+                                   to_iesg_eval=to_iesg_eval),
                               context_instance=RequestContext(request))
 
 def dehtmlify_textarea_text(s):
@@ -90,7 +105,7 @@ class EditInfoForm(forms.Form):
     create_in_state = forms.ModelChoiceField(IDState.objects.filter(document_state_id__in=(IDState.PUBLICATION_REQUESTED, IDState.AD_WATCHING)), empty_label=None, required=False)
     state_change_notice_to = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
-    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
+    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
     returning_item = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
@@ -289,12 +304,18 @@ def edit_info(request, name):
 
     if not new_document:
         form.standard_fields = [x for x in form.standard_fields if x.name != "create_in_state"]
+
+    try:
+       ballot_issued = doc.idinternal.ballot.ballot_issued
+    except BallotInfo.DoesNotExist:
+       ballot_issued = False
         
     return render_to_response('idrfc/edit_info.html',
                               dict(doc=doc,
                                    form=form,
                                    user=request.user,
-                                   login=login),
+                                   login=login,
+                                   ballot_issued=ballot_issued),
                               context_instance=RequestContext(request))
 
 
