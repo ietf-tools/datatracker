@@ -1,3 +1,13 @@
+ietfdb (3.59)
+
+  * Merged [3331] from rjsparks@nostrum.com: 
+    Make it more likely that one will issue a ballot when it makes sense 
+    to do so.  Fixes bug 703. 
+  * From smccammon@amsl.com:
+    Updated field help for liaison statements, to match the current form.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Aug 2011 00:11:00 +0200
+
 ietfdb (3.58)
 
   * Merged [3272] from rjsparks@nostrum.com:
