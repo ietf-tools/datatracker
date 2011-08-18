@@ -276,9 +276,12 @@ class PersonOrOrgInfo(models.Model):
     def email(self, priority=1, type=None):
         name = unicode(self)
         email = ''
-        addresses = self.emailaddress_set.filter(address__contains="@").order_by('priority')[:1]
+        addresses = self.emailaddress_set.filter(address__contains="@").order_by('priority')
         if addresses:
-            email = addresses[0].address.replace('<', '').replace('>', '')
+            email = addresses[0].address
+            for a in addresses:
+                if a.priority == priority:
+                    email = a.address
 	return (name, email)
     # Added by Sunny Lee to display person's affiliation - 5/26/2007
     def affiliation(self, priority=1):
