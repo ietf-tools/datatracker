@@ -310,7 +310,7 @@ def import_from_idinternal(d, idinternal):
 
                 found = False
                 for p in positions:
-                    if not d.docevent_set.filter(type="changed_ballot_position", ballotposition__pos=position, ballotposition__ad=iesg_login_to_person(p.ad)):
+                    if not BallotPositionDocEvent.objects.filter(doc=d, type="changed_ballot_position", pos=position, ad=iesg_login_to_person(p.ad)):
                         login = p.ad
                         found = True
                         break
