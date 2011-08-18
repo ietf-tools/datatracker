@@ -46,7 +46,7 @@ authorized_role = name(RoleName, "auth", "Authorized Individual")
 
 # SDOAuthorizedIndividual
 for o in SDOAuthorizedIndividual.objects.all().order_by("pk"):
-    print "importing SDOAuthorizedIndividual", o.pk, o.sdo, o.person
+    print "importing SDOAuthorizedIndividual", o.pk, unicode(o.sdo).encode("utf-8"), unicode(o.person).encode("utf-8")
 
     group = Group.objects.get(name=o.sdo.sdo_name, type="sdo")
     email = get_or_create_email(o, create_fake=False)
@@ -55,7 +55,7 @@ for o in SDOAuthorizedIndividual.objects.all().order_by("pk"):
 
 # LiaisonManagers
 for o in LiaisonManagers.objects.all().order_by("pk"):
-    print "importing LiaisonManagers", o.pk, o.sdo, o.person
+    print "importing LiaisonManagers", o.pk, unicode(o.sdo).encode("utf-8"), unicode(o.person).encode("utf-8")
 
     group = Group.objects.get(name=o.sdo.sdo_name, type="sdo")
     email = Email.objects.get(address__iexact=o.person.email(priority=o.email_priority)[1])
