@@ -414,7 +414,6 @@ def mail_admins(subject, message, fail_silently=False, html_message=None, extra_
     if not (settings.ADMINS or extra_emails):
         return
     emails = set(list(settings.ADMINS) + extra_emails);
-    print " * Admin email addresses:", emails
     from django.core.mail import EmailMultiAlternatives
     msg = EmailMultiAlternatives(settings.EMAIL_SUBJECT_PREFIX + subject, message, settings.SERVER_EMAIL, [a[1] for a in emails])
     if html_message:
