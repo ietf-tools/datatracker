@@ -81,7 +81,7 @@ for o in Announcement.objects.all().select_related('announced_to', 'announced_fr
 
     if o.nomcom:
         nomcom = Group.objects.filter(role__name="chair",
-                                      role__email__person__id=o.nomcom_chair.person.pk,
+                                      role__email__person=old_person_to_person(o.nomcom_chair.person),
                                       acronym__startswith="nomcom").exclude(acronym="nomcom").get()
         
         message.related_groups.add(nomcom)
