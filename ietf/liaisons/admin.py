@@ -33,7 +33,6 @@ class LiaisonDetailAdmin(admin.ModelAdmin):
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     admin.site.register(LiaisonDetail, LiaisonDetailAdmin)
 
-
 class LiaisonPurposeAdmin(admin.ModelAdmin):
     ordering = ('purpose_text', )
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
@@ -138,3 +137,13 @@ class LegacyLiaisonUserAdmin(admin.ModelAdmin):
     list_display = ['pk', 'person_link', 'login_name', 'user_level', 'comment', ]
     raw_id_fields = [ 'person', ]
 admin.site.register(LegacyLiaisonUser, LegacyLiaisonUserAdmin)
+
+class LiaisonStatementAdmin(admin.ModelAdmin):
+    list_display = ['id', 'title', 'from_name', 'to_name', 'submitted', 'purpose', 'related_to']
+    list_display_links = ['id', 'title']
+    ordering = ('title', )
+    raw_id_fields = ('from_contact', 'related_to', 'from_group', 'to_group', 'attachments')
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from ietf.liaisons.models import LiaisonStatement
+    admin.site.register(LiaisonStatement, LiaisonStatementAdmin)
+

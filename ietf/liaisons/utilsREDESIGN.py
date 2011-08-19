@@ -22,16 +22,19 @@ class FakePerson(object):
     def email(self):
         return (self.name, self.address)
 
-# the following is a biggish object hierarchy modeling the entity
+# the following is a biggish object hierarchy abstracting the entity
 # names and auth rules for posting liaison statements in a sort of
-# semi-declarational way
+# semi-declarational (and perhaps overengineered given the revamped
+# schema) way - unfortunately, it's never been strong enough to do so
+# fine-grained enough so the form code also has some rules
 
 def role_persons_with_fixed_email(group, role_name):
+    from redesign.group.models import Role    
     res = []
     for r in Role.objects.filter(group=group, name=role_name).select_related("email"):
         p = r.email.person
-        # evil hack to make email() return the right address
-        p.email = (lambda email: (lambda x: (x.name, email.address)))(r.email)
+        # proxy hack to make email() return the right address
+        p.email = (lambda name, address: (lambda: (name, address)))(p.name, r.email.address)
         res.append(p)
     return res
     

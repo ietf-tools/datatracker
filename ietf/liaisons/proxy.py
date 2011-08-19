@@ -1,8 +1,12 @@
 from redesign.proxy_utils import TranslatingManager
 from ietf.liaisons.models import LiaisonStatement
+from redesign.doc.models import Document
 
 class LiaisonDetailProxy(LiaisonStatement):
-    objects = TranslatingManager(dict(meeting_num="number"))
+    objects = TranslatingManager(dict(submitted_date="submitted",
+                                      deadline_date="deadline",
+                                      to_body="to_name",
+                                      from_raw_body="from_name"))
                                       
     def from_object(self, base):
         for f in base._meta.fields:
@@ -16,7 +20,7 @@ class LiaisonDetailProxy(LiaisonStatement):
     #person = models.ForeignKey(PersonOrOrgInfo, null=True, db_column='person_or_org_tag')
     @property
     def person(self):
-        return self.submitted_by
+        return self.from_contact.person if self.from_contact else ""
     #submitted_date = models.DateField(null=True, blank=True)
     @property
     def submitted_date(self):
@@ -44,23 +48,45 @@ class LiaisonDetailProxy(LiaisonStatement):
     #deadline_date = models.DateField(null=True, blank=True)
     @property
     def deadline_date(self):
-        return self.deadline.date()
+        return self.deadline
     #cc1 = models.TextField(blank=True, null=True)
     @property
     def cc1(self):
         return self.cc
     #cc2 = models.CharField(blank=True, null=True, max_length=50) # unused
+    @property
+    def cc2(self):
+        return ""
     #submitter_name = models.CharField(blank=True, null=True, max_length=255)
+    @property
+    def submitter_name(self):
+        i = self.to_name.find('<')
+        if i > 0:
+            return self.to_name[:i - 1]
+        else:
+            return self.to_name
     #submitter_email = models.CharField(blank=True, null=True, max_length=255)
+    @property
+    def submitter_email(self):
+        import re
+        re_email = re.compile("<(.*)>")
+        match = re_email.search(self.to_name)
+        if match:
+            return match.group(1)
+        else:
+            return ""
     #by_secretariat = models.IntegerField(null=True, blank=True)
     @property
     def by_secretariat(self):
-        return False
+        return not self.from_contact
     #to_poc = models.CharField(blank=True, null=True, max_length=255)
     @property
     def to_poc(self):
         return self.to_contact
-    #to_email = models.CharField(blank=True, null=True, max_length=255) # unused
+    #to_email = models.CharField(blank=True, null=True, max_length=255)
+    @property
+    def to_email(self):
+        return ""
     #purpose = models.ForeignKey(LiaisonPurpose,null=True)
     #replyto = models.CharField(blank=True, null=True, max_length=255)
     @property
@@ -84,6 +110,15 @@ class LiaisonDetailProxy(LiaisonStatement):
         return bool(self.approved)
     #action_taken = models.BooleanField(default=False, db_column='taken_care') # same name
     #related_to = models.ForeignKey('LiaisonDetail', blank=True, null=True) # same name
+
+    @property
+    def uploads_set(self):
+        return UploadsProxy.objects.filter(liaisonstatement=self).order_by('name')
+    
+    @property
+    def liaisondetail_set(self):
+        return self.liaisonstatement_set
+    
     def __str__(self):
 	return unicode(self)
     def __unicode__(self):
@@ -93,7 +128,7 @@ class LiaisonDetailProxy(LiaisonStatement):
     def from_sdo(self):
         return self.from_group if self.from_group and self.from_group.type_id == "sdo" else None
     def from_email(self):
-        self.from_contact
+        self.from_contact.address
     def get_absolute_url(self):
 	return '/liaison/%d/' % self.detail_id
     class Meta:
@@ -150,3 +185,29 @@ class LiaisonDetailProxy(LiaisonStatement):
 
     def is_pending(self):
         return not self.approved
+
+class UploadsProxy(Document):
+    #file_id = models.AutoField(primary_key=True)
+    @property
+    def file_id(self):
+        return int(self.external_url.split(".")[0])
+    #file_title = models.CharField(blank=True, max_length=255)
+    @property
+    def file_title(self):
+        return self.title
+    #person = models.ForeignKey(PersonOrOrgInfo, db_column='person_or_org_tag')
+    #file_extension = models.CharField(blank=True, max_length=10)
+    @property
+    def file_extension(self):
+        t = self.external_url.split(".")
+        if len(t) > 1:
+            return "." + t[1]
+        else:
+            return ""
+    #detail = models.ForeignKey(LiaisonDetail)
+    @property
+    def detail(self):
+        return self.liaisonstatement_set.all()[0]
+
+    class Meta:
+        proxy = True

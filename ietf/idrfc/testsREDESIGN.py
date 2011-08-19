@@ -42,10 +42,10 @@ from django.conf import settings
 from pyquery import PyQuery
 
 from ietf.idtracker.models import IDDates
-from doc.models import *
-from name.models import *
-from group.models import *
-from person.models import *
+from redesign.doc.models import *
+from redesign.name.models import *
+from redesign.group.models import *
+from redesign.person.models import *
 from ietf.iesg.models import TelechatDates
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, login_testing_unauthorized
 from ietf.utils.test_runner import mail_outbox

@@ -2,7 +2,7 @@ from redesign.person.models import Person
 from redesign.group.models import Role
 
 
-LIAISON_EDIT_GROUPS = ['Secretariat']
+LIAISON_EDIT_GROUPS = ['Secretariat'] # this is not working anymore, refers to old auth model
 
 
 def get_ietf_chair():
@@ -31,7 +31,10 @@ def get_iab_executive_director():
 
 
 def get_person_for_user(user):
-    return user.get_profile()
+    p = user.get_profile()
+    p.email = lambda: (p.name, p.email_address().address)
+
+    return p
 
 
 def is_areadirector(person):
@@ -80,7 +83,7 @@ def is_sdo_authorized_individual(person):
 
 
 def is_secretariat(user):
-    return bool(Role.objects.filter(email__person=user.get_profile(), name="auth", group__acronym="secretariat"))
+    return bool(Role.objects.filter(email__person=user.get_profile(), name="secr", group__acronym="secretariat"))
 
 
 def can_add_incoming_liaison(user):

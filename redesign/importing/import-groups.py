@@ -139,7 +139,13 @@ for o in SDOs.objects.all().order_by("pk"):
     # of the rest of the role/person models for authentication and
     # authorization
     print "importing SDOs", o.pk, o.sdo_name
-    Group.objects.get_or_create(name=o.sdo_name, type=type_names["sdo"])
+    try:
+        group = Group.objects.get(name=o.sdo_name, type=type_names["sdo"])
+    except Group.DoesNotExist:
+        group = Group(name=o.sdo_name, type=type_names["sdo"])
+
+    group.state_id = "active"
+    group.save()
 
 # Area
 for o in Area.objects.all():

@@ -21,6 +21,9 @@ from ietf.liaisons.forms import liaison_form_factory
 from ietf.liaisons.models import LiaisonDetail, OutgoingLiaisonApproval
 from ietf.liaisons.utils import IETFHM
 
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from ietf.liaisons.proxy import LiaisonDetailProxy as LiaisonDetail
+
 
 @can_submit_liaison
 def add_liaison(request, liaison=None):
@@ -81,6 +84,7 @@ def get_info(request):
             full_list.sort(lambda x,y: cmp(x[1], y[1]))
             full_list = [(person.pk, person.email())] + full_list
             result.update({'full_list': full_list})
+
     json_result = simplejson.dumps(result)
     return HttpResponse(json_result, mimetype='text/javascript')
 
@@ -93,6 +97,19 @@ def _fake_email_view(request, liaison):
                                'liaison': liaison},
                               context_instance=RequestContext(request))
 
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    def approvable_liaison_statements(group_codes):
+        # this is a bit complicated because IETFHM encodes the
+        # groups, it should just give us a list of ids or acronyms
+        group_acronyms = []
+        group_ids = []
+        for x in group_codes:
+            if "_" in x:
+                group_ids.append(x.split("_")[1])
+            else:
+                group_acronyms.append(x)
+
+        return LiaisonDetail.objects.filter(approved=None).filter(Q(from_group__acronym__in=group_acronyms) | Q (from_group__pk__in=group_ids))
 
 def liaison_list(request):
     user = request.user
@@ -104,7 +121,10 @@ def liaison_list(request):
     person = get_person_for_user(request.user)
     if person:
         approval_codes = IETFHM.get_all_can_approve_codes(person)
-        can_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).count()
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            can_approve = approvable_liaison_statements(approval_codes).count()
+        else:
+            can_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).count()
 
     order = request.GET.get('order_by', 'submitted_date')
     plain_order = order
@@ -121,7 +141,10 @@ def liaison_list(request):
             order = plain_order
         else:
             order = '-%s' % plain_order
-    public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by(order)
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        public_liaisons = LiaisonDetail.objects.exclude(approved=None).order_by(order)
+    else:
+        public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by(order)
 
     return object_list(request, public_liaisons,
                        allow_empty=True,
@@ -139,7 +162,10 @@ def liaison_list(request):
 def liaison_approval_list(request):
     person = get_person_for_user(request.user)
     approval_codes = IETFHM.get_all_can_approve_codes(person)
-    to_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).order_by("-submitted_date")
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        to_approve = approvable_liaison_statements(approval_codes).order_by("-submitted")
+    else:
+        to_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).order_by("-submitted_date")
 
     return object_list(request, to_approve,
                        allow_empty=True,
@@ -183,7 +209,7 @@ def _can_take_care(liaison, user):
         return False
 
     if user.is_authenticated():
-        if user.groups.filter(name__in=LIAISON_EDIT_GROUPS):
+        if is_secretariat(user):
             return True
         else:
             return _find_person_in_emails(liaison, get_person_for_user(user))
@@ -199,6 +225,8 @@ def _find_person_in_emails(liaison, person):
                        liaison.technical_contact] if e ])
     for email in emails.split(','):
         name, addr = parseaddr(email)
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            person.emailaddress_set = person.email_set
         if email_re.search(addr) and person.emailaddress_set.filter(address=addr):
             return True
         elif addr in ('chair@ietf.org', 'iesg@ietf.org') and is_ietfchair(person):
@@ -211,8 +239,12 @@ def _find_person_in_emails(liaison, person):
 
 
 def liaison_detail(request, object_id):
-    qfilter = Q(approval__isnull=True)|Q(approval__approved=True)
-    public_liaisons = LiaisonDetail.objects.filter(qfilter).order_by("-submitted_date")
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        qfilter = Q()
+        public_liaisons = LiaisonDetail.objects.exclude(approved=None).order_by("-submitted_date")
+    else:
+        qfilter = Q(approval__isnull=True)|Q(approval__approved=True)
+        public_liaisons = LiaisonDetail.objects.filter(qfilter).order_by("-submitted_date")
     liaison = get_object_or_404(public_liaisons, pk=object_id)
     can_edit = False
     user = request.user
@@ -226,6 +258,7 @@ def liaison_detail(request, object_id):
     relations = liaison.liaisondetail_set.filter(qfilter)
     return  object_detail(request,
                           public_liaisons,
+                          template_name="liaisons/liaisondetail_detail.html",
                           object_id=object_id,
                           extra_context = {'can_edit': can_edit,
                                            'relations': relations,
@@ -255,7 +288,11 @@ def ajax_liaison_list(request):
             order = plain_order
         else:
             order = '-%s' % plain_order
-    public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by(order)
+    
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        public_liaisons = LiaisonDetail.objects.exclude(approved=None).order_by(order)
+    else:
+        public_liaisons = LiaisonDetail.objects.filter(Q(approval__isnull=True)|Q(approval__approved=True)).order_by(order)
 
     return object_list(request, public_liaisons,
                        allow_empty=True,

@@ -8,26 +8,30 @@ from django.forms.util import ErrorList
 from django.forms.fields import email_re
 from django.template.loader import render_to_string
 
-from ietf.idtracker.models import PersonOrOrgInfo
 from ietf.liaisons.accounts import (can_add_outgoing_liaison, can_add_incoming_liaison,
                                     get_person_for_user, is_secretariat, is_sdo_liaison_manager)
-from ietf.liaisons.models import LiaisonDetail, Uploads, OutgoingLiaisonApproval, SDOs
 from ietf.liaisons.utils import IETFHM
 from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
                                    ShowAttachmentsWidget, RelatedLiaisonWidget)
+from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
+from redesign.group.models import Group
+from redesign.person.models import Person
 
 
-class LiaisonForm(forms.ModelForm):
-
+class LiaisonForm(forms.Form):
     from_field = forms.ChoiceField(widget=FromWidget, label=u'From')
     replyto = forms.CharField(label=u'Reply to')
     organization = forms.ChoiceField()
     to_poc = forms.CharField(widget=ReadOnlyWidget, label="POC", required=False)
+    response_contact = forms.CharField(required=False, max_length=255)
+    technical_contact = forms.CharField(required=False, max_length=255)
     cc1 = forms.CharField(widget=forms.Textarea, label="CC", required=False, help_text='Please insert one email address per line')
+    purpose = forms.ChoiceField()
     purpose_text = forms.CharField(widget=forms.Textarea, label='Other purpose')
     deadline_date = forms.DateField(label='Deadline')
     submitted_date = forms.DateField(label='Submission date', initial=datetime.date.today())
     title = forms.CharField(label=u'Title')
+    body = forms.CharField(widget=forms.Textarea, required=False)
     attachments = forms.CharField(label='Attachments', widget=ShowAttachmentsWidget, required=False)
     attach_title = forms.CharField(label='Title', required=False)
     attach_file = forms.FileField(label='File', required=False)
@@ -36,7 +40,7 @@ class LiaisonForm(forms.ModelForm):
                                                         require=['id_attach_title', 'id_attach_file'],
                                                         required_label='title and file'),
                                     required=False)
-    related_to = forms.ModelChoiceField(LiaisonDetail.objects.all(), label=u'Related Liaison', widget=RelatedLiaisonWidget, required=False)
+    related_to = forms.ModelChoiceField(LiaisonStatement.objects.all(), label=u'Related Liaison', widget=RelatedLiaisonWidget, required=False)
 
     fieldsets = [('From', ('from_field', 'replyto')),
                  ('To', ('organization', 'to_poc')),
@@ -46,9 +50,6 @@ class LiaisonForm(forms.ModelForm):
                  ('Liaison Statement', ('title', 'submitted_date', 'body', 'attachments')),
                  ('Add attachment', ('attach_title', 'attach_file', 'attach_button')),
                 ]
-
-    class Meta:
-        model = LiaisonDetail
 
     class Media:
         js = ("/js/jquery-1.5.1.min.js",
@@ -65,9 +66,25 @@ class LiaisonForm(forms.ModelForm):
         if kwargs.get('data', None):
             kwargs['data'].update({'person': self.person.pk})
             if is_secretariat(self.user) and 'from_fake_user' in kwargs['data'].keys():
-                self.fake_person = PersonOrOrgInfo.objects.get(pk=kwargs['data']['from_fake_user'])
+                self.fake_person = Person.objects.get(pk=kwargs['data']['from_fake_user'])
                 kwargs['data'].update({'person': self.fake_person.pk})
+
+        self.instance = kwargs.pop("instance", None)
+        
         super(LiaisonForm, self).__init__(*args, **kwargs)
+
+        # now copy in values from instance, like a ModelForm
+        if self.instance:
+            for name, field in self.fields.iteritems():
+                try:
+                    x = getattr(self.instance, name)
+                    if name == "purpose": # proxy has a name-clash on purpose so help it
+                        x = x.order
+                    self.initial[name] = x
+                except AttributeError:
+                    # we have some fields on the form that aren't in the model
+                    pass
+        self.fields["purpose"].choices = [("", "---------")] + [(str(l.order), l.name) for l in LiaisonStatementPurposeName.objects.all()]
         self.hm = IETFHM
         self.set_from_field()
         self.set_replyto_field()
@@ -98,8 +115,8 @@ class LiaisonForm(forms.ModelForm):
         assert NotImplemented
 
     def set_replyto_field(self):
-        email = self.person.email()
-        self.fields['replyto'].initial = email and email[1]
+        email = self.person.email_address()
+        self.fields['replyto'].initial = email
 
     def set_organization_field(self):
         assert NotImplemented
@@ -171,7 +188,7 @@ class LiaisonForm(forms.ModelForm):
         return self.hm.get_entity_by_key(organization_key)
 
     def get_poc(self, organization):
-        return ', '.join([i.email()[1] for i in organization.get_poc()])
+        return ', '.join([i.email_address() for i in organization.get_poc()])
 
     def clean_cc1(self):
         value = self.cleaned_data.get('cc1', '')
@@ -199,26 +216,52 @@ class LiaisonForm(forms.ModelForm):
         return cc
 
     def save(self, *args, **kwargs):
-        liaison = super(LiaisonForm, self).save(*args, **kwargs)
-        self.save_extra_fields(liaison)
-        self.save_attachments(liaison)
-        return liaison
+        l = self.instance
+        if not l:
+            l = LiaisonStatement()
+
+        l.title = self.cleaned_data["title"]
+        l.purpose = LiaisonStatementPurposeName.objects.get(order=self.cleaned_data["purpose"])
+        l.body = self.cleaned_data["body"].strip()
+        l.deadline = self.cleaned_data["deadline_date"]
+        l.related_to = self.cleaned_data["related_to"]
+        l.reply_to = self.cleaned_data["replyto"]
+        l.response_contact = self.cleaned_data["response_contact"]
+        l.technical_contact = self.cleaned_data["technical_contact"]
+        
+        now = datetime.datetime.now()
+        
+        l.modified = now
+        l.submitted = datetime.datetime.combine(self.cleaned_data["submitted_date"], now.time())
+        if self.cleaned_data.get("approval"): # FIXME
+            if not l.approved:
+                l.approved = now
+
+        self.save_extra_fields(l)
+        l.save() # we have to save here to make sure we get an id for the attachments
+        self.save_attachments(l)
+        
+        return l
 
     def save_extra_fields(self, liaison):
-        now = datetime.datetime.now()
-        liaison.last_modified_date = now
         from_entity = self.get_from_entity()
-        liaison.from_raw_body = from_entity.name
-        liaison.from_raw_code = self.cleaned_data.get('from_field')
+        print from_entity, type(from_entity)
+        print self.cleaned_data.get("from_field")
+        liason.from_name = from_entity.name
+        print from_entity.obj # FIXME? c.get("from_field")
+        liason.from_group = from_entity.obj
+        liason.from_contact = self.person # FIXME?
+
         organization = self.get_to_entity()
-        liaison.to_raw_code = self.cleaned_data.get('organization')
-        liaison.to_body = organization.name
-        liaison.to_poc = self.get_poc(organization)
-        liaison.submitter_name, liaison.submitter_email = self.person.email()
-        liaison.cc1 = self.get_cc(from_entity, organization)
-        liaison.save()
+        liason.to_name = organization.name
+        print organization.obj # FIXME? self.cleaned_data.get('organization')
+        liason.to_group = organization.obj
+        liason.to_contact = self.get_poc(organization)
+        
+        liaison.cc = self.get_cc(from_entity, organization)
 
     def save_attachments(self, instance):
+        return # FIXME
         for key in self.files.keys():
             title_key = key.replace('file', 'title')
             if not key.startswith('attach_file_') or not title_key in self.data.keys():
@@ -245,7 +288,7 @@ class LiaisonForm(forms.ModelForm):
             exclude_filter = {'pk': self.instance.pk}
         else:
             exclude_filter = {}
-        exists = bool(LiaisonDetail.objects.exclude(**exclude_filter).filter(title__iexact=title).count())
+        exists = bool(LiaisonStatement.objects.exclude(**exclude_filter).filter(title__iexact=title).count())
         if exists:
             raise forms.ValidationError('A liaison statement with the same title has previously been submitted.')
         return title
@@ -255,12 +298,10 @@ class IncomingLiaisonForm(LiaisonForm):
 
     def set_from_field(self):
         if is_secretariat(self.user):
-            sdos = SDOs.objects.all()
+            sdos = Group.objects.filter(type="sdo", state="active")
         else:
-            sdo_managed = [i.sdo for i in self.person.liaisonmanagers_set.all()]
-            sdo_authorized = [i.sdo for i in self.person.sdoauthorizedindividual_set.all()]
-            sdos = set(sdo_managed).union(sdo_authorized)
-        self.fields['from_field'].choices = [('sdo_%s' % i.pk, i.sdo_name) for i in sdos]
+            sdos = Group.objects.filter(type="sdo", state="active", role__email__person=self.person, role__name__in=("liaiman", "auth")).distinct()
+        self.fields['from_field'].choices = [('sdo_%s' % i.pk, i.name) for i in sdos.order_by("name")]
         self.fields['from_field'].widget.submitter = unicode(self.person)
 
     def set_organization_field(self):
@@ -268,7 +309,7 @@ class IncomingLiaisonForm(LiaisonForm):
 
     def get_post_only(self):
         from_entity = self.get_from_entity()
-        if is_secretariat(self.user) or self.person.sdoauthorizedindividual_set.filter(sdo=from_entity.obj):
+        if is_secretariat(self.user) or Role.objects.filter(email__person=self.person, group=from_entity.obj, name="auth"):
             return False
         return True
 
@@ -277,6 +318,9 @@ class IncomingLiaisonForm(LiaisonForm):
             self._errors['from_field'] = ErrorList([u'As an IETF Liaison Manager you can not send an incoming liaison statements, you only can post them'])
         return super(IncomingLiaisonForm, self).clean()
 
+
+def liaison_manager_sdos(person):
+    return Group.objects.filter(type="sdo", state="active", role__email__person=person, role__name="liaiman").distinct()
 
 class OutgoingLiaisonForm(LiaisonForm):
 
@@ -301,7 +345,7 @@ class OutgoingLiaisonForm(LiaisonForm):
                 all_entities += i[1]
             if all_entities:
                 self.fields['from_field'].widget.full_power_on = [i[0] for i in all_entities]
-                self.fields['from_field'].widget.reduced_to_set = ['sdo_%s' % i.sdo.pk for i in self.person.liaisonmanagers_set.all().distinct()]
+                self.fields['from_field'].widget.reduced_to_set = ['sdo_%s' % i.pk for i in liaison_manager_sdos(self.person)]
         else:
             self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
         self.fields['from_field'].widget.submitter = unicode(self.person)
@@ -310,8 +354,7 @@ class OutgoingLiaisonForm(LiaisonForm):
     def set_organization_field(self):
         # If the user is a liaison manager and is nothing more, reduce the To field to his SDOs
         if not self.hm.get_entities_for_person(self.person) and is_sdo_liaison_manager(self.person):
-            sdos = [i.sdo for i in self.person.liaisonmanagers_set.all().distinct()]
-            self.fields['organization'].choices = [('sdo_%s' % i.pk, i.sdo_name) for i in sdos]
+            self.fields['organization'].choices = [('sdo_%s' % i.pk, i.name) for i in liaison_manager_sdos()]
         else:
             self.fields['organization'].choices = self.hm.get_all_outgoing_entities()
         self.fieldsets[1] = ('To', ('organization', 'other_organization', 'to_poc'))
@@ -332,6 +375,7 @@ class OutgoingLiaisonForm(LiaisonForm):
         return self.cleaned_data['to_poc']
 
     def save_extra_fields(self, liaison):
+        raise NotImplemented
         super(OutgoingLiaisonForm, self).save_extra_fields(liaison)
         from_entity = self.get_from_entity()
         needs_approval = from_entity.needs_approval(self.person)
@@ -364,7 +408,7 @@ class OutgoingLiaisonForm(LiaisonForm):
         # If the from entity is one in wich the user has full privileges the to entity could be anyone
         if from_code in [i[0] for i in all_entities]:
             return to_code
-        sdo_codes = ['sdo_%s' % i.sdo.pk for i in person.liaisonmanagers_set.all().distinct()]
+        sdo_codes = ['sdo_%s' % i.pk for i in liaison_manager_sdos(self.person)]
         if to_code in sdo_codes:
             return to_code
         entity = self.get_to_entity()
@@ -384,7 +428,6 @@ class EditLiaisonForm(LiaisonForm):
     cc1 = forms.CharField(widget=forms.TextInput, label="CC", required=False)
 
     class Meta:
-        model = LiaisonDetail
         fields = ('from_raw_body', 'to_body', 'to_poc', 'cc1', 'last_modified_date', 'title',
                   'response_contact', 'technical_contact', 'purpose_text', 'body',
                   'deadline_date', 'purpose', 'replyto', 'related_to')
@@ -405,26 +448,8 @@ class EditLiaisonForm(LiaisonForm):
         self.fields['organization'].initial = self.instance.to_body
 
     def save_extra_fields(self, liaison):
-        now = datetime.datetime.now()
-        liaison.last_modified_date = now
-        liaison.from_raw_body = self.cleaned_data.get('from_field')
-        liaison.to_body = self.cleaned_data.get('organization')
-        liaison.to_poc = self.cleaned_data['to_poc']
-        liaison.cc1 = self.cleaned_data['cc1']
-        liaison.save()
+        liaison.from_name = self.cleaned_data.get('from_field')
+        liaison.to_name = self.cleaned_data.get('organization')
+        liaison.to_contact = self.cleaned_data['to_poc']
+        liaison.cc = self.cleaned_data['cc1']
 
-
-def liaison_form_factory(request, **kwargs):
-    user = request.user
-    force_incoming = 'incoming' in request.GET.keys()
-    liaison = kwargs.pop('liaison', None)
-    if liaison:
-        return EditLiaisonForm(user, instance=liaison, **kwargs)
-    if not force_incoming and can_add_outgoing_liaison(user):
-        return OutgoingLiaisonForm(user, **kwargs)
-    elif can_add_incoming_liaison(user):
-        return IncomingLiaisonForm(user, **kwargs)
-    return None
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from ietf.liaisons.formsREDESIGN import *

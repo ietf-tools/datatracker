@@ -32,16 +32,17 @@ from redesign.name.utils import name
 #  - groups have been imported
 
 purpose_mapping = {
-    1: name(LiaisonStatementPurposeName, "action", "For action"),
-    2: name(LiaisonStatementPurposeName, "comment", "For comment"),
-    3: name(LiaisonStatementPurposeName, "info", "For information"),
-    4: name(LiaisonStatementPurposeName, "response", "In response"),
-    5: name(LiaisonStatementPurposeName, "other", "Other"),
+    1: name(LiaisonStatementPurposeName, "action", "For action", order=1),
+    2: name(LiaisonStatementPurposeName, "comment", "For comment", order=2),
+    3: name(LiaisonStatementPurposeName, "info", "For information", order=3),
+    4: name(LiaisonStatementPurposeName, "response", "In response", order=4),
+    # we drop the "other" category here, it was virtuall unused in the old schema
     }
 
 liaison_attachment_doctype = name(DocTypeName, "liai-att", "Liaison Attachment")
 
 purpose_mapping[None] = purpose_mapping[3] # map unknown to "For information"
+purpose_mapping[5] = purpose_mapping[3] # "Other" is mapped to "For information" as default
 
 system_email = Email.objects.get(person__name="(System)")
 obviously_bogus_date = datetime.date(1970, 1, 1)
@@ -145,7 +146,7 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
     l.from_name = o.from_body().strip()
     l.from_group = get_body(l.from_name, o.from_raw_code) # try to establish link
     if not o.person:
-        l.from_contact = system_email
+        l.from_contact = None
     else:
         try:
             l.from_contact = Email.objects.get(address__iexact=o.from_email().address)
@@ -155,7 +156,7 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
     if o.by_secretariat:
         l.to_name = o.submitter_name
         if o.submitter_email:
-            l.to_name += " " + o.submitter_email
+            l.to_name += " <%s>" % o.submitter_email
     else:
         l.to_name = o.to_body
     l.to_name = l.to_name.strip()
@@ -170,7 +171,12 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
     
     l.submitted = o.submitted_date
     l.modified = o.last_modified_date
-    l.approved = o.approval.approval_date or l.modified or datetime.datetime.now() if o.approval and o.approval.approved else None
+    if not o.approval:
+        # no approval object means it's approved alright - weird, we
+        # have to fake the approved date then
+        l.approved = l.modified or l.submitted or datetime.datetime.now()
+    else:
+        l.approved = o.approval.approval_date if o.approval.approved else None
 
     l.action_taken = o.action_taken
     
@@ -184,7 +190,7 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
         attachment.name = l.name() + ("-attachment-%s" % (i + 1))
         attachment.time = l.submitted
         # we should fixup the filenames, but meanwhile, store it here
-        attachment.external_url = "%s.%s" % (u.file_id, u.file_extension)
+        attachment.external_url = "%s%s" % (u.file_id, u.file_extension)
         attachment.save()
 
         DocAlias.objects.get_or_create(document=attachment, name=attachment.name)

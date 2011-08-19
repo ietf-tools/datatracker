@@ -322,7 +322,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_FROM_O
         
         from_group = models.ForeignKey(Group, related_name="liaisonstatement_from_set", null=True, blank=True, help_text="From body, if it exists")
         from_name = models.CharField(max_length=255, help_text="Name of the sender body")
-        from_contact = models.ForeignKey(Email)
+        from_contact = models.ForeignKey(Email, blank=True, null=True)
         to_group = models.ForeignKey(Group, related_name="liaisonstatement_to_set", null=True, blank=True, help_text="To body, if it exists")
         to_name = models.CharField(max_length=255, help_text="Name of the recipient body")
         to_contact = models.CharField(blank=True, max_length=255, help_text="Contacts at to body")
