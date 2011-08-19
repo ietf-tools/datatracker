@@ -46,7 +46,7 @@ authorized_role = name(RoleName, "auth", "Authorized Individual")
 
 # SDOAuthorizedIndividual
 for o in SDOAuthorizedIndividual.objects.all().order_by("pk"):
-    print "importing SDOAuthorizedIndividual", o.pk, unicode(o.sdo).encode("utf-8"), unicode(o.person).encode("utf-8")
+    print "importing SDOAuthorizedIndividual", o.pk, o.sdo, o.person
 
     group = Group.objects.get(name=o.sdo.sdo_name, type="sdo")
     email = get_or_create_email(o, create_fake=False)
@@ -55,7 +55,7 @@ for o in SDOAuthorizedIndividual.objects.all().order_by("pk"):
 
 # LiaisonManagers
 for o in LiaisonManagers.objects.all().order_by("pk"):
-    print "importing LiaisonManagers", o.pk, unicode(o.sdo).encode("utf-8"), unicode(o.person).encode("utf-8")
+    print "importing LiaisonManagers", o.pk, o.sdo, o.person
 
     group = Group.objects.get(name=o.sdo.sdo_name, type="sdo")
     email = Email.objects.get(address__iexact=o.person.email(priority=o.email_priority)[1])
@@ -80,10 +80,13 @@ for o in OldRole.objects.all().order_by('pk'):
         acronym = "ietf"
         role = adm_director_role
 
-    group = Group.objects.get(acronym=acronym)
-    email = get_or_create_email(o, create_fake=False)
-
-    Role.objects.get_or_create(name=role, group=group, email=email)
+    try:
+        group = Group.objects.get(acronym=acronym)
+        email = get_or_create_email(o, create_fake=False)
+        
+        Role.objects.get_or_create(name=role, group=group, email=email)
+    except:
+        pass #FIXME this fails for group RSOC
 
 # WGEditor
 for o in WGEditor.objects.all():
@@ -261,7 +264,6 @@ for o in IESGHistory.objects.all().order_by('meeting__start_date', 'pk'):
                          state=existing.state,
                          type=existing.type,
                          parent=existing.parent,
-                         iesg_state=existing.iesg_state,
                          ad=existing.ad,
                          list_email=existing.list_email,
                          list_subscribe=existing.list_subscribe,

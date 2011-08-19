@@ -13,7 +13,6 @@ class GroupInfo(models.Model):
     state = models.ForeignKey(GroupStateName, null=True)
     type = models.ForeignKey(GroupTypeName, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)
-    iesg_state = models.ForeignKey(IesgGroupStateName, verbose_name="IESG state", blank=True, null=True)
     ad = models.ForeignKey(Person, blank=True, null=True)
     list_email = models.CharField(max_length=64, blank=True)
     list_subscribe = models.CharField(max_length=255, blank=True)
@@ -40,10 +39,38 @@ class Group(GroupInfo):
 # to select group history from this table.
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')
-    charter = models.ForeignKey('doc.Document', related_name='chartered_group_history_set', blank=True, null=True)
     
     class Meta:
         verbose_name_plural="group histories"
+
+def save_group_in_history(group):
+    def get_model_fields_as_dict(obj):
+        return dict((field.name, getattr(obj, field.name))
+                    for field in obj._meta.fields
+                    if field is not obj._meta.pk)
+
+    # copy fields
+    fields = get_model_fields_as_dict(group)
+    del fields["charter"] # Charter is saved canonically on Group
+    fields["group"] = group
+    
+    grouphist = GroupHistory(**fields)
+    grouphist.save()
+
+    # save RoleHistory
+    for role in group.role_set.all():
+        rh = RoleHistory(name=role.name, group=grouphist, email=role.email)
+        rh.save()
+
+    # copy many to many
+    for field in group._meta.many_to_many:
+        if not field.rel.through:
+            # just add the attributes
+            rel = getattr(grouphist, field.name)
+            for item in getattr(group, field.name).all():
+                rel.add(item)
+
+    return grouphist
 
 class GroupURL(models.Model):
     group = models.ForeignKey(Group)
@@ -62,10 +89,16 @@ class GroupMilestone(models.Model):
     class Meta:
 	ordering = ['expected_due_date']
 
-GROUP_EVENT_CHOICES = [("proposed", "Proposed group"),
-                       ("started", "Started group"),
-                       ("concluded", "Concluded group"),
-                       ]
+GROUP_EVENT_CHOICES = [
+    # core events
+    ("proposed", "Proposed group"),
+    ("started", "Started group"),
+    ("concluded", "Concluded group"),
+
+    # misc group events
+    ("added_comment", "Added comment"),
+    ("changed_record", "Changed record metadata"),
+    ]
     
 class GroupEvent(models.Model):
     """An occurrence for a group, used for tracking who, when and what."""

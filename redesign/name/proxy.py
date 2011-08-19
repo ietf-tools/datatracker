@@ -33,9 +33,7 @@ class IDState(IesgDocStateName):
     DEAD = 99
     DO_NOT_PUBLISH_STATES = (33, 34)
     
-    objects = TranslatingManager(dict(pk="order",
-                                      document_state_id="order",
-                                      document_state_id__in="order__in"))
+    objects = TranslatingManager(dict(pk="order"))
     
     def from_object(self, base):
         for f in base._meta.fields:

@@ -189,7 +189,6 @@ class EditInfoTestCase(django.test.TestCase):
                                   status_date=str(date.today() + timedelta(2)),
                                   via_rfc_editor="1",
                                   ad=str(new_ad.pk),
-                                  create_in_state="pub-req",
                                   notify="test@example.com",
                                   note="New note",
                                   telechat_date="",
@@ -214,7 +213,6 @@ class EditInfoTestCase(django.test.TestCase):
         data = dict(intended_std_level=str(draft.intended_std_level_id),
                     status_date=str(date.today() + timedelta(2)),
                     via_rfc_editor="1",
-                    create_in_state="pub-req",
                     ad=str(draft.ad_id),
                     notify="test@example.com",
                     note="",
@@ -275,7 +273,6 @@ class EditInfoTestCase(django.test.TestCase):
                                   status_date=str(date.today() + timedelta(2)),
                                   via_rfc_editor="1",
                                   ad=ad.pk,
-                                  create_in_state="watching",
                                   notify="test@example.com",
                                   note="This is a note",
                                   telechat_date="",
@@ -284,7 +281,6 @@ class EditInfoTestCase(django.test.TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.tags.filter(slug="via-rfc"))
-        self.assertEquals(draft.iesg_state_id, "watching")
         self.assertEquals(draft.ad, ad)
         self.assertEquals(draft.note, "This is a note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))

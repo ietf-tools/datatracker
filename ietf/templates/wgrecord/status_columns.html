@@ -1,0 +1,17 @@
+{% comment %}
+Copyright The IETF Trust 2011, All Rights Reserved
+{% endcomment %}
+{% load ietf_filters ietf_streams %}{% load rec_ballot_icon %}
+<td class="status">
+{% if wg.charter %}
+{{ wg.charter.charter_state|safe }}
+{% else %}
+(data missing)
+{% endif %}
+{% if not hide_telechat_date %}{% if doc.telechat_date %}<br/>IESG Telechat: {{ doc.telechat_date }}{% endif %}{% endif %}
+
+{% block extra_status %}{% endblock %}
+</td>
+<td class="ballot">
+{% ifequal wg.charter.charter_state_id "iesgrev" %}{% rec_ballot_icon wg.acronym %}{% endifequal %}
+</td>

@@ -52,6 +52,7 @@ def alias_doc(name, doc):
     return alias
 
 type_draft = name(DocTypeName, "draft", "Draft")
+type_charter = name(DocTypeName, "charter", "Charter")
 
 stream_mapping = get_stream_mapping()
 
@@ -122,6 +123,29 @@ ballot_position_mapping["abstain"] = ballot_position_mapping['Abstain']
 ballot_position_mapping["recuse"] = ballot_position_mapping['Recuse']
 ballot_position_mapping[None] = ballot_position_mapping["No Record"]
 ballot_position_mapping["Undefined"] = ballot_position_mapping["No Record"]
+
+group_ballot_position_mapping = {
+    'No': name(GroupBallotPositionName, 'no', 'No'),
+    'Yes': name(GroupBallotPositionName, 'yes', 'Yes'),
+    'Abstain': name(GroupBallotPositionName, 'abstain', 'Abstain'),
+    'Block': name(GroupBallotPositionName, 'block', 'Block'),
+    'No Record': name(GroupBallotPositionName, 'norecord', 'No record'),
+    }
+group_ballot_position_mapping["no"] = group_ballot_position_mapping['No']
+group_ballot_position_mapping["yes"] = group_ballot_position_mapping['Yes']
+group_ballot_position_mapping["block"] = group_ballot_position_mapping['Block']
+group_ballot_position_mapping["abstain"] = group_ballot_position_mapping['Abstain']
+group_ballot_position_mapping[None] = group_ballot_position_mapping["No Record"]
+group_ballot_position_mapping["Undefined"] = group_ballot_position_mapping["No Record"]
+
+charter_state_names = dict(
+    notrev=name(CharterDocStateName, slug="notrev", name="Not currently under review", desc="The proposed WG is not being considered at this time. A proposed WG will remain in this state until an AD moves it to Informal IESG review."),
+    infrev=name(CharterDocStateName, slug="infrev", name="Informal IESG review", desc="This is the initial state when an AD creates a WG. The normal next state is Internal review if the idea is accepted, or Not currently under review if the idea is abandoned."),
+    intrev=name(CharterDocStateName, slug="intrev", name="Internal review", desc="The IESG and IAB are reviewing the early draft of the charter; this is the initial IESG and IAB review. The usual next state is External review if the idea is adopted, or Informal IESG review if the IESG decides the idea needs more work, or Not currently under review is the idea is abandoned"),
+    extrev=name(CharterDocStateName, slug="extrev", name="External review", desc="The IETF community and possibly other standards development organizations (SDOs) are reviewing the proposed charter. The usual next state is IESG review, although it might move to Not currently under review is the idea is abandoned during the external review."),
+    iesgrev=name(CharterDocStateName, slug="iesgrev", name="IESG review", desc="The IESG is reviewing the discussion from the external review of the proposed charter. The usual next state is Approved, or Not currently under review if the idea is abandoned."),
+    approved=name(CharterDocStateName, slug="approved", name="Approved", desc="The WG is approved by the IESG."),
+    )
 
 substate_mapping = {
     "External Party": name(DocInfoTagName, 'extpty', "External Party", 'The document is awaiting review or input from an external party (i.e, someone other than the shepherding AD, the authors, or the WG). See the "note" field for more details on who has the action.', 3),
@@ -310,7 +334,7 @@ def import_from_idinternal(d, idinternal):
 
                 found = False
                 for p in positions:
-                    if not BallotPositionDocEvent.objects.filter(doc=d, type="changed_ballot_position", pos=position, ad=iesg_login_to_person(p.ad)):
+                    if not d.docevent_set.filter(type="changed_ballot_position", ballotposition__pos=position, ballotposition__ad=iesg_login_to_person(p.ad)):
                         login = p.ad
                         found = True
                         break

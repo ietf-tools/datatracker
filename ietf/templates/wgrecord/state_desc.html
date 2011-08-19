@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+
+{% block content %}
+<h1>{{ state.state }}</h1>
+{{ state.description|escape }}
+<form action=".">
+<input type="button" value="Back" onClick="history.go(-1);"/>
+</form>
+{% endblock%}

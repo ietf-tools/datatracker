@@ -145,6 +145,7 @@ INSTALLED_APPS = (
     'ietf.submit',
     'ietf.ietfworkflows',
     'ietf.wgchairs',
+    'ietf.wgrecord',
 )
 
 INTERNAL_IPS = (

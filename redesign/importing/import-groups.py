@@ -14,6 +14,7 @@ management.setup_environ(settings)
 
 from redesign.group.models import *
 from redesign.name.models import *
+from redesign.doc.models import Document
 from redesign.name.utils import name
 from redesign.importing.utils import old_person_to_person
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role, AreaDirector
@@ -73,13 +74,6 @@ secretariat_group.name = "IETF Secretariat"
 secretariat_group.state = state_names["active"]
 secretariat_group.type = type_names["ietf"]
 secretariat_group.save()
-
-# create RSOC for use with roles
-rsoc_group, _ = Group.objects.get_or_create(acronym="rsoc")
-rsoc_group.name = "RFC Series Oversight Committee"
-rsoc_group.state = state_names["active"]
-rsoc_group.type = type_names["ietf"]
-rsoc_group.save()
 
 system = Person.objects.get(name="(System)")
 
@@ -187,7 +181,6 @@ for o in Area.objects.all():
 
     # FIXME: missing fields from old: extra_email_addresses
 
-    
 # IETFWG, AreaGroup
 for o in IETFWG.objects.all().order_by("pk"):
     print "importing IETFWG", o.pk, o.group_acronym.acronym
@@ -260,6 +253,21 @@ for o in IETFWG.objects.all().order_by("pk"):
     if l in ("none", "not available"):
         l = ""
     group.list_archive = l
+
+    try:
+        charter = Document.objects.get(name="charter-ietf-" + o.group_acronym.acronym)
+    except Document.DoesNotExist:
+        charter = Document(type = name(DocTypeName, "charter", "Charter"),
+                           title = o.group_acronym.name, 
+                           abstract= o.group_acronym.name, 
+                           name="charter-ietf-" + o.group_acronym.acronym,
+                           )
+        charter.rev = "01"
+        charter.charter_state = name(CharterDocStateName, slug="approved", name="Approved", desc="The WG is approved by the IESG.")
+        charter.group = group
+        charter.save()
+    group.charter = charter
+
     group.comments = o.comments.strip() if o.comments else ""
     
     group.save()

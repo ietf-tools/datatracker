@@ -183,9 +183,6 @@ class InternetDraft(models.Model):
         return "<%s>" % (self.filename_with_rev())
     def filename_with_rev(self):
         return "%s-%s.txt" % (self.filename, self.revision_display())
-    def name(self):
-        # small hack to make model forward-compatible with new schema
-        return self.filename
     def group_acronym(self):
 	return self.group.acronym
     def group_ml_archive(self):
@@ -258,11 +255,11 @@ class PersonOrOrgInfo(models.Model):
     date_created = models.DateField(auto_now_add=True, null=True)
     created_by = models.CharField(blank=True, null=True, max_length=8)
     address_type = models.CharField(blank=True, null=True, max_length=4)
-    def save(self, **kwargs):
+    def save(self):
         self.first_name_key = self.first_name.upper()
         self.middle_initial_key = self.middle_initial.upper()
         self.last_name_key = self.last_name.upper()
-        super(PersonOrOrgInfo, self).save(**kwargs)
+        super(PersonOrOrgInfo, self).save()
     def __str__(self):
         # For django.VERSION 0.96
 	if self.first_name == '' and self.last_name == '':
@@ -276,12 +273,16 @@ class PersonOrOrgInfo(models.Model):
     def email(self, priority=1, type=None):
         name = unicode(self)
         email = ''
-        addresses = self.emailaddress_set.filter(address__contains="@").order_by('priority')
-        if addresses:
-            email = addresses[0].address
-            for a in addresses:
-                if a.priority == priority:
-                    email = a.address
+        types = type and [ type ] or [ "INET", "Prim", None ]
+        for type in types:
+            try:
+                if type:
+                    email = self.emailaddress_set.get(priority=priority, type=type).address
+                else:
+                    email = self.emailaddress_set.get(priority=priority).address
+                break
+            except (EmailAddress.DoesNotExist, AssertionError):
+                pass
 	return (name, email)
     # Added by Sunny Lee to display person's affiliation - 5/26/2007
     def affiliation(self, priority=1):
@@ -409,9 +410,6 @@ class Rfc(models.Model):
         return "%s.txt" % ( self.filename() )
     def filename(self):
 	return "rfc%d" % ( self.rfc_number )
-    def name(self):
-        # small hack to make model forward-compatible with new schema
-        return self.filename()
     def revision(self):
 	return "RFC"
     def revision_display(self):
@@ -1138,23 +1136,6 @@ class DocumentWrapper(object):
     primary_flag = 1
     def __init__(self, document):
 	self.document = document
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    InternetDraftOld = InternetDraft
-    IDInternalOld = IDInternal
-    RfcOld = Rfc
-    BallotInfoOld = BallotInfo
-    IDStateOld = IDState
-    IDSubStateOld = IDSubState
-    AreaOld = Area
-    AcronymOld = Acronym
-    IESGLoginOld = IESGLogin
-    IETFWGOld = IETFWG
-    IRTFOld = IRTF
-    from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo, Rfc
-    from redesign.name.proxy import IDState, IDSubState
-    from redesign.group.proxy import Area, Acronym, IETFWG, IRTF
-    from redesign.person.proxy import IESGLogin
 
 
 # changes done by convert-096.py:changed maxlength to max_length

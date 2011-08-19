@@ -9,5 +9,5 @@ class GroupAdmin(admin.ModelAdmin):
 
 admin.site.register(Group, GroupAdmin)
 admin.site.register(GroupHistory)
-
+admin.site.register(GroupURL)
 admin.site.register(Role)

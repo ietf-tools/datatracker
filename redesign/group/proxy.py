@@ -56,7 +56,7 @@ class Area(Group):
     #status = models.ForeignKey(AreaStatus)
     @property
     def status_id(self):
-        return { "active": 1, "dormant": 2, "conclude": 3 }[self.state_id]
+        return { "active": 1, "dormant": 2, "conclude": 3, "proposed": 4 }[self.state_id]
     #comments = models.TextField(blank=True)
     #last_modified_date = models.DateField(auto_now=True)
     @property
@@ -121,7 +121,7 @@ class IETFWG(Group):
     #status = models.ForeignKey(WGStatus)
     @property
     def status_id(self):
-        return { "active": 1, "dormant": 2, "conclude": 3 }[self.state_id]
+        return { "active": 1, "dormant": 2, "conclude": 3, "proposed": 4 }[self.state_id]
     #area_director = models.ForeignKey(AreaDirector, null=True)
     #meeting_scheduled = models.CharField(blank=True, max_length=3)
     @property
