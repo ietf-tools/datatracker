@@ -78,7 +78,7 @@ Create WG record
       <td></td>
       <td class="actions">
 	{% if wg %}
-          <a href="{% url record_view name=wg.acronym %}">Back</a>
+          <a href="{% url wg_view_record name=wg.acronym %}">Back</a>
 	{% endif %}
         <input type="submit" value="Save"/>
       </td>

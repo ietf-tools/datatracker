@@ -43,7 +43,7 @@ form.change-state .actions {
     {% endfor %}
     <tr>
       <td colspan="2" class="actions">
-        <a href="{% url record_view name=wg.acronym %}">Back</a>
+        <a href="{% url wg_view_record name=wg.acronym %}">Back</a>
         <input type="submit" value="Save"/>
       </td>
     </tr>
@@ -68,10 +68,9 @@ form.change-state .actions {
   var message = {
    "infrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to Informal IESG review by {{ login.name }}",
    "intrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to Internal review by {{ login.name }}. Please place it on the next IESG telechat and inform the IAB.",
-   "extrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to External review by {{ login.name }}. Please send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ",
-   "approved": "The WG {{ wg.name }} ({{ wg.acronym }}) has been approved. Please publish the charter and sent the appropriate announcements."
+   "extrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to External review by {{ login.name }}. Please send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: "
   };
 
 </script>
-<script type="text/javascript" src="/js/rec-change-state.js"></script>
+<script type="text/javascript" src="/js/wg-change-state.js"></script>
 {% endblock %}

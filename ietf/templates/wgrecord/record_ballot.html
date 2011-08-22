@@ -6,10 +6,10 @@ Copyright The IETF Trust 2011, All Rights Reserved
 
 {% if user|in_group:"Area_Director,Secretariat" %}
 {% if user|in_group:"Area_Director" %}
-<div style="margin-top:8px; margin-bottom:8px;"><span id="rec_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url rec_edit_position name=wg.acronym %}">Edit position</a></span></span></div>
+<div style="margin-top:8px; margin-bottom:8px;"><span id="wg_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url wg_edit_position name=wg.acronym %}">Edit position</a></span></span></div>
 {% endif %}
 {% if user|in_group:"Secretariat" %}
-<div style="margin-top:8px; margin-bottom:8px;"><span id="rec_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url rec_approve_ballot name=wg.acronym %}">Approve ballot</a></span></span></div>
+<div style="margin-top:8px; margin-bottom:8px;"><span id="wg_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url wg_approve_ballot name=wg.acronym %}">Approve ballot</a></span></span></div>
 {% endif %}
 {% endif %}
 
@@ -27,7 +27,7 @@ Copyright The IETF Trust 2011, All Rights Reserved
 
 <p><span class="square" style="background:white;"></span><b>No Record</b><br/>
 {% for p in info.pos_no_record %}
-<a{% if user|in_group:"Secretariat" %} href="{% url rec_edit_position name=wg.acronym %}?ad={{ p.id }}" title="Click to edit the position of {{ p.name }}"{% endif %}>{{p.name}}</a><br/>
+<a{% if user|in_group:"Secretariat" %} href="{% url wg_edit_position name=wg.acronym %}?ad={{ p.id }}" title="Click to edit the position of {{ p.name }}"{% endif %}>{{p.name}}{% if user|in_group:"Secretariat" %}</a>{% endif %}<br/>
 {% empty %}
 <i>none</i>
 {% endfor %}

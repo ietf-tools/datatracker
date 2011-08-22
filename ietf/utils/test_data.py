@@ -60,6 +60,20 @@ def make_test_data():
         group=area,
         email=email)
 
+    # ex-ad
+    u = User.objects.create(username="exad")
+    ad = p = Person.objects.create(
+        name="Exaread Irector",
+        ascii="Exaread Irector",
+        user=u)
+    email = Email.objects.create(
+        address="exaread@ietf.org",
+        person=p)
+    Role.objects.create(
+        name_id="ex-ad",
+        group=area,
+        email=email)
+
     # create a bunch of ads for swarm tests
     for i in range(1, 10):
         u = User.objects.create(username="ad%s" % i)

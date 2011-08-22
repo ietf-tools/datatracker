@@ -54,7 +54,7 @@ class DocumentInfo(models.Model):
             raise NotImplemented
 
     def get_txt_url(self):
-        if self.type.slug == "charter":
+        if self.type_id == "charter":
             return "http://www.ietf.org/charters/"
         else:
             raise NotImplemented
@@ -97,7 +97,7 @@ class Document(DocumentInfo):
 
     def get_absolute_url(self):
         name = self.name
-        if self.type.slug == "charter":
+        if self.type_id == "charter":
             return urlreverse('record_view', kwargs={ 'name': self.group.acronym })
         else:
             if self.state == "rfc":

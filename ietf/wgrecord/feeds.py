@@ -28,7 +28,7 @@ class GroupComments(Feed):
     def link(self, obj):
 	if obj is None:
 	    raise FeedDoesNotExist
-	return reverse('record_view', kwargs={'name': obj.acronym})
+	return reverse('wg_view_record', kwargs={'name': obj.acronym})
 
     def description(self, obj):
 	return self.title(obj)
@@ -38,13 +38,13 @@ class GroupComments(Feed):
         for h in history:
             gh = find_history_active_at(obj, h['date'])
             if gh:
-                h['chairs'] = map(lambda x: x.email.person.name, gh.rolehistory_set.filter(name__slug="chair"))
-                h['secr'] = map(lambda x: x.email.person.name, gh.rolehistory_set.filter(name__slug="secr"))
-                h['techadv'] = map(lambda x: x.email.person.name, gh.rolehistory_set.filter(name__slug="techadv"))
+                h['chairs'] = [x.email.person.name for x in gh.rolehistory_set.filter(name__slug="chair")]
+                h['secr'] = [x.email.person.name for x in gh.rolehistory_set.filter(name__slug="secr")]
+                h['techadv'] = [x.email.person.name for x in gh.rolehistory_set.filter(name__slug="techadv")]
             else:
-                h['chairs'] = map(lambda x: x.email.person.name, obj.role_set.filter(name__slug="chair"))
-                h['secr'] = map(lambda x: x.email.person.name, obj.role_set.filter(name__slug="secr"))
-                h['techadv'] = map(lambda x: x.email.person.name, obj.role_set.filter(name__slug="techadv"))
+                h['chairs'] = [x.email.person.name for x in obj.role_set.filter(name__slug="chair")]
+                h['secr'] = [x.email.person.name for x in obj.role_set.filter(name__slug="secr")]
+                h['techadv'] = [x.email.person.name for x in obj.role_set.filter(name__slug="techadv")]
             dh = find_history_active_at(obj.charter, h['date'])
             if dh:
                 h['rev'] = dh.rev
@@ -59,7 +59,7 @@ class GroupComments(Feed):
         return history
 
     def item_link(self, obj):
-        return reverse('record_view', kwargs={'name': obj['group'].acronym})
+        return reverse('wg_view_record', kwargs={'name': obj['group'].acronym})
 
     def item_pubdate(self, obj):
 	return obj['date']

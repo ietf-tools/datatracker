@@ -96,7 +96,7 @@ def edit_position(request, name):
     except ObjectDoesNotExist:
         wglist = GroupHistory.objects.filter(acronym=name)
         if wglist:
-            return redirect('rec_edit_position', name=wglist[0].group.acronym)
+            return redirect('wg_edit_position', name=wglist[0].group.acronym)
         else:
             raise Http404
 
@@ -193,7 +193,7 @@ def edit_position(request, name):
                 qstr = "?return_to_url=%s" % return_to_url
                 if request.GET.get('ad'):
                     qstr += "&ad=%s" % request.GET.get('ad')
-                return HttpResponseRedirect(urlreverse("rec_send_ballot_comment", kwargs=dict(name=wg.acronym)) + qstr)
+                return HttpResponseRedirect(urlreverse("wg_send_ballot_comment", kwargs=dict(name=wg.acronym)) + qstr)
             else:
                 return HttpResponseRedirect(return_to_url)
     else:
@@ -226,7 +226,7 @@ def send_ballot_comment(request, name):
     except ObjectDoesNotExist:
         wglist = GroupHistory.objects.filter(acronym=name)
         if wglist:
-            return redirect('rec_send_ballot_comment', name=wglist[0].group.acronym)
+            return redirect('wg_send_ballot_comment', name=wglist[0].group.acronym)
         else:
             raise Http404
 
@@ -315,7 +315,7 @@ def announcement_text(request, name, ann):
     except ObjectDoesNotExist:
         wglist = GroupHistory.objects.filter(acronym=name)
         if wglist:
-            return redirect('rec_announcement_text', name=wglist[0].group.acronym)
+            return redirect('wg_announcement_text', name=wglist[0].group.acronym)
         else:
             raise Http404
 
@@ -349,7 +349,7 @@ def announcement_text(request, name, ann):
                 
                 doc.time = e.time
                 doc.save()
-        return redirect('record_view', name=wg.acronym)
+        return redirect('wg_view_record', name=wg.acronym)
     return render_to_response('wgrecord/announcement_text.html',
                               dict(doc=doc,
                                    announcement=ann,
@@ -366,7 +366,7 @@ def approve_ballot(request, name):
     except ObjectDoesNotExist:
         wglist = GroupHistory.objects.filter(acronym=name)
         if wglist:
-            return redirect('rec_approve_ballot', name=wglist[0].group.acronym)
+            return redirect('wg_approve_ballot', name=wglist[0].group.acronym)
         else:
             raise Http404
 

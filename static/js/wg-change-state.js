@@ -5,6 +5,7 @@ jQuery(document).ready(function () {
     }
 
     function setMessageDraft(state) {
+      if (jQuery("#id_state").val() != "conclude") {
 	if (message[state]) {
 	    if (state == "infrev") {
 		initial_time.show();
@@ -17,6 +18,9 @@ jQuery(document).ready(function () {
 	} else {
             jQuery("#id_message").val("");
 	}
+      } else {
+            jQuery("#id_message").val("");
+      }
     }
     
     jQuery("#id_charter_state").click(function (e) {
@@ -24,4 +28,5 @@ jQuery(document).ready(function () {
     });
 
     jQuery("#id_charter_state").click();
+    
 });

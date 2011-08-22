@@ -5,7 +5,7 @@ Copyright The IETF Trust 2011, All Rights Reserved
 {% load ietf_filters %}
 <tr class="{% cycle oddrow,evenrow %}">
 <td class="acronym">
-<a href="{% url record_view name=wg.acronym %}">{{ wg.acronym|safe }}</a>
+<a href="{% url wg_view_record name=wg.acronym %}">{{ wg.acronym|safe }}</a>
 </td>
 <td class="title">{{ wg.name }}</td>
 {% include "wgrecord/date_column.html" %}

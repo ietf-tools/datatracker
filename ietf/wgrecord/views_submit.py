@@ -8,19 +8,17 @@ from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse
 from django.template import RequestContext
 
+from ietf.ietfauth.decorators import group_required
 from django.core.exceptions import ObjectDoesNotExist
 from group.models import save_group_in_history
 from doc.models import Document, DocHistory, DocEvent, save_document_in_history
 from redesign.group.models import Group
 
 from django.conf import settings
-from utils import next_revision
+from utils import next_revision, set_or_create_charter
 
 class UploadForm(forms.Form):
     txt = forms.FileField(label=".txt format", required=True)
-
-    def __init__(self, *args, **kwargs):
-        super(UploadForm, self).__init__(*args, **kwargs)
 
     def save(self, wg):
         for ext in ['txt']:
@@ -33,6 +31,7 @@ class UploadForm(forms.Form):
                 destination.write(chunk)
             destination.close()
 
+@group_required('Area_Director','Secretariat')
 def submit(request, name):
     # Get WG by acronym, redirecting if there's a newer acronym
     try:
@@ -44,7 +43,7 @@ def submit(request, name):
         else:
             raise Http404
     # Get charter
-    charter = wg.charter if wg.charter else None
+    charter = set_or_create_charter(wg)
 
     login = request.user.get_profile()
 
@@ -70,7 +69,7 @@ def submit(request, name):
             charter.time = datetime.now()
             charter.save()
 
-            return HttpResponseRedirect(reverse('record_view', kwargs={'name': wg.acronym}))
+            return HttpResponseRedirect(reverse('wg_view_record', kwargs={'name': wg.acronym}))
     else:
         form = UploadForm()
     return render_to_response('wgrecord/submit.html',

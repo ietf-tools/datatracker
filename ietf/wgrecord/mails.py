@@ -32,5 +32,5 @@ def email_secretariat(request, wg, type, text):
               "Regarding WG %s: %s" % (wg.acronym, types[type]),
               "wgrecord/email_secretariat.txt",
               dict(text=text,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse('record_view', kwargs=dict(name=wg.acronym))))
+                   url=settings.IDTRACKER_BASE_URL + urlreverse('wg_view_record', kwargs=dict(name=wg.acronym))))
 

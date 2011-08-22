@@ -1,8 +1,27 @@
 from django.conf import settings
 import re
 
-from redesign.group.models import GroupEvent
+from datetime import datetime
+from group.models import GroupEvent
+from doc.models import Document
 from ietf.utils.history import find_history_active_at
+
+def set_or_create_charter(wg):
+    try:
+        charter = Document.objects.get(name="charter-ietf-" + wg.acronym)
+    except Document.DoesNotExist:
+        charter = Document.objects.create(
+            name="charter-ietf-%s" % wg.acronym,
+            time=datetime.now(),
+            type_id="charter",
+            title=wg.name,
+            group=wg,
+            abstract=wg.name,
+            rev="",
+            )
+    wg.charter = charter
+    wg.save()
+    return charter
 
 def add_wg_comment(request, wg, text, ballot=None):
     if request:
@@ -22,6 +41,24 @@ def log_state_changed(request, doc, by, prev_state, note=''):
     e.desc = u"State changed to <b>%s</b> from %s" % (
         doc.charter_state.name,
         prev_state.name if prev_state else "None")
+
+    if note:
+        e.desc += "<br>%s" % note
+
+    e.save()
+    return e
+
+def log_group_state_changed(request, wg, by, note=''):
+    from group.models import GroupEvent
+
+    e = GroupEvent(group=wg, by=by)
+    if wg.state_id == "proposed":
+        e.type = "proposed"
+    elif wg.state_id == "active":
+        e.type = "started"
+    elif wg.state_id == "conclude":
+        e.type = "concluded"
+    e.desc = u"%s group" % e.type.capitalize()
 
     if note:
         e.desc += "<br>%s" % note

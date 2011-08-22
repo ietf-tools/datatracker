@@ -35,7 +35,7 @@ def _get_html(key, filename):
     return content
 
 @decorator_from_middleware(GZipMiddleware)
-def record_main(request, name, rev, tab):
+def wg_main(request, name, rev, tab):
     if tab is None:
 	tab = "charter"
     try:
@@ -43,9 +43,12 @@ def record_main(request, name, rev, tab):
     except ObjectDoesNotExist:
         wglist = GroupHistory.objects.filter(acronym=name)
         if wglist:
-            return redirect('record_view', name=wglist[0].group.acronym)
+            return redirect('wg_view_record', name=wglist[0].group.acronym)
         else:
             raise Http404
+
+    if not wg.charter:
+        create_empty_charter(wg)
 
     if rev != None:
         charter = get_charter_for_revision(wg.charter, rev)
@@ -56,23 +59,23 @@ def record_main(request, name, rev, tab):
 
     info = {}
 
-    info['prev_acronyms'] = list(set(map(lambda x: x.acronym, wg.history_set.exclude(acronym=wg.acronym))))
-    prev_list_email = list(set(map(lambda x: x.list_email, wg.history_set.exclude(list_email=wg.list_email))))
+    info['prev_acronyms'] = list(set([x.acronym for x in wg.history_set.exclude(acronym=wg.acronym)]))
+    prev_list_email = list(set([x.list_email for x in wg.history_set.exclude(list_email=wg.list_email)]))
     if prev_list_email != [u'']:
         info['prev_list_email'] = prev_list_email
-    prev_list_subscribe = list(set(map(lambda x: x.list_email, wg.history_set.exclude(list_subscribe=wg.list_subscribe))))
+    prev_list_subscribe = list(set([x.list_email for x in wg.history_set.exclude(list_subscribe=wg.list_subscribe)]))
     if prev_list_subscribe != [u'']:
         info['prev_list_subscribe'] = prev_list_subscribe    
-    prev_list_archive = list(set(map(lambda x: x.list_archive, wg.history_set.exclude(list_archive=wg.list_archive))))
+    prev_list_archive = list(set([x.list_archive for x in wg.history_set.exclude(list_archive=wg.list_archive)]))
     if prev_list_archive != [u'']:
         info['prev_list_archive'] = prev_list_archive
-    info['chairs'] = map(lambda x: x.email.person.name, wg.role_set.filter(name__slug="chair"))
+    info['chairs'] = [x.email.person.name for x in wg.role_set.filter(name__slug="chair")]
     if hasattr(gh, 'rolehistory_set'):
-        info['history_chairs'] = map(lambda x: x.email.person.name, gh.rolehistory_set.filter(name__slug="chair"))
+        info['history_chairs'] = [x.email.person.name for x in gh.rolehistory_set.filter(name__slug="chair")]
     else:
-        info['history_chairs'] = map(lambda x: x.email.person.name, gh.role_set.filter(name__slug="chair"))
-    info['secr'] = map(lambda x: x.email.person.name, wg.role_set.filter(name__slug="secr"))
-    info['techadv'] = map(lambda x: x.email.person.name, wg.role_set.filter(name__slug="techadv"))
+        info['history_chairs'] = [x.email.person.name for x in gh.role_set.filter(name__slug="chair")]
+    info['secr'] = [x.email.person.name for x in wg.role_set.filter(name__slug="secr")]
+    info['techadv'] = [x.email.person.name for x in wg.role_set.filter(name__slug="techadv")]
 
     if charter:
         content = _get_html(
@@ -109,7 +112,8 @@ def record_main(request, name, rev, tab):
     versions = _get_versions(wg.charter) # Important: wg.charter not charter
     history = _get_history(wg)
 
-    info['last_update'] = history[0]['date']
+    if history:
+        info['last_update'] = history[0]['date']
 
     charter_text_url = charter.get_txt_url()
 
@@ -181,13 +185,13 @@ def _get_versions(charter, include_replaced=True):
         ov.append({"name": charter.name, "rev": charter.rev, "date":charter.time})
     return ov
 
-def record_ballot(request, name):
+def wg_ballot(request, name):
     try:
         wg = Group.objects.get(acronym=name)
     except ObjectDoesNotExist:
         wglist = GroupHistory.objects.filter(acronym=name)
         if wglist:
-            return redirect('record_view', name=wglist[0].group.acronym)
+            return redirect('wg_view_record', name=wglist[0].group.acronym)
         else:
             raise Http404
 
@@ -203,7 +207,7 @@ def record_ballot(request, name):
     latest_positions = []
     no_record = []
     for p in active_ads:
-        p_pos = list(GroupBallotPositionDocEvent.objects.filter(doc=doc, ad=p).order_by("-time"))
+        p_pos = list(GroupBallotPositionDocEvent.objects.filter(doc=wg.charter, ad=p).order_by("-time"))
         if p_pos != []:
             latest_positions.append(p_pos[0])
         else:

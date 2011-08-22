@@ -101,27 +101,31 @@ def search_query(query_original, sort_by=None):
     elif by == "area":
         results = results.filter(parent=query["area"])
     elif by == "anyfield":
-        q_objs = []
-        q_objs.append(Q(name__icontains=query['anyfield']))
-        q_objs.append(Q(acronym__icontains=query['anyfield']))
-        q_objs.append(Q(state__name__icontains=query['anyfield']))
-        q_objs.append(Q(charter__charter_state__name__icontains=query['anyfield']))
-        q_objs.append(Q(ad__name__icontains=query['anyfield']))
-        q_objs.append(Q(parent__name__icontains=query['anyfield']))
-        q_objs.append(Q(history_set__acronym__icontains=query['anyfield']))
-        results = list(results.filter(reduce(lambda x, y: x | y, q_objs)))
+        q_objs = Q()
+        q_objs |= Q(acronym__icontains=query['anyfield'])
+        q_objs |= Q(state__name__icontains=query['anyfield'])
+        q_objs |= Q(charter__charter_state__name__icontains=query['anyfield'])
+        q_objs |= Q(ad__name__icontains=query['anyfield'])
+        q_objs |= Q(parent__name__icontains=query['anyfield'])
+        q_objs |= Q(history_set__acronym__icontains=query['anyfield'])
+        results = list(results.filter(*q_objs))
         # Search charter texts
         m = re.compile(query['anyfield'], re.IGNORECASE)
-        for g in Group.objects.filter(type="wg"):
+        if query['name']:
+            file_set = Group.objects.filter(type="wg", name__icontains=query["name"])
+        else:
+            file_set = Group.objects.filter(type="wg")
+        for g in file_set:
             charter = g.charter
-            try:
-                file = open(os.path.join(charter.get_file_path(), charter.name+"-"+charter.rev+".txt"))
-                for line in file:
-                    if m.search(line):
-                        results.append(g)
-                        break
-            except IOError:
-                pass # Pass silently for files not found
+            if charter:
+                try:
+                    file = open(os.path.join(charter.get_file_path(), charter.name+"-"+charter.rev+".txt"))
+                    for line in file:
+                        if m.search(line):
+                            results.append(g)
+                            break
+                except IOError:
+                    pass # Pass silently for files not found
     elif by == "eacronym":
         results = results.filter(history_set__acronym__icontains=query["eacronym"]).distinct()
 
@@ -192,7 +196,7 @@ def search_results(request):
         return render_to_response('wgrecord/search_results.html', {'recs':results, 'meta':meta}, context_instance=RequestContext(request))
     elif len(results)==1:
         wg = results[0]
-        return redirect('record_view', name=wg.acronym)
+        return redirect('wg_view_record', name=wg.acronym)
     else:
         return render_to_response('wgrecord/search_main.html', {'form':form, 'recs':results,'meta':meta}, context_instance=RequestContext(request))
         

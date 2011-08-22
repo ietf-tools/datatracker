@@ -10,8 +10,8 @@ Copyright The IETF Trust 2011, All Rights Reserved
 {% if user|in_group:"Area_Director,Secretariat" %}
 <div style="background:#E0E0FF">
 <p align=right>
-<span id="rec_edit_announce_button" class="yui-button yui-link-button"><span class="first-child">
-<a href="{% url rec_announcement_text name=wg.acronym ann="review" %}">Edit WG Review Announcement</a>
+<span id="wg_edit_announce_button" class="yui-button yui-link-button"><span class="first-child">
+<a href="{% url wg_announcement_text name=wg.acronym ann="review" %}">Edit WG Review Announcement</a>
 </span></span>
 </p>
 {% endif %}
@@ -24,8 +24,8 @@ Copyright The IETF Trust 2011, All Rights Reserved
 {% if user|in_group:"Area_Director,Secretariat" %}
 <div style="background:#E0E0FF">
 <p align=right>
-<span id="rec_edit_announce_button" class="yui-button yui-link-button"><span class="first-child">
-<a href="{% url rec_announcement_text name=wg.acronym ann="action" %}">Edit WG Action Announcement</a>
+<span id="wg_edit_announce_button" class="yui-button yui-link-button"><span class="first-child">
+<a href="{% url wg_announcement_text name=wg.acronym ann="action" %}">Edit WG Action Announcement</a>
 </span></span>
 </p>
 {% endif %}

@@ -1,7 +1,7 @@
 {% comment %}
 Copyright The IETF Trust 2011, All Rights Reserved
 {% endcomment %}
-{% load ietf_filters ietf_streams %}{% load rec_ballot_icon %}
+{% load ietf_filters ietf_streams %}{% load wg_ballot_icon %}
 <td class="status">
 {% if wg.charter %}
 {{ wg.charter.charter_state|safe }}
@@ -13,5 +13,5 @@ Copyright The IETF Trust 2011, All Rights Reserved
 {% block extra_status %}{% endblock %}
 </td>
 <td class="ballot">
-{% ifequal wg.charter.charter_state_id "iesgrev" %}{% rec_ballot_icon wg.acronym %}{% endifequal %}
+{% ifequal wg.charter.charter_state_id "iesgrev" %}{% wg_ballot_icon wg.acronym %}{% endifequal %}
 </td>

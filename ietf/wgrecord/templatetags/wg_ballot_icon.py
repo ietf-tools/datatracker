@@ -42,11 +42,7 @@ def render_ballot_icon(context, name):
     latest_positions = []
     for p in active_ads:
         p_pos = list(GroupBallotPositionDocEvent.objects.filter(doc=doc, ad=p).order_by("-time"))
-        if p_pos == []:
-            pos = GroupBallotPositionDocEvent(doc=doc, ad=p, by=p)
-            pos.save()
-            latest_positions.append(pos)
-        else:
+        if p_pos != []:
             latest_positions.append(p_pos[0])
     for p in latest_positions:
         if not p.pos_id:
@@ -66,12 +62,12 @@ def render_ballot_icon(context, name):
     return render_ballot_icon2(wg.acronym, red,yellow,green,gray,blank, my, adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
 
 def render_ballot_icon2(acronym, red,yellow,green,gray,blank, my, adId):
-    edit_position_url = urlreverse('rec_edit_position', kwargs=dict(name=acronym))
+    edit_position_url = urlreverse('wg_edit_position', kwargs=dict(name=acronym))
     if adId:
-        res_cm = ' oncontextmenu="editRecBallot(\''+str(edit_position_url)+'\');return false;"'
+        res_cm = ' oncontextmenu="editWGBallot(\''+str(edit_position_url)+'\');return false;"'
     else:
         res_cm = ''
-    res = '<table class="ballot_icon" title="IESG Review (click to show more, right-click to edit position)" onclick="showRecBallot(\'' + acronym + '\',\'' + str(edit_position_url) + '\')"'+res_cm+'>'
+    res = '<table class="ballot_icon" title="IESG Review (click to show more, right-click to edit position)" onclick="showWGBallot(\'' + acronym + '\',\'' + str(edit_position_url) + '\')"'+res_cm+'>'
     for y in range(3):
         res = res + "<tr>"
         for x in range(5):
@@ -115,7 +111,7 @@ def do_ballot_icon(parser, token):
         raise template.TemplateSyntaxError, "%r tag requires exactly two arguments" % token.contents.split()[0]
     return BallotIconNode(docName)
 
-register.tag('rec_ballot_icon', do_ballot_icon)
+register.tag('wg_ballot_icon', do_ballot_icon)
 
 @register.filter
 def my_position(doc, user):
