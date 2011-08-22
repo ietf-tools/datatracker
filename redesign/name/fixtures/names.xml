@@ -36,45 +36,33 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="extpty" model="name.docinfotagname">
-        <field type="CharField" name="name">External Party</field>
-        <field type="TextField" name="desc">The document is awaiting review or input from an external party (i.e, someone other than the shepherding AD, the authors, or the WG). See the "note" field for more details on who has the action.</field>
+    <object pk="conflict" model="name.constraintname">
+        <field type="CharField" name="name">Conflicts with</field>
+        <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="need-rev" model="name.docinfotagname">
-        <field type="CharField" name="name">Revised ID Needed</field>
-        <field type="TextField" name="desc">An updated ID is needed to address the issues that have been raised.</field>
+    <object pk="conflic2" model="name.constraintname">
+        <field type="CharField" name="name">Conflicts with (secondary)</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="conflic3" model="name.constraintname">
+        <field type="CharField" name="name">Conflicts with (tertiary)</field>
+        <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
     <object pk="iana-crd" model="name.docinfotagname">
-        <field type="CharField" name="name">IANA-coord</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="ad-f-up" model="name.docinfotagname">
-        <field type="CharField" name="name">AD Followup</field>
-        <field type="TextField" name="desc">A generic substate indicating that the shepherding AD has the action item to determine appropriate next steps. In particular, the appropriate steps (and the corresponding next state or substate) depend entirely on the nature of the issues that were raised and can only be decided with active involvement of the shepherding AD. Examples include:
-
-- if another AD raises an issue, the shepherding AD may first iterate with the other AD to get a better understanding of the exact issue. Or, the shepherding AD may attempt to argue that the issue is not serious enough to bring to the attention of the authors/WG.
-
-- if a documented issue is forwarded to a WG, some further iteration may be needed before it can be determined whether a new revision is needed or whether the WG response to an issue clarifies the issue sufficiently.
-
-- when a new revision appears, the shepherding AD will first look at the changes to determine whether they believe all outstanding issues have been raised satisfactorily, prior to asking the ADs who raised the original issues to verify the changes.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="point" model="name.docinfotagname">
-        <field type="CharField" name="name">Point Raised - writeup needed</field>
-        <field type="TextField" name="desc">IESG discussions on the document have raised some issues that need to be brought to the attention of the authors/WG, but those issues have not been written down yet. (It is common for discussions during a telechat to result in such situations. An AD may raise a possible issue during a telechat and only decide as a result of that discussion whether the issue is worth formally writing up and bringing to the attention of the authors/WG). A document stays in the "Point Raised - Writeup Needed" state until *ALL* IESG comments that have been raised have been documented.</field>
+        <field type="CharField" name="name">IANA coordination</field>
+        <field type="TextField" name="desc">RFC-Editor/IANA Registration Coordination</field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
     <object pk="missref" model="name.docinfotagname">
-        <field type="CharField" name="name">MissingRef</field>
-        <field type="TextField" name="desc"></field>
+        <field type="CharField" name="name">Missing references</field>
+        <field type="TextField" name="desc">Awaiting missing normative reference</field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
@@ -113,6 +101,42 @@
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="ref" model="name.docinfotagname">
+        <field type="CharField" name="name">Holding for references</field>
+        <field type="TextField" name="desc">Holding for normative reference</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="point" model="name.docinfotagname">
+        <field type="CharField" name="name">Point Raised - writeup needed</field>
+        <field type="TextField" name="desc">IESG discussions on the document have raised some issues that need to be brought to the attention of the authors/WG, but those issues have not been written down yet. (It is common for discussions during a telechat to result in such situations. An AD may raise a possible issue during a telechat and only decide as a result of that discussion whether the issue is worth formally writing up and bringing to the attention of the authors/WG). A document stays in the "Point Raised - Writeup Needed" state until *ALL* IESG comments that have been raised have been documented.</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">1</field>
+    </object>
+    <object pk="ad-f-up" model="name.docinfotagname">
+        <field type="CharField" name="name">AD Followup</field>
+        <field type="TextField" name="desc">A generic substate indicating that the shepherding AD has the action item to determine appropriate next steps. In particular, the appropriate steps (and the corresponding next state or substate) depend entirely on the nature of the issues that were raised and can only be decided with active involvement of the shepherding AD. Examples include:
+
+- if another AD raises an issue, the shepherding AD may first iterate with the other AD to get a better understanding of the exact issue. Or, the shepherding AD may attempt to argue that the issue is not serious enough to bring to the attention of the authors/WG.
+
+- if a documented issue is forwarded to a WG, some further iteration may be needed before it can be determined whether a new revision is needed or whether the WG response to an issue clarifies the issue sufficiently.
+
+- when a new revision appears, the shepherding AD will first look at the changes to determine whether they believe all outstanding issues have been raised satisfactorily, prior to asking the ADs who raised the original issues to verify the changes.</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">2</field>
+    </object>
+    <object pk="extpty" model="name.docinfotagname">
+        <field type="CharField" name="name">External Party</field>
+        <field type="TextField" name="desc">The document is awaiting review or input from an external party (i.e, someone other than the shepherding AD, the authors, or the WG). See the "note" field for more details on who has the action.</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">3</field>
+    </object>
+    <object pk="need-rev" model="name.docinfotagname">
+        <field type="CharField" name="name">Revised ID Needed</field>
+        <field type="TextField" name="desc">An updated ID is needed to address the issues that have been raised.</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">5</field>
     </object>
     <object pk="updates" model="name.docrelationshipname">
         <field type="CharField" name="name">Updates</field>
@@ -222,6 +246,30 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="agenda" model="name.doctypename">
+        <field type="CharField" name="name">Agenda</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="minutes" model="name.doctypename">
+        <field type="CharField" name="name">Minutes</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="slides" model="name.doctypename">
+        <field type="CharField" name="name">Slides</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="liai-att" model="name.doctypename">
+        <field type="CharField" name="name">Liaison Attachment</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="bof" model="name.groupstatename">
         <field type="CharField" name="name">BOF</field>
         <field type="TextField" name="desc"></field>
@@ -294,6 +342,18 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="ag" model="name.grouptypename">
+        <field type="CharField" name="name">AG</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="sdo" model="name.grouptypename">
+        <field type="CharField" name="name">Standards Organization</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="pub-req" model="name.iesgdocstatename">
         <field type="CharField" name="name">Publication Requested</field>
         <field type="TextField" name="desc">A formal request has been made to advance/publish the document, following the procedures in Section 7.5 of RFC 2418. The request could be from a WG chair, from an individual through the RFC Editor, etc. (The Secretariat (iesg-secretary@ietf.org) is copied on these requests to ensure that the request makes it into the ID tracker.) A document in this state has not (yet) been reviewed by an AD nor has any official action been taken on it yet (other than to note that its publication has been requested.</field>
@@ -313,7 +373,7 @@
         <field type="IntegerField" name="order">12</field>
     </object>
     <object pk="lc-req" model="name.iesgdocstatename">
-        <field type="CharField" name="name">Last Call requested</field>
+        <field type="CharField" name="name">Last Call Requested</field>
         <field type="TextField" name="desc">The AD has requested that the Secretariat start an IETF Last Call, but the the actual Last Call message has not been sent yet.</field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">15</field>
@@ -438,6 +498,108 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="action" model="name.liaisonstatementpurposename">
+        <field type="CharField" name="name">For action</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">1</field>
+    </object>
+    <object pk="comment" model="name.liaisonstatementpurposename">
+        <field type="CharField" name="name">For comment</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">2</field>
+    </object>
+    <object pk="info" model="name.liaisonstatementpurposename">
+        <field type="CharField" name="name">For information</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">3</field>
+    </object>
+    <object pk="response" model="name.liaisonstatementpurposename">
+        <field type="CharField" name="name">In response</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">4</field>
+    </object>
+    <object pk="ietf" model="name.meetingtypename">
+        <field type="CharField" name="name">IETF</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="interim" model="name.meetingtypename">
+        <field type="CharField" name="name">Interim</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="auth" model="name.rfcdocstatename">
+        <field type="CharField" name="name">AUTH</field>
+        <field type="TextField" name="desc">Awaiting author action</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="auth48" model="name.rfcdocstatename">
+        <field type="CharField" name="name">AUTH48</field>
+        <field type="TextField" name="desc">Awaiting final author approval</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="edit" model="name.rfcdocstatename">
+        <field type="CharField" name="name">EDIT</field>
+        <field type="TextField" name="desc">Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="iana-crd" model="name.rfcdocstatename">
+        <field type="CharField" name="name">IANA</field>
+        <field type="TextField" name="desc">RFC-Editor/IANA Registration Coordination</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="iesg" model="name.rfcdocstatename">
+        <field type="CharField" name="name">IESG</field>
+        <field type="TextField" name="desc">Holding for IESG action</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="isr" model="name.rfcdocstatename">
+        <field type="CharField" name="name">ISR</field>
+        <field type="TextField" name="desc">Independent Submission Review by the ISE </field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="isr-auth" model="name.rfcdocstatename">
+        <field type="CharField" name="name">ISR-AUTH</field>
+        <field type="TextField" name="desc">Independent Submission awaiting author update, or in discussion between author and ISE</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="ref" model="name.rfcdocstatename">
+        <field type="CharField" name="name">REF</field>
+        <field type="TextField" name="desc">Holding for normative reference</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="rfc-edit" model="name.rfcdocstatename">
+        <field type="CharField" name="name">RFC-EDITOR</field>
+        <field type="TextField" name="desc">Awaiting final RFC Editor review before AUTH48</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="timeout" model="name.rfcdocstatename">
+        <field type="CharField" name="name">TO</field>
+        <field type="TextField" name="desc">Time-out period during which the IESG reviews document for conflict/concurrence with other IETF working group work</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="missref" model="name.rfcdocstatename">
+        <field type="CharField" name="name">MISSREF</field>
+        <field type="TextField" name="desc">Awaiting missing normative reference</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="ad" model="name.rolename">
         <field type="CharField" name="name">Area Director</field>
         <field type="TextField" name="desc"></field>
@@ -470,6 +632,72 @@
     </object>
     <object pk="techadv" model="name.rolename">
         <field type="CharField" name="name">Tech Advisor</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="dir" model="name.rolename">
+        <field type="CharField" name="name">Executive Director</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="execdir" model="name.rolename">
+        <field type="CharField" name="name">Executive Director</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="admdir" model="name.rolename">
+        <field type="CharField" name="name">Administrative Director</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="liaiman" model="name.rolename">
+        <field type="CharField" name="name">Liaison Manager</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="auth" model="name.rolename">
+        <field type="CharField" name="name">Authorized Individual</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="schedw" model="name.sessionstatusname">
+        <field type="CharField" name="name">Waiting for Scheduling</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="apprw" model="name.sessionstatusname">
+        <field type="CharField" name="name">Waiting for Approval</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="appr" model="name.sessionstatusname">
+        <field type="CharField" name="name">Approved</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="sched" model="name.sessionstatusname">
+        <field type="CharField" name="name">Scheduled</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="canceled" model="name.sessionstatusname">
+        <field type="CharField" name="name">Canceled</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="disappr" model="name.sessionstatusname">
+        <field type="CharField" name="name">Disapproved</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
@@ -518,6 +746,36 @@
     </object>
     <object pk="unkn" model="name.stdlevelname">
         <field type="CharField" name="name">Unknown</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="session" model="name.timeslottypename">
+        <field type="CharField" name="name">Session</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="break" model="name.timeslottypename">
+        <field type="CharField" name="name">Break</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="reg" model="name.timeslottypename">
+        <field type="CharField" name="name">Registration</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="other" model="name.timeslottypename">
+        <field type="CharField" name="name">Other</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="plenary" model="name.timeslottypename">
+        <field type="CharField" name="name">Plenary</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>

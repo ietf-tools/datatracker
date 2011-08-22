@@ -80,6 +80,11 @@ class LiaisonForm(forms.Form):
                     x = getattr(self.instance, name)
                     if name == "purpose": # proxy has a name-clash on purpose so help it
                         x = x.order
+
+                    try:
+                        x = x.pk # foreign keys need the .pk, not the actual object
+                    except AttributeError:
+                        pass
                     self.initial[name] = x
                 except AttributeError:
                     # we have some fields on the form that aren't in the model

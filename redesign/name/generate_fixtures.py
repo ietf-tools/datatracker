@@ -3,9 +3,9 @@
 # boiler plate
 import os, sys
 
-one_dir_up = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
+ietf_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../ietf'))
 
-sys.path.insert(0, one_dir_up)
+sys.path.insert(0, ietf_path)
 
 from django.core.management import setup_environ
 import settings
@@ -17,7 +17,7 @@ from django.db.models import Q
 
 def output(name, qs):
     try:
-        f = open(os.path.join(settings.BASE_DIR, "idrfc/fixtures/%s.xml" % name), 'w')
+        f = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures/%s.xml" % name), 'w')
         f.write(serialize("xml", qs, indent=4))
         f.close()
     except:
@@ -29,10 +29,10 @@ def output(name, qs):
 # pick all name models directly out of the module
 names = []
 
-import name.models
-for n in dir(name.models):
+import redesign.name.models
+for n in dir(redesign.name.models):
     if n[:1].upper() == n[:1] and n.endswith("Name"):
-        model = getattr(name.models, n)
+        model = getattr(redesign.name.models, n)
         if not model._meta.abstract:
             names.extend(model.objects.all())
             

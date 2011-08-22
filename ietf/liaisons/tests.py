@@ -22,7 +22,7 @@ class LiaisonsUrlTestCase(SimpleUrlTestCase):
             return content
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from ietf.liaisons.models import LiaisonStatement
+    from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
     from redesign.person.models import Person, Email
     from redesign.group.models import Group, Role
         
@@ -87,7 +87,7 @@ class LiaisonManagementTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertEquals(len(q('form input[name=do_action_taken]')), 0)
         
-        # logged in and get
+        # log in and get
         self.client.login(remote_user="secretary")
 
         r = self.client.get(url)
@@ -103,7 +103,51 @@ class LiaisonManagementTestCase(django.test.TestCase):
         liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertTrue(liaison.action_taken)
 
+    def test_edit_liaison(self):
+        make_test_data()
+        liaison = make_liaison_models()
         
+        url = urlreverse('liaison_edit', kwargs=dict(object_id=liaison.pk))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form input[name=from_field]')), 1)
+
+        # edit
+        r = self.client.post(url,
+                             dict(from_field="from",
+                                  replyto="replyto@example.com",
+                                  organization="org",
+                                  to_poc="to_poc@example.com",
+                                  response_contact="responce_contact@example.com",
+                                  technical_contact="technical_contact@example.com",
+                                  cc1="cc1@example.com",
+                                  purpose="4",
+                                  deadline_date=(liaison.deadline + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+                                  title="title",
+                                  submitted_date=(liaison.submitted + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+                                  body="body",
+                                  ))
+        self.assertEquals(r.status_code, 302)
+        new_liaison = LiaisonStatement.objects.get(id=liaison.id)
+        self.assertEquals(new_liaison.from_name, "from")
+        self.assertEquals(new_liaison.reply_to, "replyto@example.com")
+        self.assertEquals(new_liaison.to_name, "org")
+        self.assertEquals(new_liaison.to_contact, "to_poc@example.com")
+        self.assertEquals(new_liaison.response_contact, "responce_contact@example.com")
+        self.assertEquals(new_liaison.technical_contact, "technical_contact@example.com")
+        self.assertEquals(new_liaison.cc, "cc1@example.com")
+        self.assertEquals(new_liaison.purpose, LiaisonStatementPurposeName.objects.get(order=4))
+        self.assertEquals(new_liaison.deadline, liaison.deadline + datetime.timedelta(days=1)),
+        self.assertEquals(new_liaison.title, "title")
+        self.assertEquals(new_liaison.submitted.date(), (liaison.submitted + datetime.timedelta(days=1)).date())
+        self.assertEquals(new_liaison.body, "body")
+        self.assertTrue(new_liaison.modified > liaison.modified)
+        
+    # test links and edit button
         
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # the above tests only work with the new schema
