@@ -80,7 +80,7 @@ def get_info(request):
                        'needs_approval': from_entity.needs_approval(person=person),
                        'post_only': from_entity.post_only(person=person, user=request.user)})
         if is_secretariat(request.user):
-            full_list = [(i.pk, i.email()) for i in from_entity.full_user_list()]
+            full_list = [(i.pk, i.email()) for i in set(from_entity.full_user_list())]
             full_list.sort(lambda x,y: cmp(x[1], y[1]))
             full_list = [(person.pk, person.email())] + full_list
             result.update({'full_list': full_list})
