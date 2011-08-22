@@ -1,3 +1,7 @@
+from redesign.group.models import Group, Role
+from redesign.person.models import Person
+from ietf.liaisons.proxy import proxy_personify_role
+
 from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
                                     get_ietf_chair, get_iab_chair, get_iab_executive_director,
                                     is_secretariat)
@@ -7,10 +11,6 @@ IESG = {'name': u'The IESG', 'address': u'iesg@ietf.org'}
 IAB = {'name': u'The IAB', 'address': u'iab@iab.org'}
 IABCHAIR = {'name': u'The IAB Chair', 'address': u'iab-chair@iab.org'}
 IABEXECUTIVEDIRECTOR = {'name': u'The IAB Executive Director', 'address': u'execd@iab.org'}
-
-
-def get_all_sdo_managers():
-    return list(Person.objects.filter(email__role__name="liaiman", email__role__group__state="active").distinct())
 
 
 class FakePerson(object):
@@ -28,15 +28,11 @@ class FakePerson(object):
 # schema) way - unfortunately, it's never been strong enough to do so
 # fine-grained enough so the form code also has some rules
 
+def all_sdo_managers():
+    return [proxy_personify_role(r) for r in Role.objects.filter(group__type="sdo", name="liaiman").select_related("email").distinct()]
+
 def role_persons_with_fixed_email(group, role_name):
-    from redesign.group.models import Role    
-    res = []
-    for r in Role.objects.filter(group=group, name=role_name).select_related("email"):
-        p = r.email.person
-        # proxy hack to make email() return the right address
-        p.email = (lambda name, address: (lambda: (name, address)))(p.name, r.email.address)
-        res.append(p)
-    return res
+    return [proxy_personify_role(r) for r in Role.objects.filter(group=group, name=role_name).select_related("email").distinct()]
     
 class Entity(object):
 
@@ -94,7 +90,7 @@ class IETFEntity(Entity):
         return [self.poc]
 
     def full_user_list(self):
-        result = get_all_sdo_managers()
+        result = all_sdo_managers()
         result.append(get_ietf_chair())
         return result
 
@@ -123,7 +119,7 @@ class IABEntity(Entity):
         return [self.chair]
 
     def full_user_list(self):
-        result = get_all_sdo_managers()
+        result = all_sdo_managers()
         result += [get_iab_chair(), get_iab_executive_director()]
         return result
 
@@ -131,7 +127,7 @@ class IABEntity(Entity):
 class AreaEntity(Entity):
 
     def get_poc(self):
-        return [i.person for i in self.obj.areadirector_set.all()]
+        return role_persons_with_fixed_email(self.obj, "ad")
 
     def get_cc(self, person=None):
         return [FakePerson(**IETFCHAIR)]
@@ -151,7 +147,7 @@ class AreaEntity(Entity):
         return self.get_poc()
 
     def full_user_list(self):
-        result = get_all_sdo_managers()
+        result = all_sdo_managers()
         result += self.get_poc()
         return result
 
@@ -189,7 +185,7 @@ class WGEntity(Entity):
         return role_persons_with_fixed_email(self.obj.parent, "ad") if self.obj.parent else []
 
     def full_user_list(self):
-        result = get_all_sdo_managers()
+        result = all_sdo_managers()
         result += self.get_poc()
         return result
 
@@ -332,8 +328,7 @@ class WGEntityManager(EntityManager):
         return WGEntity(name=obj.group_acronym.name, obj=obj)
 
     def can_send_on_behalf(self, person):
-        wgs = set([i.group_acronym.pk for i in person.wgchair_set.all()])
-        wgs = wgs.union([i.group_acronym.pk for i in person.wgsecretary_set.all()])
+        wgs = Group.objects.filter(role__email__person=person, role__name__in=("chair", "secretary")).values_list('pk', flat=True)
         query_filter = {'pk__in': wgs}
         return self.get_managed_list(query_filter)
 
@@ -347,7 +342,6 @@ class SDOEntityManager(EntityManager):
     def __init__(self, pk=None, name=None, queryset=None):
         super(SDOEntityManager, self).__init__(pk, name, queryset)
         if self.queryset == None:
-            from redesign.group.models import Group
             self.queryset = Group.objects.filter(type="sdo")
 
     def get_managed_list(self):

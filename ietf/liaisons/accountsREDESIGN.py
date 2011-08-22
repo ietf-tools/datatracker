@@ -1,14 +1,14 @@
 from redesign.person.models import Person
 from redesign.group.models import Role
-
+from ietf.liaisons.proxy import proxy_personify_role
 
 LIAISON_EDIT_GROUPS = ['Secretariat'] # this is not working anymore, refers to old auth model
 
 
 def get_ietf_chair():
     try:
-        return Person.objects.get(email__role__name="chair", email__role__group__acronym="ietf")
-    except Person.DoesNotExist:
+        return proxy_personify_role(Role.objects.get(name="chair", group__acronym="ietf"))
+    except Role.DoesNotExist:
         return None
 
 
@@ -18,14 +18,14 @@ def get_iesg_chair():
 
 def get_iab_chair():
     try:
-        return Person.objects.get(email__role__name="chair", email__role__group__acronym="iab")
-    except Person.DoesNotExist:
+        return proxy_personify_role(Role.objects.get(name="chair", group__acronym="iab"))
+    except Role.DoesNotExist:
         return None
 
 
 def get_iab_executive_director():
     try:
-        return Person.objects.get(email__role__name="execdir", email__role__group__acronym="iab")
+        return proxy_personify_role(Role.objects.get(name="execdir", group__acronym="iab"))
     except Person.DoesNotExist:
         return None
 

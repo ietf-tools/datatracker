@@ -1,9 +1,10 @@
-import datetime
+import datetime, os, shutil
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse as urlreverse
 import django.test
+from StringIO import StringIO
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import SimpleUrlTestCase, canonicalize_feed, canonicalize_sitemap, login_testing_unauthorized
@@ -76,6 +77,15 @@ def make_liaison_models():
 class LiaisonManagementTestCase(django.test.TestCase):
     fixtures = ['names']
 
+    def setUp(self):
+        self.liaison_dir = os.path.abspath("tmp-liaison-dir")
+        os.mkdir(self.liaison_dir)
+        
+        settings.LIAISON_ATTACH_PATH = self.liaison_dir
+
+    def tearDown(self):
+        shutil.rmtree(self.liaison_dir)
+
     def test_taken_care_of(self):
         make_test_data()
         liaison = make_liaison_models()
@@ -96,12 +106,43 @@ class LiaisonManagementTestCase(django.test.TestCase):
         self.assertEquals(len(q('form input[name=do_action_taken]')), 1)
         
         # mark action taken
-        r = self.client.post(url, dict(do_action_taken=1))
+        r = self.client.post(url, dict(do_action_taken="1"))
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEquals(len(q('form input[name=do_action_taken]')), 0)
         liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertTrue(liaison.action_taken)
+
+    def test_approval(self):
+        make_test_data()
+        liaison = make_liaison_models()
+        # has to come from WG to need approval
+        liaison.from_group = Group.objects.get(acronym="mars")
+        liaison.approved = None
+        liaison.save()
+        
+        url = urlreverse('liaison_approval_detail', kwargs=dict(object_id=liaison.pk))
+        # this liaison is for a WG so we need the AD for the area
+        login_testing_unauthorized(self, "ad", url)
+        
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form input[name=do_approval]')), 1)
+        
+        # approve
+        mailbox_before = len(mail_outbox)
+        r = self.client.post(url, dict(do_approval="1"))
+        self.assertEquals(r.status_code, 302)
+        
+        liaison = LiaisonStatement.objects.get(id=liaison.id)
+        self.assertTrue(liaison.approved)
+        from django.core import mail
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue("Liaison Statement" in mail.outbox[-1].subject)
+        #self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        #self.assertTrue("Liaison Statement" in mail_outbox[-1]["Subject"])
 
     def test_edit_liaison(self):
         make_test_data()
@@ -117,6 +158,9 @@ class LiaisonManagementTestCase(django.test.TestCase):
         self.assertEquals(len(q('form input[name=from_field]')), 1)
 
         # edit
+        attachments_before = liaison.attachments.count()
+        test_file = StringIO("hello world")
+        test_file.name = "unnamed"
         r = self.client.post(url,
                              dict(from_field="from",
                                   replyto="replyto@example.com",
@@ -124,14 +168,17 @@ class LiaisonManagementTestCase(django.test.TestCase):
                                   to_poc="to_poc@example.com",
                                   response_contact="responce_contact@example.com",
                                   technical_contact="technical_contact@example.com",
-                                  cc1="cc1@example.com",
+                                  cc1="cc@example.com",
                                   purpose="4",
                                   deadline_date=(liaison.deadline + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
                                   title="title",
                                   submitted_date=(liaison.submitted + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
                                   body="body",
+                                  attach_file_1=test_file,
+                                  attach_title_1="attachment",
                                   ))
         self.assertEquals(r.status_code, 302)
+        
         new_liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertEquals(new_liaison.from_name, "from")
         self.assertEquals(new_liaison.reply_to, "replyto@example.com")
@@ -139,7 +186,7 @@ class LiaisonManagementTestCase(django.test.TestCase):
         self.assertEquals(new_liaison.to_contact, "to_poc@example.com")
         self.assertEquals(new_liaison.response_contact, "responce_contact@example.com")
         self.assertEquals(new_liaison.technical_contact, "technical_contact@example.com")
-        self.assertEquals(new_liaison.cc, "cc1@example.com")
+        self.assertEquals(new_liaison.cc, "cc@example.com")
         self.assertEquals(new_liaison.purpose, LiaisonStatementPurposeName.objects.get(order=4))
         self.assertEquals(new_liaison.deadline, liaison.deadline + datetime.timedelta(days=1)),
         self.assertEquals(new_liaison.title, "title")
@@ -147,7 +194,174 @@ class LiaisonManagementTestCase(django.test.TestCase):
         self.assertEquals(new_liaison.body, "body")
         self.assertTrue(new_liaison.modified > liaison.modified)
         
-    # test links and edit button
+        self.assertEquals(new_liaison.attachments.count(), attachments_before + 1)
+        attachment = new_liaison.attachments.order_by("-name")[0]
+        self.assertEquals(attachment.title, "attachment")
+        with open(os.path.join(self.liaison_dir, attachment.external_url)) as f:
+            written_content = f.read()
+
+        test_file.seek(0)
+        self.assertEquals(written_content, test_file.read())
+        
+    def test_add_incoming_liaison(self):
+        make_test_data()
+        liaison = make_liaison_models()
+        
+        url = urlreverse('add_liaison') + "?incoming=1"
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form textarea[name=body]')), 1)
+
+        # add new
+        test_file = StringIO("hello world")
+        test_file.name = "unnamed"
+        from_group = Group.objects.filter(type="sdo")[0]
+        to_group = Group.objects.get(acronym="mars")
+        submitter = Person.objects.get(user__username="marschairman")
+        today = datetime.date.today()
+        related_liaison = liaison
+        r = self.client.post(url,
+                             dict(from_field="%s_%s" % (from_group.type_id, from_group.pk),
+                                  from_fake_user=str(submitter.pk),
+                                  replyto="replyto@example.com",
+                                  organization="%s_%s" % (to_group.type_id, to_group.pk),
+                                  response_contact="responce_contact@example.com",
+                                  technical_contact="technical_contact@example.com",
+                                  cc1="cc@example.com",
+                                  purpose="4",
+                                  deadline_date=(today + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+                                  related_to=str(related_liaison.pk),
+                                  title="title",
+                                  submitted_date=today.strftime("%Y-%m-%d"),
+                                  body="body",
+                                  attach_file_1=test_file,
+                                  attach_title_1="attachment",
+                                  ))
+        self.assertEquals(r.status_code, 302)
+        
+        l = LiaisonStatement.objects.all().order_by("-id")[0]
+        self.assertEquals(l.from_group, from_group)
+        self.assertEquals(l.from_contact, submitter.email_address())
+        self.assertEquals(l.reply_to, "replyto@example.com")
+        self.assertEquals(l.to_group, to_group)
+        self.assertEquals(l.response_contact, "responce_contact@example.com")
+        self.assertEquals(l.technical_contact, "technical_contact@example.com")
+        self.assertEquals(l.cc, "cc@example.com")
+        self.assertEquals(l.purpose, LiaisonStatementPurposeName.objects.get(order=4))
+        self.assertEquals(l.deadline, today + datetime.timedelta(days=1)),
+        self.assertEquals(l.related_to, liaison),
+        self.assertEquals(l.title, "title")
+        self.assertEquals(l.submitted.date(), today)
+        self.assertEquals(l.body, "body")
+        self.assertTrue(l.approved)
+        
+        self.assertEquals(l.attachments.count(), 1)
+        attachment = l.attachments.all()[0]
+        self.assertEquals(attachment.title, "attachment")
+        with open(os.path.join(self.liaison_dir, attachment.external_url)) as f:
+            written_content = f.read()
+
+        test_file.seek(0)
+        self.assertEquals(written_content, test_file.read())
+        
+    def test_add_outgoing_liaison(self):
+        make_test_data()
+        liaison = make_liaison_models()
+        
+        url = urlreverse('add_liaison')
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form textarea[name=body]')), 1)
+
+        # add new
+        test_file = StringIO("hello world")
+        test_file.name = "unnamed"
+        from_group = Group.objects.get(acronym="mars")
+        to_group = Group.objects.filter(type="sdo")[0]
+        submitter = Person.objects.get(user__username="marschairman")
+        today = datetime.date.today()
+        related_liaison = liaison
+        r = self.client.post(url,
+                             dict(from_field="%s_%s" % (from_group.type_id, from_group.pk),
+                                  from_fake_user=str(submitter.pk),
+                                  approved="",
+                                  replyto="replyto@example.com",
+                                  to_poc="to_poc@example.com",
+                                  organization="%s_%s" % (to_group.type_id, to_group.pk),
+                                  other_organization="",
+                                  response_contact="responce_contact@example.com",
+                                  technical_contact="technical_contact@example.com",
+                                  cc1="cc@example.com",
+                                  purpose="4",
+                                  deadline_date=(today + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+                                  related_to=str(related_liaison.pk),
+                                  title="title",
+                                  submitted_date=today.strftime("%Y-%m-%d"),
+                                  body="body",
+                                  attach_file_1=test_file,
+                                  attach_title_1="attachment",
+                                  ))
+        self.assertEquals(r.status_code, 302)
+        
+        l = LiaisonStatement.objects.all().order_by("-id")[0]
+        self.assertEquals(l.from_group, from_group)
+        self.assertEquals(l.from_contact, submitter.email_address())
+        self.assertEquals(l.reply_to, "replyto@example.com")
+        self.assertEquals(l.to_group, to_group)
+        self.assertEquals(l.to_contact, "to_poc@example.com")
+        self.assertEquals(l.response_contact, "responce_contact@example.com")
+        self.assertEquals(l.technical_contact, "technical_contact@example.com")
+        self.assertEquals(l.cc, "cc@example.com")
+        self.assertEquals(l.purpose, LiaisonStatementPurposeName.objects.get(order=4))
+        self.assertEquals(l.deadline, today + datetime.timedelta(days=1)),
+        self.assertEquals(l.related_to, liaison),
+        self.assertEquals(l.title, "title")
+        self.assertEquals(l.submitted.date(), today)
+        self.assertEquals(l.body, "body")
+        self.assertTrue(not l.approved)
+        
+        self.assertEquals(l.attachments.count(), 1)
+        attachment = l.attachments.all()[0]
+        self.assertEquals(attachment.title, "attachment")
+        with open(os.path.join(self.liaison_dir, attachment.external_url)) as f:
+            written_content = f.read()
+
+        test_file.seek(0)
+        self.assertEquals(written_content, test_file.read())
+
+        # try adding statement to non-predefined organization
+        r = self.client.post(url,
+                             dict(from_field="%s_%s" % (from_group.type_id, from_group.pk),
+                                  from_fake_user=str(submitter.pk),
+                                  approved="1",
+                                  replyto="replyto@example.com",
+                                  to_poc="to_poc@example.com",
+                                  organization="othersdo",
+                                  other_organization="Mars Institute",
+                                  response_contact="responce_contact@example.com",
+                                  technical_contact="technical_contact@example.com",
+                                  cc1="cc@example.com",
+                                  purpose="4",
+                                  deadline_date=(today + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+                                  related_to=str(related_liaison.pk),
+                                  title="new title",
+                                  submitted_date=today.strftime("%Y-%m-%d"),
+                                  body="body",
+                                  ))
+        self.assertEquals(r.status_code, 302)
+
+        l = LiaisonStatement.objects.all().order_by("-id")[0]
+        self.assertEquals(l.to_group, None)
+        self.assertEquals(l.to_name, "Mars Institute")
+        
         
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # the above tests only work with the new schema

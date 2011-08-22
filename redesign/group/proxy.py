@@ -17,7 +17,7 @@ class Acronym(Group):
     #acronym_id = models.AutoField(primary_key=True)
     @property
     def acronym_id(self):
-        raise NotImplemented
+        return self.id
     #acronym = models.CharField(max_length=12) # same name
     #name = models.CharField(max_length=100) # same name
     #name_key = models.CharField(max_length=50, editable=False)

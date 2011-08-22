@@ -2,22 +2,22 @@ The following liaison statement will remain pending (and not public available) i
 {% load ietf_filters %}{% autoescape off %}
 Title: {{ liaison.title|clean_whitespace }}
 Submission Date: {{ liaison.submitted_date }}
-URL of the IETF Web page: {% url liaison_approval_detail liaison.pk %}
+URL of the IETF Web page: {{ url }}
 {% if liaison.deadline_date %}Please reply by {{ liaison.deadline_date }}{% endif %}
 From: {{ liaison.from_body }} ({{ liaison.person }} <{{ liaison.replyto|default:liaison.from_email }}>)
 To: {{ liaison.to_body }} ({{ liaison.to_poc }})
 Cc: {{ liaison.cc1 }}
 Reponse Contact: {{ liaison.response_contact }}
 Technical Contact: {{ liaison.technical_contact }}
-Purpose: {% if liaison.purpose_text %}{{ liaison.purpose_text }}{% else %}{{ liaison.purpose.purpose_text }}{% endif %}
+Purpose: {% if liaison.purpose_text %}{{ liaison.purpose_text }}{% else %}{{ liaison.purpose }}{% endif %}
 {% if liaison.related_to %}Referenced liaison: {% if liaison.related_to.title %}{{ liaison.related_to.title }}{% else %}Liaison #{{ liaison.related_to.pk }}{% endif %} ({% url liaison_detail object_id=liaison.related_to.pk %}){% endif %}
 Body: {{ liaison.body }}
-Attachment(s):
+Attachments:
 {% for file in liaison.uploads_set.all %}
-    {{ file.file_title }} https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}
+    {{ file.file_title }} https://datatracker.ietf.org/documents/LIAISON/{{ file.filename }}
 {% empty %}
 No document has been attached
 {% endfor %}
 {% endautoescape %}
 
-Please visit {% url liaison_approval_detail liaison.pk %} in order to approve the liaison statement.
+Please visit {{ approve_url }} in order to approve the liaison statement.

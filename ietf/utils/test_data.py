@@ -76,9 +76,11 @@ def make_test_data():
             email=email)
 
     # group chair
+    u = User.objects.create(username="marschairman")
     p = Person.objects.create(
         name="WG Chair Man",
         ascii="WG Chair Man",
+        user=u
         )
     wgchair = Email.objects.create(
         address="wgchairman@ietf.org",

@@ -96,14 +96,22 @@ class LiaisonDetailProxy(LiaisonStatement):
     @property
     def from_raw_body(self):
         return self.from_name
+    
+    def raw_codify(self, group):
+        if not group:
+            return ""
+        if group.type_id in ("sdo", "wg", "area"):
+            return "%s_%s" % (group.type_id, group.id)
+        return group.acronym
+    
     #from_raw_code = models.CharField(blank=True, null=True, max_length=255)
     @property
     def from_raw_code(self):
-        return self.from_group_id
+        return self.raw_codify(self.from_group)
     #to_raw_code = models.CharField(blank=True, null=True, max_length=255)
     @property
     def to_raw_code(self):
-        return self.to_body_id
+        return self.raw_codify(self.to_group)
     #approval = models.ForeignKey(OutgoingLiaisonApproval, blank=True, null=True)
     @property
     def approval(self):
@@ -134,54 +142,10 @@ class LiaisonDetailProxy(LiaisonStatement):
     class Meta:
         proxy = True
 
-    def notify_pending_by_email(self, fake):
-        raise NotImplemented
-        from ietf.liaisons.utils import IETFHM
-
-        from_entity = IETFHM.get_entity_by_key(self.from_raw_code)
-        if not from_entity:
-            return None
-        to_email = []
-        for person in from_entity.can_approve():
-            to_email.append('%s <%s>' % person.email())
-        subject = 'New Liaison Statement, "%s" needs your approval' % (self.title)
-        from_email = settings.LIAISON_UNIVERSAL_FROM
-        body = render_to_string('liaisons/pending_liaison_mail.txt',
-                                {'liaison': self,
-                                })
-        mail = IETFEmailMessage(subject=subject,
-                                to=to_email,
-                                from_email=from_email,
-                                body = body)
-        if not fake:
-            mail.send()         
-        return mail                                                     
-
     def send_by_email(self, fake=False):
-        raise NotImplemented
-        if self.is_pending():
-            return self.notify_pending_by_email(fake)
-        subject = 'New Liaison Statement, "%s"' % (self.title)
-        from_email = settings.LIAISON_UNIVERSAL_FROM
-        to_email = self.to_poc.split(',')
-        cc = self.cc1.split(',')
-        if self.technical_contact:
-            cc += self.technical_contact.split(',')
-        if self.response_contact:
-            cc += self.response_contact.split(',')
-        bcc = ['statements@ietf.org']
-        body = render_to_string('liaisons/liaison_mail.txt',
-                                {'liaison': self,
-                                })
-        mail = IETFEmailMessage(subject=subject,
-                                to=to_email,
-                                from_email=from_email,
-                                cc = cc,
-                                bcc = bcc,
-                                body = body)
-        if not fake:
-            mail.send()         
-        return mail                                                     
+        # grab this from module instead of stuffing in on the model
+        from ietf.liaisons.mails import send_liaison_by_email
+        return send_liaison_by_email(self, fake)
 
     def is_pending(self):
         return not self.approved
@@ -190,7 +154,10 @@ class UploadsProxy(Document):
     #file_id = models.AutoField(primary_key=True)
     @property
     def file_id(self):
-        return int(self.external_url.split(".")[0])
+        if self.external_url.startswith(self.name):
+            return self.name # new data
+        else:
+            return int(self.external_url.split(".")[0][len(file):]) # old data
     #file_title = models.CharField(blank=True, max_length=255)
     @property
     def file_title(self):
@@ -208,6 +175,14 @@ class UploadsProxy(Document):
     @property
     def detail(self):
         return self.liaisonstatement_set.all()[0]
-
+    def filename(self):
+        return self.external_url
     class Meta:
         proxy = True
+
+def proxy_personify_role(role):
+    """Turn role into person with email() method using email from role."""
+    p = role.email.person
+    p.email = lambda: (p.name, role.email.address)
+    return p
+

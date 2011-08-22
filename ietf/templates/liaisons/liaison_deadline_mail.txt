@@ -14,7 +14,7 @@ Purpose: {% if liaison.purpose_text %}{{ liaison.purpose_text }}{% else %}{{ lia
 Body: {{ liaison.body }}
 Attachment(s):
 {% for file in liaison.uploads_set.all %}
-    {{ file.file_title }} https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}
+    {{ file.file_title }} https://datatracker.ietf.org/documents/LIAISON/file{{ file.filename }}
 {% empty %}
 No document has been attached
 {% endfor %}

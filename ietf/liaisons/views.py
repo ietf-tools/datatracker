@@ -177,19 +177,26 @@ def liaison_approval_list(request):
 def liaison_approval_detail(request, object_id):
     person = get_person_for_user(request.user)
     approval_codes = IETFHM.get_all_can_approve_codes(person)
-    to_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).order_by("-submitted_date")
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        to_approve = approvable_liaison_statements(approval_codes).order_by("-submitted")
+    else:
+        to_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).order_by("-submitted_date")
 
     if request.method=='POST' and request.POST.get('do_approval', False):
         try:
             liaison = to_approve.get(pk=object_id)
-            approval = liaison.approval
-            if not approval:
-                approval = OutgoingLiaisonApproval.objects.create(approved=True, approval_date=datetime.datetime.now())
-                liaison.approval = approval
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                liaison.approved = datetime.datetime.now()
                 liaison.save()
             else:
-                approval.approved=True
-                approval.save()
+                approval = liaison.approval
+                if not approval:
+                    approval = OutgoingLiaisonApproval.objects.create(approved=True, approval_date=datetime.datetime.now())
+                    liaison.approval = approval
+                    liaison.save()
+                else:
+                    approval.approved=True
+                    approval.save()
             if not settings.DEBUG:
                 liaison.send_by_email()
             else:

@@ -83,9 +83,11 @@ def get_body(name, raw_code):
         t = raw_code.split("_")
         if len(t) == 2:
             if t[0] == "area":
-                b = lookup_group(acronym=Acronym.objects.get(pk=t[1]), type="area")
-            elif t[0] == "group":
-                b = lookup_group(acronym=Acronym.objects.get(pk=t[1]), type="wg")
+                b = lookup_group(acronym=Acronym.objects.get(pk=t[1]).acronym, type="area")
+            elif t[0] == "wg":
+                b = lookup_group(acronym=Acronym.objects.get(pk=t[1]).acronym, type="wg")
+            elif t[0] == "sdo":
+                b = lookup_group(name=SDOs.objects.get(pk=t[1]).name, type="sdo")
 
         if not b:
             b = lookup_group(acronym=raw_code)
@@ -190,7 +192,7 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
         attachment.name = l.name() + ("-attachment-%s" % (i + 1))
         attachment.time = l.submitted
         # we should fixup the filenames, but meanwhile, store it here
-        attachment.external_url = "%s%s" % (u.file_id, u.file_extension)
+        attachment.external_url = "file%s%s" % (u.file_id, u.file_extension)
         attachment.save()
 
         DocAlias.objects.get_or_create(document=attachment, name=attachment.name)

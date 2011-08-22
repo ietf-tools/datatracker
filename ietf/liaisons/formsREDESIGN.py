@@ -1,4 +1,4 @@
-import datetime
+import datetime, os
 from email.utils import parseaddr
 
 from django import forms
@@ -14,11 +14,14 @@ from ietf.liaisons.utils import IETFHM
 from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
                                    ShowAttachmentsWidget, RelatedLiaisonWidget)
 from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
+from ietf.liaisons.proxy import LiaisonDetailProxy
 from redesign.group.models import Group
 from redesign.person.models import Person
+from redesign.doc.models import Document
 
 
 class LiaisonForm(forms.Form):
+    person = forms.ModelChoiceField(Person.objects.all())
     from_field = forms.ChoiceField(widget=FromWidget, label=u'From')
     replyto = forms.CharField(label=u'Reply to')
     organization = forms.ChoiceField()
@@ -64,15 +67,16 @@ class LiaisonForm(forms.Form):
         self.fake_person = None
         self.person = get_person_for_user(user)
         if kwargs.get('data', None):
-            kwargs['data'].update({'person': self.person.pk})
             if is_secretariat(self.user) and 'from_fake_user' in kwargs['data'].keys():
                 self.fake_person = Person.objects.get(pk=kwargs['data']['from_fake_user'])
                 kwargs['data'].update({'person': self.fake_person.pk})
+            else:
+                kwargs['data'].update({'person': self.person.pk})
 
         self.instance = kwargs.pop("instance", None)
         
         super(LiaisonForm, self).__init__(*args, **kwargs)
-
+        
         # now copy in values from instance, like a ModelForm
         if self.instance:
             for name, field in self.fields.iteritems():
@@ -120,8 +124,7 @@ class LiaisonForm(forms.Form):
         assert NotImplemented
 
     def set_replyto_field(self):
-        email = self.person.email_address()
-        self.fields['replyto'].initial = email
+        self.fields['replyto'].initial = self.person.email()[1]
 
     def set_organization_field(self):
         assert NotImplemented
@@ -193,7 +196,7 @@ class LiaisonForm(forms.Form):
         return self.hm.get_entity_by_key(organization_key)
 
     def get_poc(self, organization):
-        return ', '.join([i.email_address() for i in organization.get_poc()])
+        return ', '.join(u"%s <%s>" % i.email() for i in organization.get_poc())
 
     def clean_cc1(self):
         value = self.cleaned_data.get('cc1', '')
@@ -223,7 +226,7 @@ class LiaisonForm(forms.Form):
     def save(self, *args, **kwargs):
         l = self.instance
         if not l:
-            l = LiaisonStatement()
+            l = LiaisonDetailProxy()
 
         l.title = self.cleaned_data["title"]
         l.purpose = LiaisonStatementPurposeName.objects.get(order=self.cleaned_data["purpose"])
@@ -238,11 +241,11 @@ class LiaisonForm(forms.Form):
         
         l.modified = now
         l.submitted = datetime.datetime.combine(self.cleaned_data["submitted_date"], now.time())
-        if self.cleaned_data.get("approval"): # FIXME
-            if not l.approved:
-                l.approved = now
+        if not l.approved:
+            l.approved = now
 
         self.save_extra_fields(l)
+        
         l.save() # we have to save here to make sure we get an id for the attachments
         self.save_attachments(l)
         
@@ -250,23 +253,19 @@ class LiaisonForm(forms.Form):
 
     def save_extra_fields(self, liaison):
         from_entity = self.get_from_entity()
-        print from_entity, type(from_entity)
-        print self.cleaned_data.get("from_field")
-        liason.from_name = from_entity.name
-        print from_entity.obj # FIXME? c.get("from_field")
-        liason.from_group = from_entity.obj
-        liason.from_contact = self.person # FIXME?
+        liaison.from_name = from_entity.name
+        liaison.from_group = from_entity.obj
+        liaison.from_contact = self.cleaned_data["person"].email_address()
 
         organization = self.get_to_entity()
-        liason.to_name = organization.name
-        print organization.obj # FIXME? self.cleaned_data.get('organization')
-        liason.to_group = organization.obj
-        liason.to_contact = self.get_poc(organization)
-        
+        liaison.to_name = organization.name
+        liaison.to_group = organization.obj
+        liaison.to_contact = self.get_poc(organization)
+
         liaison.cc = self.get_cc(from_entity, organization)
 
     def save_attachments(self, instance):
-        return # FIXME
+        written = instance.attachments.all().count()
         for key in self.files.keys():
             title_key = key.replace('file', 'title')
             if not key.startswith('attach_file_') or not title_key in self.data.keys():
@@ -277,13 +276,16 @@ class LiaisonForm(forms.Form):
                 extension = '.' + extension[1]
             else:
                 extension = ''
-            attach = Uploads.objects.create(
-                file_title = self.data.get(title_key),
-                person = self.person,
-                detail = instance,
-                file_extension = extension,
+            written += 1
+            name = instance.name() + ("-attachment-%s" % written)
+            attach = Document.objects.create(
+                title = self.data.get(title_key),
+                type_id = "liaison",
+                name = name,
+                external_url = name + extension, # strictly speaking not necessary, but just for the time being ...
                 )
-            attach_file = open('%sfile%s%s' % (settings.LIAISON_ATTACH_PATH, attach.pk, attach.file_extension), 'w')
+            instance.attachments.add(attach)
+            attach_file = open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'w')
             attach_file.write(attached_file.read())
             attach_file.close()
 
@@ -380,21 +382,13 @@ class OutgoingLiaisonForm(LiaisonForm):
         return self.cleaned_data['to_poc']
 
     def save_extra_fields(self, liaison):
-        raise NotImplemented
         super(OutgoingLiaisonForm, self).save_extra_fields(liaison)
         from_entity = self.get_from_entity()
         needs_approval = from_entity.needs_approval(self.person)
         if not needs_approval or self.cleaned_data.get('approved', False):
-            approved = True
-            approval_date = datetime.datetime.now()
+            liaison.approved = datetime.datetime.now()
         else:
-            approved = False
-            approval_date = None
-        approval = OutgoingLiaisonApproval.objects.create(
-            approved = approved,
-            approval_date = approval_date)
-        liaison.approval = approval
-        liaison.save()
+            liaison.approved = None
 
     def clean_to_poc(self):
         value = self.cleaned_data.get('to_poc', None)

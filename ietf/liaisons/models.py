@@ -5,6 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.template.loader import render_to_string
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse as urlreverse
 from ietf.idtracker.models import Acronym, PersonOrOrgInfo, Area, IESGLogin
 from ietf.liaisons.mail import IETFEmailMessage
 from ietf.ietfauth.models import LegacyLiaisonUser
@@ -143,6 +144,7 @@ class LiaisonDetail(models.Model):
         from_email = settings.LIAISON_UNIVERSAL_FROM
         body = render_to_string('liaisons/pending_liaison_mail.txt',
                                 {'liaison': self,
+                                 'url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.pk))
                                 })
         mail = IETFEmailMessage(subject=subject,
                                 to=to_email,
@@ -166,6 +168,8 @@ class LiaisonDetail(models.Model):
         bcc = ['statements@ietf.org']
         body = render_to_string('liaisons/liaison_mail.txt',
                                 {'liaison': self,
+                                 'url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.pk)),
+                                 'approve_url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=liaison.pk))
                                 })
         mail = IETFEmailMessage(subject=subject,
                                 to=to_email,
@@ -289,6 +293,8 @@ class Uploads(models.Model):
     detail = models.ForeignKey(LiaisonDetail)
     def __str__(self):
 	return self.file_title
+    def filename(self):
+        return "file%s%s" % (self.file_id, self.file_extension)
     class Meta:
         db_table = 'uploads'
 
@@ -320,12 +326,12 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_FROM_O
         
         related_to = models.ForeignKey('LiaisonStatement', blank=True, null=True)
         
-        from_group = models.ForeignKey(Group, related_name="liaisonstatement_from_set", null=True, blank=True, help_text="From body, if it exists")
+        from_group = models.ForeignKey(Group, related_name="liaisonstatement_from_set", null=True, blank=True, help_text="Sender group, if it exists")
         from_name = models.CharField(max_length=255, help_text="Name of the sender body")
         from_contact = models.ForeignKey(Email, blank=True, null=True)
-        to_group = models.ForeignKey(Group, related_name="liaisonstatement_to_set", null=True, blank=True, help_text="To body, if it exists")
+        to_group = models.ForeignKey(Group, related_name="liaisonstatement_to_set", null=True, blank=True, help_text="Recipient group, if it exists")
         to_name = models.CharField(max_length=255, help_text="Name of the recipient body")
-        to_contact = models.CharField(blank=True, max_length=255, help_text="Contacts at to body")
+        to_contact = models.CharField(blank=True, max_length=255, help_text="Contacts at recipient body")
         
         reply_to = models.CharField(blank=True, max_length=255)
         
