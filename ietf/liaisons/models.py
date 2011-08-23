@@ -142,10 +142,11 @@ class LiaisonDetail(models.Model):
             to_email.append('%s <%s>' % person.email())
         subject = 'New Liaison Statement, "%s" needs your approval' % (self.title)
         from_email = settings.LIAISON_UNIVERSAL_FROM
-        body = render_to_string('liaisons/pending_liaison_mail.txt',
-                                {'liaison': self,
-                                 'url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.pk))
-                                })
+        body = render_to_string('liaisons/pending_liaison_mail.txt', {
+                'liaison': self,
+                'url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=self.pk)),
+                'referenced_url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=self.related_to.pk)) if self.related_to else None,
+                })
         mail = IETFEmailMessage(subject=subject,
                                 to=to_email,
                                 from_email=from_email,
@@ -166,11 +167,11 @@ class LiaisonDetail(models.Model):
         if self.response_contact:
             cc += self.response_contact.split(',')
         bcc = ['statements@ietf.org']
-        body = render_to_string('liaisons/liaison_mail.txt',
-                                {'liaison': self,
-                                 'url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.pk)),
-                                 'approve_url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=liaison.pk))
-                                })
+        body = render_to_string('liaisons/liaison_mail.txt', {
+                'liaison': self,
+                'url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=self.pk)),
+                'referenced_url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=self.related_to.pk)) if self.related_to else None,
+                })
         mail = IETFEmailMessage(subject=subject,
                                 to=to_email,
                                 from_email=from_email,

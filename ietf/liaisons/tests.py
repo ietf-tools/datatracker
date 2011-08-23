@@ -138,11 +138,8 @@ class LiaisonManagementTestCase(django.test.TestCase):
         
         liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertTrue(liaison.approved)
-        from django.core import mail
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertTrue("Liaison Statement" in mail.outbox[-1].subject)
-        #self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        #self.assertTrue("Liaison Statement" in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        self.assertTrue("Liaison Statement" in mail_outbox[-1]["Subject"])
 
     def test_edit_liaison(self):
         make_test_data()
@@ -217,6 +214,7 @@ class LiaisonManagementTestCase(django.test.TestCase):
         self.assertEquals(len(q('form textarea[name=body]')), 1)
 
         # add new
+        mailbox_before = len(mail_outbox)
         test_file = StringIO("hello world")
         test_file.name = "unnamed"
         from_group = Group.objects.filter(type="sdo")[0]
@@ -240,6 +238,7 @@ class LiaisonManagementTestCase(django.test.TestCase):
                                   body="body",
                                   attach_file_1=test_file,
                                   attach_title_1="attachment",
+                                  send="1",
                                   ))
         self.assertEquals(r.status_code, 302)
         
@@ -267,6 +266,9 @@ class LiaisonManagementTestCase(django.test.TestCase):
 
         test_file.seek(0)
         self.assertEquals(written_content, test_file.read())
+
+        self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        self.assertTrue("Liaison Statement" in mail_outbox[-1]["Subject"])
         
     def test_add_outgoing_liaison(self):
         make_test_data()
@@ -282,6 +284,7 @@ class LiaisonManagementTestCase(django.test.TestCase):
         self.assertEquals(len(q('form textarea[name=body]')), 1)
 
         # add new
+        mailbox_before = len(mail_outbox)
         test_file = StringIO("hello world")
         test_file.name = "unnamed"
         from_group = Group.objects.get(acronym="mars")
@@ -308,6 +311,7 @@ class LiaisonManagementTestCase(django.test.TestCase):
                                   body="body",
                                   attach_file_1=test_file,
                                   attach_title_1="attachment",
+                                  send="1",
                                   ))
         self.assertEquals(r.status_code, 302)
         
@@ -337,6 +341,9 @@ class LiaisonManagementTestCase(django.test.TestCase):
         test_file.seek(0)
         self.assertEquals(written_content, test_file.read())
 
+        self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        self.assertTrue("Liaison Statement" in mail_outbox[-1]["Subject"])
+        
         # try adding statement to non-predefined organization
         r = self.client.post(url,
                              dict(from_field="%s_%s" % (from_group.type_id, from_group.pk),
@@ -361,7 +368,6 @@ class LiaisonManagementTestCase(django.test.TestCase):
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertEquals(l.to_group, None)
         self.assertEquals(l.to_name, "Mars Institute")
-        
         
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # the above tests only work with the new schema
