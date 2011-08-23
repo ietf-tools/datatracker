@@ -24,11 +24,11 @@ class LiaisonDetailProxy(LiaisonStatement):
     #submitted_date = models.DateField(null=True, blank=True)
     @property
     def submitted_date(self):
-        return self.submitted.date()
+        return self.submitted.date() if self.submitted else None
     #last_modified_date = models.DateField(null=True, blank=True)
     @property
     def last_modified_date(self):
-        return self.modified.date()
+        return self.modified.date() if self.modified else None
     #from_id = models.IntegerField(null=True, blank=True)
     @property
     def from_id(self):

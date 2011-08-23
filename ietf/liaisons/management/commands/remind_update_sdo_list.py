@@ -38,9 +38,14 @@ class Command(BaseCommand):
         return msg
 
     def handle(self, *args, **options):
-        query = SDOs.objects.all().order_by('pk')
         sdo_pk = options.get('sdo_pk', None)
         return_output = options.get('return_output', False)
+
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            msg_list = send_reminders_to_sdos(sdo_pk=sdo_pk)
+            return msg_list if return_output else None
+
+        query = SDOs.objects.all().order_by('pk')
         if sdo_pk:
             query = query.filter(pk=sdo_pk)
 
@@ -55,3 +60,31 @@ class Command(BaseCommand):
             msg_list.append(msg)
         if return_output:
             return msg_list
+
+
+def send_reminders_to_sdos(sdo_pk=None):
+    from redesign.group.models import Group
+    from ietf.liaisons.mails import send_sdo_reminder
+    
+    sdos = Group.objects.filter(type="sdo").order_by('pk')
+    if sdo_pk:
+        sdos = sdos.filter(pk=sdo_pk)
+
+    if not sdos:
+        print "No SDOs found!"
+        
+    msgs = []
+    for sdo in sdos:
+        body = send_sdo_reminder(sdo)
+
+        if not body:
+            msg = u'%05s#: %s has no liaison manager' % (sdo.pk, sdo.name)
+        else:
+            msg = u'%05s#: %s mail sent!' % (sdo.pk, sdo.name)
+
+        print msg
+        msgs.append(msg)
+
+    return msgs
+        
+

@@ -3,6 +3,8 @@ from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail_text
+from ietf.liaisons.utils import role_persons_with_fixed_email
+from redesign.group.models import Role
 
 def send_liaison_by_email(request, liaison, fake=False):
     if liaison.is_pending(): # this conditional should definitely be at the caller, not here
@@ -60,3 +62,24 @@ def notify_pending_by_email(request, liaison, fake):
         return mail
     send_mail_text(request, to_email, from_email, subject, body)
 
+def send_sdo_reminder(sdo):
+    roles = Role.objects.filter(name="liaiman", group=sdo)
+    if not roles:
+        return None
+
+    manager_role = roles[0]
+    
+    subject = 'Request for update of list of authorized individuals'
+    to_email = manager_role.email.address
+    name = manager_role.email.get_name()
+
+    authorized_list = role_persons_with_fixed_email(sdo, "auth")
+    body = render_to_string('liaisons/sdo_reminder.txt', dict(
+            manager_name=name,
+            sdo_name=sdo.name,
+            individuals=authorized_list,
+            ))
+    
+    send_mail_text(None, to_email, settings.LIAISON_UNIVERSAL_FROM, subject, body)
+
+    return body

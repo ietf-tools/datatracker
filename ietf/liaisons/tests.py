@@ -35,16 +35,31 @@ def make_liaison_models():
         type_id="sdo",
         )
 
+    # liaison manager
     u = User.objects.create(username="zrk")
     p = Person.objects.create(
         name="Zrk Brekkk",
         ascii="Zrk Brekkk",
         user=u)
-    email = Email.objects.create(
+    manager = email = Email.objects.create(
         address="zrk@ulm.mars",
         person=p)
     Role.objects.create(
         name_id="liaiman",
+        group=sdo,
+        email=email)
+
+    # authorized individual
+    u = User.objects.create(username="rkz")
+    p = Person.objects.create(
+        name="Rkz Kkkreb",
+        ascii="Rkz Kkkreb",
+        user=u)
+    email = Email.objects.create(
+        address="rkz@ulm.mars",
+        person=p)
+    Role.objects.create(
+        name_id="auth",
         group=sdo,
         email=email)
 
@@ -58,7 +73,7 @@ def make_liaison_models():
         related_to=None,
         from_group=sdo,
         from_name=sdo.name,
-        from_contact=email,
+        from_contact=manager,
         to_group=mars_group,
         to_name=mars_group.name,
         to_contact="%s@ietf.org" % mars_group.acronym,
@@ -368,6 +383,19 @@ class LiaisonManagementTestCase(django.test.TestCase):
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertEquals(l.to_group, None)
         self.assertEquals(l.to_name, "Mars Institute")
+
+    def test_send_sdo_reminder(self):
+        make_test_data()
+        liaison = make_liaison_models()
+
+        from ietf.liaisons.mails import send_sdo_reminder
+
+        mailbox_before = len(mail_outbox)
+        send_sdo_reminder(Group.objects.filter(type="sdo")[0])
+        self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        self.assertTrue("authorized individuals" in mail_outbox[-1]["Subject"])
+        print mail_outbox[-1]
+
         
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # the above tests only work with the new schema
