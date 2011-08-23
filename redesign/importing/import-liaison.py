@@ -87,7 +87,7 @@ def get_body(name, raw_code):
             elif t[0] == "wg":
                 b = lookup_group(acronym=Acronym.objects.get(pk=t[1]).acronym, type="wg")
             elif t[0] == "sdo":
-                b = lookup_group(name=SDOs.objects.get(pk=t[1]).name, type="sdo")
+                b = lookup_group(name=SDOs.objects.get(pk=t[1]).sdo_name, type="sdo")
 
         if not b:
             b = lookup_group(acronym=raw_code)
@@ -173,6 +173,8 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
     
     l.submitted = o.submitted_date
     l.modified = o.last_modified_date
+    if not l.modified and l.submitted:
+        l.modified = l.submitted
     if not o.approval:
         # no approval object means it's approved alright - weird, we
         # have to fake the approved date then
