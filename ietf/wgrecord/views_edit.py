@@ -9,12 +9,12 @@ from django import forms
 from django.forms.util import ErrorList
 from django.core.exceptions import ObjectDoesNotExist
 
-from utils import log_state_changed, log_group_state_changed, log_info_changed, update_telechat, add_wg_comment, set_or_create_charter
+from utils import log_state_changed, log_group_state_changed, log_info_changed, update_telechat, add_wg_comment, set_or_create_charter, save_charter_in_history
 from mails import email_secretariat
 from ietf.ietfauth.decorators import group_required
 from ietf.iesg.models import TelechatDates
 
-from doc.models import Document, DocHistory, DocEvent, save_document_in_history, TelechatDocEvent, InitialReviewDocEvent
+from doc.models import Document, DocHistory, DocAlias, DocEvent, TelechatDocEvent, InitialReviewDocEvent
 from name.models import CharterDocStateName, GroupStateName, GroupTypeName, DocTypeName, RoleName
 from person.models import Person, Email
 from group.models import Group, GroupEvent, GroupHistory, GroupURL, Role, RoleHistory, save_group_in_history
@@ -73,7 +73,7 @@ def change_state(request, name):
                     if charter_state != charter.charter_state:
                         # Charter state changed
                         change = True
-                        save_document_in_history(charter)
+                        save_charter_in_history(charter)
                     
                         prev = charter.charter_state
                         charter.charter_state = charter_state
@@ -158,7 +158,6 @@ def change_state(request, name):
 class EditInfoForm(forms.Form):
     name = forms.CharField(max_length=255, label="WG Name", required=True)
     acronym = forms.CharField(max_length=8, label="WG Acronym", required=True)
-    confirm_acronym = forms.BooleanField(widget=forms.HiddenInput, required=False, initial=True)
     chairs = forms.CharField(max_length=255, label="WG Chairs", help_text="Type in a name", required=False)
     secretaries = forms.CharField(max_length=255, label="WG Secretaries", help_text="Type in a name", required=False)
     techadv = forms.CharField(max_length=255, label="WG Technical Advisors", help_text="Type in a name", required=False)
@@ -172,6 +171,7 @@ class EditInfoForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
 
     def __init__(self, *args, **kwargs):
+        self.cur_acronym = kwargs.pop('cur_acronym')
         super(self.__class__, self).__init__(*args, **kwargs)
 
         # fix up ad field
@@ -194,17 +194,20 @@ class EditInfoForm(forms.Form):
 
         self.fields['telechat_date'].choices = choices
 
-def not_valid_acronym(value):
-    try:
-        Group.objects.get(acronym=value)
-    except ObjectDoesNotExist:
-        gh = GroupHistory.objects.filter(acronym=value)
-        if gh:
-            return True
-        else:
-            return False
-    return True
-
+    def clean_acronym(self):
+        acronym = self.cleaned_data['acronym']
+        if self.cur_acronym and acronym != self.cur_acronym:
+            try:
+                Group.objects.get(acronym=acronym)
+            except ObjectDoesNotExist:
+                gh = GroupHistory.objects.filter(acronym=acronym)
+                if gh:
+                    raise forms.ValidationError("Acronym used in a previous WG. Please pick another.")
+                else:
+                    return acronym
+            raise forms.ValidationError("Acronym used in a previous WG. Please pick another.")
+        return acronym
+        
 @group_required('Area_Director','Secretariat')
 def edit_info(request, name=None):
     """Edit or create a WG, notifying parties as
@@ -228,152 +231,127 @@ def edit_info(request, name=None):
         initial_telechat_date = None
 
     if request.method == 'POST':
-        form = EditInfoForm(request.POST, initial=dict(telechat_date=initial_telechat_date))
-    
+        form = EditInfoForm(request.POST, initial=dict(telechat_date=initial_telechat_date), cur_acronym=wg.acronym if wg else None)
         if form.is_valid():
-            if (new_wg or form.cleaned_data['acronym'] != wg.acronym) and not_valid_acronym(form.cleaned_data['acronym']) and not form.cleaned_data['confirm_acronym']:
-                try:
-                    Group.objects.get(acronym=form.cleaned_data['acronym'])
-                    form._errors['acronym'] = "error"
-                except ObjectDoesNotExist:
-                    form._errors['acronym'] = "warning"
+            r = form.cleaned_data
+            if not new_wg:
+                gh = save_group_in_history(wg)
             else:
-                r = form.cleaned_data
-
-                if not new_wg:
-                    gh = save_group_in_history(wg)
-                else:
-                    # Create WG
-                    wg = Group(name=r["name"],
-                               acronym=r["acronym"],
-                               type=GroupTypeName.objects.get(name="WG"),
-                               state=GroupStateName.objects.get(name="Proposed"))
-                    wg.save()
-
-                    e = GroupEvent(group=wg, type="proposed")
-                    e.time = datetime.now()
-                    e.by = login
-                    e.desc = "Proposed group"
-                    e.save()
-                if not wg.charter:
-                    # Create adjoined charter
-                    charter = set_or_create_charter(wg)
-                    charter.charter_state = CharterDocStateName.objects.get(slug="infrev")
-                    charter.save()
-
-                    e = DocEvent(doc=charter, type="started_iesg_process")
-                    e.time = datetime.now()
-                    e.by = login
-                    e.desc = "Started IESG process on charter"
-                    e.save()
-
-                    wg.charter = charter
-                    wg.save()
-                
-                changes = []
-                
-                def desc(attr, new, old):
-                    entry = "%(attr)s has been changed to <b>%(new)s</b> from <b>%(old)s</b>"
-                    if new_wg:
-                        entry = "%(attr)s has been changed to <b>%(new)s</b>"
-
-                    return entry % dict(attr=attr, new=new, old=old)
-
-                def get_model_fields_as_dict(obj):
-                    return dict((field.name, getattr(obj, field.name))
-                                for field in obj._meta.fields
-                                if field is not obj._meta.pk)
-
-                def diff(attr, name):
-                    v = getattr(wg, attr)
-                    if r[attr] != v:
-                        changes.append(desc(name, r[attr], v))
-                        setattr(wg, attr, r[attr])
-                        if attr == "acronym":
-                            c = wg.charter
-                            save_document_in_history(c)
-                            # copy fields
-                            fields = get_model_fields_as_dict(c) 
-                            fields["name"] = "charter-ietf-%s" % (r[attr])
-                            new_c = Document(**fields)
-                            new_c.save()
-                            # Set WG charter to new one
-                            wg.charter = new_c
-                            wg.save()
-                            # Move history
-                            for h in c.history_set.all():
-                                h.doc = new_c
-                                h.save()
-                            # Move events
-                            for e in c.docevent_set.all():
-                                e.doc = new_c
-                                e.save()
-                            # And remove the previous charter entry
-                            #c.delete()
-
-                # update the attributes, keeping track of what we're doing
-                diff('name', "Name")
-                diff('acronym', "Acronym")
-                diff('ad', "Shepherding AD")
-                diff('parent', "IETF Area")
-                diff('list_email', "Mailing list email")
-                diff('list_subscribe', "Mailing list subscribe address")
-                diff('list_archive', "Mailing list archive")
-                diff('comments', "Comment")
-
-                def get_sorted_string(attr, splitter):
-                    if splitter == '\n':
-                        out = sorted(r[attr].splitlines())
-                    else:
-                        out = sorted(r[attr].split(splitter))
-                    if out == ['']:
-                        out = []
-                    return out
-
-                # update roles
-                for attr_role in [('chairs', 'Chair'), ('secretaries', 'Secretary'), ('techadv', 'Tech Advisor')]:
-                    attr = attr_role[0]
-                    rname = attr_role[1]
-                    new = get_sorted_string(attr, ",")
-                    old = [x.email.address for x in wg.role_set.filter(name__name=rname).order_by('email__address')]
-                    if new != old:
-                        # Remove old roles and save them in history
-                        for role in wg.role_set.filter(name__name=rname):
-                            role.delete()
-                        # Add new ones
-                        rolename = RoleName.objects.get(name=rname)
-                        for e in new:
-                            email = Email.objects.get(address=e)
-                            role = Role(name=rolename, email=email, group=wg)
-                            role.save()
-
-                # update urls
-                new_urls = get_sorted_string('urls', '\n')
-                old_urls = [x.url + " (" + x.name + ")" for x in wg.groupurl_set.order_by('url')]
-                if new_urls != old_urls:
-                    # Remove old urls
-                    for u in wg.groupurl_set.all():
-                        u.delete()
-                    # Add new ones
-                    for u in [u for u in new_urls if u != ""]:
-                        m = re.search('(?P<url>.+) \((?P<name>.+)\)', u)
-                        url = GroupURL(url=m.group('url'), name=m.group('name'), group=wg)
-                        url.save()
-
-                wg.time = datetime.now()
-
-                if changes and not new_wg:
-                    for c in changes:
-                        log_info_changed(request, wg, login, c)
-
-                update_telechat(request, wg.charter, login, r['telechat_date'])
-                
+                # Create WG
+                wg = Group(name=r["name"],
+                           acronym=r["acronym"],
+                           type=GroupTypeName.objects.get(name="WG"),
+                           state=GroupStateName.objects.get(name="Proposed"))
                 wg.save()
+                
+                e = GroupEvent(group=wg, type="proposed")
+                e.time = datetime.now()
+                e.by = login
+                e.desc = "Proposed group"
+                e.save()
+            if not wg.charter:
+                # Create adjoined charter
+                charter = set_or_create_charter(wg)
+                charter.charter_state = CharterDocStateName.objects.get(slug="infrev")
+                charter.save()
+                
+                e = DocEvent(doc=charter, type="started_iesg_process")
+                e.time = datetime.now()
+                e.by = login
+                e.desc = "Started IESG process on charter"
+                e.save()
+                
+            changes = []
+                
+            def desc(attr, new, old):
+                entry = "%(attr)s has been changed to <b>%(new)s</b> from <b>%(old)s</b>"
                 if new_wg:
-                    return redirect('wg_change_state', name=wg.acronym)
+                    entry = "%(attr)s has been changed to <b>%(new)s</b>"
+                    
+                return entry % dict(attr=attr, new=new, old=old)
+
+            def get_model_fields_as_dict(obj):
+                return dict((field.name, getattr(obj, field.name))
+                            for field in obj._meta.fields
+                            if field is not obj._meta.pk)
+
+            def diff(attr, name):
+                v = getattr(wg, attr)
+                if r[attr] != v:
+                    changes.append(desc(name, r[attr], v))
+                    setattr(wg, attr, r[attr])
+                    if attr == "acronym":
+                        c = wg.charter
+                        save_charter_in_history(c)
+                        # and add a DocAlias
+                        DocAlias.objects.create(
+                            name = "charter-ietf-%s" % r['acronym'],
+                            document = charter
+                            )
+
+            # update the attributes, keeping track of what we're doing
+            diff('name', "Name")
+            diff('acronym', "Acronym")
+            diff('ad', "Shepherding AD")
+            diff('parent', "IETF Area")
+            diff('list_email', "Mailing list email")
+            diff('list_subscribe', "Mailing list subscribe address")
+            diff('list_archive', "Mailing list archive")
+            diff('comments', "Comment")
+            
+            def get_sorted_string(attr, splitter):
+                if splitter == '\n':
+                    out = sorted(r[attr].splitlines())
                 else:
-                    return redirect('wg_view_record', name=wg.acronym)
-    else:
+                    out = sorted(r[attr].split(splitter))
+                if out == ['']:
+                    out = []
+                return out
+
+            # update roles
+            for attr_role in [('chairs', 'Chair'), ('secretaries', 'Secretary'), ('techadv', 'Tech Advisor')]:
+                attr = attr_role[0]
+                rname = attr_role[1]
+                new = get_sorted_string(attr, ",")
+                old = [x.email.address for x in wg.role_set.filter(name__name=rname).order_by('email__address')]
+                if new != old:
+                    # Remove old roles and save them in history
+                    for role in wg.role_set.filter(name__name=rname):
+                        role.delete()
+                    # Add new ones
+                    rolename = RoleName.objects.get(name=rname)
+                    for e in new:
+                        email = Email.objects.get(address=e)
+                        role = Role(name=rolename, email=email, group=wg)
+                        role.save()
+
+            # update urls
+            new_urls = get_sorted_string('urls', '\n')
+            old_urls = [x.url + " (" + x.name + ")" for x in wg.groupurl_set.order_by('url')]
+            if new_urls != old_urls:
+                # Remove old urls
+                for u in wg.groupurl_set.all():
+                    u.delete()
+                # Add new ones
+                for u in [u for u in new_urls if u != ""]:
+                    m = re.search('(?P<url>.+) \((?P<name>.+)\)', u)
+                    url = GroupURL(url=m.group('url'), name=m.group('name'), group=wg)
+                    url.save()
+
+            wg.time = datetime.now()
+
+            if changes and not new_wg:
+                for c in changes:
+                    log_info_changed(request, wg, login, c)
+
+            update_telechat(request, wg.charter, login, r['telechat_date'])
+            
+            wg.save()
+            if new_wg:
+                return redirect('wg_change_state', name=wg.acronym)
+            else:
+                return redirect('wg_view_record', name=wg.acronym)
+    else: # form.is_valid()
         if not new_wg:
             init = dict(name=wg.name,
                         acronym=wg.acronym,
@@ -393,7 +371,7 @@ def edit_info(request, name=None):
         else:
             init = dict(ad=login.id,
                         )
-        form = EditInfoForm(initial=init)
+        form = EditInfoForm(initial=init, cur_acronym=wg.acronym if wg else None)
 
     return render_to_response('wgrecord/edit_info.html',
                               dict(wg=wg,

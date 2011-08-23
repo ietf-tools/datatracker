@@ -10,22 +10,21 @@ from django.template import RequestContext
 
 from ietf.ietfauth.decorators import group_required
 from django.core.exceptions import ObjectDoesNotExist
-from group.models import save_group_in_history
-from doc.models import Document, DocHistory, DocEvent, save_document_in_history
-from redesign.group.models import Group
+from group.models import Group, save_group_in_history
+from doc.models import Document, DocHistory, DocEvent
 
 from django.conf import settings
-from utils import next_revision, set_or_create_charter
+from utils import next_revision, set_or_create_charter, save_charter_in_history
 
 class UploadForm(forms.Form):
     txt = forms.FileField(label=".txt format", required=True)
 
-    def save(self, wg):
+    def save(self, wg, rev):
         for ext in ['txt']:
             fd = self.cleaned_data[ext]
             if not fd:
                 continue
-            filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.%s' % (wg.acronym, next_revision(wg.charter.rev), ext))
+            filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.%s' % (wg.acronym, rev, ext))
             destination = open(filename, 'wb+')
             for chunk in fd.chunks():
                 destination.write(chunk)
@@ -50,7 +49,7 @@ def submit(request, name):
     if request.method == 'POST':
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
-            save_document_in_history(charter)
+            save_charter_in_history(charter)
             # Also save group history so we can search for it
             save_group_in_history(wg)
 
@@ -64,7 +63,7 @@ def submit(request, name):
             e.save()
             
             # Save file on disk
-            form.save(wg)
+            form.save(wg, charter.rev)
 
             charter.time = datetime.now()
             charter.save()

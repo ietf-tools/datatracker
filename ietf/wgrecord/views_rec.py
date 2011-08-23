@@ -11,9 +11,9 @@ from django.utils import simplejson as json
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.core.exceptions import ObjectDoesNotExist
-from redesign.doc.models import Document, DocHistory, GroupBallotPositionDocEvent, WriteupDocEvent
-from redesign.group.models import Group, GroupHistory
-from redesign.person.models import Person
+from doc.models import GroupBallotPositionDocEvent, WriteupDocEvent
+from group.models import Group, GroupHistory
+from person.models import Person
 from wgrecord import markup_txt
 from django.conf import settings
 
@@ -48,13 +48,13 @@ def wg_main(request, name, rev, tab):
             raise Http404
 
     if not wg.charter:
-        create_empty_charter(wg)
+        set_or_create_charter(wg)
 
     if rev != None:
-        charter = get_charter_for_revision(wg.charter, rev)
+        ch = get_charter_for_revision(wg.charter, rev)
         gh = get_group_for_revision(wg, rev)
     else:
-        charter = get_charter_for_revision(wg.charter, wg.charter.rev)
+        ch = get_charter_for_revision(wg.charter, wg.charter.rev)
         gh = get_group_for_revision(wg, wg.charter.rev)
 
     info = {}
@@ -77,10 +77,11 @@ def wg_main(request, name, rev, tab):
     info['secr'] = [x.email.person.name for x in wg.role_set.filter(name__slug="secr")]
     info['techadv'] = [x.email.person.name for x in wg.role_set.filter(name__slug="techadv")]
 
-    if charter:
+    if ch:
+        file_path = wg.charter.get_file_path() # Get from wg.charter
         content = _get_html(
-            str(charter.name)+"-"+str(charter.rev)+",html", 
-            os.path.join(charter.get_file_path(), charter.name+"-"+charter.rev+".txt"))
+            str(ch.name)+"-"+str(ch.rev)+",html", 
+            os.path.join(file_path, ch.name+"-"+ch.rev+".txt"))
         active_ads = list(Person.objects.filter(email__role__name="ad",
                                                 email__role__group__type="area",
                                                 email__role__group__state="active").distinct())
@@ -109,19 +110,19 @@ def wg_main(request, name, rev, tab):
     else:
         content = ""
 
-    versions = _get_versions(wg.charter) # Important: wg.charter not charter
+    versions = _get_versions(wg.charter) # Important: wg.charter not ch
     history = _get_history(wg)
 
     if history:
         info['last_update'] = history[0]['date']
 
-    charter_text_url = charter.get_txt_url()
+    charter_text_url = wg.charter.get_txt_url()
 
     template = "wgrecord/record_tab_%s" % tab
     return render_to_response(template + ".html",
                               {'content':content,
-                               'charter':charter, 'info':info, 'wg':wg, 'tab':tab,
-                               'rev': rev if rev else charter.rev, 'gh': gh,
+                               'charter':ch, 'info':info, 'wg':wg, 'tab':tab,
+                               'rev': rev if rev else ch.rev, 'gh': gh,
                                'snapshot': rev, 'charter_text_url': charter_text_url,
                                'history': history, 'versions': versions,
 			       },
@@ -182,7 +183,8 @@ def _get_versions(charter, include_replaced=True):
             if d.rev != charter.rev:
                 ov.append({"name":d.name, "rev":d.rev, "date":d.time})
     if charter.rev != "":
-        ov.append({"name": charter.name, "rev": charter.rev, "date":charter.time})
+        d = get_charter_for_revision(charter, charter.rev)
+        ov.append({"name": d.name, "rev": d.rev, "date":d.time})
     return ov
 
 def wg_ballot(request, name):
@@ -195,7 +197,7 @@ def wg_ballot(request, name):
         else:
             raise Http404
 
-    doc = wg.charter
+    doc = set_or_create_charter(wg)
 
     if not doc:
         raise Http404

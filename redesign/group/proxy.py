@@ -1,6 +1,8 @@
 from redesign.proxy_utils import TranslatingManager
 
 from models import *
+from doc.models import Document # for charter text
+from ietf.wgrecord.utils import get_charter_for_revision, approved_revision
 
 class Acronym(Group):
     class LazyIndividualSubmitter(object):
@@ -192,12 +194,23 @@ class IETFWG(Group):
         from django.conf import settings
         # get file path from settings. Syntesize file name from path, acronym, and suffix
         try:
-            filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, self.acronym) + ".desc.txt"
+            # Try getting charter from new charter tool
+            charter = Document.objects.get(docalias__name="charter-ietf-%s" % self.acronym)
+            ch = get_charter_for_revision(charter, charter.rev)
+            name = ch.name
+            rev = approved_revision(ch.rev)
+            filename = os.path.join(charter.get_file_path(), "%s-%s.txt" % (name, rev))
             desc_file = open(filename)
             desc = desc_file.read()
-        except BaseException:    
-            desc = 'Error Loading Work Group Description'
-        return desc
+            return desc
+        except:
+            try:
+                filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, self.acronym) + ".desc.txt"
+                desc_file = open(filename)
+                desc = desc_file.read()
+            except BaseException:    
+                desc = 'Error Loading Work Group Description'
+            return desc
 
     def additional_urls(self):
         return self.groupurl_set.all().order_by("name")

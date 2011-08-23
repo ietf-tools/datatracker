@@ -22,7 +22,7 @@ from mails import email_secretariat
 from utils import *
 from group.models import Group, GroupHistory, GroupEvent, save_group_in_history
 from name.models import GroupBallotPositionName, CharterDocStateName, GroupStateName
-from doc.models import Document, DocEvent, GroupBallotPositionDocEvent, save_document_in_history, WriteupDocEvent
+from doc.models import Document, DocEvent, GroupBallotPositionDocEvent, WriteupDocEvent
 
 def default_action_text(wg, doc, user):
    e = WriteupDocEvent(doc=doc, by=user)
@@ -100,7 +100,7 @@ def edit_position(request, name):
         else:
             raise Http404
 
-    doc = get_object_or_404(Document, name=wg.charter.name)
+    doc = set_or_create_charter(wg)
     started_process = doc.latest_event(type="started_iesg_process")
 
     ad = login = request.user.get_profile()
@@ -230,7 +230,7 @@ def send_ballot_comment(request, name):
         else:
             raise Http404
 
-    doc = wg.charter
+    doc = set_or_create_charter(wg)
     started_process = doc.latest_event(type="started_iesg_process")
     if not started_process:
         raise Http404()
@@ -319,7 +319,7 @@ def announcement_text(request, name, ann):
         else:
             raise Http404
 
-    doc = wg.charter
+    doc = set_or_create_charter(wg)
 
     login = request.user.get_profile()
 
@@ -370,7 +370,7 @@ def approve_ballot(request, name):
         else:
             raise Http404
 
-    doc = wg.charter
+    doc = set_or_create_charter(wg)
 
     login = request.user.get_profile()
 
@@ -384,7 +384,7 @@ def approve_ballot(request, name):
         new_state = GroupStateName.objects.get(slug="active")
         new_charter_state = CharterDocStateName.objects.get(slug="approved")
 
-        save_document_in_history(doc)
+        save_charter_in_history(doc)
         save_group_in_history(wg)
 
         prev_state = wg.state

@@ -3,15 +3,15 @@ import re
 
 from datetime import datetime
 from group.models import GroupEvent
-from doc.models import Document
+from doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor
 from ietf.utils.history import find_history_active_at
 
 def set_or_create_charter(wg):
     try:
-        charter = Document.objects.get(name="charter-ietf-" + wg.acronym)
+        charter = Document.objects.get(docalias__name="charter-ietf-%s" % wg.acronym)
     except Document.DoesNotExist:
         charter = Document.objects.create(
-            name="charter-ietf-%s" % wg.acronym,
+            name="charter-ietf-" + wg.acronym,
             time=datetime.now(),
             type_id="charter",
             title=wg.name,
@@ -19,9 +19,59 @@ def set_or_create_charter(wg):
             abstract=wg.name,
             rev="",
             )
-    wg.charter = charter
-    wg.save()
+        # Create an alias as well
+        DocAlias.objects.create(
+            name = charter.name,
+            document = charter
+            )
+    if wg.charter != charter:
+        wg.charter = charter
+        wg.save()
     return charter
+
+def save_charter_in_history(charter):
+    '''This is a modified save_document_in_history that save the name 
+    as charter-ietf-wgacronym with wgacronym being the current Group
+    acronym. The charter Document may have an old name which is no longer
+    in use'''
+    def get_model_fields_as_dict(obj):
+        return dict((field.name, getattr(obj, field.name))
+                    for field in obj._meta.fields
+                    if field is not obj._meta.pk)
+
+    # copy fields
+    fields = get_model_fields_as_dict(charter)
+    fields["doc"] = charter
+    fields["name"] = 'charter-ietf-%s' % charter.chartered_group.acronym
+    
+    chist = DocHistory(**fields)
+    chist.save()
+
+    # copy many to many
+    for field in charter._meta.many_to_many:
+        if not field.rel.through:
+            # just add the attributes
+            rel = getattr(chist, field.name)
+            for item in getattr(charter, field.name).all():
+                rel.add(item)
+
+    # copy remaining tricky many to many
+    def transfer_fields(obj, HistModel):
+        mfields = get_model_fields_as_dict(item)
+        # map charter -> chist
+        for k, v in mfields.iteritems():
+            if v == charter:
+                mfields[k] = chist
+        HistModel.objects.create(**mfields)
+
+    for item in RelatedDocument.objects.filter(source=charter):
+        transfer_fields(item, RelatedDocHistory)
+
+    for item in DocumentAuthor.objects.filter(document=charter):
+        transfer_fields(item, DocHistoryAuthor)
+                
+    return chist
+
 
 def add_wg_comment(request, wg, text, ballot=None):
     if request:
@@ -86,7 +136,19 @@ def get_charter_for_revision(charter, r):
         if l != []:
             return l[0]
         else:
-            return charter
+            # Get the lastest history entry
+            l = list(charter.history_set.all().order_by('-time'))
+            if l != []:
+                class FakeHistory(object):
+                    def __init__(self, name, rev, time):
+                        self.name = name
+                        self.rev = rev
+                        self.time = time
+
+                return FakeHistory(l[0].name, charter.rev, charter.time)
+            else:
+                # no history, just return charter
+                return charter
 
 def get_group_for_revision(wg, r):
     if r == None:
@@ -117,6 +179,12 @@ def next_revision(rev):
         return "%s-%#02d" % (m.group('major'), int(m.group('minor')) + 1)
     else:
         return "%s-00" % (m.group('major'))
+
+def approved_revision(rev):
+    if rev == "":
+        return ""
+    m = re.match(r"(?P<major>[0-9][0-9])(-(?P<minor>[0-9][0-9]))?", rev)
+    return m.group('major')
 
 def next_approved_revision(rev):
     if rev == "":

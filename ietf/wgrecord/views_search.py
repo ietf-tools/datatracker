@@ -101,14 +101,14 @@ def search_query(query_original, sort_by=None):
     elif by == "area":
         results = results.filter(parent=query["area"])
     elif by == "anyfield":
-        q_objs = Q()
-        q_objs |= Q(acronym__icontains=query['anyfield'])
-        q_objs |= Q(state__name__icontains=query['anyfield'])
-        q_objs |= Q(charter__charter_state__name__icontains=query['anyfield'])
-        q_objs |= Q(ad__name__icontains=query['anyfield'])
-        q_objs |= Q(parent__name__icontains=query['anyfield'])
-        q_objs |= Q(history_set__acronym__icontains=query['anyfield'])
-        results = list(results.filter(*q_objs))
+        q_obj = Q()
+        q_obj |= Q(acronym__icontains=query['anyfield'])
+        q_obj |= Q(state__name__icontains=query['anyfield'])
+        q_obj |= Q(charter__charter_state__name__icontains=query['anyfield'])
+        q_obj |= Q(ad__name__icontains=query['anyfield'])
+        q_obj |= Q(parent__name__icontains=query['anyfield'])
+        q_obj |= Q(history_set__acronym__icontains=query['anyfield'])
+        results = list(results.filter(q_obj))
         # Search charter texts
         m = re.compile(query['anyfield'], re.IGNORECASE)
         if query['name']:
