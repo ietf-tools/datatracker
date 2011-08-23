@@ -1,3 +1,5 @@
+import datetime
+
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
@@ -64,7 +66,7 @@ def notify_pending_by_email(request, liaison, fake):
 
 def send_sdo_reminder(sdo):
     roles = Role.objects.filter(name="liaiman", group=sdo)
-    if not roles:
+    if not roles: # no manager to contact
         return None
 
     manager_role = roles[0]
@@ -81,5 +83,46 @@ def send_sdo_reminder(sdo):
             ))
     
     send_mail_text(None, to_email, settings.LIAISON_UNIVERSAL_FROM, subject, body)
+
+    return body
+
+def possibly_send_deadline_reminder(liaison):
+    PREVIOUS_DAYS = {
+        14: 'in two weeks',
+        7: 'in one week',
+        4: 'in four days',
+        3: 'in three days',
+        2: 'in two days',
+        1: 'tomorrow',
+        0: 'today'
+        }
+    
+    days_to_go = (liaison.deadline - datetime.date.today()).days
+    if not (days_to_go < 0 or days_to_go in PREVIOUS_DAYS.keys()):
+        return None # no reminder
+            
+    if days_to_go < 0:
+        subject = '[Liaison OUT OF DATE] %s' % liaison.title
+        days_msg = 'is out of date for %s days' % (-days_to_go)
+    else:
+        subject = '[Liaison deadline %s] %s' % (PREVIOUS_DAYS[days_to_go], liaison.title)
+        days_msg = 'expires %s' % PREVIOUS_DAYS[days_to_go]
+
+    from_email = settings.LIAISON_UNIVERSAL_FROM
+    to_email = liaison.to_contact.split(',')
+    cc = liaison.cc.split(',')
+    if liaison.technical_contact:
+        cc += liaison.technical_contact.split(',')
+    if liaison.response_contact:
+        cc += liaison.response_contact.split(',')
+    bcc = 'statements@ietf.org'
+    body = render_to_string('liaisons/liaison_deadline_mail.txt',
+                            dict(liaison=liaison,
+                                 days_msg=days_msg,
+                                 url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=liaison.pk)),
+                                 referenced_url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.related_to.pk)) if liaison.related_to else None,
+                                 ))
+    
+    send_mail_text(None, to_email, from_email, subject, body, cc=cc, bcc=bcc)
 
     return body

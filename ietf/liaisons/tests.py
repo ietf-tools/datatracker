@@ -394,7 +394,28 @@ class LiaisonManagementTestCase(django.test.TestCase):
         send_sdo_reminder(Group.objects.filter(type="sdo")[0])
         self.assertEquals(len(mail_outbox), mailbox_before + 1)
         self.assertTrue("authorized individuals" in mail_outbox[-1]["Subject"])
-        print mail_outbox[-1]
+
+    def test_send_liaison_deadline_reminder(self):
+        make_test_data()
+        liaison = make_liaison_models()
+
+        from ietf.liaisons.mails import possibly_send_deadline_reminder
+        from ietf.liaisons.proxy import LiaisonDetailProxy as LiaisonDetail 
+
+        l = LiaisonDetail.objects.all()[0]
+        
+        mailbox_before = len(mail_outbox)
+        possibly_send_deadline_reminder(l)
+        self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        self.assertTrue("deadline" in mail_outbox[-1]["Subject"])
+
+        # try pushing the deadline
+        l.deadline = l.deadline + datetime.timedelta(days=30)
+        l.save()
+        
+        mailbox_before = len(mail_outbox)
+        possibly_send_deadline_reminder(l)
+        self.assertEquals(len(mail_outbox), mailbox_before)
 
         
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
