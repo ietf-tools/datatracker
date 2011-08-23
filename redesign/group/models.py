@@ -87,7 +87,7 @@ class Role(models.Model):
     email = models.ForeignKey(Email, help_text="Email address used by person for this role")
     auth = models.CharField(max_length=255, blank=True) # unused?
     def __unicode__(self):
-        return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym)
+        return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym or self.group.name)
 
     
 class RoleHistory(models.Model):

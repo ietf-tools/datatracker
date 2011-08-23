@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+
+{% load i18n admin_modify adminmedia %}
+
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% admin_media_prefix %}css/forms.css" />{% endblock %}
+
+{% block bodyclass %}change-form{% endblock %}
+
+{% block breadcrumbs %}{% if not is_popup %}
+<div class="breadcrumbs">
+     <a href="../../../">{% trans "Home" %}</a> &rsaquo;
+     <a href="../../">{{ app_label|capfirst|escape }}</a> &rsaquo; 
+     {% if has_change_permission %}<a href="../">{{ opts.verbose_name_plural|capfirst }}</a>{% else %}{{ opts.verbose_name_plural|capfirst }}{% endif %} &rsaquo; 
+     {% trans "Send reminder" %}
+</div>
+{% endif %}{% endblock %}
+
+{% block content %}<div id="content-main">
+<div>
+<h1>Send a reminder to each SDO Liaison Manager</h1>
+{% if output %}
+<p>
+Reminder sent successfully. See the output of the command:
+</p>
+<pre>
+{{ output }}
+</pre>
+{% else %}
+{% if sdo %}
+<p>
+You can send a reminder to the {{ sdo }} SDO Liaison Manager to request an updated list of persons authorized to send liaison statements on behalf of {{ sdo }}</h1>
+</p>
+{% else %}
+<p>
+You can send a reminder to each SDO Liaison Manager to request an updated list of persons authorized to send liaison statements on behalf of his SDO</h1>
+</p>
+<p>
+By clicking the 'Send' button you will send a request to <b>all</b> the SDO Liaison Managers. In order to send the request to one SDO Liaison Manager go to the SDO edit page.
+</p>
+{% endif %}
+<form action="" method="post">
+<input type="submit" name="send" value="Send" />
+</form>
+{% endif %}
+</div>
+</div>
+{% endblock %}
