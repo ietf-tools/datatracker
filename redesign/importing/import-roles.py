@@ -27,11 +27,10 @@ from ietf.utils.history import *
 #  - persons have been imported
 #  - groups have been imported
 
-# imports IESGLogin, AreaDirector, WGEditor, WGChair, IRTFChair,
-# WGSecretary, WGTechAdvisor, NomCom chairs from ChairsHistory,
-# IESGHistory, Role, LiaisonManagers, SDOAuthorizedIndividual
-
-# FIXME: should probably import LegacyWgPassword, LegacyLiaisonUser
+# imports roles from IESGLogin, AreaDirector, WGEditor, WGChair,
+# IRTFChair, WGSecretary, WGTechAdvisor, NomCom chairs from
+# ChairsHistory, IESGHistory, Role, LiaisonManagers,
+# SDOAuthorizedIndividual
 
 area_director_role = name(RoleName, "ad", "Area Director")
 inactive_area_director_role = name(RoleName, "ex-ad", "Ex-Area Director", desc="Inactive Area Director")
@@ -166,8 +165,8 @@ for o in ChairsHistory.objects.filter(chair_type=OldRole.NOMCOM_CHAIR):
 
 # IESGLogin
 for o in IESGLogin.objects.all():
-    print "importing IESGLogin", o.id, o.first_name, o.last_name
-    
+    print "importing IESGLogin", o.pk, o.first_name, o.last_name
+
     if not o.person:
         persons = PersonOrOrgInfo.objects.filter(first_name=o.first_name, last_name=o.last_name)
         if persons:
@@ -175,15 +174,8 @@ for o in IESGLogin.objects.all():
         else:
             print "NO PERSON", o.person_id
             continue
-
+    
     email = get_or_create_email(o, create_fake=False)
-    if not email:
-        continue
-
-    user, _ = User.objects.get_or_create(username=o.login_name)
-    email.person.user = user
-    email.person.save()
-
     # current ADs are imported below
     if o.user_level == IESGLogin.SECRETARIAT_LEVEL:
         if not Role.objects.filter(name=secretary_role, email=email):

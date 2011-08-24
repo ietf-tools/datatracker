@@ -21,7 +21,10 @@ def old_person_to_person(person):
         return Person.objects.get(alias__name=u"%s %s" % (person.first_name, person.last_name))
 
 def old_person_to_email(person):
-    hardcoded_emails = { 'Dinara Suleymanova': "dinaras@ietf.org" }
+    hardcoded_emails = {
+        "Dinara Suleymanova": "dinaras@ietf.org",
+        "Dow Street": "dow.street@linquest.com",
+        }
     
     return clean_email_address(person.email()[1] or hardcoded_emails.get("%s %s" % (person.first_name, person.last_name)) or "")
 

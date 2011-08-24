@@ -11,7 +11,8 @@ settings.USE_DB_REDESIGN_PROXY_CLASSES = False
 from django.core import management
 management.setup_environ(settings)
 
-from ietf.idtracker.models import AreaDirector, IETFWG, PersonOrOrgInfo, IDAuthor
+from ietf.idtracker.models import IESGLogin, AreaDirector, IETFWG, PersonOrOrgInfo, IDAuthor
+from ietf.ietfauth.models import LegacyWgPassword, LegacyLiaisonUser
 from ietf.liaisons.models import LiaisonDetail, LiaisonManagers, SDOAuthorizedIndividual
 from redesign.person.models import *
 from redesign.importing.utils import *
@@ -53,6 +54,64 @@ system_email = Email.objects.get_or_create(
     address="(System)",
     defaults=dict(active=True, person=system_person)
     )
+
+# LegacyWgPassword
+for o in LegacyWgPassword.objects.all():
+    print "importing LegacyWgPassword", o.pk, o.person.first_name, o.person.last_name
+    
+    email = get_or_create_email(o, create_fake=False)
+    if not email:
+        continue
+
+    username = o.login_name[:30]
+    persons = Person.objects.filter(user__username=username)
+    if persons:
+        if persons[0] != email.person:
+            print "SKIPPING", o.login_name, "who is connected to another person "
+        continue
+
+    user, _ = User.objects.get_or_create(username=username)
+    email.person.user = user
+    email.person.save()
+
+# LegacyLiaisonUser
+for o in LegacyLiaisonUser.objects.all():
+    print "importing LegacyLiaisonUser", o.pk, o.person.first_name, o.person.last_name
+    
+    email = get_or_create_email(o, create_fake=False)
+    if not email:
+        continue
+
+    username = o.login_name[:30]
+    persons = Person.objects.filter(user__username=username)
+    if persons:
+        if persons[0] != email.person:
+            print "SKIPPING", o.login_name, "who is connected to another person "
+        continue
+
+    user, _ = User.objects.get_or_create(username=username)
+    email.person.user = user
+    email.person.save()
+
+# IESGLogin
+for o in IESGLogin.objects.all():
+    print "importing IESGLogin", o.pk, o.first_name, o.last_name
+    
+    if not o.person:
+        persons = PersonOrOrgInfo.objects.filter(first_name=o.first_name, last_name=o.last_name)
+        if persons:
+            o.person = persons[0]
+        else:
+            print "NO PERSON", o.person_id
+            continue
+
+    email = get_or_create_email(o, create_fake=False)
+    if not email:
+        continue
+
+    user, _ = User.objects.get_or_create(username=o.login_name)
+    email.person.user = user
+    email.person.save()
 
 # AreaDirector from IETFWG persons
 for o in AreaDirector.objects.filter(ietfwg__in=IETFWG.objects.all()).exclude(area=None).distinct().order_by("pk").iterator():
