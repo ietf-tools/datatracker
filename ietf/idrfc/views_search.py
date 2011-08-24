@@ -570,7 +570,11 @@ def by_ad(request, name):
     ad_id = None
     ad_name = None
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        for p in Person.objects.filter(email__role__name__in=("ad", "ex-ad")):
+        responsible = Document.objects.values_list('ad', flat=True).distinct()
+        for p in Person.objects.filter(Q(email__role__name="ad",
+                                         email__role__group__type="area",
+                                         email__role__group__state="active")
+                                       | Q(pk__in=responsible)):
             if name == p.name.lower().replace(" ", "."):
                 ad_id = p.id
                 ad_name = p.name

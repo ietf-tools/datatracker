@@ -70,10 +70,12 @@ def make_test_data():
         email = Email.objects.create(
             address="ad%s@ietf.org" % i,
             person=p)
-        Role.objects.create(
-            name_id="ad" if i <= 5 else "ex-ad",
-            group=area,
-            email=email)
+        if i < 6:
+            # active
+            Role.objects.create(
+                name_id="ad",
+                group=area,
+                email=email)
 
     # group chair
     u = User.objects.create(username="marschairman")

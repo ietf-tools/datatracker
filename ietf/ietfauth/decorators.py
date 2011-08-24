@@ -84,7 +84,7 @@ def has_role(user, role_names):
         return False
 
     role_qs = {
-        "Area Director": Q(email__person=person, name="ad"),
+        "Area Director": Q(email__person=person, name="ad", group__state="active"),
         "Secretariat": Q(email__person=person, name="secr", group__acronym="secretariat")
         }
 
