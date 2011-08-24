@@ -40,7 +40,7 @@ Copyright The IETF Trust 2011, All Rights Reserved
 
 {% for pos in info.positions %}
 {% if pos.comment or pos.block_comment %}
-<h2 class="ballot_ad"><a name="{{pos.ad|slugify}}">{% if pos.is_old_ad %}[{%endif%}{{pos.ad|escape}}{% if pos.is_old_ad %}]{%endif%}</a></h2>
+<h2 class="ballot_ad"><a name="{{pos.ad|slugify}}">{{pos.ad|escape}}</a></h2>
 
 {% if pos.block_comment %}
 <p><b>Blocking ({{pos.block_comment_time}})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>

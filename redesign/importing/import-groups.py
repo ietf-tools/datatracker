@@ -77,6 +77,13 @@ secretariat_group.state = state_names["active"]
 secretariat_group.type = type_names["ietf"]
 secretariat_group.save()
 
+# create RSOC for use with roles
+rsoc_group, _ = Group.objects.get_or_create(acronym="rsoc")
+rsoc_group.name = "RFC Series Oversight Committee"
+rsoc_group.state = state_names["active"]
+rsoc_group.type = type_names["ietf"]
+rsoc_group.save()
+
 system = Person.objects.get(name="(System)")
 
 

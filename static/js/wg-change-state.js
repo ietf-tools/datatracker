@@ -5,8 +5,11 @@ jQuery(document).ready(function () {
     }
 
     function setMessageDraft(state) {
-      if (jQuery("#id_state").val() != "conclude") {
-	if (message[state]) {
+      if (jQuery("#id_state").val() == "conclude") {
+            jQuery("#id_message").val("");
+            initial_time.hide();
+      } else {
+        if (message[state]) {
 	    if (state == "infrev") {
 		initial_time.show();
 		jQuery("#id_initial_time").val(1);
@@ -15,16 +18,19 @@ jQuery(document).ready(function () {
 		jQuery("#id_initial_time").val(0);
 	    }
             jQuery("#id_message").val(message[state]);
-	} else {
+        } else {
             jQuery("#id_message").val("");
-	}
-      } else {
-            jQuery("#id_message").val("");
+            initial_time.hide();
+        }
       }
     }
     
     jQuery("#id_charter_state").click(function (e) {
         setMessageDraft(jQuery(this).val());
+    });
+
+    jQuery("#id_state").click(function (e) {
+        setMessageDraft(jQuery("#id_charter_state").val());
     });
 
     jQuery("#id_charter_state").click();

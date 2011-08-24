@@ -1,5 +1,5 @@
 {% autoescape off %}{{ ad }} has entered the following ballot position for
-{{ doc.filename }}-{{ doc.revision_display }}: {{ pos.name }}
+{{ charter.name }}-{{ charter.rev }}: {{ pos.name }}
 
 When responding, please keep the subject line intact and reply to all
 email addresses included in the To and CC lines. (Feel free to cut this

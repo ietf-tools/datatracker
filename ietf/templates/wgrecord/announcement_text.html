@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}WG {{ announcement }} announcement writeup for {{ doc.group.acronym }}{% endblock %}
+{% block title %}WG {{ announcement }} announcement writeup for {{ charter.chartered_group.acronym }}{% endblock %}
 
 {% block morecss %}
 form #id_announcement_text {
@@ -10,7 +10,7 @@ form #id_announcement_text {
 {% endblock %}
 
 {% block content %}
-<h1>WG {{ announcement }} announcement writeup for {{ doc.group.acronym }}</h1>
+<h1>WG {{ announcement }} announcement writeup for {{ charter.chartered_group.acronym }}</h1>
 
 <form action="" method="POST">
 
@@ -22,12 +22,4 @@ form #id_announcement_text {
   </div>
 </form>
 
-{% load ietf_filters %}
-{% if user|in_group:"Secretariat" %}
-<p>
-{% if can_announce %}
-<a href="{% url doc_approve_ballot name=doc.name %}">Approve ballot</a>
-{% endif %}
-</p>
-{% endif %}
 {% endblock%}

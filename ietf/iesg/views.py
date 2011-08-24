@@ -208,6 +208,19 @@ def get_doc_sectionREDESIGN(id):
         s = s + "1"
     return s
 
+def get_wg_section(wg):
+    if wg.state_id == "proposed":
+        if wg.charter.charter_state_id == "intrev":
+            s = '411'
+        elif wg.charter.charter_state_id == "iesgrev":
+            s = '412'
+    elif wg.state_id == "active":
+        if wg.charter.charter_state_id == "intrev":
+            s = '421'
+        elif wg.charter.charter_state_id == "iesgrev":
+            s = '422'
+    return s
+
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     get_doc_section = get_doc_sectionREDESIGN
     
@@ -253,15 +266,17 @@ def agenda_docs(date, next_agenda):
     return res
 
 def agenda_wg_actions(date):
-    mapping = {12:'411', 13:'412',22:'421',23:'422'}
-    matches = WGAction.objects.filter(agenda=1,telechat_date=date,category__in=mapping.keys()).order_by('category')
-    res = {}
-    for o in matches:
-        section_key = "s"+mapping[o.category]
+    from doc.models import TelechatDocEvent
+    from group.models import Group
+    
+    matches = Group.objects.filter(charter__docevent__telechatdocevent__telechat_date=date)
+
+    res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
+    for wg in list(matches):
+        section_key = "s"+get_wg_section(wg)
         if section_key not in res:
             res[section_key] = []
-        area = AreaGroup.objects.get(group=o.group_acronym)
-        res[section_key].append({'obj':o, 'area':str(area.area)})
+        res[section_key].append({'obj':wg})
     return res
 
 def agenda_management_issues(date):

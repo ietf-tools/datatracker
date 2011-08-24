@@ -29,11 +29,7 @@ Copyright The IETF Trust 2011, All Rights Reserved
 {{ c.info.text|fill:"80"|safe|urlize|linebreaksbr|keep_spacing|sanitize_html|safe }}
 </div>
 {% else %}
-{% if c.info.dontmolest %}
-{{ c.info.text|safe }}
-{% else %}
 {{ c.info.text|fill:"80"|safe|urlize|linebreaksbr|keep_spacing|sanitize_html|safe }}
-{% endif %}
 {% endif %}
 </td>
 {% endif %}

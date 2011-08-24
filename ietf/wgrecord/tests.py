@@ -359,3 +359,296 @@ class WgInfoTestCase(django.test.TestCase):
         self.assertEquals(charter.rev, next_revision(prev_rev))
         self.assertTrue("new_revision" in charter.latest_event().type)
 
+class WgAddCommentTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_add_comment(self):
+        make_test_data()
+        # Make sure all relevant names are created 
+        type_charter = name(DocTypeName, "charter", "Charter")
+        active = name(GroupStateName, "active", "Active")
+        notrev=name(CharterDocStateName, slug="notrev", name="Not currently under review")
+        infrev=name(CharterDocStateName, slug="infrev", name="Informal IESG review")
+        intrev=name(CharterDocStateName, slug="intrev", name="Internal review")
+        extrev=name(CharterDocStateName, slug="extrev", name="External review")
+        iesgrev=name(CharterDocStateName, slug="iesgrev", name="IESG review")
+        approved=name(CharterDocStateName, slug="approved", name="Approved")
+
+        group = Group.objects.get(acronym="mars")
+        url = urlreverse('wg_add_comment', kwargs=dict(name=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form textarea[name=comment]')), 1)
+
+        # request resurrect
+        comments_before = group.groupevent_set.filter(type="added_comment").count()
+
+        r = self.client.post(url, dict(comment="This is a test."))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEquals(group.groupevent_set.filter(type="added_comment").count(), comments_before + 1)
+        self.assertTrue("This is a test." in group.groupevent_set.filter(type="added_comment").order_by('-time')[0].desc)
+
+class WgEditPositionTestCase(django.test.TestCase):
+    fixtures = ['names', 'ballot']
+
+    def test_edit_position(self):
+        make_test_data()
+        # Make sure all relevant names are created 
+        type_charter = name(DocTypeName, "charter", "Charter")
+        active = name(GroupStateName, "active", "Active")
+        notrev=name(CharterDocStateName, slug="notrev", name="Not currently under review")
+        infrev=name(CharterDocStateName, slug="infrev", name="Informal IESG review")
+        intrev=name(CharterDocStateName, slug="intrev", name="Internal review")
+        extrev=name(CharterDocStateName, slug="extrev", name="External review")
+        iesgrev=name(CharterDocStateName, slug="iesgrev", name="IESG review")
+        approved=name(CharterDocStateName, slug="approved", name="Approved")
+        no = name(GroupBallotPositionName, 'no', 'No'),
+        yes = name(GroupBallotPositionName, 'yes', 'Yes'),
+        abstain = name(GroupBallotPositionName, 'abstain', 'Abstain'),
+        block = name(GroupBallotPositionName, 'block', 'Block'),
+        norecord = name(GroupBallotPositionName, 'norecord', 'No record'),
+
+        group = Group.objects.get(acronym="mars")
+        url = urlreverse('wg_edit_position', kwargs=dict(name=group.acronym))
+        login_testing_unauthorized(self, "ad", url)
+
+        charter = set_or_create_charter(group)
+
+        p = Person.objects.get(name="Aread Irector")
+
+        e = DocEvent()
+        e.type = "started_iesg_process"
+        e.by = p
+        e.doc = charter
+        e.desc = "IESG process started"
+        e.save()
+        
+        charter.charter_state = iesgrev
+        charter.save()
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form input[name=position]')) > 0)
+        self.assertEquals(len(q('form textarea[name=comment]')), 1)
+
+        # vote
+        pos_before = charter.docevent_set.filter(type="changed_ballot_position").count()
+        self.assertTrue(not charter.docevent_set.filter(type="changed_ballot_position", by__name="Aread Irector"))
+        
+        r = self.client.post(url, dict(position="block",
+                                       block_comment="This is a blocking test.",
+                                       comment="This is a test."))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEquals(charter.docevent_set.filter(type="changed_ballot_position").count(), pos_before + 1)
+        e = charter.latest_event(GroupBallotPositionDocEvent)
+        self.assertTrue("This is a blocking test." in e.block_comment)
+        self.assertTrue("This is a test." in e.comment)
+        self.assertTrue(e.pos_id, "block")
+
+        # recast vote
+        pos_before = charter.docevent_set.filter(type="changed_ballot_position").count()
+        
+        r = self.client.post(url, dict(position="yes"))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEquals(charter.docevent_set.filter(type="changed_ballot_position").count(), pos_before + 1)
+        e = charter.latest_event(GroupBallotPositionDocEvent)
+        self.assertTrue(e.pos_id, "yes")
+
+        # clear vote
+        pos_before = charter.docevent_set.filter(type="changed_ballot_position").count()
+        
+        r = self.client.post(url, dict(position="norecord"))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEquals(charter.docevent_set.filter(type="changed_ballot_position").count(), pos_before + 1)
+        e = charter.latest_event(GroupBallotPositionDocEvent)
+        self.assertTrue(e.pos_id, "norecord")
+
+    def test_edit_position_as_secretary(self):
+        make_test_data()
+        # Make sure all relevant names are created 
+        type_charter = name(DocTypeName, "charter", "Charter")
+        active = name(GroupStateName, "active", "Active")
+        notrev=name(CharterDocStateName, slug="notrev", name="Not currently under review")
+        infrev=name(CharterDocStateName, slug="infrev", name="Informal IESG review")
+        intrev=name(CharterDocStateName, slug="intrev", name="Internal review")
+        extrev=name(CharterDocStateName, slug="extrev", name="External review")
+        iesgrev=name(CharterDocStateName, slug="iesgrev", name="IESG review")
+        approved=name(CharterDocStateName, slug="approved", name="Approved")
+        no = name(GroupBallotPositionName, 'no', 'No'),
+        yes = name(GroupBallotPositionName, 'yes', 'Yes'),
+        abstain = name(GroupBallotPositionName, 'abstain', 'Abstain'),
+        block = name(GroupBallotPositionName, 'block', 'Block'),
+        norecord = name(GroupBallotPositionName, 'norecord', 'No record'),
+
+        group = Group.objects.get(acronym="mars")
+        url = urlreverse('wg_edit_position', kwargs=dict(name=group.acronym))
+        p = Person.objects.get(name="Aread Irector")
+        url += "?ad=%d" % p.id
+        login_testing_unauthorized(self, "secretary", url)
+
+        charter = set_or_create_charter(group)
+
+        e = DocEvent()
+        e.type = "started_iesg_process"
+        e.by = p
+        e.doc = charter
+        e.desc = "IESG process started"
+        e.save()
+        
+        charter.charter_state = iesgrev
+        charter.save()
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form input[name=position]')) > 0)
+
+        # vote for rhousley
+        pos_before = charter.docevent_set.filter(type="changed_ballot_position").count()
+        self.assertTrue(not charter.docevent_set.filter(type="changed_ballot_position", by__name="Sec Retary"))
+        
+        r = self.client.post(url, dict(position="no"))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEquals(charter.docevent_set.filter(type="changed_ballot_position").count(), pos_before + 1)
+        e = charter.latest_event(GroupBallotPositionDocEvent)
+        self.assertTrue(e.pos_id, "no")
+        
+    def test_send_ballot_comment(self):
+        make_test_data()
+        # Make sure all relevant names are created 
+        type_charter = name(DocTypeName, "charter", "Charter")
+        active = name(GroupStateName, "active", "Active")
+        notrev=name(CharterDocStateName, slug="notrev", name="Not currently under review")
+        infrev=name(CharterDocStateName, slug="infrev", name="Informal IESG review")
+        intrev=name(CharterDocStateName, slug="intrev", name="Internal review")
+        extrev=name(CharterDocStateName, slug="extrev", name="External review")
+        iesgrev=name(CharterDocStateName, slug="iesgrev", name="IESG review")
+        approved=name(CharterDocStateName, slug="approved", name="Approved")
+        no = name(GroupBallotPositionName, 'no', 'No'),
+        yes = name(GroupBallotPositionName, 'yes', 'Yes'),
+        abstain = name(GroupBallotPositionName, 'abstain', 'Abstain'),
+        block = name(GroupBallotPositionName, 'block', 'Block'),
+        norecord = name(GroupBallotPositionName, 'norecord', 'No record'),
+
+        group = Group.objects.get(acronym="mars")
+        url = urlreverse('wg_send_ballot_comment', kwargs=dict(name=group.acronym))
+        login_testing_unauthorized(self, "ad", url)
+
+        charter = set_or_create_charter(group)
+
+        p = Person.objects.get(name="Aread Irector")
+
+        e = DocEvent()
+        e.type = "started_iesg_process"
+        e.by = p
+        e.doc = charter
+        e.desc = "IESG process started"
+        e.save()
+        
+        charter.charter_state = iesgrev
+        charter.save()
+
+        GroupBallotPositionDocEvent.objects.create(
+            doc=charter,
+            by=p,
+            type="changed_ballot_position",
+            pos=GroupBallotPositionName.objects.get(slug="block"),
+            ad=p,
+            block_comment="This is a block test",
+            comment="This is a test",
+            )
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form input[name="cc"]')) > 0)
+
+        # send
+        p = Person.objects.get(name="Aread Irector")
+        mailbox_before = len(mail_outbox)
+        
+        r = self.client.post(url, dict(cc="test@example.com", cc_state_change="1"))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        self.assertTrue("BLOCKING COMMENT" in mail_outbox[-1]['Subject'])
+        self.assertTrue("COMMENT" in mail_outbox[-1]['Subject'])
+
+class WgApproveBallotTestCase(django.test.TestCase):
+    fixtures = ['base', 'names', 'ballot']
+
+    def test_approve_ballot(self):
+        make_test_data()
+        # Make sure all relevant names are created 
+        type_charter = name(DocTypeName, "charter", "Charter")
+        proposed = name(GroupStateName, "proposed", "Proposed")
+        active = name(GroupStateName, "active", "Active")
+        notrev=name(CharterDocStateName, slug="notrev", name="Not currently under review")
+        infrev=name(CharterDocStateName, slug="infrev", name="Informal IESG review")
+        intrev=name(CharterDocStateName, slug="intrev", name="Internal review")
+        extrev=name(CharterDocStateName, slug="extrev", name="External review")
+        iesgrev=name(CharterDocStateName, slug="iesgrev", name="IESG review")
+        approved=name(CharterDocStateName, slug="approved", name="Approved")
+        no = name(GroupBallotPositionName, 'no', 'No'),
+        yes = name(GroupBallotPositionName, 'yes', 'Yes'),
+        abstain = name(GroupBallotPositionName, 'abstain', 'Abstain'),
+        block = name(GroupBallotPositionName, 'block', 'Block'),
+        norecord = name(GroupBallotPositionName, 'norecord', 'No record'),
+
+        group = Group.objects.get(acronym="mars")
+        url = urlreverse('wg_approve_ballot', kwargs=dict(name=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        charter = set_or_create_charter(group)
+
+        p = Person.objects.get(name="Aread Irector")
+
+        e = DocEvent()
+        e.type = "started_iesg_process"
+        e.by = p
+        e.doc = charter
+        e.desc = "IESG process started"
+        e.save()
+        
+        charter.charter_state = iesgrev
+        charter.save()
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue("Send out the announcement" in q('input[type=submit]')[0].get('value'))
+        self.assertEquals(len(q('pre')), 1)
+
+        # approve
+        mailbox_before = len(mail_outbox)
+
+        # Dont copy the actual txt file
+        from django.conf import settings
+        settings.DONT_COPY_CHARTER_ON_APPROVE = True
+
+        r = self.client.post(url, dict())
+        self.assertEquals(r.status_code, 302)
+
+        charter = Document.objects.get(name=charter.name)
+        self.assertEquals(charter.charter_state_id, "approved")
+
+        self.assertEquals(charter.rev, "01")
+        
+        self.assertEquals(len(mail_outbox), mailbox_before + 2)
+
+        self.assertTrue("WG Action" in mail_outbox[-1]['Subject'])
+        self.assertTrue("Charter approved" in mail_outbox[-2]['Subject'])

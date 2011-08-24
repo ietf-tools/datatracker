@@ -24,12 +24,14 @@ from group.models import Group, GroupHistory, GroupEvent, save_group_in_history
 from name.models import GroupBallotPositionName, CharterDocStateName, GroupStateName
 from doc.models import Document, DocEvent, GroupBallotPositionDocEvent, WriteupDocEvent
 
-def default_action_text(wg, doc, user):
-   e = WriteupDocEvent(doc=doc, by=user)
+def default_action_text(wg, charter, user):
+   e = WriteupDocEvent(doc=charter, by=user)
    e.by = user
    e.type = "changed_action_announcement"
    e.desc = "WG action text was changed"
-   e.text = "The %s (%s) working group " % (wg.name, wg.acronym)
+   e.text = "To: ietf-announce@ietf.org\n"
+   e.text += "Subject: WG Action: %s (%s)\n" % (wg.name, wg.acronym)
+   e.text += "The %s (%s) working group " % (wg.name, wg.acronym)
    if wg.parent:
        e.text += "in the %s " % wg.parent.name
    e.text += "of the IETF has been "
@@ -41,15 +43,17 @@ def default_action_text(wg, doc, user):
    e.save()
    return e
 
-def default_review_text(wg, doc, user):
-   e = WriteupDocEvent(doc=doc, by=user)
+def default_review_text(wg, charter, user):
+   e = WriteupDocEvent(doc=charter, by=user)
    e.by = user
    e.type = "changed_review_announcement"
    e.desc = "WG review text was changed"
+   e.text = "To: ietf-announce@ietf.org\n"
+   e.text += "Subject: WG Review: %s (%s)\n" % (wg.name, wg.acronym)
    if wg.state_id == "proposed":
-       e.text = "A charter"
+       e.text += "A charter"
    else:
-       e.text = "A modified charter"
+       e.text += "A modified charter"
    e.text += " has been submitted for the %s (%s) working group \n" % (wg.name, wg.acronym)
    if wg.parent:
        e.text += "in the %s " % wg.parent.name
@@ -100,15 +104,17 @@ def edit_position(request, name):
         else:
             raise Http404
 
-    doc = set_or_create_charter(wg)
-    started_process = doc.latest_event(type="started_iesg_process")
+    charter = set_or_create_charter(wg)
+    started_process = charter.latest_event(type="started_iesg_process")
+    if not started_process:
+       raise Http404
 
     ad = login = request.user.get_profile()
 
     if 'HTTP_REFERER' in request.META:
         return_to_url = request.META['HTTP_REFERER']
     else:
-        return_to_url = doc.get_absolute_url()
+        return_to_url = charter.get_absolute_url()
 
     # if we're in the Secretariat, we can select an AD to act as stand-in for
     if not has_role(request.user, "Area Director"):
@@ -118,7 +124,7 @@ def edit_position(request, name):
         from person.models import Person
         ad = get_object_or_404(Person, pk=ad_id)
 
-    old_pos = doc.latest_event(GroupBallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
+    old_pos = charter.latest_event(GroupBallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
 
     if request.method == 'POST':
         form = EditPositionForm(request.POST)
@@ -130,7 +136,7 @@ def edit_position(request, name):
             if clean['return_to_url']:
               return_to_url = clean['return_to_url']
 
-            pos = GroupBallotPositionDocEvent(doc=doc, by=login)
+            pos = GroupBallotPositionDocEvent(doc=charter, by=login)
             pos.type = "changed_ballot_position"
             pos.ad = ad
             pos.pos = clean["position"]
@@ -149,7 +155,7 @@ def edit_position(request, name):
                 changes.append("comment")
 
                 if pos.comment:
-                    e = DocEvent(doc=doc)
+                    e = DocEvent(doc=charter)
                     e.by = ad # otherwise we can't see who's saying it
                     e.type = "added_comment"
                     e.desc = "[Ballot comment]\n" + pos.comment
@@ -161,7 +167,7 @@ def edit_position(request, name):
                 changes.append("block_comment")
 
                 if pos.block_comment:
-                    e = DocEvent(doc=doc, by=login)
+                    e = DocEvent(doc=charter, by=login)
                     e.by = ad # otherwise we can't see who's saying it
                     e.type = "added_comment"
                     e.desc = "[Ballot blocking comment]\n" + pos.block_comment
@@ -186,8 +192,8 @@ def edit_position(request, name):
                 for e in added_events:
                     e.save() # save them after the position is saved to get later id
                         
-                doc.time = pos.time
-                doc.save()
+                charter.time = pos.time
+                charter.save()
 
             if request.POST.get("send_mail"):
                 qstr = "?return_to_url=%s" % return_to_url
@@ -209,7 +215,7 @@ def edit_position(request, name):
         form = EditPositionForm(initial=initial)
 
     return render_to_response('wgrecord/edit_position.html',
-                              dict(doc=doc,
+                              dict(charter=charter,
                                    wg=wg,
                                    form=form,
                                    ad=ad,
@@ -230,8 +236,8 @@ def send_ballot_comment(request, name):
         else:
             raise Http404
 
-    doc = set_or_create_charter(wg)
-    started_process = doc.latest_event(type="started_iesg_process")
+    charter = set_or_create_charter(wg)
+    started_process = charter.latest_event(type="started_iesg_process")
     if not started_process:
         raise Http404()
 
@@ -239,12 +245,12 @@ def send_ballot_comment(request, name):
 
     return_to_url = request.GET.get('return_to_url')
     if not return_to_url:
-        return_to_url = doc.get_absolute_url()
+        return_to_url = charter.get_absolute_url()
 
     if 'HTTP_REFERER' in request.META:
         back_url = request.META['HTTP_REFERER']
     else:
-        back_url = doc.get_absolute_url()
+        back_url = charter.get_absolute_url()
 
     # if we're in the Secretariat, we can select an AD to act as stand-in for
     if not has_role(request.user, "Area Director"):
@@ -254,7 +260,7 @@ def send_ballot_comment(request, name):
         from person.models import Person
         ad = get_object_or_404(Person, pk=ad_id)
 
-    pos = doc.latest_event(GroupBallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
+    pos = charter.latest_event(GroupBallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
     if not pos:
         raise Http404()
     
@@ -269,28 +275,23 @@ def send_ballot_comment(request, name):
         subj.append("COMMENT")
 
     ad_name_genitive = ad.name + "'" if ad.name.endswith('s') else ad.name + "'s"
-    subject = "%s %s on %s" % (ad_name_genitive, pos.pos.name if pos.pos else "No Position", doc.name + "-" + doc.rev)
+    subject = "%s %s on %s" % (ad_name_genitive, pos.pos.name if pos.pos else "No Position", charter.name + "-" + charter.rev)
     if subj:
         subject += ": (with %s)" % " and ".join(subj)
 
-    doc.filename = doc.name # compatibility attributes
-    doc.revision_display = doc.rev
     body = render_to_string("wgrecord/ballot_comment_mail.txt",
-                            dict(block_comment=d, comment=c, ad=ad.name, doc=doc, pos=pos.pos))
+                            dict(block_comment=d, comment=c, ad=ad.name, charter=charter, pos=pos.pos))
     frm = ad.formatted_email()
     to = "The IESG <iesg@ietf.org>"
         
     if request.method == 'POST':
         cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
-        if request.POST.get("cc_state_change") and doc.notify:
-            cc.extend(doc.notify.split(','))
-
         send_mail_text(request, to, frm, subject, body, cc=", ".join(cc))
             
         return HttpResponseRedirect(return_to_url)
   
     return render_to_response('wgrecord/send_ballot_comment.html',
-                              dict(doc=doc,
+                              dict(charter=charter,
                                    subject=subject,
                                    body=body,
                                    frm=frm,
@@ -319,19 +320,19 @@ def announcement_text(request, name, ann):
         else:
             raise Http404
 
-    doc = set_or_create_charter(wg)
+    charter = set_or_create_charter(wg)
 
     login = request.user.get_profile()
 
     if ann == "action":
-        existing = doc.latest_event(WriteupDocEvent, type="changed_action_announcement")
+        existing = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     elif ann == "review":
-        existing = doc.latest_event(WriteupDocEvent, type="changed_review_announcement")
+        existing = charter.latest_event(WriteupDocEvent, type="changed_review_announcement")
     if not existing:
         if ann == "action":
-            existing = default_action_text(wg, doc, login)
+            existing = default_action_text(wg, charter, login)
         elif ann == "review":
-            existing = default_review_text(wg, doc, login)
+            existing = default_review_text(wg, charter, login)
 
     form = AnnouncementTextForm(initial=dict(announcement_text=existing.text))
 
@@ -340,20 +341,20 @@ def announcement_text(request, name, ann):
         if form.is_valid():
             t = form.cleaned_data['announcement_text']
             if t != existing.text:
-                e = WriteupDocEvent(doc=doc, by=login)
+                e = WriteupDocEvent(doc=charter, by=login)
                 e.by = login
                 e.type = "changed_%s_announcement" % ann
                 e.desc = "WG %s text was changed" % ann
                 e.text = t
                 e.save()
                 
-                doc.time = e.time
-                doc.save()
+                charter.time = e.time
+                charter.save()
         return redirect('wg_view_record', name=wg.acronym)
     return render_to_response('wgrecord/announcement_text.html',
-                              dict(doc=doc,
+                              dict(charter=charter,
                                    announcement=ann,
-                                   back_url=doc.get_absolute_url(),
+                                   back_url=charter.get_absolute_url(),
                                    announcement_text_form=form,
                                    ),
                               context_instance=RequestContext(request))
@@ -370,13 +371,13 @@ def approve_ballot(request, name):
         else:
             raise Http404
 
-    doc = set_or_create_charter(wg)
+    charter = set_or_create_charter(wg)
 
     login = request.user.get_profile()
 
-    e = doc.latest_event(WriteupDocEvent, type="changed_action_announcement")
+    e = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     if not e:
-        announcement = default_action_text(wg, doc, login)
+        announcement = default_action_text(wg, charter, login).text
     else:
         announcement = e.text
 
@@ -384,15 +385,15 @@ def approve_ballot(request, name):
         new_state = GroupStateName.objects.get(slug="active")
         new_charter_state = CharterDocStateName.objects.get(slug="approved")
 
-        save_charter_in_history(doc)
+        save_charter_in_history(charter)
         save_group_in_history(wg)
 
         prev_state = wg.state
-        prev_charter_state = doc.charter_state
+        prev_charter_state = charter.charter_state
         wg.state = new_state
-        doc.charter_state = new_charter_state
+        charter.charter_state = new_charter_state
 
-        e = DocEvent(doc=doc, by=login)
+        e = DocEvent(doc=charter, by=login)
         e.type = "iesg_approved"
         e.desc = "IESG has approved the charter"
 
@@ -400,36 +401,36 @@ def approve_ballot(request, name):
         
         change_description = e.desc + " and WG state has been changed to %s" % new_state.name
         
-        e = log_state_changed(request, doc, login, prev_state)
+        e = log_state_changed(request, charter, login, prev_state)
                     
         wg.time = e.time
         wg.save()
 
-        filename = os.path.join(doc.get_file_path(), doc.name+"-"+doc.rev+".txt")
-        try:
-           source = open(filename, 'rb')
-           raw_content = source.read()
+        filename = os.path.join(charter.get_file_path(), charter.name+"-"+charter.rev+".txt")
+        if not settings.DONT_COPY_CHARTER_ON_APPROVE:
+           try:
+              source = open(filename, 'rb')
+              raw_content = source.read()
 
-           doc.rev = next_approved_revision(doc.rev)
-           
-           new_filename = os.path.join(doc.get_file_path(), doc.name+"-"+doc.rev+".txt")
-           destination = open(new_filename, 'wb+')
-           destination.write(raw_content)
-           destination.close()
-        except IOError:
-           raise Http404
+              new_filename = os.path.join(charter.get_file_path(), charter.name+"-"+charter.rev+".txt")
+              destination = open(new_filename, 'wb+')
+              destination.write(raw_content)
+              destination.close()
+           except IOError:
+              raise Http404
 
-        doc.save()
+        charter.rev = next_approved_revision(charter.rev)
+        charter.save()
         
-        email_secretariat(request, wg, "state-%s" % doc.charter_state_id, change_description)
+        email_secretariat(request, wg, "state-%s" % charter.charter_state_id, change_description)
 
         # send announcement
         send_mail_preformatted(request, announcement)
 
-        return HttpResponseRedirect(doc.get_absolute_url())
+        return HttpResponseRedirect(charter.get_absolute_url())
   
     return render_to_response('wgrecord/approve_ballot.html',
-                              dict(doc=doc,
+                              dict(charter=charter,
                                    announcement=announcement,
                                    wg=wg),
                               context_instance=RequestContext(request))

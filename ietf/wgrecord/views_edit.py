@@ -108,7 +108,7 @@ def change_state(request, name):
                         if charter.charter_state_id == "extrev":
                             email_secretariat(request, wg, "state-%s" % charter.charter_state_id, messages['extrev'])
 
-                        if form.cleaned_data["charter_state"] == "infrev":
+                        if form.cleaned_data["charter_state"].slug == "infrev":
                             e = DocEvent()
                             e.type = "started_iesg_process"
                             e.by = login

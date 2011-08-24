@@ -4,26 +4,8 @@
 Charter submission for {{ wg.acronym }}
 {% endblock %}
 
-{% block morecss %}
-.ietf-navset {
-    background:#214197 url(/images/yui/sprite.png) repeat-x left -1400px;
-    color:white;
-    border:1px solid black;
-    padding:4px;
-}
-.ietf-navset .selected { font-weight:bold; padding: 0 3px; }
-.ietf-navset a, .ietf-navset a:visited { color: white; padding:0 3px; }
-.cutoff-warning { border: 1px dashed red; background-color: #ffeeaa; padding: 1em 2em; margin: 1em 0px; }
-{% endblock %}
-
 {% block content %}
 <h1>Charter submission for {{ wg.acronym }}</h1>
-
-{% if form.cutoff_warning %}
-<div class="cutoff-warning">
-{{ form.cutoff_warning|safe }}
-</div>
-{% endif %}
 
 <p>The text will be submitted as <strong>charter-ietf-{{ wg.acronym }}-{{ next_rev }}</strong></p>
 <form class="edit-info" action="" enctype="multipart/form-data" method="POST">

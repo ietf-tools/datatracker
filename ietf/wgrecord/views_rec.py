@@ -100,7 +100,7 @@ def wg_main(request, name, rev, tab):
         info['pos_no'] = filter(lambda x: x.pos_id == "no", latest_positions)
         info['pos_block'] = filter(lambda x: x.pos_id == "block", latest_positions)
         info['pos_abstain'] = filter(lambda x: x.pos_id == "abstain", latest_positions)
-        info['pos_no_record'] = no_record
+        info['pos_no_record'] = no_record + [x.ad for x in latest_positions if x.pos_id == "norecord"]
         
         # Get annoucement texts
         review_ann = wg.charter.latest_event(WriteupDocEvent, type="changed_review_announcement")
