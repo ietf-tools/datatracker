@@ -382,7 +382,7 @@ class EditInfoFormREDESIGN(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.all(), empty_label=None, required=True)
     status_date = forms.DateField(required=False, help_text="Format is YYYY-MM-DD")
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
-    ad = forms.ModelChoiceField(Person.objects.filter(email__role__name__in=("ad", "ex-ad")).order_by('email__role__name', 'name'), label="Responsible AD", empty_label=None, required=True)
+    ad = forms.ModelChoiceField(Person.objects.filter(email__role__name="ad", email__role__group__state="active").order_by('name'), label="Responsible AD", empty_label=None, required=True)
     create_in_state = forms.ModelChoiceField(IesgDocStateName.objects.filter(slug__in=("pub-req", "watching")), empty_label=None, required=True)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
@@ -390,22 +390,13 @@ class EditInfoFormREDESIGN(forms.Form):
     returning_item = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
-        old_ads = kwargs.pop('old_ads')
-        
         super(self.__class__, self).__init__(*args, **kwargs)
 
-        # fix up ad field
+        # if previous AD is now ex-AD, append that person to the list
+        ad_pk = self.initial.get('ad')
         choices = self.fields['ad'].choices
-        ex_ads = dict((e.pk, e) for e in Person.objects.filter(email__role__name="ex-ad").distinct())
-        if old_ads:
-            # separate active ADs from inactive
-            for i, t in enumerate(choices):
-                if t[0] in ex_ads:
-                    choices.insert(i, ("", "----------------"))
-                    break
-        else:
-            # remove old ones
-            self.fields['ad'].choices = [t for t in choices if t[0] not in ex_ads]
+        if ad_pk and ad_pk not in [pk for pk, name in choices]:
+            self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).name)]
         
         # telechat choices
         dates = TelechatDates.objects.all()[0].dates()
@@ -473,8 +464,8 @@ def edit_infoREDESIGN(request, name):
 
     if request.method == 'POST':
         form = EditInfoForm(request.POST,
-                            old_ads=False,
-                            initial=dict(telechat_date=initial_telechat_date))
+                            initial=dict(ad=doc.ad_id,
+                                         telechat_date=initial_telechat_date))
         if form.is_valid():
             save_document_in_history(doc)
             
@@ -572,16 +563,16 @@ def edit_infoREDESIGN(request, name):
     else:
         e = doc.latest_event(StatusDateDocEvent)
         status = e.date if e else None
-        init = dict(intended_std_level=doc.intended_std_level,
+        init = dict(intended_std_level=doc.intended_std_level_id,
                     status_date=status,
-                    ad=doc.ad,
+                    ad=doc.ad_id,
                     notify=doc.notify,
                     note=dehtmlify_textarea_text(doc.note),
                     telechat_date=initial_telechat_date,
                     returning_item=initial_returning_item,
                     )
 
-        form = EditInfoForm(old_ads=False, initial=init)
+        form = EditInfoForm(initial=init)
 
     if not has_role(request.user, 'Secretariat'):
         # filter out Via RFC Editor
