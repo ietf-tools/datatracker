@@ -1,5 +1,7 @@
 import datetime
 
+from django.conf import settings
+
 from redesign.proxy_utils import TranslatingManager
 from models import *
 
