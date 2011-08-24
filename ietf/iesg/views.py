@@ -209,6 +209,7 @@ def get_doc_sectionREDESIGN(id):
     return s
 
 def get_wg_section(wg):
+    s = ""
     if wg.state_id == "proposed":
         if wg.charter.charter_state_id == "intrev":
             s = '411'
