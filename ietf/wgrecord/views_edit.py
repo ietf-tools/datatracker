@@ -116,14 +116,14 @@ def change_state(request, name):
                             e.desc = "IESG process started in state <b>%s</b>" % charter.charter_state.name
                             e.save()
 
-                        if form.cleaned_data["charter_state"].slug == "infrev" and form.cleaned_data["initial_time"] and form.cleaned_data["initial_time"] != 0:
-                            e = InitialReviewDocEvent()
-                            e.type = "initial_review"
-                            e.by = login
-                            e.doc = charter
-                            e.expires = datetime.now() + timedelta(weeks=form.cleaned_data["initial_time"])
-                            e.desc = "Initial review time expires %s" % e.expires.strftime("%Y-%m-%d")
-                            e.save()
+                if form.cleaned_data["charter_state"].slug == "infrev" and form.cleaned_data["initial_time"] and form.cleaned_data["initial_time"] != 0:
+                    e = InitialReviewDocEvent()
+                    e.type = "initial_review"
+                    e.by = login
+                    e.doc = charter
+                    e.expires = datetime.now() + timedelta(weeks=form.cleaned_data["initial_time"])
+                    e.desc = "Initial review time expires %s" % e.expires.strftime("%Y-%m-%d")
+                    e.save()
                 
                 return redirect('wg_view_record', name=wg.acronym)
     else:
@@ -315,6 +315,9 @@ def edit_info(request, name=None):
                 new = get_sorted_string(attr, ",")
                 old = [x.email.address for x in wg.role_set.filter(name__name=rname).order_by('email__address')]
                 if new != old:
+                    changes.append(desc(rname, 
+                                        ",".join([Person.objects.get(email__address=x).name for x in new]), 
+                                        ",".join([Person.objects.get(email__address=x).name for x in old])))                    
                     # Remove old roles and save them in history
                     for role in wg.role_set.filter(name__name=rname):
                         role.delete()

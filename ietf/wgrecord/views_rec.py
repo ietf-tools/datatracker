@@ -60,13 +60,13 @@ def wg_main(request, name, rev, tab):
     info = {}
 
     info['prev_acronyms'] = list(set([x.acronym for x in wg.history_set.exclude(acronym=wg.acronym)]))
-    prev_list_email = list(set([x.list_email for x in wg.history_set.exclude(list_email=wg.list_email)]))
+    prev_list_email = list(set([x.list_email for x in wg.history_set.exclude(list_email=wg.list_email) if x.list_email != u'']))
     if prev_list_email != [u'']:
         info['prev_list_email'] = prev_list_email
-    prev_list_subscribe = list(set([x.list_email for x in wg.history_set.exclude(list_subscribe=wg.list_subscribe)]))
+    prev_list_subscribe = list(set([x.list_subscribe for x in wg.history_set.exclude(list_subscribe=wg.list_subscribe) if x.list_subscribe != u'']))
     if prev_list_subscribe != [u'']:
         info['prev_list_subscribe'] = prev_list_subscribe    
-    prev_list_archive = list(set([x.list_archive for x in wg.history_set.exclude(list_archive=wg.list_archive)]))
+    prev_list_archive = list(set([x.list_archive for x in wg.history_set.exclude(list_archive=wg.list_archive) if x.list_archive != u'']))
     if prev_list_archive != [u'']:
         info['prev_list_archive'] = prev_list_archive
     info['chairs'] = [x.email.person.name for x in wg.role_set.filter(name__slug="chair")]
@@ -80,8 +80,8 @@ def wg_main(request, name, rev, tab):
     if ch:
         file_path = wg.charter.get_file_path() # Get from wg.charter
         content = _get_html(
-            str(ch.name)+"-"+str(ch.rev)+",html", 
-            os.path.join(file_path, ch.name+"-"+ch.rev+".txt"))
+            "charter-ietf-"+str(gh.acronym)+"-"+str(ch.rev)+",html", 
+            os.path.join(file_path, "charter-ietf-"+gh.acronym+"-"+ch.rev+".txt"))
         active_ads = list(Person.objects.filter(email__role__name="ad",
                                                 email__role__group__type="area",
                                                 email__role__group__state="active").distinct())
@@ -94,7 +94,7 @@ def wg_main(request, name, rev, tab):
                 latest_positions.append(p_pos[0])
             else:
                 no_record.append(p)
-        info = {}
+
         info['positions'] = latest_positions
         info['pos_yes'] = filter(lambda x: x.pos_id == "yes", latest_positions)
         info['pos_no'] = filter(lambda x: x.pos_id == "no", latest_positions)
@@ -152,12 +152,16 @@ def _get_history(wg):
         if e.type == "new_revision":
             if charter_history:
                 charter = get_charter_for_revision(wg.charter, charter_history.rev)
+                group = get_group_for_revision(wg, charter_history.rev)
             else:
                 charter = get_charter_for_revision(wg.charter, wg.charter.rev)
+                group = get_group_for_revision(wg, wg.charter.rev)
 
             prev_charter = get_charter_for_revision(wg.charter, prev_revision(charter.rev))
-            results.append({'comment':e, 'info':info, 'date':e.time, 'group': wg,
+            prev_group = get_group_for_revision(wg, prev_revision(charter.rev))
+            results.append({'comment':e, 'info':info, 'date':e.time, 'group': group,
                             'charter': charter, 'prev_charter': prev_charter,
+                            'prev_group': prev_group,
                             'txt_url': wg.charter.get_txt_url(), 
                             'is_rev':True})
         else:
@@ -180,11 +184,13 @@ def _get_versions(charter, include_replaced=True):
     for r in sorted(list(set(charter.history_set.values_list('rev', flat=True)))):
         if r != "":
             d = get_charter_for_revision(charter, r)
+            g = get_group_for_revision(charter.chartered_group, r)
             if d.rev != charter.rev:
-                ov.append({"name":d.name, "rev":d.rev, "date":d.time})
+                ov.append({"name": "charter-ietf-%s" % g.acronym, "rev":d.rev, "date":d.time})
     if charter.rev != "":
         d = get_charter_for_revision(charter, charter.rev)
-        ov.append({"name": d.name, "rev": d.rev, "date":d.time})
+        g = get_group_for_revision(charter.chartered_group, charter.rev)
+        ov.append({"name": "charter-ietf-%s" % g.acronym, "rev": d.rev, "date":d.time})
     return ov
 
 def wg_ballot(request, name):

@@ -59,7 +59,7 @@ def submit(request, name):
             e.type = "new_revision"
             e.by = login
             e.doc = charter
-            e.desc = "New version available: <b>%s</b>" % (charter.filename_with_rev())
+            e.desc = "New version available: <b>charter-ietf-%s-%s.txt</b>" % (wg.acronym, charter.rev)
             e.save()
             
             # Save file on disk

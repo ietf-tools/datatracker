@@ -13,7 +13,7 @@ Copyright The IETF Trust 2011, All Rights Reserved
 {% if c.is_rev %}
 <td>{{ c.info.version }}</td>
 <td>(System)</td>
-<td>New version available: <a href="{{ c.txt_url }}{{ c.charter.name }}-{{c.charter.rev}}.txt">{{ c.charter.name }}-{{ c.charter.rev }}</a> {% if c.prev_charter  %}(<a href="http://tools.ietf.org/rfcdiff?url1={{ c.txt_url }}{{ c.charter.name }}-{{c.charter.rev}}.txt&url2={{ c.txt_url }}{{ c.prev_charter.name }}-{{c.prev_charter.rev}}.txt">diff from -{{ c.prev_charter.rev }}</a>){% endif %}</td>
+<td>New version available: <a href="{{ c.txt_url }}charter-ietf-{{ c.group.acronym }}-{{c.charter.rev}}.txt">charter-ietf-{{ c.group.acronym }}-{{ c.charter.rev }}</a> {% if c.prev_charter  %}(<a href="http://tools.ietf.org/rfcdiff?url1={{ c.txt_url }}charter-ietf-{{ c.group.acronym }}-{{c.charter.rev}}.txt&url2={{ c.txt_url }}charter-ietf-{{ c.prev_group.acronym }}-{{c.prev_charter.rev}}.txt">diff from -{{ c.prev_charter.rev }}</a>){% endif %}</td>
 {% endif %}
 
 {% if c.is_com %}

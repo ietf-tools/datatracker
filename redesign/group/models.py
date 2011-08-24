@@ -97,7 +97,7 @@ GROUP_EVENT_CHOICES = [
 
     # misc group events
     ("added_comment", "Added comment"),
-    ("changed_record", "Changed record metadata"),
+    ("info_changed", "Changed WG metadata"),
     ]
     
 class GroupEvent(models.Model):

@@ -54,8 +54,8 @@ class GroupComments(Feed):
             else:
                 h['rev'] = obj.charter.rev
                 h['charter'] = _get_html(
-                    str(obj.charter.name)+"-"+str(obj.charter.rev)+",html", 
-                    os.path.join(obj.charter.get_file_path(), obj.charter.name+"-"+obj.charter.rev+".txt"))
+                    "charter-ietf-"+str(obj.acronym)+"-"+str(obj.charter.rev)+",html", 
+                    os.path.join(obj.charter.get_file_path(), "charter-ietf-"+obj.acronym+"-"+obj.charter.rev+".txt"))
         return history
 
     def item_link(self, obj):

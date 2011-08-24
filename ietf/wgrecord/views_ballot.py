@@ -406,13 +406,15 @@ def approve_ballot(request, name):
         wg.time = e.time
         wg.save()
 
-        filename = os.path.join(charter.get_file_path(), charter.name+"-"+charter.rev+".txt")
-        if not settings.DONT_COPY_CHARTER_ON_APPROVE:
+        ch = get_charter_for_revision(wg.charter, wg.charter.rev)
+
+        filename = os.path.join(charter.get_file_path(), ch.name+"-"+ch.rev+".txt")
+        if not hasattr(settings, 'DONT_COPY_CHARTER_ON_APPROVE') or not settings.DONT_COPY_CHARTER_ON_APPROVE:
            try:
               source = open(filename, 'rb')
               raw_content = source.read()
 
-              new_filename = os.path.join(charter.get_file_path(), charter.name+"-"+charter.rev+".txt")
+              new_filename = os.path.join(charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (wg.acronym, next_approved_revision(ch.rev)))
               destination = open(new_filename, 'wb+')
               destination.write(raw_content)
               destination.close()
