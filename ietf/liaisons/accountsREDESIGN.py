@@ -33,8 +33,10 @@ def get_iab_executive_director():
 def get_person_for_user(user):
     if not user.is_authenticated():
         return None
-    
-    p = user.get_profile()
+    try:
+        p = user.get_profile()
+    except Person.DoesNotExist:
+        pass
     p.email = lambda: (p.name, p.email_address().address)
 
     return p
@@ -86,7 +88,7 @@ def is_sdo_authorized_individual(person):
 
 
 def is_secretariat(user):
-    return user.is_authenticated() and bool(Role.objects.filter(email__person=user.get_profile(), name="secr", group__acronym="secretariat"))
+    return user.is_authenticated() and bool(Role.objects.filter(email__person__user=user, name="secr", group__acronym="secretariat"))
 
 
 def can_add_incoming_liaison(user):
