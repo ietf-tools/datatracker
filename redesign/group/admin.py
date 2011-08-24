@@ -14,13 +14,24 @@ from django.utils.translation import ugettext as _
 from models import *
 
 class GroupAdmin(admin.ModelAdmin):
-    list_display = ["acronym", "name", "type"]
+    list_display = ["acronym", "name", "type", "role_list"]
     list_display_links = ["acronym", "name"]
     list_filter = ["type"]
     search_fields = ["name"]
     ordering = ["name"]
     raw_id_fields = ["charter", "parent", "ad"]
 
+    def role_list(self, obj):
+        roles = Role.objects.filter(group=obj).order_by("name", "email__person__name").select_related('email')
+        res = []
+        for r in roles:
+            res.append(u'<a href="../../person/person/%s/">%s</a> (<a href="../../group/role/%s/">%s)' % (r.email.person.pk, escape(r.email.person.name), r.pk, r.name.name))
+        return ", ".join(res)
+    role_list.short_description = "Persons"
+    role_list.allow_tags = True
+    
+
+    # SDO reminder
     def get_urls(self):
         from django.conf.urls.defaults import patterns, url
 
