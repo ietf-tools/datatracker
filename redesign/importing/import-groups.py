@@ -37,12 +37,12 @@ state_names = dict(
 type_names = dict(
     ietf=name(GroupTypeName, slug="ietf", name="IETF"),
     area=name(GroupTypeName, slug="area", name="Area"),
-    ag=name(GroupTypeName, slug="ag", name="AG"),
-    wg=name(GroupTypeName, slug="wg", name="WG"),
-    rg=name(GroupTypeName, slug="rg", name="RG"),
+    ag=name(GroupTypeName, slug="ag", name="AG", desc="Area group"),
+    wg=name(GroupTypeName, slug="wg", name="WG", desc="Working group"),
+    rg=name(GroupTypeName, slug="rg", name="RG", desc="Research group"),
     team=name(GroupTypeName, slug="team", name="Team"),
     individ=name(GroupTypeName, slug="individ", name="Individual"),
-    sdo=name(GroupTypeName, slug="sdo", name="Standards Organization"),
+    sdo=name(GroupTypeName, slug="sdo", name="SDO", desc="Standards organization"),
     )
 
 # make sure we got the IETF as high-level parent
