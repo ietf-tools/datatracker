@@ -204,7 +204,6 @@ class LiaisonManagementTestCase(django.test.TestCase):
         self.assertEquals(new_liaison.title, "title")
         self.assertEquals(new_liaison.submitted.date(), (liaison.submitted + datetime.timedelta(days=1)).date())
         self.assertEquals(new_liaison.body, "body")
-        self.assertTrue(new_liaison.modified > liaison.modified)
         
         self.assertEquals(new_liaison.attachments.count(), attachments_before + 1)
         attachment = new_liaison.attachments.order_by("-name")[0]
