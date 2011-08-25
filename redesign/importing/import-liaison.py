@@ -41,7 +41,7 @@ purpose_mapping = {
 
 liaison_attachment_doctype = name(DocTypeName, "liai-att", "Liaison Attachment")
 
-purpose_mapping[None] = purpose_mapping[3] # map unknown to "For information"
+purpose_mapping[None] = purpose_mapping[0] = purpose_mapping[3] # map unknown to "For information"
 purpose_mapping[5] = purpose_mapping[3] # "Other" is mapped to "For information" as default
 
 system_email = Email.objects.get(person__name="(System)")
