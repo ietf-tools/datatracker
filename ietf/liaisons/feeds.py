@@ -10,7 +10,9 @@ from datetime import datetime, time
 import re
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from redesign.group.models import Group
     from ietf.liaisons.proxy import LiaisonDetailProxy as LiaisonDetail
+    from ietf.liaisons.models import LiaisonStatement
 
 # A slightly funny feed class, the 'object' is really
 # just a dict with some parameters that items() uses
@@ -29,14 +31,23 @@ class Liaisons(Feed):
 	    if len(bits) != 2:
 		raise FeedDoesNotExist
             if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                from redesign.group.models import Group
                 try:
                     group = Group.objects.get(acronym=bits[1])
                     obj['filter'] = { 'from_group': group }
                     obj['title'] = u'Liaison Statements from %s' % group.name
                     return obj
                 except Group.DoesNotExist:
-                    raise FeedDoesNotExist
+                    # turn all-nonword characters into one-character
+                    # wildcards to make it easier to construct the URL
+                    search_string = re.sub(r"[^a-zA-Z1-9]", ".", bits[1])
+                    statements = LiaisonStatement.objects.filter(from_name__iregex=search_string)
+                    if statements:
+                        name = statements[0].from_name
+                        obj['filter'] = { 'from_name': name }
+                        obj['title'] = u'Liaison Statements from %s' % name
+                        return obj
+                    else:
+                        raise FeedDoesNotExist
 	    try:
 		acronym = Acronym.objects.get(acronym=bits[1])
 		obj['filter'] = {'from_id': acronym.acronym_id}
