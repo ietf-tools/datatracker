@@ -19,9 +19,9 @@ from redesign.importing.utils import get_or_create_email
 
 from ietf.idtracker.models import IESGLogin, AreaDirector, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
 from ietf.liaisons.models import LiaisonManagers, SDOAuthorizedIndividual
+from ietf.wgchairs.models import WGDelegate
 from ietf.proceedings.models import IESGHistory
 from ietf.utils.history import *
-
 
 # assumptions:
 #  - persons have been imported
@@ -30,7 +30,7 @@ from ietf.utils.history import *
 # imports roles from IESGLogin, AreaDirector, WGEditor, WGChair,
 # IRTFChair, WGSecretary, WGTechAdvisor, NomCom chairs from
 # ChairsHistory, IESGHistory, Role, LiaisonManagers,
-# SDOAuthorizedIndividual
+# SDOAuthorizedIndividual, WGDelegate
 
 area_director_role = name(RoleName, "ad", "Area Director")
 chair_role = name(RoleName, "chair", "Chair")
@@ -41,7 +41,17 @@ exec_director_role = name(RoleName, "execdir", "Executive Director")
 adm_director_role = name(RoleName, "admdir", "Administrative Director")
 liaison_manager_role = name(RoleName, "liaiman", "Liaison Manager")
 authorized_role = name(RoleName, "auth", "Authorized Individual")
+delegate_role = name(RoleName, "delegate", "Delegate")
 
+# WGDelegate
+for o in WGDelegate.objects.all().order_by("pk"):
+    print "importing WGDelegate", o.pk, unicode(o.wg).encode("utf-8"), unicode(o.person).encode("utf-8")
+
+    group = Group.objects.get(acronym=o.wg.group_acronym.acronym)
+    email = get_or_create_email(o, create_fake=False)
+
+    Role.objects.get_or_create(name=delegate_role, group=group, email=email)
+    
 # SDOAuthorizedIndividual
 for o in SDOAuthorizedIndividual.objects.all().order_by("pk"):
     print "importing SDOAuthorizedIndividual", o.pk, unicode(o.sdo).encode("utf-8"), unicode(o.person).encode("utf-8")
