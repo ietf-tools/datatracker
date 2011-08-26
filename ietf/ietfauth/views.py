@@ -32,14 +32,27 @@
 
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import datetime
+import hashlib
+
 from django.template import RequestContext
-from django.shortcuts import render_to_response
+from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render_to_response
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.utils.http import urlquote
+
+from django.contrib.auth.models import User
+from django.utils import simplejson as json
+from django.utils.translation import ugettext as _
+
+from forms import (RegistrationForm, PasswordForm, RecoverPasswordForm)
+
+
+def index(request):
+    return render_to_response('registration/index.html', context_instance=RequestContext(request))
 
 def url_login(request, user, passwd):
     user = authenticate(username=user, password=passwd)
@@ -70,3 +83,82 @@ def ietf_loggedin(request):
 @login_required
 def profile(request):
     return render_to_response('registration/profile.html', context_instance=RequestContext(request))
+
+
+def create_account(request):
+    success = False
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            success = True
+    else:
+        form = RegistrationForm()
+    return render_to_response('registration/create.html',
+                              {'form': form,
+                               'success': success},
+                              context_instance=RequestContext(request))
+
+
+def confirm_account(request, username, date, realm, registration_hash):
+    valid = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, date, username, realm)).hexdigest() == registration_hash
+    if not valid:
+        raise Http404
+    request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
+    if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK)):
+        raise Http404
+    success = False
+    if request.method == 'POST':
+        form = PasswordForm(request.POST, username=username)
+        if form.is_valid():
+            form.save()
+            # TODO: Add the user in the htdigest file
+            success = True
+    else:
+        form = PasswordForm(username=username)
+    return render_to_response('registration/confirm.html',
+                              {'form': form, 'email': username, 'success': success},
+                              context_instance=RequestContext(request))
+
+
+def password_reset_view(request):
+    success = False
+    if request.method == 'POST':
+        form = RecoverPasswordForm(request.POST)
+        if form.is_valid():
+            form.save()
+            success = True
+    else:
+        form = RecoverPasswordForm()
+    return render_to_response('registration/password_reset.html',
+                              {'form': form,
+                               'success': success},
+                              context_instance=RequestContext(request))
+
+
+def confirm_password_reset(request, username, date, realm, reset_hash):
+    valid = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, date, username, realm)).hexdigest() == reset_hash
+    if not valid:
+        raise Http404
+    success = False
+    if request.method == 'POST':
+        form = PasswordForm(request.POST, update_user=True, username=username)
+        if form.is_valid():
+            form.save()
+            # TODO: Update the user in the htdigest file
+            success = True
+    else:
+        form = PasswordForm(username=username)
+    return render_to_response('registration/change_password.html',
+                              {'form': form,
+                               'success': success,
+                               'username': username},
+                              context_instance=RequestContext(request))
+
+def ajax_check_username(request):
+    username = request.GET.get('username', '')
+    error = False
+    if User.objects.filter(username=username).count():
+        error = _('This email is already in use')
+    return HttpResponse(simplejson.dumps({'error': error}), mimetype='text/plain')
+    

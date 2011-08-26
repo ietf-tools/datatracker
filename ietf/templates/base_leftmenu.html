@@ -35,6 +35,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load wg_menu %} 
 {% load ietf_filters %}
 <ul>
+<li class="sect first">Accounts</li>
+  <li><a href="{% url account_index %}">New Account</a></li>
 {% if user|in_group:"Area_Director" %}
 <li class="sect first">AD Dashboard</li>
   <li><a href="{% url doc_search_by_ad name=user.get_profile.person.full_name_as_key %}">My Documents</a></li>

@@ -229,6 +229,11 @@ MAX_DAILY_SUBMISSION = 1000
 MAX_DAILY_SUBMISSION_SIZE = 2000
 # End of ID Submission Tool settings
 
+# Account settings
+DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
+HTPASSWD_COMMAND = "/usr/bin/htpasswd2"
+HTPASSWD_FILE = "/www/htpasswd"
+
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *
