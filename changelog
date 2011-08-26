@@ -1,3 +1,9 @@
+ietfdb (3.60)
+
+  * Added basic automated apache password management functionality.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Aug 2011 21:43:47 +0200
+
 ietfdb (3.59)
 
   * Merged [3331] from rjsparks@nostrum.com: 
