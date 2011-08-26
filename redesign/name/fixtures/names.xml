@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <django-objects version="1.0">
-    <object pk="yes" model="name.ballotpositionname">
-        <field type="CharField" name="name">Yes</field>
+    <object pk="noobj" model="name.ballotpositionname">
+        <field type="CharField" name="name">No Objection</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="noobj" model="name.ballotpositionname">
-        <field type="CharField" name="name">No Objection</field>
+    <object pk="yes" model="name.ballotpositionname">
+        <field type="CharField" name="name">Yes</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
@@ -54,24 +54,6 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="iana-crd" model="name.docinfotagname">
-        <field type="CharField" name="name">IANA coordination</field>
-        <field type="TextField" name="desc">RFC-Editor/IANA Registration Coordination</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="missref" model="name.docinfotagname">
-        <field type="CharField" name="name">Missing references</field>
-        <field type="TextField" name="desc">Awaiting missing normative reference</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="fasttrac" model="name.docinfotagname">
-        <field type="CharField" name="name">FastTrack</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
     <object pk="rfc-rev" model="name.docinfotagname">
         <field type="CharField" name="name">Review by RFC Editor</field>
         <field type="TextField" name="desc"></field>
@@ -99,12 +81,6 @@
     <object pk="errata" model="name.docinfotagname">
         <field type="CharField" name="name">Has errata</field>
         <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="ref" model="name.docinfotagname">
-        <field type="CharField" name="name">Holding for references</field>
-        <field type="TextField" name="desc">Holding for normative reference</field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
@@ -138,14 +114,14 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">5</field>
     </object>
-    <object pk="updates" model="name.docrelationshipname">
-        <field type="CharField" name="name">Updates</field>
+    <object pk="replaces" model="name.docrelationshipname">
+        <field type="CharField" name="name">Replaces</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="replaces" model="name.docrelationshipname">
-        <field type="CharField" name="name">Replaces</field>
+    <object pk="updates" model="name.docrelationshipname">
+        <field type="CharField" name="name">Updates</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
@@ -156,20 +132,8 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="reviews" model="name.docrelationshipname">
-        <field type="CharField" name="name">Reviews</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="refs" model="name.docrelationshipname">
-        <field type="CharField" name="name">References</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="rfc" model="name.docstatename">
-        <field type="CharField" name="name">RFC</field>
+    <object pk="active" model="name.docstatename">
+        <field type="CharField" name="name">Active</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
@@ -180,14 +144,8 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="repl" model="name.docstatename">
-        <field type="CharField" name="name">Replaced</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="active" model="name.docstatename">
-        <field type="CharField" name="name">Active</field>
+    <object pk="rfc" model="name.docstatename">
+        <field type="CharField" name="name">RFC</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
@@ -198,8 +156,20 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="repl" model="name.docstatename">
+        <field type="CharField" name="name">Replaced</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="ietf-rm" model="name.docstatename">
         <field type="CharField" name="name">Withdrawn by IETF</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="legacy" model="name.docstreamname">
+        <field type="CharField" name="name">Legacy</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
@@ -216,12 +186,6 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="legacy" model="name.docstreamname">
-        <field type="CharField" name="name">Legacy</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
     <object pk="iab" model="name.docstreamname">
         <field type="CharField" name="name">IAB</field>
         <field type="TextField" name="desc"></field>
@@ -230,18 +194,6 @@
     </object>
     <object pk="irtf" model="name.docstreamname">
         <field type="CharField" name="name">IRTF</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="draft" model="name.doctypename">
-        <field type="CharField" name="name">Draft</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="ext" model="name.doctypename">
-        <field type="CharField" name="name">External</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
@@ -260,6 +212,12 @@
     </object>
     <object pk="slides" model="name.doctypename">
         <field type="CharField" name="name">Slides</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="draft" model="name.doctypename">
+        <field type="CharField" name="name">Draft</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
@@ -318,15 +276,21 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="ag" model="name.grouptypename">
+        <field type="CharField" name="name">AG</field>
+        <field type="TextField" name="desc">Area group</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="wg" model="name.grouptypename">
         <field type="CharField" name="name">WG</field>
-        <field type="TextField" name="desc"></field>
+        <field type="TextField" name="desc">Working group</field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
     <object pk="rg" model="name.grouptypename">
         <field type="CharField" name="name">RG</field>
-        <field type="TextField" name="desc"></field>
+        <field type="TextField" name="desc">Research group</field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
@@ -342,15 +306,9 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="ag" model="name.grouptypename">
-        <field type="CharField" name="name">AG</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
     <object pk="sdo" model="name.grouptypename">
-        <field type="CharField" name="name">Standards Organization</field>
-        <field type="TextField" name="desc"></field>
+        <field type="CharField" name="name">SDO</field>
+        <field type="TextField" name="desc">Standards organization</field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
@@ -534,72 +492,6 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="auth" model="name.rfcdocstatename">
-        <field type="CharField" name="name">AUTH</field>
-        <field type="TextField" name="desc">Awaiting author action</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="auth48" model="name.rfcdocstatename">
-        <field type="CharField" name="name">AUTH48</field>
-        <field type="TextField" name="desc">Awaiting final author approval</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="edit" model="name.rfcdocstatename">
-        <field type="CharField" name="name">EDIT</field>
-        <field type="TextField" name="desc">Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="iana-crd" model="name.rfcdocstatename">
-        <field type="CharField" name="name">IANA</field>
-        <field type="TextField" name="desc">RFC-Editor/IANA Registration Coordination</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="iesg" model="name.rfcdocstatename">
-        <field type="CharField" name="name">IESG</field>
-        <field type="TextField" name="desc">Holding for IESG action</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="isr" model="name.rfcdocstatename">
-        <field type="CharField" name="name">ISR</field>
-        <field type="TextField" name="desc">Independent Submission Review by the ISE </field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="isr-auth" model="name.rfcdocstatename">
-        <field type="CharField" name="name">ISR-AUTH</field>
-        <field type="TextField" name="desc">Independent Submission awaiting author update, or in discussion between author and ISE</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="ref" model="name.rfcdocstatename">
-        <field type="CharField" name="name">REF</field>
-        <field type="TextField" name="desc">Holding for normative reference</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="rfc-edit" model="name.rfcdocstatename">
-        <field type="CharField" name="name">RFC-EDITOR</field>
-        <field type="TextField" name="desc">Awaiting final RFC Editor review before AUTH48</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="timeout" model="name.rfcdocstatename">
-        <field type="CharField" name="name">TO</field>
-        <field type="TextField" name="desc">Time-out period during which the IESG reviews document for conflict/concurrence with other IETF working group work</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="missref" model="name.rfcdocstatename">
-        <field type="CharField" name="name">MISSREF</field>
-        <field type="TextField" name="desc">Awaiting missing normative reference</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
     <object pk="ad" model="name.rolename">
         <field type="CharField" name="name">Area Director</field>
         <field type="TextField" name="desc"></field>
@@ -636,12 +528,6 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="dir" model="name.rolename">
-        <field type="CharField" name="name">Executive Director</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
     <object pk="execdir" model="name.rolename">
         <field type="CharField" name="name">Executive Director</field>
         <field type="TextField" name="desc"></field>
@@ -662,6 +548,12 @@
     </object>
     <object pk="auth" model="name.rolename">
         <field type="CharField" name="name">Authorized Individual</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="delegate" model="name.rolename">
+        <field type="CharField" name="name">Delegate</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
@@ -768,14 +660,14 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="other" model="name.timeslottypename">
-        <field type="CharField" name="name">Other</field>
+    <object pk="plenary" model="name.timeslottypename">
+        <field type="CharField" name="name">Plenary</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="plenary" model="name.timeslottypename">
-        <field type="CharField" name="name">Plenary</field>
+    <object pk="other" model="name.timeslottypename">
+        <field type="CharField" name="name">Other</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>

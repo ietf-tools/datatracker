@@ -209,6 +209,10 @@ class IETFWG(Group):
         d = Dummy()
         d.all = self.chairs()
         return d
+    @property
+    def wgdelegate_set(self):
+        from ietf.wgchairs.models import WGDelegate
+        return WGDelegate.objects.filter(group=self, name="delegate")
     
     class Meta:
         proxy = True

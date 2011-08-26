@@ -92,7 +92,23 @@ def make_test_data():
         group=group,
         email=wgchair,
         )
-    
+
+    # group delegate
+    u = User.objects.create(username="wgdelegate")
+    p = Person.objects.create(
+        name="WG Delegate",
+        ascii="WG Delegate",
+        user=u
+        )
+    email = Email.objects.create(
+        address="wgdelegate@ietf.org",
+        person=p)
+    Role.objects.create(
+        name_id="delegate",
+        group=group,
+        email=email,
+        )
+
     # secretary
     u = User.objects.create(username="secretary")
     p = Person.objects.create(
