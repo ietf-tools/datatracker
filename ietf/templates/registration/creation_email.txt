@@ -1,0 +1,17 @@
+{% autoescape off %}
+Hello,
+
+We have received an account creation request for {{ username }}
+at {{ domain }}.  In order to set a new password for the 
+{{ username }} account, please go to the following link and
+follow the instructions there:
+
+   http://{{ domain }}{% url confirm_account username today realm auth %}
+
+This link will expire in {{ expire }} days.
+
+Best regards,
+
+	The datatracker login manager service
+	(for the IETF Secretariat)
+{% endautoescape %}

@@ -1,0 +1,23 @@
+{% extends "registration/base.html" %}
+
+{% block title %}Confirm account creation{% endblock %}
+
+{% block content %}
+<div id="confirm_account_page">
+<h1>Confirm account creation</h1>
+{% if success %}
+<p>Your account with login name '{{ email }}' has been created, using the password you have select.</p>
+<p>Now you can <a href="{% url ietfauth.views.ietf_login %}">sign in</a></p>
+{% else %}
+<p>In order to complete the setup of your account with login name  '{{ email }}', please set a password:</p>
+<form action="" method="POST">
+  <table class="register-form">
+  {{ form }}
+  </table>
+  <div class="submit_row">
+    <input type="submit" value="Set Password" />
+  </div>
+</form>
+{% endif %}
+</div>
+{% endblock %}
