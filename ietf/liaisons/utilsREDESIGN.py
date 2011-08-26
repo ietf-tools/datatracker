@@ -1,6 +1,6 @@
 from redesign.group.models import Group, Role
 from redesign.person.models import Person
-from ietf.liaisons.proxy import proxy_personify_role
+from redesign.proxy_utils import proxy_personify_role
 
 from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
                                     get_ietf_chair, get_iab_chair, get_iab_executive_director,

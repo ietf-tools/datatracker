@@ -180,10 +180,3 @@ class UploadsProxy(Document):
         return self.external_url
     class Meta:
         proxy = True
-
-def proxy_personify_role(role):
-    """Turn role into person with email() method using email from role."""
-    p = role.email.person
-    p.email = lambda: (p.name, role.email.address)
-    return p
-

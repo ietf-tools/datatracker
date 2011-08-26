@@ -1,6 +1,18 @@
 from django.db.models.manager import Manager
 from django.db.models.query import QuerySet
 
+def proxy_personify_role(role):
+    """Turn role into person with email() method using email from role."""
+    p = role.email.person
+    p.email = lambda: (p.name, role.email.address)
+    return p
+
+def proxy_role_email(e):
+    """Add email() method to person on email."""
+    e.person.email = lambda: (e.person.name, e.address)
+    return e
+
+
 class TranslatingQuerySet(QuerySet):
     def translated_args(self, args):
         trans = self.translated_attrs
