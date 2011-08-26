@@ -12,9 +12,11 @@ from ietf.ietfworkflows.utils import (get_default_workflow_for_wg, get_workflow_
                                       update_tags, FOLLOWUP_TAG, get_state_by_name)
 from ietf.ietfworkflows.models import AnnotationTag, State
 from ietf.idtracker.models import PersonOrOrgInfo
+from ietf.utils.mail import send_mail_text
 
 from workflows.models import Transition
 
+from redesign.person.models import Person    
 
 class RelatedWGForm(forms.Form):
 
@@ -191,26 +193,30 @@ class AddDelegateForm(RelatedWGForm):
     def get_next_form(self):
         return self.next_form
 
-    def get_person(self, email):
-        persons = PersonOrOrgInfo.objects.filter(emailaddress__address=email).distinct()
-        if not persons:
-            raise PersonOrOrgInfo.DoesNotExist
-        if len(persons) > 1:
-            raise PersonOrOrgInfo.MultipleObjectsReturned
-        return persons[0]
-
     def save(self):
         email = self.cleaned_data.get('email')
-        try:
-            person = self.get_person(email)
-        except PersonOrOrgInfo.DoesNotExist:
-            self.next_form = NotExistDelegateForm(wg=self.wg, user=self.user, email=email, shepherd=self.shepherd)
-            self.next_form.set_message('doesnotexist', 'There is no user with this email allowed to login to the system')
-            return
-        except PersonOrOrgInfo.MultipleObjectsReturned:
-            self.next_form = MultipleDelegateForm(wg=self.wg, user=self.user, email=email, shepherd=self.shepherd)
-            self.next_form.set_message('multiple', 'There are multiple users with this email in the system')
-            return
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            try:
+                person = Person.objects.filter(email__address=email).distinct().get()
+            except Person.DoesNotExist:
+                self.next_form = NotExistDelegateForm(wg=self.wg, user=self.user, email=email, shepherd=self.shepherd)
+                self.next_form.set_message('doesnotexist', 'There is no user with this email allowed to login to the system')
+                return
+            except Person.MultipleObjectsReturned:
+                self.next_form = MultipleDelegateForm(wg=self.wg, user=self.user, email=email, shepherd=self.shepherd)
+                self.next_form.set_message('multiple', 'There are multiple users with this email in the system')
+                return
+        else:
+            try:
+                person = PersonOrOrgInfo.objects.filter(emailaddress__address=email).distinct().get()
+            except PersonOrOrgInfo.DoesNotExist:
+                self.next_form = NotExistDelegateForm(wg=self.wg, user=self.user, email=email, shepherd=self.shepherd)
+                self.next_form.set_message('doesnotexist', 'There is no user with this email allowed to login to the system')
+                return
+            except PersonOrOrgInfo.MultipleObjectsReturned:
+                self.next_form = MultipleDelegateForm(wg=self.wg, user=self.user, email=email, shepherd=self.shepherd)
+                self.next_form.set_message('multiple', 'There are multiple users with this email in the system')
+                return
         if self.shepherd:
             self.assign_shepherd(person)
         else:
@@ -282,12 +288,15 @@ class NotExistDelegateForm(MultipleDelegateForm):
         info = render_to_string('wgchairs/notexistdelegate.html', {'email_list': email_list, 'shepherd': self.shepherd})
         return info + super(NotExistDelegateForm, self).as_p()
 
-    def send_email(self, email, template):
+    def send_email(self, to_email, template):
         if self.shepherd:
             subject = 'WG shepherd needs system credentials'
         else:
             subject = 'WG Delegate needs system credentials'
-        persons = PersonOrOrgInfo.objects.filter(emailaddress__address=self.email).distinct()
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            persons = Person.objects.filter(email__address=self.email).distinct()
+        else:
+            persons = PersonOrOrgInfo.objects.filter(emailaddress__address=self.email).distinct()
         body = render_to_string(template,
                                 {'chair': get_person_for_user(self.user),
                                  'delegate_email': self.email,
@@ -295,20 +304,8 @@ class NotExistDelegateForm(MultipleDelegateForm):
                                  'delegate_persons': persons,
                                  'wg': self.wg,
                                 })
-        mail = EmailMessage(subject=subject,
-                            body=body,
-                            to=email,
-                            from_email=settings.DEFAULT_FROM_EMAIL)
-        mail.send()
 
-    def send_email_to_delegate(self, email):
-        self.send_email(email, 'wgchairs/notexistsdelegate_delegate_email.txt')
-
-    def send_email_to_secretariat(self, email):
-        self.send_email(email, 'wgchairs/notexistsdelegate_secretariat_email.txt')
-
-    def send_email_to_wgchairs(self, email):
-        self.send_email(email, 'wgchairs/notexistsdelegate_wgchairs_email.txt')
+        send_mail_text(None, to_email, settings.DEFAULT_FROM_EMAIL, subject, body)
 
     def save(self):
         self.next_form = AddDelegateForm(wg=self.wg, user=self.user)
@@ -316,9 +313,13 @@ class NotExistDelegateForm(MultipleDelegateForm):
             self.next_form.set_message('warning', 'Email was not sent cause tool is in DEBUG mode')
         else:
             email_list = self.get_email_list()
-            self.send_email_to_delegate([email_list[0]])
-            self.send_email_to_secretariat([email_list[1]])
-            self.send_email_to_wgchairs(email_list[2:])
+            # this is ugly...
+            delegate = email_list[0]
+            secretariat = email_list[1]
+            wgchairs = email_list[2:]
+            self.send_email(delegate, 'wgchairs/notexistsdelegate_delegate_email.txt')
+            self.send_email(secretariat, 'wgchairs/notexistsdelegate_secretariat_email.txt')
+            self.send_email(wgchairs, 'wgchairs/notexistsdelegate_wgchairs_email.txt')
             self.next_form.set_message('success', 'Email sent successfully')
 
 

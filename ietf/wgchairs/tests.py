@@ -42,8 +42,35 @@ class ManageDelegatesTestCase(django.test.TestCase):
         self.assertEquals(len(q('form input[name=delete]')), 0)
         self.assertEquals(Role.objects.filter(name="delegate", group__acronym="mars").count(), 0)
         
-        
-        
+    def test_add_not_existing_delegate(self):
+        make_test_data()
+
+        url = urlreverse('manage_delegates', kwargs=dict(acronym="mars"))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form input[name=email]')), 1)
+
+        # add non-existing
+        r = self.client.post(url,
+                             dict(email="unknown@example.com",
+                                  form_type="single"))
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue("unknown@example.com" in r.content)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form input[type=submit][value*="Send email"]')), 1)
+
+        # we get back a warning and offer to send email, do that
+        mailbox_before = len(mail_outbox)
+        r = self.client.post(url,
+                             dict(email="unknown@example.com",
+                                  form_type="notexist"))
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue("Email sent" in r.content)
+        self.assertEquals(len(mail_outbox), mailbox_before + 3)
         
         
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:

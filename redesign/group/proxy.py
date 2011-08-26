@@ -1,4 +1,4 @@
-from redesign.proxy_utils import TranslatingManager
+from redesign.proxy_utils import TranslatingManager, proxy_role_email
 
 from models import *
 
@@ -87,7 +87,7 @@ class Area(Group):
 
 def proxied_role_emails(emails):
     for e in emails:
-        e.person.email = { 1: e }
+        proxy_role_email(e)
     return emails
 
 class IETFWG(Group):
@@ -203,11 +203,12 @@ class IETFWG(Group):
         return self.groupurl_set.all().order_by("name")
     def clean_email_archive(self):
         return self.list_archive
+    @property
     def wgchair_set(self):
         # gross hack ...
         class Dummy: pass
         d = Dummy()
-        d.all = self.chairs()
+        d.all = self.chairs
         return d
     @property
     def wgdelegate_set(self):
