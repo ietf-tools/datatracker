@@ -16,7 +16,9 @@ from ietf.utils.mail import send_mail_text
 
 from workflows.models import Transition
 
-from redesign.person.models import Person    
+from redesign.person.models import Person, Email
+from redesign.group.models import Role, RoleName
+
 
 class RelatedWGForm(forms.Form):
 
@@ -197,7 +199,7 @@ class AddDelegateForm(RelatedWGForm):
         email = self.cleaned_data.get('email')
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             try:
-                person = Person.objects.filter(email__address=email).distinct().get()
+                person = Person.objects.filter(email__address=email).exclude(user=None).distinct().get()
             except Person.DoesNotExist:
                 self.next_form = NotExistDelegateForm(wg=self.wg, user=self.user, email=email, shepherd=self.shepherd)
                 self.next_form.set_message('doesnotexist', 'There is no user with this email allowed to login to the system')
@@ -229,8 +231,15 @@ class AddDelegateForm(RelatedWGForm):
         self.next_form.set_message('success', 'Shepherd assigned successfully')
 
     def create_delegate(self, person):
-        (delegate, created) = WGDelegate.objects.get_or_create(wg=self.wg,
-                                                               person=person)
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            created = False
+            e = Email.objects.get(address=self.cleaned_data.get('email'))
+            if not Role.objects.filter(name="delegate", group=self.wg, email=e):
+                delegate, created = Role.objects.get_or_create(
+                    name=RoleName.objects.get(slug="delegate"), group=self.wg, email=e)
+        else:
+            (delegate, created) = WGDelegate.objects.get_or_create(wg=self.wg,
+                                                                   person=person)
         if not created:
             self.set_message('error', 'The email belongs to a person who is already a delegate')
         else:
@@ -251,11 +260,17 @@ class MultipleDelegateForm(AddDelegateForm):
         if not self.email:
             self.email = self.data.get('email', None)
         self.fields['email'].initial = self.email
-        self.fields['persons'].choices = [(i.pk, unicode(i)) for i in PersonOrOrgInfo.objects.filter(emailaddress__address=self.email, iesglogin__isnull=False).distinct().order_by('first_name')]
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            self.fields['persons'].choices = [(i.pk, unicode(i)) for i in Person.objects.filter(email__address=self.email).exclude(user=None).distinct().order_by('name')]
+        else:
+            self.fields['persons'].choices = [(i.pk, unicode(i)) for i in PersonOrOrgInfo.objects.filter(emailaddress__address=self.email, iesglogin__isnull=False).distinct().order_by('first_name')]
 
     def save(self):
         person_id = self.cleaned_data.get('persons')
-        person = PersonOrOrgInfo.objects.get(pk=person_id)
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            person = Person.objects.get(pk=person_id)
+        else:
+            person = PersonOrOrgInfo.objects.get(pk=person_id)
         if self.shepherd:
             self.assign_shepherd(person)
         else:
@@ -312,8 +327,8 @@ class NotExistDelegateForm(MultipleDelegateForm):
         if settings.DEBUG:
             self.next_form.set_message('warning', 'Email was not sent cause tool is in DEBUG mode')
         else:
-            email_list = self.get_email_list()
             # this is ugly...
+            email_list = self.get_email_list()
             delegate = email_list[0]
             secretariat = email_list[1]
             wgchairs = email_list[2:]

@@ -72,6 +72,27 @@ class ManageDelegatesTestCase(django.test.TestCase):
         self.assertTrue("Email sent" in r.content)
         self.assertEquals(len(mail_outbox), mailbox_before + 3)
         
+    def test_add_delegate(self):
+        make_test_data()
+
+        url = urlreverse('manage_delegates', kwargs=dict(acronym="mars"))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form input[name=email]')), 1)
+
+        # add existing person
+        r = self.client.post(url,
+                             dict(email="plain@example.com",
+                                  form_type="single"))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue("new delegate" in r.content)
+        self.assertTrue(Email.objects.get(address="plain@example.com").person.name in r.content)
+        
         
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # the above tests only work with the new schema

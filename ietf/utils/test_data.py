@@ -46,6 +46,16 @@ def make_test_data():
     Alias.objects.get_or_create(person=system_person, name=system_person.name)
     Email.objects.get_or_create(address="", person=system_person)
 
+    # plain IETF'er
+    u = User.objects.create(username="plain")
+    p = Person.objects.create(
+        name="Plain Man",
+        ascii="Plain Man",
+        user=u)
+    email = Email.objects.create(
+        address="plain@example.com",
+        person=p)
+    
     # ad
     u = User.objects.create(username="ad")
     ad = p = Person.objects.create(
@@ -123,7 +133,7 @@ def make_test_data():
         group=secretariat,
         email=email,
         )
-    
+
     # draft
     draft = Document.objects.create(
         name="draft-ietf-test",
