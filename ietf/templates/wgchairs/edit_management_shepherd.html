@@ -15,7 +15,7 @@
 <form action="" method="POST">
 <table class="ietf-table" style="width: 100%;">
 <tr><th>Actual shepherd</th></tr>
-<tr><td>{% if doc.shepherd %}{{ doc.shepherd }}{% else %}No shephered assigned{% endif %}</td></tr>
+<tr><td>{% if doc.shepherd %}{{ doc.shepherd }}{% else %}No shepherd assigned{% endif %}</td></tr>
 </table>
     <input type="hidden" name="update_shepherd" value="1" />
     <input type="submit" name="remove_shepherd" value="Unassign shepherd" />
