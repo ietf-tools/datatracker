@@ -784,7 +784,7 @@ for index, o in enumerate(all_drafts.iterator()):
     d.pages = o.txt_page_count
     d.intended_std_level = intended_std_level_mapping[o.intended_status.intended_status]
     d.ad = None
-    d.shepherd = None
+    d.shepherd = old_person_to_person(o.shepherd) if o.shepherd else None
     d.notify = ""
     d.external_url = ""
     d.note = ""
