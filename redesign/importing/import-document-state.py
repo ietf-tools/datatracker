@@ -60,13 +60,13 @@ relationship_updates = name(DocRelationshipName, "updates", "Updates")
 relationship_obsoletes = name(DocRelationshipName, "obs", "Obsoletes")
 
 intended_std_level_mapping = {
-    "BCP": name(IntendedStdLevelName, "bcp", "Best Current Practice"),
-    "Draft Standard": name(IntendedStdLevelName, "ds", name="Draft Standard"),
-    "Experimental": name(IntendedStdLevelName, "exp", name="Experimental"),
-    "Historic": name(IntendedStdLevelName, "hist", name="Historic"),
-    "Informational": name(IntendedStdLevelName, "inf", name="Informational"),
-    "Proposed Standard": name(IntendedStdLevelName, "ps", name="Proposed Standard"),
-    "Standard": name(IntendedStdLevelName, "std", name="Standard"),
+    "Proposed Standard": name(IntendedStdLevelName, "ps", name="Proposed Standard", order=1),
+    "Draft Standard": name(IntendedStdLevelName, "ds", name="Draft Standard", order=2),
+    "Standard": name(IntendedStdLevelName, "std", name="Standard", order=3),
+    "BCP": name(IntendedStdLevelName, "bcp", "Best Current Practice", order=4),
+    "Informational": name(IntendedStdLevelName, "inf", name="Informational", order=5),
+    "Experimental": name(IntendedStdLevelName, "exp", name="Experimental", order=6),
+    "Historic": name(IntendedStdLevelName, "hist", name="Historic", order=7),
     "None": None,
     "Request": None,
     }
