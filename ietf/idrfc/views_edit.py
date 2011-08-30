@@ -542,8 +542,8 @@ def edit_infoREDESIGN(request, name):
             if r["status_date"] != status_date:
                 e = StatusDateDocEvent(doc=doc, by=login)
                 e.type ="changed_status_date"
-                d = desc("Status date", r["status_date"], status_date)
-                changes.append(d)
+                e.desc = desc("Status date", r["status_date"], status_date)
+                changes.append(e.desc)
                 e.date = r["status_date"]
                 e.save()
             
