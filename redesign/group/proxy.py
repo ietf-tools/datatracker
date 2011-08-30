@@ -25,12 +25,16 @@ class Acronym(Group):
     def name_key(self):
         return self.name.upper()
 
+    @property
+    def ietfwg(self):
+        return IETFWG().from_object(self)
+    
     def __str__(self):
         return self.acronym
 
     def __unicode__(self):
         return self.acronym
-    
+
     class Meta:
         proxy = True
 
@@ -101,6 +105,11 @@ class IETFWG(Group):
                                       start_date__isnull=lambda v: None if v else ("groupevent__type", "started")
                                       ),
                                  always_filter=dict(type__in=("wg", "individ")))
+
+    def from_object(self, base):
+        for f in base._meta.fields:
+            setattr(self, f.name, getattr(base, f.name))
+        return self
 
     ACTIVE=1
     #group_acronym = models.OneToOneField(Acronym, primary_key=True, editable=False)

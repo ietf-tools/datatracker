@@ -92,6 +92,9 @@ def manage_workflow(request, acronym):
                               }, RequestContext(request))
 
 
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from ietf.wgchairs.forms import assign_shepherd
+    
 def managing_shepherd(request, acronym, name):
     """
      View for managing the assigned shepherd of a document.
@@ -107,11 +110,17 @@ def managing_shepherd(request, acronym, name):
     add_form = add_form_factory(request, wg, user, shepherd=doc)
     if request.method == 'POST':
         if request.POST.get('remove_shepherd'):
-            doc.shepherd = None
-            doc.save()
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                assign_shepherd(user, doc, None)
+            else:
+                doc.shepherd = None
+                doc.save()
         elif request.POST.get('setme'):
-            doc.shepherd = person
-            doc.save()
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                assign_shepherd(user, doc, person)
+            else:
+                doc.shepherd = person
+                doc.save()
         elif add_form.is_valid():
             add_form.save()
             add_form = add_form.get_next_form()
@@ -132,16 +141,18 @@ def wg_shepherd_documents(request, acronym):
         return HttpResponseForbidden('You have no permission to access this view')
     current_person = get_person_for_user(user)
 
-    form = SearchForm({'by': 'group', 'group': str(wg.group_acronym.acronym),
-                       'activeDrafts': 'on'})
-    if not form.is_valid():
-        raise ValueError("form did not validate")
-    (docs, meta) = search_query(form.cleaned_data)
-
-    base_qs = InternetDraft.objects.filter(pk__in=[i.id._draft.pk for i in docs if i.id]).select_related('status')
-    documents_no_shepherd = base_qs.filter(shepherd__isnull=True)
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        base_qs = InternetDraft.objects.filter(group=wg, state="active").select_related("status").order_by('title')
+    else:
+        form = SearchForm({'by': 'group', 'group': str(wg.group_acronym.acronym),
+                           'activeDrafts': 'on'})
+        if not form.is_valid():
+            raise ValueError("form did not validate")
+        (docs, meta) = search_query(form.cleaned_data)
+        base_qs = InternetDraft.objects.filter(pk__in=[i.id._draft.pk for i in docs if i.id]).select_related('status')
+    documents_no_shepherd = base_qs.filter(shepherd=None)
     documents_my = base_qs.filter(shepherd=current_person)
-    documents_other = base_qs.exclude(shepherd__isnull=True).exclude(shepherd__pk__in=[current_person.pk, 0])
+    documents_other = base_qs.exclude(shepherd=None).exclude(shepherd__pk__in=[current_person.pk, 0])
     context = {
         'no_shepherd': documents_no_shepherd,
         'my_documents': documents_my,

@@ -1,3 +1,5 @@
+import datetime
+
 from django import forms
 from django.conf import settings
 from django.core.mail import EmailMessage
@@ -181,6 +183,31 @@ class RemoveDelegateForm(RelatedWGForm):
         WGDelegate.objects.filter(pk__in=delegates).delete()
         self.set_message('success', 'Delegates removed')
 
+def assign_shepherd(user, internetdraft, shepherd):
+    if internetdraft.shepherd == shepherd:
+        return
+    
+    from redesign.doc.models import save_document_in_history, DocEvent, Document
+
+    # saving the proxy object is a bit of a mess, so convert it to a
+    # proper document
+    doc = Document.objects.get(name=internetdraft.name)
+    
+    save_document_in_history(doc)
+    e = DocEvent(doc=doc, by=user.get_profile())
+    if not shepherd:
+        e.desc = u"Unassigned shepherd"
+    else:
+        e.desc = u"Changed shepherd to %s" % shepherd.name
+    e.type = "changed_document"
+    e.save()
+            
+    doc.time = e.time
+    doc.shepherd = shepherd
+    doc.save()
+
+    # update proxy too
+    internetdraft.shepherd = shepherd
 
 class AddDelegateForm(RelatedWGForm):
 
@@ -225,8 +252,11 @@ class AddDelegateForm(RelatedWGForm):
             self.create_delegate(person)
 
     def assign_shepherd(self, person):
-        self.shepherd.shepherd = person
-        self.shepherd.save()
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            assign_shepherd(self.user, self.shepherd, person)
+        else:
+            self.shepherd.shepherd = person
+            self.shepherd.save()
         self.next_form = AddDelegateForm(wg=self.wg, user=self.user, shepherd=self.shepherd)
         self.next_form.set_message('success', 'Shepherd assigned successfully')
 

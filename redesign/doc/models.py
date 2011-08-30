@@ -210,6 +210,9 @@ EVENT_TYPES = [
     ("requested_resurrect", "Requested resurrect"),
     ("completed_resurrect", "Completed resurrect"),
     ("published_rfc", "Published RFC"),
+
+    # WG events
+    ("changed_protocol_writeup", "Changed protocol writeup"),
     
     # IESG events
     ("started_iesg_process", "Started IESG process on document"),

@@ -14,6 +14,7 @@ from ietf.utils.test_data import make_test_data
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from redesign.person.models import Person, Email
     from redesign.group.models import Group, Role
+    from redesign.doc.models import Document
         
 class ManageDelegatesTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -93,7 +94,94 @@ class ManageDelegatesTestCase(django.test.TestCase):
         self.assertTrue("new delegate" in r.content)
         self.assertTrue(Email.objects.get(address="plain@example.com").person.name in r.content)
         
+
+class ManageShepherdsTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_manage_shepherds(self):
+        make_test_data()
+
+        url = urlreverse('manage_shepherds', kwargs=dict(acronym="mars"))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # setup test documents
+        group = Group.objects.get(acronym="mars")
+
+        from redesign.doc.models import Document
+        common = dict(group=group,
+                      state_id="active",
+                      ad=Person.objects.get(user__username="ad"),
+                      type_id="draft")
+        Document.objects.create(name="test-no-shepherd",
+                                title="No shepherd",
+                                shepherd=None,
+                                **common)
+        Document.objects.create(name="test-shepherd-me",
+                                title="Shepherd me",
+                                shepherd=Person.objects.get(user__username="secretary"),
+                                **common)
+        Document.objects.create(name="test-shepherd-other", title="Shepherd other",
+                                shepherd=Person.objects.get(user__username="plain"),
+                                **common)
         
+        # get and make sure they are divided correctly
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('div#noshepherd a:contains("No shepherd")')), 1)
+        self.assertEquals(len(q('div#mydocs a:contains("Shepherd me")')), 1)
+        self.assertEquals(len(q('div#othershepherds a:contains("Shepherd other")')), 1)
+
+    def test_set_shepherd(self):
+        draft = make_test_data()
+
+        url = urlreverse('doc_managing_shepherd', kwargs=dict(acronym="mars", name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('input[type=submit][name=setme]')), 1)
+
+        # set me
+        events_before = draft.docevent_set.count()
+        r = self.client.post(url,
+                             dict(setme="1"))
+        self.assertEquals(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue(draft.shepherd)
+        self.assertEquals(draft.shepherd.user.username, "secretary")
+        self.assertEquals(draft.docevent_set.count(), events_before + 1)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(Person.objects.get(user__username="secretary").name in r.content)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('input[type=submit][name=remove_shepherd]')), 1)
+        
+        # unassign
+        events_before = draft.docevent_set.count()
+        r = self.client.post(url,
+                             dict(remove_shepherd="1"))
+        self.assertEquals(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue(not draft.shepherd)
+        self.assertEquals(draft.docevent_set.count(), events_before + 1)
+        
+        # change to existing person
+        events_before = draft.docevent_set.count()
+        r = self.client.post(url,
+                             dict(email="plain@example.com",
+                                  form_type="single"))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue("Shepherd assigned" in r.content)
+        self.assertTrue(Email.objects.get(address="plain@example.com").person.name in r.content)
+        self.assertEquals(draft.docevent_set.count(), events_before + 1)
+
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # the above tests only work with the new schema
     del ManageDelegatesTestCase 
+    del ManageShepherdsTestCase 
