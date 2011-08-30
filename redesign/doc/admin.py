@@ -2,10 +2,22 @@ from django.contrib import admin
 from models import *
 from person.models import *
 
+class DocAliasAdmin(admin.ModelAdmin):
+    list_display = [ 'name', 'document_link', ]
+    search_fields = [ 'name', 'document__name', ]
+    raw_id_fields = ['document']
+admin.site.register(DocAlias, DocAliasAdmin)
+
+class DocAliasInline(admin.TabularInline):
+    model = DocAlias
+    extra = 1
+
 class DocumentAdmin(admin.ModelAdmin):
     list_display = ['name', 'rev', 'state', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
     search_fields = ['name']
     raw_id_fields = ['authors', 'related', 'group', 'shepherd', 'ad']
+    inlines = [DocAliasInline]
+
 admin.site.register(Document, DocumentAdmin)
 
 class DocHistoryAdmin(admin.ModelAdmin):
@@ -14,12 +26,6 @@ class DocHistoryAdmin(admin.ModelAdmin):
     ordering = ['time', 'doc', 'rev']
     raw_id_fields = ['doc', 'authors', 'related', 'group', 'shepherd', 'ad']
 admin.site.register(DocHistory, DocHistoryAdmin)
-
-class DocAliasAdmin(admin.ModelAdmin):
-    list_display = [ 'name', 'document_link', ]
-    search_fields = [ 'name', 'document__name', ]
-    raw_id_fields = ['document']
-admin.site.register(DocAlias, DocAliasAdmin)
 
 
 # events
