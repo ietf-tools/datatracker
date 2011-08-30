@@ -530,6 +530,7 @@ def edit_infoREDESIGN(request, name):
 
             for c in changes:
                 e = DocEvent(doc=doc, by=login)
+                e.desc = c
                 e.type = "changed_document"
                 e.save()
 
