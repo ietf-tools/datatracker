@@ -1,4 +1,5 @@
 from django import template
+from django.conf import settings
 
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper, IdWrapper
 from ietf.ietfworkflows.utils import (get_workflow_for_draft,
@@ -14,8 +15,8 @@ register = template.Library()
 
 @register.inclusion_tag('ietfworkflows/stream_state.html', takes_context=True)
 def stream_state(context, doc):
-    from django.conf import settings
-    return settings.TEMPLATE_STRING_IF_INVALID # FIXME: temporary work-around
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        return settings.TEMPLATE_STRING_IF_INVALID # FIXME: temporary work-around
     request = context.get('request', None)
     data = {}
     stream = get_stream_from_wrapper(doc)
@@ -54,7 +55,8 @@ def workflow_history_entry(context, entry):
 
 @register.inclusion_tag('ietfworkflows/edit_actions.html', takes_context=True)
 def edit_actions(context, wrapper):
-    return None    # FIXME: temporary work-around
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        return settings.TEMPLATE_STRING_IF_INVALID # FIXME: temporary work-around
 
     request = context.get('request', None)
     user = request and request.user

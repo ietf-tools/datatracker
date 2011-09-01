@@ -1,4 +1,7 @@
+from django.conf import settings
+
 from ietf.ietfworkflows.streams import get_streamed_draft
+from redesign.group.models import Role
 
 
 def get_person_for_user(user):
@@ -17,9 +20,15 @@ def is_secretariat(user):
 def is_wgchair(person):
     return bool(person.wgchair_set.all())
 
+def is_wgchairREDESIGN(person):
+    return bool(Role.objects.filter(name="chair", group__type="wg", group__state="active", email__person=person))
+
 
 def is_wgdelegate(person):
     return bool(person.wgdelegate_set.all())
+
+def is_delegateREDESIGN(person):
+    return bool(Role.objects.filter(name="delegate", group__type="wg", group__state="active", email__person=person))
 
 
 def is_chair_of_draft(user, draft):
@@ -33,6 +42,18 @@ def is_chair_of_draft(user, draft):
     if not group or not hasattr(group, 'chairs'):
         return False
     return bool(group.chairs().filter(person=person).count())
+
+def is_chair_of_draftREDESIGN(user, draft):
+    if not user.is_authenticated() or not user.get_profile() or not draft.group:
+        return False
+
+    return bool(Role.objects.filter(name="chair", group=draft.group, email__person=user.get_profile()))
+    
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from ietf.wgchairs.accounts import is_secretariat, get_person_for_user 
+    is_delegate = is_delegateREDESIGN
+    is_wgchair = is_wgchairREDESIGN
+    is_chair_of_draft = is_chair_of_draftREDESIGN
 
 
 def can_edit_state(user, draft):
