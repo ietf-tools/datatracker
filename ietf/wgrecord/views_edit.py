@@ -208,6 +208,18 @@ class EditInfoForm(forms.Form):
             raise forms.ValidationError("Acronym used in a previous WG. Please pick another.")
         return acronym
         
+def format_urls(set, fs="\n"):
+    ostr = ""
+    for i,x in enumerate(set):
+        if i != 0:
+            ostr += fs
+        if x.name:
+            ostr += x.url + " (" + x.name + ")"
+        else:
+            ostr += x.url
+        
+    return ostr
+        
 @group_required('Area_Director','Secretariat')
 def edit_info(request, name=None):
     """Edit or create a WG, notifying parties as
@@ -330,16 +342,21 @@ def edit_info(request, name=None):
 
             # update urls
             new_urls = get_sorted_string('urls', '\n')
-            old_urls = [x.url + " (" + x.name + ")" for x in wg.groupurl_set.order_by('url')]
-            if new_urls != old_urls:
+            old_urls = format_urls(wg.groupurl_set.order_by('url'), ", ")
+            if ", ".join(new_urls) != old_urls:
+                changes.append(desc('urls', ", ".join(new_urls), old_urls))
                 # Remove old urls
                 for u in wg.groupurl_set.all():
                     u.delete()
                 # Add new ones
                 for u in [u for u in new_urls if u != ""]:
-                    m = re.search('(?P<url>.+) \((?P<name>.+)\)', u)
-                    url = GroupURL(url=m.group('url'), name=m.group('name'), group=wg)
-                    url.save()
+                    m = re.search('(?P<url>[\w\d:#@%/;$()~_?\+-=\\\.&]+)( \((?P<name>.+)\))?', u)
+                    if m:
+                        if m.group('name'):
+                            url = GroupURL(url=m.group('url'), name=m.group('name'), group=wg)
+                        else:
+                            url = GroupURL(url=m.group('url'), name='', group=wg)
+                        url.save()
 
             wg.time = datetime.now()
 
@@ -367,7 +384,7 @@ def edit_info(request, name=None):
                         list_email=wg.list_email if wg.list_email else None,
                         list_subscribe=wg.list_subscribe if wg.list_subscribe else None,
                         list_archive=wg.list_archive if wg.list_archive else None,
-                        urls=string.join([x.url + " (" + x.name + ")" for x in wg.groupurl_set.all()], "\n"),
+                        urls=format_urls(wg.groupurl_set.all()),
                         comments=wg.comments if wg.comments else None,
                         telechat_date=initial_telechat_date,
                         )
