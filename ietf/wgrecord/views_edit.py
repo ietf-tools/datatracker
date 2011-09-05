@@ -172,7 +172,16 @@ class EditInfoForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.cur_acronym = kwargs.pop('cur_acronym')
+        if 'hide' in kwargs:
+            self.hide = kwargs.pop('hide')
+        else:
+            self.hide = None
         super(self.__class__, self).__init__(*args, **kwargs)
+
+        # hide requested fields
+        if self.hide:
+            for f in self.hide:
+                self.fields[f].widget = forms.HiddenInput
 
         # fix up ad field
         choices = self.fields['ad'].choices
@@ -388,10 +397,12 @@ def edit_info(request, name=None):
                         comments=wg.comments if wg.comments else None,
                         telechat_date=initial_telechat_date,
                         )
+            hide = None
         else:
             init = dict(ad=login.id,
                         )
-        form = EditInfoForm(initial=init, cur_acronym=wg.acronym if wg else None)
+            hide = ['chairs', 'techadv', 'list_email', 'list_subscribe', 'list_archive', 'urls', 'telechat_date']
+        form = EditInfoForm(initial=init, cur_acronym=wg.acronym if wg else None, hide=hide)
 
     return render_to_response('wgrecord/edit_info.html',
                               dict(wg=wg,

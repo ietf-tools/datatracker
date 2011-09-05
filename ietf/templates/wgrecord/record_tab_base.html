@@ -28,11 +28,11 @@ Copyright The IETF Trust 2011, All Rights Reserved
 {% endifequal %}{% endifequal %}
 
 {% ifnotequal wg.state_id "conclude" %}
-<span id="wg_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url wg_edit_info name=wg.acronym %}">Edit</a></span></span>
+<span id="wg_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url wg_edit_info name=wg.acronym %}">Edit WG</a></span></span>
 {% endifnotequal %}
 
 {% ifnotequal wg.state_id "conclude" %}
-<span id="wg_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url wg_submit name=wg.acronym %}">Submit charter</a></span></span>
+<span id="wg_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url wg_submit name=wg.acronym %}">Edit charter</a></span></span>
 {% endifnotequal %}
 </div>
 {% endif %}{# if not snapshot #}

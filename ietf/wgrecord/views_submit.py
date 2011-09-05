@@ -17,17 +17,26 @@ from django.conf import settings
 from utils import next_revision, set_or_create_charter, save_charter_in_history
 
 class UploadForm(forms.Form):
-    txt = forms.FileField(label=".txt format", required=True)
+    content = forms.CharField(widget=forms.Textarea, label="Charter text", help_text="Edit the charter text", required=False)
+    txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file", required=False)
+
+    def clean_content(self):
+        return self.cleaned_data["content"].replace("\r", "")
 
     def save(self, wg, rev):
-        for ext in ['txt']:
-            fd = self.cleaned_data[ext]
-            if not fd:
-                continue
-            filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.%s' % (wg.acronym, rev, ext))
+        fd = self.cleaned_data['txt']
+        filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, rev))
+        if fd:
+            # A file was specified. Save it.
             destination = open(filename, 'wb+')
             for chunk in fd.chunks():
                 destination.write(chunk)
+            destination.close()
+        else:
+            # No file, save content
+            destination = open(filename, 'wb+')
+            content = self.cleaned_data['content']
+            destination.write(content)
             destination.close()
 
 @group_required('Area_Director','Secretariat')
@@ -43,7 +52,7 @@ def submit(request, name):
             raise Http404
     # Get charter
     charter = set_or_create_charter(wg)
-
+    
     login = request.user.get_profile()
 
     if request.method == 'POST':
@@ -70,7 +79,13 @@ def submit(request, name):
 
             return HttpResponseRedirect(reverse('wg_view_record', kwargs={'name': wg.acronym}))
     else:
-        form = UploadForm()
+        filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
+        try:
+            charter_text = open(filename, 'r')
+            init = dict(content = charter_text.read())
+        except IOError:
+            init = {}
+        form = UploadForm(initial = init)
     return render_to_response('wgrecord/submit.html',
                               {'form': form,
                                'next_rev': next_revision(wg.charter.rev),

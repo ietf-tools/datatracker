@@ -1,5 +1,12 @@
 {% extends "base.html" %}
 
+{% block morecss %}
+form #id_content {
+  width: 40em;
+  height: 600px;
+}
+{% endblock %}
+
 {% block title %}
 Charter submission for {{ wg.acronym }}
 {% endblock %}
@@ -15,6 +22,7 @@ Charter submission for {{ wg.acronym }}
       <th>{{ field.label_tag }}:</th>
       <td>
         {{ field }}
+	{% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
         {{ field.errors }}
       </td>
     </tr>
