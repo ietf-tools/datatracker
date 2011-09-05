@@ -33,6 +33,7 @@ from ietf.utils.history import *
 # SDOAuthorizedIndividual, WGDelegate
 
 area_director_role = name(RoleName, "ad", "Area Director")
+inactive_area_director_role = name(RoleName, "ex-ad", "Ex Area Director")
 chair_role = name(RoleName, "chair", "Chair")
 editor_role = name(RoleName, "editor", "Editor")
 secretary_role = name(RoleName, "secr", "Secretary")
@@ -186,7 +187,7 @@ for o in IESGLogin.objects.all():
     
     email = get_or_create_email(o, create_fake=False)
     # current ADs are imported below
-    if o.user_level == IESGLogin.SECRETARIAT_LEVEL:
+    if email and o.user_level == IESGLogin.SECRETARIAT_LEVEL:
         if not Role.objects.filter(name=secretary_role, email=email):
             Role.objects.create(name=secretary_role, group=Group.objects.get(acronym="secretariat"), email=email)
     
