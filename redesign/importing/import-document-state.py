@@ -139,12 +139,12 @@ group_ballot_position_mapping[None] = group_ballot_position_mapping["No Record"]
 group_ballot_position_mapping["Undefined"] = group_ballot_position_mapping["No Record"]
 
 charter_state_names = dict(
-    notrev=name(CharterDocStateName, slug="notrev", name="Not currently under review", desc="The proposed WG is not being considered at this time. A proposed WG will remain in this state until an AD moves it to Informal IESG review."),
-    infrev=name(CharterDocStateName, slug="infrev", name="Informal IESG review", desc="This is the initial state when an AD creates a WG. The normal next state is Internal review if the idea is accepted, or Not currently under review if the idea is abandoned."),
+    notrev=name(CharterDocStateName, slug="notrev", name="Not currently under review", desc="The proposed charter is not being considered at this time. A proposed charter will remain in this state until an AD moves it to Informal IESG review."),
+    infrev=name(CharterDocStateName, slug="infrev", name="Informal IESG review", desc="This is the initial state when an AD proposes a new charter. The normal next state is Internal review if the idea is accepted, or Not currently under review if the idea is abandoned."),
     intrev=name(CharterDocStateName, slug="intrev", name="Internal review", desc="The IESG and IAB are reviewing the early draft of the charter; this is the initial IESG and IAB review. The usual next state is External review if the idea is adopted, or Informal IESG review if the IESG decides the idea needs more work, or Not currently under review is the idea is abandoned"),
     extrev=name(CharterDocStateName, slug="extrev", name="External review", desc="The IETF community and possibly other standards development organizations (SDOs) are reviewing the proposed charter. The usual next state is IESG review, although it might move to Not currently under review is the idea is abandoned during the external review."),
     iesgrev=name(CharterDocStateName, slug="iesgrev", name="IESG review", desc="The IESG is reviewing the discussion from the external review of the proposed charter. The usual next state is Approved, or Not currently under review if the idea is abandoned."),
-    approved=name(CharterDocStateName, slug="approved", name="Approved", desc="The WG is approved by the IESG."),
+    approved=name(CharterDocStateName, slug="approved", name="Approved", desc="The charter is approved by the IESG."),
     )
 
 substate_mapping = {
