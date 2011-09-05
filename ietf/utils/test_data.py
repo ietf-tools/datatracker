@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 
 from ietf.iesg.models import TelechatDates, WGAction
 from ietf.ipr.models import IprDetail, IprDocAlias
+from ietf.meeting.models import Meeting
 from redesign.doc.models import *
 from redesign.name.models import *
 from redesign.group.models import *
@@ -220,6 +221,18 @@ def make_test_data():
         token_name="Aread",
         category=13,
         telechat_date=dates.date2
+        )
+
+    # Meeting
+    Meeting.objects.create(
+        number="42",
+        type_id="ietf",
+        date=datetime.date.today() + datetime.timedelta(days=180),
+        city="New York",
+        country="United States",
+        time_zone="US/Eastern",
+        break_area="Lounge",
+        reg_area="Lobby",
         )
     
     return draft

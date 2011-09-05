@@ -1,0 +1,113 @@
+Informational                                                  Test Name
+Internet-Draft                                          Test Center Inc.
+Intended status: Informational
+Expires: %(expire)s                                   %(date)s
+
+                          
+                        Testing tests
+                  %(filename)s
+
+
+Abstract
+
+   This document describes how to test tests.
+
+Status of this Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.  This document may not be modified,
+   and derivative works of it may not be created, and it may not be
+   published except as an Internet-Draft.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on %(expire)s.
+
+Copyright Notice
+
+   Copyright (c) %(year)s IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.
+
+   This Informational Internet Draft is submitted as an RFC Editor
+
+
+
+Name                     Expires %(expire)s                [Page 1]
+ 
+Internet-Draft             Testing tests                %(month_year)s
+
+   Contribution and/or non-IETF Document (not as a Contribution, IETF
+   Contribution, nor IETF Document) in accordance with BCP 78 and BCP
+   79.
+
+
+Table of Contents
+
+   1.  Introduction . . . . . . . . . . . . . . . . . . . . . . . . .  4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Name                     Expires %(expire)s                [Page 2]
+ 
+Internet-Draft             Testing tests                %(month_year)s
+
+1.  Introduction
+
+   This document describes a protocol for testing tests.
+
