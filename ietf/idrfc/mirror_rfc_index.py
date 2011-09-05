@@ -168,7 +168,7 @@ def get_stream_mapping():
     return {
         "Legacy": name(DocStreamName, "legacy", "Legacy"),
         "IETF": name(DocStreamName, "ietf", "IETF"),
-        "INDEPENDENT": name(DocStreamName, "indie", "Independent Submission"),
+        "INDEPENDENT": name(DocStreamName, "ise", "Independent Submission"),
         "IAB": name(DocStreamName, "iab", "IAB"),
         "IRTF": name(DocStreamName, "irtf", "IRTF"),
     }
