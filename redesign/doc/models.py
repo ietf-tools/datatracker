@@ -55,7 +55,7 @@ class DocumentInfo(models.Model):
 
     def get_txt_url(self):
         if self.type_id == "charter":
-            return "http://www.ietf.org/charters/"
+            return settings.CHARTER_TXT_URL
         else:
             raise NotImplemented
 
