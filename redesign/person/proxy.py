@@ -48,10 +48,10 @@ class IESGLogin(Person):
     def __unicode__(self):
         return self.name
     def is_current_ad(self):
-	return self in Person.objects.filter(email__role__name="ad", email__role__group__state="active").distinct()
+	return self in Person.objects.filter(role__name="ad", role__group__state="active").distinct()
     @staticmethod
     def active_iesg():
-	return IESGLogin.objects.filter(email__role__name="ad", email__role__group__state="active").distinct().order_by('name')
+	return IESGLogin.objects.filter(role__name="ad", role__group__state="active").distinct().order_by('name')
     
     class Meta:
         proxy = True

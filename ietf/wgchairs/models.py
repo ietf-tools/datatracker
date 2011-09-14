@@ -47,10 +47,7 @@ class ProtoWriteUp(models.Model):
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from redesign.group.models import Role
     class WGDelegateProxy(Role):
-        #person = models.ForeignKey(PersonOrOrgInfo)
-        @property
-        def person(self):
-            return self.email.person
+        #person = models.ForeignKey(PersonOrOrgInfo) # same name
         #wg = models.ForeignKey(IETFWG)
         @property
         def wg(self):

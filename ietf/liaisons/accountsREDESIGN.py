@@ -43,27 +43,27 @@ def get_person_for_user(user):
 
 
 def is_areadirector(person):
-    return bool(Role.objects.filter(email__person=person, name="ad", group__state="active", group__type="area"))
+    return bool(Role.objects.filter(person=person, name="ad", group__state="active", group__type="area"))
 
 
 def is_wgchair(person):
-    return bool(Role.objects.filter(email__person=person, name="chair", group__state="active", group__type="wg"))
+    return bool(Role.objects.filter(person=person, name="chair", group__state="active", group__type="wg"))
 
 
 def is_wgsecretary(person):
-    return bool(Role.objects.filter(email__person=person, name="sec", group__state="active", group__type="wg"))
+    return bool(Role.objects.filter(person=person, name="sec", group__state="active", group__type="wg"))
 
 
 def is_ietfchair(person):
-    return bool(Role.objects.filter(email__person=person, name="chair", group__acronym="ietf"))
+    return bool(Role.objects.filter(person=person, name="chair", group__acronym="ietf"))
 
 
 def is_iabchair(person):
-    return bool(Role.objects.filter(email__person=person, name="chair", group__acronym="iab"))
+    return bool(Role.objects.filter(person=person, name="chair", group__acronym="iab"))
 
 
 def is_iab_executive_director(person):
-    return bool(Role.objects.filter(email__person=person, name="execdir", group__acronym="iab"))
+    return bool(Role.objects.filter(person=person, name="execdir", group__acronym="iab"))
 
 
 def can_add_outgoing_liaison(user):
@@ -80,15 +80,15 @@ def can_add_outgoing_liaison(user):
 
 
 def is_sdo_liaison_manager(person):
-    return bool(Role.objects.filter(email__person=person, name="liaiman", group__type="sdo"))
+    return bool(Role.objects.filter(person=person, name="liaiman", group__type="sdo"))
 
 
 def is_sdo_authorized_individual(person):
-    return bool(Role.objects.filter(email__person=person, name="auth", group__type="sdo"))
+    return bool(Role.objects.filter(person=person, name="auth", group__type="sdo"))
 
 
 def is_secretariat(user):
-    return user.is_authenticated() and bool(Role.objects.filter(email__person__user=user, name="secr", group__acronym="secretariat"))
+    return user.is_authenticated() and bool(Role.objects.filter(person__user=user, name="secr", group__acronym="secretariat"))
 
 
 def can_add_incoming_liaison(user):
@@ -109,13 +109,13 @@ def can_add_liaison(user):
 
 def is_sdo_manager_for_outgoing_liaison(person, liaison):
     if liaison.from_group and liaison.from_group.type_id == "sdo":
-        return bool(liaison.from_group.role_set.filter(name="liaiman", email__person=person))
+        return bool(liaison.from_group.role_set.filter(name="liaiman", person=person))
     return False
 
 
 def is_sdo_manager_for_incoming_liaison(person, liaison):
     if liaison.to_group and liaison.to_group.type_id == "sdo":
-        return bool(liaison.to_group.role_set.filter(name="liaiman", email__person=person))
+        return bool(liaison.to_group.role_set.filter(name="liaiman", person=person))
     return False
 
 

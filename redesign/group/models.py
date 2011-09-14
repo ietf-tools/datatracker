@@ -84,6 +84,7 @@ class GroupEvent(models.Model):
 class Role(models.Model):
     name = models.ForeignKey(RoleName)
     group = models.ForeignKey(Group)
+    person = models.ForeignKey(Person)
     email = models.ForeignKey(Email, help_text="Email address used by person for this role")
     def __unicode__(self):
         return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym or self.group.name)
@@ -96,6 +97,7 @@ class RoleHistory(models.Model):
     # GroupHistory instead
     name = models.ForeignKey(RoleName)
     group = models.ForeignKey(GroupHistory)
+    person = models.ForeignKey(Person)
     email = models.ForeignKey(Email, help_text="Email address used by person for this role")
     def __unicode__(self):
         return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym)

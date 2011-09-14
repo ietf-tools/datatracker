@@ -51,7 +51,7 @@ for o in WGDelegate.objects.all().order_by("pk"):
     group = Group.objects.get(acronym=o.wg.group_acronym.acronym)
     email = get_or_create_email(o, create_fake=False)
 
-    Role.objects.get_or_create(name=delegate_role, group=group, email=email)
+    Role.objects.get_or_create(name=delegate_role, group=group, person=email.person, email=email)
     
 # SDOAuthorizedIndividual
 for o in SDOAuthorizedIndividual.objects.all().order_by("pk"):
@@ -60,7 +60,7 @@ for o in SDOAuthorizedIndividual.objects.all().order_by("pk"):
     group = Group.objects.get(name=o.sdo.sdo_name, type="sdo")
     email = get_or_create_email(o, create_fake=False)
 
-    Role.objects.get_or_create(name=authorized_role, group=group, email=email)
+    Role.objects.get_or_create(name=authorized_role, group=group, person=email.person, email=email)
 
 # LiaisonManagers
 for o in LiaisonManagers.objects.all().order_by("pk"):
@@ -69,7 +69,7 @@ for o in LiaisonManagers.objects.all().order_by("pk"):
     group = Group.objects.get(name=o.sdo.sdo_name, type="sdo")
     email = Email.objects.get(address__iexact=o.person.email(priority=o.email_priority)[1])
 
-    Role.objects.get_or_create(name=liaison_manager_role, group=group, email=email)
+    Role.objects.get_or_create(name=liaison_manager_role, group=group, person=email.person, email=email)
 
 # Role
 for o in OldRole.objects.all().order_by('pk'):
@@ -81,6 +81,9 @@ for o in OldRole.objects.all().order_by('pk'):
 
     print "importing Role", o.id, o.role_name
     
+    email = get_or_create_email(o, create_fake=False)
+    official_email = email
+    
     if o.role_name.endswith("Executive Director"):
         acronym = acronym[:-(len("Executive Director") + 1)]
         role = exec_director_role
@@ -88,11 +91,20 @@ for o in OldRole.objects.all().order_by('pk'):
     if o.id == OldRole.IAD_CHAIR:
         acronym = "ietf"
         role = adm_director_role
+        official_email, _ = Email.objects.get_or_create(address="iad@ietf.org")
 
+    if o.id == OldRole.IETF_CHAIR:
+        official_email, _ = Email.objects.get_or_create(address="chair@ietf.org")
+
+    if o.id == OldRole.IAB_CHAIR:
+        official_email, _ = Email.objects.get_or_create(address="iab-chair@ietf.org")
+
+    if o.id == OldRole.RSOC_CHAIR:
+        official_email, _ = Email.objects.get_or_create(address="rsoc-chair@iab.org")
+        
     group = Group.objects.get(acronym=acronym)
-    email = get_or_create_email(o, create_fake=False)
 
-    Role.objects.get_or_create(name=role, group=group, email=email)
+    Role.objects.get_or_create(name=role, group=group, person=email.person, email=official_email)
 
 # WGEditor
 for o in WGEditor.objects.all():
@@ -102,7 +114,7 @@ for o in WGEditor.objects.all():
     email = get_or_create_email(o, create_fake=True)
     group = Group.objects.get(acronym=acronym)
 
-    Role.objects.get_or_create(name=editor_role, group=group, email=email)
+    Role.objects.get_or_create(name=editor_role, group=group, person=email.person, email=email)
 
 # WGSecretary
 for o in WGSecretary.objects.all():
@@ -112,7 +124,7 @@ for o in WGSecretary.objects.all():
     email = get_or_create_email(o, create_fake=True)
     group = Group.objects.get(acronym=acronym)
 
-    Role.objects.get_or_create(name=secretary_role, group=group, email=email)
+    Role.objects.get_or_create(name=secretary_role, group=group, person=email.person, email=email)
 
 # WGTechAdvisor
 for o in WGTechAdvisor.objects.all():
@@ -122,7 +134,7 @@ for o in WGTechAdvisor.objects.all():
     email = get_or_create_email(o, create_fake=True)
     group = Group.objects.get(acronym=acronym)
 
-    Role.objects.get_or_create(name=techadvisor_role, group=group, email=email)
+    Role.objects.get_or_create(name=techadvisor_role, group=group, person=email.person, email=email)
 
 # WGChair
 for o in WGChair.objects.all():
@@ -149,7 +161,7 @@ for o in WGChair.objects.all():
 
     email = get_or_create_email(o, create_fake=True)
 
-    Role.objects.get_or_create(name=chair_role, group=group, email=email)
+    Role.objects.get_or_create(name=chair_role, group=group, person=email.person, email=email)
 
 # IRTFChair
 for o in IRTFChair.objects.all():
@@ -159,9 +171,10 @@ for o in IRTFChair.objects.all():
     email = get_or_create_email(o, create_fake=True)
     group = Group.objects.get(acronym=acronym)
 
-    Role.objects.get_or_create(name=chair_role, group=group, email=email)
+    Role.objects.get_or_create(name=chair_role, group=group, person=email.person, email=email)
 
 # NomCom chairs
+official_email, _ = Email.objects.get_or_create(address="nomcom-chair@ietf.org")
 nomcom_groups = list(Group.objects.filter(acronym__startswith="nomcom").exclude(acronym="nomcom"))
 for o in ChairsHistory.objects.filter(chair_type=OldRole.NOMCOM_CHAIR):
     print "importing NOMCOM chair", o
@@ -170,8 +183,8 @@ for o in ChairsHistory.objects.filter(chair_type=OldRole.NOMCOM_CHAIR):
             break
 
     email = get_or_create_email(o, create_fake=False)
-    
-    Role.objects.get_or_create(name=chair_role, group=g, email=email)
+
+    Role.objects.get_or_create(name=chair_role, group=g, person=email.person, email=official_email)
 
 # IESGLogin
 for o in IESGLogin.objects.all():
@@ -188,8 +201,8 @@ for o in IESGLogin.objects.all():
     email = get_or_create_email(o, create_fake=False)
     # current ADs are imported below
     if email and o.user_level == IESGLogin.SECRETARIAT_LEVEL:
-        if not Role.objects.filter(name=secretary_role, email=email):
-            Role.objects.create(name=secretary_role, group=Group.objects.get(acronym="secretariat"), email=email)
+        if not Role.objects.filter(name=secretary_role, person=email.person):
+            Role.objects.create(name=secretary_role, group=Group.objects.get(acronym="secretariat"), person=email.person, email=email)
     
 # AreaDirector
 for o in AreaDirector.objects.all():
@@ -209,13 +222,13 @@ for o in AreaDirector.objects.all():
         role_type = inactive_area_director_role
     
     r = Role.objects.filter(name__in=(area_director_role, inactive_area_director_role),
-                            email=email)
+                            person=email.person)
     if r and r[0].group == "iesg":
         r[0].group = area
         r[0].name = role_type
         r[0].save()
     else:
-        Role.objects.get_or_create(name=role_type, group=area, email=email)
+        Role.objects.get_or_create(name=role_type, group=area, person=email.person, email=email)
 
 # IESGHistory
 emails_for_time = {}
@@ -241,13 +254,13 @@ for o in IESGHistory.objects.all().order_by('meeting__start_date', 'pk'):
     emails_for_time[key].append(email)
     
     history = find_history_active_at(area, meeting_time)
-    if (history and history.rolehistory_set.filter(email__person=email.person) or
-        not history and area.role_set.filter(email__person=email.person)):
+    if (history and history.rolehistory_set.filter(person=email.person) or
+        not history and area.role_set.filter(person=email.person)):
         continue
 
     if history and history.time == meeting_time:
         # add to existing GroupHistory
-        RoleHistory.objects.create(name=area_director_role, group=history, email=email)
+        RoleHistory.objects.create(name=area_director_role, group=history, person=email.person, email=email)
     else:
         existing = history if history else area
         
@@ -271,5 +284,5 @@ for o in IESGHistory.objects.all().order_by('meeting__start_date', 'pk'):
         # we need to add all emails for this area at this time
         # because the new GroupHistory resets the known roles
         for e in emails_for_time[key]:
-            RoleHistory.objects.get_or_create(name=area_director_role, group=h, email=e)
+            RoleHistory.objects.get_or_create(name=area_director_role, group=h, person=e.person, email=e)
         

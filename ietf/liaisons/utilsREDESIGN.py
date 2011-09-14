@@ -29,10 +29,10 @@ class FakePerson(object):
 # fine-grained enough so the form code also has some rules
 
 def all_sdo_managers():
-    return [proxy_personify_role(r) for r in Role.objects.filter(group__type="sdo", name="liaiman").select_related("email").distinct()]
+    return [proxy_personify_role(r) for r in Role.objects.filter(group__type="sdo", name="liaiman").select_related("person").distinct()]
 
 def role_persons_with_fixed_email(group, role_name):
-    return [proxy_personify_role(r) for r in Role.objects.filter(group=group, name=role_name).select_related("email").distinct()]
+    return [proxy_personify_role(r) for r in Role.objects.filter(group=group, name=role_name).select_related("person").distinct()]
     
 class Entity(object):
 
@@ -139,7 +139,7 @@ class AreaEntity(Entity):
 
     def needs_approval(self, person=None):
         # Check if person is an area director
-        if self.obj.role_set.filter(email__person=person, name="ad"):
+        if self.obj.role_set.filter(person=person, name="ad"):
             return False
         return True
 
@@ -177,7 +177,7 @@ class WGEntity(Entity):
 
     def needs_approval(self, person=None):
         # Check if person is director of this wg area
-        if self.obj.parent and self.obj.parent.role_set.filter(email__person=person, name="ad"):
+        if self.obj.parent and self.obj.parent.role_set.filter(person=person, name="ad"):
             return False
         return True
 
@@ -202,7 +202,7 @@ class SDOEntity(Entity):
         return [p for p in role_persons_with_fixed_email(self.obj, "liaiman") if p != person]
 
     def post_only(self, person, user):
-        if is_secretariat(user) or self.obj.role_set.filter(email__person=person, name="auth"):
+        if is_secretariat(user) or self.obj.role_set.filter(person=person, name="auth"):
             return False
         return True
 
@@ -297,11 +297,11 @@ class AreaEntityManager(EntityManager):
         return AreaEntity(name=obj.area_acronym.name, obj=obj)
 
     def can_send_on_behalf(self, person):
-        query_filter = dict(role__email__person=person, role__name="ad")
+        query_filter = dict(role__person=person, role__name="ad")
         return self.get_managed_list(query_filter)
 
     def can_approve_list(self, person):
-        query_filter = dict(role__email__person=person, role__name="ad")
+        query_filter = dict(role__person=person, role__name="ad")
         return self.get_managed_list(query_filter)
 
 
@@ -328,12 +328,12 @@ class WGEntityManager(EntityManager):
         return WGEntity(name=obj.group_acronym.name, obj=obj)
 
     def can_send_on_behalf(self, person):
-        wgs = Group.objects.filter(role__email__person=person, role__name__in=("chair", "secretary")).values_list('pk', flat=True)
+        wgs = Group.objects.filter(role__person=person, role__name__in=("chair", "secretary")).values_list('pk', flat=True)
         query_filter = {'pk__in': wgs}
         return self.get_managed_list(query_filter)
 
     def can_approve_list(self, person):
-        query_filter = dict(parent__role__email__person=person, parent__role__name="ad")
+        query_filter = dict(parent__role__person=person, parent__role__name="ad")
         return self.get_managed_list(query_filter)
 
 

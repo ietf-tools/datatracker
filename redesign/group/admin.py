@@ -22,10 +22,10 @@ class GroupAdmin(admin.ModelAdmin):
     raw_id_fields = ["charter", "parent", "ad"]
 
     def role_list(self, obj):
-        roles = Role.objects.filter(group=obj).order_by("name", "email__person__name").select_related('email')
+        roles = Role.objects.filter(group=obj).order_by("name", "person__name").select_related('person')
         res = []
         for r in roles:
-            res.append(u'<a href="../../person/person/%s/">%s</a> (<a href="../../group/role/%s/">%s)' % (r.email.person.pk, escape(r.email.person.name), r.pk, r.name.name))
+            res.append(u'<a href="../../person/person/%s/">%s</a> (<a href="../../group/role/%s/">%s)' % (r.person.pk, escape(r.person.name), r.pk, r.name.name))
         return ", ".join(res)
     role_list.short_description = "Persons"
     role_list.allow_tags = True
@@ -98,11 +98,12 @@ admin.site.register(Group, GroupAdmin)
 admin.site.register(GroupHistory)
 
 class RoleAdmin(admin.ModelAdmin):
-    list_display = ["name", "email", "group"]
+    list_display = ["name", "person", "email", "group"]
     list_display_links = ["name"]
-    search_fields = ["name", "email"]
+    search_fields = ["name", "person", "email"]
     list_filter = ["name"]
     ordering = ["id"]
-    raw_id_fields = ["email", "group"]
+    raw_id_fields = ["email", "person", "group"]
 
 admin.site.register(Role, RoleAdmin)
+admin.site.register(RoleHistory, RoleAdmin)

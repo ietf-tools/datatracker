@@ -382,7 +382,7 @@ class EditInfoFormREDESIGN(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.all(), empty_label=None, required=True)
     status_date = forms.DateField(required=False, help_text="Format is YYYY-MM-DD")
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
-    ad = forms.ModelChoiceField(Person.objects.filter(email__role__name="ad", email__role__group__state="active").order_by('name'), label="Responsible AD", empty_label=None, required=True)
+    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Responsible AD", empty_label=None, required=True)
     create_in_state = forms.ModelChoiceField(IesgDocStateName.objects.filter(slug__in=("pub-req", "watching")), empty_label=None, required=True)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)

@@ -1060,6 +1060,7 @@ class Role(models.Model):
     IAB_EXCUTIVE_DIRECTOR = 4
     IRTF_CHAIR            = 5
     IAD_CHAIR             = 6
+    RSOC_CHAIR            = 7
 
     # This __str__ makes it odd to use as a ForeignKey.
     def __str__(self):

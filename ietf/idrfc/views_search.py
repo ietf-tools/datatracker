@@ -298,9 +298,9 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         def __init__(self, *args, **kwargs):
             super(SearchForm, self).__init__(*args, **kwargs)
             responsible = Document.objects.values_list('ad', flat=True).distinct()
-            active_ads = list(Person.objects.filter(email__role__name="ad",
-                                                    email__role__group__type="area",
-                                                    email__role__group__state="active").distinct())
+            active_ads = list(Person.objects.filter(role__name="ad",
+                                                    role__group__type="area",
+                                                    role__group__state="active").distinct())
             inactive_ads = list(Person.objects.filter(pk__in=responsible)
                                 .exclude(pk__in=[x.pk for x in active_ads]))
             extract_last_name = lambda x: x.name_parts()[3]
@@ -382,8 +382,8 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             docs = docs.filter(group__acronym=query["group"])
         elif by == "area":
             docs = docs.filter(Q(group__parent=query["area"]) |
-                               Q(ad__email__role__name="ad",
-                                 ad__email__role__group=query["area"]))
+                               Q(ad__role__name="ad",
+                                 ad__role__group=query["area"]))
         elif by == "ad":
             docs = docs.filter(ad=query["ad"])
         elif by == "state":
@@ -571,9 +571,9 @@ def by_ad(request, name):
     ad_name = None
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         responsible = Document.objects.values_list('ad', flat=True).distinct()
-        for p in Person.objects.filter(Q(email__role__name="ad",
-                                         email__role__group__type="area",
-                                         email__role__group__state="active")
+        for p in Person.objects.filter(Q(role__name="ad",
+                                         role__group__type="area",
+                                         role__group__state="active")
                                        | Q(pk__in=responsible)):
             if name == p.name.lower().replace(" ", "."):
                 ad_id = p.id

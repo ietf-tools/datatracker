@@ -47,6 +47,7 @@ def make_liaison_models():
     Role.objects.create(
         name_id="liaiman",
         group=sdo,
+        person=p,
         email=email)
 
     # authorized individual
@@ -61,6 +62,7 @@ def make_liaison_models():
     Role.objects.create(
         name_id="auth",
         group=sdo,
+        person=p,
         email=email)
 
     mars_group = Group.objects.get(acronym="mars")

@@ -11,10 +11,9 @@ from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_runner import mail_outbox
 from ietf.utils.test_data import make_test_data
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from redesign.person.models import Person, Email
-    from redesign.group.models import Group, Role
-    from redesign.doc.models import Document
+from redesign.person.models import Person, Email
+from redesign.group.models import Group, Role
+from redesign.doc.models import Document
         
 class SubmitTestCase(django.test.TestCase):
     fixtures = ['names']

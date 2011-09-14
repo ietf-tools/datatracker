@@ -52,7 +52,7 @@ def nomcomREDESIGN(request):
         e = n.latest_event(type="concluded")
         n.end_year = e.time.year if e else ""
 
-        chair = n.role_set.get(name="chair").email
+        chair = n.role_set.get(name="chair").person
         announcements = Message.objects.filter(related_groups=n).order_by('-time')
         for a in announcements:
             a.to_name = address_re.sub("", a.to)

@@ -313,7 +313,7 @@ def generate_approval_mail_approved(request, doc):
         made_by = "This document is the product of the %s." % doc.group.name_with_wg
     
     director = doc.ad
-    other_director = Person.objects.filter(email__role__group__role__email__person=director, email__role__group__role__name="ad").exclude(pk=director.pk)
+    other_director = Person.objects.filter(role__group__role__person=director, role__group__role__name="ad").exclude(pk=director.pk)
     
     if doc.group.type_id != "individ" and other_director:
         contacts = "The IESG contact persons are %s and %s." % (director.name, other_director[0].name)
@@ -497,7 +497,7 @@ def generate_issue_ballot_mailREDESIGN(request, doc):
     full_status = full_intended_status(doc.intended_std_level.name)
     status = full_status.replace("a ", "").replace("an ", "")
 
-    active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active").distinct()
+    active_ads = Person.objects.filter(role__name="ad", role__group__state="active").distinct()
     
     e = doc.latest_event(type="started_iesg_process")
     positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", time__gte=e.time).order_by("-time", '-id').select_related('ad')

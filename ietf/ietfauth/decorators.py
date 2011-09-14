@@ -84,8 +84,8 @@ def has_role(user, role_names):
         return False
 
     role_qs = {
-        "Area Director": Q(email__person=person, name="ad", group__state="active"),
-        "Secretariat": Q(email__person=person, name="secr", group__acronym="secretariat")
+        "Area Director": Q(person=person, name="ad", group__type="area", group__state="active"),
+        "Secretariat": Q(person=person, name="secr", group__acronym="secretariat")
         }
 
     filter_expr = Q()
@@ -108,4 +108,5 @@ def role_required(*role_names):
     return decorate
     
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    # overwrite group_required
     group_required = lambda *group_names: role_required(*[n.replace("Area_Director", "Area Director") for n in group_names])

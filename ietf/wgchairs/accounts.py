@@ -11,7 +11,7 @@ def is_area_director_for_group(person, group):
     return bool(group.area.area.areadirector_set.filter(person=person).count())
 
 def is_area_director_for_groupREDESIGN(person, group):
-    return bool(Role.objects.filter(group=group.parent, email__person=person, name="ad"))
+    return bool(Role.objects.filter(group=group.parent, person=person, name="ad"))
 
 
 def is_group_chair(person, group):
@@ -20,14 +20,14 @@ def is_group_chair(person, group):
     return False
 
 def is_group_chairREDESIGN(person, group):
-    return bool(Role.objects.filter(group=group, email__person=person, name="chair"))
+    return bool(Role.objects.filter(group=group, person=person, name="chair"))
 
 
 def is_group_delegate(person, group):
     return bool(group.wgdelegate_set.filter(person=person).count())
 
 def is_group_delegateREDESIGN(person, group):
-    return bool(Role.objects.filter(group=group, email__person=person, name="delegate"))
+    return bool(Role.objects.filter(group=group, person=person, name="delegate"))
 
 
 def get_person_for_user(user):

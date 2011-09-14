@@ -383,7 +383,7 @@ class InternetDraft(Document):
         elif self.ad:
             # return area for AD
             try:
-                area = Group.objects.get(role__name="ad", role__email=self.ad, state="active")
+                area = Group.objects.get(role__name="ad", role__person=self.ad, state="active")
                 return Area().from_object(area)
             except Group.DoesNotExist:
                 return None
@@ -566,7 +566,7 @@ class InternetDraft(Document):
     #     return remarks
     def active_positions(self):
         """Returns a list of dicts, with AD and Position tuples"""
-        active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active")
+        active_ads = Person.objects.filter(role__name="ad", role__group__state="active")
 	res = []
         def add(ad, pos):
             from person.proxy import IESGLogin as IESGLoginProxy

@@ -3,7 +3,7 @@ from django.db.models.query import QuerySet
 
 def proxy_personify_role(role):
     """Turn role into person with email() method using email from role."""
-    p = role.email.person
+    p = role.person
     p.email = lambda: (p.name, role.email.address)
     return p
 

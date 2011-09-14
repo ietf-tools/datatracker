@@ -77,7 +77,7 @@ def profile(request):
         person = None
         try:
             person = request.user.get_profile()
-            roles = Role.objects.filter(email__person=person).distinct()
+            roles = Role.objects.filter(person=person)
         except Person.DoesNotExist:
             pass
         

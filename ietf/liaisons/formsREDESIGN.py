@@ -307,7 +307,7 @@ class IncomingLiaisonForm(LiaisonForm):
         if is_secretariat(self.user):
             sdos = Group.objects.filter(type="sdo", state="active")
         else:
-            sdos = Group.objects.filter(type="sdo", state="active", role__email__person=self.person, role__name__in=("liaiman", "auth")).distinct()
+            sdos = Group.objects.filter(type="sdo", state="active", role__person=self.person, role__name__in=("liaiman", "auth")).distinct()
         self.fields['from_field'].choices = [('sdo_%s' % i.pk, i.name) for i in sdos.order_by("name")]
         self.fields['from_field'].widget.submitter = unicode(self.person)
 
@@ -316,7 +316,7 @@ class IncomingLiaisonForm(LiaisonForm):
 
     def get_post_only(self):
         from_entity = self.get_from_entity()
-        if is_secretariat(self.user) or Role.objects.filter(email__person=self.person, group=from_entity.obj, name="auth"):
+        if is_secretariat(self.user) or Role.objects.filter(person=self.person, group=from_entity.obj, name="auth"):
             return False
         return True
 
@@ -327,7 +327,7 @@ class IncomingLiaisonForm(LiaisonForm):
 
 
 def liaison_manager_sdos(person):
-    return Group.objects.filter(type="sdo", state="active", role__email__person=person, role__name="liaiman").distinct()
+    return Group.objects.filter(type="sdo", state="active", role__person=person, role__name="liaiman").distinct()
 
 class OutgoingLiaisonForm(LiaisonForm):
 

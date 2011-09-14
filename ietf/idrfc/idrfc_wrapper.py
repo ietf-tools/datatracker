@@ -710,7 +710,7 @@ class BallotWrapper:
             return
 
         from redesign.person.models import Person
-        active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active").distinct()
+        active_ads = Person.objects.filter(role__name="ad", role__group__state="active").distinct()
         
         positions = []
         seen = {}

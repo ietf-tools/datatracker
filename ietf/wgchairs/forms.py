@@ -264,9 +264,9 @@ class AddDelegateForm(RelatedWGForm):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             created = False
             e = Email.objects.get(address=self.cleaned_data.get('email'))
-            if not Role.objects.filter(name="delegate", group=self.wg, email=e):
+            if not Role.objects.filter(name="delegate", group=self.wg, person=person, email=e):
                 delegate, created = Role.objects.get_or_create(
-                    name=RoleName.objects.get(slug="delegate"), group=self.wg, email=e)
+                    name=RoleName.objects.get(slug="delegate"), group=self.wg, person=e.person, email=e)
         else:
             (delegate, created) = WGDelegate.objects.get_or_create(wg=self.wg,
                                                                    person=person)

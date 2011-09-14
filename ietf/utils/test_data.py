@@ -69,6 +69,7 @@ def make_test_data():
     Role.objects.create(
         name_id="ad",
         group=area,
+        person=p,
         email=email)
 
     # create a bunch of ads for swarm tests
@@ -86,6 +87,7 @@ def make_test_data():
             Role.objects.create(
                 name_id="ad",
                 group=area,
+                person=p,
                 email=email)
 
     # group chair
@@ -101,6 +103,7 @@ def make_test_data():
     Role.objects.create(
         name_id="chair",
         group=group,
+        person=p,
         email=wgchair,
         )
 
@@ -117,6 +120,7 @@ def make_test_data():
     Role.objects.create(
         name_id="delegate",
         group=group,
+        person=p,
         email=email,
         )
 
@@ -132,6 +136,7 @@ def make_test_data():
     Role.objects.create(
         name_id="secr",
         group=secretariat,
+        person=p,
         email=email,
         )
 
