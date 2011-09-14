@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.19"
+version = "0.21"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -126,7 +126,6 @@ class Draft():
 
         self.rawlines = self.text.split("\n")
         self.lines, self.pages = self._stripheaders()
-
         # Some things (such as the filename) has to be on the first page.  If
         # we didn't get back a set of pages, only one single page with the
         # whole document, then we need to do an enforced page split in order
@@ -403,11 +402,33 @@ class Draft():
             r"(?:, | )([Ee]d\.?|\([Ee]d\.?\)|[Ee]ditor)$",
             ]
 
+        address_section = r"^ *([0-9]+\.)? *(Author|Editor)('s|s'|s|\(s\)) (Address|Addresses|Information)"
+
         ignore = [
             "Standards Track", "Current Practice", "Internet Draft", "Working Group",
             "No Affiliation", 
             ]
-        # group       12                   34            5            6
+
+        def make_authpat(hon, first, last, suffix):
+            def dotexp(s):
+                s = re.sub("\. ", ".* ", s)
+                s = re.sub("\.$", ".*", s)
+                return s
+            first = dotexp(first)
+            last = dotexp(last)
+            if " " in first:
+                # if there's a middle part, let it be optional
+                first, middle = first.split(" ", 1)
+                first = "%s( +%s)?" % (first, middle)
+            # Some chinese names are shown with double-letter(latin) abbreviated given names, rather than
+            # a single-letter(latin) abbreviation:
+            first = re.sub("^([A-Z])[A-Z]+\.\*", r"\1[-\w]+", first) 
+
+            # permit insertion of middle names between first and last, and
+            # add possible honorific and suffix information
+            authpat = "(?:^| and )(?:%(hon)s ?)?(%(first)s\S*( +[^ ]+)* +%(last)s)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| %(suffix)s| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "last":last, "suffix":suffix,}
+            return authpat
+
         authors = []
         author_info = []
         companies = []
@@ -416,7 +437,7 @@ class Draft():
         have_blankline = False
         have_draftline = False
         prev_blankline = False
-        for line in self.lines[:15]:
+        for line in self.lines[:30]:
             #_debug( "**" + line)
             leading_space = len(re.findall("^ *", line)[0])
             line_len = len(line.rstrip())
@@ -466,6 +487,15 @@ class Draft():
             if have_blankline and have_draftline:
                 break
 
+        #find authors' addresses section if it exists
+        last_line = len(self.lines)-1
+        address_section_pos = last_line/2
+        for i in range(last_line/2,last_line):
+            line = self.lines[i]
+            if re.search(address_section, line):
+                address_section_pos = i
+                break
+
         found_pos = []
         for i in range(len(authors)):
             _debug("1: authors[%s]: %s" % (i, authors[i]))
@@ -500,40 +530,32 @@ class Draft():
                 author = "%s %s" % (firstname, casefixname)
                 _debug("\nAuthors: "+str(authors))
                 _debug("Author: "+author)
+
                 # Pattern for full author information search, based on first page author name:
-                authpat = author
-                # Permit expansion of first name
-                authpat = re.sub("\. ", ".* ", authpat)
-                authpat = re.sub("\.$", ".*", authpat)
-                # Permit insertsion of middle name or initial
-                authpat = re.sub(" ", "\S*( +[^ ]+)* +", authpat)
-                # Permit expansion of double-name initials
-                if not "[A-Z]" in authpat:
-                    authpat = re.sub("-", ".*?-", authpat)
-                # Some chinese names are shown with double-letter(latin) abbreviated given names, rather than
-                # a single-letter(latin) abbreviation:
-                authpat = re.sub("^([A-Z])[A-Z]+\.\*", r"\1[-\w]+", authpat) 
-                authpat = "(?:^| and )(?:%s ?)?(%s)( *\(.*\)|,( [A-Z][-A-Za-z0-9]*)?| %s| [A-Z][a-z]+)?" % (aux["honor"], authpat, aux["suffix"])
+                authpat = make_authpat(aux['honor'], firstname, casefixname, aux['suffix'])
                 _debug("Authpat: " + authpat)
                 start = 0
                 col = None
                 # Find start of author info for this author (if any).
                 # Scan from the end of the file, looking for a match to  authpath
                 # Scan towards the front from the end of the file, looking for a match to authpath
-                for j in range(len(self.lines)-1, 15, -1):
+                for j in range(last_line, address_section_pos, -1):
                     line = self.lines[j]
+                    _debug( "Line: " + line)
                     forms = [ line ] + [ line.replace(short, longform[short]) for short in longform if short in line ]
                     for form in forms:
                         try:
                             if re.search(authpat, form.strip()) and not j in found_pos:
+                                _debug( "Match")
+                                
                                 start = j
                                 found_pos += [ start ]
                                 _debug( " ==> start %s, normalized '%s'" % (start, form.strip()))
                                 # The author info could be formatted in multiple columns...
                                 columns = re.split("(    +| and )", form)
-                                # _debug( "Columns:" + columns; sys.stdout.flush())
+                                # _debug( "Columns:" + str(columns))
                                 # Find which column:
-                                #_debug( "Col range:" + range(len(columns)); sys.stdout.flush())
+                                # _debug( "Col range:" + str(range(len(columns))))
 
                                 cols = [ c for c in range(len(columns)) if re.search(authpat+r"( and |, |$)", columns[c].strip()) ]
                                 if cols:
@@ -571,7 +593,7 @@ class Draft():
                                             if suffix:
                                                 fullname = fullname+" "+suffix
                                             if not " ".join([ n for n in names if n ]) == fullname:
-                                                _err("Author tuple doesn't match text in draft: %s: %s %s" % (authors[i], names, fullname))
+                                                _err("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
                                             authors[i] = (fullname, first, middle, surname, suffix)
                                         #_debug( "Author: %s: %s" % (author_match, authors[author_match]))
                                         break
@@ -726,7 +748,6 @@ class Draft():
         refs.sort()
         return normrefs, rfcrefs, refs
 
-
 # ----------------------------------------------------------------------
 
 def getmeta(fn):
@@ -736,7 +757,7 @@ def getmeta(fn):
 
     if " " in fn or not fn.endswith(".txt"):
         _warn("Skipping unexpected draft name: '%s'" % (fn))
-        return
+        return {}
 
     if os.path.exists(fn):
         filename = fn
