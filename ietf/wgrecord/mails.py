@@ -17,6 +17,7 @@ from redesign.person.models import Person
 # These become part of the subject of the email
 types = {}
 types['state'] = "State changed"
+types['state-notrev'] = "State changed to Not currently under review"
 types['state-infrev'] = "State changed to Informal review"
 types['state-intrev'] = "State changed to Internal review"
 types['state-extrev'] = "State changed to External review"

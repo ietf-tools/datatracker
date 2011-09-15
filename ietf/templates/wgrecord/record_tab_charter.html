@@ -7,7 +7,7 @@ Copyright The IETF Trust 2011, All Rights Reserved
 {% load ietf_filters %}
 
 {% block record_revision %}
-Snapshots: {% if not snapshot %}<strong>{% else %}<a href="{% url wg_view_record name=wg.acronym %}">{% endif %}current{% if not snapshot %}</strong>{% else %}</a>{% endif %} {% for d in versions reversed %}{% ifnotequal d.rev wg.charter.rev %}{% ifequal snapshot d.rev %}<strong>{% else %}<a href="{% url wg_view_record name=wg.acronym %}{{d.rev}}/">{% endifequal %}{{ d.rev }}{% ifequal snapshot d.rev %}</strong>{% else %}</a>{% endifequal %} {% endifnotequal %}{% endfor %}
+Snapshots: {% for d in versions reversed %}{% ifequal active_rev d.rev %}<strong>{% endifequal %}{% ifequal rev d.rev %}{% else %}{% ifequal active_rev d.rev %}<a href="{% url wg_view_record name=wg.acronym %}">{% else %}<a href="{% url wg_view_record name=wg.acronym %}{{d.rev}}/">{% endifequal %}{% endifequal %}{{ d.rev }}{% ifequal rev d.rev %}{% else %}</a>{% endifequal %}{% ifequal active_rev d.rev %}</strong>{% endifequal %} {% endfor %}
 {% endblock %}
 
 {% block record_metatable %}

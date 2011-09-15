@@ -122,6 +122,11 @@ class Document(DocumentInfo):
         e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
 
+    def telechat_date(self):
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+        if e and "Removed" not in e.desc:
+            return e.telechat_date
+
     def canonical_name(self):
         name = self.name
         if self.type_id == "draft" and self.state_id == "rfc":

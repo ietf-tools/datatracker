@@ -5,7 +5,14 @@ Copyright The IETF Trust 2011, All Rights Reserved
 <form name="search_form" id="search_form" class="search_form" action="/wgrecord/search/" method="get">
 
   <div class="search_field">
-    <label>Name:</label> {{ form.name }}
+    <label>Name/acronym:</label> {{ form.nameacronym }}
+  </div>
+  <div class="search_field">
+    <label>Types:</label>
+    <table id="search_types">
+      <tr><td>{{ form.inprocess }} WGs (in chartering process)</td></tr>
+      <tr><td>{{ form.active }} WGs (approved charter)</td></tr>
+    </table>
   </div>
 
   <span onclick="toggleAdvanced();"><b><img src="/images/{% if meta.advanced %}minus{% else %}plus{% endif %}.png" alt="" id="search_advanced-img" /> Advanced</b></span>
@@ -13,9 +20,6 @@ Copyright The IETF Trust 2011, All Rights Reserved
   <div id="search_advanced" style="{% if not meta.advanced %}display:none;{%endif%}margin-top:1em;">
     Additional search criteria:
     
-    <div class="search_field">
-      <label><input type="radio" class="radio" name="by" value="acronym" {% ifequal meta.by "acronym" %}checked="checked"{% endifequal %} onclick="changeBy();"/> Acronym:</label> {{ form.acronym }}
-    </div>
     <div class="search_field">
       <label><input type="radio" class="radio" name="by" value="state" {% ifequal meta.by "state" %}checked="checked"{% endifequal %} onclick="changeBy();"/> State:</label> {{ form.state }} :: {{ form.charter_state }}
     </div>
@@ -49,8 +53,9 @@ function toggleSubmit() {
     var button = document.getElementById("id_search_submit");
     var by = findCheckedSearchBy();
     var value = findSearchByValue(by);
-    var text = document.getElementById("id_name");
-    if ((value == "") && (text.value == "")) {
+    var active = document.getElementById("id_active");
+    var text = document.getElementById("id_nameacronym");
+    if ((value == "") && (text.value == "" && active.checked)) {
         button.disabled = true;
     } else {
         button.disabled = false;
@@ -90,7 +95,6 @@ function findCheckedSearchBy() {
 }
 
 function findSearchByValue(by) {
-    if (by == 'acronym') { return document.getElementById("id_acronym").value; }
     if (by == 'state') { 
         // state might be wg state...
         state_value = document.getElementById("id_state").value;
@@ -108,13 +112,11 @@ function findSearchByValue(by) {
 function changeBy() {
     var by=findCheckedSearchBy();
     var f = document.search_form;
-    f.acronym.disabled=true;
     f.state.disabled=true; f.charter_state.disabled=true;
     f.ad.disabled=true;
     f.area.disabled=true;
     f.anyfield.disabled=true;  
     f.eacronym.disabled=true;  
-    if (by=='acronym') { f.acronym.disabled=false;}
     if (by=='state') { f.state.disabled=false; f.charter_state.disabled=false;}
     if (by=='ad') { f.ad.disabled=false; }
     if (by=='area') { f.area.disabled=false;}

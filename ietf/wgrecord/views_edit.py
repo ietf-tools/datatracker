@@ -22,23 +22,30 @@ from group.models import Group, GroupEvent, GroupHistory, GroupURL, Role, RoleHi
 from views_search import json_emails
     
 class ChangeStateForm(forms.Form):
-    charter_state = forms.ModelChoiceField(CharterDocStateName.objects.all(), label="Charter state", empty_label=None, required=True)
-    state = forms.ModelChoiceField(GroupStateName.objects.filter(slug__in=["proposed", "active", "conclude"]), label="WG state", empty_label=None, required=True)
+    charter_state = forms.ModelChoiceField(CharterDocStateName.objects.all(), label="Charter state", empty_label=None, required=False)
     confirm_state = forms.BooleanField(widget=forms.HiddenInput, required=False, initial=True)
-    initial_time = forms.IntegerField(initial=1, label="Review time", help_text="(in weeks)", required=False)
-    message = forms.CharField(widget=forms.Textarea, help_text="Message the the secretariat", required=False)
+    initial_time = forms.IntegerField(initial=0, label="Review time", help_text="(in weeks)", required=False)
+    message = forms.CharField(widget=forms.Textarea, help_text="Message to the secretariat", required=False)
     comment = forms.CharField(widget=forms.Textarea, help_text="Comment for the WG history", required=False)
     def __init__(self, *args, **kwargs):
         if 'queryset' in kwargs:
             qs = kwargs.pop('queryset')
         else:
             qs = None
+        if 'hide' in kwargs:
+            self.hide = kwargs.pop('hide')
+        else:
+            self.hide = None
         super(ChangeStateForm, self).__init__(*args, **kwargs)
         if qs:
             self.fields['charter_state'].queryset = qs
+        # hide requested fields
+        if self.hide:
+            for f in self.hide:
+                self.fields[f].widget = forms.HiddenInput
 
 @group_required('Area_Director','Secretariat')
-def change_state(request, name):
+def change_state(request, name, option=None):
     """Change state of WG and charter, notifying parties as necessary
     and logging the change as a comment."""
     # Get WG by acronym, redirecting if there's a newer acronym
@@ -59,11 +66,19 @@ def change_state(request, name):
     if request.method == 'POST':
         form = ChangeStateForm(request.POST)
         if form.is_valid():
-            if charter.charter_state_id == "infrev" and initial_review and form.cleaned_data['charter_state'].slug != "infrev" and initial_review.expires > datetime.now() and not form.cleaned_data['confirm_state']:
+            if initial_review and form.cleaned_data['charter_state'] and form.cleaned_data['charter_state'].slug != "infrev" and initial_review.expires > datetime.now() and not form.cleaned_data['confirm_state']:
                 form._errors['charter_state'] = "warning"
             else:
-                state = form.cleaned_data['state']
-                charter_state = form.cleaned_data['charter_state']
+                if option == "initcharter" or option == "recharter":
+                    charter_state=CharterDocStateName.objects.get(slug="infrev")
+                elif option == "abandon":
+                    if wg.state_id == "proposed":
+                        charter_state = CharterDocStateName.objects.get(slug="notrev")
+                    else:
+                        charter_state = CharterDocStateName.objects.get(slug="approved")
+                else:
+                    charter_state = form.cleaned_data['charter_state']
+
                 comment = form.cleaned_data['comment']
                 message = form.cleaned_data['message']
                 
@@ -87,17 +102,6 @@ def change_state(request, name):
                         # This is an error
                         raise Http404
 
-                if state != wg.state:
-                    # WG state changed
-                    change = True
-                    save_group_in_history(wg)
-
-                    prev = wg.state
-                    wg.state = state
-
-                    ge = log_group_state_changed(request, wg, login, comment)
-                
-                    wg.save()
                 if change:
                     if charter:
                         messages = {}
@@ -108,7 +112,7 @@ def change_state(request, name):
                         if charter.charter_state_id == "extrev":
                             email_secretariat(request, wg, "state-%s" % charter.charter_state_id, messages['extrev'])
 
-                        if form.cleaned_data["charter_state"].slug == "infrev":
+                        if charter_state.slug == "infrev":
                             e = DocEvent()
                             e.type = "started_iesg_process"
                             e.by = login
@@ -116,7 +120,7 @@ def change_state(request, name):
                             e.desc = "IESG process started in state <b>%s</b>" % charter.charter_state.name
                             e.save()
 
-                if form.cleaned_data["charter_state"].slug == "infrev" and form.cleaned_data["initial_time"] and form.cleaned_data["initial_time"] != 0:
+                if charter_state.slug == "infrev" and form.cleaned_data["initial_time"] and form.cleaned_data["initial_time"] != 0:
                     e = InitialReviewDocEvent()
                     e.type = "initial_review"
                     e.by = login
@@ -127,17 +131,22 @@ def change_state(request, name):
                 
                 return redirect('wg_view_record', name=wg.acronym)
     else:
-        if wg.state_id != "proposed":
-            states = CharterDocStateName.objects.filter(slug__in=["infrev", "intrev", "extrev", "iesgrev", "approved"])
-            form = ChangeStateForm(queryset=states, initial=dict(charter_state=charter.charter_state_id, state=wg.state_id))
+        if option == "recharter":
+            hide = ['charter_state']
+            init = dict(initial_time=1, message="%s has initiated a recharter effort on the WG %s (%s)" % (login.name, wg.name, wg.acronym))
+        elif option == "initcharter":
+            hide = ['charter_state']
+            init = dict(initial_time=1, message="%s has initiated chartering of the proposed WG %s (%s)" % (login.name, wg.name, wg.acronym))
+        elif option == "abandon":
+            hide = ['initial_time', 'charter_state']
+            init = dict(message="%s has abandoned the chartering effort on the WG %s (%s)" % (login.name, wg.name, wg.acronym))
         else:
-            form = ChangeStateForm(initial=dict(charter_state=charter.charter_state_id, state=wg.state_id))
+            hide = ['initial_time']
+            init = dict(charter_state=wg.charter.charter_state_id, state=wg.state_id)
+        states = CharterDocStateName.objects.filter(slug__in=["infrev", "intrev", "extrev", "iesgrev"])
+        form = ChangeStateForm(queryset=states, hide=hide, initial=init)
 
     group_hists = GroupHistory.objects.filter(group=wg).exclude(state=wg.state).order_by("-time")[:1]
-    if group_hists:
-        prev_state = group_hists[0].state
-    else:
-        prev_state = None
     if charter:
         charter_hists = DocHistory.objects.filter(doc__name=charter.name).exclude(charter_state=charter.charter_state).order_by("-time")[:1]
         if charter_hists:
@@ -151,7 +160,7 @@ def change_state(request, name):
                               dict(form=form,
                                    wg=wg,
                                    login=login,
-                                   prev_state=prev_state,
+                                   option=option,
                                    prev_charter_state=prev_charter_state),
                               context_instance=RequestContext(request))
 
@@ -167,7 +176,6 @@ class EditInfoForm(forms.Form):
     list_subscribe = forms.CharField(max_length=255, required=False)
     list_archive = forms.CharField(max_length=255, required=False)
     urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", help_text="Format: http://site/url (optional description). Separate by newline.", required=False)
-    comments = forms.CharField(widget=forms.Textarea, label="Reason for chartering", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
 
     def __init__(self, *args, **kwargs):
@@ -318,7 +326,6 @@ def edit_info(request, name=None):
             diff('list_email', "Mailing list email")
             diff('list_subscribe', "Mailing list subscribe address")
             diff('list_archive', "Mailing list archive")
-            diff('comments', "Comment")
             
             def get_sorted_string(attr, splitter):
                 if splitter == '\n':
@@ -377,7 +384,7 @@ def edit_info(request, name=None):
             
             wg.save()
             if new_wg:
-                return redirect('wg_change_state', name=wg.acronym)
+                return redirect('wg_startstop_process', name=wg.acronym, option="initcharter")
             else:
                 return redirect('wg_view_record', name=wg.acronym)
     else: # form.is_valid()
@@ -394,7 +401,6 @@ def edit_info(request, name=None):
                         list_subscribe=wg.list_subscribe if wg.list_subscribe else None,
                         list_archive=wg.list_archive if wg.list_archive else None,
                         urls=format_urls(wg.groupurl_set.all()),
-                        comments=wg.comments if wg.comments else None,
                         telechat_date=initial_telechat_date,
                         )
             hide = None
@@ -427,6 +433,18 @@ def conclude(request, name):
             raise Http404
 
     login = request.user.get_profile()
+
+#                 if state != wg.state:
+#                     # WG state changed
+#                     change = True
+#                     save_group_in_history(wg)
+
+#                     prev = wg.state
+#                     wg.state = state
+
+#                     ge = log_group_state_changed(request, wg, login, comment)
+                
+#                     wg.save()
 
     if request.method == 'POST':
         form = ConcludeForm(request.POST)

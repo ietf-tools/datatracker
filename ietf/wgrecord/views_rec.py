@@ -27,7 +27,7 @@ def _get_html(key, filename):
         f = open(filename, 'rb')
         raw_content = f.read()
     except IOError:
-        return ("Error; cannot read ("+key+")", "")
+        return "Error; cannot read ("+key+")"
     finally:
         if f:
             f.close()
@@ -50,12 +50,18 @@ def wg_main(request, name, rev, tab):
     if not wg.charter:
         set_or_create_charter(wg)
 
+    if wg.charter.charter_state_id == "approved":
+        active_rev = approved_revision(wg.charter.rev)
+    else:
+        active_rev = wg.charter.rev
+
     if rev != None:
         ch = get_charter_for_revision(wg.charter, rev)
         gh = get_group_for_revision(wg, rev)
     else:
-        ch = get_charter_for_revision(wg.charter, wg.charter.rev)
+        ch = get_charter_for_revision(wg.charter, active_rev)
         gh = get_group_for_revision(wg, wg.charter.rev)
+
 
     info = {}
 
@@ -80,7 +86,7 @@ def wg_main(request, name, rev, tab):
     if ch:
         file_path = wg.charter.get_file_path() # Get from wg.charter
         content = _get_html(
-            "charter-ietf-"+str(gh.acronym)+"-"+str(ch.rev)+",html", 
+            "charter-ietf-"+str(gh.acronym)+"-"+str(ch.rev)+".txt", 
             os.path.join(file_path, "charter-ietf-"+gh.acronym+"-"+ch.rev+".txt"))
         active_ads = list(Person.objects.filter(email__role__name="ad",
                                                 email__role__group__type="area",
@@ -123,6 +129,7 @@ def wg_main(request, name, rev, tab):
                               {'content':content,
                                'charter':ch, 'info':info, 'wg':wg, 'tab':tab,
                                'rev': rev if rev else ch.rev, 'gh': gh,
+                               'active_rev': active_rev,
                                'snapshot': rev, 'charter_text_url': charter_text_url,
                                'history': history, 'versions': versions,
 			       },
@@ -187,7 +194,7 @@ def _get_versions(charter, include_replaced=True):
             g = get_group_for_revision(charter.chartered_group, r)
             if d.rev != charter.rev:
                 ov.append({"name": "charter-ietf-%s" % g.acronym, "rev":d.rev, "date":d.time})
-    if charter.rev != "":
+    if charter.rev != "" and (not ov or ov[-1]['rev'] != charter.rev):
         d = get_charter_for_revision(charter, charter.rev)
         g = get_group_for_revision(charter.chartered_group, charter.rev)
         ov.append({"name": "charter-ietf-%s" % g.acronym, "rev": d.rev, "date":d.time})

@@ -1,6 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Change state of WG {{ wg.acronym }}{% endblock %}
+{% block title %}
+{% ifequal option "initcharter" %}
+Initiate chartering of WG {{ wg.acronym }}
+{% else %}
+{% ifequal option "recharter" %}
+Recharter WG {{ wg.acronym }}
+{% else %}
+{% ifequal option "abandon" %}
+Abandon effort on WG {{ wg.acronym }}
+{% else %}
+Change state of WG {{ wg.acronym }}
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}
+{% endblock %}
 
 {% block morecss %}
 form.change-state select {
@@ -19,22 +33,49 @@ form.change-state .actions {
 {% endblock %}
 
 {% block content %}
-<h1>Change state of {{ wg.acronym }}</h1>
+<h1>{% ifequal option "initcharter" %}
+Initiate chartering of WG {{ wg.acronym }}
+{% else %}
+{% ifequal option "recharter" %}
+Recharter WG {{ wg.acronym }}
+{% else %}
+{% ifequal option "abandon" %}
+Abandon effort on WG {{ wg.acronym }}
+{% else %}
+Change state of WG {{ wg.acronym }}
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}
+</h1>
 
-<p class="helptext">For help on the states, see the <a href="{% url help_charter_states %}">state table</a>.</p>
+{% ifnotequal option "initcharter" %}{% ifnotequal option "recharter" %}{% ifnotequal option "abandon" %}<p class="helptext">For help on the states, see the <a href="{% url help_charter_states %}">state table</a>.</p>{% endifnotequal %}{% endifnotequal %}{% endifnotequal %}
 
 <form class="change-state" action="" method="post">
   <table>
     {% for field in form.visible_fields %}
     <tr>
-      <th>{{ field.label_tag }}:</th>
-      <td>{{ field }}
+      {% ifequal field.name "initial_time" %}
+        {% ifequal option "recharter" %}
+        <th>{{ field.label_tag }}:</th>
+        <td>{{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        {% else %}
+        {% ifequal option "initcharter" %}
+        <th>{{ field.label_tag }}:</th>
+        <td>{{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        {% endifequal %}
+        {% endifequal %}
+      {% else %}
+        <th>{{ field.label_tag }}:</th>
+        <td>{{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {% endifequal %}      
       {% ifequal field.name "charter_state" %}
 	{% ifequal field.errors "warning" %}
-        <ul><li>The initial review time hasn't elapsed. Proceed anyway? <label><input type="checkbox" name="confirm_state" /></label></li></ul>
+        <ul><li>The initial review time hasn't elapsed. Select this checkbox to proceed anyway: <label><input type="checkbox" name="confirm_state" /></label></li></ul>
 	{% endifequal %}
       {% endifequal %}      
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
 	{% ifnotequal field.name "charter_state" %}
         {{ field.errors }}
 	{% endifnotequal %}
@@ -43,8 +84,12 @@ form.change-state .actions {
     {% endfor %}
     <tr>
       <td colspan="2" class="actions">
+        {% if option %}
+        <input type="submit" value="Submit"/>
+        {% else %}
         <a href="{% url wg_view_record name=wg.acronym %}">Back</a>
         <input type="submit" value="Save"/>
+        {% endif %}
       </td>
     </tr>
   </table>

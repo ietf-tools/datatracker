@@ -15,10 +15,12 @@ from django.conf import settings
 from django.utils import simplejson
 
 class SearchForm(forms.Form):
-    name = forms.CharField(required=False)
+    nameacronym = forms.CharField(required=False)
+
+    inprocess = forms.BooleanField(required=False,initial=True)
+    active = forms.BooleanField(required=False,initial=False)
 
     by = forms.ChoiceField(choices=[(x,x) for x in ('acronym','state','ad','area','anyfield', 'eacronym')], required=False, initial='wg', label='Foobar')
-    acronym = forms.CharField(required=False)
     state = forms.ModelChoiceField(GroupStateName.objects.all(), label="WG state", empty_label="any state", required=False)
     charter_state = forms.ModelChoiceField(CharterDocStateName.objects.all(), label="Charter state", empty_label="any state", required=False)
     ad = forms.ChoiceField(choices=(), required=False)
@@ -40,19 +42,19 @@ class SearchForm(forms.Form):
         
         self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.name) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
         
-    def clean_name(self):
-        value = self.cleaned_data.get('name','')
+    def clean_nameacronym(self):
+        value = self.cleaned_data.get('nameacronym','')
         return value
     def clean(self):
         q = self.cleaned_data
         # Reset query['by'] if needed
-        for k in ('acronym', 'ad', 'area', 'anyfield', 'eacronym'):
+        for k in ('ad', 'area', 'anyfield', 'eacronym'):
             if (q['by'] == k) and not q[k]:
                 q['by'] = None
         if (q['by'] == 'state') and not (q['state'] or q['charter_state']):
             q['by'] = None
         # Reset other fields
-        for k in ('acronym', 'ad', 'area', 'anyfield', 'eacronym'):
+        for k in ('ad', 'area', 'anyfield', 'eacronym'):
             if q['by'] != k:
                 self.data[k] = ""
                 q[k] = ""
@@ -68,7 +70,7 @@ def search_query(query_original, sort_by=None):
 
     # Non-ASCII strings don't match anything; this check
     # is currently needed to avoid complaints from MySQL.
-    for k in ['name','acronym','anyfield','eacronym']:
+    for k in ['nameacronym','anyfield','eacronym']:
         try:
             tmp = str(query.get(k, ''))
         except:
@@ -78,18 +80,25 @@ def search_query(query_original, sort_by=None):
     MAX = 500
     maxReached = False
 
-    results = Group.objects.filter(type="wg")
+    if query["inprocess"]:
+        if query["active"]:
+            results = Group.objects.filter(type="wg")
+        else:
+            results = Group.objects.filter(type="wg").exclude(charter__charter_state__slug="approved")
+    else:
+        if query["active"]:
+            results = Group.objects.filter(type="wg", charter__charter_state__slug="approved")
+        else:
+            raise Http404 # Empty, prevented by js
 
     prefix = ""
     q_objs = []
     # name
-    if query["name"]:
-        results = results.filter(name__icontains=query["name"])
+    if query["nameacronym"]:
+        results = results.filter(Q(name__icontains=query["nameacronym"]) | Q(acronym__icontains=query["nameacronym"]))
     # radio choices
     by = query["by"]
-    if by == "acronym":
-        results = results.filter(acronym__icontains=query["acronym"])
-    elif by == "state":
+    if by == "state":
         q_objs = []
         if query['state']:
             q_objs.append(Q(state=query['state']))
@@ -102,7 +111,6 @@ def search_query(query_original, sort_by=None):
         results = results.filter(parent=query["area"])
     elif by == "anyfield":
         q_obj = Q()
-        q_obj |= Q(acronym__icontains=query['anyfield'])
         q_obj |= Q(state__name__icontains=query['anyfield'])
         q_obj |= Q(charter__charter_state__name__icontains=query['anyfield'])
         q_obj |= Q(ad__name__icontains=query['anyfield'])

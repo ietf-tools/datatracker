@@ -419,7 +419,7 @@ def approve_ballot(request, name):
               destination.write(raw_content)
               destination.close()
            except IOError:
-              raise Http404
+              raise Http404("Charter text %s" % (filename))
 
         charter.rev = next_approved_revision(charter.rev)
         charter.save()
