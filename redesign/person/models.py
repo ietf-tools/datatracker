@@ -1,12 +1,14 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import datetime
+
 from django.db import models
 from django.contrib.auth.models import User
 
 from redesign.person.name import name_parts
 
 class PersonInfo(models.Model):
-    time = models.DateTimeField(auto_now_add=True)      # When this Person record entered the system
+    time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
     name = models.CharField(max_length=255, db_index=True) # The normal unicode form of the name.  This must be
                                                         # set to the same value as the ascii-form if equal.
     ascii = models.CharField(max_length=255)            # The normal ascii-form of the name.
