@@ -289,8 +289,6 @@ for o in WgMeetingSession.objects.all().order_by("pk"):
         s.attendees = o.number_attendee
         s.agenda_note = (o.special_agenda_note or "").strip()
         s.requested = o.requested_date or obviously_bogus_date
-        print o.requested_by_id
-        print o.requested_by
         s.requested_by = old_person_to_person(o.requested_by) if o.requested_by else system_person
         s.requested_duration = requested_length_mapping[getattr(o, "length_session%s" % i)]
         s.comments = (o.special_req or "").strip()
