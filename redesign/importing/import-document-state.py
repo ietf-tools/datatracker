@@ -14,13 +14,13 @@ management.setup_environ(settings)
 from redesign.doc.models import *
 from redesign.group.models import *
 from redesign.name.models import *
-from redesign.importing.utils import old_person_to_person
+from redesign.importing.utils import old_person_to_person, person_name
 from redesign.name.utils import name
 from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.mirror_rfc_index import get_std_level_mapping, get_stream_mapping
+#from ietf.ietfworkflows.utils import get_state_for_draft
 
-import sys
 
 document_name_to_import = None
 if len(sys.argv) > 1:
@@ -45,6 +45,7 @@ connection.queries = DummyQueries()
 # imports InternetDraft, IDInternal, BallotInfo, Position,
 # IESGComment, IESGDiscuss, DocumentComment, IDAuthor, idrfc.RfcIndex,
 # idrfc.DraftVersions
+
 
 def alias_doc(name, doc):
     DocAlias.objects.filter(name=name).exclude(document=doc).delete()
@@ -136,6 +137,8 @@ substate_mapping = {
     "Point Raised - writeup needed": name(DocInfoTagName, 'point', "Point Raised - writeup needed", 'IESG discussions on the document have raised some issues that need to be brought to the attention of the authors/WG, but those issues have not been written down yet. (It is common for discussions during a telechat to result in such situations. An AD may raise a possible issue during a telechat and only decide as a result of that discussion whether the issue is worth formally writing up and bringing to the attention of the authors/WG). A document stays in the "Point Raised - Writeup Needed" state until *ALL* IESG comments that have been raised have been documented.', 1)
     }
 
+#wg_state_mapping = dict([(s.slug, s) for s in WGDocStateName.objects.all()] + [(None, None)])
+
 tag_review_by_rfc_editor = name(DocInfoTagName, 'rfc-rev', "Review by RFC Editor")
 tag_via_rfc_editor = name(DocInfoTagName, 'via-rfc', "Via RFC Editor")
 tag_expired_tombstone = name(DocInfoTagName, 'exp-tomb', "Expired tombstone")
@@ -190,12 +193,9 @@ def iesg_login_to_person(l):
             
         try:
             return old_person_to_person(l.person)
-        except Email.DoesNotExist:
-            try:
-                return Person.objects.get(name="%s %s" % (l.person.first_name, l.person.last_name))
-            except Person.DoesNotExist:
-                print "MISSING IESG LOGIN", l.person, l.person.email()
-                return None
+        except Person.DoesNotExist:
+            print "MISSING IESG LOGIN", l.person, l.person.email()
+            return None
 
 def iesg_login_is_secretary(l):
     # Amy has two users, for some reason, we sometimes get the wrong one
@@ -775,7 +775,7 @@ for index, o in enumerate(all_drafts.iterator()):
         d.stream = stream_mapping["INDEPENDENT"]
     else:
         d.stream = stream_mapping["IETF"]
-    d.wg_state = None
+    d.wg_state = None #wg_state_mapping[get_state_for_draft(o)]
     d.iesg_state = iesg_state_mapping[None]
     d.iana_state = None
     d.rfc_state = None
@@ -802,7 +802,7 @@ for index, o in enumerate(all_drafts.iterator()):
     d.authors.clear()
     for i, a in enumerate(o.authors.all().select_related("person").order_by('author_order', 'person')):
         try:
-            e = Email.objects.get(address__iexact=a.email() or a.person.email()[1] or u"unknown-email-%s-%s" % (a.person.first_name, a.person.last_name))
+            e = Email.objects.get(address__iexact=a.email() or a.person.email()[1] or u"unknown-email-%s" % person_name(a.person).replace(" ", "-"))
             # renumber since old numbers may be a bit borked
             DocumentAuthor.objects.create(document=d, author=e, order=i)
         except Email.DoesNotExist:
