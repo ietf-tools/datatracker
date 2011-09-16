@@ -57,7 +57,7 @@ system_email = Email.objects.get_or_create(
 
 # LegacyWgPassword
 for o in LegacyWgPassword.objects.all():
-    print "importing LegacyWgPassword", o.pk, o.person.first_name, o.person.last_name
+    print "importing LegacyWgPassword", o.pk, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')
     
     email = get_or_create_email(o, create_fake=False)
     if not email:
@@ -76,7 +76,7 @@ for o in LegacyWgPassword.objects.all():
 
 # LegacyLiaisonUser
 for o in LegacyLiaisonUser.objects.all():
-    print "importing LegacyLiaisonUser", o.pk, o.person.first_name, o.person.last_name
+    print "importing LegacyLiaisonUser", o.pk, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')
     
     email = get_or_create_email(o, create_fake=False)
     if not email:
@@ -95,7 +95,7 @@ for o in LegacyLiaisonUser.objects.all():
 
 # IESGLogin
 for o in IESGLogin.objects.all():
-    print "importing IESGLogin", o.pk, o.first_name, o.last_name
+    print "importing IESGLogin", o.pk, o.first_name.encode('utf-8'), o.last_name.encode('utf-8')
     
     if not o.person:
         persons = PersonOrOrgInfo.objects.filter(first_name=o.first_name, last_name=o.last_name)
