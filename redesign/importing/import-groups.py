@@ -81,6 +81,14 @@ rsoc_group.state = state_names["active"]
 rsoc_group.type = type_names["ietf"]
 rsoc_group.save()
 
+# create IAB for use with liaison statements
+iab_group, _ = Group.objects.get_or_create(acronym="iab")
+iab_group.name = "Internet Architecture Board"
+iab_group.state = state_names["active"]
+iab_group.type = type_names["ietf"]
+iab_group.save()
+
+
 system = Person.objects.get(name="(System)")
 
 

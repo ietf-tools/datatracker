@@ -93,6 +93,13 @@ def get_or_create_email(o, create_fake):
         
         e.person = p
         e.save()
+    else:
+        if e.person.name != name:
+            Alias.objects.create(name=name, person=e.person)
+            # take longest name rather than the first we encounter
+            if len(name) > e.person.name:
+                e.person.name = name
+                e.person.save()
 
     return e
 
