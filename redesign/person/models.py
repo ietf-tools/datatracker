@@ -3,6 +3,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from redesign.person.name import name_parts
+
 class PersonInfo(models.Model):
     time = models.DateTimeField(auto_now_add=True)      # When this Person record entered the system
     name = models.CharField(max_length=255, db_index=True) # The normal unicode form of the name.  This must be
@@ -14,29 +16,10 @@ class PersonInfo(models.Model):
 
     def __unicode__(self):
         return self.name
-    def _parts(self, name):
-        prefix, first, middle, last, suffix = "", "", "", "", ""
-        parts = name.split()
-        if parts[0] in ["Mr", "Mr.", "Mrs", "Mrs.", "Ms", "Ms.", "Miss", "Dr.", "Doctor", "Prof", "Prof.", "Professor", "Sir", "Lady", "Dame", ]:
-            prefix = parts[0];
-            parts = parts[1:]
-        if len(parts) > 2:
-            if parts[-1] in ["Jr", "Jr.", "II", "2nd", "III", "3rd", ]:
-                suffix = parts[-1]
-                parts = parts[:-1]
-        if len(parts) > 2:
-            first = parts[0]
-            last = parts[-1]
-            middle = " ".join(parts[1:-1])
-        elif len(parts) == 2:
-            first, last = parts
-        else:
-            last = parts[0]
-        return prefix, first, middle, last, suffix
     def name_parts(self):
-        return self._parts(self.name)
+        return name_parts(self.name)
     def ascii_parts(self):
-        return self._parts(self.ascii)
+        return name_parts(self.ascii)
     def short(self):
         if self.ascii_short:
             return self.ascii_short
