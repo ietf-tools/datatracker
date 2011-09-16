@@ -188,7 +188,7 @@ for o in ChairsHistory.objects.filter(chair_type=OldRole.NOMCOM_CHAIR):
 
 # IESGLogin
 for o in IESGLogin.objects.all():
-    print "importing IESGLogin", o.pk, o.first_name, o.last_name
+    print "importing IESGLogin", o.pk, o.first_name.encode("utf-8"), o.last_name.encode("utf-8")
 
     if not o.person:
         persons = PersonOrOrgInfo.objects.filter(first_name=o.first_name, last_name=o.last_name)
