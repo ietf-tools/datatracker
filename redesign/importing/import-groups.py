@@ -20,7 +20,7 @@ from redesign.importing.utils import old_person_to_person
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role, AreaDirector
 from ietf.liaisons.models import SDOs
 
-from ietf.wgrecord.utils import set_or_create_charter
+from ietf.wgcharter.utils import set_or_create_charter
 
 # imports IETFWG, Area, AreaGroup, Acronym, IRTF, AreaWGURL, SDOs
 
@@ -264,8 +264,12 @@ for o in IETFWG.objects.all().order_by("pk"):
     group.list_archive = l
 
     charter = set_or_create_charter(group)
-    charter.rev = "01"
-    charter.charter_state = name(CharterDocStateName, slug="approved", name="Approved", desc="The WG is approved by the IESG.")
+    if group.state_id == "active" or group.state_id == "conclude":
+        charter.rev = "01"
+        charter.charter_state = name(CharterDocStateName, slug="approved", name="Approved", desc="The WG is approved by the IESG.")
+    else:
+        charter.rev = "00"
+        charter.charter_state = name(CharterDocStateName, slug="notrev", name="Not currently under review", desc="The effort was abandoned by the IESG.")
     charter.save()
 
     group.comments = o.comments.strip() if o.comments else ""

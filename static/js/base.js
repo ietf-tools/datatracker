@@ -110,7 +110,7 @@ function showWGBallot(acronym, editPositionUrl) {
     el = document.getElementById("ballot_dialog_body");
     el.innerHTML = "Loading...";
     YAHOO.util.Connect.asyncRequest('GET', 
-          "/wgrecord/"+acronym+"/_ballot.data",
+          "/wgcharter/"+acronym+"/_ballot.data",
           { success: function(o) { el.innerHTML = (o.responseText !== undefined) ? o.responseText : "?"; }, 
             failure: function(o) { el.innerHTML = "Error: "+o.status+" "+o.statusText; },
             argument: null

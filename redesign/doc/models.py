@@ -98,7 +98,7 @@ class Document(DocumentInfo):
     def get_absolute_url(self):
         name = self.name
         if self.type_id == "charter":
-            return urlreverse('wg_view_record', kwargs={ 'name': self.group.acronym })
+            return urlreverse('wg_view', kwargs={ 'name': self.group.acronym })
         else:
             if self.state == "rfc":
                 aliases = self.docalias_set.filter(name__startswith="rfc")

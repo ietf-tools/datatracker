@@ -51,6 +51,13 @@ class PersonInfo(models.Model):
         if e:
             return e[0]
         return None
+    def area(self):
+        # Returns area if AD else None
+        for e in Email.objects.filter(person=self):
+            rl = e.role_set.filter(name = "ad")
+            if rl:
+                return rl[0].group
+        return None
     def email_address(self):
         e = self.email_set.filter(active=True)
         if e:

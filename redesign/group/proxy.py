@@ -2,7 +2,7 @@ from redesign.proxy_utils import TranslatingManager
 
 from models import *
 from doc.models import Document # for charter text
-from ietf.wgrecord.utils import get_charter_for_revision, approved_revision
+from ietf.wgcharter.utils import get_charter_for_revision, approved_revision
 
 class Acronym(Group):
     class LazyIndividualSubmitter(object):
