@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% ifequal option "initcharter" %}
+Initiate chartering of WG {{ wg.acronym }}
+{% else %}
+{% ifequal option "recharter" %}
+Recharter WG {{ wg.acronym }}
+{% else %}
+{% ifequal option "abandon" %}
+Abandon effort on WG {{ wg.acronym }}
+{% else %}
+Change state of WG {{ wg.acronym }}
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}
+{% endblock %}
+
+{% block morecss %}
+form.change-state select {
+  width: 22em;
+}
+
+#id_message, #id_comment {
+  width: 40em;
+}
+
+form.change-state .actions {
+  text-align: right;
+  padding-top: 10px;
+}
+
+{% endblock %}
+
+{% block content %}
+<h1>{% ifequal option "initcharter" %}
+Initiate chartering of WG {{ wg.acronym }}
+{% else %}
+{% ifequal option "recharter" %}
+Recharter WG {{ wg.acronym }}
+{% else %}
+{% ifequal option "abandon" %}
+Abandon effort on WG {{ wg.acronym }}
+{% else %}
+Change state of WG {{ wg.acronym }}
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}
+</h1>
+
+{% ifnotequal option "initcharter" %}{% ifnotequal option "recharter" %}{% ifnotequal option "abandon" %}<p class="helptext">For help on the states, see the <a href="{% url help_charter_states %}">state table</a>.</p>{% endifnotequal %}{% endifnotequal %}{% endifnotequal %}
+
+<form class="change-state" action="" method="post">
+  <table>
+    {% for field in form.visible_fields %}
+    <tr>
+      {% ifequal field.name "initial_time" %}
+        {% ifequal option "recharter" %}
+        <th>{{ field.label_tag }}:</th>
+        <td>{{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        {% else %}
+        {% ifequal option "initcharter" %}
+        <th>{{ field.label_tag }}:</th>
+        <td>{{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        {% endifequal %}
+        {% endifequal %}
+      {% else %}
+        <th>{{ field.label_tag }}:</th>
+        <td>{{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {% endifequal %}      
+      {% ifequal field.name "charter_state" %}
+	{% ifequal field.errors "warning" %}
+        <ul><li>The initial review time hasn't elapsed. Select this checkbox to proceed anyway: <label><input type="checkbox" name="confirm_state" /></label></li></ul>
+	{% endifequal %}
+      {% endifequal %}      
+	{% ifnotequal field.name "charter_state" %}
+        {{ field.errors }}
+	{% endifnotequal %}
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td colspan="2" class="actions">
+        {% if option %}
+        <input type="submit" value="Submit"/>
+        {% else %}
+        <a href="{% url wg_view name=wg.acronym %}">Back</a>
+        <input type="submit" value="Save"/>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+</form>
+
+{% if prev_state %}
+<h3>Or revert to previous state</h3>
+
+<div class="prev-state">
+  <form action="" method="post">
+    <input type="hidden" name="charter_state" value="{{ prev_charter_state.slug }}" />
+    <input type="hidden" name="state" value="{{ prev_state.slug }}" />
+    <input type="submit" value="Back to {{ prev_charter_state.name }}" />
+  </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content_end %}
+<script type="text/javascript">
+  var message = {
+   "infrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to Informal IESG review by {{ login.name }}",
+   "intrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to Internal review by {{ login.name }}. Please place it on the next IESG telechat and inform the IAB.",
+   "extrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to External review by {{ login.name }}. Please send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: "
+  };
+
+</script>
+<script type="text/javascript" src="/js/wg-change-state.js"></script>
+{% endblock %}

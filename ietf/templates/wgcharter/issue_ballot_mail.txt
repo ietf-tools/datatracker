@@ -1,0 +1,38 @@
+{% autoescape off %}To: Internet Engineering Steering Group <iesg@ietf.org>
+From: IESG Secretary <iesg-secretary@ietf.org>
+Reply-To: IESG Secretary <iesg-secretary@ietf.org>
+Subject: Evaluation: {{ charter.chartered_group }} ({{ charter.chartered_group.acronym }})
+
+{% filter wordwrap:73 %}Evaluation for {{ charter.chartered_group }} ({{ charter.chartered_group.acronym }}) can be found at {{ charter_url }}
+{% endfilter %}
+        Please return the full line with your position.
+
+                      Yes   No   Block  Abstain
+{% for fmt in active_ad_positions %}{{ fmt }}
+{% endfor %}{% if inactive_ad_positions %}
+
+{% for fmt in inactive_ad_positions %}{{ fmt }}
+{% endfor %}{% endif %}
+
+No "Block" positions, are needed for approval.
+
+BLOCKING AND NON-BLOCKING COMMENTS
+==================================
+{% filter wordwrap:79 %}{% for p in ad_feedback %}{{ p.ad }}:
+
+{% if p.block_comment %}Blocking comment [{{ p.time }}]:
+{{ p.block_comment }}
+
+{% endif %}{% if p.comment %}Comment [{{ p.time }}]:
+{{ p.comment }}
+
+{% endif %}
+{% endfor %}{% endfilter %}
+---- following is a DRAFT of message to be sent AFTER approval ---
+{{ approval_text }}
+
+---- ballot text ----
+
+{{ ballot_writeup }}
+
+{% endautoescape%}
