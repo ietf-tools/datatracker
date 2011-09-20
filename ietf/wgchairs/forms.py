@@ -37,7 +37,7 @@ class RelatedWGForm(forms.Form):
 
 class TagForm(RelatedWGForm):
 
-    tags = forms.ModelMultipleChoiceField(AnnotationTag.objects.filter(wgworkflow__name='Default WG Workflow'),
+    tags = forms.ModelMultipleChoiceField(AnnotationTag.objects.filter(workflow__name='Default WG Workflow'),
                                           widget=forms.CheckboxSelectMultiple, required=False)
 
     def save(self):
@@ -50,7 +50,7 @@ class TagForm(RelatedWGForm):
 
 class StateForm(RelatedWGForm):
 
-    states = forms.ModelMultipleChoiceField(State.objects.filter(wgworkflow__name='Default WG Workflow'),
+    states = forms.ModelMultipleChoiceField(State.objects.filter(workflow__name='Default WG Workflow'),
                                             widget=forms.CheckboxSelectMultiple, required=False)
 
     def update_transitions(self, workflow):
@@ -95,7 +95,7 @@ class DeleteTransitionForm(RelatedWGForm):
 
 class TransitionForm(forms.ModelForm):
 
-    states = forms.ModelMultipleChoiceField(State.objects.filter(wgworkflow__name='Default WG Workflow'))
+    states = forms.ModelMultipleChoiceField(State.objects.filter(workflow__name='Default WG Workflow'))
 
     class Meta:
         model = Transition
