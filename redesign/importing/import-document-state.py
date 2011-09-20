@@ -214,8 +214,8 @@ def date_in_match(match):
 
 re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat(| - %s) by" % date_re_str)
 re_telechat_changed = re.compile(r"Telechat date (was|has been) changed to (<b>)?%s(</b>)? from" % date_re_str)
-re_ballot_position = re.compile(r"\[Ballot Position Update\] (New position, (?P<position>.*), has been recorded (|for (?P<for>.*) )|Position (|for (?P<for2>.*) )has been changed to (?P<position2>.*) from .*)by (?P<by>.*)")
-re_ballot_issued = re.compile(r"Ballot has been issued(| by)")
+re_ballot_position = re.compile(r"\[Ballot Position Update\] (New position, (?P<position>.*), has been recorded(| for (?P<for>.*) )|Position (|for (?P<for2>.*) )has been changed to (?P<position2>.*) from .*)(|by (?P<by>.*))")
+re_ballot_issued = re.compile(r"Ballot has been issued")
 re_state_changed = re.compile(r"(State (has been changed|changed|Changes) to <b>(?P<to>.*)</b> from (<b>|)(?P<from>.*)(</b> by|)|Sub state has been changed to (?P<tosub>.*) from (?P<fromsub>.*))")
 re_note_changed = re.compile(r"(\[Note\]: .*'.*'|Note field has been cleared)", re.DOTALL)
 re_draft_added = re.compile(r"Draft [Aa]dded (by .*)?( in state (?P<state>.*))?")
@@ -288,7 +288,10 @@ def import_from_idinternal(d, idinternal):
         match = re_ballot_position.search(c.comment_text)
         if match:
             position = ballot_position_mapping[match.group('position') or match.group('position2')]
-            ad_name = match.group('for') or match.group('for2') or match.group('by') # some of the old positions don't specify who it's for, in that case assume it's "by", the person who entered the position
+            # some of the old positions don't specify who it's for, in
+            # that case assume it's "by", the person who entered the
+            # position
+            ad_name = match.group('for') or match.group('for2') or match.group('by') or (u"%s %s" % (c.created_by.first_name, c.created_by.last_name) if c.created_by else "")
             ad_first, ad_last = ad_name.split(' ')
             login = IESGLogin.objects.filter(first_name=ad_first, last_name=ad_last).order_by('user_level')[0]
             if iesg_login_is_secretary(login):
