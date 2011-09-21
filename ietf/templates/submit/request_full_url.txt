@@ -1,3 +1,4 @@
-Follow this link to get full access to the submission of I-D {{ submission.filename }}-{{ submission.revision }}
+Follow this link to get full access to the submission of
+I-D {{ submission.filename }}-{{ submission.revision }}:
 
-http://{{ domain }}/submit/status/{{ submission.submission_id }}/{{ submission.get_hash }}/
+{{ url|safe }}

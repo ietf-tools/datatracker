@@ -1,7 +1,7 @@
 Informational                                                  Test Name
 Internet-Draft                                          Test Center Inc.
-Intended status: Informational
-Expires: %(expire)s                                   %(date)s
+Intended status: Informational                           %(date)s
+Expires: %(expire)s
 
                           
                         Testing tests
@@ -15,9 +15,7 @@ Abstract
 Status of this Memo
 
    This Internet-Draft is submitted in full conformance with the
-   provisions of BCP 78 and BCP 79.  This document may not be modified,
-   and derivative works of it may not be created, and it may not be
-   published except as an Internet-Draft.
+   provisions of BCP 78 and BCP 79.
 
    Internet-Drafts are working documents of the Internet Engineering
    Task Force (IETF).  Note that other groups may also distribute
@@ -41,73 +39,73 @@ Copyright Notice
    (http://trustee.ietf.org/license-info) in effect on the date of
    publication of this document.  Please review these documents
    carefully, as they describe your rights and restrictions with respect
-   to this document.
-
-   This Informational Internet Draft is submitted as an RFC Editor
-
+   to this document.  Code Components extracted from this document must
 
 
 Name                     Expires %(expire)s                [Page 1]
- 
+
 Internet-Draft             Testing tests                %(month_year)s
 
-   Contribution and/or non-IETF Document (not as a Contribution, IETF
-   Contribution, nor IETF Document) in accordance with BCP 78 and BCP
-   79.
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+   This document may contain material from IETF Documents or IETF
+   Contributions published or made publicly available before November
+   10, 2008.  The person(s) controlling the copyright in some of this
+   material may not have granted the IETF Trust the right to allow
+   modifications of such material outside the IETF Standards Process.
+   Without obtaining an adequate license from the person(s) controlling
+   the copyright in such materials, this document may not be modified
+   outside the IETF Standards Process, and derivative works of it may
+   not be created outside the IETF Standards Process, except to format
+   it for publication as an RFC or to translate it into languages other
+   than English.
 
 
 Table of Contents
 
-   1.  Introduction . . . . . . . . . . . . . . . . . . . . . . . . .  4
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   1.  Introduction . . . . . . . . . . . . . . . . . . . . . . . . .  3
+   2.  IANA Considerations  . . . . . . . . . . . . . . . . . . . . .  4
+   3.  Security Considerations  . . . . . . . . . . . . . . . . . . .  4
 
 
 Name                     Expires %(expire)s                [Page 2]
- 
+
 Internet-Draft             Testing tests                %(month_year)s
 
 1.  Introduction
 
    This document describes a protocol for testing tests.
 
+Name                     Expires %(expire)s                [Page 3]
+
+Internet-Draft             Testing tests                %(month_year)s
+
+2. Security Considerations
+
+  There are none.
+
+
+3. IANA Considerations
+
+  No new registrations for IANA.
+
+
+Authors' Addresses
+
+  Test Name
+  Test Center Inc.
+  Some way 42
+  Some Where, NY
+
+  Email: testname@example.com
+
+
+
+
+
+
+
+
+Name                     Expires %(expire)s                [Page 4]

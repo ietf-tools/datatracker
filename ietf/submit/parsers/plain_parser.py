@@ -65,23 +65,3 @@ class PlainParser(FileParser):
             self.parsed_info.metadraft.filename = filename
             return
         self.parsed_info.add_error('The first page of the document does not contain a legitimate filename that start with draft-*')
-
-    def parse_wg(self):
-        filename = self.parsed_info.metadraft.filename
-        try:
-            existing_draft = InternetDraft.objects.get(filename=filename)
-            self.parsed_info.metadraft.wg = existing_draft.group
-        except InternetDraft.DoesNotExist:
-            if filename.startswith('draft-ietf-'):
-                # Extra check for WG that contains dashes
-                for group in IETFWG.objects.filter(group_acronym__acronym__contains='-'):
-                    if filename.startswith('draft-ietf-%s-' % group.group_acronym.acronym):
-                        self.parsed_info.metadraft.wg = group
-                        return
-                group_acronym = filename.split('-')[2]
-                try:
-                    self.parsed_info.metadraft.wg = IETFWG.objects.get(group_acronym__acronym=group_acronym)
-                except IETFWG.DoesNotExist:
-                    self.parsed_info.add_error('Invalid WG ID: %s' % group_acronym)
-            else:
-                self.parsed_info.metadraft.wg = IETFWG.objects.get(pk=NONE_WG_PK)

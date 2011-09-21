@@ -60,9 +60,6 @@ class IdSubmissionDetail(models.Model):
             self.create_hash()
             self.save()
         return self.submission_hash
-    def status_link(self):
-        return '<a href="http://datatracker.ietf.org/submit/status/%s/%s/">%s</a>' % (self.submission_id, self.submission_hash, self.status)
-    status_link.allow_tags = True
 
 
 def create_submission_hash(sender, instance, **kwargs):
@@ -86,7 +83,7 @@ class IdApprovedDetail(models.Model):
 
 class TempIdAuthors(models.Model):
     id_document_tag = models.IntegerField()
-    first_name = models.CharField(blank=True, max_length=255)
+    first_name = models.CharField(blank=True, max_length=255) # with new schema, this contains the full name while the other name fields are empty to avoid loss of information
     last_name = models.CharField(blank=True, max_length=255)
     email_address = models.CharField(blank=True, max_length=255)
     last_modified_date = models.DateField(null=True, blank=True)
@@ -100,13 +97,11 @@ class TempIdAuthors(models.Model):
         db_table = 'temp_id_authors'
 
     def email(self):
-        return ('%s %s' % (self.first_name, self.last_name), self.email_address)
+        return (self.get_full_name(), self.email_address)
 
     def get_full_name(self):
-        full_name = ('%s %s %s %s') % (self.first_name, self.middle_initial or '',
-            self.last_name, self.name_suffix or '')
-        full_name = re.sub(' +', ' ', full_name).strip()
-        return full_name
+        parts = (self.first_name or '', self.middle_initial or '', self.last_name or '', self.name_suffix or '')
+        return u" ".join(x.strip() for x in parts if x.strip())
 
     def __unicode__(self):
         return u"%s <%s>" % self.email()

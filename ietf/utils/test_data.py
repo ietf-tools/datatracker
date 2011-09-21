@@ -142,7 +142,7 @@ def make_test_data():
 
     # draft
     draft = Document.objects.create(
-        name="draft-ietf-test",
+        name="draft-ietf-mars-test",
         time=datetime.datetime.now(),
         type_id="draft",
         title="Optimizing Martian Network Topologies",
