@@ -1,8 +1,10 @@
 {% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
 To: RFC Editor <rfc-editor@rfc-editor.org>
 Cc: The IESG <iesg@ietf.org>, <iana@iana.org>, <ietf-announce@ietf.org>
-Subject: Re: {{ status }} to be: {{ doc.file_tag }}
-{% filter wordwrap:73 %}{% if disapproved %}
+Subject: Results of IETF-conflict review for {{ doc.file_tag }}
+{% filter wordwrap:73 %}
+The IESG has completed a review of <draft-foo> consistent with RFC5742.  This review is applied to all non-IETF streams.
+{% if disapproved %}
 The IESG recommends that '{{ doc.title }}' {{ doc.file_tag|safe }} NOT be published as {{ full_status }}.
 {% else %}
 The IESG has no problem with the publication of '{{ doc.title }}' {{ doc.file_tag|safe }} as {{ full_status }}.
