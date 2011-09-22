@@ -38,7 +38,7 @@ class InternetDraft(Document):
     def group(self):
         from group.proxy import Acronym as AcronymProxy
         g = super(InternetDraft, self).group
-        return AcronymProxy(g) if g else None
+        return AcronymProxy().from_object(g) if g else None
     #filename = models.CharField(max_length=255, unique=True)
     @property
     def filename(self):
@@ -566,21 +566,12 @@ class InternetDraft(Document):
     #     return remarks
     def active_positions(self):
         """Returns a list of dicts, with AD and Position tuples"""
-        active_ads = Person.objects.filter(role__name="ad", role__group__state="active")
-	res = []
-        def add(ad, pos):
-            from person.proxy import IESGLogin as IESGLoginProxy
-            res.append(dict(ad=IESGLoginProxy().from_object(ad), pos=Position().from_object(pos) if pos else None))
-        
-        found = set()
-	for pos in BallotPositionDocEvent.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads).select_related('ad').order_by("-time", "-id"):
-            if pos.ad not in found:
-                found.add(pos.ad)
-                add(pos.ad, pos)
+        from person.proxy import IESGLogin as IESGLoginProxy
+        from redesign.doc.utils import active_ballot_positions
 
-        for ad in active_ads:
-            if ad not in found:
-                add(ad, None)
+        res = []
+        for ad, pos in active_ballot_positions(self).iteritems():
+            res.append(dict(ad=IESGLoginProxy().from_object(ad), pos=Position().from_object(pos) if pos else None))
 
         res.sort(key=lambda x: x["ad"].last_name)
         
