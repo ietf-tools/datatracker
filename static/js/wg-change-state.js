@@ -1,4 +1,5 @@
 jQuery(document).ready(function () {
+
     function setMessageDraft(state) {
       if (jQuery("#id_state").val() == "conclude") {
             jQuery("#id_message").val("");
@@ -19,6 +20,10 @@ jQuery(document).ready(function () {
         setMessageDraft(jQuery("#id_charter_state").val());
     });
 
-    jQuery("#id_charter_state").click();
+    var prev_mesg = jQuery("#id_message").val();
+
+    if (prev_mesg == "") {
+      jQuery("#id_charter_state").click();
+    }
     
 });
