@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2011, All Rights Reserved
 
 import re, os
+import datetime
 from django import forms
 from django.shortcuts import render_to_response, redirect
 from django.db.models import Q
@@ -13,6 +14,7 @@ from redesign.group.models import Group
 from redesign.person.models import Person, Email
 from django.conf import settings
 from django.utils import simplejson
+from operator import attrgetter
 
 class SearchForm(forms.Form):
     nameacronym = forms.CharField(required=False)
@@ -154,7 +156,9 @@ def search_query(query_original, sort_by=None):
         elif sort_by == "date":
             res.append(str(g.time or datetime.date(1990, 1, 1)))
         elif sort_by == "status":
-            res.append(g.charter.charter_state)
+            res.append(g.charter.charter_state.name)
+            # Sort secondary by group state
+            res.append(g.state.name)
 
         return res
                 
@@ -225,7 +229,7 @@ def by_area(request, name):
             break
     if not area_id:
         raise Http404
-    form = SearchForm({'inprocess': True, 'active': True, 'by':'area','area':area_id})
+    form = SearchForm({'inprocess': True, 'active': True, 'concluded': True, 'by':'area','area':area_id})
     if not form.is_valid():
         raise ValueError("form did not validate")
     (results,meta) = search_query(form.cleaned_data)
@@ -239,8 +243,19 @@ def by_area(request, name):
                     {'htitle': 'Date', 'htype':'date'},
                     {'htitle': 'Status', 'htype':'status', 'colspan':'2'},
                     ]
-    results.sort(key=lambda g: str(g.time or datetime.date(1990, 1, 1)), reverse=True)
-    return render_to_response('wgcharter/by_area.html', {'form':form, 'recs':results,'meta':meta, 'area_name':area_name}, context_instance=RequestContext(request))
+    fresults = []
+    for r in results:
+        if r.state_id == "proposed" and r.charter.charter_state_id == "notrev":
+            if r.charter.latest_event(desc__icontains="abandoned"):
+                if r.charter.latest_event(desc__icontains="abandoned").time > datetime.datetime.now() - datetime.timedelta(days=31):
+                    # Abandoned recently
+                    fresults.append(r)
+        else:
+            if not r.state_id == "conclude":
+                fresults.append(r)
+
+    fresults.sort(key=lambda g: str(g.time or datetime.date(1990, 1, 1)), reverse=True)
+    return render_to_response('wgcharter/by_area.html', {'form':form, 'recs':fresults,'meta':meta, 'area_name':area_name}, context_instance=RequestContext(request))
 
 def in_process(request):
     results = Group.objects.filter(type="wg", 

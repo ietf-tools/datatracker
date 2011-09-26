@@ -103,7 +103,7 @@ def change_state(request, name, option=None):
                             # Special log for abandoned efforts
                             e = DocEvent(doc=charter, by=login)
                             e.type = "changed_document"
-                            e.desc = u"IESG has abandoned the chartering effort and reverted to the previously approved charter"
+                            e.desc = "IESG has abandoned the chartering effort"
                             
                             if comment:
                                 e.desc += "<br>%s" % comment
