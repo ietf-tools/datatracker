@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.21"
+version = "0.23"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -646,7 +646,7 @@ class Draft():
                             for k in range(i+1, len(authors)):
                                 if authors[k] and authors[k].lower() in companies:
                                     authors[k] = None
-                        elif not "@" in line:
+                        elif blanklines and not "@" in line:
                             # Break on an author name
                             _debug( " - Break on other author name")
                             break
@@ -698,6 +698,8 @@ class Draft():
         match = re.search('(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s+<?draft-\S+\s*\n)\s*\n', self.pages[0])
         if not match:
             match = re.search('(?:\n\s*\n\s*)<?draft-\S+\s*\n*((.+\n){1,3})\s*\n', self.pages[0])
+        if not match:
+            match = re.search('(?:\n\s*\n\s*)((.+\n){0,2}(.+\n*))(\s*\n){2}', self.pages[0])
         if not match:
             match = re.search('(?i)(.+\n|.+\n.+\n)(\s*status of this memo\s*\n)', self.pages[0])
         if match:
