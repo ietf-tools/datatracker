@@ -268,10 +268,15 @@ class DraftValidation(object):
 
     def validate_metadata(self):
         self.validate_revision()
+        self.validate_title()
         self.validate_authors()
         self.validate_abstract()
         self.validate_creation_date()
         self.validate_wg()
+
+    def validate_title(self):
+        if not self.draft.id_document_name:
+            self.add_warning('title', 'Title is empty or was not found')
 
     def validate_wg(self):
         if self.wg and not self.wg.status.pk == IETFWG.ACTIVE:
