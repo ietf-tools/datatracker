@@ -1,7 +1,11 @@
 {% if files %}
 <ul>
 {% for file in files %}
+  {% if file.exists %} 
   <li><a href="{{ file.url }}" target="_blank">{{ file.name }}</a></li>
+  {% else %}
+  <li style="color: red;"><span style="text-decoration: line-through;">{{ file.name }}</span> This file is not found on staging area</li>
+  {% endif %}
 {% endfor %}
 </ul>
 {% endif %}
