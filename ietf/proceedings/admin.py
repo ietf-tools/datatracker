@@ -78,6 +78,7 @@ class WgMeetingSessionAdmin(admin.ModelAdmin):
 admin.site.register(WgMeetingSession, WgMeetingSessionAdmin)
 
 class WgProceedingsActivitiesAdmin(admin.ModelAdmin):
+    list_display = ['meeting', 'group_acronym', 'activity', 'act_date', 'act_time', 'act_by', ]
     list_filter = ['meeting', ]
     pass
 admin.site.register(WgProceedingsActivities, WgProceedingsActivitiesAdmin)
