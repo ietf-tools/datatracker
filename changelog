@@ -1,3 +1,39 @@
+ietfdb (3.61)
+
+  From esanchez@yaco.es: 
+
+  * Check for missed files on staging area. Fixes #707 
+
+  * Validate title extraction. Fixes #706 
+
+  From henrik@levkowetz.com:
+
+  * Improved extraction of draft title during submission.
+
+  * Fixed a problem where the scan for an author's email address was
+    prematurely terminated because another author's affiliation also was part
+    of this author's address information.
+
+  * Changed the length of the username field from 30 to 64 characters,
+    to avoid datatracker login problems for people with long email
+    addresses.
+
+  * Speeded up things and increased reliability during submission author
+    information extraction by looking for a recognizable author's address
+    section, and not searching for author names earlier in the document if
+    found.  Fixes a known bad case where the author name occurred in the
+    middle of a draft.
+
+  * Added handling for the case where an author name is followed by 
+    parentheses which are not closed on the same line.
+
+  * Added some columns to the admin interface for WgProceedingsActivities.
+    Fixed breakage in the feeds code caused by table entries for this model
+    containing meeting FKs which don't have an associated meeting entry.  The
+    base problem of broken table entries remain, though.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Oct 2011 15:46:27 +0200
+
 ietfdb (3.60)
 
   * Added basic automated apache password management functionality.
