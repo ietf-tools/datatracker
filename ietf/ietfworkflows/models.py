@@ -211,6 +211,14 @@ class Stream(models.Model):
         delegates += [i.person for i in self.streamdelegate_set.all()]
         return delegates
 
+    def _ise_stream_chairs(self):
+        chairs = []
+        try:
+            chairs.append(Role.objects.get(role_name='ISE').person)
+        except Role.DoesNotExist:
+            pass
+        return chairs
+
     def get_chairs(self):
         chairs = []
         if hasattr(self, '_%s_stream_chairs' % self.name.lower()):
