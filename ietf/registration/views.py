@@ -40,7 +40,6 @@ def confirm_register_view(request, username, date, realm, registration_hash):
         form = PasswordForm(request.POST, username=username)
         if form.is_valid():
             form.save()
-            # TODO: Add the user in the htdigest file
             success = True
     else:
         form = PasswordForm(username=username)
@@ -74,7 +73,6 @@ def confirm_password_recovery(request, username, date, realm, recovery_hash):
         form = PasswordForm(request.POST, update_user=True, username=user.username)
         if form.is_valid():
             user = form.save()
-            # TODO: Update the user in the htdigest file
             success = True
     else:
         form = PasswordForm(username=user.username)

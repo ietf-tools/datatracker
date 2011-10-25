@@ -1,3 +1,4 @@
+import subprocess
 import datetime
 import hashlib
 
@@ -75,6 +76,7 @@ class PasswordForm(forms.Form):
     password1 = forms.CharField(label=_("Password"), widget=forms.PasswordInput)
     password2 = forms.CharField(label=_("Password confirmation"), widget=forms.PasswordInput,
         help_text=_("Enter the same password as above, for verification."))
+    realm = 'IETF'
 
     def __init__(self, *args, **kwargs):
         self.username = kwargs.pop('username')
@@ -104,6 +106,21 @@ class PasswordForm(forms.Form):
     def get_user(self):
         return User.objects.get(username=self.username)
 
+    def save_password_file(self):
+        if settings.USE_PYTHON_HTDIGEST:
+            pass_file = settings.HTPASSWD_FILE
+            realm = settings.HTDIGEST_REALM
+            password = self.get_password()
+            username = self.username
+            prefix = '%s:%s:' % (username, realm)
+            key = hashlib.md5(prefix + password).hexdigest()
+            f = open(pass_file, 'w+')
+            f.write('%s%s\n' % (prefix, key))
+            f.close()
+        else:
+            p = subprocess.Popen([settings.HTPASSWD_COMMAND, "-b", settings.HTPASSWD_FILE, self.username, self.get_password()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = p.communicate()
+
     def save(self):
         if self.update_user:
             user = self.get_user()
@@ -111,4 +128,5 @@ class PasswordForm(forms.Form):
             user = self.create_user()
         user.set_password(self.get_password())
         user.save()
+        self.save_password_file()
         return user
