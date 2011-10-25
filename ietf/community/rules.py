@@ -1,3 +1,8 @@
+from django.db.models import Q
+
+from redesign.doc.models import Document
+
+
 class RuleManager(object):
 
     codename = ''
@@ -10,32 +15,47 @@ class RuleManager(object):
         return value
 
     def get_documents(self):
-        return []
+        return Document.objects.none()
 
 
 class WgAsociatedRule(RuleManager):
     codename = 'wg_asociated'
-    description = 'All I-Ds associated with an particular WG'
+    description = 'All I-Ds associated with a particular WG'
+
+    def get_documents(self):
+        return Document.objects.filter(group__acronym=self.value)
 
 
 class AreaAsociatedRule(RuleManager):
     codename = 'area_asociated'
-    description = 'All I-Ds associated with all WGs in an particular Area'
+    description = 'All I-Ds associated with all WGs in a particular Area'
+
+    def get_documents(self):
+        return Document.objects.filter(group__parent__acronym=self.value, group__parent__type='area')
 
 
 class AdResponsibleRule(RuleManager):
     codename = 'ad_responsible'
     description = 'All I-Ds with a particular responsible AD'
 
+    def get_documents(self):
+        return Document.objects.filter(ad__name__icontains=self.value)
+
 
 class AuthorRule(RuleManager):
     codename = 'author'
     description = 'All I-Ds with a particular author'
 
+    def get_documents(self):
+        return Document.objects.filter(authors__person__name__icontains=self.value)
+
 
 class ShepherdRule(RuleManager):
     codename = 'shepherd'
     description = 'All I-Ds with a particular document shepherd'
+
+    def get_documents(self):
+        return Document.objects.filter(shepherd__name__icontains=self.value)
 
 
 class ReferenceToRFCRule(RuleManager):
@@ -61,6 +81,9 @@ class ReferenceFromIDRule(RuleManager):
 class WithTextRule(RuleManager):
     codename = 'with_text'
     description = 'All I-Ds that contain a particular text string'
+
+    def get_documents(self):
+        return Document.objects.filter(Q(title__icontains=self.value) | Q(abstract__icontains=self.value))
 
 
 TYPES_OF_RULES = [(i.codename, i.description) for i in RuleManager.__subclasses__()]
