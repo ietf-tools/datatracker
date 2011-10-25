@@ -22,9 +22,11 @@ class CommunityListNode(template.Node):
             person = user.get_profile()
             groups = []
             managed_areas = [i.group for i in Role.objects.filter(name__slug='ad', email__in=person.email_set.all())]
-            groups += list(CommunityList.objects.filter(group__in=managed_areas))
+            for area in managed_areas:
+                groups.append(CommunityList.objects.get_or_create(group=area)[0])
             managed_wg = [i.group for i in Role.objects.filter(name__slug='chair', group__type__slug='wg', email__in=person.email_set.all())]
-            groups += list(CommunityList.objects.filter(group__in=managed_wg))
+            for wg in managed_wg:
+                groups.append(CommunityList.objects.get_or_create(group=wg)[0])
             lists['group'] = groups
         except:
             pass
@@ -44,3 +46,10 @@ def get_user_managed_lists(parser, token):
                                   " be 'as'")
     var_name = lastbits_reversed[0][::-1]
     return CommunityListNode(user, var_name)
+
+
+@register.inclusion_tag('community/display_field.html', takes_context=False)
+def show_field(field, doc):
+    return {'field': field,
+            'value': field().get_value(doc),
+           }
