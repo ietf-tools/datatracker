@@ -279,9 +279,9 @@ class DraftValidation(object):
         if self.draft.status_id in [POSTED, POSTED_BY_SECRETARIAT]:
             return
         for ext in self.draft.file_type.split(','):
-            source = os.path.join(settings.STAGING_PATH, '%s-%s%s' % (self.draft.filename, self.draft.revision, ext))
+            source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (self.draft.filename, self.draft.revision, ext))
             if not os.path.exists(source):
-                self.add_warning('document_files', 'Some files are not found on staging area.<br />We recommend you that you cancel this submission and upload your files again.')
+                self.add_warning('document_files', '"%s" were not found in the staging area.<br />We recommend you that you cancel this submission and upload your files again.' % os.path.basename(source))
                 break
 
     def validate_title(self):
