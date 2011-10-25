@@ -51,17 +51,14 @@ class UploadForm(forms.Form):
     def read_dates(self):
         now = datetime.datetime.utcnow()
         first_cut_off = Meeting.get_first_cut_off()
-        print "first_cut_off:", first_cut_off
         second_cut_off = Meeting.get_second_cut_off()
-        print "second_cut_off:", second_cut_off
         ietf_monday = Meeting.get_ietf_monday()
-        print "ietf_monday:", ietf_monday
 
         if now.date() >= first_cut_off and now.date() < second_cut_off:  # We are in the first_cut_off
             if now.date() == first_cut_off and now.hour < settings.CUTOFF_HOUR:
-                self.cutoff_warning = 'The pre-meeting cutoff date for new documents (i.e., version -00 Internet-Drafts) is %s at 5 PM (PT). You will not be able to submit a new document after this time until %s, at midnight' % (first_cut_off, ietf_monday)
+                self.cutoff_warning = 'The pre-meeting cutoff date for new documents (i.e., version -00 Internet-Drafts) is %s, at %02sh UTC. After that, you will not be able to submit a new document until %s, at %sh UTC' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, )
             else:  # No 00 version allowed
-                self.cutoff_warning = 'The pre-meeting cutoff date for new documents (i.e., version -00 Internet-Drafts) was %s at 5 PM (PT). You will not be able to submit a new document until %s, at midnight.<br>You can still submit a version -01 or higher Internet-Draft until 5 PM (PT), %s' % (first_cut_off, ietf_monday, second_cut_off)
+                self.cutoff_warning = 'The pre-meeting cutoff date for new documents (i.e., version -00 Internet-Drafts) was %s at %sh UTC. You will not be able to submit a new document until %s, at %sh UTC.<br>You can still submit a version -01 or higher Internet-Draft until %sh UTC, %s' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, second_cut_off, )
                 self.in_first_cut_off = True
         elif now.date() >= second_cut_off and now.date() < ietf_monday:
             if now.date() == second_cut_off and now.hour < settings.CUTOFF_HOUR:  # We are in the first_cut_off yet
@@ -150,9 +147,9 @@ class UploadForm(forms.Form):
         # Same draft by name
         same_name = IdSubmissionDetail.objects.filter(filename=filename, revision=revision, submission_date=today)
         if same_name.count() > settings.MAX_SAME_DRAFT_NAME:
-            raise forms.ValidationError('A same I-D cannot be submitted more than %s times a day' % settings.MAX_SAME_DRAFT_NAME)
+            raise forms.ValidationError('The same I-D cannot be submitted more than %s times a day' % settings.MAX_SAME_DRAFT_NAME)
         if sum([i.filesize for i in same_name]) > (settings.MAX_SAME_DRAFT_NAME_SIZE * 1048576):
-            raise forms.ValidationError('A same I-D submission cannot exceed more than %s MByte a day' % settings.MAX_SAME_DRAFT_NAME_SIZE)
+            raise forms.ValidationError('The same I-D submission cannot exceed more than %s MByte a day' % settings.MAX_SAME_DRAFT_NAME_SIZE)
 
         # Total from same ip
         same_ip = IdSubmissionDetail.objects.filter(remote_ip=remote_ip, submission_date=today)
@@ -165,7 +162,7 @@ class UploadForm(forms.Form):
         if self.group:
             same_group = IdSubmissionDetail.objects.filter(group_acronym=self.group, submission_date=today)
             if same_group.count() > settings.MAX_SAME_WG_DRAFT:
-                raise forms.ValidationError('A same working group I-Ds cannot be submitted more than %s times a day' % settings.MAX_SAME_WG_DRAFT)
+                raise forms.ValidationError('The same working group I-Ds cannot be submitted more than %s times a day' % settings.MAX_SAME_WG_DRAFT)
             if sum([i.filesize for i in same_group]) > (settings.MAX_SAME_WG_DRAFT_SIZE * 1048576):
                 raise forms.ValidationError('Total size of same working group I-Ds cannot exceed %s MByte a day' % settings.MAX_SAME_WG_DRAFT_SIZE)
 
@@ -181,13 +178,13 @@ class UploadForm(forms.Form):
         self.staging_path = getattr(settings, 'IDSUBMIT_STAGING_PATH', None)
         self.idnits = getattr(settings, 'IDSUBMIT_IDNITS_BINARY', None)
         if not self.staging_path:
-            raise forms.ValidationError('IDSUBMIT_STAGING_PATH not defined on settings.py')
+            raise forms.ValidationError('IDSUBMIT_STAGING_PATH not defined in settings.py')
         if not os.path.exists(self.staging_path):
-            raise forms.ValidationError('IDSUBMIT_STAGING_PATH defined on settings.py does not exist')
+            raise forms.ValidationError('IDSUBMIT_STAGING_PATH defined in settings.py does not exist')
         if not self.idnits:
-            raise forms.ValidationError('IDSUBMIT_IDNITS_BINARY not defined on settings.py')
+            raise forms.ValidationError('IDSUBMIT_IDNITS_BINARY not defined in settings.py')
         if not os.path.exists(self.idnits):
-            raise forms.ValidationError('IDSUBMIT_IDNITS_BINARY defined on settings.py does not exist')
+            raise forms.ValidationError('IDSUBMIT_IDNITS_BINARY defined in settings.py does not exist')
 
     def check_previous_submission(self):
         filename = self.draft.filename
