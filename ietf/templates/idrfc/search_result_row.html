@@ -35,6 +35,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ietf_filters %}
 {% load ballot_icon %}
 <tr class="{% cycle oddrow,evenrow %}">
+<td class="addtolist">
+<a href="{% url community_add_document doc.id.draft_name %}" title="Add to your personal ID list">+</a>
+</td>
 <td class="doc">
 {% if doc.rfc %}{{ doc.rfc.displayname_with_link|safe }}
 {% if doc.id %}<br />(<a href="{{ doc.id.get_absolute_url }}">{{doc.id.draft_name}}</a>){%endif%}
@@ -46,5 +49,4 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% include "idrfc/status_columns.html" %}
 {# <td class="ad">{% if doc.ad_name %}{{ doc.ad_name }}{% else %}&nbsp;{% endif %}</td> #}
 <td class="ad">{{ doc.ad_name|default:"" }}</td>
-
 </tr>

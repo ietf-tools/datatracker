@@ -1,0 +1,18 @@
+<h2>Display customization</h2>
+
+<form action="#custom" method="POST" />
+  <h3>Sort method</h2>
+  {{ display_form.sort_method }}
+
+  <h3>Show fields</h2>
+  <div>
+  {% for field in dc.get_display_fields_config %}
+  <div style="float: left; width: 30%;">
+    <input id="id_{{ field.codename }}" type="checkbox" name="{{ field.codename }}"{% if field.active %} checked="checked"{% endif %} />
+    <label for="id_{{ field.codename }}">{{ field.description }}</label>
+  </div>
+  {% endfor %}
+  </div>
+  <div style="clear: both;"><br /></div>
+  <input type="submit" value="Save configuration" name="save_display" />
+</form>

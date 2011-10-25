@@ -1,0 +1,20 @@
+{% load community_tags %}
+
+{% with dc.get_active_fields as fields %}
+<table class="ietf-table">
+<tr>
+  {% for field in fields %}
+  <th>{{ field.description }}</th>
+  {% endfor %}
+</tr>
+{% for doc in cl.get_documents %}
+<tr class="{% cycle oddrow,evenrow %}">
+  {% for field in fields %}
+  <td>
+    {% show_field field doc %}
+  </td>
+  {% endfor %}
+</tr>
+{% endfor %}
+</table>
+{% endwith %}

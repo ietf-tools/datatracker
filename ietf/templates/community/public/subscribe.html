@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Subscribe to {{ cl.long_name }}{% endblock %}
+
+{% block content %}
+<h1>Subscribe to {{ cl.long_name }}</h1>
+{% if success %}
+<p>
+We have sent and email to your email address with instructions to complete your subscription.
+</p>
+{% else %}
+<p>
+Subscribe to the email list for notifications of {% if significant %}significant {% endif %}changes on {{ cl.long_name }}.
+</p>
+<form action="" method="post">
+<table>
+  {{ form }}
+</table>
+<input type="submit" value="Subscribe" />
+</form>
+{% endif %}
+{% endblock %}
