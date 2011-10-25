@@ -6,7 +6,7 @@ class IdSubmissionStatusAdmin(admin.ModelAdmin):
 admin.site.register(IdSubmissionStatus, IdSubmissionStatusAdmin)    
 
 class IdSubmissionDetailAdmin(admin.ModelAdmin):
-    list_display = ['submission_id', 'filename', 'status_link', 'submission_date', 'last_updated_date',]
+    list_display = ['submission_id', 'draft_link', 'status_link', 'submission_date', 'last_updated_date',]
     ordering = [ '-submission_date' ]
     search_fields = ['filename', ]
 admin.site.register(IdSubmissionDetail, IdSubmissionDetailAdmin)    
