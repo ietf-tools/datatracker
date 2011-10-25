@@ -109,6 +109,17 @@ def perform_postREDESIGN(submission):
     draft.abstract = submission.abstract
     was_rfc = draft.state_id == "rfc"
     draft.state_id = "active"
+
+    if draft.name.startswith("draft-iab-"):
+        stream_slug = "iab"
+    elif draft.name.startswith("draft-irtf-"):
+        stream_slug = "irtf"
+    elif not draft.group_id or draft.group.type_id == "individ":
+        stream_slug = "ise"
+    else:
+        stream_slug = "ietf"
+
+    draft.stream = DocStreamName.objects.get(slug=stream_slug)
     draft.save()
 
     DocAlias.objects.get_or_create(name=submission.filename, document=draft)
