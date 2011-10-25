@@ -160,5 +160,5 @@ def ajax_check_username(request):
     error = False
     if User.objects.filter(username=username).count():
         error = _('This email is already in use')
-    return HttpResponse(simplejson.dumps({'error': error}), mimetype='text/plain')
+    return HttpResponse(json.dumps({'error': error}), mimetype='text/plain')
     
