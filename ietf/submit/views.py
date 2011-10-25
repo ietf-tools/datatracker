@@ -21,13 +21,10 @@ from ietf.utils.mail import send_mail
 
 def submit_index(request):
     if request.method == 'POST':
-        try:
-            form = UploadForm(request=request, data=request.POST, files=request.FILES)
-            if form.is_valid():
-                submit = form.save()
-                return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submit.submission_id, 'submission_hash': submit.get_hash()}))
-        except IOError:
-            form = UploadForm(request=request)
+        form = UploadForm(request=request, data=request.POST, files=request.FILES)
+        if form.is_valid():
+            submit = form.save()
+            return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submit.submission_id, 'submission_hash': submit.get_hash()}))
     else:
         form = UploadForm(request=request)
     return render_to_response('submit/submit_index.html',
