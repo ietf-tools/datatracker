@@ -21,10 +21,14 @@ from ietf.utils.mail import send_mail
 
 def submit_index(request):
     if request.method == 'POST':
-        form = UploadForm(request=request, data=request.POST, files=request.FILES)
-        if form.is_valid():
-            submit = form.save()
-            return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submit.submission_id, 'submission_hash': submit.get_hash()}))
+        try:
+            form = UploadForm(request=request, data=request.POST, files=request.FILES)
+            if form.is_valid():
+                submit = form.save()
+                return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submit.submission_id, 'submission_hash': submit.get_hash()}))
+        except IOError, e:
+            if not "Client read error" in str(e):
+                raise
     else:
         form = UploadForm(request=request)
     return render_to_response('submit/submit_index.html',
