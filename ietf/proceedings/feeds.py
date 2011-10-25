@@ -22,14 +22,14 @@ class LatestWgProceedingsActivity(Feed):
             if m:
                 obj['title'] = m.group(1) 
                 obj['title'] = re.sub("[^ -~]+", "", obj['title'])
-                slides = Slide.objects.filter(meeting__meeting_num=act.meeting_id).filter(slide_name=m.group(1)).filter(group_acronym_id=act.group_acronym_id)
+                slides = Slide.objects.filter(meeting=act.meeting).filter(slide_name=m.group(1)).filter(group_acronym_id=act.group_acronym_id)
                 if len(slides) == 1:
                     obj['link'] = self.base_url + slides[0].file_loc()
 
             m = re.match("^agenda was uploaded$", act.activity)
             if m:
                 obj['title'] = "agenda";
-                agendas = WgAgenda.objects.filter(meeting__meeting_num=act.meeting_id).filter(group_acronym_id=act.group_acronym_id)
+                agendas = WgAgenda.objects.filter(meeting=act.meeting).filter(group_acronym_id=act.group_acronym_id)
                 if len(agendas) == 1:
                     dir = Proceeding.objects.get(meeting_num=act.meeting).dir_name
                     obj['link'] = self.base_url + dir + "/agenda/" + agendas[0].filename
