@@ -63,7 +63,7 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 <div id="ietf-login" class="noprint">{% if user.is_authenticated %}
 {{ user }}
 {% else %}
-<a href="/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign In</a>
+<a href="https://datatracker.ietf.org/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign In</a>
 {% endif %}</div>
 
 <table style="margin-left:8px;margin-top:8px;" width="98%;">
@@ -72,8 +72,10 @@ IETF.user_groups = { {% for group in user.groups.all %}"{{group}}":true{% if not
 <div class="ietf-navbar">
 {% include "base_leftmenu.html" %}
 </div>
-<div style="padding-left: 12px;padding-top:4px;font-size:69%;">
+<div style="width: 100%; text-align: center; padding-top:4px;font-size:69%;">
 Version {{ version_num }}, {{revision_date}}
+<br/>
+<a href="http://tools.ietf.org/tools/ietfdb/newticket">Report a bug</a>
 </div>
 </td>
 <td>
