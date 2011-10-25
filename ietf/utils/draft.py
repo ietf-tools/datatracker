@@ -770,7 +770,7 @@ def getmeta(fn):
         filename = os.path.join("/www/tools.ietf.org/id", fn)
     if not os.path.exists(filename):
         _warn("Could not find file: '%s'" % (filename))
-        return
+        return None
 
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(filename)[stat.ST_MTIME]))
     text = _gettext(filename)
@@ -822,7 +822,8 @@ def _printmeta(timestamp, fn, outfile=sys.stdout):
         sys.stderr.write("%-58s" % fn[:-4])
 
     fields = getmeta(fn)
-    _output(fields.get("doctag", fn[:-7]), fields, outfile)
+    if fields:
+        _output(fields.get("doctag", fn[:-7]), fields, outfile)
 
     if opt_trace:
         sys.stderr.write("%5.1f\n" % ((time.time() - t)))
