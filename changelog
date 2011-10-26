@@ -1,3 +1,40 @@
+ietfdb (3.62)
+
+  This is a minor bugfix release in preparation for merging in the Alternate
+  Streams draft tracker enhancements.
+
+  * Fixed a problem where server IO failures could be silently discarded
+    resulting in an ID submission upload being quietly ignored, returning
+    the upload form anew.
+
+  * Changed to a more helpful text on the 500 server error page.
+
+  * Tweaked various submission cutoff message strings.  Also made the cut-off
+    messages use the actual hour defined in settings, rather than a hardcoded
+    string saying '5 PM (PT)' ...
+
+  * Cleaned up the display of 'Sign In' and version number when rendering the 
+    base template without context (which is the case for the 500 server error 
+    template).
+
+  * Fixed a wrong settings variable (introduced when merging code from the 
+    yaco idsubmit branch for v3.61).  Refine the error report for failures to 
+    move files from staging to repository.
+
+  * Refined the admin list page for submission details a bit.
+
+  * Change the 'Sign In' link to be https, preventing clear-text passwords
+    over the wire (given the current use of basic http auth, rather than
+    diget auth, on the web server).
+
+  * Added a 'Report a bug' link in the lefthand column, below the version
+    indication.
+
+  * The cutoff hour setting is in UTC, not PST or PDT.  Adjusted 
+    accordingly in the settings file.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Oct 2011 15:55:18 +0200
+
 ietfdb (3.61)
 
   From esanchez@yaco.es: 
