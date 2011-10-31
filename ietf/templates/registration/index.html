@@ -1,0 +1,23 @@
+{% extends "registration/base.html" %}
+
+{% block title %}Account Management{% endblock %}
+
+{% block content %}
+<div id="account_index">
+<h1>Account Management</h1>
+
+<p>
+   <b>You can:</b>
+   <ul>
+      {% if user.username %}
+      <li><a href="/accounts/profile/">See your profile</a></li>
+      {% else %}
+      <li><a href="/accounts/login/">Sign in</a></li>
+      {% endif %}
+      <li><a href="/accounts/create/">Request an account</a></li>
+      <li><a href="/accounts/reset/">Request a password reset </a></li>
+   </ul>
+</p>
+ 
+</div>
+{% endblock %}

@@ -5,7 +5,6 @@ import hashlib
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.sites.models import Site
 from django.utils.translation import ugettext, ugettext_lazy as _
 
@@ -35,10 +34,10 @@ class RegistrationForm(forms.Form):
             'today': today,
             'realm': self.realm,
             'auth': auth,
-            'to_email': to_email,
+            'username': to_email,
             'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
         }
-        send_mail(None, to_email, from_email, subject, 'registration/register_email.txt', context)
+        send_mail(None, to_email, from_email, subject, 'registration/creation_email.txt', context)
 
     def clean_email(self):
         email = self.cleaned_data.get('email', '')
@@ -49,26 +48,29 @@ class RegistrationForm(forms.Form):
         return email
 
 
-class RecoverPasswordForm(PasswordResetForm):
+class RecoverPasswordForm(RegistrationForm):
 
     realm = 'IETF'
 
-    def save(self):
+    def send_email(self):
         domain = Site.objects.get_current().domain
         subject = 'Password recovery at %s' % domain
         from_email = settings.DEFAULT_FROM_EMAIL
         today = datetime.date.today().strftime('%Y%m%d')
-        for user in self.users_cache:
-            to_email = self.cleaned_data["email"]
-            recovery_hash = hashlib.md5('%s%s%s%s%s' % (settings.SECRET_KEY, today, user.username, user.password, self.realm)).hexdigest()
-            context = {'domain': domain,
-                       'username': user.username,
-                       'recovery_hash': recovery_hash,
-                       'today': today,
-                       'realm': self.realm,
-                       'expire': settings.DAYS_TO_EXPIRE_RECOVER_LINK,
-                      }
-            send_mail(None, to_email, from_email, subject, 'registration/password_recovery_email.txt', context)
+        to_email = self.cleaned_data["email"]
+        auth = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, today, to_email, self.realm)).hexdigest()
+        context = {'domain': domain,
+                   'today': today,
+                   'realm': self.realm,
+                   'auth': auth,
+                   'username': to_email,
+                   'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+                  }
+        send_mail(None, to_email, from_email, subject, 'registration/password_reset_email.txt', context)
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '')
+        return email
 
 
 class PasswordForm(forms.Form):

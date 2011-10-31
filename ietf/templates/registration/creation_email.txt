@@ -2,7 +2,7 @@ Hello,
 
 In order to complete your registration on {{ domain }}, please follow this link or copy it and paste it in your web browser:
 
-http://{{ domain }}{% url confirm_register_view to_email today realm auth %}
+http://{{ domain }}{% url confirm_account username today realm auth %}
 
 This link will expire in {{ expire }} days.
 
