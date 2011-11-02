@@ -71,7 +71,12 @@ def _get_group_from_acronym(group_model_str, acronym):
 
 
 def _set_stream_automatically(draft, stream):
-    streamed = StreamedID.objects.create(stream=stream, draft=draft)
+    (streamed, created) = StreamedID.objects.get_or_create(draft=draft)
+    if created:
+        streamed.stream = stream
+        streamed.save()
+    else:
+        return
     if not stream or not stream.with_groups:
         return
     try:
