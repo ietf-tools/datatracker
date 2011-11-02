@@ -8,7 +8,7 @@ from workflows.utils import set_workflow_for_object
 
 from ietf.idtracker.models import PersonOrOrgInfo, IETFWG
 from ietf.wgchairs.accounts import get_person_for_user
-from ietf.ietfworkflows.models import Stream
+from ietf.ietfworkflows.models import Stream, StreamDelegate
 from ietf.ietfworkflows.utils import (get_workflow_for_draft, get_workflow_for_wg,
                                       get_state_for_draft, get_state_by_name,
                                       update_state, FOLLOWUP_TAG,
@@ -62,7 +62,7 @@ class NoWorkflowStateForm(StreamDraftForm):
             wgs = set([i.group_acronym for i in self.person.wgchair_set.all()]).union(set([i.wg for i in self.person.wgdelegate_set.all()]))
         if len(wgs) > 1:
             self.wgs = list(wgs)
-            self.wgs.sort(lambda x,y: cmp(x.group_acronym.acronym, y.group_acronym.acronym))
+            self.wgs.sort(lambda x, y: cmp(x.group_acronym.acronym, y.group_acronym.acronym))
             self.fields['wg'].choices = [(i.pk, '%s - %s' % (i.group_acronym.acronym, i.group_acronym.name)) for i in self.wgs]
         else:
             self.onlywg = list(wgs)[0].group_acronym
@@ -200,3 +200,28 @@ class DraftStreamForm(StreamDraftForm):
                       comment=comment,
                       person=self.person,
                       to_stream=to_stream)
+
+
+class StreamDelegatesForm(forms.Form):
+    email = forms.EmailField()
+
+    def __init__(self, *args, **kwargs):
+        self.stream = kwargs.pop('stream')
+        super(StreamDelegatesForm, self).__init__(*args, **kwargs)
+
+    def get_person(self, email):
+        persons = PersonOrOrgInfo.objects.filter(emailaddress__address=email).distinct()
+        if not persons:
+            return None
+        return persons[0]
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        self.person = self.get_person(email)
+        if not self.person:
+            raise forms.ValidationError('There is no user with this email in the system')
+
+    def save(self):
+        StreamDelegate.objects.get_or_create(
+            person=self.person,
+            stream=self.stream)

@@ -87,11 +87,12 @@ def get_workflow_for_draft(draft):
         if not streamed_draft or not streamed_draft.stream:
             return None
         stream = streamed_draft.stream
-        if stream.with_groups:
-            if not streamed_draft.group:
+        if stream.document_group_attribute:
+            group = streamed_draft.get_group()
+            if not group:
                 return None
             else:
-                workflow = get_workflow_for_wg(streamed_draft.group, streamed_draft.stream.workflow)
+                workflow = get_workflow_for_wg(group, streamed_draft.stream.workflow)
         else:
             workflow = stream.workflow
         set_workflow_for_object(draft, workflow)
