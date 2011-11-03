@@ -1,3 +1,33 @@
+ietfdb (3.63)
+
+  This is a feature release which adds support for Alternate Stream draft
+  tracking, similar to the WG Chair draft tracking.  Some bug fixes have
+  also been included.
+
+  From esanchez@yaco.es:
+
+  * Merged /branch/yaco/wgchairs.r3120:r3154-3558 from esanchez@yaco.es.  
+    This adds support for alternate streams document tracking, similar to the 
+    WG chairs tracking functionality.
+
+  * Merged /branch/yaco/wgchairs.r3120/static/media:r3152-3153.  Do not 
+    show the draft addoption form when editing stream. See #671.
+
+  * Merged /branch/yaco/wgchairs.r3120/static/media:r3122-3152.  Do no try 
+    to create an already existing model. See #671.
+
+  From henrik@levkowetz.com:  
+
+  * Improved handling of a particular IO Error that sometimes occur during 
+    draft submission.
+
+  * Removed some of the bling and unnecessary information from the document 
+    WG state display.
+
+  * Aligned the workflow admin display lists with the current model fields.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Nov 2011 13:49:01 +0100
+
 ietfdb (3.62)
 
   This is a minor bugfix release in preparation for merging in the Alternate
