@@ -116,7 +116,7 @@ class PasswordForm(forms.Form):
             username = self.username
             prefix = '%s:%s:' % (username, realm)
             key = hashlib.md5(prefix + password).hexdigest()
-            f = open(pass_file, 'w+')
+            f = open(pass_file, 'a+')
             f.write('%s%s\n' % (prefix, key))
             f.close()
         else:
