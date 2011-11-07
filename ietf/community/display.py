@@ -35,7 +35,7 @@ class DateField(DisplayField):
     def get_value(self, document):
         dates = document.documentchangedates_set.all()
         if dates and dates[0].new_version_date:
-            return dates[0].new_version_date
+            return dates[0].new_version_date.strftime('%Y-%m-%d')
         return document.time.strftime('%Y-%m-%d')
 
 

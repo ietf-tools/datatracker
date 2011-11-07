@@ -62,20 +62,33 @@ class ReferenceToRFCRule(RuleManager):
     codename = 'reference_to_rfc'
     description = 'All I-Ds that have a reference to a particular RFC'
 
+    def get_documents(self):
+        return Document.objects.filter(Q(type__name='Draft') | Q(state__name='rfc')).filter(relateddocument__target__document__state__name='rfc', relateddocument__target__document__name__icontains=self.value).distinct()
+
 
 class ReferenceToIDRule(RuleManager):
     codename = 'reference_to_id'
     description = 'All I-Ds that have a reference to a particular I-D'
+
+    def get_documents(self):
+        return Document.objects.filter(Q(type__name='Draft') | Q(state__name='rfc')).filter(relateddocument__target__document__type__name='Draft', relateddocument__target__document__name__icontains=self.value).distinct()
 
 
 class ReferenceFromRFCRule(RuleManager):
     codename = 'reference_from_rfc'
     description = 'All I-Ds that are referenced by a particular RFC'
 
+    def get_documents(self):
+        return Document.objects.filter(Q(type__name='Draft') | Q(state__name='rfc')).filter(relateddocument__source__state__name='rfc', relateddocument__source__name__icontains=self.value).distinct()
+
+
 
 class ReferenceFromIDRule(RuleManager):
     codename = 'reference_from_id'
     description = 'All I-Ds that are referenced by a particular I-D'
+
+    def get_documents(self):
+        return Document.objects.filter(Q(type__name='Draft') | Q(state__name='rfc')).filter(relateddocument__source__type__name='Draft', relateddocument__source__name__icontains=self.value).distinct()
 
 
 class WithTextRule(RuleManager):

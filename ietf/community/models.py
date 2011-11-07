@@ -1,8 +1,10 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models import signals
+from django.db.models import signals, Q
 
+from ietf.utils.mail import send_mail
 from redesign.doc.models import Document
 from redesign.group.models import Group, Role
 
@@ -161,6 +163,21 @@ class ListNotification(models.Model):
     desc = models.TextField()
     significant = models.BooleanField(default=False)
 
+    def notify_by_email(self):
+        clists = CommunityList.objects.filter(
+            Q(added_ids=self.document) | Q(rule__cached_ids=self.document)).distinct()
+        from_email = settings.DEFAULT_FROM_EMAIL
+        for l in clists:
+            subject = '%s notification: Changes on %s' % (l.long_name(), self.document.name)
+            context = {'notification': self,
+                       'clist': l}
+            to_email = ''
+            filter_subscription = {'community_list': l}
+            if not self.significant:
+                filter_subscription['significant'] = False
+            bcc = ','.join(list(set([i.email for i in EmailSubscription.objects.filter(**filter_subscription)])))
+            send_mail(None, to_email, from_email, subject, 'community/public/notification_email.txt', context, bcc=bcc)
+
     def save(self, *args, **kwargs):
         super(ListNotification, self).save(*args, **kwargs)
         (changes, created) = DocumentChangeDates.objects.get_or_create(document=self.document)
@@ -170,6 +187,7 @@ class ListNotification(models.Model):
         else:
             changes.normal_change_date = self.notification_date
         changes.save()
+        self.notify_by_email()
 
 
 def save_previous_states(sender, instance, **kwargs):
