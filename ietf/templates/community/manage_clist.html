@@ -13,26 +13,38 @@
 <h1>{{ cl.long_name }}</h1>
 <div id="mytabs" class="yui-navset">
 <ul class="yui-nav">
-  <li class="selected"><a href="#info"><em>Info</em></a></li>
+  <li class="selected"><a href="#view"><em>Documents</em></a></li>
+  <li><a href="#documents"><em>Searches</em></a></li>
   <li><a href="#rules"><em>Rules</em></a></li>
-  <li><a href="#documents"><em>Documents</em></a></li>
   <li><a href="#custom"><em>Display customization</em></a></li>
-  <li><a href="#view"><em>View list</em></a></li>
+  <li><a href="#info"><em>Exports</em></a></li>
 </ul>
 
 <div class="yui-content">
-<div id="info">
-<p>Feel free to share the following links if you need it.</p>
-<ul>
- <li><a href="view/">Read only view for {{ cl.long_name }}</a></li>
- <li><a href="changes/feed/">Feed for every change in status of {{ cl.long_name }}</a></li>
- <li><a href="changes/significant/feed/">Feed for significant change in status of {{ cl.long_name }}</a></li>
-</ul>
 
-<p>Export your list to CSV format</p>
+<div id="view">
+{% include "community/view_list.html" %}
+</div>
+
+<div id="documents">
+<h2>Documents manually added to this list</h2>
+<p>
+In order to add some documents to your list you have to:
+</p>
 <ul>
- <li><a href="csv/">CSV for {{ cl.long_name }}</a></li>
+   <li>Search the document or documents you want to add using <a href="/doc/search">the datatracker searcher</a>.</li>
+   <li>In the search result you'll find a link to add individual documents to your list.</li>
 </ul>
+<table class="ietf-table">
+ <tr><th>Name</th><th>Title</th><th>Remove from list</th></tr>
+{% for doc in cl.added_ids.all %}
+<tr class="{% cycle oddrow,evenrow %}">
+  <td>{{ doc }}</td>
+  <td><a href="{{ doc.get_absolute_url }}"</a>{{ doc.title }}</td>
+  <td><a href="{% url community_remove_document cl.pk doc.pk %}">Remove</a></td>
+</tr>
+{% endfor %}
+</table>
 </div>
 
 <div id="rules">
@@ -56,26 +68,22 @@
 </form>
 </div>
 
-<div id="documents">
-<h2>Documents manually added to this list</h2>
-<table class="ietf-table">
- <tr><th>Name</th><th>Title</th><th>Remove from list</th></tr>
-{% for doc in cl.added_ids.all %}
-<tr class="{% cycle oddrow,evenrow %}">
-  <td>{{ doc }}</td>
-  <td><a href="{{ doc.get_absolute_url }}"</a>{{ doc.title }}</td>
-  <td><a href="{% url community_remove_document cl.pk doc.pk %}">Remove</a></td>
-</tr>
-{% endfor %}
-</table>
-</div>
-
 <div id="custom">
 {% include "community/customize_display.html" %}
 </div>
 
-<div id="view">
-{% include "community/view_list.html" %}
+<div id="info">
+<p>Feel free to share the following links if you need it.</p>
+<ul>
+ <li><a href="view/">Read only view for {{ cl.long_name }}</a></li>
+ <li><a href="changes/feed/">Feed for every change in status of {{ cl.long_name }}</a></li>
+ <li><a href="changes/significant/feed/">Feed for significant change in status of {{ cl.long_name }}</a></li>
+</ul>
+
+<p>Export your list to CSV format</p>
+<ul>
+ <li><a href="csv/">CSV for {{ cl.long_name }}</a></li>
+</ul>
 </div>
 
 </div>
