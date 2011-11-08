@@ -184,7 +184,8 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=N
 	copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
     if bcc:
         msg['X-Tracker-Bcc']=bcc
-    copy_email(msg, copy_to)
+    if not test_mode: # if we're running automated tests, this copy is just annoying
+        copy_email(msg, copy_to)
 
 def send_mail_preformatted(request, preformatted):
     """Parse preformatted string containing mail with From:, To:, ...,

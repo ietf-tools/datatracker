@@ -90,5 +90,6 @@ def run_tests(*args, **kwargs):
         raise EnvironmentError("Refusing to run tests on core3")
     import ietf.utils.mail
     ietf.utils.mail.send_smtp = test_send_smtp
+    ietf.utils.mail.test_mode = True
     run_tests_1(*args, **kwargs)
     
