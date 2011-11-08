@@ -17,7 +17,7 @@ class FilenameField(DisplayField):
     description = 'I-D filename'
 
     def get_value(self, document):
-        return document.name
+        return '<a href="%s">%s</a>' % (document.get_absolute_url(), document.name)
 
 
 class TitleField(DisplayField):
