@@ -155,6 +155,15 @@ for o in SDOs.objects.all().order_by("pk"):
     group.state_id = "active"
     group.save()
 
+def import_date_event(group, name, type_name):
+    d = getattr(o, "%s_date" % name)
+    if d:
+        e = GroupEvent(group=group, type=type_name)
+        e.time = datetime.datetime.combine(d, datetime.time(12, 0, 0))
+        e.by = system
+        e.desc = e.get_type_display()
+        e.save()
+
 # Area
 for o in Area.objects.all():
     print "importing Area", o.pk, o.area_acronym.acronym
@@ -191,17 +200,13 @@ for o in Area.objects.all():
     
     # import events
     group.groupevent_set.all().delete()
-    
-    if o.concluded_date:
-        e = GroupEvent(group=group, type="concluded")
-        e.time = datetime.datetime.combine(o.concluded_date, datetime.time(12, 0, 0))
-        e.by = system
-        e.desc = e.get_type_display()
-        e.save()
+
+    import_date_event(group, "start", "started")
+    import_date_event(group, "concluded", "concluded")
 
     # FIXME: missing fields from old: extra_email_addresses
 
-    
+
 # IETFWG, AreaGroup
 for o in IETFWG.objects.all().order_by("pk"):
     print "importing IETFWG", o.pk, o.group_acronym.acronym
@@ -299,18 +304,9 @@ for o in IETFWG.objects.all().order_by("pk"):
     # import events
     group.groupevent_set.all().delete()
 
-    def import_date_event(name, type_name):
-        d = getattr(o, "%s_date" % name)
-        if d:
-            e = GroupEvent(group=group, type=type_name)
-            e.time = datetime.datetime.combine(d, datetime.time(12, 0, 0))
-            e.by = system
-            e.desc = e.get_type_display()
-            e.save()
-
-    import_date_event("proposed", "proposed")
-    import_date_event("start", "started")
-    import_date_event("concluded", "concluded")
+    import_date_event(group, "proposed", "proposed")
+    import_date_event(group, "start", "started")
+    import_date_event(group, "concluded", "concluded")
     # dormant_date is empty on all so don't bother with that
             
     # FIXME: missing fields from old: meeting_scheduled, email_keyword, meeting_scheduled_old
