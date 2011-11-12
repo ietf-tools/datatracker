@@ -213,6 +213,9 @@ class Stream(models.Model):
         delegates += [i.person for i in self.streamdelegate_set.all()]
         return delegates
 
+    def _ise_chairs_for_document(self, document):
+        return self._ise_stream_chairs()
+
     def _ise_stream_chairs(self):
         chairs = []
         try:
