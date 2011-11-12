@@ -30,7 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGLogin, DocumentComment, Acronym
+from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGLogin, DocumentComment, Acronym, IDState
 from ietf.idrfc.models import RfcEditorQueue
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
 
@@ -575,6 +575,20 @@ class IdRfcWrapper:
             return 'RFC'
         elif self.id.draft_status == "Active":
             return 'Active Internet-Draft'
+        else:
+            return 'Old Internet-Draft'
+
+    def view_sort_group_byad(self):
+        if self.rfc:
+            return 'RFC'
+        elif self.id.draft_status == "Active":
+            if self.id.in_ietf_process():
+               if self.id.ietf_process._idinternal.cur_state_id == IDState.DEAD:
+                   return 'IESG Dead Internet-Draft'
+               else:
+                   return "%s Internet-Draft" % self.id.ietf_process._idinternal.cur_state
+            else: 
+                return 'Active Internet-Draft'
         else:
             return 'Old Internet-Draft'
 

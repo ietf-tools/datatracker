@@ -234,14 +234,16 @@ def session_draft_list(num, session):
     drafts = set(re.findall('(draft-[-a-z0-9]*)',agenda))
 
     for draft in drafts:
-        if (re.search('-[0-9]{2}$',draft)):
-            doc_name = draft
-        else:
-            id = get_object_or_404(InternetDraft, filename=draft)
-            doc = IdWrapper(id)
-            doc_name = draft + "-" + id.revision
-        result.append(doc_name)
-
+        try:
+            if (re.search('-[0-9]{2}$',draft)):
+                doc_name = draft
+            else:
+                id = InternetDraft.objects.get(filename=draft)
+                doc = IdWrapper(id)
+                doc_name = draft + "-" + id.revision
+            result.append(doc_name)
+        except InternetDraft.DoesNotExist:
+            pass
     return sorted(list(set(result)))
 
 

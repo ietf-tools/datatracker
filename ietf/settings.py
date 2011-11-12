@@ -73,6 +73,7 @@ ADMIN_MEDIA_PREFIX = '/media/'
 
 AUTH_PROFILE_MODULE = 'ietfauth.IetfUserProfile'
 AUTHENTICATION_BACKENDS = ( "ietf.ietfauth.auth.IetfUserBackend", )
+
 SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
