@@ -61,8 +61,8 @@ Show: <input type="radio" name="discuss_show" checked="checked" value="all" id="
 {% include "idrfc/status_columns.html" %}
 <td class="ad">{{ doc.ad_name|default:"" }}</td>
 <td>
-{% for po in doc.ietf_process.iesg_ballot.get_discuss %}
-{{po.ad_name}} ({% if po.discuss_date %}{{po.discuss_date|timesince_days}}{%endif%} days ago{% if doc.is_id_wrapper %}{% ifnotequal po.discuss_revision doc.latest_revision %} for -{{po.discuss_revision}}{% endifnotequal %}{% endif %})<br/>
+{% for po in doc.ietf_process.iesg_ballot.get_discuss|dictsort:"is_old_ad" %}
+{%if po.is_old_ad %}[{%endif%}{{po.ad_name}}{%if po.is_old_ad %}]{%endif%} ({% if po.discuss_date %}{{po.discuss_date|timesince_days}}{%endif%} days ago{% if doc.is_id_wrapper %}{% ifnotequal po.discuss_revision doc.latest_revision %} for -{{po.discuss_revision}}{% endifnotequal %}{% endif %})<br/>
 {% endfor %}
 </td>
 </tr>
