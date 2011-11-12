@@ -600,6 +600,22 @@
         <field type="CharField" name="created_by">cclark</field>
         <field type="CharField" name="address_type">W</field>
     </object>
+    <object pk="108300" model="idtracker.personororginfo">
+        <field type="CharField" name="record_type">business</field>
+        <field type="CharField" name="name_prefix">Mrs.</field>
+        <field type="CharField" name="first_name">Karen</field>
+        <field type="CharField" name="first_name_key">KAREN</field>
+        <field type="CharField" name="middle_initial"></field>
+        <field type="CharField" name="middle_initial_key"></field>
+        <field type="CharField" name="last_name">Moreland</field>
+        <field type="CharField" name="last_name_key">MORELAND</field>
+        <field type="CharField" name="name_suffix"></field>
+        <field type="DateField" name="date_modified">1999-02-26</field>
+        <field type="CharField" name="modified_by">cclark</field>
+        <field type="DateField" name="date_created">1999-02-26</field>
+        <field type="CharField" name="created_by">cclark</field>
+        <field type="CharField" name="address_type">W</field>
+    </object>
     <object pk="26" model="idtracker.iesglogin">
         <field type="CharField" name="login_name">scoya</field>
         <field type="CharField" name="password">deleted</field>
@@ -766,7 +782,7 @@
         <field type="IntegerField" name="user_level">0</field>
         <field type="CharField" name="first_name">Karen</field>
         <field type="CharField" name="last_name">Moreland</field>
-        <field to="idtracker.personororginfo" name="person" rel="ManyToOneRel"><None></None></field>
+        <field to="idtracker.personororginfo" name="person" rel="ManyToOneRel">108300</field>
         <field type="CharField" name="pgp_id"></field>
         <field type="NullBooleanField" name="default_search">0</field>
     </object>

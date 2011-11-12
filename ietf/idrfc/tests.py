@@ -46,6 +46,9 @@ from ietf.idtracker.models import *
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, login_testing_unauthorized
 from ietf.utils.test_runner import mail_outbox
 
+from ietf.ietfworkflows.models import Stream
+from django.contrib.auth.models import User
+
 class IdRfcUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
         self.doTestUrls(__file__)
@@ -179,6 +182,7 @@ class EditInfoTestCase(django.test.TestCase):
                                   state_change_notice_to="test@example.com",
                                   note="",
                                   telechat_date="",
+                                  stream=Stream.objects.get(name=u'IETF').id,
                                   ))
         self.assertEquals(r.status_code, 302)
 
@@ -206,6 +210,7 @@ class EditInfoTestCase(django.test.TestCase):
                     job_owner=str(draft.idinternal.job_owner_id),
                     state_change_notice_to="test@example.com",
                     note="",
+                    stream=Stream.objects.get(name=u'IETF').id,
                     )
 
         from ietf.iesg.models import TelechatDates
@@ -265,6 +270,7 @@ class EditInfoTestCase(django.test.TestCase):
                                   state_change_notice_to="test@example.com",
                                   note="This is a note",
                                   telechat_date="",
+                                  stream=Stream.objects.get(name=u'IETF').id,
                                   ))
         self.assertEquals(r.status_code, 302)
 

@@ -22,6 +22,10 @@ from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
+from ietf.ietfworkflows.models import Stream
+from ietf.ietfworkflows.utils import update_stream
+from ietf.ietfworkflows.streams import get_stream_from_draft
+
     
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(IDState.objects.all(), empty_label=None, required=True)
@@ -101,6 +105,7 @@ class EditInfoForm(forms.Form):
     intended_status = forms.ModelChoiceField(IDIntendedStatus.objects.all(), empty_label=None, required=True)
     area_acronym = forms.ModelChoiceField(Area.active_areas(), required=True, empty_label='None Selected')
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
+    stream = forms.ModelChoiceField(Stream.objects.all(), empty_label=None, required=True)
     job_owner = forms.ModelChoiceField(IESGLogin.objects.filter(user_level__in=(IESGLogin.AD_LEVEL, IESGLogin.INACTIVE_AD_LEVEL)).order_by('user_level', 'last_name'), label="Responsible AD", empty_label=None, required=True)
     create_in_state = forms.ModelChoiceField(IDState.objects.filter(document_state_id__in=(IDState.PUBLICATION_REQUESTED, IDState.AD_WATCHING)), empty_label=None, required=False)
     state_change_notice_to = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
@@ -279,6 +284,13 @@ def edit_info(request, name):
             doc.idinternal.event_date = date.today()
             doc.idinternal.status_date = date.today()
 
+            
+            update_stream(doc,
+                          "Setting stream while adding document to the tracker",
+                           person=request.user.get_profile().person(),
+                           to_stream = r['stream']
+                          )
+
             if changes and not new_document:
                 email_owner(request, doc, orig_job_owner, login, "\n".join(changes))
             if new_document:
@@ -288,6 +300,8 @@ def edit_info(request, name):
             doc.save()
             return HttpResponseRedirect(doc.idinternal.get_absolute_url())
     else:
+        stream=get_stream_from_draft(doc)
+        stream_id = stream.id if stream else None 
         init = dict(intended_status=doc.intended_status_id,
                     area_acronym=doc.idinternal.area_acronym_id,
                     job_owner=doc.idinternal.job_owner_id,
@@ -295,6 +309,7 @@ def edit_info(request, name):
                     note=dehtmlify_textarea_text(doc.idinternal.note),
                     telechat_date=initial_telechat_date,
                     returning_item=doc.idinternal.returning_item,
+                    stream=stream_id
                     )
 
         form = EditInfoForm(old_ads=False, initial=init)
