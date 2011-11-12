@@ -11,6 +11,8 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
 from ietf.ipr.search import iprs_from_docs
+from ietf.ietfworkflows.streams import (get_stream_from_draft)
+from ietf.ietfworkflows.models import (Stream)
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.idinternal.state_change_notice_to.replace(';', ',').split(',')]
@@ -160,6 +162,12 @@ def generate_approval_mail_rfc_editor(request, doc):
     disapproved = doc.idinternal.cur_state_id in IDState.DO_NOT_PUBLISH_STATES
     doc_type = "RFC" if type(doc) == Rfc else "Internet Draft"
     
+    stream = get_stream_from_draft(doc)
+    to = ", ".join([u"%s <%s>" % x.email() for x in stream.get_chairs_for_document(doc) ])
+    if stream.name == "IRTF":
+    	# also send to the IRSG
+        to += ", Internet Research Steering Group (IRSG) <irsg@irtf.org>"
+
     return render_to_string("idrfc/approval_mail_rfc_editor.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url(),
@@ -167,6 +175,7 @@ def generate_approval_mail_rfc_editor(request, doc):
                                  status=status,
                                  full_status=full_status,
                                  disapproved=disapproved,
+                                 to=to,
                                  )
                             )
 

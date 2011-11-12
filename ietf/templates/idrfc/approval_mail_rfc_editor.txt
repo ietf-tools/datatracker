@@ -1,5 +1,5 @@
 {% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
-To: RFC Editor <rfc-editor@rfc-editor.org>
+To: {{to}}
 Cc: The IESG <iesg@ietf.org>, <iana@iana.org>, <ietf-announce@ietf.org>
 Subject: Results of IETF-conflict review for {{ doc.file_tag }}
 {% filter wordwrap:73 %}
