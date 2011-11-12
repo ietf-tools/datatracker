@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block content %}
 <h1>Internet-Drafts and RFCs for {{ ad_name }}</h1>
 
-{% regroup docs by view_sort_group as grouped_docs %}
+{% regroup docs by view_sort_group_byad as grouped_docs %}
 
 <table class="ietf-table ietf-doctable">
 <tr><th class="doc">Document</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th><th class="ad">Area Director</th></tr> 
