@@ -203,9 +203,9 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_IPR"):
         rev = models.CharField(max_length=2, blank=True)
         def __unicode__(self):
             if self.rev:
-                return u"%s which applies to %s-%s" % (self.ipr, self.document, self.revision)
+                return u"%s which applies to %s-%s" % (self.ipr, self.doc_alias.name, self.rev)
             else:
-                return u"%s which applies to %s" % (self.ipr, self.document)
+                return u"%s which applies to %s" % (self.ipr, self.doc_alias.name)
 
     # proxy stuff
     IprDraftOld = IprDraft
