@@ -13,8 +13,9 @@ from ietf.utils.test_data import make_test_data
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from redesign.person.models import Person, Email
-    from redesign.group.models import Group, Role
-    from redesign.doc.models import Document
+    from redesign.group.models import Group, Role, GroupStateTransitions
+    from redesign.doc.models import Document, State, WriteupDocEvent
+    from redesign.name.models import DocTagName
         
 class ManageDelegatesTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -181,7 +182,118 @@ class ManageShepherdsTestCase(django.test.TestCase):
         self.assertTrue(Email.objects.get(address="plain@example.com").person.name in r.content)
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
 
+class ManageWorkflowTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_manage_workflows(self):
+        make_test_data()
+
+        group = Group.objects.get(acronym="mars")
+
+        url = urlreverse('manage_workflow', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        state = State.objects.get(type="draft-stream-ietf", slug="wg-lc")
+        self.assertTrue(state not in group.unused_states.all())
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q("form.set-state").find("input[name=state][value=%s]" % state.pk).parents("form").find("input[name=active][value=0]")), 1)
+
+        # deactivate state
+        r = self.client.post(url,
+                             dict(action="setstateactive",
+                                  state=state.pk,
+                                  active="0"))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q("form.set-state").find("input[name=state][value=%s]" % state.pk).parents("form").find("input[name=active][value=1]")), 1)
+        group = Group.objects.get(acronym=group.acronym)
+        self.assertTrue(state in group.unused_states.all())
+
+        # change next states
+        state = State.objects.get(type="draft-stream-ietf", slug="wg-doc")
+        next_states = State.objects.filter(type=b"draft-stream-ietf", slug__in=["parked", "dead", "wait-wgw", 'sub-pub']).values_list('pk', flat=True)
+        r = self.client.post(url,
+                             dict(action="setnextstates",
+                                  state=state.pk,
+                                  next_states=next_states))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q("form.set-next-states").find("input[name=state][value=%s]" % state.pk).parents('form').find("input[name=next_states][checked=checked]")), len(next_states))
+        transitions = GroupStateTransitions.objects.filter(group=group, state=state)
+        self.assertEquals(len(transitions), 1)
+        self.assertEquals(set(transitions[0].next_states.values_list("pk", flat=True)), set(next_states))
+
+        # change them back to default
+        next_states = state.next_states.values_list("pk", flat=True)
+        r = self.client.post(url,
+                             dict(action="setnextstates",
+                                  state=state.pk,
+                                  next_states=next_states))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        transitions = GroupStateTransitions.objects.filter(group=group, state=state)
+        self.assertEquals(len(transitions), 0)
+
+        # deactivate tag
+        tag = DocTagName.objects.get(slug="w-expert")
+        r = self.client.post(url,
+                             dict(action="settagactive",
+                                  tag=tag.pk,
+                                  active="0"))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form').find('input[name=tag][value="%s"]' % tag.pk).parents("form").find("input[name=active]")), 1)
+        group = Group.objects.get(acronym=group.acronym)
+        self.assertTrue(tag in group.unused_tags.all())
+
+class ManageWriteupTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_manage_writeup(self):
+        draft = make_test_data()
+
+        self.assertTrue(not draft.tags.filter(slug="sheph-u"))
+
+        url = urlreverse('doc_managing_writeup', kwargs=dict(acronym=draft.group.acronym, name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q("input[type=submit][value*=Change]")), 1)
+
+        # post text
+        r = self.client.post(url,
+                             dict(writeup="New writeup"))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q("input[name=followup]")), 1)
+        self.assertEquals(len(q("input[name=confirm]")), 1)
+        self.assertEquals(q("input[name=writeup]").val(), "New writeup")
+
+        # update tag and confirm
+        r = self.client.post(url,
+                             dict(writeup="New writeup",
+                                  confirm="1",
+                                  followup="1",
+                                  comment="Starting on write up",
+                                  modify_tag="Modify"))
+        self.assertEquals(r.status_code, 200)
+        e = draft.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
+        self.assertTrue(e)
+        self.assertEquals(e.text, "New writeup")
+        self.assertEquals(e.by.user.username, "secretary")
+        self.assertTrue(draft.tags.filter(slug="sheph-u"))
+
+
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # the above tests only work with the new schema
     del ManageDelegatesTestCase 
     del ManageShepherdsTestCase 
+    del ManageWorkflowTestCase
+    del ManageWriteupCase

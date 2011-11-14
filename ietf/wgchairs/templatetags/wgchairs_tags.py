@@ -24,12 +24,8 @@ def wgchairs_admin_options(context, wg):
 
 @register.simple_tag
 def writeup(doc):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        e = doc.latest_event(type="changed_protocol_writeup")
-        return e.text if e else ""
-    
     writeup = doc.protowriteup_set.all()
-    if not writeup.count():
+    if not writeup:
         return ''
     else:
         return writeup[0].writeup
@@ -37,12 +33,8 @@ def writeup(doc):
 
 @register.simple_tag
 def writeupdate(doc):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        e = doc.latest_event(type="changed_protocol_writeup")
-        return e.time if e else ""
-    
     writeup = doc.protowriteup_set.all()
-    if not writeup.count():
+    if not writeup:
         return ''
     else:
         return writeup[0].date
