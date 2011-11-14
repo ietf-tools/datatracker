@@ -11,6 +11,29 @@ from redesign.util import admin_link
 
 import datetime, os
 
+class StateType(models.Model):
+    slug = models.CharField(primary_key=True, max_length=30) # draft, draft_iesg, charter, ...
+    label = models.CharField(max_length=255) # State, IESG state, WG state, ...
+
+    def __unicode__(self):
+        return self.label
+
+class State(models.Model):
+    type = models.ForeignKey(StateType)
+    slug = models.SlugField()
+    name = models.CharField(max_length=255)
+    used = models.BooleanField(default=True)
+    desc = models.TextField(blank=True)
+    order = models.IntegerField(default=0)
+
+    next_states = models.ManyToManyField('State', related_name="previous_states")
+
+    def __unicode__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ["type", "order"]
+
 class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
     time = models.DateTimeField(default=datetime.datetime.now) # should probably have auto_now=True
@@ -18,12 +41,13 @@ class DocumentInfo(models.Model):
     type = models.ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
     title = models.CharField(max_length=255)
     # State
+    states = models.ManyToManyField(State, blank=True)
+
     state = models.ForeignKey(DocStateName, blank=True, null=True) # Active/Expired/RFC/Replaced/Withdrawn
-    tags = models.ManyToManyField(DocInfoTagName, blank=True, null=True) # Revised ID Needed, ExternalParty, AD Followup, ...
+    tags = models.ManyToManyField(DocTagName, blank=True, null=True) # Revised ID Needed, ExternalParty, AD Followup, ...
     stream = models.ForeignKey(DocStreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
     group = models.ForeignKey(Group, blank=True, null=True) # WG, RG, IAB, IESG, Edu, Tools
-    wg_state  = models.ForeignKey(WgDocStateName, verbose_name="WG state", blank=True, null=True) # Not/Candidate/Active/Parked/LastCall/WriteUp/Submitted/Dead
-    iesg_state = models.ForeignKey(IesgDocStateName, verbose_name="IESG state", blank=True, null=True) # 
+    iesg_state = models.ForeignKey(IesgDocStateName, verbose_name="IESG state", blank=True, null=True) #
     iana_state = models.ForeignKey(IanaDocStateName, verbose_name="IANA state", blank=True, null=True)
     rfc_state = models.ForeignKey(RfcDocStateName, verbose_name="RFC state", blank=True, null=True)
     # Other
@@ -48,7 +72,24 @@ class DocumentInfo(models.Model):
             return os.path.join(settings.AGENDA_PATH, meeting, self.type_id) + "/"
         else:
             raise NotImplemented
-    
+
+    def set_state(self, state):
+        already_set = self.states.filter(type=state.type)
+        others = [s for s in already_set if s != state]
+        if others:
+            self.states.remove(*others)
+        if state not in already_set:
+            self.states.add(state)
+
+    def unset_state(self, state):
+        self.states.remove(state)
+
+    def get_state(self, state_type):
+        try:
+            return self.states.get(type=state_type)
+        except State.DoesNotExist:
+            return None
+
     class Meta:
         abstract = True
     def author_list(self):
@@ -116,7 +157,6 @@ class Document(DocumentInfo):
             if a:
                 name = a[0].name
         return name
-            
 
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')
@@ -144,6 +184,9 @@ class DocHistory(DocumentInfo):
     authors = models.ManyToManyField(Email, through=DocHistoryAuthor, blank=True)
     def __unicode__(self):
         return unicode(self.doc.name)
+    class Meta:
+        verbose_name = "document history"
+        verbose_name_plural = "document histories"
 
 def save_document_in_history(doc):
     def get_model_fields_as_dict(obj):
@@ -198,6 +241,12 @@ class DocAlias(models.Model):
         verbose_name = "document alias"
         verbose_name_plural = "document aliases"
 
+class DocReminder(models.Model):
+    event = models.ForeignKey('DocEvent')
+    type = models.ForeignKey(DocReminderTypeName)
+    due = models.DateTimeField()
+    active = models.BooleanField(default=True)
+
 
 EVENT_TYPES = [
     # core events
@@ -205,6 +254,7 @@ EVENT_TYPES = [
     ("changed_document", "Changed document metadata"),
     
     # misc document events
+    ("changed_stream", "Changed document stream"),
     ("added_comment", "Added comment"),
     ("expired_document", "Expired document"),
     ("requested_resurrect", "Requested resurrect"),
@@ -212,6 +262,7 @@ EVENT_TYPES = [
     ("published_rfc", "Published RFC"),
 
     # WG events
+    ("changed_group", "Changed group"),
     ("changed_protocol_writeup", "Changed protocol writeup"),
     
     # IESG events
