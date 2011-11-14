@@ -196,14 +196,14 @@ def insert_into_database(drafts, refs):
 import django.db.transaction
 
 def get_rfc_tag_mapping():
-    """Return dict with RFC Editor state name -> DocInfoTagName"""
-    from name.models import DocInfoTagName
+    """Return dict with RFC Editor state name -> DocTagName"""
+    from name.models import DocTagName
     from name.utils import name
     
     return {
-        'IANA': name(DocInfoTagName, 'iana-crd', 'IANA coordination', "RFC-Editor/IANA Registration Coordination"),
-        'REF': name(DocInfoTagName, 'ref', 'Holding for references', "Holding for normative reference"),
-        'MISSREF': name(DocInfoTagName, 'missref', 'Missing references', "Awaiting missing normative reference"),
+        'IANA': name(DocTagName, 'iana-crd', 'IANA coordination', "RFC-Editor/IANA Registration Coordination"),
+        'REF': name(DocTagName, 'ref', 'Holding for references', "Holding for normative reference"),
+        'MISSREF': name(DocTagName, 'missref', 'Missing references', "Awaiting missing normative reference"),
     }
 
 def get_rfc_state_mapping():
@@ -229,7 +229,7 @@ def get_rfc_state_mapping():
 @django.db.transaction.commit_on_success
 def insert_into_databaseREDESIGN(drafts, refs):
     from doc.models import Document
-    from name.models import DocInfoTagName
+    from name.models import DocTagName
 
     tags = get_rfc_tag_mapping()
     states = get_rfc_state_mapping()

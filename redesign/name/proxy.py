@@ -87,7 +87,7 @@ class IDSubStateManager(TranslatingManager):
     def all(self):
         return self.filter(slug__in=['extpty', 'need-rev', 'ad-f-up', 'point'])
         
-class IDSubState(DocInfoTagName):
+class IDSubState(DocTagName):
     objects = IDSubStateManager(dict(pk="order"))
     
     def from_object(self, base):
@@ -116,3 +116,13 @@ class IDSubState(DocInfoTagName):
     class Meta:
         proxy = True
 
+
+class AnnotationTagObjectRelationProxy(DocTagName):
+    objects = TranslatingManager(dict(annotation_tag__name="name"))
+
+    @property
+    def annotation_tag(self):
+        return self
+
+    class Meta:
+        proxy = True

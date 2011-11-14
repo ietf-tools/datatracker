@@ -27,14 +27,19 @@ def output(name, qs):
         raise
 
 # pick all name models directly out of the module
-names = []
+objects = []
 
 import redesign.name.models
 for n in dir(redesign.name.models):
     if n[:1].upper() == n[:1] and n.endswith("Name"):
         model = getattr(redesign.name.models, n)
         if not model._meta.abstract:
-            names.extend(model.objects.all())
-            
-output("names", names)        
+            objects.extend(model.objects.all())
+
+
+import redesign.doc.models # FIXME
+objects += redesign.doc.models.StateType.objects.all()
+objects += redesign.doc.models.State.objects.all()
+
+output("names", objects)
 

@@ -24,7 +24,7 @@ from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
 from doc.models import Document, DocEvent, StatusDateDocEvent, TelechatDocEvent, save_document_in_history, DocHistory
-from name.models import IesgDocStateName, IntendedStdLevelName, DocInfoTagName, get_next_iesg_states, DocStateName
+from name.models import IesgDocStateName, IntendedStdLevelName, DocTagName, get_next_iesg_states, DocStateName
 from person.models import Person, Email
     
 class ChangeStateForm(forms.Form):
@@ -548,7 +548,7 @@ def edit_infoREDESIGN(request, name):
                 e.save()
             
             if has_role(request.user, 'Secretariat'):
-                via_rfc = DocInfoTagName.objects.get(slug="via-rfc")
+                via_rfc = DocTagName.objects.get(slug="via-rfc")
                 if r['via_rfc_editor']:
                     doc.tags.add(via_rfc)
                 else:

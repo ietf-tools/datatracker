@@ -308,7 +308,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             inactive_ads.sort(key=extract_last_name)
 
             self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.name) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
-            self.fields['subState'].choices = [('', 'any substate'), ('0', 'no substate')] + [(n.slug, n.name) for n in DocInfoTagName.objects.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))]
+            self.fields['subState'].choices = [('', 'any substate'), ('0', 'no substate')] + [(n.slug, n.name) for n in DocTagName.objects.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))]
         def clean_name(self):
             value = self.cleaned_data.get('name','')
             return normalize_draftname(value)

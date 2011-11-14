@@ -10,7 +10,7 @@ from ietf.idtracker.models import InternetDraft, IDDates, IDStatus, IDState, Doc
 from ietf.utils.mail import send_mail, send_mail_subj
 from ietf.idrfc.utils import log_state_changed, add_document_comment
 from doc.models import Document, DocEvent, save_document_in_history
-from name.models import IesgDocStateName, DocStateName, DocInfoTagName
+from name.models import IesgDocStateName, DocStateName, DocTagName
 from person.models import Person, Email
 
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
@@ -349,7 +349,7 @@ def clean_up_id_filesREDESIGN():
                         # revert version after having deleted tombstone
                         doc.rev = "%02d" % (int(revision) - 1) # FIXME: messed up
                         doc.save()
-                        doc.tags.add(DocInfoTagName.objects.get(slug='exp-tomb'))
+                        doc.tags.add(DocTagName.objects.get(slug='exp-tomb'))
                     else:
                         move_file_to("expired_without_tombstone")
             

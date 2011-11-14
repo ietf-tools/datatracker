@@ -168,7 +168,7 @@ def get_stream_mapping():
     return {
         "Legacy": name(DocStreamName, "legacy", "Legacy"),
         "IETF": name(DocStreamName, "ietf", "IETF"),
-        "INDEPENDENT": name(DocStreamName, "ise", "Independent Submission"),
+        "INDEPENDENT": name(DocStreamName, "ise", "ISE", desc="Independent submission editor stream"),
         "IAB": name(DocStreamName, "iab", "IAB"),
         "IRTF": name(DocStreamName, "irtf", "IRTF"),
     }
@@ -181,13 +181,13 @@ def insert_to_databaseREDESIGN(data):
     from person.models import Person
     from doc.models import Document, DocAlias, DocEvent, RelatedDocument
     from group.models import Group
-    from name.models import DocInfoTagName, DocRelationshipName
+    from name.models import DocTagName, DocRelationshipName
     from name.utils import name
     
     system = Person.objects.get(name="(System)")
     std_level_mapping = get_std_level_mapping()
     stream_mapping = get_stream_mapping()
-    tag_has_errata = name(DocInfoTagName, 'errata', "Has errata")
+    tag_has_errata = name(DocTagName, 'errata', "Has errata")
     relationship_obsoletes = name(DocRelationshipName, "obs", "Obsoletes")
     relationship_updates = name(DocRelationshipName, "updates", "Updates")
 

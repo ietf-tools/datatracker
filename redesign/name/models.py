@@ -28,16 +28,13 @@ class IesgGroupStateName(NameModel):
 class RoleName(NameModel):
     """AD, Chair"""
 class DocStreamName(NameModel):
-    """IETF, IAB, IRTF, Independent Submission, Legacy"""
+    """IETF, IAB, IRTF, ISE, Legacy"""
 class DocStateName(NameModel):
     """Active, Expired, RFC, Replaced, Withdrawn"""
 class DocRelationshipName(NameModel):
     """Updates, Replaces, Obsoletes, Reviews, ... The relationship is
     always recorded in one direction.
     """
-class WgDocStateName(NameModel):
-    """Not, Candidate, Active, Parked, LastCall, WriteUp, Submitted,
-    Dead"""
 class IesgDocStateName(NameModel):
     """Pub Request, Ad Eval, Expert Review, Last Call Requested, In
     Last Call, Waiting for Writeup, Waiting for AD Go-Ahead, IESG
@@ -51,15 +48,17 @@ class RfcDocStateName(NameModel):
 class DocTypeName(NameModel):
     """Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email,
     Review, Issue, Wiki"""
-class DocInfoTagName(NameModel):
+class DocTagName(NameModel):
     """Waiting for Reference, IANA Coordination, Revised ID Needed,
-    External Party, AD Followup, Point Raised - Writeup Needed"""
+    External Party, AD Followup, Point Raised - Writeup Needed, ..."""
 class StdLevelName(NameModel):
     """Proposed Standard, Draft Standard, Standard, Experimental,
     Informational, Best Current Practice, Historic, ..."""
 class IntendedStdLevelName(NameModel):
     """Standards Track, Experimental, Informational, Best Current
     Practice, Historic, ..."""
+class DocReminderTypeName(NameModel):
+    "Stream state"
 class BallotPositionName(NameModel):
     """ Yes, NoObjection, Abstain, Discuss, Recuse """
 class MeetingTypeName(NameModel):
