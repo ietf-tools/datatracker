@@ -3,6 +3,7 @@
 # basic dependencies
 set -e
 python import-persons.py
+python import-states.py
 python import-groups.py
 python import-roles.py
 

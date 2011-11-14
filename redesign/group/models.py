@@ -19,6 +19,10 @@ class GroupInfo(models.Model):
     list_subscribe = models.CharField(max_length=255, blank=True)
     list_archive = models.CharField(max_length=255, blank=True)
     comments = models.TextField(blank=True)
+
+    unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group")
+    unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group")
+
     def __unicode__(self):
         return self.name
 
@@ -62,6 +66,13 @@ class GroupMilestone(models.Model):
     class Meta:
 	ordering = ['expected_due_date']
 
+class GroupStateTransitions(models.Model):
+    """Captures that a group has overriden the default available
+    document state transitions for a certain state."""
+    group = models.ForeignKey(Group)
+    state = models.ForeignKey('doc.State', help_text="State for which the next states should be overridden")
+    next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
+
 GROUP_EVENT_CHOICES = [("proposed", "Proposed group"),
                        ("started", "Started group"),
                        ("concluded", "Concluded group"),
@@ -101,3 +112,6 @@ class RoleHistory(models.Model):
     email = models.ForeignKey(Email, help_text="Email address used by person for this role")
     def __unicode__(self):
         return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym)
+
+    class Meta:
+        verbose_name_plural = "role histories"

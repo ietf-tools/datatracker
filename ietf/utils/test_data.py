@@ -4,6 +4,7 @@ from ietf.iesg.models import TelechatDates, WGAction
 from ietf.ipr.models import IprDetail, IprDocAlias
 from ietf.meeting.models import Meeting
 from redesign.doc.models import *
+from redesign.doc.utils import *
 from redesign.name.models import *
 from redesign.group.models import *
 from redesign.person.models import *
@@ -29,6 +30,12 @@ def make_test_data():
         type_id="wg",
         parent=area,
         )
+    individ = Group.objects.create(
+        name="Individual submissions",
+        acronym="none",
+        state_id="active",
+        type_id="individ",
+        parent=None)
     
     # persons
 
@@ -49,13 +56,13 @@ def make_test_data():
 
     # plain IETF'er
     u = User.objects.create(username="plain")
-    p = Person.objects.create(
+    plainman = Person.objects.create(
         name="Plain Man",
         ascii="Plain Man",
         user=u)
     email = Email.objects.create(
         address="plain@example.com",
-        person=p)
+        person=plainman)
     
     # ad
     u = User.objects.create(username="ad")
@@ -154,10 +161,13 @@ def make_test_data():
         rev="01",
         pages=2,
         intended_std_level_id="ps",
+        shepherd=plainman,
         ad=ad,
         notify="aliens@example.mars",
         note="",
         )
+
+    draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
     doc_alias = DocAlias.objects.create(
         document=draft,

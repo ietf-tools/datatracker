@@ -14,16 +14,19 @@ management.setup_environ(settings)
 
 from redesign.group.models import *
 from redesign.name.models import *
+from redesign.doc.models import State, StateType
+from redesign.doc.utils import get_tags_for_stream_id
 from redesign.name.utils import name
 from redesign.importing.utils import old_person_to_person
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role, AreaDirector
 from ietf.liaisons.models import SDOs
+import workflows.utils
 
 # imports IETFWG, Area, AreaGroup, Acronym, IRTF, AreaWGURL, SDOs
 
 # also creates nomcom groups
 
-# assumptions: persons have been imported
+# assumptions: persons and states have been imported
 
 state_names = dict(
     bof=name(GroupStateName, slug="bof", name="BOF"),
@@ -90,7 +93,6 @@ iab_group.save()
 
 
 system = Person.objects.get(name="(System)")
-
 
 # NomCom
 for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("start_year"):
@@ -300,7 +302,28 @@ for o in IETFWG.objects.all().order_by("pk"):
         milestone.done_date = m.done_date
         milestone.time = datetime.datetime.combine(m.last_modified_date, datetime.time(12, 0, 0))
         milestone.save()
-        
+
+    # import workflow states and transitions
+    w = workflows.utils.get_workflow_for_object(o)
+    if w:
+        try:
+            w = w.wgworkflow
+        except WGWorkflow.DoesNotExist:
+            w = None
+    if w:
+        w.unused_states = State.objects.filter(type="draft-stream-ietf").exclude(name__in=[x.name for x in w.selected_states.all()])
+        w.unused_tags = DocTagName.objects.filter(slug__in=get_tags_for_stream_id("draft-stream-ietf")).exclude(name__in=[x.name for x in w.selected_tags.all()])
+
+        # custom transitions
+        states = dict((s.name, s) for s in State.objects.filter(type="draft-stream-ietf"))
+        old_states = dict((s.name, s) for s in w.states.filter(name__in=[name for name in states]).select_related('transitions'))
+        for name in old_states:
+            s = states[name]
+            o = old_states[name]
+            n = [states[t.destination.name] for t in o.transitions.filter(workflow=workflow)]
+            if set(s.next_states) != set(n):
+                g, _ = GroupStateTransitions.objects.get_or_create(group=group, state=s)
+                g.next_states = n
     # import events
     group.groupevent_set.all().delete()
 

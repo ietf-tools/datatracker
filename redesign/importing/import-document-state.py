@@ -11,7 +11,10 @@ settings.USE_DB_REDESIGN_PROXY_CLASSES = False
 from django.core import management
 management.setup_environ(settings)
 
+from django.template.defaultfilters import pluralize
+
 from redesign.doc.models import *
+from redesign.doc.utils import get_tags_for_stream_id
 from redesign.group.models import *
 from redesign.name.models import *
 from redesign.importing.utils import old_person_to_person, person_name
@@ -19,8 +22,9 @@ from redesign.name.utils import name
 from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.mirror_rfc_index import get_std_level_mapping, get_stream_mapping
-#from ietf.ietfworkflows.utils import get_state_for_draft
-
+from ietf.ietfworkflows.models import StreamedID, AnnotationTag, ContentType, ObjectHistoryEntry, ObjectWorkflowHistoryEntry, ObjectAnnotationTagHistoryEntry, ObjectStreamHistoryEntry, StateObjectRelationMetadata
+import workflows.utils
+from ietf.wgchairs.models import ProtoWriteUp
 
 document_name_to_import = None
 if len(sys.argv) > 1:
@@ -28,13 +32,14 @@ if len(sys.argv) > 1:
 
 # prevent memory from leaking when settings.DEBUG=True
 from django.db import connection
-class DummyQueries(object):
+class DontSaveQueries(object):
     def append(self, x):
         pass 
-connection.queries = DummyQueries()
+connection.queries = DontSaveQueries()
 
 
 # assumptions:
+# - states have been imported
 # - groups have been imported
 # - IESG login emails/roles have been imported
 # - IDAuthor emails/persons have been imported
@@ -44,7 +49,7 @@ connection.queries = DummyQueries()
 
 # imports InternetDraft, IDInternal, BallotInfo, Position,
 # IESGComment, IESGDiscuss, DocumentComment, IDAuthor, idrfc.RfcIndex,
-# idrfc.DraftVersions
+# idrfc.DraftVersions, StreamedID
 
 
 def alias_doc(name, doc):
@@ -55,6 +60,7 @@ def alias_doc(name, doc):
 type_draft = name(DocTypeName, "draft", "Draft")
 
 stream_mapping = get_stream_mapping()
+stream_mapping["ISE"] = stream_mapping["INDEPENDENT"]
 
 relationship_replaces = name(DocRelationshipName, "replaces", "Replaces")
 relationship_updates = name(DocRelationshipName, "updates", "Updates")
@@ -108,13 +114,14 @@ iesg_state_mapping = {
     None: None, # FIXME: consider introducing the ID-exists state
     }
 
+
 ballot_position_mapping = {
     'No Objection': name(BallotPositionName, 'noobj', 'No Objection'),
     'Yes': name(BallotPositionName, 'yes', 'Yes'),
     'Abstain': name(BallotPositionName, 'abstain', 'Abstain'),
     'Discuss': name(BallotPositionName, 'discuss', 'Discuss'),
     'Recuse': name(BallotPositionName, 'recuse', 'Recuse'),
-    'No Record': name(BallotPositionName, 'norecord', 'No record'),
+    'No Record': name(BallotPositionName, 'norecord', 'No Record'),
     }
 ballot_position_mapping["no"] = ballot_position_mapping['No Objection']
 ballot_position_mapping["yes"] = ballot_position_mapping['Yes']
@@ -124,26 +131,49 @@ ballot_position_mapping["recuse"] = ballot_position_mapping['Recuse']
 ballot_position_mapping[None] = ballot_position_mapping["No Record"]
 ballot_position_mapping["Undefined"] = ballot_position_mapping["No Record"]
 
+# tags
 substate_mapping = {
-    "External Party": name(DocInfoTagName, 'extpty', "External Party", 'The document is awaiting review or input from an external party (i.e, someone other than the shepherding AD, the authors, or the WG). See the "note" field for more details on who has the action.', 3),
-    "Revised ID Needed": name(DocInfoTagName, 'need-rev', "Revised ID Needed", 'An updated ID is needed to address the issues that have been raised.', 5),
-    "AD Followup": name(DocInfoTagName, 'ad-f-up', "AD Followup", """A generic substate indicating that the shepherding AD has the action item to determine appropriate next steps. In particular, the appropriate steps (and the corresponding next state or substate) depend entirely on the nature of the issues that were raised and can only be decided with active involvement of the shepherding AD. Examples include:
+    "External Party": name(DocTagName, 'extpty', "External Party", 'The document is awaiting review or input from an external party (i.e, someone other than the shepherding AD, the authors, or the WG). See the "note" field for more details on who has the action.', 3),
+    "Revised ID Needed": name(DocTagName, 'need-rev', "Revised ID Needed", 'An updated ID is needed to address the issues that have been raised.', 5),
+    "AD Followup": name(DocTagName, 'ad-f-up', "AD Followup", """A generic substate indicating that the shepherding AD has the action item to determine appropriate next steps. In particular, the appropriate steps (and the corresponding next state or substate) depend entirely on the nature of the issues that were raised and can only be decided with active involvement of the shepherding AD. Examples include:
 
 - if another AD raises an issue, the shepherding AD may first iterate with the other AD to get a better understanding of the exact issue. Or, the shepherding AD may attempt to argue that the issue is not serious enough to bring to the attention of the authors/WG.
 
 - if a documented issue is forwarded to a WG, some further iteration may be needed before it can be determined whether a new revision is needed or whether the WG response to an issue clarifies the issue sufficiently.
 
 - when a new revision appears, the shepherding AD will first look at the changes to determine whether they believe all outstanding issues have been raised satisfactorily, prior to asking the ADs who raised the original issues to verify the changes.""", 2),
-    "Point Raised - writeup needed": name(DocInfoTagName, 'point', "Point Raised - writeup needed", 'IESG discussions on the document have raised some issues that need to be brought to the attention of the authors/WG, but those issues have not been written down yet. (It is common for discussions during a telechat to result in such situations. An AD may raise a possible issue during a telechat and only decide as a result of that discussion whether the issue is worth formally writing up and bringing to the attention of the authors/WG). A document stays in the "Point Raised - Writeup Needed" state until *ALL* IESG comments that have been raised have been documented.', 1)
+    "Point Raised - writeup needed": name(DocTagName, 'point', "Point Raised - writeup needed", 'IESG discussions on the document have raised some issues that need to be brought to the attention of the authors/WG, but those issues have not been written down yet. (It is common for discussions during a telechat to result in such situations. An AD may raise a possible issue during a telechat and only decide as a result of that discussion whether the issue is worth formally writing up and bringing to the attention of the authors/WG). A document stays in the "Point Raised - Writeup Needed" state until *ALL* IESG comments that have been raised have been documented.', 1)
     }
 
-#wg_state_mapping = dict([(s.slug, s) for s in WGDocStateName.objects.all()] + [(None, None)])
+tag_review_by_rfc_editor = name(DocTagName, 'rfc-rev', "Review by RFC Editor")
+tag_via_rfc_editor = name(DocTagName, 'via-rfc', "Via RFC Editor")
+tag_expired_tombstone = name(DocTagName, 'exp-tomb', "Expired tombstone")
+tag_approved_in_minute = name(DocTagName, 'app-min', "Approved in minute")
+tag_has_errata = name(DocTagName, 'errata', "Has errata")
 
-tag_review_by_rfc_editor = name(DocInfoTagName, 'rfc-rev', "Review by RFC Editor")
-tag_via_rfc_editor = name(DocInfoTagName, 'via-rfc', "Via RFC Editor")
-tag_expired_tombstone = name(DocInfoTagName, 'exp-tomb', "Expired tombstone")
-tag_approved_in_minute = name(DocInfoTagName, 'app-min', "Approved in minute")
-tag_has_errata = name(DocInfoTagName, 'errata', "Has errata")
+name(DocTagName, "w-expert", "Awaiting Expert Review/Resolution of Issues Raised", order=1)
+name(DocTagName, "w-extern", "Awaiting External Review/Resolution of Issues Raised", order=2)
+name(DocTagName, "w-merge", "Awaiting Merge with Other Document", order=3)
+name(DocTagName, "need-aut", "Author or Editor Needed", order=4)
+name(DocTagName, "w-refdoc", "Waiting for Referenced Document", order=5)
+name(DocTagName, "w-refing", "Waiting for Referencing Document", order=6)
+name(DocTagName, "rev-wglc", "Revised I-D Needed - Issue raised by WGLC", order=7)
+name(DocTagName, "rev-ad", "Revised I-D Needed - Issue raised by AD", order=8)
+name(DocTagName, "rev-iesg", "Revised I-D Needed - Issue raised by IESG", order=9)
+name(DocTagName, "sheph-u", "Doc Shepherd Follow-up Underway", order=10)
+name(DocTagName, "other", "Other - see Comment Log", order=11)
+name(DocTagName, "need-ed", "Editor Needed", order=1)
+name(DocTagName, "w-part", "Waiting for Partner Feedback", order=2)
+name(DocTagName, "w-review", "Awaiting Reviews", order=3)
+name(DocTagName, "sh-f-up", "Document Shepherd Followup", order=4)
+name(DocTagName, "need-sh", "Shepherd Needed")
+name(DocTagName, "w-dep", "Waiting for Dependency on Other Document")
+name(DocTagName, "iesg-com", "IESG Review Completed")
+
+stream_state_reminder_type = name(DocReminderTypeName, "stream-s", "Stream state should change")
+
+#tag_mapping = dict((t.name, t) for t in DocTagName.objects.all())
+
 
 # helpers
 def save_docevent(doc, event, comment):
@@ -770,6 +800,8 @@ for index, o in enumerate(all_drafts.iterator()):
     d.title = o.title
     d.state = state_mapping[o.status.status]
     d.group = Group.objects.get(acronym=o.group.acronym)
+
+    # try guess stream to have a default for old submissions
     if o.filename.startswith("draft-iab-"):
         d.stream = stream_mapping["IAB"]
     elif o.filename.startswith("draft-irtf-"):
@@ -778,10 +810,25 @@ for index, o in enumerate(all_drafts.iterator()):
         d.stream = stream_mapping["INDEPENDENT"]
     else:
         d.stream = stream_mapping["IETF"]
-    d.wg_state = None #wg_state_mapping[get_state_for_draft(o)]
+
+    try:
+        d.stream = stream_mapping[StreamedID.objects.get(draft=o).stream.name]
+    except StreamedID.DoesNotExist:
+        pass
+
     d.iesg_state = iesg_state_mapping[None]
     d.iana_state = None
     d.rfc_state = None
+    s = workflows.utils.get_state(o)
+    if s:
+        try:
+            # there may be a mismatch between the stream type and the
+            # state because of a bug in the ietfworkflows code so try
+            # first without type constraint
+            d.set_state(State.objects.get(name=s.name))
+        except State.MultipleObjectsReturned:
+            d.set_state(State.objects.get(type="draft-stream-%s" % d.stream_id, name=s.name))
+
     d.rev = o.revision
     d.abstract = o.abstract
     d.pages = o.txt_page_count
@@ -836,7 +883,79 @@ for index, o in enumerate(all_drafts.iterator()):
             e.desc = "New version available"
             e.save()
             known_revisions.add(v.revision)
-    
+
+    # ietfworkflows history entries
+    ctype = ContentType.objects.get_for_model(o)
+    for h in ObjectHistoryEntry.objects.filter(content_type=ctype, content_id=o.pk).order_by('date', 'id'):
+        e = DocEvent(type="changed_document")
+        e.time = h.date
+        e.by = old_person_to_person(h.person)
+        e.doc = d
+        r = h.get_real_instance()
+        if r:
+            if isinstance(r, ObjectWorkflowHistoryEntry):
+                s = State.objects.filter(type="draft-stream-%s" % d.stream_id, name=r.to_state)
+                if not s:
+                    s = State.objects.filter(name=r.to_state)
+                start = "State changed"
+                if s:
+                    start = "%s changed" % s[0].type.label
+
+                e.desc = u"%s to <b>%s</b> from %s" % (start, r.to_state, r.from_state)
+            elif isinstance(r, ObjectAnnotationTagHistoryEntry):
+                l = []
+                if r.setted:
+                    s = r.setted.split(",")
+                    l.append(u"Annotation tag%s %s set." % (pluralize(s), ", ".join(s)))
+                if r.unsetted:
+                    s = r.unsetted.split(",")
+                    l.append(u"Annotation tag%s %s cleared." % (pluralize(s), ", ".join(s)))
+                e.desc = " ".join(l)
+            elif isinstance(r, ObjectStreamHistoryEntry):
+                e.type = "changed_stream"
+                e.desc = u"Stream changed to <b>%s</b> from %s" % (r.to_stream, r.from_stream)
+            else:
+                raise Exception("Unknown ObjectHistoryEntry type: %s" % type(r))
+        e.save()
+
+        if r and isinstance(r, ObjectWorkflowHistoryEntry):
+            # may need to add reminder
+            try:
+                metadata = StateObjectRelationMetadata.objects.get(relation__state__name=r.to_state,
+                                                                   relation__content_id=o.pk,
+                                                                   relation__content_type=ContentType.objects.get_for_model(o))
+                if metadata.estimated_date:
+                    try:
+                        reminder = DocReminder.objects.get(event__doc=d, type=stream_state_reminder_type)
+                    except DocReminder.DoesNotExist:
+                        reminder = DocReminder(type=stream_state_reminder_type)
+
+                    reminder.event = e
+                    reminder.due = metadata.estimated_date
+                    reminder.active = metadata.estimated_date > datetime.datetime.now()
+                    reminder.save()
+            except StateObjectRelationMetadata.DoesNotExist:
+                pass
+
+        if h.comment and h.comment.strip() and not d.docevent_set.filter(type="added_comment", desc=h.comment.strip(), time=h.date):
+            e = DocEvent(type="added_comment")
+            e.time = h.date
+            e.by = old_person_to_person(h.person)
+            e.doc = d
+            e.desc = h.comment.strip()
+            e.save()
+
+
+    # wgchairs protocol writeups
+    for w in ProtoWriteUp.objects.filter(draft=o).order_by('date'):
+        e = WriteupDocEvent(type="changed_protocol_writeup")
+        e.time = w.date
+        e.by = old_person_to_person(w.person)
+        e.doc = d
+        e.desc = e.get_type_display()
+        e.text = w.writeup
+        e.save()
+
     # import events that might be missing, we can't be sure who did
     # them or when but if we don't generate them, we'll be missing the
     # information completely
@@ -870,6 +989,15 @@ for index, o in enumerate(all_drafts.iterator()):
     # tags
     sync_tag(d, o.review_by_rfc_editor, tag_review_by_rfc_editor)
     sync_tag(d, o.expired_tombstone, tag_expired_tombstone)
+
+    ctype = ContentType.objects.get_for_model(o)
+    used_tags = AnnotationTag.objects.filter(annotationtagobjectrelation__content_type=ctype, annotationtagobjectrelation__content_id=o.pk).values_list('name', flat=True)
+    possible_tags = get_tags_for_stream_id(d.stream_id)
+    for name in possible_tags:
+        if name == "need-rev" and o.idinternal and o.idinternal.cur_sub_state and o.idinternal.cur_sub_state.sub_state == "Revised ID Needed":
+            continue # don't overwrite tag from IESG substate
+
+        sync_tag(d, name in used_tags, name)
 
     # replacements
     if o.replaced_by:

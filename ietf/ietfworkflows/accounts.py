@@ -27,7 +27,7 @@ def is_wgchairREDESIGN(person):
 def is_wgdelegate(person):
     return bool(person.wgdelegate_set.all())
 
-def is_delegateREDESIGN(person):
+def is_wgdelegateREDESIGN(person):
     return bool(Role.objects.filter(name="delegate", group__type="wg", group__state="active", person=person))
 
 
@@ -51,14 +51,14 @@ def is_chair_of_draftREDESIGN(user, draft):
     
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from ietf.wgchairs.accounts import is_secretariat, get_person_for_user 
-    is_delegate = is_delegateREDESIGN
+    is_wgdelegate = is_wgdelegateREDESIGN
     is_wgchair = is_wgchairREDESIGN
     is_chair_of_draft = is_chair_of_draftREDESIGN
 
 
 def can_edit_state(user, draft):
     streamed = get_streamed_draft(draft)
-    if not streamed or not streamed.stream:
+    if not settings.USE_DB_REDESIGN_PROXY_CLASSES and (not streamed or not streamed.stream):
         person = get_person_for_user(user)
         if not person:
             return False
@@ -71,3 +71,13 @@ def can_edit_state(user, draft):
 
 def can_edit_stream(user, draft):
     return is_secretariat(user)
+
+def can_adopt(user, draft):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES and draft.stream_id == "ise":
+        person = get_person_for_user(user)
+        if not person:
+            return False
+        return is_wgchair(person) or is_wgdelegate(person)
+    else:
+        return is_secretariat(user)
+    

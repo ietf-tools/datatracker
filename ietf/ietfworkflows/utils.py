@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
+from django.template.defaultfilters import pluralize
 
 from workflows.models import State, StateObjectRelation
 from workflows.utils import (get_workflow_for_object, set_workflow_for_object,
@@ -16,7 +17,10 @@ from ietf.ietfworkflows.models import (WGWorkflow, AnnotationTagObjectRelation,
                                        AnnotationTag, ObjectAnnotationTagHistoryEntry,
                                        ObjectHistoryEntry, StateObjectRelationMetadata,
                                        ObjectWorkflowHistoryEntry, ObjectStreamHistoryEntry)
-
+from ietf.idtracker.models import InternetDraft
+from ietf.utils.mail import send_mail
+from redesign.doc.models import Document, DocEvent, save_document_in_history, DocReminder, DocReminderTypeName
+from redesign.group.models import Role
 
 WAITING_WRITEUP = 'WG Consensus: Waiting for Write-Up'
 FOLLOWUP_TAG = 'Doc Shepherd Follow-up Underway'
@@ -77,6 +81,9 @@ def get_workflow_for_wg(wg, default=None):
 
 
 def get_workflow_for_draft(draft):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        return True if get_streamed_draft(draft) else None
+
     workflow = get_workflow_for_object(draft)
     try:
         workflow = workflow and workflow.wgworkflow
@@ -99,6 +106,10 @@ def get_workflow_for_draft(draft):
 
 
 def get_workflow_history_for_draft(draft, entry_type=None):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from redesign.doc.proxy import ObjectHistoryEntryProxy
+        return ObjectHistoryEntryProxy.objects.filter(doc=draft).order_by('-time', '-id').select_related('by')
+
     ctype = ContentType.objects.get_for_model(draft)
     filter_param = {'content_type': ctype,
                     'content_id': draft.pk}
@@ -111,12 +122,18 @@ def get_workflow_history_for_draft(draft, entry_type=None):
 
 
 def get_annotation_tags_for_draft(draft):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from redesign.name.proxy import AnnotationTagObjectRelationProxy
+        return AnnotationTagObjectRelationProxy.objects.filter(document=draft.pk)
+
     ctype = ContentType.objects.get_for_model(draft)
     tags = AnnotationTagObjectRelation.objects.filter(content_type=ctype, content_id=draft.pk)
     return tags
 
 
 def get_state_for_draft(draft):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        return draft.get_state("draft-stream-%s" % draft.stream_id)
     return get_state(draft)
 
 
@@ -221,8 +238,55 @@ def notify_state_entry(entry, extra_notify=[]):
 def notify_stream_entry(entry, extra_notify=[]):
     return notify_entry(entry, 'ietfworkflows/stream_updated_mail.txt', extra_notify)
 
+def get_notification_receivers(doc, extra_notify):
+    persons = set()
+    res = []
+    for r in Role.objects.filter(group=doc.group, name__in=("chair", "delegate")):
+        res.append(u'"%s" <%s>' % (r.person.name, r.email.address))
+        persons.add(r.person)
+
+    for email in doc.authors.all():
+        if email.person not in persons:
+            res.append(email.formatted_email())
+            persons.add(email.person)
+
+    for x in extra_notify:
+        if not x in res:
+            res.append(x)
+
+    return res
 
 def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[]):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        doc = Document.objects.get(pk=obj.pk)
+        save_document_in_history(doc)
+
+        obj.tags.remove(*reset_tags)
+        obj.tags.add(*set_tags)
+
+        doc.time = datetime.datetime.now()
+
+        e = DocEvent(type="changed_document", time=doc.time, by=person, doc=doc)
+        l = []
+        if set_tags:
+            l.append(u"Annotation tag%s %s set." % (pluralize(set_tags), ", ".join(x.name for x in set_tags)))
+        if reset_tags:
+            l.append(u"Annotation tag%s %s cleared." % (pluralize(reset_tags), ", ".join(x.name for x in reset_tags)))
+        e.desc = " ".join(l)
+        e.save()
+
+        receivers = get_notification_receivers(doc, extra_notify)
+        send_mail(None, receivers, settings.DEFAULT_FROM_EMAIL,
+                  u"Annotations tags changed for draft %s" % doc.name,
+                  'ietfworkflows/annotation_tags_updated_mail.txt',
+                  dict(doc=doc,
+                       entry=dict(setted=", ".join(x.name for x in set_tags),
+                                  unsetted=", ".join(x.name for x in reset_tags),
+                                  change_date=doc.time,
+                                  person=person,
+                                  comment=comment)))
+        return
+
     ctype = ContentType.objects.get_for_model(obj)
     setted = []
     resetted = []
@@ -251,15 +315,53 @@ def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[
     notify_tag_entry(entry, extra_notify)
 
 
-def update_state(obj, comment, person, to_state, estimated_date=None, extra_notify=[]):
-    ctype = ContentType.objects.get_for_model(obj)
-    from_state = get_state_for_draft(obj)
-    to_state = set_state_for_draft(obj, to_state, estimated_date)
+def update_state(doc, comment, person, to_state, estimated_date=None, extra_notify=[]):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        doc = Document.objects.get(pk=doc.pk)
+        save_document_in_history(doc)
+
+        doc.time = datetime.datetime.now()
+        from_state = doc.get_state("draft-stream-%s" % doc.stream_id)
+        doc.set_state(to_state)
+
+        e = DocEvent(type="changed_document", time=doc.time, by=person, doc=doc)
+        e.desc = u"%s changed to <b>%s</b> from %s" % (to_state.type.label, to_state, from_state)
+        e.save()
+
+        if estimated_date:
+            t = DocReminderTypeName.objects.get(slug="stream-s")
+            try:
+                reminder = DocReminder.objects.get(event__doc=doc, type=t,
+                                                   active=True)
+            except DocReminder.DoesNotExist:
+                reminder = DocReminder(type=t)
+
+                reminder.event = e
+                reminder.due = estimated_date
+                reminder.active = True
+                reminder.save()
+
+        receivers = get_notification_receivers(doc, extra_notify)
+        send_mail(None, receivers, settings.DEFAULT_FROM_EMAIL,
+                  u"State changed for draft %s" % doc.name,
+                  'ietfworkflows/state_updated_mail.txt',
+                  dict(doc=doc,
+                       entry=dict(from_state=from_state,
+                                  to_state=to_state,
+                                  transition_date=doc.time,
+                                  person=person,
+                                  comment=comment)))
+
+        return
+
+    ctype = ContentType.objects.get_for_model(doc)
+    from_state = get_state_for_draft(doc)
+    to_state = set_state_for_draft(doc, to_state, estimated_date)
     if not to_state:
         return False
     entry = ObjectWorkflowHistoryEntry.objects.create(
         content_type=ctype,
-        content_id=obj.pk,
+        content_id=doc.pk,
         from_state=from_state and from_state.name or '',
         to_state=to_state and to_state.name or '',
         date=datetime.datetime.now(),
@@ -268,13 +370,38 @@ def update_state(obj, comment, person, to_state, estimated_date=None, extra_noti
     notify_state_entry(entry, extra_notify)
 
 
-def update_stream(obj, comment, person, to_stream, extra_notify=[]):
-    ctype = ContentType.objects.get_for_model(obj)
-    from_stream = get_stream_from_draft(obj)
-    to_stream = set_stream_for_draft(obj, to_stream)
+def update_stream(doc, comment, person, to_stream, extra_notify=[]):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        doc = Document.objects.get(pk=doc.pk)
+        save_document_in_history(doc)
+
+        doc.time = datetime.datetime.now()
+        from_stream = doc.stream
+        doc.stream = to_stream
+        doc.save()
+
+        e = DocEvent(type="changed_stream", time=doc.time, by=person, doc=doc)
+        e.desc = u"Stream changed to <b>%s</b> from %s" % (to_stream.name, from_stream.name)
+        e.save()
+
+        receivers = get_notification_receivers(doc, extra_notify)
+        send_mail(None, receivers, settings.DEFAULT_FROM_EMAIL,
+                  u"Stream changed for draft %s" % doc.name,
+                  'ietfworkflows/stream_updated_mail.txt',
+                  dict(doc=doc,
+                       entry=dict(from_stream=from_stream,
+                                  to_stream=to_stream,
+                                  transition_date=doc.time,
+                                  person=person,
+                                  comment=comment)))
+        return
+
+    ctype = ContentType.objects.get_for_model(doc)
+    from_stream = get_stream_from_draft(doc)
+    to_stream = set_stream_for_draft(doc, to_stream)
     entry = ObjectStreamHistoryEntry.objects.create(
         content_type=ctype,
-        content_id=obj.pk,
+        content_id=doc.pk,
         from_stream=from_stream and from_stream.name or '',
         to_stream=to_stream and to_stream.name or '',
         date=datetime.datetime.now(),
@@ -284,16 +411,6 @@ def update_stream(obj, comment, person, to_stream, extra_notify=[]):
 
 
 def get_full_info_for_draft(draft):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        return dict(# FIXME: temporary work-around
-            streamed=settings.TEMPLATE_STRING_IF_INVALID,
-            stream=settings.TEMPLATE_STRING_IF_INVALID,
-            workflow=settings.TEMPLATE_STRING_IF_INVALID,
-            tags=[settings.TEMPLATE_STRING_IF_INVALID],
-            state=settings.TEMPLATE_STRING_IF_INVALID,
-            shepherd=draft.shepherd,
-            )
-
     return dict(
         streamed=get_streamed_draft(draft),
         stream=get_stream_from_draft(draft),

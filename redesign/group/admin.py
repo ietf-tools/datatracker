@@ -17,7 +17,7 @@ class GroupAdmin(admin.ModelAdmin):
     list_display = ["acronym", "name", "type", "role_list"]
     list_display_links = ["acronym", "name"]
     list_filter = ["type"]
-    search_fields = ["name"]
+    search_fields = ["acronym", "name"]
     ordering = ["name"]
     raw_id_fields = ["charter", "parent", "ad"]
 

@@ -98,6 +98,7 @@ class IETFWG(Group):
     objects = TranslatingManager(dict(group_acronym="id",
                                       group_acronym__acronym="acronym",
                                       group_acronym__acronym__in="acronym__in",
+                                      group_acronym__acronym__contains="acronym__contains",
                                       email_archive__startswith="list_archive__startswith",
                                       group_type=lambda v: ("type", { 1: "wg" }[int(v)]),
                                       status=lambda v: ("state", { 1: "active" }[int(v)]),

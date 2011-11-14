@@ -217,7 +217,12 @@ class InternetDraft(Document):
     @property
     def authors(self):
         return IDAuthor.objects.filter(document=self)
-    
+
+    @property
+    def protowriteup_set(self):
+        from ietf.wgchairs.models import ProtoWriteUpProxy
+        return ProtoWriteUpProxy.objects.filter(doc=self, type="changed_protocol_writeup")
+
     # methods from InternetDraft
     def displayname(self):
         return self.name
@@ -886,5 +891,28 @@ class DraftLikeDocAlias(DocAlias):
         from ipr.models import IprDraftProxy
         return IprDraftProxy.objects.filter(doc_alias=self.pk)
     
+    class Meta:
+        proxy = True
+
+class ObjectHistoryEntryProxy(DocEvent):
+    #date = models.DateTimeField(_('Date'), auto_now_add=True)
+    @property
+    def date(self):
+        return self.time
+    #comment = models.TextField(_('Comment'))
+    @property
+    def comment(self):
+        return ""
+    #person = models.ForeignKey(PersonOrOrgInfo)
+    @property
+    def person(self):
+        return self.by
+
+    def get_real_instance(self):
+        return self
+
+    def describe_change(self):
+        return u"<p>%s</p>" % self.desc
+
     class Meta:
         proxy = True

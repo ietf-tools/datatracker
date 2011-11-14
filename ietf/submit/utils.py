@@ -96,11 +96,12 @@ def perform_postREDESIGN(submission):
     try:
         draft = Document.objects.get(name=submission.filename)
         save_document_in_history(draft)
-        draft.tags.remove(DocInfoTagName.objects.get(slug="exp-tomb"))
+        draft.tags.remove(DocTagName.objects.get(slug="exp-tomb"))
     except Document.DoesNotExist:
         draft = Document(name=submission.filename)
         draft.intended_std_level = None
 
+    draft.type_id = "draft"
     draft.time = datetime.datetime.now()
     draft.title = submission.id_document_name
     draft.group_id = group_id
@@ -120,6 +121,9 @@ def perform_postREDESIGN(submission):
         stream_slug = "ietf"
 
     draft.stream = DocStreamName.objects.get(slug=stream_slug)
+    if draft.stream_id == "ietf":
+        # automatically set state "WG Document"
+        draft.set_state(State.objects.get(type="draft_stream_%s" % draft.stream_id, slug="wg-doc"))
     draft.save()
 
     DocAlias.objects.get_or_create(name=submission.filename, document=draft)

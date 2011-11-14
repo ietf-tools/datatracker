@@ -1,12 +1,12 @@
 import datetime
 
-
+from django.conf import settings
 from django import forms
 from django.template.loader import render_to_string
 from workflows.models import State
 from workflows.utils import set_workflow_for_object
 
-from ietf.idtracker.models import PersonOrOrgInfo, IETFWG
+from ietf.idtracker.models import PersonOrOrgInfo, IETFWG, InternetDraft
 from ietf.wgchairs.accounts import get_person_for_user
 from ietf.ietfworkflows.models import Stream
 from ietf.ietfworkflows.utils import (get_workflow_for_draft, get_workflow_for_wg,
@@ -18,7 +18,10 @@ from ietf.ietfworkflows.accounts import is_secretariat
 from ietf.ietfworkflows.streams import (get_stream_from_draft, get_streamed_draft,
                                         get_stream_by_name, set_stream_for_draft)
 from ietf.ietfworkflows.constants import CALL_FOR_ADOPTION, IETF_STREAM
-
+from redesign.doc.utils import get_tags_for_stream_id
+from redesign.doc.models import save_document_in_history, DocEvent, Document
+from redesign.name.models import DocTagName, DocStreamName
+from redesign.group.models import Group, GroupStateTransitions
 
 class StreamDraftForm(forms.Form):
 
@@ -55,45 +58,91 @@ class NoWorkflowStateForm(StreamDraftForm):
     def __init__(self, *args, **kwargs):
         super(NoWorkflowStateForm, self).__init__(*args, **kwargs)
         self.wgs = None
-        self.onlywg = None
         if is_secretariat(self.user):
-            wgs = IETFWG.objects.all()
+            wgs = IETFWG.objects.all().order_by('group_acronym__acronym')
         else:
-            wgs = set([i.group_acronym for i in self.person.wgchair_set.all()]).union(set([i.wg for i in self.person.wgdelegate_set.all()]))
-        if len(wgs) > 1:
-            self.wgs = list(wgs)
-            self.wgs.sort(lambda x,y: cmp(x.group_acronym.acronym, y.group_acronym.acronym))
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                wgs = IETFWG.objects.filter(type="wg", state="active", role__name__in=("chair", "delegate"), role__person__user=self.user).order_by('acronym').distinct()
+            else:
+                wgs = set([i.group_acronym for i in self.person.wgchair_set.all()]).union(set([i.wg for i in self.person.wgdelegate_set.all()]))
+                wgs = list(wgs)
+                wgs.sort(lambda x,y: cmp(x.group_acronym.acronym, y.group_acronym.acronym))
+        self.wgs = wgs
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            self.fields['wg'].choices = [(i.pk, '%s - %s' % (i.acronym, i.name)) for i in self.wgs]
+        else:
             self.fields['wg'].choices = [(i.pk, '%s - %s' % (i.group_acronym.acronym, i.group_acronym.name)) for i in self.wgs]
-        else:
-            self.onlywg = list(wgs)[0].group_acronym
 
     def save(self):
-        comment = self.cleaned_data.get('comment')
+        comment = self.cleaned_data.get('comment').strip()
         weeks = self.cleaned_data.get('weeks')
-        if self.onlywg:
-            wg = self.onlywg
-        else:
-            wg = IETFWG.objects.get(pk=self.cleaned_data.get('wg'))
+        wg = IETFWG.objects.get(pk=self.cleaned_data.get('wg'))
         estimated_date = None
         if weeks:
             now = datetime.date.today()
             estimated_date = now + datetime.timedelta(weeks=weeks)
-        workflow = get_workflow_for_wg(wg)
-        set_workflow_for_object(self.draft, workflow)
-        stream = get_stream_by_name(IETF_STREAM)
-        streamed = get_streamed_draft(self.draft)
-        if not streamed:
-            set_stream_for_draft(self.draft, stream)
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            # do changes on real Document object instead of proxy to avoid trouble
+            doc = Document.objects.get(pk=self.draft.pk)
+            save_document_in_history(doc)
+
+            doc.time = datetime.datetime.now()
+
+            new_stream = DocStreamName.objects.get(slug="ietf")
+
+            if doc.stream != new_stream:
+                e = DocEvent(type="changed_stream")
+                e.time = doc.time
+                e.by = self.user.get_profile()
+                e.doc = doc
+                e.desc = u"Stream changed to <b>%s</b> from %s" % (new_stream.name, doc.stream.name)
+                e.save()
+                doc.stream = new_stream
+
+            if doc.group.pk != wg.pk:
+                e = DocEvent(type="changed_group")
+                e.time = doc.time
+                e.by = self.user.get_profile()
+                e.doc = doc
+                e.desc = u"Changed group to <b>%s (%s)</b>" % (wg.name, wg.acronym.upper())
+                if doc.group.type_id != "individ":
+                    e.desc += " from %s (%s)" % (doc.group.name, doc.group.acronym)
+                e.save()
+                doc.group_id = wg.pk
+
+            doc.save()
+            self.draft = InternetDraft.objects.get(pk=doc.pk) # make sure proxy object is updated
+        else:
+            workflow = get_workflow_for_wg(wg)
+            set_workflow_for_object(self.draft, workflow)
+            stream = get_stream_by_name(IETF_STREAM)
             streamed = get_streamed_draft(self.draft)
-        streamed.stream = stream
-        streamed.group = wg
-        streamed.save()
-        update_state(obj=self.draft,
+            if not streamed:
+                set_stream_for_draft(self.draft, stream)
+                streamed = get_streamed_draft(self.draft)
+            streamed.stream = stream
+            streamed.group = wg
+            streamed.save()
+
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            from redesign.doc.models import State
+            to_state = State.objects.get(slug="c-adopt", type="draft-stream-%s" % self.draft.stream_id)
+        else:
+            to_state = get_state_by_name(CALL_FOR_ADOPTION)
+        update_state(self.draft,
                      comment=comment,
                      person=self.person,
-                     to_state=get_state_by_name(CALL_FOR_ADOPTION),
+                     to_state=to_state,
                      estimated_date=estimated_date)
 
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            if comment:
+                e = DocEvent(type="added_comment")
+                e.time = self.draft.time
+                e.by = self.person
+                e.doc_id = self.draft.pk
+                e.desc = comment
+                e.save()
 
 class DraftTagsStateForm(StreamDraftForm):
 
@@ -115,8 +164,20 @@ class DraftTagsStateForm(StreamDraftForm):
                     if new_state:
                         self.data = self.data.copy()
                         self.data.update({'new_state': new_state.id})
-        self.available_tags = self.workflow.get_tags()
-        self.tags = [i.annotation_tag for i in get_annotation_tags_for_draft(self.draft)]
+                if key.startswith('new_state_'): # hack to get value from submit buttons
+                    self.data = self.data.copy()
+                    self.data['new_state'] = key.replace('new_state_', '')
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            possible_tags = get_tags_for_stream_id(self.draft.stream_id)
+            if self.draft.stream_id == "ietf" and self.draft.group:
+                unused_tags = self.draft.group.unused_tags.values_list("slug", flat=True)
+                possible_tags = [t for t in possible_tags if t not in unused_tags]
+            self.available_tags = DocTagName.objects.filter(slug__in=possible_tags)
+            self.tags = self.draft.tags.filter(slug__in=possible_tags)
+        else:
+            self.available_tags = self.workflow.get_tags()
+            self.tags = [i.annotation_tag for i in get_annotation_tags_for_draft(self.draft)]
+
         self.fields['tags'].choices = [(i.pk, i.name) for i in self.available_tags]
         self.fields['tags'].initial = [i.pk for i in self.tags]
 
@@ -128,9 +189,46 @@ class DraftTagsStateForm(StreamDraftForm):
         return None
 
     def get_transitions(self):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            return []
         return self.state.transitions.filter(workflow=self.workflow)
 
+    def get_next_states(self):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            from redesign.doc.models import State
+            state_type = "draft-stream-%s" % self.draft.stream_id
+            s = self.draft.get_state(state_type)
+            next_states = []
+            if s:
+                next_states = s.next_states.all()
+
+                if self.draft.stream_id == "ietf" and self.draft.group:
+                    transitions = self.draft.group.groupstatetransitions_set.filter(state=s)
+                    if transitions:
+                        next_states = transitions[0].next_states.all()
+            else:
+                # return the initial state
+                states = State.objects.filter(type=state_type).order_by('order')
+                if states:
+                    next_states = states[:1]
+
+            unused = []
+            if self.draft.group:
+                unused = self.draft.group.unused_states.values_list("pk", flat=True)
+            return [n for n in next_states if n.pk not in unused]
+
+        return []
+
+
     def get_states(self):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            from redesign.doc.models import State
+            states = State.objects.filter(type="draft-stream-%s" % self.draft.stream_id)
+            if self.draft.stream_id == "ietf" and self.draft.group:
+                unused_states = self.draft.group.unused_states.values_list("pk", flat=True)
+                states = [s for s in states if s.pk not in unused_states]
+            return [(i.pk, i.name) for i in states]
+
         return [(i.pk, i.name) for i in self.workflow.get_states()]
 
     def save_tags(self):
@@ -145,7 +243,10 @@ class DraftTagsStateForm(StreamDraftForm):
             try:
                 shepherd = self.draft.shepherd
                 if shepherd:
-                    extra_notify = ['%s <%s>' % shepherd.email()]
+                    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                        extra_notify = [shepherd.formatted_email()]
+                    else:
+                        extra_notify = ['%s <%s>' % shepherd.email()]
             except PersonOrOrgInfo.DoesNotExist:
                 pass
         if not set_tags and not reset_tags:
@@ -159,13 +260,16 @@ class DraftTagsStateForm(StreamDraftForm):
 
     def save_state(self):
         comment = self.cleaned_data.get('comment')
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            from redesign.doc.models import State
         state = State.objects.get(pk=self.cleaned_data.get('new_state'))
         weeks = self.cleaned_data.get('weeks')
         estimated_date = None
         if weeks:
             now = datetime.date.today()
             estimated_date = now + datetime.timedelta(weeks=weeks)
-        update_state(obj=self.draft,
+
+        update_state(self.draft,
                      comment=comment,
                      person=self.person,
                      to_state=state,
@@ -173,15 +277,27 @@ class DraftTagsStateForm(StreamDraftForm):
 
     def save(self):
         self.save_tags()
-        if 'only_tags' in self.data.keys():
-            return
-        self.save_state()
+        if 'only_tags' not in self.data.keys():
+            self.save_state()
+
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            comment = self.cleaned_data.get('comment').strip()
+            if comment:
+                e = DocEvent(type="added_comment")
+                e.time = self.draft.time
+                e.by = self.person
+                e.doc_id = self.draft.pk
+                e.desc = comment
+                e.save()
 
 
 class DraftStreamForm(StreamDraftForm):
 
     comment = forms.CharField(widget=forms.Textarea)
-    stream = forms.ModelChoiceField(Stream.objects.all())
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        stream = forms.ModelChoiceField(DocStreamName.objects.exclude(slug="legacy"))
+    else:
+        stream = forms.ModelChoiceField(Stream.objects.all())
 
     template = 'ietfworkflows/stream_form.html'
 
@@ -193,10 +309,18 @@ class DraftStreamForm(StreamDraftForm):
             self.fields['stream'].initial = self.stream.pk
 
     def save(self):
-        comment = self.cleaned_data.get('comment')
+        comment = self.cleaned_data.get('comment').strip()
         to_stream = self.cleaned_data.get('stream')
 
         update_stream(self.draft,
                       comment=comment,
                       person=self.person,
                       to_stream=to_stream)
+
+        if comment:
+            e = DocEvent(type="added_comment")
+            e.time = self.draft.time
+            e.by = self.person
+            e.doc_id = self.draft.pk
+            e.desc = comment
+            e.save()
