@@ -35,12 +35,10 @@ def get_person_for_user(user):
         return None
     try:
         p = user.get_profile()
+        p.email = lambda: (p.name, p.email_address().address)
+        return p
     except Person.DoesNotExist:
-        pass
-    p.email = lambda: (p.name, p.email_address().address)
-
-    return p
-
+        return None
 
 def is_areadirector(person):
     return bool(Role.objects.filter(person=person, name="ad", group__state="active", group__type="area"))
