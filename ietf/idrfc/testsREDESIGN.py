@@ -48,8 +48,8 @@ from redesign.group.models import *
 from redesign.person.models import *
 from ietf.iesg.models import TelechatDates
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, login_testing_unauthorized
-from ietf.utils.test_runner import mail_outbox
 from ietf.utils.test_data import make_test_data
+from ietf.utils.mail import outbox
 
 class IdRfcUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
@@ -92,7 +92,7 @@ class ChangeStateTestCase(django.test.TestCase):
         
         # change state
         events_before = draft.docevent_set.count()
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         r = self.client.post(url, dict(state="review-e"))
         self.assertEquals(r.status_code, 302)
@@ -101,9 +101,9 @@ class ChangeStateTestCase(django.test.TestCase):
         self.assertEquals(draft.iesg_state_id, "review-e")
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
         self.assertTrue("State changed" in draft.docevent_set.all()[0].desc)
-        self.assertEquals(len(mail_outbox), mailbox_before + 2)
-        self.assertTrue("State Update Notice" in mail_outbox[-2]['Subject'])
-        self.assertTrue(draft.name in mail_outbox[-1]['Subject'])
+        self.assertEquals(len(outbox), mailbox_before + 2)
+        self.assertTrue("State Update Notice" in outbox[-2]['Subject'])
+        self.assertTrue(draft.name in outbox[-1]['Subject'])
 
         
         # check that we got a previous state now
@@ -121,7 +121,7 @@ class ChangeStateTestCase(django.test.TestCase):
         self.client.login(remote_user="secretary")
         url = urlreverse('doc_change_state', kwargs=dict(name=draft.name))
 
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         self.assertTrue(not draft.latest_event(type="changed_ballot_writeup_text"))
         r = self.client.post(url, dict(state="lc-req"))
@@ -147,8 +147,8 @@ class ChangeStateTestCase(django.test.TestCase):
         self.assertTrue("Technical Summary" in e.text)
 
         # mail notice
-        self.assertTrue(len(mail_outbox) > mailbox_before)
-        self.assertTrue("Last Call:" in mail_outbox[-1]['Subject'])
+        self.assertTrue(len(outbox) > mailbox_before)
+        self.assertTrue("Last Call:" in outbox[-1]['Subject'])
 
         # comment
         self.assertTrue("Last call was requested" in draft.latest_event().desc)
@@ -180,7 +180,7 @@ class EditInfoTestCase(django.test.TestCase):
 
         # edit info
         events_before = draft.docevent_set.count()
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
 
         new_ad = Person.objects.get(name="Ad No1")
 
@@ -202,8 +202,8 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.note, "New note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="telechat_date"))
         self.assertEquals(draft.docevent_set.count(), events_before + 4)
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue(draft.name in mail_outbox[-1]['Subject'])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue(draft.name in outbox[-1]['Subject'])
 
     def test_edit_telechat_date(self):
         draft = make_test_data()
@@ -266,7 +266,7 @@ class EditInfoTestCase(django.test.TestCase):
 
         # add
         events_before = draft.docevent_set.count()
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
 
         ad = Person.objects.get(name="Aread Irector")
 
@@ -291,7 +291,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.docevent_set.count(), events_before + 4)
         events = list(draft.docevent_set.order_by('time', 'id'))
         self.assertEquals(events[-4].type, "started_iesg_process")
-        self.assertEquals(len(mail_outbox), mailbox_before)
+        self.assertEquals(len(outbox), mailbox_before)
 
 
 class ResurrectTestCase(django.test.TestCase):
@@ -315,7 +315,7 @@ class ResurrectTestCase(django.test.TestCase):
 
         # request resurrect
         events_before = draft.docevent_set.count()
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         r = self.client.post(url, dict())
         self.assertEquals(r.status_code, 302)
@@ -326,8 +326,8 @@ class ResurrectTestCase(django.test.TestCase):
         self.assertTrue(e)
         self.assertEquals(e.by, Person.objects.get(name="Aread Irector"))
         self.assertTrue("Resurrection" in e.desc)
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("Resurrection" in mail_outbox[-1]['Subject'])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("Resurrection" in outbox[-1]['Subject'])
 
     def test_resurrect(self):
         draft = make_test_data()
@@ -349,7 +349,7 @@ class ResurrectTestCase(django.test.TestCase):
 
         # request resurrect
         events_before = draft.docevent_set.count()
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         r = self.client.post(url, dict())
         self.assertEquals(r.status_code, 302)
@@ -358,7 +358,7 @@ class ResurrectTestCase(django.test.TestCase):
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
         self.assertEquals(draft.latest_event().type, "completed_resurrect")
         self.assertEquals(draft.state_id, "active")
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
+        self.assertEquals(len(outbox), mailbox_before + 1)
         
 class AddCommentTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -376,7 +376,7 @@ class AddCommentTestCase(django.test.TestCase):
 
         # request resurrect
         events_before = draft.docevent_set.count()
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         r = self.client.post(url, dict(comment="This is a test."))
         self.assertEquals(r.status_code, 302)
@@ -384,9 +384,9 @@ class AddCommentTestCase(django.test.TestCase):
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
         self.assertEquals("This is a test.", draft.latest_event().desc)
         self.assertEquals("added_comment", draft.latest_event().type)
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("updated" in mail_outbox[-1]['Subject'])
-        self.assertTrue(draft.name in mail_outbox[-1]['Subject'])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("updated" in outbox[-1]['Subject'])
+        self.assertTrue(draft.name in outbox[-1]['Subject'])
 
 class EditPositionTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -498,13 +498,13 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertTrue(len(q('form input[name="cc"]')) > 0)
 
         # send
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
 
         r = self.client.post(url, dict(cc="test@example.com", cc_state_change="1"))
         self.assertEquals(r.status_code, 302)
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        m = mail_outbox[-1]
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        m = outbox[-1]
         self.assertTrue("COMMENT" in m['Subject'])
         self.assertTrue(draft.name in m['Subject'])
         self.assertTrue("Test!" in str(m))
@@ -526,7 +526,7 @@ class DeferBallotTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
 
         # defer
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         r = self.client.post(url, dict())
         self.assertEquals(r.status_code, 302)
@@ -534,10 +534,10 @@ class DeferBallotTestCase(django.test.TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.iesg_state_id, "defer")
         
-        self.assertEquals(len(mail_outbox), mailbox_before + 2)
-        self.assertTrue("State Update" in mail_outbox[-2]['Subject'])
-        self.assertTrue("Deferred" in mail_outbox[-1]['Subject'])
-        self.assertTrue(draft.file_tag() in mail_outbox[-1]['Subject'])
+        self.assertEquals(len(outbox), mailbox_before + 2)
+        self.assertTrue("State Update" in outbox[-2]['Subject'])
+        self.assertTrue("Deferred" in outbox[-1]['Subject'])
+        self.assertTrue(draft.file_tag() in outbox[-1]['Subject'])
 
     def test_undefer_ballot(self):
         draft = make_test_data()
@@ -610,7 +610,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
         self.assertEquals(r.status_code, 200)
         
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
 
         # send
         r = self.client.post(url, dict(
@@ -618,9 +618,9 @@ class BallotWriteupsTestCase(django.test.TestCase):
                 send_last_call_request="1"))
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.iesg_state_id, "lc-req")
-        self.assertEquals(len(mail_outbox), mailbox_before + 3)
-        self.assertTrue("Last Call" in mail_outbox[-1]['Subject'])
-        self.assertTrue(draft.name in mail_outbox[-1]['Subject'])
+        self.assertEquals(len(outbox), mailbox_before + 3)
+        self.assertTrue("Last Call" in outbox[-1]['Subject'])
+        self.assertTrue(draft.name in outbox[-1]['Subject'])
 
     def test_edit_ballot_writeup(self):
         draft = make_test_data()
@@ -681,7 +681,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         e.text = "The document has been approved."
         e.save()
         
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         r = self.client.post(url, dict(
                 ballot_writeup="This is a test.",
@@ -690,8 +690,8 @@ class BallotWriteupsTestCase(django.test.TestCase):
         draft = Document.objects.get(name=draft.name)
 
         self.assertTrue(draft.latest_event(type="sent_ballot_announcement"))
-        self.assertEquals(len(mail_outbox), mailbox_before + 2)
-        issue_email = mail_outbox[-2]
+        self.assertEquals(len(outbox), mailbox_before + 2)
+        issue_email = outbox[-2]
         self.assertTrue("Evaluation:" in issue_email['Subject'])
         self.assertTrue("comment1" not in str(issue_email))
         self.assertTrue("comment2" in str(issue_email))
@@ -753,17 +753,17 @@ class ApproveBallotTestCase(django.test.TestCase):
         self.assertEquals(len(q('.announcement pre:contains("Subject: Protocol Action")')), 1)
 
         # approve
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         r = self.client.post(url, dict())
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.iesg_state_id, "ann")
-        self.assertEquals(len(mail_outbox), mailbox_before + 4)
-        self.assertTrue("Protocol Action" in mail_outbox[-2]['Subject'])
+        self.assertEquals(len(outbox), mailbox_before + 4)
+        self.assertTrue("Protocol Action" in outbox[-2]['Subject'])
         # the IANA copy
-        self.assertTrue("Protocol Action" in mail_outbox[-1]['Subject'])
+        self.assertTrue("Protocol Action" in outbox[-1]['Subject'])
 
     def test_disapprove_ballot(self):
         draft = make_test_data()
@@ -774,15 +774,15 @@ class ApproveBallotTestCase(django.test.TestCase):
         login_testing_unauthorized(self, "secretary", url)
 
         # disapprove (the Martians aren't going to be happy)
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
 
         r = self.client.post(url, dict())
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.iesg_state_id, "dead")
-        self.assertEquals(len(mail_outbox), mailbox_before + 3)
-        self.assertTrue("NOT be published" in str(mail_outbox[-1]))
+        self.assertEquals(len(outbox), mailbox_before + 3)
+        self.assertTrue("NOT be published" in str(outbox[-1]))
 
 class MakeLastCallTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -802,7 +802,7 @@ class MakeLastCallTestCase(django.test.TestCase):
         self.assertEquals(len(q('input[name=last_call_sent_date]')), 1)
 
         # make last call
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
 
         expire_date = q('input[name=last_call_expiration_date]')[0].get("value")
         
@@ -815,11 +815,11 @@ class MakeLastCallTestCase(django.test.TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.iesg_state.slug, "lc")
         self.assertEquals(draft.latest_event(LastCallDocEvent, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
-        self.assertEquals(len(mail_outbox), mailbox_before + 4)
+        self.assertEquals(len(outbox), mailbox_before + 4)
 
-        self.assertTrue("Last Call" in mail_outbox[-4]['Subject'])
+        self.assertTrue("Last Call" in outbox[-4]['Subject'])
         # the IANA copy
-        self.assertTrue("Last Call" in mail_outbox[-3]['Subject'])
+        self.assertTrue("Last Call" in outbox[-3]['Subject'])
 
 class ExpireIDsTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -881,13 +881,13 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertEquals(len(list(get_soon_to_expire_ids(14))), 1)
         
         # test send warning
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
 
         send_expire_warning_for_id(draft)
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("aread@ietf.org" in str(mail_outbox[-1])) # author
-        self.assertTrue("wgchairman@ietf.org" in str(mail_outbox[-1]))
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("aread@ietf.org" in str(outbox[-1])) # author
+        self.assertTrue("wgchairman@ietf.org" in str(outbox[-1]))
         
     def test_expire_ids(self):
         from ietf.idrfc.expire import get_expired_ids, send_expire_notice_for_id, expire_id, INTERNET_DRAFT_DAYS_TO_EXPIRE
@@ -917,12 +917,12 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertEquals(len(list(get_expired_ids())), 1)
 
         # test notice
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
 
         send_expire_notice_for_id(draft)
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("expired" in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("expired" in outbox[-1]["Subject"])
 
         # test expiry
         txt = "%s-%s.txt" % (draft.name, draft.rev)
@@ -1061,7 +1061,7 @@ class ExpireLastCallTestCase(django.test.TestCase):
         self.assertEquals(len(drafts), 1)
 
         # expire it
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
         
         expire_last_call(drafts[0])
@@ -1069,8 +1069,8 @@ class ExpireLastCallTestCase(django.test.TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.iesg_state.slug, "writeupw")
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("Last Call Expired" in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("Last Call Expired" in outbox[-1]["Subject"])
         
 
         

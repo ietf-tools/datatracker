@@ -58,7 +58,7 @@ def send_smtp(msg, bcc=None):
         log("No addressees for email from '%s', subject '%s'.  Nothing sent." % (frm, msg.get('Subject', '[no subject]')))
     else:
         if test_mode:
-            outbox.append((msg, to, msg.as_string()))
+            outbox.append(msg)
             return
         server = None
         try:

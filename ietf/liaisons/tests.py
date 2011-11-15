@@ -8,8 +8,8 @@ from StringIO import StringIO
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import SimpleUrlTestCase, canonicalize_feed, canonicalize_sitemap, login_testing_unauthorized
-from ietf.utils.test_runner import mail_outbox
 from ietf.utils.test_data import make_test_data
+from ietf.utils.mail import outbox
 
 class LiaisonsUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
@@ -149,14 +149,14 @@ class LiaisonManagementTestCase(django.test.TestCase):
         self.assertEquals(len(q('form input[name=do_approval]')), 1)
         
         # approve
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         r = self.client.post(url, dict(do_approval="1"))
         self.assertEquals(r.status_code, 302)
         
         liaison = LiaisonStatement.objects.get(id=liaison.id)
         self.assertTrue(liaison.approved)
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("Liaison Statement" in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
 
     def test_edit_liaison(self):
         make_test_data()
@@ -230,7 +230,7 @@ class LiaisonManagementTestCase(django.test.TestCase):
         self.assertEquals(len(q('form textarea[name=body]')), 1)
 
         # add new
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         test_file = StringIO("hello world")
         test_file.name = "unnamed"
         from_group = Group.objects.filter(type="sdo")[0]
@@ -283,8 +283,8 @@ class LiaisonManagementTestCase(django.test.TestCase):
         test_file.seek(0)
         self.assertEquals(written_content, test_file.read())
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("Liaison Statement" in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
         
     def test_add_outgoing_liaison(self):
         make_test_data()
@@ -300,7 +300,7 @@ class LiaisonManagementTestCase(django.test.TestCase):
         self.assertEquals(len(q('form textarea[name=body]')), 1)
 
         # add new
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         test_file = StringIO("hello world")
         test_file.name = "unnamed"
         from_group = Group.objects.get(acronym="mars")
@@ -357,8 +357,8 @@ class LiaisonManagementTestCase(django.test.TestCase):
         test_file.seek(0)
         self.assertEquals(written_content, test_file.read())
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("Liaison Statement" in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
         
         # try adding statement to non-predefined organization
         r = self.client.post(url,
@@ -391,10 +391,10 @@ class LiaisonManagementTestCase(django.test.TestCase):
 
         from ietf.liaisons.mails import send_sdo_reminder
 
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         send_sdo_reminder(Group.objects.filter(type="sdo")[0])
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("authorized individuals" in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("authorized individuals" in outbox[-1]["Subject"])
 
     def test_send_liaison_deadline_reminder(self):
         make_test_data()
@@ -405,18 +405,18 @@ class LiaisonManagementTestCase(django.test.TestCase):
 
         l = LiaisonDetail.objects.all()[0]
         
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         possibly_send_deadline_reminder(l)
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("deadline" in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("deadline" in outbox[-1]["Subject"])
 
         # try pushing the deadline
         l.deadline = l.deadline + datetime.timedelta(days=30)
         l.save()
         
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         possibly_send_deadline_reminder(l)
-        self.assertEquals(len(mail_outbox), mailbox_before)
+        self.assertEquals(len(outbox), mailbox_before)
 
         
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:

@@ -8,8 +8,8 @@ from StringIO import StringIO
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.test_runner import mail_outbox
 from ietf.utils.test_data import make_test_data
+from ietf.utils.mail import outbox
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from redesign.person.models import Person, Email
@@ -39,7 +39,7 @@ class EditStreamInfoTestCase(django.test.TestCase):
         self.assertEquals(len(q('form select[name="wg"] option')), 1) # we can only select "mars"
 
         # adopt in mars WG
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
         r = self.client.post(url,
                              dict(comment="some comment",
@@ -51,10 +51,10 @@ class EditStreamInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.group.acronym, "mars")
         self.assertEquals(draft.stream_id, "ietf")
         self.assertEquals(draft.docevent_set.count() - events_before, 4)
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("state changed" in mail_outbox[-1]["Subject"].lower())
-        self.assertTrue("wgchairman@ietf.org" in unicode(mail_outbox[-1]))
-        self.assertTrue("wgdelegate@ietf.org" in unicode(mail_outbox[-1]))
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
+        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
 
     def test_set_tags(self):
         draft = make_test_data()
@@ -75,7 +75,7 @@ class EditStreamInfoTestCase(django.test.TestCase):
         self.assertEquals(len(q('form input[type=submit][name=only_tags]')), 1)
 
         # set tags
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
         r = self.client.post(url,
                              dict(comment="some comment",
@@ -93,11 +93,11 @@ class EditStreamInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.tags.filter(slug="need-aut").count(), 1)
         self.assertEquals(draft.tags.filter(slug="sheph-u").count(), 1)
         self.assertEquals(draft.docevent_set.count() - events_before, 2)
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("tags changed" in mail_outbox[-1]["Subject"].lower())
-        self.assertTrue("wgchairman@ietf.org" in unicode(mail_outbox[-1]))
-        self.assertTrue("wgdelegate@ietf.org" in unicode(mail_outbox[-1]))
-        self.assertTrue("plain@example.com" in unicode(mail_outbox[-1]))
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("tags changed" in outbox[-1]["Subject"].lower())
+        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("plain@example.com" in unicode(outbox[-1]))
 
     def test_set_state(self):
         draft = make_test_data()
@@ -117,7 +117,7 @@ class EditStreamInfoTestCase(django.test.TestCase):
 
         # set state
         new_state = State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="parked")
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
         r = self.client.post(url,
                              dict(comment="some comment",
@@ -134,10 +134,10 @@ class EditStreamInfoTestCase(django.test.TestCase):
         self.assertEquals(len(reminder), 1)
         due = datetime.datetime.now() + datetime.timedelta(weeks=10)
         self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("state changed" in mail_outbox[-1]["Subject"].lower())
-        self.assertTrue("wgchairman@ietf.org" in unicode(mail_outbox[-1]))
-        self.assertTrue("wgdelegate@ietf.org" in unicode(mail_outbox[-1]))
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("state changed" in outbox[-1]["Subject"].lower())
+        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
 
     def test_set_stream(self):
         draft = make_test_data()
@@ -152,7 +152,7 @@ class EditStreamInfoTestCase(django.test.TestCase):
         self.assertEquals(len(q('select[name=stream]')), 1)
 
         # set state
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
         r = self.client.post(url,
                              dict(comment="some comment",
@@ -163,10 +163,10 @@ class EditStreamInfoTestCase(django.test.TestCase):
         draft = Document.objects.get(pk=draft.pk)
         self.assertEquals(draft.stream_id, "irtf")
         self.assertEquals(draft.docevent_set.count() - events_before, 2)
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("stream changed" in mail_outbox[-1]["Subject"].lower())
-        self.assertTrue("wgchairman@ietf.org" in unicode(mail_outbox[-1]))
-        self.assertTrue("wgdelegate@ietf.org" in unicode(mail_outbox[-1]))
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("stream changed" in outbox[-1]["Subject"].lower())
+        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
+        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
 
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # the above tests only work with the new schema

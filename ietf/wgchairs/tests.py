@@ -8,8 +8,8 @@ from StringIO import StringIO
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.test_runner import mail_outbox
 from ietf.utils.test_data import make_test_data
+from ietf.utils.mail import outbox
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from redesign.person.models import Person, Email
@@ -66,13 +66,13 @@ class ManageDelegatesTestCase(django.test.TestCase):
         self.assertEquals(len(q('form input[type=submit][value*="Send email"]')), 1)
 
         # we get back a warning and offer to send email, do that
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         r = self.client.post(url,
                              dict(email="unknown@example.com",
                                   form_type="notexist"))
         self.assertEquals(r.status_code, 200)
         self.assertTrue("Email sent" in r.content)
-        self.assertEquals(len(mail_outbox), mailbox_before + 3)
+        self.assertEquals(len(outbox), mailbox_before + 3)
         
     def test_add_delegate(self):
         make_test_data()

@@ -8,8 +8,8 @@ from StringIO import StringIO
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.test_runner import mail_outbox
 from ietf.utils.test_data import make_test_data
+from ietf.utils.mail import outbox
 
 from redesign.person.models import Person, Email
 from redesign.group.models import Group, Role
@@ -103,14 +103,14 @@ class SubmitTestCase(django.test.TestCase):
         supply_submitter_url = self.do_submission(name, rev)
 
         # supply submitter info, then draft should be in and ready for approval
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         r = self.supply_submitter(name, supply_submitter_url)
 
         self.assertEquals(r.status_code, 302)
         status_url = r["Location"]
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("New draft waiting for approval" in mail_outbox[-1]["Subject"])
-        self.assertTrue(name in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("New draft waiting for approval" in outbox[-1]["Subject"])
+        self.assertTrue(name in outbox[-1]["Subject"])
 
         # as chair of WG, we should see approval button
         self.client.login(remote_user="marschairman")
@@ -122,7 +122,7 @@ class SubmitTestCase(django.test.TestCase):
         self.assertEquals(len(approve_submit), 1)
 
         # approve submission
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         approve_url = approve_submit.parents("form").attr("action")
         r = self.client.post(approve_url, dict())
         self.assertEquals(r.status_code, 302)
@@ -140,12 +140,12 @@ class SubmitTestCase(django.test.TestCase):
         self.assertEquals(draft.authors.count(), 1)
         self.assertEquals(draft.authors.all()[0].get_name(), "Test Name")
         self.assertEquals(draft.authors.all()[0].address, "testname@example.com")
-        self.assertEquals(len(mail_outbox), mailbox_before + 2)
-        self.assertTrue((u"I-D Action: %s" % name) in mail_outbox[-2]["Subject"])
-        self.assertTrue("Test Name" in unicode(mail_outbox[-2]))
-        self.assertTrue("New Version Notification" in mail_outbox[-1]["Subject"])
-        self.assertTrue(name in unicode(mail_outbox[-1]))
-        self.assertTrue("mars" in unicode(mail_outbox[-1]))
+        self.assertEquals(len(outbox), mailbox_before + 2)
+        self.assertTrue((u"I-D Action: %s" % name) in outbox[-2]["Subject"])
+        self.assertTrue("Test Name" in unicode(outbox[-2]))
+        self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
+        self.assertTrue(name in unicode(outbox[-1]))
+        self.assertTrue("mars" in unicode(outbox[-1]))
 
     def test_submit_existing(self):
         # submit new revision of existing -> supply submitter info -> confirm
@@ -165,14 +165,14 @@ class SubmitTestCase(django.test.TestCase):
         supply_submitter_url = self.do_submission(name, rev)
 
         # supply submitter info, then we get a confirmation email
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         r = self.supply_submitter(name, supply_submitter_url)
 
         self.assertEquals(r.status_code, 200)
         self.assertTrue("Your submission is pending email authentication" in r.content)
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        confirmation = mail_outbox[-1]
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        confirmation = outbox[-1]
         self.assertTrue("Confirmation for" in confirmation["Subject"])
         self.assertTrue(name in confirmation["Subject"])
 
@@ -191,7 +191,7 @@ class SubmitTestCase(django.test.TestCase):
         self.assertEquals(len(q('input[type=submit][value=Auto-Post]')), 1)
 
         # confirm
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         r = self.client.post(confirm_url)
         self.assertEquals(r.status_code, 200)
         self.assertTrue('Authorization key accepted' in r.content)
@@ -209,17 +209,17 @@ class SubmitTestCase(django.test.TestCase):
         self.assertEquals(draft.authors.count(), 1)
         self.assertEquals(draft.authors.all()[0].get_name(), "Test Name")
         self.assertEquals(draft.authors.all()[0].address, "testname@example.com")
-        self.assertEquals(len(mail_outbox), mailbox_before + 3)
-        self.assertTrue((u"I-D Action: %s" % name) in mail_outbox[-3]["Subject"])
-        self.assertTrue("Test Name" in unicode(mail_outbox[-3]))
-        self.assertTrue("New Version Notification" in mail_outbox[-2]["Subject"])
-        self.assertTrue(name in unicode(mail_outbox[-2]))
-        self.assertTrue("mars" in unicode(mail_outbox[-2]))
-        self.assertTrue(draft.ad.email_address().address in unicode(mail_outbox[-2]))
-        self.assertTrue(ballot_position.ad.email_address().address in unicode(mail_outbox[-2]))
-        self.assertTrue("New Version Notification" in mail_outbox[-1]["Subject"])
-        self.assertTrue(name in unicode(mail_outbox[-1]))
-        self.assertTrue("mars" in unicode(mail_outbox[-1]))
+        self.assertEquals(len(outbox), mailbox_before + 3)
+        self.assertTrue((u"I-D Action: %s" % name) in outbox[-3]["Subject"])
+        self.assertTrue("Test Name" in unicode(outbox[-3]))
+        self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
+        self.assertTrue(name in unicode(outbox[-2]))
+        self.assertTrue("mars" in unicode(outbox[-2]))
+        self.assertTrue(draft.ad.email_address().address in unicode(outbox[-2]))
+        self.assertTrue(ballot_position.ad.email_address().address in unicode(outbox[-2]))
+        self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
+        self.assertTrue(name in unicode(outbox[-1]))
+        self.assertTrue("mars" in unicode(outbox[-1]))
 
     def test_cancel_submission(self):
         # submit -> cancel
@@ -270,7 +270,7 @@ class SubmitTestCase(django.test.TestCase):
         self.assertEquals(len(q('input[name=title]')), 1)
 
         # edit
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         creation_date = datetime.date.today() - datetime.timedelta(days=-3)
         r = self.client.post(edit_url,
                              dict(title="some title",
@@ -305,9 +305,9 @@ class SubmitTestCase(django.test.TestCase):
         self.assertEquals(authors.get(author_order=2).first_name, "Person 2")
         self.assertEquals(authors.get(author_order=2).email_address, "person2@example.com")
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("Manual Post Requested" in mail_outbox[-1]["Subject"])
-        self.assertTrue(name in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("Manual Post Requested" in outbox[-1]["Subject"])
+        self.assertTrue(name in outbox[-1]["Subject"])
 
     def test_request_full_url(self):
         # submit -> request full URL to be sent
@@ -331,13 +331,13 @@ class SubmitTestCase(django.test.TestCase):
         request_url = request_button.parents("form").attr("action")
 
         # request URL to be sent
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         r = self.client.post(request_url)
         self.assertEquals(r.status_code, 200)
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("Full URL for managing submission" in mail_outbox[-1]["Subject"])
-        self.assertTrue(name in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("Full URL for managing submission" in outbox[-1]["Subject"])
+        self.assertTrue(name in outbox[-1]["Subject"])
 
 
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:

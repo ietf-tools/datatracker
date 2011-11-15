@@ -4,8 +4,8 @@ from django.conf import settings
 import django.test
 
 from ietf.utils.test_utils import SimpleUrlTestCase, canonicalize_sitemap
-from ietf.utils.test_runner import mail_outbox
 from ietf.utils.test_data import make_test_data
+from ietf.utils.mail import outbox
 
 from ietf.announcements.models import ScheduledAnnouncement
 
@@ -31,13 +31,13 @@ class SendScheduledAnnouncementsTestCase(django.test.TestCase):
             content_type="",
             )
 
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         from ietf.announcements.send_scheduled import send_scheduled_announcement
         send_scheduled_announcement(a)
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("This is a test" in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("This is a test" in outbox[-1]["Subject"])
         self.assertTrue(ScheduledAnnouncement.objects.get(id=a.id).mail_sent)
 
     def test_send_mime_announcement(self):
@@ -52,14 +52,14 @@ class SendScheduledAnnouncementsTestCase(django.test.TestCase):
             content_type='Multipart/Mixed; Boundary="NextPart"',
             )
 
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         from ietf.announcements.send_scheduled import send_scheduled_announcement
         send_scheduled_announcement(a)
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("This is a test" in mail_outbox[-1]["Subject"])
-        self.assertTrue("--NextPart" in mail_outbox[-1].as_string())
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("This is a test" in outbox[-1]["Subject"])
+        self.assertTrue("--NextPart" in outbox[-1].as_string())
         self.assertTrue(ScheduledAnnouncement.objects.get(id=a.id).mail_sent)
 
 
@@ -87,13 +87,13 @@ class SendScheduledAnnouncementsTestCaseREDESIGN(django.test.TestCase):
             send_at=datetime.datetime.now() + datetime.timedelta(hours=12)
             )
 
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         from ietf.announcements.send_scheduled import send_scheduled_announcement
         send_scheduled_announcement(q)
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("This is a test" in mail_outbox[-1]["Subject"])
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("This is a test" in outbox[-1]["Subject"])
         self.assertTrue(SendQueue.objects.get(id=q.id).sent_at)
 
     def test_send_mime_announcement(self):
@@ -119,14 +119,14 @@ class SendScheduledAnnouncementsTestCaseREDESIGN(django.test.TestCase):
             send_at=datetime.datetime.now() + datetime.timedelta(hours=12)
             )
         
-        mailbox_before = len(mail_outbox)
+        mailbox_before = len(outbox)
         
         from ietf.announcements.send_scheduled import send_scheduled_announcement
         send_scheduled_announcement(q)
 
-        self.assertEquals(len(mail_outbox), mailbox_before + 1)
-        self.assertTrue("This is a test" in mail_outbox[-1]["Subject"])
-        self.assertTrue("--NextPart" in mail_outbox[-1].as_string())
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("This is a test" in outbox[-1]["Subject"])
+        self.assertTrue("--NextPart" in outbox[-1].as_string())
         self.assertTrue(SendQueue.objects.get(id=q.id).sent_at)
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
