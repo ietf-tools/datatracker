@@ -64,6 +64,8 @@ class SendScheduledAnnouncementsTestCase(django.test.TestCase):
 
 
 class SendScheduledAnnouncementsTestCaseREDESIGN(django.test.TestCase):
+    fixtures = ["names"]
+
     def test_send_plain_announcement(self):
         from ietf.announcements.models import Message, SendQueue
         from redesign.person.models import Person
