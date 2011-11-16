@@ -3,6 +3,7 @@
 import pytz, datetime
 
 from django.db import models
+from django.conf import settings
 from timedeltafield import TimedeltaField
 
 from redesign.group.models import Group
