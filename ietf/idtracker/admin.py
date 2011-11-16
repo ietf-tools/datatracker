@@ -138,7 +138,8 @@ class RfcStatusAdmin(admin.ModelAdmin):
 admin.site.register(RfcStatus, RfcStatusAdmin)
 
 class RoleAdmin(admin.ModelAdmin):
-    pass
+    list_display = ["person", "role_name", ]
+    raw_id_fields = ["person", ]
 admin.site.register(Role, RoleAdmin)
 
 class WGStatusAdmin(admin.ModelAdmin):
