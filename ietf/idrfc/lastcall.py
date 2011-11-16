@@ -8,8 +8,7 @@ from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 
-from doc.models import Document, DocEvent, LastCallDocEvent, WriteupDocEvent, save_document_in_history
-from name.models import IesgDocStateName
+from doc.models import Document, DocEvent, LastCallDocEvent, WriteupDocEvent, save_document_in_history, State
 from person.models import Person
 
 def request_last_call(request, doc):
@@ -47,7 +46,7 @@ def get_expired_last_calls():
 
 def get_expired_last_callsREDESIGN():
     today = datetime.date.today()
-    for d in Document.objects.filter(iesg_state="lc"):
+    for d in Document.objects.filter(states__type="draft-iesg", states__slug="lc"):
         e = d.latest_event(LastCallDocEvent, type="sent_last_call")
         if e and e.expires.date() <= today:
             yield d
@@ -71,18 +70,18 @@ def expire_last_call(doc):
     email_last_call_expired(doc)
 
 def expire_last_callREDESIGN(doc):
-    state = IesgDocStateName.objects.get(slug="writeupw")
+    state = State.objects.get(type="draft-iesg", slug="writeupw")
 
     e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     if e and "What does this protocol do and why" not in e.text:
-        # if it boiler-plate text has been removed, we assume the
+        # if boiler-plate text has been removed, we assume the
         # write-up has been written
-        state = IesgDocStateName.objects.get(slug="goaheadw")
+        state = State.objects.get(type="draft-iesg", slug="goaheadw")
 
     save_document_in_history(doc)
 
-    prev = doc.iesg_state
-    doc.iesg_state = state
+    prev = doc.get_state("draft-iesg")
+    doc.set_state(state)
     e = log_state_changed(None, doc, Person.objects.get(name="(System)"), prev)
                     
     doc.time = e.time

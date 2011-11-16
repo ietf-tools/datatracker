@@ -63,7 +63,7 @@ class Person(PersonInfo):
     
     def person(self): # little temporary wrapper to help porting to new schema
         return self
-        
+
 class PersonHistory(PersonInfo):
     person = models.ForeignKey(Person, related_name="history_set")
     user = models.ForeignKey(User, blank=True, null=True)

@@ -59,7 +59,7 @@ class InLastCall(Feed):
 
     def items(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            ret = list(IDInternal.objects.filter(iesg_state='lc'))
+            ret = list(IDInternal.objects.filter(states__type="draft-iesg", states__slug="lc"))
         else:
             ret = list(IDInternal.objects.filter(primary_flag=1).filter(cur_state__state='In Last Call'))
 	ret.sort(key=lambda item: (item.document().lc_expiration_date or datetime.date.today()))

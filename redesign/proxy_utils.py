@@ -12,6 +12,9 @@ def proxy_role_email(e):
     e.person.email = lambda: (e.person.name, e.address)
     return e
 
+def chunks(l, n):
+    """Split list l up in chunks of max size n."""
+    return (l[i:i+n] for i in range(0, len(l), n))
 
 class TranslatingQuerySet(QuerySet):
     def translated_args(self, args):
@@ -42,10 +45,13 @@ class TranslatingQuerySet(QuerySet):
             if k in trans:
                 t = trans[k]
                 if callable(t):
-                    t, v = t(v)
+                    ts = t(v)
+                else:
+                    ts = (t, v)
 
-                if t:
-                    res[t] = v
+                for t, v in chunks(ts, 2):
+                    if t:
+                        res[t] = v
             else:
                 res[k] = v
         return res

@@ -23,9 +23,9 @@ from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 
-from doc.models import Document, DocEvent, StatusDateDocEvent, TelechatDocEvent, save_document_in_history, DocHistory
-from name.models import IesgDocStateName, IntendedStdLevelName, DocTagName, get_next_iesg_states, DocStateName
-from person.models import Person, Email
+from redesign.doc.models import *
+from redesign.name.models import IntendedStdLevelName, DocTagName
+from redesign.person.models import Person, Email
     
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(IDState.objects.all(), empty_label=None, required=True)
@@ -85,7 +85,7 @@ def change_state(request, name):
                               context_instance=RequestContext(request))
 
 class ChangeStateFormREDESIGN(forms.Form):
-    state = forms.ModelChoiceField(IesgDocStateName.objects.all(), empty_label=None, required=True)
+    state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label=None, required=True)
     # FIXME: no tags yet
     #substate = forms.ModelChoiceField(IDSubState.objects.all(), required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
@@ -95,7 +95,7 @@ def change_stateREDESIGN(request, name):
     """Change state of Internet Draft, notifying parties as necessary
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if (not doc.latest_event(type="started_iesg_process")) or doc.state_id == "expired":
+    if (not doc.latest_event(type="started_iesg_process")) or doc.get_state_slug() == "expired":
         raise Http404()
 
     login = request.user.get_profile()
@@ -105,11 +105,11 @@ def change_stateREDESIGN(request, name):
         if form.is_valid():
             state = form.cleaned_data['state']
             comment = form.cleaned_data['comment']
-            if state != doc.iesg_state:
+            prev = doc.get_state("draft-iesg")
+            if state != prev:
                 save_document_in_history(doc)
                 
-                prev = doc.iesg_state
-                doc.iesg_state = state
+                doc.set_state(state)
 
                 e = log_state_changed(request, doc, login, prev, comment)
                 
@@ -119,7 +119,7 @@ def change_stateREDESIGN(request, name):
                 email_state_changed(request, doc, e.desc)
                 email_owner(request, doc, doc.ad, login, e.desc)
 
-                if doc.iesg_state_id == "lc-req":
+                if state.slug == "lc-req":
                     request_last_call(request, doc)
 
                     return render_to_response('idrfc/last_call_requested.html',
@@ -130,14 +130,16 @@ def change_stateREDESIGN(request, name):
             return HttpResponseRedirect(doc.get_absolute_url())
 
     else:
-        form = ChangeStateForm(initial=dict(state=doc.iesg_state_id))
+        state = doc.get_state("draft-iesg")
+        form = ChangeStateForm(initial=dict(state=state.pk if state else None))
 
-    next_states = get_next_iesg_states(doc.iesg_state)
+    state = doc.get_state("draft-iesg")
+    next_states = state.next_states.all() if state else None
     prev_state = None
-    
-    hists = DocHistory.objects.filter(doc=doc).exclude(iesg_state=doc.iesg_state).order_by("-time")[:1]
+
+    hists = doc.history_set.exclude(states=doc.get_state("draft-iesg")).order_by('-time')[:1]
     if hists:
-        prev_state = hists[0].iesg_state
+        prev_state = hists[0].get_state("draft-iesg")
 
     return render_to_response('idrfc/change_stateREDESIGN.html',
                               dict(form=form,
@@ -383,7 +385,7 @@ class EditInfoFormREDESIGN(forms.Form):
     status_date = forms.DateField(required=False, help_text="Format is YYYY-MM-DD")
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Responsible AD", empty_label=None, required=True)
-    create_in_state = forms.ModelChoiceField(IesgDocStateName.objects.filter(slug__in=("pub-req", "watching")), empty_label=None, required=True)
+    create_in_state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=True)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
@@ -447,15 +449,14 @@ def edit_infoREDESIGN(request, name):
     """Edit various Internet Draft attributes, notifying parties as
     necessary and logging changes as document events."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if doc.state_id == "expired":
+    if doc.get_state_slug() == "expired":
         raise Http404()
 
     login = request.user.get_profile()
 
     new_document = False
-    if not doc.iesg_state: # FIXME: should probably receive "new document" as argument to view instead of this
+    if not doc.get_state("draft-iesg"): # FIXME: should probably receive "new document" as argument to view instead of this
         new_document = True
-        doc.iesg_state = IesgDocStateName.objects.get(slug="pub-req")
         doc.notify = get_initial_notify(doc)
 
     e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
@@ -471,11 +472,12 @@ def edit_infoREDESIGN(request, name):
             
             r = form.cleaned_data
             if new_document:
+                doc.set_state(r['create_in_state'])
+
                 # fix so Django doesn't barf in the diff below because these
                 # fields can't be NULL
                 doc.ad = r['ad']
-                doc.iesg_state = r['create_in_state']
-                
+
                 replaces = Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces")
                 if replaces:
                     # this should perhaps be somewhere else, e.g. the
@@ -491,7 +493,7 @@ def edit_infoREDESIGN(request, name):
                 e.type = "started_iesg_process"
                 e.by = login
                 e.doc = doc
-                e.desc = "IESG process started in state <b>%s</b>" % doc.iesg_state.name
+                e.desc = "IESG process started in state <b>%s</b>" % doc.get_state("draft-iesg").name
                 e.save()
                     
             orig_ad = doc.ad
@@ -619,7 +621,7 @@ def request_resurrect(request, name):
 def request_resurrectREDESIGN(request, name):
     """Request resurrect of expired Internet Draft."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if doc.state_id != "expired":
+    if doc.get_state_slug() != "expired":
         raise Http404()
 
     login = request.user.get_profile()
@@ -674,7 +676,7 @@ def resurrect(request, name):
 def resurrectREDESIGN(request, name):
     """Resurrect expired Internet Draft."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if doc.state_id != "expired":
+    if doc.get_state_slug() != "expired":
         raise Http404()
 
     login = request.user.get_profile()
@@ -691,7 +693,7 @@ def resurrectREDESIGN(request, name):
         e.desc = "Resurrection was completed"
         e.save()
         
-        doc.state = DocStateName.objects.get(slug="active")
+        doc.set_state(State.objects.get(type="draft", slug="active"))
         doc.time = datetime.datetime.now()
         doc.save()
         return HttpResponseRedirect(doc.get_absolute_url())
@@ -738,7 +740,7 @@ def add_comment(request, name):
 def add_commentREDESIGN(request, name):
     """Add comment to Internet Draft."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.iesg_state:
+    if not doc.get_state("draft-iesg"):
         raise Http404()
 
     login = request.user.get_profile()

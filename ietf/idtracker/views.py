@@ -29,7 +29,7 @@ IESG to do anything with the document.
 
 def status(request):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        drafts = list(IDInternal.objects.exclude(iesg_state=None).exclude(iesg_state__in=('pub', 'dead', 'watching', 'rfcqueue')).order_by('iesg_state__order'))
+        drafts = list(IDInternal.objects.filter(states__type="draft-iesg").exclude(states__type="draft-iesg", states__slug__in=('pub', 'dead', 'watching', 'rfcqueue')).distinct().order_by('states__order'))
         drafts.sort(key=lambda d: (d.cur_state_id, d.status_date or datetime.date.min, d.b_sent_date or datetime.date.min))
         # sadly we can't use the generic view because it only works with a queryset...
         return render_to_response('idtracker/status_of_items.html', dict(object_list=drafts, title="IESG Status of Items"), context_instance=RequestContext(request))
@@ -39,7 +39,7 @@ def status(request):
 
 def last_call(request):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        drafts = list(IDInternal.objects.exclude(iesg_state=None).filter(iesg_state__in=('lc', 'writeupw', 'goaheadw')).order_by('iesg_state__order'))
+        drafts = list(IDInternal.objects.filter(states__type="draft-iesg", states__slug__in=('lc', 'writeupw', 'goaheadw')).distinct().order_by('states__order'))
         drafts.sort(key=lambda d: (d.cur_state_id, d.status_date or datetime.date.min, d.b_sent_date or datetime.date.min))
         # sadly we can't use the generic view because it only works with a queryset...
         return render_to_response('idtracker/status_of_items.html', dict(object_list=drafts, title="Documents in Last Call", lastcall=1), context_instance=RequestContext(request))

@@ -178,11 +178,11 @@ import django.db.transaction
 
 @django.db.transaction.commit_on_success
 def insert_to_databaseREDESIGN(data):
-    from person.models import Person
-    from doc.models import Document, DocAlias, DocEvent, RelatedDocument
-    from group.models import Group
-    from name.models import DocTagName, DocRelationshipName
-    from name.utils import name
+    from redesign.person.models import Person
+    from redesign.doc.models import Document, DocAlias, DocEvent, RelatedDocument, State
+    from redesign.group.models import Group
+    from redesign.name.models import DocTagName, DocRelationshipName
+    from redesign.name.utils import name
     
     system = Person.objects.get(name="(System)")
     std_level_mapping = get_std_level_mapping()
@@ -242,8 +242,8 @@ def insert_to_databaseREDESIGN(data):
             doc.std_level = std_level_mapping[current_status]
             changed = True
 
-        if doc.state_id != "rfc":
-            doc.state_id = "rfc"
+        if doc.get_state_slug() != "rfc":
+            doc.set_state(State.objects.filter(type="draft", slug="rfc"))
             changed = True
 
         if doc.stream != stream_mapping[stream]:

@@ -47,9 +47,10 @@ connection.queries = DontSaveQueries()
 # Regarding history, we currently don't try to create DocumentHistory
 # objects, we just import the comments as events.
 
-# imports InternetDraft, IDInternal, BallotInfo, Position,
-# IESGComment, IESGDiscuss, DocumentComment, IDAuthor, idrfc.RfcIndex,
-# idrfc.DraftVersions, StreamedID
+# imports drafts and RFCs, more specifically InternetDraft,
+# IDInternal, BallotInfo, Position, IESGComment, IESGDiscuss,
+# DocumentComment, IDAuthor, idrfc.RfcIndex, idrfc.DraftVersions,
+# StreamedID
 
 
 def alias_doc(name, doc):
@@ -85,35 +86,34 @@ intended_std_level_mapping["Draft"] = intended_std_level_mapping["Draft Standard
 std_level_mapping = get_std_level_mapping()
 
 state_mapping = {
-    'Active': name(DocStateName, "active", "Active"),
-    'Expired': name(DocStateName, "expired", "Expired"),
-    'RFC': name(DocStateName, "rfc", "RFC"),
-    'Withdrawn by Submitter': name(DocStateName, "auth-rm", "Withdrawn by Submitter"),
-    'Replaced': name(DocStateName, "repl", "Replaced"),
-    'Withdrawn by IETF': name(DocStateName, "ietf-rm", "Withdrawn by IETF"),
+    'Active': State.objects.get(type="draft", slug="active"),
+    'Expired': State.objects.get(type="draft", slug="expired"),
+    'RFC': State.objects.get(type="draft", slug="rfc"),
+    'Withdrawn by Submitter': State.objects.get(type="draft", slug="auth-rm"),
+    'Replaced': State.objects.get(type="draft", slug="repl"),
+    'Withdrawn by IETF': State.objects.get(type="draft", slug="ietf-rm"),
     }
 
 iesg_state_mapping = {
-    'RFC Published': name(IesgDocStateName, "pub", "RFC Published", 'The ID has been published as an RFC.', order=32),
-    'Dead': name(IesgDocStateName, "dead", "Dead", 'Document is "dead" and is no longer being tracked. (E.g., it has been replaced by another document with a different name, it has been withdrawn, etc.)', order=99),
-    'Approved-announcement to be sent': name(IesgDocStateName, "approved", "Approved-announcement to be sent", 'The IESG has approved the document for publication, but the Secretariat has not yet sent out on official approval message.', order=27),
-    'Approved-announcement sent': name(IesgDocStateName, "ann", "Approved-announcement sent", 'The IESG has approved the document for publication, and the Secretariat has sent out the official approval message to the RFC editor.', order=30),
-    'AD is watching': name(IesgDocStateName, "watching", "AD is watching", 'An AD is aware of the document and has chosen to place the document in a separate state in order to keep a closer eye on it (for whatever reason). Documents in this state are still not being actively tracked in the sense that no formal request has been made to publish or advance the document. The sole difference between this state and "I-D Exists" is that an AD has chosen to put it in a separate state, to make it easier to keep track of (for the AD\'s own reasons).', order=42),
-    'IESG Evaluation': name(IesgDocStateName, "iesg-eva", "IESG Evaluation", 'The document is now (finally!) being formally reviewed by the entire IESG. Documents are discussed in email or during a bi-weekly IESG telechat. In this phase, each AD reviews the document and airs any issues they may have. Unresolvable issues are documented as "discuss" comments that can be forwarded to the authors/WG. See the description of substates for additional details about the current state of the IESG discussion.', order=20),
-    'AD Evaluation': name(IesgDocStateName, "ad-eval", "AD Evaluation", 'A specific AD (e.g., the Area Advisor for the WG) has begun reviewing the document to verify that it is ready for advancement. The shepherding AD is responsible for doing any necessary review before starting an IETF Last Call or sending the document directly to the IESG as a whole.', order=11),
-    'Last Call Requested': name(IesgDocStateName, "lc-req", "Last Call Requested", 'The AD has requested that the Secretariat start an IETF Last Call, but the the actual Last Call message has not been sent yet.', order=15),
-    'In Last Call': name(IesgDocStateName, "lc", "In Last Call", 'The document is currently waiting for IETF Last Call to complete. Last Calls for WG documents typically last 2 weeks, those for individual submissions last 4 weeks.', order=16),
-    'Publication Requested': name(IesgDocStateName, "pub-req", "Publication Requested", 'A formal request has been made to advance/publish the document, following the procedures in Section 7.5 of RFC 2418. The request could be from a WG chair, from an individual through the RFC Editor, etc. (The Secretariat (iesg-secretary@ietf.org) is copied on these requests to ensure that the request makes it into the ID tracker.) A document in this state has not (yet) been reviewed by an AD nor has any official action been taken on it yet (other than to note that its publication has been requested.', order=10),
-    'RFC Ed Queue': name(IesgDocStateName, "rfcqueue", "RFC Ed Queue", 'The document is in the RFC editor Queue (as confirmed by http://www.rfc-editor.org/queue.html).', order=31),
-    'IESG Evaluation - Defer': name(IesgDocStateName, "defer", "IESG Evaluation - Defer", 'During a telechat, one or more ADs requested an additional 2 weeks to review the document. A defer is designed to be an exception mechanism, and can only be invoked once, the first time the document comes up for discussion during a telechat.', order=21),
-    'Waiting for Writeup': name(IesgDocStateName, "writeupw", "Waiting for Writeup", 'Before a standards-track or BCP document is formally considered by the entire IESG, the AD must write up a protocol action. The protocol action is included in the approval message that the Secretariat sends out when the document is approved for publication as an RFC.', order=18),
-    'Waiting for AD Go-Ahead': name(IesgDocStateName, "goaheadw", "Waiting for AD Go-Ahead", 'As a result of the IETF Last Call, comments may need to be responded to and a revision of the ID may be needed as well. The AD is responsible for verifying that all Last Call comments have been adequately addressed and that the (possibly revised) document is in the ID directory and ready for consideration by the IESG as a whole.', order=19),
-    'Expert Review': name(IesgDocStateName, "review-e", "Expert Review", 'An AD sometimes asks for an external review by an outside party as part of evaluating whether a document is ready for advancement. MIBs, for example, are reviewed by the "MIB doctors". Other types of reviews may also be requested (e.g., security, operations impact, etc.). Documents stay in this state until the review is complete and possibly until the issues raised in the review are addressed. See the "note" field for specific details on the nature of the review.', order=12),
-    'DNP-waiting for AD note': name(IesgDocStateName, "nopubadw", "DNP-waiting for AD note", 'Do Not Publish: The IESG recommends against publishing the document, but the writeup explaining its reasoning has not yet been produced. DNPs apply primarily to individual submissions received through the RFC editor.  See the "note" field for more details on who has the action item.', order=33),
-    'DNP-announcement to be sent': name(IesgDocStateName, "nopubanw", "DNP-announcement to be sent", 'The IESG recommends against publishing the document, the writeup explaining its reasoning has been produced, but the Secretariat has not yet sent out the official "do not publish" recommendation message.', order=34),
+    'RFC Published': State.objects.get(type="draft-iesg", slug="pub"),
+    'Dead': State.objects.get(type="draft-iesg", slug="dead"),
+    'Approved-announcement to be sent': State.objects.get(type="draft-iesg", slug="approved"),
+    'Approved-announcement sent': State.objects.get(type="draft-iesg", slug="ann"),
+    'AD is watching': State.objects.get(type="draft-iesg", slug="watching"),
+    'IESG Evaluation': State.objects.get(type="draft-iesg", slug="iesg-eva"),
+    'AD Evaluation': State.objects.get(type="draft-iesg", slug="ad-eval"),
+    'Last Call Requested': State.objects.get(type="draft-iesg", slug="lc-req"),
+    'In Last Call': State.objects.get(type="draft-iesg", slug="lc"),
+    'Publication Requested': State.objects.get(type="draft-iesg", slug="pub-req"),
+    'RFC Ed Queue': State.objects.get(type="draft-iesg", slug="rfcqueue"),
+    'IESG Evaluation - Defer': State.objects.get(type="draft-iesg", slug="defer"),
+    'Waiting for Writeup': State.objects.get(type="draft-iesg", slug="writeupw"),
+    'Waiting for AD Go-Ahead': State.objects.get(type="draft-iesg", slug="goaheadw"),
+    'Expert Review': State.objects.get(type="draft-iesg", slug="review-e"),
+    'DNP-waiting for AD note': State.objects.get(type="draft-iesg", slug="nopubadw"),
+    'DNP-announcement to be sent': State.objects.get(type="draft-iesg", slug="nopubanw"),
     None: None, # FIXME: consider introducing the ID-exists state
     }
-
 
 ballot_position_mapping = {
     'No Objection': name(BallotPositionName, 'noobj', 'No Objection'),
@@ -265,12 +265,13 @@ re_comment_discuss_by_tag = re.compile(r" by [\w-]+ [\w-]+$")
 
 def import_from_idinternal(d, idinternal):
     d.time = idinternal.event_date
-    d.iesg_state = iesg_state_mapping[idinternal.cur_state.state]    
     d.ad = iesg_login_to_person(idinternal.job_owner)
     d.notify = idinternal.state_change_notice_to or ""
     d.note = (idinternal.note or "").replace('<br>', '\n').strip().replace('\n', '<br>')
     d.save()
     
+    d.set_state(iesg_state_mapping[idinternal.cur_state.state])
+
     # extract events
     last_note_change_text = ""
     started_iesg_process = ""
@@ -798,8 +799,9 @@ for index, o in enumerate(all_drafts.iterator()):
     d.time = o.revision_date
     d.type = type_draft
     d.title = o.title
-    d.state = state_mapping[o.status.status]
     d.group = Group.objects.get(acronym=o.group.acronym)
+
+    d.set_state(state_mapping[o.status.status])
 
     # try guess stream to have a default for old submissions
     if o.filename.startswith("draft-iab-"):
@@ -812,13 +814,13 @@ for index, o in enumerate(all_drafts.iterator()):
         d.stream = stream_mapping["IETF"]
 
     try:
-        d.stream = stream_mapping[StreamedID.objects.get(draft=o).stream.name]
+        old_stream = StreamedID.objects.get(draft=o).stream
+        if old_stream:
+            d.stream = stream_mapping[old_stream.name]
     except StreamedID.DoesNotExist:
         pass
 
-    d.iesg_state = iesg_state_mapping[None]
-    d.iana_state = None
-    d.rfc_state = None
+    d.unset_state("draft-iesg")
     s = workflows.utils.get_state(o)
     if s:
         try:
@@ -1063,7 +1065,8 @@ for index, o in enumerate(all_rfcs.iterator()):
     d.time = datetime.datetime.now()
     d.title = o.title
     d.std_level = std_level_mapping[o.current_status]
-    d.state = state_mapping['RFC']
+    d.set_state(state_mapping["RFC"])
+
     d.stream = stream_mapping[o.stream]
     if not d.group and o.wg:
         d.group = Group.objects.get(acronym=o.wg)

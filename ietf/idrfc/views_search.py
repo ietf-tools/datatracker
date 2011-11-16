@@ -290,7 +290,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         addInputEvents(area.widget)
         ad = forms.ChoiceField(choices=(), required=False)
         addInputEvents(ad.widget)
-        state = forms.ModelChoiceField(IesgDocStateName.objects.all(), empty_label="any state", required=False)
+        state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label="any state", required=False)
         addInputEvents(state.widget)
         subState = forms.ChoiceField(choices=(), required=False)
         addInputEvents(subState.widget)
@@ -360,18 +360,15 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
                                Q(title__icontains=query["name"])).distinct()
 
         # rfc/active/old check buttons
-        allowed = []
-        disallowed = []
+        allowed_states = []
+        if query["rfcs"]:
+            allowed_states.append("rfc")
+        if query["activeDrafts"]:
+            allowed_states.append("active")
+        if query["oldDrafts"]:
+            allowed_states.extend(['repl', 'expired', 'auth-rm', 'ietf-rm'])
 
-        def add(allow, states):
-            l = allowed if allow else disallowed
-            l.extend(states)
-
-        add(query["rfcs"], ['rfc'])
-        add(query["activeDrafts"], ['active'])
-        add(query["oldDrafts"], ['repl', 'expired', 'auth-rm', 'ietf-rm'])
-
-        docs = docs.filter(state__in=allowed).exclude(state__in=disallowed)
+        docs = docs.filter(states__type="draft", states__slug__in=allowed_states)
 
         # radio choices
         by = query["by"]
@@ -388,13 +385,13 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             docs = docs.filter(ad=query["ad"])
         elif by == "state":
             if query["state"]:
-                docs = docs.filter(iesg_state=query["state"])
+                docs = docs.filter(states=query["state"])
             if query["subState"]:
                 docs = docs.filter(tags=query["subState"])
 
         # evaluate and fill in values with aggregate queries to avoid
         # too many individual queries
-        results = list(docs.select_related("state", "iesg_state", "ad", "ad__person", "std_level", "intended_std_level", "group")[:MAX])
+        results = list(docs.select_related("states", "ad", "ad__person", "std_level", "intended_std_level", "group")[:MAX])
 
         rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=[r.pk for r in results]).values_list("document_id", "name"))
         # canonical name
@@ -452,7 +449,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
             if rfc_num != None:
                 res.append(2)
-            elif d.state_id == "active":
+            elif d.get_state_slug() == "active":
                 res.append(1)
             else:
                 res.append(3)
@@ -465,15 +462,15 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
                 if rfc_num != None:
                     res.append(rfc_num)
                 else:
-                    res.append(d.state)
+                    res.append(d.get_state().order)
             elif sort_by == "ipr":
                 res.append(d.name)
             elif sort_by == "ad":
                 if rfc_num != None:
                     res.append(rfc_num)
-                elif d.state_id == "active":
-                    if d.iesg_state:
-                        res.append(d.iesg_state.order)
+                elif d.get_state_slug() == "active":
+                    if d.get_state("draft-iesg"):
+                        res.append(get_state("draft-iesg").order)
                     else:
                         res.append(0)
             else:
@@ -599,7 +596,7 @@ def by_ad(request, name):
 @cache_page(15*60) # 15 minutes
 def all(request):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        active = (dict(filename=n) for n in InternetDraft.objects.filter(state="active").order_by("name").values_list('name', flat=True))
+        active = (dict(filename=n) for n in InternetDraft.objects.filter(states__type="draft", states__slug="active").order_by("name").values_list('name', flat=True))
         rfc1 = (dict(filename=d, rfc_number=int(n[3:])) for d, n in DocAlias.objects.filter(document__state="rfc", name__startswith="rfc").exclude(document__name__startswith="rfc").order_by("document__name").values_list('document__name','name').distinct())
         rfc2 = (dict(rfc_number=r, draft=None) for r in sorted(int(n[3:]) for n in Document.objects.filter(type="draft", name__startswith="rfc").values_list('name', flat=True)))
         dead = InternetDraft.objects.exclude(state__in=("active", "rfc")).select_related("state").order_by("name")

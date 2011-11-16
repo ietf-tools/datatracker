@@ -25,8 +25,8 @@ from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 from ietf.idrfc.idrfc_wrapper import BallotWrapper
 
-from doc.models import Document, DocEvent, BallotPositionDocEvent, LastCallDocEvent, save_document_in_history
-from name.models import BallotPositionName, IesgDocStateName
+from redesign.doc.models import *
+from redesign.name.models import BallotPositionName
 
 
 BALLOT_CHOICES = (("yes", "Yes"),
@@ -227,7 +227,7 @@ def edit_positionREDESIGN(request, name):
     """Vote and edit discuss and comment on Internet Draft as Area Director."""
     doc = get_object_or_404(Document, docalias__name=name)
     started_process = doc.latest_event(type="started_iesg_process")
-    if not doc.iesg_state or not started_process:
+    if not doc.get_state("draft-iesg") or not started_process:
         raise Http404()
 
     ad = login = request.user.get_profile()
@@ -337,7 +337,7 @@ def edit_positionREDESIGN(request, name):
         form = EditPositionForm(initial=initial)
 
     ballot_deferred = None
-    if doc.iesg_state_id == "defer":
+    if doc.get_state_slug("draft-iesg") == "defer":
         ballot_deferred = doc.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
 
     return render_to_response('idrfc/edit_positionREDESIGN.html',
@@ -543,7 +543,7 @@ def defer_ballot(request, name):
 def defer_ballotREDESIGN(request, name):
     """Signal post-pone of Internet Draft ballot, notifying relevant parties."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.iesg_state:
+    if not doc.get_state("draft-iesg"):
         raise Http404()
 
     login = request.user.get_profile()
@@ -552,8 +552,8 @@ def defer_ballotREDESIGN(request, name):
     if request.method == 'POST':
         save_document_in_history(doc)
 
-        prev = doc.iesg_state
-        doc.iesg_state = IesgDocStateName.objects.get(slug='defer')
+        prev = doc.get_state("draft-iesg")
+        doc.set_state(State.objects.get(type="draft-iesg", slug='defer'))
         e = log_state_changed(request, doc, login, prev)
         
         doc.time = e.time
@@ -608,7 +608,7 @@ def undefer_ballot(request, name):
 def undefer_ballotREDESIGN(request, name):
     """Delete deferral of Internet Draft ballot."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.iesg_state:
+    if not doc.get_state("draft-iesg"):
         raise Http404()
 
     login = request.user.get_profile()
@@ -617,8 +617,8 @@ def undefer_ballotREDESIGN(request, name):
     if request.method == 'POST':
         save_document_in_history(doc)
 
-        prev = doc.iesg_state
-        doc.iesg_state = IesgDocStateName.objects.get(slug='iesg-eva')
+        prev = doc.get_state("draft-iesg")
+        doc.set_state(State.objects.get(type="draft-iesg", slug='iesg-eva'))
         e = log_state_changed(request, doc, login, prev)
         
         doc.time = e.time
@@ -748,7 +748,7 @@ class LastCallTextFormREDESIGN(forms.Form):
 def lastcalltextREDESIGN(request, name):
     """Editing of the last call text"""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.iesg_state:
+    if not doc.get_state("draft-iesg"):
         raise Http404()
 
     login = request.user.get_profile()
@@ -775,8 +775,8 @@ def lastcalltextREDESIGN(request, name):
                 if "send_last_call_request" in request.POST:
                     save_document_in_history(doc)
 
-                    prev = doc.iesg_state
-                    doc.iesg_state = IesgDocStateName.objects.get(slug='lc-req')
+                    prev = doc.get_state("draft-iesg")
+                    doc.set_state(State.objects.get(type="draft-iesg", slug='lc-req'))
                     e = log_state_changed(request, doc, login, prev)
                     
                     doc.time = e.time
@@ -797,10 +797,11 @@ def lastcalltextREDESIGN(request, name):
             # make sure form has the updated text
             form = LastCallTextForm(initial=dict(last_call_text=e.text))
 
-        
-    can_request_last_call = doc.iesg_state.order < 27
-    can_make_last_call = doc.iesg_state.order < 20
-    can_announce = doc.iesg_state.order > 19
+
+    s = doc.get_state("draft-iesg")
+    can_request_last_call = s.order < 27
+    can_make_last_call = s.order < 20
+    can_announce = s.order > 19
     
     need_intended_status = ""
     if not doc.intended_std_level:
@@ -1039,7 +1040,7 @@ class ApprovalTextFormREDESIGN(forms.Form):
 def ballot_approvaltextREDESIGN(request, name):
     """Editing of approval text"""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.iesg_state:
+    if not doc.get_state("draft-iesg"):
         raise Http404()
 
     login = request.user.get_profile()
@@ -1069,7 +1070,7 @@ def ballot_approvaltextREDESIGN(request, name):
             # make sure form has the updated text
             form = ApprovalTextForm(initial=dict(approval_text=existing.text))
 
-    can_announce = doc.iesg_state.order > 19
+    can_announce = doc.get_state("draft-iesg").order > 19
     need_intended_status = ""
     if not doc.intended_std_level:
         need_intended_status = doc.file_tag()
@@ -1162,7 +1163,7 @@ def approve_ballot(request, name):
 def approve_ballotREDESIGN(request, name):
     """Approve ballot, sending out announcement, changing state."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.iesg_state:
+    if not doc.get_state("draft-iesg"):
         raise Http404()
 
     login = request.user.get_profile()
@@ -1188,15 +1189,15 @@ def approve_ballotREDESIGN(request, name):
         
     if request.method == 'POST':
         if action == "do_not_publish":
-            new_state = IesgDocStateName.objects.get(slug="dead")
+            new_state = State.objects.get(type="draft-iesg", slug="dead")
         else:
-            new_state = IesgDocStateName.objects.get(slug="ann")
+            new_state = State.objects.get(type="draft-iesg", slug="ann")
 
         # fixup document
         save_document_in_history(doc)
 
-        prev = doc.iesg_state
-        doc.iesg_state = new_state
+        prev = doc.get_state("draft-iesg")
+        doc.set_state(new_state)
 
         e = DocEvent(doc=doc, by=login)
         if action == "do_not_publish":
@@ -1208,7 +1209,7 @@ def approve_ballotREDESIGN(request, name):
 
         e.save()
         
-        change_description = e.desc + " and state has been changed to %s" % doc.iesg_state.name
+        change_description = e.desc + " and state has been changed to %s" % doc.get_state("draft-iesg").name
         
         e = log_state_changed(request, doc, login, prev)
                     
@@ -1296,7 +1297,7 @@ def make_last_call(request, name):
 def make_last_callREDESIGN(request, name):
     """Make last call for Internet Draft, sending out announcement."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.iesg_state:
+    if not doc.get_state("draft-iesg"):
         raise Http404()
 
     login = request.user.get_profile()
@@ -1314,14 +1315,14 @@ def make_last_callREDESIGN(request, name):
 
             save_document_in_history(doc)
 
-            prev = doc.iesg_state
-            doc.iesg_state = IesgDocStateName.objects.get(slug='lc')
+            prev = doc.get_state("draft-iesg")
+            doc.set_state(State.objects.get(type="draft-iesg", slug='lc'))
             e = log_state_changed(request, doc, login, prev)
                     
             doc.time = e.time
             doc.save()
 
-            change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, doc.iesg_state.name)
+            change_description = "Last call has been made for %s and state has been changed to %s" % (doc.name, doc.get_state("draft-iesg").name)
             email_state_changed(request, doc, change_description)
             email_owner(request, doc, doc.ad, login, change_description)
             

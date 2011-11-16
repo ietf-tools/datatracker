@@ -177,7 +177,7 @@ class IETFWG(Group):
 
     def active_drafts(self):
         from redesign.doc.proxy import InternetDraft
-	return InternetDraft.objects.filter(group=self, state="active")
+	return InternetDraft.objects.filter(group=self, states__type="draft", states__slug="active")
     # def choices():
     #     return [(wg.group_acronym_id, wg.group_acronym.acronym) for wg in IETFWG.objects.all().filter(group_type__type='WG').select_related().order_by('acronym.acronym')]
     # choices = staticmethod(choices)

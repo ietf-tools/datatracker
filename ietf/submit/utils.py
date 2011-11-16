@@ -108,8 +108,7 @@ def perform_postREDESIGN(submission):
     draft.rev = submission.revision
     draft.pages = submission.txt_page_count
     draft.abstract = submission.abstract
-    was_rfc = draft.state_id == "rfc"
-    draft.state_id = "active"
+    was_rfc = draft.get_state_slug() == "rfc"
 
     if draft.name.startswith("draft-iab-"):
         stream_slug = "iab"
@@ -121,10 +120,12 @@ def perform_postREDESIGN(submission):
         stream_slug = "ietf"
 
     draft.stream = DocStreamName.objects.get(slug=stream_slug)
+    draft.save()
+
+    draft.set_state(State.objects.get(type="draft", slug="active"))
     if draft.stream_id == "ietf":
         # automatically set state "WG Document"
-        draft.set_state(State.objects.get(type="draft_stream_%s" % draft.stream_id, slug="wg-doc"))
-    draft.save()
+        draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
     DocAlias.objects.get_or_create(name=submission.filename, document=draft)
 
@@ -162,7 +163,7 @@ def perform_postREDESIGN(submission):
     submission.status_id = POSTED
 
     announce_to_lists(submission)
-    if draft.iesg_state != None and not was_rfc:
+    if draft.get_state("draft-iesg") != None and not was_rfc:
         announce_new_version(submission, draft, state_change_msg)
     announce_to_authors(submission)
 

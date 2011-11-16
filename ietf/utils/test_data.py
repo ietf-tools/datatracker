@@ -153,8 +153,6 @@ def make_test_data():
         time=datetime.datetime.now(),
         type_id="draft",
         title="Optimizing Martian Network Topologies",
-        state_id="active",
-        iesg_state_id="pub-req",
         stream_id="ietf",
         group=group,
         abstract="Techniques for achieving near-optimal Martian networks.",
@@ -167,6 +165,8 @@ def make_test_data():
         note="",
         )
 
+    draft.set_state(State.objects.get(type="draft", slug="active"))
+    draft.set_state(State.objects.get(type="draft-iesg", slug="pub-req"))
     draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
     doc_alias = DocAlias.objects.create(
@@ -244,7 +244,7 @@ def make_test_data():
         type_id="ietf",
         date=datetime.date.today() + datetime.timedelta(days=180),
         city="New York",
-        country="United States",
+        country="US",
         time_zone="US/Eastern",
         break_area="Lounge",
         reg_area="Lobby",

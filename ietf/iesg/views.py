@@ -483,7 +483,7 @@ def discusses(request):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         res = []
 
-        for d in IDInternal.objects.filter(iesg_state__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), docevent__ballotpositiondocevent__pos="discuss").distinct():
+        for d in IDInternal.objects.filter(states__type="draft-iesg", states__slug__in=("pub-req", "ad-eval", "review-e", "lc-req", "lc", "writeupw", "goaheadw", "iesg-eva", "defer", "watching"), docevent__ballotpositiondocevent__pos="discuss").distinct():
             found = False
             for p in d.positions.all():
                 if p.discuss:

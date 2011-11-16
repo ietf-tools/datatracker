@@ -62,14 +62,13 @@ class ChangeStateTestCase(django.test.TestCase):
 
     def test_change_state(self):
         draft = make_test_data()
-        draft.iesg_state = IesgDocStateName.objects.get(slug="ad-eval")
-        draft.save()
-        
+        draft.set_state(State.objects.get(type="draft-iesg", slug="ad-eval"))
+
         url = urlreverse('doc_change_state', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
-        first_state = draft.iesg_state
-        next_states = get_next_iesg_states(first_state)
+        first_state = draft.get_state("draft-iesg")
+        next_states = first_state.next_states
 
         # normal get
         r = self.client.get(url)
@@ -82,23 +81,23 @@ class ChangeStateTestCase(django.test.TestCase):
 
             
         # faulty post
-        r = self.client.post(url, dict(state="foobarbaz"))
+        r = self.client.post(url, dict(state=State.objects.get(type="draft", slug="active").pk))
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.iesg_state, first_state)
+        self.assertEquals(draft.get_state("draft-iesg"), first_state)
 
         
         # change state
         events_before = draft.docevent_set.count()
         mailbox_before = len(outbox)
         
-        r = self.client.post(url, dict(state="review-e"))
+        r = self.client.post(url, dict(state=State.objects.get(type="draft-iesg", slug="review-e").pk))
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.iesg_state_id, "review-e")
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "review-e")
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
         self.assertTrue("State changed" in draft.docevent_set.all()[0].desc)
         self.assertEquals(len(outbox), mailbox_before + 2)
@@ -115,8 +114,7 @@ class ChangeStateTestCase(django.test.TestCase):
         
     def test_request_last_call(self):
         draft = make_test_data()
-        draft.iesg_state = IesgDocStateName.objects.get(slug="ad-eval")
-        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="ad-eval"))
 
         self.client.login(remote_user="secretary")
         url = urlreverse('doc_change_state', kwargs=dict(name=draft.name))
@@ -124,7 +122,7 @@ class ChangeStateTestCase(django.test.TestCase):
         mailbox_before = len(outbox)
         
         self.assertTrue(not draft.latest_event(type="changed_ballot_writeup_text"))
-        r = self.client.post(url, dict(state="lc-req"))
+        r = self.client.post(url, dict(state=State.objects.get(type="draft-iesg", slug="lc-req").pk))
         self.assertContains(r, "Your request to issue the Last Call")
 
         # last call text
@@ -189,7 +187,7 @@ class EditInfoTestCase(django.test.TestCase):
                                   status_date=str(date.today() + timedelta(2)),
                                   via_rfc_editor="1",
                                   ad=str(new_ad.pk),
-                                  create_in_state="pub-req",
+                                  create_in_state=State.objects.get(type="draft-iesg", slug="pub-req").pk,
                                   notify="test@example.com",
                                   note="New note",
                                   telechat_date="",
@@ -214,7 +212,7 @@ class EditInfoTestCase(django.test.TestCase):
         data = dict(intended_std_level=str(draft.intended_std_level_id),
                     status_date=str(date.today() + timedelta(2)),
                     via_rfc_editor="1",
-                    create_in_state="pub-req",
+                    create_in_state=State.objects.get(type="draft-iesg", slug="pub-req").pk,
                     ad=str(draft.ad_id),
                     notify="test@example.com",
                     note="",
@@ -249,8 +247,8 @@ class EditInfoTestCase(django.test.TestCase):
     def test_start_iesg_process_on_draft(self):
         draft = make_test_data()
         draft.ad = None
-        draft.iesg_state = None
         draft.save()
+        draft.unset_state("draft-iesg")
         draft.docevent_set.all().delete()
         
         url = urlreverse('doc_edit_info', kwargs=dict(name=draft.name))
@@ -275,7 +273,7 @@ class EditInfoTestCase(django.test.TestCase):
                                   status_date=str(date.today() + timedelta(2)),
                                   via_rfc_editor="1",
                                   ad=ad.pk,
-                                  create_in_state="watching",
+                                  create_in_state=State.objects.get(type="draft-iesg", slug="watching").pk,
                                   notify="test@example.com",
                                   note="This is a note",
                                   telechat_date="",
@@ -284,7 +282,7 @@ class EditInfoTestCase(django.test.TestCase):
 
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.tags.filter(slug="via-rfc"))
-        self.assertEquals(draft.iesg_state_id, "watching")
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "watching")
         self.assertEquals(draft.ad, ad)
         self.assertEquals(draft.note, "This is a note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
@@ -299,8 +297,7 @@ class ResurrectTestCase(django.test.TestCase):
 
     def test_request_resurrect(self):
         draft = make_test_data()
-        draft.state_id = "expired"
-        draft.save()
+        draft.set_state(State.objects.get(type="draft", slug="expired"))
 
         url = urlreverse('doc_request_resurrect', kwargs=dict(name=draft.name))
         
@@ -331,8 +328,8 @@ class ResurrectTestCase(django.test.TestCase):
 
     def test_resurrect(self):
         draft = make_test_data()
-        draft.state_id = "expired"
-        draft.save()
+        draft.set_state(State.objects.get(type="draft", slug="expired"))
+
         DocEvent.objects.create(doc=draft,
                              type="requested_resurrect",
                              by=Person.objects.get(name="Aread Irector"))
@@ -357,7 +354,7 @@ class ResurrectTestCase(django.test.TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
         self.assertEquals(draft.latest_event().type, "completed_resurrect")
-        self.assertEquals(draft.state_id, "active")
+        self.assertEquals(draft.get_state_slug(), "active")
         self.assertEquals(len(outbox), mailbox_before + 1)
         
 class AddCommentTestCase(django.test.TestCase):
@@ -515,9 +512,8 @@ class DeferBallotTestCase(django.test.TestCase):
 
     def test_defer_ballot(self):
         draft = make_test_data()
-        draft.iesg_state_id = "iesg-eva"
-        draft.save()
-        
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+
         url = urlreverse('doc_defer_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
 
@@ -532,7 +528,7 @@ class DeferBallotTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.iesg_state_id, "defer")
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "defer")
         
         self.assertEquals(len(outbox), mailbox_before + 2)
         self.assertTrue("State Update" in outbox[-2]['Subject'])
@@ -541,9 +537,8 @@ class DeferBallotTestCase(django.test.TestCase):
 
     def test_undefer_ballot(self):
         draft = make_test_data()
-        draft.iesg_state_id = "defer"
-        draft.save()
-        
+        draft.set_state(State.objects.get(type="draft-iesg", slug="defer"))
+
         url = urlreverse('doc_undefer_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
 
@@ -556,7 +551,7 @@ class DeferBallotTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.iesg_state_id, "iesg-eva")
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "iesg-eva")
 
 class BallotWriteupsTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -617,7 +612,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
                 last_call_text=draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text,
                 send_last_call_request="1"))
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.iesg_state_id, "lc-req")
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "lc-req")
         self.assertEquals(len(outbox), mailbox_before + 3)
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
@@ -727,8 +722,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         self.assertTrue("Subject: Protocol Action" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
 
         # test regenerate when it's a disapprove
-        draft.iesg_state_id = "nopubadw"
-        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="nopubadw"))
 
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEquals(r.status_code, 200)
@@ -740,8 +734,8 @@ class ApproveBallotTestCase(django.test.TestCase):
 
     def test_approve_ballot(self):
         draft = make_test_data()
-        draft.iesg_state_id = "iesg-eva" # make sure it's approvable
-        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva")) # make sure it's approvable
+
         url = urlreverse('doc_approve_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -759,7 +753,7 @@ class ApproveBallotTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.iesg_state_id, "ann")
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "ann")
         self.assertEquals(len(outbox), mailbox_before + 4)
         self.assertTrue("Protocol Action" in outbox[-2]['Subject'])
         # the IANA copy
@@ -767,8 +761,7 @@ class ApproveBallotTestCase(django.test.TestCase):
 
     def test_disapprove_ballot(self):
         draft = make_test_data()
-        draft.iesg_state_id = "nopubadw"
-        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="nopubadw"))
 
         url = urlreverse('doc_approve_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -780,7 +773,7 @@ class ApproveBallotTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.iesg_state_id, "dead")
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "dead")
         self.assertEquals(len(outbox), mailbox_before + 3)
         self.assertTrue("NOT be published" in str(outbox[-1]))
 
@@ -789,9 +782,8 @@ class MakeLastCallTestCase(django.test.TestCase):
 
     def test_make_last_call(self):
         draft = make_test_data()
-        draft.iesg_state_id = "lc-req"
-        draft.save()
-        
+        draft.set_state(State.objects.get(type="draft-iesg", slug="lc-req"))
+
         url = urlreverse('doc_make_last_call', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -813,7 +805,7 @@ class MakeLastCallTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.iesg_state.slug, "lc")
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "lc")
         self.assertEquals(draft.latest_event(LastCallDocEvent, "sent_last_call").expires.strftime("%Y-%m-%d"), expire_date)
         self.assertEquals(len(outbox), mailbox_before + 4)
 
@@ -866,8 +858,7 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertEquals(len(list(get_soon_to_expire_ids(14))), 0)
 
         # hack into expirable state
-        draft.iesg_state = None
-        draft.save()
+        draft.unset_state("draft-iesg")
 
         NewRevisionDocEvent.objects.create(
             type="new_revision",
@@ -897,9 +888,8 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertEquals(len(list(get_expired_ids())), 0)
         
         # hack into expirable state
-        draft.iesg_state = None
-        draft.save()
-        
+        draft.unset_state("draft-iesg")
+
         NewRevisionDocEvent.objects.create(
             type="new_revision",
             by=Person.objects.get(name="Aread Irector"),
@@ -911,9 +901,8 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         self.assertEquals(len(list(get_expired_ids())), 1)
 
-        draft.iesg_state = IesgDocStateName.objects.get(slug="watching")
-        draft.save()
-        
+        draft.set_state(State.objects.get(type="draft-iesg", slug="watching"))
+
         self.assertEquals(len(list(get_expired_ids())), 1)
 
         # test notice
@@ -933,9 +922,9 @@ class ExpireIDsTestCase(django.test.TestCase):
         expire_id(draft)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.state_id, "expired")
+        self.assertEquals(draft.get_state_slug(), "expired")
         self.assertEquals(int(draft.rev), int(revision_before) + 1)
-        self.assertEquals(draft.iesg_state_id, "dead")
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "dead")
         self.assertTrue(draft.latest_event(type="expired_document"))
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
@@ -968,7 +957,7 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         
         # RFC draft
-        draft.state = DocStateName.objects.get(slug="rfc")
+        draft.set_state(State.objects.get(type="draft", slug="rfc"))
         draft.save()
 
         txt = "%s-%s.txt" % (draft.name, draft.rev)
@@ -986,7 +975,7 @@ class ExpireIDsTestCase(django.test.TestCase):
 
 
         # expire draft
-        draft.state = DocStateName.objects.get(slug="expired")
+        draft.set_state(State.objects.get(type="draft", slug="expired"))
         draft.save()
 
         e = DocEvent()
@@ -1028,11 +1017,10 @@ class ExpireLastCallTestCase(django.test.TestCase):
     def test_expire_last_call(self):
         from ietf.idrfc.lastcall import get_expired_last_calls, expire_last_call
         
-        # check that non-expirable drafts aren't expired 
+        # check that non-expirable drafts aren't expired
 
         draft = make_test_data()
-        draft.iesg_state_id = "lc"
-        draft.save()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
 
         secretary = Person.objects.get(name="Sec Retary")
         
@@ -1067,7 +1055,7 @@ class ExpireLastCallTestCase(django.test.TestCase):
         expire_last_call(drafts[0])
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.iesg_state.slug, "writeupw")
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "writeupw")
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
         self.assertEquals(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call Expired" in outbox[-1]["Subject"])

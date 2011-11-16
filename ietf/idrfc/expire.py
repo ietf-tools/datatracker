@@ -4,14 +4,14 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.db.models import Q
 
-import datetime, os, shutil, glob, re
+import datetime, os, shutil, glob, re, itertools
 
 from ietf.idtracker.models import InternetDraft, IDDates, IDStatus, IDState, DocumentComment, IDAuthor,WGChair
 from ietf.utils.mail import send_mail, send_mail_subj
 from ietf.idrfc.utils import log_state_changed, add_document_comment
-from doc.models import Document, DocEvent, save_document_in_history
-from name.models import IesgDocStateName, DocStateName, DocTagName
-from person.models import Person, Email
+from redesign.doc.models import Document, DocEvent, save_document_in_history, State
+from redesign.name.models import DocTagName
+from redesign.person.models import Person, Email
 
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
@@ -36,7 +36,11 @@ def document_expires(doc):
         return None
 
 def expirable_documents():
-    return Document.objects.filter(state="active").exclude(tags="rfc-rev").filter(Q(iesg_state=None) | Q(iesg_state__order__gte=42))
+    d = Document.objects.filter(states__type="draft", states__slug="active").exclude(tags="rfc-rev")
+    # we need to get those that either don't have a state or have a
+    # state >= 42 (AD watching), unfortunately that doesn't appear to
+    # be possible to get to work directly in Django 1.1
+    return itertools.chain(d.exclude(states__type="draft-iesg").distinct(), d.filter(states__type="draft-iesg", states__order__gte=42).distinct())
 
 def get_soon_to_expire_ids(days):
     start_date = datetime.date.today() - datetime.timedelta(InternetDraft.DAYS_TO_EXPIRE - 1)
@@ -104,7 +108,8 @@ def send_expire_warning_for_idREDESIGN(doc):
     if doc.group.type_id != "individ":
         cc = [e.formatted_email() for e in Email.objects.filter(role__group=doc.group, role__name="chair") if not e.address.startswith("unknown-email")]
 
-    state = doc.iesg_state.name if doc.iesg_state else "I-D Exists"
+    s = doc.get_state("draft-iesg")
+    state = s.name if s else "I-D Exists"
         
     frm = None
     request = None
@@ -138,8 +143,9 @@ def send_expire_notice_for_idREDESIGN(doc):
     if not doc.ad:
         return
 
-    state = doc.iesg_state.name if doc.iesg_state else "I-D Exists"
-    
+    s = doc.get_state("draft-iesg")
+    state = s.name if s else "I-D Exists"
+
     request = None
     to = doc.ad.formatted_email()
     send_mail(request, to,
@@ -216,10 +222,10 @@ def expire_idREDESIGN(doc):
     
     save_document_in_history(doc)
     if doc.latest_event(type='started_iesg_process'):
-        dead_state = IesgDocStateName.objects.get(slug="dead")
-        if doc.iesg_state != dead_state:
-            prev = doc.iesg_state
-            doc.iesg_state = dead_state
+        dead_state = State.objects.get(type="draft-iesg", slug="dead")
+        prev = doc.get_state("draft-iesg")
+        if prev != dead_state:
+            doc.set_state(dead_state)
             log_state_changed(None, doc, system, prev)
 
         e = DocEvent(doc=doc, by=system)
@@ -228,7 +234,7 @@ def expire_idREDESIGN(doc):
         e.save()
     
     doc.rev = new_revision # FIXME: incrementing the revision like this is messed up
-    doc.state = DocStateName.objects.get(slug="expired")
+    doc.set_state(State.objects.get(type="draft", slug="expired"))
     doc.time = datetime.datetime.now()
     doc.save()
 
@@ -334,10 +340,10 @@ def clean_up_id_filesREDESIGN():
         try:
             doc = Document.objects.get(name=filename, rev=revision)
 
-            if doc.state_id == "rfc":
+            if doc.get_state_slug() == "rfc":
                 if ext != ".txt":
                     move_file_to("unknown_ids")
-            elif doc.state_id in ("expired", "auth-rm", "repl", "ietf-rm"):
+            elif doc.get_state_slug() in ("expired", "repl", "auth-rm", "ietf-rm"):
                 e = doc.latest_event(type__in=('expired_document', 'new_revision', "completed_resurrect"))
                 expiration_date = e.time.date() if e and e.type == "expired_document" else None
 

@@ -25,7 +25,7 @@ class EditStreamInfoTestCase(django.test.TestCase):
         draft = make_test_data()
         draft.stream_id = "ise"
         draft.group = Group.objects.get(type="individ")
-        draft.unset_state(State.objects.get(type="draft-stream-ietf", slug="wg-doc"))
+        draft.unset_state("draft-stream-ietf")
         draft.save()
 
         url = urlreverse('edit_adopt', kwargs=dict(name=draft.name))

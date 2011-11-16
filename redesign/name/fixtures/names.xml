@@ -78,42 +78,6 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="active" model="name.docstatename">
-        <field type="CharField" name="name">Active</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="expired" model="name.docstatename">
-        <field type="CharField" name="name">Expired</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="rfc" model="name.docstatename">
-        <field type="CharField" name="name">RFC</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="auth-rm" model="name.docstatename">
-        <field type="CharField" name="name">Withdrawn by Submitter</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="repl" model="name.docstatename">
-        <field type="CharField" name="name">Replaced</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="ietf-rm" model="name.docstatename">
-        <field type="CharField" name="name">Withdrawn by IETF</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
     <object pk="legacy" model="name.docstreamname">
         <field type="CharField" name="name">Legacy</field>
         <field type="TextField" name="desc"></field>
@@ -189,6 +153,24 @@
     <object pk="iesg-com" model="name.doctagname">
         <field type="CharField" name="name">IESG Review Completed</field>
         <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="iana-crd" model="name.doctagname">
+        <field type="CharField" name="name">IANA coordination</field>
+        <field type="TextField" name="desc">RFC-Editor/IANA Registration Coordination</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="ref" model="name.doctagname">
+        <field type="CharField" name="name">Holding for references</field>
+        <field type="TextField" name="desc">Holding for normative reference</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="missref" model="name.doctagname">
+        <field type="CharField" name="name">Missing references</field>
+        <field type="TextField" name="desc">Awaiting missing normative reference</field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
@@ -425,108 +407,6 @@
         <field type="TextField" name="desc">Standards organization</field>
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="pub-req" model="name.iesgdocstatename">
-        <field type="CharField" name="name">Publication Requested</field>
-        <field type="TextField" name="desc">A formal request has been made to advance/publish the document, following the procedures in Section 7.5 of RFC 2418. The request could be from a WG chair, from an individual through the RFC Editor, etc. (The Secretariat (iesg-secretary@ietf.org) is copied on these requests to ensure that the request makes it into the ID tracker.) A document in this state has not (yet) been reviewed by an AD nor has any official action been taken on it yet (other than to note that its publication has been requested.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">10</field>
-    </object>
-    <object pk="ad-eval" model="name.iesgdocstatename">
-        <field type="CharField" name="name">AD Evaluation</field>
-        <field type="TextField" name="desc">A specific AD (e.g., the Area Advisor for the WG) has begun reviewing the document to verify that it is ready for advancement. The shepherding AD is responsible for doing any necessary review before starting an IETF Last Call or sending the document directly to the IESG as a whole.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">11</field>
-    </object>
-    <object pk="review-e" model="name.iesgdocstatename">
-        <field type="CharField" name="name">Expert Review</field>
-        <field type="TextField" name="desc">An AD sometimes asks for an external review by an outside party as part of evaluating whether a document is ready for advancement. MIBs, for example, are reviewed by the "MIB doctors". Other types of reviews may also be requested (e.g., security, operations impact, etc.). Documents stay in this state until the review is complete and possibly until the issues raised in the review are addressed. See the "note" field for specific details on the nature of the review.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">12</field>
-    </object>
-    <object pk="lc-req" model="name.iesgdocstatename">
-        <field type="CharField" name="name">Last Call Requested</field>
-        <field type="TextField" name="desc">The AD has requested that the Secretariat start an IETF Last Call, but the the actual Last Call message has not been sent yet.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">15</field>
-    </object>
-    <object pk="lc" model="name.iesgdocstatename">
-        <field type="CharField" name="name">In Last Call</field>
-        <field type="TextField" name="desc">The document is currently waiting for IETF Last Call to complete. Last Calls for WG documents typically last 2 weeks, those for individual submissions last 4 weeks.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">16</field>
-    </object>
-    <object pk="writeupw" model="name.iesgdocstatename">
-        <field type="CharField" name="name">Waiting for Writeup</field>
-        <field type="TextField" name="desc">Before a standards-track or BCP document is formally considered by the entire IESG, the AD must write up a protocol action. The protocol action is included in the approval message that the Secretariat sends out when the document is approved for publication as an RFC.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">18</field>
-    </object>
-    <object pk="goaheadw" model="name.iesgdocstatename">
-        <field type="CharField" name="name">Waiting for AD Go-Ahead</field>
-        <field type="TextField" name="desc">As a result of the IETF Last Call, comments may need to be responded to and a revision of the ID may be needed as well. The AD is responsible for verifying that all Last Call comments have been adequately addressed and that the (possibly revised) document is in the ID directory and ready for consideration by the IESG as a whole.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">19</field>
-    </object>
-    <object pk="iesg-eva" model="name.iesgdocstatename">
-        <field type="CharField" name="name">IESG Evaluation</field>
-        <field type="TextField" name="desc">The document is now (finally!) being formally reviewed by the entire IESG. Documents are discussed in email or during a bi-weekly IESG telechat. In this phase, each AD reviews the document and airs any issues they may have. Unresolvable issues are documented as "discuss" comments that can be forwarded to the authors/WG. See the description of substates for additional details about the current state of the IESG discussion.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">20</field>
-    </object>
-    <object pk="defer" model="name.iesgdocstatename">
-        <field type="CharField" name="name">IESG Evaluation - Defer</field>
-        <field type="TextField" name="desc">During a telechat, one or more ADs requested an additional 2 weeks to review the document. A defer is designed to be an exception mechanism, and can only be invoked once, the first time the document comes up for discussion during a telechat.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">21</field>
-    </object>
-    <object pk="approved" model="name.iesgdocstatename">
-        <field type="CharField" name="name">Approved-announcement to be sent</field>
-        <field type="TextField" name="desc">The IESG has approved the document for publication, but the Secretariat has not yet sent out on official approval message.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">27</field>
-    </object>
-    <object pk="ann" model="name.iesgdocstatename">
-        <field type="CharField" name="name">Approved-announcement sent</field>
-        <field type="TextField" name="desc">The IESG has approved the document for publication, and the Secretariat has sent out the official approval message to the RFC editor.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">30</field>
-    </object>
-    <object pk="rfcqueue" model="name.iesgdocstatename">
-        <field type="CharField" name="name">RFC Ed Queue</field>
-        <field type="TextField" name="desc">The document is in the RFC editor Queue (as confirmed by http://www.rfc-editor.org/queue.html).</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">31</field>
-    </object>
-    <object pk="pub" model="name.iesgdocstatename">
-        <field type="CharField" name="name">RFC Published</field>
-        <field type="TextField" name="desc">The ID has been published as an RFC.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">32</field>
-    </object>
-    <object pk="nopubadw" model="name.iesgdocstatename">
-        <field type="CharField" name="name">DNP-waiting for AD note</field>
-        <field type="TextField" name="desc">Do Not Publish: The IESG recommends against publishing the document, but the writeup explaining its reasoning has not yet been produced. DNPs apply primarily to individual submissions received through the RFC editor.  See the "note" field for more details on who has the action item.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">33</field>
-    </object>
-    <object pk="nopubanw" model="name.iesgdocstatename">
-        <field type="CharField" name="name">DNP-announcement to be sent</field>
-        <field type="TextField" name="desc">The IESG recommends against publishing the document, the writeup explaining its reasoning has been produced, but the Secretariat has not yet sent out the official "do not publish" recommendation message.</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">34</field>
-    </object>
-    <object pk="watching" model="name.iesgdocstatename">
-        <field type="CharField" name="name">AD is watching</field>
-        <field type="TextField" name="desc">An AD is aware of the document and has chosen to place the document in a separate state in order to keep a closer eye on it (for whatever reason). Documents in this state are still not being actively tracked in the sense that no formal request has been made to publish or advance the document. The sole difference between this state and "I-D Exists" is that an AD has chosen to put it in a separate state, to make it easier to keep track of (for the AD's own reasons).</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">42</field>
-    </object>
-    <object pk="dead" model="name.iesgdocstatename">
-        <field type="CharField" name="name">Dead</field>
-        <field type="TextField" name="desc">Document is "dead" and is no longer being tracked. (E.g., it has been replaced by another document with a different name, it has been withdrawn, etc.)</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">99</field>
     </object>
     <object pk="ps" model="name.intendedstdlevelname">
         <field type="CharField" name="name">Proposed Standard</field>
@@ -804,58 +684,64 @@
     <object pk="draft-stream-iab" model="doc.statetype">
         <field type="CharField" name="label">IAB state</field>
     </object>
-    <object pk="1" model="doc.state">
+    <object pk="draft-iana" model="doc.statetype">
+        <field type="CharField" name="label">IANA state</field>
+    </object>
+    <object pk="draft-rfc" model="doc.statetype">
+        <field type="CharField" name="label">RFC state</field>
+    </object>
+    <object pk="69" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">active</field>
         <field type="CharField" name="name">Active</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc"></field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">1</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="2" model="doc.state">
+    <object pk="70" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">expired</field>
         <field type="CharField" name="name">Expired</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc"></field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">2</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="3" model="doc.state">
+    <object pk="71" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">rfc</field>
         <field type="CharField" name="name">RFC</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc"></field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">3</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="4" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
-        <field type="SlugField" name="slug">auth-rm</field>
-        <field type="CharField" name="name">Withdrawn by Submitter</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="TextField" name="desc"></field>
-        <field type="IntegerField" name="order">0</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
-    </object>
-    <object pk="5" model="doc.state">
+    <object pk="72" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">repl</field>
         <field type="CharField" name="name">Replaced</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc"></field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">4</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="6" model="doc.state">
+    <object pk="73" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
+        <field type="SlugField" name="slug">auth-rm</field>
+        <field type="CharField" name="name">Withdrawn by Submitter</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc"></field>
+        <field type="IntegerField" name="order">5</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="74" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">ietf-rm</field>
         <field type="CharField" name="name">Withdrawn by IETF</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc"></field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">6</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
     <object pk="7" model="doc.state">
@@ -865,7 +751,7 @@
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">A formal request has been made to advance/publish the document, following the procedures in Section 7.5 of RFC 2418. The request could be from a WG chair, from an individual through the RFC Editor, etc. (The Secretariat (iesg-secretary@ietf.org) is copied on these requests to ensure that the request makes it into the ID tracker.) A document in this state has not (yet) been reviewed by an AD nor has any official action been taken on it yet (other than to note that its publication has been requested.</field>
         <field type="IntegerField" name="order">10</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="22"></object><object pk="23"></object></field>
     </object>
     <object pk="8" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -874,7 +760,7 @@
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">A specific AD (e.g., the Area Advisor for the WG) has begun reviewing the document to verify that it is ready for advancement. The shepherding AD is responsible for doing any necessary review before starting an IETF Last Call or sending the document directly to the IESG as a whole.</field>
         <field type="IntegerField" name="order">11</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="9"></object></field>
     </object>
     <object pk="9" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -883,7 +769,7 @@
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">An AD sometimes asks for an external review by an outside party as part of evaluating whether a document is ready for advancement. MIBs, for example, are reviewed by the "MIB doctors". Other types of reviews may also be requested (e.g., security, operations impact, etc.). Documents stay in this state until the review is complete and possibly until the issues raised in the review are addressed. See the "note" field for specific details on the nature of the review.</field>
         <field type="IntegerField" name="order">12</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="8"></object></field>
     </object>
     <object pk="10" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -928,7 +814,7 @@
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">The document is now (finally!) being formally reviewed by the entire IESG. Documents are discussed in email or during a bi-weekly IESG telechat. In this phase, each AD reviews the document and airs any issues they may have. Unresolvable issues are documented as "discuss" comments that can be forwarded to the authors/WG. See the description of substates for additional details about the current state of the IESG discussion.</field>
         <field type="IntegerField" name="order">20</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="15"></object></field>
     </object>
     <object pk="15" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -937,7 +823,7 @@
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">During a telechat, one or more ADs requested an additional 2 weeks to review the document. A defer is designed to be an exception mechanism, and can only be invoked once, the first time the document comes up for discussion during a telechat.</field>
         <field type="IntegerField" name="order">21</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="14"></object></field>
     </object>
     <object pk="16" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -946,7 +832,7 @@
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">The IESG has approved the document for publication, but the Secretariat has not yet sent out on official approval message.</field>
         <field type="IntegerField" name="order">27</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="17"></object></field>
     </object>
     <object pk="17" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -955,7 +841,7 @@
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">The IESG has approved the document for publication, and the Secretariat has sent out the official approval message to the RFC editor.</field>
         <field type="IntegerField" name="order">30</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="16"></object></field>
     </object>
     <object pk="18" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -1000,7 +886,7 @@
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">An AD is aware of the document and has chosen to place the document in a separate state in order to keep a closer eye on it (for whatever reason). Documents in this state are still not being actively tracked in the sense that no formal request has been made to publish or advance the document. The sole difference between this state and "I-D Exists" is that an AD has chosen to put it in a separate state, to make it easier to keep track of (for the AD's own reasons).</field>
         <field type="IntegerField" name="order">42</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="7"></object></field>
     </object>
     <object pk="23" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -1009,6 +895,105 @@
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">Document is "dead" and is no longer being tracked. (E.g., it has been replaced by another document with a different name, it has been withdrawn, etc.)</field>
         <field type="IntegerField" name="order">99</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="7"></object></field>
+    </object>
+    <object pk="79" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">edit</field>
+        <field type="CharField" name="name">EDIT</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="78" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">auth48</field>
+        <field type="CharField" name="name">AUTH48</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Awaiting final author approval</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="77" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">auth</field>
+        <field type="CharField" name="name">AUTH</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Awaiting author action</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="80" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">iana-crd</field>
+        <field type="CharField" name="name">IANA</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">RFC-Editor/IANA Registration Coordination</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="81" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">iesg</field>
+        <field type="CharField" name="name">IESG</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Holding for IESG action</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="82" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">isr</field>
+        <field type="CharField" name="name">ISR</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Independent Submission Review by the ISE </field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="83" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">isr-auth</field>
+        <field type="CharField" name="name">ISR-AUTH</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Independent Submission awaiting author update, or in discussion between author and ISE</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="84" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">ref</field>
+        <field type="CharField" name="name">REF</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Holding for normative reference</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="85" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">rfc-edit</field>
+        <field type="CharField" name="name">RFC-EDITOR</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Awaiting final RFC Editor review before AUTH48</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="86" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">timeout</field>
+        <field type="CharField" name="name">TO</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Time-out period during which the IESG reviews document for conflict/concurrence with other IETF working group work</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="87" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+        <field type="SlugField" name="slug">missref</field>
+        <field type="CharField" name="name">MISSREF</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Awaiting missing normative reference</field>
+        <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
     <object pk="34" model="doc.state">
@@ -1165,7 +1150,7 @@
 
  Under normal conditions, it should not be possible for an I-D to be in the "WG Document" state in more than one WG at a time. This said, I-Ds may be transferred from one WG to another with the consent of the WG Chairs and the responsible ADs.</field>
         <field type="IntegerField" name="order">4</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="28"></object><object pk="29"></object><object pk="30"></object><object pk="32"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="28"></object><object pk="29"></object><object pk="30"></object><object pk="76"></object></field>
     </object>
     <object pk="28" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
@@ -1214,11 +1199,24 @@
 
  It is possible for one WGLC to lead into another WGLC for the same document. For example, an I-D that completed a WGLC as an "Informational" document may need another WGLC if a decision is taken to convert the I-D into a Standards Track document.</field>
         <field type="IntegerField" name="order">7</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="27"></object><object pk="31"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="27"></object><object pk="75"></object></field>
     </object>
     <object pk="31" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">wait-wgc</field>
+        <field type="CharField" name="name">Waiting for WG Chair Go-Ahead</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">&lt;a href="http://tools.ietf.org/html/rfc6174#section-4.2.8" target="_blank"&gt;4.2.8. Waiting for WG Chair Go-Ahead&lt;/a&gt;
+
+ A WG Chair may wish to place an I-D that receives a lot of comments during a WGLC into the "Waiting for WG Chair Go-Ahead" state. This state describes an I-D that has undergone a WGLC; however, the Chair is not yet ready to call consensus on the document.
+
+ If comments from the WGLC need to be responded to, or a revision to the I-D is needed, the Chair may place an I-D into this state until all of the WGLC comments are adequately addressed and the (possibly revised) document is in the I-D repository.</field>
+        <field type="IntegerField" name="order">8</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="75" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
+        <field type="SlugField" name="slug">chair-w</field>
         <field type="CharField" name="name">Waiting for WG Chair Go-Ahead</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">&lt;a href="http://tools.ietf.org/html/rfc6174#section-4.2.8" target="_blank"&gt;4.2.8. Waiting for WG Chair Go-Ahead&lt;/a&gt;
@@ -1242,6 +1240,21 @@
 
  The name of this state includes the words "Waiting for Writeup" because a good document shepherd writeup takes time to prepare.</field>
         <field type="IntegerField" name="order">9</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="76" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
+        <field type="SlugField" name="slug">writeupw</field>
+        <field type="CharField" name="name">WG Consensus: Waiting for Write-Up</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">&lt;a href="http://tools.ietf.org/html/rfc6174#section-4.2.9" target="_blank"&gt;4.2.9. WG Consensus: Waiting for Writeup&lt;/a&gt;
+
+ A document in the "WG Consensus: Waiting for Writeup" state has essentially completed its development within the working group, and is nearly ready to be sent to the IESG for publication. The last thing to be done is the preparation of a protocol writeup by a Document Shepherd. The IESG requires that a document shepherd writeup be completed before publication of the I-D is requested. The IETF document shepherding process and the role of a WG Document Shepherd is described in RFC 4858 [RFC4858]
+
+ A WG Chair may call consensus on an I-D without a formal WGLC and transition an I-D that was in the "WG Document" state directly into this state.
+
+ The name of this state includes the words "Waiting for Writeup" because a good document shepherd writeup takes time to prepare.</field>
+        <field type="IntegerField" name="order">9</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="27"></object><object pk="33"></object></field>
     </object>
     <object pk="33" model="doc.state">
@@ -1255,7 +1268,7 @@
 
  An I-D in this state may be under review by the IESG, it may have been approved and be in the RFC Editor's queue, or it may have been published as an RFC. Other possibilities exist too. The document may be "Dead" (in the IESG state machine) or in a "Do Not Publish" state.</field>
         <field type="IntegerField" name="order">10</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="32"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="76"></object></field>
     </object>
     <object pk="44" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>

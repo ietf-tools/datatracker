@@ -121,11 +121,11 @@ class IdWrapper:
 
     def rfc_editor_state(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            if self._draft.rfc_state:
+            s = self._draft.get_state("draft-rfceditor")
+            if s:
                 # extract possible extra states
                 tags = self._draft.tags.filter(slug__in=("iana-crd", "ref", "missref"))
-                s = [self._draft.rfc_state.name] + [t.slug.replace("-crd", "").upper() for t in tags]
-                return " ".join(s)
+                return " ".join([s.name] + [t.slug.replace("-crd", "").upper() for t in tags])
             else:
                 return None
         

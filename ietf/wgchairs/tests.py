@@ -110,10 +110,9 @@ class ManageShepherdsTestCase(django.test.TestCase):
 
         from redesign.doc.models import Document
         common = dict(group=group,
-                      state_id="active",
                       ad=Person.objects.get(user__username="ad"),
                       type_id="draft")
-        Document.objects.create(name="test-no-shepherd",
+        Document.objects.create(name="test-shepherd-no",
                                 title="No shepherd",
                                 shepherd=None,
                                 **common)
@@ -124,6 +123,8 @@ class ManageShepherdsTestCase(django.test.TestCase):
         Document.objects.create(name="test-shepherd-other", title="Shepherd other",
                                 shepherd=Person.objects.get(user__username="plain"),
                                 **common)
+        for d in Document.objects.filter(name__startswith="test-shepherd"):
+            d.set_state(State.objects.get(type="draft", slug="active"))
         
         # get and make sure they are divided correctly
         r = self.client.get(url)

@@ -226,7 +226,7 @@ def wg_shepherd_documents(request, acronym):
     current_person = get_person_for_user(user)
 
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        base_qs = InternetDraft.objects.filter(group=wg, state="active").select_related("status").order_by('title')
+        base_qs = InternetDraft.objects.filter(group=wg, states__type="draft", states__slug="active").select_related("status").order_by('title')
     else:
         form = SearchForm({'by': 'group', 'group': str(wg.group_acronym.acronym),
                            'activeDrafts': 'on'})

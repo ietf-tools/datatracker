@@ -328,18 +328,25 @@ def update_state(doc, comment, person, to_state, estimated_date=None, extra_noti
         e.desc = u"%s changed to <b>%s</b> from %s" % (to_state.type.label, to_state, from_state)
         e.save()
 
-        if estimated_date:
-            t = DocReminderTypeName.objects.get(slug="stream-s")
-            try:
-                reminder = DocReminder.objects.get(event__doc=doc, type=t,
-                                                   active=True)
-            except DocReminder.DoesNotExist:
-                reminder = DocReminder(type=t)
+        # reminder
+        reminder_type = DocReminderTypeName.objects.get(slug="stream-s")
+        try:
+            reminder = DocReminder.objects.get(event__doc=doc, type=reminder_type,
+                                               active=True)
+        except DocReminder.DoesNotExist:
+            reminder = None
 
-                reminder.event = e
-                reminder.due = estimated_date
-                reminder.active = True
-                reminder.save()
+        if estimated_date:
+            if not reminder:
+                reminder = DocReminder(type=reminder_type)
+
+            reminder.event = e
+            reminder.due = estimated_date
+            reminder.active = True
+            reminder.save()
+        elif reminder:
+            reminder.active = False
+            reminder.save()
 
         receivers = get_notification_receivers(doc, extra_notify)
         send_mail(None, receivers, settings.DEFAULT_FROM_EMAIL,

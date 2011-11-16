@@ -269,7 +269,7 @@ def generate_approval_mail_rfc_editor(request, doc):
 DO_NOT_PUBLISH_IESG_STATES = ("nopubadw", "nopubanw")
 
 def generate_approval_mailREDESIGN(request, doc):
-    if doc.iesg_state_id in DO_NOT_PUBLISH_IESG_STATES or doc.tags.filter(slug='via-rfc'):
+    if doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES or doc.tags.filter(slug='via-rfc'):
         mail = generate_approval_mail_rfc_editor(request, doc)
     else:
         mail = generate_approval_mail_approved(request, doc)
@@ -320,7 +320,7 @@ def generate_approval_mail_approved(request, doc):
     else:
         contacts = "The IESG contact person is %s." % director.name
 
-    doc_type = "RFC" if doc.state_id == "rfc" else "Internet Draft"
+    doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
         
     return render_to_string("idrfc/approval_mail.txt",
                             dict(doc=doc,
@@ -338,8 +338,8 @@ def generate_approval_mail_approved(request, doc):
 def generate_approval_mail_rfc_editorREDESIGN(request, doc):
     full_status = full_intended_status(doc.intended_std_level.name)
     status = full_status.replace("a ", "").replace("an ", "")
-    disapproved = doc.iesg_state_id in DO_NOT_PUBLISH_IESG_STATES
-    doc_type = "RFC" if doc.state_id == "rfc" else "Internet Draft"
+    disapproved = doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES
+    doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
     
     return render_to_string("idrfc/approval_mail_rfc_editor.txt",
                             dict(doc=doc,
@@ -619,7 +619,7 @@ def email_last_call_expired(doc):
               cc="iesg-secretary@ietf.org")
 
 def email_last_call_expiredREDESIGN(doc):
-    text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.iesg_state.name
+    text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.get_state("draft-iesg").name
     
     send_mail(None,
               "iesg@ietf.org",

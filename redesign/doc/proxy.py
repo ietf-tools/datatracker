@@ -12,12 +12,12 @@ class InternetDraft(Document):
     objects = TranslatingManager(dict(filename="name",
                                       filename__contains="name__contains",
                                       id_document_tag="pk",
-                                      status=lambda v: ("state", { 1: 'active', 2: 'expired', 3: 'rfc', 4: 'auth-rm', 5: 'repl', 6: 'ietf-rm'}[v]),
+                                      status=lambda v: ("states__slug", { 1: 'active', 2: 'expired', 3: 'rfc', 4: 'auth-rm', 5: 'repl', 6: 'ietf-rm'}[v], "states__type", "draft"),
                                       job_owner="ad",
                                       rfc_number=lambda v: ("docalias__name", "rfc%s" % v),
-                                      cur_state="iesg_state__order",
+                                      cur_state=lambda v: ("states__order", v, 'states__type', 'draft-iesg'),
                                       idinternal__primary_flag=None,
-                                      idinternal__cur_state__state="iesg_state__name",
+                                      idinternal__cur_state__state=lambda v: ("states__name", v, 'states__type', 'draft-iesg'),
                                       ), always_filter=dict(type="draft"))
 
     DAYS_TO_EXPIRE=185
@@ -89,11 +89,12 @@ class InternetDraft(Document):
     #status = models.ForeignKey(IDStatus)
     @property
     def status(self):
-        return IDStatus().from_object(self.state) if self.state else None
+        s = self.get_state()
+        return IDStatus().from_object(s) if s else None
 
     @property
     def status_id(self):
-        return { 'active': 1, 'repl': 5, 'expired': 2, 'rfc': 3, 'auth-rm': 4, 'ietf-rm': 6 }[self.state_id]
+        return { 'active': 1, 'repl': 5, 'expired': 2, 'rfc': 3, 'auth-rm': 4, 'ietf-rm': 6 }[self.get_state_slug()]
         
     #intended_status = models.ForeignKey(IDIntendedStatus)
     @property
@@ -180,7 +181,7 @@ class InternetDraft(Document):
         e = self.latest_event(type="started_iesg_process")
         if e:
             start = e.time
-            if self.state_id == "rfc" and self.name.startswith("draft") and not hasattr(self, "viewing_as_rfc"):
+            if self.get_state_slug() == "rfc" and self.name.startswith("draft") and not hasattr(self, "viewing_as_rfc"):
                 previous_process = self.latest_event(type="started_iesg_process", time__lt=e.time)
                 if previous_process:
                     start = previous_process.time
@@ -211,7 +212,7 @@ class InternetDraft(Document):
             e = self.changed_ballot_position
         else:
             e = self.latest_event(type="changed_ballot_position")
-        return self if self.iesg_state or e else None
+        return self if e or self.get_state("draft-iesg") else None
 
     # reverse relationship
     @property
@@ -238,7 +239,7 @@ class InternetDraft(Document):
 	return self.docstate()
     def revision_display(self):
 	r = int(self.revision)
-	if self.state_id != 'active' and not self.expired_tombstone:
+	if self.get_state_slug() != 'active' and not self.expired_tombstone:
 	   r = max(r - 1, 0)
 	return "%02d" % r
     def expiration(self):
@@ -296,7 +297,7 @@ class InternetDraft(Document):
     #rfc_flag = models.IntegerField(null=True)
     @property
     def rfc_flag(self):
-        return self.state_id == "rfc"
+        return self.get_state_slug() == "rfc"
     
     #ballot = models.ForeignKey(BallotInfo, related_name='drafts', db_column="ballot_id")
     @property
@@ -345,17 +346,23 @@ class InternetDraft(Document):
     #cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')
     @property
     def cur_state(self):
-        return IDState().from_object(self.iesg_state) if self.iesg_state else None
+        s = self.get_state("draft-iesg")
+        return IDState().from_object(s) if s else None
     
     @property
     def cur_state_id(self):
-        return self.iesg_state.order if self.iesg_state else None
+        s = self.get_state("draft-iesg")
+        return s.order if s else None
     
     #prev_state = models.ForeignKey(IDState, db_column='prev_state', related_name='docs_prev')
     @property
     def prev_state(self):
-        ds = self.history_set.exclude(iesg_state=self.iesg_state).order_by('-time')[:1]
-        return IDState().from_object(ds[0].iesg_state) if ds else None
+        ds = self.history_set.exclude(states=self.get_state("draft-iesg")).order_by('-time')[:1]
+        if ds:
+            s = ds[0].get_state("draft-iesg")
+            if s:
+                return IDState().from_object(s) if ds else None
+        return None
     
     #assigned_to = models.CharField(blank=True, max_length=25) # unused
 
@@ -491,20 +498,19 @@ class InternetDraft(Document):
     def ballot_others(self):
         return []
     def docstate(self):
-        if self.iesg_state:
-            return self.iesg_state.name
+        s = self.get_state("draft-iesg")
+        if s:
+            return s.name
         else:
             return "I-D Exists"
-    def change_state(self, state, sub_state):
-        self.iesg_state = state
-    
 
     # things from BallotInfo
     #active = models.BooleanField()
     @property
     def active(self):
         # taken from BallotWrapper
-        return self.latest_event(type="sent_ballot_announcement") and self.iesg_state and self.iesg_state.name in ['In Last Call', 'Waiting for Writeup', 'Waiting for AD Go-Ahead', 'IESG Evaluation', 'IESG Evaluation - Defer'] and (self.state_id == "rfc" or self.state_id == "active")
+        s = self.get_state("draft-iesg")
+        return self.latest_event(type="sent_ballot_announcement") and s and s.name in ['In Last Call', 'Waiting for Writeup', 'Waiting for AD Go-Ahead', 'IESG Evaluation', 'IESG Evaluation - Defer'] and (self.get_state_slug() in ("rfc", "active"))
 
     #an_sent = models.BooleanField()
     @property
@@ -528,7 +534,7 @@ class InternetDraft(Document):
     @property
     def defer(self):
         # we're deferred if we're in the deferred state
-        return self.iesg_state and self.iesg_state.name == "IESG Evaluation - Defer"
+        return self.get_state_slug("draft-iesg") == "defer"
 
     #defer_by = models.ForeignKey(IESGLogin, db_column='defer_by', related_name='deferred', null=True)
     @property
@@ -916,3 +922,82 @@ class ObjectHistoryEntryProxy(DocEvent):
 
     class Meta:
         proxy = True
+
+class IDStatus(State):
+    def from_object(self, base):
+        for f in base._meta.fields:
+            setattr(self, f.name, getattr(base, f.name))
+        return self
+                
+    #status_id = models.AutoField(primary_key=True)
+    
+    #status = models.CharField(max_length=25, db_column='status_value')
+    @property
+    def status(self):
+        return self.name
+
+    def __unicode__(self):
+        return super(self.__class__, self).__unicode__()
+    
+    class Meta:
+        proxy = True
+
+class IDState(State):
+    PUBLICATION_REQUESTED = 10
+    LAST_CALL_REQUESTED = 15
+    IN_LAST_CALL = 16
+    WAITING_FOR_WRITEUP = 18
+    WAITING_FOR_AD_GO_AHEAD = 19
+    IESG_EVALUATION = 20
+    IESG_EVALUATION_DEFER = 21
+    APPROVED_ANNOUNCEMENT_SENT = 30
+    AD_WATCHING = 42
+    DEAD = 99
+    DO_NOT_PUBLISH_STATES = (33, 34)
+    
+    objects = TranslatingManager(dict(pk="order",
+                                      document_state_id="order",
+                                      document_state_id__in="order__in"))
+    
+    def from_object(self, base):
+        for f in base._meta.fields:
+            setattr(self, f.name, getattr(base, f.name))
+        return self
+                
+    #document_state_id = models.AutoField(primary_key=True)
+    @property
+    def document_state_id(self):
+        return self.order
+        
+    #state = models.CharField(max_length=50, db_column='document_state_val')
+    @property
+    def state(self):
+        return self.name
+    
+    #equiv_group_flag = models.IntegerField(null=True, blank=True) # unused
+    #description = models.TextField(blank=True, db_column='document_desc')
+    @property
+    def description(self):
+        return self.desc
+
+    @property
+    def nextstate(self):
+        # simulate related queryset
+        return IDState.objects.filter(pk__in=[x.pk for x in self.next_states])
+    
+    @property
+    def next_state(self):
+        # simulate IDNextState
+        return self
+
+    def __str__(self):
+        return self.state
+
+    @staticmethod
+    def choices():
+	return [(state.pk, state.name) for state in IDState.objects.all()]
+    
+    class Meta:
+        proxy = True
+        
+

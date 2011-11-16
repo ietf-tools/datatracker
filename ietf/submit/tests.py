@@ -177,7 +177,7 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue(name in confirmation["Subject"])
 
         # dig out confirmation link
-        msg = confirmation.get_payload(i=1).get_payload(i=0).get_payload(decode=True)
+        msg = confirmation.get_payload(decode=True)
         line_start = "I-D Submission Tool URL:"
         self.assertTrue(line_start in msg)
         confirm_url = None

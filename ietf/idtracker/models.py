@@ -1152,8 +1152,8 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     IESGLoginOld = IESGLogin
     IETFWGOld = IETFWG
     IRTFOld = IRTF
-    from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo, Rfc
-    from redesign.name.proxy import IDState, IDSubState
+    from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo, Rfc, IDState
+    from redesign.name.proxy import IDSubState
     from redesign.group.proxy import Area, Acronym, IETFWG, IRTF
     from redesign.person.proxy import IESGLogin
 

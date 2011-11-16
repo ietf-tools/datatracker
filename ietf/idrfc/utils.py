@@ -65,18 +65,20 @@ def log_state_changed(request, doc, by, email_watch_list=True, note=''):
 def log_state_changedREDESIGN(request, doc, by, prev_iesg_state, note=''):
     from doc.models import DocEvent
 
+    state = doc.get_state("draft-iesg")
+
     e = DocEvent(doc=doc, by=by)
     e.type = "changed_document"
     e.desc = u"State changed to <b>%s</b> from %s" % (
-        doc.iesg_state.name,
-        prev_iesg_state.name if prev_iesg_state else "None")
+        state.name,
+        prev_iesg_state.name if prev_iesg_state else "I-D Exists")
 
     if note:
         e.desc += "<br>%s" % note
 
-    if doc.iesg_state_id == "lc":
+    if state.slug == "lc":
         writeup = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
-        if writeup:
+        if writeup and writeup.text:
             e.desc += "<br><br><b>The following Last Call Announcement was sent out:</b><br><br>"
             e.desc += writeup.text.replace("\n", "<br><br>")
 

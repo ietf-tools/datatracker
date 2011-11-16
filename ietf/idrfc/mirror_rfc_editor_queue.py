@@ -197,8 +197,8 @@ import django.db.transaction
 
 def get_rfc_tag_mapping():
     """Return dict with RFC Editor state name -> DocTagName"""
-    from name.models import DocTagName
-    from name.utils import name
+    from redesign.name.models import DocTagName
+    from redesign.name.utils import name
     
     return {
         'IANA': name(DocTagName, 'iana-crd', 'IANA coordination', "RFC-Editor/IANA Registration Coordination"),
@@ -207,22 +207,21 @@ def get_rfc_tag_mapping():
     }
 
 def get_rfc_state_mapping():
-    """Return dict with RFC Editor state name -> RfcDocStateName"""
-    from name.models import RfcDocStateName
-    from name.utils import name
-    
+    """Return dict with RFC Editor state name -> State"""
+    from redesign.doc.models import State, StateType
+    t = StateType.objects.get(slug="draft-rfceditor")
     return {
-        'AUTH': name(RfcDocStateName, 'auth', 'AUTH', "Awaiting author action"),
-        'AUTH48': name(RfcDocStateName, 'auth48', "AUTH48", "Awaiting final author approval"),
-        'EDIT': name(RfcDocStateName, 'edit', 'EDIT', "Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing"),
-        'IANA': name(RfcDocStateName, 'iana-crd', 'IANA', "RFC-Editor/IANA Registration Coordination"),
-        'IESG': name(RfcDocStateName, 'iesg', 'IESG', "Holding for IESG action"),
-        'ISR': name(RfcDocStateName, 'isr', 'ISR', "Independent Submission Review by the ISE "),
-        'ISR-AUTH': name(RfcDocStateName, 'isr-auth', 'ISR-AUTH', "Independent Submission awaiting author update, or in discussion between author and ISE"),
-        'REF': name(RfcDocStateName, 'ref', 'REF', "Holding for normative reference"),
-        'RFC-EDITOR': name(RfcDocStateName, 'rfc-edit', 'RFC-EDITOR', "Awaiting final RFC Editor review before AUTH48"),
-        'TO': name(RfcDocStateName, 'timeout', 'TO', "Time-out period during which the IESG reviews document for conflict/concurrence with other IETF working group work"),
-        'MISSREF': name(RfcDocStateName, 'missref', 'MISSREF', "Awaiting missing normative reference"),
+        'AUTH': State.objects.get_or_create(type=t, slug='auth', name='AUTH', desc="Awaiting author action")[0],
+        'AUTH48': State.objects.get_or_create(type=t, slug='auth48', name="AUTH48", desc="Awaiting final author approval")[0],
+        'EDIT': State.objects.get_or_create(type=t, slug='edit', name='EDIT', desc="Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing")[0],
+        'IANA': State.objects.get_or_create(type=t, slug='iana-crd', name='IANA', desc="RFC-Editor/IANA Registration Coordination")[0],
+        'IESG': State.objects.get_or_create(type=t, slug='iesg', name='IESG', desc="Holding for IESG action")[0],
+        'ISR': State.objects.get_or_create(type=t, slug='isr', name='ISR', desc="Independent Submission Review by the ISE ")[0],
+        'ISR-AUTH': State.objects.get_or_create(type=t, slug='isr-auth', name='ISR-AUTH', desc="Independent Submission awaiting author update, or in discussion between author and ISE")[0],
+        'REF': State.objects.get_or_create(type=t, slug='ref', name='REF', desc="Holding for normative reference")[0],
+        'RFC-EDITOR': State.objects.get_or_create(type=t, slug='rfc-edit', name='RFC-EDITOR', desc="Awaiting final RFC Editor review before AUTH48")[0],
+        'TO': State.objects.get_or_create(type=t, slug='timeout', name='TO', desc="Time-out period during which the IESG reviews document for conflict/concurrence with other IETF working group work")[0],
+        'MISSREF': State.objects.get_or_create(type=t, slug='missref', name='MISSREF', desc="Awaiting missing normative reference")[0],
     }
 
 
@@ -237,10 +236,9 @@ def insert_into_databaseREDESIGN(drafts, refs):
     rfc_editor_tags = tags.values()
     
     log("removing old data...")
-    for d in Document.objects.exclude(rfc_state=None).filter(tags__in=rfc_editor_tags):
+    for d in Document.objects.filter(states__type="draft-rfceditor").distinct():
         d.tags.remove(*rfc_editor_tags)
-
-    Document.objects.exclude(rfc_state=None).update(rfc_state=None)
+        d.unset_state("draft-rfceditor")
 
     log("inserting new data...")
 
@@ -254,8 +252,7 @@ def insert_into_databaseREDESIGN(drafts, refs):
         s = state.split(" ")
         if s:
             # first is state
-            d.rfc_state = states[s[0]]
-            d.save()
+            d.set_state(states[s[0]])
 
             # remainding are tags
             for x in s[1:]:

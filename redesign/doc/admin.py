@@ -26,7 +26,7 @@ class StatesWidget(forms.SelectMultiple):
     requires 'instance' have been set on the widget."""
     def render(self, name, value, attrs=None, choices=()):
 
-        types = StateType.objects.filter(slug__in=get_state_types(self.instance))
+        types = StateType.objects.filter(slug__in=get_state_types(self.instance)).order_by("slug")
         
         categorized_choices = []
         for t in types:
@@ -78,11 +78,15 @@ class DocumentForm(forms.ModelForm):
         model = Document
 
 class DocumentAdmin(admin.ModelAdmin):
-    list_display = ['name', 'rev', 'state', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
+    list_display = ['name', 'rev', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
     search_fields = ['name']
+    list_filter = ['type']
     raw_id_fields = ['authors', 'related', 'group', 'shepherd', 'ad']
     inlines = [DocAliasInline]
     form = DocumentForm
+
+    def state(self, instance):
+        return self.get_state()
 
 admin.site.register(Document, DocumentAdmin)
 
@@ -91,6 +95,9 @@ class DocHistoryAdmin(admin.ModelAdmin):
     search_fields = ['doc__name']
     ordering = ['time', 'doc', 'rev']
     raw_id_fields = ['doc', 'authors', 'related', 'group', 'shepherd', 'ad']
+
+    def state(self, instance):
+        return self.get_state()
 
 admin.site.register(DocHistory, DocHistoryAdmin)
 
