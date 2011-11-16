@@ -53,7 +53,7 @@ def is_authorized_in_draft_stream(user, draft):
         return True
     # Check if the person is chair of the related group
     chairs = streamed.stream.get_chairs_for_document(draft)
-    if chairs and person in chairs:
+    if chairs and person in [i.person for i in chairs]:
         return True
     # Check if the person is authorized by a delegate system
     delegates = streamed.stream.get_delegates_for_document(draft)
