@@ -1,3 +1,44 @@
+ietfdb (3.64)
+
+  This release contains the features and bugfixes from the IETF-82
+  code sprint.
+
+  From adam@nostrum.com: 
+
+  * Fixed a bug in is_authorized_in_draft_stream: would never return true 
+    for WG chairs.
+
+  From lars.eggert@nokia.com: 
+
+  * Automatically set the recipients of RFC5742 review emails sent by the 
+    IESG based on the RFC Stream. 
+
+  * Fixed a typo. 
+
+  From rjsparks@nostrum.com: 
+
+  * Marked area directors who are not on the current IESG with square 
+    brackets on the discuss summary page.  Fixes bug 666.
+
+  * Changed the AD status page to group documents by current state.
+    Fixes bug 742.
+
+  * Changed the edit info form to allow (force) setting the stream when 
+    editing or adding a document to the iesg tracker.  Fixes bug 743.
+
+  From henrik@levkowetz.com:
+
+  * Added a colour indication to the Area/WG overview page showing 
+    responsible AD for each WG.  Also some html reformatting for better 
+    readability.
+
+  * Be more specific about the submission startup time on meeting Monday.  
+    Indicate time and timezone for more cases on the submission form.
+
+  * Various fixes to test fixtures and admin pages.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Nov 2011 07:08:11 +0100
+
 ietfdb (3.63)
 
   This is a feature release which adds support for Alternate Stream draft
