@@ -86,7 +86,7 @@ class TelechatAgendaItem(models.Model):
     TYPE_CHOICES_DICT = dict(TYPE_CHOICES)
     id = models.AutoField(primary_key=True, db_column='template_id')
     text = models.TextField(blank=True, db_column='template_text')
-    type = models.IntegerField(db_column='template_type', choices=TYPE_CHOICES)
+    type = models.IntegerField(db_column='template_type', choices=TYPE_CHOICES, default=3)
     title = models.CharField(max_length=255, db_column='template_title')
     #The following fields are apparently not used
     #note = models.TextField(null=True,blank=True)
@@ -94,7 +94,7 @@ class TelechatAgendaItem(models.Model):
     #decision = models.TextField(null=True,blank=True)
     def __unicode__(self):
         type_name = self.TYPE_CHOICES_DICT.get(self.type, str(self.type))
-        return u'%s: %s' % (type_name, self.title)
+        return u'%s: %s' % (type_name, self.title or "")
     class Meta:
         db_table = 'templates'
 
