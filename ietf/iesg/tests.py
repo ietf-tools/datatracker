@@ -11,6 +11,7 @@ from ietf.idrfc.models import RfcIndex
 from ietf.idtracker.models import *
 from ietf.iesg.models import *
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, login_testing_unauthorized
+from ietf.ietfworkflows.models import Stream
 
 class RescheduleOnAgendaTestCase(django.test.TestCase):
     fixtures = ['base', 'draft']
@@ -87,7 +88,9 @@ class RescheduleInEditTestCase(django.test.TestCase):
                                     'area_acronym': draft.idinternal.area_acronym_id,
                                     'note': draft.idinternal.note,
                                     'state_change_notice_to': draft.idinternal.state_change_notice_to,
-                                    'intended_status': "6", })
+                                    'intended_status': "6",
+                                    'stream': Stream.objects.get(name=u'IETF').id,
+                                })
         self.assertEquals(r.status_code, 302)
 
         # check that it moved below the right header in the DOM on the
