@@ -710,6 +710,8 @@ class DocumentComment(models.Model):
 	return datetime.datetime.combine( self.date, datetime.time( * [int(s) for s in self.time.split(":")] ) )
     def doc_id(self):
         return self.document_id
+    def doc_name(self):
+        return self.document.draft.filename
     class Meta:
         db_table = 'document_comments'
         
