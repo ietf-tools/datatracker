@@ -1,4 +1,4 @@
-Follow this link to confirm you Auto-Post of I-D {{ draft.filename }}-{{ draft.revision }}
+Follow this link to confirm your Auto-Post of I-D {{ draft.filename }}-{{ draft.revision }}
 
 I-D Submission Tool URL: http://{{ domain }}/submit/status/{{ draft.submission_id }}/confirm/{{ draft.auth_key }}/
 
