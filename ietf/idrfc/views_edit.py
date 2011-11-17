@@ -387,7 +387,7 @@ def resurrect(request, name):
 class AddCommentForm(forms.Form):
     comment = forms.CharField(required=True, widget=forms.Textarea)
 
-@group_required('Area_Director','Secretariat')
+@group_required('Area_Director','Secretariat', 'IANA')
 def add_comment(request, name):
     """Add comment to Internet Draft."""
     doc = get_object_or_404(InternetDraft, filename=name)
