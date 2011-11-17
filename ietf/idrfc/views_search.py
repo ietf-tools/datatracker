@@ -391,7 +391,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
         # evaluate and fill in values with aggregate queries to avoid
         # too many individual queries
-        results = list(docs.select_related("states", "ad", "ad__person", "std_level", "intended_std_level", "group")[:MAX])
+        results = list(docs.select_related("states", "ad", "ad__person", "std_level", "intended_std_level", "group", "stream")[:MAX])
 
         rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=[r.pk for r in results]).values_list("document_id", "name"))
         # canonical name
