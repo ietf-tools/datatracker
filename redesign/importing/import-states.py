@@ -30,6 +30,11 @@ irtf_type, _ = StateType.objects.get_or_create(slug="draft-stream-irtf", label="
 ise_type, _ = StateType.objects.get_or_create(slug="draft-stream-ise", label="ISE state")
 iab_type, _ = StateType.objects.get_or_create(slug="draft-stream-iab", label="IAB state")
 
+slides_type, _ = StateType.objects.get_or_create(slug="slides", label="State")
+minutes_type, _ = StateType.objects.get_or_create(slug="minutes", label="State")
+agenda_type, _ = StateType.objects.get_or_create(slug="agenda", label="State")
+liaison_att_type, _ = StateType.objects.get_or_create(slug="liai-att", label="State")
+
 # draft states
 print "Importing draft states"
 State.objects.get_or_create(type=draft_type, slug="active", name="Active", order=1)
@@ -168,3 +173,10 @@ for state_type, workflow in workflows:
             print "MISSING state", name, "in workflow", workflow.name
             continue
         s.next_states = [states[t.destination.name] for t in o.transitions.filter(workflow=workflow)]
+
+
+# meeting material states
+for t in (slides_type, minutes_type, agenda_type):
+    print "importing states for", t.slug
+    State.objects.get_or_create(type=t, slug="active", name="Active", order=1)
+    State.objects.get_or_create(type=t, slug="deleted", name="Deleted", order=2)

@@ -360,7 +360,7 @@ class WgMeetingSessionProxy(TimeSlot):
 	return "%s at %s" % (self.acronym(), self.meeting)
     def agenda_file(self,interimvar=0):
         if not hasattr(self, '_agenda_file'):
-            docs = self.materials.filter(type="agenda")
+            docs = self.materials.filter(type="agenda", states__type="agenda", states__slug="active")
             if not docs:
                 return ""
 
@@ -371,7 +371,7 @@ class WgMeetingSessionProxy(TimeSlot):
             
         return self._agenda_file
     def minute_file(self,interimvar=0):
-        docs = self.materials.filter(type="minutes")
+        docs = self.materials.filter(type="minutes", states__type="minutes", states__slug="active")
         if not docs:
             return ""
 
@@ -410,7 +410,7 @@ class WgMeetingSessionProxy(TimeSlot):
                     return "plenaryw"
                 if "Technical" in self.name:
                     return "plenaryt"
-                for m in self.materials.filter(type="agenda"):
+                for m in self.materials.filter(type="agenda", states__type="agenda", states__slug="active"):
                     if "plenaryw" in m.name:
                         return "plenaryw"
                     if "plenaryt" in m.name:

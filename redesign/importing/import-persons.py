@@ -22,7 +22,8 @@ from redesign.importing.utils import *
 # imports AreaDirector persons that are connected to an IETFWG,
 # persons from IDAuthor, announcement originators from Announcements,
 # requesters from WgMeetingSession, LiaisonDetail persons,
-# LiaisonManagers/SDOAuthorizedIndividual persons
+# LiaisonManagers/SDOAuthorizedIndividual persons,
+# WgProceedingsActivities persons
 
 # should probably import
 # PersonOrOrgInfo/PostalAddress/EmailAddress/PhoneNumber fully
@@ -162,6 +163,12 @@ for o in LiaisonDetail.objects.exclude(person=None).order_by("pk"):
         addr = o.from_email().address
         possibly_import_other_priority_email(email, addr)
     
+# WgProceedingsActivities persons
+for o in PersonOrOrgInfo.objects.filter(wgproceedingsactivities__id__gte=1).order_by("pk").distinct():
+    print "importing WgProceedingsActivities person", o.pk, o.first_name.encode('utf-8'), o.last_name.encode('utf-8')
+
+    email = get_or_create_email(o, create_fake=True)
+
 # IDAuthor persons
 for o in IDAuthor.objects.all().order_by('id').select_related('person').iterator():
     print "importing IDAuthor", o.id, o.person_id, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')

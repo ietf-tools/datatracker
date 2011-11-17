@@ -17,7 +17,7 @@ from redesign.doc.models import *
 from redesign.doc.utils import get_tags_for_stream_id
 from redesign.group.models import *
 from redesign.name.models import *
-from redesign.importing.utils import old_person_to_person, person_name
+from redesign.importing.utils import old_person_to_person, person_name, dont_save_queries
 from redesign.name.utils import name
 from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
 from ietf.idrfc.models import RfcIndex, DraftVersions
@@ -30,13 +30,7 @@ document_name_to_import = None
 if len(sys.argv) > 1:
     document_name_to_import = sys.argv[1]
 
-# prevent memory from leaking when settings.DEBUG=True
-from django.db import connection
-class DontSaveQueries(object):
-    def append(self, x):
-        pass 
-connection.queries = DontSaveQueries()
-
+dont_save_queries()
 
 # assumptions:
 # - states have been imported
@@ -779,7 +773,7 @@ def import_from_idinternal(d, idinternal):
 
 
 
-all_drafts = InternetDraft.objects.all().select_related()
+all_drafts = InternetDraft.objects.all().order_by('pk').select_related()
 if document_name_to_import:
     if document_name_to_import.startswith("rfc"):
         all_drafts = all_drafts.filter(rfc_number=document_name_to_import[3:])
@@ -1047,7 +1041,7 @@ def get_or_create_rfc_document(rfc_number):
     return (d, alias)
 
     
-all_rfcs = RfcIndex.objects.all()
+all_rfcs = RfcIndex.objects.all().order_by("rfc_number")
 
 if all_drafts.count() != InternetDraft.objects.count():
     if document_name_to_import and document_name_to_import.startswith("rfc"):

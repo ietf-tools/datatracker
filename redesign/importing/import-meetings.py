@@ -13,17 +13,22 @@ management.setup_environ(settings)
 
 from django.template.defaultfilters import slugify
 
-from ietf.idtracker.models import AreaDirector, IETFWG, Acronym, IRTF
+import datetime
+
+from ietf.idtracker.models import AreaDirector, IETFWG, Acronym, IRTF, PersonOrOrgInfo
 from ietf.meeting.models import *
-from ietf.proceedings.models import Meeting as MeetingOld, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda, Minute, Slide
+from ietf.proceedings.models import Meeting as MeetingOld, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda, Minute, Slide, WgProceedingsActivities
 from redesign.person.models import *
-from redesign.doc.models import Document, DocAlias
-from redesign.importing.utils import get_or_create_email, old_person_to_person
+from redesign.doc.models import Document, DocAlias, State, DocEvent
+from redesign.importing.utils import old_person_to_person, dont_save_queries
 from redesign.name.models import *
 from redesign.name.utils import name
 
+dont_save_queries()
 
-# imports Meeting, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda, Minute, Slide
+# imports Meeting, MeetingVenue, MeetingRoom, NonSession,
+# WgMeetingSession, WgAgenda, Minute, Slide, upload events from
+# WgProceedingsActivities
 
 # assumptions:
 #  - persons have been imported
@@ -198,7 +203,7 @@ def import_materials(wg_meeting_session, timeslot=None, session=None):
                 session_name = timeslot.name
 
             if kind == Slide:
-                d.title = o.slide_name
+                d.title = o.slide_name.strip()
                 l = o.file_loc()
                 d.external_url = l[l.find("slides/") + len("slides/"):]
                 d.order = o.order_num or 1
@@ -209,16 +214,43 @@ def import_materials(wg_meeting_session, timeslot=None, session=None):
             d.group = session.group if session else None
 
             d.save()
+
+            d.set_state(State.objects.get(type=doctype, slug="active"))
                 
             DocAlias.objects.get_or_create(document=d, name=name)
 
             materials.add(d)
 
+            # try to create a doc event to figure out who uploaded it
+            t = d.type_id
+            if d.type_id == "slides":
+                t = "slide, '%s" % d.title
+            activities = WgProceedingsActivities.objects.filter(group_acronym=wg_meeting_session.group_acronym_id,
+                                                                meeting=wg_meeting_session.meeting_id,
+                                                                activity__startswith=t,
+                                                                activity__endswith="was uploaded")[:1]
+            if activities:
+                a = activities[0]
+                try:
+                    e = DocEvent.objects.get(doc=d, type="uploaded")
+                except DocEvent.DoesNotExist:
+                    e = DocEvent(doc=d, type="uploaded")
+                e.time = datetime.datetime.combine(a.act_date, datetime.time(*[int(s) for s in a.act_time.split(":")]))
+                try:
+                    e.by = old_person_to_person(a.act_by) or system_person
+                except PersonOrOrgInfo.DoesNotExist:
+                    e.by = system_person
+                e.desc = u"Uploaded %s" % d.type_id
+                e.save()
+            else:
+                print "NO UPLOAD ACTIVITY RECORD for", d.name, t, wg_meeting_session.group_acronym_id, wg_meeting_session.meeting_id
+
+
     import_material_kind(WgAgenda, agenda_doctype)
     import_material_kind(Minute, minutes_doctype)
     import_material_kind(Slide, slides_doctype)
 
-for o in WgMeetingSession.objects.all().order_by("pk"):
+for o in WgMeetingSession.objects.all().order_by("pk").iterator():
     # num_session is unfortunately not quite reliable, seems to be
     # right for 1 or 2 but not 3 and it's sometimes null
     sessions = o.num_session or 1
@@ -336,7 +368,7 @@ for o in WgMeetingSession.objects.all().order_by("pk"):
     # status id, third session required AD approval),
     # combined_room_id1/2, combined_time_id1/2
 
-for o in NonSession.objects.all().order_by('pk').select_related("meeting"):
+for o in NonSession.objects.all().order_by('pk').select_related("meeting").iterator():
     print "importing NonSession", o.pk
 
     if o.time_desc in ("", "0"):

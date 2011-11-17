@@ -266,10 +266,13 @@ EVENT_TYPES = [
     # core events
     ("new_revision", "Added new revision"),
     ("changed_document", "Changed document metadata"),
-    
-    # misc document events
-    ("changed_stream", "Changed document stream"),
     ("added_comment", "Added comment"),
+
+    ("uploaded", "Uploaded document"),
+    ("deleted", "Deleted document"),
+
+    # misc draft/RFC events
+    ("changed_stream", "Changed document stream"),
     ("expired_document", "Expired document"),
     ("requested_resurrect", "Requested resurrect"),
     ("completed_resurrect", "Completed resurrect"),
