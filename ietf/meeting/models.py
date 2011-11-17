@@ -78,11 +78,11 @@ class Room(models.Model):
 
 class TimeSlot(models.Model):
     """
-    Everything that would appear on the meeting agenda of a meeting is mapped
-    to a time slot, including breaks (i.e., also NonSession+NonSessionRef.
-    Sessions are connected to TimeSlots during scheduling.
-    A template function to populate a meeting with an appropriate set of TimeSlots
-    is probably also needed.
+    Everything that would appear on the meeting agenda of a meeting is
+    mapped to a time slot, including breaks. Sessions are connected to
+    TimeSlots during scheduling. A template function to populate a
+    meeting with an appropriate set of TimeSlots is probably also
+    needed.
     """
     meeting = models.ForeignKey(Meeting)
     type = models.ForeignKey(TimeSlotTypeName)
@@ -129,6 +129,10 @@ class Constraint(models.Model):
         return u"%s %s %s" % (self.source, self.name.lower(), self.target)
 
 class Session(models.Model):
+    """Session records that a group should have a session on the
+    meeting (the actual period of time and location is stored in
+    TimeSlot) - if multiple timeslots are needed, multiple sessions
+    will have to be created."""
     meeting = models.ForeignKey(Meeting)
     group = models.ForeignKey(Group)    # The group type determines the session type.  BOFs also need to be added as a group.
     attendees = models.IntegerField(null=True, blank=True)
