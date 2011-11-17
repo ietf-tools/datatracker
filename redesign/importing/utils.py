@@ -73,7 +73,7 @@ def get_or_create_email(o, create_fake):
     e, _ = Email.objects.select_related("person").get_or_create(address=email)
     if not e.person:
         asciified = unaccent.asciify(name)
-        aliases = Alias.objects.filter(name__in=(name, asciified))
+        aliases = Alias.objects.filter(name__in=(name, asciified)).select_related('person')
         if aliases:
             p = aliases[0].person
         else:
@@ -95,7 +95,8 @@ def get_or_create_email(o, create_fake):
         e.save()
     else:
         if e.person.name != name:
-            Alias.objects.create(name=name, person=e.person)
+            if not Alias.objects.filter(name=name):
+                Alias.objects.create(name=name, person=e.person)
             # take longest name rather than the first we encounter
             if len(name) > e.person.name:
                 e.person.name = name
@@ -114,3 +115,11 @@ def possibly_import_other_priority_email(email, addr):
                 e.save()
         except Email.DoesNotExist:
             Email.objects.create(address=addr, person=email.person, active=False)
+
+def dont_save_queries():
+    # prevent memory from leaking when settings.DEBUG=True
+    from django.db import connection
+    class DontSaveQueries(object):
+        def append(self, x):
+            pass 
+    connection.queries = DontSaveQueries()
