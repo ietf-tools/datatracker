@@ -65,19 +65,12 @@
 
 <table class="ietf-table state-table">
   <tr> 
-    <th style="width:26em">State</th>
-    <th style="auto">Turn on/off</th>
+    <th>Turn on/off</th>
+    <th style="width:30em">State</th>
     <th style="width:26em">Next states</th>
   </tr>
   {% for state in states %}
   <tr class="{% cycle "oddrow" "evenrow" %}{% if not state.used %} inactive{% endif %}" style="vertical-align: top;">
-    <td>
-      <div>
-        <span>{{ state.name }} {% if not state.used %} (not used in {{ wg.acronym }}){% endif %}</span>
-        <a class="toggler" title="Click to show description of state" href="">+</a>
-      </div>
-      <div class="toggled">{{ state.desc|safe|linebreaks }}</div>
-    </td>
     <td>
       {% if state.mandatory %}
       (mandatory)
@@ -95,6 +88,13 @@
         <input type="hidden" name="action" value="setstateactive" />
       </form>
       {% endif %}
+    </td>
+    <td>
+      <div>
+        <span>{{ state.name }} {% if not state.used %} (not used in {{ wg.acronym }}){% endif %}</span>
+        <a class="toggler" title="Click to show description of state" href="">+</a>
+      </div>
+      <div class="toggled">{{ state.desc|safe|linebreaks }}</div>
     </td>
     <td>
       <div>
@@ -123,12 +123,11 @@
 
 <table class="ietf-table tag-table">
   <tr> 
-    <th>Tag</th>
     <th>Turn on/off</th>
+    <th>Tag</th>
   </tr>
   {% for tag in tags %}
   <tr class="{% cycle "oddrow" "evenrow" %}{% if not tag.used %} inactive{% endif %}" style="vertical-align: top;">
-    <td><span>{{ tag.name }} {% if not tag.used %} (not used in {{ wg.acronym }}){% endif %}</span></td>
     <td>
       <form class="set-tag" method="post" action="">
       {% if tag.used %}
@@ -143,6 +142,7 @@
         <input type="hidden" name="action" value="settagactive" />
       </form>
     </td>
+    <td><span>{{ tag.name }} {% if not tag.used %} (not used in {{ wg.acronym }}){% endif %}</span></td>
   </tr>
   {% endfor %}
 </table>
