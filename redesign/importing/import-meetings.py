@@ -243,7 +243,7 @@ def import_materials(wg_meeting_session, timeslot=None, session=None):
                 e.desc = u"Uploaded %s" % d.type_id
                 e.save()
             else:
-                print "NO UPLOAD ACTIVITY RECORD for", d.name.encode("utf-8"), t, wg_meeting_session.group_acronym_id, wg_meeting_session.meeting_id
+                print "NO UPLOAD ACTIVITY RECORD for", d.name.encode("utf-8"), t.encode("utf-8"), wg_meeting_session.group_acronym_id, wg_meeting_session.meeting_id
 
 
     import_material_kind(WgAgenda, agenda_doctype)
