@@ -1,3 +1,4 @@
+from django.conf import settings
 from django import template
 
 from ietf.ietfworkflows.utils import get_state_for_draft
@@ -24,7 +25,7 @@ def wgchairs_admin_options(context, wg):
 @register.simple_tag
 def writeup(doc):
     writeup = doc.protowriteup_set.all()
-    if not writeup.count():
+    if not writeup:
         return ''
     else:
         return writeup[0].writeup
@@ -33,7 +34,7 @@ def writeup(doc):
 @register.simple_tag
 def writeupdate(doc):
     writeup = doc.protowriteup_set.all()
-    if not writeup.count():
+    if not writeup:
         return ''
     else:
         return writeup[0].date

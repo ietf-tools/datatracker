@@ -111,6 +111,7 @@ table.ietf-table { border-collapse:collapse; border:1px solid #7f7f7f; }
 .ietf-doctable tr.header { border-top: 1px solid #7f7f7f; border-bottom: 1px solid #7f7f7f; border-left: 1px solid white; border-right:2px solid white;}
 .ietf-doctable tr.header td {padding: 6px 6px; font-weight: bold; }
 .ietf-doctable table { max-width: 1200px; }
+.ietf-doctable th { cursor: pointer }
 .ietf-doctable th.doc, .ietf-doctable td.doc { min-width:20em; max-width: 35em; }
 .ietf-doctable th.title, .ietf-doctable td.title { min-width: 20em; max-width: 35em; }
 .ietf-doctable th.date, .ietf-doctable td.date { white-space:nowrap; min-width: 6em;}

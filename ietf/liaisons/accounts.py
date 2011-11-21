@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from ietf.idtracker.models import Role, PersonOrOrgInfo
 
 
@@ -141,3 +143,6 @@ def can_edit_liaison(user, liaison):
         return (is_sdo_manager_for_outgoing_liaison(person, liaison) or
                 is_sdo_manager_for_incoming_liaison(person, liaison))
     return False
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from accountsREDESIGN import * 

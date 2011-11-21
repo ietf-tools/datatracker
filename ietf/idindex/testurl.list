@@ -5,16 +5,16 @@
 301	/drafts/current/	
 301	/drafts/all/		
 301	/drafts/dead/		
-301	/drafts/9574/related/	
-301	/drafts/9574/		
+#301	/drafts/9574/related/	
+#301	/drafts/9574/		
 301	/drafts/draft-ietf-dnsext-dnssec-protocol/related/
 301	/drafts/draft-ietf-dnsext-dnssec-protocol/	
-404	/drafts/987654/
+#404	/drafts/987654/
 301	/drafts/all_id_txt.html
 301	/drafts/all_id.html
 301	/drafts/		
-200,heavy	/drafts/_test/all_id.txt
+#200,heavy	/drafts/_test/all_id.txt
 # this takes 3 minutes, so disabled by default
 #200,heavy	/drafts/_test/all_id2.txt
-200,heavy	/drafts/_test/id_index.txt
-200,heavy	/drafts/_test/id_abstracts.txt
+#200,heavy	/drafts/_test/id_index.txt
+#200,heavy	/drafts/_test/id_abstracts.txt

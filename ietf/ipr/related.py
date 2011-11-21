@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+from django.conf import settings
+from django.db.models import Q
 from ietf.idtracker.models import InternetDraft, Rfc
 
 inverse = {
@@ -77,3 +79,59 @@ def related_docs(doc, found = []):
                 set_relation(doc, 'is_draft_of', item)
                 found = related_docs(item, found)
     return found
+
+def related_docsREDESIGN(alias, _):
+    """Get related document aliases to given alias through depth-first search."""
+    from redesign.doc.models import RelatedDocument
+    from redesign.doc.proxy import DraftLikeDocAlias
+
+    mapping = dict(
+        updates='that updated',
+        obs='that obsoleted',
+        replaces='that replaced',
+        )
+    inverse_mapping = dict(
+        updates='that was updated by',
+        obs='that was obsoleted by',
+        replaces='that was replaced by',
+        )
+    
+    res = [ alias ]
+    remaining = [ alias ]
+    while remaining:
+        a = remaining.pop()
+        related = RelatedDocument.objects.filter(relationship__in=mapping.keys()).filter(Q(source=a.document) | Q(target=a))
+        for r in related:
+            if r.source == a.document:
+                found = DraftLikeDocAlias.objects.filter(pk=r.target_id)
+                inverse = True
+            else:
+                found = DraftLikeDocAlias.objects.filter(document=r.source)
+                inverse = False
+
+            for x in found:
+                if not x in res:
+                    x.related = a
+                    x.relation = (inverse_mapping if inverse else mapping)[r.relationship_id]
+                    res.append(x)
+                    remaining.append(x)
+
+        # there's one more source of relatedness, a draft can have been published
+        aliases = DraftLikeDocAlias.objects.filter(document=a.document).exclude(pk__in=[x.pk for x in res])
+        for oa in aliases:
+            rel = None
+            if a.name.startswith("rfc") and oa.name.startswith("draft"):
+                rel = "that was published as"
+            elif a.name.startswith("draft") and oa.name.startswith("rfc"):
+                rel = "which came from"
+
+            if rel:
+                oa.related = a
+                oa.relation = rel
+                res.append(oa)
+                remaining.append(oa)
+
+    return res
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    related_docs = related_docsREDESIGN

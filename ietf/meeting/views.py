@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-# Create your views here.
 #import models
 import datetime
 import os
@@ -20,7 +19,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
-from django.db.models import Count
+from django.db.models import Count, Max
 from ietf.idtracker.models import InternetDraft
 from ietf.idrfc.idrfc_wrapper import IdWrapper
 from ietf.utils.pipe import pipe
@@ -43,19 +42,38 @@ def show_html_materials(request, meeting_num=None):
     if now > begin_date:
         sub_began = 1
     # List of WG sessions and Plenary sessions
-    queryset_list = WgMeetingSession.objects.filter(Q(meeting=meeting_num, group_acronym_id__gte = -2, status__id=4), Q(irtf__isnull=True) | Q(irtf=0))
-    queryset_irtf = WgMeetingSession.objects.filter(meeting=meeting_num, group_acronym_id__gte = -2, status__id=4, irtf__gt=0)
-    queryset_interim = []
-    queryset_training = []
-    for item in list(WgMeetingSession.objects.filter(meeting=meeting_num)):
-        if item.interim_meeting():
-            item.interim=1
-            queryset_interim.append(item)
-        if item.group_acronym_id < -2:
-            if item.slides():
-                queryset_training.append(item)
-    cache_version = WgProceedingsActivities.objects.aggregate(Count('id'))
-    return object_list(request,queryset=queryset_list, template_name="meeting/list.html",allow_empty=True, extra_context={'meeting_num':meeting_num,'irtf_list':queryset_irtf, 'interim_list':queryset_interim, 'training_list':queryset_training, 'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date,'sub_began':sub_began,'cache_version':cache_version})
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        queryset_list = []
+        queryset_irtf = []
+        queryset_interim = []   # currently ignored, have no way of handling interim here
+        queryset_training = []
+        for item in WgMeetingSession.objects.filter(meeting=meeting_num):
+            if item.type_id in ("session", "plenary"):
+                if item.session and item.session.group and item.session.group.type_id == "rg":
+                    queryset_irtf.append(item)
+                else:
+                    queryset_list.append(item)
+            else:
+                if item.type_id == "other" and item.slides():
+                    queryset_training.append(item)
+        from redesign.doc.models import Document
+        cache_version = Document.objects.filter(timeslot__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
+    else:
+        queryset_list = WgMeetingSession.objects.filter(Q(meeting=meeting_num, group_acronym_id__gte = -2, status__id=4), Q(irtf__isnull=True) | Q(irtf=0))
+        queryset_irtf = WgMeetingSession.objects.filter(meeting=meeting_num, group_acronym_id__gte = -2, status__id=4, irtf__gt=0)
+        queryset_interim = []
+        queryset_training = []
+        for item in list(WgMeetingSession.objects.filter(meeting=meeting_num)):
+            if item.interim_meeting():
+                item.interim=1
+                queryset_interim.append(item)
+            if item.group_acronym_id < -2:
+                if item.slides():
+                    queryset_training.append(item)
+        cache_version = WgProceedingsActivities.objects.aggregate(Count('id'))
+    return render_to_response("meeting/list.html",
+                              {'meeting_num':meeting_num,'object_list': queryset_list, 'irtf_list':queryset_irtf, 'interim_list':queryset_interim, 'training_list':queryset_training, 'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date,'sub_began':sub_began,'cache_version':cache_version},
+                              context_instance=RequestContext(request))
 
 def current_materials(request):
     meeting = Meeting.objects.order_by('-meeting_num')[0]
@@ -99,6 +117,64 @@ def agenda_info(num=None):
     plenaryw_agenda = get_plenary_agenda(n, -1)
     plenaryt_agenda = get_plenary_agenda(n, -2)
     return timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda
+
+def agenda_infoREDESIGN(num=None):
+    try:
+        if num != None:
+            meeting = Meeting.objects.get(number=num)
+        else:
+            meeting = Meeting.objects.all().order_by('-date')[:1].get()
+    except Meeting.DoesNotExist:
+        raise Http404("No meeting information for meeting %s available" % num)
+
+    # now go through the timeslots, only keeping those that are
+    # sessions/plenary/training and don't occur at the same time
+    timeslots = []
+    time_seen = set()
+    for t in MeetingTime.objects.filter(meeting=meeting, type__in=("session", "plenary", "other")).order_by("time").select_related():
+        if not t.time in time_seen:
+            time_seen.add(t.time)
+            timeslots.append(t)
+
+    update = Switches().from_object(meeting)
+    venue = meeting.meeting_venue
+
+    ads = []
+    meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
+    from redesign.group.models import Group
+    from ietf.utils.history import find_history_active_at
+    for g in Group.objects.filter(type="area").order_by("acronym"):
+        history = find_history_active_at(g, meeting_time)
+        if history:
+            if history.state_id == "active":
+                ads.extend(IESGHistory().from_role(x, meeting_time) for x in history.rolehistory_set.filter(name="ad"))
+        else:
+            if g.state_id == "active":
+                ads.extend(IESGHistory().from_role(x, meeting_time) for x in g.role_set.filter(name="ad"))
+    
+    from redesign.doc.models import Document
+    plenary_agendas = Document.objects.filter(timeslot__meeting=meeting, timeslot__type="plenary", type="agenda").distinct()
+    plenaryw_agenda = plenaryt_agenda = "The Plenary has not been scheduled"
+    for agenda in plenary_agendas:
+        # we use external_url at the moment, should probably regularize
+        # the filenames to match the document name instead
+        path = os.path.join(settings.AGENDA_PATH, meeting.number, "agenda", agenda.external_url)
+        try:
+            f = open(path)
+            s = f.read()
+            f.close()
+        except IOError:
+             s = "THE AGENDA HAS NOT BEEN UPLOADED YET"
+        
+        if "plenaryw" in agenda.name:
+            plenaryw_agenda = s
+        elif "plenaryt" in agenda.name:
+            plenaryt_agenda = s
+                               
+    return timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    agenda_info = agenda_infoREDESIGN
 
 @decorator_from_middleware(GZipMiddleware)
 def html_agenda(request, num=None):
@@ -348,7 +424,7 @@ def ical_agenda(request, num=None):
             if session.area() == '' or session.area().find('plenary') > 0 or (session.area().lower() in include):
                 filter.append(session.acronym())
 
-    return HttpResponse(render_to_string("meeting/agenda.ics",
+    return HttpResponse(render_to_string("meeting/agendaREDESIGN.ics" if settings.USE_DB_REDESIGN_PROXY_CLASSES else "meeting/agenda.ics",
         {"filter":set(filter), "timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
             "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, 
             "now":now},

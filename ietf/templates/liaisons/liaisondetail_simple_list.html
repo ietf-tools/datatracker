@@ -38,7 +38,7 @@
 <td>
 {% if liaison.by_secretariat %}
   {% for file in liaison.uploads_set.all %}
-    <a href="https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}">{{ file.file_title|escape }}</a><br/>
+    <a href="https://datatracker.ietf.org/documents/LIAISON/{{ file.filename }}">{{ file.file_title|escape }}</a><br/>
   {% endfor %}
 {% else %}
   <a href="{{ liaison.detail_id }}/">{{ liaison.title|escape }}</a>

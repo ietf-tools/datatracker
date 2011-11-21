@@ -25,9 +25,6 @@ def show_submission_files(context, submission):
 		       'url': '%s%s-%s%s' % (settings.IDSUBMIT_STAGING_URL, submission.filename, submission.revision, ext)})
     return {'files': result}
 
-def show_two_pages(context, two_pages, validation):
-    result
-
 
 @register.filter
 def two_pages_decorated_with_validation(value, validation):

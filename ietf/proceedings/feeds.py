@@ -1,6 +1,7 @@
-import re
+import re, os
 from django.contrib.syndication.feeds import Feed
 from django.utils.feedgenerator import Atom1Feed
+from django.conf import settings
 from ietf.proceedings.models import WgProceedingsActivities
 from ietf.proceedings.models import Slide, WgAgenda, Proceeding
 from datetime import datetime, time
@@ -14,6 +15,21 @@ class LatestWgProceedingsActivity(Feed):
     base_url = "http://www3.ietf.org/proceedings/"
 
     def items(self):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            objs = []
+            from redesign.doc.models import Document
+            for doc in Document.objects.filter(type__in=("agenda", "minutes", "slides")).order_by('-time')[:60]:
+                obj = dict(
+                    title=doc.type_id,
+                    group_acronym=doc.name.split("-")[2],
+                    date=doc.time,
+                    link=self.base_url + os.path.join(doc.get_file_path(), doc.external_url)[len(settings.AGENDA_PATH):],
+                    author=""
+                    )
+                objs.append(obj)
+
+            return objs
+        
         objs = []
         for act in WgProceedingsActivities.objects.order_by('-act_date')[:60]:
             obj = {}

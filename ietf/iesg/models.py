@@ -107,6 +107,7 @@ class WGAction(models.Model):
         (22, "WG Rechartering::Under evaluation for IETF Review"),
         (23, "WG Rechartering::Proposed for Approval")
     )
+    # note that with the new schema, Acronym is monkey-patched and is really Group
     group_acronym = models.ForeignKey(Acronym, db_column='group_acronym_id', primary_key=True, unique=True)
     note = models.TextField(blank=True,null=True)
     status_date = models.DateField()

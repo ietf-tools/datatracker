@@ -1,5 +1,6 @@
 #coding: utf-8
 from django import template
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.util import unquote
 from django.core.exceptions import PermissionDenied
@@ -18,7 +19,8 @@ from ietf.ietfauth.models import LegacyWgPassword, LegacyLiaisonUser
 
 class FromBodiesAdmin(admin.ModelAdmin):
     list_display = ['body_name', 'contact_link', 'other_sdo']
-admin.site.register(FromBodies, FromBodiesAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(FromBodies, FromBodiesAdmin)
 
 
 class LiaisonDetailAdmin(admin.ModelAdmin):
@@ -28,12 +30,13 @@ class LiaisonDetailAdmin(admin.ModelAdmin):
 #               'response_contact', 'technical_contact', 'purpose', 'purpose_text', 'deadline_date', 'action_taken',
 #               'related_to')
     raw_id_fields=['person', 'related_to']
-admin.site.register(LiaisonDetail, LiaisonDetailAdmin)
-
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(LiaisonDetail, LiaisonDetailAdmin)
 
 class LiaisonPurposeAdmin(admin.ModelAdmin):
     ordering = ('purpose_text', )
-admin.site.register(LiaisonPurpose, LiaisonPurposeAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(LiaisonPurpose, LiaisonPurposeAdmin)
 
 
 class LiaisonManagersAdmin(admin.ModelAdmin):
@@ -134,3 +137,13 @@ class LegacyLiaisonUserAdmin(admin.ModelAdmin):
     list_display = ['pk', 'person_link', 'login_name', 'user_level', 'comment', ]
     raw_id_fields = [ 'person', ]
 admin.site.register(LegacyLiaisonUser, LegacyLiaisonUserAdmin)
+
+class LiaisonStatementAdmin(admin.ModelAdmin):
+    list_display = ['id', 'title', 'from_name', 'to_name', 'submitted', 'purpose', 'related_to']
+    list_display_links = ['id', 'title']
+    ordering = ('title', )
+    raw_id_fields = ('from_contact', 'related_to', 'from_group', 'to_group', 'attachments')
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from ietf.liaisons.models import LiaisonStatement
+    admin.site.register(LiaisonStatement, LiaisonStatementAdmin)
+

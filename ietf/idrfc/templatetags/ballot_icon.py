@@ -32,6 +32,7 @@
 
 from django import template
 from django.core.urlresolvers import reverse as urlreverse
+from django.conf import settings
 from ietf.idtracker.models import IDInternal, BallotInfo
 from ietf.idrfc.idrfc_wrapper import position_to_string, BALLOT_ACTIVE_STATES
 from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
@@ -40,12 +41,21 @@ register = template.Library()
 
 def get_user_adid(context):
     if 'user' in context and in_group(context['user'], "Area_Director"):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            return context['user'].get_profile().id
         return context['user'].get_profile().iesg_login_id()
     else:
         return None
 
 def get_user_name(context):
     if 'user' in context and context['user'].is_authenticated():
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            from person.models import Person
+            try:
+                return context['user'].get_profile().name
+            except Person.DoesNotExist:
+                return None
+
         person = context['user'].get_profile().person()
         if person:
             return str(person)
@@ -61,7 +71,7 @@ def render_ballot_icon(context, doc):
             return ""
         if str(doc.cur_state) not in BALLOT_ACTIVE_STATES:
             return ""
-        if doc.rfc_flag:
+        if doc.rfc_flag and not settings.USE_DB_REDESIGN_PROXY_CLASSES:
             name = doc.document().filename()
         else:
             name = doc.document().filename

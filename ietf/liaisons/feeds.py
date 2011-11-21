@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+from django.conf import settings
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.db.models import Q
@@ -7,6 +8,11 @@ from ietf.liaisons.models import LiaisonDetail, FromBodies
 from ietf.idtracker.models import Acronym
 from datetime import datetime, time
 import re
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from redesign.group.models import Group
+    from ietf.liaisons.proxy import LiaisonDetailProxy as LiaisonDetail
+    from ietf.liaisons.models import LiaisonStatement
 
 # A slightly funny feed class, the 'object' is really
 # just a dict with some parameters that items() uses
@@ -24,6 +30,24 @@ class Liaisons(Feed):
 	if bits[0] == 'from':
 	    if len(bits) != 2:
 		raise FeedDoesNotExist
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                try:
+                    group = Group.objects.get(acronym=bits[1])
+                    obj['filter'] = { 'from_group': group }
+                    obj['title'] = u'Liaison Statements from %s' % group.name
+                    return obj
+                except Group.DoesNotExist:
+                    # turn all-nonword characters into one-character
+                    # wildcards to make it easier to construct the URL
+                    search_string = re.sub(r"[^a-zA-Z1-9]", ".", bits[1])
+                    statements = LiaisonStatement.objects.filter(from_name__iregex=search_string)
+                    if statements:
+                        name = statements[0].from_name
+                        obj['filter'] = { 'from_name': name }
+                        obj['title'] = u'Liaison Statements from %s' % name
+                        return obj
+                    else:
+                        raise FeedDoesNotExist
 	    try:
 		acronym = Acronym.objects.get(acronym=bits[1])
 		obj['filter'] = {'from_id': acronym.acronym_id}
@@ -49,16 +73,22 @@ class Liaisons(Feed):
 	if bits[0] == 'to':
 	    if len(bits) != 2:
 		raise FeedDoesNotExist
-	    # The schema uses two different fields for the same
-	    # basic purpose, depending on whether it's a Secretariat-submitted
-	    # or Liaison-tool-submitted document.
-	    obj['q'] = [ (Q(by_secretariat=0) & Q(to_body__icontains=bits[1])) | (Q(by_secretariat=1) & Q(submitter_name__icontains=bits[1])) ]
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                obj['filter'] = dict(to_name__icontains=bits[1])
+            else:
+                # The schema uses two different fields for the same
+                # basic purpose, depending on whether it's a Secretariat-submitted
+                # or Liaison-tool-submitted document.
+                obj['q'] = [ (Q(by_secretariat=0) & Q(to_body__icontains=bits[1])) | (Q(by_secretariat=1) & Q(submitter_name__icontains=bits[1])) ]
 	    obj['title'] = 'Liaison Statements where to matches %s' % bits[1]
 	    return obj
 	if bits[0] == 'subject':
 	    if len(bits) != 2:
 		raise FeedDoesNotExist
-	    obj['q'] = [ Q(title__icontains=bits[1]) | Q(uploads__file_title__icontains=bits[1]) ]
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                obj['q'] = [ Q(title__icontains=bits[1]) | Q(attachments__title__icontains=bits[1]) ]
+            else:
+                obj['q'] = [ Q(title__icontains=bits[1]) | Q(uploads__file_title__icontains=bits[1]) ]
 	    obj['title'] = 'Liaison Statements where subject matches %s' % bits[1]
 	    return obj
 	raise FeedDoesNotExist

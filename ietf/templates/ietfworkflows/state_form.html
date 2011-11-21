@@ -5,13 +5,13 @@
   <th>2. Change annotation tags if needed</th>
 </tr>
 <tr style="vertical-align: top;"><td style="width: 50%;">
-    <div class="field{% if form.errors.comment %} error{% endif %}">
-    {{ form.errors.comment }}
+    <div class="field{% if form.comment.errors %} error{% endif %}">
+    {{ form.comment.errors }}
     Comment: <span class="required">*</span><br />
     <textarea name="comment">{{ form.data.comment }}</textarea>
     </div>
-    <div class="field{% if form.errors.weeks %} error{% endif %}">
-    {{ form.errors.weeks }}
+    <div class="field{% if form.weeks.errors %} error{% endif %}">
+    {{ form.weeks.errors }}
     Estimated time in next status:<br />
     <input type="text" name="weeks" value="{{ form.data.weeks }}" /> (in weeks)
     </div>
@@ -46,14 +46,27 @@
   {% endif %}
   </ul>
   {% endwith %}
-    <div class="free-change field{% if form.errors.new_state %} error{% endif %}">
-      {{ form.errors.new_state }}
+
+  {% with form.get_next_states as next_states %}
+  {% if next_states %}
+  <ul>
+    Jump to the next state:
+    {% for state in next_states %}
+    <input type="submit" name="new_state_{{ state.pk }}" value="{{ state.name }}" />
+    {% endfor %}
+  {% endif %}
+  </ul>
+  {% endwith %}
+
+    <div class="free-change field{% if form.new_state.errors %} error{% endif %}">
+      {{ form.new_state.errors }}
+      Change to another state:
       <select name="new_state">
         {% for value, name in form.get_states %}
           <option value="{{ value }}">{{ name }}</option>
         {% endfor %}
       </select>
-      <input type="submit" name="change" value="State change" />
+      <input type="submit" name="change" value="Change state" />
     </div>
 </td></tr>
 </table>

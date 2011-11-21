@@ -1,6 +1,6 @@
 {% autoescape off %}Manual posting has been requested for the following Internet-Draft:
 
-I-D Submission Tool URL: http://{{ domain }}/submit/status/{{ draft.submission_id }}/
+I-D Submission Tool URL: {{ url }}
 
 File name: {{ draft.filename }}
 Version: {{ draft.revision }}
@@ -13,10 +13,10 @@ Abstract: {{ draft.abstract }}
 Pages: {{ draft.txt_page_count }}
 File size: {{ draft.filesize|filesizeformat }}
 
-Submitter: {{ form.cleaned_data.first_name }} {{ form.cleaned_data.last_name }} <{{ form.cleaned_data.email }}>
+Submitter: {{ submitter.get_full_name }} <{{ submitter.email.1 }}>
 
-Author(s):
-{% for author in form.get_authors %}{{ author.first_name }} {{ author.last_name }} <{{ author.email.1 }}>
+Authors:
+{% for author in form.get_authors %}{{ author.get_full_name }} <{{ author.email.1 }}>
 {% endfor %}
 
 {{ draft.comment_to_sec }}

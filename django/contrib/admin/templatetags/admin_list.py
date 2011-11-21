@@ -110,7 +110,10 @@ def result_headers(cl):
             # It is a non-field, but perhaps one that is sortable
             admin_order_field = getattr(attr, "admin_order_field", None)
             if not admin_order_field:
-                yield {"text": header}
+                yield {
+                    "text": header,
+                    "class_attrib": ""
+                    }
                 continue
 
             # So this _is_ a sortable non-field.  Go to the yield

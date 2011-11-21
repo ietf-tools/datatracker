@@ -35,8 +35,9 @@
 import socket
 from django.conf import settings
 from django.template import TemplateDoesNotExist
+import ietf.utils.mail
+from ietf.utils.mail import outbox as outbox
 
-mail_outbox = []
 loaded_templates = set()
 test_database_name = None
 old_destroy = None
@@ -57,10 +58,6 @@ def safe_destroy_0_1(*args, **kwargs):
         print "     NOT SAFE; Changing settings.DATABASE_NAME from "+settings.DATABASE_NAME+" to "+test_database_name
         settings.DATABASE_NAME = test_database_name
     return old_destroy(*args, **kwargs)
-
-def test_send_smtp(msg, bcc=None):
-    global mail_outbox
-    mail_outbox.append(msg)
 
 def template_coverage_loader(template_name, dirs):
     loaded_templates.add(str(template_name))
@@ -88,7 +85,6 @@ def run_tests(*args, **kwargs):
     # against the production database
     if socket.gethostname().startswith("core3"):
         raise EnvironmentError("Refusing to run tests on core3")
-    import ietf.utils.mail
-    ietf.utils.mail.send_smtp = test_send_smtp
+    ietf.utils.mail.test_mode = True
     run_tests_1(*args, **kwargs)
     

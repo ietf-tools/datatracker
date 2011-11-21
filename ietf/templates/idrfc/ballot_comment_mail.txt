@@ -16,13 +16,13 @@ There is no DISCUSS or COMMENT text associated with this position.
 DISCUSS:
 ----------------------------------------------------------------------
 
-{{ discuss|safe }}
+{{ discuss|safe|wordwrap:73 }}
 
 
 {% endif %}{% if comment %}----------------------------------------------------------------------
 COMMENT:
 ----------------------------------------------------------------------
 
-{{ comment|safe }}
+{{ comment|safe|wordwrap:73 }}
 {% endif %}
 {% endautoescape %}

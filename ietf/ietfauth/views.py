@@ -82,6 +82,23 @@ def ietf_loggedin(request):
     
 @login_required
 def profile(request):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from person.models import Person
+        from group.models import Role
+        
+        roles = []
+        person = None
+        try:
+            person = request.user.get_profile()
+            roles = Role.objects.filter(person=person)
+        except Person.DoesNotExist:
+            pass
+        
+        return render_to_response('registration/profileREDESIGN.html',
+                                  dict(roles=roles,
+                                       person=person),
+                                  context_instance=RequestContext(request))
+    
     return render_to_response('registration/profile.html', context_instance=RequestContext(request))
 
 

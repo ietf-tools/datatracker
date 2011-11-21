@@ -31,6 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test.client import Client
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
@@ -41,6 +42,8 @@ class IetfAuthUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
         self.doTestUrls(__file__)
 
+# this test case should really work on a test database instead of the
+# real one
 class IetfAuthTestCase(unittest.TestCase,RealDatabaseTest):
     def setUp(self):
         self.setUpRealDatabase()
@@ -61,7 +64,7 @@ class IetfAuthTestCase(unittest.TestCase,RealDatabaseTest):
 
         response = c.get(nexturl[2], {}, False, REMOTE_USER=username)
         self.assertEquals(response.status_code, 200)
-        self.assert_("Roles/Groups:" in response.content)
+        self.assert_("User name" in response.content)
         return response
 
     def testLogin(self):
@@ -95,4 +98,7 @@ class IetfAuthTestCase(unittest.TestCase,RealDatabaseTest):
         self.assert_("IETF_Chair" in groups)
 
         print "OK"
-        
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    # this test doesn't make any sense anymore
+    IetfAuthTestCase.testGroups = lambda x: None

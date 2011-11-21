@@ -1,4 +1,4 @@
-{% load ietf_filters %}{{wg.group_acronym.name|safe}} ({{wg}})
+{% if USE_DB_REDESIGN_PROXY_CLASSES %}{% include "wginfo/wg-charterREDESIGN.txt" %}{% else %}{% load ietf_filters %}{{wg.group_acronym.name|safe}} ({{wg}})
 {{ wg.group_acronym.name|dashify }}{{ wg.group_acronym.acronym|dashify }}---
 
  Charter
@@ -44,4 +44,4 @@ Internet-Drafts:
            * {{obs.action}} RFC{{obs.rfc_acted_on_id}}{% endfor %}{% for obs in rfc.obsoleted_by%}
            * {%ifequal obs.action 'Obsoletes'%}OBSOLETED BY{%else%}Updated by{%endifequal%} RFC{{obs.rfc_id}}{% endfor %}
 {%endfor%}
-{%else%}No Requests for Comments{% endif %}
+{%else%}No Requests for Comments{% endif %}{% endif %}

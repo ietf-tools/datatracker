@@ -88,7 +88,8 @@ class RelatedLiaisonWidget(TextInput):
             noliaison = 'inline'
             deselect = 'none'
         else:
-            from ietf.liaisons.models import LiaisonDetail
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                from ietf.liaisons.proxy import LiaisonDetailProxy as LiaisonDetail
             liaison = LiaisonDetail.objects.get(pk=value)
             title = liaison.title
             if not title:

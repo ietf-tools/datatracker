@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.conf import settings
 
 from ietf.ietfworkflows.models import (AnnotationTag, WGWorkflow,
                                        Stream, StreamedID)
@@ -22,4 +23,5 @@ admin.site.register(StreamedID, StreamedIdAdmin)
 
 class StreamAdmin(admin.ModelAdmin):
     list_display = ['name', 'document_group_attribute', 'group_chair_attribute', 'workflow_link', ]
-admin.site.register(Stream, StreamAdmin)
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    admin.site.register(Stream, StreamAdmin)

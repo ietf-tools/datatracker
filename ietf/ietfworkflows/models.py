@@ -2,6 +2,7 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 
 from ietf.idtracker.models import PersonOrOrgInfo, InternetDraft, Role, IRTF
 from ietf.utils.admin import admin_link
@@ -262,3 +263,6 @@ class StreamedID(models.Model):
 class StreamDelegate(models.Model):
     stream = models.ForeignKey(Stream)
     person = models.ForeignKey(PersonOrOrgInfo)
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from redesign.name.proxy import StreamProxy as Stream

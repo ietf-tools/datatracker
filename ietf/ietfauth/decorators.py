@@ -31,6 +31,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django.utils.http import urlquote
+from django.conf import settings
+from django.db.models import Q
 from django.contrib.auth.decorators import _CheckLogin
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 
@@ -62,3 +64,50 @@ def group_required(*group_names):
     def decorate(view_func):
         return _CheckLogin403(view_func, lambda u: bool(u.groups.filter(name__in=group_names)), "Restricted to group%s %s" % ("s" if len(group_names) != 1 else "", ",".join(group_names)))
     return decorate
+
+
+def has_role(user, role_names):
+    """Determines whether user has any of the given standard roles
+    given. Role names must be a list or, in case of a single value, a
+    string."""
+    if isinstance(role_names, str) or isinstance(role_names, unicode):
+        role_names = [ role_names ]
+    
+    if not user or not user.is_authenticated():
+        return False
+
+    from redesign.person.models import Person
+    
+    try:
+        person = user.get_profile()
+    except Person.DoesNotExist:
+        return False
+
+    role_qs = {
+        "Area Director": Q(person=person, name="ad", group__type="area", group__state="active"),
+        "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
+        "IANA": Q(person=person, name="delegate", group__acronym="iana"),  # FIXME
+        }
+
+    filter_expr = Q()
+    for r in role_names:
+        filter_expr |= role_qs[r]
+
+    from redesign.group.models import Role
+    return bool(Role.objects.filter(filter_expr)[:1])
+
+def role_required(*role_names):
+    """View decorator for checking that the user is logged in and
+    belongs to (at least) one of the listed roles. Users who are not
+    logged in are redirected to the login page; users who don't have
+    one of the roles get a "403" page.
+    """
+    def decorate(view_func):
+        return _CheckLogin403(view_func,
+                              lambda u: has_role(u, role_names),
+                              "Restricted to role%s %s" % ("s" if len(role_names) != 1 else "", ",".join(role_names)))
+    return decorate
+    
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    # overwrite group_required
+    group_required = lambda *group_names: role_required(*[n.replace("Area_Director", "Area Director") for n in group_names])

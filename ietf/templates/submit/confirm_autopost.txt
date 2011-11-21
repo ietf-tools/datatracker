@@ -1,6 +1,7 @@
-Follow this link to confirm your Auto-Post of I-D {{ draft.filename }}-{{ draft.revision }}
+Follow this link to confirm your Auto-Post of
+I-D {{ draft.filename }}-{{ draft.revision }}:
 
-I-D Submission Tool URL: http://{{ domain }}/submit/status/{{ draft.submission_id }}/confirm/{{ draft.auth_key }}/
+I-D Submission Tool URL: {{ confirm_url|safe }}
 
 Remember that you can cancel the submission from:
-http://{{ domain }}/submit/status/{{ draft.submission_id }}/{{ draft.get_hash }}/
+{{ status_url|safe }}

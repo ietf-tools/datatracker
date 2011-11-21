@@ -1,6 +1,3 @@
-# python imports
-import sets
-
 # django imports
 from django.db import models
 from django.contrib.auth.models import User

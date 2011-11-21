@@ -425,3 +425,6 @@ def liaison_form_factory(request, **kwargs):
     elif can_add_incoming_liaison(user):
         return IncomingLiaisonForm(user, **kwargs)
     return None
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from ietf.liaisons.formsREDESIGN import *

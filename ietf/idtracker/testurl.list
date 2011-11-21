@@ -6,13 +6,8 @@
 200	/idtracker/status/last-call/	
 
 301	/idtracker/rfc3847/
-301	/idtracker/12689/		
 301	/idtracker/draft-ietf-isis-link-attr/	
-301 	/idtracker/draft-ietf-isis-link-attr/comment/65232/	
 301	/idtracker/draft-eronen-tls-psk/ # no IESG information
-301	/idtracker/comment/65232/	
-301 	/idtracker/ballot/1760/	
-404	/idtracker/ballot/1723/ # dangling ballot, does not link to any doc
 301	/idtracker/
 200	/feed/comments/draft-ietf-isis-link-attr/
 200	/feed/comments/rfc3373/
@@ -27,5 +22,4 @@
 # Test case for missing comment time (bug fixed in changeset 1733)
 200     /feed/comments/draft-ietf-msec-newtype-keyid/
 
-200,heavy	/sitemap-drafts.xml
 200,heavy	/sitemap-idtracker.xml

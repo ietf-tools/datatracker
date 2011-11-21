@@ -1,4 +1,4 @@
-import sha
+import hashlib
 import random
 import os
 import subprocess
@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 from django.utils.html import mark_safe
+from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.idtracker.models import InternetDraft, IETFWG
 from ietf.proceedings.models import Meeting
@@ -249,7 +250,10 @@ class UploadForm(forms.Form):
         document_id = 0
         existing_draft = InternetDraft.objects.filter(filename=draft.filename)
         if existing_draft:
-            document_id = existing_draft[0].id_document_tag
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                document_id = -1
+            else:
+                document_id = existing_draft[0].id_document_tag
         detail = IdSubmissionDetail.objects.create(
             id_document_name=draft.get_title(),
             filename=draft.filename,
@@ -271,22 +275,34 @@ class UploadForm(forms.Form):
         for author in draft.get_author_info():
             full_name, first_name, middle_initial, last_name, name_suffix, email = author
             order += 1
-            TempIdAuthors.objects.create(
-                id_document_tag=document_id,
-                first_name=first_name,
-                middle_initial=middle_initial,
-                last_name=last_name,
-                name_suffix=name_suffix,
-                email_address=email,
-                author_order=order,
-                submission=detail)
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                # save full name
+                TempIdAuthors.objects.create(
+                    id_document_tag=document_id,
+                    first_name=full_name.strip(),
+                    email_address=email,
+                    author_order=order,
+                    submission=detail)
+            else:
+                TempIdAuthors.objects.create(
+                    id_document_tag=document_id,
+                    first_name=first_name,
+                    middle_initial=middle_initial,
+                    last_name=last_name,
+                    name_suffix=name_suffix,
+                    email_address=email,
+                    author_order=order,
+                    submission=detail)
         return detail
 
 
 class AutoPostForm(forms.Form):
 
-    first_name = forms.CharField(label=u'Given name', required=True)
-    last_name = forms.CharField(label=u'Last name', required=True)
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        name = forms.CharField(required=True)
+    else:
+        first_name = forms.CharField(label=u'Given name', required=True)
+        last_name = forms.CharField(label=u'Last name', required=True)
     email = forms.EmailField(label=u'Email address', required=True)
 
     def __init__(self, *args, **kwargs):
@@ -295,10 +311,21 @@ class AutoPostForm(forms.Form):
         super(AutoPostForm, self).__init__(*args, **kwargs)
 
     def get_author_buttons(self):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            buttons = []
+            for i in self.validation.authors:
+                buttons.append('<input type="button" data-name="%(name)s" data-email="%(email)s" value="%(name)s" />'
+                               % dict(name=i.get_full_name(),
+                                      email=i.email()[1] or ''))
+            return "".join(buttons)
+
+
+        # this should be moved to a Javascript file and attributes like data-first-name ...
         button_template = '<input type="button" onclick="jQuery(\'#id_first_name\').val(\'%(first_name)s\');jQuery(\'#id_last_name\').val(\'%(last_name)s\');jQuery(\'#id_email\').val(\'%(email)s\');" value="%(full_name)s" />'
+
         buttons = []
         for i in self.validation.authors:
-            full_name = '%s. %s' % (i.first_name[0], i.last_name)
+            full_name = u'%s. %s' % (i.first_name[0], i.last_name)
             buttons.append(button_template % {'first_name': i.first_name,
                                               'last_name': i.last_name,
                                               'email': i.email()[1] or '',
@@ -314,10 +341,22 @@ class AutoPostForm(forms.Form):
         subject = 'Confirmation for Auto-Post of I-D %s' % self.draft.filename
         from_email = settings.IDSUBMIT_FROM_EMAIL
         to_email = self.cleaned_data['email']
+
+        confirm_url = settings.IDTRACKER_BASE_URL + urlreverse('draft_confirm', kwargs=dict(submission_id=self.draft.submission_id, auth_key=self.draft.auth_key))
+        status_url = settings.IDTRACKER_BASE_URL + urlreverse('draft_status_by_hash', kwargs=dict(submission_id=self.draft.submission_id, submission_hash=self.draft.get_hash()))
+        
         send_mail(request, to_email, from_email, subject, 'submit/confirm_autopost.txt',
-                  {'draft': self.draft, 'domain': Site.objects.get_current().domain })
+                  { 'draft': self.draft, 'confirm_url': confirm_url, 'status_url': status_url })
 
     def save_submitter_info(self):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            return TempIdAuthors.objects.create(
+                id_document_tag=self.draft.temp_id_document_tag,
+                first_name=self.cleaned_data['name'],
+                email_address=self.cleaned_data['email'],
+                author_order=0,
+                submission=self.draft)
+
         return TempIdAuthors.objects.create(
             id_document_tag=self.draft.temp_id_document_tag,
             first_name=self.cleaned_data['first_name'],
@@ -327,8 +366,8 @@ class AutoPostForm(forms.Form):
             submission=self.draft)
 
     def save_new_draft_info(self):
-        salt = sha.new(str(random.random())).hexdigest()[:5]
-        self.draft.auth_key = sha.new(salt+self.cleaned_data['email']).hexdigest()
+        salt = hashlib.sha1(str(random.random())).hexdigest()[:5]
+        self.draft.auth_key = hashlib.sha1(salt+self.cleaned_data['email']).hexdigest()
         self.draft.status_id = WAITING_AUTHENTICATION
         self.draft.save()
 
@@ -340,11 +379,18 @@ class MetaDataForm(AutoPostForm):
     creation_date = forms.DateField(label=u'Creation date', required=True)
     pages = forms.IntegerField(label=u'Pages', required=True)
     abstract = forms.CharField(label=u'Abstract', widget=forms.Textarea, required=True)
-    first_name = forms.CharField(label=u'Given name', required=True)
-    last_name = forms.CharField(label=u'Last name', required=True)
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        name = forms.CharField(required=True)
+    else:
+        first_name = forms.CharField(label=u'Given name', required=True)
+        last_name = forms.CharField(label=u'Last name', required=True)
     email = forms.EmailField(label=u'Email address', required=True)
     comments = forms.CharField(label=u'Comments to the secretariat', widget=forms.Textarea, required=False)
-    fields = ['title', 'version', 'creation_date', 'pages', 'abstract', 'first_name', 'last_name', 'email', 'comments']
+
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        fields = ['title', 'version', 'creation_date', 'pages', 'abstract', 'name', 'email', 'comments']
+    else:
+        fields = ['title', 'version', 'creation_date', 'pages', 'abstract', 'first_name', 'last_name', 'email', 'comments']
 
     def __init__(self, *args, **kwargs):
         super(MetaDataForm, self).__init__(*args, **kwargs)
@@ -355,26 +401,44 @@ class MetaDataForm(AutoPostForm):
         authors=[]
         if self.is_bound:
             for key, value in self.data.items():
-                if key.startswith('first_name_'):
-                    author = {'errors': {}}
-                    index = key.replace('first_name_', '')
-                    first_name = value.strip()
-                    if not first_name:
-                        author['errors']['first_name'] = 'This field is required'
-                    last_name = self.data.get('last_name_%s' % index, '').strip()
-                    if not last_name:
-                        author['errors']['last_name'] = 'This field is required'
-                    email = self.data.get('email_%s' % index, '').strip()
-                    if email and not email_re.search(email):
-                        author['errors']['email'] = 'Enter a valid e-mail address'
-                    if first_name or last_name or email:
-                        author.update({'first_name': first_name,
-                                       'last_name': last_name,
-                                       'email': ('%s %s' % (first_name, last_name), email),
-                                       'index': index,
-                                       })
-                        authors.append(author)
-            authors.sort(lambda x,y: cmp(int(x['index']), int(y['index'])))
+                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                    if key.startswith('name_'):
+                        author = {'errors': {}}
+                        index = key.replace('name_', '')
+                        name = value.strip()
+                        if not name:
+                            author['errors']['name'] = 'This field is required'
+                        email = self.data.get('email_%s' % index, '').strip()
+                        if email and not email_re.search(email):
+                            author['errors']['email'] = 'Enter a valid e-mail address'
+                        if name or email:
+                            author.update({'get_full_name': name,
+                                           'email': (name, email),
+                                           'index': index,
+                                           })
+                            authors.append(author)
+
+                else:
+                    if key.startswith('first_name_'):
+                        author = {'errors': {}}
+                        index = key.replace('first_name_', '')
+                        first_name = value.strip()
+                        if not first_name:
+                            author['errors']['first_name'] = 'This field is required'
+                        last_name = self.data.get('last_name_%s' % index, '').strip()
+                        if not last_name:
+                            author['errors']['last_name'] = 'This field is required'
+                        email = self.data.get('email_%s' % index, '').strip()
+                        if email and not email_re.search(email):
+                            author['errors']['email'] = 'Enter a valid e-mail address'
+                        if first_name or last_name or email:
+                            author.update({'first_name': first_name,
+                                           'last_name': last_name,
+                                           'email': ('%s %s' % (first_name, last_name), email),
+                                           'index': index,
+                                           })
+                            authors.append(author)
+            authors.sort(key=lambda x: x['index'])
         return authors
 
     def set_initials(self):
@@ -434,7 +498,7 @@ class MetaDataForm(AutoPostForm):
 
     def save_new_draft_info(self):
         draft = self.draft
-        draft.id_documen_name = self.cleaned_data['title']
+        draft.id_document_name = self.cleaned_data['title']
         if draft.revision != self.cleaned_data['version']:
             self.move_docs(draft, self.cleaned_data['version'])
             draft.revision = self.cleaned_data['version']
@@ -444,7 +508,21 @@ class MetaDataForm(AutoPostForm):
         draft.comment_to_sec = self.cleaned_data['comments']
         draft.status_id = MANUAL_POST_REQUESTED
         draft.save()
-        self.save_submitter_info()
+
+        # sync authors
+        draft.tempidauthors_set.all().delete()
+
+        self.save_submitter_info() # submitter is author 0
+
+        for i, author in enumerate(self.authors):
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                # save full name
+                TempIdAuthors.objects.create(
+                    id_document_tag=draft.temp_id_document_tag,
+                    first_name=author["get_full_name"],
+                    email_address=author["email"][1],
+                    author_order=i + 1,
+                    submission=draft)
 
     def save(self, request):
         self.save_new_draft_info()
@@ -459,5 +537,11 @@ class MetaDataForm(AutoPostForm):
         if self.draft.group_acronym:
             cc += [i.person.email()[1] for i in self.draft.group_acronym.wgchair_set.all()]
         cc = list(set(cc))
-        send_mail(request, to_email, from_email, subject, 'submit/manual_post_mail.txt',
-                  {'form': self, 'draft': self.draft, 'domain': Site.objects.get_current().domain }, cc=cc)
+        submitter = self.draft.tempidauthors_set.get(author_order=0)
+        send_mail(request, to_email, from_email, subject, 'submit/manual_post_mail.txt', {
+                'form': self,
+                'draft': self.draft,
+                'url': settings.IDTRACKER_BASE_URL + urlreverse('draft_status', kwargs=dict(submission_id=self.draft.submission_id)),
+                'submitter': submitter
+                },
+                  cc=cc)

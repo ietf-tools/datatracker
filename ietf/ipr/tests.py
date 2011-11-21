@@ -35,7 +35,7 @@ import unittest
 from django.test.client import Client
 from django.conf import settings
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, canonicalize_feed, canonicalize_sitemap
-import ietf.utils.test_runner as test_runner
+from ietf.utils.mail import outbox, empty_outbox
 
 class IprUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
@@ -48,6 +48,8 @@ class IprUrlTestCase(SimpleUrlTestCase):
         else:
             return content
 
+# this test should be ported to run on a test database instead of the
+# real database, and possibly expanded
 class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
     SPECIFIC_DISCLOSURE = {
         'legal_name':'Testing Only Please Ignore',
@@ -58,6 +60,7 @@ class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
         'ietf_telephone':'555-555-0101',
         'ietf_email':'test.participant@example.com',
         'rfclist':'1149',
+        'draftlist':'draft-burdis-http-sasl-00',
         'patents':'none',
         'date_applied':'never',
         'country':'nowhere',
@@ -74,12 +77,12 @@ class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
 
     def testNewSpecific(self):
         print "     Testing IPR disclosure submission"
-        test_runner.mail_outbox = []
+        empty_outbox
         c = Client()
         response = c.post('/ipr/new-specific/', self.SPECIFIC_DISCLOSURE)
         self.assertEquals(response.status_code, 200)
         self.assert_("Your IPR disclosure has been submitted" in response.content)
-        self.assertEquals(len(test_runner.mail_outbox), 1)
+        self.assertEquals(len(outbox), 1)
         print "OK   (1 email found in test outbox)"
         
     

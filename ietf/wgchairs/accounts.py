@@ -1,3 +1,6 @@
+from django.conf import settings
+from redesign.group.models import Role
+
 def is_secretariat(user):
     if not user or not user.is_authenticated():
         return False
@@ -7,19 +10,24 @@ def is_secretariat(user):
 def is_area_director_for_group(person, group):
     return bool(group.area.area.areadirector_set.filter(person=person).count())
 
+def is_area_director_for_groupREDESIGN(person, group):
+    return bool(Role.objects.filter(group=group.parent, person=person, name="ad"))
+
 
 def is_group_chair(person, group):
     if group.chairs().filter(person=person):
         return True
     return False
 
+def is_group_chairREDESIGN(person, group):
+    return bool(Role.objects.filter(group=group, person=person, name="chair"))
+
 
 def is_group_delegate(person, group):
     return bool(group.wgdelegate_set.filter(person=person).count())
 
-
-def is_document_shepherd(person, document):
-    return person == document.shepherd
+def is_group_delegateREDESIGN(person, group):
+    return bool(Role.objects.filter(group=group, person=person, name="delegate"))
 
 
 def get_person_for_user(user):
@@ -29,6 +37,13 @@ def get_person_for_user(user):
         return None
 
 
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from ietf.liaisons.accounts import is_secretariat, get_person_for_user
+    is_area_director_for_group = is_area_director_for_groupREDESIGN
+    is_group_chair = is_group_chairREDESIGN
+    is_group_delegate = is_group_delegateREDESIGN
+    
+    
 def can_do_wg_workflow_in_group(user, group):
     person = get_person_for_user(user)
     if not person:
@@ -87,4 +102,7 @@ def can_manage_writeup_of_a_document(user, document):
     if not person or not document.group:
         return False
     return (can_manage_writeup_of_a_document_no_state(user, document) or
-            is_document_shepherd(person, document))
+            person == document.shepherd)
+
+
+

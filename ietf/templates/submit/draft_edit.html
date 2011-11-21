@@ -14,6 +14,7 @@ table.ietf-table span.field-error { display: block; color: red; }
 {% block pagehead %}
 {{ block.super }}
 
+<script type="text/javascript" src="/js/draft-submit.js"></script>
 <script type="text/javascript">
 (function ($) {
 
@@ -118,8 +119,12 @@ Please fix the following errors.
 If you are one of the authors, then please click a button by your name to automatically fill in the submitter's information as requested below. Otherwise, Please manually enter your information.<br />
 {{ form.get_author_buttons|safe }}
 </td></tr>
+{% if settings.USE_DB_REDESIGN_PROXY_CLASSES %}
+<tr{% if form.errors.name %} class="warning"{% endif %}><th class="author">Name</th><td>{{ form.name }}{{ form.errors.name }}</td></tr>
+{% else %}
 <tr{% if form.errors.first_name %} class="warning"{% endif %}><th class="author">First name</th><td>{{ form.first_name }}{{ form.errors.first_name }}</td></tr>
 <tr{% if form.errors.last_name %} class="warning"{% endif %}><th class="author">Last name</th><td>{{ form.last_name }}{{ form.errors.last_name }}</td></tr>
+{% endif %}
 <tr{% if form.errors.email %} class="warning"{% endif %}><th class="author">Email address</th><td>{{ form.email }}{{ form.errors.email }}</td></tr>
 <tr{% if form.errors.comments %} class="warning"{% endif %}><th>Comments to the secretariat</th><td>{{ form.comments }}{{ form.errors.comments }}</td></tr>
 </table>
@@ -127,13 +132,25 @@ If you are one of the authors, then please click a button by your name to automa
 <h3>Authors</h3>
 <table class="author_list ietf-table" style="width: 100%;">
   <thead>
-    <tr><th>First name</th><th>Last name</th><th>Email address</th></tr>
+    <tr>
+      {% if settings.USE_DB_REDESIGN_PROXY_CLASSES %}
+      <th>Name</th>
+      {% else %}
+      <th>First name</th>
+      <th>Last name</th>
+      {% endif %}
+      <th>Email address</th>
+    </tr>
   </thead>
   <tbody>
 {% for author in form.get_authors %}
   <tr class="editable {% cycle oddrow,evenrow %}{% if author.errors %} error{% endif %}">
+    {% if settings.USE_DB_REDESIGN_PROXY_CLASSES %}
+    <td name="name"><span class="fieldValue">{{ author.get_full_name|default:"" }}</span><span class="field-error">{{ author.errors.name }}</span></td>
+    {% else %}
     <td name="first_name"><span class="fieldValue">{{ author.first_name|default:"" }}</span><span class="field-error">{{ author.errors.first_name }}</span></td>
     <td name="last_name"><span class="fieldValue">{{ author.last_name|default:"" }}</span><span class="field-error">{{ author.errors.last_name }}</span></td>
+    {% endif %}
     <td name="email"><span class="fieldValue">{{ author.email.1|default:"" }}</span><span class="field-error">{{ author.errors.email }}</span></td>
   </tr>
 {% endfor %}

@@ -96,4 +96,9 @@ class DraftVersions(models.Model):
         return "DraftVersions"+self.filename+self.revision+str(self.revision_date)
     class Meta:
         db_table = "draft_versions_mirror"
-    
+
+
+from django.conf import settings
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    RfcIndexOld = RfcIndex
+    from redesign.doc.proxy import RfcIndex

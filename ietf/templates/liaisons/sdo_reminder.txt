@@ -3,7 +3,7 @@ Dear {{ manager_name }}
 
 This is an automatic reminder, please do not reply to this email.
 
-As liaison manager of {{ sdo_name }} you have to provide and updated list of persons who are authorized to send liaison statements on behalf of your SDO.
+As liaison manager of {{ sdo_name }} you have to provide an updated list of persons who are authorized to send liaison statements on behalf of your organization.
 
 Current list in our system for {{ sdo_name }} is:
 
@@ -13,9 +13,9 @@ Current list in our system for {{ sdo_name }} is:
 {% endfor %}
 ------
 
-Please fell free to add or remove individuals from the list and send it to the secretariat at statments@ietf.org.
+Please feel free to add or remove individuals from the list and send it to the secretariat at statements@ietf.org.
 
-For any questions please contact statments@ietf.org.
+For any questions please contact statements@ietf.org.
 
 Thank you,
 

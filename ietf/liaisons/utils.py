@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from ietf.idtracker.models import Area, IETFWG
 from ietf.liaisons.models import SDOs, LiaisonManagers
 from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
@@ -420,3 +422,6 @@ class IETFHierarchyManager(object):
 
 
 IETFHM = IETFHierarchyManager()
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    from utilsREDESIGN import * 

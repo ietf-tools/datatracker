@@ -4,7 +4,7 @@
     {{ entry.person }}
   </div>
   <div class="entry-action">
-    {{ entry.describe_change|safe }}
+    {{ entry.describe_change|safe|linebreaks }}
   </div>
   <div class="entry-comment">
     {{ entry.comment }}

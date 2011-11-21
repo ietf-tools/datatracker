@@ -25,18 +25,18 @@ class IdTrackerUrlTestCase(SimpleUrlTestCase):
         else:
             return content
 
-class WGRoleTest(django.test.TestCase):
-    fixtures = ['wgtest']
-
-    def setUp(self):
-        from ietf.idtracker.models import IETFWG
-	self.xmas = IETFWG.objects.get(group_acronym__acronym='xmas')
-	self.snow = IETFWG.objects.get(group_acronym__acronym='snow')
-
-    def test_roles(self):
-        print "     Testing WG roles"
-    	self.assertEquals(self.xmas.wgchair_set.all()[0].role(), 'xmas WG Chair')
-	self.assertEquals(self.snow.wgchair_set.all()[0].role(), 'snow BOF Chair')
-	self.assertEquals(self.xmas.wgsecretary_set.all()[0].role(), 'xmas WG Secretary')
-	self.assertEquals(self.xmas.wgtechadvisor_set.all()[0].role(), 'xmas Technical Advisor')
-        print "OK"
+# class WGRoleTest(django.test.TestCase):
+#     fixtures = ['wgtest']
+# 
+#     def setUp(self):
+#         from ietf.idtracker.models import IETFWG
+# 	self.xmas = IETFWG.objects.get(group_acronym__acronym='xmas')
+# 	self.snow = IETFWG.objects.get(group_acronym__acronym='snow')
+# 
+#     def test_roles(self):
+#         print "     Testing WG roles"
+#     	self.assertEquals(self.xmas.wgchair_set.all()[0].role(), 'xmas WG Chair')
+# 	self.assertEquals(self.snow.wgchair_set.all()[0].role(), 'snow BOF Chair')
+# 	self.assertEquals(self.xmas.wgsecretary_set.all()[0].role(), 'xmas WG Secretary')
+# 	self.assertEquals(self.xmas.wgtechadvisor_set.all()[0].role(), 'xmas Technical Advisor')
+#         print "OK"

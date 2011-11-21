@@ -69,8 +69,7 @@ def parse(response):
             events.expandNode(node)
             node.normalize()
             draft_name = getChildText(node, "draft").strip()
-            if re.search("-\d\d\.txt$", draft_name):
-                draft_name = draft_name[0:-7]
+            draft_name = re.sub("(-\d\d)?(.txt){1,2}$", "", draft_name)
             date_received = getChildText(node, "date-received")
             
             states = []
@@ -169,6 +168,9 @@ def parse_all(response):
     refs.extend(indirect_refs)
     del(indirect_refs)
 
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES: # note: return before id lookup
+        return (drafts, refs)
+
     # convert filenames to id_document_tags
     log("connecting to database...")
     cursor = db.connection.cursor()
@@ -190,7 +192,76 @@ def insert_into_database(drafts, refs):
     cursor.close()
     db.connection._commit()
     db.connection.close()
+
+import django.db.transaction
+
+def get_rfc_tag_mapping():
+    """Return dict with RFC Editor state name -> DocTagName"""
+    from redesign.name.models import DocTagName
+    from redesign.name.utils import name
     
+    return {
+        'IANA': name(DocTagName, 'iana-crd', 'IANA coordination', "RFC-Editor/IANA Registration Coordination"),
+        'REF': name(DocTagName, 'ref', 'Holding for references', "Holding for normative reference"),
+        'MISSREF': name(DocTagName, 'missref', 'Missing references', "Awaiting missing normative reference"),
+    }
+
+def get_rfc_state_mapping():
+    """Return dict with RFC Editor state name -> State"""
+    from redesign.doc.models import State, StateType
+    t = StateType.objects.get(slug="draft-rfceditor")
+    return {
+        'AUTH': State.objects.get_or_create(type=t, slug='auth', name='AUTH', desc="Awaiting author action")[0],
+        'AUTH48': State.objects.get_or_create(type=t, slug='auth48', name="AUTH48", desc="Awaiting final author approval")[0],
+        'EDIT': State.objects.get_or_create(type=t, slug='edit', name='EDIT', desc="Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing")[0],
+        'IANA': State.objects.get_or_create(type=t, slug='iana-crd', name='IANA', desc="RFC-Editor/IANA Registration Coordination")[0],
+        'IESG': State.objects.get_or_create(type=t, slug='iesg', name='IESG', desc="Holding for IESG action")[0],
+        'ISR': State.objects.get_or_create(type=t, slug='isr', name='ISR', desc="Independent Submission Review by the ISE ")[0],
+        'ISR-AUTH': State.objects.get_or_create(type=t, slug='isr-auth', name='ISR-AUTH', desc="Independent Submission awaiting author update, or in discussion between author and ISE")[0],
+        'REF': State.objects.get_or_create(type=t, slug='ref', name='REF', desc="Holding for normative reference")[0],
+        'RFC-EDITOR': State.objects.get_or_create(type=t, slug='rfc-edit', name='RFC-EDITOR', desc="Awaiting final RFC Editor review before AUTH48")[0],
+        'TO': State.objects.get_or_create(type=t, slug='timeout', name='TO', desc="Time-out period during which the IESG reviews document for conflict/concurrence with other IETF working group work")[0],
+        'MISSREF': State.objects.get_or_create(type=t, slug='missref', name='MISSREF', desc="Awaiting missing normative reference")[0],
+    }
+
+
+@django.db.transaction.commit_on_success
+def insert_into_databaseREDESIGN(drafts, refs):
+    from doc.models import Document
+    from name.models import DocTagName
+
+    tags = get_rfc_tag_mapping()
+    states = get_rfc_state_mapping()
+
+    rfc_editor_tags = tags.values()
+    
+    log("removing old data...")
+    for d in Document.objects.filter(states__type="draft-rfceditor").distinct():
+        d.tags.remove(*rfc_editor_tags)
+        d.unset_state("draft-rfceditor")
+
+    log("inserting new data...")
+
+    for name, date_received, state, stream_id in drafts:
+        try:
+            d = Document.objects.get(name=name)
+        except Document.DoesNotExist:
+            log("unknown document %s" % name)
+            continue
+
+        s = state.split(" ")
+        if s:
+            # first is state
+            d.set_state(states[s[0]])
+
+            # remainding are tags
+            for x in s[1:]:
+                d.tags.add(tags[x])
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    insert_into_database = insert_into_databaseREDESIGN
+
+
 if __name__ == '__main__':
     try:
         log("output from mirror_rfc_editor_queue.py:\n")
