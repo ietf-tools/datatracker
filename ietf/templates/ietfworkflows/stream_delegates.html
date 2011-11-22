@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load ietf_streams ietf_filters %}
 
+{% block title %}Manage delegates for {{ stream.name }} stream{% endblock %}
+
 {% block content %}
 <h1>Stream: {{ stream.name }}</h1>
 
