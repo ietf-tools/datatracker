@@ -77,6 +77,13 @@ secretariat_group.state = state_names["active"]
 secretariat_group.type = type_names["ietf"]
 secretariat_group.save()
 
+# create ISE for use with streams
+ise_group, _ = Group.objects.get_or_create(acronym="ise")
+ise_group.name = "Independent Submission Editor"
+ise_group.state = state_names["active"]
+ise_group.type = type_names["ietf"]
+ise_group.save()
+
 # create RSOC for use with roles
 rsoc_group, _ = Group.objects.get_or_create(acronym="rsoc")
 rsoc_group.name = "RFC Series Oversight Committee"
@@ -84,7 +91,7 @@ rsoc_group.state = state_names["active"]
 rsoc_group.type = type_names["ietf"]
 rsoc_group.save()
 
-# create IAB for use with liaison statements
+# create IAB for use with liaison statements and streams
 iab_group, _ = Group.objects.get_or_create(acronym="iab")
 iab_group.name = "Internet Architecture Board"
 iab_group.state = state_names["active"]

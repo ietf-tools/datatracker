@@ -102,10 +102,7 @@ for o in OldRole.objects.all().order_by('pk'):
     if o.id == OldRole.RSOC_CHAIR:
         official_email, _ = Email.objects.get_or_create(address="rsoc-chair@iab.org")
         
-    if o.role_name == "ISE":
-        group = Group.objects.get(type="individ")
-    else:
-        group = Group.objects.get(acronym=acronym)
+    group = Group.objects.get(acronym=acronym)
 
     Role.objects.get_or_create(name=role, group=group, person=email.person, email=official_email)
 
