@@ -229,8 +229,6 @@ class AddDelegateForm(RelatedWGForm):
         return self.next_form
 
     def get_person(self, email):
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            raise NotImplementedError
         persons = PersonOrOrgInfo.objects.filter(emailaddress__address=email).filter(
             Q(iesglogin__isnull=False)|
             Q(legacywgpassword__isnull=False)|
@@ -256,7 +254,7 @@ class AddDelegateForm(RelatedWGForm):
                 return
         else:
             try:
-                person = PersonOrOrgInfo.objects.filter(emailaddress__address=email).distinct().get()
+                person = self.get_person(email)
             except PersonOrOrgInfo.DoesNotExist:
                 self.next_form = NotExistDelegateForm(wg=self.wg, user=self.user, email=email, shepherd=self.shepherd)
                 self.next_form.set_message('doesnotexist', 'There is no user with this email allowed to login to the system')
