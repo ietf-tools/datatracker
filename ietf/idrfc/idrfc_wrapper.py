@@ -724,12 +724,15 @@ class BallotWrapper:
             return
 
         from redesign.person.models import Person
+        from redesign.doc.models import BallotPositionDocEvent, NewRevisionDocEvent
+
         active_ads = Person.objects.filter(role__name="ad", role__group__state="active").distinct()
         
         positions = []
         seen = {}
 
-        from doc.models import BallotPositionDocEvent
+        new_revisions = list(NewRevisionDocEvent.objects.filter(doc=self.ballot, type="new_revision").order_by('-time', '-id'))
+
 	for pos in BallotPositionDocEvent.objects.filter(doc=self.ballot, type="changed_ballot_position", time__gte=self.ballot.process_start, time__lte=self.ballot.process_end).select_related('ad').order_by("-time", '-id'):
             if pos.ad not in seen:
                 p = dict(ad_name=pos.ad.name,
@@ -738,17 +741,23 @@ class BallotWrapper:
                          is_old_ad=pos.ad not in active_ads,
                          old_positions=[])
 
+                rev = pos.doc.rev
+                for n in new_revisions:
+                    if n.time <= pos.time:
+                        rev = n.rev
+                        break
+
                 if pos.pos.slug == "discuss":
                     p["has_text"] = True
                     p["discuss_text"] = pos.discuss
                     p["discuss_date"] = pos.discuss_time
-                    p["discuss_revision"] = pos.doc.rev # FIXME: wrong
+                    p["discuss_revision"] = rev
 
                 if pos.comment:
                     p["has_text"] = True
                     p["comment_text"] = pos.comment
                     p["comment_date"] = pos.comment_time
-                    p["comment_revision"] = pos.doc.rev # FIXME: wrong
+                    p["comment_revision"] = rev
 
                 positions.append(p)
                 seen[pos.ad] = p
@@ -771,6 +780,7 @@ class BallotWrapper:
                              position="No Record",
                              )
                     positions.append(d)
+
         self._positions = positions
         
     def old_init(self):
