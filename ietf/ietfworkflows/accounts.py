@@ -1,5 +1,7 @@
 from django.conf import settings
 
+from django.db.models import Q
+
 from ietf.ietfworkflows.streams import get_streamed_draft
 from redesign.group.models import Role
 
@@ -82,8 +84,9 @@ def is_authorized_in_draft_streamREDESIGN(user, draft):
         return True
 
     # must be a chair or delegate of the stream group (or draft group)
-    group_req = Q(group__acronym=stream.slug)
-    if draft.group and stream.slug == "ietf":
+    from redesign.doc.models import Document
+    group_req = Q(group__acronym=super(Document, draft).stream.slug)
+    if draft.group and super(Document, draft).stream.slug == "ietf":
         group_req |= Q(group=draft.group)
 
     return bool(Role.objects.filter(name__in=("chair", "delegate"), person__user=user).filter(group_req))
