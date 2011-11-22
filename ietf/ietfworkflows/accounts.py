@@ -93,7 +93,7 @@ def is_authorized_in_draft_streamREDESIGN(user, draft):
 
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from ietf.wgchairs.accounts import is_secretariat, get_person_for_user 
+    from ietf.liaisons.accounts import is_secretariat, get_person_for_user
     is_wgdelegate = is_wgdelegateREDESIGN
     is_wgchair = is_wgchairREDESIGN
     is_chair_of_stream = is_chair_of_streamREDESIGN
