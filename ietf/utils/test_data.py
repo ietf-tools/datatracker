@@ -17,12 +17,25 @@ def make_test_data():
         state_id="active",
         type_id="ietf",
         parent=None)
+    ietf = Group.objects.create(
+        name="IETF",
+        acronym="ietf",
+        state_id="active",
+        type_id="ietf",
+        parent=None)
+    for x in ["irtf", "iab", "ise"]:
+        Group.objects.create(
+            name=x.upper(),
+            acronym=x,
+            state_id="active",
+            type_id="ietf",
+            parent=None)
     area = Group.objects.create(
         name="Far Future",
         acronym="farfut",
         state_id="active",
         type_id="area",
-        parent=None)
+        parent=ietf)
     group = Group.objects.create(
         name="Martian Special Interest Group",
         acronym="mars",

@@ -168,6 +168,35 @@ class EditStreamInfoTestCase(django.test.TestCase):
         self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
 
+    def test_manage_stream_delegates(self):
+        make_test_data()
+
+        url = urlreverse('stream_delegates', kwargs=dict(stream_name="IETF"))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('input[type=submit][value*=Add]')), 1)
+
+        delegate = Email.objects.get(address="plain@example.com")
+
+        # add delegate
+        r = self.client.post(url,
+                             dict(email=delegate.address))
+        self.assertEquals(r.status_code, 200)
+
+        self.assertEquals(Role.objects.filter(group__acronym="ietf", name="delegate", person__email=delegate).count(), 1)
+
+        # remove delegate again
+        r = self.client.post(url,
+                             dict(remove_delegate=[delegate.person.pk],
+                                  delete="1"))
+        self.assertEquals(r.status_code, 200)
+
+        self.assertEquals(Role.objects.filter(group__acronym="ietf", name="delegate", person__email=delegate).count(), 0)
+
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # the above tests only work with the new schema
     del EditStreamInfoTestCase

@@ -41,7 +41,7 @@ def is_delegate_of_stream(user, stream):
 def is_delegate_of_streamREDESIGN(user, stream):
     if is_secretariat(user):
         return True
-    return bool(Role.objects.filter(group__acronym=stream.slug, name="delegate", person__user=user))
+    return user.is_authenticated() and bool(Role.objects.filter(group__acronym=stream.slug, name="delegate", person__user=user))
 
 
 def is_chair_of_stream(user, stream):
@@ -53,7 +53,7 @@ def is_chair_of_stream(user, stream):
 def is_chair_of_streamREDESIGN(user, stream):
     if is_secretariat(user):
         return True
-    return bool(Role.objects.filter(group__acronym=stream.slug, name="chair", person__user=user))
+    return user.is_authenticated() and bool(Role.objects.filter(group__acronym=stream.slug, name="chair", person__user=user))
 
 
 def is_authorized_in_draft_stream(user, draft):

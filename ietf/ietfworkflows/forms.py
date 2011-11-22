@@ -20,8 +20,9 @@ from ietf.ietfworkflows.streams import (get_stream_from_draft, get_streamed_draf
 from ietf.ietfworkflows.constants import CALL_FOR_ADOPTION, IETF_STREAM
 from redesign.doc.utils import get_tags_for_stream_id
 from redesign.doc.models import save_document_in_history, DocEvent, Document
-from redesign.name.models import DocTagName, DocStreamName
-from redesign.group.models import Group, GroupStateTransitions
+from redesign.name.models import DocTagName, DocStreamName, RoleName
+from redesign.group.models import Group, GroupStateTransitions, Role
+from redesign.person.models import Person, Email
 
 class StreamDraftForm(forms.Form):
 
@@ -333,7 +334,10 @@ class StreamDelegatesForm(forms.Form):
         super(StreamDelegatesForm, self).__init__(*args, **kwargs)
 
     def get_person(self, email):
-        persons = PersonOrOrgInfo.objects.filter(emailaddress__address=email).distinct()
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            persons = Person.objects.filter(email__address=email).distinct()
+        else:
+            persons = PersonOrOrgInfo.objects.filter(emailaddress__address=email).distinct()
         if not persons:
             return None
         return persons[0]
@@ -343,8 +347,17 @@ class StreamDelegatesForm(forms.Form):
         self.person = self.get_person(email)
         if not self.person:
             raise forms.ValidationError('There is no user with this email in the system')
+        return email
 
     def save(self):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            # FIXME: should save group history here
+            Role.objects.get_or_create(person=self.person,
+                                       group=Group.objects.get(acronym=self.stream.slug),
+                                       name=RoleName.objects.get(slug="delegate"),
+                                       email=Email.objects.get(address=self.cleaned_data.get('email')))
+            return
+
         StreamDelegate.objects.get_or_create(
             person=self.person,
             stream=self.stream)

@@ -122,7 +122,12 @@ def stream_delegates(request, stream_name):
     if request.method == 'POST':
         if request.POST.get('delete', False):
             pk_list = request.POST.getlist('remove_delegate')
-            StreamDelegate.objects.filter(stream=stream, person__pk__in=pk_list).delete()
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                # FIXME: should save group history here
+                from redesign.group.models import Role
+                Role.objects.filter(person__in=pk_list, group__acronym=stream.slug, name="delegate").delete()
+            else:
+                StreamDelegate.objects.filter(stream=stream, person__pk__in=pk_list).delete()
         else:
             form = StreamDelegatesForm(request.POST, stream=stream)
             if form.is_valid():
