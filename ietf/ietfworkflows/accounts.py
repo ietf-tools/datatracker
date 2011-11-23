@@ -89,7 +89,7 @@ def is_authorized_in_draft_streamREDESIGN(user, draft):
     if draft.group and super(Document, draft).stream.slug == "ietf":
         group_req |= Q(group=draft.group)
 
-    return bool(Role.objects.filter(name__in=("chair", "delegate"), person__user=user).filter(group_req))
+    return user.is_authenticated() and bool(Role.objects.filter(name__in=("chair", "delegate"), person__user=user).filter(group_req))
 
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
