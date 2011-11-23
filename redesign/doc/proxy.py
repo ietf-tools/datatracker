@@ -957,9 +957,9 @@ class IDState(State):
     DEAD = 99
     DO_NOT_PUBLISH_STATES = (33, 34)
     
-    objects = TranslatingManager(dict(pk="order",
-                                      document_state_id="order",
-                                      document_state_id__in="order__in"))
+    objects = TranslatingManager(dict(pk=lambda v: ("order", v, "type", "draft-iesg"),
+                                      document_state_id=lambda v: ("order", v, "type", "draft-iesg"),
+                                      document_state_id__in=lambda v: ("order__in", v, "type", "draft-iesg")))
     
     def from_object(self, base):
         for f in base._meta.fields:
