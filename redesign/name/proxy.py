@@ -49,5 +49,15 @@ class AnnotationTagObjectRelationProxy(DocTagName):
         proxy = True
 
 class StreamProxy(DocStreamName):
+    def get_chairs(self):
+        from redesign.group.models import Role
+        from redesign.proxy_utils import proxy_personify_role
+        return [proxy_personify_role(r) for r in Role.objects.filter(group__acronym=self.slug, name="chair")]
+
+    def get_delegates(self):
+        from redesign.group.models import Role
+        from redesign.proxy_utils import proxy_personify_role
+        return [proxy_personify_role(r) for r in Role.objects.filter(group__acronym=self.slug, name="delegate")]
+
     class Meta:
         proxy = True

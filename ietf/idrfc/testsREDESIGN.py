@@ -56,7 +56,7 @@ class IdRfcUrlTestCase(SimpleUrlTestCase):
         #self.doTestUrls(__file__)
         self.doTestUrls(os.path.join(os.path.dirname(os.path.abspath(__file__)), "testurlREDESIGN.list"))
 
-        
+
 class ChangeStateTestCase(django.test.TestCase):
     fixtures = ['names']
 
@@ -109,7 +109,7 @@ class ChangeStateTestCase(django.test.TestCase):
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEquals(len(q('.prev-state form input[name="state"][value="ad-eval"]')), 1)
+        self.assertEquals(len(q('.prev-state form input[name="state"]')), 1)
 
         
     def test_request_last_call(self):
@@ -198,7 +198,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.ad, new_ad)
         self.assertEquals(draft.note, "New note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="telechat_date"))
-        self.assertEquals(draft.docevent_set.count(), events_before + 4)
+        self.assertEquals(draft.docevent_set.count(), events_before + 3)
         self.assertEquals(len(outbox), mailbox_before + 1)
         self.assertTrue(draft.name in outbox[-1]['Subject'])
 
@@ -284,9 +284,9 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.ad, ad)
         self.assertEquals(draft.note, "This is a note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
-        self.assertEquals(draft.docevent_set.count(), events_before + 4)
+        self.assertEquals(draft.docevent_set.count(), events_before + 3)
         events = list(draft.docevent_set.order_by('time', 'id'))
-        self.assertEquals(events[-4].type, "started_iesg_process")
+        self.assertEquals(events[-3].type, "started_iesg_process")
         self.assertEquals(len(outbox), mailbox_before)
 
 

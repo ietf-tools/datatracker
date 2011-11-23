@@ -161,7 +161,7 @@ def change_stateREDESIGN(request, name):
         prev_state = hists[0].get_state("draft-iesg")
 
     to_iesg_eval = None
-    if not self.latest_event(type="sent_ballot_announcement"):
+    if not doc.latest_event(type="sent_ballot_announcement"):
         if next_states and next_states.filter(slug="iesg-eva"):
             to_iesg_eval = State.objects.get(type="draft-iesg", slug="iesg-eva")
             next_states = next_states.exclude(slug="iesg-eva")

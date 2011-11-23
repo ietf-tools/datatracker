@@ -352,18 +352,18 @@ def generate_approval_mail_rfc_editorREDESIGN(request, doc):
 
     to = []
     if doc.group:
-        for r in doc.group.roles_set.filter(name="chair").select_related():
+        for r in doc.group.role_set.filter(name="chair").select_related():
             to.append(r.formatted_email())
 
         if doc.stream_id == "ise":
             # include ISE chair
             g = Group.objects.get(type='individ')
-            for r in g.roles_set.filter(name="chair").select_related():
+            for r in g.role_set.filter(name="chair").select_related():
                 to.append(r.formatted_email())
         elif doc.stream_id == "irtf":
             # include IRTF chair
             g = Group.objects.get(type='irtf')
-            for r in g.roles_set.filter(name="chair").select_related():
+            for r in g.role_set.filter(name="chair").select_related():
                 to.append(r.formatted_email())
             # and IRSG
             to.append('"Internet Research Steering Group" <irsg@irtf.org>')
