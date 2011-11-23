@@ -74,7 +74,7 @@
 200	/doc/search/?activeDrafts=on&name=sipping
 200	/doc/search/?oldDrafts=on&name=tls
 200	/doc/search/?activeDrafts=on&oldDrafts=on&ad=104942&by=ad
-200	/doc/search/?activeDrafts=on&state=iesg-eva&by=state
+200	/doc/search/?activeDrafts=on&state=12&by=state
 200	/doc/search/?activeDrafts=on&oldDrafts=on&subState=need-rev&by=state
 200	/doc/search/?activeDrafts=on&oldDrafts=on&rfcs=on&ad=104942&name=nfs&by=ad
 200	/doc/search/?rfcs=on&group=tls&by=group
