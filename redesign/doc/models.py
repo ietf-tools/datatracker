@@ -166,7 +166,7 @@ class Document(DocumentInfo):
 
     def canonical_name(self):
         name = self.name
-        if self.type_id == "draft" and self.get_state() == "rfc":
+        if self.type_id == "draft" and self.get_state_slug() == "rfc":
             a = self.docalias_set.filter(name__startswith="rfc")
             if a:
                 name = a[0].name
