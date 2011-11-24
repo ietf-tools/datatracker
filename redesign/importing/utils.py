@@ -36,8 +36,13 @@ def person_name(person):
             return ""
         return n.replace("]", "").strip()
 
+    def initial_fixup(n):
+        if len(n) == 1:
+            return n + "."
+        return n
+
     names = [clean_prefix(person.name_prefix), clean(person.first_name),
-             clean(person.middle_initial), clean(person.last_name), clean_suffix(person.name_suffix)]
+             initial_fixup(clean(person.middle_initial)), clean(person.last_name), clean_suffix(person.name_suffix)]
 
     return u" ".join(n for n in names if n)
 
