@@ -980,6 +980,16 @@ for index, o in enumerate(all_drafts.iterator()):
         e.desc = "Last call sent"
         e.save()
 
+    e = d.latest_event(type="expired_document")
+    if o.expiration_date and not e:
+        e = DocEvent(type="expired_document")
+        e.time = o.expiration_date
+        e.by = system
+        e.doc = d
+        e.desc = "Document is expired by system"
+        e.save()
+
+
     # import other attributes
 
     # tags
