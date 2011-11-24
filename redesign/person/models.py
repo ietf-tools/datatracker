@@ -54,7 +54,9 @@ class PersonInfo(models.Model):
         else:
             return ""
     def full_name_as_key(self):
-        return self.name.lower().replace(" ", ".")
+        # this is mostly a remnant from the old views, needed in the menu
+        prefix, first, middle, last, suffix = name_parts(self.name)
+        return (u"%s %s" % (first, last)).lower().replace(" ", ".")
     class Meta:
         abstract = True
 
