@@ -22,12 +22,11 @@ import copy
 # ... send some mail ...
 # ... inspect ietf.utils.mail.outbox ...
 # ... call ietf.utils.mail.empty_outbox() ...
-test_mode=False
-outbox=[]
+test_mode = False
+outbox = []
 
 def empty_outbox():
-    global outbox
-    outbox = []
+     outbox[:] = []
 
 def add_headers(msg):
     if not(msg.has_key('Message-ID')):
