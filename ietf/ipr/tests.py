@@ -77,7 +77,7 @@ class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
 
     def testNewSpecific(self):
         print "     Testing IPR disclosure submission"
-        empty_outbox
+        empty_outbox()
         c = Client()
         response = c.post('/ipr/new-specific/', self.SPECIFIC_DISCLOSURE)
         self.assertEquals(response.status_code, 200)
