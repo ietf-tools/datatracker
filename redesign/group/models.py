@@ -29,7 +29,13 @@ class GroupInfo(models.Model):
     class Meta:
         abstract = True
 
+class GroupManager(models.Manager):
+    def active_wgs(self):
+        return self.get_query_set().filter(type='wg', state__in=('bof','proposed','active'))
+
 class Group(GroupInfo):
+    objects = GroupManager()
+
     # we keep charter separate
     charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
     
