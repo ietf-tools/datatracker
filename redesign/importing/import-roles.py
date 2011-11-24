@@ -44,6 +44,20 @@ liaison_manager_role = name(RoleName, "liaiman", "Liaison Manager")
 authorized_role = name(RoleName, "auth", "Authorized Individual")
 delegate_role = name(RoleName, "delegate", "Delegate")
 
+# import IANA authorized individuals
+for o in User.objects.filter(groups__name="IANA"):
+    print "Importing IANA group memeber", o
+
+    if o.username == "amanda.barber@icann.org":
+        o.username = "amanda.baber@icann.org"
+
+    person = PersonOrOrgInfo.objects.filter(iesglogin__login_name=o.username)[0]
+
+    group = Group.objects.get(acronym="iana")
+    email = get_or_create_email(person, create_fake=False)
+
+    Role.objects.get_or_create(name=authorized_role, group=group, person=email.person, email=email)
+
 # WGDelegate
 for o in WGDelegate.objects.all().order_by("pk"):
     print "importing WGDelegate", o.pk, unicode(o.wg).encode("utf-8"), unicode(o.person).encode("utf-8")

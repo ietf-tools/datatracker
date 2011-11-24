@@ -98,6 +98,12 @@ iab_group.state = state_names["active"]
 iab_group.type = type_names["ietf"]
 iab_group.save()
 
+# create IANA for use with roles for authorization
+iana_group, _ = Group.objects.get_or_create(acronym="iana")
+iana_group.name = "IANA"
+iana_group.state = state_names["active"]
+iana_group.type = type_names["ietf"]
+iana_group.save()
 
 system = Person.objects.get(name="(System)")
 

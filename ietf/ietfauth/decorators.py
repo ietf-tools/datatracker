@@ -86,7 +86,7 @@ def has_role(user, role_names):
     role_qs = {
         "Area Director": Q(person=person, name="ad", group__type="area", group__state="active"),
         "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
-        "IANA": Q(person=person, name="delegate", group__acronym="iana"),  # FIXME
+        "IANA": Q(person=person, name="auth", group__acronym="iana"),
         }
 
     filter_expr = Q()
