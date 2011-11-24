@@ -87,6 +87,8 @@ def has_role(user, role_names):
         "Area Director": Q(person=person, name="ad", group__type="area", group__state="active"),
         "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
         "IANA": Q(person=person, name="auth", group__acronym="iana"),
+        "WG Chair": Q(person=person,name="chair", group__type="wg", group__state="active"),
+        "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state="active"),
         }
 
     filter_expr = Q()
