@@ -1031,7 +1031,7 @@ def get_or_create_rfc_document(rfc_number):
     if draft:
         name = draft.filename
 
-    d, _ = Document.objects.get_or_create(name=name)
+    d, _ = Document.objects.get_or_create(name=name, type=type_draft)
     if not name.startswith('rfc'):
         # make sure draft also got an alias
         alias_doc(name, d)
