@@ -66,6 +66,7 @@ def edit_actions(context, wrapper):
     if not idwrapper:
         return None
     doc = wrapper
+    draft = wrapper._draft
     possible_actions = [
         ("Adopt in WG", can_adopt(user, draft), urlreverse('edit_adopt', kwargs=dict(name=doc.draft_name))) if settings.USE_DB_REDESIGN_PROXY_CLASSES else ("", False, ""),
         ("Change stream state", can_edit_state(user, draft), urlreverse('edit_state', kwargs=dict(name=doc.draft_name))),
