@@ -1,5 +1,7 @@
 from django.core.mail import EmailMessage
 
+# FIXME: this is not using the ietf mail stuff, which it really should
+# - this code should be DELETED
 
 class IETFEmailMessage(EmailMessage):
 
