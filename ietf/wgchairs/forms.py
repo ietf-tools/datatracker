@@ -2,7 +2,6 @@ import datetime
 
 from django import forms
 from django.conf import settings
-from django.core.mail import EmailMessage
 from django.db.models import Q
 from django.forms.models import BaseModelFormSet
 from django.template.loader import render_to_string
