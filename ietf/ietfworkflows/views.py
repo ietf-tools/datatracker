@@ -67,11 +67,13 @@ def _edit_draft_stream(request, draft, form_class=DraftTagsStateForm):
         form_class = NoWorkflowStateForm
     if request.method == 'POST':
         form = form_class(user=user, draft=draft, data=request.POST)
+        form.request = request
         if form.is_valid():
             form.save()
             return HttpResponseRedirect('.')
     else:
         form = form_class(user=user, draft=draft)
+        form.request = request
     state = get_state_for_draft(draft)
     stream = get_stream_from_draft(draft)
     history = get_workflow_history_for_draft(draft, 'objectworkflowhistoryentry')

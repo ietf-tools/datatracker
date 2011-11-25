@@ -369,7 +369,7 @@ class NotExistDelegateForm(MultipleDelegateForm):
                                  'wg': self.wg,
                                 })
 
-        send_mail_text(None, to_email, settings.DEFAULT_FROM_EMAIL, subject, body)
+        send_mail_text(self.request, to_email, settings.DEFAULT_FROM_EMAIL, subject, body)
 
     def save(self):
         self.next_form = AddDelegateForm(wg=self.wg, user=self.user)
@@ -392,14 +392,16 @@ def add_form_factory(request, wg, user, shepherd=False):
         return AddDelegateForm(wg=wg, user=user, shepherd=shepherd)
 
     if request.POST.get('form_type', None) == 'multiple':
-        return MultipleDelegateForm(wg=wg, user=user, data=request.POST.copy(), shepherd=shepherd)
+        f = MultipleDelegateForm(wg=wg, user=user, data=request.POST.copy(), shepherd=shepherd)
     elif request.POST.get('form_type', None) == 'notexist':
-        return NotExistDelegateForm(wg=wg, user=user, data=request.POST.copy(), shepherd=shepherd)
+        f = NotExistDelegateForm(wg=wg, user=user, data=request.POST.copy(), shepherd=shepherd)
     elif request.POST.get('form_type', None) == 'single':
-        return AddDelegateForm(wg=wg, user=user, data=request.POST.copy(), shepherd=shepherd)
+        f = AddDelegateForm(wg=wg, user=user, data=request.POST.copy(), shepherd=shepherd)
+    else:
+        f = AddDelegateForm(wg=wg, user=user, shepherd=shepherd)
 
-    return AddDelegateForm(wg=wg, user=user, shepherd=shepherd)
-
+    f.request = request
+    return f
 
 class WriteUpEditForm(RelatedWGForm):
 
@@ -459,9 +461,9 @@ class WriteUpEditForm(RelatedWGForm):
             else:
                 tags = [FOLLOWUP_TAG]
             if followup:
-                update_tags(self.doc, comment, self.person, set_tags=tags, extra_notify=extra_notify)
+                update_tags(self.request, self.doc, comment, self.person, set_tags=tags, extra_notify=extra_notify)
             else:
-                update_tags(self.doc, comment, self.person, reset_tags=tags, extra_notify=extra_notify)
+                update_tags(self.request, self.doc, comment, self.person, reset_tags=tags, extra_notify=extra_notify)
         return self.doc_writeup
 
     def is_valid(self):

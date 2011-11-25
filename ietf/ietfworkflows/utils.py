@@ -257,7 +257,7 @@ def get_notification_receivers(doc, extra_notify):
 
     return res
 
-def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[]):
+def update_tags(request, obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[]):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         doc = Document.objects.get(pk=obj.pk)
         save_document_in_history(doc)
@@ -277,7 +277,7 @@ def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[
         e.save()
 
         receivers = get_notification_receivers(doc, extra_notify)
-        send_mail(None, receivers, settings.DEFAULT_FROM_EMAIL,
+        send_mail(request, receivers, settings.DEFAULT_FROM_EMAIL,
                   u"Annotations tags changed for draft %s" % doc.name,
                   'ietfworkflows/annotation_tags_updated_mail.txt',
                   dict(doc=doc,
@@ -316,7 +316,7 @@ def update_tags(obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[
     notify_tag_entry(entry, extra_notify)
 
 
-def update_state(doc, comment, person, to_state, estimated_date=None, extra_notify=[]):
+def update_state(request, doc, comment, person, to_state, estimated_date=None, extra_notify=[]):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         doc = Document.objects.get(pk=doc.pk)
         save_document_in_history(doc)
@@ -350,7 +350,7 @@ def update_state(doc, comment, person, to_state, estimated_date=None, extra_noti
             reminder.save()
 
         receivers = get_notification_receivers(doc, extra_notify)
-        send_mail(None, receivers, settings.DEFAULT_FROM_EMAIL,
+        send_mail(request, receivers, settings.DEFAULT_FROM_EMAIL,
                   u"State changed for draft %s" % doc.name,
                   'ietfworkflows/state_updated_mail.txt',
                   dict(doc=doc,
@@ -378,7 +378,7 @@ def update_state(doc, comment, person, to_state, estimated_date=None, extra_noti
     notify_state_entry(entry, extra_notify)
 
 
-def update_stream(doc, comment, person, to_stream, extra_notify=[]):
+def update_stream(request, doc, comment, person, to_stream, extra_notify=[]):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         doc = Document.objects.get(pk=doc.pk)
         save_document_in_history(doc)
@@ -393,7 +393,7 @@ def update_stream(doc, comment, person, to_stream, extra_notify=[]):
         e.save()
 
         receivers = get_notification_receivers(doc, extra_notify)
-        send_mail(None, receivers, settings.DEFAULT_FROM_EMAIL,
+        send_mail(request, receivers, settings.DEFAULT_FROM_EMAIL,
                   u"Stream changed for draft %s" % doc.name,
                   'ietfworkflows/stream_updated_mail.txt',
                   dict(doc=doc,

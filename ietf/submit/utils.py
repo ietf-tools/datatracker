@@ -43,7 +43,7 @@ def request_full_url(request, submission):
                'url': url})
 
 
-def perform_post(submission):
+def perform_post(request, submission):
     group_id = submission.group_acronym and submission.group_acronym.pk or NONE_WG
     state_change_msg = ''
     try:
@@ -89,7 +89,7 @@ def perform_post(submission):
     send_announcements(submission, draft, state_change_msg)
     submission.save()
 
-def perform_postREDESIGN(submission):
+def perform_postREDESIGN(request, submission):
     system = Person.objects.get(name="(System)")
 
     group_id = submission.group_acronym_id or NONE_WG
@@ -162,10 +162,10 @@ def perform_postREDESIGN(submission):
     move_docs(submission)
     submission.status_id = POSTED
 
-    announce_to_lists(submission)
+    announce_to_lists(request, submission)
     if draft.get_state("draft-iesg") != None and not was_rfc:
-        announce_new_version(submission, draft, state_change_msg)
-    announce_to_authors(submission)
+        announce_new_version(request, submission, draft, state_change_msg)
+    announce_to_authors(request, submission)
 
     submission.save()
 
@@ -173,13 +173,13 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     perform_post = perform_postREDESIGN
 
 def send_announcements(submission, draft, state_change_msg):
-    announce_to_lists(submission)
+    announce_to_lists(request, submission)
     if draft.idinternal and not draft.idinternal.rfc_flag:
-        announce_new_version(submission, draft, state_change_msg)
-    announce_to_authors(submission)
+        announce_new_version(request, submission, draft, state_change_msg)
+    announce_to_authors(request, submission)
 
 
-def announce_to_lists(submission):
+def announce_to_lists(request, submission):
     subject = 'I-D Action: %s-%s.txt' % (submission.filename, submission.revision)
     from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     to_email = [settings.IDSUBMIT_ANNOUNCE_LIST_EMAIL]
@@ -192,12 +192,12 @@ def announce_to_lists(submission):
         cc = [submission.group_acronym.email_address]
     else:
         cc = None
-    send_mail(None, to_email, from_email, subject, 'submit/announce_to_lists.txt',
+    send_mail(request, to_email, from_email, subject, 'submit/announce_to_lists.txt',
               {'submission': submission,
                'authors': authors}, cc=cc)
 
 
-def announce_new_version(submission, draft, state_change_msg):
+def announce_new_version(request, submission, draft, state_change_msg):
     to_email = []
     if draft.idinternal.state_change_notice_to:
         to_email.append(draft.idinternal.state_change_notice_to)
@@ -212,12 +212,12 @@ def announce_new_version(submission, draft, state_change_msg):
         pass
     subject = 'New Version Notification - %s-%s.txt' % (submission.filename, submission.revision)
     from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-    send_mail(None, to_email, from_email, subject, 'submit/announce_new_version.txt',
+    send_mail(request, to_email, from_email, subject, 'submit/announce_new_version.txt',
               {'submission': submission,
                'msg': state_change_msg})
 
 
-def announce_new_versionREDESIGN(submission, draft, state_change_msg):
+def announce_new_versionREDESIGN(request, submission, draft, state_change_msg):
     to_email = []
     if draft.notify:
         to_email.append(draft.notify)
@@ -230,14 +230,14 @@ def announce_new_versionREDESIGN(submission, draft, state_change_msg):
 
     subject = 'New Version Notification - %s-%s.txt' % (submission.filename, submission.revision)
     from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-    send_mail(None, to_email, from_email, subject, 'submit/announce_new_version.txt',
+    send_mail(request, to_email, from_email, subject, 'submit/announce_new_version.txt',
               {'submission': submission,
                'msg': state_change_msg})
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     announce_new_version = announce_new_versionREDESIGN
 
-def announce_to_authors(submission):
+def announce_to_authors(request, submission):
     authors = submission.tempidauthors_set.order_by('author_order')
     cc = list(set(i.email()[1] for i in authors if i.email() != authors[0].email()))
     to_email = [authors[0].email()[1]]  # First TempIdAuthor is submitter
@@ -249,7 +249,7 @@ def announce_to_authors(submission):
         wg = 'IESG'
     else:
         wg = 'Individual Submission'
-    send_mail(None, to_email, from_email, subject, 'submit/announce_to_authors.txt',
+    send_mail(request, to_email, from_email, subject, 'submit/announce_to_authors.txt',
               {'submission': submission,
                'submitter': authors[0].get_full_name(),
                'wg': wg}, cc=cc)

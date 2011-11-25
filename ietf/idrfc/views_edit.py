@@ -366,7 +366,7 @@ def edit_info(request, name):
             doc.idinternal.status_date = date.today()
 
             
-            update_stream(doc,
+            update_stream(request, doc,
                           "Setting stream while adding document to the tracker",
                            person=request.user.get_profile().person(),
                            to_stream = r['stream']

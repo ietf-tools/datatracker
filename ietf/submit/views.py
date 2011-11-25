@@ -231,7 +231,7 @@ def draft_confirm(request, submission_id, auth_key):
     else:
         if request.method=='POST':
             message = ('success', 'Authorization key accepted. Auto-Post complete')
-            perform_post(detail)
+            perform_post(request, detail)
         else:
             return render_to_response('submit/last_confirmation_step.html',
                                {'detail': detail, },
@@ -248,7 +248,7 @@ def draft_approve(request, submission_id, check_function=_can_approve):
         if can_perform == None:
             raise Http404
         return HttpResponseForbidden('You have no permission to perform this action')
-    perform_post(detail)
+    perform_post(request, detail)
     return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submission_id}))
 
 

@@ -107,6 +107,7 @@ def create_account(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
+            form.request = request
             form.save()
             success = True
     else:
@@ -143,6 +144,7 @@ def password_reset_view(request):
     if request.method == 'POST':
         form = RecoverPasswordForm(request.POST)
         if form.is_valid():
+            form.request = request
             form.save()
             success = True
     else:

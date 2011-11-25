@@ -272,6 +272,7 @@ def managing_writeup(request, acronym, name):
     followup = bool(followup_tag.count())
     if request.method == 'POST':
         form = WriteUpEditForm(wg=wg, doc=doc, user=user, data=request.POST, files=request.FILES)
+        form.request = request
         if request.FILES.get('uploaded_writeup', None):
             try:
                 newwriteup = request.FILES['uploaded_writeup'].read().encode('ascii')
@@ -301,6 +302,7 @@ def managing_writeup(request, acronym, name):
             followup = bool(followup_tag.count())
     else:
         form = WriteUpEditForm(wg=wg, doc=doc, user=user)
+        form.request = request
     return render_to_response('wgchairs/edit_management_writeup.html',
                               dict(doc=doc,
                                    user=user,

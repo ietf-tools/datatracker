@@ -130,7 +130,7 @@ class NoWorkflowStateForm(StreamDraftForm):
             to_state = State.objects.get(slug="c-adopt", type="draft-stream-%s" % self.draft.stream_id)
         else:
             to_state = get_state_by_name(CALL_FOR_ADOPTION)
-        update_state(self.draft,
+        update_state(self.request, self.draft,
                      comment=comment,
                      person=self.person,
                      to_state=to_state,
@@ -252,7 +252,7 @@ class DraftTagsStateForm(StreamDraftForm):
                 pass
         if not set_tags and not reset_tags:
             return
-        update_tags(self.draft,
+        update_tags(self.request, self.draft,
                     comment=comment,
                     person=self.person,
                     set_tags=set_tags,
@@ -270,7 +270,7 @@ class DraftTagsStateForm(StreamDraftForm):
             now = datetime.date.today()
             estimated_date = now + datetime.timedelta(weeks=weeks)
 
-        update_state(self.draft,
+        update_state(self.request, self.draft,
                      comment=comment,
                      person=self.person,
                      to_state=state,
@@ -313,7 +313,7 @@ class DraftStreamForm(StreamDraftForm):
         comment = self.cleaned_data.get('comment').strip()
         to_stream = self.cleaned_data.get('stream')
 
-        update_stream(self.draft,
+        update_stream(self.request, self.draft,
                       comment=comment,
                       person=self.person,
                       to_stream=to_stream)
