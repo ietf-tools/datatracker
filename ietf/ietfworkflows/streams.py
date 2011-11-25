@@ -13,7 +13,7 @@ def get_streamed_draft(draft):
         o.draft = draft
         o.stream = super(InternetDraft, draft).stream
         o.group = draft.group
-        o.get_group = lambda x: draft.group
+        o.get_group = lambda: draft.group
         return o
 
     if not draft:
