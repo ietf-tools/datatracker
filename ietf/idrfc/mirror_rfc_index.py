@@ -162,15 +162,15 @@ def get_std_level_mapping():
         }
 
 def get_stream_mapping():
-    from name.models import DocStreamName
+    from name.models import StreamName
     from name.utils import name
 
     return {
-        "Legacy": name(DocStreamName, "legacy", "Legacy"),
-        "IETF": name(DocStreamName, "ietf", "IETF"),
-        "INDEPENDENT": name(DocStreamName, "ise", "ISE", desc="Independent submission editor stream"),
-        "IAB": name(DocStreamName, "iab", "IAB"),
-        "IRTF": name(DocStreamName, "irtf", "IRTF"),
+        "Legacy": name(StreamName, "legacy", "Legacy"),
+        "IETF": name(StreamName, "ietf", "IETF"),
+        "INDEPENDENT": name(StreamName, "ise", "ISE", desc="Independent submission editor stream"),
+        "IAB": name(StreamName, "iab", "IAB"),
+        "IRTF": name(StreamName, "irtf", "IRTF"),
     }
 
 

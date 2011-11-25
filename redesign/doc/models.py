@@ -43,7 +43,7 @@ class DocumentInfo(models.Model):
 
     states = models.ManyToManyField(State, blank=True) # plain state (Active/Expired/...), IESG state, stream state
     tags = models.ManyToManyField(DocTagName, blank=True, null=True) # Revised ID Needed, ExternalParty, AD Followup, ...
-    stream = models.ForeignKey(DocStreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
+    stream = models.ForeignKey(StreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
     group = models.ForeignKey(Group, blank=True, null=True) # WG, RG, IAB, IESG, Edu, Tools
 
     abstract = models.TextField()

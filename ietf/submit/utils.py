@@ -119,7 +119,7 @@ def perform_postREDESIGN(submission):
     else:
         stream_slug = "ietf"
 
-    draft.stream = DocStreamName.objects.get(slug=stream_slug)
+    draft.stream = StreamName.objects.get(slug=stream_slug)
     draft.save()
 
     draft.set_state(State.objects.get(type="draft", slug="active"))

@@ -28,7 +28,7 @@ from ietf.ietfworkflows.utils import update_stream
 from ietf.ietfworkflows.streams import get_stream_from_draft
 
 from redesign.doc.models import *
-from redesign.name.models import IntendedStdLevelName, DocTagName, DocStreamName
+from redesign.name.models import IntendedStdLevelName, DocTagName, StreamName
 from redesign.person.models import Person, Email
 
 class ChangeStateForm(forms.Form):
@@ -417,7 +417,7 @@ def edit_info(request, name):
 class EditInfoFormREDESIGN(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.all(), empty_label=None, required=True)
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
-    stream = forms.ModelChoiceField(DocStreamName.objects.all(), empty_label=None, required=True)
+    stream = forms.ModelChoiceField(StreamName.objects.all(), empty_label=None, required=True)
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Responsible AD", empty_label=None, required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)

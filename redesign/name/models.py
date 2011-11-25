@@ -27,7 +27,7 @@ class IesgGroupStateName(NameModel):
     review """
 class RoleName(NameModel):
     """AD, Chair"""
-class DocStreamName(NameModel):
+class StreamName(NameModel):
     """IETF, IAB, IRTF, ISE, Legacy"""
 class DocRelationshipName(NameModel):
     """Updates, Replaces, Obsoletes, Reviews, ... The relationship is

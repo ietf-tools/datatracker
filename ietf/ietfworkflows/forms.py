@@ -20,7 +20,7 @@ from ietf.ietfworkflows.streams import (get_stream_from_draft, get_streamed_draf
 from ietf.ietfworkflows.constants import CALL_FOR_ADOPTION, IETF_STREAM
 from redesign.doc.utils import get_tags_for_stream_id
 from redesign.doc.models import save_document_in_history, DocEvent, Document
-from redesign.name.models import DocTagName, DocStreamName, RoleName
+from redesign.name.models import DocTagName, StreamName, RoleName
 from redesign.group.models import Group, GroupStateTransitions, Role
 from redesign.person.models import Person, Email
 
@@ -89,7 +89,7 @@ class NoWorkflowStateForm(StreamDraftForm):
 
             doc.time = datetime.datetime.now()
 
-            new_stream = DocStreamName.objects.get(slug="ietf")
+            new_stream = StreamName.objects.get(slug="ietf")
 
             if doc.stream != new_stream:
                 e = DocEvent(type="changed_stream")
@@ -296,7 +296,7 @@ class DraftStreamForm(StreamDraftForm):
 
     comment = forms.CharField(widget=forms.Textarea)
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        stream = forms.ModelChoiceField(DocStreamName.objects.exclude(slug="legacy"))
+        stream = forms.ModelChoiceField(StreamName.objects.exclude(slug="legacy"))
     else:
         stream = forms.ModelChoiceField(Stream.objects.all())
 
