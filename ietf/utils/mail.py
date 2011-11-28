@@ -180,10 +180,10 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     try:
 	copy_to = settings.EMAIL_COPY_TO
     except AttributeError:
-	copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
-    if bcc:
-        msg['X-Tracker-Bcc']=bcc
-    if not test_mode: # if we're running automated tests, this copy is just annoying
+        copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
+    if copy_to and not test_mode: # if we're running automated tests, this copy is just annoying
+        if bcc:
+            msg['X-Tracker-Bcc']=bcc
         copy_email(msg, copy_to)
 
 def send_mail_preformatted(request, preformatted):
