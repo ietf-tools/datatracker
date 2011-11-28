@@ -92,7 +92,6 @@ MIDDLEWARE_CLASSES = (
     'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.transaction.TransactionMiddleware',
     'ietf.middleware.UnicodeNfkcNormalization',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
 ROOT_URLCONF = 'sec.urls'
@@ -159,7 +158,6 @@ INSTALLED_APPS = (
     'sec.telechat',
     'form_utils',
     'django_extensions',
-    'debug_toolbar',
 )
 
 INTERNAL_IPS = (
