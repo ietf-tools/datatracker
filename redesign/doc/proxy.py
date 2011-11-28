@@ -333,8 +333,7 @@ class InternetDraft(Document):
     #status_date = models.DateField(blank=True,null=True)
     @property
     def status_date(self):
-        e = self.latest_event(StatusDateDocEvent, type="changed_status_date")
-        return e.date if e else None
+        return self.time.date()
 
     #email_display = models.CharField(blank=True, max_length=50) # unused
     #agenda = models.IntegerField(null=True, blank=True)

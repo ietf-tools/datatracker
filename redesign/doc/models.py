@@ -295,8 +295,6 @@ EVENT_TYPES = [
     ("requested_last_call", "Requested last call"),
     ("sent_last_call", "Sent last call"),
     
-    ("changed_status_date", "Changed status date"),
-    
     ("scheduled_for_telechat", "Scheduled for telechat"),
 
     ("iesg_approved", "IESG approved document (no problem)"),
@@ -333,9 +331,6 @@ class BallotPositionDocEvent(DocEvent):
     
 class WriteupDocEvent(DocEvent):
     text = models.TextField(blank=True)
-
-class StatusDateDocEvent(DocEvent):
-    date = models.DateField(blank=True, null=True)
 
 class LastCallDocEvent(DocEvent):
     expires = models.DateTimeField(blank=True, null=True)

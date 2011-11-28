@@ -122,7 +122,6 @@ admin.site.register(DocEvent, DocEventAdmin)
 
 admin.site.register(NewRevisionDocEvent, DocEventAdmin)
 admin.site.register(WriteupDocEvent, DocEventAdmin)
-admin.site.register(StatusDateDocEvent, DocEventAdmin)
 admin.site.register(LastCallDocEvent, DocEventAdmin)
 admin.site.register(TelechatDocEvent, DocEventAdmin)
 

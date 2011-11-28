@@ -500,7 +500,7 @@ def import_from_idinternal(d, idinternal):
                 # status date changed
                 match = re_status_date_changed.search(line)
                 if match:
-                    e = StatusDateDocEvent(type="changed_status_date", date=date_in_match(match))
+                    e = DocEvent(type="added_comment")
                     e.desc = line
                     save_docevent(d, e, c)
                     handled = True
@@ -588,16 +588,6 @@ def import_from_idinternal(d, idinternal):
     else:
         made_up_date = d.time
     made_up_date += datetime.timedelta(seconds=1)
-
-    e = d.latest_event(StatusDateDocEvent, type="changed_status_date")
-    status_date = e.date if e else None
-    if idinternal.status_date != status_date:
-        e = StatusDateDocEvent(type="changed_status_date", date=idinternal.status_date)
-        e.time = made_up_date
-        e.by = system
-        e.doc = d
-        e.desc = "Status date has been changed to <b>%s</b> from <b>%s</b>" % (idinternal.status_date, status_date)
-        e.save()
 
     e = d.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     telechat_date = e.telechat_date if e else None
