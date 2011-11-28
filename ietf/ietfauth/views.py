@@ -208,16 +208,16 @@ def test_email(request):
         if form.is_valid():
             cookie = form.cleaned_data['email']
     else:
-        form = TestEmailForm(initial=dict(email=request.COOKIES.get('testemailcc')))
+        form = TestEmailForm(initial=dict(email=request.COOKIES.get('testmailcc')))
 
     r = render_to_response('ietfauth/testemail.html',
                            dict(form=form,
-                                cookie=cookie if cookie != None else request.COOKIES.get("testemailcc", "")
+                                cookie=cookie if cookie != None else request.COOKIES.get("testmailcc", "")
                                 ),
                            context_instance=RequestContext(request))
 
     if cookie != None:
-        r.set_cookie("testemailcc", cookie)
+        r.set_cookie("testmailcc", cookie)
 
     return r
 
