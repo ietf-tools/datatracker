@@ -62,8 +62,8 @@ def send_smtp(msg, bcc=None):
         server = None
         try:
             server = smtplib.SMTP()
-            if settings.DEBUG:
-                server.set_debuglevel(1)
+            #if settings.DEBUG:
+            #    server.set_debuglevel(1)
             server.connect(settings.EMAIL_HOST, settings.EMAIL_PORT)
             if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
                 server.ehlo()
