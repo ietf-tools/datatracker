@@ -124,3 +124,6 @@ class PasswordForm(forms.Form):
         debug.show('stdout')
         debug.show('stderr')        
         return p.returncode
+
+class TestEmailForm(forms.Form):
+    email = forms.EmailField(required=False)

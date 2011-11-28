@@ -48,7 +48,7 @@ from django.contrib.auth.models import User
 from django.utils import simplejson as json
 from django.utils.translation import ugettext as _
 
-from forms import (RegistrationForm, PasswordForm, RecoverPasswordForm)
+from forms import *
 
 
 def index(request):
@@ -181,3 +181,43 @@ def ajax_check_username(request):
         error = _('This email is already in use')
     return HttpResponse(json.dumps({'error': error}), mimetype='text/plain')
     
+def test_email(request):
+    if settings.SERVER_MODE == "production":
+        raise Http404()
+
+    # note that the cookie set here is only used when running in
+    # "test" mode, normally you run the server in "development" mode,
+    # in which case email is sent out as usual; for development, put
+    # this
+    #
+    # EMAIL_HOST = 'localhost'
+    # EMAIL_PORT = 1025
+    # EMAIL_HOST_USER = None
+    # EMAIL_HOST_PASSWORD = None
+    # EMAIL_COPY_TO = ""
+    #
+    # in your settings.py and start a little debug email server in a
+    # console with the following (it receives and prints messages)
+    #
+    # python -m smtpd -n -c DebuggingServer localhost:1025
+
+    cookie = None
+
+    if request.method == "POST":
+        form = TestEmailForm(request.POST)
+        if form.is_valid():
+            cookie = form.cleaned_data['email']
+    else:
+        form = TestEmailForm(initial=dict(email=request.COOKIES.get('testemailcc')))
+
+    r = render_to_response('ietfauth/testemail.html',
+                           dict(form=form,
+                                cookie=cookie if cookie != None else request.COOKIES.get("testemailcc", "")
+                                ),
+                           context_instance=RequestContext(request))
+
+    if cookie != None:
+        r.set_cookie("testemailcc", cookie)
+
+    return r
+

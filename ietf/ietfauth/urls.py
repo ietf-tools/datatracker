@@ -9,6 +9,7 @@ urlpatterns = patterns('',
         (r'^loggedin/$', views.ietf_loggedin),
 	(r'^profile/$', views.profile),
 #        (r'^login/(?P<user>[a-z0-9.@]+)/(?P<passwd>.+)$', views.url_login),
+	(r'^testemail/$', views.test_email),
 )
 
 urlpatterns += patterns('ietf.ietfauth.views',

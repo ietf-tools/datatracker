@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Set up test email address{% endblock %}
+
+{% block content %}
+<h1>Set up test email address</h1>
+
+<p>Since this server is running in test mode, all email to be sent out
+is intercepted and thrown away.</p>
+
+<p>To receive a copy of each message before it's thrown away, you can
+set an email address below. The address is stored in the <code>testmailcc</code>
+cookie in your browser. So make sure cookies are enabled.</p>
+
+<p>Value of <code>testmailcc</code>: {{ cookie }}</p>
+
+<form action="" method="post">
+  <table>
+  {{ form.as_table }}
+  </table>
+  <div>
+    <input type="submit" value="Set cookie" />
+  </div>
+</form>
+{% endblock %}
