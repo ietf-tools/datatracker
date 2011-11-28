@@ -1,0 +1,17 @@
+{% extends "meetings/base_rooms_times.html" %}
+
+{% block subsection %}
+
+<div class="module role-container">
+    <h2>Non-Session</h2>
+      <form method="post" action="">
+        <table>
+          {{ formset }}
+        </table>
+
+      {% include "includes/buttons_save.html" %}
+      
+      </form>
+</div> <!-- module -->
+
+{% endblock %}

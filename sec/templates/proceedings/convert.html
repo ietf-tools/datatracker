@@ -1,0 +1,51 @@
+{% extends "base_site.html" %}
+
+{% block title %}Proceedings - Convert Materials{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../../">Proceedings</a>
+  &raquo; <a href="../">{{ meeting.meeting_num }}</a>
+  &raquo; Convert Material
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <form action="." method="post">
+    <h2>Proceedings - PPT/DOC Files in Queue</h2>
+    <table class="full-width">
+    <thead>
+        <tr>
+          <th>Slide Name</th>
+          <th>Group</th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for slide in slide_list %}
+        <tr class = "{% cycle 'row1' 'row2' %}">
+          <td>{{ slide.slide_name }}</td>
+          <td>{{ slide.group_name }}</td>
+          <td><a href="{{ MEDIA_URL }}/proceedings/{{ meeting.meeting_num }}/slides/{{ slide.filename }}">Download</a></td>
+          <td><a href="{% url sec.proceedings.views.upload_presentation id=meeting.meeting_num, slide_id=slide.id %}">Upload</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </form>
+
+    <div class="button-group">
+      <ul>
+        <li><button onclick="window.location='../'">Back</button></li>
+      </ul>
+    </div> <!-- button-group -->
+
+</div> <!-- module -->
+
+{% endblock %}
+

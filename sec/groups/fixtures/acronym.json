@@ -1,0 +1,29 @@
+[
+    {
+        "pk": 1744, 
+        "model": "core.acronym", 
+        "fields": {
+            "acronym": "alto", 
+            "name_key": "APPLICATION-LAYER TRAFFIC OPTIMIZATION", 
+            "name": "Application-Layer Traffic Optimization"
+        }
+    }, 
+    {
+        "pk": 1249,
+        "model": "core.acronym",
+        "fields": {
+            "acronym": "rtg",
+            "name_key": "ROUTING AREA",
+            "name": "Routing Area"
+        }
+    },
+    {
+        "pk": 934, 
+        "model": "core.acronym", 
+        "fields": {
+            "acronym": "app", 
+            "name_key": "APPLICATIONS AREA", 
+            "name": "Applications Area"
+        }
+    } 
+]

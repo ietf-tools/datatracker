@@ -1,0 +1,39 @@
+{% extends "base_site.html" %}
+
+{% block title %}Rolodex - Search{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Rolodex
+{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h2>Search / Add</h2>
+      <table class="full-width">
+      <tr>
+      <td id="rolodex-search-form" class="border-right">
+      <form id="search-form" action="." method="post">
+	<table class="full-width">
+	  {{ form.as_table }}
+	  <tr><td class="button-group" align="center" colspan="2"><button type="submit" name="submit" value="Search">Search</button></td></tr>
+	</table>
+      </form>
+      </td>
+      <td valign="top" align="center">
+      <p>To add a new contact click...</p>
+      <p><button onclick="window.location='add/'">Add New Contact</button></p>
+      </td>
+      </tr>
+      </table>
+</div> <!-- module -->
+
+<div class="module">
+  <h2>Search Results</h2>
+      {% include "includes/search_results_table.html" %}
+      {% if not_found %}{{ not_found }}{% endif %}
+</div> <!-- module -->
+{% endblock %}

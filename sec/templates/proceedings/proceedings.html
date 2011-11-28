@@ -1,0 +1,141 @@
+{% include "includes/proceeding_header.html" %}
+{% load ams_filters %}
+{% comment %}
+This is a unique template in the Secretariat Django project in that it does not extend
+the standard base templates.  Instead we include proceedings_header.html and
+proceedings_footer.html which are used in the PHP apps.
+Note this section should begin with
+<td id="content1"><div id="content2">
+and end with
+</div></td></tr>
+{% endcomment %}
+
+<td id="content1"><div id="content2">
+
+<h2>{{ meeting.get_group_name }} ({{ meeting.get_group_acronym }})</h2>
+<h3>Interim Meeting of {{ meeting.meeting_date }}</h3>
+<i>Note: This is a snapshot as of {% now "Y-m-d" %}.  It may now be out of date.</i>
+<h3>
+{% if minutes_url %}
+<a href="{{ minutes_url }}">Minutes</a>
+{% else %}
+Minutes
+{% endif %}
+ |
+ {% if agenda_url %}
+<a href="{{ agenda_url }}">Agenda</a>
+{% else %}
+Agenda
+{% endif %}
+ | <a href="http://jabber.ietf.org/logs/{{ meeting.get_group_acronym }}/">Jabber Logs</a>
+{% if group.email_archive %}
+ | <a href="{{ group.email_archive }}">Mailing List Archives</a>
+{% endif %}
+</h3>
+
+<div id="content2"><p>Additional information is available at <a href="http://tools.ietf.org/wg/{{ meeting.get_group_acronym }}">tools.ietf.org/wg/{{ meeting.get_group_acronym }}</a>
+
+<table width="60%" border="0" cellspacing="2" cellpadding="2">
+  <tr><td bgcolor="#EEEEFF">
+      <h3>Chair(s):</h3>
+      <ul>
+      {% for chair in group.chairs %}
+        <li><a href="mailto:{{ chair.person.email }}">{{ chair.person.first_name }} {{ chair.person.last_name }}</a></li>
+      {% endfor %}
+      </ul>
+      {% if group.secretaries %}
+          {% if group.secretaries.count > 1 %}<h3>Secretaries</h3>{% else %}<h3>Secretary</h3>{% endif %}
+          <ul>
+            {% for secretary in group.secretaries %}
+              <li><a href="mailto:{{ secretary.person.email }}">{{ secretary.person.first_name }} {{ secretary.person.last_name }}</a></li>
+            {% endfor %}
+          </ul>
+      {% endif %}
+      <h3>{{ area_name }} Area Director(s):</h3>
+      <ul>
+      {% for ad in group.area_directors %}
+        <li><a href="mailto:{{ ad.person.email }}">{{ ad.person.first_name }} {{ ad.person.last_name }}</a></li>
+      {% endfor %}
+      </ul>
+      {% if group.wgtechadvisor_set.all %}
+          <h3>{{ area_name }} Advisor(s)</h3>
+          <ul>
+            {% for advisor in group.wgtechadvisor_set.all %}
+              <li><a href="mailto:{{ advisor.person.email }}">{{ advisor.person.first_name }} {{ advisor.person.last_name }}</a></li>
+            {% endfor %}
+          </ul>
+      {% endif %}
+<br /><br /></td></tr></table>
+
+{% comment %}
+<h2>Mailing Lists:</h2>
+General Discussion: {{ group.email_address }}<br />
+{% if group.email_keyword != '' %}
+To Subscribe: {{ group.email_subscribe }}<br />
+In Body: {{ group.email_keyword }}<br />
+{% else %}
+To Subscribe: <a href="{{ group.email_subscribe }}">{{ group.email_subscribe }}</a><br />
+{% endif %}
+Archive: <a href="{{ group.email_archive }}">{{ group.email_archive }}</a><br />
+{% endcomment %}
+
+<h2>Meeting Slides:</h2>
+{% if slides %}
+<ul>
+  {% for slide in slides %}
+  <li><a href="{{ slide.url }}" target="_blank">{{ slide.slide_name }}</a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No Slides Present</p>
+{% endif %}
+
+{% if drafts %}
+<h2>Internet-Drafts:</h2>
+<ul>
+  {% for draft in drafts %}
+  <li><a href="http://datatracker.ietf.org/doc/{{ draft.filename }}" target="_blank">{{ draft.filename }}-{{ draft.revision }}</a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<h2>No Current Internet-Drafts</h2>
+{% endif %}
+
+{% if rfcs %}
+<h2>Request for Comments:</h2>
+<table>
+  <tr align=left><th>RFC</th><th>Status</th><th>Title</th></tr>
+  {% for rfc in rfcs %}
+  <tr align=left>
+    <td width="90"><a href="http://datatracker.ietf.org/doc/rfc{{ rfc.rfc_number }}" target="_blank">RFC{{ rfc.rfc_number }}</a></td>
+    <td width="90">{{ rfc.status.status|abbr_status }}</td>
+    <td>{{ rfc.title }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<h2>No Request for Comments</h2>
+{% endif %}
+
+<h2>Charter:</h2>
+<p>{{ charter|safe }}</p>
+
+{% if group.milestones %}
+<h2>Goals and Milestones:</h2>
+<table>
+  {% for milestone in group.milestones %}
+  <tr align="left" valign="top">
+    <td width="70" valign="top">
+    {% if milestone.done == 'Done' %}Done{% else %}{{ milestone.expected_due_date|date:"m-Y" }}{% endif %}
+    </td>
+    <td>&nbsp;&nbsp;</td><td>{{ milestone.description }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+
+
+</div></td></tr>
+
+{% include "includes/proceeding_footer.html" %}

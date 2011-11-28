@@ -1,0 +1,37 @@
+[
+    {
+        "pk": 1, 
+        "model": "groups.wgtype", 
+        "fields": {
+            "type": "WG"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "groups.wgtype", 
+        "fields": {
+            "type": "PWG"
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "groups.wgtype", 
+        "fields": {
+            "type": "BOF"
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "groups.wgtype", 
+        "fields": {
+            "type": "AG"
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "groups.wgtype", 
+        "fields": {
+            "type": "TEAM"
+        }
+    }
+]

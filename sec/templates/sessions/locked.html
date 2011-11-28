@@ -1,0 +1,29 @@
+{% extends "base_site.html" %}
+
+{% block title %}Sessions{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Sessions (Locked)
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Sessions - Status</h2>
+
+      <p>{{ message }}</p>
+      
+      <div class="button-group">
+      <ul>
+        <li><button onclick="window.location='../'">Back</button></li>
+      </ul>
+      </div> <!-- button-group -->
+
+
+</div> <!-- module -->
+
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base_site.html" %}
+
+{% block title %}Rolodex - Add{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Rolodex</a>
+  &raquo; Add
+{% endblock %}
+
+{% block content %}
+
+{% if results %}
+
+<ul class="errorlist"><li>Please take a minute to search the list below to prevent creating a duplicate record</li></ul>
+
+<div class="module">
+  <h2>Adding {{ name }} </h2>
+
+    {% include "includes/search_results_table.html" %}
+
+    <div class="button-group">
+      <ul>
+	<li><button onclick="history.go(-1);return true">Back</button></li>
+	<li><button onclick="window.location='../add-proceed/'">Proceed</button></li>
+      </ul>
+    </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% else %}
+
+<div class="module">
+  <h2>Name</h2>
+  <form id="rolodex-add-form" enctype="multipart/form-data" action="" method="post">
+    <table class="full-width">
+      {{ form.as_table }}
+    </table>
+
+    {% include "includes/buttons_proceed.html" %}
+
+  </form>
+</div> <!-- module -->
+
+{% endif %}
+
+{% endblock %}

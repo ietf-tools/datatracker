@@ -1,0 +1,31 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - Add{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/add_form.js"></script>
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Drafts</a>
+  &raquo; Add 
+{% endblock %}
+
+{% block content %}
+
+<div class="module draft-container">
+    <h2>Draft - Add</h2>
+    <form id="drafts-add-form" enctype="multipart/form-data" action="" method="post">
+      <table class="full-width">
+        {{ form.as_table }}
+      </table>
+      
+      {% include "includes/draft_file_formset.html" %}
+      
+      {% include "includes/buttons_save_cancel.html" %}
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

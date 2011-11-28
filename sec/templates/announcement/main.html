@@ -1,0 +1,40 @@
+{% extends "base_site.html" %}
+
+{% block title %}Announcement{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Announcement
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>Announcement</h2>
+
+    
+    <form action="" method="POST">
+    <table class="new-style" id="announce-table">
+      {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+      {% for field in form.visible_fields %}
+        <tr>
+        <th>{{ field.label_tag }}{% if field.field.required %}<span class="required"> *</span>{% endif %}</th>
+        <td>{{ field.errors }}{{ field }}{% if field.help_text %}<br>{{ field.help_text }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+    </table>
+    <p>Use comma separated lists for emails (Cc, Bcc, Reply To)</p>
+    <div class="button-group">
+      <ul id="announcement-button-list">
+        <li><button type="submit" name="submit" value="submit" onclick="return window.confirm('Send the announcement?');">Send</button></li>
+        <li><button type="submit" name="submit" value="Cancel">Cancel</button></li>
+      </ul>
+    </div> <!-- button-group -->
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

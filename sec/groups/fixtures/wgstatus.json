@@ -1,0 +1,23 @@
+[
+    {
+        "pk": 1, 
+        "model": "groups.wgstatus", 
+        "fields": {
+            "status": "Active"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "groups.wgstatus", 
+        "fields": {
+            "status": "Dormant"
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "groups.wgstatus", 
+        "fields": {
+            "status": "Concluded"
+        }
+    }
+]

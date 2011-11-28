@@ -1,0 +1,28 @@
+{% extends "base_site.html" %}
+
+{% block title %}Working Groups - Description{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Working Groups</a>
+  &raquo; <a href="../">{{ group.acronym }}</a>
+  &raquo; Descripton
+{% endblock %}
+
+{% block content %}
+
+<div class="module group-container">
+    <h2>Working Group - Description</h2>
+    <form enctype="multipart/form-data" action="" method="post" id="group-description-form">
+      {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+      {{ form.description.errors }}{{ form.description }}
+
+      {% include "includes/buttons_save_cancel.html" %}
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

@@ -1,0 +1,23 @@
+[
+    {
+        "pk": 1744, 
+        "model": "groups.ietfwg", 
+        "fields": {
+            "status": 1, 
+            "email_keyword": "new keyword test testing", 
+            "dormant_date": null, 
+            "proposed_date": "2008-09-18", 
+            "meeting_scheduled_old": "YES", 
+            "email_archive": "http://www.ietf.org/mail-archive/web/alto/current/maillist.html", 
+            "last_modified_date": "2010-08-09", 
+            "comments": "1st meeting at 72nd IETF-Dublin, Ireland; 2nd meeting at 73rd IETF-Minneapolis, MN", 
+            "email_subscribe": "https://www.ietf.org/mailman/listinfo/alto", 
+            "concluded_date": null, 
+            "meeting_scheduled": "YES", 
+            "area_director": 139, 
+            "email_address": "alto@ietf.org", 
+            "start_date": "2008-11-11", 
+            "group_type": 1
+        }
+    }
+]

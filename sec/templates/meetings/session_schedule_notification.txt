@@ -1,0 +1,14 @@
+Dear {{ to_name }},
+
+The sessions that you have requested have been scheduled.
+Below is the scheduled session information followed by
+the original request. 
+
+{{ session_info }}
+{% if session.special_agenda_note %}
+Special Note: {{ session.special_agenda_note }}
+{% endif %}
+
+Request Information:
+
+{% include "includes/session_info.txt" %}

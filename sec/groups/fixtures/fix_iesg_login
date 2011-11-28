@@ -1,0 +1,17 @@
+#!/usr/bin/python
+
+from sec.groups.models import *
+from django.core.exceptions import ObjectDoesNotExist
+from sec.core.models import *
+
+qs = IESGLogin.objects.all()
+count = 0
+for item in qs:
+    print "%s: " % item.id,
+    try:
+        print item.person,
+    except ObjectDoesNotExist:
+        print "Fail: %s" % item.id
+        item.delete()
+        count = count + 1
+print "Total items fixed: %s" % count

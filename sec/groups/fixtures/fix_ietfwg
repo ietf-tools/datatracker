@@ -1,0 +1,21 @@
+#!/usr/bin/python
+
+from sec.groups.models import *
+from django.core.exceptions import ObjectDoesNotExist
+
+"""Many Working Group(IETFWG) objects refer to non-existent area directors.  
+Need to find these db problems and fix by replacing with NULL
+
+Run this script on the dev database to prevent dumpdata from returning
+'Unable to serialize database' errors when trying to create fixtures for
+testing.
+"""
+
+qs = IETFWG.objects.all()
+for item in qs:
+   try:
+       print item.area_director
+   except ObjectDoesNotExist:
+       print "Fail: %s" % item.group_acronym_id
+       item.area_director = None
+       item.save()

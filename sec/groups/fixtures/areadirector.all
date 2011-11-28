@@ -1,0 +1,266 @@
+[
+    {
+        "pk": 124, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 104942, 
+            "area": 1324
+        }
+    }, 
+    {
+        "pk": 66, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 2324, 
+            "area": 1092
+        }
+    }, 
+    {
+        "pk": 67, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 4763, 
+            "area": 1157
+        }
+    }, 
+    {
+        "pk": 68, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 188, 
+            "area": 1179
+        }
+    }, 
+    {
+        "pk": 69, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 2324, 
+            "area": 1190
+        }
+    }, 
+    {
+        "pk": 127, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 101568, 
+            "area": 1193
+        }
+    }, 
+    {
+        "pk": 71, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 2372, 
+            "area": 1199
+        }
+    }, 
+    {
+        "pk": 74, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 2744, 
+            "area": 1264
+        }
+    }, 
+    {
+        "pk": 125, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 19790, 
+            "area": 1260
+        }
+    }, 
+    {
+        "pk": 119, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 2329, 
+            "area": 1249
+        }
+    }, 
+    {
+        "pk": 123, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 103264, 
+            "area": 1541
+        }
+    }, 
+    {
+        "pk": 112, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 5376, 
+            "area": 1008
+        }
+    }, 
+    {
+        "pk": 109, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 17253, 
+            "area": 1324
+        }
+    }, 
+    {
+        "pk": 79, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 2515, 
+            "area": 1092
+        }
+    }, 
+    {
+        "pk": 80, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 4817, 
+            "area": 1190
+        }
+    }, 
+    {
+        "pk": 126, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 21072, 
+            "area": 1052
+        }
+    }, 
+    {
+        "pk": 100, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 4356, 
+            "area": 1346
+        }
+    }, 
+    {
+        "pk": 111, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 6842, 
+            "area": 1541
+        }
+    }, 
+    {
+        "pk": 82, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 2723, 
+            "area": 1199
+        }
+    }, 
+    {
+        "pk": 113, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 2853, 
+            "area": 1179
+        }
+    }, 
+    {
+        "pk": 103, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 6699, 
+            "area": 1193
+        }
+    }, 
+    {
+        "pk": 114, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 773, 
+            "area": 1179
+        }
+    }, 
+    {
+        "pk": 129, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 19483, 
+            "area": 1260
+        }
+    }, 
+    {
+        "pk": 130, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 106956, 
+            "area": null
+        }
+    }, 
+    {
+        "pk": 139, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 105907, 
+            "area": 934
+        }
+    }, 
+    {
+        "pk": 132, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 103539, 
+            "area": 1683
+        }
+    }, 
+    {
+        "pk": 133, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 2348, 
+            "area": 1052
+        }
+    }, 
+    {
+        "pk": 134, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 103961, 
+            "area": 1683
+        }
+    }, 
+    {
+        "pk": 135, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 104198, 
+            "area": 1249
+        }
+    }, 
+    {
+        "pk": 136, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 102154, 
+            "area": 934
+        }
+    }, 
+    {
+        "pk": 140, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 111252, 
+            "area": 1808
+        }
+    }, 
+    {
+        "pk": 141, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 111252, 
+            "area": 1193
+        }
+    }, 
+    {
+        "pk": 131, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 102154, 
+            "area": 1193
+        }
+    }
+]

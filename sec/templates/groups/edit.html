@@ -1,0 +1,31 @@
+{% extends "base_site.html" %}
+
+{% block title %}Working Groups - Edit{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Working Groups</a>
+  &raquo; <a href="../">{{ group.acronym }}</a>
+  &raquo; Edit
+{% endblock %}
+
+{% block content %}
+
+<div class="module group-container">
+    <h2>Working Group - Edit</h2>
+    <form enctype="multipart/form-data" action="" method="post">
+      <table class="full-width">
+        {{ form }}
+      </table>
+
+  {% include "includes/awp_edit_form.html" %}
+
+  {% include "includes/buttons_save_cancel.html" %}
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

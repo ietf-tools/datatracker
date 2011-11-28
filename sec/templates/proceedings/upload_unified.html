@@ -1,0 +1,104 @@
+{% extends "base_site.html" %}
+
+{% block title %}Proceedings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  
+  {% ifequal meeting.type "interim" %}
+    &raquo; <a href="{% url proceeding %}">Proceedings</a>
+    &raquo; <a href="{% url proceedings_select_interim %}">Interim Select Group</a>
+    &raquo; <a href="{% url proceedings_interim group_id=group.pk %}">{{ group.acronym }}</a>
+    &raquo; {{ meeting }}
+  {% else %}
+    &raquo; <a href="{% url proceedings %}">Proceedings</a>
+    &raquo; <a href="{% url proceedings_view id=meeting.pk %}">{{ meeting }}</a>
+    &raquo; <a href="{% url proceedings_select meeting_id=meeting.pk %}">Select</a>
+    &raquo; {{ group.acronym }}
+  {% endifequal %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>{% ifequal meeting.type "interim" %}
+          Interim Meeting {{ meeting }}
+        {% else %}
+          IETF {{ meeting }} - Upload Material - Group: {{ group.acronym }}
+        {% endifequal %}
+    </h2>
+       <table class="center">
+         <thead>
+           <tr>
+             <th>Type</th>
+             <th>Filename</th>
+             <th>Delete</th>
+           </tr>
+         </thead>
+         <tbody>
+           <tr>
+               {% if proceedings_url %}
+                 <td><a href="{{ proceedings_url|safe }}" target="_blank">Proceedings</a></td>
+                 <td></td>
+               {% else %}
+                 <td>Proceedings</td>
+                 <td>Proceedings not yet generated</td>
+               {% endif %}
+             <td></td>
+           </tr>
+           <tr>
+             {% if minutes %}
+             <td><a href="{{ minutes.url }}" target="_blank">Minutes</td>
+             <td>{{ minutes.filename }}</td>
+             <td><a href="{% url proceedings_delete_material meeting_id=meeting.number group_id=group.pk type='minute' object_id=minutes.pk %}">Delete</a></td>
+             {% else %}
+             <td>Minutes</td>
+             <td>(not uploaded)</td>
+             <td></td>
+             {% endif %}
+           </tr>
+           <tr>
+             {% if agenda %}
+             <td><a href="{{ agenda.url }}" target="_blank">Agenda</a></td>
+             <td>{{ agenda.filename }}</td>
+             <td><a href="{% url proceedings_delete_material meeting_id=meeting.pk group_id=group.pk type='agenda' object_id=agenda.pk %}">Delete</a></td>
+             {% else %}
+             <td>Agenda</td>
+             <td>(not uploaded)</td>
+             <td></td>
+             {% endif %}
+             </tr>
+         </tbody>
+       </table>
+     
+     <div class="inline-related">
+       <h2>Slides</h2>
+         {% include "includes/slides.html" %}
+         <p>(<span class="required"> *</span> - Waiting to be converted to PDF format.)</p>
+     </div> <!-- inline-group -->
+     
+     <div class="inline-related">
+       <h2>Upload Materials</h2>
+       <form enctype="multipart/form-data" action="." method="post">
+       <table class="center" id="proceedings-upload-table">
+       {{ form.as_table }}
+       </table>
+
+       {% include "includes/buttons_submit_back.html" %}
+ 
+       </form>
+      </div> <!-- inline-group -->
+</div> <!-- module -->
+
+{% if activities %}
+  <br>
+  <div class="module interim-container">
+    {% include "includes/activities.html" %}
+  </div>
+{% endif %}
+
+{% endblock %}

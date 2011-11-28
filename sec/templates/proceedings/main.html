@@ -1,0 +1,86 @@
+{% extends "base_site.html" %}
+
+{% block title %}Proceeding manager{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; Proceedings
+{% endblock %}
+
+{% block content %}
+
+<div  class="module" >
+    <h2>Proceedings</h2>
+    <div id="proceedings-left-col">
+    <table id="proceedings-list-table" class="full-width{% if request.user_is_secretariat %} secretariat{% endif %}">
+      <thead>
+        <tr>
+          <th>IETF Meeting</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for meeting in meetings %}
+          <tr class = "{% cycle 'row1' 'row2' %} {{ proceeding.frozen }} ">
+            <td>
+              <a href="{% url proceedings_view id=meeting.number %}">{{ meeting.number }}</a>
+              {% ifequal meeting.frozen 1 %}&nbsp;&nbsp;[Frozen]{% endifequal %}	
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if request.user_is_secretariat %}
+        <div class="button-group">
+          <ul id="proceedings-meeting-buttons">
+            <li><button onclick="window.location='{% url meetings_add %}'">Add</button></li>
+          </ul>
+        </div> <!-- button-group -->
+    {% endif %}
+    </div>
+    
+    <div id="proceedings-right-col">
+    <table id="proceedings-interim-table" class="full-width{% if request.user_is_secretariat %} secretariat{% endif %}">
+      <thead>
+        <tr>
+          <th>Interim Meeting</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for meeting in interim_meetings %}
+
+              <tr class = "{% cycle 'row1' 'row2' %}">
+                <td><a href="{% url proceedings_upload_unified meeting_id=meeting.pk group_id=meeting.group_acronym_id %}">{{ meeting.group_acronym|ljust:"8" }} - {{ meeting.start_date }}</a></td>
+              </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="button-group">
+      <ul id="proceedings-interim-buttons">
+        <li><button onclick="window.location='{% url proceedings_select_interim %}'">Create Interim Meeting</button></li>
+      </ul>
+    </div> <!-- button-group -->
+    </div>
+    
+    <br>
+    {% if not request.user_is_secretariat %}
+    <br>
+    <hr>
+    <p>The list(s) above includes those meetings which you can upload materials for.  Click on the meeting number or interim meeting date to continue.</p>
+    {% endif %}
+
+
+    <div class="button-group">
+      <ul id="proceedings-button-list">
+        <li><button onclick="window.location='../'">Back</button></li>
+      </ul>
+    </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}
+~
+~
+~
+

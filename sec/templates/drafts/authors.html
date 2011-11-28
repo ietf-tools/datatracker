@@ -1,0 +1,75 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - Authors{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <link rel="stylesheet" type="text/css" href="/css/jquery-ui-1.8.1.custom.css" />
+  <link rel="stylesheet" type="text/css" href="/css/jquery.ui.autocomplete.css" />
+  <script type="text/javascript" src="/js/jquery-ui-1.8.1.custom.min.js"></script>
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Drafts</a>
+  &raquo; <a href="../">{{ draft.id_document_tag }}</a>
+  &raquo; Authors
+{% endblock %}
+
+{% block content %}
+
+<div class="module draft-container">
+   <h2>Authors ({{ draft.filename }})</h2>
+      <table class="full-width">
+        {% for author in authors %}
+            <tr>
+                <td><a href="{% url sec.rolodex.views.view tag=author.person.person_or_org_tag %}">{{ author.person.first_name }} {{ author.person.last_name }}</a></td>
+                <td><button onclick="if (window.confirm('You are about to delete {{ author.person.first_name }} {{ author.person.last_name }} from the list.')) { window.location='{% url drafts_author_delete id=author.id %}' };">Delete</button></td>
+            </tr>
+        {% endfor %}
+      </table>
+
+
+   <div class="inline-related">
+     <h2><b>New Author</b></h3>
+       
+       <form action="." method="post">
+       <div class="add-form">
+         {{ formset.management_form }}
+         {{ formset.non_form_errors }}
+         <table class="full-width">
+         <thead>
+             <tr>
+             {% for field in formset.forms.0.visible_fields %}
+                 <th>{{ field.label }}</th>
+             {% endfor %}
+             </tr>
+         </thead>
+         <tbody>
+         {% for form in formset.forms %}
+         {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+              <tr class="{% cycle row1,row2 %}">
+              {# Include the hidden fields in the form #}
+              {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+              {% endfor %}
+              {% for field in form.visible_fields %}
+                   <td>
+                     {{ field.errors }}
+                     {{ field }}
+                   </td>
+              {% endfor %}
+              </tr>
+          {% endfor %}
+         </tbody>
+         </table>
+         <p>To see a list of people type the first name, or last name, or both.</p>
+       </div>
+       
+   </div> <!-- iniline-related -->
+
+   {% include "includes/buttons_submit.html" %}
+   
+  </form>
+</div> <!-- module -->
+
+{% endblock %}

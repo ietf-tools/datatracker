@@ -1,0 +1,12 @@
+<div class="inline-group">
+  <h2>Area Specific Web Pages</h2>
+  {% for item in awps %}
+  <div class="inline-related{% if forloop.last %} last-related{% endif %}">
+    <h3><b>Web Page:</b>&nbsp; #{{ forloop.counter }}</h3>
+    <table>
+      <tr><td>URL:</td><td>{{ item.url }}</td><tr>
+      <tr><td>Name:</td><td>{{ item.name }}</td></tr>
+    </table>
+  </div> <!-- iniline-related -->
+  {% endfor %}
+</div> <!-- inline-group -->

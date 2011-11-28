@@ -1,0 +1,5 @@
+{{ request.person }}, a chair of the {{ group_name }} working group, indicated that the {{ group_name }} working group does not plan to hold a session at IETF {{ meeting.meeting_num }}.
+
+This message was generated and sent by the IETF Meeting Session Request Tool.
+
+

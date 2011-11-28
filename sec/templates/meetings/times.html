@@ -1,0 +1,49 @@
+{% extends "meetings/base_rooms_times.html" %}
+
+{% block subsection %}
+
+<div class="module role-container">
+    <h2>Rooms</h2>
+
+          <div class="inline-group">
+           <div class="tabular inline-related">
+            <form id="meetings-meta-times" action="" method="post">
+              {{ formset.management_form }}
+              {{ formset.non_form_errors }}
+              <table class="full-width">
+                <thead>
+                 <tr>
+                   {% for field in formset.forms.0.visible_fields %}
+                     <th>{{ field.label|capfirst }}</th>
+                   {% endfor %}
+                 </tr>
+                </thead>
+                <tbody>
+                 {% for form in formset.forms %}
+                 {% if form.non_field_errors %}
+                   <tr><td colspan="3">{{ form.non_field_errors }}</td></tr>
+                 {% endif %}
+                 <tr class="{% cycle row1,row2 %}">
+                   {% for hidden in form.hidden_fields %}
+                   {{ hidden }}
+                   {% endfor %}
+                   {% for field in form.visible_fields %}
+                   <td>
+                     {{ field.errors }}
+                    {{ field }}
+                   </td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+               </tbody>
+            </table>
+
+          </div> <!-- iniline-related -->
+        </div> <!-- inline-group -->
+        
+        {% include "includes/buttons_save.html" %}
+      
+      </form>
+</div> <!-- module -->
+
+{% endblock %}

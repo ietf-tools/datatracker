@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}
+IPR Admin Detail Page
+{% endblock %}
+
+{% block extrahead %}
+    <link rel="stylesheet" href="/css/ipr.css" type="text/css" media="screen" charset="utf-8" />
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="{% url ipr_admin_list %}">IPR Admin</a>
+  &raquo; Detail
+ {% endblock %}
+
+{% block content %}
+<!-- this form is a kludge to apply the style from previously created update/create pages -->
+<form action="" method="post">
+    <h3>{{ ipr_title }}</h3>
+
+    {{ header_text|safe }}
+    <br />
+    {% for url_title in legacy_links %}
+        {% if url_title %}
+        <a href="{{ url_title.0 }}">{{ url_title.1 }}</a>
+        {% endif %}
+    {% endfor %}
+    <br />
+    <br />
+    <b>Submitted date: {{ submitted_date }}</b>
+    <br />
+
+    <div class="module ipr-container">
+    {% for section in  page_data %}
+        {#{ forloop.counter }#}
+        {% if section %}
+        <!-- <fieldset> -->
+            <h2>{{ section.0 }}</h2> 
+            <ul>
+            {% for line in section %}
+                {% ifnotequal forloop.counter 1 %}
+                    {# related documents #}
+                    {% ifequal forloop.parentloop.counter 4 %}
+                        <li>
+                        <table><tr>
+                        <td>{{ line.0 }}</td>
+                        <td>
+                        {# 'Designations for other contributions' #}
+                        {% ifequal 5 forloop.counter %}
+                            <strong>{{ line.1 }}</strong>
+                        {% else %}
+                            <ul>
+                            {% for item in line.1 %}
+                                <li><strong>{{ item }}</strong></li>
+                            {% endfor %}
+                            </ul>
+                        {% endifequal %}
+                        </td>
+                        </tr></table>
+                        </li>
+                    {% else %}
+                        <li>{{ line.0 }} <strong>{{ line.1 }}</strong></li>
+                    {% endifequal %}
+                {% endifnotequal %}
+            {% endfor %}
+            </ul>
+        <!-- </fieldset> -->
+        {% endif %}
+    {% endfor %}
+</form>
+    {{ footer_text }}
+    </div> <!-- module -->
+
+    {% for c in controls %}
+        {% ifequal c 'notify' %}
+<form action="" method="post">
+    <input type="hidden" name="ipr_id" value="$ipr_id">
+    <input type="hidden" name="command" value="notify">
+    <input type="submit" name="notice_it" value="Notify the submitter of IPR that is being updated">
+</form>
+        {% endifequal %}
+        {% ifequal c 'post' %}
+<form action="" method="post">
+    <input type="hidden" name="ipr_id" value="$ipr_id">
+    <input type="hidden" name="command" value="post">
+    <input type="submit" name="post_it" value="Post It">
+</form>
+        {% endifequal %}
+        {% ifequal c 'delete' %}
+<form action="" method="post">
+    <input type="hidden" name="ipr_id" value="$ipr_id">
+    <input type="hidden" name="command" value="delete">
+    <input type="submit" name="do_delete" value="Delete">
+</form>
+        {% endifequal %}
+    {% endfor %}
+
+{% endblock %}

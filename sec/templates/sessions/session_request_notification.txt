@@ -1,0 +1,3 @@
+{{ header }} meeting session request has just been submitted by {{ request.person }}, a chair of the {{ group_name }} working group.
+
+{% include "includes/session_info.txt" %}

@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% load form_utils_tags %}
+{% block title %}
+IPR Admin Internal Page
+{% endblock %}
+
+{% block extrahead %}
+	<script type="text/javascript" src="/js/jquery-1.5.1.min.js"></script>
+	<script type="text/javascript" src="/js/jquery-ui-1.8.9.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.json-2.2.min.js"></script>
+    <link rel="stylesheet" href="/css/redmond/jquery-ui-1.8.9.custom.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="/css/jquery.ui.autocomplete.css" />
+    <link rel="stylesheet" href="/css/ipr.css" type="text/css" media="screen" charset="utf-8" />
+
+
+<script type="text/javascript">
+$(function() {
+    $("input").keydown(function(event) {
+        if (event.keyCode == '13') {
+            event.preventDefault();
+            // go to next form field
+        }
+    });
+
+    function add_to_list(list, id, label) {
+    list.append('<li><a href="' + id + '"><img src="/images/delete.png" alt="delete"></a> ' + label + '</li>');
+    }
+
+    function setup_ajax(field, list, searchfield, url) {
+        var datastore = {};
+        if(field.val() != '')
+            datastore = $.evalJSON(field.val())
+
+        $.each(datastore, function(k, v) {
+            add_to_list(list, k, v);
+        });
+
+        searchfield.autocomplete({
+            source: url,
+            minLength: 1,
+            select: function( event, ui ) {
+                datastore[ui.item.id] = ui.item.label;
+                field.val($.toJSON(datastore));
+                searchfield.val('');
+                add_to_list(list, ui.item.id, ui.item.label);
+                return false;
+            }
+        });
+
+        list.delegate("a", "click", function() {
+            delete datastore[$(this).attr("href")];
+            field.val($.toJSON(datastore));
+            $(this).closest("li").remove();
+            return false;
+        });
+    }
+
+    setup_ajax($("#id_rfc_num"), $("#rfc_num_list"), $("#id_rfc_num_search"), "{% url ipr_ajax_rfc_num %}");
+    setup_ajax($("#id_id_filename"), $("#id_filename_list"), $("#id_id_filename_search"), "{% url ipr_ajax_internet_draft %}");
+    
+});
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="{% url ipr_admin_list %}">IPR Admin</a>
+  &raquo; Create
+  {% endblock %}
+
+{% block content %}
+<div class="module ipr-container">
+<form method="post">
+{{ ipr_contact_formset.management_form }}
+<h2>Add New IPR</h2>
+    {% if ipr_detail_form.non_field_errors %}{{ ipr_detail_form.non_field_errors }}{% endif %}
+    {{ ipr_detail_form.errors }}
+    <!-- <fieldset> -->
+        <ul>
+        {% for field in ipr_detail_form.fieldsets.basic %}
+            <li>
+                {% ifequal field.name "title" %}
+                  <label for="id_title">IPR Title<span class="required"> *</span></label>
+                {% else %}
+                  {% ifequal field.name "submitted_date" %}
+                    <label for="id_submitted_date">Submitted Date<span class="required"> *</span></label>
+                  {% else %}
+                    {{ field.label_tag }}
+                  {% endifequal %}
+                {% endifequal %}
+                {{ field }}
+            </li>
+        {% endfor %}
+        </ul>
+    <!-- </fieldset> -->
+
+    <hr>
+    <!-- <fieldset> -->
+        <ul>
+        {% for field in ipr_detail_form.fieldsets.booleans %}
+            <li>
+                {{ field.label_tag }}
+                {{ field }}
+            </li>
+        {% endfor %}
+        </ul>
+    <!-- </fieldset> -->
+
+    <hr>
+    <!-- <fieldset> -->
+        <ul>
+        {% for field in ipr_detail_form.fieldsets.old_ipr %}
+            {% if field.is_hidden %}{% else %}
+            <li>
+                {{ field.label_tag }}
+                {{ field }}
+            </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    <!-- </fieldset> -->
+
+    <!-- <fieldset> -->
+        <h2>{{ ipr_detail_form.fieldsets.legal_name.legend }}</h2>
+        <ul>
+        {% for field in ipr_detail_form.fieldsets.legal_name %}
+            <li>
+                {% ifequal field.name "legal_name" %}
+                  <label for="id_legal_name">Legal Name<span class="required"> *</span></label>
+                {% else %}
+                  {{ field.label_tag }}
+                {% endifequal %}
+                {{ field }}
+            </li>
+        {% endfor %}
+        </ul>
+    <!-- </fieldset> -->
+
+        {% with ipr_contact_formset.forms.0 as form %}
+            <!-- <fieldset> -->
+            <h2>II. Patent Holder's Contact for License Application</h2>
+            <ul>
+            {{ form.as_ul }}
+            </ul>
+            <!-- </fieldset> -->
+        {% endwith %}
+
+        {% with ipr_contact_formset.forms.1 as form %}
+            <!-- <fieldset> -->
+            <h2>III. Contact Information for the IETF Participant Whose Personal Belief Triggered the Disclosure in this Template (Optional)</h2>
+            <ul>
+            {{ form.as_ul }}
+            </ul>
+            <!-- </fieldset> -->
+        {% endwith %}
+
+
+    <div class="autocompletes">
+        <h2>{{ ipr_detail_form.fieldsets.rfc.legend }}</h2>
+        <ul>
+            <li>
+                {{ ipr_detail_form.rfc_num.label_tag }}
+                <input type="text" id="id_rfc_num_search">
+                {{ ipr_detail_form.rfc_num }}
+                <ul id="rfc_num_list"></ul>
+            </li>
+            <li>
+                {{ ipr_detail_form.id_filename.label_tag }}
+                <input type="text" id="id_id_filename_search">
+                {{ ipr_detail_form.id_filename }}
+                <ul id="id_filename_list"></ul>
+            </li>
+            <li>
+                {{ ipr_detail_form.other_designations.label_tag }}
+                {{ ipr_detail_form.other_designations }}
+            </li>
+        </ul>
+    </div> <!-- autocompletes -->
+
+    <!-- <fieldset> -->
+        <h2>{{ ipr_detail_form.fieldsets.disclosure.legend }}</h2>
+        <ul>
+            <li>
+             {{ ipr_detail_form.fieldsets.disclosure.description }}
+            </li>
+        {% for field in ipr_detail_form.fieldsets.disclosure %}
+            <li>
+                {{ field.label_tag }}
+                {{ field }}
+            </li>
+        {% endfor %}
+        </ul>
+    <!-- </fieldset> -->
+
+    <!-- <fieldset> -->
+        <h2>VI. Licensing Declaration</h2>
+        <p>The Patent Holder states that its position with respect to licensing any patent claims contained in the patent(s) or patent application(s) disclosed above that would necessarily be infringed by implementation of the technology required by the relevant IETF specification ("Necessary Patent Claims"), for the purpose of implementing such specification, is as follows(select one licensing declaration option only):</p>
+
+        <ol>
+            <li>{{ licensing_option_labels.0 }}) 
+                <label for="id_licensing_option_0">
+                    <input id="id_licensing_option_0"  name="licensing_option" value="1" type="radio">
+                    No License Required for Implementers.
+                </label>
+                <ul>
+                    <li>
+                        <input id="lic_opt_a_sub" name="id_lic_opt_a_sub" type="checkbox">
+                        <label for="lic_opt_a_sub">This licensing declaration is limited solely to standards-track IETF documents.</label>
+                    </li>
+                </ul>
+            </li>
+            <li>{{ licensing_option_labels.1 }}) 
+                <label for="id_licensing_option_1">
+                    <input id="id_licensing_option_1" value="2" name="licensing_option" type="radio">
+                    Royalty-Free, Reasonable and Non-Discriminatory License to All Implementers.
+                </label>
+                <ul>
+                    <li>
+                        <input id="lic_opt_b_sub" name="id_lic_opt_b_sub" type="checkbox">
+                        <label for="lic_opt_b_sub">This licensing declaration is limited solely to standards-track IETF documents.</label>
+                    </li>
+                </ul>
+            </li>
+            <li>{{ licensing_option_labels.2 }}) 
+                <label for="id_licensing_option_2">
+                    <input id="id_licensing_option_2" value="3" name="licensing_option" type="radio">
+                    Reasonable and Non-Discriminatory License to All Implementers with Possible Royalty/Fee.
+                </label>
+                <ul>
+                    <li>
+                        <input id="lic_opt_c_sub" name="id_lic_opt_c_sub" type="checkbox">
+                        <label for="lic_opt_c_sub">This licensing declaration is limited solely to standards-track IETF documents.</label>
+                    </li>
+                </ul>
+            </li>
+            <li>{{ licensing_option_labels.3 }}) 
+                <label for="id_licensing_option_3">
+                    <input id="id_licensing_option_3" value="4" name="licensing_option" type="radio">
+                    Licensing Declaration to be Provided Later (implies a willingness to commit to the provisions of a), b), or c) above to all implementers; otherwise, the next option "Unwilling to Commit to the Provisions of a), b), or c) Above" - must be selected)
+                </label>
+            </li>
+            <li>{{ licensing_option_labels.4 }}) 
+                <label for="id_licensing_option_4">
+                <input id="id_licensing_option_4" value="5" name="licensing_option" type="radio">
+                    Unwilling to Commit to the Provisions of a), b), or c) Above
+                </label>
+            </li>
+            <li>{{ licensing_option_labels.5 }}) 
+                <label for="id_licensing_option_5">
+                    <input id="id_licensing_option_5" value="6" name="licensing_option" type="radio">
+                    See text box below for licensing declaration.
+                </label>
+            </li>
+        </ol>
+        <ul>
+            <li>
+                {{ ipr_detail_form.comments.label_tag }}
+                {{ ipr_detail_form.comments }}
+            </li>
+            <li>
+                {{ ipr_detail_form.lic_checkbox }}
+                {{ ipr_detail_form.lic_checkbox.label_tag }}
+            </li>
+        </ul>
+    <!-- </fieldset> -->
+
+    {% with ipr_contact_formset.forms.2 as form %}
+        <!-- <fieldset> -->
+        <h2>VII. Contact Information of Submitter of this Form (if different from IETF Participant in Section III above)</h2>
+        <ul>
+            {{ form.as_ul }}
+        </ul>
+        <!-- </fieldset> -->
+    {% endwith %}
+
+    <!-- <fieldset> -->
+        <h2>{{ ipr_detail_form.fieldsets.other_notes.legend }}</h2>
+        <ul>
+            {% for field in ipr_detail_form.fieldsets.other_notes %}
+                <li>
+                    {{ field.label_tag }}
+                    {{ field }}
+                </li>
+            {% endfor %}
+        </ul>
+    <!-- </fieldset> -->
+
+    {% include "includes/buttons_submit.html" %}
+    
+</form>
+</div> <!-- module -->
+
+{% endblock %}

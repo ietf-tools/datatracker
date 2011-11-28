@@ -1,0 +1,30 @@
+{% extends "base_site.html" %}
+
+{% block title %}Meetings - Add{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/jquery-1.3.2.min.js"></script>
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../">Meetings</a>
+  &raquo; Add
+{% endblock %}
+
+{% block content %}
+
+<noscript class="errornote"> You have javascript disabled.  Javascript is required for this application.</noscript>
+
+<div  class="module">
+  <h2>Proceedings - Add</h2>
+  <form id="proceedings-add-form" enctype="multipart/form-data" action="" method="post">
+  <table id="proceedings-add-table">
+    {{ form.as_table }}
+  </table>
+  {% include "includes/buttons_save_cancel.html"%}
+  </form>
+</div> <!-- module -->
+
+{% endblock %}
+

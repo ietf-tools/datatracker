@@ -1,0 +1,38 @@
+{% extends "base_site.html" %}
+
+{% block title %}Sessions{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Sessions</a>
+  &raquo; Session Status 
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Sessions - Status</h2>
+    <p>Enter the message that you would like displayed to the WG Chair when this tool is locked.</p>
+    <form action="" method="post">
+      <table>
+      {{ form.as_table }}
+      </table>
+      <div class="button-group">
+      <ul>
+        {% if is_locked %}
+        <li><button type="submit" name="submit" value="Unlock">Unlock</button></li>
+        {% else %}
+        <li><button type="submit" name="submit" value="Lock">Lock</button></li>
+        {% endif %}
+        <li><button type="submit" name="submit" value="Done">Done</button></li>
+      </ul>
+      </div> <!-- button-group -->
+
+    </form>
+
+</div> <!-- module -->
+
+{% endblock %}

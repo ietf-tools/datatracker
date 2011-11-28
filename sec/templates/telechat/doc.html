@@ -1,0 +1,46 @@
+{% extends "telechat/base_telechat.html" %}
+
+{% block subsection %}
+<div id="telechat_main">
+<a href="./previous/"><< Previous</a>&nbsp;&nbsp;<a href="./next/">Next >></a><br />
+{{ document }} ({{ document.intended_std_level }})
+<br />Token: {{ document.ad.name }}
+<br />
+<form action="" method="post">
+{{ formset.management_form }}
+<table id="telechat-positions-table">
+<tr><th>Area Director</th><th>Yes</th><th>No Objections</th><th>Discuss</th><th>Abstain</th><th>Recuse</th></tr>
+{% for form in formset.forms %}
+<tr><td>{{ form.initial.name }}{{ form.name }}{{ form.id }}</td>
+{% with form.position as field %}
+{% for choice in field.field.choices %}
+<td><input type="radio" {% ifequal form.initial.position choice.0 %}checked="checked" {% endifequal %}id="id_{{ field.html_name }}_{{ forloop.counter0 }}" value="{{ choice.0 }}" name="{{ field.html_name }}" /></td>
+{% endfor %}
+{% endwith %}
+</tr>
+{% endfor %}
+</tr>
+</table>
+<button type="submit" name="submit" value="update">Update</button>
+</form>
+<form action="" method="post">
+<ul>
+  <li><label for="id_state_0"><input type="radio" id="id_state_0" value="remains" name="state" /> Remains under discussion by the IESG</label></li>
+  <ul>
+    <li>{{ state_form.iesg_state }}{{ state_form.tag }}</li>
+    <li>{{ state_form.iana_note.label }}{{ state_form.iana_note }}</li>
+  </ul>
+  <li><label for="id_state_1"><input type="radio" id="id_state_1" value="approved" name="state" /> Has been approved by the IESG</label></li>
+  <li><label for="id_state_2"><input type="radio" id="id_state_2" value="note" name="state" /> Needs note to be drafted by {{ state_form.ad }}</label></li>
+    <ul>
+      <li>{{ state_form.other_note.label }}{{ state_form.other_note }}</li>
+    </ul>  
+</ul>
+<button type="submit" name="submit" value="update">Update</button>
+</form>
+<h2>Ballot Writeup</h2>
+<pre>
+{{ writeup }}
+</pre>
+</div>
+{% endblock %}

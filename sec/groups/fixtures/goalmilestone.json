@@ -1,0 +1,14 @@
+[
+    {
+        "pk": 9839, 
+        "model": "groups.goalmilestone", 
+        "fields": {
+            "done_date": "2009-05-30", 
+            "description": "Working Group Last Call for problem statement", 
+            "expected_due_date": "2009-04-30", 
+            "last_modified_date": "2010-03-25", 
+            "done": "Done", 
+            "group_acronym": 1744
+        }
+    }
+]

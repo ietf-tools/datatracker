@@ -1,0 +1,14 @@
+<div class="inline-group">
+  <h2>Additional Web Pages</h2>
+  {{ awp_formset.management_form }}
+  {{ awp_formset.non_form_errors }}
+
+  {% for form in awp_formset.forms %}
+  <div class="inline-related{% if forloop.last %} last-related{% endif %}">
+    <h3><b>Web Page:</b>&nbsp; #{{ forloop.counter }}</h3>
+    <table>
+      {{ form.as_table }}
+    </table>
+  </div> <!-- iniline-related -->
+  {% endfor %}
+</div> <!-- inline-group -->

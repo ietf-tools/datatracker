@@ -1,0 +1,48 @@
+{% extends "base_site.html" %}
+
+{% block title %}Proceedings - Status{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../../">Proceedings</a>
+  &raquo; <a href="../">{{ meeting.meeting_num }}</a>
+  &raquo; Status
+{% endblock %}
+
+{% block content %}
+
+
+<ul class="errorlist"><li>Changing one of the status below will result in changing the status of Proceedings {{ meeting.meeting_num }}. </li></ul>
+
+<div class="module">
+    <h2>IETF  {{ meeting.meeting_num }}</h2>
+       <table class="center">
+        <form action="modify/" method="post">
+         <tr>   
+            <input type="hidden" name="frozen" value="{{ proceeding.frozen }}" />
+                  {% if not proceeding.frozen %}
+		         <tr>
+ 			     <td>Active Proceeding</td> 
+			     <td><input type="submit" name="submit" value="Freeze" /></td>
+		  {% endif %}
+                  {% if proceeding.frozen %}
+                         <tr>    
+		             <td>Frozen Proceeding</td>
+                             <td><input type="submit" name="submit" value="Activate" /></td>
+                  {% endif %}
+                         </tr>
+        </form>
+       </table>
+            
+        <div class="button-group">
+          <ul>
+             <li><button onclick="history.go(-1);return true">Back</button></li>
+          </ul>
+        </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}
+

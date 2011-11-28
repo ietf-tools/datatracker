@@ -1,0 +1,66 @@
+{% extends "base_site.html" %}
+
+{% block title %}Rolodex - Edit{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/dynamic_inlines.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Rolodex</a>
+  &raquo; <a href="../">{{ person }}</a>
+  &raquo; Edit
+{% endblock %}
+
+{% block content %}
+<form enctype="multipart/form-data" action="" method="post" id="personororginfo-form">
+<div class="module">
+    <h2>Name</h2>
+    <table id="rolodex-person-table" class="full-width">
+      {{ person_form.as_table }}
+    </table>
+</div> <!-- module --> 
+
+<div class="inline-group">
+    <div class="tabular inline-related{% if forloop.last %} last-related{% endif %}">
+	<fieldset class="module aligned ">
+	<h2>Email Addresses</h2>
+        {{ email_formset.management_form }}
+        {{ email_formset.non_form_errors }}
+	<table>
+            <thead>
+		<tr>
+		{% for field in email_formset.forms.0 %}
+		     {% if not field.is_hidden %}
+			  <th>{{ field.label }}</th>
+		     {% endif %}
+		{% endfor %}
+		</tr>
+            </thead>
+            <tbody>
+	     {% for form in email_formset.forms %}
+                  {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+		  <tr class="{% cycle row1,row2 %}">
+		  {# Include the hidden fields in the form #}
+		  {% for hidden in form.hidden_fields %}
+		    {{ hidden }}
+		  {% endfor %}
+		  {% for field in form.visible_fields %}
+		    <td>
+		    {{ field.errors }}
+		    {{ field }}
+		    </td>
+		  {% endfor %}
+		  </tr>
+	     {% endfor %}
+            </tbody>
+	</table>
+	</fieldset>
+    </div> <!-- tabular inline-related last_related -->
+</div> <!-- inline-group -->
+
+
+{% include "includes/buttons_save_cancel.html" %}
+
+</form>
+{% endblock %}

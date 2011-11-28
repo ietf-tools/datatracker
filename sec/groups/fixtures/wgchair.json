@@ -1,0 +1,10 @@
+[
+    {
+        "pk": 4405, 
+        "model": "groups.wgchair", 
+        "fields": {
+            "person": 104557, 
+            "group_acronym": 1744
+        }
+    }
+]

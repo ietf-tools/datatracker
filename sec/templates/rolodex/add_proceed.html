@@ -1,0 +1,26 @@
+{% extends "base_site.html" %}
+
+{% block title %}Rolodex - Add{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Rolodex</a>
+  &raquo; Add
+{% endblock %}
+
+{% block content %}
+<h1>Adding {{ post_data.name }}</h1>
+
+<form action="" method="post">
+<div class="module">
+<h2>Email</h2>
+	<table>
+	 {{ email_form.as_table }}
+	</table>
+</div> <!-- module -->
+
+
+{% include "includes/buttons_submit.html" %}
+
+</form>
+
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base_site.html" %}
+
+{% block title %}Meetings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../../">Meetings</a>
+  &raquo; <a href="../">{{ meeting.number }}</a>
+  &raquo; Schedule Sessions
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>IETF {{ meeting.number }} - Schedule Sessions</h2>
+      
+      <div class="inline-related">
+        <table>
+        <form class="internal-form" action="" method="post">
+          <tr><th><label for="id_group">Working Groups</label></th><td>{{ group_form.group }}&nbsp;<input type="submit" name="submit" value="Select" /></td></tr>
+        </form>
+        <form action="" method="post">
+          <tr><th><label for="id_group">Tutorials</label></th><td>{{ tutorial_form.group }}&nbsp;<input type="submit" name="submit" value="Select" /><br>
+          <a href="{% url meetings_add_tutorial meeting_id=meeting.number %}">Add New Tutorial / Saturday Session</a></td></tr>
+        </form>
+        <form action="" method="post">
+          <tr><th><label for="id_group">BOFs</label></th><td>{{ bof_form.group }}&nbsp;<input type="submit" name="submit" value="Select" /></td></tr>
+        </form>
+        <form action="" method="post">
+          <tr><th><label for="id_group">IRTF</label></th><td>{{ irtf_form.group }}&nbsp;<input type="submit" name="submit" value="Select" /></td></tr>
+        </form>
+        </table>
+        
+        <p><a href="https://datatracker.ietf.org/meeting/{{ meeting.number }}/agenda.html">View Agenda</a></p>
+        
+      <div class="button-group">
+       <ul>
+         <li><button onclick="window.location='{% url meetings_rooms meeting_id=meeting.number %}'">Rooms and Times</button></li>
+         <li><button onclick="window.location='../'">Back</button></li>
+        </ul>
+      </div> <!-- button-group -->
+      
+      </div><!-- inline-related-->
+      
+      <div class="inline-related">
+      <h2>Scheduled Sessions</h2>
+        <ul>
+          {% for session in scheduled_sessions %}
+            <li><a href="{% url meetings_edit_session session_id=session.id %}">{{ session.group }}</a></li>
+          {% endfor %}
+        </ul>
+      </div><!-- inline-related-->
+
+     
+</div> <!-- module -->
+
+{% endblock %}
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}
+IPR Administrate Page
+{% endblock %}
+
+{% block extrahead %}
+    <link rel="stylesheet" href="/css/ipr.css" type="text/css" media="screen" charset="utf-8" />
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; IPR Admin
+{% endblock %}
+
+{% block content %}
+<center><h2>IPR Admin Page</h2></center><br>
+<div class="module">
+<div class="button-group">
+<ul>
+<li><button onclick="window.location='{% url ipr_admin_create %}'">Create new IPR</button></li>
+<li><button onclick="window.location='https://datatracker.ietf.org/public/ipr_disclosure.cgi'">IPR Disclosure Page</button></li>
+</ul>
+</div>
+
+<h2>Current List in the Queue</h2>
+<table>
+{% for ipr in queue_ipr %}
+<tr class="{% cycle 'row1' 'row2' %}">
+<td><a href="{% url ipr_admin_detail ipr.ipr_id %}">{{ipr.title }}</a></td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>Current Active IPR List</h2><br>
+<h3>Generic IPR</h3>
+<table>
+{% for ipr in generic_ipr %}
+  <tr class="{% cycle 'row1' 'row2' %}">
+  <td><a href="{% url ipr_admin_update ipr.ipr_id %}">{{ipr.title }}</a>
+  {% if ipr.legacy_title_1 %}
+    <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <a href="{{ipr.legacy_url_1}}">{{ipr.legacy_title_1}},</a>
+  {% endif %}
+  {% if ipr.legacy_title_2 %}
+    <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <a href="{{ipr.legacy_url_2}}">{{ipr.legacy_title_2}}</a>
+  {% endif %}
+  </td>
+{% endfor %}
+</table>
+
+<br><br>
+<hr>
+<h3>Third Party Notification</h3>
+<table>
+{% for ipr in third_party_notifications %}
+  <tr class="{% cycle 'row1' 'row2' %}">
+  <td><a href="{% url ipr_admin_update ipr.ipr_id %}">{{ipr.title }}</a>
+  {% if ipr.legacy_title_1 %}
+    <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <a href="{{ipr.legacy_url_1}}">{{ipr.legacy_title_1}},</a>
+  {% endif %}
+  {% if ipr.legacy_title_2 %}
+    <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <a href="{{ipr.legacy_url_2}}">{{ipr.legacy_title_2}}</a>
+  {% endif %}
+  </td>
+{% endfor %}
+</table>
+
+<br><br>
+  <hr>
+  <h3>Specific IPR</h3>
+  <table>
+  {% for ipr in specific_ipr %}
+    <tr class="{% cycle 'row1' 'row2' %}">
+    <td><a href="{% url ipr_admin_update ipr.ipr_id %}">{{ipr.title }}</a>
+    {% if ipr.legacy_title_1 %}
+      <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+      <a href="{{ipr.legacy_url_1}}">{{ipr.legacy_title_1}},</a>
+    {% endif %}
+    {% if ipr.legacy_title_2 %}
+      <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+      <a href="{{ipr.legacy_url_2}}">{{ipr.legacy_title_2}}</a>
+    {% endif %}
+    </td>
+  {% endfor %}
+  </table>
+  
+  <br><br>
+    <hr>
+      <center><h2>IPR Removed by IPR Admin list</h2></center><br>
+        <table>
+        {% for ipr in admin_removed_ipr %}
+          <tr class="{% cycle 'row1' 'row2' %}">
+          <td><a href="{% url ipr_admin_update ipr.ipr_id %}">{{ipr.title }}</a>
+          {% if ipr.legacy_title_1 %}
+            <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+            <a href="{{ipr.legacy_url_1}}">{{ipr.legacy_title_1}},</a>
+          {% endif %}
+          {% if ipr.legacy_title_2 %}
+            <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+            <a href="{{ipr.legacy_url_2}}">{{ipr.legacy_title_2}}</a>
+          {% endif %}
+          </td>
+          {% endfor %}
+        </table>
+   <br><br>
+     <hr>
+       <center><h2>IPR Removed by Request list</h2></center><br>
+         <table>
+         {% for ipr in request_removed_ipr %}
+           <tr class="{% cycle 'row1' 'row2' %}">
+           <td><a href="{% url ipr_admin_update ipr.ipr_id %}">{{ipr.title }}</a>
+           {% if ipr.legacy_title_1 %}
+             <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+             <a href="{{ipr.legacy_url_1}}">{{ipr.legacy_title_1}},</a>
+           {% endif %}
+           {% if ipr.legacy_title_2 %}
+             <br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+             <a href="{{ipr.legacy_url_2}}">{{ipr.legacy_title_2}}</a>
+           {% endif %}
+           </td>
+         {% endfor %}
+       </table>
+  <hr>
+  <br><br>
+</div> <!-- module -->
+
+
+{% endblock %}

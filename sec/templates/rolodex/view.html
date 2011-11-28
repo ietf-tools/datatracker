@@ -1,0 +1,80 @@
+{% extends "base_site.html" %}
+
+{% block title %}Rolodex - View{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Rolodex</a>
+  &raquo; {{ person.name }} 
+{% endblock %}
+
+{% block content %}
+<div id="rolodex-view-container" class="module">
+  <h2>
+    {{ person.name }} ({{ person.id }})
+  </h2>
+  
+  <table id="view-table">
+  <tr><td class="border-right">
+  {% if person.address %}
+  <table id="view-address-table" class="full-width">
+  <thead><th>Address</th></thead>
+    <tr><td><pre>{{ person.address }}</pre></tr></td>
+  </table>
+  {% else %}
+  <table id="view-address-table" class="full-width">
+    <thead><th colspan="2">Address</th></thead>
+  </table>
+  {% endif %}
+  </td><td>
+  <!--
+  <table id="view-phone-table" class="full-width">
+  <thead><th colspan="3">Phone Numbers</th></thead>
+    {% for number in numbers %}
+      <tr><td>{{ number.phone_type }}:</td><td>{{ number.phone_number }}</td><td>{{ number.phone_comment }}</td></tr>
+    {% endfor %}
+  </table>
+  -->
+  <table id="view-email-table" class="full-width">
+  <thead><th colspan="3">Email</th></thead>
+    {% for email in person.emails %}
+      <tr><td>{{ email.address }}</td></tr>
+    {% endfor %}
+  </table>
+  </td></tr></table>
+
+  <div class="inline-related">
+    <h3><b>Roles</b></h3>
+    <p>
+      <table>
+      {% for role in person.role_set.all %}
+        <tr>
+            <td>{{ role.name }} </td>
+            <td>
+              {% ifequal role.group.type.slug "wg" %}
+                <a href="{% url groups_view name=role.group.acronym %}">{{ role.group }}</a>
+              {% else %}
+                {% ifequal role.group.type.slug "area" %}
+                  <a href="{% url areas_view name=role.group.acronym %}">{{ role.group }}</a>
+                {% else %}
+                  {{ role.group }}
+                {% endifequal %}
+              {% endifequal %}
+            </td>
+        </tr>
+      {% endfor %}
+      </table>
+  </div> <!-- iniline-related -->
+
+<div class="button-group">
+  <ul>
+    <li><button onclick="window.location='../'">Search</button></li>
+    <li><button onclick="window.location='edit/'">Edit</button></li>
+    {% comment %} 
+    Removed per Glen
+    <li><button onclick="window.location='../../delete/{{ person.person_or_org_tag }}'">Delete</button></li>
+    {% endcomment %} 
+  </ul>
+</div> <!-- view-buttons -->
+
+</div> <!-- view-container -->
+{% endblock %}

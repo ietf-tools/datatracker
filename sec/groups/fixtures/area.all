@@ -1,0 +1,275 @@
+[
+    {
+        "pk": 934, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2010-03-29", 
+            "extra_email_addresses": "chris.newman@sun.com", 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "1983-09-06"
+        }
+    }, 
+    {
+        "pk": 1008, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2008-02-07", 
+            "extra_email_addresses": null, 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "2002-11-17"
+        }
+    }, 
+    {
+        "pk": 1052, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2003-09-26", 
+            "extra_email_addresses": null, 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "1983-09-06"
+        }
+    }, 
+    {
+        "pk": 1092, 
+        "model": "core.area", 
+        "fields": {
+            "status": 3, 
+            "last_modified_date": "1997-07-29", 
+            "extra_email_addresses": null, 
+            "comments": "This is an area with a specific charter.  When IPng is 'over', this area will conclude.", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": "1997-01-01", 
+            "start_date": "1993-09-07"
+        }
+    }, 
+    {
+        "pk": 1157, 
+        "model": "core.area", 
+        "fields": {
+            "status": 3, 
+            "last_modified_date": "1997-07-29", 
+            "extra_email_addresses": null, 
+            "comments": " ", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": "1997-03-01", 
+            "start_date": "1983-09-06"
+        }
+    }, 
+    {
+        "pk": 1179, 
+        "model": "core.area", 
+        "fields": {
+            "status": 3, 
+            "last_modified_date": "2002-10-10", 
+            "extra_email_addresses": null, 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": "2002-10-10", 
+            "start_date": "1983-09-06"
+        }
+    }, 
+    {
+        "pk": 1190, 
+        "model": "core.area", 
+        "fields": {
+            "status": 3, 
+            "last_modified_date": "1997-07-29", 
+            "extra_email_addresses": null, 
+            "comments": " ", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": "1997-04-01", 
+            "start_date": "1986-01-01"
+        }
+    }, 
+    {
+        "pk": 1193, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2008-02-07", 
+            "extra_email_addresses": "rbonica@juniper.net", 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "1983-09-06"
+        }
+    }, 
+    {
+        "pk": 1199, 
+        "model": "core.area", 
+        "fields": {
+            "status": 3, 
+            "last_modified_date": "1997-07-29", 
+            "extra_email_addresses": null, 
+            "comments": " ", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": "1992-01-01", 
+            "start_date": "1986-01-01"
+        }
+    }, 
+    {
+        "pk": 1249, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2002-03-26", 
+            "extra_email_addresses": "dward@cisco.com", 
+            "comments": " ", 
+            "area_coordinator_tag": 106471, 
+            "concluded_date": null, 
+            "start_date": "1983-09-06"
+        }
+    }, 
+    {
+        "pk": 1260, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2004-11-11", 
+            "extra_email_addresses": "tim.polk@nist.gov", 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "1983-09-06"
+        }
+    }, 
+    {
+        "pk": 1264, 
+        "model": "core.area", 
+        "fields": {
+            "status": 3, 
+            "last_modified_date": "1997-07-29", 
+            "extra_email_addresses": null, 
+            "comments": "No longer exists", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": "1997-01-01", 
+            "start_date": "1983-09-06"
+        }
+    }, 
+    {
+        "pk": 1324, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2005-07-05", 
+            "extra_email_addresses": "ietf.tsvchairs@netlab.nec.de", 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "1983-09-06"
+        }
+    }, 
+    {
+        "pk": 1346, 
+        "model": "core.area", 
+        "fields": {
+            "status": 3, 
+            "last_modified_date": "2002-04-05", 
+            "extra_email_addresses": null, 
+            "comments": " ", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": "2002-03-22", 
+            "start_date": "1983-09-06"
+        }
+    }, 
+    {
+        "pk": 1541, 
+        "model": "core.area", 
+        "fields": {
+            "status": 2, 
+            "last_modified_date": "2005-01-31", 
+            "extra_email_addresses": null, 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": "2005-01-31", 
+            "start_date": "2001-03-20"
+        }
+    }, 
+    {
+        "pk": 1683, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2005-12-22", 
+            "extra_email_addresses": null, 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "2005-10-06"
+        }
+    }, 
+    {
+        "pk": 1808, 
+        "model": "core.area", 
+        "fields": {
+            "status": 2, 
+            "last_modified_date": "2010-08-03", 
+            "extra_email_addresses": null, 
+            "comments": "some comments here\r\n", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": "2010-11-08", 
+            "start_date": "2010-12-20"
+        }
+    }, 
+    {
+        "pk": 1809, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2010-08-03", 
+            "extra_email_addresses": null, 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "2010-11-13"
+        }
+    }, 
+    {
+        "pk": 1810, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2010-08-03", 
+            "extra_email_addresses": null, 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "2010-11-13"
+        }
+    }, 
+    {
+        "pk": 1812, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2010-08-04", 
+            "extra_email_addresses": null, 
+            "comments": "This is comment\r\n\r\n\r\n", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "2010-12-20"
+        }
+    }, 
+    {
+        "pk": 1814, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2010-08-09", 
+            "extra_email_addresses": null, 
+            "comments": "\r\n", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "2010-12-20"
+        }
+    }
+]

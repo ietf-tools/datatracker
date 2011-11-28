@@ -1,0 +1,28 @@
+[
+    {
+        "pk": 1249, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2002-03-26", 
+            "extra_email_addresses": "dward@cisco.com", 
+            "comments": " ", 
+            "area_coordinator_tag": 106471, 
+            "concluded_date": null, 
+            "start_date": "1983-09-06"
+        }
+    },
+    {
+        "pk": 934, 
+        "model": "core.area", 
+        "fields": {
+            "status": 1, 
+            "last_modified_date": "2010-03-29", 
+            "extra_email_addresses": "chris.newman@sun.com", 
+            "comments": "", 
+            "area_coordinator_tag": 0, 
+            "concluded_date": null, 
+            "start_date": "1983-09-06"
+        }
+    } 
+]

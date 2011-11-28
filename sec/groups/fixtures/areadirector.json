@@ -1,0 +1,10 @@
+[
+    {
+        "pk": 139, 
+        "model": "core.areadirector", 
+        "fields": {
+            "person": 105907, 
+            "area": 934
+        }
+    }
+]

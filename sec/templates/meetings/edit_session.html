@@ -1,0 +1,78 @@
+{% extends "base_site.html" %}
+
+{% block title %}Meetings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../../">Meetings</a>
+  &raquo; <a href="{% url meetings_schedule_sessions meeting_id=session.meeting.meeting_num %}">{{ session.meeting }}</a>
+  &raquo; {{ session.session_id }}
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>Requested Information</h2>
+    
+    {% if show_request %}
+       {% include "includes/sessions_request_view.html" %}
+    {% endif %}
+    
+    <div class="inline-group">
+    <h2>Sessions</h2>
+
+        <form method="post" action="">
+        {{ formset.management_form }}
+          {% for form in formset.forms %}
+            <div class="inline-related{% if forloop.last %} last-related{% endif %}">
+              <h3><b>Session:</b>&nbsp; #{{ forloop.counter }}</h3>
+              <table>
+                {{ form }}
+              </table>
+            </div> <!-- inline-related -->
+          {% endfor %}
+    </div> <!-- inline-group -->
+    
+    <table>
+    {{ extra_form }}
+    </table>
+    
+      <div class="button-group">
+       <ul>
+         <li><button type="submit" name="submit" value="Save">Save</button></li>
+         <li><button type="button" onclick="if (window.confirm('This group will be permanently removed from the agenda and scheduling tool')) { window.location='{% url meetings_remove_session session_id=session.session_id%}' };">Remove this group from agenda</button></li>
+         <li><button type="button" onclick="window.location='{% url meetings_schedule_sessions meeting_id=session.meeting.meeting_num %}'">Back</button></li>
+        </ul>
+      </div> <!-- button-group -->
+      
+      </form>
+      
+</div> <!-- module -->
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

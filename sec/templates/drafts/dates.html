@@ -1,0 +1,35 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - Submission Dates{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Drafts</a>
+  &raquo; Submission Dates
+{% endblock %}
+
+{% block content %}
+
+<div class="module draft-container">
+    <h2>Draft - Submission Dates</h2>
+    <form enctype="multipart/form-data" action="" method="post">
+      {{ formset.management_form }}
+      
+      <table class="full-width">
+      {% for form in formset.forms %}
+        <tr>
+          <th>{{ form.instance.description }}</th><td>{{ form.date }}</td><td>{{ form.id }}</td>
+        </tr>
+      {% endfor %}
+      <tr><th>Reset to next meeting defaults</th><td><button type="submit" name="submit" value="Reset">Reset</button></td></tr>  
+      </table>
+      
+      {% include "includes/buttons_save_cancel.html" %}
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}
