@@ -78,36 +78,6 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="legacy" model="name.docstreamname">
-        <field type="CharField" name="name">Legacy</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="ietf" model="name.docstreamname">
-        <field type="CharField" name="name">IETF</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="iab" model="name.docstreamname">
-        <field type="CharField" name="name">IAB</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="irtf" model="name.docstreamname">
-        <field type="CharField" name="name">IRTF</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="ise" model="name.docstreamname">
-        <field type="CharField" name="name">ISE</field>
-        <field type="TextField" name="desc">Independent submission editor stream</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
     <object pk="rfc-rev" model="name.doctagname">
         <field type="CharField" name="name">Review by RFC Editor</field>
         <field type="TextField" name="desc"></field>
@@ -636,6 +606,36 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="legacy" model="name.streamname">
+        <field type="CharField" name="name">Legacy</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="ietf" model="name.streamname">
+        <field type="CharField" name="name">IETF</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="ise" model="name.streamname">
+        <field type="CharField" name="name">ISE</field>
+        <field type="TextField" name="desc">Independent submission editor stream</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="iab" model="name.streamname">
+        <field type="CharField" name="name">IAB</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="irtf" model="name.streamname">
+        <field type="CharField" name="name">IRTF</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="session" model="name.timeslottypename">
         <field type="CharField" name="name">Session</field>
         <field type="TextField" name="desc"></field>
@@ -666,17 +666,23 @@
         <field type="BooleanField" name="used">1</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="draft-stream-irtf" model="doc.statetype">
-        <field type="CharField" name="label">RG state</field>
+    <object pk="draft" model="doc.statetype">
+        <field type="CharField" name="label">State</field>
     </object>
     <object pk="draft-iesg" model="doc.statetype">
         <field type="CharField" name="label">IESG state</field>
     </object>
-    <object pk="draft" model="doc.statetype">
-        <field type="CharField" name="label">State</field>
+    <object pk="draft-iana" model="doc.statetype">
+        <field type="CharField" name="label">IANA state</field>
+    </object>
+    <object pk="draft-rfceditor" model="doc.statetype">
+        <field type="CharField" name="label">RFC Editor state</field>
     </object>
     <object pk="draft-stream-ietf" model="doc.statetype">
         <field type="CharField" name="label">WG state</field>
+    </object>
+    <object pk="draft-stream-irtf" model="doc.statetype">
+        <field type="CharField" name="label">RG state</field>
     </object>
     <object pk="draft-stream-ise" model="doc.statetype">
         <field type="CharField" name="label">ISE state</field>
@@ -684,13 +690,37 @@
     <object pk="draft-stream-iab" model="doc.statetype">
         <field type="CharField" name="label">IAB state</field>
     </object>
-    <object pk="draft-iana" model="doc.statetype">
-        <field type="CharField" name="label">IANA state</field>
+    <object pk="slides" model="doc.statetype">
+        <field type="CharField" name="label">State</field>
     </object>
-    <object pk="draft-rfc" model="doc.statetype">
-        <field type="CharField" name="label">RFC state</field>
+    <object pk="minutes" model="doc.statetype">
+        <field type="CharField" name="label">State</field>
     </object>
-    <object pk="69" model="doc.state">
+    <object pk="agenda" model="doc.statetype">
+        <field type="CharField" name="label">State</field>
+    </object>
+    <object pk="liai-att" model="doc.statetype">
+        <field type="CharField" name="label">State</field>
+    </object>
+    <object pk="81" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">agenda</field>
+        <field type="SlugField" name="slug">active</field>
+        <field type="CharField" name="name">Active</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc"></field>
+        <field type="IntegerField" name="order">1</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="82" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">agenda</field>
+        <field type="SlugField" name="slug">deleted</field>
+        <field type="CharField" name="name">Deleted</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc"></field>
+        <field type="IntegerField" name="order">2</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="1" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">active</field>
         <field type="CharField" name="name">Active</field>
@@ -699,7 +729,7 @@
         <field type="IntegerField" name="order">1</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="70" model="doc.state">
+    <object pk="2" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">expired</field>
         <field type="CharField" name="name">Expired</field>
@@ -708,7 +738,7 @@
         <field type="IntegerField" name="order">2</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="71" model="doc.state">
+    <object pk="3" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">rfc</field>
         <field type="CharField" name="name">RFC</field>
@@ -717,7 +747,7 @@
         <field type="IntegerField" name="order">3</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="72" model="doc.state">
+    <object pk="4" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">repl</field>
         <field type="CharField" name="name">Replaced</field>
@@ -726,7 +756,7 @@
         <field type="IntegerField" name="order">4</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="73" model="doc.state">
+    <object pk="5" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">auth-rm</field>
         <field type="CharField" name="name">Withdrawn by Submitter</field>
@@ -735,7 +765,7 @@
         <field type="IntegerField" name="order">5</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="74" model="doc.state">
+    <object pk="6" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">ietf-rm</field>
         <field type="CharField" name="name">Withdrawn by IETF</field>
@@ -744,34 +774,34 @@
         <field type="IntegerField" name="order">6</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="7" model="doc.state">
+    <object pk="16" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">pub-req</field>
         <field type="CharField" name="name">Publication Requested</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">A formal request has been made to advance/publish the document, following the procedures in Section 7.5 of RFC 2418. The request could be from a WG chair, from an individual through the RFC Editor, etc. (The Secretariat (iesg-secretary@ietf.org) is copied on these requests to ensure that the request makes it into the ID tracker.) A document in this state has not (yet) been reviewed by an AD nor has any official action been taken on it yet (other than to note that its publication has been requested.</field>
         <field type="IntegerField" name="order">10</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="22"></object><object pk="23"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="11"></object><object pk="8"></object></field>
     </object>
-    <object pk="8" model="doc.state">
+    <object pk="13" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">ad-eval</field>
         <field type="CharField" name="name">AD Evaluation</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">A specific AD (e.g., the Area Advisor for the WG) has begun reviewing the document to verify that it is ready for advancement. The shepherding AD is responsible for doing any necessary review before starting an IETF Last Call or sending the document directly to the IESG as a whole.</field>
         <field type="IntegerField" name="order">11</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="9"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="21"></object></field>
     </object>
-    <object pk="9" model="doc.state">
+    <object pk="21" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">review-e</field>
         <field type="CharField" name="name">Expert Review</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">An AD sometimes asks for an external review by an outside party as part of evaluating whether a document is ready for advancement. MIBs, for example, are reviewed by the "MIB doctors". Other types of reviews may also be requested (e.g., security, operations impact, etc.). Documents stay in this state until the review is complete and possibly until the issues raised in the review are addressed. See the "note" field for specific details on the nature of the review.</field>
         <field type="IntegerField" name="order">12</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="8"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="13"></object></field>
     </object>
-    <object pk="10" model="doc.state">
+    <object pk="14" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">lc-req</field>
         <field type="CharField" name="name">Last Call Requested</field>
@@ -780,7 +810,7 @@
         <field type="IntegerField" name="order">15</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="11" model="doc.state">
+    <object pk="15" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">lc</field>
         <field type="CharField" name="name">In Last Call</field>
@@ -789,7 +819,7 @@
         <field type="IntegerField" name="order">16</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="12" model="doc.state">
+    <object pk="19" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">writeupw</field>
         <field type="CharField" name="name">Waiting for Writeup</field>
@@ -798,7 +828,7 @@
         <field type="IntegerField" name="order">18</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="13" model="doc.state">
+    <object pk="20" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">goaheadw</field>
         <field type="CharField" name="name">Waiting for AD Go-Ahead</field>
@@ -807,43 +837,43 @@
         <field type="IntegerField" name="order">19</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="14" model="doc.state">
+    <object pk="12" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">iesg-eva</field>
         <field type="CharField" name="name">IESG Evaluation</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">The document is now (finally!) being formally reviewed by the entire IESG. Documents are discussed in email or during a bi-weekly IESG telechat. In this phase, each AD reviews the document and airs any issues they may have. Unresolvable issues are documented as "discuss" comments that can be forwarded to the authors/WG. See the description of substates for additional details about the current state of the IESG discussion.</field>
         <field type="IntegerField" name="order">20</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="15"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="18"></object></field>
     </object>
-    <object pk="15" model="doc.state">
+    <object pk="18" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">defer</field>
         <field type="CharField" name="name">IESG Evaluation - Defer</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">During a telechat, one or more ADs requested an additional 2 weeks to review the document. A defer is designed to be an exception mechanism, and can only be invoked once, the first time the document comes up for discussion during a telechat.</field>
         <field type="IntegerField" name="order">21</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="14"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="12"></object></field>
     </object>
-    <object pk="16" model="doc.state">
+    <object pk="9" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">approved</field>
         <field type="CharField" name="name">Approved-announcement to be sent</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">The IESG has approved the document for publication, but the Secretariat has not yet sent out on official approval message.</field>
         <field type="IntegerField" name="order">27</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="17"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="10"></object></field>
     </object>
-    <object pk="17" model="doc.state">
+    <object pk="10" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">ann</field>
         <field type="CharField" name="name">Approved-announcement sent</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">The IESG has approved the document for publication, and the Secretariat has sent out the official approval message to the RFC editor.</field>
         <field type="IntegerField" name="order">30</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="16"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="9"></object></field>
     </object>
-    <object pk="18" model="doc.state">
+    <object pk="17" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">rfcqueue</field>
         <field type="CharField" name="name">RFC Ed Queue</field>
@@ -852,7 +882,7 @@
         <field type="IntegerField" name="order">31</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="19" model="doc.state">
+    <object pk="7" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">pub</field>
         <field type="CharField" name="name">RFC Published</field>
@@ -861,7 +891,7 @@
         <field type="IntegerField" name="order">32</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="20" model="doc.state">
+    <object pk="22" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">nopubadw</field>
         <field type="CharField" name="name">DNP-waiting for AD note</field>
@@ -870,7 +900,7 @@
         <field type="IntegerField" name="order">33</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="21" model="doc.state">
+    <object pk="23" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">nopubanw</field>
         <field type="CharField" name="name">DNP-announcement to be sent</field>
@@ -879,44 +909,26 @@
         <field type="IntegerField" name="order">34</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="22" model="doc.state">
+    <object pk="11" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">watching</field>
         <field type="CharField" name="name">AD is watching</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">An AD is aware of the document and has chosen to place the document in a separate state in order to keep a closer eye on it (for whatever reason). Documents in this state are still not being actively tracked in the sense that no formal request has been made to publish or advance the document. The sole difference between this state and "I-D Exists" is that an AD has chosen to put it in a separate state, to make it easier to keep track of (for the AD's own reasons).</field>
         <field type="IntegerField" name="order">42</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="7"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="16"></object></field>
     </object>
-    <object pk="23" model="doc.state">
+    <object pk="8" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">dead</field>
         <field type="CharField" name="name">Dead</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">Document is "dead" and is no longer being tracked. (E.g., it has been replaced by another document with a different name, it has been withdrawn, etc.)</field>
         <field type="IntegerField" name="order">99</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="7"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="16"></object></field>
     </object>
-    <object pk="79" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
-        <field type="SlugField" name="slug">edit</field>
-        <field type="CharField" name="name">EDIT</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="TextField" name="desc">Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing</field>
-        <field type="IntegerField" name="order">0</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
-    </object>
-    <object pk="78" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
-        <field type="SlugField" name="slug">auth48</field>
-        <field type="CharField" name="name">AUTH48</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="TextField" name="desc">Awaiting final author approval</field>
-        <field type="IntegerField" name="order">0</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
-    </object>
-    <object pk="77" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+    <object pk="24" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
         <field type="SlugField" name="slug">auth</field>
         <field type="CharField" name="name">AUTH</field>
         <field type="BooleanField" name="used">1</field>
@@ -924,8 +936,26 @@
         <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="80" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+    <object pk="25" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
+        <field type="SlugField" name="slug">auth48</field>
+        <field type="CharField" name="name">AUTH48</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Awaiting final author approval</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="26" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
+        <field type="SlugField" name="slug">edit</field>
+        <field type="CharField" name="name">EDIT</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc">Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="27" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
         <field type="SlugField" name="slug">iana-crd</field>
         <field type="CharField" name="name">IANA</field>
         <field type="BooleanField" name="used">1</field>
@@ -933,8 +963,8 @@
         <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="81" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+    <object pk="28" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
         <field type="SlugField" name="slug">iesg</field>
         <field type="CharField" name="name">IESG</field>
         <field type="BooleanField" name="used">1</field>
@@ -942,8 +972,8 @@
         <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="82" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+    <object pk="29" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
         <field type="SlugField" name="slug">isr</field>
         <field type="CharField" name="name">ISR</field>
         <field type="BooleanField" name="used">1</field>
@@ -951,8 +981,8 @@
         <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="83" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+    <object pk="30" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
         <field type="SlugField" name="slug">isr-auth</field>
         <field type="CharField" name="name">ISR-AUTH</field>
         <field type="BooleanField" name="used">1</field>
@@ -960,8 +990,8 @@
         <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="84" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+    <object pk="31" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
         <field type="SlugField" name="slug">ref</field>
         <field type="CharField" name="name">REF</field>
         <field type="BooleanField" name="used">1</field>
@@ -969,8 +999,8 @@
         <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="85" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+    <object pk="32" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
         <field type="SlugField" name="slug">rfc-edit</field>
         <field type="CharField" name="name">RFC-EDITOR</field>
         <field type="BooleanField" name="used">1</field>
@@ -978,8 +1008,8 @@
         <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="86" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+    <object pk="33" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
         <field type="SlugField" name="slug">timeout</field>
         <field type="CharField" name="name">TO</field>
         <field type="BooleanField" name="used">1</field>
@@ -987,8 +1017,8 @@
         <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="87" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfc</field>
+    <object pk="34" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
         <field type="SlugField" name="slug">missref</field>
         <field type="CharField" name="name">MISSREF</field>
         <field type="BooleanField" name="used">1</field>
@@ -996,7 +1026,7 @@
         <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="34" model="doc.state">
+    <object pk="45" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-iab</field>
         <field type="SlugField" name="slug">candidat</field>
         <field type="CharField" name="name">Candidate IAB Document</field>
@@ -1005,7 +1035,7 @@
         <field type="IntegerField" name="order">1</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="35" model="doc.state">
+    <object pk="46" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-iab</field>
         <field type="SlugField" name="slug">active</field>
         <field type="CharField" name="name">Active IAB Document</field>
@@ -1014,7 +1044,7 @@
         <field type="IntegerField" name="order">2</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="36" model="doc.state">
+    <object pk="47" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-iab</field>
         <field type="SlugField" name="slug">parked</field>
         <field type="CharField" name="name">Parked IAB Document</field>
@@ -1023,7 +1053,7 @@
         <field type="IntegerField" name="order">3</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="37" model="doc.state">
+    <object pk="48" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-iab</field>
         <field type="SlugField" name="slug">review-i</field>
         <field type="CharField" name="name">IAB Review</field>
@@ -1032,7 +1062,7 @@
         <field type="IntegerField" name="order">4</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="38" model="doc.state">
+    <object pk="49" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-iab</field>
         <field type="SlugField" name="slug">review-c</field>
         <field type="CharField" name="name">Community Review</field>
@@ -1041,7 +1071,7 @@
         <field type="IntegerField" name="order">5</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="39" model="doc.state">
+    <object pk="50" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-iab</field>
         <field type="SlugField" name="slug">approved</field>
         <field type="CharField" name="name">Approved by IAB, To Be Sent to RFC Editor</field>
@@ -1050,7 +1080,7 @@
         <field type="IntegerField" name="order">6</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="40" model="doc.state">
+    <object pk="51" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-iab</field>
         <field type="SlugField" name="slug">diff-org</field>
         <field type="CharField" name="name">Sent to a Different Organization for Publication</field>
@@ -1059,7 +1089,7 @@
         <field type="IntegerField" name="order">7</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="41" model="doc.state">
+    <object pk="52" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-iab</field>
         <field type="SlugField" name="slug">rfc-edit</field>
         <field type="CharField" name="name">Sent to the RFC Editor</field>
@@ -1068,7 +1098,7 @@
         <field type="IntegerField" name="order">8</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="42" model="doc.state">
+    <object pk="53" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-iab</field>
         <field type="SlugField" name="slug">pub</field>
         <field type="CharField" name="name">Published RFC</field>
@@ -1077,7 +1107,7 @@
         <field type="IntegerField" name="order">9</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="43" model="doc.state">
+    <object pk="54" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-iab</field>
         <field type="SlugField" name="slug">dead</field>
         <field type="CharField" name="name">Dead IAB Document</field>
@@ -1086,7 +1116,7 @@
         <field type="IntegerField" name="order">10</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="24" model="doc.state">
+    <object pk="35" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">c-adopt</field>
         <field type="CharField" name="name">Call For Adoption By WG Issued</field>
@@ -1105,7 +1135,7 @@
         <field type="IntegerField" name="order">1</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="25" model="doc.state">
+    <object pk="36" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">adopt-wg</field>
         <field type="CharField" name="name">Adopted by a WG</field>
@@ -1124,7 +1154,7 @@
         <field type="IntegerField" name="order">2</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="26" model="doc.state">
+    <object pk="37" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">info</field>
         <field type="CharField" name="name">Adopted for WG Info Only</field>
@@ -1135,7 +1165,7 @@
         <field type="IntegerField" name="order">3</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="27" model="doc.state">
+    <object pk="38" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">wg-doc</field>
         <field type="CharField" name="name">WG Document</field>
@@ -1150,9 +1180,9 @@
 
  Under normal conditions, it should not be possible for an I-D to be in the "WG Document" state in more than one WG at a time. This said, I-Ds may be transferred from one WG to another with the consent of the WG Chairs and the responsible ADs.</field>
         <field type="IntegerField" name="order">4</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="28"></object><object pk="29"></object><object pk="30"></object><object pk="76"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="39"></object><object pk="40"></object><object pk="41"></object><object pk="43"></object></field>
     </object>
-    <object pk="28" model="doc.state">
+    <object pk="39" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">parked</field>
         <field type="CharField" name="name">Parked WG Document</field>
@@ -1167,9 +1197,9 @@
 
  A "Parked WG Document" that is not expired may be transferred from one WG to another with the consent of the WG Chairs and the responsible ADs.</field>
         <field type="IntegerField" name="order">5</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="27"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="38"></object></field>
     </object>
-    <object pk="29" model="doc.state">
+    <object pk="40" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">dead</field>
         <field type="CharField" name="name">Dead WG Document</field>
@@ -1180,9 +1210,9 @@
 
  Note that an I-D that is declared to be "Dead" in one WG and that is not expired may be transferred to a non-dead state in another WG with the consent of the WG Chairs and the responsible ADs.</field>
         <field type="IntegerField" name="order">6</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="27"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="38"></object></field>
     </object>
-    <object pk="30" model="doc.state">
+    <object pk="41" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">wg-lc</field>
         <field type="CharField" name="name">In WG Last Call</field>
@@ -1199,22 +1229,9 @@
 
  It is possible for one WGLC to lead into another WGLC for the same document. For example, an I-D that completed a WGLC as an "Informational" document may need another WGLC if a decision is taken to convert the I-D into a Standards Track document.</field>
         <field type="IntegerField" name="order">7</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="27"></object><object pk="75"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="38"></object><object pk="42"></object></field>
     </object>
-    <object pk="31" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
-        <field type="SlugField" name="slug">wait-wgc</field>
-        <field type="CharField" name="name">Waiting for WG Chair Go-Ahead</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="TextField" name="desc">&lt;a href="http://tools.ietf.org/html/rfc6174#section-4.2.8" target="_blank"&gt;4.2.8. Waiting for WG Chair Go-Ahead&lt;/a&gt;
-
- A WG Chair may wish to place an I-D that receives a lot of comments during a WGLC into the "Waiting for WG Chair Go-Ahead" state. This state describes an I-D that has undergone a WGLC; however, the Chair is not yet ready to call consensus on the document.
-
- If comments from the WGLC need to be responded to, or a revision to the I-D is needed, the Chair may place an I-D into this state until all of the WGLC comments are adequately addressed and the (possibly revised) document is in the I-D repository.</field>
-        <field type="IntegerField" name="order">8</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
-    </object>
-    <object pk="75" model="doc.state">
+    <object pk="42" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">chair-w</field>
         <field type="CharField" name="name">Waiting for WG Chair Go-Ahead</field>
@@ -1225,24 +1242,9 @@
 
  If comments from the WGLC need to be responded to, or a revision to the I-D is needed, the Chair may place an I-D into this state until all of the WGLC comments are adequately addressed and the (possibly revised) document is in the I-D repository.</field>
         <field type="IntegerField" name="order">8</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="30"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="41"></object></field>
     </object>
-    <object pk="32" model="doc.state">
-        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
-        <field type="SlugField" name="slug">wait-wgw</field>
-        <field type="CharField" name="name">WG Consensus: Waiting for Write-Up</field>
-        <field type="BooleanField" name="used">1</field>
-        <field type="TextField" name="desc">&lt;a href="http://tools.ietf.org/html/rfc6174#section-4.2.9" target="_blank"&gt;4.2.9. WG Consensus: Waiting for Writeup&lt;/a&gt;
-
- A document in the "WG Consensus: Waiting for Writeup" state has essentially completed its development within the working group, and is nearly ready to be sent to the IESG for publication. The last thing to be done is the preparation of a protocol writeup by a Document Shepherd. The IESG requires that a document shepherd writeup be completed before publication of the I-D is requested. The IETF document shepherding process and the role of a WG Document Shepherd is described in RFC 4858 [RFC4858]
-
- A WG Chair may call consensus on an I-D without a formal WGLC and transition an I-D that was in the "WG Document" state directly into this state.
-
- The name of this state includes the words "Waiting for Writeup" because a good document shepherd writeup takes time to prepare.</field>
-        <field type="IntegerField" name="order">9</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
-    </object>
-    <object pk="76" model="doc.state">
+    <object pk="43" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">writeupw</field>
         <field type="CharField" name="name">WG Consensus: Waiting for Write-Up</field>
@@ -1255,9 +1257,9 @@
 
  The name of this state includes the words "Waiting for Writeup" because a good document shepherd writeup takes time to prepare.</field>
         <field type="IntegerField" name="order">9</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="27"></object><object pk="33"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="38"></object><object pk="44"></object></field>
     </object>
-    <object pk="33" model="doc.state">
+    <object pk="44" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ietf</field>
         <field type="SlugField" name="slug">sub-pub</field>
         <field type="CharField" name="name">Submitted to IESG for Publication</field>
@@ -1268,9 +1270,9 @@
 
  An I-D in this state may be under review by the IESG, it may have been approved and be in the RFC Editor's queue, or it may have been published as an RFC. Other possibilities exist too. The document may be "Dead" (in the IESG state machine) or in a "Do Not Publish" state.</field>
         <field type="IntegerField" name="order">10</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="76"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="43"></object></field>
     </object>
-    <object pk="44" model="doc.state">
+    <object pk="55" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">candidat</field>
         <field type="CharField" name="name">Candidate RG Document</field>
@@ -1279,7 +1281,7 @@
         <field type="IntegerField" name="order">1</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="45" model="doc.state">
+    <object pk="56" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">active</field>
         <field type="CharField" name="name">Active RG Document</field>
@@ -1288,7 +1290,7 @@
         <field type="IntegerField" name="order">2</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="46" model="doc.state">
+    <object pk="57" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">parked</field>
         <field type="CharField" name="name">Parked RG Document</field>
@@ -1297,7 +1299,7 @@
         <field type="IntegerField" name="order">3</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="47" model="doc.state">
+    <object pk="58" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">rg-lc</field>
         <field type="CharField" name="name">In RG Last Call</field>
@@ -1306,7 +1308,7 @@
         <field type="IntegerField" name="order">4</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="48" model="doc.state">
+    <object pk="59" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">sheph-w</field>
         <field type="CharField" name="name">Waiting for Document Shepherd</field>
@@ -1315,7 +1317,7 @@
         <field type="IntegerField" name="order">5</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="49" model="doc.state">
+    <object pk="60" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">chair-w</field>
         <field type="CharField" name="name">Waiting for IRTF Chair</field>
@@ -1324,7 +1326,7 @@
         <field type="IntegerField" name="order">6</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="50" model="doc.state">
+    <object pk="61" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">irsg-w</field>
         <field type="CharField" name="name">Awaiting IRSG Reviews</field>
@@ -1333,7 +1335,7 @@
         <field type="IntegerField" name="order">7</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="51" model="doc.state">
+    <object pk="62" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">irsgpoll</field>
         <field type="CharField" name="name">In IRSG Poll</field>
@@ -1342,7 +1344,7 @@
         <field type="IntegerField" name="order">8</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="52" model="doc.state">
+    <object pk="63" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">iesg-rev</field>
         <field type="CharField" name="name">In IESG Review</field>
@@ -1351,7 +1353,7 @@
         <field type="IntegerField" name="order">9</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="53" model="doc.state">
+    <object pk="64" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">rfc-edit</field>
         <field type="CharField" name="name">Sent to the RFC Editor</field>
@@ -1360,7 +1362,7 @@
         <field type="IntegerField" name="order">10</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="54" model="doc.state">
+    <object pk="65" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">pub</field>
         <field type="CharField" name="name">Published RFC</field>
@@ -1369,7 +1371,7 @@
         <field type="IntegerField" name="order">11</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="55" model="doc.state">
+    <object pk="66" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">iesghold</field>
         <field type="CharField" name="name">Document on Hold Based On IESG Request</field>
@@ -1378,7 +1380,7 @@
         <field type="IntegerField" name="order">12</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="68" model="doc.state">
+    <object pk="67" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-irtf</field>
         <field type="SlugField" name="slug">dead</field>
         <field type="CharField" name="name">Dead IRTF Document</field>
@@ -1387,7 +1389,7 @@
         <field type="IntegerField" name="order">13</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="57" model="doc.state">
+    <object pk="68" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ise</field>
         <field type="SlugField" name="slug">receive</field>
         <field type="CharField" name="name">Submission Received</field>
@@ -1396,7 +1398,7 @@
         <field type="IntegerField" name="order">1</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="58" model="doc.state">
+    <object pk="69" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ise</field>
         <field type="SlugField" name="slug">find-rev</field>
         <field type="CharField" name="name">Finding Reviewers</field>
@@ -1405,7 +1407,7 @@
         <field type="IntegerField" name="order">2</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="59" model="doc.state">
+    <object pk="70" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ise</field>
         <field type="SlugField" name="slug">ise-rev</field>
         <field type="CharField" name="name">In ISE Review</field>
@@ -1414,7 +1416,7 @@
         <field type="IntegerField" name="order">3</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="60" model="doc.state">
+    <object pk="71" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ise</field>
         <field type="SlugField" name="slug">need-res</field>
         <field type="CharField" name="name">Response to Review Needed</field>
@@ -1423,7 +1425,7 @@
         <field type="IntegerField" name="order">4</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="61" model="doc.state">
+    <object pk="72" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ise</field>
         <field type="SlugField" name="slug">iesg-rev</field>
         <field type="CharField" name="name">In IESG Review</field>
@@ -1432,7 +1434,7 @@
         <field type="IntegerField" name="order">5</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="62" model="doc.state">
+    <object pk="73" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ise</field>
         <field type="SlugField" name="slug">rfc-edit</field>
         <field type="CharField" name="name">Sent to the RFC Editor</field>
@@ -1441,7 +1443,7 @@
         <field type="IntegerField" name="order">6</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="63" model="doc.state">
+    <object pk="74" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ise</field>
         <field type="SlugField" name="slug">pub</field>
         <field type="CharField" name="name">Published RFC</field>
@@ -1450,7 +1452,7 @@
         <field type="IntegerField" name="order">7</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="64" model="doc.state">
+    <object pk="75" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ise</field>
         <field type="SlugField" name="slug">dead</field>
         <field type="CharField" name="name">No Longer In Independent Submission Stream</field>
@@ -1459,13 +1461,49 @@
         <field type="IntegerField" name="order">8</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
-    <object pk="65" model="doc.state">
+    <object pk="76" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-stream-ise</field>
         <field type="SlugField" name="slug">iesghold</field>
         <field type="CharField" name="name">Document on Hold Based On IESG Request</field>
         <field type="BooleanField" name="used">1</field>
         <field type="TextField" name="desc">The IESG has requested that the document be held pending further review, as specified in RFC 5742, and the ISE has agreed to such a hold.</field>
         <field type="IntegerField" name="order">9</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="79" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">minutes</field>
+        <field type="SlugField" name="slug">active</field>
+        <field type="CharField" name="name">Active</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc"></field>
+        <field type="IntegerField" name="order">1</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="80" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">minutes</field>
+        <field type="SlugField" name="slug">deleted</field>
+        <field type="CharField" name="name">Deleted</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc"></field>
+        <field type="IntegerField" name="order">2</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="77" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">slides</field>
+        <field type="SlugField" name="slug">active</field>
+        <field type="CharField" name="name">Active</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc"></field>
+        <field type="IntegerField" name="order">1</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="78" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">slides</field>
+        <field type="SlugField" name="slug">deleted</field>
+        <field type="CharField" name="name">Deleted</field>
+        <field type="BooleanField" name="used">1</field>
+        <field type="TextField" name="desc"></field>
+        <field type="IntegerField" name="order">2</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
 </django-objects>
