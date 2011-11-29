@@ -92,14 +92,21 @@ class ChangeStateTestCase(django.test.TestCase):
         # change state
         events_before = draft.docevent_set.count()
         mailbox_before = len(outbox)
+        draft.tags.add("ad-f-up")
         
-        r = self.client.post(url, dict(state=State.objects.get(type="draft-iesg", slug="review-e").pk))
+        r = self.client.post(url,
+                             dict(state=State.objects.get(type="draft-iesg", slug="review-e").pk,
+                                  substate="point",
+                                  comment="Test comment"))
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.get_state_slug("draft-iesg"), "review-e")
-        self.assertEquals(draft.docevent_set.count(), events_before + 1)
-        self.assertTrue("State changed" in draft.docevent_set.all()[0].desc)
+        self.assertTrue(not draft.tags.filter(slug="ad-f-up"))
+        self.assertTrue(draft.tags.filter(slug="point"))
+        self.assertEquals(draft.docevent_set.count(), events_before + 2)
+        self.assertTrue("Test comment" in draft.docevent_set.all()[0].desc)
+        self.assertTrue("State changed" in draft.docevent_set.all()[1].desc)
         self.assertEquals(len(outbox), mailbox_before + 2)
         self.assertTrue("State Update Notice" in outbox[-2]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])

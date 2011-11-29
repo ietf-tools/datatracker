@@ -82,7 +82,13 @@ def expire_last_callREDESIGN(doc):
 
     prev = doc.get_state("draft-iesg")
     doc.set_state(state)
-    e = log_state_changed(None, doc, Person.objects.get(name="(System)"), prev)
+
+    prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+    prev_tag = prev_tag[0] if prev_tag else None
+    if prev_tag:
+        doc.tags.remove(prev_tag)
+
+    e = log_state_changed(None, doc, Person.objects.get(name="(System)"), prev, prev_tag)
                     
     doc.time = e.time
     doc.save()

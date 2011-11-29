@@ -224,9 +224,13 @@ def expire_idREDESIGN(doc):
     if doc.latest_event(type='started_iesg_process'):
         dead_state = State.objects.get(type="draft-iesg", slug="dead")
         prev = doc.get_state("draft-iesg")
+        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        prev_tag = prev_tag[0] if prev_tag else None
         if prev != dead_state:
             doc.set_state(dead_state)
-            log_state_changed(None, doc, system, prev)
+            if prev_tag:
+                doc.tags.remove(prev_tag)
+            log_state_changed(None, doc, system, prev, prev_tag)
 
         e = DocEvent(doc=doc, by=system)
         e.type = "expired_document"

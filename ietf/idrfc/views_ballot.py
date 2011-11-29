@@ -554,7 +554,13 @@ def defer_ballotREDESIGN(request, name):
 
         prev = doc.get_state("draft-iesg")
         doc.set_state(State.objects.get(type="draft-iesg", slug='defer'))
-        e = log_state_changed(request, doc, login, prev)
+
+        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        prev_tag = prev_tag[0] if prev_tag else None
+        if prev_tag:
+            doc.tags.remove(prev_tag)
+
+        e = log_state_changed(request, doc, login, prev, prev_tag)
         
         doc.time = e.time
         doc.save()
@@ -619,7 +625,13 @@ def undefer_ballotREDESIGN(request, name):
 
         prev = doc.get_state("draft-iesg")
         doc.set_state(State.objects.get(type="draft-iesg", slug='iesg-eva'))
-        e = log_state_changed(request, doc, login, prev)
+
+        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        prev_tag = prev_tag[0] if prev_tag else None
+        if prev_tag:
+            doc.tags.remove(prev_tag)
+
+        e = log_state_changed(request, doc, login, prev, prev_tag)
         
         doc.time = e.time
         doc.save()
@@ -777,7 +789,13 @@ def lastcalltextREDESIGN(request, name):
 
                     prev = doc.get_state("draft-iesg")
                     doc.set_state(State.objects.get(type="draft-iesg", slug='lc-req'))
-                    e = log_state_changed(request, doc, login, prev)
+
+                    prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+                    prev_tag = prev_tag[0] if prev_tag else None
+                    if prev_tag:
+                        doc.tags.remove(prev_tag)
+
+                    e = log_state_changed(request, doc, login, prev, prev_tag)
                     
                     doc.time = e.time
                     doc.save()
@@ -1199,6 +1217,11 @@ def approve_ballotREDESIGN(request, name):
         prev = doc.get_state("draft-iesg")
         doc.set_state(new_state)
 
+        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        prev_tag = prev_tag[0] if prev_tag else None
+        if prev_tag:
+            doc.tags.remove(prev_tag)
+        
         e = DocEvent(doc=doc, by=login)
         if action == "do_not_publish":
             e.type = "iesg_disapproved"
@@ -1211,7 +1234,7 @@ def approve_ballotREDESIGN(request, name):
         
         change_description = e.desc + " and state has been changed to %s" % doc.get_state("draft-iesg").name
         
-        e = log_state_changed(request, doc, login, prev)
+        e = log_state_changed(request, doc, login, prev, prev_tag)
                     
         doc.time = e.time
         doc.save()
@@ -1317,7 +1340,13 @@ def make_last_callREDESIGN(request, name):
 
             prev = doc.get_state("draft-iesg")
             doc.set_state(State.objects.get(type="draft-iesg", slug='lc'))
-            e = log_state_changed(request, doc, login, prev)
+
+            prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+            prev_tag = prev_tag[0] if prev_tag else None
+            if prev_tag:
+                doc.tags.remove(prev_tag)
+
+            e = log_state_changed(request, doc, login, prev, prev_tag)
                     
             doc.time = e.time
             doc.save()

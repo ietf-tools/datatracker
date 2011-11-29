@@ -105,8 +105,7 @@ def change_state(request, name):
 
 class ChangeStateFormREDESIGN(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label=None, required=True)
-    # FIXME: no tags yet
-    #substate = forms.ModelChoiceField(IDSubState.objects.all(), required=False)
+    substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty')), required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
 @group_required('Area_Director','Secretariat')
@@ -123,14 +122,36 @@ def change_stateREDESIGN(request, name):
         form = ChangeStateForm(request.POST)
         if form.is_valid():
             state = form.cleaned_data['state']
-            comment = form.cleaned_data['comment']
+            tag = form.cleaned_data['substate']
+            comment = form.cleaned_data['comment'].strip()
             prev = doc.get_state("draft-iesg")
-            if state != prev:
+
+            # tag handling is a bit awkward since the UI still works
+            # as if IESG tags are a substate
+            prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+            prev_tag = prev_tag[0] if prev_tag else None
+
+            if state != prev or tag != prev_tag:
                 save_document_in_history(doc)
                 
                 doc.set_state(state)
 
-                e = log_state_changed(request, doc, login, prev, comment)
+                if prev_tag:
+                    doc.tags.remove(prev_tag)
+
+                if tag:
+                    doc.tags.add(tag)
+
+                e = log_state_changed(request, doc, login, prev, prev_tag)
+
+                if comment:
+                    c = DocEvent(type="added_comment")
+                    c.doc = doc
+                    c.by = login
+                    c.desc = comment
+                    c.save()
+
+                    e.desc += "<br>" + comment
                 
                 doc.time = e.time
                 doc.save()
