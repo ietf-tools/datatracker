@@ -22,12 +22,13 @@ from sec.utils.group import get_my_groups
 
 from ietf.ietfauth.decorators import has_role
 from ietf.utils.mail import send_mail
-from ietf.meeting.models import Meeting, Session
+from ietf.meeting.models import Meeting, Session, Constraint
 
 from redesign.group.models import Group, Role    
 
 from forms import *
 
+import datetime
 import itertools
 
 # -------------------------------------------------
@@ -36,7 +37,10 @@ import itertools
 
 SESSION_REQUEST_EMAIL = 'session-request@ietf.org'
 LOCKFILE = os.path.join(settings.PROCEEDINGS_DIR,'session_request.lock')
-
+DELTA_INDEX = {datetime.timedelta(0,3600):'1',
+               datetime.timedelta(0,5400):'2',
+               datetime.timedelta(0,7200):'3',
+               datetime.timedelta(0,9000):'4'}
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
@@ -47,6 +51,33 @@ def check_app_locked():
     '''
     return os.path.exists(LOCKFILE)
 
+def get_initial_session(sessions):
+    '''
+    This function takes a queryset of sessions ordered by 'id' for consistency.  It returns
+    a dictionary to be used as the initial for a legacy session form
+    '''
+    meeting = sessions[0].meeting
+    group = sessions[0].group
+    # TODO reverse target/source
+    conflicts = group.constraint_target_set.filter(meeting=meeting)
+    initial = {}
+    initial['num_session'] = sessions.count()
+    
+    # accessing these foreign key fields throw errors if they are unset so we
+    # need to catch these
+    initial['length_session1'] = DELTA_INDEX[sessions[0].requested_duration]
+    try:
+        initial['length_session2'] = DELTA_INDEX[sessions[1].requested_duration]
+        initial['length_session3'] = DELTA_INDEX[sessions[2].requested_duration]
+    except IndexError:
+        pass
+    initial['attendees'] = sessions[0].attendees
+    initial['conflict1'] = ' '.join([ c.source.acronym for c in conflicts.filter(name__slug='conflict') ])
+    initial['conflict2'] = ' '.join([ c.source.acronym for c in conflicts.filter(name__slug='conflic2') ])
+    initial['conflict3'] = ' '.join([ c.source.acronym for c in conflicts.filter(name__slug='conflic3') ])
+    initial['special_req'] = sessions[0].comments
+    return initial
+    
 def get_lock_message():
     '''
     Returns the message to display to non-secretariat users when the tool is locked.
@@ -167,25 +198,15 @@ def send_notification(request,group,meeting,user,session,action):
               cc=cc_list)
 
 """
-def session_conflicts_as_string(group, meeting=None):
+def session_conflicts_as_string(group, meeting):
     '''
-    Takes a IETFWG or IRTF object and optional meeting object
-    builds list of other groups which have a conflict with this one
-    NOTE: this isn't provided by a simple related_name reference on the group
-    because session_conflicts cannot use ForeignKeys
+    Takes a Group object and Meeting object and returns a string of other groups which have
+    a conflict with this one
     '''
-    return ''
-    """
-    if not meeting:
-        meeting = get_meeting()
-    object_list = []
-    session_conflicts = SessionConflict.objects.filter(meeting_num=meeting,conflict_gid=group.pk)
-    for item in session_conflicts:
-        object_list.append(get_group_or_404(item.group_acronym_id))
-    names_list = [ str(x) for x in object_list ]
-    other_groups = ', '.join(names_list)
-    return other_groups
-    
+    # TODO seems like this should be constraint_target_set
+    group_list = [ g.target.acronym for g in group.constraint_source_set.filter(meeting=meeting) ]
+    return ', '.join(group_list)
+"""    
 # -------------------------------------------------
 # View Functions
 # -------------------------------------------------
@@ -314,7 +335,7 @@ def confirm(request, group_id):
         return HttpResponseRedirect(url)
         
     # GET logic
-    session_conflicts = session_conflicts_as_string(group)
+    session_conflicts = session_conflicts_as_string(group, meeting)
     
     return render_to_response('sessions/confirm.html', {
         'session': new_session,
@@ -332,7 +353,7 @@ def edit(request, session_id):
     session = get_object_or_404(WgMeetingSession, session_id=session_id)
     group = get_group_or_404(session.group_acronym_id)
     group_name = str(group)
-    session_conflicts = session_conflicts_as_string(group)
+    session_conflicts = session_conflicts_as_string(group, meeting)
     user = request.person
     
     
@@ -374,6 +395,8 @@ def edit(request, session_id):
             return HttpResponseRedirect(url)
 
     else:
+        sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
+        initial = get_initial_session(sessions)
         form = SessionForm(instance=session)
     
     return render_to_response('sessions/edit.html', {
@@ -444,9 +467,8 @@ def new(request, group_id):
     '''
     
     group = get_object_or_404(Group, id=group_id)
-    group_name = str(group)
-    session_conflicts = session_conflicts_as_string(group)
     meeting = get_meeting()
+    session_conflicts = session_conflicts_as_string(group, meeting)
     user = request.user
   
     if request.method == 'POST':
@@ -458,9 +480,10 @@ def new(request, group_id):
         form = SessionForm(request.POST)
         if form.is_valid():
             # check if request already exists for this group
-            if WgMeetingSession.objects.filter(group_acronym_id=group.pk,meeting=meeting):
-                messages.warning(request, 'Sessions for working group %s have already been requested once.' % str(groupk))
-                url = reverse('sessions_main')
+            if Session.objects.filter(group=group,meeting=meeting):
+                #messages.warning(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
+                create_message(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
+                url = reverse('sessions')
                 return HttpResponseRedirect(url)
             
             # save in user session
@@ -475,40 +498,15 @@ def new(request, group_id):
     # the "previous" querystring causes the form to be returned
     # pre-populated with data from last meeeting's session request
     elif request.method == 'GET' and request.GET.has_key('previous'):
-        previous_meeting = Meeting.objects.get(meeting_num=meeting.meeting_num - 1)
-        try:
-            previous_session = WgMeetingSession.objects.get(meeting=previous_meeting,group_acronym_id=group.pk)
-        except WgMeetingSession.DoesNotExist:
-            messages.warning(request, 'No session scheduled for this group at meeting: %s' % previous_meeting.meeting_num)
-            redirect_url = reverse('sessions_new', kwargs={'group_id':group_id})
+        previous_meeting = Meeting.objects.get(number=str(int(meeting.number) - 1))
+        previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).order_by('id')
+        if not previous_sessions:
+            #messages.warning(request, 'No session scheduled for this group at meeting: %s' % previous_meeting.number)
+            create_message(request, 'No session scheduled for this group at meeting: %s' % previous_meeting.number)
+            redirect_url = reverse('sessions_new', kwargs={'group_id':group.id})
             return HttpResponseRedirect(redirect_url)
             
-        # setup initial dictionary ---------------
-        initial = {}
-        initial['num_session'] = previous_session.num_session
-        
-        # accessing these foreign key fields throw errors if they are unset so we
-        # need to catch these
-        try:
-            initial['length_session1'] = previous_session.length_session1
-        except ObjectDoesNotExist:
-            pass
-        try:
-            initial['length_session2'] = previous_session.length_session2
-        except ObjectDoesNotExist:
-            pass
-        try:
-            initial['length_session3'] = previous_session.length_session3
-        except ObjectDoesNotExist:
-            pass
-        initial['number_attendee'] = previous_session.number_attendee
-        initial['conflict1'] = previous_session.conflict1
-        initial['conflict2'] = previous_session.conflict2
-        initial['conflict3'] = previous_session.conflict3
-        initial['conflict_other'] = previous_session.conflict_other
-        initial['special_req'] = previous_session.special_req
-        # end initial setup ----------------------
-        
+        initial = get_initial_session(previous_sessions)
         form = SessionForm(initial=initial)
     
     else:
@@ -518,7 +516,6 @@ def new(request, group_id):
         'meeting': meeting,
         'form': form,
         'group': group,
-        'group_name': group_name,
         'session_conflicts': session_conflicts},
         RequestContext(request, {}),
     )
@@ -623,7 +620,7 @@ def view(request, session_id):
     group = get_group_or_404(session.group_acronym_id)
     activities = SessionRequestActivity.objects.filter(group_acronym_id=session.group_acronym_id,meeting=meeting)
     # other groups that list this group in their conflicts
-    session_conflicts = session_conflicts_as_string(group)
+    session_conflicts = session_conflicts_as_string(group, meeting)
     show_approve_button = False
     
     # if this session request has a 3rd session waiting approval and the user can approve it

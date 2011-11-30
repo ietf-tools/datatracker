@@ -12,7 +12,7 @@ import os
 # -------------------------------------------------
 
 NUM_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
-LENGTH_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
+LENGTH_SESSION_CHOICES = (('','--Please select'),('1','1 hour'),('2','1.5 hours'), ('3','2 hours'),('4','2.5 hours'))
 #WG_CHOICES = list( Acronym.objects.filter(ietfwg__status=1,ietfwg__group_type__in=[1,4]).values_list('acronym','acronym').order_by('acronym'))
 WG_CHOICES = list( Group.objects.active.values_list('acronym','acronym').order_by('acronym'))
 WG_CHOICES.insert(0,('','--Select WG(s)'))
@@ -93,7 +93,7 @@ class SessionForm(forms.Form):
         
         # check third_session checkbox if instance and length_session3
         # assert False, (self.instance, self.fields['length_session3'].initial)
-        if self.initial:
+        if self.initial and 'length_session3' in self.initial:
             if self.initial['length_session3'] != '0' and self.initial['length_session3'] != None:
                 self.fields['third_session'].initial = True
                 
