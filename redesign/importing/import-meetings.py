@@ -359,8 +359,8 @@ for o in WgMeetingSession.objects.all().order_by("pk").iterator():
         for target in Group.objects.filter(acronym__in=conflicting_groups):
             Constraint.objects.get_or_create(
                 meeting=s.meeting,
-                source=target,
-                target=s.group,
+                source=s.group,
+                target=target,
                 name=conflict_constraints[i])
 
 
