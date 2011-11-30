@@ -126,7 +126,7 @@ class Constraint(models.Model):
     name = models.ForeignKey(ConstraintName)
 
     def __unicode__(self):
-        return u"%s %s %s" % (self.source, self.name.lower(), self.target)
+        return u"%s %s %s" % (self.source, self.name.name.lower(), self.target)
 
 class Session(models.Model):
     """Session records that a group should have a session on the
