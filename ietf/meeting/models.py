@@ -63,11 +63,11 @@ class Meeting(models.Model):
 
     # the various dates are currently computed
     def get_submission_start_date(self):
-        return self.date + datetime.timedelta(days=-90)
+        return self.date + datetime.timedelta(days=settings.SUBMISSION_START_DAYS)
     def get_submission_cut_off_date(self):
-        return self.date + datetime.timedelta(days=33)
+        return self.date + datetime.timedelta(days=settings.SUBMISSION_CUTOFF_DAYS)
     def get_submission_correction_date(self):
-        return self.date + datetime.timedelta(days=59)
+        return self.date + datetime.timedelta(days=settings.SUBMISSION_CORRECTION_DAYS)
 
 class Room(models.Model):
     meeting = models.ForeignKey(Meeting)
