@@ -93,7 +93,7 @@ for o in OldRole.objects.all().order_by('pk'):
     if o.id == OldRole.NOMCOM_CHAIR:
         continue # handled elsewhere
 
-    print "importing Role", o.id, o.role_name
+    print "importing Role", o.id, o.role_name, unicode(o.person).encode("utf-8")
     
     email = get_or_create_email(o, create_fake=False)
     official_email = email
@@ -180,6 +180,10 @@ for o in WGChair.objects.all():
 # IRTFChair
 for o in IRTFChair.objects.all():
     acronym = o.irtf.acronym.lower()
+    if acronym == "irtf":
+         # we already got the IRTF chair from Role, and the data in here is buggy
+        continue
+
     print "importing IRTFChair", acronym, o.person
 
     email = get_or_create_email(o, create_fake=True)
