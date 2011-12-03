@@ -51,7 +51,7 @@
          <p>The list below includes those working groups for which you or your co-chair has requested sessions at the upcoming IETF meeting. You can click on an acronym to initiate changes to a session, or cancel a session.</p>
            <ul>
            {% for session in scheduled_sessions %}
-             <li><a href="{% url sessions_view session_id=session.id %}">{{ session.group }} - {% if not session.ts_status_id %}{{ session.status }}{% else %}First Two Sessions:{{ session.status }}, Third Session:{{ session.ts_status }}{% endif %}</a></li>
+             <li><a href="{% url sessions_view group=session.group.acronym meeting=session.meeting.number %}">{{ session.group }} - {% if not session.ts_status_id %}{{ session.status }}{% else %}First Two Sessions:{{ session.status }}, Third Session:{{ session.ts_status }}{% endif %}</a></li>
            {% empty %}
              <i>NONE</i>
            {% endfor %}

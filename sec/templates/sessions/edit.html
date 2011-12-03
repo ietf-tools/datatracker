@@ -9,7 +9,7 @@
 
 {% block breadcrumbs %}{{ block.super }} 
   &raquo; <a href="../../">Sessions</a>
-  &raquo; <a href="../">{{ session.session_id }}</a>
+  &raquo; <a href="../">{{ group.acronym }}-{{ meeting.number }}</a>
   &raquo; Edit 
 {% endblock %}
 
@@ -21,7 +21,7 @@
 {% block content %}
 
 <div class="module interim-container">
-    <h2>IETF {{ meeting.meeting_num }}: Edit Session Request</h2>
+    <h2>IETF {{ meeting.number }}: Edit Session Request</h2>
          <div class="inline-related">
          <br>
 

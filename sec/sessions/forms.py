@@ -12,9 +12,9 @@ import os
 # -------------------------------------------------
 
 NUM_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
-LENGTH_SESSION_CHOICES = (('','--Please select'),('1','1 hour'),('2','1.5 hours'), ('3','2 hours'),('4','2.5 hours'))
-#WG_CHOICES = list( Acronym.objects.filter(ietfwg__status=1,ietfwg__group_type__in=[1,4]).values_list('acronym','acronym').order_by('acronym'))
-WG_CHOICES = list( Group.objects.active.values_list('acronym','acronym').order_by('acronym'))
+LENGTH_SESSION_CHOICES = (('','--Please select'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'),('9000','2.5 hours'))
+#WG_CHOICES = list( Group.objects.active.values_list('acronym','acronym').order_by('acronym'))
+WG_CHOICES = list( Group.objects.filter(type__in=('wg','rg'),state__in=('bof','proposed','active')).values_list('acronym','acronym').order_by('acronym'))
 WG_CHOICES.insert(0,('','--Select WG(s)'))
 
 # -------------------------------------------------
@@ -65,13 +65,13 @@ class GroupSelectForm(forms.Form):
 class SessionForm(forms.Form):
     num_session = forms.ChoiceField(choices=NUM_SESSION_CHOICES)
     length_session1 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES)
-    length_session2 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES)
-    length_session3 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES)
+    length_session2 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES,required=False)
+    length_session3 = forms.ChoiceField(choices=LENGTH_SESSION_CHOICES,required=False)
     attendees = forms.IntegerField()
-    conflict1 = forms.CharField(max_length=80)
-    conflict2 = forms.CharField(max_length=80)
-    conflict3 = forms.CharField(max_length=80)
-    comments = forms.CharField(max_length=200)
+    conflict1 = forms.CharField(max_length=80,required=False)
+    conflict2 = forms.CharField(max_length=80,required=False)
+    conflict3 = forms.CharField(max_length=80,required=False)
+    comments = forms.CharField(max_length=200,required=False)
     wg_selector1 = forms.ChoiceField(choices=WG_CHOICES,required=False)
     wg_selector2 = forms.ChoiceField(choices=WG_CHOICES,required=False)
     wg_selector3 = forms.ChoiceField(choices=WG_CHOICES,required=False)

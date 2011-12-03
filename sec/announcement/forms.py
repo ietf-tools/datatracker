@@ -1,6 +1,6 @@
 from django import forms
 from models import *
-from sec.utils.email import MultiEmailField
+from sec.utils.mail import MultiEmailField
 from sec.utils.group import current_nomcom
 from ietf.wgchairs.accounts import get_person_for_user
 
