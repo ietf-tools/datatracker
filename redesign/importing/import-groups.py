@@ -242,6 +242,8 @@ for o in IETFWG.objects.all().order_by("pk"):
             s = state_names["conclude"]
     elif o.group_type.type == "PWG":
         s = state_names["proposed"]
+        if o.status.status == "Concluded":
+            s = state_names["conclude"]
     elif o.status.status == "Active":
         s = state_names["active"]
     elif o.status.status == "Dormant":
