@@ -147,7 +147,7 @@ def send_expire_notice_for_idREDESIGN(doc):
     state = s.name if s else "I-D Exists"
 
     request = None
-    to = doc.ad.formatted_email()
+    to = doc.ad.role_email("ad").formatted_email()
     send_mail(request, to,
               "I-D Expiring System <ietf-secretariat-reply@ietf.org>",
               u"I-D was expired %s" % doc.file_tag(),

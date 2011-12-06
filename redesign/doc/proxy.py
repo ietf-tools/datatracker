@@ -326,7 +326,7 @@ class InternetDraft(Document):
     #token_email = models.CharField(blank=True, max_length=255)
     @property
     def token_email(self):
-        return self.ad.email_address()
+        return self.ad.role_email("ad")
     
     #note = models.TextField(blank=True) # same name
     

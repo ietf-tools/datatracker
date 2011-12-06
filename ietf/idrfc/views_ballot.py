@@ -477,7 +477,7 @@ def send_ballot_commentREDESIGN(request, name):
     doc.revision_display = doc.rev
     body = render_to_string("idrfc/ballot_comment_mail.txt",
                             dict(discuss=d, comment=c, ad=ad.name, doc=doc, pos=pos.pos))
-    frm = ad.formatted_email()
+    frm = ad.role_email("ad").formatted_email()
     to = "The IESG <iesg@ietf.org>"
         
     if request.method == 'POST':

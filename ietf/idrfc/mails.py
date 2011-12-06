@@ -56,11 +56,11 @@ def email_owner(request, doc, owner, changed_by, text, subject=None):
                    doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
 
-def email_ownerREDESIGN(request, doc, owner, changed_by, text, subject=None):
-    if not owner or not changed_by or owner == changed_by:
+def email_adREDESIGN(request, doc, ad, changed_by, text, subject=None):
+    if not ad or not changed_by or ad == changed_by:
         return
 
-    to = owner.formatted_email()
+    to = ad.role_email("ad").formatted_email()
     send_mail(request, to,
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
               "%s updated by %s" % (doc.file_tag(), changed_by.name),
@@ -70,7 +70,7 @@ def email_ownerREDESIGN(request, doc, owner, changed_by, text, subject=None):
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    email_owner = email_ownerREDESIGN
+    email_owner = email_adREDESIGN
 
 
 def full_intended_status(intended_status):
