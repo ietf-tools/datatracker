@@ -9,12 +9,11 @@ import datetime
 class GroupInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     name = models.CharField(max_length=80)
-    acronym = models.CharField(max_length=16, blank=True, db_index=True)
     state = models.ForeignKey(GroupStateName, null=True)
     type = models.ForeignKey(GroupTypeName, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)
     iesg_state = models.ForeignKey(IesgGroupStateName, verbose_name="IESG state", blank=True, null=True)
-    ad = models.ForeignKey(Person, blank=True, null=True)
+    ad = models.ForeignKey(Person, verbose_name="AD", blank=True, null=True)
     list_email = models.CharField(max_length=64, blank=True)
     list_subscribe = models.CharField(max_length=255, blank=True)
     list_archive = models.CharField(max_length=255, blank=True)
@@ -36,7 +35,7 @@ class GroupManager(models.Manager):
 class Group(GroupInfo):
     objects = GroupManager()
 
-    # we keep charter separate
+    acronym = models.CharField(max_length=40, unique=True, db_index=True)
     charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
     
     def latest_event(self, *args, **filter_args):
@@ -50,6 +49,7 @@ class Group(GroupInfo):
 # to select group history from this table.
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')
+    acronym = models.CharField(max_length=40)
     charter = models.ForeignKey('doc.Document', related_name='chartered_group_history_set', blank=True, null=True)
     
     class Meta:

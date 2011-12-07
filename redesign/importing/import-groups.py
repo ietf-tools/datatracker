@@ -11,6 +11,7 @@ settings.USE_DB_REDESIGN_PROXY_CLASSES = False
 from django.core import management
 management.setup_environ(settings)
 
+from django.template.defaultfilters import slugify
 
 from redesign.group.models import *
 from redesign.name.models import *
@@ -168,6 +169,7 @@ for o in SDOs.objects.all().order_by("pk"):
         group = Group(name=o.sdo_name, type=type_names["sdo"])
 
     group.state_id = "active"
+    group.acronym = slugify(group.name)
     group.save()
 
 def import_date_event(group, name, type_name):
