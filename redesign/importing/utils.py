@@ -114,12 +114,11 @@ def possibly_import_other_priority_email(email, addr):
     if addr and addr.lower() != email.address.lower():
         try:
             e = Email.objects.get(address=addr)
-            if e.person != email.person or e.active != False:
+            if e.person != email.person:
                 e.person = email.person
-                e.active = False
                 e.save()
         except Email.DoesNotExist:
-            Email.objects.create(address=addr, person=email.person, active=False)
+            Email.objects.create(address=addr, person=email.person)
 
 def dont_save_queries():
     # prevent memory from leaking when settings.DEBUG=True
