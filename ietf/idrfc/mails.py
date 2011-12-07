@@ -420,8 +420,13 @@ def email_resurrect_requested(request, doc, by):
 
 def email_resurrect_requestedREDESIGN(request, doc, by):
     to = "I-D Administrator <internet-drafts@ietf.org>"
-    frm = by.formatted_email()
-    send_mail(request, to, frm,
+
+    if by.role_set.filter(name="secr", group__acronym="secretariat"):
+        e = by.role_email("secr", group="secretariat")
+    else:
+        e = by.role_email("ad")
+
+    send_mail(request, to, e.formatted_email(),
               "I-D Resurrection Request",
               "idrfc/resurrect_request_email.txt",
               dict(doc=doc,
@@ -442,7 +447,12 @@ def email_resurrection_completed(request, doc):
                    url=settings.IDTRACKER_BASE_URL + doc.idinternal.get_absolute_url()))
 
 def email_resurrection_completedREDESIGN(request, doc, requester):
-    to = requester.formatted_email()
+    if requester.role_set.filter(name="secr", group__acronym="secretariat"):
+        e = requester.role_email("secr", group="secretariat")
+    else:
+        e = requester.role_email("ad")
+
+    to = e.formatted_email()
     frm = "I-D Administrator <internet-drafts-reply@ietf.org>"
     send_mail(request, to, frm,
               "I-D Resurrection Completed - %s" % doc.file_tag(),
