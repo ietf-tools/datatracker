@@ -92,6 +92,7 @@ MIDDLEWARE_CLASSES = (
     'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.transaction.TransactionMiddleware',
     'ietf.middleware.UnicodeNfkcNormalization',
+    'sec.middleware.secauth.SecAuthMiddleware',
 )
 
 ROOT_URLCONF = 'sec.urls'
@@ -174,6 +175,14 @@ INTERNAL_IPS = (
 # local
         '127.0.0.1',
         '::1',
+)
+
+# this is a tuple of regular expressions.  if the incoming URL matches one of
+# these, than non secretariat access is allowed.
+SEC_AUTH_UNRESTRICTED_URLS = (
+    (r'^/sec/$'),
+    (r'^/sec/proceedings/'),
+    (r'^/sec/sessions/'),
 )
 
 # no slash at end

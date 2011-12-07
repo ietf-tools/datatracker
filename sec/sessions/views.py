@@ -4,6 +4,7 @@ from django.conf import settings
 #from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
@@ -21,6 +22,7 @@ from redesign.name.models import SessionStatusName, ConstraintName
 
 from forms import *
 
+from itertools import chain
 import datetime
 import itertools
 
@@ -47,10 +49,9 @@ def get_initial_session(sessions):
     '''
     meeting = sessions[0].meeting
     group = sessions[0].group
-    # TODO reverse target/source
-    conflicts = group.constraint_target_set.filter(meeting=meeting)
+    conflicts = group.constraint_source_set.filter(meeting=meeting)
     initial = {}
-    initial['num_session'] = sessions.count()
+    initial['num_session'] = sessions.count() if sessions.count() != 3 else 2
     
     # accessing these foreign key fields throw errors if they are unset so we
     # need to catch these
@@ -61,9 +62,9 @@ def get_initial_session(sessions):
     except IndexError:
         pass
     initial['attendees'] = sessions[0].attendees
-    initial['conflict1'] = ' '.join([ c.source.acronym for c in conflicts.filter(name__slug='conflict') ])
-    initial['conflict2'] = ' '.join([ c.source.acronym for c in conflicts.filter(name__slug='conflic2') ])
-    initial['conflict3'] = ' '.join([ c.source.acronym for c in conflicts.filter(name__slug='conflic3') ])
+    initial['conflict1'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflict') ])
+    initial['conflict2'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflic2') ])
+    initial['conflict3'] = ' '.join([ c.target.acronym for c in conflicts.filter(name__slug='conflic3') ])
     initial['comments'] = sessions[0].comments
     return initial
     
@@ -85,37 +86,40 @@ def get_meeting():
     '''
     return Meeting.objects.all().order_by('-date')[0]
 
-def get_scheduled_sessions(user, meeting):
+def get_scheduled_groups(user, meeting):
     '''
     Takes a Django User object and a Meeting object
-    Returns a list of meeting session requests the user has access to
+    Returns a sorted list of those groups that have session requests
+    and the user has access to
     '''
-    scheduled_sessions = []
-    # NOTE: need to exclude group_acronym_ids < 0 as these are training sessions    
-    #all_sessions = WgMeetingSession.objects.filter(meeting=meeting,group_acronym_id__gte=0)
-    # TODO do we need to exclude training?
-    all_sessions = meeting.session_set.all()
+    groups = Group.objects.active.filter(~Q(session__status='canceled'),
+                                         ~Q(session__status='notmeet'),
+                                         session__meeting=meeting).order_by('acronym').distinct()
     
     # short circuit for secretariat
     if has_role(user,'Secretariat'):
-        return all_sessions
+        return groups
         
     my_groups = get_my_groups(user)
-    my_groups_ids = [ x.pk for x in my_groups ]
-    for session in all_sessions:
-        if session.group_acronym_id in my_groups_ids:
-            scheduled_sessions.append(session)
     
-    return scheduled_sessions
+    return groups & my_groups
     
 def get_unscheduled_groups(user, meeting):
     '''
     This function takes a Django User object and a Meeting object.
-    It returns a list of active groups that the user is related to 
+    It returns a sorted list of active groups that the user is related to 
     (as chair or secretary) that do not already have sessions requests for the named meeting.
+    NOTE: session records exist for canceled sessions and groups not meeting so we need to 
+    add those groups back in.
     If the user is a secretariat than all groups are considered.
     '''
-    unscheduled = Group.objects.active.exclude(session__meeting=meeting)
+    no_session = Group.objects.active.exclude(session__meeting=meeting)
+    # add groups with "cancelled" sessions
+    canceled = Group.objects.active.filter(session__meeting=meeting,session__status__slug='canceled').distinct()
+    not_meeting = Group.objects.active.filter(session__meeting=meeting,session__status__slug='notmeet').distinct()
+    unscheduled = sorted(
+        chain(no_session,canceled,not_meeting),
+        key = lambda instance: instance.acronym)
     
     # short circuit for secretariat
     if has_role(user,'Secretariat'):
@@ -168,7 +172,7 @@ def send_notification(group,meeting,login,session,action):
     
     # if third session requested approval is required
     # change headers TO=ADs, CC=session-request, submitter and cochairs
-    if session['length_session3']:
+    if session.get('length_session3',None):
         context['session']['num_session'] = 3
         to_email = get_ad_email_list(group)
         cc_list = get_chair_email_list(group)
@@ -191,20 +195,19 @@ def session_conflicts_as_string(group, meeting):
     Takes a Group object and Meeting object and returns a string of other groups which have
     a conflict with this one
     '''
-    # TODO seems like this should be constraint_target_set
-    group_list = [ g.target.acronym for g in group.constraint_source_set.filter(meeting=meeting) ]
+    group_list = [ g.source.acronym for g in group.constraint_target_set.filter(meeting=meeting) ]
     return ', '.join(group_list)
 
 # -------------------------------------------------
 # View Functions
 # -------------------------------------------------
 @check_permissions
-def approve(request, group, meeting):
+def approve(request, group_id):
     '''
     This view approves the third session.  For use by ADs or Secretariat.
     '''
-    meeting = get_object_or_404(Meeting, number=meeting)
-    group = get_object_or_404(Group, acronym=group)
+    meeting = get_meeting()
+    group = get_object_or_404(Group, id=group_id)
     session = Session.objects.get(meeting=meeting,group=group,status='apprw')
     
     if has_role(request.user,'Secretariat') or group.parent.role_set.filter(name='ad',person=request.user.get_profile()):
@@ -213,22 +216,22 @@ def approve(request, group, meeting):
         
         #messages.success(request, 'Third session approved')
         create_message(request, 'Third session approved')
-        url = reverse('sessions_view', kwargs={'group':group.acronym,'meeting':meeting.number})
+        url = reverse('sessions_view', kwargs={'group_id':group_id})
         return HttpResponseRedirect(url)
     else:
         # if an unauthorized user gets here return error
         #messages.error(request, 'Not authorized to approve the third session')
         create_message(request, 'Not authorized to approve the third session')
-        url = reverse('sessions_view', kwargs={'group':group.acronym,'meeting':meeting.number})
+        url = reverse('sessions_view', kwargs={'group_id':group_id})
         return HttpResponseRedirect(url)
 
 @check_permissions
-def cancel(request, group, meeting):
+def cancel(request, group_id):
     '''
     This view cancels a session request and sends a notification
     '''
-    meeting = get_object_or_404(Meeting, number=meeting)
-    group = get_object_or_404(Group, acronym=group)
+    meeting = get_meeting()
+    group = get_object_or_404(Group, id=group_id)
     sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
     login = request.user.get_profile()
     
@@ -282,9 +285,14 @@ def confirm(request, group_id):
             url = reverse('sessions')
             return HttpResponseRedirect(url)
         
+        # delete any existing session records with status = canceled or notmeet
+        Session.objects.filter(group=group,meeting=meeting,status__in=('canceled','notmeet')).delete()
+        
         # create new session records
         count = 0
-        for duration in (form['length_session1'],form['length_session2'],form['length_session3']):
+        # lenth_session2 and length_session3 fields might be disabled by javascript and so 
+        # wouldn't appear in form data
+        for duration in (form.get('length_session1',None),form.get('length_session2',None),form.get('length_session3',None)):
             count += 1
             if duration:
                 slug = 'apprw' if count == 3 else 'schedw'
@@ -330,50 +338,107 @@ def confirm(request, group_id):
     )
 
 @check_permissions            
-def edit(request, group, meeting):    
+def edit(request, group_id):    
     '''
     This view allows the user to edit details of the session request
     '''
-    meeting = get_object_or_404(Meeting, number=meeting)
-    group = get_object_or_404(Group, acronym=group)
+    meeting = get_meeting()
+    group = get_object_or_404(Group, id=group_id)
     sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
+    sessions_count = sessions.count()
+    initial = get_initial_session(sessions)
     session_conflicts = session_conflicts_as_string(group, meeting)
     login = request.user.get_profile()
     
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('sessions_view', kwargs={'group':group.acronym,'meeting':meeting.number})
+            url = reverse('sessions_view', kwargs={'group_id':group_id})
             return HttpResponseRedirect(url)
         
-        form = SessionForm(request.POST)
+        form = SessionForm(request.POST,initial=initial)
         if form.is_valid():
-            # Todo save stuff
-            
-            
-            assert False, (form.has_changed(), form.changed_data)
-            
-            # delete and re-save conflicts
-            Constraint.objects.filter(meeting=meeting,source=group).delete()
-            save_conflicts(group,meeting,form['conflict1'],'conflict')
-            save_conflicts(group,meeting,form['conflict2'],'conflic2')
-            save_conflicts(group,meeting,form['conflict3'],'conflic3')
-            
-            # deprecated
-            # log activity
-            #add_session_activity(group,'Session Request was updated',meeting,user)
-            
-            # send notification
-            send_notification(group,meeting,login,form.cleaned_data,'update')
-            
+            if form.has_changed():
+                # might be cleaner to simply delete and rewrite all records (but maintain submitter?)
+                # adjust duration or add sessions
+                # session 1
+                if 'length_session1' in form.changed_data:
+                    session = sessions[0]
+                    session.requested_duration = datetime.timedelta(0,int(form.cleaned_data['length_session1']))
+                    session.save()
+                    
+                # session 2
+                if 'length_session2' in form.changed_data:
+                    length_session2 = form.cleaned_data['length_session2']
+                    if length_session2 == '':
+                        sessions[1].delete()
+                    elif sessions_count < 2:
+                        duration = datetime.timedelta(0,int(form.cleaned_data['length_session2']))
+                        new_session = Session(meeting=meeting,
+                                              group=group,
+                                              attendees=form.cleaned_data['attendees'],
+                                              requested=datetime.datetime.now(),
+                                              requested_by=login,
+                                              requested_duration=duration,
+                                              comments=form.cleaned_data['comments'],
+                                              status=SessionStatusName.objects.get(slug='schedw'))
+                        new_session.save()
+                    else:
+                        duration = datetime.timedelta(0,int(form.cleaned_data['length_session2']))
+                        session = sessions[1]
+                        session.requested_duration = duration
+                        session.save()
+  
+                # session 3
+                if 'length_session3' in form.changed_data:
+                    length_session3 = form.cleaned_data['length_session3']
+                    if length_session3 == '':
+                        sessions[2].delete()
+                    elif sessions_count < 3:
+                        duration = datetime.timedelta(0,int(form.cleaned_data['length_session3']))
+                        new_session = Session(meeting=meeting,
+                                              group=group,
+                                              attendees=form.cleaned_data['attendees'],
+                                              requested=datetime.datetime.now(),
+                                              requested_by=login,
+                                              requested_duration=duration,
+                                              comments=form.cleaned_data['comments'],
+                                              status=SessionStatusName.objects.get(slug='apprw'))
+                        new_session.save()
+                    else:
+                        duration = datetime.timedelta(0,int(form.cleaned_data['length_session3']))
+                        session = sessions[2]
+                        session.requested_duration = duration
+                        session.save()
+                    
+                
+                if 'attendees' in form.changed_data:
+                    sessions.update(attendees=form.cleaned_data['attendees'])
+                if 'comments' in form.changed_data:
+                    sessions.update(comments=form.cleaned_data['comments'])
+                if 'conflict1' in form.changed_data:
+                    Constraint.objects.filter(meeting=meeting,source=group,name='conflict').delete()
+                    save_conflicts(group,meeting,form.cleaned_data['conflict1'],'conflict')
+                if 'conflict2' in form.changed_data:
+                    Constraint.objects.filter(meeting=meeting,source=group,name='conflic2').delete()
+                    save_conflicts(group,meeting,form.cleaned_data['conflict2'],'conflic2')
+                if 'conflict3' in form.changed_data:
+                    Constraint.objects.filter(meeting=meeting,source=group,name='conflic3').delete()
+                    save_conflicts(group,meeting,form.cleaned_data['conflict3'],'conflic3')
+                
+                # deprecated
+                # log activity
+                #add_session_activity(group,'Session Request was updated',meeting,user)
+                
+                # send notification
+                send_notification(group,meeting,login,form.cleaned_data,'update')
+                
             #messages.success(request, 'Session Request updated')
             create_message(request, 'Session Request updated')
-            url = reverse('sessions_view', kwargs={'group':group.acronym,'meeting':meeting.number})
+            url = reverse('sessions_view', kwargs={'group_id':group_id})
             return HttpResponseRedirect(url)
-
+                
     else:
-        sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
-        initial = get_initial_session(sessions)
         form = SessionForm(initial=initial)
     
     return render_to_response('sessions/edit.html', {
@@ -404,6 +469,7 @@ def main(request):
         RequestContext(request, {}),
     )
         
+    # TODO this is not currently used in the main template
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Group will not meet':
@@ -415,23 +481,34 @@ def main(request):
         
     meeting = get_meeting()
     
-    scheduled_sessions = get_scheduled_sessions(request.user, meeting)
-    sorted_scheduled_sessions = sorted(scheduled_sessions, key=lambda scheduled_sessions: scheduled_sessions.group.acronym)
+    scheduled_groups = get_scheduled_groups(request.user, meeting)
     
     # load form select with unscheduled groups
     unscheduled_groups = get_unscheduled_groups(request.user, meeting)
-    sorted_unscheduled_groups = sorted(unscheduled_groups, key=lambda unscheduled_groups: unscheduled_groups.acronym)
     choices = zip([ g.pk for g in unscheduled_groups ],
                   [ str(g) for g in unscheduled_groups ])
-    sorted_choices = sorted(choices, key=lambda choices: choices[1])
-    form = GroupSelectForm(choices=sorted_choices)
+    form = GroupSelectForm(choices=choices)
     
+    # add session status messages for use in template
+    for group in scheduled_groups:
+        sessions = group.session_set.filter(meeting=meeting)
+        if sessions.count() < 3:
+            group.status_message = sessions[0].status
+        else:
+            group.status_message = 'First two sessions: %s, Third session: %s' % (sessions[0].status,sessions[2].status)
+    
+    # add not meeting indicators for use in template
+    for group in unscheduled_groups:
+        sessions = group.session_set.filter(meeting=meeting)
+        if sessions and sessions[0].status.slug == 'notmeet':
+            group.not_meeting = True
+            
     return render_to_response('sessions/main.html', {
         'is_locked': is_locked,
         'form': form,
         'meeting': meeting,
-        'scheduled_sessions': sorted_scheduled_sessions,
-        'unscheduled_groups': sorted_unscheduled_groups},
+        'scheduled_groups': scheduled_groups,
+        'unscheduled_groups': unscheduled_groups},
         RequestContext(request, {}),
     )
 
@@ -479,7 +556,7 @@ def new(request, group_id):
         if not previous_sessions:
             #messages.warning(request, 'No session scheduled for this group at meeting: %s' % previous_meeting.number)
             create_message(request, 'No session scheduled for this group at meeting: %s' % previous_meeting.number)
-            redirect_url = reverse('sessions_new', kwargs={'group_id':group.id})
+            redirect_url = reverse('sessions_new', kwargs={'group_id':group_id})
             return HttpResponseRedirect(redirect_url)
             
         initial = get_initial_session(previous_sessions)
@@ -512,6 +589,7 @@ def no_session(request, group_id):
                       meeting=meeting,
                       requested=datetime.datetime.now(),
                       requested_by=login,
+                      requested_duration=0,
                       status=SessionStatusName.objects.get(slug='notmeet'))
     session.save()
     
@@ -546,7 +624,7 @@ def tool_status(request):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Done':
-            url = reverse('sessions_main')
+            url = reverse('sessions')
             return HttpResponseRedirect(url)
         
         form = ToolStatusForm(request.POST)
@@ -558,14 +636,15 @@ def tool_status(request):
                 f.close()
                 
                 messages.success(request, 'Session Request Tool is now Locked')
-                url = reverse('sessions_main')
+                url = reverse('sessions')
                 return HttpResponseRedirect(url)
             
         elif button_text == 'Unlock':
             os.remove(LOCKFILE)
                 
-            messages.success(request, 'Session Request Tool is now Unlocked')
-            url = reverse('sessions_main')
+            #messages.success(request, 'Session Request Tool is now Unlocked')
+            create_message(request, 'Session Request Tool is now Unlocked')
+            url = reverse('sessions')
             return HttpResponseRedirect(url)
     
     else:
@@ -582,12 +661,12 @@ def tool_status(request):
         RequestContext(request, {}),
     )
 
-def view(request, group, meeting):
+def view(request, group_id):
     '''
     This view displays the session request info
     '''
-    meeting = get_object_or_404(Meeting, number=meeting)
-    group = get_object_or_404(Group, acronym=group)
+    meeting = get_meeting()
+    group = get_object_or_404(Group, id=group_id)
     sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
     
     # TODO simulate activity records

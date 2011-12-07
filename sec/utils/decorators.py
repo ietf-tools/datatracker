@@ -4,6 +4,8 @@ from functools import wraps
 
 from ietf.ietfauth.decorators import has_role
 
+from itertools import chain
+
 def check_for_cancel(redirect_url):
     """
     Decorator to make a view redirect to the given url if the reuqest is a POST which contains
@@ -31,11 +33,12 @@ def check_permissions(func):
             return func(request, *args, **kwargs)
         
         #TODO delete this
-        return func(request, *args, **kwargs)
-        '''
+        #return func(request, *args, **kwargs)
+        
         # get the parent group
         if 'group_id' in kwargs:
             group_id = kwargs['group_id']
+        '''
         elif 'meeting_id' in kwargs:
             meeting = Meeting.objects.get(id=kwargs['meeting_id'])
             group_id = meeting.group
@@ -56,15 +59,21 @@ def check_permissions(func):
             WGSecretary.objects.filter(group_acronym=group_id,person=request.person) or
             IRTFChair.objects.filter(irtf=group_id,person=request.person)):
                 return func(request, *args, **kwargs)
- 
+        
         if request.user_is_ietf_iab_chair and group_id in ('-1','-2'):
+            return func(request, *args, **kwargs)
+        '''
+        group = get_group_or_404(group_id)
+        login = request.user.get_profile()
+        all_roles = chain(
+            group.role_set.filter(name__in=('chair','secr')),
+            group.parent.role_set.filter(name='ad'))
+        if login in [ r.person for r in all_roles ]:
             return func(request, *args, **kwargs)
             
         # if we get here access is denied
-        group = get_group_or_404(group_id)
         return render_to_response('unauthorized.html',{
             'user_name':request.person,
             'group_name':str(group)}
         )
-        '''
     return wraps(func)(wrapper)
