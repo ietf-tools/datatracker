@@ -138,7 +138,7 @@ class Session(models.Model):
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)
     #
-    requested = models.DateTimeField()
+    requested = models.DateTimeField(default=datetime.datetime.now)
     requested_by = models.ForeignKey(Person)
     requested_duration = TimedeltaField()
     comments = models.TextField()

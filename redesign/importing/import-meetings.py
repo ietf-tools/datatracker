@@ -17,7 +17,7 @@ import datetime
 
 from ietf.idtracker.models import AreaDirector, IETFWG, Acronym, IRTF, PersonOrOrgInfo
 from ietf.meeting.models import *
-from ietf.proceedings.models import Meeting as MeetingOld, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda, Minute, Slide, WgProceedingsActivities
+from ietf.proceedings.models import Meeting as MeetingOld, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda, Minute, Slide, WgProceedingsActivities, NotMeetingGroup
 from redesign.person.models import *
 from redesign.doc.models import Document, DocAlias, State, DocEvent
 from redesign.importing.utils import old_person_to_person, dont_save_queries
@@ -28,7 +28,7 @@ dont_save_queries()
 
 # imports Meeting, MeetingVenue, MeetingRoom, NonSession,
 # WgMeetingSession, WgAgenda, Minute, Slide, upload events from
-# WgProceedingsActivities
+# WgProceedingsActivities, NotMeetingGroup
 
 # assumptions:
 #  - persons have been imported
@@ -45,6 +45,8 @@ session_status_mapping = {
     5: name(SessionStatusName, "canceled", "Canceled"),
     6: name(SessionStatusName, "disappr", "Disapproved"),
     }
+
+status_not_meeting = name(SessionStatusName, "notmeet", "Not meeting")
 
 session_status_mapping[0] = session_status_mapping[1] # assume broken statuses of 0 are actually cancelled
 
@@ -133,6 +135,12 @@ for o in MeetingOld.objects.all():
         
     m.save()
 
+meeting_cache = {}
+def get_meeting(num):
+    if not num in meeting_cache:
+        meeting_cache[num] = Meeting.objects.get(number="%s" % num)
+    return meeting_cache[num]
+
 for o in MeetingRoom.objects.all():
     print "importing MeetingRoom", o.pk
 
@@ -141,7 +149,7 @@ for o in MeetingRoom.objects.all():
     except Room.DoesNotExist:
         r = Room(pk=o.pk)
 
-    r.meeting = Meeting.objects.get(number="%s" % o.meeting_id)
+    r.meeting = get_meeting(o.meeting_id)
     r.name = o.room_name
     r.save()
 
@@ -265,7 +273,7 @@ for o in WgMeetingSession.objects.all().order_by("pk").iterator():
             s = Session.objects.get(pk=pk)
         except:
             s = Session(pk=pk)
-        s.meeting = Meeting.objects.get(number=o.meeting_id)
+        s.meeting = get_meeting(o.meeting_id)
 
         def get_timeslot(attr):
             meeting_time = getattr(o, attr)
@@ -375,7 +383,7 @@ for o in NonSession.objects.all().order_by('pk').select_related("meeting").itera
         print "IGNORING non-scheduled NonSession", o.non_session_ref.name
         continue
 
-    meeting = Meeting.objects.get(number=o.meeting_id)
+    meeting = get_meeting(o.meeting_id)
 
     # some non-sessions are scheduled every day, but only if there's a
     # session nearby, figure out which days this corresponds to
@@ -408,3 +416,25 @@ for o in NonSession.objects.all().order_by('pk').select_related("meeting").itera
         slot.duration = ends - starts
         slot.show_location = o.show_break_location
         slot.save()
+
+
+for o in NotMeetingGroup.objects.all().select_related('group_acronym'):
+    if o.group_acronym_id == None or o.group_acronym == None:
+        print "SKIPPING NotMeetingGroup with group_acronym_id", o.group_acronym_id
+        continue # bogus data
+
+    print "importing NotMeetingGroup", o.group_acronym.acronym, o.meeting_id
+    try:
+        group = Group.objects.get(acronym=o.group_acronym.acronym)
+    except Group.DoesNotExist:
+        print "SKIPPING", o.group_acronym.acronym
+        continue
+    meeting = get_meeting(o.meeting_id)
+
+    if not Session.objects.filter(meeting=meeting, group=group):
+        Session.objects.get_or_create(meeting=meeting,
+                                      group=group,
+                                      status=status_not_meeting,
+                                      defaults=dict(requested_by=system_person,
+                                                    requested_duration=0))
+

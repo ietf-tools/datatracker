@@ -584,6 +584,12 @@ class MeetingHour(models.Model):
     class Meta:
         db_table = u'meeting_hours'
 
+class NotMeetingGroup(models.Model):
+    # note: phony key, there's no primary key in db
+    group_acronym = models.ForeignKey(Acronym, primary_key=True, null=True, blank=True)
+    meeting = models.ForeignKey(Meeting, db_column='meeting_num', null=True, blank=True)
+    class Meta:
+        db_table = u'not_meeting_groups'
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     MeetingOld = Meeting
