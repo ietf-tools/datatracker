@@ -29,14 +29,17 @@ class PersonInfo(models.Model):
             prefix, first, middle, last, suffix = self.ascii_parts()
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
     def role_email(self, role_name, group=None):
+        """Lookup email for role for person, optionally on group which
+        may be an object or the group acronym."""
         if group:
+            if isinstance(group, str) or isinstance(group, unicode):
+                group = Group.objects.get(acronym=group)
             e = Email.objects.filter(person=self, role__group=group, role__name=role_name)
-            if e:
-                return e[0]
         else:
             e = Email.objects.filter(person=self, role__group__state="active", role__name=role_name)
-            if e:
-                return e[0]
+        if e:
+            return e[0]
+        # no cigar, try the complete set before giving up
         e = self.email_set.order_by("-active")
         if e:
             return e[0]
@@ -44,7 +47,7 @@ class PersonInfo(models.Model):
     def email_address(self):
         e = self.email_set.filter(active=True)
         if e:
-            return e[0]
+            return e[0].address
         else:
             return ""
     def formatted_email(self):
