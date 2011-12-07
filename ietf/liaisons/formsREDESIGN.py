@@ -255,7 +255,9 @@ class LiaisonForm(forms.Form):
         from_entity = self.get_from_entity()
         liaison.from_name = from_entity.name
         liaison.from_group = from_entity.obj
-        liaison.from_contact = self.cleaned_data["person"].email_address()
+        e = self.cleaned_data["person"].email_set.order_by('-active')
+        if e:
+            liaison.from_contact = e[0]
 
         organization = self.get_to_entity()
         liaison.to_name = organization.name

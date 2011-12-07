@@ -260,7 +260,7 @@ class LiaisonManagementTestCase(django.test.TestCase):
         
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertEquals(l.from_group, from_group)
-        self.assertEquals(l.from_contact, submitter.email_address())
+        self.assertEquals(l.from_contact.address, submitter.email_address())
         self.assertEquals(l.reply_to, "replyto@example.com")
         self.assertEquals(l.to_group, to_group)
         self.assertEquals(l.response_contact, "responce_contact@example.com")
@@ -333,7 +333,7 @@ class LiaisonManagementTestCase(django.test.TestCase):
         
         l = LiaisonStatement.objects.all().order_by("-id")[0]
         self.assertEquals(l.from_group, from_group)
-        self.assertEquals(l.from_contact, submitter.email_address())
+        self.assertEquals(l.from_contact.address, submitter.email_address())
         self.assertEquals(l.reply_to, "replyto@example.com")
         self.assertEquals(l.to_group, to_group)
         self.assertEquals(l.to_contact, "to_poc@example.com")

@@ -216,7 +216,7 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue(name in unicode(outbox[-2]))
         self.assertTrue("mars" in unicode(outbox[-2]))
         self.assertTrue(draft.ad.role_email("ad").address in unicode(outbox[-2]))
-        self.assertTrue(ballot_position.ad.email_address().address in unicode(outbox[-2]))
+        self.assertTrue(ballot_position.ad.email_address() in unicode(outbox[-2]))
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
         self.assertTrue(name in unicode(outbox[-1]))
         self.assertTrue("mars" in unicode(outbox[-1]))

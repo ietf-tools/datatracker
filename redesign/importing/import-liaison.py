@@ -153,7 +153,7 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
         try:
             l.from_contact = Email.objects.get(address__iexact=o.from_email().address)
         except EmailAddress.DoesNotExist:
-            l.from_contact = old_person_to_person(o.person).email_address()
+            l.from_contact = old_person_to_person(o.person).email_set.order_by('-active')[0]
 
     if o.by_secretariat:
         l.to_name = o.submitter_name
