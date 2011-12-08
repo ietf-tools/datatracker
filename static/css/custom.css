@@ -530,7 +530,7 @@ ul.session-buttons {
 
 #telechat-sidebar {
     float: left;
-    width: 250px;
+    width: 300px;
     background: url("../images/admin/default-bg.gif") repeat-x scroll left top #7CA0C7;
     color: white;
 }
@@ -589,7 +589,8 @@ ul.doc-list li {
 */
 
 #telechat-main {
-    float: right;
-    width: 560px;
+    float: left;
+    padding-left: 20px;
+    width: 640px;
 }
 
