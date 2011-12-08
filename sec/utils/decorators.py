@@ -1,8 +1,11 @@
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response, get_object_or_404
 from functools import wraps
 
 from ietf.ietfauth.decorators import has_role
+
+from redesign.group.models import Group
 
 from itertools import chain
 
@@ -63,7 +66,7 @@ def check_permissions(func):
         if request.user_is_ietf_iab_chair and group_id in ('-1','-2'):
             return func(request, *args, **kwargs)
         '''
-        group = get_group_or_404(group_id)
+        group = get_object_or_404(Group,id=group_id)
         login = request.user.get_profile()
         all_roles = chain(
             group.role_set.filter(name__in=('chair','secr')),
@@ -73,7 +76,23 @@ def check_permissions(func):
             
         # if we get here access is denied
         return render_to_response('unauthorized.html',{
-            'user_name':request.person,
-            'group_name':str(group)}
+            'user_name':login,
+            'group_name':group.acronym}
         )
+    return wraps(func)(wrapper)
+
+def sec_only(func):
+    """
+    This decorator checks that the user making the request is a secretariat user.
+    (Based on the cusotm user_is_secretariat request attribute)
+    """
+    def wrapper(request, *args, **kwargs):
+        # short circuit.  secretariat user has full access
+        if request.user_is_secretariat:
+            return func(request, *args, **kwargs)
+        
+        return render_to_response('unauthorized.html',{
+            'user_name':request.user.get_profile()}
+        )
+
     return wraps(func)(wrapper)

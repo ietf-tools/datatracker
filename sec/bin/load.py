@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from django.core.management import setup_environ
+from django.contrib.auth.models import User
 from sec import settings
 
 setup_environ(settings)
@@ -19,6 +20,17 @@ records = [('IETF Announcement List','ietf-announce@ietf.org'),
            ('Working Group Chairs', 'wgchairs@ietf.org'),
            ('BoF Chairs', 'bofchairs@ietf.org')]
                
+def add_user():
+    user = User.objects.create_user('test-chair')
+    person = Person(name='Test Chair',user=user)
+    person.save()
+    email = Email(address='testchair@amsl.com',person=person)
+    email.save()
+    group = Group.objects.get(name="ancp")
+    role_name = RoleName.objects.get(slug='chair')
+    r = Role(name=role_name,group=group,email=email,person=email.person)
+    r.save()
+
 def add_emails():
     for item in records:
         p = Person(name=item[0],ascii=item[0])
@@ -43,6 +55,7 @@ def assign_roles():
         print 'created %s' % repr(r)
     
 # control        
+add_user()
 add_emails()
 add_roles()
 assign_roles()

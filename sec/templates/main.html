@@ -3,6 +3,8 @@
 {% block content %}
 <div id="content-main">
 
+{% if request.user_is_secretariat %}
+
 <table class="menu" width="100%" cellpadding="5" cellspacing="5" border="0">
   <tr valign="top">
     <td>
@@ -31,6 +33,31 @@
     </td>
   </tr>
 </table>
+
+{% else %}
+
+<table class="menu" width="100%" cellpadding="5" cellspacing="5" border="0">
+  <tr valign="top">
+    <td>
+      <h3>Section 1</h3>
+        <li> <a href="{% url sessions %}"><b>Session Requests</b></a></li><br>
+        <li> <a href="{% url proceedings %}"><b>Meeting Material</b></a></li><br>
+   </td>
+   <td>
+     <h3>Section 2</h3>
+    </td>
+  </tr>
+  <tr valign="top">
+    <td>
+      <h3>Section 3</h3>
+    </td>
+    <td>
+      <h3>Section 4</h3>
+    </td>
+  </tr>
+</table>
+
+{% endif %}
 
 </div>
 {% endblock %}

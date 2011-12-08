@@ -10,7 +10,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
 from sec.utils.mail import get_ad_email_list, get_chair_email_list, get_cc_list
-from sec.utils.decorators import check_permissions
+from sec.utils.decorators import check_permissions, sec_only
 from sec.utils.group import get_my_groups
 
 from ietf.ietfauth.decorators import has_role
@@ -102,7 +102,7 @@ def get_scheduled_groups(user, meeting):
         
     my_groups = get_my_groups(user)
     
-    return groups & my_groups
+    return [ val for val in my_groups if val in groups ]
     
 def get_unscheduled_groups(user, meeting):
     '''
@@ -127,7 +127,8 @@ def get_unscheduled_groups(user, meeting):
         
     my_groups = get_my_groups(user)
     
-    return unscheduled & my_groups
+    #return unscheduled & my_groups
+    return [ val for val in my_groups if val in unscheduled ]
     
 def save_conflicts(group, meeting, conflicts, name):
     '''
@@ -337,7 +338,7 @@ def confirm(request, group_id):
         RequestContext(request, {}),
     )
 
-@check_permissions            
+@check_permissions
 def edit(request, group_id):    
     '''
     This view allows the user to edit details of the session request
@@ -499,8 +500,7 @@ def main(request):
     
     # add not meeting indicators for use in template
     for group in unscheduled_groups:
-        sessions = group.session_set.filter(meeting=meeting)
-        if sessions and sessions[0].status.slug == 'notmeet':
+        if group.session_set.filter(meeting=meeting,status='notmeet'):
             group.not_meeting = True
             
     return render_to_response('sessions/main.html', {
@@ -614,7 +614,7 @@ def no_session(request, group_id):
     url = reverse('sessions')
     return HttpResponseRedirect(url)
 
-#@sec_only
+@sec_only
 def tool_status(request):
     '''
     This view handles locking and unlocking of the tool to the public.
@@ -667,7 +667,12 @@ def view(request, group_id):
     '''
     meeting = get_meeting()
     group = get_object_or_404(Group, id=group_id)
-    sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
+    sessions = Session.objects.filter(~Q(status__in=('canceled','notmeet')),meeting=meeting,group=group).order_by('id')
+    
+    # if there are no session requests yet, redirect to new session request page
+    if not sessions:
+        redirect_url = reverse('sessions_new', kwargs={'group_id':group_id})
+        return HttpResponseRedirect(redirect_url)
     
     # TODO simulate activity records
     activities = []

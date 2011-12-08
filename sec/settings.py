@@ -180,9 +180,9 @@ INTERNAL_IPS = (
 # this is a tuple of regular expressions.  if the incoming URL matches one of
 # these, than non secretariat access is allowed.
 SEC_AUTH_UNRESTRICTED_URLS = (
-    (r'^/sec/$'),
-    (r'^/sec/proceedings/'),
-    (r'^/sec/sessions/'),
+    (r'^/$'),
+    (r'^/proceedings/'),
+    (r'^/sessions/'),
 )
 
 # no slash at end
