@@ -360,7 +360,12 @@ class WgMeetingSessionProxy(TimeSlot):
 	return "%s at %s" % (self.acronym(), self.meeting)
     def agenda_file(self,interimvar=0):
         if not hasattr(self, '_agenda_file'):
-            docs = self.materials.filter(type="agenda", states__type="agenda", states__slug="active")
+            self._agenda_file = ""
+
+            if not self.session:
+                return ""
+
+            docs = self.session.materials.filter(type="agenda", states__type="agenda", states__slug="active")
             if not docs:
                 return ""
 
@@ -371,7 +376,10 @@ class WgMeetingSessionProxy(TimeSlot):
             
         return self._agenda_file
     def minute_file(self,interimvar=0):
-        docs = self.materials.filter(type="minutes", states__type="minutes", states__slug="active")
+        if not self.session:
+            return ""
+
+        docs = self.session.materials.filter(type="minutes", states__type="minutes", states__slug="active")
         if not docs:
             return ""
 
@@ -404,17 +412,17 @@ class WgMeetingSessionProxy(TimeSlot):
     
     # from ResolveAcronym:
     def acronym(self):
-        if not self.session:
-            if self.type_id == "plenary":
-                if "Operations and Administration" in self.name:
+        if self.type_id == "plenary":
+            if "Operations and Administration" in self.name:
+                return "plenaryw"
+            if "Technical" in self.name:
+                return "plenaryt"
+            for m in self.materials.filter(type="agenda", states__type="agenda", states__slug="active"):
+                if "plenaryw" in m.name:
                     return "plenaryw"
-                if "Technical" in self.name:
+                if "plenaryt" in m.name:
                     return "plenaryt"
-                for m in self.materials.filter(type="agenda", states__type="agenda", states__slug="active"):
-                    if "plenaryw" in m.name:
-                        return "plenaryw"
-                    if "plenaryt" in m.name:
-                        return "plenaryt"
+        if not self.session:
             return "%s" % self.pk
         if hasattr(self, "interim"):
             return "i" + self.session.group.acronym
@@ -427,6 +435,8 @@ class WgMeetingSessionProxy(TimeSlot):
             return self.name
         if hasattr(self, "interim"):
             return self.session.group.name + " (interim)"
+        elif self.session.name:
+            return self.session.name
         else:
             return self.session.group.name
     def area(self):
@@ -510,8 +520,8 @@ class IESGHistoryProxy(Person):
     #meeting = models.ForeignKey(Meeting, db_column='meeting_num')
     def from_role(self, role, time):
         from ietf.utils.history import find_history_active_at
-        personhistory = find_history_active_at(role.email.person, time)
-        self.from_object(personhistory or role.email.person)
+        personhistory = find_history_active_at(role.person, time)
+        self.from_object(personhistory or role.person)
         from redesign.group.proxy import Area
         self.area = Area().from_object(role.group)
         return self

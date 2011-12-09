@@ -26,6 +26,10 @@ from ietf.utils.pipe import pipe
 
 from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches, WgProceedingsActivities, SessionConflict
 
+from redesign.group.models import Group
+from ietf.utils.history import find_history_active_at
+from redesign.doc.models import Document
+
 
 @decorator_from_middleware(GZipMiddleware)
 def show_html_materials(request, meeting_num=None):
@@ -141,19 +145,16 @@ def agenda_infoREDESIGN(num=None):
 
     ads = []
     meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
-    from redesign.group.models import Group
-    from ietf.utils.history import find_history_active_at
     for g in Group.objects.filter(type="area").order_by("acronym"):
         history = find_history_active_at(g, meeting_time)
         if history:
             if history.state_id == "active":
-                ads.extend(IESGHistory().from_role(x, meeting_time) for x in history.rolehistory_set.filter(name="ad"))
+                ads.extend(IESGHistory().from_role(x, meeting_time) for x in history.rolehistory_set.filter(name="ad").select_related())
         else:
             if g.state_id == "active":
-                ads.extend(IESGHistory().from_role(x, meeting_time) for x in g.role_set.filter(name="ad"))
+                ads.extend(IESGHistory().from_role(x, meeting_time) for x in g.role_set.filter(name="ad").select_related('group', 'person'))
     
-    from redesign.doc.models import Document
-    plenary_agendas = Document.objects.filter(timeslot__meeting=meeting, timeslot__type="plenary", type="agenda").distinct()
+    plenary_agendas = Document.objects.filter(session__meeting=meeting, session__timeslot__type="plenary", type="agenda").distinct()
     plenaryw_agenda = plenaryt_agenda = "The Plenary has not been scheduled"
     for agenda in plenary_agendas:
         # we use external_url at the moment, should probably regularize
@@ -165,12 +166,12 @@ def agenda_infoREDESIGN(num=None):
             f.close()
         except IOError:
              s = "THE AGENDA HAS NOT BEEN UPLOADED YET"
-        
-        if "plenaryw" in agenda.name:
-            plenaryw_agenda = s
-        elif "plenaryt" in agenda.name:
+
+        if "technical" in agenda.title.lower():
             plenaryt_agenda = s
-                               
+        else:
+            plenaryw_agenda = s
+
     return timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:

@@ -91,8 +91,7 @@ class TimeSlot(models.Model):
     duration = TimedeltaField()
     location = models.ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True, help_text="Show location in agenda")
-    materials = models.ManyToManyField(Document, blank=True)
-    session = models.ForeignKey('Session', null=True, blank=True, help_text=u"Scheduled group session, if any")
+    session = models.ForeignKey('Session', null=True, blank=True, help_text=u"Scheduled session, if any")
     modified = models.DateTimeField(default=datetime.datetime.now)
 
     def __unicode__(self):
@@ -130,31 +129,25 @@ class Constraint(models.Model):
 
 class Session(models.Model):
     """Session records that a group should have a session on the
-    meeting (the actual period of time and location is stored in
-    TimeSlot) - if multiple timeslots are needed, multiple sessions
-    will have to be created."""
+    meeting (time and location is stored in a TimeSlot) - if multiple
+    timeslots are needed, multiple sessions will have to be created.
+    Training sessions and similar are modeled by filling in a
+    responsible group (e.g. Edu team) and filling in the name"""
     meeting = models.ForeignKey(Meeting)
+    name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting")
     group = models.ForeignKey(Group)    # The group type determines the session type.  BOFs also need to be added as a group.
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)
-    #
     requested = models.DateTimeField(default=datetime.datetime.now)
     requested_by = models.ForeignKey(Person)
     requested_duration = TimedeltaField()
     comments = models.TextField()
-    #
     status = models.ForeignKey(SessionStatusName)
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(default=datetime.datetime.now)
 
-    # contains the materials while the session is being requested,
-    # when it is scheduled, timeslot.materials should be used
     materials = models.ManyToManyField(Document, blank=True)
 
     def __unicode__(self):
         timeslots = self.timeslot_set.order_by('time')
         return u"%s: %s %s" % (self.meeting, self.group.acronym, timeslots[0].time.strftime("%H%M") if timeslots else "(unscheduled)")
-
-# IESG history is extracted from GroupHistory, rather than hand coded in a
-# separate table.
-

@@ -106,6 +106,14 @@ iana_group.state = state_names["active"]
 iana_group.type = type_names["ietf"]
 iana_group.save()
 
+# create IEPG for use with meetings
+iepg_group, _ = Group.objects.get_or_create(acronym="iepg")
+iepg_group.name = "IEPG"
+iepg_group.state = state_names["active"]
+iepg_group.type = type_names["ietf"]
+iepg_group.save()
+
+
 system = Person.objects.get(name="(System)")
 
 # NomCom

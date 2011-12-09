@@ -54,7 +54,6 @@ session_slot = name(TimeSlotTypeName, "session", "Session")
 break_slot = name(TimeSlotTypeName, "break", "Break")
 registration_slot = name(TimeSlotTypeName, "reg", "Registration")
 plenary_slot = name(TimeSlotTypeName, "plenary", "Plenary")
-other_slot = name(TimeSlotTypeName, "other", "Other")
 
 conflict_constraints = {
     1: name(ConstraintName, "conflict", "Conflicts with"),
@@ -171,14 +170,54 @@ requested_length_mapping = {
     "4": 150 * 60,
     }
 
-def import_materials(wg_meeting_session, timeslot=None, session=None):
-    if timeslot:
-        meeting = timeslot.meeting
-        materials = timeslot.materials
-    else:
-        meeting = session.meeting
-        materials = session.materials
+non_group_mapping = {
+    "plenaryw": "ietf",
+    "plenaryt": "ietf",
+    "newcomer": "edu",
+    "editor": "edu",
+    "wgchair": "edu",
+    "sectut": "edu",
+    "protut": "edu",
+    "iepg": "iepg",
+    "rfc": "edu",
+    "wgleader": "edu",
+    "xml2rfc": "edu",
+    "rbst": "edu",
+    "recp": "ietf",
+    "MIBDOC": "edu",
+    "IE": "iepg",
+    "newcomF": "edu",
+    "WritRFC": "edu",
+    "Orien": "edu",
+    "newwork": "edu",
+    "leadership": "edu",
+    "ipv6spec": "edu",
+    "Wel": "ietf",
+    "IDRTut": "edu",
+    "ToolsTut": "edu",
+    "cosp": "tools",
+    "doclife": "edu",
+    "dnstut": "edu",
+    "xmltut": "edu",
+    "RFCEd": "edu",
+    "IDRBasics": "edu",
+    "newcomSWED": "edu",
+    "MIBTut": "edu",
+    "IDR75": "edu",
+    "NewcomerJP": "edu",
+    "MIBT": "edu",
+    "DNSProg": "edu",
+    "natTUT": "edu",
+    "NewcomerCHINA": "edu",
+    "CreatingID": "edu",
+    "NewMeetGreet": "ietf",
+    "appsprepmeeting": "edu",
+    "NewcomersFrench": "edu",
+    "NewComMandar": "edu",
+    "AdminP": "ietf",
+    }
 
+def import_materials(wg_meeting_session, session):
     def import_material_kind(kind, doctype):
         # import agendas
         irtf = 0
@@ -190,13 +229,12 @@ def import_materials(wg_meeting_session, timeslot=None, session=None):
                                     interim=0)
 
         for o in found:
-            if session:
-                acronym = session.group.acronym
-            else:
-                acronym = wg_meeting_session.acronym()
-            name = "%s-%s-%s" % (doctype.slug, meeting.number, acronym)
+            name = "%s-%s-%s" % (doctype.slug, session.meeting.number, acronym)
             if kind == Slide:
                 name += "-%s" % o.slide_num
+
+            if session.name:
+                name += "-%s" % slugify(session.name)
 
             name = name.lower()
 
@@ -205,21 +243,17 @@ def import_materials(wg_meeting_session, timeslot=None, session=None):
             except Document.DoesNotExist:
                 d = Document(type=doctype, name=name)
                 
-            if session:
-                session_name = session.group.acronym.upper()
-            else:
-                session_name = timeslot.name
-
             if kind == Slide:
                 d.title = o.slide_name.strip()
                 l = o.file_loc()
                 d.external_url = l[l.find("slides/") + len("slides/"):]
                 d.order = o.order_num or 1
             else:
-                d.title = u"%s for %s at %s" % (doctype.name, session_name, meeting)
+                session_name = session.name if session.name else session.group.acronym.upper()
+                d.title = u"%s for %s at %s" % (doctype.name, session_name, session.meeting)
                 d.external_url = o.filename # save filenames for now as they don't appear to be quite regular
             d.rev = "01"
-            d.group = session.group if session else None
+            d.group = session.group
 
             d.save()
 
@@ -227,7 +261,7 @@ def import_materials(wg_meeting_session, timeslot=None, session=None):
                 
             DocAlias.objects.get_or_create(document=d, name=name)
 
-            materials.add(d)
+            session.materials.add(d)
 
             # try to create a doc event to figure out who uploaded it
             t = d.type_id
@@ -257,6 +291,8 @@ def import_materials(wg_meeting_session, timeslot=None, session=None):
     import_material_kind(WgAgenda, agenda_doctype)
     import_material_kind(Minute, minutes_doctype)
     import_material_kind(Slide, slides_doctype)
+
+obviously_bogus_date = datetime.date(1970, 1, 1)
 
 for o in WgMeetingSession.objects.all().order_by("pk").iterator():
     # num_session is unfortunately not quite reliable, seems to be
@@ -302,30 +338,22 @@ for o in WgMeetingSession.objects.all().order_by("pk").iterator():
             acronym = Acronym.objects.get(pk=o.group_acronym_id)
             if o.group_acronym_id < 0:
                 # this wasn't actually a WG session, but rather a tutorial
-                # or similar, don't create a session but instead modify
-                # the time slot appropriately
-                if not timeslot:
-                    print "IGNORING unscheduled non-WG-session", acronym.name
-                    continue
-                
-                meeting_time = getattr(o, "sched_time_id%s" % i)
-                if meeting_time.session_name_id:
-                    timeslot.name = meeting_time.session_name.session_name
-                else:
-                    timeslot.name = acronym.name
+                # or similar
+                a = non_group_mapping.get(acronym.acronym)
+                if not a:
+                    a = "ietf"
+                    print "UNKNOWN phony group", o.group_acronym_id, acronym.acronym, "falling back to '%s'" % a
+                s.group = Group.objects.get(acronym=a)
+                s.name = acronym.name
 
-                if "Plenary" in timeslot.name:
-                    timeslot.type = plenary_slot
-                else:
-                    timeslot.type = other_slot
-                timeslot.modified = o.last_modified_date
-                timeslot.save()
-                
-                import_materials(o, timeslot=timeslot)
-                
-                continue
+                if timeslot:
+                    if timeslot.name == "Unknown":
+                        timeslot.name = acronym.name
 
-            s.group = Group.objects.get(acronym=acronym.acronym)
+                    if "Plenary" in timeslot.name:
+                        timeslot.type = plenary_slot
+            else:
+                s.group = Group.objects.get(acronym=acronym.acronym)
         s.attendees = o.number_attendee
         s.agenda_note = (o.special_agenda_note or "").strip()
         s.requested = o.requested_date or obviously_bogus_date
@@ -340,7 +368,7 @@ for o in WgMeetingSession.objects.all().order_by("pk").iterator():
         s.status = session_status_mapping[o.status_id or 5]
 
         s.scheduled = o.scheduled_date
-        s.modified = o.last_modified_date
+        s.modified = o.last_modified_date or obviously_bogus_date
 
         s.save()
 
@@ -349,7 +377,7 @@ for o in WgMeetingSession.objects.all().order_by("pk").iterator():
             timeslot.modified = s.modified
             timeslot.save()
             
-        import_materials(o, timeslot=timeslot, session=s)
+        import_materials(o, s)
 
         # some sessions have been scheduled over multiple time slots
         if i < 3:
@@ -358,7 +386,6 @@ for o in WgMeetingSession.objects.all().order_by("pk").iterator():
                 timeslot.session = s
                 timeslot.modified = s.modified
                 timeslot.save()
-                import_materials(o, timeslot=timeslot, session=s)
 
 
     for i in (1, 2, 3):
