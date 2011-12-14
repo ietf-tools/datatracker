@@ -229,7 +229,7 @@ def import_materials(wg_meeting_session, session):
                                     interim=0)
 
         for o in found:
-            name = "%s-%s-%s" % (doctype.slug, session.meeting.number, acronym)
+            name = "%s-%s-%s" % (doctype.slug, session.meeting.number, session.group.acronym)
             if kind == Slide:
                 name += "-%s" % o.slide_num
 
