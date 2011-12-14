@@ -47,21 +47,32 @@ def show_html_materials(request, meeting_num=None):
         sub_began = 1
     # List of WG sessions and Plenary sessions
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        seen_materials = set()
+
         queryset_list = []
         queryset_irtf = []
         queryset_interim = []   # currently ignored, have no way of handling interim here
         queryset_training = []
         for item in WgMeetingSession.objects.filter(meeting=meeting_num):
-            if item.type_id in ("session", "plenary"):
-                if item.session and item.session.group and item.session.group.type_id == "rg":
-                    queryset_irtf.append(item)
-                else:
-                    queryset_list.append(item)
-            else:
-                if item.type_id == "other" and item.slides():
+            if not item.session or not item.session.group:
+                continue
+
+            if item.session.group.type_id == "rg":
+                queryset_irtf.append(item)
+            elif item.session.group.acronym == "edu":
+                if item.slides():
                     queryset_training.append(item)
+            else:
+                if item.session.name and not item.slides():
+                    continue
+                t = tuple(x.pk for x in item.session.materials.all())
+                if t and t in seen_materials:
+                    continue
+                seen_materials.add(t)
+                queryset_list.append(item)
+
         from redesign.doc.models import Document
-        cache_version = Document.objects.filter(timeslot__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
+        cache_version = Document.objects.filter(session__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
     else:
         queryset_list = WgMeetingSession.objects.filter(Q(meeting=meeting_num, group_acronym_id__gte = -2, status__id=4), Q(irtf__isnull=True) | Q(irtf=0))
         queryset_irtf = WgMeetingSession.objects.filter(meeting=meeting_num, group_acronym_id__gte = -2, status__id=4, irtf__gt=0)

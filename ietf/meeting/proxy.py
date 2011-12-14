@@ -445,7 +445,7 @@ class WgMeetingSessionProxy(TimeSlot):
     def area_name(self):
         if self.type_id == "plenary":
             return "Plenary Sessions"
-        elif self.type_id == "other":
+        elif self.session and self.session.group and self.session.group.acronym == "edu":
             return "Training"
         elif not self.session or not self.session.group or not self.session.group.parent or not self.session.group.parent.type_id == "area":
             return ""
