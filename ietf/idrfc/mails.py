@@ -425,6 +425,7 @@ def email_resurrect_requestedREDESIGN(request, doc, by):
         e = by.role_email("secr", group="secretariat")
     else:
         e = by.role_email("ad")
+    frm = e.address
 
     send_mail(request, to, e.formatted_email(),
               "I-D Resurrection Request",
