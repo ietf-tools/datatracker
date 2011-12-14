@@ -240,10 +240,9 @@ class MeetingTimeProxy(TimeSlot):
 NonSessionProxy = MeetingTimeProxy
 
 class WgMeetingSessionProxy(TimeSlot):
-    # we model WgMeetingSession as a TimeSlot - we need to do this
-    # because some previous sessions are now really time slots, to
-    # make the illusion complete we thus have to forward all the
-    # session stuff to the real session
+    # we model WgMeetingSession as a TimeSlot, to make the illusion
+    # complete we thus have to forward all the session stuff to the
+    # real session
     objects = TranslatingManager(dict(group_acronym_id="session__group",
                                       status__id=lambda v: ("state", {4: "sched"}[v])))
 
@@ -388,7 +387,7 @@ class WgMeetingSessionProxy(TimeSlot):
         filename = docs[0].external_url
         return "%s/minutes/%s" % (self.meeting.number, filename)
     def slides(self,interimvar=0):
-        return SlideProxy.objects.filter(timeslot=self).order_by("order")
+        return SlideProxy.objects.filter(session__timeslot=self).order_by("order")
     def interim_meeting(self):
         return False
     def length_session1_desc(self):
@@ -440,7 +439,7 @@ class WgMeetingSessionProxy(TimeSlot):
         else:
             return self.session.group.name
     def area(self):
-        if not self.session:
+        if not self.session or not self.session.group or not self.session.group.parent or not self.session.group.parent.type_id == "area":
             return ""
         return self.session.group.parent.acronym
     def area_name(self):
@@ -448,7 +447,7 @@ class WgMeetingSessionProxy(TimeSlot):
             return "Plenary Sessions"
         elif self.type_id == "other":
             return "Training"
-        elif not self.session:
+        elif not self.session or not self.session.group or not self.session.group.parent or not self.session.group.parent.type_id == "area":
             return ""
         return self.session.group.parent.name
     def isWG(self):
