@@ -1,9 +1,5 @@
 import re
 from bisect import bisect
-try:
-    set
-except NameError:
-    from sets import Set as set     # Python 2.3 fallback
 
 from django.conf import settings
 from django.db.models.related import RelatedObject
@@ -18,10 +14,10 @@ from django.utils.datastructures import SortedDict
 # Calculate the verbose_name by converting from InitialCaps to "lowercase with spaces".
 get_verbose_name = lambda class_name: re.sub('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1', class_name).lower().strip()
 
-DEFAULT_NAMES = ('verbose_name', 'db_table', 'ordering',
+DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural', 'db_table', 'ordering',
                  'unique_together', 'permissions', 'get_latest_by',
                  'order_with_respect_to', 'app_label', 'db_tablespace',
-                 'abstract', 'managed', 'proxy')
+                 'abstract', 'managed', 'proxy', 'auto_created')
 
 class Options(object):
     def __init__(self, meta, app_label=None):
@@ -47,11 +43,16 @@ class Options(object):
         self.proxy_for_model = None
         self.parents = SortedDict()
         self.duplicate_targets = {}
+        self.auto_created = False
 
         # To handle various inheritance situations, we need to track where
         # managers came from (concrete or abstract base classes).
         self.abstract_managers = []
         self.concrete_managers = []
+
+        # List of all lookups defined in ForeignKey 'limit_choices_to' options
+        # from *other* models. Needed for some admin checks. Internal use only.
+        self.related_fkey_lookups = []
 
     def contribute_to_class(self, cls, name):
         from django.db import connection
@@ -89,11 +90,12 @@ class Options(object):
 
             # verbose_name_plural is a special case because it uses a 's'
             # by default.
-            setattr(self, 'verbose_name_plural', meta_attrs.pop('verbose_name_plural', string_concat(self.verbose_name, 's')))
+            if self.verbose_name_plural is None:
+                self.verbose_name_plural = string_concat(self.verbose_name, 's')
 
             # Any leftover attributes must be invalid.
             if meta_attrs != {}:
-                raise TypeError, "'class Meta' got invalid attribute(s): %s" % ','.join(meta_attrs.keys())
+                raise TypeError("'class Meta' got invalid attribute(s): %s" % ','.join(meta_attrs.keys()))
         else:
             self.verbose_name_plural = string_concat(self.verbose_name, 's')
         del self.meta
@@ -103,11 +105,11 @@ class Options(object):
             self.db_table = "%s_%s" % (self.app_label, self.module_name)
             self.db_table = truncate_name(self.db_table, connection.ops.max_name_length())
 
-
     def _prepare(self, model):
         if self.order_with_respect_to:
             self.order_with_respect_to = self.get_field(self.order_with_respect_to)
             self.ordering = ('_order',)
+            model.add_to_class('_order', OrderWrt())
         else:
             self.order_with_respect_to = None
 
@@ -116,6 +118,12 @@ class Options(object):
                 # Promote the first parent link in lieu of adding yet another
                 # field.
                 field = self.parents.value_for_index(0)
+                # Look for a local field with the same name as the
+                # first parent link. If a local field has already been
+                # created, use it instead of promoting the parent
+                already_created = [fld for fld in self.local_fields if fld.name == field.name]
+                if already_created:
+                    field = already_created[0]
                 field.primary_key = True
                 self.setup_pk(field)
             else:
@@ -273,7 +281,7 @@ class Options(object):
         for f in to_search:
             if f.name == name:
                 return f
-        raise FieldDoesNotExist, '%s has no field named %r' % (self.object_name, name)
+        raise FieldDoesNotExist('%s has no field named %r' % (self.object_name, name))
 
     def get_field_by_name(self, name):
         """
@@ -329,8 +337,6 @@ class Options(object):
             cache[f.name] = (f, model, True, True)
         for f, model in self.get_fields_with_model():
             cache[f.name] = (f, model, True, False)
-        if self.order_with_respect_to:
-            cache['_order'] = OrderWrt(), None, True, False
         if app_cache_ready():
             self._name_map = cache
         return cache
@@ -487,4 +493,3 @@ class Options(object):
         Returns the index of the primary key field in the self.fields list.
         """
         return self.fields.index(self.pk)
-

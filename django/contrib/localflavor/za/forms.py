@@ -2,8 +2,9 @@
 South Africa-specific Form helpers
 """
 
+from django.core.validators import EMPTY_VALUES
 from django.forms import ValidationError
-from django.forms.fields import Field, RegexField, EMPTY_VALUES
+from django.forms.fields import Field, RegexField
 from django.utils.checksums import luhn
 from django.utils.translation import gettext as _
 import re
@@ -21,13 +22,13 @@ class ZAIDField(Field):
     }
 
     def clean(self, value):
-        # strip spaces and dashes
-        value = value.strip().replace(' ', '').replace('-', '')
-
         super(ZAIDField, self).clean(value)
 
         if value in EMPTY_VALUES:
             return u''
+
+        # strip spaces and dashes
+        value = value.strip().replace(' ', '').replace('-', '')
 
         match = re.match(id_re, value)
 
@@ -56,4 +57,4 @@ class ZAPostCodeField(RegexField):
 
     def __init__(self, *args, **kwargs):
         super(ZAPostCodeField, self).__init__(r'^\d{4}$',
-            max_length=None, min_length=None)
+            max_length=None, min_length=None, *args, **kwargs)

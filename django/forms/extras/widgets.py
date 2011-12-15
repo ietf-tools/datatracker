@@ -2,16 +2,40 @@
 Extra HTML Widget classes
 """
 
+import time
 import datetime
 import re
 
 from django.forms.widgets import Widget, Select
+from django.utils import datetime_safe
 from django.utils.dates import MONTHS
 from django.utils.safestring import mark_safe
+from django.utils.formats import get_format
+from django.conf import settings
 
 __all__ = ('SelectDateWidget',)
 
 RE_DATE = re.compile(r'(\d{4})-(\d\d?)-(\d\d?)$')
+
+def _parse_date_fmt():
+    fmt = get_format('DATE_FORMAT')
+    escaped = False
+    output = []
+    for char in fmt:
+        if escaped:
+            escaped = False
+        elif char == '\\':
+            escaped = True
+        elif char in 'Yy':
+            output.append('year')
+            #if not self.first_select: self.first_select = 'year'
+        elif char in 'bFMmNn':
+            output.append('month')
+            #if not self.first_select: self.first_select = 'month'
+        elif char in 'dj':
+            output.append('day')
+            #if not self.first_select: self.first_select = 'day'
+    return output
 
 class SelectDateWidget(Widget):
     """
@@ -41,46 +65,47 @@ class SelectDateWidget(Widget):
         except AttributeError:
             year_val = month_val = day_val = None
             if isinstance(value, basestring):
-                match = RE_DATE.match(value)
-                if match:
-                    year_val, month_val, day_val = [int(v) for v in match.groups()]
+                if settings.USE_L10N:
+                    try:
+                        input_format = get_format('DATE_INPUT_FORMATS')[0]
+                        # Python 2.4 compatibility:
+                        #     v = datetime.datetime.strptime(value, input_format)
+                        # would be clearer, but datetime.strptime was added in
+                        # Python 2.5
+                        v = datetime.datetime(*(time.strptime(value, input_format)[0:6]))
+                        year_val, month_val, day_val = v.year, v.month, v.day
+                    except ValueError:
+                        pass
+                else:
+                    match = RE_DATE.match(value)
+                    if match:
+                        year_val, month_val, day_val = [int(v) for v in match.groups()]
+        choices = [(i, i) for i in self.years]
+        year_html = self.create_select(name, self.year_field, value, year_val, choices)
+        choices = MONTHS.items()
+        month_html = self.create_select(name, self.month_field, value, month_val, choices)
+        choices = [(i, i) for i in range(1, 32)]
+        day_html = self.create_select(name, self.day_field, value, day_val,  choices)
 
         output = []
-
-        if 'id' in self.attrs:
-            id_ = self.attrs['id']
-        else:
-            id_ = 'id_%s' % name
-
-        month_choices = MONTHS.items()
-        if not (self.required and value):
-            month_choices.append(self.none_value)
-        month_choices.sort()
-        local_attrs = self.build_attrs(id=self.month_field % id_)
-        s = Select(choices=month_choices)
-        select_html = s.render(self.month_field % name, month_val, local_attrs)
-        output.append(select_html)
-
-        day_choices = [(i, i) for i in range(1, 32)]
-        if not (self.required and value):
-            day_choices.insert(0, self.none_value)
-        local_attrs['id'] = self.day_field % id_
-        s = Select(choices=day_choices)
-        select_html = s.render(self.day_field % name, day_val, local_attrs)
-        output.append(select_html)
-
-        year_choices = [(i, i) for i in self.years]
-        if not (self.required and value):
-            year_choices.insert(0, self.none_value)
-        local_attrs['id'] = self.year_field % id_
-        s = Select(choices=year_choices)
-        select_html = s.render(self.year_field % name, year_val, local_attrs)
-        output.append(select_html)
-
+        for field in _parse_date_fmt():
+            if field == 'year':
+                output.append(year_html)
+            elif field == 'month':
+                output.append(month_html)
+            elif field == 'day':
+                output.append(day_html)
         return mark_safe(u'\n'.join(output))
 
     def id_for_label(self, id_):
-        return '%s_month' % id_
+        first_select = None
+        field_list = _parse_date_fmt()
+        if field_list:
+            first_select = field_list[0]
+        if first_select is not None:
+            return '%s_%s' % (id_, first_select)
+        else:
+            return '%s_month' % id_
     id_for_label = classmethod(id_for_label)
 
     def value_from_datadict(self, data, files, name):
@@ -90,5 +115,27 @@ class SelectDateWidget(Widget):
         if y == m == d == "0":
             return None
         if y and m and d:
-            return '%s-%s-%s' % (y, m, d)
+            if settings.USE_L10N:
+                input_format = get_format('DATE_INPUT_FORMATS')[0]
+                try:
+                    date_value = datetime.date(int(y), int(m), int(d))
+                except ValueError:
+                    return '%s-%s-%s' % (y, m, d)
+                else:
+                    date_value = datetime_safe.new_date(date_value)
+                    return date_value.strftime(input_format)
+            else:
+                return '%s-%s-%s' % (y, m, d)
         return data.get(name, None)
+
+    def create_select(self, name, field, value, val, choices):
+        if 'id' in self.attrs:
+            id_ = self.attrs['id']
+        else:
+            id_ = 'id_%s' % name
+        if not (self.required and val):
+            choices.insert(0, self.none_value)
+        local_attrs = self.build_attrs(id=field % id_)
+        s = Select(choices=choices)
+        select_html = s.render(field % name, val, local_attrs)
+        return select_html

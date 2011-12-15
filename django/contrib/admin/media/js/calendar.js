@@ -25,6 +25,7 @@ function quickElement() {
 var CalendarNamespace = {
     monthsOfYear: gettext('January February March April May June July August September October November December').split(' '),
     daysOfWeek: gettext('S M T W T F S').split(' '),
+    firstDayOfWeek: parseInt(get_format('FIRST_DAY_OF_WEEK')),
     isLeapYear: function(year) {
         return (((year % 4)==0) && ((year % 100)!=0) || ((year % 400)==0));
     },
@@ -45,6 +46,12 @@ var CalendarNamespace = {
         return days;
     },
     draw: function(month, year, div_id, callback) { // month = 1-12, year = 1-9999
+        var today = new Date();
+        var todayDay = today.getDate();
+        var todayMonth = today.getMonth()+1;
+        var todayYear = today.getFullYear();
+        var todayClass = '';
+
         month = parseInt(month);
         year = parseInt(year);
         var calDiv = document.getElementById(div_id);
@@ -56,10 +63,10 @@ var CalendarNamespace = {
         // Draw days-of-week header
         var tableRow = quickElement('tr', tableBody);
         for (var i = 0; i < 7; i++) {
-            quickElement('th', tableRow, CalendarNamespace.daysOfWeek[i]);
+            quickElement('th', tableRow, CalendarNamespace.daysOfWeek[(i + CalendarNamespace.firstDayOfWeek) % 7]);
         }
 
-        var startingPos = new Date(year, month-1, 1).getDay();
+        var startingPos = new Date(year, month-1, 1 - CalendarNamespace.firstDayOfWeek).getDay();
         var days = CalendarNamespace.getDaysInMonth(month, year);
 
         // Draw blanks before first of month
@@ -75,7 +82,13 @@ var CalendarNamespace = {
             if (i%7 == 0 && currentDay != 1) {
                 tableRow = quickElement('tr', tableBody);
             }
-            var cell = quickElement('td', tableRow, '');
+            if ((currentDay==todayDay) && (month==todayMonth) && (year==todayYear)) {
+                todayClass='today';
+            } else {
+                todayClass='';
+            }
+            var cell = quickElement('td', tableRow, '', 'class', todayClass);
+
             quickElement('a', cell, currentDay, 'href', 'javascript:void(' + callback + '('+year+','+month+','+currentDay+'));');
             currentDay++;
         }

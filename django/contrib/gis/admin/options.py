@@ -64,7 +64,7 @@ class GeoModelAdmin(ModelAdmin):
     def get_map_widget(self, db_field):
         """
         Returns a subclass of the OpenLayersWidget (or whatever was specified
-        in the `widget` attribute) using the settings from the attributes set 
+        in the `widget` attribute) using the settings from the attributes set
         in this class.
         """
         is_collection = db_field.geom_type in ('MULTIPOINT', 'MULTILINESTRING', 'MULTIPOLYGON', 'GEOMETRYCOLLECTION')
@@ -111,20 +111,21 @@ class GeoModelAdmin(ModelAdmin):
                       }
         return OLMap
 
-# Using the Beta OSM in the admin requires the following:
-#  (1) The Google Maps Mercator projection needs to be added
-#      to your `spatial_ref_sys` table.  You'll need at least GDAL 1.5:
-#      >>> from django.contrib.gis.gdal import SpatialReference
-#      >>> from django.contrib.gis.utils import add_postgis_srs
-#      >>> add_postgis_srs(SpatialReference(900913)) # Adding the Google Projection 
 from django.contrib.gis import gdal
 if gdal.HAS_GDAL:
+    # Use the official spherical mercator projection SRID on versions
+    # of GDAL that support it; otherwise, fallback to 900913
+    if gdal.GDAL_VERSION >= (1, 7):
+        spherical_mercator_srid = 3857
+    else:
+        spherical_mercator_srid = 900913
+
     class OSMGeoAdmin(GeoModelAdmin):
         map_template = 'gis/admin/osm.html'
         extra_js = ['http://openstreetmap.org/openlayers/OpenStreetMap.js']
         num_zoom = 20
-        map_srid = 900913
+        map_srid = spherical_mercator_srid
         max_extent = '-20037508,-20037508,20037508,20037508'
-        max_resolution = 156543.0339
+        max_resolution = '156543.0339'
         point_zoom = num_zoom - 6
         units = 'm'

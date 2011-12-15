@@ -1,10 +1,28 @@
-import sys, time, os
+import sys
+import time
+import os
+import warnings
 from django.conf import settings
-from django.db import connection
 from django.core import mail
+from django.core.mail.backends import locmem
 from django.test import signals
 from django.template import Template
 from django.utils.translation import deactivate
+
+
+class Approximate(object):
+    def __init__(self, val, places=7):
+        self.val = val
+        self.places = places
+
+    def __repr__(self):
+        return repr(self.val)
+
+    def __eq__(self, other):
+        if self.val == other:
+            return True
+        return round(abs(self.val-other), self.places) == 0
+
 
 class ContextList(list):
     """A wrapper that provides direct key access to context items contained
@@ -15,9 +33,16 @@ class ContextList(list):
             for subcontext in self:
                 if key in subcontext:
                     return subcontext[key]
-            raise KeyError
+            raise KeyError(key)
         else:
             return super(ContextList, self).__getitem__(key)
+
+    def __contains__(self, key):
+        try:
+            value = self[key]
+        except KeyError:
+            return False
+        return True
 
 
 def instrumented_test_render(self, context):
@@ -28,41 +53,27 @@ def instrumented_test_render(self, context):
     signals.template_rendered.send(sender=self, template=self, context=context)
     return self.nodelist.render(context)
 
-class TestSMTPConnection(object):
-    """A substitute SMTP connection for use during test sessions.
-    The test connection stores email messages in a dummy outbox,
-    rather than sending them out on the wire.
-
-    """
-    def __init__(*args, **kwargs):
-        pass
-    def open(self):
-        "Mock the SMTPConnection open() interface"
-        pass
-    def close(self):
-        "Mock the SMTPConnection close() interface"
-        pass
-    def send_messages(self, messages):
-        "Redirect messages to the dummy outbox"
-        mail.outbox.extend(messages)
-        return len(messages)
 
 def setup_test_environment():
     """Perform any global pre-test setup. This involves:
 
         - Installing the instrumented test renderer
-        - Diverting the email sending functions to a test buffer
+        - Set the email backend to the locmem email backend.
         - Setting the active locale to match the LANGUAGE_CODE setting.
     """
-    Template.original_render = Template.render
-    Template.render = instrumented_test_render
+    Template.original_render = Template._render
+    Template._render = instrumented_test_render
 
     mail.original_SMTPConnection = mail.SMTPConnection
-    mail.SMTPConnection = TestSMTPConnection
+    mail.SMTPConnection = locmem.EmailBackend
+
+    mail.original_email_backend = settings.EMAIL_BACKEND
+    settings.EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
     mail.outbox = []
 
     deactivate()
+
 
 def teardown_test_environment():
     """Perform any global post-test teardown. This involves:
@@ -71,13 +82,34 @@ def teardown_test_environment():
         - Restoring the email sending functions
 
     """
-    Template.render = Template.original_render
+    Template._render = Template.original_render
     del Template.original_render
 
     mail.SMTPConnection = mail.original_SMTPConnection
     del mail.original_SMTPConnection
 
+    settings.EMAIL_BACKEND = mail.original_email_backend
+    del mail.original_email_backend
+
     del mail.outbox
+
+
+def get_warnings_state():
+    """
+    Returns an object containing the state of the warnings module
+    """
+    # There is no public interface for doing this, but this implementation of
+    # get_warnings_state and restore_warnings_state appears to work on Python
+    # 2.4 to 2.7.
+    return warnings.filters[:]
+
+
+def restore_warnings_state(state):
+    """
+    Restores the state of the warnings module when passed an object that was
+    returned by get_warnings_state()
+    """
+    warnings.filters = state[:]
 
 
 def get_runner(settings):

@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.sites.models import Site
+from django.contrib.sites.models import get_current_site
 from django.template import Context, loader
 from django import forms
 from django.utils.translation import ugettext_lazy as _
@@ -13,9 +13,10 @@ class UserCreationForm(forms.ModelForm):
     """
     username = forms.RegexField(label=_("Username"), max_length=30, regex=r'^[\w.@+-]+$',
         help_text = _("Required. 30 characters or fewer. Letters, digits and @/./+/-/_ only."),
-        error_message = _("This value may contain only letters, numbers and @/./+/-/_ characters."))
+        error_messages = {'invalid': _("This value may contain only letters, numbers and @/./+/-/_ characters.")})
     password1 = forms.CharField(label=_("Password"), widget=forms.PasswordInput)
-    password2 = forms.CharField(label=_("Password confirmation"), widget=forms.PasswordInput)
+    password2 = forms.CharField(label=_("Password confirmation"), widget=forms.PasswordInput,
+        help_text = _("Enter the same password as above, for verification."))
 
     class Meta:
         model = User
@@ -46,10 +47,16 @@ class UserCreationForm(forms.ModelForm):
 class UserChangeForm(forms.ModelForm):
     username = forms.RegexField(label=_("Username"), max_length=30, regex=r'^[\w.@+-]+$',
         help_text = _("Required. 30 characters or fewer. Letters, digits and @/./+/-/_ only."),
-        error_message = _("This value may contain only letters, numbers and @/./+/-/_ characters."))
-    
+        error_messages = {'invalid': _("This value may contain only letters, numbers and @/./+/-/_ characters.")})
+
     class Meta:
         model = User
+
+    def __init__(self, *args, **kwargs):
+        super(UserChangeForm, self).__init__(*args, **kwargs)
+        f = self.fields.get('user_permissions', None)
+        if f is not None:
+            f.queryset = f.queryset.select_related('content_type')
 
 class AuthenticationForm(forms.Form):
     """
@@ -101,23 +108,26 @@ class PasswordResetForm(forms.Form):
 
     def clean_email(self):
         """
-        Validates that a user exists with the given e-mail address.
+        Validates that an active user exists with the given e-mail address.
         """
         email = self.cleaned_data["email"]
-        self.users_cache = User.objects.filter(email__iexact=email)
+        self.users_cache = User.objects.filter(
+                                email__iexact=email,
+                                is_active=True
+                            )
         if len(self.users_cache) == 0:
             raise forms.ValidationError(_("That e-mail address doesn't have an associated user account. Are you sure you've registered?"))
         return email
 
     def save(self, domain_override=None, email_template_name='registration/password_reset_email.html',
-             use_https=False, token_generator=default_token_generator):
+             use_https=False, token_generator=default_token_generator, request=None):
         """
         Generates a one-use only link for resetting password and sends to the user
         """
         from django.core.mail import send_mail
         for user in self.users_cache:
             if not domain_override:
-                current_site = Site.objects.get_current()
+                current_site = get_current_site(request)
                 site_name = current_site.name
                 domain = current_site.domain
             else:

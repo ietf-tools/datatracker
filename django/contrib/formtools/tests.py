@@ -1,5 +1,6 @@
 import unittest
 from django import forms
+from django.conf import settings
 from django.contrib.formtools import preview, wizard, utils
 from django import http
 from django.test import TestCase
@@ -115,7 +116,7 @@ class SecurityHashTests(unittest.TestCase):
         hash1 = utils.security_hash(None, f1)
         hash2 = utils.security_hash(None, f2)
         self.assertEqual(hash1, hash2)
-        
+
     def test_empty_permitted(self):
         """
         Regression test for #10643: the security hash should allow forms with
@@ -145,19 +146,37 @@ class WizardPageOneForm(forms.Form):
 class WizardPageTwoForm(forms.Form):
     field = forms.CharField()
 
+class WizardPageTwoAlternativeForm(forms.Form):
+    field = forms.CharField()
+
+class WizardPageThreeForm(forms.Form):
+    field = forms.CharField()
+
 class WizardClass(wizard.FormWizard):
     def render_template(self, *args, **kw):
-        return ""
+        return http.HttpResponse("")
 
     def done(self, request, cleaned_data):
         return http.HttpResponse(success_string)
 
-class DummyRequest(object):
+class DummyRequest(http.HttpRequest):
     def __init__(self, POST=None):
+        super(DummyRequest, self).__init__()
         self.method = POST and "POST" or "GET"
-        self.POST = POST
+        if POST is not None:
+            self.POST.update(POST)
+        self._dont_enforce_csrf_checks = True
 
 class WizardTests(TestCase):
+
+    def setUp(self):
+        # Use a known SECRET_KEY to make security_hash tests deterministic
+        self.old_SECRET_KEY = settings.SECRET_KEY
+        settings.SECRET_KEY = "123"
+
+    def tearDown(self):
+        settings.SECRET_KEY = self.old_SECRET_KEY
+
     def test_step_starts_at_zero(self):
         """
         step should be zero for the first form
@@ -176,3 +195,75 @@ class WizardTests(TestCase):
         response = wizard(request)
         self.assertEquals(1, wizard.step)
 
+    def test_14498(self):
+        """
+        Regression test for ticket #14498.  All previous steps' forms should be
+        validated.
+        """
+        that = self
+        reached = [False]
+
+        class WizardWithProcessStep(WizardClass):
+            def process_step(self, request, form, step):
+                reached[0] = True
+                that.assertTrue(hasattr(form, 'cleaned_data'))
+
+        wizard = WizardWithProcessStep([WizardPageOneForm,
+                                        WizardPageTwoForm,
+                                        WizardPageThreeForm])
+        data = {"0-field": "test",
+                "1-field": "test2",
+                "hash_0": "2fdbefd4c0cad51509478fbacddf8b13",
+                "wizard_step": "1"}
+        wizard(DummyRequest(POST=data))
+        self.assertTrue(reached[0])
+
+    def test_14576(self):
+        """
+        Regression test for ticket #14576.
+
+        The form of the last step is not passed to the done method.
+        """
+        reached = [False]
+        that = self
+
+        class Wizard(WizardClass):
+            def done(self, request, form_list):
+                reached[0] = True
+                that.assertTrue(len(form_list) == 2)
+
+        wizard = Wizard([WizardPageOneForm,
+                         WizardPageTwoForm])
+
+        data = {"0-field": "test",
+                "1-field": "test2",
+                "hash_0": "2fdbefd4c0cad51509478fbacddf8b13",
+                "wizard_step": "1"}
+        wizard(DummyRequest(POST=data))
+        self.assertTrue(reached[0])
+
+    def test_15075(self):
+        """
+        Regression test for ticket #15075.  Allow modifying wizard's form_list
+        in process_step.
+        """
+        reached = [False]
+        that = self
+
+        class WizardWithProcessStep(WizardClass):
+            def process_step(self, request, form, step):
+                if step == 0:
+                    self.form_list[1] = WizardPageTwoAlternativeForm
+                if step == 1:
+                    that.assertTrue(isinstance(form, WizardPageTwoAlternativeForm))
+                    reached[0] = True
+
+        wizard = WizardWithProcessStep([WizardPageOneForm,
+                                        WizardPageTwoForm,
+                                        WizardPageThreeForm])
+        data = {"0-field": "test",
+                "1-field": "test2",
+                "hash_0": "2fdbefd4c0cad51509478fbacddf8b13",
+                "wizard_step": "1"}
+        wizard(DummyRequest(POST=data))
+        self.assertTrue(reached[0])

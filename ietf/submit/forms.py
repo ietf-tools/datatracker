@@ -5,7 +5,7 @@ import subprocess
 import datetime
 
 from django import forms
-from django.forms.fields import email_re
+from django.core.validators import email_re
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string

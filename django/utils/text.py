@@ -1,5 +1,4 @@
 import re
-from django.conf import settings
 from django.utils.encoding import force_unicode
 from django.utils.functional import allow_lazy
 from django.utils.translation import ugettext_lazy
@@ -37,23 +36,30 @@ def wrap(text, width):
     return u''.join(_generator())
 wrap = allow_lazy(wrap, unicode)
 
-def truncate_words(s, num):
-    "Truncates a string after a certain number of words."
+def truncate_words(s, num, end_text='...'):
+    """Truncates a string after a certain number of words. Takes an optional
+    argument of what should be used to notify that the string has been
+    truncated, defaulting to ellipsis (...)
+
+    Newlines in the string will be stripped.
+    """
     s = force_unicode(s)
     length = int(num)
     words = s.split()
     if len(words) > length:
         words = words[:length]
-        if not words[-1].endswith('...'):
-            words.append('...')
+        if not words[-1].endswith(end_text):
+            words.append(end_text)
     return u' '.join(words)
 truncate_words = allow_lazy(truncate_words, unicode)
 
-def truncate_html_words(s, num):
-    """
-    Truncates html to a certain number of words (not counting tags and
+def truncate_html_words(s, num, end_text='...'):
+    """Truncates HTML to a certain number of words (not counting tags and
     comments). Closes opened tags if they were correctly closed in the given
-    html.
+    html. Takes an optional argument of what should be used to notify that the
+    string has been truncated, defaulting to ellipsis (...).
+
+    Newlines in the HTML are preserved.
     """
     s = force_unicode(s)
     length = int(num)
@@ -65,7 +71,7 @@ def truncate_html_words(s, num):
     re_tag = re.compile(r'<(/)?([^ ]+?)(?: (/)| .*?)?>')
     # Count non-HTML words and keep note of open tags
     pos = 0
-    ellipsis_pos = 0
+    end_text_pos = 0
     words = 0
     open_tags = []
     while words <= length:
@@ -78,11 +84,11 @@ def truncate_html_words(s, num):
             # It's an actual non-HTML word
             words += 1
             if words == length:
-                ellipsis_pos = pos
+                end_text_pos = pos
             continue
         # Check for tag
         tag = re_tag.match(m.group(0))
-        if not tag or ellipsis_pos:
+        if not tag or end_text_pos:
             # Don't worry about non tags or tags after our truncate point
             continue
         closing_tag, tagname, self_closing = tag.groups()
@@ -104,7 +110,9 @@ def truncate_html_words(s, num):
     if words <= length:
         # Don't try to close tags if we don't need to truncate
         return s
-    out = s[:ellipsis_pos] + ' ...'
+    out = s[:end_text_pos]
+    if end_text:
+        out += ' ' + end_text
     # Close any tags still open
     for tag in open_tags:
         out += '</%s>' % tag
@@ -157,12 +165,12 @@ recapitalize = allow_lazy(recapitalize)
 
 def phone2numeric(phone):
     "Converts a phone number with letters into its numeric equivalent."
-    letters = re.compile(r'[A-PR-Y]', re.I)
-    char2number = lambda m: {'a': '2', 'c': '2', 'b': '2', 'e': '3',
-         'd': '3', 'g': '4', 'f': '3', 'i': '4', 'h': '4', 'k': '5',
-         'j': '5', 'm': '6', 'l': '5', 'o': '6', 'n': '6', 'p': '7',
-         's': '7', 'r': '7', 'u': '8', 't': '8', 'w': '9', 'v': '8',
-         'y': '9', 'x': '9'}.get(m.group(0).lower())
+    letters = re.compile(r'[A-Z]', re.I)
+    char2number = lambda m: {'a': '2', 'b': '2', 'c': '2', 'd': '3', 'e': '3',
+         'f': '3', 'g': '4', 'h': '4', 'i': '4', 'j': '5', 'k': '5', 'l': '5',
+         'm': '6', 'n': '6', 'o': '6', 'p': '7', 'q': '7', 'r': '7', 's': '7',
+         't': '8', 'u': '8', 'v': '8', 'w': '9', 'x': '9', 'y': '9', 'z': '9',
+        }.get(m.group(0).lower())
     return letters.sub(char2number, phone)
 phone2numeric = allow_lazy(phone2numeric)
 
@@ -186,7 +194,7 @@ def javascript_quote(s, quote_double_quotes=False):
     if type(s) == str:
         s = s.decode('utf-8')
     elif type(s) != unicode:
-        raise TypeError, s
+        raise TypeError(s)
     s = s.replace('\\', '\\\\')
     s = s.replace('\r', '\\r')
     s = s.replace('\n', '\\n')
@@ -200,9 +208,14 @@ javascript_quote = allow_lazy(javascript_quote, unicode)
 # Expression to match some_token and some_token="with spaces" (and similarly
 # for single-quoted strings).
 smart_split_re = re.compile(r"""
-    ([^\s"]*"(?:[^"\\]*(?:\\.[^"\\]*)*)"\S*|
-     [^\s']*'(?:[^'\\]*(?:\\.[^'\\]*)*)'\S*|
-     \S+)""", re.VERBOSE)
+    ((?:
+        [^\s'"]*
+        (?:
+            (?:"(?:[^"\\]|\\.)*" | '(?:[^'\\]|\\.)*')
+            [^\s'"]*
+        )+
+    ) | \S+)
+""", re.VERBOSE)
 
 def smart_split(text):
     r"""

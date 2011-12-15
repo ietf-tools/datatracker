@@ -30,6 +30,7 @@ class CacheClass(BaseCache):
         self._lock = RWLock()
 
     def add(self, key, value, timeout=None):
+        self.validate_key(key)
         self._lock.writer_enters()
         try:
             exp = self._expire_info.get(key)
@@ -44,6 +45,7 @@ class CacheClass(BaseCache):
             self._lock.writer_leaves()
 
     def get(self, key, default=None):
+        self.validate_key(key)
         self._lock.reader_enters()
         try:
             exp = self._expire_info.get(key)
@@ -76,8 +78,9 @@ class CacheClass(BaseCache):
         self._expire_info[key] = time.time() + timeout
 
     def set(self, key, value, timeout=None):
+        self.validate_key(key)
         self._lock.writer_enters()
-        # Python 2.3 and 2.4 don't allow combined try-except-finally blocks.
+        # Python 2.4 doesn't allow combined try-except-finally blocks.
         try:
             try:
                 self._set(key, pickle.dumps(value), timeout)
@@ -87,6 +90,7 @@ class CacheClass(BaseCache):
             self._lock.writer_leaves()
 
     def has_key(self, key):
+        self.validate_key(key)
         self._lock.reader_enters()
         try:
             exp = self._expire_info.get(key)
@@ -110,8 +114,7 @@ class CacheClass(BaseCache):
 
     def _cull(self):
         if self._cull_frequency == 0:
-            self._cache.clear()
-            self._expire_info.clear()
+            self.clear()
         else:
             doomed = [k for (i, k) in enumerate(self._cache) if i % self._cull_frequency == 0]
             for k in doomed:
@@ -128,8 +131,13 @@ class CacheClass(BaseCache):
             pass
 
     def delete(self, key):
+        self.validate_key(key)
         self._lock.writer_enters()
         try:
             self._delete(key)
         finally:
             self._lock.writer_leaves()
+
+    def clear(self):
+        self._cache.clear()
+        self._expire_info.clear()

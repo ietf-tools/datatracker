@@ -1,6 +1,6 @@
 import os
 import re
-from Cookie import SimpleCookie, CookieError
+from Cookie import BaseCookie, SimpleCookie, CookieError
 from pprint import pformat
 from urllib import urlencode
 from urlparse import urljoin
@@ -45,7 +45,8 @@ class HttpRequest(object):
     def get_host(self):
         """Returns the HTTP host using the environment or request headers."""
         # We try three options, in order of decreasing preference.
-        if 'HTTP_X_FORWARDED_HOST' in self.META:
+        if settings.USE_X_FORWARDED_HOST and (
+            'HTTP_X_FORWARDED_HOST' in self.META):
             host = self.META['HTTP_X_FORWARDED_HOST']
         elif 'HTTP_HOST' in self.META:
             host = self.META['HTTP_HOST']
@@ -177,14 +178,14 @@ class QueryDict(MultiValueDict):
         super(QueryDict, self).__delitem__(key)
 
     def __copy__(self):
-        result = self.__class__('', mutable=True)
+        result = self.__class__('', mutable=True, encoding=self.encoding)
         for key, value in dict.items(self):
             dict.__setitem__(result, key, value)
         return result
 
     def __deepcopy__(self, memo):
-        import copy
-        result = self.__class__('', mutable=True)
+        import django.utils.copycompat as copy
+        result = self.__class__('', mutable=True, encoding=self.encoding)
         memo[id(self)] = result
         for key, value in dict.items(self):
             dict.__setitem__(result, copy.deepcopy(key, memo), copy.deepcopy(value, memo))
@@ -248,16 +249,66 @@ class QueryDict(MultiValueDict):
             output.extend([urlencode({k: smart_str(v, self.encoding)}) for v in list_])
         return '&'.join(output)
 
+class CompatCookie(SimpleCookie):
+    """
+    Cookie class that handles some issues with browser compatibility.
+    """
+    def value_encode(self, val):
+        # Some browsers do not support quoted-string from RFC 2109,
+        # including some versions of Safari and Internet Explorer.
+        # These browsers split on ';', and some versions of Safari
+        # are known to split on ', '. Therefore, we encode ';' and ','
+
+        # SimpleCookie already does the hard work of encoding and decoding.
+        # It uses octal sequences like '\\012' for newline etc.
+        # and non-ASCII chars.  We just make use of this mechanism, to
+        # avoid introducing two encoding schemes which would be confusing
+        # and especially awkward for javascript.
+
+        # NB, contrary to Python docs, value_encode returns a tuple containing
+        # (real val, encoded_val)
+        val, encoded = super(CompatCookie, self).value_encode(val)
+
+        encoded = encoded.replace(";", "\\073").replace(",","\\054")
+        # If encoded now contains any quoted chars, we need double quotes
+        # around the whole string.
+        if "\\" in encoded and not encoded.startswith('"'):
+            encoded = '"' + encoded + '"'
+
+        return val, encoded
+
+    def load(self, rawdata, ignore_parse_errors=False):
+        if ignore_parse_errors:
+            self.bad_cookies = []
+            self._BaseCookie__set = self._loose_set
+        SimpleCookie.load(self, rawdata)
+        if ignore_parse_errors:
+            self._BaseCookie__set = self._strict_set
+            for key in self.bad_cookies:
+                del self[key]
+
+    _strict_set = BaseCookie._BaseCookie__set
+
+    def _loose_set(self, key, real_value, coded_value):
+        try:
+            self._strict_set(key, real_value, coded_value)
+        except CookieError:
+            self.bad_cookies.append(key)
+            dict.__setitem__(self, key, None)
+
+
 def parse_cookie(cookie):
     if cookie == '':
         return {}
-    try:
-        c = SimpleCookie()
-        c.load(cookie)
-    except CookieError:
-        # Invalid cookie
-        return {}
-
+    if not isinstance(cookie, BaseCookie):
+        try:
+            c = CompatCookie()
+            c.load(cookie, ignore_parse_errors=True)
+        except CookieError:
+            # Invalid cookie
+            return {}
+    else:
+        c = cookie
     cookiedict = {}
     for key in c.keys():
         cookiedict[key] = c.get(key).value
@@ -273,27 +324,27 @@ class HttpResponse(object):
 
     def __init__(self, content='', mimetype=None, status=None,
             content_type=None):
-        from django.conf import settings
+        # _headers is a mapping of the lower-case name to the original case of
+        # the header (required for working with legacy systems) and the header
+        # value.  Both the name of the header and its value are ASCII strings.
+        self._headers = {}
         self._charset = settings.DEFAULT_CHARSET
         if mimetype:
             content_type = mimetype     # For backwards compatibility
         if not content_type:
             content_type = "%s; charset=%s" % (settings.DEFAULT_CONTENT_TYPE,
-                    settings.DEFAULT_CHARSET)
+                    self._charset)
         if not isinstance(content, basestring) and hasattr(content, '__iter__'):
             self._container = content
             self._is_string = False
         else:
             self._container = [content]
             self._is_string = True
-        self.cookies = SimpleCookie()
+        self.cookies = CompatCookie()
         if status:
             self.status_code = status
 
-        # _headers is a mapping of the lower-case name to the original case of
-        # the header (required for working with legacy systems) and the header
-        # value.
-        self._headers = {'content-type': ('Content-Type', content_type)}
+        self['Content-Type'] = content_type
 
     def __str__(self):
         """Full HTTP message, including headers."""
@@ -404,14 +455,14 @@ class HttpResponseRedirect(HttpResponse):
 
     def __init__(self, redirect_to):
         HttpResponse.__init__(self)
-        self['Location'] = redirect_to
+        self['Location'] = iri_to_uri(redirect_to)
 
 class HttpResponsePermanentRedirect(HttpResponse):
     status_code = 301
 
     def __init__(self, redirect_to):
         HttpResponse.__init__(self)
-        self['Location'] = redirect_to
+        self['Location'] = iri_to_uri(redirect_to)
 
 class HttpResponseNotModified(HttpResponse):
     status_code = 304

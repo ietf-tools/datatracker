@@ -14,21 +14,30 @@ from django.template.context import RequestContext
 from django.utils.hashcompat import md5_constructor
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.formtools.utils import security_hash
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect
+
 
 class FormWizard(object):
-    # Dictionary of extra template context variables.
-    extra_context = {}
-
     # The HTML (and POST data) field name for the "step" variable.
     step_field_name="wizard_step"
 
     # METHODS SUBCLASSES SHOULDN'T OVERRIDE ###################################
 
     def __init__(self, form_list, initial=None):
-        "form_list should be a list of Form classes (not instances)."
+        """
+        Start a new wizard with a list of forms.
+
+        form_list should be a list of Form classes (not instances).
+        """
         self.form_list = form_list[:]
         self.initial = initial or {}
-        self.step = 0 # A zero-based counter keeping track of which step we're in.
+
+        # Dictionary of extra template context variables.
+        self.extra_context = {}
+
+        # A zero-based counter keeping track of which step we're in.
+        self.step = 0
 
     def __repr__(self):
         return "step: %d\nform_list: %s\ninitial_data: %s" % (self.step, self.form_list, self.initial)
@@ -39,11 +48,12 @@ class FormWizard(object):
 
     def num_steps(self):
         "Helper method that returns the number of steps."
-        # You might think we should just set "self.form_list = len(form_list)"
+        # You might think we should just set "self.num_steps = len(form_list)"
         # in __init__(), but this calculation needs to be dynamic, because some
         # hook methods might alter self.form_list.
         return len(self.form_list)
 
+    @method_decorator(csrf_protect)
     def __call__(self, request, *args, **kwargs):
         """
         Main method that does all the hard work, conforming to the Django view
@@ -58,13 +68,38 @@ class FormWizard(object):
         if current_step >= self.num_steps():
             raise Http404('Step %s does not exist' % current_step)
 
-        # For each previous step, verify the hash and process.
-        # TODO: Move "hash_%d" to a method to make it configurable.
+        # Validate and process all the previous forms before instantiating the
+        # current step's form in case self.process_step makes changes to
+        # self.form_list.
+
+        # If any of them fails validation, that must mean the validator relied
+        # on some other input, such as an external Web site.
+
+        # It is also possible that alidation might fail under certain attack
+        # situations: an attacker might be able to bypass previous stages, and
+        # generate correct security hashes for all the skipped stages by virtue
+        # of:
+        #  1) having filled out an identical form which doesn't have the
+        #     validation (and does something different at the end),
+        #  2) or having filled out a previous version of the same form which
+        #     had some validation missing,
+        #  3) or previously having filled out the form when they had more
+        #     privileges than they do now.
+        #
+        # Since the hashes only take into account values, and not other other
+        # validation the form might do, we must re-do validation now for
+        # security reasons.
+        previous_form_list = []
         for i in range(current_step):
-            form = self.get_form(i, request.POST)
-            if request.POST.get("hash_%d" % i, '') != self.security_hash(request, form):
+            f = self.get_form(i, request.POST)
+            if request.POST.get("hash_%d" % i, '') != self.security_hash(request, f):
                 return self.render_hash_failure(request, i)
-            self.process_step(request, form, i)
+
+            if not f.is_valid():
+                return self.render_revalidation_failure(request, i, f)
+            else:
+                self.process_step(request, f, i)
+                previous_form_list.append(f)
 
         # Process the current step. If it's valid, go to the next step or call
         # done(), depending on whether any steps remain.
@@ -72,25 +107,14 @@ class FormWizard(object):
             form = self.get_form(current_step, request.POST)
         else:
             form = self.get_form(current_step)
+
         if form.is_valid():
             self.process_step(request, form, current_step)
             next_step = current_step + 1
 
-            # If this was the last step, validate all of the forms one more
-            # time, as a sanity check, and call done().
-            num = self.num_steps()
-            if next_step == num:
-                final_form_list = [self.get_form(i, request.POST) for i in range(num)]
 
-                # Validate all the forms. If any of them fail validation, that
-                # must mean the validator relied on some other input, such as
-                # an external Web site.
-                for i, f in enumerate(final_form_list):
-                    if not f.is_valid():
-                        return self.render_revalidation_failure(request, i, f)
-                return self.done(request, final_form_list)
-
-            # Otherwise, move along to the next step.
+            if next_step == self.num_steps():
+                return self.done(request, previous_form_list + [form])
             else:
                 form = self.get_form(next_step)
                 self.step = current_step = next_step

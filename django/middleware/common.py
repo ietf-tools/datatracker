@@ -53,8 +53,9 @@ class CommonMiddleware(object):
         # Append a slash if APPEND_SLASH is set and the URL doesn't have a
         # trailing slash and there is no pattern for the current path
         if settings.APPEND_SLASH and (not old_url[1].endswith('/')):
-            if (not _is_valid_path(request.path_info) and
-                    _is_valid_path("%s/" % request.path_info)):
+            urlconf = getattr(request, 'urlconf', None)
+            if (not _is_valid_path(request.path_info, urlconf) and
+                    _is_valid_path("%s/" % request.path_info, urlconf)):
                 new_url[1] = new_url[1] + '/'
                 if settings.DEBUG and request.method == 'POST':
                     raise RuntimeError, (""
@@ -79,9 +80,9 @@ class CommonMiddleware(object):
         return http.HttpResponsePermanentRedirect(newurl)
 
     def process_response(self, request, response):
-        "Check for a flat page (for 404s) and calculate the Etag, if needed."
+        "Send broken link emails and calculate the Etag, if needed."
         if response.status_code == 404:
-            if settings.SEND_BROKEN_LINK_EMAILS:
+            if settings.SEND_BROKEN_LINK_EMAILS and not settings.DEBUG:
                 # If the referrer was from an internal link or a non-search-engine site,
                 # send a note to the managers.
                 domain = request.get_host()
@@ -93,7 +94,8 @@ class CommonMiddleware(object):
                     ip = request.META.get('REMOTE_ADDR', '<none>')
                     mail_managers("Broken %slink on %s" % ((is_internal and 'INTERNAL ' or ''), domain),
                         "Referrer: %s\nRequested URL: %s\nUser agent: %s\nIP address: %s\n" \
-                                  % (referer, request.get_full_path(), ua, ip))
+                                  % (referer, request.get_full_path(), ua, ip),
+                                  fail_silently=True)
                 return response
 
         # Use ETags, if requested.
@@ -130,7 +132,7 @@ def _is_internal_request(domain, referer):
     # Different subdomains are treated as different domains.
     return referer is not None and re.match("^https?://%s/" % re.escape(domain), referer)
 
-def _is_valid_path(path):
+def _is_valid_path(path, urlconf=None):
     """
     Returns True if the given path resolves against the default URL resolver,
     False otherwise.
@@ -139,7 +141,7 @@ def _is_valid_path(path):
     easier, avoiding unnecessarily indented try...except blocks.
     """
     try:
-        urlresolvers.resolve(path)
+        urlresolvers.resolve(path, urlconf)
         return True
     except urlresolvers.Resolver404:
         return False

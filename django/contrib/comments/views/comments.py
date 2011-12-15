@@ -1,7 +1,7 @@
 from django import http
 from django.conf import settings
 from utils import next_redirect, confirmation_view
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -10,6 +10,7 @@ from django.utils.html import escape
 from django.views.decorators.http import require_POST
 from django.contrib import comments
 from django.contrib.comments import signals
+from django.views.decorators.csrf import csrf_protect
 
 class CommentPostBadRequest(http.HttpResponseBadRequest):
     """
@@ -22,7 +23,9 @@ class CommentPostBadRequest(http.HttpResponseBadRequest):
         if settings.DEBUG:
             self.content = render_to_string("comments/400-debug.html", {"why": why})
 
-def post_comment(request, next=None):
+@csrf_protect
+@require_POST
+def post_comment(request, next=None, using=None):
     """
     Post a comment.
 
@@ -47,7 +50,7 @@ def post_comment(request, next=None):
         return CommentPostBadRequest("Missing content_type or object_pk field.")
     try:
         model = models.get_model(*ctype.split(".", 1))
-        target = model._default_manager.get(pk=object_pk)
+        target = model._default_manager.using(using).get(pk=object_pk)
     except TypeError:
         return CommentPostBadRequest(
             "Invalid content_type value: %r" % escape(ctype))
@@ -59,6 +62,10 @@ def post_comment(request, next=None):
         return CommentPostBadRequest(
             "No object matching content-type %r and object PK %r exists." % \
                 (escape(ctype), escape(object_pk)))
+    except (ValueError, ValidationError), e:
+        return CommentPostBadRequest(
+            "Attempting go get content-type %r and object PK %r exists raised %s" % \
+                (escape(ctype), escape(object_pk), e.__class__.__name__))
 
     # Do we want to preview the comment?
     preview = "preview" in data
@@ -75,8 +82,14 @@ def post_comment(request, next=None):
     # If there are errors or if we requested a preview show the comment
     if form.errors or preview:
         template_list = [
-            "comments/%s_%s_preview.html" % tuple(str(model._meta).split(".")),
+            # These first two exist for purely historical reasons.
+            # Django v1.0 and v1.1 allowed the underscore format for
+            # preview templates, so we have to preserve that format.
+            "comments/%s_%s_preview.html" % (model._meta.app_label, model._meta.module_name),
             "comments/%s_preview.html" % model._meta.app_label,
+            # Now the usual directory based template heirarchy.
+            "comments/%s/%s/preview.html" % (model._meta.app_label, model._meta.module_name),
+            "comments/%s/preview.html" % model._meta.app_label,
             "comments/preview.html",
         ]
         return render_to_response(
@@ -115,8 +128,6 @@ def post_comment(request, next=None):
     )
 
     return next_redirect(data, next, comment_done, c=comment._get_pk_val())
-
-post_comment = require_POST(post_comment)
 
 comment_done = confirmation_view(
     template = "comments/posted.html",

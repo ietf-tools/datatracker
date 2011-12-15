@@ -1,10 +1,5 @@
 import sys
 import time
-try:
-    set
-except NameError:
-    # Python 2.3 compat
-    from sets import Set as set
 
 from django.conf import settings
 from django.core.management import call_command
@@ -47,7 +42,7 @@ class BaseDatabaseCreation(object):
         pending_references = {}
         qn = self.connection.ops.quote_name
         for f in opts.local_fields:
-            col_type = f.db_type()
+            col_type = f.db_type(connection=self.connection)
             tablespace = f.db_tablespace or opts.db_tablespace
             if col_type is None:
                 # Skip ManyToManyFields, because they're not represented as
@@ -73,9 +68,6 @@ class BaseDatabaseCreation(object):
                 else:
                     field_output.extend(ref_output)
             table_output.append(' '.join(field_output))
-        if opts.order_with_respect_to:
-            table_output.append(style.SQL_FIELD(qn('_order')) + ' ' + \
-                style.SQL_COLTYPE(models.IntegerField().db_type()))
         for field_constraints in opts.unique_together:
             table_output.append(style.SQL_KEYWORD('UNIQUE') + ' (%s)' % \
                 ", ".join([style.SQL_FIELD(qn(opts.get_field(f).column)) for f in field_constraints]))
@@ -145,6 +137,12 @@ class BaseDatabaseCreation(object):
 
     def sql_for_many_to_many(self, model, style):
         "Return the CREATE TABLE statments for all the many-to-many tables defined on a model"
+        import warnings
+        warnings.warn(
+            'Database creation API for m2m tables has been deprecated. M2M models are now automatically generated',
+            PendingDeprecationWarning
+        )
+
         output = []
         for f in model._meta.local_many_to_many:
             if model._meta.managed or f.rel.to._meta.managed:
@@ -153,11 +151,17 @@ class BaseDatabaseCreation(object):
 
     def sql_for_many_to_many_field(self, model, f, style):
         "Return the CREATE TABLE statements for a single m2m field"
+        import warnings
+        warnings.warn(
+            'Database creation API for m2m tables has been deprecated. M2M models are now automatically generated',
+            PendingDeprecationWarning
+        )
+
         from django.db import models
         from django.db.backends.util import truncate_name
 
         output = []
-        if f.creates_table:
+        if f.auto_created:
             opts = model._meta
             qn = self.connection.ops.quote_name
             tablespace = f.db_tablespace or opts.db_tablespace
@@ -173,7 +177,7 @@ class BaseDatabaseCreation(object):
                 style.SQL_TABLE(qn(f.m2m_db_table())) + ' (']
             table_output.append('    %s %s %s%s,' %
                 (style.SQL_FIELD(qn('id')),
-                style.SQL_COLTYPE(models.AutoField(primary_key=True).db_type()),
+                style.SQL_COLTYPE(models.AutoField(primary_key=True).db_type(connection=self.connection)),
                 style.SQL_KEYWORD('NOT NULL PRIMARY KEY'),
                 tablespace_sql))
 
@@ -210,6 +214,12 @@ class BaseDatabaseCreation(object):
 
     def sql_for_inline_many_to_many_references(self, model, field, style):
         "Create the references to other tables required by a many-to-many table"
+        import warnings
+        warnings.warn(
+            'Database creation API for m2m tables has been deprecated. M2M models are now automatically generated',
+            PendingDeprecationWarning
+        )
+
         from django.db import models
         opts = model._meta
         qn = self.connection.ops.quote_name
@@ -217,14 +227,14 @@ class BaseDatabaseCreation(object):
         table_output = [
             '    %s %s %s %s (%s)%s,' %
                 (style.SQL_FIELD(qn(field.m2m_column_name())),
-                style.SQL_COLTYPE(models.ForeignKey(model).db_type()),
+                style.SQL_COLTYPE(models.ForeignKey(model).db_type(connection=self.connection)),
                 style.SQL_KEYWORD('NOT NULL REFERENCES'),
                 style.SQL_TABLE(qn(opts.db_table)),
                 style.SQL_FIELD(qn(opts.pk.column)),
                 self.connection.ops.deferrable_sql()),
             '    %s %s %s %s (%s)%s,' %
                 (style.SQL_FIELD(qn(field.m2m_reverse_name())),
-                style.SQL_COLTYPE(models.ForeignKey(field.rel.to).db_type()),
+                style.SQL_COLTYPE(models.ForeignKey(field.rel.to).db_type(connection=self.connection)),
                 style.SQL_KEYWORD('NOT NULL REFERENCES'),
                 style.SQL_TABLE(qn(field.rel.to._meta.db_table)),
                 style.SQL_FIELD(qn(field.rel.to._meta.pk.column)),
@@ -245,6 +255,8 @@ class BaseDatabaseCreation(object):
 
     def sql_indexes_for_field(self, model, f, style):
         "Return the CREATE INDEX SQL statements for a single model field"
+        from django.db.backends.util import truncate_name
+
         if f.db_index and not f.unique:
             qn = self.connection.ops.quote_name
             tablespace = f.db_tablespace or model._meta.db_tablespace
@@ -256,8 +268,9 @@ class BaseDatabaseCreation(object):
                     tablespace_sql = ''
             else:
                 tablespace_sql = ''
+            i_name = '%s_%s' % (model._meta.db_table, self._digest(f.column))
             output = [style.SQL_KEYWORD('CREATE INDEX') + ' ' +
-                style.SQL_TABLE(qn('%s_%s' % (model._meta.db_table, f.column))) + ' ' +
+                style.SQL_TABLE(qn(truncate_name(i_name, self.connection.ops.max_name_length()))) + ' ' +
                 style.SQL_KEYWORD('ON') + ' ' +
                 style.SQL_TABLE(qn(model._meta.db_table)) + ' ' +
                 "(%s)" % style.SQL_FIELD(qn(f.column)) +
@@ -300,15 +313,21 @@ class BaseDatabaseCreation(object):
                 (style.SQL_KEYWORD('ALTER TABLE'),
                 style.SQL_TABLE(qn(table)),
                 style.SQL_KEYWORD(self.connection.ops.drop_foreignkey_sql()),
-                style.SQL_FIELD(truncate_name(r_name, self.connection.ops.max_name_length()))))
+                style.SQL_FIELD(qn(truncate_name(r_name, self.connection.ops.max_name_length())))))
         del references_to_delete[model]
         return output
 
     def sql_destroy_many_to_many(self, model, f, style):
         "Returns the DROP TABLE statements for a single m2m field"
+        import warnings
+        warnings.warn(
+            'Database creation API for m2m tables has been deprecated. M2M models are now automatically generated',
+            PendingDeprecationWarning
+        )
+
         qn = self.connection.ops.quote_name
         output = []
-        if f.creates_table:
+        if f.auto_created:
             output.append("%s %s;" % (style.SQL_KEYWORD('DROP TABLE'),
                 style.SQL_TABLE(qn(f.m2m_db_table()))))
             ds = self.connection.ops.drop_sequence_sql("%s_%s" % (model._meta.db_table, f.column))
@@ -322,23 +341,37 @@ class BaseDatabaseCreation(object):
         database already exists. Returns the name of the test database created.
         """
         if verbosity >= 1:
-            print "Creating test database..."
+            print "Creating test database '%s'..." % self.connection.alias
 
         test_database_name = self._create_test_db(verbosity, autoclobber)
 
         self.connection.close()
-        settings.DATABASE_NAME = test_database_name
-        self.connection.settings_dict["DATABASE_NAME"] = test_database_name
+        self.connection.settings_dict["NAME"] = test_database_name
         can_rollback = self._rollback_works()
-        settings.DATABASE_SUPPORTS_TRANSACTIONS = can_rollback
-        self.connection.settings_dict["DATABASE_SUPPORTS_TRANSACTIONS"] = can_rollback
+        self.connection.settings_dict["SUPPORTS_TRANSACTIONS"] = can_rollback
 
-        call_command('syncdb', verbosity=verbosity, interactive=False)
+        call_command('syncdb',
+            verbosity=verbosity,
+            interactive=False,
+            database=self.connection.alias,
+            load_initial_data=False)
+
+        # We need to then do a flush to ensure that any data installed by
+        # custom SQL has been removed. The only test data should come from
+        # test fixtures, or autogenerated from post_syncdb triggers.
+        # This has the side effect of loading initial data (which was
+        # intentionally skipped in the syncdb).
+        call_command('flush',
+            verbosity=verbosity,
+            interactive=False,
+            database=self.connection.alias)
 
         if settings.CACHE_BACKEND.startswith('db://'):
-            from django.core.cache import parse_backend_uri
-            _, cache_name, _ = parse_backend_uri(settings.CACHE_BACKEND)
-            call_command('createcachetable', cache_name)
+            from django.core.cache import parse_backend_uri, cache
+            from django.db import router
+            if router.allow_syncdb(self.connection.alias, cache.cache_model_class):
+                _, cache_name, _ = parse_backend_uri(settings.CACHE_BACKEND)
+                call_command('createcachetable', cache_name, database=self.connection.alias)
 
         # Get a cursor (even though we don't need one yet). This has
         # the side effect of initializing the test database.
@@ -350,10 +383,10 @@ class BaseDatabaseCreation(object):
         "Internal implementation - creates the test db tables."
         suffix = self.sql_table_creation_suffix()
 
-        if settings.TEST_DATABASE_NAME:
-            test_database_name = settings.TEST_DATABASE_NAME
+        if self.connection.settings_dict['TEST_NAME']:
+            test_database_name = self.connection.settings_dict['TEST_NAME']
         else:
-            test_database_name = TEST_DATABASE_PREFIX + settings.DATABASE_NAME
+            test_database_name = TEST_DATABASE_PREFIX + self.connection.settings_dict['NAME']
 
         qn = self.connection.ops.quote_name
 
@@ -403,11 +436,10 @@ class BaseDatabaseCreation(object):
         database already exists. Returns the name of the test database created.
         """
         if verbosity >= 1:
-            print "Destroying test database..."
+            print "Destroying test database '%s'..." % self.connection.alias
         self.connection.close()
-        test_database_name = settings.DATABASE_NAME
-        settings.DATABASE_NAME = old_database_name
-        self.connection.settings_dict["DATABASE_NAME"] = old_database_name
+        test_database_name = self.connection.settings_dict['NAME']
+        self.connection.settings_dict['NAME'] = old_database_name
 
         self._destroy_test_db(test_database_name, verbosity)
 
@@ -437,3 +469,16 @@ class BaseDatabaseCreation(object):
         "SQL to append to the end of the test table creation statements"
         return ''
 
+    def test_db_signature(self):
+        """
+        Returns a tuple with elements of self.connection.settings_dict (a
+        DATABASES setting value) that uniquely identify a database
+        accordingly to the RDBMS particularities.
+        """
+        settings_dict = self.connection.settings_dict
+        return (
+            settings_dict['HOST'],
+            settings_dict['PORT'],
+            settings_dict['ENGINE'],
+            settings_dict['NAME']
+        )

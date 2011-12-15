@@ -13,6 +13,7 @@ from django.core.exceptions import ImproperlyConfigured
 from south.db import db
 from south.utils import ask_for_it_by_name
 from south.hacks import hacks
+from south.exceptions import UnfreezeMeLater, ORMBaseNotIncluded, ImpossibleORMUnfreeze
 
 
 class ModelsLocals(object):
@@ -92,18 +93,40 @@ class _FakeORM(object):
             if "Meta" not in data:
                 data['Meta'] = {}
             try:
-                app_name, model_name = name.split(".", 1)
+                app_label, model_name = name.split(".", 1)
             except ValueError:
-                app_name = self.default_app
+                app_label = self.default_app
                 model_name = name
-                name = "%s.%s" % (app_name, model_name)
             
-            name = name.lower()
-            self.models[name] = name
-            model_names.append((name, app_name, model_name, data))
+            # If there's an object_name in the Meta, use it and remove it
+            if "object_name" in data['Meta']:
+                model_name = data['Meta']['object_name']
+                del data['Meta']['object_name']
+            
+            name = "%s.%s" % (app_label, model_name)
+            self.models[name.lower()] = name
+            model_names.append((name.lower(), app_label, model_name, data))
         
-        for name, app_name, model_name, data in model_names:
-            self.models[name] = self.make_model(app_name, model_name, data)
+        # Loop until model_names is entry, or hasn't shrunk in size since
+        # last iteration.
+        # The make_model method can ask to postpone a model; it's then pushed
+        # to the back of the queue. Because this is currently only used for
+        # inheritance, it should thus theoretically always decrease by one.
+        last_size = None
+        while model_names:
+            # First, make sure we've shrunk.
+            if len(model_names) == last_size:
+                raise ImpossibleORMUnfreeze()
+            last_size = len(model_names)
+            # Make one run through
+            postponed_model_names = []
+            for name, app_label, model_name, data in model_names:
+                try:
+                    self.models[name] = self.make_model(app_label, model_name, data)
+                except UnfreezeMeLater:
+                    postponed_model_names.append((name, app_label, model_name, data))
+            # Reset
+            model_names = postponed_model_names
         
         # And perform the second run to iron out any circular/backwards depends.
         self.retry_failed_fields()
@@ -125,7 +148,7 @@ class _FakeORM(object):
         try:
             return self.models[fullname]
         except KeyError:
-            raise AttributeError("The model '%s' from the app '%s' is not available in this migration." % (key, self.default_app))
+            raise AttributeError("The model '%s' from the app '%s' is not available in this migration. (Did you use orm.ModelName, not orm['app.ModelName']?)" % (key, self.default_app))
     
     
     def __getitem__(self, key):
@@ -218,7 +241,7 @@ class _FakeORM(object):
         results = {'app_label': app}
         for key, code in data.items():
             # Some things we never want to use.
-            if key in ["_bases"]:
+            if key in ["_bases", "_ormbases"]:
                 continue
             # Some things we don't want with stubs.
             if stub and key in ["order_with_respect_to"]:
@@ -237,10 +260,23 @@ class _FakeORM(object):
         "Makes a Model class out of the given app name, model name and pickled data."
         
         # Extract any bases out of Meta
-        if "_bases" in data['Meta']:
-            bases = data['Meta']['_bases']
+        if "_ormbases" in data['Meta']:
+            # Make sure everything we depend on is done already; otherwise, wait.
+            for key in data['Meta']['_ormbases']:
+                key = key.lower()
+                if key not in self.models:
+                    raise ORMBaseNotIncluded("Cannot find ORM base %s" % key)
+                elif isinstance(self.models[key], basestring):
+                    # Then the other model hasn't been unfrozen yet.
+                    # We postpone ourselves; the situation will eventually resolve.
+                    raise UnfreezeMeLater()
+            bases = [self.models[key.lower()] for key in data['Meta']['_ormbases']]
+        # Perhaps the old style?
+        elif "_bases" in data['Meta']:
+            bases = map(ask_for_it_by_name, data['Meta']['_bases'])
+        # Ah, bog standard, then.
         else:
-            bases = ['django.db.models.Model']
+            bases = [models.Model]
         
         # Turn the Meta dict into a basic class
         meta = self.make_meta(app, name, data['Meta'], data.get("_stub", False))
@@ -304,7 +340,7 @@ class _FakeORM(object):
         
         model = type(
             str(name),
-            tuple(map(ask_for_it_by_name, bases)),
+            tuple(bases),
             fields,
         )
         

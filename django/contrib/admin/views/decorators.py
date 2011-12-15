@@ -2,7 +2,7 @@ import base64
 try:
     from functools import wraps
 except ImportError:
-    from django.utils.functional import wraps  # Python 2.3, 2.4 fallback.
+    from django.utils.functional import wraps  # Python 2.4 fallback.
 
 from django import http, template
 from django.conf import settings
@@ -28,7 +28,7 @@ def staff_member_required(view_func):
     member, displaying the login page if necessary.
     """
     def _checklogin(request, *args, **kwargs):
-        if request.user.is_authenticated() and request.user.is_staff:
+        if request.user.is_active and request.user.is_staff:
             # The user is valid. Continue to the admin page.
             return view_func(request, *args, **kwargs)
 
@@ -60,10 +60,6 @@ def staff_member_required(view_func):
                 users = list(User.objects.filter(email=username))
                 if len(users) == 1 and users[0].check_password(password):
                     message = _("Your e-mail address is not your username. Try '%s' instead.") % users[0].username
-                else:
-                    # Either we cannot find the user, or if more than 1
-                    # we cannot guess which user is the correct one.
-                    message = _("Usernames cannot contain the '@' character.")
             return _display_login_form(request, message)
 
         # The user data is correct; log in the user in and continue.

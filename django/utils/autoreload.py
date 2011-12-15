@@ -42,6 +42,10 @@ try:
 except ImportError:
     pass
 
+try:
+    import termios
+except ImportError:
+    termios = None
 
 RUN_RELOADER = True
 
@@ -67,7 +71,17 @@ def code_changed():
             return True
     return False
 
+def ensure_echo_on():
+    if termios:
+        fd = sys.stdin
+        if fd.isatty():
+            attr_list = termios.tcgetattr(fd)
+            if not attr_list[3] & termios.ECHO:
+                attr_list[3] |= termios.ECHO
+                termios.tcsetattr(fd, termios.TCSANOW, attr_list)
+
 def reloader_thread():
+    ensure_echo_on()
     while RUN_RELOADER:
         if code_changed():
             sys.exit(3) # force reload
@@ -75,7 +89,7 @@ def reloader_thread():
 
 def restart_with_reloader():
     while True:
-        args = [sys.executable] + sys.argv
+        args = [sys.executable] + ['-W%s' % o for o in sys.warnoptions] + sys.argv
         if sys.platform == "win32":
             args = ['"%s"' % arg for arg in args]
         new_environ = os.environ.copy()

@@ -1,18 +1,12 @@
+import re
 from datetime import date
 from ctypes import c_char, c_char_p, c_double, c_int, c_ubyte, c_void_p, POINTER
 from django.contrib.gis.gdal.envelope import OGREnvelope
-from django.contrib.gis.gdal.libgdal import lgdal, gdal_version
+from django.contrib.gis.gdal.libgdal import lgdal, GEOJSON
 from django.contrib.gis.gdal.prototypes.errcheck import check_bool, check_envelope
 from django.contrib.gis.gdal.prototypes.generation import \
     const_string_output, double_output, geom_output, int_output, \
     srs_output, string_output, void_output
-
-# Some prototypes need to be aware of what version GDAL we have.
-major, minor = map(int, gdal_version().split('.')[:2])
-if major <= 1 and minor <= 4:
-    GEOJSON = False
-else:
-    GEOJSON = True
 
 ### Generation routines specific to this module ###
 def env_func(f, argtypes):
@@ -83,7 +77,8 @@ get_geom_srs = srs_output(lgdal.OGR_G_GetSpatialReference, [c_void_p])
 get_area = double_output(lgdal.OGR_G_GetArea, [c_void_p])
 get_centroid = void_output(lgdal.OGR_G_Centroid, [c_void_p, c_void_p])
 get_dims = int_output(lgdal.OGR_G_GetDimension, [c_void_p])
-get_coord_dims = int_output(lgdal.OGR_G_GetCoordinateDimension, [c_void_p])
+get_coord_dim = int_output(lgdal.OGR_G_GetCoordinateDimension, [c_void_p])
+set_coord_dim = void_output(lgdal.OGR_G_SetCoordinateDimension, [c_void_p, c_int], errcheck=False)
 
 get_geom_count = int_output(lgdal.OGR_G_GetGeometryCount, [c_void_p])
 get_geom_name = const_string_output(lgdal.OGR_G_GetGeometryName, [c_void_p])

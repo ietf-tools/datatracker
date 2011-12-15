@@ -1,11 +1,11 @@
 from django.http import HttpResponse, Http404
 from django.template import loader
-from django.contrib.gis.db.backend import SpatialBackend
-from django.contrib.sites.models import Site
+from django.contrib.sites.models import get_current_site
 from django.core import urlresolvers
 from django.core.paginator import EmptyPage, PageNotAnInteger
-from django.db.models import get_model
 from django.contrib.gis.db.models.fields import GeometryField
+from django.db import connections, DEFAULT_DB_ALIAS
+from django.db.models import get_model
 from django.utils.encoding import smart_str
 
 from django.contrib.gis.shortcuts import render_to_kml, render_to_kmz
@@ -15,7 +15,7 @@ def index(request, sitemaps):
     This view generates a sitemap index that uses the proper view
     for resolving geographic section sitemap URLs.
     """
-    current_site = Site.objects.get_current()
+    current_site = get_current_site(request)
     sites = []
     protocol = request.is_secure() and 'https' or 'http'
     for section, site in sitemaps.items():
@@ -25,7 +25,7 @@ def index(request, sitemaps):
             pages = site.paginator.num_pages
         sitemap_url = urlresolvers.reverse('django.contrib.gis.sitemaps.views.sitemap', kwargs={'section': section})
         sites.append('%s://%s%s' % (protocol, current_site.domain, sitemap_url))
-      
+
         if pages > 1:
             for page in range(2, pages+1):
                 sites.append('%s://%s%s?p=%s' % (protocol, current_site.domain, sitemap_url, page))
@@ -46,12 +46,13 @@ def sitemap(request, sitemaps, section=None):
         maps = sitemaps.values()
 
     page = request.GET.get("p", 1)
+    current_site = get_current_site(request)
     for site in maps:
         try:
             if callable(site):
-                urls.extend(site().get_urls(page))
+                urls.extend(site().get_urls(page=page, site=current_site))
             else:
-                urls.extend(site.get_urls(page))
+                urls.extend(site.get_urls(page=page, site=current_site))
         except EmptyPage:
             raise Http404("Page %s empty" % page)
         except PageNotAnInteger:
@@ -59,7 +60,7 @@ def sitemap(request, sitemaps, section=None):
     xml = smart_str(loader.render_to_string('gis/sitemaps/geo_sitemap.xml', {'urlset': urls}))
     return HttpResponse(xml, mimetype='application/xml')
 
-def kml(request, label, model, field_name=None, compress=False):
+def kml(request, label, model, field_name=None, compress=False, using=DEFAULT_DB_ALIAS):
     """
     This view generates KML for the given app label, model, and field name.
 
@@ -79,17 +80,19 @@ def kml(request, label, model, field_name=None, compress=False):
         except:
             raise Http404('Invalid geometry field.')
 
-    if SpatialBackend.postgis:
+    connection = connections[using]
+
+    if connection.ops.postgis:
         # PostGIS will take care of transformation.
-        placemarks = klass._default_manager.kml(field_name=field_name)
+        placemarks = klass._default_manager.using(using).kml(field_name=field_name)
     else:
         # There's no KML method on Oracle or MySQL, so we use the `kml`
         # attribute of the lazy geometry instead.
         placemarks = []
-        if SpatialBackend.oracle:
-            qs = klass._default_manager.transform(4326, field_name=field_name)
+        if connection.ops.oracle:
+            qs = klass._default_manager.using(using).transform(4326, field_name=field_name)
         else:
-            qs = klass._default_manager.all()
+            qs = klass._default_manager.using(using).all()
         for mod in qs:
             setattr(mod, 'kml', getattr(mod, field_name).kml)
             placemarks.append(mod)
@@ -101,8 +104,8 @@ def kml(request, label, model, field_name=None, compress=False):
         render = render_to_kml
     return render('gis/kml/placemarks.kml', {'places' : placemarks})
 
-def kmz(request, label, model, field_name=None):
+def kmz(request, label, model, field_name=None, using=DEFAULT_DB_ALIAS):
     """
     This view returns KMZ for the given app label, model, and field name.
     """
-    return kml(request, label, model, field_name, True)
+    return kml(request, label, model, field_name, compress=True, using=using)

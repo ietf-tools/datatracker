@@ -3,8 +3,9 @@
 Spanish-specific Form helpers
 """
 
+from django.core.validators import EMPTY_VALUES
 from django.forms import ValidationError
-from django.forms.fields import RegexField, Select, EMPTY_VALUES
+from django.forms.fields import RegexField, Select
 from django.utils.translation import ugettext_lazy as _
 import re
 
@@ -96,13 +97,13 @@ class ESIdentityCardNumberField(RegexField):
             if letter2 == nif_get_checksum(number):
                 return value
             else:
-                raise ValidationError, self.error_messages['invalid_nif']
+                raise ValidationError(self.error_messages['invalid_nif'])
         elif letter1 in self.nie_types and letter2:
             # NIE
             if letter2 == nif_get_checksum(number):
                 return value
             else:
-                raise ValidationError, self.error_messages['invalid_nie']
+                raise ValidationError(self.error_messages['invalid_nie'])
         elif not self.only_nif and letter1 in self.cif_types and len(number) in [7, 8]:
             # CIF
             if not letter2:
@@ -111,9 +112,9 @@ class ESIdentityCardNumberField(RegexField):
             if letter2 in (checksum, self.cif_control[checksum]):
                 return value
             else:
-                raise ValidationError, self.error_messages['invalid_cif']
+                raise ValidationError(self.error_messages['invalid_cif'])
         else:
-            raise ValidationError, self.error_messages['invalid']
+            raise ValidationError(self.error_messages['invalid'])
 
 class ESCCCField(RegexField):
     """
@@ -158,7 +159,7 @@ class ESCCCField(RegexField):
         if get_checksum('00' + entity + office) + get_checksum(account) == checksum:
             return value
         else:
-            raise ValidationError, self.error_messages['checksum']
+            raise ValidationError(self.error_messages['checksum'])
 
 class ESRegionSelect(Select):
     """

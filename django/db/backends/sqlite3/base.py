@@ -1,12 +1,16 @@
 """
 SQLite3 backend for django.
 
-Python 2.3 and 2.4 require pysqlite2 (http://pysqlite.org/).
+Python 2.4 requires pysqlite2 (http://pysqlite.org/).
 
 Python 2.5 and later can use a pysqlite2 module or the sqlite3 module in the
 standard library.
 """
 
+import re
+import sys
+
+from django.db import utils
 from django.db.backends import *
 from django.db.backends.signals import connection_created
 from django.db.backends.sqlite3.client import DatabaseClient
@@ -27,12 +31,8 @@ except ImportError, exc:
         exc = e1
     else:
         module = 'either pysqlite2 or sqlite3 modules (tried in that order)'
-    raise ImproperlyConfigured, "Error loading %s: %s" % (module, exc)
+    raise ImproperlyConfigured("Error loading %s: %s" % (module, exc))
 
-try:
-    import decimal
-except ImportError:
-    from django.utils import _decimal as decimal # for Python 2.3
 
 DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError
@@ -64,13 +64,17 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 class DatabaseOperations(BaseDatabaseOperations):
     def date_extract_sql(self, lookup_type, field_name):
         # sqlite doesn't support extract, so we fake it with the user-defined
-        # function django_extract that's registered in connect().
-        return 'django_extract("%s", %s)' % (lookup_type.lower(), field_name)
+        # function django_extract that's registered in connect(). Note that
+        # single quotes are used because this is a string (and could otherwise
+        # cause a collision with a field name).
+        return "django_extract('%s', %s)" % (lookup_type.lower(), field_name)
 
     def date_trunc_sql(self, lookup_type, field_name):
         # sqlite doesn't support DATE_TRUNC, so we fake it with a user-defined
-        # function django_date_trunc that's registered in connect().
-        return 'django_date_trunc("%s", %s)' % (lookup_type.lower(), field_name)
+        # function django_date_trunc that's registered in connect(). Note that
+        # single quotes are used because this is a string (and could otherwise
+        # cause a collision with a field name).
+        return "django_date_trunc('%s', %s)" % (lookup_type.lower(), field_name)
 
     def drop_foreignkey_sql(self):
         return ""
@@ -154,33 +158,35 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         self.client = DatabaseClient(self)
         self.creation = DatabaseCreation(self)
         self.introspection = DatabaseIntrospection(self)
-        self.validation = BaseDatabaseValidation()
+        self.validation = BaseDatabaseValidation(self)
 
     def _cursor(self):
         if self.connection is None:
             settings_dict = self.settings_dict
-            if not settings_dict['DATABASE_NAME']:
+            if not settings_dict['NAME']:
                 from django.core.exceptions import ImproperlyConfigured
-                raise ImproperlyConfigured, "Please fill out DATABASE_NAME in the settings module before using the database."
+                raise ImproperlyConfigured("Please fill out the database NAME in the settings module before using the database.")
             kwargs = {
-                'database': settings_dict['DATABASE_NAME'],
+                'database': settings_dict['NAME'],
                 'detect_types': Database.PARSE_DECLTYPES | Database.PARSE_COLNAMES,
             }
-            kwargs.update(settings_dict['DATABASE_OPTIONS'])
+            kwargs.update(settings_dict['OPTIONS'])
             self.connection = Database.connect(**kwargs)
             # Register extract, date_trunc, and regexp functions.
             self.connection.create_function("django_extract", 2, _sqlite_extract)
             self.connection.create_function("django_date_trunc", 2, _sqlite_date_trunc)
             self.connection.create_function("regexp", 2, _sqlite_regexp)
-            connection_created.send(sender=self.__class__)
+            connection_created.send(sender=self.__class__, connection=self)
         return self.connection.cursor(factory=SQLiteCursorWrapper)
 
     def close(self):
         # If database is in memory, closing the connection destroys the
         # database. To prevent accidental data loss, ignore close requests on
         # an in-memory db.
-        if self.settings_dict['DATABASE_NAME'] != ":memory:":
+        if self.settings_dict['NAME'] != ":memory:":
             BaseDatabaseWrapper.close(self)
+
+FORMAT_QMARK_REGEX = re.compile(r'(?![^%])%s')
 
 class SQLiteCursorWrapper(Database.Cursor):
     """
@@ -189,19 +195,25 @@ class SQLiteCursorWrapper(Database.Cursor):
     you'll need to use "%%s".
     """
     def execute(self, query, params=()):
-        query = self.convert_query(query, len(params))
-        return Database.Cursor.execute(self, query, params)
+        query = self.convert_query(query)
+        try:
+            return Database.Cursor.execute(self, query, params)
+        except Database.IntegrityError, e:
+            raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
+        except Database.DatabaseError, e:
+            raise utils.DatabaseError, utils.DatabaseError(*tuple(e)), sys.exc_info()[2]
 
     def executemany(self, query, param_list):
+        query = self.convert_query(query)
         try:
-          query = self.convert_query(query, len(param_list[0]))
-          return Database.Cursor.executemany(self, query, param_list)
-        except (IndexError,TypeError):
-          # No parameter list provided
-          return None
+            return Database.Cursor.executemany(self, query, param_list)
+        except Database.IntegrityError, e:
+            raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
+        except Database.DatabaseError, e:
+            raise utils.DatabaseError, utils.DatabaseError(*tuple(e)), sys.exc_info()[2]
 
-    def convert_query(self, query, num_params):
-        return query % tuple("?" * num_params)
+    def convert_query(self, query):
+        return FORMAT_QMARK_REGEX.sub('?', query).replace('%%','%')
 
 def _sqlite_extract(lookup_type, dt):
     if dt is None:

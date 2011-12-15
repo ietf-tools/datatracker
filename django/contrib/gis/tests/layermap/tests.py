@@ -1,15 +1,22 @@
-import os, unittest
-from copy import copy
+import os
+import unittest
 from decimal import Decimal
-from models import City, County, CountyFeat, Interstate, State, city_mapping, co_mapping, cofeat_mapping, inter_mapping
-from django.contrib.gis.db.backend import SpatialBackend
-from django.contrib.gis.utils.layermapping import LayerMapping, LayerMapError, InvalidDecimal, MissingForeignKey
-from django.contrib.gis.gdal import DataSource
 
-shp_path = os.path.dirname(__file__)
-city_shp = os.path.join(shp_path, '../data/cities/cities.shp')
-co_shp = os.path.join(shp_path, '../data/counties/counties.shp')
-inter_shp = os.path.join(shp_path, '../data/interstates/interstates.shp')
+from django.utils.copycompat import copy
+
+from django.contrib.gis.gdal import DataSource, OGRException
+from django.contrib.gis.tests.utils import mysql
+from django.contrib.gis.utils.layermapping import LayerMapping, LayerMapError, InvalidDecimal, MissingForeignKey
+
+from models import \
+    City, County, CountyFeat, Interstate, ICity1, ICity2, Invalid, State, \
+    city_mapping, co_mapping, cofeat_mapping, inter_mapping
+
+shp_path = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data'))
+city_shp = os.path.join(shp_path, 'cities', 'cities.shp')
+co_shp = os.path.join(shp_path, 'counties', 'counties.shp')
+inter_shp = os.path.join(shp_path, 'interstates', 'interstates.shp')
+invalid_shp = os.path.join(shp_path, 'invalid', 'emptypoints.shp')
 
 # Dictionaries to hold what's expected in the county shapefile.  
 NAMES  = ['Bexar', 'Galveston', 'Harris', 'Honolulu', 'Pueblo']
@@ -84,7 +91,7 @@ class LayerMapTest(unittest.TestCase):
             lm.save(silent=True, strict=True)
         except InvalidDecimal:
             # No transactions for geoms on MySQL; delete added features.
-            if SpatialBackend.mysql: Interstate.objects.all().delete()
+            if mysql: Interstate.objects.all().delete()
         else:
             self.fail('Should have failed on strict import with invalid decimal values.')
 
@@ -149,7 +156,7 @@ class LayerMapTest(unittest.TestCase):
             self.assertRaises(e, LayerMapping, County, co_shp, co_mapping, transform=False, unique=arg)
 
         # No source reference system defined in the shapefile, should raise an error.
-        if not SpatialBackend.mysql:
+        if not mysql:
             self.assertRaises(LayerMapError, LayerMapping, County, co_shp, co_mapping)
 
         # Passing in invalid ForeignKey mapping parameters -- must be a dictionary
@@ -242,7 +249,30 @@ class LayerMapTest(unittest.TestCase):
             lm.save(step=st, strict=True)
             self.county_helper(county_feat=False)
 
-def suite():
-    s = unittest.TestSuite()
-    s.addTest(unittest.makeSuite(LayerMapTest))
-    return s
+    def test06_model_inheritance(self):
+        "Tests LayerMapping on inherited models.  See #12093."
+        icity_mapping = {'name' : 'Name',
+                         'population' : 'Population',
+                         'density' : 'Density',
+                         'point' : 'POINT',
+                         'dt' : 'Created',
+                         }
+
+        # Parent model has geometry field.
+        lm1 = LayerMapping(ICity1, city_shp, icity_mapping)
+        lm1.save()
+
+        # Grandparent has geometry field.
+        lm2 = LayerMapping(ICity2, city_shp, icity_mapping)
+        lm2.save()
+
+        self.assertEqual(6, ICity1.objects.count())
+        self.assertEqual(3, ICity2.objects.count())
+
+    def test07_invalid_layer(self):
+        "Tests LayerMapping on invalid geometries.  See #15378."
+        invalid_mapping = {'point': 'POINT'}
+        lm = LayerMapping(Invalid, invalid_shp, invalid_mapping,
+                          source_srs=4326)
+        lm.save(silent=True)
+

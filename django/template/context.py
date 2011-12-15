@@ -1,51 +1,67 @@
+from copy import copy
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.importlib import import_module
+from django.http import HttpRequest
 
+# Cache of actual callables.
 _standard_context_processors = None
+# We need the CSRF processor no matter what the user has in their settings,
+# because otherwise it is a security vulnerability, and we can't afford to leave
+# this to human error or failure to read migration instructions.
+_builtin_context_processors =  ('django.core.context_processors.csrf',)
 
 class ContextPopException(Exception):
     "pop() has been called more times than push()"
     pass
 
-class Context(object):
-    "A stack container for variable context"
-    def __init__(self, dict_=None, autoescape=True, current_app=None):
+class EmptyClass(object):
+    # No-op class which takes no args to its __init__ method, to help implement
+    # __copy__
+    pass
+
+class BaseContext(object):
+    def __init__(self, dict_=None):
         dict_ = dict_ or {}
         self.dicts = [dict_]
-        self.autoescape = autoescape
-        self.current_app = current_app
+
+    def __copy__(self):
+        duplicate = EmptyClass()
+        duplicate.__class__ = self.__class__
+        duplicate.__dict__ = self.__dict__.copy()
+        duplicate.dicts = duplicate.dicts[:]
+        return duplicate
 
     def __repr__(self):
         return repr(self.dicts)
 
     def __iter__(self):
-        for d in self.dicts:
+        for d in reversed(self.dicts):
             yield d
 
     def push(self):
         d = {}
-        self.dicts = [d] + self.dicts
+        self.dicts.append(d)
         return d
 
     def pop(self):
         if len(self.dicts) == 1:
             raise ContextPopException
-        return self.dicts.pop(0)
+        return self.dicts.pop()
 
     def __setitem__(self, key, value):
         "Set a variable in the current context"
-        self.dicts[0][key] = value
+        self.dicts[-1][key] = value
 
     def __getitem__(self, key):
         "Get a variable's value, starting at the current context and going upward"
-        for d in self.dicts:
+        for d in reversed(self.dicts):
             if key in d:
                 return d[key]
         raise KeyError(key)
 
     def __delitem__(self, key):
         "Delete a variable from the current context"
-        del self.dicts[0][key]
+        del self.dicts[-1][key]
 
     def has_key(self, key):
         for d in self.dicts:
@@ -53,20 +69,62 @@ class Context(object):
                 return True
         return False
 
-    __contains__ = has_key
+    def __contains__(self, key):
+        return self.has_key(key)
 
     def get(self, key, otherwise=None):
-        for d in self.dicts:
+        for d in reversed(self.dicts):
             if key in d:
                 return d[key]
         return otherwise
+
+class Context(BaseContext):
+    "A stack container for variable context"
+    def __init__(self, dict_=None, autoescape=True, current_app=None):
+        self.autoescape = autoescape
+        self.current_app = current_app
+        self.render_context = RenderContext()
+        super(Context, self).__init__(dict_)
+
+    def __copy__(self):
+        duplicate = super(Context, self).__copy__()
+        duplicate.render_context = copy(self.render_context)
+        return duplicate
 
     def update(self, other_dict):
         "Like dict.update(). Pushes an entire dictionary's keys and values onto the context."
         if not hasattr(other_dict, '__getitem__'):
             raise TypeError('other_dict must be a mapping (dictionary-like) object.')
-        self.dicts = [other_dict] + self.dicts
+        self.dicts.append(other_dict)
         return other_dict
+
+class RenderContext(BaseContext):
+    """
+    A stack container for storing Template state.
+
+    RenderContext simplifies the implementation of template Nodes by providing a
+    safe place to store state between invocations of a node's `render` method.
+
+    The RenderContext also provides scoping rules that are more sensible for
+    'template local' variables. The render context stack is pushed before each
+    template is rendered, creating a fresh scope with nothing in it. Name
+    resolution fails if a variable is not found at the top of the RequestContext
+    stack. Thus, variables are local to a specific template and don't affect the
+    rendering of other templates as they would if they were stored in the normal
+    template context.
+    """
+    def __iter__(self):
+        for d in self.dicts[-1]:
+            yield d
+
+    def has_key(self, key):
+        return key in self.dicts[-1]
+
+    def get(self, key, otherwise=None):
+        d = self.dicts[-1]
+        if key in d:
+            return d[key]
+        return otherwise
 
 # This is a function rather than module-level procedural code because we only
 # want it to execute if somebody uses RequestContext.
@@ -75,7 +133,10 @@ def get_standard_processors():
     global _standard_context_processors
     if _standard_context_processors is None:
         processors = []
-        for path in settings.TEMPLATE_CONTEXT_PROCESSORS:
+        collect = []
+        collect.extend(_builtin_context_processors)
+        collect.extend(settings.TEMPLATE_CONTEXT_PROCESSORS)
+        for path in collect:
             i = path.rfind('.')
             module, attr = path[:i], path[i+1:]
             try:

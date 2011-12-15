@@ -1,6 +1,7 @@
 from django.contrib.admin.filterspecs import FilterSpec
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.contrib.admin.util import quote
+from django.core.exceptions import SuspiciousOperation
 from django.core.paginator import Paginator, InvalidPage
 from django.db import models
 from django.db.models.query import QuerySet
@@ -8,11 +9,6 @@ from django.utils.encoding import force_unicode, smart_str
 from django.utils.translation import ugettext
 from django.utils.http import urlencode
 import operator
-
-try:
-    set
-except NameError:
-    from sets import Set as set   # Python 2.3 fallback
 
 # The system will display a "Show all" link on the change list only if the
 # total result count is less than or equal to this setting.
@@ -58,8 +54,6 @@ class ChangeList(object):
         self.params = dict(request.GET.items())
         if PAGE_VAR in self.params:
             del self.params[PAGE_VAR]
-        if TO_FIELD_VAR in self.params:
-            del self.params[TO_FIELD_VAR]
         if ERROR_FLAG in self.params:
             del self.params[ERROR_FLAG]
 
@@ -121,7 +115,7 @@ class ChangeList(object):
             try:
                 result_list = paginator.page(self.page_num+1).object_list
             except InvalidPage:
-                result_list = ()
+                raise IncorrectLookupParameters
 
         self.result_count = result_count
         self.full_result_count = full_result_count
@@ -171,7 +165,7 @@ class ChangeList(object):
     def get_query_set(self):
         qs = self.root_query_set
         lookup_params = self.params.copy() # a dictionary of the query string
-        for i in (ALL_VAR, ORDER_VAR, ORDER_TYPE_VAR, SEARCH_VAR, IS_POPUP_VAR):
+        for i in (ALL_VAR, ORDER_VAR, ORDER_TYPE_VAR, SEARCH_VAR, IS_POPUP_VAR, TO_FIELD_VAR):
             if i in lookup_params:
                 del lookup_params[i]
         for key, value in lookup_params.items():
@@ -183,7 +177,21 @@ class ChangeList(object):
 
             # if key ends with __in, split parameter into separate values
             if key.endswith('__in'):
-                lookup_params[key] = value.split(',')
+                value = value.split(',')
+                lookup_params[key] = value
+
+            # if key ends with __isnull, special case '' and false
+            if key.endswith('__isnull'):
+                if value.lower() in ('', 'false'):
+                    value = False
+                else:
+                    value = True
+                lookup_params[key] = value
+
+            if not self.model_admin.lookup_allowed(key, value):
+                raise SuspiciousOperation(
+                    "Filtering by %s not allowed" % key
+                )
 
         # Apply lookup parameters from the query string.
         try:
@@ -191,7 +199,7 @@ class ChangeList(object):
         # Naked except! Because we don't have any other way of validating "params".
         # They might be invalid if the keyword arguments are incorrect, or if the
         # values are not in the correct type, so we might get FieldError, ValueError,
-        # ValicationError, or ? from a custom field that raises yet something else 
+        # ValicationError, or ? from a custom field that raises yet something else
         # when handed impossible data.
         except:
             raise IncorrectLookupParameters

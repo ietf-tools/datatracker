@@ -33,37 +33,32 @@
 from django.utils.http import urlquote
 from django.conf import settings
 from django.db.models import Q
-from django.contrib.auth.decorators import _CheckLogin
 from django.http import HttpResponseRedirect, HttpResponseForbidden
+from django.contrib.auth import REDIRECT_FIELD_NAME
 
-# based on http://www.djangosnippets.org/snippets/254/
-class _CheckLogin403(_CheckLogin):
-    def __init__(self, view_func, test_func, forbidden_message=None):
-        self.forbidden_message = forbidden_message
-        super(_CheckLogin403, self).__init__(view_func, test_func)
-
-    def __call__(self, request, *args, **kwargs):
-        if not request.user.is_authenticated():
-            path = urlquote(request.get_full_path())
-            tup = self.login_url, self.redirect_field_name, path
-            return HttpResponseRedirect('%s?%s=%s' % tup)
-        elif self.test_func(request.user):
-            return self.view_func(request, *args, **kwargs)
-        else:
-            return HttpResponseForbidden(self.forbidden_message)
-
-# based on http://www.djangosnippets.org/snippets/1703/
-def group_required(*group_names):
+def passes_test_decorator(test_func, message):
     """
-    Decorator for views that checks that the user is logged in,
-    and belongs to (at least) one of the listed groups. Users who
-    are not logged in are redirected to the login page; users
-    who don't belong to any of the groups (but are logged in) 
-    get a "403" page.
+    Decorator creator that creates a decorator for checking that user
+    passes the test, redirecting to login or returning a 403
+    error. The test function should be on the form fn(user) ->
+    true/false.
     """
     def decorate(view_func):
-        return _CheckLogin403(view_func, lambda u: bool(u.groups.filter(name__in=group_names)), "Restricted to group%s %s" % ("s" if len(group_names) != 1 else "", ",".join(group_names)))
+        def inner(request, *args, **kwargs):
+            if not request.user.is_authenticated():
+                return HttpResponseRedirect('%s?%s=%s' % (settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
+            elif test_func(request.user):
+                return view_func(request, *args, **kwargs)
+            else:
+                return HttpResponseForbidden(message)
+        return inner
     return decorate
+
+def group_required(*group_names):
+    """Decorator for views that checks that the user is logged in,
+    and belongs to (at least) one of the listed groups."""
+    return passes_test_decorator(lambda u: u.groups.filter(name__in=group_names),
+                                 "Restricted to group%s %s" % ("s" if len(group_names) != 1 else "", ",".join(group_names)))
 
 
 def has_role(user, role_names):
@@ -100,15 +95,9 @@ def has_role(user, role_names):
 
 def role_required(*role_names):
     """View decorator for checking that the user is logged in and
-    belongs to (at least) one of the listed roles. Users who are not
-    logged in are redirected to the login page; users who don't have
-    one of the roles get a "403" page.
-    """
-    def decorate(view_func):
-        return _CheckLogin403(view_func,
-                              lambda u: has_role(u, role_names),
-                              "Restricted to role%s %s" % ("s" if len(role_names) != 1 else "", ",".join(role_names)))
-    return decorate
+    has one of the listed roles."""
+    return passes_test_decorator(lambda u: has_role(u, role_names),
+                                 "Restricted to role%s %s" % ("s" if len(role_names) != 1 else "", ",".join(role_names)))
     
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # overwrite group_required

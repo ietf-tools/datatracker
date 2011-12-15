@@ -1,29 +1,27 @@
-from django.core.management.base import CommandError
 import os
 import re
 
-try:
-    set
-except NameError:
-    from sets import Set as set   # Python 2.3 fallback
+from django.conf import settings
+from django.core.management.base import CommandError
+from django.db import models
+from django.db.models import get_models
 
-def sql_create(app, style):
+def sql_create(app, style, connection):
     "Returns a list of the CREATE TABLE SQL statements for the given app."
-    from django.db import connection, models
-    from django.conf import settings
 
-    if settings.DATABASE_ENGINE == 'dummy':
+    if connection.settings_dict['ENGINE'] == 'django.db.backends.dummy':
         # This must be the "dummy" database backend, which means the user
-        # hasn't set DATABASE_ENGINE.
+        # hasn't set ENGINE for the databse.
         raise CommandError("Django doesn't know which syntax to use for your SQL statements,\n" +
-            "because you haven't specified the DATABASE_ENGINE setting.\n" +
-            "Edit your settings file and change DATABASE_ENGINE to something like 'postgresql' or 'mysql'.")
+            "because you haven't specified the ENGINE setting for the database.\n" +
+            "Edit your settings file and change DATBASES['default']['ENGINE'] to something like\n" +
+            "'django.db.backends.postgresql' or 'django.db.backends.mysql'.")
 
     # Get installed models, so we generate REFERENCES right.
     # We trim models from the current app so that the sqlreset command does not
     # generate invalid SQL (leaving models out of known_models is harmless, so
     # we can be conservative).
-    app_models = models.get_models(app)
+    app_models = models.get_models(app, include_auto_created=True)
     final_output = []
     tables = connection.introspection.table_names()
     known_models = set([model for model in connection.introspection.installed_models(tables) if model not in app_models])
@@ -40,10 +38,6 @@ def sql_create(app, style):
         # Keep track of the fact that we've created the table for this model.
         known_models.add(model)
 
-    # Create the many-to-many join tables.
-    for model in app_models:
-        final_output.extend(connection.creation.sql_for_many_to_many(model, style))
-
     # Handle references to tables that are from other apps
     # but don't exist physically.
     not_installed_models = set(pending_references.keys())
@@ -58,11 +52,8 @@ def sql_create(app, style):
 
     return final_output
 
-def sql_delete(app, style):
+def sql_delete(app, style, connection):
     "Returns a list of the DROP TABLE SQL statements for the given app."
-    from django.db import connection, models
-    from django.db.backends.util import truncate_name
-    from django.contrib.contenttypes import generic
 
     # This should work even if a connection isn't available
     try:
@@ -82,7 +73,7 @@ def sql_delete(app, style):
     to_delete = set()
 
     references_to_delete = {}
-    app_models = models.get_models(app)
+    app_models = models.get_models(app, include_auto_created=True)
     for model in app_models:
         if cursor and connection.introspection.table_name_converter(model._meta.db_table) in table_names:
             # The table exists, so it needs to be dropped
@@ -97,13 +88,6 @@ def sql_delete(app, style):
         if connection.introspection.table_name_converter(model._meta.db_table) in table_names:
             output.extend(connection.creation.sql_destroy_model(model, references_to_delete, style))
 
-    # Output DROP TABLE statements for many-to-many tables.
-    for model in app_models:
-        opts = model._meta
-        for f in opts.local_many_to_many:
-            if cursor and connection.introspection.table_name_converter(f.m2m_db_table()) in table_names:
-                output.extend(connection.creation.sql_destroy_many_to_many(model, f, style))
-
     # Close database connection explicitly, in case this output is being piped
     # directly into a database client, to avoid locking issues.
     if cursor:
@@ -112,18 +96,17 @@ def sql_delete(app, style):
 
     return output[::-1] # Reverse it, to deal with table dependencies.
 
-def sql_reset(app, style):
+def sql_reset(app, style, connection):
     "Returns a list of the DROP TABLE SQL, then the CREATE TABLE SQL, for the given module."
-    return sql_delete(app, style) + sql_all(app, style)
+    return sql_delete(app, style, connection) + sql_all(app, style, connection)
 
-def sql_flush(style, only_django=False):
+def sql_flush(style, connection, only_django=False):
     """
     Returns a list of the SQL statements used to flush the database.
 
     If only_django is True, then only table names that have associated Django
     models and are in INSTALLED_APPS will be included.
     """
-    from django.db import connection
     if only_django:
         tables = connection.introspection.django_table_names(only_existing=True)
     else:
@@ -131,53 +114,49 @@ def sql_flush(style, only_django=False):
     statements = connection.ops.sql_flush(style, tables, connection.introspection.sequence_list())
     return statements
 
-def sql_custom(app, style):
+def sql_custom(app, style, connection):
     "Returns a list of the custom table modifying SQL statements for the given app."
-    from django.db.models import get_models
     output = []
 
     app_models = get_models(app)
     app_dir = os.path.normpath(os.path.join(os.path.dirname(app.__file__), 'sql'))
 
     for model in app_models:
-        output.extend(custom_sql_for_model(model, style))
+        output.extend(custom_sql_for_model(model, style, connection))
 
     return output
 
-def sql_indexes(app, style):
+def sql_indexes(app, style, connection):
     "Returns a list of the CREATE INDEX SQL statements for all models in the given app."
-    from django.db import connection, models
     output = []
     for model in models.get_models(app):
         output.extend(connection.creation.sql_indexes_for_model(model, style))
     return output
 
-def sql_all(app, style):
+def sql_all(app, style, connection):
     "Returns a list of CREATE TABLE SQL, initial-data inserts, and CREATE INDEX SQL for the given module."
-    return sql_create(app, style) + sql_custom(app, style) + sql_indexes(app, style)
+    return sql_create(app, style, connection) + sql_custom(app, style, connection) + sql_indexes(app, style, connection)
 
-def custom_sql_for_model(model, style):
-    from django.db import models
-    from django.conf import settings
-
+def custom_sql_for_model(model, style, connection):
     opts = model._meta
     app_dir = os.path.normpath(os.path.join(os.path.dirname(models.get_app(model._meta.app_label).__file__), 'sql'))
     output = []
 
     # Post-creation SQL should come before any initial SQL data is loaded.
-    # However, this should not be done for fields that are part of a a parent
-    # model (via model inheritance).
-    nm = opts.init_name_map()
-    post_sql_fields = [f for f in opts.local_fields if hasattr(f, 'post_create_sql')]
-    for f in post_sql_fields:
-        output.extend(f.post_create_sql(style, model._meta.db_table))
+    # However, this should not be done for models that are unmanaged or
+    # for fields that are part of a parent model (via model inheritance).
+    if opts.managed:
+        post_sql_fields = [f for f in opts.local_fields if hasattr(f, 'post_create_sql')]
+        for f in post_sql_fields:
+            output.extend(f.post_create_sql(style, model._meta.db_table))
 
     # Some backends can't execute more than one SQL statement at a time,
     # so split into separate statements.
     statements = re.compile(r";[ \t]*$", re.M)
 
     # Find custom SQL, if it's available.
-    sql_files = [os.path.join(app_dir, "%s.%s.sql" % (opts.object_name.lower(), settings.DATABASE_ENGINE)),
+    backend_name = connection.settings_dict['ENGINE'].split('.')[-1]
+    sql_files = [os.path.join(app_dir, "%s.%s.sql" % (opts.object_name.lower(), backend_name)),
                  os.path.join(app_dir, "%s.sql" % opts.object_name.lower())]
     for sql_file in sql_files:
         if os.path.exists(sql_file):
@@ -192,9 +171,7 @@ def custom_sql_for_model(model, style):
     return output
 
 
-def emit_post_sync_signal(created_models, verbosity, interactive):
-    from django.db import models
-    from django.dispatch import dispatcher
+def emit_post_sync_signal(created_models, verbosity, interactive, db):
     # Emit the post_sync signal for every application.
     for app in models.get_apps():
         app_name = app.__name__.split('.')[-2]
@@ -202,4 +179,4 @@ def emit_post_sync_signal(created_models, verbosity, interactive):
             print "Running post-sync handlers for application", app_name
         models.signals.post_syncdb.send(sender=app, app=app,
             created_models=created_models, verbosity=verbosity,
-            interactive=interactive)
+            interactive=interactive, db=db)

@@ -2,6 +2,7 @@ from django.template import Lexer, Parser, tag_re, NodeList, VariableNode, Templ
 from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.utils.safestring import SafeData, EscapeData
+from django.utils.formats import localize
 
 class DebugLexer(Lexer):
     def __init__(self, template_string, origin):
@@ -75,16 +76,19 @@ class DebugNodeList(NodeList):
             raise
         except Exception, e:
             from sys import exc_info
-            wrapped = TemplateSyntaxError(u'Caught an exception while rendering: %s' % force_unicode(e, errors='replace'))
+            wrapped = TemplateSyntaxError(u'Caught %s while rendering: %s' %
+                (e.__class__.__name__, force_unicode(e, errors='replace')))
             wrapped.source = node.source
             wrapped.exc_info = exc_info()
-            raise wrapped
+            raise wrapped, None, wrapped.exc_info[2]
         return result
 
 class DebugVariableNode(VariableNode):
     def render(self, context):
         try:
-            output = force_unicode(self.filter_expression.resolve(context))
+            output = self.filter_expression.resolve(context)
+            output = localize(output)
+            output = force_unicode(output)
         except TemplateSyntaxError, e:
             if not hasattr(e, 'source'):
                 e.source = self.source

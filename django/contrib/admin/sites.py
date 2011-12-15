@@ -3,6 +3,8 @@ from django import http, template
 from django.contrib.admin import ModelAdmin
 from django.contrib.admin import actions
 from django.contrib.auth import authenticate, login
+from django.contrib.contenttypes import views as contenttype_views
+from django.views.decorators.csrf import csrf_protect
 from django.db.models.base import ModelBase
 from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
@@ -13,10 +15,6 @@ from django.utils.text import capfirst
 from django.utils.translation import ugettext_lazy, ugettext as _
 from django.views.decorators.cache import never_cache
 from django.conf import settings
-try:
-    set
-except NameError:
-    from sets import Set as set     # Python 2.3 fallback
 
 ERROR_MESSAGE = ugettext_lazy("Please enter a correct username and password. Note that both fields are case-sensitive.")
 LOGIN_FORM_KEY = 'this_is_the_login_form'
@@ -36,8 +34,11 @@ class AdminSite(object):
     """
 
     index_template = None
-    login_template = None
     app_index_template = None
+    login_template = None
+    logout_template = None
+    password_change_template = None
+    password_change_done_template = None
 
     def __init__(self, name=None, app_name='admin'):
         self._registry = {} # model_class class -> admin_class instance
@@ -138,7 +139,7 @@ class AdminSite(object):
         Returns True if the given HttpRequest has permission to view
         *at least one* page in the admin site.
         """
-        return request.user.is_authenticated() and request.user.is_staff
+        return request.user.is_active and request.user.is_staff
 
     def check_dependencies(self):
         """
@@ -151,11 +152,15 @@ class AdminSite(object):
         from django.contrib.contenttypes.models import ContentType
 
         if not LogEntry._meta.installed:
-            raise ImproperlyConfigured("Put 'django.contrib.admin' in your INSTALLED_APPS setting in order to use the admin application.")
+            raise ImproperlyConfigured("Put 'django.contrib.admin' in your "
+                "INSTALLED_APPS setting in order to use the admin application.")
         if not ContentType._meta.installed:
-            raise ImproperlyConfigured("Put 'django.contrib.contenttypes' in your INSTALLED_APPS setting in order to use the admin application.")
-        if 'django.core.context_processors.auth' not in settings.TEMPLATE_CONTEXT_PROCESSORS:
-            raise ImproperlyConfigured("Put 'django.core.context_processors.auth' in your TEMPLATE_CONTEXT_PROCESSORS setting in order to use the admin application.")
+            raise ImproperlyConfigured("Put 'django.contrib.contenttypes' in "
+                "your INSTALLED_APPS setting in order to use the admin application.")
+        if not ('django.contrib.auth.context_processors.auth' in settings.TEMPLATE_CONTEXT_PROCESSORS or
+            'django.core.context_processors.auth' in settings.TEMPLATE_CONTEXT_PROCESSORS):
+            raise ImproperlyConfigured("Put 'django.contrib.auth.context_processors.auth' "
+                "in your TEMPLATE_CONTEXT_PROCESSORS setting in order to use the admin application.")
 
     def admin_view(self, view, cacheable=False):
         """
@@ -186,10 +191,17 @@ class AdminSite(object):
             return view(request, *args, **kwargs)
         if not cacheable:
             inner = never_cache(inner)
+        # We add csrf_protect here so this function can be used as a utility
+        # function for any view, without having to repeat 'csrf_protect'.
+        if not getattr(view, 'csrf_exempt', False):
+            inner = csrf_protect(inner)
         return update_wrapper(inner, view)
 
     def get_urls(self):
         from django.conf.urls.defaults import patterns, url, include
+
+        if settings.DEBUG:
+            self.check_dependencies()
 
         def wrap(view, cacheable=False):
             def wrapper(*args, **kwargs):
@@ -214,7 +226,7 @@ class AdminSite(object):
                 wrap(self.i18n_javascript, cacheable=True),
                 name='jsi18n'),
             url(r'^r/(?P<content_type_id>\d+)/(?P<object_id>.+)/$',
-                'django.views.defaults.shortcut'),
+                wrap(contenttype_views.shortcut)),
             url(r'^(?P<app_label>\w+)/$',
                 wrap(self.app_index),
                 name='app_list')
@@ -241,14 +253,22 @@ class AdminSite(object):
             url = '%spassword_change/done/' % self.root_path
         else:
             url = reverse('admin:password_change_done', current_app=self.name)
-        return password_change(request, post_change_redirect=url)
+        defaults = {
+            'post_change_redirect': url
+        }
+        if self.password_change_template is not None:
+            defaults['template_name'] = self.password_change_template
+        return password_change(request, **defaults)
 
     def password_change_done(self, request):
         """
         Displays the "success" page after a password change.
         """
         from django.contrib.auth.views import password_change_done
-        return password_change_done(request)
+        defaults = {}
+        if self.password_change_done_template is not None:
+            defaults['template_name'] = self.password_change_done_template
+        return password_change_done(request, **defaults)
 
     def i18n_javascript(self, request):
         """
@@ -270,7 +290,10 @@ class AdminSite(object):
         This should *not* assume the user is already logged in.
         """
         from django.contrib.auth.views import logout
-        return logout(request)
+        defaults = {}
+        if self.logout_template is not None:
+            defaults['template_name'] = self.logout_template
+        return logout(request, **defaults)
     logout = never_cache(logout)
 
     def login(self, request):
@@ -313,8 +336,6 @@ class AdminSite(object):
                     if user.check_password(password):
                         message = _("Your e-mail address is not your username."
                                     " Try '%s' instead.") % user.username
-                    else:
-                        pass
             return self.display_login_form(request, message)
 
         # The user data is correct; log in the user in and continue.
@@ -448,7 +469,7 @@ class AdminSite(object):
         import warnings
         warnings.warn(
             "AdminSite.root() is deprecated; use include(admin.site.urls) instead.",
-            PendingDeprecationWarning
+            DeprecationWarning
         )
 
         #

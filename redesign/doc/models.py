@@ -217,11 +217,8 @@ def save_document_in_history(doc):
 
     # copy many to many
     for field in doc._meta.many_to_many:
-        if not field.rel.through:
-            # just add the attributes
-            rel = getattr(dochist, field.name)
-            for item in getattr(doc, field.name).all():
-                rel.add(item)
+        if field.rel.through and field.rel.through._meta.auto_created:
+            setattr(dochist, field.name, getattr(doc, field.name).all())
 
     # copy remaining tricky many to many
     def transfer_fields(obj, HistModel):

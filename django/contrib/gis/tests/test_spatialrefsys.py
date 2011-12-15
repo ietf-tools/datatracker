@@ -1,8 +1,8 @@
 import unittest
-from django.contrib.gis.db.backend import SpatialBackend
+
+from django.db import connection
+from django.contrib.gis.gdal import GDAL_VERSION
 from django.contrib.gis.tests.utils import mysql, no_mysql, oracle, postgis, spatialite
-if not mysql:
-    from django.contrib.gis.models import SpatialRefSys
 
 test_srs = ({'srid' : 4326,
              'auth_name' : ('EPSG', True),
@@ -28,9 +28,12 @@ test_srs = ({'srid' : 4326,
              },
             )
 
-if SpatialBackend.postgis:
-    major, minor1, minor2 = SpatialBackend.version
-    POSTGIS_14 = major >=1 and minor1 >= 4
+if oracle:
+    from django.contrib.gis.db.backends.oracle.models import SpatialRefSys
+elif postgis:
+    from django.contrib.gis.db.backends.postgis.models import SpatialRefSys
+elif spatialite:
+    from django.contrib.gis.db.backends.spatialite.models import SpatialRefSys
 
 class SpatialRefSysTest(unittest.TestCase):
 
@@ -52,7 +55,7 @@ class SpatialRefSysTest(unittest.TestCase):
 
             # No proj.4 and different srtext on oracle backends :(
             if postgis:
-                if POSTGIS_14:
+                if connection.ops.spatial_version >= (1, 4, 0):
                     srtext = sd['srtext14']
                 else:
                     srtext = sd['srtext']
@@ -76,10 +79,11 @@ class SpatialRefSysTest(unittest.TestCase):
             # Testing the SpatialReference object directly.
             if postgis or spatialite:
                 srs = sr.srs
-                self.assertEqual(sd['proj4'], srs.proj4)
+                if GDAL_VERSION <= (1, 8):
+                    self.assertEqual(sd['proj4'], srs.proj4)
                 # No `srtext` field in the `spatial_ref_sys` table in SpatiaLite
                 if not spatialite:
-                    if POSTGIS_14:
+                    if connection.ops.spatial_version >= (1, 4, 0):
                         srtext = sd['srtext14']
                     else:
                         srtext = sd['srtext']

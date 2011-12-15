@@ -10,7 +10,6 @@ from ietf.idtracker.models import (InternetDraft, PersonOrOrgInfo, IETFWG,
                                    IDAuthor, EmailAddress, IESGLogin, BallotInfo)
 from ietf.submit.models import TempIdAuthors
 from ietf.utils.mail import send_mail
-from ietf.idrfc.utils import add_document_comment
 from ietf.utils import unaccent
 
 from redesign.doc.models import *
@@ -77,6 +76,7 @@ def perform_post(request, submission):
         )
     update_authors(draft, submission)
     if draft.idinternal:
+        from ietf.idrfc.utils import add_document_comment
         add_document_comment(None, draft, "New version available")
         if draft.idinternal.cur_sub_state_id == 5 and draft.idinternal.rfc_flag == 0:  # Substate 5 Revised ID Needed
             draft.idinternal.prev_sub_state_id = draft.idinternal.cur_sub_state_id

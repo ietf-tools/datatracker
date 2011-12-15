@@ -5,7 +5,7 @@ from django import forms
 from django.conf import settings
 from django.db.models import Q
 from django.forms.util import ErrorList
-from django.forms.fields import email_re
+from django.core.validators import email_re
 from django.template.loader import render_to_string
 
 from ietf.idtracker.models import PersonOrOrgInfo

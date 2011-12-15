@@ -3,16 +3,12 @@
 BR-specific Form helpers
 """
 
+from django.core.validators import EMPTY_VALUES
 from django.forms import ValidationError
-from django.forms.fields import Field, RegexField, CharField, Select, EMPTY_VALUES
+from django.forms.fields import Field, RegexField, CharField, Select
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext_lazy as _
 import re
-
-try:
-    set
-except NameError:
-    from sets import Set as set     # For Python 2.3
 
 phone_digits_re = re.compile(r'^(\d{2})[-\.]?(\d{4})[-\.]?(\d{4})$')
 

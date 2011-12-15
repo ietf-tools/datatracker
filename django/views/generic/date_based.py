@@ -27,7 +27,7 @@ def archive_index(request, queryset, date_field, num_latest=15,
         queryset = queryset.filter(**{'%s__lte' % date_field: datetime.datetime.now()})
     date_list = queryset.dates(date_field, 'year')[::-1]
     if not date_list and not allow_empty:
-        raise Http404, "No %s available" % model._meta.verbose_name
+        raise Http404("No %s available" % model._meta.verbose_name)
 
     if date_list and num_latest:
         latest = queryset.order_by('-'+date_field)[:num_latest]
@@ -105,6 +105,8 @@ def archive_month(request, year, month, queryset, date_field,
 
     Templates: ``<app_label>/<model_name>_archive_month.html``
     Context:
+        date_list:
+            List of days in this month with objects
         month:
             (date) this month
         next_month:
@@ -139,6 +141,7 @@ def archive_month(request, year, month, queryset, date_field,
     if last_day >= now.date() and not allow_future:
         lookup_kwargs['%s__lte' % date_field] = now
     object_list = queryset.filter(**lookup_kwargs)
+    date_list = object_list.dates(date_field, 'day')
     if not object_list and not allow_empty:
         raise Http404
 
@@ -160,6 +163,7 @@ def archive_month(request, year, month, queryset, date_field,
         template_name = "%s/%s_archive_month.html" % (model._meta.app_label, model._meta.object_name.lower())
     t = template_loader.get_template(template_name)
     c = RequestContext(request, {
+        'date_list': date_list,
         '%s_list' % template_object_name: object_list,
         'month': date,
         'next_month': next_month,
@@ -339,11 +343,11 @@ def object_detail(request, year, month, day, queryset, date_field,
     elif slug and slug_field:
         lookup_kwargs['%s__exact' % slug_field] = slug
     else:
-        raise AttributeError, "Generic detail view must be called with either an object_id or a slug/slugfield"
+        raise AttributeError("Generic detail view must be called with either an object_id or a slug/slugfield")
     try:
         obj = queryset.get(**lookup_kwargs)
     except ObjectDoesNotExist:
-        raise Http404, "No %s found for" % model._meta.verbose_name
+        raise Http404("No %s found for" % model._meta.verbose_name)
     if not template_name:
         template_name = "%s/%s_detail.html" % (model._meta.app_label, model._meta.object_name.lower())
     if template_name_field:

@@ -13,7 +13,7 @@
  Envelope: A ctypes structure for bounding boxes (GDAL library
   not required).
 
- OGRGeometry: Layer for accessing OGR Geometry objects.
+ OGRGeometry: Object for accessing OGR Geometry functionality.
 
  OGRGeomType: A class for representing the different OGR Geometry
   types (GDAL library not required).
@@ -31,29 +31,24 @@
  to a non-existant file location (e.g., `GDAL_LIBRARY_PATH='/null/path'`; 
  setting to None/False/'' will not work as a string must be given).
 """
-import sys
-
 # Attempting to import objects that depend on the GDAL library.  The
 # HAS_GDAL flag will be set to True if the library is present on
 # the system.
 try:
     from django.contrib.gis.gdal.driver import Driver
     from django.contrib.gis.gdal.datasource import DataSource
-    from django.contrib.gis.gdal.libgdal import gdal_version, gdal_full_version, gdal_release_date
+    from django.contrib.gis.gdal.libgdal import gdal_version, gdal_full_version, gdal_release_date, GEOJSON, GDAL_VERSION
     from django.contrib.gis.gdal.srs import SpatialReference, CoordTransform
-    from django.contrib.gis.gdal.geometries import OGRGeometry, GEOJSON
+    from django.contrib.gis.gdal.geometries import OGRGeometry
     HAS_GDAL = True
 except:
     HAS_GDAL, GEOJSON = False, False
 
-# The envelope, error, and geomtype modules do not actually require the
-# GDAL library, but still nead at least Python 2.4 and ctypes.
-PYTHON23 = sys.version_info[0] == 2 and sys.version_info[1] == 3
-if not PYTHON23:
-    try:
-        from django.contrib.gis.gdal.envelope import Envelope
-        from django.contrib.gis.gdal.error import check_err, OGRException, OGRIndexError, SRSException
-        from django.contrib.gis.gdal.geomtype import OGRGeomType
-    except ImportError:
-        # No ctypes, but don't raise an exception.
-        pass
+try:
+    from django.contrib.gis.gdal.envelope import Envelope
+except ImportError:
+    # No ctypes, but don't raise an exception.
+    pass
+
+from django.contrib.gis.gdal.error import check_err, OGRException, OGRIndexError, SRSException
+from django.contrib.gis.gdal.geomtype import OGRGeomType

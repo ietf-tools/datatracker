@@ -249,6 +249,8 @@ HTPASSWD_FILE = "/www/htpasswd"
 # DB redesign
 USE_DB_REDESIGN_PROXY_CLASSES = True
 
+SOUTH_TESTS_MIGRATE = False 
+
 if USE_DB_REDESIGN_PROXY_CLASSES:
     AUTH_PROFILE_MODULE = 'person.Person'
     AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )

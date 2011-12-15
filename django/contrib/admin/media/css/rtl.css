@@ -82,6 +82,10 @@ div.breadcrumbs {
 
 /* changelists styles */
 
+.change-list ul.toplinks li {
+    float: right;
+}
+
 .change-list .filtered {
     background: white url(../img/admin/changelist-bg_rtl.gif) top left repeat-y !important;
 }
@@ -110,6 +114,13 @@ div.breadcrumbs {
     border-right: 5px solid #ccc;
     padding-right: 5px;
     margin-right: -10px;
+}
+
+.filtered .actions {
+    border-left:1px solid #DDDDDD;
+    margin-left:160px !important;
+    border-right: 0 none;
+    margin-right:0 !important;
 }
 
 /* FORMS */
@@ -187,9 +198,13 @@ fieldset .field-box {
     text-align: right;
 }
 
+.inline-deletelink {
+    float: left;
+}
+
 /* MISC */
 
-.inline-related h2 {
+.inline-related h2, .inline-group h2 {
     text-align: right
 }
 

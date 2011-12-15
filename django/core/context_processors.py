@@ -8,25 +8,44 @@ RequestContext.
 """
 
 from django.conf import settings
+from django.middleware.csrf import get_token
+from django.utils.functional import lazy
 
 def auth(request):
     """
-    Returns context variables required by apps that use Django's authentication
-    system.
+    DEPRECATED. This context processor is the old location, and has been moved
+    to `django.contrib.auth.context_processors`.
 
-    If there is no 'user' attribute in the request, uses AnonymousUser (from
-    django.contrib.auth).
+    This function still exists for backwards-compatibility; it will be removed
+    in Django 1.4.
     """
-    if hasattr(request, 'user'):
-        user = request.user
-    else:
-        from django.contrib.auth.models import AnonymousUser
-        user = AnonymousUser()
-    return {
-        'user': user,
-        'messages': user.get_and_delete_messages(),
-        'perms': PermWrapper(user),
-    }
+    import warnings
+    warnings.warn(
+        "The context processor at `django.core.context_processors.auth` is " \
+        "deprecated; use the path `django.contrib.auth.context_processors.auth` " \
+        "instead.",
+        PendingDeprecationWarning
+    )
+    from django.contrib.auth.context_processors import auth as auth_context_processor
+    return auth_context_processor(request)
+
+def csrf(request):
+    """
+    Context processor that provides a CSRF token, or the string 'NOTPROVIDED' if
+    it has not been provided by either a view decorator or the middleware
+    """
+    def _get_val():
+        token = get_token(request)
+        if token is None:
+            # In order to be able to provide debugging info in the
+            # case of misconfiguration, we use a sentinel value
+            # instead of returning an empty dict.
+            return 'NOTPROVIDED'
+        else:
+            return token
+    _get_val = lazy(_get_val, str)
+
+    return {'csrf_token': _get_val() }
 
 def debug(request):
     "Returns context variables helpful for debugging."
@@ -79,7 +98,7 @@ class PermWrapper(object):
 
     def __getitem__(self, module_name):
         return PermLookupDict(self.user, module_name)
-        
+
     def __iter__(self):
         # I am large, I contain multitudes.
         raise TypeError("PermWrapper is not iterable.")

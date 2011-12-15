@@ -1,35 +1,27 @@
 from django.conf import settings
-from django.db.models.fields import Field
+from django.utils.translation import ugettext_lazy as _
+from django.db.models.fields import CharField
+from django.contrib.localflavor.us.us_states import STATE_CHOICES
 
-class USStateField(Field): 
-    def get_internal_type(self): 
-        return "USStateField" 
-        
-    def db_type(self):
-        if settings.DATABASE_ENGINE == 'oracle':
-            return 'CHAR(2)'
-        else:
-            return 'varchar(2)'
-    
-    def formfield(self, **kwargs): 
-        from django.contrib.localflavor.us.forms import USStateSelect 
-        defaults = {'widget': USStateSelect} 
-        defaults.update(kwargs) 
-        return super(USStateField, self).formfield(**defaults)
+class USStateField(CharField):
 
-class PhoneNumberField(Field):
-    def get_internal_type(self):
-        return "PhoneNumberField"
+    description = _("U.S. state (two uppercase letters)")
 
-    def db_type(self):
-        if settings.DATABASE_ENGINE == 'oracle':
-            return 'VARCHAR2(20)'
-        else:
-            return 'varchar(20)'
+    def __init__(self, *args, **kwargs):
+        kwargs['choices'] = STATE_CHOICES
+        kwargs['max_length'] = 2
+        super(USStateField, self).__init__(*args, **kwargs)
+
+class PhoneNumberField(CharField):
+
+    description = _("Phone number")
+
+    def __init__(self, *args, **kwargs):
+        kwargs['max_length'] = 20
+        super(PhoneNumberField, self).__init__(*args, **kwargs)
 
     def formfield(self, **kwargs):
         from django.contrib.localflavor.us.forms import USPhoneNumberField
         defaults = {'form_class': USPhoneNumberField}
         defaults.update(kwargs)
         return super(PhoneNumberField, self).formfield(**defaults)
-

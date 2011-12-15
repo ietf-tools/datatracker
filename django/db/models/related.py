@@ -18,9 +18,10 @@ class RelatedObject(object):
         self.name = '%s:%s' % (self.opts.app_label, self.opts.module_name)
         self.var_name = self.opts.object_name.lower()
 
-    def get_db_prep_lookup(self, lookup_type, value):
+    def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
         # Defer to the actual field definition for db prep
-        return self.field.get_db_prep_lookup(lookup_type, value)
+        return self.field.get_db_prep_lookup(lookup_type, value,
+                        connection=connection, prepared=prepared)
 
     def editable_fields(self):
         "Get the fields in this class that should be edited inline."
@@ -44,3 +45,6 @@ class RelatedObject(object):
             return self.field.rel.related_name or (self.opts.object_name.lower() + '_set')
         else:
             return self.field.rel.related_name or (self.opts.object_name.lower())
+
+    def get_cache_name(self):
+        return "_%s_cache" % self.get_accessor_name()

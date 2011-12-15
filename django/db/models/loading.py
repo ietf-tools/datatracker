@@ -4,7 +4,9 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.datastructures import SortedDict
 from django.utils.importlib import import_module
+from django.utils.module_loading import module_has_submodule
 
+import imp
 import sys
 import os
 import threading
@@ -35,6 +37,7 @@ class AppCache(object):
         postponed = [],
         nesting_level = 0,
         write_lock = threading.RLock(),
+        _get_models_cache = {},
     )
 
     def __init__(self):
@@ -70,17 +73,29 @@ class AppCache(object):
         """
         self.handled[app_name] = None
         self.nesting_level += 1
+        app_module = import_module(app_name)
         try:
             models = import_module('.models', app_name)
         except ImportError:
             self.nesting_level -= 1
-            if can_postpone:
-                # Either the app has no models, or the package is still being
-                # imported by Python and the model module isn't available yet.
-                # We will check again once all the recursion has finished (in
-                # populate).
-                self.postponed.append(app_name)
-            return None
+            # If the app doesn't have a models module, we can just ignore the
+            # ImportError and return no models for it.
+            if not module_has_submodule(app_module, 'models'):
+                return None
+            # But if the app does have a models module, we need to figure out
+            # whether to suppress or propagate the error. If can_postpone is
+            # True then it may be that the package is still being imported by
+            # Python and the models module isn't available yet. So we add the
+            # app to the postponed list and we'll try it again after all the
+            # recursion has finished (in populate). If can_postpone is False
+            # then it's time to raise the ImportError.
+            else:
+                if can_postpone:
+                    self.postponed.append(app_name)
+                    return None
+                else:
+                    raise
+
         self.nesting_level -= 1
         if models not in self.app_store:
             self.app_store[models] = len(self.app_store)
@@ -122,7 +137,7 @@ class AppCache(object):
                             return None
                     else:
                         return mod
-            raise ImproperlyConfigured, "App with label %s could not be found" % app_label
+            raise ImproperlyConfigured("App with label %s could not be found" % app_label)
         finally:
             self.write_lock.release()
 
@@ -131,19 +146,38 @@ class AppCache(object):
         self._populate()
         return self.app_errors
 
-    def get_models(self, app_mod=None):
+    def get_models(self, app_mod=None, include_auto_created=False, include_deferred=False):
         """
         Given a module containing models, returns a list of the models.
         Otherwise returns a list of all installed models.
+
+        By default, auto-created models (i.e., m2m models without an
+        explicit intermediate table) are not included. However, if you
+        specify include_auto_created=True, they will be.
+
+        By default, models created to satisfy deferred attribute
+        queries are *not* included in the list of models. However, if
+        you specify include_deferred, they will be.
         """
+        cache_key = (app_mod, include_auto_created, include_deferred)
+        try:
+            return self._get_models_cache[cache_key]
+        except KeyError:
+            pass
         self._populate()
         if app_mod:
-            return self.app_models.get(app_mod.__name__.split('.')[-2], SortedDict()).values()
+            app_list = [self.app_models.get(app_mod.__name__.split('.')[-2], SortedDict())]
         else:
-            model_list = []
-            for app_entry in self.app_models.itervalues():
-                model_list.extend(app_entry.values())
-            return model_list
+            app_list = self.app_models.itervalues()
+        model_list = []
+        for app in app_list:
+            model_list.extend(
+                model for model in app.values()
+                if ((not model._deferred or include_deferred)
+                    and (not model._meta.auto_created or include_auto_created))
+            )
+        self._get_models_cache[cache_key] = model_list
+        return model_list
 
     def get_model(self, app_label, model_name, seed_cache=True):
         """
@@ -177,6 +211,7 @@ class AppCache(object):
                 if os.path.splitext(fname1)[0] == os.path.splitext(fname2)[0]:
                     continue
             model_dict[model_name] = model
+        self._get_models_cache.clear()
 
 cache = AppCache()
 

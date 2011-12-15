@@ -1,16 +1,18 @@
 from forms import Form
+from django.core.exceptions import ValidationError
 from django.utils.encoding import StrAndUnicode
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from fields import IntegerField, BooleanField
 from widgets import Media, HiddenInput
-from util import ErrorList, ErrorDict, ValidationError
+from util import ErrorList
 
 __all__ = ('BaseFormSet', 'all_valid')
 
 # special field names
 TOTAL_FORM_COUNT = 'TOTAL_FORMS'
 INITIAL_FORM_COUNT = 'INITIAL_FORMS'
+MAX_NUM_FORM_COUNT = 'MAX_NUM_FORMS'
 ORDERING_FIELD_NAME = 'ORDER'
 DELETION_FIELD_NAME = 'DELETE'
 
@@ -23,6 +25,7 @@ class ManagementForm(Form):
     def __init__(self, *args, **kwargs):
         self.base_fields[TOTAL_FORM_COUNT] = IntegerField(widget=HiddenInput)
         self.base_fields[INITIAL_FORM_COUNT] = IntegerField(widget=HiddenInput)
+        self.base_fields[MAX_NUM_FORM_COUNT] = IntegerField(required=False, widget=HiddenInput)
         super(ManagementForm, self).__init__(*args, **kwargs)
 
 class BaseFormSet(StrAndUnicode):
@@ -55,7 +58,8 @@ class BaseFormSet(StrAndUnicode):
         else:
             form = ManagementForm(auto_id=self.auto_id, prefix=self.prefix, initial={
                 TOTAL_FORM_COUNT: self.total_form_count(),
-                INITIAL_FORM_COUNT: self.initial_form_count()
+                INITIAL_FORM_COUNT: self.initial_form_count(),
+                MAX_NUM_FORM_COUNT: self.max_num
             })
         return form
     management_form = property(_management_form)
@@ -65,8 +69,13 @@ class BaseFormSet(StrAndUnicode):
         if self.data or self.files:
             return self.management_form.cleaned_data[TOTAL_FORM_COUNT]
         else:
-            total_forms = self.initial_form_count() + self.extra
-            if total_forms > self.max_num > 0:
+            initial_forms = self.initial_form_count()
+            total_forms = initial_forms + self.extra
+            # Allow all existing related objects/inlines to be displayed,
+            # but don't allow extra beyond max_num.
+            if initial_forms > self.max_num >= 0:
+                total_forms = initial_forms
+            elif total_forms > self.max_num >= 0:
                 total_forms = self.max_num
         return total_forms
 
@@ -77,7 +86,7 @@ class BaseFormSet(StrAndUnicode):
         else:
             # Use the length of the inital data if it's there, 0 otherwise.
             initial_forms = self.initial and len(self.initial) or 0
-            if initial_forms > self.max_num > 0:
+            if initial_forms > self.max_num >= 0:
                 initial_forms = self.max_num
         return initial_forms
 
@@ -118,6 +127,18 @@ class BaseFormSet(StrAndUnicode):
         return self.forms[self.initial_form_count():]
     extra_forms = property(_get_extra_forms)
 
+    def _get_empty_form(self, **kwargs):
+        defaults = {
+            'auto_id': self.auto_id,
+            'prefix': self.add_prefix('__prefix__'),
+            'empty_permitted': True,
+        }
+        defaults.update(kwargs)
+        form = self.form(**defaults)
+        self.add_fields(form, None)
+        return form
+    empty_form = property(_get_empty_form)
+
     # Maybe this should just go away?
     def _get_cleaned_data(self):
         """
@@ -144,7 +165,7 @@ class BaseFormSet(StrAndUnicode):
                 # if this is an extra form and hasn't changed, don't consider it
                 if i >= self.initial_form_count() and not form.has_changed():
                     continue
-                if form.cleaned_data[DELETION_FIELD_NAME]:
+                if self._should_delete_form(form):
                     self._deleted_form_indexes.append(i)
         return [self.forms[i] for i in self._deleted_form_indexes]
     deleted_forms = property(_get_deleted_forms)
@@ -168,7 +189,7 @@ class BaseFormSet(StrAndUnicode):
                 if i >= self.initial_form_count() and not form.has_changed():
                     continue
                 # don't add data marked for deletion to self.ordered_data
-                if self.can_delete and form.cleaned_data[DELETION_FIELD_NAME]:
+                if self.can_delete and self._should_delete_form(form):
                     continue
                 self._ordering.append((i, form.cleaned_data[ORDERING_FIELD_NAME]))
             # After we're done populating self._ordering, sort it.
@@ -212,6 +233,15 @@ class BaseFormSet(StrAndUnicode):
         return self._errors
     errors = property(_get_errors)
 
+    def _should_delete_form(self, form):
+        # The way we lookup the value of the deletion field here takes
+        # more code than we'd like, but the form's cleaned_data will
+        # not exist if the form is invalid.
+        field = form.fields[DELETION_FIELD_NAME]
+        raw_value = form._raw_value(DELETION_FIELD_NAME)
+        should_delete = field.clean(raw_value)
+        return should_delete
+
     def is_valid(self):
         """
         Returns True if form.errors is empty for every form in self.forms.
@@ -221,16 +251,11 @@ class BaseFormSet(StrAndUnicode):
         # We loop over every form.errors here rather than short circuiting on the
         # first failure to make sure validation gets triggered for every form.
         forms_valid = True
+        err = self.errors
         for i in range(0, self.total_form_count()):
             form = self.forms[i]
             if self.can_delete:
-                # The way we lookup the value of the deletion field here takes
-                # more code than we'd like, but the form's cleaned_data will
-                # not exist if the form is invalid.
-                field = form.fields[DELETION_FIELD_NAME]
-                raw_value = form._raw_value(DELETION_FIELD_NAME)
-                should_delete = field.clean(raw_value)
-                if should_delete:
+                if self._should_delete_form(form):
                     # This form is going to be deleted so any of its errors
                     # should not cause the entire formset to be invalid.
                     continue
@@ -252,7 +277,7 @@ class BaseFormSet(StrAndUnicode):
         try:
             self.clean()
         except ValidationError, e:
-            self._non_form_errors = e.messages
+            self._non_form_errors = self.error_class(e.messages)
 
     def clean(self):
         """
@@ -267,7 +292,7 @@ class BaseFormSet(StrAndUnicode):
         """A hook for adding extra fields on to each form instance."""
         if self.can_order:
             # Only pre-fill the ordering field for initial forms.
-            if index < self.initial_form_count():
+            if index is not None and index < self.initial_form_count():
                 form.fields[ORDERING_FIELD_NAME] = IntegerField(label=_(u'Order'), initial=index+1, required=False)
             else:
                 form.fields[ORDERING_FIELD_NAME] = IntegerField(label=_(u'Order'), required=False)
@@ -302,7 +327,7 @@ class BaseFormSet(StrAndUnicode):
         return mark_safe(u'\n'.join([unicode(self.management_form), forms]))
 
 def formset_factory(form, formset=BaseFormSet, extra=1, can_order=False,
-                    can_delete=False, max_num=0):
+                    can_delete=False, max_num=None):
     """Return a FormSet for the given form class."""
     attrs = {'form': form, 'extra': extra,
              'can_order': can_order, 'can_delete': can_delete,

@@ -2,8 +2,9 @@
 Chile specific form helpers.
 """
 
+from django.core.validators import EMPTY_VALUES
 from django.forms import ValidationError
-from django.forms.fields import RegexField, Select, EMPTY_VALUES
+from django.forms.fields import RegexField, Select
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_unicode
 
@@ -73,7 +74,7 @@ class CLRutField(RegexField):
         tuple.
         """
         rut = smart_unicode(rut).replace(' ', '').replace('.', '').replace('-', '')
-        return rut[:-1], rut[-1]
+        return rut[:-1], rut[-1].upper()
 
     def _format(self, code, verifier=None):
         """

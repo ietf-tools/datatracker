@@ -1,14 +1,72 @@
+import sys
+import signal
 import unittest
+
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db.models import get_app, get_apps
 from django.test import _doctest as doctest
 from django.test.utils import setup_test_environment, teardown_test_environment
 from django.test.testcases import OutputChecker, DocTestRunner, TestCase
 
+
+try:
+    all
+except NameError:
+    from django.utils.itercompat import all
+
 # The module name for tests outside models.py
 TEST_MODULE = 'tests'
 
 doctestOutputChecker = OutputChecker()
+
+class DjangoTestRunner(unittest.TextTestRunner):
+
+    def __init__(self, verbosity=0, failfast=False, **kwargs):
+        super(DjangoTestRunner, self).__init__(verbosity=verbosity, **kwargs)
+        self.failfast = failfast
+        self._keyboard_interrupt_intercepted = False
+
+    def run(self, *args, **kwargs):
+        """
+        Runs the test suite after registering a custom signal handler
+        that triggers a graceful exit when Ctrl-C is pressed.
+        """
+        self._default_keyboard_interrupt_handler = signal.signal(signal.SIGINT,
+            self._keyboard_interrupt_handler)
+        try:
+            result = super(DjangoTestRunner, self).run(*args, **kwargs)
+        finally:
+            signal.signal(signal.SIGINT, self._default_keyboard_interrupt_handler)
+        return result
+
+    def _keyboard_interrupt_handler(self, signal_number, stack_frame):
+        """
+        Handles Ctrl-C by setting a flag that will stop the test run when
+        the currently running test completes.
+        """
+        self._keyboard_interrupt_intercepted = True
+        sys.stderr.write(" <Test run halted by Ctrl-C> ")
+        # Set the interrupt handler back to the default handler, so that
+        # another Ctrl-C press will trigger immediate exit.
+        signal.signal(signal.SIGINT, self._default_keyboard_interrupt_handler)
+
+    def _makeResult(self):
+        result = super(DjangoTestRunner, self)._makeResult()
+        failfast = self.failfast
+
+        def stoptest_override(func):
+            def stoptest(test):
+                # If we were set to failfast and the unit test failed,
+                # or if the user has typed Ctrl-C, report and quit
+                if (failfast and not result.wasSuccessful()) or \
+                    self._keyboard_interrupt_intercepted:
+                    result.stop()
+                func(test)
+            return stoptest
+
+        setattr(result, 'stopTest', stoptest_override(result.stopTest))
+        return result
 
 def get_tests(app_module):
     try:
@@ -73,41 +131,66 @@ def build_suite(app_module):
     return suite
 
 def build_test(label):
-    """Construct a test case a test with the specified label. Label should
-    be of the form model.TestClass or model.TestClass.test_method. Returns
-    an instantiated test or test suite corresponding to the label provided.
+    """Construct a test case with the specified label. Label should be of the
+    form model.TestClass or model.TestClass.test_method. Returns an
+    instantiated test or test suite corresponding to the label provided.
 
     """
     parts = label.split('.')
     if len(parts) < 2 or len(parts) > 3:
         raise ValueError("Test label '%s' should be of the form app.TestCase or app.TestCase.test_method" % label)
 
+    #
+    # First, look for TestCase instances with a name that matches
+    #
     app_module = get_app(parts[0])
+    test_module = get_tests(app_module)
     TestClass = getattr(app_module, parts[1], None)
 
     # Couldn't find the test class in models.py; look in tests.py
     if TestClass is None:
-        test_module = get_tests(app_module)
         if test_module:
             TestClass = getattr(test_module, parts[1], None)
 
-    if len(parts) == 2: # label is app.TestClass
-        try:
-            return unittest.TestLoader().loadTestsFromTestCase(TestClass)
-        except TypeError:
-            raise ValueError("Test label '%s' does not refer to a test class" % label)
-    else: # label is app.TestClass.test_method
-        if not TestClass:
-            raise ValueError("Test label '%s' does not refer to a test class" % label)
-        return TestClass(parts[2])
+    try:
+        if issubclass(TestClass, unittest.TestCase):
+            if len(parts) == 2: # label is app.TestClass
+                try:
+                    return unittest.TestLoader().loadTestsFromTestCase(TestClass)
+                except TypeError:
+                    raise ValueError("Test label '%s' does not refer to a test class" % label)
+            else: # label is app.TestClass.test_method
+                return TestClass(parts[2])
+    except TypeError:
+        # TestClass isn't a TestClass - it must be a method or normal class
+        pass
 
-# Python 2.3 compatibility: TestSuites were made iterable in 2.4.
-# We need to iterate over them, so we add the missing method when
-# necessary.
-try:
-    getattr(unittest.TestSuite, '__iter__')
-except AttributeError:
-    setattr(unittest.TestSuite, '__iter__', lambda s: iter(s._tests))
+    #
+    # If there isn't a TestCase, look for a doctest that matches
+    #
+    tests = []
+    for module in app_module, test_module:
+        try:
+            doctests = doctest.DocTestSuite(module,
+                                            checker=doctestOutputChecker,
+                                            runner=DocTestRunner)
+            # Now iterate over the suite, looking for doctests whose name
+            # matches the pattern that was given
+            for test in doctests:
+                if test._dt_test.name in (
+                        '%s.%s' % (module.__name__, '.'.join(parts[1:])),
+                        '%s.__test__.%s' % (module.__name__, '.'.join(parts[1:]))):
+                    tests.append(test)
+        except ValueError:
+            # No doctests found.
+            pass
+
+    # If no tests were found, then we were given a bad test label.
+    if not tests:
+        raise ValueError("Test label '%s' does not refer to a test" % label)
+
+    # Construct a suite out of the tests that matched.
+    return unittest.TestSuite(tests)
 
 def partition_suite(suite, classes, bins):
     """
@@ -146,52 +229,181 @@ def reorder_suite(suite, classes):
         bins[0].addTests(bins[i+1])
     return bins[0]
 
-def run_tests(test_labels, verbosity=1, interactive=True, extra_tests=[]):
+def dependency_ordered(test_databases, dependencies):
+    """Reorder test_databases into an order that honors the dependencies
+    described in TEST_DEPENDENCIES.
     """
-    Run the unit tests for all the test labels in the provided list.
-    Labels must be of the form:
-     - app.TestClass.test_method
-        Run a single specific test method
-     - app.TestClass
-        Run all the test methods in a given class
-     - app
-        Search for doctests and unittests in the named application.
+    ordered_test_databases = []
+    resolved_databases = set()
+    while test_databases:
+        changed = False
+        deferred = []
 
-    When looking for tests, the test runner will look in the models and
-    tests modules for the application.
+        while test_databases:
+            signature, (db_name, aliases) = test_databases.pop()
+            dependencies_satisfied = True
+            for alias in aliases:
+                if alias in dependencies:
+                    if all(a in resolved_databases for a in dependencies[alias]):
+                        # all dependencies for this alias are satisfied
+                        dependencies.pop(alias)
+                        resolved_databases.add(alias)
+                    else:
+                        dependencies_satisfied = False
+                else:
+                    resolved_databases.add(alias)
 
-    A list of 'extra' tests may also be provided; these tests
-    will be added to the test suite.
-
-    Returns the number of tests that failed.
-    """
-    setup_test_environment()
-
-    settings.DEBUG = False
-    suite = unittest.TestSuite()
-
-    if test_labels:
-        for label in test_labels:
-            if '.' in label:
-                suite.addTest(build_test(label))
+            if dependencies_satisfied:
+                ordered_test_databases.append((signature, (db_name, aliases)))
+                changed = True
             else:
-                app = get_app(label)
+                deferred.append((signature, (db_name, aliases)))
+
+        if not changed:
+            raise ImproperlyConfigured("Circular dependency in TEST_DEPENDENCIES")
+        test_databases = deferred
+    return ordered_test_databases
+
+class DjangoTestSuiteRunner(object):
+    def __init__(self, verbosity=1, interactive=True, failfast=True, **kwargs):
+        self.verbosity = verbosity
+        self.interactive = interactive
+        self.failfast = failfast
+
+    def setup_test_environment(self, **kwargs):
+        setup_test_environment()
+        settings.DEBUG = False
+
+    def build_suite(self, test_labels, extra_tests=None, **kwargs):
+        suite = unittest.TestSuite()
+
+        if test_labels:
+            for label in test_labels:
+                if '.' in label:
+                    suite.addTest(build_test(label))
+                else:
+                    app = get_app(label)
+                    suite.addTest(build_suite(app))
+        else:
+            for app in get_apps():
                 suite.addTest(build_suite(app))
-    else:
-        for app in get_apps():
-            suite.addTest(build_suite(app))
 
-    for test in extra_tests:
-        suite.addTest(test)
+        if extra_tests:
+            for test in extra_tests:
+                suite.addTest(test)
 
-    suite = reorder_suite(suite, (TestCase,))
+        return reorder_suite(suite, (TestCase,))
 
-    old_name = settings.DATABASE_NAME
-    from django.db import connection
-    connection.creation.create_test_db(verbosity, autoclobber=not interactive)
-    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
-    connection.creation.destroy_test_db(old_name, verbosity)
+    def setup_databases(self, **kwargs):
+        from django.db import connections, DEFAULT_DB_ALIAS
 
-    teardown_test_environment()
+        # First pass -- work out which databases actually need to be created,
+        # and which ones are test mirrors or duplicate entries in DATABASES
+        mirrored_aliases = {}
+        test_databases = {}
+        dependencies = {}
+        for alias in connections:
+            connection = connections[alias]
+            if connection.settings_dict['TEST_MIRROR']:
+                # If the database is marked as a test mirror, save
+                # the alias.
+                mirrored_aliases[alias] = connection.settings_dict['TEST_MIRROR']
+            else:
+                # Store a tuple with DB parameters that uniquely identify it.
+                # If we have two aliases with the same values for that tuple,
+                # we only need to create the test database once.
+                item = test_databases.setdefault(
+                    connection.creation.test_db_signature(),
+                    (connection.settings_dict['NAME'], [])
+                )
+                item[1].append(alias)
 
-    return len(result.failures) + len(result.errors)
+                if 'TEST_DEPENDENCIES' in connection.settings_dict:
+                    dependencies[alias] = connection.settings_dict['TEST_DEPENDENCIES']
+                else:
+                    if alias != DEFAULT_DB_ALIAS:
+                        dependencies[alias] = connection.settings_dict.get('TEST_DEPENDENCIES', [DEFAULT_DB_ALIAS])
+
+        # Second pass -- actually create the databases.
+        old_names = []
+        mirrors = []
+        for signature, (db_name, aliases) in dependency_ordered(test_databases.items(), dependencies):
+            # Actually create the database for the first connection
+            connection = connections[aliases[0]]
+            old_names.append((connection, db_name, True))
+            test_db_name = connection.creation.create_test_db(self.verbosity, autoclobber=not self.interactive)
+            for alias in aliases[1:]:
+                connection = connections[alias]
+                if db_name:
+                    old_names.append((connection, db_name, False))
+                    connection.settings_dict['NAME'] = test_db_name
+                else:
+                    # If settings_dict['NAME'] isn't defined, we have a backend where
+                    # the name isn't important -- e.g., SQLite, which uses :memory:.
+                    # Force create the database instead of assuming it's a duplicate.
+                    old_names.append((connection, db_name, True))
+                    connection.creation.create_test_db(self.verbosity, autoclobber=not self.interactive)
+
+        for alias, mirror_alias in mirrored_aliases.items():
+            mirrors.append((alias, connections[alias].settings_dict['NAME']))
+            connections[alias].settings_dict['NAME'] = connections[mirror_alias].settings_dict['NAME']
+
+        return old_names, mirrors
+
+    def run_suite(self, suite, **kwargs):
+        return DjangoTestRunner(verbosity=self.verbosity, failfast=self.failfast).run(suite)
+
+    def teardown_databases(self, old_config, **kwargs):
+        from django.db import connections
+        old_names, mirrors = old_config
+        # Point all the mirrors back to the originals
+        for alias, old_name in mirrors:
+            connections[alias].settings_dict['NAME'] = old_name
+        # Destroy all the non-mirror databases
+        for connection, old_name, destroy in old_names:
+            if destroy:
+                connection.creation.destroy_test_db(old_name, self.verbosity)
+            else:
+                connection.settings_dict['NAME'] = old_name
+
+    def teardown_test_environment(self, **kwargs):
+        teardown_test_environment()
+
+    def suite_result(self, suite, result, **kwargs):
+        return len(result.failures) + len(result.errors)
+
+    def run_tests(self, test_labels, extra_tests=None, **kwargs):
+        """
+        Run the unit tests for all the test labels in the provided list.
+        Labels must be of the form:
+         - app.TestClass.test_method
+            Run a single specific test method
+         - app.TestClass
+            Run all the test methods in a given class
+         - app
+            Search for doctests and unittests in the named application.
+
+        When looking for tests, the test runner will look in the models and
+        tests modules for the application.
+
+        A list of 'extra' tests may also be provided; these tests
+        will be added to the test suite.
+
+        Returns the number of tests that failed.
+        """
+        self.setup_test_environment()
+        suite = self.build_suite(test_labels, extra_tests)
+        old_config = self.setup_databases()
+        result = self.run_suite(suite)
+        self.teardown_databases(old_config)
+        self.teardown_test_environment()
+        return self.suite_result(suite, result)
+
+def run_tests(test_labels, verbosity=1, interactive=True, failfast=False, extra_tests=None):
+    import warnings
+    warnings.warn(
+        'The run_tests() test runner has been deprecated in favor of DjangoTestSuiteRunner.',
+        PendingDeprecationWarning
+    )
+    test_runner = DjangoTestSuiteRunner(verbosity=verbosity, interactive=interactive, failfast=failfast)
+    return test_runner.run_tests(test_labels, extra_tests=extra_tests)

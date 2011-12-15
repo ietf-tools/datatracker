@@ -1,23 +1,20 @@
 """Default variable filters."""
 
 import re
-
-try:
-    from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-except ImportError:
-    from django.utils._decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import random as random_module
 try:
     from functools import wraps
 except ImportError:
-    from django.utils.functional import wraps  # Python 2.3, 2.4 fallback.
+    from django.utils.functional import wraps  # Python 2.4 fallback.
 
 from django.template import Variable, Library
 from django.conf import settings
-from django.utils.translation import ugettext, ungettext
+from django.utils import formats
 from django.utils.encoding import force_unicode, iri_to_uri
+from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe, SafeData
+from django.utils.translation import ugettext, ungettext
 
 register = Library()
 
@@ -67,29 +64,10 @@ def capfirst(value):
 capfirst.is_safe=True
 capfirst = stringfilter(capfirst)
 
-_base_js_escapes = (
-    ('\\', r'\x5C'),
-    ('\'', r'\x27'),
-    ('"', r'\x22'),
-    ('>', r'\x3E'),
-    ('<', r'\x3C'),
-    ('&', r'\x26'),
-    ('=', r'\x3D'),
-    ('-', r'\x2D'),
-    (';', r'\x3B'),
-    (u'\u2028', r'\u2028'),
-    (u'\u2029', r'\u2029')
-)
-
-# Escape every ASCII character with a value less than 32.
-_js_escapes = (_base_js_escapes +
-               tuple([('%c' % z, '\\x%02X' % z) for z in range(32)]))
-
 def escapejs(value):
     """Hex encodes characters for use in JavaScript strings."""
-    for bad, good in _js_escapes:
-        value = value.replace(bad, good)
-    return value
+    from django.utils.html import escapejs
+    return escapejs(value)
 escapejs = stringfilter(escapejs)
 
 def fix_ampersands(value):
@@ -162,18 +140,28 @@ def floatformat(text, arg=-1):
 
     try:
         m = int(d) - d
-    except (OverflowError, InvalidOperation):
+    except (ValueError, OverflowError, InvalidOperation):
         return input_val
 
     if not m and p < 0:
-        return mark_safe(u'%d' % (int(d)))
+        return mark_safe(formats.number_format(u'%d' % (int(d)), 0))
 
     if p == 0:
         exp = Decimal(1)
     else:
-        exp = Decimal('1.0') / (Decimal(10) ** abs(p))
+        exp = Decimal(u'1.0') / (Decimal(10) ** abs(p))
     try:
-        return mark_safe(u'%s' % str(d.quantize(exp, ROUND_HALF_UP)))
+        # Avoid conversion to scientific notation by accessing `sign`, `digits`
+        # and `exponent` from `Decimal.as_tuple()` directly.
+        sign, digits, exponent = d.quantize(exp, ROUND_HALF_UP).as_tuple()
+        digits = [unicode(digit) for digit in reversed(digits)]
+        while len(digits) <= abs(exponent):
+            digits.append(u'0')
+        digits.insert(-exponent, u'.')
+        if sign:
+            digits.append(u'-')
+        number = u''.join(reversed(digits))
+        return mark_safe(formats.number_format(number, abs(p)))
     except InvalidOperation:
         return input_val
 floatformat.is_safe = True
@@ -249,7 +237,8 @@ stringformat.is_safe = True
 
 def title(value):
     """Converts a string into titlecase."""
-    return re.sub("([a-z])'([A-Z])", lambda m: m.group(0).lower(), value.title())
+    t = re.sub("([a-z])'([A-Z])", lambda m: m.group(0).lower(), value.title())
+    return re.sub("\d([A-Z])", lambda m: m.group(0).lower(), t)
 title.is_safe = True
 title = stringfilter(title)
 
@@ -258,6 +247,8 @@ def truncatewords(value, arg):
     Truncates a string after a certain number of words.
 
     Argument: Number of words to truncate after.
+
+    Newlines within the string are removed.
     """
     from django.utils.text import truncate_words
     try:
@@ -273,6 +264,8 @@ def truncatewords_html(value, arg):
     Truncates HTML after a certain number of words.
 
     Argument: Number of words to truncate after.
+
+    Newlines in the HTML are preserved.
     """
     from django.utils.text import truncate_html_words
     try:
@@ -499,10 +492,9 @@ def join(value, arg, autoescape=None):
     """
     value = map(force_unicode, value)
     if autoescape:
-        from django.utils.html import conditional_escape
         value = [conditional_escape(v) for v in value]
     try:
-        data = arg.join(value)
+        data = conditional_escape(arg).join(value)
     except AttributeError: # fail silently but nicely
         return value
     return mark_safe(data)
@@ -600,6 +592,10 @@ def unordered_list(value, autoescape=None):
         first_item, second_item = list_
         if second_item == []:
             return [first_item], True
+        try:
+            it = iter(second_item)  # see if second item is iterable
+        except TypeError:
+            return list_, False
         old_style_list = True
         new_second_item = []
         for sublist in second_item:
@@ -649,7 +645,13 @@ unordered_list.needs_autoescape = True
 
 def add(value, arg):
     """Adds the arg to the value."""
-    return int(value) + int(arg)
+    try:
+        return int(value) + int(arg)
+    except (ValueError, TypeError):
+        try:
+            return value + arg
+        except:
+            return value
 add.is_safe = False
 
 def get_digit(value, arg):
@@ -684,22 +686,28 @@ def date(value, arg=None):
     if arg is None:
         arg = settings.DATE_FORMAT
     try:
-        return format(value, arg)
+        return formats.date_format(value, arg)
     except AttributeError:
-        return ''
+        try:
+            return format(value, arg)
+        except AttributeError:
+            return ''
 date.is_safe = False
 
 def time(value, arg=None):
     """Formats a time according to the given format."""
-    from django.utils.dateformat import time_format
+    from django.utils import dateformat
     if value in (None, u''):
         return u''
     if arg is None:
         arg = settings.TIME_FORMAT
     try:
-        return time_format(value, arg)
+        return formats.time_format(value, arg)
     except AttributeError:
-        return ''
+        try:
+            return dateformat.time_format(value, arg)
+        except AttributeError:
+            return ''
 time.is_safe = False
 
 def timesince(value, arg=None):
@@ -718,7 +726,6 @@ timesince.is_safe = False
 def timeuntil(value, arg=None):
     """Formats a date as the time until that date (i.e. "4 days, 6 hours")."""
     from django.utils.timesince import timeuntil
-    from datetime import datetime
     if not value:
         return u''
     try:
@@ -791,16 +798,18 @@ def filesizeformat(bytes):
     """
     try:
         bytes = float(bytes)
-    except TypeError:
-        return u"0 bytes"
+    except (TypeError,ValueError,UnicodeDecodeError):
+        return ungettext("%(size)d byte", "%(size)d bytes", 0) % {'size': 0}
+
+    filesize_number_format = lambda value: formats.number_format(round(value, 1), 1)
 
     if bytes < 1024:
         return ungettext("%(size)d byte", "%(size)d bytes", bytes) % {'size': bytes}
     if bytes < 1024 * 1024:
-        return ugettext("%.1f KB") % (bytes / 1024)
+        return ugettext("%s KB") % filesize_number_format(bytes / 1024)
     if bytes < 1024 * 1024 * 1024:
-        return ugettext("%.1f MB") % (bytes / (1024 * 1024))
-    return ugettext("%.1f GB") % (bytes / (1024 * 1024 * 1024))
+        return ugettext("%s MB") % filesize_number_format(bytes / (1024 * 1024))
+    return ugettext("%s GB") % filesize_number_format(bytes / (1024 * 1024 * 1024))
 filesizeformat.is_safe = True
 
 def pluralize(value, arg=u's'):

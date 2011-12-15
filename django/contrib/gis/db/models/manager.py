@@ -1,6 +1,5 @@
 from django.db.models.manager import Manager
 from django.contrib.gis.db.models.query import GeoQuerySet
-from django.contrib.gis.db.models.sql.subqueries import insert_query
 
 class GeoManager(Manager):
     "Overrides Manager to return Geographic QuerySets."
@@ -11,7 +10,7 @@ class GeoManager(Manager):
     use_for_related_fields = True
 
     def get_query_set(self):
-        return GeoQuerySet(model=self.model)
+        return GeoQuerySet(self.model, using=self._db)
 
     def area(self, *args, **kwargs):
         return self.get_query_set().area(*args, **kwargs)
@@ -34,6 +33,15 @@ class GeoManager(Manager):
     def extent(self, *args, **kwargs):
         return self.get_query_set().extent(*args, **kwargs)
 
+    def extent3d(self, *args, **kwargs):
+        return self.get_query_set().extent3d(*args, **kwargs)
+
+    def force_rhr(self, *args, **kwargs):
+        return self.get_query_set().force_rhr(*args, **kwargs)
+
+    def geohash(self, *args, **kwargs):
+        return self.get_query_set().geohash(*args, **kwargs)
+
     def geojson(self, *args, **kwargs):
         return self.get_query_set().geojson(*args, **kwargs)
 
@@ -51,7 +59,7 @@ class GeoManager(Manager):
 
     def make_line(self, *args, **kwargs):
         return self.get_query_set().make_line(*args, **kwargs)
-    
+
     def mem_size(self, *args, **kwargs):
         return self.get_query_set().mem_size(*args, **kwargs)
 
@@ -66,6 +74,9 @@ class GeoManager(Manager):
 
     def point_on_surface(self, *args, **kwargs):
         return self.get_query_set().point_on_surface(*args, **kwargs)
+
+    def reverse_geom(self, *args, **kwargs):
+        return self.get_query_set().reverse_geom(*args, **kwargs)
 
     def scale(self, *args, **kwargs):
         return self.get_query_set().scale(*args, **kwargs)
@@ -90,6 +101,3 @@ class GeoManager(Manager):
 
     def unionagg(self, *args, **kwargs):
         return self.get_query_set().unionagg(*args, **kwargs)
-
-    def _insert(self, values, **kwargs):
-        return insert_query(self.model, values, **kwargs)

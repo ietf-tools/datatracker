@@ -10,7 +10,8 @@ class OrderWrt(fields.IntegerField):
     A proxy for the _order database field that is used when
     Meta.order_with_respect_to is specified.
     """
-    name = '_order'
-    attname = '_order'
-    column = '_order'
 
+    def __init__(self, *args, **kwargs):
+        kwargs['name'] = '_order'
+        kwargs['editable'] = False
+        super(OrderWrt, self).__init__(*args, **kwargs)

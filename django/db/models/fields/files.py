@@ -1,6 +1,7 @@
-import copy
 import datetime
 import os
+
+import django.utils.copycompat as copy
 
 from django.conf import settings
 from django.db.models.fields import Field
@@ -72,7 +73,7 @@ class FieldFile(File):
     def _get_size(self):
         self._require_file()
         if not self._committed:
-            return len(self.file)
+            return self.file.size
         return self.storage.size(self.name)
     size = property(_get_size)
 
@@ -92,7 +93,7 @@ class FieldFile(File):
         setattr(self.instance, self.field.name, self.name)
 
         # Update the filesize cache
-        self._size = len(content)
+        self._size = content.size
         self._committed = True
 
         # Save the object because it has changed, unless save is False
@@ -216,6 +217,8 @@ class FileField(Field):
     # The descriptor to use for accessing the attribute off of the class.
     descriptor_class = FileDescriptor
 
+    description = ugettext_lazy("File path")
+
     def __init__(self, verbose_name=None, name=None, upload_to='', storage=None, **kwargs):
         for arg in ('primary_key', 'unique'):
             if arg in kwargs:
@@ -232,12 +235,12 @@ class FileField(Field):
     def get_internal_type(self):
         return "FileField"
 
-    def get_db_prep_lookup(self, lookup_type, value):
+    def get_prep_lookup(self, lookup_type, value):
         if hasattr(value, 'name'):
             value = value.name
-        return super(FileField, self).get_db_prep_lookup(lookup_type, value)
+        return super(FileField, self).get_prep_lookup(lookup_type, value)
 
-    def get_db_prep_value(self, value):
+    def get_prep_value(self, value):
         "Returns field's value prepared for saving into a database."
         # Need to convert File objects provided via a form to unicode for database insertion
         if value is None:
@@ -255,19 +258,6 @@ class FileField(Field):
     def contribute_to_class(self, cls, name):
         super(FileField, self).contribute_to_class(cls, name)
         setattr(cls, self.name, self.descriptor_class(self))
-        signals.post_delete.connect(self.delete_file, sender=cls)
-
-    def delete_file(self, instance, sender, **kwargs):
-        file = getattr(instance, self.attname)
-        # If no other object of this type references the file,
-        # and it's not the default value for future objects,
-        # delete it from the backend.
-        if file and file.name != self.default and \
-            not sender._default_manager.filter(**{self.name: file.name}):
-                file.delete(save=False)
-        elif file:
-            # Otherwise, just close the file, so it doesn't tie up resources.
-            file.close()
 
     def get_directory_name(self):
         return os.path.normpath(force_unicode(datetime.datetime.now().strftime(smart_str(self.upload_to))))
@@ -325,6 +315,7 @@ class ImageFieldFile(ImageFile, FieldFile):
 class ImageField(FileField):
     attr_class = ImageFieldFile
     descriptor_class = ImageFileDescriptor
+    description = ugettext_lazy("File path")
 
     def __init__(self, verbose_name=None, name=None, width_field=None, height_field=None, **kwargs):
         self.width_field, self.height_field = width_field, height_field

@@ -29,7 +29,10 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
     def get_field_type(self, data_type, description):
         # If it's a NUMBER with scale == 0, consider it an IntegerField
         if data_type == cx_Oracle.NUMBER and description[5] == 0:
-            return 'IntegerField'
+            if description[4] > 11:
+                return 'BigIntegerField'
+            else:
+                return 'IntegerField'
         else:
             return super(DatabaseIntrospection, self).get_field_type(
                 data_type, description)
@@ -63,6 +66,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         Returns a dictionary of {field_index: (field_index_other_table, other_table)}
         representing all relationships to the given table. Indexes are 0-based.
         """
+        table_name = table_name.upper()
         cursor.execute("""
     SELECT ta.column_id - 1, tb.table_name, tb.column_id - 1
     FROM   user_constraints, USER_CONS_COLUMNS ca, USER_CONS_COLUMNS cb,
@@ -79,7 +83,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
 
         relations = {}
         for row in cursor.fetchall():
-            relations[row[0]] = (row[2], row[1])
+            relations[row[0]] = (row[2], row[1].lower())
         return relations
 
     def get_indexes(self, cursor, table_name):

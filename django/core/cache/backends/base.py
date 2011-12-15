@@ -1,9 +1,17 @@
 "Base Cache class."
 
-from django.core.exceptions import ImproperlyConfigured
+import warnings
+
+from django.core.exceptions import ImproperlyConfigured, DjangoRuntimeWarning
 
 class InvalidCacheBackendError(ImproperlyConfigured):
     pass
+
+class CacheKeyWarning(DjangoRuntimeWarning):
+    pass
+
+# Memcached does not accept keys longer than this.
+MEMCACHE_MAX_KEY_LENGTH = 250
 
 class BaseCache(object):
     def __init__(self, params):
@@ -71,7 +79,7 @@ class BaseCache(object):
         ValueError exception.
         """
         if key not in self:
-            raise ValueError, "Key '%s' not found" % key
+            raise ValueError("Key '%s' not found" % key)
         new_value = self.get(key) + delta
         self.set(key, new_value)
         return new_value
@@ -91,3 +99,46 @@ class BaseCache(object):
         # so that it always has the same functionality as has_key(), even
         # if a subclass overrides it.
         return self.has_key(key)
+
+    def set_many(self, data, timeout=None):
+        """
+        Set a bunch of values in the cache at once from a dict of key/value
+        pairs.  For certain backends (memcached), this is much more efficient
+        than calling set() multiple times.
+
+        If timeout is given, that timeout will be used for the key; otherwise
+        the default cache timeout will be used.
+        """
+        for key, value in data.items():
+            self.set(key, value, timeout)
+
+    def delete_many(self, keys):
+        """
+        Set a bunch of values in the cache at once.  For certain backends
+        (memcached), this is much more efficient than calling delete() multiple
+        times.
+        """
+        for key in keys:
+            self.delete(key)
+
+    def clear(self):
+        """Remove *all* values from the cache at once."""
+        raise NotImplementedError
+
+    def validate_key(self, key):
+        """
+        Warn about keys that would not be portable to the memcached
+        backend. This encourages (but does not force) writing backend-portable
+        cache code.
+
+        """
+        if len(key) > MEMCACHE_MAX_KEY_LENGTH:
+            warnings.warn('Cache key will cause errors if used with memcached: '
+                    '%s (longer than %s)' % (key, MEMCACHE_MAX_KEY_LENGTH),
+                    CacheKeyWarning)
+        for char in key:
+            if ord(char) < 33 or ord(char) == 127:
+                warnings.warn('Cache key contains characters that will cause '
+                        'errors if used with memcached: %r' % key,
+                              CacheKeyWarning)
+

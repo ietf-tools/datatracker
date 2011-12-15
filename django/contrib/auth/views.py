@@ -1,60 +1,86 @@
+import re
+import urlparse
+
 from django.conf import settings
-from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm, PasswordChangeForm
-from django.contrib.auth.tokens import default_token_generator
 from django.core.urlresolvers import reverse
-from django.shortcuts import render_to_response, get_object_or_404
-from django.contrib.sites.models import Site, RequestSite
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.http import urlquote, base36_to_int
 from django.utils.translation import ugettext as _
-from django.contrib.auth.models import User
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
 
-def login(request, template_name='registration/login.html', redirect_field_name=REDIRECT_FIELD_NAME):
-    "Displays the login form and handles the login action."
+# Avoid shadowing the login() and logout() views below.
+from django.contrib.auth import REDIRECT_FIELD_NAME, login as auth_login, logout as auth_logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, PasswordChangeForm
+from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.models import get_current_site
+
+
+@csrf_protect
+@never_cache
+def login(request, template_name='registration/login.html',
+          redirect_field_name=REDIRECT_FIELD_NAME,
+          authentication_form=AuthenticationForm):
+    """Displays the login form and handles the login action."""
     redirect_to = request.REQUEST.get(redirect_field_name, '')
+
     if request.method == "POST":
-        form = AuthenticationForm(data=request.POST)
+        form = authentication_form(data=request.POST)
         if form.is_valid():
             # Light security check -- make sure redirect_to isn't garbage.
-            if not redirect_to or '//' in redirect_to or ' ' in redirect_to:
+            if not redirect_to or ' ' in redirect_to:
                 redirect_to = settings.LOGIN_REDIRECT_URL
-            from django.contrib.auth import login
-            login(request, form.get_user())
+
+            # Heavier security check -- redirects to http://example.com should
+            # not be allowed, but things like /view/?param=http://example.com
+            # should be allowed. This regex checks if there is a '//' *before* a
+            # question mark.
+            elif '//' in redirect_to and re.match(r'[^\?]*//', redirect_to):
+                    redirect_to = settings.LOGIN_REDIRECT_URL
+
+            # Okay, security checks complete. Log the user in.
+            auth_login(request, form.get_user())
+
             if request.session.test_cookie_worked():
                 request.session.delete_test_cookie()
+
             return HttpResponseRedirect(redirect_to)
+
     else:
-        form = AuthenticationForm(request)
+        form = authentication_form(request)
+
     request.session.set_test_cookie()
-    if Site._meta.installed:
-        current_site = Site.objects.get_current()
-    else:
-        current_site = RequestSite(request)
+
+    current_site = get_current_site(request)
+
     return render_to_response(template_name, {
         'form': form,
         redirect_field_name: redirect_to,
         'site': current_site,
         'site_name': current_site.name,
     }, context_instance=RequestContext(request))
-login = never_cache(login)
 
 def logout(request, next_page=None, template_name='registration/logged_out.html', redirect_field_name=REDIRECT_FIELD_NAME):
     "Logs out the user and displays 'You are logged out' message."
-    from django.contrib.auth import logout
-    logout(request)
-    if next_page is None:
-        redirect_to = request.REQUEST.get(redirect_field_name, '')
-        if redirect_to:
+    auth_logout(request)
+    redirect_to = request.REQUEST.get(redirect_field_name, '')
+    if redirect_to:
+        netloc = urlparse.urlparse(redirect_to)[1]
+        # Security check -- don't allow redirection to a different host.
+        if not (netloc and netloc != request.get_host()):
             return HttpResponseRedirect(redirect_to)
-        else:
-            return render_to_response(template_name, {
-                'title': _('Logged out')
-            }, context_instance=RequestContext(request))
+
+    if next_page is None:
+        current_site = get_current_site(request)
+        return render_to_response(template_name, {
+            'site': current_site,
+            'site_name': current_site.name,
+            'title': _('Logged out')
+        }, context_instance=RequestContext(request))
     else:
         # Redirect to this page until the session has been cleared.
         return HttpResponseRedirect(next_page or request.path)
@@ -74,10 +100,11 @@ def redirect_to_login(next, login_url=None, redirect_field_name=REDIRECT_FIELD_N
 # 4 views for password reset:
 # - password_reset sends the mail
 # - password_reset_done shows a success message for the above
-# - password_reset_confirm checks the link the user clicked and 
+# - password_reset_confirm checks the link the user clicked and
 #   prompts for a new password
 # - password_reset_complete shows a success message for the above
 
+@csrf_protect
 def password_reset(request, is_admin_site=False, template_name='registration/password_reset_form.html',
         email_template_name='registration/password_reset_email.html',
         password_reset_form=PasswordResetForm, token_generator=default_token_generator,
@@ -90,12 +117,10 @@ def password_reset(request, is_admin_site=False, template_name='registration/pas
             opts = {}
             opts['use_https'] = request.is_secure()
             opts['token_generator'] = token_generator
+            opts['email_template_name'] = email_template_name
+            opts['request'] = request
             if is_admin_site:
                 opts['domain_override'] = request.META['HTTP_HOST']
-            else:
-                opts['email_template_name'] = email_template_name
-                if not Site._meta.installed:
-                    opts['domain_override'] = RequestSite(request).domain
             form.save(**opts)
             return HttpResponseRedirect(post_reset_redirect)
     else:
@@ -107,6 +132,7 @@ def password_reset(request, is_admin_site=False, template_name='registration/pas
 def password_reset_done(request, template_name='registration/password_reset_done.html'):
     return render_to_response(template_name, context_instance=RequestContext(request))
 
+@never_cache
 def password_reset_confirm(request, uidb36=None, token=None, template_name='registration/password_reset_confirm.html',
                            token_generator=default_token_generator, set_password_form=SetPasswordForm,
                            post_reset_redirect=None):
@@ -119,13 +145,13 @@ def password_reset_confirm(request, uidb36=None, token=None, template_name='regi
         post_reset_redirect = reverse('django.contrib.auth.views.password_reset_complete')
     try:
         uid_int = base36_to_int(uidb36)
-    except ValueError:
-        raise Http404
+        user = User.objects.get(id=uid_int)
+    except (ValueError, User.DoesNotExist):
+        user = None
 
-    user = get_object_or_404(User, id=uid_int)
     context_instance = RequestContext(request)
 
-    if token_generator.check_token(user, token):
+    if user is not None and token_generator.check_token(user, token):
         context_instance['validlink'] = True
         if request.method == 'POST':
             form = set_password_form(user, request.POST)
@@ -137,28 +163,29 @@ def password_reset_confirm(request, uidb36=None, token=None, template_name='regi
     else:
         context_instance['validlink'] = False
         form = None
-    context_instance['form'] = form    
+    context_instance['form'] = form
     return render_to_response(template_name, context_instance=context_instance)
 
 def password_reset_complete(request, template_name='registration/password_reset_complete.html'):
     return render_to_response(template_name, context_instance=RequestContext(request,
                                                                              {'login_url': settings.LOGIN_URL}))
 
+@csrf_protect
+@login_required
 def password_change(request, template_name='registration/password_change_form.html',
-                    post_change_redirect=None):
+                    post_change_redirect=None, password_change_form=PasswordChangeForm):
     if post_change_redirect is None:
         post_change_redirect = reverse('django.contrib.auth.views.password_change_done')
     if request.method == "POST":
-        form = PasswordChangeForm(request.user, request.POST)
+        form = password_change_form(user=request.user, data=request.POST)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(post_change_redirect)
     else:
-        form = PasswordChangeForm(request.user)
+        form = password_change_form(user=request.user)
     return render_to_response(template_name, {
         'form': form,
     }, context_instance=RequestContext(request))
-password_change = login_required(password_change)
 
 def password_change_done(request, template_name='registration/password_change_done.html'):
     return render_to_response(template_name, context_instance=RequestContext(request))

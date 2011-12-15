@@ -187,7 +187,7 @@ class EditStreamInfoTestCase(django.test.TestCase):
                              dict(email=delegate.address))
         self.assertEquals(r.status_code, 200)
 
-        self.assertEquals(Role.objects.filter(group__acronym="ietf", name="delegate", person__email=delegate).count(), 1)
+        self.assertEquals(Role.objects.filter(group__acronym="ietf", name="delegate", person__email__address=delegate.address).count(), 1)
 
         # remove delegate again
         r = self.client.post(url,
@@ -195,7 +195,7 @@ class EditStreamInfoTestCase(django.test.TestCase):
                                   delete="1"))
         self.assertEquals(r.status_code, 200)
 
-        self.assertEquals(Role.objects.filter(group__acronym="ietf", name="delegate", person__email=delegate).count(), 0)
+        self.assertEquals(Role.objects.filter(group__acronym="ietf", name="delegate", person__email__address=delegate.address).count(), 0)
 
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # the above tests only work with the new schema

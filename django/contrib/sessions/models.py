@@ -40,7 +40,7 @@ class Session(models.Model):
 
     For complete documentation on using Sessions in your code, consult
     the sessions documentation that is shipped with Django (also available
-    on the Django website).
+    on the Django Web site).
     """
     session_key = models.CharField(_('session key'), max_length=40,
                                    primary_key=True)
@@ -58,7 +58,7 @@ class Session(models.Model):
         pickled, tamper_check = encoded_data[:-32], encoded_data[-32:]
         if md5_constructor(pickled + settings.SECRET_KEY).hexdigest() != tamper_check:
             from django.core.exceptions import SuspiciousOperation
-            raise SuspiciousOperation, "User tampered with session cookie."
+            raise SuspiciousOperation("User tampered with session cookie.")
         try:
             return pickle.loads(pickled)
         # Unpickling can cause a variety of exceptions. If something happens,

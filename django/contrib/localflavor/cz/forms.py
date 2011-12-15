@@ -2,8 +2,9 @@
 Czech-specific form helpers
 """
 
+from django.core.validators import EMPTY_VALUES
 from django.forms import ValidationError
-from django.forms.fields import Select, RegexField, Field, EMPTY_VALUES
+from django.forms.fields import Select, RegexField, Field
 from django.utils.translation import ugettext_lazy as _
 import re
 
@@ -50,7 +51,7 @@ class CZBirthNumberField(Field):
     }
 
     def clean(self, value, gender=None):
-        super(CZBirthNumberField, self).__init__(value)
+        super(CZBirthNumberField, self).clean(value)
 
         if value in EMPTY_VALUES:
             return u''
@@ -107,7 +108,7 @@ class CZICNumberField(Field):
     }
 
     def clean(self, value):
-        super(CZICNumberField, self).__init__(value)
+        super(CZICNumberField, self).clean(value)
 
         if value in EMPTY_VALUES:
             return u''
@@ -137,4 +138,3 @@ class CZICNumberField(Field):
             return u'%s' % value
 
         raise ValidationError(self.error_messages['invalid'])
-

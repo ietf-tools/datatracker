@@ -46,7 +46,7 @@ class LazySettings(LazyObject):
         argument must support attribute access (__getattr__)).
         """
         if self._wrapped != None:
-            raise RuntimeError, 'Settings already configured.'
+            raise RuntimeError('Settings already configured.')
         holder = UserSettingsHolder(default_settings)
         for name, value in options.items():
             setattr(holder, name, value)
@@ -72,7 +72,7 @@ class Settings(object):
         try:
             mod = importlib.import_module(self.SETTINGS_MODULE)
         except ImportError, e:
-            raise ImportError, "Could not import settings '%s' (Is it on sys.path? Does it have syntax errors?): %s" % (self.SETTINGS_MODULE, e)
+            raise ImportError("Could not import settings '%s' (Is it on sys.path? Does it have syntax errors?): %s" % (self.SETTINGS_MODULE, e))
 
         # Settings that should be converted into tuples if they're mistakenly entered
         # as strings.
@@ -102,14 +102,11 @@ class Settings(object):
                 new_installed_apps.append(app)
         self.INSTALLED_APPS = new_installed_apps
 
-        if hasattr(time, 'tzset'):
+        if hasattr(time, 'tzset') and getattr(self, 'TIME_ZONE'):
             # Move the time zone info into os.environ. See ticket #2315 for why
             # we don't do this unconditionally (breaks Windows).
             os.environ['TZ'] = self.TIME_ZONE
             time.tzset()
-
-    def get_all_members(self):
-        return dir(self)
 
 class UserSettingsHolder(object):
     """
@@ -129,8 +126,11 @@ class UserSettingsHolder(object):
     def __getattr__(self, name):
         return getattr(self.default_settings, name)
 
-    def get_all_members(self):
-        return dir(self) + dir(self.default_settings)
+    def __dir__(self):
+        return self.__dict__.keys() + dir(self.default_settings)
+
+    # For Python < 2.6:
+    __members__ = property(lambda self: self.__dir__())
 
 settings = LazySettings()
 

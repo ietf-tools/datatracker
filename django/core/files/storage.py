@@ -1,12 +1,13 @@
 import os
 import errno
 import urlparse
+import itertools
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured, SuspiciousOperation
 from django.core.files import locks, File
 from django.core.files.move import file_move_safe
-from django.utils.encoding import force_unicode, smart_str
+from django.utils.encoding import force_unicode, filepath_to_uri
 from django.utils.functional import LazyObject
 from django.utils.importlib import import_module
 from django.utils.text import get_valid_filename
@@ -65,13 +66,14 @@ class Storage(object):
         """
         dir_name, file_name = os.path.split(name)
         file_root, file_ext = os.path.splitext(file_name)
-        # If the filename already exists, keep adding an underscore (before the
-        # file extension, if one exists) to the filename until the generated
+        # If the filename already exists, add an underscore and a number (before
+        # the file extension, if one exists) to the filename until the generated
         # filename doesn't exist.
+        count = itertools.count(1)
         while self.exists(name):
-            file_root += '_'
             # file_ext includes the dot.
-            name = os.path.join(dir_name, file_root + file_ext)
+            name = os.path.join(dir_name, "%s_%s%s" % (file_root, count.next(), file_ext))
+
         return name
 
     def path(self, name):
@@ -114,13 +116,9 @@ class Storage(object):
     def url(self, name):
         """
         Returns an absolute URL where the file's contents can be accessed
-        directly by a web browser.
+        directly by a Web browser.
         """
         raise NotImplementedError()
-
-    # Needed by django.utils.functional.LazyObject (via DefaultStorage).
-    def get_all_members(self):
-        return self.__members__
 
 class FileSystemStorage(Storage):
     """
@@ -212,7 +210,7 @@ class FileSystemStorage(Storage):
             path = safe_join(self.location, name)
         except ValueError:
             raise SuspiciousOperation("Attempted access to '%s' denied." % name)
-        return smart_str(os.path.normpath(path))
+        return os.path.normpath(path)
 
     def size(self, name):
         return os.path.getsize(self.path(name))
@@ -220,7 +218,7 @@ class FileSystemStorage(Storage):
     def url(self, name):
         if self.base_url is None:
             raise ValueError("This file is not accessible via a URL.")
-        return urlparse.urljoin(self.base_url, name).replace('\\', '/')
+        return urlparse.urljoin(self.base_url, filepath_to_uri(name))
 
 def get_storage_class(import_path=None):
     if import_path is None:

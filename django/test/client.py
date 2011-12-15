@@ -3,6 +3,8 @@ from urlparse import urlparse, urlunparse, urlsplit
 import sys
 import os
 import re
+import mimetypes
+from copy import copy
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -54,6 +56,10 @@ class ClientHandler(BaseHandler):
     Uses the WSGI interface to compose requests, but returns
     the raw HttpResponse object
     """
+    def __init__(self, enforce_csrf_checks=True, *args, **kwargs):
+        self.enforce_csrf_checks = enforce_csrf_checks
+        super(ClientHandler, self).__init__(*args, **kwargs)
+
     def __call__(self, environ):
         from django.conf import settings
         from django.core import signals
@@ -66,6 +72,11 @@ class ClientHandler(BaseHandler):
         signals.request_started.send(sender=self.__class__)
         try:
             request = WSGIRequest(environ)
+            # sneaky little hack so that we can easily get round
+            # CsrfViewMiddleware.  This makes life easier, and is probably
+            # required for backwards compatibility with external tests against
+            # admin views.
+            request._dont_enforce_csrf_checks = not self.enforce_csrf_checks
             response = self.get_response(request)
 
             # Apply response middleware.
@@ -82,9 +93,12 @@ class ClientHandler(BaseHandler):
 def store_rendered_templates(store, signal, sender, template, context, **kwargs):
     """
     Stores templates and contexts that are rendered.
+
+    The context is copied so that it is an accurate representation at the time
+    of rendering.
     """
     store.setdefault('template', []).append(template)
-    store.setdefault('context', ContextList()).append(context)
+    store.setdefault('context', ContextList()).append(copy(context))
 
 def encode_multipart(boundary, data):
     """
@@ -133,11 +147,14 @@ def encode_multipart(boundary, data):
 
 def encode_file(boundary, key, file):
     to_str = lambda s: smart_str(s, settings.DEFAULT_CHARSET)
+    content_type = mimetypes.guess_type(file.name)[0]
+    if content_type is None:
+        content_type = 'application/octet-stream'
     return [
         '--' + boundary,
         'Content-Disposition: form-data; name="%s"; filename="%s"' \
             % (to_str(key), to_str(os.path.basename(file.name))),
-        'Content-Type: application/octet-stream',
+        'Content-Type: %s' % content_type,
         '',
         file.read()
     ]
@@ -160,8 +177,8 @@ class Client(object):
     contexts and templates produced by a view, rather than the
     HTML rendered to the end-user.
     """
-    def __init__(self, **defaults):
-        self.handler = ClientHandler()
+    def __init__(self, enforce_csrf_checks=False, **defaults):
+        self.handler = ClientHandler(enforce_csrf_checks)
         self.defaults = defaults
         self.cookies = SimpleCookie()
         self.exc_info = None
@@ -185,6 +202,13 @@ class Client(object):
         return {}
     session = property(_session)
 
+    def _get_path(self, parsed):
+        # If there are parameters, add them
+        if parsed[3]:
+             return urllib.unquote(parsed[2] + ";" + parsed[3])
+        else:
+             return urllib.unquote(parsed[2])
+
     def request(self, **request):
         """
         The master request method. Composes the environment dictionary
@@ -193,7 +217,7 @@ class Client(object):
         using the arguments to the request.
         """
         environ = {
-            'HTTP_COOKIE':      self.cookies.output(header='', sep='; '),
+            'HTTP_COOKIE':       self.cookies.output(header='', sep='; '),
             'PATH_INFO':         '/',
             'QUERY_STRING':      '',
             'REMOTE_ADDR':       '127.0.0.1',
@@ -216,53 +240,57 @@ class Client(object):
         # callback function.
         data = {}
         on_template_render = curry(store_rendered_templates, data)
-        signals.template_rendered.connect(on_template_render)
-
+        signals.template_rendered.connect(on_template_render, dispatch_uid="template-render")
         # Capture exceptions created by the handler.
-        got_request_exception.connect(self.store_exc_info)
-
+        got_request_exception.connect(self.store_exc_info, dispatch_uid="request-exception")
         try:
-            response = self.handler(environ)
-        except TemplateDoesNotExist, e:
-            # If the view raises an exception, Django will attempt to show
-            # the 500.html template. If that template is not available,
-            # we should ignore the error in favor of re-raising the
-            # underlying exception that caused the 500 error. Any other
-            # template found to be missing during view error handling
-            # should be reported as-is.
-            if e.args != ('500.html',):
-                raise
 
-        # Look for a signalled exception, clear the current context
-        # exception data, then re-raise the signalled exception.
-        # Also make sure that the signalled exception is cleared from
-        # the local cache!
-        if self.exc_info:
-            exc_info = self.exc_info
-            self.exc_info = None
-            raise exc_info[1], None, exc_info[2]
+            try:
+                response = self.handler(environ)
+            except TemplateDoesNotExist, e:
+                # If the view raises an exception, Django will attempt to show
+                # the 500.html template. If that template is not available,
+                # we should ignore the error in favor of re-raising the
+                # underlying exception that caused the 500 error. Any other
+                # template found to be missing during view error handling
+                # should be reported as-is.
+                if e.args != ('500.html',):
+                    raise
 
-        # Save the client and request that stimulated the response.
-        response.client = self
-        response.request = request
+            # Look for a signalled exception, clear the current context
+            # exception data, then re-raise the signalled exception.
+            # Also make sure that the signalled exception is cleared from
+            # the local cache!
+            if self.exc_info:
+                exc_info = self.exc_info
+                self.exc_info = None
+                raise exc_info[1], None, exc_info[2]
 
-        # Add any rendered template detail to the response.
-        # If there was only one template rendered (the most likely case),
-        # flatten the list to a single element.
-        for detail in ('template', 'context'):
-            if data.get(detail):
-                if len(data[detail]) == 1:
-                    setattr(response, detail, data[detail][0]);
+            # Save the client and request that stimulated the response.
+            response.client = self
+            response.request = request
+
+            # Add any rendered template detail to the response.
+            # If there was only one template rendered (the most likely case),
+            # flatten the list to a single element.
+            for detail in ('template', 'context'):
+                if data.get(detail):
+                    if len(data[detail]) == 1:
+                        setattr(response, detail, data[detail][0]);
+                    else:
+                        setattr(response, detail, data[detail])
                 else:
-                    setattr(response, detail, data[detail])
-            else:
-                setattr(response, detail, None)
+                    setattr(response, detail, None)
 
-        # Update persistent cookie data.
-        if response.cookies:
-            self.cookies.update(response.cookies)
+            # Update persistent cookie data.
+            if response.cookies:
+                self.cookies.update(response.cookies)
 
-        return response
+            return response
+        finally:
+            signals.template_rendered.disconnect(dispatch_uid="template-render")
+            got_request_exception.disconnect(dispatch_uid="request-exception")
+
 
     def get(self, path, data={}, follow=False, **extra):
         """
@@ -271,7 +299,7 @@ class Client(object):
         parsed = urlparse(path)
         r = {
             'CONTENT_TYPE':    'text/html; charset=utf-8',
-            'PATH_INFO':       urllib.unquote(parsed[2]),
+            'PATH_INFO':       self._get_path(parsed),
             'QUERY_STRING':    urlencode(data, doseq=True) or parsed[4],
             'REQUEST_METHOD': 'GET',
             'wsgi.input':      FakePayload('')
@@ -280,7 +308,7 @@ class Client(object):
 
         response = self.request(**r)
         if follow:
-            response = self._handle_redirects(response)
+            response = self._handle_redirects(response, **extra)
         return response
 
     def post(self, path, data={}, content_type=MULTIPART_CONTENT,
@@ -303,7 +331,7 @@ class Client(object):
         r = {
             'CONTENT_LENGTH': len(post_data),
             'CONTENT_TYPE':   content_type,
-            'PATH_INFO':      urllib.unquote(parsed[2]),
+            'PATH_INFO':      self._get_path(parsed),
             'QUERY_STRING':   parsed[4],
             'REQUEST_METHOD': 'POST',
             'wsgi.input':     FakePayload(post_data),
@@ -312,7 +340,7 @@ class Client(object):
 
         response = self.request(**r)
         if follow:
-            response = self._handle_redirects(response)
+            response = self._handle_redirects(response, **extra)
         return response
 
     def head(self, path, data={}, follow=False, **extra):
@@ -322,7 +350,7 @@ class Client(object):
         parsed = urlparse(path)
         r = {
             'CONTENT_TYPE':    'text/html; charset=utf-8',
-            'PATH_INFO':       urllib.unquote(parsed[2]),
+            'PATH_INFO':       self._get_path(parsed),
             'QUERY_STRING':    urlencode(data, doseq=True) or parsed[4],
             'REQUEST_METHOD': 'HEAD',
             'wsgi.input':      FakePayload('')
@@ -331,7 +359,7 @@ class Client(object):
 
         response = self.request(**r)
         if follow:
-            response = self._handle_redirects(response)
+            response = self._handle_redirects(response, **extra)
         return response
 
     def options(self, path, data={}, follow=False, **extra):
@@ -340,7 +368,7 @@ class Client(object):
         """
         parsed = urlparse(path)
         r = {
-            'PATH_INFO':       urllib.unquote(parsed[2]),
+            'PATH_INFO':       self._get_path(parsed),
             'QUERY_STRING':    urlencode(data, doseq=True) or parsed[4],
             'REQUEST_METHOD': 'OPTIONS',
             'wsgi.input':      FakePayload('')
@@ -349,7 +377,7 @@ class Client(object):
 
         response = self.request(**r)
         if follow:
-            response = self._handle_redirects(response)
+            response = self._handle_redirects(response, **extra)
         return response
 
     def put(self, path, data={}, content_type=MULTIPART_CONTENT,
@@ -362,12 +390,18 @@ class Client(object):
         else:
             post_data = data
 
+        # Make `data` into a querystring only if it's not already a string. If
+        # it is a string, we'll assume that the caller has already encoded it.
+        query_string = None
+        if not isinstance(data, basestring):
+            query_string = urlencode(data, doseq=True)
+
         parsed = urlparse(path)
         r = {
             'CONTENT_LENGTH': len(post_data),
             'CONTENT_TYPE':   content_type,
-            'PATH_INFO':      urllib.unquote(parsed[2]),
-            'QUERY_STRING':   urlencode(data, doseq=True) or parsed[4],
+            'PATH_INFO':      self._get_path(parsed),
+            'QUERY_STRING':   query_string or parsed[4],
             'REQUEST_METHOD': 'PUT',
             'wsgi.input':     FakePayload(post_data),
         }
@@ -375,7 +409,7 @@ class Client(object):
 
         response = self.request(**r)
         if follow:
-            response = self._handle_redirects(response)
+            response = self._handle_redirects(response, **extra)
         return response
 
     def delete(self, path, data={}, follow=False, **extra):
@@ -384,7 +418,7 @@ class Client(object):
         """
         parsed = urlparse(path)
         r = {
-            'PATH_INFO':       urllib.unquote(parsed[2]),
+            'PATH_INFO':       self._get_path(parsed),
             'QUERY_STRING':    urlencode(data, doseq=True) or parsed[4],
             'REQUEST_METHOD': 'DELETE',
             'wsgi.input':      FakePayload('')
@@ -393,7 +427,7 @@ class Client(object):
 
         response = self.request(**r)
         if follow:
-            response = self._handle_redirects(response)
+            response = self._handle_redirects(response, **extra)
         return response
 
     def login(self, **credentials):
@@ -417,6 +451,9 @@ class Client(object):
                 request.session = engine.SessionStore()
             login(request, user)
 
+            # Save the session values.
+            request.session.save()
+
             # Set the cookie to represent the session.
             session_cookie = settings.SESSION_COOKIE_NAME
             self.cookies[session_cookie] = request.session.session_key
@@ -428,9 +465,6 @@ class Client(object):
                 'expires': None,
             }
             self.cookies[session_cookie].update(cookie_data)
-
-            # Save the session values.
-            request.session.save()
 
             return True
         else:
@@ -448,7 +482,7 @@ class Client(object):
             session.delete(session_key=session_cookie.value)
         self.cookies = SimpleCookie()
 
-    def _handle_redirects(self, response):
+    def _handle_redirects(self, response, **extra):
         "Follows any redirects by requesting responses from the server using GET."
 
         response.redirect_chain = []
@@ -459,11 +493,14 @@ class Client(object):
             redirect_chain = response.redirect_chain
             redirect_chain.append((url, response.status_code))
 
+            if scheme:
+                extra['wsgi.url_scheme'] = scheme
+
             # The test client doesn't handle external links,
             # but since the situation is simulated in test_client,
             # we fake things here by ignoring the netloc portion of the
             # redirected URL.
-            response = self.get(path, QueryDict(query), follow=False)
+            response = self.get(path, QueryDict(query), follow=False, **extra)
             response.redirect_chain = redirect_chain
 
             # Prevent loops

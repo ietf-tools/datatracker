@@ -24,40 +24,34 @@ class Monkeypatcher(unittest.TestCase):
         
         fake = Fake()
         fake.__name__ = name
-        return fake
-
-
-    def create_test_app(self):
-        
-        class Fake:
+        try:
+            fake.migrations = __import__(name + ".migrations", {}, {}, ['migrations'])
+        except ImportError:
             pass
-        
-        fake = Fake()
-        fake.__name__ = "fakeapp.migrations"
-        fake.__file__ = os.path.join(test_root, "fakeapp", "migrations", "__init__.py")
         return fake
-    
-    
+
+
     def setUp(self):
         """
         Changes the Django environment so we can run tests against our test apps.
         """
-        # Set the installed apps
-        hacks.set_installed_apps(["fakeapp", "otherfakeapp"])
+        if getattr(self, 'installed_apps', None):
+            hacks.set_installed_apps(self.installed_apps)
     
     
     def tearDown(self):
         """
         Undoes what setUp did.
         """
-        hacks.reset_installed_apps()
+        if getattr(self, 'installed_apps', None):
+            hacks.reset_installed_apps()
 
 
 # Try importing all tests if asked for (then we can run 'em)
 try:
     skiptest = settings.SKIP_SOUTH_TESTS
 except:
-    skiptest = False
+    skiptest = True
 
 if not skiptest:
     from south.tests.db import *

@@ -15,10 +15,14 @@ cache class.
 See docs/cache.txt for information on the public API.
 """
 
-from cgi import parse_qsl
+try:
+    from urlparse import parse_qsl
+except ImportError:
+    from cgi import parse_qsl
+
 from django.conf import settings
 from django.core import signals
-from django.core.cache.backends.base import InvalidCacheBackendError
+from django.core.cache.backends.base import InvalidCacheBackendError, CacheKeyWarning
 from django.utils import importlib
 
 # Name for use in settings file --> name of module in "backends" directory.
@@ -39,10 +43,10 @@ def parse_backend_uri(backend_uri):
     (scheme, host, params) tuple.
     """
     if backend_uri.find(':') == -1:
-        raise InvalidCacheBackendError, "Backend URI must start with scheme://"
+        raise InvalidCacheBackendError("Backend URI must start with scheme://")
     scheme, rest = backend_uri.split(':', 1)
     if not rest.startswith('//'):
-        raise InvalidCacheBackendError, "Backend URI must start with scheme://"
+        raise InvalidCacheBackendError("Backend URI must start with scheme://")
 
     host = rest[2:]
     qpos = rest.find('?')

@@ -4,6 +4,7 @@ import locale
 import os
 import re
 import sys
+import warnings
 import gettext as gettext_module
 from cStringIO import StringIO
 
@@ -40,6 +41,9 @@ def to_locale(language, to_lower=False):
         if to_lower:
             return language[:p].lower()+'_'+language[p+1:].lower()
         else:
+            # Get correct locale for sr-latn
+            if len(language[p+1:]) > 2:
+                return language[:p].lower()+'_'+language[p+1].upper()+language[p+2:].lower()
             return language[:p].lower()+'_'+language[p+1:].upper()
     else:
         return language.lower()
@@ -56,7 +60,7 @@ class DjangoTranslation(gettext_module.GNUTranslations):
     """
     This class sets up the GNUTranslations context with regard to output
     charset. Django uses a defined DEFAULT_CHARSET as the output charset on
-    Python 2.4. With Python 2.3, use DjangoTranslation23.
+    Python 2.4.
     """
     def __init__(self, *args, **kw):
         from django.conf import settings
@@ -83,23 +87,6 @@ class DjangoTranslation(gettext_module.GNUTranslations):
     def __repr__(self):
         return "<DjangoTranslation lang:%s>" % self.__language
 
-class DjangoTranslation23(DjangoTranslation):
-    """
-    Compatibility class that is only used with Python 2.3.
-    Python 2.3 doesn't support set_output_charset on translation objects and
-    needs this wrapper class to make sure input charsets from translation files
-    are correctly translated to output charsets.
-
-    With a full switch to Python 2.4, this can be removed from the source.
-    """
-    def gettext(self, msgid):
-        res = self.ugettext(msgid)
-        return res.encode(self.django_output_charset)
-
-    def ngettext(self, msgid1, msgid2, n):
-        res = self.ungettext(msgid1, msgid2, n)
-        return res.encode(self.django_output_charset)
-
 def translation(language):
     """
     Returns a translation object.
@@ -116,11 +103,6 @@ def translation(language):
         return t
 
     from django.conf import settings
-
-    # set up the right translation class
-    klass = DjangoTranslation
-    if sys.version_info < (2, 4):
-        klass = DjangoTranslation23
 
     globalpath = os.path.join(os.path.dirname(sys.modules[settings.__module__].__file__), 'locale')
 
@@ -143,7 +125,7 @@ def translation(language):
 
         def _translation(path):
             try:
-                t = gettext_module.translation('django', path, [loc], klass)
+                t = gettext_module.translation('django', path, [loc], DjangoTranslation)
                 t.set_language(lang)
                 return t
             except IOError, e:
@@ -173,15 +155,15 @@ def translation(language):
             if os.path.isdir(localepath):
                 res = _merge(localepath)
 
-        if projectpath and os.path.isdir(projectpath):
-            res = _merge(projectpath)
-
         for appname in settings.INSTALLED_APPS:
             app = import_module(appname)
             apppath = os.path.join(os.path.dirname(app.__file__), 'locale')
 
             if os.path.isdir(apppath):
                 res = _merge(apppath)
+
+        if projectpath and os.path.isdir(projectpath):
+            res = _merge(projectpath)
 
         if res is None:
             if fallback is not None:
@@ -202,6 +184,12 @@ def activate(language):
     language and installs it as the current translation object for the current
     thread.
     """
+    if isinstance(language, basestring) and language == 'no':
+        warnings.warn(
+            "The use of the language code 'no' is deprecated. "
+            "Please use the 'nb' translation instead.",
+            PendingDeprecationWarning
+        )
     _active[currentThread()] = translation(language)
 
 def deactivate():
@@ -236,8 +224,9 @@ def get_language():
 def get_language_bidi():
     """
     Returns selected language's BiDi layout.
-    False = left-to-right layout
-    True = right-to-left layout
+    
+    * False = left-to-right layout
+    * True = right-to-left layout
     """
     from django.conf import settings
     
@@ -266,15 +255,16 @@ def do_translate(message, translation_function):
     translation object to use. If no current translation is activated, the
     message will be run through the default translation object.
     """
+    eol_message = message.replace('\r\n', '\n').replace('\r', '\n')
     global _default, _active
     t = _active.get(currentThread(), None)
     if t is not None:
-        result = getattr(t, translation_function)(message)
+        result = getattr(t, translation_function)(eol_message)
     else:
         if _default is None:
             from django.conf import settings
             _default = translation(settings.LANGUAGE_CODE)
-        result = getattr(_default, translation_function)(message)
+        result = getattr(_default, translation_function)(eol_message)
     if isinstance(message, SafeData):
         return mark_safe(result)
     return result
@@ -351,6 +341,10 @@ def get_language_from_request(request):
             return lang_code
 
     lang_code = request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME)
+
+    if lang_code and lang_code not in supported:
+        lang_code = lang_code.split('-')[0] # e.g. if fr-ca is not supported fallback to fr
+
     if lang_code and lang_code in supported and check_for_language(lang_code):
         return lang_code
 
@@ -388,39 +382,6 @@ def get_language_from_request(request):
                 return lang
 
     return settings.LANGUAGE_CODE
-
-def get_date_formats():
-    """
-    Checks whether translation files provide a translation for some technical
-    message ID to store date and time formats. If it doesn't contain one, the
-    formats provided in the settings will be used.
-    """
-    from django.conf import settings
-    date_format = ugettext('DATE_FORMAT')
-    datetime_format = ugettext('DATETIME_FORMAT')
-    time_format = ugettext('TIME_FORMAT')
-    if date_format == 'DATE_FORMAT':
-        date_format = settings.DATE_FORMAT
-    if datetime_format == 'DATETIME_FORMAT':
-        datetime_format = settings.DATETIME_FORMAT
-    if time_format == 'TIME_FORMAT':
-        time_format = settings.TIME_FORMAT
-    return date_format, datetime_format, time_format
-
-def get_partial_date_formats():
-    """
-    Checks whether translation files provide a translation for some technical
-    message ID to store partial date formats. If it doesn't contain one, the
-    formats provided in the settings will be used.
-    """
-    from django.conf import settings
-    year_month_format = ugettext('YEAR_MONTH_FORMAT')
-    month_day_format = ugettext('MONTH_DAY_FORMAT')
-    if year_month_format == 'YEAR_MONTH_FORMAT':
-        year_month_format = settings.YEAR_MONTH_FORMAT
-    if month_day_format == 'MONTH_DAY_FORMAT':
-        month_day_format = settings.MONTH_DAY_FORMAT
-    return year_month_format, month_day_format
 
 dot_re = re.compile(r'\S')
 def blankout(src, char):
@@ -478,10 +439,11 @@ def templatize(src):
                 else:
                     singular.append('%%(%s)s' % t.contents)
             elif t.token_type == TOKEN_TEXT:
+                contents = t.contents.replace('%', '%%')
                 if inplural:
-                    plural.append(t.contents)
+                    plural.append(contents)
                 else:
-                    singular.append(t.contents)
+                    singular.append(contents)
         else:
             if t.token_type == TOKEN_BLOCK:
                 imatch = inline_re.match(t.contents)
@@ -537,3 +499,52 @@ def parse_accept_lang_header(lang_string):
         result.append((lang, priority))
     result.sort(lambda x, y: -cmp(x[1], y[1]))
     return result
+
+# get_date_formats and get_partial_date_formats aren't used anymore by Django
+# and are kept for backward compatibility.
+# Note, it's also important to keep format names marked for translation.
+# For compatibility we still want to have formats on translation catalogs.
+# That makes template code like {{ my_date|date:_('DATE_FORMAT') }} still work
+def get_date_formats():
+    """
+    Checks whether translation files provide a translation for some technical
+    message ID to store date and time formats. If it doesn't contain one, the
+    formats provided in the settings will be used.
+    """
+    warnings.warn(
+        "'django.utils.translation.get_date_formats' is deprecated. "
+        "Please update your code to use the new i18n aware formatting.",
+        PendingDeprecationWarning
+    )
+    from django.conf import settings
+    date_format = ugettext('DATE_FORMAT')
+    datetime_format = ugettext('DATETIME_FORMAT')
+    time_format = ugettext('TIME_FORMAT')
+    if date_format == 'DATE_FORMAT':
+        date_format = settings.DATE_FORMAT
+    if datetime_format == 'DATETIME_FORMAT':
+        datetime_format = settings.DATETIME_FORMAT
+    if time_format == 'TIME_FORMAT':
+        time_format = settings.TIME_FORMAT
+    return date_format, datetime_format, time_format
+
+def get_partial_date_formats():
+    """
+    Checks whether translation files provide a translation for some technical
+    message ID to store partial date formats. If it doesn't contain one, the
+    formats provided in the settings will be used.
+    """
+    warnings.warn(
+        "'django.utils.translation.get_partial_date_formats' is deprecated. "
+        "Please update your code to use the new i18n aware formatting.",
+        PendingDeprecationWarning
+    )
+    from django.conf import settings
+    year_month_format = ugettext('YEAR_MONTH_FORMAT')
+    month_day_format = ugettext('MONTH_DAY_FORMAT')
+    if year_month_format == 'YEAR_MONTH_FORMAT':
+        year_month_format = settings.YEAR_MONTH_FORMAT
+    if month_day_format == 'MONTH_DAY_FORMAT':
+        month_day_format = settings.MONTH_DAY_FORMAT
+    return year_month_format, month_day_format
+

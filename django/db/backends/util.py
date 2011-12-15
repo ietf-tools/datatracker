@@ -1,12 +1,8 @@
 import datetime
+import decimal
 from time import time
 
 from django.utils.hashcompat import md5_constructor
-
-try:
-    import decimal
-except ImportError:
-    from django.utils import _decimal as decimal    # for Python 2.3
 
 class CursorDebugWrapper(object):
     def __init__(self, cursor, db):
@@ -85,7 +81,7 @@ def typecast_timestamp(s): # does NOT store time zone information
     else:
         microseconds = '0'
     return datetime.datetime(int(dates[0]), int(dates[1]), int(dates[2]),
-        int(times[0]), int(times[1]), int(seconds), int(float('.'+microseconds) * 1000000))
+        int(times[0]), int(times[1]), int(seconds), int((microseconds + '000000')[:6]))
 
 def typecast_boolean(s):
     if s is None: return None

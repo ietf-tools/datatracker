@@ -16,6 +16,7 @@ class FlexibleFieldLookupDict:
         'smallinteger': 'SmallIntegerField',
         'int': 'IntegerField',
         'integer': 'IntegerField',
+        'bigint': 'BigIntegerField',
         'integer unsigned': 'PositiveIntegerField',
         'decimal': 'DecimalField',
         'real': 'FloatField',
@@ -65,7 +66,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         relations = {}
 
         # Schema for this table
-        cursor.execute("SELECT sql FROM sqlite_master WHERE tbl_name = %s", [table_name])
+        cursor.execute("SELECT sql FROM sqlite_master WHERE tbl_name = %s AND type = %s", [table_name, "table"])
         results = cursor.fetchone()[0].strip()
         results = results[results.index('(')+1:results.rindex(')')]
 

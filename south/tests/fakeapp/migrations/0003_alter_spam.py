@@ -3,10 +3,6 @@ from django.db import models
 
 class Migration:
     
-    needed_by = (
-        ("otherfakeapp", "0003_third"),
-    )
-    
     def forwards(self):
         
         db.alter_column("southtest_spam", 'name', models.CharField(max_length=255, null=True))

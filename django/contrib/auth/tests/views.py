@@ -1,8 +1,9 @@
 import os
 import re
+import urllib
 
 from django.conf import settings
-from django.contrib.auth import SESSION_KEY
+from django.contrib.auth import SESSION_KEY, REDIRECT_FIELD_NAME
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.sites.models import Site, RequestSite
 from django.contrib.auth.models import User
@@ -15,7 +16,7 @@ class AuthViewsTestCase(TestCase):
     Helper base class for all the follow test cases.
     """
     fixtures = ['authtestdata.json']
-    urls = 'django.contrib.auth.urls'
+    urls = 'django.contrib.auth.tests.urls'
 
     def setUp(self):
         self.old_LANGUAGES = settings.LANGUAGES
@@ -36,16 +37,6 @@ class AuthViewsTestCase(TestCase):
         settings.TEMPLATE_DIRS = self.old_TEMPLATE_DIRS
 
 class PasswordResetTest(AuthViewsTestCase):
-
-    def setUp(self):
-        self.old_LANGUAGES = settings.LANGUAGES
-        self.old_LANGUAGE_CODE = settings.LANGUAGE_CODE
-        settings.LANGUAGES = (('en', 'English'),)
-        settings.LANGUAGE_CODE = 'en'
-
-    def tearDown(self):
-        settings.LANGUAGES = self.old_LANGUAGES
-        settings.LANGUAGE_CODE = self.old_LANGUAGE_CODE
 
     def test_email_not_found(self):
         "Error is raised if the provided email address isn't currently registered"
@@ -88,6 +79,18 @@ class PasswordResetTest(AuthViewsTestCase):
         path = path[:-5] + ("0"*4) + path[-1]
 
         response = self.client.get(path)
+        self.assertEquals(response.status_code, 200)
+        self.assert_("The password reset link was invalid" in response.content)
+
+    def test_confirm_invalid_user(self):
+        # Ensure that we get a 200 response for a non-existant user, not a 404
+        response = self.client.get('/reset/123456-1-1/')
+        self.assertEquals(response.status_code, 200)
+        self.assert_("The password reset link was invalid" in response.content)
+
+    def test_confirm_overflow_user(self):
+        # Ensure that we get a 200 response for a base36 user id that overflows int
+        response = self.client.get('/reset/zzzzzzzzzzzzz-1-1/')
         self.assertEquals(response.status_code, 200)
         self.assert_("The password reset link was invalid" in response.content)
 
@@ -188,12 +191,55 @@ class LoginTest(AuthViewsTestCase):
     def test_current_site_in_context_after_login(self):
         response = self.client.get(reverse('django.contrib.auth.views.login'))
         self.assertEquals(response.status_code, 200)
-        site = Site.objects.get_current()
-        self.assertEquals(response.context['site'], site)
-        self.assertEquals(response.context['site_name'], site.name)
-        self.assert_(isinstance(response.context['form'], AuthenticationForm), 
+        if Site._meta.installed:
+            site = Site.objects.get_current()
+            self.assertEquals(response.context['site'], site)
+            self.assertEquals(response.context['site_name'], site.name)
+        else:
+            self.assertTrue(isinstance(response.context['site'], RequestSite))
+        self.assert_(isinstance(response.context['form'], AuthenticationForm),
                      'Login form is not an AuthenticationForm')
-        
+
+    def test_security_check(self, password='password'):
+        login_url = reverse('django.contrib.auth.views.login')
+
+        # Those URLs should not pass the security check
+        for bad_url in ('http://example.com',
+                        'https://example.com',
+                        'ftp://exampel.com',
+                        '//example.com'):
+
+            nasty_url = '%(url)s?%(next)s=%(bad_url)s' % {
+                'url': login_url,
+                'next': REDIRECT_FIELD_NAME,
+                'bad_url': urllib.quote(bad_url)
+            }
+            response = self.client.post(nasty_url, {
+                'username': 'testclient',
+                'password': password,
+                }
+            )
+            self.assertEquals(response.status_code, 302)
+            self.assertFalse(bad_url in response['Location'], "%s should be blocked" % bad_url)
+
+        # Now, these URLs have an other URL as a GET parameter and therefore
+        # should be allowed
+        for url_ in ('http://example.com', 'https://example.com',
+                    'ftp://exampel.com',  '//example.com'):
+            safe_url = '%(url)s?%(next)s=/view/?param=%(safe_param)s' % {
+                'url': login_url,
+                'next': REDIRECT_FIELD_NAME,
+                'safe_param': urllib.quote(url_)
+            }
+            response = self.client.post(safe_url, {
+                    'username': 'testclient',
+                    'password': password,
+                }
+            )
+            self.assertEquals(response.status_code, 302)
+            self.assertTrue('/view/?param=%s' % url_ in response['Location'], "/view/?param=%s should be allowed" % url_)
+
+
 class LogoutTest(AuthViewsTestCase):
     urls = 'django.contrib.auth.tests.urls'
 
@@ -218,7 +264,26 @@ class LogoutTest(AuthViewsTestCase):
         self.assert_('Logged out' in response.content)
         self.confirm_logged_out()
 
-    def test_logout_with_next_page_specified(self): 
+    def test_14377(self):
+        # Bug 14377
+        self.login()
+        response = self.client.get('/logout/')
+        self.assertTrue('site' in response.context)
+
+    def test_logout_with_overridden_redirect_url(self):
+        # Bug 11223
+        self.login()
+        response = self.client.get('/logout/next_page/')
+        self.assertEqual(response.status_code, 302)
+        self.assert_(response['Location'].endswith('/somewhere/'))
+
+        response = self.client.get('/logout/next_page/?next=/login/')
+        self.assertEqual(response.status_code, 302)
+        self.assert_(response['Location'].endswith('/login/'))
+
+        self.confirm_logged_out()
+
+    def test_logout_with_next_page_specified(self):
         "Logout with next_page option given redirects to specified resource"
         self.login()
         response = self.client.get('/logout/next_page/')
@@ -241,3 +306,45 @@ class LogoutTest(AuthViewsTestCase):
         self.assertEqual(response.status_code, 302)
         self.assert_(response['Location'].endswith('/somewhere/'))
         self.confirm_logged_out()
+
+    def test_security_check(self, password='password'):
+        logout_url = reverse('django.contrib.auth.views.logout')
+
+        # Those URLs should not pass the security check
+        for bad_url in ('http://example.com',
+                        'https://example.com',
+                        'ftp://exampel.com',
+                        '//example.com'
+                        ):
+            nasty_url = '%(url)s?%(next)s=%(bad_url)s' % {
+                'url': logout_url,
+                'next': REDIRECT_FIELD_NAME,
+                'bad_url': urllib.quote(bad_url)
+            }
+            self.login()
+            response = self.client.get(nasty_url)
+            self.assertEquals(response.status_code, 302)
+            self.assertFalse(bad_url in response['Location'],
+                             "%s should be blocked" % bad_url)
+            self.confirm_logged_out()
+
+        # These URLs *should* still pass the security check
+        for good_url in ('/view/?param=http://example.com',
+                         '/view/?param=https://example.com',
+                         '/view?param=ftp://exampel.com',
+                         'view/?param=//example.com',
+                         'https:///',
+                         '//testserver/',
+                         '/url%20with%20spaces/', # see ticket #12534
+                         ):
+            safe_url = '%(url)s?%(next)s=%(good_url)s' % {
+                'url': logout_url,
+                'next': REDIRECT_FIELD_NAME,
+                'good_url': urllib.quote(good_url)
+            }
+            self.login()
+            response = self.client.get(safe_url)
+            self.assertEquals(response.status_code, 302)
+            self.assertTrue(good_url in response['Location'],
+                            "%s should be allowed" % good_url)
+            self.confirm_logged_out()

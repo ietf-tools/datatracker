@@ -107,7 +107,7 @@ class TransitionForm(forms.ModelForm):
 
     class Meta:
         model = Transition
-        fields = ('DELETE', 'name', 'states', 'destination', )
+        fields = ('name', 'states', 'destination', )
 
     def __init__(self, *args, **kwargs):
         self.wg = kwargs.pop('wg', None)

@@ -4,19 +4,40 @@ Oracle database backend for Django.
 Requires cx_Oracle: http://cx-oracle.sourceforge.net/
 """
 
-import os
-import datetime
-import time
-try:
-    from decimal import Decimal
-except ImportError:
-    from django.utils._decimal import Decimal
 
-# Oracle takes client-side character set encoding from the environment.
-os.environ['NLS_LANG'] = '.UTF8'
-# This prevents unicode from getting mangled by getting encoded into the
-# potentially non-unicode database character set.
-os.environ['ORA_NCHAR_LITERAL_REPLACE'] = 'TRUE'
+import datetime
+import sys
+import time
+from decimal import Decimal
+
+
+def _setup_environment(environ):
+    import platform
+    # Cygwin requires some special voodoo to set the environment variables
+    # properly so that Oracle will see them.
+    if platform.system().upper().startswith('CYGWIN'):
+        try:
+            import ctypes
+        except ImportError, e:
+            from django.core.exceptions import ImproperlyConfigured
+            raise ImproperlyConfigured("Error loading ctypes: %s; "
+                                       "the Oracle backend requires ctypes to "
+                                       "operate correctly under Cygwin." % e)
+        kernel32 = ctypes.CDLL('kernel32')
+        for name, value in environ:
+            kernel32.SetEnvironmentVariableA(name, value)
+    else:
+        import os
+        os.environ.update(environ)
+
+_setup_environment([
+    # Oracle takes client-side character set encoding from the environment.
+    ('NLS_LANG', '.UTF8'),
+    # This prevents unicode from getting mangled by getting encoded into the
+    # potentially non-unicode database character set.
+    ('ORA_NCHAR_LITERAL_REPLACE', 'TRUE'),
+])
+
 
 try:
     import cx_Oracle as Database
@@ -24,9 +45,9 @@ except ImportError, e:
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured("Error loading cx_Oracle module: %s" % e)
 
+from django.db import utils
 from django.db.backends import *
 from django.db.backends.signals import connection_created
-from django.db.backends.oracle import query
 from django.db.backends.oracle.client import DatabaseClient
 from django.db.backends.oracle.creation import DatabaseCreation
 from django.db.backends.oracle.introspection import DatabaseIntrospection
@@ -47,13 +68,14 @@ else:
 class DatabaseFeatures(BaseDatabaseFeatures):
     empty_fetchmany_value = ()
     needs_datetime_string_cast = False
-    uses_custom_query_class = True
     interprets_empty_strings_as_nulls = True
     uses_savepoints = True
     can_return_id_from_insert = True
+    allow_sliced_subqueries = False
 
 
 class DatabaseOperations(BaseDatabaseOperations):
+    compiler_module = "django.db.backends.oracle.compiler"
 
     def autoinc_sql(self, table, column):
         # To simulate auto-incrementing primary keys in Oracle, we have to
@@ -102,6 +124,54 @@ WHEN (new.%(col_name)s IS NULL)
             sql = "TRUNC(%s, '%s')" % (field_name, lookup_type)
         return sql
 
+    def convert_values(self, value, field):
+        if isinstance(value, Database.LOB):
+            value = value.read()
+            if field and field.get_internal_type() == 'TextField':
+                value = force_unicode(value)
+
+        # Oracle stores empty strings as null. We need to undo this in
+        # order to adhere to the Django convention of using the empty
+        # string instead of null, but only if the field accepts the
+        # empty string.
+        if value is None and field and field.empty_strings_allowed:
+            value = u''
+        # Convert 1 or 0 to True or False
+        elif value in (1, 0) and field and field.get_internal_type() in ('BooleanField', 'NullBooleanField'):
+            value = bool(value)
+        # Force floats to the correct type
+        elif value is not None and field and field.get_internal_type() == 'FloatField':
+            value = float(value)
+        # Convert floats to decimals
+        elif value is not None and field and field.get_internal_type() == 'DecimalField':
+            value = util.typecast_decimal(field.format_number(value))
+        # cx_Oracle always returns datetime.datetime objects for
+        # DATE and TIMESTAMP columns, but Django wants to see a
+        # python datetime.date, .time, or .datetime.  We use the type
+        # of the Field to determine which to cast to, but it's not
+        # always available.
+        # As a workaround, we cast to date if all the time-related
+        # values are 0, or to time if the date is 1/1/1900.
+        # This could be cleaned a bit by adding a method to the Field
+        # classes to normalize values from the database (the to_python
+        # method is used for validation and isn't what we want here).
+        elif isinstance(value, Database.Timestamp):
+            # In Python 2.3, the cx_Oracle driver returns its own
+            # Timestamp object that we must convert to a datetime class.
+            if not isinstance(value, datetime.datetime):
+                value = datetime.datetime(value.year, value.month,
+                        value.day, value.hour, value.minute, value.second,
+                        value.fsecond)
+            if field and field.get_internal_type() == 'DateTimeField':
+                pass
+            elif field and field.get_internal_type() == 'DateField':
+                value = value.date()
+            elif field and field.get_internal_type() == 'TimeField' or (value.year == 1900 and value.month == value.day == 1):
+                value = value.time()
+            elif value.hour == value.minute == value.second == value.microsecond == 0:
+                value = value.date()
+        return value
+
     def datetime_cast_sql(self):
         return "TO_TIMESTAMP(%s, 'YYYY-MM-DD HH24:MI:SS.FF')"
 
@@ -130,6 +200,9 @@ WHEN (new.%(col_name)s IS NULL)
             return "UPPER(%s)"
         return "%s"
 
+    def max_in_list_size(self):
+        return 1000
+
     def max_name_length(self):
         return 30
 
@@ -140,9 +213,6 @@ WHEN (new.%(col_name)s IS NULL)
         if value is None:
             return u''
         return force_unicode(value.read())
-
-    def query_class(self, DefaultQueryClass):
-        return query.query_class(DefaultQueryClass, Database)
 
     def quote_name(self, name):
         # SQL92 requires delimited (quoted) names to be case-sensitive.  When
@@ -265,55 +335,80 @@ WHEN (new.%(col_name)s IS NULL)
         return super(DatabaseOperations, self).combine_expression(connector, sub_expressions)
 
 
+class _UninitializedOperatorsDescriptor(object):
+
+    def __get__(self, instance, owner):
+        # If connection.operators is looked up before a connection has been
+        # created, transparently initialize connection.operators to avert an
+        # AttributeError.
+        if instance is None:
+            raise AttributeError("operators not available as class attribute")
+        # Creating a cursor will initialize the operators.
+        instance.cursor().close()
+        return instance.__dict__['operators']
+
+
 class DatabaseWrapper(BaseDatabaseWrapper):
 
-    operators = {
+    operators = _UninitializedOperatorsDescriptor()
+
+    _standard_operators = {
         'exact': '= %s',
         'iexact': '= UPPER(%s)',
-        'contains': "LIKEC %s ESCAPE '\\'",
-        'icontains': "LIKEC UPPER(%s) ESCAPE '\\'",
+        'contains': "LIKE TRANSLATE(%s USING NCHAR_CS) ESCAPE TRANSLATE('\\' USING NCHAR_CS)",
+        'icontains': "LIKE UPPER(TRANSLATE(%s USING NCHAR_CS)) ESCAPE TRANSLATE('\\' USING NCHAR_CS)",
         'gt': '> %s',
         'gte': '>= %s',
         'lt': '< %s',
         'lte': '<= %s',
+        'startswith': "LIKE TRANSLATE(%s USING NCHAR_CS) ESCAPE TRANSLATE('\\' USING NCHAR_CS)",
+        'endswith': "LIKE TRANSLATE(%s USING NCHAR_CS) ESCAPE TRANSLATE('\\' USING NCHAR_CS)",
+        'istartswith': "LIKE UPPER(TRANSLATE(%s USING NCHAR_CS)) ESCAPE TRANSLATE('\\' USING NCHAR_CS)",
+        'iendswith': "LIKE UPPER(TRANSLATE(%s USING NCHAR_CS)) ESCAPE TRANSLATE('\\' USING NCHAR_CS)",
+    }
+
+    _likec_operators = _standard_operators.copy()
+    _likec_operators.update({
+        'contains': "LIKEC %s ESCAPE '\\'",
+        'icontains': "LIKEC UPPER(%s) ESCAPE '\\'",
         'startswith': "LIKEC %s ESCAPE '\\'",
         'endswith': "LIKEC %s ESCAPE '\\'",
         'istartswith': "LIKEC UPPER(%s) ESCAPE '\\'",
         'iendswith': "LIKEC UPPER(%s) ESCAPE '\\'",
-    }
-    oracle_version = None
+    })
 
     def __init__(self, *args, **kwargs):
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
 
+        self.oracle_version = None
         self.features = DatabaseFeatures()
         self.ops = DatabaseOperations()
         self.client = DatabaseClient(self)
         self.creation = DatabaseCreation(self)
         self.introspection = DatabaseIntrospection(self)
-        self.validation = BaseDatabaseValidation()
+        self.validation = BaseDatabaseValidation(self)
 
     def _valid_connection(self):
         return self.connection is not None
 
     def _connect_string(self):
         settings_dict = self.settings_dict
-        if len(settings_dict['DATABASE_HOST'].strip()) == 0:
-            settings_dict['DATABASE_HOST'] = 'localhost'
-        if len(settings_dict['DATABASE_PORT'].strip()) != 0:
-            dsn = Database.makedsn(settings_dict['DATABASE_HOST'],
-                                   int(settings_dict['DATABASE_PORT']),
-                                   settings_dict['DATABASE_NAME'])
+        if not settings_dict['HOST'].strip():
+            settings_dict['HOST'] = 'localhost'
+        if settings_dict['PORT'].strip():
+            dsn = Database.makedsn(settings_dict['HOST'],
+                                   int(settings_dict['PORT']),
+                                   settings_dict['NAME'])
         else:
-            dsn = settings_dict['DATABASE_NAME']
-        return "%s/%s@%s" % (settings_dict['DATABASE_USER'],
-                             settings_dict['DATABASE_PASSWORD'], dsn)
+            dsn = settings_dict['NAME']
+        return "%s/%s@%s" % (settings_dict['USER'],
+                             settings_dict['PASSWORD'], dsn)
 
     def _cursor(self):
         cursor = None
         if not self._valid_connection():
             conn_string = convert_unicode(self._connect_string())
-            self.connection = Database.connect(conn_string, **self.settings_dict['DATABASE_OPTIONS'])
+            self.connection = Database.connect(conn_string, **self.settings_dict['OPTIONS'])
             cursor = FormatStylePlaceholderCursor(self.connection)
             # Set oracle date to ansi date format.  This only needs to execute
             # once when we create a new connection. We also set the Territory
@@ -321,6 +416,22 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             cursor.execute("ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS' "
                            "NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS.FF' "
                            "NLS_TERRITORY = 'AMERICA'")
+
+            if 'operators' not in self.__dict__:
+                # Ticket #14149: Check whether our LIKE implementation will
+                # work for this connection or we need to fall back on LIKEC.
+                # This check is performed only once per DatabaseWrapper
+                # instance per thread, since subsequent connections will use
+                # the same settings.
+                try:
+                    cursor.execute("SELECT 1 FROM DUAL WHERE DUMMY %s"
+                                   % self._standard_operators['contains'],
+                                   ['X'])
+                except utils.DatabaseError:
+                    self.operators = self._likec_operators
+                else:
+                    self.operators = self._standard_operators
+
             try:
                 self.oracle_version = int(self.connection.version.split('.')[0])
                 # There's no way for the DatabaseOperations class to know the
@@ -339,7 +450,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                 # Django docs specify cx_Oracle version 4.3.1 or higher, but
                 # stmtcachesize is available only in 4.3.2 and up.
                 pass
-            connection_created.send(sender=self.__class__)
+            connection_created.send(sender=self.__class__, connection=self)
         if not cursor:
             cursor = FormatStylePlaceholderCursor(self.connection)
         return cursor
@@ -347,6 +458,28 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     # Oracle doesn't support savepoint commits.  Ignore them.
     def _savepoint_commit(self, sid):
         pass
+
+    def _commit(self):
+        if self.connection is not None:
+            try:
+                return self.connection.commit()
+            except Database.IntegrityError, e:
+                # In case cx_Oracle implements (now or in a future version)
+                # raising this specific exception
+                raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
+            except Database.DatabaseError, e:
+                # cx_Oracle 5.0.4 raises a cx_Oracle.DatabaseError exception
+                # with the following attributes and values:
+                #  code = 2091
+                #  message = 'ORA-02091: transaction rolled back
+                #            'ORA-02291: integrity constraint (TEST_DJANGOTEST.SYS
+                #               _C00102056) violated - parent key not found'
+                # We convert that particular case to our IntegrityError exception
+                x = e.args[0]
+                if hasattr(x, 'code') and hasattr(x, 'message') \
+                   and x.code == 2091 and 'ORA-02291' in x.message:
+                    raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
+                raise utils.DatabaseError, utils.DatabaseError(*tuple(e)), sys.exc_info()[2]
 
 
 class OracleParam(object):
@@ -375,6 +508,30 @@ class OracleParam(object):
             self.input_size = None
 
 
+class VariableWrapper(object):
+    """
+    An adapter class for cursor variables that prevents the wrapped object
+    from being converted into a string when used to instanciate an OracleParam.
+    This can be used generally for any other object that should be passed into
+    Cursor.execute as-is.
+    """
+
+    def __init__(self, var):
+        self.var = var
+
+    def bind_parameter(self, cursor):
+        return self.var
+
+    def __getattr__(self, key):
+        return getattr(self.var, key)
+
+    def __setattr__(self, key, value):
+        if key == 'var':
+            self.__dict__[key] = value
+        else:
+            setattr(self.var, key, value)
+
+
 class InsertIdVar(object):
     """
     A late-binding cursor variable that can be passed to Cursor.execute
@@ -383,7 +540,7 @@ class InsertIdVar(object):
     """
 
     def bind_parameter(self, cursor):
-        param = cursor.var(Database.NUMBER)
+        param = cursor.cursor.var(Database.NUMBER)
         cursor._insert_id_var = param
         return param
 
@@ -436,11 +593,13 @@ class FormatStylePlaceholderCursor(object):
         self._guess_input_sizes([params])
         try:
             return self.cursor.execute(query, self._param_generator(params))
-        except DatabaseError, e:
+        except Database.IntegrityError, e:
+            raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
+        except Database.DatabaseError, e:
             # cx_Oracle <= 4.4.0 wrongly raises a DatabaseError for ORA-01400.
-            if e.args[0].code == 1400 and not isinstance(e, IntegrityError):
-                e = IntegrityError(e.args[0])
-            raise e
+            if hasattr(e.args[0], 'code') and e.args[0].code == 1400 and not isinstance(e, IntegrityError):
+                raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
+            raise utils.DatabaseError, utils.DatabaseError(*tuple(e)), sys.exc_info()[2]
 
     def executemany(self, query, params=None):
         try:
@@ -460,67 +619,35 @@ class FormatStylePlaceholderCursor(object):
         try:
             return self.cursor.executemany(query,
                                 [self._param_generator(p) for p in formatted])
-        except DatabaseError, e:
+        except Database.IntegrityError, e:
+            raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
+        except Database.DatabaseError, e:
             # cx_Oracle <= 4.4.0 wrongly raises a DatabaseError for ORA-01400.
-            if e.args[0].code == 1400 and not isinstance(e, IntegrityError):
-                e = IntegrityError(e.args[0])
-            raise e
+            if hasattr(e.args[0], 'code') and e.args[0].code == 1400 and not isinstance(e, IntegrityError):
+                raise utils.IntegrityError, utils.IntegrityError(*tuple(e)), sys.exc_info()[2]
+            raise utils.DatabaseError, utils.DatabaseError(*tuple(e)), sys.exc_info()[2]
 
     def fetchone(self):
         row = self.cursor.fetchone()
         if row is None:
             return row
-        return self._rowfactory(row)
+        return _rowfactory(row, self.cursor)
 
     def fetchmany(self, size=None):
         if size is None:
             size = self.arraysize
-        return tuple([self._rowfactory(r)
+        return tuple([_rowfactory(r, self.cursor)
                       for r in self.cursor.fetchmany(size)])
 
     def fetchall(self):
-        return tuple([self._rowfactory(r)
+        return tuple([_rowfactory(r, self.cursor)
                       for r in self.cursor.fetchall()])
 
-    def _rowfactory(self, row):
-        # Cast numeric values as the appropriate Python type based upon the
-        # cursor description, and convert strings to unicode.
-        casted = []
-        for value, desc in zip(row, self.cursor.description):
-            if value is not None and desc[1] is Database.NUMBER:
-                precision, scale = desc[4:6]
-                if scale == -127:
-                    if precision == 0:
-                        # NUMBER column: decimal-precision floating point
-                        # This will normally be an integer from a sequence,
-                        # but it could be a decimal value.
-                        if '.' in value:
-                            value = Decimal(value)
-                        else:
-                            value = int(value)
-                    else:
-                        # FLOAT column: binary-precision floating point.
-                        # This comes from FloatField columns.
-                        value = float(value)
-                elif precision > 0:
-                    # NUMBER(p,s) column: decimal-precision fixed point.
-                    # This comes from IntField and DecimalField columns.
-                    if scale == 0:
-                        value = int(value)
-                    else:
-                        value = Decimal(value)
-                elif '.' in value:
-                    # No type information. This normally comes from a
-                    # mathematical expression in the SELECT list. Guess int
-                    # or Decimal based on whether it has a decimal point.
-                    value = Decimal(value)
-                else:
-                    value = int(value)
-            elif desc[1] in (Database.STRING, Database.FIXED_CHAR,
-                             Database.LONG_STRING):
-                value = to_unicode(value)
-            casted.append(value)
-        return tuple(casted)
+    def var(self, *args):
+        return VariableWrapper(self.cursor.var(*args))
+
+    def arrayvar(self, *args):
+        return VariableWrapper(self.cursor.arrayvar(*args))
 
     def __getattr__(self, attr):
         if attr in self.__dict__:
@@ -529,7 +656,63 @@ class FormatStylePlaceholderCursor(object):
             return getattr(self.cursor, attr)
 
     def __iter__(self):
-        return iter(self.cursor)
+        return CursorIterator(self.cursor)
+
+
+class CursorIterator(object):
+
+    """Cursor iterator wrapper that invokes our custom row factory."""
+
+    def __init__(self, cursor):
+        self.cursor = cursor
+        self.iter = iter(cursor)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return _rowfactory(self.iter.next(), self.cursor)
+
+
+def _rowfactory(row, cursor):
+    # Cast numeric values as the appropriate Python type based upon the
+    # cursor description, and convert strings to unicode.
+    casted = []
+    for value, desc in zip(row, cursor.description):
+        if value is not None and desc[1] is Database.NUMBER:
+            precision, scale = desc[4:6]
+            if scale == -127:
+                if precision == 0:
+                    # NUMBER column: decimal-precision floating point
+                    # This will normally be an integer from a sequence,
+                    # but it could be a decimal value.
+                    if '.' in value:
+                        value = Decimal(value)
+                    else:
+                        value = int(value)
+                else:
+                    # FLOAT column: binary-precision floating point.
+                    # This comes from FloatField columns.
+                    value = float(value)
+            elif precision > 0:
+                # NUMBER(p,s) column: decimal-precision fixed point.
+                # This comes from IntField and DecimalField columns.
+                if scale == 0:
+                    value = int(value)
+                else:
+                    value = Decimal(value)
+            elif '.' in value:
+                # No type information. This normally comes from a
+                # mathematical expression in the SELECT list. Guess int
+                # or Decimal based on whether it has a decimal point.
+                value = Decimal(value)
+            else:
+                value = int(value)
+        elif desc[1] in (Database.STRING, Database.FIXED_CHAR,
+                         Database.LONG_STRING):
+            value = to_unicode(value)
+        casted.append(value)
+    return tuple(casted)
 
 
 def to_unicode(s):
@@ -546,19 +729,15 @@ def _get_sequence_reset_sql():
     # TODO: colorize this SQL code with style.SQL_KEYWORD(), etc.
     return """
 DECLARE
-    startvalue integer;
-    cval integer;
+    table_value integer;
+    seq_value integer;
 BEGIN
-    LOCK TABLE %(table)s IN SHARE MODE;
-    SELECT NVL(MAX(%(column)s), 0) INTO startvalue FROM %(table)s;
-    SELECT "%(sequence)s".nextval INTO cval FROM dual;
-    cval := startvalue - cval;
-    IF cval != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE "%(sequence)s" MINVALUE 0 INCREMENT BY '||cval;
-        SELECT "%(sequence)s".nextval INTO cval FROM dual;
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE "%(sequence)s" INCREMENT BY 1';
-    END IF;
-    COMMIT;
+    SELECT NVL(MAX(%(column)s), 0) INTO table_value FROM %(table)s;
+    SELECT NVL(last_number - cache_size, 0) INTO seq_value FROM user_sequences
+           WHERE sequence_name = '%(sequence)s';
+    WHILE table_value > seq_value LOOP
+        SELECT "%(sequence)s".nextval INTO seq_value FROM dual;
+    END LOOP;
 END;
 /"""
 

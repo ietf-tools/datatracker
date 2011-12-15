@@ -3,17 +3,13 @@ Serialize data to/from JSON
 """
 
 import datetime
+import decimal
 from StringIO import StringIO
 
 from django.core.serializers.python import Serializer as PythonSerializer
 from django.core.serializers.python import Deserializer as PythonDeserializer
 from django.utils import datetime_safe
 from django.utils import simplejson
-
-try:
-    import decimal
-except ImportError:
-    from django.utils import _decimal as decimal    # Python 2.3 fallback
 
 class Serializer(PythonSerializer):
     """
@@ -22,8 +18,6 @@ class Serializer(PythonSerializer):
     internal_use_only = False
 
     def end_serialization(self):
-        self.options.pop('stream', None)
-        self.options.pop('fields', None)
         simplejson.dump(self.objects, self.stream, cls=DjangoJSONEncoder, **self.options)
 
     def getvalue(self):
@@ -38,7 +32,7 @@ def Deserializer(stream_or_string, **options):
         stream = StringIO(stream_or_string)
     else:
         stream = stream_or_string
-    for obj in PythonDeserializer(simplejson.load(stream)):
+    for obj in PythonDeserializer(simplejson.load(stream), **options):
         yield obj
 
 class DjangoJSONEncoder(simplejson.JSONEncoder):

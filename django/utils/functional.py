@@ -60,9 +60,6 @@ def curry(_curried_func, *args, **kwargs):
 # Summary of changes made to the Python 2.5 code below:
 #   * swapped ``partial`` for ``curry`` to maintain backwards-compatibility
 #     in Django.
-#   * Wrapped the ``setattr`` call in ``update_wrapper`` with a try-except
-#     block to make it compatible with Python 2.3, which doesn't allow
-#     assigning to ``__name__``.
 
 # Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007 Python Software Foundation.
 # All Rights Reserved.
@@ -90,10 +87,7 @@ def update_wrapper(wrapper,
        function (defaults to functools.WRAPPER_UPDATES)
     """
     for attr in assigned:
-        try:
-            setattr(wrapper, attr, getattr(wrapped, attr))
-        except TypeError: # Python 2.3 doesn't allow assigning to __name__.
-            pass
+        setattr(wrapper, attr, getattr(wrapped, attr))
     for attr in updated:
         getattr(wrapper, attr).update(getattr(wrapped, attr))
     # Return the wrapper so this can be used as a decorator via curry()
@@ -147,6 +141,7 @@ def lazy(func, *resultclasses):
     the lazy evaluation code is triggered. Results are not memoized; the
     function is evaluated on every access.
     """
+
     class __proxy__(Promise):
         """
         Encapsulate a function call and act as a proxy for methods that are
@@ -162,14 +157,24 @@ def lazy(func, *resultclasses):
             if self.__dispatch is None:
                 self.__prepare_class__()
 
+        def __reduce__(self):
+            return (
+                _lazy_proxy_unpickle,
+                (self.__func, self.__args, self.__kw) + resultclasses
+            )
+
         def __prepare_class__(cls):
             cls.__dispatch = {}
             for resultclass in resultclasses:
                 cls.__dispatch[resultclass] = {}
                 for (k, v) in resultclass.__dict__.items():
+                    # All __promise__ return the same wrapper method, but they
+                    # also do setup, inserting the method into the dispatch
+                    # dict.
+                    meth = cls.__promise__(resultclass, k, v)
                     if hasattr(cls, k):
                         continue
-                    setattr(cls, k, cls.__promise__(resultclass, k, v))
+                    setattr(cls, k, meth)
             cls._delegate_str = str in resultclasses
             cls._delegate_unicode = unicode in resultclasses
             assert not (cls._delegate_str and cls._delegate_unicode), "Cannot call lazy() with both str and unicode return types."
@@ -236,6 +241,9 @@ def lazy(func, *resultclasses):
 
     return wraps(func)(__wrapper__)
 
+def _lazy_proxy_unpickle(func, args, kwargs, *resultclasses):
+    return lazy(func, *resultclasses)(*args, **kwargs)
+
 def allow_lazy(func, *resultclasses):
     """
     A decorator that allows a function to be called with one or more lazy
@@ -257,9 +265,8 @@ class LazyObject(object):
     A wrapper for another class that can be used to delay instantiation of the
     wrapped class.
 
-    This is useful, for example, if the wrapped class needs to use Django
-    settings at creation time: we want to permit it to be imported without
-    accessing settings.
+    By subclassing, you have the opportunity to intercept and alter the
+    instantiation. If you don't need to do that, use SimpleLazyObject.
     """
     def __init__(self):
         self._wrapped = None
@@ -267,9 +274,6 @@ class LazyObject(object):
     def __getattr__(self, name):
         if self._wrapped is None:
             self._setup()
-        if name == "__members__":
-            # Used to implement dir(obj)
-            return self._wrapped.get_all_members()
         return getattr(self._wrapped, name)
 
     def __setattr__(self, name, value):
@@ -281,9 +285,83 @@ class LazyObject(object):
                 self._setup()
             setattr(self._wrapped, name, value)
 
+    def __delattr__(self, name):
+        if name == "_wrapped":
+            raise TypeError("can't delete _wrapped.")
+        if self._wrapped is None:
+            self._setup()
+        delattr(self._wrapped, name)
+
     def _setup(self):
         """
         Must be implemented by subclasses to initialise the wrapped object.
         """
         raise NotImplementedError
 
+    # introspection support:
+    __members__ = property(lambda self: self.__dir__())
+
+    def __dir__(self):
+        if self._wrapped is None:
+            self._setup()
+        return  dir(self._wrapped)
+
+class SimpleLazyObject(LazyObject):
+    """
+    A lazy object initialised from any function.
+
+    Designed for compound objects of unknown type. For builtins or objects of
+    known type, use django.utils.functional.lazy.
+    """
+    def __init__(self, func):
+        """
+        Pass in a callable that returns the object to be wrapped.
+
+        If copies are made of the resulting SimpleLazyObject, which can happen
+        in various circumstances within Django, then you must ensure that the
+        callable can be safely run more than once and will return the same
+        value.
+        """
+        self.__dict__['_setupfunc'] = func
+        # For some reason, we have to inline LazyObject.__init__ here to avoid
+        # recursion
+        self._wrapped = None
+
+    def __str__(self):
+        if self._wrapped is None: self._setup()
+        return str(self._wrapped)
+
+    def __unicode__(self):
+        if self._wrapped is None: self._setup()
+        return unicode(self._wrapped)
+
+    def __deepcopy__(self, memo):
+        if self._wrapped is None:
+            # We have to use SimpleLazyObject, not self.__class__, because the
+            # latter is proxied.
+            result = SimpleLazyObject(self._setupfunc)
+            memo[id(self)] = result
+            return result
+        else:
+            # Changed to use deepcopy from copycompat, instead of copy
+            # For Python 2.4.
+            from django.utils.copycompat import deepcopy
+            return deepcopy(self._wrapped, memo)
+
+    # Need to pretend to be the wrapped class, for the sake of objects that care
+    # about this (especially in equality tests)
+    def __get_class(self):
+        if self._wrapped is None: self._setup()
+        return self._wrapped.__class__
+    __class__ = property(__get_class)
+
+    def __eq__(self, other):
+        if self._wrapped is None: self._setup()
+        return self._wrapped == other
+
+    def __hash__(self):
+        if self._wrapped is None: self._setup()
+        return hash(self._wrapped)
+
+    def _setup(self):
+        self._wrapped = self._setupfunc()

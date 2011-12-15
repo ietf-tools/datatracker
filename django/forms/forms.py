@@ -2,8 +2,8 @@
 Form classes
 """
 
-from copy import deepcopy
-
+from django.core.exceptions import ValidationError
+from django.utils.copycompat import deepcopy
 from django.utils.datastructures import SortedDict
 from django.utils.html import conditional_escape
 from django.utils.encoding import StrAndUnicode, smart_unicode, force_unicode
@@ -11,16 +11,17 @@ from django.utils.safestring import mark_safe
 
 from fields import Field, FileField
 from widgets import Media, media_property, TextInput, Textarea
-from util import flatatt, ErrorDict, ErrorList, ValidationError
+from util import flatatt, ErrorDict, ErrorList
 
 __all__ = ('BaseForm', 'Form')
 
 NON_FIELD_ERRORS = '__all__'
 
 def pretty_name(name):
-    "Converts 'first_name' to 'First name'"
-    name = name[0].upper() + name[1:]
-    return name.replace('_', ' ')
+    """Converts 'first_name' to 'First name'"""
+    if not name:
+        return u''
+    return name.replace('_', ' ').capitalize()
 
 def get_declared_fields(bases, attrs, with_base_fields=True):
     """
@@ -138,7 +139,9 @@ class BaseForm(StrAndUnicode):
         "Helper function for outputting HTML. Used by as_table(), as_ul(), as_p()."
         top_errors = self.non_field_errors() # Errors that should be displayed above all fields.
         output, hidden_fields = [], []
+
         for name, field in self.fields.items():
+            html_class_attr = ''
             bf = BoundField(self, field, name)
             bf_errors = self.error_class([conditional_escape(error) for error in bf.errors]) # Escape and cache in local variable.
             if bf.is_hidden:
@@ -146,8 +149,15 @@ class BaseForm(StrAndUnicode):
                     top_errors.extend([u'(Hidden field %s) %s' % (name, force_unicode(e)) for e in bf_errors])
                 hidden_fields.append(unicode(bf))
             else:
+                # Create a 'class="..."' atribute if the row should have any
+                # CSS classes applied.
+                css_classes = bf.css_classes()
+                if css_classes:
+                    html_class_attr = ' class="%s"' % css_classes
+
                 if errors_on_separate_row and bf_errors:
                     output.append(error_row % force_unicode(bf_errors))
+
                 if bf.label:
                     label = conditional_escape(force_unicode(bf.label))
                     # Only add the suffix if the label does not end in
@@ -158,13 +168,23 @@ class BaseForm(StrAndUnicode):
                     label = bf.label_tag(label) or ''
                 else:
                     label = ''
+
                 if field.help_text:
                     help_text = help_text_html % force_unicode(field.help_text)
                 else:
                     help_text = u''
-                output.append(normal_row % {'errors': force_unicode(bf_errors), 'label': force_unicode(label), 'field': unicode(bf), 'help_text': help_text})
+
+                output.append(normal_row % {
+                    'errors': force_unicode(bf_errors),
+                    'label': force_unicode(label),
+                    'field': unicode(bf),
+                    'help_text': help_text,
+                    'html_class_attr': html_class_attr
+                })
+
         if top_errors:
             output.insert(0, error_row % force_unicode(top_errors))
+
         if hidden_fields: # Insert any hidden fields in the last row.
             str_hidden = u''.join(hidden_fields)
             if output:
@@ -176,7 +196,9 @@ class BaseForm(StrAndUnicode):
                     # that users write): if there are only top errors, we may
                     # not be able to conscript the last row for our purposes,
                     # so insert a new, empty row.
-                    last_row = normal_row % {'errors': '', 'label': '', 'field': '', 'help_text': ''}
+                    last_row = (normal_row % {'errors': '', 'label': '',
+                                              'field': '', 'help_text':'',
+                                              'html_class_attr': html_class_attr})
                     output.append(last_row)
                 output[-1] = last_row[:-len(row_ender)] + str_hidden + row_ender
             else:
@@ -187,15 +209,30 @@ class BaseForm(StrAndUnicode):
 
     def as_table(self):
         "Returns this form rendered as HTML <tr>s -- excluding the <table></table>."
-        return self._html_output(u'<tr><th>%(label)s</th><td>%(errors)s%(field)s%(help_text)s</td></tr>', u'<tr><td colspan="2">%s</td></tr>', '</td></tr>', u'<br />%s', False)
+        return self._html_output(
+            normal_row = u'<tr%(html_class_attr)s><th>%(label)s</th><td>%(errors)s%(field)s%(help_text)s</td></tr>',
+            error_row = u'<tr><td colspan="2">%s</td></tr>',
+            row_ender = u'</td></tr>',
+            help_text_html = u'<br />%s',
+            errors_on_separate_row = False)
 
     def as_ul(self):
         "Returns this form rendered as HTML <li>s -- excluding the <ul></ul>."
-        return self._html_output(u'<li>%(errors)s%(label)s %(field)s%(help_text)s</li>', u'<li>%s</li>', '</li>', u' %s', False)
+        return self._html_output(
+            normal_row = u'<li%(html_class_attr)s>%(errors)s%(label)s %(field)s%(help_text)s</li>',
+            error_row = u'<li>%s</li>',
+            row_ender = '</li>',
+            help_text_html = u' %s',
+            errors_on_separate_row = False)
 
     def as_p(self):
         "Returns this form rendered as HTML <p>s."
-        return self._html_output(u'<p>%(label)s %(field)s%(help_text)s</p>', u'%s', '</p>', u' %s', True)
+        return self._html_output(
+            normal_row = u'<p%(html_class_attr)s>%(label)s %(field)s%(help_text)s</p>',
+            error_row = u'%s',
+            row_ender = '</p>',
+            help_text_html = u' %s',
+            errors_on_separate_row = True)
 
     def non_field_errors(self):
         """
@@ -227,6 +264,13 @@ class BaseForm(StrAndUnicode):
         # changed from the initial data, short circuit any validation.
         if self.empty_permitted and not self.has_changed():
             return
+        self._clean_fields()
+        self._clean_form()
+        self._post_clean()
+        if self._errors:
+            delattr(self, 'cleaned_data')
+
+    def _clean_fields(self):
         for name, field in self.fields.items():
             # value_from_datadict() gets the data from the data dictionaries.
             # Each widget type knows how to retrieve its own data, because some
@@ -246,12 +290,19 @@ class BaseForm(StrAndUnicode):
                 self._errors[name] = self.error_class(e.messages)
                 if name in self.cleaned_data:
                     del self.cleaned_data[name]
+
+    def _clean_form(self):
         try:
             self.cleaned_data = self.clean()
         except ValidationError, e:
             self._errors[NON_FIELD_ERRORS] = self.error_class(e.messages)
-        if self._errors:
-            delattr(self, 'cleaned_data')
+
+    def _post_clean(self):
+        """
+        An internal hook for performing additional cleaning after form cleaning
+        is complete. Used for model validation in model forms.
+        """
+        pass
 
     def clean(self):
         """
@@ -343,6 +394,7 @@ class BoundField(StrAndUnicode):
         self.name = name
         self.html_name = form.add_prefix(name)
         self.html_initial_name = form.add_initial_prefix(name)
+        self.html_initial_id = form.add_initial_prefix(self.auto_id)
         if self.field.label is None:
             self.label = pretty_name(name)
         else:
@@ -371,10 +423,15 @@ class BoundField(StrAndUnicode):
         """
         if not widget:
             widget = self.field.widget
+
         attrs = attrs or {}
         auto_id = self.auto_id
         if auto_id and 'id' not in attrs and 'id' not in widget.attrs:
-            attrs['id'] = auto_id
+            if not only_initial:
+                attrs['id'] = auto_id
+            else:
+                attrs['id'] = self.html_initial_id
+
         if not self.form.is_bound:
             data = self.form.initial.get(self.name, self.field.initial)
             if callable(data):
@@ -384,6 +441,8 @@ class BoundField(StrAndUnicode):
                 data = self.form.initial.get(self.name, self.field.initial)
             else:
                 data = self.data
+        data = self.field.prepare_value(data)
+
         if not only_initial:
             name = self.html_name
         else:
@@ -429,6 +488,19 @@ class BoundField(StrAndUnicode):
             contents = u'<label for="%s"%s>%s</label>' % (widget.id_for_label(id_), attrs, unicode(contents))
         return mark_safe(contents)
 
+    def css_classes(self, extra_classes=None):
+        """
+        Returns a string of space-separated CSS classes for this field.
+        """
+        if hasattr(extra_classes, 'split'):
+            extra_classes = extra_classes.split()
+        extra_classes = set(extra_classes or [])
+        if self.errors and hasattr(self.form, 'error_css_class'):
+            extra_classes.add(self.form.error_css_class)
+        if self.field.required and hasattr(self.form, 'required_css_class'):
+            extra_classes.add(self.form.required_css_class)
+        return ' '.join(extra_classes)
+
     def _is_hidden(self):
         "Returns True if this BoundField's widget is hidden."
         return self.field.widget.is_hidden
@@ -446,3 +518,14 @@ class BoundField(StrAndUnicode):
             return self.html_name
         return ''
     auto_id = property(_auto_id)
+
+    def _id_for_label(self):
+        """
+        Wrapper around the field widget's `id_for_label` class method.
+        Useful, for example, for focusing on this field regardless of whether
+        it has a single widget or a MutiWidget.
+        """
+        widget = self.field.widget
+        id_ = widget.attrs.get('id') or self.auto_id
+        return widget.id_for_label(id_)
+    id_for_label = property(_id_for_label)

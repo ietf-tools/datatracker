@@ -34,16 +34,16 @@ class GetCurrentLanguageBidiNode(Node):
         return ''
 
 class TranslateNode(Node):
-    def __init__(self, value, noop):
-        self.value = Variable(value)
+    def __init__(self, filter_expression, noop):
         self.noop = noop
+        self.filter_expression = filter_expression
+        if isinstance(self.filter_expression.var, basestring):
+            self.filter_expression.var = Variable(u"'%s'" % self.filter_expression.var)
 
     def render(self, context):
-        value = self.value.resolve(context)
-        if self.noop:
-            return value
-        else:
-            return _render_value_in_context(translation.ugettext(value), context)
+        self.filter_expression.var.translate = not self.noop
+        output = self.filter_expression.resolve(context)
+        return _render_value_in_context(output, context)
 
 class BlockTranslateNode(Node):
     def __init__(self, extra_context, singular, plural=None, countervar=None,
@@ -76,13 +76,14 @@ class BlockTranslateNode(Node):
         if self.plural and self.countervar and self.counter:
             count = self.counter.resolve(context)
             context[self.countervar] = count
-            plural, vars = self.render_token_list(self.plural)
+            plural, plural_vars = self.render_token_list(self.plural)
             result = translation.ungettext(singular, plural, count)
+            vars.extend(plural_vars)
         else:
             result = translation.ugettext(singular)
         # Escape all isolated '%' before substituting in the context.
         result = re.sub(u'%(?!\()', u'%%', result)
-        data = dict([(v, _render_value_in_context(context[v], context)) for v in vars])
+        data = dict([(v, _render_value_in_context(context.get(v, ''), context)) for v in vars])
         context.pop()
         return result % data
 
@@ -104,7 +105,7 @@ def do_get_available_languages(parser, token):
     """
     args = token.contents.split()
     if len(args) != 3 or args[1] != 'as':
-        raise TemplateSyntaxError, "'get_available_languages' requires 'as variable' (got %r)" % args
+        raise TemplateSyntaxError("'get_available_languages' requires 'as variable' (got %r)" % args)
     return GetAvailableLanguagesNode(args[2])
 
 def do_get_current_language(parser, token):
@@ -121,7 +122,7 @@ def do_get_current_language(parser, token):
     """
     args = token.contents.split()
     if len(args) != 3 or args[1] != 'as':
-        raise TemplateSyntaxError, "'get_current_language' requires 'as variable' (got %r)" % args
+        raise TemplateSyntaxError("'get_current_language' requires 'as variable' (got %r)" % args)
     return GetCurrentLanguageNode(args[2])
 
 def do_get_current_language_bidi(parser, token):
@@ -138,7 +139,7 @@ def do_get_current_language_bidi(parser, token):
     """
     args = token.contents.split()
     if len(args) != 3 or args[1] != 'as':
-        raise TemplateSyntaxError, "'get_current_language_bidi' requires 'as variable' (got %r)" % args
+        raise TemplateSyntaxError("'get_current_language_bidi' requires 'as variable' (got %r)" % args)
     return GetCurrentLanguageBidiNode(args[2])
 
 def do_translate(parser, token):
@@ -174,16 +175,30 @@ def do_translate(parser, token):
     class TranslateParser(TokenParser):
         def top(self):
             value = self.value()
+
+            # Backwards Compatiblity fix:
+            # FilterExpression does not support single-quoted strings,
+            # so we make a cheap localized fix in order to maintain
+            # backwards compatibility with existing uses of ``trans``
+            # where single quote use is supported.
+            if value[0] == "'":
+                pos = None
+                m = re.match("^'([^']+)'(\|.*$)",value)
+                if m:
+                    value = '"%s"%s' % (m.group(1).replace('"','\\"'),m.group(2))
+                elif value[-1] == "'":
+                    value = '"%s"' % value[1:-1].replace('"','\\"')
+
             if self.more():
                 if self.tag() == 'noop':
                     noop = True
                 else:
-                    raise TemplateSyntaxError, "only option for 'trans' is 'noop'"
+                    raise TemplateSyntaxError("only option for 'trans' is 'noop'")
             else:
                 noop = False
             return (value, noop)
     value, noop = TranslateParser(token.contents).top()
-    return TranslateNode(value, noop)
+    return TranslateNode(parser.compile_filter(value), noop)
 
 def do_block_translate(parser, token):
     """
@@ -215,16 +230,16 @@ def do_block_translate(parser, token):
                 if tag == 'with' or tag == 'and':
                     value = self.value()
                     if self.tag() != 'as':
-                        raise TemplateSyntaxError, "variable bindings in 'blocktrans' must be 'with value as variable'"
+                        raise TemplateSyntaxError("variable bindings in 'blocktrans' must be 'with value as variable'")
                     extra_context[self.tag()] = VariableNode(
                             parser.compile_filter(value))
                 elif tag == 'count':
                     counter = parser.compile_filter(self.value())
                     if self.tag() != 'as':
-                        raise TemplateSyntaxError, "counter specification in 'blocktrans' must be 'count value as variable'"
+                        raise TemplateSyntaxError("counter specification in 'blocktrans' must be 'count value as variable'")
                     countervar = self.tag()
                 else:
-                    raise TemplateSyntaxError, "unknown subtag %s for 'blocktrans' found" % tag
+                    raise TemplateSyntaxError("unknown subtag %s for 'blocktrans' found" % tag)
             return (countervar, counter, extra_context)
 
     countervar, counter, extra_context = BlockTranslateParser(token.contents).top()
@@ -239,7 +254,7 @@ def do_block_translate(parser, token):
             break
     if countervar and counter:
         if token.contents.strip() != 'plural':
-            raise TemplateSyntaxError, "'blocktrans' doesn't allow other block tags inside it"
+            raise TemplateSyntaxError("'blocktrans' doesn't allow other block tags inside it")
         while parser.tokens:
             token = parser.next_token()
             if token.token_type in (TOKEN_VAR, TOKEN_TEXT):
@@ -247,7 +262,7 @@ def do_block_translate(parser, token):
             else:
                 break
     if token.contents.strip() != 'endblocktrans':
-        raise TemplateSyntaxError, "'blocktrans' doesn't allow other block tags (seen %r) inside it" % token.contents
+        raise TemplateSyntaxError("'blocktrans' doesn't allow other block tags (seen %r) inside it" % token.contents)
 
     return BlockTranslateNode(extra_context, singular, plural, countervar,
             counter)

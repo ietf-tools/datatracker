@@ -34,6 +34,31 @@ def escape(html):
     return mark_safe(force_unicode(html).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", '&#39;'))
 escape = allow_lazy(escape, unicode)
 
+_base_js_escapes = (
+    ('\\', r'\u005C'),
+    ('\'', r'\u0027'),
+    ('"', r'\u0022'),
+    ('>', r'\u003E'),
+    ('<', r'\u003C'),
+    ('&', r'\u0026'),
+    ('=', r'\u003D'),
+    ('-', r'\u002D'),
+    (';', r'\u003B'),
+    (u'\u2028', r'\u2028'),
+    (u'\u2029', r'\u2029')
+)
+
+# Escape every ASCII character with a value less than 32.
+_js_escapes = (_base_js_escapes +
+               tuple([('%c' % z, '\\u%04X' % z) for z in range(32)]))
+
+def escapejs(value):
+    """Hex encodes characters for use in JavaScript strings."""
+    for bad, good in _js_escapes:
+        value = mark_safe(force_unicode(value).replace(bad, good))
+    return value
+escapejs = allow_lazy(escapejs, unicode)
+
 def conditional_escape(html):
     """
     Similar to escape(), except that it doesn't operate on pre-escaped strings.
@@ -94,10 +119,8 @@ def urlize(text, trim_url_limit=None, nofollow=False, autoescape=False):
     trim_url = lambda x, limit=trim_url_limit: limit is not None and (len(x) > limit and ('%s...' % x[:max(0, limit - 3)])) or x
     safe_input = isinstance(text, SafeData)
     words = word_split_re.split(force_unicode(text))
-    # Fix http://code.djangoproject.com/ticket/12183 
-    # (Pasi Eronen, 2009-11-12)
+    nofollow_attr = nofollow and ' rel="nofollow"' or ''
     for i, word in enumerate(words):
-        nofollow_attr = nofollow and ' rel="nofollow"' or ''
         match = None
         if '.' in word or '@' in word or ':' in word:
             match = punctuation_re.match(word)

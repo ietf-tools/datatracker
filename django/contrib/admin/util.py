@@ -1,11 +1,15 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.db.models.related import RelatedObject
+from django.forms.forms import pretty_name
+from django.utils import formats
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_unicode, smart_unicode, smart_str
 from django.utils.translation import ungettext, ugettext as _
 from django.core.urlresolvers import reverse, NoReverseMatch
+from django.utils.datastructures import SortedDict
 
 def quote(s):
     """
@@ -55,135 +59,160 @@ def flatten_fieldsets(fieldsets):
                 field_names.append(field)
     return field_names
 
-def _nest_help(obj, depth, val):
-    current = obj
-    for i in range(depth):
-        current = current[-1]
-    current.append(val)
-
-def get_change_view_url(app_label, module_name, pk, admin_site, levels_to_root):
-    """
-    Returns the url to the admin change view for the given app_label,
-    module_name and primary key.
-    """
+def _format_callback(obj, user, admin_site, levels_to_root, perms_needed):
+    has_admin = obj.__class__ in admin_site._registry
+    opts = obj._meta
     try:
-        return reverse('%sadmin_%s_%s_change' % (admin_site.name, app_label, module_name), None, (pk,))
+        admin_url = reverse('%s:%s_%s_change'
+                            % (admin_site.name,
+                               opts.app_label,
+                               opts.object_name.lower()),
+                            None, (quote(obj._get_pk_val()),))
     except NoReverseMatch:
-        return '%s%s/%s/%s/' % ('../'*levels_to_root, app_label, module_name, pk)
+        admin_url = '%s%s/%s/%s/' % ('../'*levels_to_root,
+                                     opts.app_label,
+                                     opts.object_name.lower(),
+                                     quote(obj._get_pk_val()))
+    if has_admin:
+        p = '%s.%s' % (opts.app_label,
+                       opts.get_delete_permission())
+        if not user.has_perm(p):
+            perms_needed.add(opts.verbose_name)
+        # Display a link to the admin page.
+        return mark_safe(u'%s: <a href="%s">%s</a>' %
+                         (escape(capfirst(opts.verbose_name)),
+                          admin_url,
+                          escape(obj)))
+    else:
+        # Don't display link to edit, because it either has no
+        # admin or is edited inline.
+        return u'%s: %s' % (capfirst(opts.verbose_name),
+                            force_unicode(obj))
 
-def get_deleted_objects(deleted_objects, perms_needed, user, obj, opts, current_depth, admin_site, levels_to_root=4):
+def get_deleted_objects(objs, opts, user, admin_site, levels_to_root=4):
     """
-    Helper function that recursively populates deleted_objects.
+    Find all objects related to ``objs`` that should also be
+    deleted. ``objs`` should be an iterable of objects.
 
-    `levels_to_root` defines the number of directories (../) to reach the
-    admin root path. In a change_view this is 4, in a change_list view 2.
+    Returns a nested list of strings suitable for display in the
+    template with the ``unordered_list`` filter.
+
+    `levels_to_root` defines the number of directories (../) to reach
+    the admin root path. In a change_view this is 4, in a change_list
+    view 2.
 
     This is for backwards compatibility since the options.delete_selected
     method uses this function also from a change_list view.
     This will not be used if we can reverse the URL.
     """
-    nh = _nest_help # Bind to local variable for performance
-    if current_depth > 16:
-        return # Avoid recursing too deep.
-    opts_seen = []
-    for related in opts.get_all_related_objects():
-        has_admin = related.model in admin_site._registry
-        if related.opts in opts_seen:
-            continue
-        opts_seen.append(related.opts)
-        rel_opts_name = related.get_accessor_name()
-        if isinstance(related.field.rel, models.OneToOneRel):
-            try:
-                sub_obj = getattr(obj, rel_opts_name)
-            except ObjectDoesNotExist:
-                pass
-            else:
-                if has_admin:
-                    p = '%s.%s' % (related.opts.app_label, related.opts.get_delete_permission())
-                    if not user.has_perm(p):
-                        perms_needed.add(related.opts.verbose_name)
-                        # We don't care about populating deleted_objects now.
-                        continue
-                if not has_admin:
-                    # Don't display link to edit, because it either has no
-                    # admin or is edited inline.
-                    nh(deleted_objects, current_depth,
-                        [u'%s: %s' % (capfirst(related.opts.verbose_name), force_unicode(sub_obj)), []])
-                else:
-                    # Display a link to the admin page.
-                    nh(deleted_objects, current_depth, [mark_safe(u'%s: <a href="%s">%s</a>' %
-                        (escape(capfirst(related.opts.verbose_name)),
-                        get_change_view_url(related.opts.app_label,
-                                            related.opts.object_name.lower(),
-                                            sub_obj._get_pk_val(),
-                                            admin_site,
-                                            levels_to_root),
-                        escape(sub_obj))), []])
-                get_deleted_objects(deleted_objects, perms_needed, user, sub_obj, related.opts, current_depth+2, admin_site)
+    collector = NestedObjects()
+    for obj in objs:
+        # TODO using a private model API!
+        obj._collect_sub_objects(collector)
+
+    perms_needed = set()
+
+    to_delete = collector.nested(_format_callback,
+                                 user=user,
+                                 admin_site=admin_site,
+                                 levels_to_root=levels_to_root,
+                                 perms_needed=perms_needed)
+
+    return to_delete, perms_needed
+
+
+class NestedObjects(object):
+    """
+    A directed acyclic graph collection that exposes the add() API
+    expected by Model._collect_sub_objects and can present its data as
+    a nested list of objects.
+
+    """
+    def __init__(self):
+        # Use object keys of the form (model, pk) because actual model
+        # objects may not be unique
+
+        # maps object key to list of child keys
+        self.children = SortedDict()
+
+        # maps object key to parent key
+        self.parents = SortedDict()
+
+        # maps object key to actual object
+        self.seen = SortedDict()
+
+    def add(self, model, pk, obj,
+            parent_model=None, parent_obj=None, nullable=False):
+        """
+        Add item ``obj`` to the graph. Returns True (and does nothing)
+        if the item has been seen already.
+
+        The ``parent_obj`` argument must already exist in the graph; if
+        not, it's ignored (but ``obj`` is still added with no
+        parent). In any case, Model._collect_sub_objects (for whom
+        this API exists) will never pass a parent that hasn't already
+        been added itself.
+
+        These restrictions in combination ensure the graph will remain
+        acyclic (but can have multiple roots).
+
+        ``model``, ``pk``, and ``parent_model`` arguments are ignored
+        in favor of the appropriate lookups on ``obj`` and
+        ``parent_obj``; unlike CollectedObjects, we can't maintain
+        independence from the knowledge that we're operating on model
+        instances, and we don't want to allow for inconsistency.
+
+        ``nullable`` arg is ignored: it doesn't affect how the tree of
+        collected objects should be nested for display.
+        """
+        model, pk = type(obj), obj._get_pk_val()
+
+        # auto-created M2M models don't interest us
+        if model._meta.auto_created:
+            return True
+
+        key = model, pk
+
+        if key in self.seen:
+            return True
+        self.seen.setdefault(key, obj)
+
+        if parent_obj is not None:
+            parent_model, parent_pk = (type(parent_obj),
+                                       parent_obj._get_pk_val())
+            parent_key = (parent_model, parent_pk)
+            if parent_key in self.seen:
+                self.children.setdefault(parent_key, list()).append(key)
+                self.parents.setdefault(key, parent_key)
+
+    def _nested(self, key, format_callback=None, **kwargs):
+        obj = self.seen[key]
+        if format_callback:
+            ret = [format_callback(obj, **kwargs)]
         else:
-            has_related_objs = False
-            for sub_obj in getattr(obj, rel_opts_name).all():
-                has_related_objs = True
-                if not has_admin:
-                    # Don't display link to edit, because it either has no
-                    # admin or is edited inline.
-                    nh(deleted_objects, current_depth,
-                        [u'%s: %s' % (capfirst(related.opts.verbose_name), force_unicode(sub_obj)), []])
-                else:
-                    # Display a link to the admin page.
-                    nh(deleted_objects, current_depth, [mark_safe(u'%s: <a href="%s">%s</a>' %
-                        (escape(capfirst(related.opts.verbose_name)),
-                        get_change_view_url(related.opts.app_label,
-                                            related.opts.object_name.lower(),
-                                            sub_obj._get_pk_val(),
-                                            admin_site,
-                                            levels_to_root),
-                        escape(sub_obj))), []])
-                get_deleted_objects(deleted_objects, perms_needed, user, sub_obj, related.opts, current_depth+2, admin_site)
-            # If there were related objects, and the user doesn't have
-            # permission to delete them, add the missing perm to perms_needed.
-            if has_admin and has_related_objs:
-                p = '%s.%s' % (related.opts.app_label, related.opts.get_delete_permission())
-                if not user.has_perm(p):
-                    perms_needed.add(related.opts.verbose_name)
-    for related in opts.get_all_related_many_to_many_objects():
-        has_admin = related.model in admin_site._registry
-        if related.opts in opts_seen:
-            continue
-        opts_seen.append(related.opts)
-        rel_opts_name = related.get_accessor_name()
-        has_related_objs = False
+            ret = [obj]
 
-        # related.get_accessor_name() could return None for symmetrical relationships
-        if rel_opts_name:
-            rel_objs = getattr(obj, rel_opts_name, None)
-            if rel_objs:
-                has_related_objs = True
+        children = []
+        for child in self.children.get(key, ()):
+            children.extend(self._nested(child, format_callback, **kwargs))
+        if children:
+            ret.append(children)
 
-        if has_related_objs:
-            for sub_obj in rel_objs.all():
-                if not has_admin:
-                    # Don't display link to edit, because it either has no
-                    # admin or is edited inline.
-                    nh(deleted_objects, current_depth, [_('One or more %(fieldname)s in %(name)s: %(obj)s') % \
-                        {'fieldname': force_unicode(related.field.verbose_name), 'name': force_unicode(related.opts.verbose_name), 'obj': escape(sub_obj)}, []])
-                else:
-                    # Display a link to the admin page.
-                    nh(deleted_objects, current_depth, [
-                        mark_safe((_('One or more %(fieldname)s in %(name)s:') % {'fieldname': escape(force_unicode(related.field.verbose_name)), 'name': escape(force_unicode(related.opts.verbose_name))}) + \
-                        (u' <a href="%s">%s</a>' % \
-                            (get_change_view_url(related.opts.app_label,
-                                                 related.opts.object_name.lower(),
-                                                 sub_obj._get_pk_val(),
-                                                 admin_site,
-                                                 levels_to_root),
-                            escape(sub_obj)))), []])
-        # If there were related objects, and the user doesn't have
-        # permission to change them, add the missing perm to perms_needed.
-        if has_admin and has_related_objs:
-            p = u'%s.%s' % (related.opts.app_label, related.opts.get_change_permission())
-            if not user.has_perm(p):
-                perms_needed.add(related.opts.verbose_name)
+        return ret
+
+    def nested(self, format_callback=None, **kwargs):
+        """
+        Return the graph as a nested list.
+
+        Passes **kwargs back to the format_callback as kwargs.
+
+        """
+        roots = []
+        for key in self.seen.keys():
+            if key not in self.parents:
+                roots.extend(self._nested(key, format_callback, **kwargs))
+        return roots
+
 
 def model_format_dict(obj):
     """
@@ -221,3 +250,98 @@ def model_ngettext(obj, n=None):
     d = model_format_dict(obj)
     singular, plural = d["verbose_name"], d["verbose_name_plural"]
     return ungettext(singular, plural, n or 0)
+
+def lookup_field(name, obj, model_admin=None):
+    opts = obj._meta
+    try:
+        f = opts.get_field(name)
+    except models.FieldDoesNotExist:
+        # For non-field values, the value is either a method, property or
+        # returned via a callable.
+        if callable(name):
+            attr = name
+            value = attr(obj)
+        elif (model_admin is not None and hasattr(model_admin, name) and
+          not name == '__str__' and not name == '__unicode__'):
+            attr = getattr(model_admin, name)
+            value = attr(obj)
+        else:
+            attr = getattr(obj, name)
+            if callable(attr):
+                value = attr()
+            else:
+                value = attr
+        f = None
+    else:
+        attr = None
+        value = getattr(obj, name)
+    return f, attr, value
+
+def label_for_field(name, model, model_admin=None, return_attr=False):
+    attr = None
+    try:
+        field = model._meta.get_field_by_name(name)[0]
+        if isinstance(field, RelatedObject):
+            label = field.opts.verbose_name
+        else:
+            label = field.verbose_name
+    except models.FieldDoesNotExist:
+        if name == "__unicode__":
+            label = force_unicode(model._meta.verbose_name)
+        elif name == "__str__":
+            label = smart_str(model._meta.verbose_name)
+        else:
+            if callable(name):
+                attr = name
+            elif model_admin is not None and hasattr(model_admin, name):
+                attr = getattr(model_admin, name)
+            elif hasattr(model, name):
+                attr = getattr(model, name)
+            else:
+                message = "Unable to lookup '%s' on %s" % (name, model._meta.object_name)
+                if model_admin:
+                    message += " or %s" % (model_admin.__class__.__name__,)
+                raise AttributeError(message)
+
+            if hasattr(attr, "short_description"):
+                label = attr.short_description
+            elif callable(attr):
+                if attr.__name__ == "<lambda>":
+                    label = "--"
+                else:
+                    label = pretty_name(attr.__name__)
+            else:
+                label = pretty_name(name)
+    if return_attr:
+        return (label, attr)
+    else:
+        return label
+
+def help_text_for_field(name, model):
+    try:
+        help_text = model._meta.get_field_by_name(name)[0].help_text
+    except models.FieldDoesNotExist:
+        help_text = ""
+    return smart_unicode(help_text)
+
+
+def display_for_field(value, field):
+    from django.contrib.admin.templatetags.admin_list import _boolean_icon
+    from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
+
+    if field.flatchoices:
+        return dict(field.flatchoices).get(value, EMPTY_CHANGELIST_VALUE)
+    # NullBooleanField needs special-case null-handling, so it comes
+    # before the general null test.
+    elif isinstance(field, models.BooleanField) or isinstance(field, models.NullBooleanField):
+        return _boolean_icon(value)
+    elif value is None:
+        return EMPTY_CHANGELIST_VALUE
+    elif isinstance(field, models.DateField) or isinstance(field, models.TimeField):
+        return formats.localize(value)
+    elif isinstance(field, models.DecimalField):
+        return formats.number_format(value, field.decimal_places)
+    elif isinstance(field, models.FloatField):
+        return formats.number_format(value)
+    else:
+        return smart_unicode(value)

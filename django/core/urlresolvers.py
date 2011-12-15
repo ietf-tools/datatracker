@@ -10,6 +10,7 @@ a string) and returns a tuple in this format:
 import re
 
 from django.http import Http404
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured, ViewDoesNotExist
 from django.utils.datastructures import MultiValueDict
 from django.utils.encoding import iri_to_uri, force_unicode, smart_str
@@ -18,12 +19,6 @@ from django.utils.importlib import import_module
 from django.utils.regex_helper import normalize
 from django.utils.thread_support import currentThread
 
-try:
-    reversed
-except NameError:
-    from django.utils.itercompat import reversed     # Python 2.3 fallback
-    from sets import Set as set
-
 _resolver_cache = {} # Maps URLconf modules to RegexURLResolver instances.
 _callable_cache = {} # Maps view and url pattern names to their view functions.
 
@@ -31,6 +26,9 @@ _callable_cache = {} # Maps view and url pattern names to their view functions.
 # the current thread (which is the only one we ever access), it is assumed to
 # be empty.
 _prefixes = {}
+
+# Overridden URLconfs for each thread are stored here.
+_urlconfs = {}
 
 class Resolver404(Http404):
     pass
@@ -131,10 +129,10 @@ class RegexURLPattern(object):
             self._callback = get_callable(self._callback_str)
         except ImportError, e:
             mod_name, _ = get_mod_func(self._callback_str)
-            raise ViewDoesNotExist, "Could not import %s. Error was: %s" % (mod_name, str(e))
+            raise ViewDoesNotExist("Could not import %s. Error was: %s" % (mod_name, str(e)))
         except AttributeError, e:
             mod_name, func_name = get_mod_func(self._callback_str)
-            raise ViewDoesNotExist, "Tried %s in module %s. Error was: %s" % (func_name, mod_name, str(e))
+            raise ViewDoesNotExist("Tried %s in module %s. Error was: %s" % (func_name, mod_name, str(e)))
         return self._callback
     callback = property(_get_callback)
 
@@ -185,7 +183,8 @@ class RegexURLResolver(object):
             else:
                 bits = normalize(p_pattern)
                 lookups.appendlist(pattern.callback, (bits, p_pattern))
-                lookups.appendlist(pattern.name, (bits, p_pattern))
+                if pattern.name is not None:
+                    lookups.appendlist(pattern.name, (bits, p_pattern))
         self._reverse_dict = lookups
         self._namespace_dict = namespaces
         self._app_dict = apps
@@ -230,8 +229,8 @@ class RegexURLResolver(object):
                             sub_match_dict[smart_str(k)] = v
                         return sub_match[0], sub_match[1], sub_match_dict
                     tried.append(pattern.regex.pattern)
-            raise Resolver404, {'tried': tried, 'path': new_path}
-        raise Resolver404, {'path' : path}
+            raise Resolver404({'tried': tried, 'path': new_path})
+        raise Resolver404({'path' : path})
 
     def _get_urlconf_module(self):
         try:
@@ -246,18 +245,16 @@ class RegexURLResolver(object):
         try:
             iter(patterns)
         except TypeError:
-            raise ImproperlyConfigured("The included urlconf %s doesn't have any "
-                "patterns in it" % self.urlconf_name)
+            raise ImproperlyConfigured("The included urlconf %s doesn't have any patterns in it" % self.urlconf_name)
         return patterns
     url_patterns = property(_get_url_patterns)
 
     def _resolve_special(self, view_type):
         callback = getattr(self.urlconf_module, 'handler%s' % view_type)
-        mod_name, func_name = get_mod_func(callback)
         try:
-            return getattr(import_module(mod_name), func_name), {}
+            return get_callable(callback), {}
         except (ImportError, AttributeError), e:
-            raise ViewDoesNotExist, "Tried %s. Error was: %s" % (callback, str(e))
+            raise ViewDoesNotExist("Tried %s. Error was: %s" % (callback, str(e)))
 
     def resolve404(self):
         return self._resolve_special('404')
@@ -300,9 +297,13 @@ class RegexURLResolver(object):
                 "arguments '%s' not found." % (lookup_view_s, args, kwargs))
 
 def resolve(path, urlconf=None):
+    if urlconf is None:
+        urlconf = get_urlconf()
     return get_resolver(urlconf).resolve(path)
 
 def reverse(viewname, urlconf=None, args=None, kwargs=None, prefix=None, current_app=None):
+    if urlconf is None:
+        urlconf = get_urlconf()
     resolver = get_resolver(urlconf)
     args = args or []
     kwargs = kwargs or {}
@@ -371,3 +372,25 @@ def get_script_prefix():
     """
     return _prefixes.get(currentThread(), u'/')
 
+def set_urlconf(urlconf_name):
+    """
+    Sets the URLconf for the current thread (overriding the default one in
+    settings). Set to None to revert back to the default.
+    """
+    thread = currentThread()
+    if urlconf_name:
+        _urlconfs[thread] = urlconf_name
+    else:
+        # faster than wrapping in a try/except
+        if thread in _urlconfs:
+            del _urlconfs[thread]
+
+def get_urlconf(default=None):
+    """
+    Returns the root URLconf to use for the current thread if it has been
+    changed from the default one.
+    """
+    thread = currentThread()
+    if thread in _urlconfs:
+        return _urlconfs[thread]
+    return default

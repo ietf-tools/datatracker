@@ -7,15 +7,10 @@ circular import difficulties.
 """
 
 import weakref
-from copy import deepcopy
+from django.utils.copycompat import deepcopy
 
 from django.utils import tree
 from django.utils.datastructures import SortedDict
-
-try:
-    sorted
-except NameError:
-    from django.utils.itercompat import sorted  # For Python 2.3.
 
 
 class CyclicDependency(Exception):
@@ -24,6 +19,13 @@ class CyclicDependency(Exception):
     dependency, i.e. when deleting multiple objects.
     """
     pass
+
+class InvalidQuery(Exception):
+    """
+    The query passed to raw isn't a safe query to use with raw.
+    """
+    pass
+
 
 class CollectedObjects(object):
     """
@@ -48,7 +50,7 @@ class CollectedObjects(object):
         else:
             self.blocked = {}
 
-    def add(self, model, pk, obj, parent_model, nullable=False):
+    def add(self, model, pk, obj, parent_model, parent_obj=None, nullable=False):
         """
         Adds an item to the container.
 
@@ -58,6 +60,8 @@ class CollectedObjects(object):
         * obj - the object itself.
         * parent_model - the model of the parent object that this object was
           reached through.
+        * parent_obj - the parent object this object was reached
+          through (not used here, but needed in the API for use elsewhere)
         * nullable - should be True if this relation is nullable.
 
         Returns True if the item already existed in the structure and
@@ -132,7 +136,7 @@ class QueryWrapper(object):
     def __init__(self, sql, params):
         self.data = sql, params
 
-    def as_sql(self, qn=None):
+    def as_sql(self, qn=None, connection=None):
         return self.data
 
 class Q(tree.Node):
@@ -151,7 +155,8 @@ class Q(tree.Node):
     def _combine(self, other, conn):
         if not isinstance(other, Q):
             raise TypeError(other)
-        obj = deepcopy(self)
+        obj = type(self)()
+        obj.add(self, conn)
         obj.add(other, conn)
         return obj
 
@@ -162,7 +167,8 @@ class Q(tree.Node):
         return self._combine(other, self.AND)
 
     def __invert__(self):
-        obj = deepcopy(self)
+        obj = type(self)()
+        obj.add(self, self.AND)
         obj.negate()
         return obj
 
@@ -181,11 +187,29 @@ class DeferredAttribute(object):
         Retrieves and caches the value from the datastore on the first lookup.
         Returns the cached value.
         """
+        from django.db.models.fields import FieldDoesNotExist
+
         assert instance is not None
         cls = self.model_ref()
         data = instance.__dict__
         if data.get(self.field_name, self) is self:
-            data[self.field_name] = cls._base_manager.filter(pk=instance.pk).values_list(self.field_name, flat=True).get()
+            # self.field_name is the attname of the field, but only() takes the
+            # actual name, so we need to translate it here.
+            try:
+                cls._meta.get_field_by_name(self.field_name)
+                name = self.field_name
+            except FieldDoesNotExist:
+                name = [f.name for f in cls._meta.fields
+                    if f.attname == self.field_name][0]
+            # We use only() instead of values() here because we want the
+            # various data coersion methods (to_python(), etc.) to be called
+            # here.
+            val = getattr(
+                cls._base_manager.filter(pk=instance.pk).only(name).using(
+                    instance._state.db).get(),
+                self.field_name
+            )
+            data[self.field_name] = val
         return data[self.field_name]
 
     def __set__(self, instance, value):
@@ -195,19 +219,29 @@ class DeferredAttribute(object):
         """
         instance.__dict__[self.field_name] = value
 
-def select_related_descend(field, restricted, requested):
+def select_related_descend(field, restricted, requested, reverse=False):
     """
     Returns True if this field should be used to descend deeper for
     select_related() purposes. Used by both the query construction code
     (sql.query.fill_related_selections()) and the model instance creation code
     (query.get_cached_row()).
+
+    Arguments:
+     * field - the field to be checked
+     * restricted - a boolean field, indicating if the field list has been
+       manually restricted using a requested clause)
+     * requested - The select_related() dictionary.
+     * reverse - boolean, True if we are checking a reverse select related
     """
     if not field.rel:
         return False
-    if field.rel.parent_link:
+    if field.rel.parent_link and not reverse:
         return False
-    if restricted and field.name not in requested:
-        return False
+    if restricted:
+        if reverse and field.related_query_name() not in requested:
+            return False
+        if not reverse and field.name not in requested:
+            return False
     if not restricted and field.null:
         return False
     return True

@@ -54,7 +54,9 @@ def template_tag_index(request):
     load_all_installed_template_libraries()
 
     tags = []
-    for module_name, library in template.libraries.items():
+    app_libs = template.libraries.items()
+    builtin_libs = [(None, lib) for lib in template.builtins]
+    for module_name, library in builtin_libs + app_libs:
         for tag_name, tag_func in library.tags.items():
             title, body, metadata = utils.parse_docstring(tag_func.__doc__)
             if title:
@@ -87,7 +89,9 @@ def template_filter_index(request):
     load_all_installed_template_libraries()
 
     filters = []
-    for module_name, library in template.libraries.items():
+    app_libs = template.libraries.items()
+    builtin_libs = [(None, lib) for lib in template.builtins]
+    for module_name, library in builtin_libs + app_libs:
         for filter_name, filter_func in library.filters.items():
             title, body, metadata = utils.parse_docstring(filter_func.__doc__)
             if title:
@@ -187,14 +191,14 @@ def model_detail(request, app_label, model_name):
     try:
         app_mod = models.get_app(app_label)
     except ImproperlyConfigured:
-        raise Http404, _("App %r not found") % app_label
+        raise Http404(_("App %r not found") % app_label)
     model = None
     for m in models.get_models(app_mod):
         if m._meta.object_name.lower() == model_name:
             model = m
             break
     if model is None:
-        raise Http404, _("Model %(model_name)r not found in app %(app_label)r") % {'model_name': model_name, 'app_label': app_label}
+        raise Http404(_("Model %(model_name)r not found in app %(app_label)r") % {'model_name': model_name, 'app_label': app_label})
 
     opts = model._meta
 
@@ -309,12 +313,17 @@ def missing_docutils_page(request):
 
 def load_all_installed_template_libraries():
     # Load/register all template tag libraries from installed apps.
-    for e in templatetags.__path__:
-        libraries = [os.path.splitext(p)[0] for p in os.listdir(e) if p.endswith('.py') and p[0].isalpha()]
+    for module_name in template.get_templatetags_modules():
+        mod = import_module(module_name)
+        libraries = [
+            os.path.splitext(p)[0]
+            for p in os.listdir(os.path.dirname(mod.__file__))
+            if p.endswith('.py') and p[0].isalpha()
+        ]
         for library_name in libraries:
             try:
-                lib = template.get_library("django.templatetags.%s" % library_name.split('.')[-1])
-            except template.InvalidTemplateLibrary:
+                lib = template.get_library(library_name)
+            except template.InvalidTemplateLibrary, e:
                 pass
 
 def get_return_data_type(func_name):
@@ -326,43 +335,12 @@ def get_return_data_type(func_name):
             return 'Integer'
     return ''
 
-# Maps Field objects to their human-readable data types, as strings.
-# Column-type strings can contain format strings; they'll be interpolated
-# against the values of Field.__dict__ before being output.
-# If a column type is set to None, it won't be included in the output.
-DATA_TYPE_MAPPING = {
-    'AutoField'                 : _('Integer'),
-    'BooleanField'              : _('Boolean (Either True or False)'),
-    'CharField'                 : _('String (up to %(max_length)s)'),
-    'CommaSeparatedIntegerField': _('Comma-separated integers'),
-    'DateField'                 : _('Date (without time)'),
-    'DateTimeField'             : _('Date (with time)'),
-    'DecimalField'              : _('Decimal number'),
-    'EmailField'                : _('E-mail address'),
-    'FileField'                 : _('File path'),
-    'FilePathField'             : _('File path'),
-    'FloatField'                : _('Floating point number'),
-    'ForeignKey'                : _('Integer'),
-    'ImageField'                : _('File path'),
-    'IntegerField'              : _('Integer'),
-    'IPAddressField'            : _('IP address'),
-    'ManyToManyField'           : '',
-    'NullBooleanField'          : _('Boolean (Either True, False or None)'),
-    'OneToOneField'             : _('Relation to parent model'),
-    'PhoneNumberField'          : _('Phone number'),
-    'PositiveIntegerField'      : _('Integer'),
-    'PositiveSmallIntegerField' : _('Integer'),
-    'SlugField'                 : _('String (up to %(max_length)s)'),
-    'SmallIntegerField'         : _('Integer'),
-    'TextField'                 : _('Text'),
-    'TimeField'                 : _('Time'),
-    'URLField'                  : _('URL'),
-    'USStateField'              : _('U.S. state (two uppercase letters)'),
-    'XMLField'                  : _('XML text'),
-}
-
 def get_readable_field_data_type(field):
-    return DATA_TYPE_MAPPING[field.get_internal_type()] % field.__dict__
+    """Returns the description for a given field type, if it exists,
+    Fields' descriptions can contain format strings, which will be interpolated
+    against the values of field.__dict__ before being output."""
+
+    return field.description % field.__dict__
 
 def extract_views_from_urlpatterns(urlpatterns, base=''):
     """
@@ -384,7 +362,7 @@ def extract_views_from_urlpatterns(urlpatterns, base=''):
                 continue
             views.extend(extract_views_from_urlpatterns(patterns, base + p.regex.pattern))
         else:
-            raise TypeError, _("%s does not appear to be a urlpattern object") % p
+            raise TypeError(_("%s does not appear to be a urlpattern object") % p)
     return views
 
 named_group_matcher = re.compile(r'\(\?P(<\w+>).+?\)')

@@ -2,8 +2,9 @@
 IT-specific Form helpers
 """
 
+from django.core.validators import EMPTY_VALUES
 from django.forms import ValidationError
-from django.forms.fields import Field, RegexField, Select, EMPTY_VALUES
+from django.forms.fields import Field, RegexField, Select
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_unicode
 from django.contrib.localflavor.it.util import ssn_check_digit, vat_number_check_digit
@@ -49,8 +50,8 @@ class ITSocialSecurityNumberField(RegexField):
 
     def clean(self, value):
         value = super(ITSocialSecurityNumberField, self).clean(value)
-        if value == u'':
-            return value
+        if value in EMPTY_VALUES:
+            return u''
         value = re.sub('\s', u'', value).upper()
         try:
             check_digit = ssn_check_digit(value)
@@ -70,8 +71,8 @@ class ITVatNumberField(Field):
 
     def clean(self, value):
         value = super(ITVatNumberField, self).clean(value)
-        if value == u'':
-            return value
+        if value in EMPTY_VALUES:
+            return u''
         try:
             vat_number = int(value)
         except ValueError:

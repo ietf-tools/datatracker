@@ -1,37 +1,31 @@
-try:
-    # Only exists in Python 2.4+
-    from threading import local
-except ImportError:
-    # Import copy of _thread_local.py from Python 2.4
-    from django.utils._threading_local import local
-try:
-    set
-except NameError:
-    # Python 2.3 compat
-    from sets import Set as set
+import decimal
+from threading import local
 
-try:
-    import decimal
-except ImportError:
-    # Python 2.3 fallback
-    from django.utils import _decimal as decimal
-
+from django.db import DEFAULT_DB_ALIAS
 from django.db.backends import util
 from django.utils import datetime_safe
+from django.utils.importlib import import_module
 
 class BaseDatabaseWrapper(local):
     """
     Represents a database connection.
     """
     ops = None
-    def __init__(self, settings_dict):
+
+    def __init__(self, settings_dict, alias=DEFAULT_DB_ALIAS):
         # `settings_dict` should be a dictionary containing keys such as
-        # DATABASE_NAME, DATABASE_USER, etc. It's called `settings_dict`
-        # instead of `settings` to disambiguate it from Django settings
-        # modules.
+        # NAME, USER, etc. It's called `settings_dict` instead of `settings`
+        # to disambiguate it from Django settings modules.
         self.connection = None
         self.queries = []
         self.settings_dict = settings_dict
+        self.alias = alias
+
+    def __eq__(self, other):
+        return self.alias == other.alias
+
+    def __ne__(self, other):
+        return not self == other
 
     def _commit(self):
         if self.connection is not None:
@@ -91,7 +85,6 @@ class BaseDatabaseFeatures(object):
     # True if django.db.backend.utils.typecast_timestamp is used on values
     # returned from dates() calls.
     needs_datetime_string_cast = True
-    uses_custom_query_class = False
     empty_fetchmany_value = []
     update_can_self_select = True
     interprets_empty_strings_as_nulls = False
@@ -102,6 +95,7 @@ class BaseDatabaseFeatures(object):
     # If True, don't use integer foreign keys referring to, e.g., positive
     # integer primary keys.
     related_fields_match_type = False
+    allow_sliced_subqueries = True
 
 class BaseDatabaseOperations(object):
     """
@@ -109,6 +103,11 @@ class BaseDatabaseOperations(object):
     a backend performs ordering or calculates the ID of a recently-inserted
     row.
     """
+    compiler_module = "django.db.models.sql.compiler"
+
+    def __init__(self):
+        self._cache = {}
+
     def autoinc_sql(self, table, column):
         """
         Returns any SQL needed to support auto-incrementing primary keys, or
@@ -208,7 +207,7 @@ class BaseDatabaseOperations(object):
         from django.utils.encoding import smart_unicode, force_unicode
 
         # Convert params to contain Unicode values.
-        to_unicode = lambda s: force_unicode(s, strings_only=True)
+        to_unicode = lambda s: force_unicode(s, strings_only=True, errors='replace')
         if isinstance(params, (list, tuple)):
             u_params = tuple([to_unicode(val) for val in params])
         else:
@@ -233,6 +232,13 @@ class BaseDatabaseOperations(object):
         placeholder for the column being searched against.
         """
         return "%s"
+
+    def max_in_list_size(self):
+        """
+        Returns the maximum number of items that can be passed in a single 'IN'
+        list condition, or None if the backend does not impose a limit.
+        """
+        return None
 
     def max_name_length(self):
         """
@@ -271,14 +277,17 @@ class BaseDatabaseOperations(object):
         """
         pass
 
-    def query_class(self, DefaultQueryClass):
+    def compiler(self, compiler_name):
         """
-        Given the default Query class, returns a custom Query class
-        to use for this backend. Returns None if a custom Query isn't used.
-        See also BaseDatabaseFeatures.uses_custom_query_class, which regulates
-        whether this method is called at all.
+        Returns the SQLCompiler class corresponding to the given name,
+        in the namespace corresponding to the `compiler_module` attribute
+        on this backend.
         """
-        return None
+        if compiler_name not in self._cache:
+            self._cache[compiler_name] = getattr(
+                import_module(self.compiler_module), compiler_name
+            )
+        return self._cache[compiler_name]
 
     def quote_name(self, name):
         """
@@ -350,6 +359,11 @@ class BaseDatabaseOperations(object):
         Returns the SQL statement required to start a transaction.
         """
         return "BEGIN;"
+
+    def end_transaction_sql(self, success=True):
+        if not success:
+            return "ROLLBACK;"
+        return "COMMIT;"
 
     def tablespace_sql(self, tablespace, inline=False):
         """
@@ -498,11 +512,13 @@ class BaseDatabaseIntrospection(object):
         If only_existing is True, the resulting list will only include the tables
         that actually exist in the database.
         """
-        from django.db import models
+        from django.db import models, router
         tables = set()
         for app in models.get_apps():
             for model in models.get_models(app):
                 if not model._meta.managed:
+                    continue
+                if not router.allow_syncdb(self.connection.alias, model):
                     continue
                 tables.add(model._meta.db_table)
                 tables.update([f.m2m_db_table() for f in model._meta.local_many_to_many])
@@ -512,18 +528,19 @@ class BaseDatabaseIntrospection(object):
 
     def installed_models(self, tables):
         "Returns a set of all models represented by the provided list of table names."
-        from django.db import models
+        from django.db import models, router
         all_models = []
         for app in models.get_apps():
             for model in models.get_models(app):
-                all_models.append(model)
+                if router.allow_syncdb(self.connection.alias, model):
+                    all_models.append(model)
         return set([m for m in all_models
             if self.table_name_converter(m._meta.db_table) in map(self.table_name_converter, tables)
         ])
 
     def sequence_list(self):
         "Returns a list of information about all DB sequences for all models in all apps."
-        from django.db import models
+        from django.db import models, router
 
         apps = models.get_apps()
         sequence_list = []
@@ -531,6 +548,8 @@ class BaseDatabaseIntrospection(object):
         for app in apps:
             for model in models.get_models(app):
                 if not model._meta.managed:
+                    continue
+                if not router.allow_syncdb(self.connection.alias, model):
                     continue
                 for f in model._meta.local_fields:
                     if isinstance(f, models.AutoField):
@@ -565,6 +584,9 @@ class BaseDatabaseValidation(object):
     """
     This class encapsualtes all backend-specific model validation.
     """
+    def __init__(self, connection):
+        self.connection = connection
+
     def validate_field(self, errors, opts, f):
         "By default, there is no backend-specific validation"
         pass

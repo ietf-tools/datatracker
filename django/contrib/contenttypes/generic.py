@@ -5,7 +5,7 @@ Classes allowing "generic" relations through ContentType and object-id fields.
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
 from django.db.models import signals
-from django.db import models
+from django.db import models, router
 from django.db.models.fields.related import RelatedField, Field, ManyToManyRel
 from django.db.models.loading import get_model
 from django.forms import ModelForm
@@ -45,14 +45,14 @@ class GenericForeignKey(object):
             kwargs[self.ct_field] = self.get_content_type(obj=value)
             kwargs[self.fk_field] = value._get_pk_val()
 
-    def get_content_type(self, obj=None, id=None):
+    def get_content_type(self, obj=None, id=None, using=None):
         # Convenience function using get_model avoids a circular import when
         # using this model
         ContentType = get_model("contenttypes", "contenttype")
         if obj:
-            return ContentType.objects.get_for_model(obj)
+             return ContentType.objects.db_manager(obj._state.db).get_for_model(obj)
         elif id:
-            return ContentType.objects.get_for_id(id)
+             return ContentType.objects.db_manager(using).get_for_id(id)
         else:
             # This should never happen. I love comments like this, don't you?
             raise Exception("Impossible arguments to GFK.get_content_type!")
@@ -73,7 +73,7 @@ class GenericForeignKey(object):
             f = self.model._meta.get_field(self.ct_field)
             ct_id = getattr(instance, f.get_attname(), None)
             if ct_id:
-                ct = self.get_content_type(id=ct_id)
+                ct = self.get_content_type(id=ct_id, using=instance._state.db)
                 try:
                     rel_obj = ct.get_object_for_this_type(pk=getattr(instance, self.fk_field))
                 except ObjectDoesNotExist:
@@ -83,7 +83,7 @@ class GenericForeignKey(object):
 
     def __set__(self, instance, value):
         if instance is None:
-            raise AttributeError, u"%s must be accessed via instance" % self.related.opts.object_name
+            raise AttributeError(u"%s must be accessed via instance" % self.related.opts.object_name)
 
         ct = None
         fk = None
@@ -105,8 +105,6 @@ class GenericRelation(RelatedField, Field):
                             limit_choices_to=kwargs.pop('limit_choices_to', None),
                             symmetrical=kwargs.pop('symmetrical', True))
 
-        # By its very nature, a GenericRelation doesn't create a table.
-        self.creates_table = False
 
         # Override content-type/object-id field names on the related class
         self.object_id_field_name = kwargs.pop("object_id_field", "object_id")
@@ -131,7 +129,13 @@ class GenericRelation(RelatedField, Field):
         return self.object_id_field_name
 
     def m2m_reverse_name(self):
-        return self.model._meta.pk.column
+        return self.rel.to._meta.pk.column
+
+    def m2m_target_field_name(self):
+        return self.model._meta.pk.name
+
+    def m2m_reverse_target_field_name(self):
+        return self.rel.to._meta.pk.name
 
     def contribute_to_class(self, cls, name):
         super(GenericRelation, self).contribute_to_class(cls, name)
@@ -151,7 +155,7 @@ class GenericRelation(RelatedField, Field):
     def get_internal_type(self):
         return "ManyToManyField"
 
-    def db_type(self):
+    def db_type(self, connection):
         # Since we're simulating a ManyToManyField, in effect, best return the
         # same db_type as well.
         return None
@@ -203,7 +207,7 @@ class ReverseGenericRelatedObjectsDescriptor(object):
             join_table = qn(self.field.m2m_db_table()),
             source_col_name = qn(self.field.m2m_column_name()),
             target_col_name = qn(self.field.m2m_reverse_name()),
-            content_type = ContentType.objects.get_for_model(instance),
+            content_type = ContentType.objects.db_manager(instance._state.db).get_for_model(instance),
             content_type_field_name = self.field.content_type_field_name,
             object_id_field_name = self.field.object_id_field_name
         )
@@ -212,7 +216,7 @@ class ReverseGenericRelatedObjectsDescriptor(object):
 
     def __set__(self, instance, value):
         if instance is None:
-            raise AttributeError, "Manager must be accessed via instance"
+            raise AttributeError("Manager must be accessed via instance")
 
         manager = self.__get__(instance)
         manager.clear()
@@ -245,35 +249,39 @@ def create_generic_related_manager(superclass):
             self.pk_val = self.instance._get_pk_val()
 
         def get_query_set(self):
+            db = self._db or router.db_for_read(self.model, instance=self.instance)
             query = {
                 '%s__pk' % self.content_type_field_name : self.content_type.id,
                 '%s__exact' % self.object_id_field_name : self.pk_val,
             }
-            return superclass.get_query_set(self).filter(**query)
+            return superclass.get_query_set(self).using(db).filter(**query)
 
         def add(self, *objs):
             for obj in objs:
                 if not isinstance(obj, self.model):
-                    raise TypeError, "'%s' instance expected" % self.model._meta.object_name
+                    raise TypeError("'%s' instance expected" % self.model._meta.object_name)
                 setattr(obj, self.content_type_field_name, self.content_type)
                 setattr(obj, self.object_id_field_name, self.pk_val)
                 obj.save()
         add.alters_data = True
 
         def remove(self, *objs):
+            db = router.db_for_write(self.model, instance=self.instance)
             for obj in objs:
-                obj.delete()
+                obj.delete(using=db)
         remove.alters_data = True
 
         def clear(self):
+            db = router.db_for_write(self.model, instance=self.instance)
             for obj in self.all():
-                obj.delete()
+                obj.delete(using=db)
         clear.alters_data = True
 
         def create(self, **kwargs):
             kwargs[self.content_type_field_name] = self.content_type
             kwargs[self.object_id_field_name] = self.pk_val
-            return super(GenericRelatedObjectManager, self).create(**kwargs)
+            db = router.db_for_write(self.model, instance=self.instance)
+            return super(GenericRelatedObjectManager, self).using(db).create(**kwargs)
         create.alters_data = True
 
     return GenericRelatedObjectManager
@@ -291,18 +299,28 @@ class BaseGenericInlineFormSet(BaseModelFormSet):
     """
     A formset for generic inline objects to a parent.
     """
-    ct_field_name = "content_type"
-    ct_fk_field_name = "object_id"
 
-    def __init__(self, data=None, files=None, instance=None, save_as_new=None, prefix=None):
+    def __init__(self, data=None, files=None, instance=None, save_as_new=None,
+                 prefix=None, queryset=None):
+        # Avoid a circular import.
+        from django.contrib.contenttypes.models import ContentType
         opts = self.model._meta
         self.instance = instance
         self.rel_name = '-'.join((
             opts.app_label, opts.object_name.lower(),
             self.ct_field.name, self.ct_fk_field.name,
         ))
+        if self.instance is None or self.instance.pk is None:
+            qs = self.model._default_manager.none()
+        else:
+            if queryset is None:
+                queryset = self.model._default_manager
+            qs = queryset.filter(**{
+                self.ct_field.name: ContentType.objects.get_for_model(self.instance),
+                self.ct_fk_field.name: self.instance.pk,
+            })
         super(BaseGenericInlineFormSet, self).__init__(
-            queryset=self.get_queryset(), data=data, files=files,
+            queryset=qs, data=data, files=files,
             prefix=prefix
         )
 
@@ -313,16 +331,6 @@ class BaseGenericInlineFormSet(BaseModelFormSet):
                         cls.ct_field.name, cls.ct_fk_field.name,
         ))
     get_default_prefix = classmethod(get_default_prefix)
-
-    def get_queryset(self):
-        # Avoid a circular import.
-        from django.contrib.contenttypes.models import ContentType
-        if self.instance is None or self.instance.pk is None:
-            return self.model._default_manager.none()
-        return self.model._default_manager.filter(**{
-            self.ct_field.name: ContentType.objects.get_for_model(self.instance),
-            self.ct_fk_field.name: self.instance.pk,
-        })
 
     def save_new(self, form, commit=True):
         # Avoid a circular import.
@@ -339,7 +347,7 @@ def generic_inlineformset_factory(model, form=ModelForm,
                                   ct_field="content_type", fk_field="object_id",
                                   fields=None, exclude=None,
                                   extra=3, can_order=False, can_delete=True,
-                                  max_num=0,
+                                  max_num=None,
                                   formfield_callback=lambda f: f.formfield()):
     """
     Returns an ``GenericInlineFormSet`` for the given kwargs.
@@ -379,6 +387,12 @@ class GenericInlineModelAdmin(InlineModelAdmin):
             fields = flatten_fieldsets(self.declared_fieldsets)
         else:
             fields = None
+        if self.exclude is None:
+            exclude = []
+        else:
+            exclude = list(self.exclude)
+        exclude.extend(self.get_readonly_fields(request, obj))
+        exclude = exclude or None
         defaults = {
             "ct_field": self.ct_field,
             "fk_field": self.ct_fk_field,
@@ -386,11 +400,11 @@ class GenericInlineModelAdmin(InlineModelAdmin):
             "formfield_callback": self.formfield_for_dbfield,
             "formset": self.formset,
             "extra": self.extra,
-            "can_delete": True,
+            "can_delete": self.can_delete,
             "can_order": False,
             "fields": fields,
             "max_num": self.max_num,
-            "exclude": self.exclude
+            "exclude": exclude
         }
         return generic_inlineformset_factory(self.model, **defaults)
 

@@ -5,7 +5,7 @@ from email.utils import parseaddr
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Q
-from django.forms.fields import email_re
+from django.core.validators import email_re
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext

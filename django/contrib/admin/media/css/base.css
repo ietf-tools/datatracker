@@ -319,11 +319,11 @@ table thead th.sorted a {
 }
 
 table thead th.ascending a {
-    background: url(../img/admin/arrow-down.gif) right .4em no-repeat;
+    background: url(../img/admin/arrow-up.gif) right .4em no-repeat;
 }
 
 table thead th.descending a {
-    background: url(../img/admin/arrow-up.gif) right .4em no-repeat;
+    background: url(../img/admin/arrow-down.gif) right .4em no-repeat;
 }
 
 /* ORDERABLE TABLES */
@@ -344,7 +344,7 @@ table.orderable-initalized .order-cell, body>tr>td.order-cell {
 
 /* FORM DEFAULTS */
 
-input, textarea, select {
+input, textarea, select, .form-row p {
     margin: 2px 0;
     padding: 2px 3px;
     vertical-align: middle;
@@ -365,7 +365,7 @@ input[type=text], input[type=password], textarea, select, .vTextField {
 
 .button, input[type=submit], input[type=button], .submit-row input {
     background: white url(../img/admin/nav-bg.gif) bottom repeat-x;
-    padding: 3px;
+    padding: 3px 5px;
     color: black;
     border: 1px solid #bbb;
     border-color: #ddd #aaa #aaa #ddd;
@@ -445,6 +445,14 @@ ul.messagelist li {
     background: #ffc url(../img/admin/icon_success.gif) 5px .3em no-repeat;
 }
 
+ul.messagelist li.warning{
+    background-image: url(../img/admin/icon_alert.gif);
+}
+
+ul.messagelist li.error{
+    background-image: url(../img/admin/icon_error.gif);
+}
+
 .errornote {
     font-size: 12px !important;
     display: block;
@@ -470,6 +478,11 @@ ul.errorlist {
     background: red url(../img/admin/icon_alert.gif) 5px .3em no-repeat;
 }
 
+.errorlist li a {
+ 	color: white;
+    text-decoration: underline;
+}
+
 td ul.errorlist {
     margin: 0 !important;
     padding: 0 !important;
@@ -483,7 +496,7 @@ td ul.errorlist li {
     background: #ffc;
 }
 
-.errors input, .errors select {
+.errors input, .errors select, .errors textarea {
     border: 1px solid red;
 }
 

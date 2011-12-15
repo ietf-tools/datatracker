@@ -60,6 +60,7 @@ class FormPreview(object):
         f = self.form(request.POST, auto_id=AUTO_ID)
         context = {'form': f, 'stage_field': self.unused_name('stage'), 'state': self.state}
         if f.is_valid():
+            self.process_preview(request, f, context) 
             context['hash_field'] = self.unused_name('hash')
             context['hash_value'] = self.security_hash(request, f)
             return render_to_response(self.preview_template, context, context_instance=RequestContext(request))
@@ -93,6 +94,13 @@ class FormPreview(object):
         {'user_id': 32} for a request to '/contact/32/'. You can use that
         user_id to make sure it's a valid user and/or save it for later, for
         use in done().
+        """
+        pass
+
+    def process_preview(self, request, form, context):
+        """
+        Given a validated form, performs any extra processing before displaying
+        the preview page, and saves any extra data in context.
         """
         pass
 
