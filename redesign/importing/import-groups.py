@@ -21,9 +21,10 @@ from redesign.name.utils import name
 from redesign.importing.utils import old_person_to_person
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role, AreaDirector
 from ietf.liaisons.models import SDOs
+from ietf.iesg.models import TelechatDates, TelechatDate
 import workflows.utils
 
-# imports IETFWG, Area, AreaGroup, Acronym, IRTF, AreaWGURL, SDOs
+# imports IETFWG, Area, AreaGroup, Acronym, IRTF, AreaWGURL, SDOs, TelechatDates
 
 # also creates nomcom groups
 
@@ -115,6 +116,13 @@ iepg_group.save()
 
 
 system = Person.objects.get(name="(System)")
+
+for o in TelechatDates.objects.all():
+    print "importing TelechatDates"
+    for x in range(1, 5):
+        d = getattr(o, "date%s" % x)
+        if d:
+            TelechatDate.objects.get_or_create(date=d)
 
 # NomCom
 for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("start_year"):
@@ -230,7 +238,6 @@ for o in Area.objects.all():
     import_date_event(group, "concluded", "concluded")
 
     # FIXME: missing fields from old: extra_email_addresses
-
 
 # IETFWG, AreaGroup
 for o in IETFWG.objects.all().order_by("pk"):

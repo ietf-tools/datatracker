@@ -69,7 +69,7 @@ class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
         e = TelechatDocEvent(type="scheduled_for_telechat")
         e.doc = draft
         e.by = Person.objects.get(name="Aread Irector")
-        e.telechat_date = TelechatDates.objects.all()[0].date1
+        e.telechat_date = TelechatDate.objects.active()[0].date
         e.returning_item = True
         e.save()
         
@@ -90,16 +90,16 @@ class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
 
         # reschedule
         events_before = draft.docevent_set.count()
-        d = TelechatDates.objects.all()[0].dates()[2]
+        d = TelechatDate.objects.active()[3].date
 
-        r = self.client.post(url, { '%s-telechat_date' % form_id: d.strftime("%Y-%m-%d"),
+        r = self.client.post(url, { '%s-telechat_date' % form_id: d.isoformat(),
                                     '%s-clear_returning_item' % form_id: "1" })
 
         self.assertEquals(r.status_code, 200)
 
         # check that it moved below the right header in the DOM on the
         # agenda docs page
-        d_header_pos = r.content.find("IESG telechat %s" % d.strftime("%Y-%m-%d"))
+        d_header_pos = r.content.find("IESG telechat %s" % d.isoformat())
         draft_pos = r.content.find(draft.name)
         self.assertTrue(d_header_pos < draft_pos)
 
@@ -153,55 +153,56 @@ class ManageTelechatDatesTestCase(django.test.TestCase):
         self.assertTrue(dates.date4 == new_date)
         self.assertTrue(dates.date1 == old_date2)
 
-class ManageTelechatDatesTestCaseREDESIGN(django.test.TestCase):
-    fixtures = ['names']
+# class ManageTelechatDatesTestCaseREDESIGN(django.test.TestCase):
+#     fixtures = ['names']
 
-    def test_set_dates(self):
-        from ietf.utils.test_data import make_test_data
-        make_test_data()
+#     def test_set_dates(self):
+#         from ietf.utils.test_data import make_test_data
+#         make_test_data()
         
-        dates = TelechatDates.objects.all()[0]
-        url = urlreverse('ietf.iesg.views.telechat_dates')
-        login_testing_unauthorized(self, "secretary", url)
+#         dates = TelechatDates.objects.all()[0]
+#         url = urlreverse('ietf.iesg.views.telechat_dates')
+#         login_testing_unauthorized(self, "secretary", url)
 
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=date1]')), 1)
+#         # normal get
+#         r = self.client.get(url)
+#         self.assertEquals(r.status_code, 200)
+#         q = PyQuery(r.content)
+#         self.assertEquals(len(q('form input[name=date1]')), 1)
 
-        # post
-        new_date = dates.date1 + timedelta(days=7)
+#         # post
+#         new_date = dates.date1 + timedelta(days=7)
         
-        r = self.client.post(url, dict(date1=new_date.isoformat(),
-                                       date2=new_date.isoformat(),
-                                       date3=new_date.isoformat(),
-                                       date4=new_date.isoformat(),
-                                       ))
-        self.assertEquals(r.status_code, 200)
+#         r = self.client.post(url, dict(date1=new_date.isoformat(),
+#                                        date2=new_date.isoformat(),
+#                                        date3=new_date.isoformat(),
+#                                        date4=new_date.isoformat(),
+#                                        ))
+#         self.assertEquals(r.status_code, 200)
 
-        dates = TelechatDates.objects.all()[0]
-        self.assertTrue(dates.date1 == new_date)
+#         dates = TelechatDates.objects.all()[0]
+#         self.assertTrue(dates.date1 == new_date)
 
-    def test_rollup_dates(self):
-        from ietf.utils.test_data import make_test_data
-        make_test_data()
+#     def test_rollup_dates(self):
+#         from ietf.utils.test_data import make_test_data
+#         make_test_data()
         
-        dates = TelechatDates.objects.all()[0]
-        url = urlreverse('ietf.iesg.views.telechat_dates')
-        login_testing_unauthorized(self, "secretary", url)
+#         dates = TelechatDates.objects.all()[0]
+#         url = urlreverse('ietf.iesg.views.telechat_dates')
+#         login_testing_unauthorized(self, "secretary", url)
 
-        old_date2 = dates.date2
-        new_date = dates.date4 + timedelta(days=14)
-        r = self.client.post(url, dict(rollup_dates="1"))
-        self.assertEquals(r.status_code, 200)
+#         old_date2 = dates.date2
+#         new_date = dates.date4 + timedelta(days=14)
+#         r = self.client.post(url, dict(rollup_dates="1"))
+#         self.assertEquals(r.status_code, 200)
 
-        dates = TelechatDates.objects.all()[0]
-        self.assertTrue(dates.date4 == new_date)
-        self.assertTrue(dates.date1 == old_date2)
+#         dates = TelechatDates.objects.all()[0]
+#         self.assertTrue(dates.date4 == new_date)
+#         self.assertTrue(dates.date1 == old_date2)
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    ManageTelechatDatesTestCase = ManageTelechatDatesTestCaseREDESIGN
+    #ManageTelechatDatesTestCase = ManageTelechatDatesTestCaseREDESIGN
+    del ManageTelechatDatesTestCase
         
 class WorkingGroupActionsTestCase(django.test.TestCase):
     fixtures = ['base', 'wgactions']
@@ -380,22 +381,22 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
         self.assertEquals(len(q('form select[name=telechat_date]')), 1)
 
         # change
-        dates = TelechatDates.objects.all()[0]
+        dates = TelechatDate.objects.active()
         token_name = Person.objects.get(name="Ad No1").name_parts()[1]
         old = wga.pk
-        r = self.client.post(url, dict(status_date=dates.date1.isoformat(),
+        r = self.client.post(url, dict(status_date=dates[0].date.isoformat(),
                                        token_name=token_name,
                                        category="23",
                                        note="Testing.",
-                                       telechat_date=dates.date4.isoformat()))
+                                       telechat_date=dates[3].date.isoformat()))
         self.assertEquals(r.status_code, 302)
 
         wga = WGAction.objects.get(pk=old)
-        self.assertEquals(wga.status_date, dates.date1)
+        self.assertEquals(wga.status_date, dates[0].date)
         self.assertEquals(wga.token_name, token_name)
         self.assertEquals(wga.category, 23)
         self.assertEquals(wga.note, "Testing.")
-        self.assertEquals(wga.telechat_date, dates.date4)
+        self.assertEquals(wga.telechat_date, dates[3].date)
         
     def test_add_possible_wg(self):
         from ietf.utils.test_data import make_test_data
@@ -431,14 +432,14 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
         self.assertEquals(len(q('form select[name=telechat_date]')), 1)
 
         wgas_before = WGAction.objects.all().count()
-        dates = TelechatDates.objects.all()[0]
+        dates = TelechatDate.objects.active()
         token_name = Person.objects.get(name="Ad No1").name_parts()[1]
         r = self.client.post(add_url,
-                             dict(status_date=dates.date1.isoformat(),
+                             dict(status_date=dates[0].date.isoformat(),
                                   token_name=token_name,
                                   category="23",
                                   note="Testing.",
-                                  telechat_date=dates.date4.isoformat()))
+                                  telechat_date=dates[3].date.isoformat()))
         self.assertEquals(r.status_code, 302)
         self.assertEquals(wgas_before + 1, WGAction.objects.all().count())
         

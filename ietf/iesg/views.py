@@ -536,13 +536,17 @@ def discusses(request):
     return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
 
 
-class TelechatDatesForm(forms.ModelForm):
-    class Meta:
-        model = TelechatDates
-        fields = ['date1', 'date2', 'date3', 'date4']
+if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    class TelechatDatesForm(forms.ModelForm):
+        class Meta:
+            model = TelechatDates
+            fields = ['date1', 'date2', 'date3', 'date4']
 
 @group_required('Secretariat')
 def telechat_dates(request):
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        return HttpResponseRedirect("/admin/iesg/telechatdate/")
+
     dates = TelechatDates.objects.all()[0]
 
     if request.method == 'POST':

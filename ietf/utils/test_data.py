@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 
-from ietf.iesg.models import TelechatDates, WGAction
+from ietf.iesg.models import TelechatDate, WGAction
 from ietf.ipr.models import IprDetail, IprDocAlias
 from ietf.meeting.models import Meeting
 from redesign.doc.models import *
@@ -226,12 +226,11 @@ def make_test_data():
     
     # telechat dates
     t = datetime.date.today()
-    dates = TelechatDates(date1=t,
-                          date2=t + datetime.timedelta(days=7),
-                          date3=t + datetime.timedelta(days=14),
-                          date4=t + datetime.timedelta(days=21),
-                          )
-    super(dates.__class__, dates).save(force_insert=True) # work-around hard-coded save block
+    old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date
+    date1 = TelechatDate.objects.create(date=t).date
+    date2 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14)).date
+    date3 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 2)).date
+    date4 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 3)).date
 
     # WG Actions
     group = Group.objects.create(
@@ -248,7 +247,7 @@ def make_test_data():
         agenda=1,
         token_name="Aread",
         category=13,
-        telechat_date=dates.date2
+        telechat_date=date2
         )
 
     # Meeting

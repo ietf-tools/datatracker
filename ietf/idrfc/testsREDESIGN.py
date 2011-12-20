@@ -46,7 +46,7 @@ from redesign.doc.models import *
 from redesign.name.models import *
 from redesign.group.models import *
 from redesign.person.models import *
-from ietf.iesg.models import TelechatDates
+from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
@@ -225,21 +225,21 @@ class EditInfoTestCase(django.test.TestCase):
 
         # add to telechat
         self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
-        data["telechat_date"] = TelechatDates.objects.all()[0].date1.isoformat()
+        data["telechat_date"] = TelechatDate.objects.active()[0].date.isoformat()
         r = self.client.post(url, data)
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
-        self.assertEquals(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, TelechatDates.objects.all()[0].date1)
+        self.assertEquals(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, TelechatDate.objects.active()[0].date)
 
         # change telechat
-        data["telechat_date"] = TelechatDates.objects.all()[0].date2.isoformat()
+        data["telechat_date"] = TelechatDate.objects.active()[1].date.isoformat()
         r = self.client.post(url, data)
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, TelechatDates.objects.all()[0].date2)
+        self.assertEquals(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, TelechatDate.objects.active()[1].date)
 
         # remove from agenda
         data["telechat_date"] = ""

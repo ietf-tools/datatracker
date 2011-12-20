@@ -33,7 +33,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django.db import models
+from django.conf import settings
 from ietf.idtracker.models import Acronym
+import datetime
 
 # This table is not used by any code right now, and according to Glen,
 # probably not currently (Aug 2009) maintained by the secretariat.
@@ -121,3 +123,77 @@ class WGAction(models.Model):
         db_table = 'group_internal'
         ordering = ['-telechat_date']
         verbose_name = "WG Action"
+
+
+def next_telechat_date():
+    dates = TelechatDate.objects.order_by("-date")
+    if dates:
+        return dates[0].date + datetime.timedelta(days=14)
+    return datetime.date.today()
+
+class TelechatDateManager(models.Manager):
+    def active(self):
+        return self.get_query_set().filter(date__gte=datetime.date.today())
+
+class TelechatDate(models.Model):
+    objects = TelechatDateManager()
+
+    date = models.DateField(default=next_telechat_date)
+
+    def __unicode__(self):
+        return self.date.isoformat()
+
+    class Meta:
+        ordering = ['-date']
+
+class TelechatDatesProxyDummy(object):
+    def all(self):
+        class Dummy(object):
+            def __getitem__(self, i):
+                return self
+
+            def get_date(self, index):
+                if not hasattr(self, "date_cache"):
+                    self.date_cache = TelechatDate.objects.active().order_by("date")
+
+                if index < len(self.date_cache):
+                    return self.date_cache[index].date
+                return None
+
+            #date1 = models.DateField(primary_key=True, null=True, blank= True)
+            @property
+            def date1(self):
+                return self.get_date(0)
+            #date2 = models.DateField(null=True, blank=True)
+            @property
+            def date2(self):
+                return self.get_date(1)
+            #date3 = models.DateField(null=True, blank=True)
+            @property
+            def date3(self):
+                return self.get_date(2)
+            #date4 = models.DateField(null=True, blank=True)
+            @property
+            def date4(self):
+                return self.get_date(3)
+
+            def dates(self):
+                l = []
+                if self.date1:
+                    l.append(self.date1)
+                if self.date2:
+                    l.append(self.date2)
+                if self.date3:
+                    l.append(self.date3)
+                if self.date4:
+                    l.append(self.date4)
+                return l
+
+        return Dummy()
+
+class TelechatDatesProxy(object):
+    objects = TelechatDatesProxyDummy()
+
+if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    TelechatDatesOld = TelechatDates
+    TelechatDates = TelechatDatesProxy
