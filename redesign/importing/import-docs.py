@@ -110,12 +110,12 @@ iesg_state_mapping = {
     }
 
 ballot_position_mapping = {
-    'No Objection': name(BallotPositionName, 'noobj', 'No Objection'),
-    'Yes': name(BallotPositionName, 'yes', 'Yes'),
-    'Abstain': name(BallotPositionName, 'abstain', 'Abstain'),
-    'Discuss': name(BallotPositionName, 'discuss', 'Discuss'),
-    'Recuse': name(BallotPositionName, 'recuse', 'Recuse'),
-    'No Record': name(BallotPositionName, 'norecord', 'No Record'),
+    'Yes': name(BallotPositionName, 'yes', 'Yes', order=1),
+    'No Objection': name(BallotPositionName, 'noobj', 'No Objection', order=2),
+    'Discuss': name(BallotPositionName, 'discuss', 'Discuss', order=3),
+    'Abstain': name(BallotPositionName, 'abstain', 'Abstain', order=4),
+    'Recuse': name(BallotPositionName, 'recuse', 'Recuse', order=5),
+    'No Record': name(BallotPositionName, 'norecord', 'No Record', order=6),
     }
 ballot_position_mapping["no"] = ballot_position_mapping['No Objection']
 ballot_position_mapping["yes"] = ballot_position_mapping['Yes']
