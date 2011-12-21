@@ -143,7 +143,9 @@ for o in LiaisonManagers.objects.order_by("pk"):
     print "importing LiaisonManagers person", o.pk, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')
 
     email = get_or_create_email(o, create_fake=False)
-    possibly_import_other_priority_email(email, o.person.email(priority=o.email_priority)[1])
+    addresses = o.person.emailaddress_set.filter(priority=o.email_priority).filter(address__contains="@")[:1]
+    if addresses:
+        possibly_import_other_priority_email(email, addresses[0])
     
 # SDOAuthorizedIndividual persons
 for o in PersonOrOrgInfo.objects.filter(sdoauthorizedindividual__pk__gte=1).order_by("pk").distinct():
@@ -160,8 +162,10 @@ for o in LiaisonDetail.objects.exclude(person=None).order_by("pk"):
     # we may also need to import email address used specifically for
     # the document
     if "@" in email.address:
-        addr = o.from_email().address
-        possibly_import_other_priority_email(email, addr)
+        try:
+            possibly_import_other_priority_email(email, o.from_email())
+        except EmailAddress.DoesNotExist:
+            pass
     
 # WgProceedingsActivities persons
 for o in PersonOrOrgInfo.objects.filter(wgproceedingsactivities__id__gte=1).order_by("pk").distinct():
@@ -176,4 +180,7 @@ for o in IDAuthor.objects.all().order_by('id').select_related('person').iterator
 
     # we may also need to import email address used specifically for
     # the document
-    possibly_import_other_priority_email(email, o.email())
+
+    addresses = o.person.emailaddress_set.filter(type='I-D', priority=o.document_id).filter(address__contains="@")[:1]
+    if addresses:
+        possibly_import_other_priority_email(email, addresses[0])

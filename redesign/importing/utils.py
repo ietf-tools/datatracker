@@ -1,5 +1,7 @@
 from ietf.utils import unaccent
 from redesign.person.models import Person, Email, Alias
+from ietf.idtracker.models import EmailAddress
+import datetime
 
 def clean_email_address(addr):
     addr = addr.replace("!", "@").replace("(at)", "@") # some obvious @ replacements
@@ -53,12 +55,44 @@ def old_person_to_person(person):
         return Person.objects.get(alias__name=person_name(person))
 
 def old_person_to_email(person):
+    # try connected addresses
+    addresses = person.emailaddress_set.filter(address__contains="@").order_by('priority')[:1]
+    if addresses:
+        addr = clean_email_address(addresses[0].address)
+        priority = addresses[0].priority
+        return (addr, priority)
+
+    # try to see if there's a person with the same name and an email address
+    addresses = EmailAddress.objects.filter(person_or_org__first_name=person.first_name, person_or_org__last_name=person.last_name).filter(address__contains="@").order_by('priority')[:1]
+    if addresses:
+        addr = clean_email_address(addresses[0].address)
+        priority = addresses[0].priority
+        return (addr, priority)
+
+    # otherwise try the short list
     hardcoded_emails = {
         "Dinara Suleymanova": "dinaras@ietf.org",
         "Dow Street": "dow.street@linquest.com",
+        "Xiaoya Yang": "xiaoya.yang@itu.int",
         }
-    
-    return clean_email_address(person.email()[1] or hardcoded_emails.get(u"%s %s" % (person.first_name, person.last_name)) or "")
+
+    addr = hardcoded_emails.get(u"%s %s" % (person.first_name, person.last_name), "")
+    priority = 1
+    return (addr, priority)
+
+
+
+def calc_email_import_time(priority):
+    # we may import some old email addresses that are now
+    # inactive, to ensure everything is not completely borked, we
+    # want to ensure that high-priority (< 100) email addresses
+    # end up later (in reverse of priority - I-D addresses follow
+    # the normal ordering, since higher I-D id usually means later)
+    if priority < 100:
+        d = -priority
+    else:
+        d = priority - 36000
+    return datetime.datetime(1970, 1, 2, 0, 0, 0) + datetime.timedelta(seconds=d)
 
 def get_or_create_email(o, create_fake):
     # take o.person (or o) and get or create new Email and Person objects
@@ -66,7 +100,7 @@ def get_or_create_email(o, create_fake):
 
     name = person_name(person)
 
-    email = old_person_to_email(person)
+    email, priority = old_person_to_email(person)
     if not email:
         if create_fake:
             email = u"unknown-email-%s" % name.replace(" ", "-")
@@ -97,6 +131,7 @@ def get_or_create_email(o, create_fake):
                 Alias.objects.create(name=p.ascii, person=p)
         
         e.person = p
+        e.time = calc_email_import_time(priority)
         e.save()
     else:
         if e.person.name != name:
@@ -109,16 +144,19 @@ def get_or_create_email(o, create_fake):
 
     return e
 
-def possibly_import_other_priority_email(email, addr):
-    addr = clean_email_address(addr or "")
-    if addr and addr.lower() != email.address.lower():
-        try:
-            e = Email.objects.get(address=addr)
-            if e.person != email.person:
-                e.person = email.person
-                e.save()
-        except Email.DoesNotExist:
-            Email.objects.create(address=addr, person=email.person)
+def possibly_import_other_priority_email(email, old_email):
+    addr = clean_email_address(old_email.address or "")
+    if not addr or addr.lower() == email.address.lower():
+        return
+
+    try:
+        e = Email.objects.get(address=addr)
+        if e.person != email.person:
+            e.person = email.person
+            e.save()
+    except Email.DoesNotExist:
+        Email.objects.create(address=addr, person=email.person,
+                             time=calc_email_import_time(old_email.priority))
 
 def dont_save_queries():
     # prevent memory from leaking when settings.DEBUG=True

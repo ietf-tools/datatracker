@@ -40,18 +40,18 @@ class PersonInfo(models.Model):
         if e:
             return e[0]
         # no cigar, try the complete set before giving up
-        e = self.email_set.order_by("-active")
+        e = self.email_set.order_by("-active", "-time")
         if e:
             return e[0]
         return None
     def email_address(self):
-        e = self.email_set.filter(active=True)
+        e = self.email_set.filter(active=True).order_by("-time")
         if e:
             return e[0].address
         else:
             return ""
     def formatted_email(self):
-        e = self.email_set.order_by("-active")
+        e = self.email_set.order_by("-active", "-time")
         if e:
             return e[0].formatted_email()
         else:
