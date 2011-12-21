@@ -70,13 +70,13 @@
 
 200	/doc/search/
 200	/doc/search/?rfcs=on&name=snmp
-200	/doc/search/?rfcs=on&name=nfs&by=ad&ad=104942
+200	/doc/search/?rfcs=on&name=nfs&by=ad&ad=112773
 200	/doc/search/?activeDrafts=on&name=sipping
 200	/doc/search/?oldDrafts=on&name=tls
-200	/doc/search/?activeDrafts=on&oldDrafts=on&ad=104942&by=ad
+200	/doc/search/?activeDrafts=on&oldDrafts=on&ad=112773&by=ad
 200	/doc/search/?activeDrafts=on&state=12&by=state
 200	/doc/search/?activeDrafts=on&oldDrafts=on&subState=need-rev&by=state
-200	/doc/search/?activeDrafts=on&oldDrafts=on&rfcs=on&ad=104942&name=nfs&by=ad
+200	/doc/search/?activeDrafts=on&oldDrafts=on&rfcs=on&ad=112773&name=nfs&by=ad
 200	/doc/search/?rfcs=on&group=tls&by=group
 200	/doc/search/?activeDrafts=on&group=tls&by=group
 200	/doc/search/?activeDrafts=on&oldDrafts=on&rfcs=on&author=eronen&by=author
