@@ -12,7 +12,8 @@ class IdSubmissionStatus(models.Model):
     status_value = models.CharField(blank=True, max_length=255)
 
     class Meta:
-        db_table = 'id_submission_status'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'id_submission_status'
 
     def __unicode__(self):
         return self.status_value
@@ -50,7 +51,8 @@ class IdSubmissionDetail(models.Model):
     submission_hash = models.CharField(null=True, blank=True, max_length=255)
 
     class Meta:
-        db_table = 'id_submission_detail'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'id_submission_detail'
 
     def create_hash(self):
         self.submission_hash = md5_constructor(settings.SECRET_KEY + self.filename).hexdigest()
@@ -84,7 +86,8 @@ class IdApprovedDetail(models.Model):
     recorded_by = models.IntegerField(null=True, blank=True)
 
     class Meta:
-        db_table = 'id_approved_detail'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'id_approved_detail'
 
     def __unicode__(self):
         return "%s (%s)" % (self.filename, self.approved_status)
@@ -103,7 +106,8 @@ class TempIdAuthors(models.Model):
     name_suffix = models.CharField(blank=True, max_length=255, null=True)
 
     class Meta:
-        db_table = 'temp_id_authors'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'temp_id_authors'
 
     def email(self):
         return (self.get_full_name(), self.email_address)

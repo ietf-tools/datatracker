@@ -5,5 +5,9 @@
 #
 
 from settings import *
-DATABASE_ENGINE = "sqlite3"
-DATABASE_NAME = "test.db" 
+DATABASES = {
+    'default': {
+        'NAME': 'test.db',
+        'ENGINE': 'django.db.backends.sqlite3',
+        },
+    }

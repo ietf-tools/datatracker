@@ -98,7 +98,8 @@ class TelechatAgendaItem(models.Model):
         type_name = self.TYPE_CHOICES_DICT.get(self.type, str(self.type))
         return u'%s: %s' % (type_name, self.title or "")
     class Meta:
-        db_table = 'templates'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'templates'
 
 class WGAction(models.Model):
     CATEGORY_CHOICES = (
@@ -120,7 +121,8 @@ class WGAction(models.Model):
     def __str__(self):
         return str(self.telechat_date)+": "+str(self.group_acronym)
     class Meta:
-        db_table = 'group_internal'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'group_internal'
         ordering = ['-telechat_date']
         verbose_name = "WG Action"
 

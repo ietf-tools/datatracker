@@ -45,7 +45,8 @@ class IprSelecttype(models.Model):
     def __str__(self):
 	return self.type_display
     class Meta:
-        db_table = 'ipr_selecttype'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'ipr_selecttype'
 
 class IprLicensing(models.Model):
     licensing_option = models.AutoField(primary_key=True)
@@ -53,7 +54,8 @@ class IprLicensing(models.Model):
     def __str__(self):
 	return self.value;
     class Meta:
-        db_table = 'ipr_licensing'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'ipr_licensing'
 
 
 class IprDetail(models.Model):
@@ -87,15 +89,15 @@ class IprDetail(models.Model):
     date_applied = models.CharField(max_length=255)
     country = models.CharField(max_length=100)
     notes = models.TextField("Additional notes", db_column="p_notes", blank=True)
-    is_pending = models.IntegerField("Unpublished Pending Patent Application", blank=True, choices=SELECT_CHOICES, db_column="selecttype")
-    applies_to_all = models.IntegerField("Applies to all IPR owned by Submitter", blank=True, choices=SELECT_CHOICES, db_column="selectowned")
+    is_pending = models.IntegerField("Unpublished Pending Patent Application", blank=True, null=True, choices=SELECT_CHOICES, db_column="selecttype")
+    applies_to_all = models.IntegerField("Applies to all IPR owned by Submitter", blank=True, null=True, choices=SELECT_CHOICES, db_column="selectowned")
 
     # Licensing Declaration fieldset
     #licensing_option = models.ForeignKey(IprLicensing, db_column='licensing_option')
     licensing_option = models.IntegerField(null=True, blank=True, choices=LICENSE_CHOICES)
-    lic_opt_a_sub = models.IntegerField(editable=False, choices=STDONLY_CHOICES)
-    lic_opt_b_sub = models.IntegerField(editable=False, choices=STDONLY_CHOICES)
-    lic_opt_c_sub = models.IntegerField(editable=False, choices=STDONLY_CHOICES)
+    lic_opt_a_sub = models.IntegerField(null=True, editable=False, choices=STDONLY_CHOICES)
+    lic_opt_b_sub = models.IntegerField(null=True, editable=False, choices=STDONLY_CHOICES)
+    lic_opt_c_sub = models.IntegerField(null=True, editable=False, choices=STDONLY_CHOICES)
     comments = models.TextField("Licensing Comments", blank=True)
     lic_checkbox = models.BooleanField("All terms and conditions has been disclosed")
 
@@ -116,6 +118,9 @@ class IprDetail(models.Model):
     def __str__(self):
 	return self.title
     def __unicode__(self):
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            # the latin-1 decode doesn't seem necessary anymore
+            return self.title
         return self.title.decode("latin-1", 'replace')
     def docs(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
@@ -132,7 +137,8 @@ class IprDetail(models.Model):
         except IprContact.MultipleObjectsReturned:
             return self.contact.filter(contact_type=3)[0]
     class Meta:
-        db_table = 'ipr_detail'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'ipr_detail'
 
 class IprContact(models.Model):
     TYPE_CHOICES = (
@@ -154,7 +160,8 @@ class IprContact(models.Model):
     def __str__(self):
 	return self.name or '<no name>'
     class Meta:
-        db_table = 'ipr_contacts'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'ipr_contacts'
 
 
 class IprDraft(models.Model):
@@ -174,7 +181,8 @@ class IprNotification(models.Model):
     def __str__(self):
 	return "IPR notification for %s sent %s %s" % (self.ipr, self.date_sent, self.time_sent)
     class Meta:
-        db_table = 'ipr_notifications'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'ipr_notifications'
 
 class IprRfc(models.Model):
     ipr = models.ForeignKey(IprDetail, related_name='rfcs_old' if settings.USE_DB_REDESIGN_PROXY_CLASSES else 'rfcs')
@@ -191,7 +199,8 @@ class IprUpdate(models.Model):
     status_to_be = models.IntegerField(null=True, blank=True)
     processed = models.IntegerField(null=True, blank=True)
     class Meta:
-        db_table = 'ipr_updates'
+        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            db_table = 'ipr_updates'
 
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_IPR"):

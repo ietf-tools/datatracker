@@ -36,12 +36,20 @@ DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN +
 
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = 'mysql'
-DATABASE_NAME = 'ietf'
-DATABASE_USER = 'ietf'
-#DATABASE_PASSWORD = 'ietf'
-DATABASE_PORT = ''
-DATABASE_HOST = ''
+DATABASES = {
+    'default': {
+        'NAME': 'ietf',
+        'ENGINE': 'django.db.backends.mysql',
+        'USER': 'ietf',
+        #'PASSWORD': 'ietf',
+        },
+    'legacy': {
+        'NAME': 'ietf_legacy',
+        'ENGINE': 'django.db.backends.mysql',
+        'USER': 'ietf',
+        #'PASSWORD': 'ietf',
+        },
+    }
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -74,8 +82,10 @@ MEDIA_URL = ''
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/media/'
 
-AUTH_PROFILE_MODULE = 'ietfauth.IetfUserProfile'
-AUTHENTICATION_BACKENDS = ( "ietf.ietfauth.auth.IetfUserBackend", )
+AUTH_PROFILE_MODULE = 'person.Person'
+AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
+
+DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
 
 SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -250,10 +260,6 @@ HTPASSWD_FILE = "/www/htpasswd"
 USE_DB_REDESIGN_PROXY_CLASSES = True
 
 SOUTH_TESTS_MIGRATE = False 
-
-if USE_DB_REDESIGN_PROXY_CLASSES:
-    AUTH_PROFILE_MODULE = 'person.Person'
-    AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
