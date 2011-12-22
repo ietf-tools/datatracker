@@ -76,7 +76,6 @@ legacy_tables = set((
     "iesg_history",
     "iesg_login",
     "iesg_password",
-    "iesg_telechatdate",
     "ietfauth_ietfuserprofile",
     "ietfauth_usermap",
     "ietfworkflows_annotationtag",
