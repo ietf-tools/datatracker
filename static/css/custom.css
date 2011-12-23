@@ -124,6 +124,14 @@ td.border-right {
     padding: 0;
 }
 
+tr.green-row {
+    background-color: #A5EEAA;
+}
+
+tr.red-row {
+    background-color: #FF66FF;
+}
+
 table.full-width {
     width: 100%;
 }
@@ -530,9 +538,11 @@ ul.session-buttons {
 
 #telechat-sidebar {
     float: left;
-    width: 300px;
+    width: 294px;
     background: url("../images/admin/default-bg.gif") repeat-x scroll left top #7CA0C7;
     color: white;
+    min-height: 500px; 
+    padding: 0 0 0 6px;
 }
 
 #telechat-sidebar h2 {
@@ -541,7 +551,7 @@ ul.session-buttons {
 
 #telechat-sidebar ul {
     /*list-style-type: none;*/
-    padding: 0 0 0 3px;
+    padding: 0;
 }
 
 #telechat-sidebar ul.doc-list {
@@ -594,3 +604,10 @@ ul.doc-list li {
     width: 640px;
 }
 
+#telechat-main pre {
+    white-space: pre-wrap;       /* css-3 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
