@@ -38,13 +38,13 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'NAME': 'ietf',
+        'NAME': 'ietf_new',
         'ENGINE': 'django.db.backends.mysql',
         'USER': 'ietf',
         #'PASSWORD': 'ietf',
         },
     'legacy': {
-        'NAME': 'ietf_legacy',
+        'NAME': 'ietf',
         'ENGINE': 'django.db.backends.mysql',
         'USER': 'ietf',
         #'PASSWORD': 'ietf',
