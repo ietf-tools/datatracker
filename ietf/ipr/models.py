@@ -29,6 +29,9 @@ SELECT_CHOICES = (
     ("0", 'NO'),
     ("1", 'YES'),
     ("2", 'NO'),
+    (0, 'NO'), # with new schema, choices are really numeric
+    (1, 'YES'),
+    (2, 'NO'),
 )
 STATUS_CHOICES = (
     ( 0, "Waiting for approval" ), 
