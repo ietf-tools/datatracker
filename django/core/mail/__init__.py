@@ -87,9 +87,9 @@ def mail_admins(subject, message, fail_silently=False, connection=None, html_mes
     """Sends a message to the admins, as defined by the ADMINS setting."""
     if not (settings.ADMINS or extra_emails):
         return
-    emails = set(list(settings.ADMINS) + extra_emails);
+    emails = set(list(settings.ADMINS) + extra_emails)
     from django.core.mail import EmailMultiAlternatives
-    msg = EmailMultiAlternatives(settings.EMAIL_SUBJECT_PREFIX + subject, message, settings.SERVER_EMAIL, [a[1] for a in mails])
+    msg = EmailMultiAlternatives(settings.EMAIL_SUBJECT_PREFIX + subject, message, settings.SERVER_EMAIL, [a[1] for a in emails])
     if html_message:
         msg.attach_alternative(html_message, "text/html")
     msg.send(fail_silently=fail_silently)
