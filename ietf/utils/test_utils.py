@@ -44,13 +44,14 @@ from datetime import datetime
 import urllib2 as urllib
 from difflib import unified_diff
 
+real_database_name = ietf.settings.DATABASES["default"]["NAME"]
 
 import traceback
 
 class RealDatabaseTest:
     def setUpRealDatabase(self):
         self._original_testdb = self._getDatabaseName()
-        newdb = ietf.settings.DATABASE_NAME
+        newdb = real_database_name
         print "     Switching database from "+self._original_testdb+" to "+newdb
         self._setDatabaseName(newdb)
 
@@ -64,7 +65,7 @@ class RealDatabaseTest:
 
     def _setDatabaseName(self, name):        
         connection.close()
-        django.conf.settings.DATABASE_NAME = name
+        django.conf.settings.DATABASES["default"]["NAME"] = name
         connection.settings_dict['NAME'] = name
         connection.cursor()
 

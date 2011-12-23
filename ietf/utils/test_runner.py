@@ -47,16 +47,16 @@ def safe_create_1(self, verbosity, *args, **kwargs):
     global test_database_name, old_create
     print "     Creating test database..."
     x = old_create(self, 0, *args, **kwargs)
-    print "     Saving test database name "+settings.DATABASE_NAME+"..."
-    test_database_name = settings.DATABASE_NAME
+    print "     Saving test database name "+settings.DATABASES["default"]["NAME"]+"..."
+    test_database_name = settings.DATABASES["default"]["NAME"]
     return x
 
 def safe_destroy_0_1(*args, **kwargs):
     global test_database_name, old_destroy
     print "     Checking that it's safe to destroy test database..."
-    if settings.DATABASE_NAME != test_database_name:
-        print "     NOT SAFE; Changing settings.DATABASE_NAME from "+settings.DATABASE_NAME+" to "+test_database_name
-        settings.DATABASE_NAME = test_database_name
+    if settings.DATABASES["default"]["NAME"] != test_database_name:
+        print '     NOT SAFE; Changing settings.DATABASES["default"]["NAME"] from %s to %s' % (settings.DATABASES["default"]["NAME"], test_database_name)
+        settings.DATABASES["default"]["NAME"] = test_database_name
     return old_destroy(*args, **kwargs)
 
 def template_coverage_loader(template_name, dirs):
