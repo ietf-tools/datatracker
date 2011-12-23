@@ -12,18 +12,25 @@ from ietf.idrfc.utils import log_state_changed, add_document_comment
 from redesign.doc.models import Document, DocEvent, save_document_in_history, State
 from redesign.name.models import DocTagName
 from redesign.person.models import Person, Email
+from ietf.meeting.models import Meeting
 
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
 def in_id_expire_freeze(when=None):
     if when == None:
         when = datetime.datetime.now()
-        
-    d = IDDates.objects.get(id=IDDates.SECOND_CUT_OFF).date
+
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        d = Meeting.get_second_cut_off()
+    else:
+        d = IDDates.objects.get(id=IDDates.SECOND_CUT_OFF).date
     # for some reason, the old Perl code started at 9 am
     second_cut_off = datetime.datetime.combine(d, datetime.time(9, 0))
     
-    d = IDDates.objects.get(id=IDDates.IETF_MONDAY).date
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        d = Meeting.get_ietf_monday()
+    else:
+        d = IDDates.objects.get(id=IDDates.IETF_MONDAY).date
     ietf_monday = datetime.datetime.combine(d, datetime.time(0, 0))
     
     return second_cut_off <= when < ietf_monday

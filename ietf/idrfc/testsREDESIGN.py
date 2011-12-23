@@ -33,7 +33,7 @@
 import unittest
 import StringIO
 import os, shutil
-from datetime import date, timedelta
+from datetime import date, timedelta, time
 
 import django.test
 from django.core.urlresolvers import reverse as urlreverse
@@ -41,11 +41,11 @@ from django.conf import settings
 
 from pyquery import PyQuery
 
-from ietf.idtracker.models import IDDates
 from redesign.doc.models import *
 from redesign.name.models import *
 from redesign.group.models import *
 from redesign.person.models import *
+from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
@@ -844,16 +844,18 @@ class ExpireIDsTestCase(django.test.TestCase):
         
     def test_in_id_expire_freeze(self):
         from ietf.idrfc.expire import in_id_expire_freeze
-        
-        # dummy id dates
-        IDDates.objects.create(id=IDDates.SECOND_CUT_OFF, date=datetime.date(2010, 7, 12), description="", f_name="")
-        IDDates.objects.create(id=IDDates.IETF_MONDAY, date=datetime.date(2010, 7, 26), description="", f_name="")
-    
-        self.assertTrue(not in_id_expire_freeze(datetime.datetime(2010, 7, 11, 0, 0)))
-        self.assertTrue(not in_id_expire_freeze(datetime.datetime(2010, 7, 12, 8, 0)))
-        self.assertTrue(in_id_expire_freeze(datetime.datetime(2010, 7, 12, 10, 0)))
-        self.assertTrue(in_id_expire_freeze(datetime.datetime(2010, 7, 25, 0, 0)))
-        self.assertTrue(not in_id_expire_freeze(datetime.datetime(2010, 7, 26, 0, 0)))
+
+        Meeting.objects.create(number="123",
+                               type=MeetingTypeName.objects.get(slug="ietf"),
+                               date=date.today())
+        second_cut_off = Meeting.get_second_cut_off()
+        ietf_monday = Meeting.get_ietf_monday()
+
+        self.assertTrue(not in_id_expire_freeze(datetime.datetime.combine(second_cut_off - datetime.timedelta(days=7), time(0, 0, 0))))
+        self.assertTrue(not in_id_expire_freeze(datetime.datetime.combine(second_cut_off, time(0, 0, 0))))
+        self.assertTrue(in_id_expire_freeze(datetime.datetime.combine(second_cut_off + datetime.timedelta(days=7), time(0, 0, 0))))
+        self.assertTrue(in_id_expire_freeze(datetime.datetime.combine(ietf_monday - datetime.timedelta(days=1), time(0, 0, 0))))
+        self.assertTrue(not in_id_expire_freeze(datetime.datetime.combine(ietf_monday, time(0, 0, 0))))
         
     def test_warn_expirable_ids(self):
         from ietf.idrfc.expire import get_soon_to_expire_ids, send_expire_warning_for_id, INTERNET_DRAFT_DAYS_TO_EXPIRE
