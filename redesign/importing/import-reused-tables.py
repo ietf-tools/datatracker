@@ -22,11 +22,15 @@ from ietf.ipr.models import IprSelecttype, IprLicensing, IprDetail, IprContact, 
 from ietf.submit.models import IdSubmissionStatus, IdSubmissionDetail, IdApprovedDetail, TempIdAuthors
 from django.contrib.auth.models import User
 
-models_to_copy = [Redirect, Suffix, Command,
-                  TelechatAgendaItem, WGAction,
-                  IprSelecttype, IprLicensing, IprDetail, IprContact, IprNotification, IprUpdate,
-                  IdSubmissionStatus, IdSubmissionDetail, IdApprovedDetail, TempIdAuthors,
-                  User]
+known_models = {
+    'base': [User],
+    'others': [Redirect, Suffix, Command,
+               TelechatAgendaItem, WGAction,
+               IprSelecttype, IprLicensing, IprDetail, IprContact, IprNotification, IprUpdate,
+               IdSubmissionStatus, IdSubmissionDetail, IdApprovedDetail, TempIdAuthors]
+    }
+
+models_to_copy = known_models[sys.argv[1]]
 
 def queryset_chunks(q, n):
     """Split queryset q up in chunks of max size n."""
