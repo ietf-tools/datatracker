@@ -239,6 +239,15 @@ def _get_versions(draft, include_replaced=True):
         draft_list = [draft]+list(draft.replaces_set.all())
     else:
         draft_list = [draft]
+
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        from redesign.doc.models import NewRevisionDocEvent
+        for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=draft_list).select_related('doc').order_by("-time", "-id"):
+            if not (e.doc.name == draft.name and e.rev == draft.rev):
+                ov.append(dict(draft_name=e.doc.name, revision=e.rev, date=e.time.date()))
+                
+        return ov
+        
     for d in draft_list:
         for v in DraftVersions.objects.filter(filename=d.filename).order_by('-revision'):
             if (d.filename == draft.filename) and (draft.revision_display() == v.revision):
