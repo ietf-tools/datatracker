@@ -8,13 +8,14 @@
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
-  &raquo; Telechat 
+  &raquo; <a href="{% url telechat %}">Telechat</a> 
 {% endblock %}
 
 {% block content %}
 
 <div id="telechat-sidebar">
     <h2>Agenda</h2>
+    {% if agenda %}
     <ul>
       <li class="level1">2 Protocol Actions</li>
       <li>2.1 WG Submissions</li>
@@ -71,9 +72,21 @@
       <li>4.2.2 Proposed for Approval</li>
       {% with agenda.wgs.s422 as groups %}{% include "telechat/group_template.html" %}{% endwith %}
     </ul>
+    {% else %}
+    Please select a telechat to display the agenda.
+    {% endif %}
 </div>
 
-{% block subsection %}<div id="telechat-main"></div>{% endblock %}
-
+<div id="telechat-main">
+  <div id="telechat-nav">
+    {% if date %}
+    <a href="{% url telechat_minutes date=date %}">Minute Approval</a>
+    <a href="{% url telechat_management date=date %}">Management Issues</a>
+    {% endif %}
+    <br>
+  </div>
+  
+  {% block subsection %}<div id="telechat-content"></div>{% endblock %}
+</div>
 
 {% endblock %}

@@ -133,19 +133,19 @@ INSTALLED_APPS = (
     'ietf.announcements',
     'ietf.idindex',
     'ietf.idtracker',
-    #'ietf.ietfauth',
-    #'ietf.iesg',
-    #'ietf.ipr',
-    #'ietf.liaisons',
-    #'ietf.mailinglists',
+    'ietf.ietfauth',
+    'ietf.iesg',
+    'ietf.ipr',
+    'ietf.liaisons',
+    'ietf.mailinglists',
     'ietf.meeting',
-    #'ietf.proceedings',
-    #'ietf.redirects',
-    #'ietf.idrfc',
-    #'ietf.wginfo',
-    #'ietf.submit',
-    #'ietf.ietfworkflows',
-    #'ietf.wgchairs',
+    'ietf.proceedings',
+    'ietf.redirects',
+    'ietf.idrfc',
+    'ietf.wginfo',
+    'ietf.submit',
+    'ietf.ietfworkflows',
+    'ietf.wgchairs',
     # new apps
     'sec.announcement',
     'sec.areas',
@@ -191,7 +191,7 @@ IDTRACKER_BASE_URL = "http://datatracker.ietf.org"
 # Valid values:
 # 'production', 'test', 'development'
 # Override this in settings_local.py if it's not true
-SERVER_MODE = 'development'
+SERVER_MODE = 'production'
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
@@ -217,14 +217,14 @@ IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
 
 # Override this in settings_local.py if needed
-CACHE_MIDDLEWARE_SECONDS = 300
-CACHE_MIDDLEWARE_KEY_PREFIX = ''
-if SERVER_MODE == 'production':
-    CACHE_BACKEND= 'file://'+'/a/www/ietf-datatracker/cache/'
-else:
+#CACHE_MIDDLEWARE_SECONDS = 300
+#CACHE_MIDDLEWARE_KEY_PREFIX = ''
+#if SERVER_MODE == 'production':
+#    CACHE_BACKEND= 'file://'+'/a/www/ietf-datatracker/cache/'
+#else:
     # Default to no caching in development/test, so that every developer
     # doesn't have to set CACHE_BACKEND in settings_local
-    CACHE_BACKEND = 'dummy:///'
+#    CACHE_BACKEND = 'dummy:///'
 
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]

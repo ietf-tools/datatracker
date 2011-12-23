@@ -1,44 +1,62 @@
 {% extends "telechat/base_telechat.html" %}
 
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; {{ date }}
+{% endblock %}
+
+
 {% block subsection %}
-<div id="telechat-main">
-<a href="./previous/"><< Previous</a>&nbsp;&nbsp;<a href="./next/">Next >></a><br />
-<br />
-<h3>{{ document }} ({{ document.intended_std_level }})</h3>
-<a href="#writeup">Ballot Writeup</a><br />
-Token: {{ document.ad.name }}<br />
-Number of Open Positions: {{ open_positions }}<br />
-<br />
-<form action="" method="post">
-{{ formset.management_form }}
-<table id="telechat-positions-table">
-<tr><th>Area Director</th><th>Yes</th><th>No Objections</th><th>Discuss</th><th>Abstain</th><th>Recuse</th></tr>
-{% for form in formset.forms %}
-<tr><td>{{ form.initial.name }}{{ form.name }}{{ form.id }}</td>
-{% with form.position as field %}
-{% for choice in field.field.choices %}
-<td><input type="radio" {% ifequal form.initial.position choice.0 %}checked="checked" {% endifequal %}id="id_{{ field.html_name }}_{{ forloop.counter0 }}" value="{{ choice.0 }}" name="{{ field.html_name }}" /></td>
-{% endfor %}
-{% endwith %}
-</tr>
-{% endfor %}
-</tr>
-</table>
-<button type="submit" name="submit" value="update_ballot">Update Ballot</button>
-</form>
+<div id="telechat-content">
+<h1> Telechat Date: {{ date }}</h1>
+{% if document %}
+    <a href="./previous/"><< Previous</a>&nbsp;&nbsp;<a href="./next/">Next >></a><br />
+    <br />
+    <h3>
+      {% for line in header %}
+        {{ line }}<br />
+      {% endfor %}
+    </h3>
+    <br />
+    <h3>{{ document }} ({{ document.intended_std_level }})</h3>
+    <a href="#writeup">Ballot Writeup</a><br />
+    Token: {{ document.ad.name }}<br />
+    Number of Open Positions: {{ open_positions }}<br />
+    <br />
+    <form action="" method="post">
+    {{ formset.management_form }}
+    <table id="telechat-positions-table">
+    <tr><th>Area Director</th><th>Yes</th><th>No Objections</th><th>Discuss</th><th>Abstain</th><th>Recuse</th><th>No Position</th></tr>
+    {% for form in formset.forms %}
+    <tr{% ifequal form.initial.position 'norecord' %} class="green-row"{% endifequal %}{% ifequal form.initial.position 'discuss' %} class="red-row"{% endifequal %}><td>{{ form.initial.name }}{{ form.name }}{{ form.id }}</td>
+    {% with form.position as field %}
+    {% for choice in field.field.choices %}
+    <td><input type="radio" {% ifequal form.initial.position choice.0 %}checked="checked" {% endifequal %}id="id_{{ field.html_name }}_{{ forloop.counter0 }}" value="{{ choice.0 }}" name="{{ field.html_name }}" /></td>
+    {% endfor %}
+    {% endwith %}
+    </tr>
+    {% endfor %}
+    </tr>
+    </table>
+    <button type="submit" name="submit" value="update_ballot">Update Ballot</button>
+    </form>
+    
+    
+    <form action="" method="post">
+      <table>
+      {{ state_form.as_table }}
+      </table>
+      <button type="submit" name="submit" value="update_state">Update State</button>
+    </form>
+    
+    <a name="writeup"><h2>Ballot Writeup</h2></a>
+    <pre>
+    {{ writeup }}
+    </pre>
+    
 
-
-<form action="" method="post">
-  <table>
-  {{ state_form.as_table }}
-  </table>
-  <button type="submit" name="submit" value="update_state">Update State</button>
-</form>
-
-<a name="writeup"><h2>Ballot Writeup</h2></a>
-<pre>
-{{ writeup }}
-</pre>
+{% else %}
+    <h3>No Documents on the Agenda</h3>
+{% endif %}
 
 </div>
 
