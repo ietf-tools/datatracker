@@ -246,7 +246,7 @@ class IRTF(Group):
         proxy = True
 
 class AreaGroup(Group):
-    objects = TranslatingManager(dict(group="pk"),
+    objects = TranslatingManager(dict(group=lambda v: ("pk", v.pk)),
                                  always_filter=dict(type="wg"))
 
     def from_object(self, base):
@@ -261,3 +261,6 @@ class AreaGroup(Group):
     @property
     def group(self):
         return self
+
+    class Meta:
+        proxy = True
