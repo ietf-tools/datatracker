@@ -1,8 +1,4 @@
 class LegacyRouter(object):
-    legacy_apps = ["idindex", "idtracker", "ietfauth", ""]
-    legacy_models = ["AnnouncedFrom", "AnnouncedTo", "Announcement", "ScheduledAnnouncement",
-                     "TelechatDates"]
-
     def db_for_read(self, model, **hints):
         if model._meta.db_table in legacy_tables:
             return 'legacy'
