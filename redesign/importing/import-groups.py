@@ -21,10 +21,10 @@ from redesign.name.utils import name
 from redesign.importing.utils import old_person_to_person
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role, AreaDirector
 from ietf.liaisons.models import SDOs
-from ietf.iesg.models import TelechatDates, TelechatDate
+from ietf.iesg.models import TelechatDates, Telechat, TelechatDate
 import workflows.utils
 
-# imports IETFWG, Area, AreaGroup, Acronym, IRTF, AreaWGURL, SDOs, TelechatDates
+# imports IETFWG, Area, AreaGroup, Acronym, IRTF, AreaWGURL, SDOs, TelechatDates, dates from Telechat
 
 # also creates nomcom groups
 
@@ -117,6 +117,13 @@ iepg_group.save()
 
 system = Person.objects.get(name="(System)")
 
+for o in Telechat.objects.all().order_by("pk"):
+    if o.pk <= 3:
+        print "skipping phony Telechat", o.pk
+        continue
+    print "importing Telechat", o.pk, o.telechat_date
+    TelechatDate.objects.get_or_create(date=o.telechat_date)
+            
 for o in TelechatDates.objects.all():
     print "importing TelechatDates"
     for x in range(1, 5):

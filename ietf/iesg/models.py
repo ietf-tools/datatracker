@@ -52,6 +52,7 @@ import datetime
 #        verbose_name = "Telechat Minute Text"
 #        verbose_name_plural = "Telechat Minutes"
 
+# this model is deprecated
 class TelechatDates(models.Model):
     date1 = models.DateField(primary_key=True, null=True, blank=True)
     date2 = models.DateField(null=True, blank=True)
@@ -125,6 +126,18 @@ class WGAction(models.Model):
             db_table = 'group_internal'
         ordering = ['-telechat_date']
         verbose_name = "WG Action"
+
+class Telechat(models.Model):
+    telechat_id = models.IntegerField(primary_key=True)
+    telechat_date = models.DateField(null=True, blank=True)
+    minute_approved = models.IntegerField(null=True, blank=True)
+    wg_news_txt = models.TextField(blank=True)
+    iab_news_txt = models.TextField(blank=True)
+    management_issue = models.TextField(blank=True)
+    frozen = models.IntegerField(null=True, blank=True)
+    mi_frozen = models.IntegerField(null=True, blank=True)
+    class Meta:
+        db_table = u'telechat'
 
 
 def next_telechat_date():
