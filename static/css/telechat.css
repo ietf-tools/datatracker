@@ -2,3 +2,9 @@
     margin: 0 auto;
     width: 960px;
 }
+
+ul#list-nav li a {
+    width: 19%;
+    background-color: #36648B;
+}
+

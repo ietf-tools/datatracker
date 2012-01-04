@@ -1,6 +1,5 @@
 from django.conf import settings
-#from django.contrib import messages
-from session_messages import create_message
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import get_model
 from django.core.exceptions import ObjectDoesNotExist
@@ -222,7 +221,7 @@ def description(request, name):
             except IOError, e:
                 return render_to_response('groups/error.html', { 'error': e},) 
 
-            create_message(request, 'The Group Description was changed successfully')
+            messages.success(request, 'The Group Description was changed successfully')
             url = reverse('groups_view', kwargs={'name':name})
             return HttpResponseRedirect(url)
     else:
@@ -279,7 +278,7 @@ def edit(request, name):
                 if not created:
                     obj.area = area
                     obj.save()
-            create_message(request, 'The Group was changed successfully')
+            messages.success(request, 'The Group was changed successfully')
             url = reverse('groups_view', kwargs={'name':name})
             return HttpResponseRedirect(url)
         else:

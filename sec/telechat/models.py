@@ -1,5 +1,6 @@
 from django.db import models
 
+'''
 class AgendaItems(models.Model):
     agenda_item_id = models.IntegerField(primary_key=True)
     telechat_id = models.ForeignKey('Telechat')
@@ -30,3 +31,4 @@ class Telechat(models.Model):
     mi_frozen = models.IntegerField(null=True, blank=True)
     class Meta:
         db_table = u'telechat'
+'''

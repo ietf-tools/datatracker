@@ -1,5 +1,4 @@
-#from django.contrib import messages
-from session_messages import create_message
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.formsets import formset_factory
@@ -77,7 +76,7 @@ def add_proceed(request):
     if request.session['post_data']:
         post_data = request.session['post_data']
     else:
-        create_message('ERROR: unable to save session data')
+        messages.error('ERROR: unable to save session data')
         url = reverse('rolodex_add')
         return HttpResponseRedirect(url)
 
@@ -101,7 +100,7 @@ def add_proceed(request):
                 new_email.person = new_person
                 new_email.save()
 
-            create_message(request, 'The Rolodex entry was added successfully')
+            messages.success(request, 'The Rolodex entry was added successfully')
             url = reverse('rolodex._view', kwargs={'id': new_person.id})
             return HttpResponseRedirect(url)
     else:
@@ -138,7 +137,7 @@ def delete(request, id):
             # Django 1.3 has a way to override, on_delete
             #person.delete()
             
-            create_message(request, 'This feature is disabled')
+            messages.warning(request, 'This feature is disabled')
             url = reverse('rolodex')
             return HttpResponseRedirect(url)
 
@@ -176,7 +175,7 @@ def edit(request, id):
             person_form.save()
             email_formset.save()
             
-            create_message(request, 'The Rolodex entry was changed successfully')
+            messages.success(request, 'The Rolodex entry was changed successfully')
             url = reverse('rolodex_view', kwargs={'id': id})
             return HttpResponseRedirect(url)
 

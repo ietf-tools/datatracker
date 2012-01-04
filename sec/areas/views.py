@@ -1,5 +1,4 @@
-#from django.contrib import messages
-from session_messages import create_message
+from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.urlresolvers import reverse
 from django.forms.formsets import formset_factory
@@ -85,8 +84,7 @@ def add(request):
                     group_url = GroupURL(group=area,name=item['name'],url=item['url'])
                     group_url.save()
 
-            #messages.success(request, 'The Area was created successfully!')
-            create_message(request, 'The Area was created successfully!')
+            messages.success(request, 'The Area was created successfully!')
             url = reverse('areas')
             return HttpResponseRedirect(url)
     else:
@@ -125,8 +123,7 @@ def edit(request, name):
                 form.save()
                 awp_formset.save()
                 
-                #messages.success(request, 'The Area entry was changed successfully')
-                create_message(request, 'The Area entry was changed successfully')
+                messages.success(request, 'The Area entry was changed successfully')
                 url = reverse('areas_view', kwargs={'name':name})
                 return HttpResponseRedirect(url)
         else:
@@ -200,8 +197,7 @@ def people(request, name):
                 role = Role(name=role_name,group=area,person=person,email=email_obj)
                 role.save()
                 
-                #messages.success(request, 'New Area Director added successfully!')
-                create_message(request, 'New Area Director added successfully!')
+                messages.success(request, 'New Area Director added successfully!')
                 url = reverse('areas_view', kwargs={'name':name})
                 return HttpResponseRedirect(url)
     else:
@@ -252,7 +248,7 @@ def modify(request, name):
             role.name = role_name
             role.save()
             
-            create_message(request, 'The Area Director has been retired successfully!')
+            messages.success(request, 'The Area Director has been retired successfully!')
 
         # handle voting request
         # per requirements, affiliated_org field shall be the person's name
@@ -262,7 +258,7 @@ def modify(request, name):
             #telechat_user_obj.save()
             #login.user_level = 1
             #login.save()
-            create_message(request, 'Voting rights have been granted successfully!')
+            messages.success(request, 'Voting rights have been granted successfully!')
 
         url = reverse('areas_view', kwargs={'name':name})
         return HttpResponseRedirect(url)

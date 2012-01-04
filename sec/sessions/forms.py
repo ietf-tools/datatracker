@@ -1,8 +1,4 @@
 from django import forms
-#from models import *
-#from sec.core.models import Acronym, IRTF, WgMeetingSession, MeetingHour
-#from sec.core.forms import GroupSelectForm
-#from sec.groups.models import IETFWG
 
 from redesign.group.models import Group
 import os
@@ -44,7 +40,7 @@ def validate_group(acronym):
     Takes a string which is a group acronym.  Returns true if it is an acronym
     of a active group
     '''
-    if Group.objects.active.filter(acronym=acronym):
+    if Group.objects.active_wgs().filter(acronym=acronym):
         return True
 
     return False

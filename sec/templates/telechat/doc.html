@@ -7,9 +7,9 @@
 
 {% block subsection %}
 <div id="telechat-content">
-<h1> Telechat Date: {{ date }}</h1>
 {% if document %}
-    <a href="./previous/"><< Previous</a>&nbsp;&nbsp;<a href="./next/">Next >></a><br />
+    <a href="./previous/"><< Previous</a>
+    <span class="right-nav"><a href="./next/">Next >></a></span>
     <br />
     <h3>
       {% for line in header %}
@@ -37,7 +37,9 @@
     {% endfor %}
     </tr>
     </table>
-    <button type="submit" name="submit" value="update_ballot">Update Ballot</button>
+    <div class="button-group">
+      <button type="submit" name="submit" value="update_ballot">Update Ballot</button>
+    </div>
     </form>
     
     

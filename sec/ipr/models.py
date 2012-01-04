@@ -5,7 +5,7 @@ from django.db import models
 #from sec.drafts.models import InternetDraft
 #from sec.drafts.models import Rfc
 
-from ietf.ietf.ipr.models import *
+from ietf.ipr.models import *
 
 # ------------------------------------------------------------------------
 # Models

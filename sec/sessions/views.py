@@ -1,7 +1,5 @@
-from session_messages import create_message
-
 from django.conf import settings
-#from django.contrib import messages
+from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db.models import Q
@@ -92,9 +90,9 @@ def get_scheduled_groups(user, meeting):
     Returns a sorted list of those groups that have session requests
     and the user has access to
     '''
-    groups = Group.objects.active.filter(~Q(session__status='canceled'),
-                                         ~Q(session__status='notmeet'),
-                                         session__meeting=meeting).order_by('acronym').distinct()
+    groups = Group.objects.active_wgs().filter(~Q(session__status='canceled'),
+                                               ~Q(session__status='notmeet'),
+                                               session__meeting=meeting).order_by('acronym').distinct()
     
     # short circuit for secretariat
     if has_role(user,'Secretariat'):
@@ -113,10 +111,10 @@ def get_unscheduled_groups(user, meeting):
     add those groups back in.
     If the user is a secretariat than all groups are considered.
     '''
-    no_session = Group.objects.active.exclude(session__meeting=meeting)
+    no_session = Group.objects.active_wgs().exclude(session__meeting=meeting)
     # add groups with "cancelled" sessions
-    canceled = Group.objects.active.filter(session__meeting=meeting,session__status__slug='canceled').distinct()
-    not_meeting = Group.objects.active.filter(session__meeting=meeting,session__status__slug='notmeet').distinct()
+    canceled = Group.objects.active_wgs().filter(session__meeting=meeting,session__status__slug='canceled').distinct()
+    not_meeting = Group.objects.active_wgs().filter(session__meeting=meeting,session__status__slug='notmeet').distinct()
     unscheduled = sorted(
         chain(no_session,canceled,not_meeting),
         key = lambda instance: instance.acronym)
@@ -215,14 +213,12 @@ def approve(request, group_id):
         session.status = SessionStatusName.objects.get(slug='appr')
         session.save()
         
-        #messages.success(request, 'Third session approved')
-        create_message(request, 'Third session approved')
+        messages.success(request, 'Third session approved')
         url = reverse('sessions_view', kwargs={'group_id':group_id})
         return HttpResponseRedirect(url)
     else:
         # if an unauthorized user gets here return error
-        #messages.error(request, 'Not authorized to approve the third session')
-        create_message(request, 'Not authorized to approve the third session')
+        messages.error(request, 'Not authorized to approve the third session')
         url = reverse('sessions_view', kwargs={'group_id':group_id})
         return HttpResponseRedirect(url)
 
@@ -257,8 +253,7 @@ def cancel(request, group_id):
                'group':group,
                'meeting':meeting}, cc=cc_list)
                
-    #messages.success(request, 'The %s Session Request has been canceled' % group.acronym)
-    create_message(request, 'The %s Session Request has been canceled' % group.acronym)
+    messages.success(request, 'The %s Session Request has been canceled' % group.acronym)
     url = reverse('sessions')
     return HttpResponseRedirect(url)
 
@@ -281,8 +276,7 @@ def confirm(request, group_id):
         
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            #messages.success(request, 'Session Request has been canceled')
-            create_message(request, 'Session Request has been canceled')
+            messages.success(request, 'Session Request has been canceled')
             url = reverse('sessions')
             return HttpResponseRedirect(url)
         
@@ -323,8 +317,7 @@ def confirm(request, group_id):
         send_notification(group,meeting,login,form,'new')
         
         status_text = 'IETF Agenda to be scheduled'
-        #messages.success(request, 'Your request has been sent to %s' % status_text)
-        create_message(request, 'Your request has been sent to %s' % status_text)
+        messages.success(request, 'Your request has been sent to %s' % status_text)
         url = reverse('sessions')
         return HttpResponseRedirect(url)
         
@@ -434,8 +427,7 @@ def edit(request, group_id):
                 # send notification
                 send_notification(group,meeting,login,form.cleaned_data,'update')
                 
-            #messages.success(request, 'Session Request updated')
-            create_message(request, 'Session Request updated')
+            messages.success(request, 'Session Request updated')
             url = reverse('sessions_view', kwargs={'group_id':group_id})
             return HttpResponseRedirect(url)
                 
@@ -534,8 +526,7 @@ def new(request, group_id):
         if form.is_valid():
             # check if request already exists for this group
             if Session.objects.filter(group=group,meeting=meeting).exclude(status__in=('canceled','notmeet')): # TODO test exclude
-                #messages.warning(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
-                create_message(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
+                messages.warning(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
                 url = reverse('sessions')
                 return HttpResponseRedirect(url)
             
@@ -554,8 +545,7 @@ def new(request, group_id):
         previous_meeting = Meeting.objects.get(number=str(int(meeting.number) - 1))
         previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).order_by('id')
         if not previous_sessions:
-            #messages.warning(request, 'No session scheduled for this group at meeting: %s' % previous_meeting.number)
-            create_message(request, 'No session scheduled for this group at meeting: %s' % previous_meeting.number)
+            messages.warning(request, 'No session scheduled for this group at meeting: %s' % previous_meeting.number)
             redirect_url = reverse('sessions_new', kwargs={'group_id':group_id})
             return HttpResponseRedirect(redirect_url)
             
@@ -609,8 +599,7 @@ def no_session(request, group_id):
     #add_session_activity(group,text,meeting,request.person)
     
     # redirect
-    #messages.success(request, 'A message was sent to notify not having a session at IETF %s' % meeting.number)
-    create_message(request, 'A message was sent to notify not having a session at IETF %s' % meeting.number)
+    messages.success(request, 'A message was sent to notify not having a session at IETF %s' % meeting.number)
     url = reverse('sessions')
     return HttpResponseRedirect(url)
 
@@ -642,8 +631,7 @@ def tool_status(request):
         elif button_text == 'Unlock':
             os.remove(LOCKFILE)
                 
-            #messages.success(request, 'Session Request Tool is now Unlocked')
-            create_message(request, 'Session Request Tool is now Unlocked')
+            messages.success(request, 'Session Request Tool is now Unlocked')
             url = reverse('sessions')
             return HttpResponseRedirect(url)
     

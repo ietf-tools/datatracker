@@ -14,7 +14,7 @@
 {% block content %}
 
 <div id="telechat-sidebar">
-    <h2>Agenda</h2>
+    <h2>Agenda {{ date }}</h2>
     {% if agenda %}
     <ul>
       <li class="level1">2 Protocol Actions</li>
@@ -77,16 +77,22 @@
     {% endif %}
 </div>
 
+
 <div id="telechat-main">
+  {% if date %}
   <div id="telechat-nav">
-    {% if date %}
-    <a href="{% url telechat_minutes date=date %}">Minute Approval</a>
-    <a href="{% url telechat_management date=date %}">Management Issues</a>
-    {% endif %}
-    <br>
+    <ul id="list-nav">
+      <li><a href="{% url telechat_roll_call date=date %}">Roll Call</a></li>
+      <li><a href="{% url telechat_bash date=date %}">Bash Agenda</a></li>
+      <li><a href="{% url telechat_minutes date=date %}">Minute Approval</a></li>
+      <li><a href="{% url telechat_doc date=date %}">Main Agenda</a></li>
+      <li><a href="{% url telechat_management date=date %}">Management Issues</a></li>
+    </ul>
   </div>
+  {% endif %}
   
   {% block subsection %}<div id="telechat-content"></div>{% endblock %}
+
 </div>
 
 {% endblock %}

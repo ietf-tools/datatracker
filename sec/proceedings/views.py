@@ -1,6 +1,5 @@
 from django.conf import settings
-#from django.contrib import messages
-from session_messages import create_message
+from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.urlresolvers import reverse
 from django.db.models import Max
@@ -258,7 +257,8 @@ def handle_upload_file(file,filename,meeting,subdir):
     If the file is a zip file, it creates a new directory in 'slides', which is the basename of the
     zip file and unzips the file in the new directory.
     '''
-    filename = filename.lower()
+    # filename gets saved elsewhere w/o lower so don't do it here
+    #filename = filename.lower()
     base, extension = os.path.splitext(filename)
     
     if extension == '.zip':

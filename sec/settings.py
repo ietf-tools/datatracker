@@ -34,12 +34,14 @@ DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN +
 
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = 'mysql'
-DATABASE_NAME = 'ietf'
-DATABASE_USER = 'ietf'
-DATABASE_PORT = ''
-DATABASE_HOST = ''
-
+DATABASES = {
+    'default': {
+        'NAME': 'ietf_new',
+        'ENGINE': 'django.db.backends.mysql',
+        'USER': 'ietf',
+        }
+    }
+ 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 # although not all variations may be possible on all operating systems.
@@ -71,8 +73,13 @@ MEDIA_URL = ''
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/media/'
 
-AUTH_PROFILE_MODULE = 'ietfauth.IetfUserProfile'
-AUTHENTICATION_BACKENDS = ( "ietf.ietfauth.auth.IetfUserBackend", )
+#AUTH_PROFILE_MODULE = 'ietfauth.IetfUserProfile'
+#AUTHENTICATION_BACKENDS = ( "ietf.ietfauth.auth.IetfUserBackend", )
+AUTH_PROFILE_MODULE = 'person.Person'
+AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
+
+#DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
+
 SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
@@ -84,6 +91,7 @@ TEMPLATE_LOADERS = (
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.RemoteUserMiddleware',
     'django.middleware.doc.XViewMiddleware',
@@ -107,9 +115,9 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'django.core.context_processors.request',
+    'django.contrib.messages.context_processors.messages',
     'sec.context_processors.server_mode',
     'sec.context_processors.revision_info',
-    'session_messages.context_processors.session_messages',
 )
 
 INSTALLED_APPS = (

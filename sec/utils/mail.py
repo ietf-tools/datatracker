@@ -46,8 +46,8 @@ def get_cc_list(group, person):
     emails = []
     emails.extend(get_ad_email_list(group))
     emails.extend(get_chair_email_list(group))
-    if person.email_address().address not in emails:
-        emails.append(person.email_address().address)
+    if person.email_address() not in emails:
+        emails.append(person.email_address())
     return emails
     
 def get_chair_email_list(group):

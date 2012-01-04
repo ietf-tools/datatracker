@@ -1,6 +1,5 @@
 from django.conf import settings
-#from django.contrib import messages
-from session_messages import create_message
+from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.urlresolvers import reverse
 from django.db.models import Max, Min, Q
@@ -359,7 +358,7 @@ def edit_meeting(request, meeting_id):
             form = MeetingForm(request.POST, instance=meeting)
             if form.is_valid():
                 form.save()
-                create_message(request,'The meeting entry was changed successfully')
+                messages.success(request,'The meeting entry was changed successfully')
                 url = reverse('meetings_view', kwargs={'meeting_id':meeting_id})
                 return HttpResponseRedirect(url)
 
@@ -536,8 +535,7 @@ def new_session(request, meeting_id, group_id):
     # warn and redirect to edit if there is already a scheduled session for this group
     if session:
         if session[0].status == 'sched':
-            #message_error(request, 'The session for %s is already scheduled for meeting %s' % (session.group, meeting_id))
-            create_message(request, 'The session for %s is already scheduled for meeting %s' % (session[0].group, meeting_id))
+            messages.error(request, 'The session for %s is already scheduled for meeting %s' % (session[0].group, meeting_id))
             url = reverse('meetings_edit_session', kwargs={'session_id':session[0].id})
             return HttpResponseRedirect(url)
             
@@ -722,7 +720,7 @@ def rooms(request, meeting_id):
         formset = RoomFormset(request.POST, instance=meeting, prefix='room')
         if formset.is_valid():
             formset.save()
-            create_message(request, 'Meeting Rooms changed successfully')
+            messages.success(request, 'Meeting Rooms changed successfully')
             url = reverse('meetings_rooms', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
     else:
@@ -815,7 +813,7 @@ def times(request, meeting_id):
         formset = TimeSlotFormset(request.POST, prefix='time')
         if formset.is_valid():
             formset.save()
-            create_message(request, 'Meeting Times changed successfully')
+            messages.success(request, 'Meeting Times changed successfully')
             url = reverse('meetings_times', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
     else:

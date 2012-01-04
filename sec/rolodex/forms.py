@@ -1,7 +1,5 @@
 from django import forms
-# uncomment for django 1.2
-#from django.core.validators import email_re
-from django.forms.fields import email_re
+from django.core.validators import email_re
 
 from redesign.person.models import Email, Person
 

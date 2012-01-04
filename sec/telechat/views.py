@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Count
 from django.forms.models import inlineformset_factory, modelformset_factory
@@ -6,7 +7,6 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
-from session_messages import create_message
 from redesign.doc.models import DocEvent, Document, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
 from redesign.doc.proxy import InternetDraft
 from redesign.name.models import BallotPositionName
@@ -16,7 +16,7 @@ from ietf.idrfc.mails import email_owner, email_state_changed
 from ietf.idrfc.utils import log_state_changed, add_document_comment
 from ietf.idrfc.views_doc import get_ballot
 #from ietf.idtracker.models import InternetDraft
-from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem, WGAction
 from ietf.iesg.views import _agenda_data
 
 from forms import *
@@ -34,6 +34,12 @@ def get_telechat_dates():
     # TODO this may change with Ole date changes
     dates = TelechatDocEvent.objects.values('telechat_date').order_by('-telechat_date').annotate(Count('telechat_date'))
     return [ d['telechat_date'] for d in dates if d['telechat_date'] ]
+
+def get_next_telechat_date():
+    '''
+    This function returns the date of the next telechat
+    '''
+    return TelechatDate.objects.filter(date__gte=datetime.date.today()).order_by('-date')[0].date
     
 def get_last_telechat_date():
     '''
@@ -71,8 +77,9 @@ def get_section_header(file,agenda):
 def get_first_doc(agenda):
     '''
     This function takes an agenda dictionary and returns the first document in the agenda
+    TODO should handle group
     '''
-    for k,v in agenda['docs'].iteritems():
+    for k,v in sorted(agenda['docs'].iteritems()):
         if v:
             return v[0]['obj']
     
@@ -81,6 +88,16 @@ def get_first_doc(agenda):
 # -------------------------------------------------
 # View Functions
 # -------------------------------------------------
+def bash(request, date):
+    
+    agenda = _agenda_data(request, date=date)
+    
+    return render_to_response('telechat/bash.html', {
+        'agenda': agenda,
+        'date': date},
+        RequestContext(request, {}),
+    )
+    
 def doc(request, date):
     '''
     This view redirects to doc_detail using the first document in the agenda or
@@ -120,7 +137,7 @@ def doc_detail(request, date, name):
     #    raise Http404()
     
     # setup ballot
-    assert False, name
+    #assert False, name
     
     ballot, x = get_ballot(name)
     # sort on AD last name
@@ -166,7 +183,7 @@ def doc_detail(request, date, name):
                         pos.desc = '[Ballot Position Update] Position for %s has been changed to %s by %s' % (ad.name, pos.pos.name, login.name)
                     pos.save()
                     
-                    create_message(request,'Ballot position changed.')
+                    messages.success(request,'Ballot position changed.')
                     url = reverse('telechat_doc_detail', kwargs={'date':date,'name':name})
                     return HttpResponseRedirect(url)
         
@@ -213,7 +230,7 @@ def doc_detail(request, date, name):
                     if state.slug == "lc-req":
                         request_last_call(request, doc)
                 
-                create_message(request,'Document state updated')
+                messages.success(request,'Document state updated')
                 url = reverse('telechat_doc_detail', kwargs={'date':date,'name':name})
                 return HttpResponseRedirect(url)        
     else:
@@ -291,9 +308,12 @@ def main(request):
     form = DateSelectForm(choices=choices)
     
     # TODO rewrite this for new impl
-    existing = [ x.telechat_date.strftime('%Y-%m-%d') for x in Telechat.objects.all() ]
-    rec = TelechatDates.objects.all()[0]
-    new_choices = [ (r,r) for r in (rec.date1,rec.date2,rec.date3,rec.date4) if r not in existing]
+    #existing = [ x.telechat_date.strftime('%Y-%m-%d') for x in Telechat.objects.all() ]
+    #existing = get_telechat_dates()
+    #rec = TelechatDate.objects.all()[0]
+    #new_choices = [ (r,r) for r in (rec.date1,rec.date2,rec.date3,rec.date4) if r not in existing]
+    next = get_next_telechat_date()
+    new_choices = [ (next.strftime('%Y-%m-%d'),next.strftime('%Y-%m-%d')) ]
     new_form = DateSelectForm(choices=new_choices)
 
     return render_to_response('telechat/main.html', {
@@ -354,7 +374,17 @@ def new(request):
         
         # get first Document
         
-        create_message(request,'New Telechat Agenda created')
+        messages.success(request,'New Telechat Agenda created')
         url = reverse('telechat_doc', kwargs={'date':date,'name':name})
         return HttpResponseRedirect(url)  
         
+def roll_call(request, date):
+    
+    agenda = _agenda_data(request, date=date)
+    
+    return render_to_response('telechat/roll_call.html', {
+        'agenda': agenda,
+        'date': date},
+        RequestContext(request, {}),
+    )
+    

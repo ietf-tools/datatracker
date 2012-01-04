@@ -17,14 +17,14 @@ def get_my_groups(user):
     person = user.get_profile()
     
     if has_role(user,'Secretariat'):
-        return Group.objects.active.all().order_by('acronym')
+        return Group.objects.active_wgs().order_by('acronym')
         
     elif has_role(user,'Area Director'):
         # we are assuming one person will not be area director for more than one area
-        return Group.objects.active.filter(parent=person.role_set.get(name__name='Area Director').group).order_by('acronym')
+        return Group.objects.active_wgs().filter(parent=person.role_set.get(name__name='Area Director').group).order_by('acronym')
         
     elif has_role(user,['WG Chair','WG Secretary']):
-        return Group.objects.active.filter(role__person=person,role__name__in=('chair','secr')).order_by('acronym')
+        return Group.objects.active_wgs().filter(role__person=person,role__name__in=('chair','secr')).order_by('acronym')
 
     # otherwise return empty list
     return []

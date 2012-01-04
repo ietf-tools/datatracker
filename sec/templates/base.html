@@ -61,12 +61,6 @@
     </ul>
     {% endif %}
 
-    <!-- Session Messages -->
-    {% if session_messages %}
-    <ul class="messagelist">{% for message in session_messages %}<li>{{ message }}</li>{% endfor %}</ul>
-    {% endif %}
-    <!-- END Session Messages -->
-
     <!-- Content -->
     <div id="content" class="{% block coltype %}colM{% endblock %}">
         {% block pretitle %}{% endblock %}
