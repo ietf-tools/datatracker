@@ -161,10 +161,8 @@ class IETFWG(Group):
     #area = FKAsOneToOne('areagroup', reverse=True)
     @property
     def area(self):
-        class AreaGroup: pass
         if self.parent:
-            areagroup = AreaGroup()
-            areagroup.area = Area().from_object(self.parent)
+            areagroup = AreaGroup().from_object(self)
             return areagroup
         else:
             return None
@@ -246,3 +244,20 @@ class IRTF(Group):
     #    return IRTFChair.objects.filter(irtf=self)
     class Meta:
         proxy = True
+
+class AreaGroup(Group):
+    objects = TranslatingManager(dict(group="pk"),
+                                 always_filter=dict(type="wg"))
+
+    def from_object(self, base):
+        for f in base._meta.fields:
+            setattr(self, f.name, getattr(base, f.name))
+        return self
+
+    @property
+    def area(self):
+        return Area().from_object(self.parent)
+
+    @property
+    def group(self):
+        return self
