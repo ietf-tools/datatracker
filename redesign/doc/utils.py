@@ -49,3 +49,6 @@ def active_ballot_positions(doc):
 
     return res
     
+def get_rfc_number(doc):
+    qs = doc.docalias_set.filter(name__startswith='rfc')
+    return qs[0].name[3:] if qs else None
