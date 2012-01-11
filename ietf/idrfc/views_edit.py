@@ -456,16 +456,12 @@ class EditInfoFormREDESIGN(forms.Form):
             self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).name)]
         
         # telechat choices
-        dates = TelechatDates.objects.all()[0].dates()
+        dates = [d.date for d in TelechatDate.objects.active().order_by('date')]
         init = kwargs['initial']['telechat_date']
         if init and init not in dates:
             dates.insert(0, init)
 
-        choices = [("", "(not on agenda)")]
-        for d in dates:
-            choices.append((d, d.strftime("%Y-%m-%d")))
-
-        self.fields['telechat_date'].choices = choices
+        self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, d.strftime("%Y-%m-%d")) for d in dates]
 
         # returning item is rendered non-standard
         self.standard_fields = [x for x in self.visible_fields() if x.name not in ('returning_item',)]
