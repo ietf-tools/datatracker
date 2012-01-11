@@ -96,6 +96,7 @@ class GroupAdmin(admin.ModelAdmin):
 
 admin.site.register(Group, GroupAdmin)
 admin.site.register(GroupHistory)
+admin.site.register(GroupURL)
 
 class RoleAdmin(admin.ModelAdmin):
     list_display = ["name", "person", "email", "group"]
@@ -104,6 +105,5 @@ class RoleAdmin(admin.ModelAdmin):
     list_filter = ["name"]
     ordering = ["id"]
     raw_id_fields = ["email", "person", "group"]
-
 admin.site.register(Role, RoleAdmin)
 admin.site.register(RoleHistory, RoleAdmin)

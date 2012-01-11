@@ -1,0 +1,15 @@
+{# Copyright The IETF Trust 2011, All Rights Reserved #}
+
+<th class="{{hdr.htype}}"{% if hdr.colspan %}colspan="{{ hdr.colspan }}" {% endif %}
+    onclick="location=unescape('{{ meta.rqps }}&sortBy={{hdr.htype}}');"
+    style="white-space: nowrap;"
+>
+<span>
+    <label>{{hdr.htitle}}</label>
+    {% if hdr.selected %}
+    <img style="border-style: none;vertical-align:top" src="/images/sort-header-filled.png"/>
+    {% else %}
+    <img style="border-style: none;vertical-align:top" src="/images/sort-header-clear.png"/>
+    {% endif %}
+</span>
+</th> 

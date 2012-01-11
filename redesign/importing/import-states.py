@@ -34,9 +34,10 @@ slides_type, _ = StateType.objects.get_or_create(slug="slides", label="State")
 minutes_type, _ = StateType.objects.get_or_create(slug="minutes", label="State")
 agenda_type, _ = StateType.objects.get_or_create(slug="agenda", label="State")
 liaison_att_type, _ = StateType.objects.get_or_create(slug="liai-att", label="State")
+charter_type, _ = StateType.objects.get_or_create(slug="charter", label="State")
 
 # draft states
-print "Importing draft states"
+print "importing draft states"
 State.objects.get_or_create(type=draft_type, slug="active", name="Active", order=1)
 State.objects.get_or_create(type=draft_type, slug="expired", name="Expired", order=2)
 State.objects.get_or_create(type=draft_type, slug="rfc", name="RFC", order=3)
@@ -180,3 +181,13 @@ for t in (slides_type, minutes_type, agenda_type):
     print "importing states for", t.slug
     State.objects.get_or_create(type=t, slug="active", name="Active", order=1)
     State.objects.get_or_create(type=t, slug="deleted", name="Deleted", order=2)
+
+# charter states
+print "importing states for charters"
+State.objects.get_or_create(type=charter_type, slug="notrev", name="Not currently under review", desc="The proposed charter is not being considered at this time. A proposed charter will remain in this state until an AD moves it to Informal IESG review.")
+State.objects.get_or_create(type=charter_type, slug="infrev", name="Informal IESG review", desc="This is the initial state when an AD proposes a new charter. The normal next state is Internal review if the idea is accepted, or Not currently under review if the idea is abandoned.")
+State.objects.get_or_create(type=charter_type, slug="intrev", name="Internal review", desc="The IESG and IAB are reviewing the early draft of the charter; this is the initial IESG and IAB review. The usual next state is External review if the idea is adopted, or Informal IESG review if the IESG decides the idea needs more work, or Not currently under review is the idea is abandoned")
+State.objects.get_or_create(type=charter_type, slug="extrev", name="External review", desc="The IETF community and possibly other standards development organizations (SDOs) are reviewing the proposed charter. The usual next state is IESG review, although it might move to Not currently under review is the idea is abandoned during the external review.")
+State.objects.get_or_create(type=charter_type, slug="iesgrev", name="IESG review", desc="The IESG is reviewing the discussion from the external review of the proposed charter. The usual next state is Approved, or Not currently under review if the idea is abandoned.")
+State.objects.get_or_create(type=charter_type, slug="approved", name="Approved", desc="The charter is approved by the IESG.")
+    

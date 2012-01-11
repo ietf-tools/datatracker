@@ -59,7 +59,7 @@ is occasionally incorrect.</span>
 <tr><td>Area Director:</td>
 <td>
 {% if not wg.ad %}?{% else %}
-<a href="mailto:{{ wg.ad_email }}">{{ wg.ad.name }} &lt;{{ wg.ad_email }}&gt;</a>{% endif %}
+<a href="mailto:{{ wg.areadirector.address }}">{{ wg.ad.name }} &lt;{{ wg.areadirector.address }}&gt;</a>{% endif %}
 </td>
 </tr>
 {% if wg.techadvisors %}
@@ -115,7 +115,7 @@ is occasionally incorrect.</span>
 {% if wg.additional_urls %}
 <p>In addition to the charter maintained by the IETF Secretariat, there is additional information about this working group on the Web at: 
 {% for url in wg.additional_urls %}
-<a href="{{ url.url }}">{{ url.description}}</a>{% if not forloop.last %}, {% endif %}
+<a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}, {% endif %}
 {% endfor %}
 </p>
 {% endif %}

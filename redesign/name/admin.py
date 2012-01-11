@@ -7,7 +7,6 @@ class NameAdmin(admin.ModelAdmin):
     
 admin.site.register(GroupTypeName, NameAdmin)
 admin.site.register(GroupStateName, NameAdmin)
-admin.site.register(IesgGroupStateName, NameAdmin)
 admin.site.register(RoleName, NameAdmin)
 admin.site.register(StreamName, NameAdmin)
 admin.site.register(DocRelationshipName, NameAdmin)

@@ -17,11 +17,13 @@ from redesign.group.models import *
 from redesign.name.models import *
 from redesign.doc.models import State, StateType
 from redesign.doc.utils import get_tags_for_stream_id
+from redesign.doc.models import Document
 from redesign.name.utils import name
 from redesign.importing.utils import old_person_to_person
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role, AreaDirector
 from ietf.liaisons.models import SDOs
 from ietf.iesg.models import TelechatDates, Telechat, TelechatDate
+from ietf.wgcharter.utils import set_or_create_charter
 import workflows.utils
 
 # imports IETFWG, Area, AreaGroup, Acronym, IRTF, AreaWGURL, SDOs, TelechatDates, dates from Telechat
@@ -29,6 +31,8 @@ import workflows.utils
 # also creates nomcom groups
 
 # assumptions: persons and states have been imported
+
+doc_type_charter = name(DocTypeName, "charter", "Charter")
 
 state_names = dict(
     bof=name(GroupStateName, slug="bof", name="BOF"),
@@ -49,6 +53,15 @@ type_names = dict(
     individ=name(GroupTypeName, slug="individ", name="Individual"),
     sdo=name(GroupTypeName, slug="sdo", name="SDO", desc="Standards organization"),
     )
+
+group_ballot_names = {
+    'No': name(GroupBallotPositionName, 'no', 'No'),
+    'Yes': name(GroupBallotPositionName, 'yes', 'Yes'),
+    'Abstain': name(GroupBallotPositionName, 'abstain', 'Abstain'),
+    'Block': name(GroupBallotPositionName, 'block', 'Block'),
+    'No Record': name(GroupBallotPositionName, 'norecord', 'No record'),
+    }
+
 
 # make sure we got the IETF as high-level parent
 ietf_group, _ = Group.objects.get_or_create(acronym="ietf")
@@ -322,6 +335,16 @@ for o in IETFWG.objects.all().order_by("pk"):
     if l in ("none", "not available"):
         l = ""
     group.list_archive = l
+
+    charter = set_or_create_charter(group)
+    if group.state_id in ("active", "conclude"):
+        charter.rev = "01"
+        charter.set_state(State.objects.get(type="charter", slug="approved"))
+    else:
+        charter.rev = "00"
+        charter.set_state(State.objects.get(type="charter", slug="notrev"))
+    charter.save()
+
     group.comments = o.comments.strip() if o.comments else ""
     
     group.save()

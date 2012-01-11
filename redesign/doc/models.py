@@ -65,6 +65,8 @@ class DocumentInfo(models.Model):
         elif self.type_id in ("agenda", "minutes", "slides"):
             meeting = self.name.split("-")[1]
             return os.path.join(settings.AGENDA_PATH, meeting, self.type_id) + "/"
+        elif self.type_id == "charter":
+            return settings.CHARTER_PATH
         else:
             raise NotImplemented
 
@@ -142,11 +144,14 @@ class Document(DocumentInfo):
 
     def get_absolute_url(self):
         name = self.name
-        if self.get_state_slug() == "rfc":
-            aliases = self.docalias_set.filter(name__startswith="rfc")
-            if aliases:
-                name = aliases[0].name
-        return urlreverse('doc_view', kwargs={ 'name': name })
+        if self.type_id == "charter":
+            return urlreverse('wg_view', kwargs={ 'name': self.group.acronym })
+        elif self.type_id == "draft":
+            if self.get_state_slug() == "rfc":
+                aliases = self.docalias_set.filter(name__startswith="rfc")
+                if aliases:
+                    name = aliases[0].name
+            return urlreverse('doc_view', kwargs={ 'name': name })
 
     def file_tag(self):
         return u"<%s>" % self.filename_with_rev()
@@ -192,8 +197,7 @@ class DocHistoryAuthor(models.Model):
 
 class DocHistory(DocumentInfo):
     doc = models.ForeignKey(Document, related_name="history_set")
-    # Django 1.2 won't let us define these in the base class, so we have
-    # to repeat them
+    name = models.CharField(max_length=255) # WG charter names can change if the group acronym changes
     related = models.ManyToManyField('DocAlias', through=RelatedDocHistory, blank=True)
     authors = models.ManyToManyField(Email, through=DocHistoryAuthor, blank=True)
     def __unicode__(self):
@@ -211,6 +215,7 @@ def save_document_in_history(doc):
     # copy fields
     fields = get_model_fields_as_dict(doc)
     fields["doc"] = doc
+    fields["name"] = doc.name
     
     dochist = DocHistory(**fields)
     dochist.save()
@@ -278,7 +283,12 @@ EVENT_TYPES = [
     # WG events
     ("changed_group", "Changed group"),
     ("changed_protocol_writeup", "Changed protocol writeup"),
-    
+
+    # charter events
+    ("initial_review", "Set initial review time"),
+    ("changed_review_announcement", "Changed WG Review text"),
+    ("changed_action_announcement", "Changed WG Action text"),
+
     # IESG events
     ("started_iesg_process", "Started IESG process on document"),
 
@@ -336,3 +346,14 @@ class TelechatDocEvent(DocEvent):
     telechat_date = models.DateField(blank=True, null=True)
     returning_item = models.BooleanField(default=False)
 
+# Charter ballot events
+class GroupBallotPositionDocEvent(DocEvent):
+    ad = models.ForeignKey(Person)
+    pos = models.ForeignKey(GroupBallotPositionName, verbose_name="position", default="norecord")
+    block_comment = models.TextField(help_text="Blocking comment if position is comment", blank=True)
+    block_comment_time = models.DateTimeField(help_text="Blocking comment was written", blank=True, null=True)
+    comment = models.TextField(help_text="Non-blocking comment", blank=True)
+    comment_time = models.DateTimeField(help_text="Time non-blocking comment was written", blank=True, null=True)
+
+class InitialReviewDocEvent(DocEvent):
+    expires = models.DateTimeField(blank=True, null=True)

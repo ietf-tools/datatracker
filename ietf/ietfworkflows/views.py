@@ -19,6 +19,8 @@ from ietf.ietfworkflows.accounts import (can_edit_state, can_edit_stream,
                                          is_chair_of_stream, can_adopt)
 from redesign.doc.utils import get_tags_for_stream_id
 from redesign.name.models import DocTagName
+from redesign.group.utils import save_group_in_history
+from redesign.group.models import Group, Role
 
 
 REDUCED_HISTORY_LEN = 20
@@ -125,9 +127,9 @@ def stream_delegates(request, stream_name):
         if request.POST.get('delete', False):
             pk_list = request.POST.getlist('remove_delegate')
             if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                # FIXME: should save group history here
-                from redesign.group.models import Role
-                Role.objects.filter(person__in=pk_list, group__acronym=stream.slug, name="delegate").delete()
+                stream_group = Group.objects.get(acronym=stream.slug)
+                save_group_in_history(stream_group)
+                Role.objects.filter(person__in=pk_list, group=stream_group, name="delegate").delete()
             else:
                 StreamDelegate.objects.filter(stream=stream, person__pk__in=pk_list).delete()
         else:

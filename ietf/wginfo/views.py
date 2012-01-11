@@ -111,7 +111,8 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
 def wg_documents(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
-    concluded = (wg.status_id != 1)
+    concluded = (wg.status_id != 1 and wg.status_id != 4)
+    proposed = (wg.status_id == 4)
     form = SearchForm({'by':'group', 'group':str(wg.group_acronym.acronym),
                        'rfcs':'on', 'activeDrafts':'on'})
     if not form.is_valid():
@@ -130,26 +131,28 @@ def wg_documents(request, acronym):
         if ( len(parts) >= 3):
             if parts[1] != "ietf" and parts[2].startswith(wg.group_acronym.acronym+"-"):
                 docs_related_pruned.append(d)
-    return wg, concluded, docs, meta, docs_related_pruned, meta_related
+    return wg, concluded, proposed, docs, meta, docs_related_pruned, meta_related
 
 def wg_documents_txt(request, acronym):
-    wg, concluded, docs, meta, docs_related, meta_related = wg_documents(request, acronym)
-    return HttpResponse(loader.render_to_string('wginfo/wg_documents.txt', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs,  'meta':meta, 'docs_related':docs_related, 'meta_related':meta_related}),mimetype='text/plain; charset=UTF-8')
+    wg, concluded, proposed, docs, meta, docs_related, meta_related = wg_documents(request, acronym)
+    return HttpResponse(loader.render_to_string('wginfo/wg_documents.txt', {'wg': wg, 'concluded':concluded, 'proposed':proposed, 'selected':'documents', 'docs':docs,  'meta':meta, 'docs_related':docs_related, 'meta_related':meta_related}),mimetype='text/plain; charset=UTF-8')
 
 def wg_documents_html(request, acronym):
-    wg, concluded, docs, meta, docs_related, meta_related = wg_documents(request, acronym)
-    return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'selected':'documents', 'docs':docs,  'meta':meta, 'docs_related':docs_related, 'meta_related':meta_related}, RequestContext(request))
+    wg, concluded, proposed, docs, meta, docs_related, meta_related = wg_documents(request, acronym)
+    return render_to_response('wginfo/wg_documents.html', {'wg': wg, 'concluded':concluded, 'proposed':proposed, 'selected':'documents', 'docs':docs,  'meta':meta, 'docs_related':docs_related, 'meta_related':meta_related}, RequestContext(request))
 
 def wg_charter(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
-    concluded = (wg.status_id != 1)
+    concluded = (wg.status_id != 1 and wg.status_id != 4)
+    proposed = (wg.status_id == 4)
 
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         fill_in_charter_info(wg)
         return render_to_response('wginfo/wg_charterREDESIGN.html',
                                   dict(wg=wg,
                                        concluded=concluded,
+                                       proposed=proposed,
                                        selected='charter'),
                                   RequestContext(request))
         
-    return render_to_response('wginfo/wg_charter.html', {'wg': wg, 'concluded':concluded, 'selected':'charter'}, RequestContext(request))
+    return render_to_response('wginfo/wg_charter.html', {'wg': wg, 'concluded':concluded, 'proposed': proposed, 'selected':'charter'}, RequestContext(request))

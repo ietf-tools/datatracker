@@ -156,6 +156,7 @@ INSTALLED_APPS = (
     'ietf.submit',
     'ietf.ietfworkflows',
     'ietf.wgchairs',
+    'ietf.wgcharter',
 )
 
 INTERNAL_IPS = (
@@ -187,6 +188,8 @@ MAX_WG_DELEGATES = 3
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
+CHARTER_PATH = '/a/www/ietf-ftp/charters/'
+CHARTER_TXT_URL = 'http://www.ietf.org/charters/'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 AGENDA_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/agenda/%(wg)s.%(ext)s'
 MINUTES_PATH_PATTERN = '/a/www/www6s/proceedings/%(meeting)s/minutes/%(wg)s.%(ext)s'

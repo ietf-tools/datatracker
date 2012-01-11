@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}WG {{ announcement }} announcement writeup for {{ charter.chartered_group.acronym }}{% endblock %}
+
+{% block morecss %}
+form #id_announcement_text {
+  width: 700px;
+  height: 600px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>WG {{ announcement }} announcement writeup for {{ charter.chartered_group.acronym }}</h1>
+
+<form action="" method="POST">
+
+  {{ announcement_text_form.announcement_text }}
+
+  <div class="actions">
+    <a href="{{ back_url }}">Back</a>
+    <input type="submit" name="save_text" value="Save WG {{ announcement }} announcement text" />
+    <input type="submit" name="regenerate_text" value="Regenerate {{ announcement }} text" />
+  </div>
+
+{% load ietf_filters %}
+{% if user|in_group:"Secretariat" %}
+  <div class="actions">
+    <input type="submit" name="send_text" value="Send WG {{ announcement }} announcement" />
+  </div>
+{% endif %}
+
+</form>
+
+{% endblock%}

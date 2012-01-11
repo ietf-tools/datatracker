@@ -13,7 +13,7 @@ from ietf.utils.mail import outbox
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from redesign.person.models import Person, Email
-    from redesign.group.models import Group, Role, GroupStateTransitions
+    from redesign.group.models import Group, GroupHistory, Role, GroupStateTransitions
     from redesign.doc.models import Document, State, WriteupDocEvent
     from redesign.name.models import DocTagName
         
@@ -87,6 +87,7 @@ class ManageDelegatesTestCase(django.test.TestCase):
         self.assertEquals(len(q('form input[name=email]')), 1)
 
         # add existing person
+        history_before = GroupHistory.objects.filter(acronym="mars").count()
         r = self.client.post(url,
                              dict(email="plain@example.com",
                                   form_type="single"))
@@ -94,7 +95,9 @@ class ManageDelegatesTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertTrue("new delegate" in r.content)
         self.assertTrue(Email.objects.get(address="plain@example.com").person.name in r.content)
-        
+        self.assertEquals(Role.objects.filter(name="delegate", group__acronym="mars", email__address="plain@example.com").count(), 1)
+        self.assertEquals(history_before + 1, GroupHistory.objects.filter(acronym="mars").count())
+
 
 class ManageShepherdsTestCase(django.test.TestCase):
     fixtures = ['names']

@@ -1,6 +1,8 @@
 from redesign.proxy_utils import TranslatingManager, proxy_role_email
 
 from models import *
+from doc.models import Document # for charter text
+from ietf.wgcharter.utils import get_charter_for_revision, approved_revision
 
 class Acronym(Group):
     class LazyIndividualSubmitter(object):
@@ -60,7 +62,7 @@ class Area(Group):
     #status = models.ForeignKey(AreaStatus)
     @property
     def status_id(self):
-        return { "active": 1, "dormant": 2, "conclude": 3 }[self.state_id]
+        return { "active": 1, "dormant": 2, "conclude": 3, "proposed": 4 }[self.state_id]
     #comments = models.TextField(blank=True)
     #last_modified_date = models.DateField(auto_now=True)
     @property
@@ -131,7 +133,7 @@ class IETFWG(Group):
     #status = models.ForeignKey(WGStatus)
     @property
     def status_id(self):
-        return { "active": 1, "dormant": 2, "conclude": 3 }[self.state_id]
+        return { "active": 1, "dormant": 2, "conclude": 3, "proposed": 4 }[self.state_id]
     #area_director = models.ForeignKey(AreaDirector, null=True)
     #meeting_scheduled = models.CharField(blank=True, max_length=3)
     @property
@@ -200,12 +202,23 @@ class IETFWG(Group):
         from django.conf import settings
         # get file path from settings. Syntesize file name from path, acronym, and suffix
         try:
-            filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, self.acronym) + ".desc.txt"
+            # Try getting charter from new charter tool
+            charter = Document.objects.get(docalias__name="charter-ietf-%s" % self.acronym)
+            ch = get_charter_for_revision(charter, charter.rev)
+            name = ch.name
+            rev = approved_revision(ch.rev)
+            filename = os.path.join(charter.get_file_path(), "%s-%s.txt" % (name, rev))
             desc_file = open(filename)
             desc = desc_file.read()
-        except BaseException:    
-            desc = 'Error Loading Work Group Description'
-        return desc
+            return desc
+        except:
+            try:
+                filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, self.acronym) + ".desc.txt"
+                desc_file = open(filename)
+                desc = desc_file.read()
+            except BaseException:    
+                desc = 'Error Loading Work Group Description'
+            return desc
 
     def additional_urls(self):
         return self.groupurl_set.all().order_by("name")

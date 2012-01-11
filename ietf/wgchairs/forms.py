@@ -21,6 +21,7 @@ from workflows.models import Transition
 from redesign.doc.models import WriteupDocEvent
 from redesign.person.models import Person, Email
 from redesign.group.models import Role, RoleName
+from redesign.group.utils import save_group_in_history
 from redesign.name.models import DocTagName
 
 
@@ -45,7 +46,7 @@ class RelatedWGForm(forms.Form):
 
 class TagForm(RelatedWGForm):
 
-    tags = forms.ModelMultipleChoiceField(AnnotationTag.objects.filter(wgworkflow__name='Default WG Workflow'),
+    tags = forms.ModelMultipleChoiceField(AnnotationTag.objects.filter(workflow__name='Default WG Workflow'),
                                           widget=forms.CheckboxSelectMultiple, required=False)
 
     def save(self):
@@ -58,7 +59,7 @@ class TagForm(RelatedWGForm):
 
 class StateForm(RelatedWGForm):
 
-    states = forms.ModelMultipleChoiceField(State.objects.filter(wgworkflow__name='Default WG Workflow'),
+    states = forms.ModelMultipleChoiceField(State.objects.filter(workflow__name='Default WG Workflow'),
                                             widget=forms.CheckboxSelectMultiple, required=False)
 
     def update_transitions(self, workflow):
@@ -103,7 +104,7 @@ class DeleteTransitionForm(RelatedWGForm):
 
 class TransitionForm(forms.ModelForm):
 
-    states = forms.ModelMultipleChoiceField(State.objects.filter(wgworkflow__name='Default WG Workflow'))
+    states = forms.ModelMultipleChoiceField(State.objects.filter(workflow__name='Default WG Workflow'))
 
     class Meta:
         model = Transition
@@ -182,6 +183,7 @@ class RemoveDelegateForm(RelatedWGForm):
 
     def save(self):
         delegates = self.cleaned_data.get('delete')
+        save_group_in_history(self.wg)
         WGDelegate.objects.filter(pk__in=delegates).delete()
         self.set_message('success', 'Delegates removed')
 
@@ -281,7 +283,9 @@ class AddDelegateForm(RelatedWGForm):
             created = False
             e = Email.objects.get(address=self.cleaned_data.get('email'))
             if not Role.objects.filter(name="delegate", group=self.wg, person=person, email=e):
-                delegate, created = Role.objects.get_or_create(
+                created = True
+                save_group_in_history(self.wg)
+                delegate, _ = Role.objects.get_or_create(
                     name=RoleName.objects.get(slug="delegate"), group=self.wg, person=e.person, email=e)
         else:
             (delegate, created) = WGDelegate.objects.get_or_create(wg=self.wg,

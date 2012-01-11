@@ -20,11 +20,6 @@ class GroupStateName(NameModel):
     """BOF, Proposed, Active, Dormant, Concluded"""
 class GroupTypeName(NameModel):
     """IETF, Area, WG, RG, Team, etc."""
-class IesgGroupStateName(NameModel):
-    """Informal IESG review, Internal review, External review, IESG review,
-    WG exists, Not currently under review, Informal IESG recharter review,
-    Internal recharter review, External recharter review, IESG recharter 
-    review """
 class RoleName(NameModel):
     """AD, Chair"""
 class StreamName(NameModel):
@@ -48,6 +43,8 @@ class DocReminderTypeName(NameModel):
     "Stream state"
 class BallotPositionName(NameModel):
     """ Yes, No Objection, Abstain, Discuss, Recuse """
+class GroupBallotPositionName(NameModel):
+    """ Yes, No, Block, Abstain """
 class MeetingTypeName(NameModel):
     """IETF, Interim"""
 class SessionStatusName(NameModel):

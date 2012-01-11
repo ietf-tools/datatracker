@@ -1,0 +1,55 @@
+200	/
+200	/wgcharter/
+
+# In IESG process
+200  	/wgcharter/in_process/
+
+# by AD
+# current AD -- needs to be updated at some point
+200	/wgcharter/ad/aread.irector/
+# former AD
+200	/wgcharter/ad/exaread.irector/
+404	/wgcharter/ad/no.body/
+
+# create
+302	/wgcharter/create/
+
+# WG
+200	/wgcharter/mars/
+200     /wgcharter/mars/00-00/
+200	/wgcharter/mars/_ballot.data
+
+# Edit WG
+302     /wgcharter/mars/edit/state/
+302     /wgcharter/mars/edit/info/
+302     /wgcharter/mars/edit/conclude/
+302     /wgcharter/mars/edit/addcomment/
+302     /wgcharter/mars/edit/action/
+302     /wgcharter/mars/edit/review/
+
+# ballots
+302     /wgcharter/mars/edit/position/
+302     /wgcharter/mars/edit/sendballotcomment/
+302     /wgcharter/mars/edit/approveballot/
+
+# submission of charters
+302     /wgcharter/mars/submit/
+
+# search
+200	/wgcharter/search/
+302	/wgcharter/search/?name=martian
+200     /wgcharter/search/?name=something
+200     /wgcharter/search/?name=something&by=acronym&acronym=some
+200	/wgcharter/search/?name=something&by=state&state=active&charter_state=
+200	/wgcharter/search/?name=something&by=state&state=&charter_state=approved
+200	/wgcharter/search/?name=something&by=ad&ad=1
+200     /wgcharter/search/?name=something&by=area&area=2
+200	/wgcharter/search/?name=something&by=anyfield&anyfield=something
+200	/wgcharter/search/?name=something&by=eacronym&eacronym=someold
+
+# searchPerson (ajax)
+200     /wgcharter/searchPerson/
+
+# 
+
+

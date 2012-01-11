@@ -10,6 +10,14 @@ from redesign.group.models import *
 from redesign.person.models import *
 
 def make_test_data():
+    # telechat dates
+    t = datetime.date.today()
+    old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date
+    date1 = TelechatDate.objects.create(date=t).date
+    date2 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14)).date
+    date3 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 2)).date
+    date4 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 3)).date
+
     # groups
     secretariat = Group.objects.create(
         name="Secretariat",
@@ -36,6 +44,13 @@ def make_test_data():
         state_id="active",
         type_id="area",
         parent=ietf)
+    individ = Group.objects.create(
+        name="Individual submissions",
+        acronym="none",
+        state_id="active",
+        type_id="individ",
+        parent=None)
+    # mars WG
     group = Group.objects.create(
         name="Martian Special Interest Group",
         acronym="mars",
@@ -43,13 +58,52 @@ def make_test_data():
         type_id="wg",
         parent=area,
         )
-    individ = Group.objects.create(
-        name="Individual submissions",
-        acronym="none",
-        state_id="active",
-        type_id="individ",
-        parent=None)
-    
+    charter = Document.objects.create(
+        name="charter-ietf-" + group.acronym,
+        type_id="charter",
+        title=group.name,
+        group=group,
+        rev="00",
+        )
+    charter.set_state(State.objects.get(slug="approved", type="charter"))
+    group.charter = charter
+    group.save()
+    DocAlias.objects.create(
+        name=charter.name,
+        document=charter
+        )
+    # ames WG
+    group = Group.objects.create(
+        name="Asteroid Mining Equipment Standardization Group",
+        acronym="ames",
+        state_id="proposed",
+        type_id="wg",
+        parent=area,
+        )
+    charter = Document.objects.create(
+        name="charter-ietf-" + group.acronym,
+        type_id="charter",
+        title=group.name,
+        group=group,
+        rev="00",
+        )
+    charter.set_state(State.objects.get(slug="infrev", type="charter"))
+    DocAlias.objects.create(
+        name=charter.name,
+        document=charter
+        )
+    group.charter = charter
+    group.save()
+    WGAction.objects.create(
+        pk=group.pk,
+        note="",
+        status_date=datetime.date.today(),
+        agenda=1,
+        token_name="Aread",
+        category=13,
+        telechat_date=date2
+        )
+
     # persons
 
     # system
@@ -107,6 +161,20 @@ def make_test_data():
             Role.objects.create(
                 name_id="ad",
                 group=area,
+                person=p,
+                email=email)
+        else:
+            areahist = GroupHistory.objects.create(
+                group=area,
+                name=area.name,
+                acronym=area.acronym,
+                type_id=area.type_id,
+                state_id=area.state_id,
+                parent=area.parent
+                )
+            RoleHistory.objects.create(
+                name_id="ad",
+                group=areahist,
                 person=p,
                 email=email)
 
@@ -224,33 +292,7 @@ def make_test_data():
         rev="00",
         )
     
-    # telechat dates
-    t = datetime.date.today()
-    old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date
-    date1 = TelechatDate.objects.create(date=t).date
-    date2 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14)).date
-    date3 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 2)).date
-    date4 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 3)).date
-
-    # WG Actions
-    group = Group.objects.create(
-        name="Asteroid Mining Equipment Standardization Group",
-        acronym="ames",
-        state_id="proposed",
-        type_id="wg",
-        parent=area,
-        )
-    WGAction.objects.create(
-        pk=group.pk,
-        note="",
-        status_date=datetime.date.today(),
-        agenda=1,
-        token_name="Aread",
-        category=13,
-        telechat_date=date2
-        )
-
-    # Meeting
+    # meeting
     Meeting.objects.create(
         number="42",
         type_id="ietf",

@@ -52,3 +52,25 @@ def active_ballot_positions(doc):
 def get_rfc_number(doc):
     qs = doc.docalias_set.filter(name__startswith='rfc')
     return qs[0].name[3:] if qs else None
+
+def augment_with_telechat_date(docs):
+    """Add a telechat_date attribute to each document with the
+    scheduled telechat or None if it's not scheduled."""
+    docs_dict = {}
+    for d in docs:
+        docs_dict[d.pk] = d
+        d.telechat_date = None
+
+    seen = set()
+
+    for e in TelechatDocEvent.objects.filter(type="scheduled_for_telechat", doc__in=docs).order_by('-time'):
+        if e.doc_id in seen:
+            continue
+
+        docs_dict[e.doc_id].telechat_date = e.telechat_date
+        seen.add(e.doc_id)
+
+    return docs
+
+
+

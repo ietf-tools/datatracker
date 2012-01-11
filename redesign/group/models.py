@@ -12,7 +12,6 @@ class GroupInfo(models.Model):
     state = models.ForeignKey(GroupStateName, null=True)
     type = models.ForeignKey(GroupTypeName, null=True)
     parent = models.ForeignKey('Group', blank=True, null=True)
-    iesg_state = models.ForeignKey(IesgGroupStateName, verbose_name="IESG state", blank=True, null=True)
     ad = models.ForeignKey(Person, verbose_name="AD", blank=True, null=True)
     list_email = models.CharField(max_length=64, blank=True)
     list_subscribe = models.CharField(max_length=255, blank=True)
@@ -44,14 +43,10 @@ class Group(GroupInfo):
         e = GroupEvent.objects.filter(group=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
     
-# This will record the new state and the date it occurred for any changes
-# to a group.  The group acronym must be unique and is the invariant used
-# to select group history from this table.
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')
     acronym = models.CharField(max_length=40)
-    charter = models.ForeignKey('doc.Document', related_name='chartered_group_history_set', blank=True, null=True)
-    
+
     class Meta:
         verbose_name_plural="group histories"
 
@@ -79,11 +74,17 @@ class GroupStateTransitions(models.Model):
     state = models.ForeignKey('doc.State', help_text="State for which the next states should be overridden")
     next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
 
-GROUP_EVENT_CHOICES = [("proposed", "Proposed group"),
-                       ("started", "Started group"),
-                       ("concluded", "Concluded group"),
-                       ]
-    
+GROUP_EVENT_CHOICES = [
+    # core events
+    ("proposed", "Proposed group"),
+    ("started", "Started group"),
+    ("concluded", "Concluded group"),
+
+    # misc group events
+    ("added_comment", "Added comment"),
+    ("info_changed", "Changed metadata"),
+    ]
+
 class GroupEvent(models.Model):
     """An occurrence for a group, used for tracking who, when and what."""
     group = models.ForeignKey(Group)

@@ -9,6 +9,7 @@ from ietf.idtracker.feeds import DocumentComments, InLastCall
 from ietf.ipr.feeds import LatestIprDisclosures
 from ietf.proceedings.feeds import LatestWgProceedingsActivity
 from ietf.liaisons.feeds import Liaisons
+from ietf.wgcharter.feeds import GroupComments
 
 from ietf.idtracker.sitemaps import IDTrackerMap, DraftMap
 from ietf.liaisons.sitemaps import LiaisonMap
@@ -24,6 +25,7 @@ feeds = {
     'iesg-agenda': IESGAgenda,
     'last-call': InLastCall,
     'comments': DocumentComments,
+    'wgcomments': GroupComments, 
     'ipr': LatestIprDisclosures,
     'liaison': Liaisons,
     'wg-proceedings' : LatestWgProceedingsActivity
@@ -59,6 +61,7 @@ urlpatterns = patterns('',
     (r'^accounts/', include('ietf.ietfauth.urls')),
     (r'^doc/', include('ietf.idrfc.urls')),
     (r'^wg/', include('ietf.wginfo.urls')),
+    (r'^wgcharter/', include('ietf.wgcharter.urls')),
     (r'^cookies/', include('ietf.cookies.urls')),
     (r'^submit/', include('ietf.submit.urls')),
     (r'^streams/', include('ietf.ietfworkflows.urls')),

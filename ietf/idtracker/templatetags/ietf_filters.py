@@ -431,6 +431,15 @@ def stable_dictsort(value, arg):
     decorated.sort(lambda a, b: cmp(a[0], b[0]) if a[0] and b[0] else -1 if b[0] else 1 if a[0] else 0)
     return [item[1] for item in decorated]
 
+@register.filter
+def ad_area(user):
+    if user and user.is_authenticated():
+        from redesign.group.models import Group
+        g = Group.objects.filter(role__name="ad", role__person__user=user)
+        if g:
+            return g[0].acronym
+    return None
+
 def _test():
     import doctest
     doctest.testmod()

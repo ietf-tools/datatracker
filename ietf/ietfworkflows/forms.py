@@ -22,6 +22,7 @@ from redesign.doc.utils import get_tags_for_stream_id
 from redesign.doc.models import save_document_in_history, DocEvent, Document
 from redesign.name.models import DocTagName, StreamName, RoleName
 from redesign.group.models import Group, GroupStateTransitions, Role
+from redesign.group.utils import save_group_in_history
 from redesign.person.models import Person, Email
 
 class StreamDraftForm(forms.Form):
@@ -351,9 +352,10 @@ class StreamDelegatesForm(forms.Form):
 
     def save(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            # FIXME: should save group history here
+            stream_group = Group.objects.get(acronym=self.stream.slug)
+            save_group_in_history(stream_group)
             Role.objects.get_or_create(person=self.person,
-                                       group=Group.objects.get(acronym=self.stream.slug),
+                                       group=stream_group,
                                        name=RoleName.objects.get(slug="delegate"),
                                        email=Email.objects.get(address=self.cleaned_data.get('email')))
             return

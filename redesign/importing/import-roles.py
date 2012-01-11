@@ -283,14 +283,12 @@ for o in IESGHistory.objects.all().order_by('meeting__start_date', 'pk'):
         existing = history if history else area
         
         h = GroupHistory(group=area,
-                         charter=existing.charter,
                          time=meeting_time,
                          name=existing.name,
                          acronym=existing.acronym,
                          state=existing.state,
                          type=existing.type,
                          parent=existing.parent,
-                         iesg_state=existing.iesg_state,
                          ad=existing.ad,
                          list_email=existing.list_email,
                          list_subscribe=existing.list_subscribe,
