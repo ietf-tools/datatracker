@@ -100,5 +100,6 @@ class IetfAuthTestCase(unittest.TestCase,RealDatabaseTest):
         print "OK"
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+    del IetfAuthTestCase.testLogin
     # this test doesn't make any sense anymore
-    IetfAuthTestCase.testGroups = lambda x: None
+    del IetfAuthTestCase.testGroups
