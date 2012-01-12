@@ -8,7 +8,7 @@ from django.template import RequestContext
 from django import forms
 from django.forms.util import ErrorList
 
-from utils import log_state_changed, log_group_state_changed, log_info_changed, update_telechat, add_wg_comment, set_or_create_charter, save_charter_in_history, approved_revision
+from utils import *
 from mails import email_secretariat
 from ietf.ietfauth.decorators import group_required
 from ietf.iesg.models import TelechatDate
@@ -297,9 +297,10 @@ def edit_info(request, name=None):
                            state=GroupStateName.objects.get(name="Proposed"))
                 wg.save()
                 
-                e = GroupEvent(group=wg, type="proposed")
+                e = ChangeStateGroupEvent(group=wg, type="changed_state")
                 e.time = datetime.datetime.now()
                 e.by = login
+                e.state_id = "proposed"
                 e.desc = "Proposed group"
                 e.save()
             if not wg.charter:

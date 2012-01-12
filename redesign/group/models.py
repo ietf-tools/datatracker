@@ -38,11 +38,14 @@ class Group(GroupInfo):
     charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
     
     def latest_event(self, *args, **filter_args):
-        """Get latest group event with filter arguments, e.g.
-        d.latest_event(type="xyz")."""
-        e = GroupEvent.objects.filter(group=self).filter(**filter_args).order_by('-time', '-id')[:1]
+        """Get latest event of optional Python type and with filter
+        arguments, e.g. g.latest_event(type="xyz") returns a GroupEvent
+        while g.latest_event(ChangeStateGroupEvent, type="xyz") returns a
+        ChangeStateGroupEvent event."""
+        model = args[0] if args else GroupEvent
+        e = model.objects.filter(group=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
-    
+
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')
     acronym = models.CharField(max_length=40)
@@ -75,12 +78,7 @@ class GroupStateTransitions(models.Model):
     next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
 
 GROUP_EVENT_CHOICES = [
-    # core events
-    ("proposed", "Proposed group"),
-    ("started", "Started group"),
-    ("concluded", "Concluded group"),
-
-    # misc group events
+    ("changed_state", "Changed state"),
     ("added_comment", "Added comment"),
     ("info_changed", "Changed metadata"),
     ]
@@ -98,6 +96,9 @@ class GroupEvent(models.Model):
 
     class Meta:
         ordering = ['-time', 'id']
+
+class ChangeStateGroupEvent(GroupEvent):
+    state = models.ForeignKey(GroupStateName)
 
 class Role(models.Model):
     name = models.ForeignKey(RoleName)

@@ -2,8 +2,8 @@ from django.conf import settings
 import re
 
 from datetime import datetime
-from group.models import GroupEvent
-from doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor
+from redesign.group.models import GroupEvent, ChangeStateGroupEvent
+from redesign.doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor, DocEvent
 from ietf.utils.history import find_history_active_at
 
 def set_or_create_charter(wg):
@@ -81,8 +81,6 @@ def add_wg_comment(request, wg, text, ballot=None):
     e.save()
 
 def log_state_changed(request, doc, by, prev_state, note=''):
-    from doc.models import DocEvent
-
     e = DocEvent(doc=doc, by=by)
     e.type = "changed_document"
     e.desc = u"State changed to <b>%s</b> from %s" % (
@@ -96,16 +94,12 @@ def log_state_changed(request, doc, by, prev_state, note=''):
     return e
 
 def log_group_state_changed(request, wg, by, note=''):
-    from group.models import GroupEvent
-
-    e = GroupEvent(group=wg, by=by)
-    if wg.state_id == "proposed":
-        e.type = "proposed"
-    elif wg.state_id == "active":
-        e.type = "started"
-    elif wg.state_id == "conclude":
-        e.type = "concluded"
-    e.desc = u"%s group" % e.type.capitalize()
+    e = ChangeStateGroupEvent(group=wg, by=by, type="changed_state")
+    e.state = wg.state
+    e.desc = { 'active': "Started group",
+               'propose': "Proposed group",
+               'conclude': "Concluded group",
+               }[wg.state_id]
 
     if note:
         e.desc += "<br>%s" % note
@@ -114,8 +108,6 @@ def log_group_state_changed(request, wg, by, note=''):
     return e
 
 def log_info_changed(request, wg, by, note=''):
-    from group.models import GroupEvent
-
     e = GroupEvent(group=wg, by=by)
     e.type = "info_changed"
     e.desc = "WG info changed: "

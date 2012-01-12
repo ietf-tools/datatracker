@@ -161,16 +161,18 @@ for o in ChairsHistory.objects.filter(chair_type=Role.NOMCOM_CHAIR).order_by("st
     # we need start/end year so fudge events
     group.groupevent_set.all().delete()
     
-    e = GroupEvent(group=group, type="started")
+    e = ChangeStateGroupEvent(group=group, type="changed_state")
     e.time = datetime.datetime(o.start_year, 5, 1, 12, 0, 0)
     e.by = system
-    e.desc = e.get_type_display()
+    e.desc = "Started group"
+    e.state = state_names["active"]
     e.save()
 
-    e = GroupEvent(group=group, type="concluded")
+    e = ChangeStateGroupEvent(group=group, type="changed_state")
     e.time = datetime.datetime(o.end_year, 5, 1, 12, 0, 0)
     e.by = system
-    e.desc = e.get_type_display()
+    e.desc = "Concluded group"
+    e.state = state_names["conclude"]
     e.save()
     
 # IRTF
@@ -208,13 +210,14 @@ for o in SDOs.objects.all().order_by("pk"):
     group.acronym = slugify(group.name)
     group.save()
 
-def import_date_event(group, name, type_name):
+def import_date_event(group, name, state_id, desc):
     d = getattr(o, "%s_date" % name)
     if d:
-        e = GroupEvent(group=group, type=type_name)
+        e = ChangeStateGroupEvent(group=group, type="changed_state")
         e.time = datetime.datetime.combine(d, datetime.time(12, 0, 0))
         e.by = system
-        e.desc = e.get_type_display()
+        e.state = state_names[state_id]
+        e.desc = desc
         e.save()
 
 # Area
@@ -254,8 +257,8 @@ for o in Area.objects.all():
     # import events
     group.groupevent_set.all().delete()
 
-    import_date_event(group, "start", "started")
-    import_date_event(group, "concluded", "concluded")
+    import_date_event(group, "start", "active", "Started group")
+    import_date_event(group, "concluded", "conclude", "Concluded group")
 
     # FIXME: missing fields from old: extra_email_addresses
 
@@ -391,9 +394,9 @@ for o in IETFWG.objects.all().order_by("pk"):
     # import events
     group.groupevent_set.all().delete()
 
-    import_date_event(group, "proposed", "proposed")
-    import_date_event(group, "start", "started")
-    import_date_event(group, "concluded", "concluded")
+    import_date_event(group, "proposed", "proposed", "Proposed group")
+    import_date_event(group, "start", "active", "Started group")
+    import_date_event(group, "concluded", "conclude", "Concluded group")
     # dormant_date is empty on all so don't bother with that
             
     # FIXME: missing fields from old: meeting_scheduled, email_keyword, meeting_scheduled_old
