@@ -141,7 +141,6 @@ substate_mapping = {
 
 tag_review_by_rfc_editor = name(DocTagName, 'rfc-rev', "Review by RFC Editor")
 tag_via_rfc_editor = name(DocTagName, 'via-rfc', "Via RFC Editor")
-tag_expired_tombstone = name(DocTagName, 'exp-tomb', "Expired tombstone")
 tag_approved_in_minute = name(DocTagName, 'app-min', "Approved in minute")
 tag_has_errata = name(DocTagName, 'errata', "Has errata")
 
@@ -815,7 +814,7 @@ for index, o in enumerate(all_drafts.iterator()):
         except State.MultipleObjectsReturned:
             d.set_state(State.objects.get(type="draft-stream-%s" % d.stream_id, name=s.name))
 
-    d.rev = o.revision
+    d.rev = o.revision_display()
     d.abstract = o.abstract
     d.pages = o.txt_page_count
     d.intended_std_level = intended_std_level_mapping[o.intended_status.intended_status]
@@ -991,7 +990,6 @@ for index, o in enumerate(all_drafts.iterator()):
 
     # tags
     sync_tag(d, o.review_by_rfc_editor, tag_review_by_rfc_editor)
-    sync_tag(d, o.expired_tombstone, tag_expired_tombstone)
 
     ctype = ContentType.objects.get_for_model(o)
     used_tags = AnnotationTag.objects.filter(annotationtagobjectrelation__content_type=ctype, annotationtagobjectrelation__content_id=o.pk).values_list('name', flat=True)

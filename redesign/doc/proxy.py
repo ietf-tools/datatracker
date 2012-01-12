@@ -173,7 +173,7 @@ class InternetDraft(Document):
     #expired_tombstone = models.BooleanField()
     @property
     def expired_tombstone(self):
-        return bool(self.tags.filter(slug='exp-tomb'))
+        return False
 
     def calc_process_start_end(self):
         import datetime
@@ -238,10 +238,7 @@ class InternetDraft(Document):
     def idstate(self):
 	return self.docstate()
     def revision_display(self):
-	r = int(self.revision)
-	if self.get_state_slug() != 'active' and not self.expired_tombstone:
-	   r = max(r - 1, 0)
-	return "%02d" % r
+        return self.rev
     def expiration(self):
         return self.expires.date()
     def can_expire(self):

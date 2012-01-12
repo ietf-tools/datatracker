@@ -96,7 +96,6 @@ def perform_postREDESIGN(request, submission):
     try:
         draft = Document.objects.get(name=submission.filename)
         save_document_in_history(draft)
-        draft.tags.remove(DocTagName.objects.get(slug="exp-tomb"))
     except Document.DoesNotExist:
         draft = Document(name=submission.filename)
         draft.intended_std_level = None

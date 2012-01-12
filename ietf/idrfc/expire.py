@@ -203,17 +203,6 @@ def expire_idREDESIGN(doc):
     for t in file_types:
         move_file("%s-%s.%s" % (doc.name, doc.rev, t))
 
-    # make tombstone
-    new_revision = "%02d" % (int(doc.rev) + 1)
-
-    new_file = open(os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, "%s-%s.txt" % (doc.name, new_revision)), 'w')
-    txt = render_to_string("idrfc/expire_textREDESIGN.txt",
-                           dict(doc=doc,
-                                authors=[(e.get_name(), e.address) for e in doc.authors.all()],
-                                expire_days=InternetDraft.DAYS_TO_EXPIRE))
-    new_file.write(txt)
-    new_file.close()
-    
     # now change the state
     
     save_document_in_history(doc)
@@ -233,7 +222,6 @@ def expire_idREDESIGN(doc):
         e.desc = "Document has expired"
         e.save()
 
-    doc.rev = new_revision # FIXME: incrementing the revision like this is messed up
     doc.set_state(State.objects.get(type="draft", slug="expired"))
     doc.time = datetime.datetime.now()
     doc.save()
@@ -300,7 +288,7 @@ def clean_up_id_files():
 
 def clean_up_id_filesREDESIGN():
     """Move unidentified and old files out of the Internet Draft directory."""
-    cut_off = datetime.date.today() - datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    cut_off = datetime.date.today()
 
     pattern = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, "draft-*.*")
     files = []
@@ -340,21 +328,19 @@ def clean_up_id_filesREDESIGN():
         try:
             doc = Document.objects.get(name=filename, rev=revision)
 
-            if doc.get_state_slug() == "rfc":
+            state = doc.get_state_slug()
+
+            if state == "rfc":
                 if ext != ".txt":
                     move_file_to("unknown_ids")
-            elif doc.get_state_slug() in ("expired", "repl", "auth-rm", "ietf-rm"):
-                if doc.expires and doc.expires.date() < cut_off:
-                    # Expired, Withdrawn by Author, Replaced, Withdrawn by IETF,
-                    # and expired more than DAYS_TO_EXPIRE ago
-                    if os.path.getsize(path) < 1500:
-                        move_file_to("deleted_tombstones")
-                        # revert version after having deleted tombstone
-                        doc.rev = "%02d" % (int(revision) - 1) # FIXME: messed up
-                        doc.save()
-                        doc.tags.add(DocTagName.objects.get(slug='exp-tomb'))
-                    else:
-                        move_file_to("expired_without_tombstone")
+            elif state in ("expired", "repl", "auth-rm", "ietf-rm") and doc.expires and doc.expires.date() < cut_off:
+                # Expired, Replaced, Withdrawn by Author/IETF, and expired
+                if os.path.getsize(path) < 1500:
+                    # we don't make tombstones any more so this should
+                    # go away in the future
+                    move_file_to("deleted_tombstones")
+                else:
+                    move_file_to("expired_without_tombstone")
             
         except Document.DoesNotExist:
             move_file_to("unknown_ids")

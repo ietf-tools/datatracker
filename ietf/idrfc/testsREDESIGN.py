@@ -913,19 +913,14 @@ class ExpireIDsTestCase(django.test.TestCase):
         txt = "%s-%s.txt" % (draft.name, draft.rev)
         self.write_id_file(txt, 5000)
 
-        revision_before = draft.rev
-
         expire_id(draft)
 
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.get_state_slug(), "expired")
-        self.assertEquals(int(draft.rev), int(revision_before) + 1)
         self.assertEquals(draft.get_state_slug("draft-iesg"), "dead")
         self.assertTrue(draft.latest_event(type="expired_document"))
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
-        new_txt = "%s-%s.txt" % (draft.name, draft.rev)
-        self.assertTrue(os.path.exists(os.path.join(self.id_dir, new_txt)))
 
     def test_clean_up_id_files(self):
         draft = make_test_data()
@@ -1004,10 +999,6 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertTrue(not os.path.exists(os.path.join(self.id_dir, txt)))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "deleted_tombstones", txt)))
 
-        draft = Document.objects.get(name=draft.name)
-        self.assertEquals(int(draft.rev), int(revision_before) - 1)
-        self.assertTrue(draft.tags.filter(slug="exp-tomb"))
-        
 class ExpireLastCallTestCase(django.test.TestCase):
     fixtures = ['names']
 

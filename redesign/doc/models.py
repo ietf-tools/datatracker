@@ -158,7 +158,6 @@ class Document(DocumentInfo):
         return u"<%s>" % self.filename_with_rev()
 
     def filename_with_rev(self):
-        # FIXME: compensate for tombstones?
         return u"%s-%s.txt" % (self.name, self.rev)
     
     def latest_event(self, *args, **filter_args):
