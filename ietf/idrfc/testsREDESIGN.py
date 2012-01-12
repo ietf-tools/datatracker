@@ -349,7 +349,7 @@ class ResurrectTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertEquals(len(q('form input[type=submit]')), 1)
 
-        # request resurrect
+        # complete resurrect
         events_before = draft.docevent_set.count()
         mailbox_before = len(outbox)
         
@@ -360,6 +360,7 @@ class ResurrectTestCase(django.test.TestCase):
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
         self.assertEquals(draft.latest_event().type, "completed_resurrect")
         self.assertEquals(draft.get_state_slug(), "active")
+        self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
         self.assertEquals(len(outbox), mailbox_before + 1)
         
 class AddCommentTestCase(django.test.TestCase):
@@ -858,7 +859,7 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertTrue(not in_id_expire_freeze(datetime.datetime.combine(ietf_monday, time(0, 0, 0))))
         
     def test_warn_expirable_ids(self):
-        from ietf.idrfc.expire import get_soon_to_expire_ids, send_expire_warning_for_id, INTERNET_DRAFT_DAYS_TO_EXPIRE
+        from ietf.idrfc.expire import get_soon_to_expire_ids, send_expire_warning_for_id
 
         draft = make_test_data()
 
@@ -866,15 +867,6 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         # hack into expirable state
         draft.unset_state("draft-iesg")
-
-        NewRevisionDocEvent.objects.create(
-            type="new_revision",
-            by=Person.objects.get(name="Aread Irector"),
-            doc=draft,
-            desc="New revision",
-            time=datetime.datetime.now() - datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE - 7),
-            rev="01"
-        )
 
         self.assertEquals(len(list(get_soon_to_expire_ids(14))), 1)
         
@@ -888,7 +880,7 @@ class ExpireIDsTestCase(django.test.TestCase):
         self.assertTrue("wgchairman@ietf.org" in str(outbox[-1]))
         
     def test_expire_ids(self):
-        from ietf.idrfc.expire import get_expired_ids, send_expire_notice_for_id, expire_id, INTERNET_DRAFT_DAYS_TO_EXPIRE
+        from ietf.idrfc.expire import get_expired_ids, send_expire_notice_for_id, expire_id
 
         draft = make_test_data()
         
@@ -896,15 +888,8 @@ class ExpireIDsTestCase(django.test.TestCase):
         
         # hack into expirable state
         draft.unset_state("draft-iesg")
-
-        NewRevisionDocEvent.objects.create(
-            type="new_revision",
-            by=Person.objects.get(name="Aread Irector"),
-            doc=draft,
-            desc="New revision",
-            time=datetime.datetime.now() - datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE + 1),
-            rev="01"
-        )
+        draft.expires = datetime.datetime.now()
+        draft.save()
 
         self.assertEquals(len(list(get_expired_ids())), 1)
 
@@ -912,6 +897,10 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         self.assertEquals(len(list(get_expired_ids())), 1)
 
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+
+        self.assertEquals(len(list(get_expired_ids())), 0)
+        
         # test notice
         mailbox_before = len(outbox)
 
@@ -941,7 +930,7 @@ class ExpireIDsTestCase(django.test.TestCase):
     def test_clean_up_id_files(self):
         draft = make_test_data()
         
-        from ietf.idrfc.expire import clean_up_id_files, INTERNET_DRAFT_DAYS_TO_EXPIRE
+        from ietf.idrfc.expire import clean_up_id_files
 
         # put unknown file
         unknown = "draft-i-am-unknown-01.txt"
@@ -983,6 +972,7 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         # expire draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
+        draft.expires = datetime.datetime.now()
         draft.save()
 
         e = DocEvent()
@@ -990,7 +980,7 @@ class ExpireIDsTestCase(django.test.TestCase):
         e.by = Person.objects.get(name="(System)")
         e.type = "expired_document"
         e.text = "Document has expired"
-        e.time = datetime.date.today() - datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE + 1)
+        e.time = draft.expires
         e.save()
 
         # expired without tombstone

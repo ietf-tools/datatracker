@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 
 from ietf.iesg.models import TelechatDate, WGAction
@@ -51,7 +52,7 @@ def make_test_data():
         type_id="individ",
         parent=None)
     # mars WG
-    group = Group.objects.create(
+    mars_wg = group = Group.objects.create(
         name="Martian Special Interest Group",
         acronym="mars",
         state_id="active",
@@ -190,7 +191,7 @@ def make_test_data():
         person=p)
     Role.objects.create(
         name_id="chair",
-        group=group,
+        group=mars_wg,
         person=p,
         email=wgchair,
         )
@@ -207,7 +208,7 @@ def make_test_data():
         person=p)
     Role.objects.create(
         name_id="delegate",
-        group=group,
+        group=mars_wg,
         person=p,
         email=email,
         )
@@ -235,13 +236,14 @@ def make_test_data():
         type_id="draft",
         title="Optimizing Martian Network Topologies",
         stream_id="ietf",
-        group=group,
+        group=mars_wg,
         abstract="Techniques for achieving near-optimal Martian networks.",
         rev="01",
         pages=2,
         intended_std_level_id="ps",
         shepherd=plainman,
         ad=ad,
+        expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
         notify="aliens@example.mars",
         note="",
         )

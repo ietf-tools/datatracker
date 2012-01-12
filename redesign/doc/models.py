@@ -54,6 +54,7 @@ class DocumentInfo(models.Model):
     std_level = models.ForeignKey(StdLevelName, blank=True, null=True)
     ad = models.ForeignKey(Person, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)
     shepherd = models.ForeignKey(Person, related_name='shepherd_%(class)s_set', blank=True, null=True)
+    expires = models.DateTimeField(blank=True, null=True)
     notify = models.CharField(max_length=255, blank=True)
     external_url = models.URLField(blank=True) # Should be set for documents with type 'External'.
     note = models.TextField(blank=True)

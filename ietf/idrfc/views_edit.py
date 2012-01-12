@@ -727,6 +727,7 @@ def resurrectREDESIGN(request, name):
         e.save()
         
         doc.set_state(State.objects.get(type="draft", slug="active"))
+        doc.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
         doc.time = datetime.datetime.now()
         doc.save()
         return HttpResponseRedirect(doc.get_absolute_url())

@@ -243,8 +243,7 @@ class InternetDraft(Document):
 	   r = max(r - 1, 0)
 	return "%02d" % r
     def expiration(self):
-        e = self.latest_event(type__in=("completed_resurrect", "new_revision"))
-        return e.time.date() + datetime.timedelta(days=self.DAYS_TO_EXPIRE)
+        return self.expires.date()
     def can_expire(self):
         # Copying the logic from expire-ids-1 without thinking
         # much about it.

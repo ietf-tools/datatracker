@@ -136,6 +136,7 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, u"%s-%s.txt" % (name, rev))))
         self.assertEquals(draft.type_id, "draft")
         self.assertEquals(draft.stream_id, "ietf")
+        self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
         self.assertEquals(draft.get_state("draft-stream-%s" % draft.stream_id).slug, "wg-doc")
         self.assertEquals(draft.authors.count(), 1)
         self.assertEquals(draft.authors.all()[0].get_name(), "Test Name")

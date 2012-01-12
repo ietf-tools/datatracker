@@ -982,6 +982,13 @@ for index, o in enumerate(all_drafts.iterator()):
 
     # import other attributes
 
+    # when to expire
+    e = d.latest_event(type__in=("completed_resurrect", "new_revision"))
+    if e:
+        d.expires = e.time + datetime.timedelta(days=InternetDraft.DAYS_TO_EXPIRE)
+    else:
+        d.expires = None
+
     # tags
     sync_tag(d, o.review_by_rfc_editor, tag_review_by_rfc_editor)
     sync_tag(d, o.expired_tombstone, tag_expired_tombstone)

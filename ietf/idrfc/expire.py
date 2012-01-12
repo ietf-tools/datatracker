@@ -14,8 +14,6 @@ from redesign.name.models import DocTagName
 from redesign.person.models import Person, Email
 from ietf.meeting.models import Meeting
 
-INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
-
 def in_id_expire_freeze(when=None):
     if when == None:
         when = datetime.datetime.now()
@@ -34,13 +32,6 @@ def in_id_expire_freeze(when=None):
     ietf_monday = datetime.datetime.combine(d, datetime.time(0, 0))
     
     return second_cut_off <= when < ietf_monday
-
-def document_expires(doc):
-    e = doc.latest_event(type__in=("completed_resurrect", "new_revision"))
-    if e:
-        return e.time + datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE)
-    else:
-        return None
 
 def expirable_documents():
     d = Document.objects.filter(states__type="draft", states__slug="active").exclude(tags="rfc-rev")
@@ -62,8 +53,7 @@ def get_soon_to_expire_idsREDESIGN(days):
     end_date = start_date + datetime.timedelta(days - 1)
     
     for d in expirable_documents():
-        t = document_expires(d)
-        if t and start_date <= t.date() <= end_date:
+        if d.expires and start_date <= d.expires.date() <= end_date:
             yield d
 
 def get_expired_ids():
@@ -79,8 +69,7 @@ def get_expired_idsREDESIGN():
     today = datetime.date.today()
 
     for d in expirable_documents():
-        t = document_expires(d)
-        if t and t.date() <= today:
+        if d.expires and d.expires.date() <= today:
             yield d
 
 def send_expire_warning_for_id(doc):
@@ -108,7 +97,7 @@ def send_expire_warning_for_id(doc):
                    cc_addrs)
 
 def send_expire_warning_for_idREDESIGN(doc):
-    expiration = document_expires(doc).date()
+    expiration = doc.expires.date()
 
     to = [e.formatted_email() for e in doc.authors.all() if not e.address.startswith("unknown-email")]
     cc = None
@@ -225,7 +214,7 @@ def expire_idREDESIGN(doc):
     new_file.write(txt)
     new_file.close()
     
-    # now change the states
+    # now change the state
     
     save_document_in_history(doc)
     if doc.latest_event(type='started_iesg_process'):
@@ -243,7 +232,7 @@ def expire_idREDESIGN(doc):
         e.type = "expired_document"
         e.desc = "Document has expired"
         e.save()
-    
+
     doc.rev = new_revision # FIXME: incrementing the revision like this is messed up
     doc.set_state(State.objects.get(type="draft", slug="expired"))
     doc.time = datetime.datetime.now()
@@ -311,7 +300,7 @@ def clean_up_id_files():
 
 def clean_up_id_filesREDESIGN():
     """Move unidentified and old files out of the Internet Draft directory."""
-    cut_off = datetime.date.today() - datetime.timedelta(days=INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    cut_off = datetime.date.today() - datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
 
     pattern = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, "draft-*.*")
     files = []
@@ -355,10 +344,7 @@ def clean_up_id_filesREDESIGN():
                 if ext != ".txt":
                     move_file_to("unknown_ids")
             elif doc.get_state_slug() in ("expired", "repl", "auth-rm", "ietf-rm"):
-                e = doc.latest_event(type__in=('expired_document', 'new_revision', "completed_resurrect"))
-                expiration_date = e.time.date() if e and e.type == "expired_document" else None
-
-                if expiration_date and expiration_date < cut_off:
+                if doc.expires and doc.expires.date() < cut_off:
                     # Expired, Withdrawn by Author, Replaced, Withdrawn by IETF,
                     # and expired more than DAYS_TO_EXPIRE ago
                     if os.path.getsize(path) < 1500:

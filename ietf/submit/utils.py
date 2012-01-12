@@ -120,6 +120,7 @@ def perform_postREDESIGN(request, submission):
         stream_slug = "ietf"
 
     draft.stream = StreamName.objects.get(slug=stream_slug)
+    draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
     draft.save()
 
     draft.set_state(State.objects.get(type="draft", slug="active"))
