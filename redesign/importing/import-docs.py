@@ -870,6 +870,13 @@ for index, o in enumerate(all_drafts.iterator()):
             e.save()
             known_revisions.add(v.revision)
 
+    # check that the revision number is accurate, there are some bugs
+    # in the old system, presumably because of the tombstone revision
+    # hack
+    revs = list(sorted(known_revisions, reverse=True))
+    if revs and revs[0] > d.rev:
+        d.rev = revs[0]
+
     # ietfworkflows history entries
     ctype = ContentType.objects.get_for_model(o)
     for h in ObjectHistoryEntry.objects.filter(content_type=ctype, content_id=o.pk).order_by('date', 'id'):
@@ -1007,6 +1014,8 @@ for index, o in enumerate(all_drafts.iterator()):
         RelatedDocument.objects.get_or_create(source=replacement, target=d_alias, relationship=relationship_replaces)
     
     # the RFC-related attributes are imported when we handle the RFCs below
+
+    d.save()
 
 # now process RFCs
 
