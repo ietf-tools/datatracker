@@ -8,7 +8,7 @@
 
 {% block breadcrumbs %}{{ block.super }} 
   &raquo; <a href="../../">Drafts</a>
-  &raquo; <a href="../">{{ draft.id_document_tag }}</a>
+  &raquo; <a href="../">{{ draft.name }}</a>
   &raquo; Confirm
 {% endblock %}
 
@@ -20,7 +20,7 @@
       
       <table>
         <tr><th>Action Selected:</th><td>{{ action }}</td></tr>
-        <tr><th>Draft:</th><td>{{ draft.filename }}</td></tr>
+        <tr><th>Draft:</th><td>{{ draft.name }}</td></tr>
         {% for detail in details %}
           <tr><th>{{ detail.label }}</th><td>{{ detail.value }}</td></tr>
         {% endfor %}

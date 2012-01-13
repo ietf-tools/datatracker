@@ -1,11 +1,46 @@
-from sec.core.models import IDInternal
-from sec.groups.models import WGChair, IETFWG
-from sec.utils.ams_utils import get_last_revision
+from sec.utils.ams_utils import get_start_date
 from django.core.exceptions import ObjectDoesNotExist
 
+from django.conf import settings
+
+
 import datetime
+import glob
+import os
 import time
 
+def announcement_from_form(data, **kwargs):
+    '''
+    This function creates a new scheduled_announcements record.  Taking as input EmailForm.data
+    and key word arguments used to override some of the scheduled_announcement fields
+    '''
+    # possible overrides
+    scheduled_by = kwargs.get('scheduled_by','IETFDEV')
+    from_val = kwargs.get('from_val','ID Tracker <internet-drafts-reply@ietf.org>')
+    content_type = kwargs.get('content_type','')
+    
+    # from the form
+    subject = data['subject']
+    to_val = data['to']
+    cc_val = data['cc']
+    body = data['body']
+    
+    """
+    sa = ScheduledAnnouncement(scheduled_by=scheduled_by,
+                               scheduled_date=datetime.date.today().isoformat(),
+                               scheduled_time=time.strftime('%H:%M:%S'),
+                               subject=subject,
+                               to_val=to_val,
+                               cc_val=cc_val,
+                               from_val=from_val,
+                               body=body,
+                               first_q=1,
+                               content_type=content_type)
+    sa.save()
+    return sa
+    """
+    pass
+    
 def get_authors(draft):
     """
     Takes a draft object and returns a list of authors suitable for a tombstone document
@@ -13,9 +48,10 @@ def get_authors(draft):
     authors = []
     for a in draft.authors.all():
         initial = ''
-        if a.person.first_name:
-            initial = a.person.first_name[0] + '. '
-        entry = '%s%s <%s>' % (initial,a.person.last_name,a.person.email())
+        prefix, first, middle, last, suffix = a.person.name_parts()
+        if first:
+            initial = first + '. '
+        entry = '%s%s <%s>' % (initial,last,a.address)
         authors.append(entry)
     return authors
 
@@ -29,9 +65,10 @@ def get_abbr_authors(draft):
     authors = draft.authors.all()
     
     if authors:
-        if authors[0].person.first_name:
-            initial = authors[0].person.first_name[0] + '. '
-        result = '%s%s' % (initial,authors[0].person.last_name)
+        prefix, first, middle, last, suffix = authors[0].person.name_parts()
+        if first:
+            initial = first[0] + '. '
+        result = '%s%s' % (initial,last)
         if len(authors) > 1:
             result += ', et al'
     
@@ -50,6 +87,28 @@ def get_authors_email(draft):
         authors.append(entry)
     return ', '.join(authors)
 
+def get_last_revision(filename):
+    """
+    This function takes a filename, in the same form it appears in the InternetDraft record,
+    no revision or extension (ie. draft-ietf-alto-reqs) and returns a string which is the 
+    reivision number of the last active version of the document, the highest revision 
+    txt document in the archive directory.  If no matching file is found raise exception.
+    """
+    files = glob.glob(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR,filename) + '-??.txt')
+    if files:
+        sorted_files = sorted(files)
+        return get_revision(sorted_files[-1])
+    else:
+        raise Exception('last revision not found in archive')
+
+def get_revision(name):
+    """
+    Takes a draft filename and returns the revision, as a string.
+    """
+    #return name[-6:-4]
+    base,ext = os.path.splitext(name)
+    return base[-2:]
+
 def get_revision_emails(draft):
     """
     Dervied from the ColdFusion legacy app, we accumulate To: emails for a new
@@ -60,23 +119,26 @@ def get_revision_emails(draft):
     3) any ad who has marked "discuss" in the ballot associated with this id_internal
     """
     emails = []
-    try:
-        id = IDInternal.objects.get(draft=draft.id_document_tag,rfc_flag=0)
-    except (IDInternal.DoesNotExist, IDInternal.MultipleObjectsReturned):
+    # from legacy
+    if not draft.get_state('draft-iesg'):
         return ''
+        
     # get state_change_notice_to
-    emails.append(id.state_change_notice_to)
+    emails.append(draft.notify)
+    
     # get job_owner
-    emails.append(id.job_owner.person.email())
+    emails.append(draft.ad.email_address())
+    
+    # TODO
     # get ballots discuss
     # need to catch errors here because in some cases the referenced ballot_info
     # record does not exist
-    try:
-        position_list = id.ballot.positions.filter(discuss=1)
-        for p in position_list:
-            emails.append(p.ad.person.email())
-    except ObjectDoesNotExist:
-        pass
+    #try:
+    #    position_list = id.ballot.positions.filter(discuss=1)
+    #    for p in position_list:
+    #        emails.append(p.ad.person.email())
+    #except ObjectDoesNotExist:
+    #    pass
 
     return ', '.join(emails)
 
@@ -84,7 +146,7 @@ def add_email(emails,person):
     if person.email() not in emails:
         emails[person.email()] = '"%s %s"' % (person.first_name,person.last_name)
 
-def get_cc_list(draft):
+def get_fullcc_list(draft):
     """
     This function takes a draft object and returns a string of emails to use in cc field
     of a standard notification.  Uses an intermediate "emails" dictionary, emails are the
@@ -92,12 +154,25 @@ def get_cc_list(draft):
     """
     emails = {}
     # get authors
-    for a in draft.authors.all():
-        add_email(emails,a.person)
+    for author in draft.authors.all():
+        if author.address not in emails:
+            emails[author.address] = '"%s"' % (author.person.name)
     # add chairs
-    if draft.group.acronym_id != 1027:
-        for chair in WGChair.objects.filter(group_acronym=draft.group.acronym_id):
-            add_email(emails,chair.person)
+    if draft.group.pk != 1027:
+        for chair in draft.group.role_set.filter(name='chair'):
+            if author.address not in emails:
+                emails[chair.address] = '"%s"' % (chair.person.name)
+    # add AD
+    if draft.group.type.slug == 'wg':    
+        emails['%s-ads@tools.ietf.org' % draft.group.acronym] = '"%s-ads"' % (draft.group.acronym)
+    elif draft.group.type.slug == 'rg':
+        email = draft.group.parent.role_set.filter(name='chair')[0].email
+        emails[email.address] = '"%s"' % (email.person.name)
+    # add sheperd
+    if draft.shepherd:
+        emails[draft.shepherd.email_address()] = '"%s"' % (draft.shepherd.name)
+    
+    """    
     # add wg advisor
     try:
         advisor = IETFWG.objects.get(group_acronym=draft.group.acronym_id).area_director
@@ -119,6 +194,7 @@ def get_cc_list(draft):
                 emails[email.strip()] = ''
     except ObjectDoesNotExist:
         pass 
+    """
     
     # use sort so we get consistently ordered lists
     result_list = []
@@ -144,11 +220,11 @@ def get_email_initial(draft, type=None, input=None):
     """
     # assert False, (draft, type, input)
     expiration_date = datetime.date.today() + datetime.timedelta(185)
-    new_revision = str(int(draft.revision)+1).zfill(2)
-    new_filename = draft.filename + '-' + new_revision + '.txt'
-    curr_filename = draft.filename + '-' + draft.revision + '.txt'
+    new_revision = str(int(draft.rev)+1).zfill(2)
+    new_filename = draft.name + '-' + new_revision + '.txt'
+    curr_filename = draft.name + '-' + draft.rev + '.txt'
     data = {}
-    data['cc'] = get_cc_list(draft)
+    data['cc'] = get_fullcc_list(draft)
     data['to'] = ''
     if type == 'extend':
         data['subject'] = 'Extension of Expiration Date for %s' % (curr_filename)
@@ -164,12 +240,12 @@ IETF Secretariat.""" %(curr_filename, expiration_date.strftime('%B %d, %Y'))
     elif type == 'new':
         # from emailannouncement.cfm
         # if the ID belongs to a group other than "none" add line to message body
-        if draft.group_acronym() != 'none':
+        if draft.group.type.slug == 'wg':
             wg_message = 'This draft is a work item of the %s Working Group of the IETF.' % draft.group.name
         else:
             wg_message = ''
         data['to'] = 'i-d-announce@ietf.org'
-        data['cc'] = draft.group.ietfwg.email_address
+        data['cc'] = draft.group.list_email
         data['subject'] = 'I-D ACTION:%s' % (curr_filename)
         data['body'] = """--NextPart
 
@@ -208,12 +284,12 @@ Content-ID:     <%s.I-D@ietf.org>
 """ % (wg_message,
        draft.title,
        get_abbr_authors(draft),
-       draft.file(),
-       draft.txt_page_count,
-       draft.revision_date,
+       draft.name,
+       draft.pages,
+       get_start_date(draft),
        draft.abstract,
-       draft.file(),
-       draft.file(),
+       draft.name,
+       draft.name,
        time.strftime("%Y-%m-%d%H%M%S", time.localtime()))
 
     elif type == 'replace':
@@ -224,8 +300,8 @@ Content-ID:     <%s.I-D@ietf.org>
 IETF Secretariat.""" % (curr_filename,input['replaced_by'])
 
     elif type == 'resurrect':
-        last_revision = get_last_revision(draft.filename)
-        last_filename = draft.filename + '-' + last_revision + '.txt'
+        last_revision = get_last_revision(draft.name)
+        last_filename = draft.name + '-' + last_revision + '.txt'
         data['subject'] = 'Resurrection of %s' % (last_filename)
         data['body'] = """As you requested, %s has been resurrected.  The draft will expire on
 %s unless it is replaced by an updated version, or the Secretariat has been notified that the

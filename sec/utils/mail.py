@@ -35,7 +35,7 @@ def get_ad_email_list(group):
         emails.append(group.parent.role_set.filter(name='chair')[0].email.address)
     return emails
 
-def get_cc_list(group, person):
+def get_cc_list(group, person=None):
     '''
     This function takes a Group and Person.  It returns a list of emails for the ads and chairs of
     the group and the person's email if it isn't already in the list.
@@ -46,7 +46,7 @@ def get_cc_list(group, person):
     emails = []
     emails.extend(get_ad_email_list(group))
     emails.extend(get_chair_email_list(group))
-    if person.email_address() not in emails:
+    if person and person.email_address() not in emails:
         emails.append(person.email_address())
     return emails
     

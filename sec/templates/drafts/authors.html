@@ -11,7 +11,7 @@
 
 {% block breadcrumbs %}{{ block.super }} 
   &raquo; <a href="../../">Drafts</a>
-  &raquo; <a href="../">{{ draft.id_document_tag }}</a>
+  &raquo; <a href="../">{{ draft.name }}</a>
   &raquo; Authors
 {% endblock %}
 
@@ -22,8 +22,8 @@
       <table class="full-width">
         {% for author in authors %}
             <tr>
-                <td><a href="{% url sec.rolodex.views.view tag=author.person.person_or_org_tag %}">{{ author.person.first_name }} {{ author.person.last_name }}</a></td>
-                <td><button onclick="if (window.confirm('You are about to delete {{ author.person.first_name }} {{ author.person.last_name }} from the list.')) { window.location='{% url drafts_author_delete id=author.id %}' };">Delete</button></td>
+                <td><a href="{% url sec.rolodex.views.view id=author.person.pk %}">{{ author.person.name }}</a></td>
+                <td><button onclick="if (window.confirm('You are about to delete {{ author.person.name }} from the list.')) { window.location='{% url drafts_author_delete id=draft.name email=author.address %}' };">Delete</button></td>
             </tr>
         {% endfor %}
       </table>

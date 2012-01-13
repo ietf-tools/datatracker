@@ -16,3 +16,6 @@ class DraftsTest(TestCase):
         url = reverse('drafts_search')
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)
+
+    # test draft revision wrong basename
+    # test draft revision wrong rev number

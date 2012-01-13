@@ -129,7 +129,6 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.admindocs',
     'django.contrib.humanize',
-    'session_messages',
     'south',
     'workflows',
     'permissions',
@@ -254,6 +253,9 @@ IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 FIRST_CUTOFF_DAYS = 20
 SECOND_CUTOFF_DAYS = 13
 CUTOFF_HOUR = 17
+SUBMISSION_START_DAYS = -90
+SUBMISSION_CUTOFF_DAYS = 33
+SUBMISSION_CORRECTION_DAYS = 59
 
 IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
@@ -275,6 +277,9 @@ MAX_DAILY_SUBMISSION_SIZE = 2000
 
 # DB redesign
 USE_DB_REDESIGN_PROXY_CLASSES = True
+
+# no migrations
+SOUTH_TESTS_MIGRATE = False
 
 if USE_DB_REDESIGN_PROXY_CLASSES:
     AUTH_PROFILE_MODULE = 'person.Person'

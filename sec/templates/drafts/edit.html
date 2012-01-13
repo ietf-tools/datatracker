@@ -8,7 +8,7 @@
 
 {% block breadcrumbs %}{{ block.super }} 
   &raquo; <a href="../../">Drafts</a>
-  &raquo; <a href="../">{{ draft.id_document_tag }}</a>
+  &raquo; <a href="../">{{ draft.name }}</a>
   &raquo; Edit 
 {% endblock %}
 
@@ -21,34 +21,27 @@
     <form enctype="multipart/form-data" action="" method="post">
       <table class="full-width">
         <tr><td>Document Name:</td><td>{{ form.title.errors }}{{ form.title }}</td></tr>
-        <tr><td>Area:</td><td>{{ draft.get_area.area_acronym.name }}</td></tr>
         <tr><td>Group:</td><td>{{ form.group.errors }}{{ form.group }}</td></tr>
-        <tr><td>Status:</td><td>{{ form.status.errors }}{{ form.status }}</td></tr>
+        <!-- <tr><td>State:</td><td>{{ form.state.errors }}{{ form.state }}</td></tr> -->
         <tr><td>Under Review by RFC Editor:</td><td>{{ form.review_by_rfc_editor.errors }}{{ form.review_by_rfc_editor }}</td></tr>
-        <tr><td>File Name:</td><td>{{ form.filename.errors }}{{ form.filename }} - {{ form.revision }}{{ form.file_type_txt }}.txt {{ form.file_type_pdf }}.pdf {{ form.file_type_ps }}.ps {{ form.file_type_xml }}.xml </td></tr>
-        <tr><td>Revision Date:</td><td>{{ form.revision_date.errors }}{{ form.revision_date }}</td></tr>
-        <tr><td>Start Date:</td><td>{{ form.start_date.errors }}{{ form.start_date }}
-        &nbsp;&nbsp;&nbsp;&nbsp;Number of Pages: &nbsp;&nbsp;&nbsp;{{ form.txt_page_count.errors }}{{ form.txt_page_count }}</td></tr>
-        {% comment %}<tr><td>Local Path:</td><td>/a/www/ietf-ftp/internet-drafts/{{ form.local_path.errors }}{{ form.local_path }}</td></tr>{% endcomment %}
+        <tr><td>File Name:</td><td>{{ form.name.errors }}{{ form.name }} - {{ form.rev.errors }}{{ form.rev }}</td></tr>
+        <tr><td>Number of Pages:</td><td>{{ form.pages.errors }}{{ form.pages }}</td></tr>
         <tr><td>Abstract:</td><td></td></tr>
         <tr><td colspan="4">{{ form.abstract.errors }}{{ form.abstract }}</td></tr>
         <tr><td>Expiration Date:</td><td>{{ form.expiration_date.errors }}{{ form.expiration_date }}</td></tr>
         <tr><td>Intended Status:</td><td>{{ draft.intended_status }}</td></tr>
         <tr><td>RFC Number:</td><td>{{ draft.rfc_number }}</td></tr>
-        <tr><td>Dunn Sent Date:</td><td>{{ draft.dunn_sent_date }}</td></tr>
-        <tr><td>Extension Date:</td><td>{{ form.extension_date.errors }}{{ form.extension_date }}</td></tr>
-        <tr><td>Changes Expected:</td><td>{{ form.lc_changes.errors }}{{ form.lc_changes }}</td></tr>
-        <tr><td>Comments:</td><td>{{ form.comments.errors }}{{ form.comments }}</td></tr>
+        <tr><td>Comments:</td><td>{{ form.internal_comments.errors }}{{ form.internal_comments }}</td></tr>
         <tr><td>Replaced by:</td><td>{{ form.replaced_by.errors }}{{ form.replaced_by }}</td></tr>
-        <tr><td>Last Modified Date:</td><td>{{ draft.last_modified_date }}</td></tr>
+        <tr><td>Last Modified Date:</td><td>{{ draft.time }}</td></tr>
       </table>
   </div> <!-- draft-edit-col1 -->    
   <div id="draft-edit-col2">
       <div class="inline-related">
         <h2>Author(s)</h2>
         <table>
-	{% for author in draft.authors.all %}
-          <tr><td><a href="{% url sec.rolodex.views.view tag=author.person.person_or_org_tag %}">{{ author.person.first_name }} {{ author.person.last_name }}</a></td></tr>
+        {% for author in draft.authors.all %}
+          <tr><td><a href="{% url sec.rolodex.views.view id=author.person.pk %}">{{ author.person.name }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->

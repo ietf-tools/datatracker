@@ -7,8 +7,9 @@ from django.forms.formsets import BaseFormSet
 
 from redesign.doc.models import *
 from redesign.name.models import IntendedStdLevelName
+from redesign.group.models import Group
 
-#from sec.utils.ams_utils import get_base, get_revision
+from sec.utils.ams_utils import get_base, get_revision
 
 # ---------------------------------------------
 # Select Choices 
@@ -20,9 +21,15 @@ SEARCH_IS_CHOICES.insert(0,('',''))
 STATUS_CHOICES = list(State.objects.filter(type='draft').values_list('slug', 'name')) 
 SEARCH_STATUS_CHOICES = STATUS_CHOICES[:]
 SEARCH_STATUS_CHOICES.insert(0,('',''))
+
+WITHDRAW_CHOICES = (('ietf','Withdraw by IETF'),('author','Withdraw by Author'))
+
+ADD_GROUP_CHOICES = [ (g.acronym, g.acronym) for g in Group.objects.active_wgs().order_by('acronym') ]
+ADD_GROUP_CHOICES.insert(0,('',''))
+
 """
 FILE_TYPE_CHOICES = (('.txt','.txt'),('.ps','.ps'),('.pdf','.pdf'))
-WITHDRAW_CHOICES = (('ietf','Withdraw by IETF'),('author','Withdraw by Author'))
+
 RFC_OBS_CHOICES = (('',''),('Obsoletes','Obsoletes'),('Updates','Updates'))
 
 # build active group and area choices
@@ -49,6 +56,7 @@ ADD_GROUP_CHOICES.insert(0,('',''))
 # ---------------------------------------------
 # Custom Fields 
 # ---------------------------------------------
+"""
 class DocumentField(forms.FileField):
     '''A validating document upload field'''
     valid_file_extensions = ('txt','pdf','ps','xml')
@@ -74,10 +82,16 @@ class DocumentField(forms.FileField):
                 raise forms.ValidationError('File name must be in the form base-NN.[txt|pdf|ps|xml]')
             # ensure that base name is not already used
             if self.unique:
-                if InternetDraft.objects.filter(filename=get_base(file.name)).count() > 0:
+                if Document.objects.filter(name=get_base(file.name)).count() > 0:
                     raise forms.ValidationError('This document already exists! (%s)' % get_base(file.name)) 
 
         return file
+
+class MyModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.acronym
+
+
 # ---------------------------------------------
 # Utility Functions 
 # ---------------------------------------------
@@ -105,7 +119,7 @@ class AddForm(forms.Form):
 
     def save():
         pass
-        
+
 class AddFileForm(forms.Form):
     # it appears the file input widget is not stylable via css
     file = DocumentField(unique=True)
@@ -113,27 +127,25 @@ class AddFileForm(forms.Form):
 class AddModelForm(forms.ModelForm):
     #file = DocumentField(unique=True)
     #file2 = DocumentField(required=False)
-
+    start_date = forms.DateField()
+    group = MyModelChoiceField(queryset=Group.objects.active_wgs().order_by('acronym'), required=True)
+    
     class Meta:
-        model = InternetDraft
+        model = Document
         # remove replaced_by,review_by_rfc_editor fields from list per secretariat staff 09-27-10
         # remove local_path per Glen, staff 12-02-10
-        fields = ('title','group','start_date','txt_page_count','abstract','comments')
+        fields = ('title','group','stream','start_date','pages','abstract','internal_comments')
        
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):
         super(AddModelForm, self).__init__(*args, **kwargs)
         self.fields['title'].label='Document Name'
         self.fields['title'].widget=forms.Textarea()
-        self.fields['group'].widget=forms.Select(choices=ADD_GROUP_CHOICES)
-        #self.fields['status'].label='Document Status'
-        #self.fields['status'].widget=forms.Select(choices=(('1','Active'),))
+        #self.fields['group'].queryset=Group.objects.active_wgs().order_by('acronym')
+        #self.fields['group'].widget = MyModelChoiceField(queryset=Group.objects.active_wgs().order_by('acronym'))
         self.fields['start_date'].initial=datetime.date.today
-        self.fields['txt_page_count'].label='Number of Pages'
-        #self.fields['local_path'].help_text='/a/www/ietf-ftp/internet-drafts/...'
-        #self.fields['file'].widget.attrs['size'] = 40
-        #self.fields['file2'].widget.attrs['size'] = 40
-        #self.fields['file2'].label='File (optional)'
+        self.fields['pages'].label='Number of Pages'
+        self.fields['internal_comments'].label='Comments'
 
     # Validation: all upload files must have the same base name
     '''
@@ -177,13 +189,6 @@ class AuthorForm(forms.Form):
             raise forms.ValidationError("You must select an entry from the list!") 
         return name
 
-class AuthorModelForm(forms.ModelForm):
-    person = forms.CharField(max_length=100,label='Name')
-    
-    class Meta:
-        model = IDAuthor
-        exclude = ('author_order')
-        
 class BaseFileFormSet(BaseFormSet):
     '''
     This class is used when creating the formset factory for file upload,
@@ -216,99 +221,51 @@ class BaseFileFormSet(BaseFormSet):
             draft = self.request.session['draft']
             # Check that the upload base filename is the same as the draft base filename
             upload_base = get_base(names[0])
-            draft_base = draft.filename
+            draft_base = draft.name
             if upload_base != draft_base:
                 raise forms.ValidationError, "The upload filename (%s) is different than the draft filename (%s)" % (upload_base, draft_base)
                 
             # Check that the revision number of the upload file is current revision + 1
-            next_revision = str(int(draft.revision)+1).zfill(2)
+            next_revision = str(int(draft.rev)+1).zfill(2)
             if names[0][-2:] != next_revision:
                 raise forms.ValidationError, "Expected revision # %s" % (next_revision)
-            
+
 class EditModelForm(forms.ModelForm):
-    ''' NOTE: the replaced_by field is a foreign key to another InternetDraft object but
-    we don't want to see a select widget with all drafts listed in the form.  Also it is 
-    a BrokenForeignKey meaning many records in the db have "0" in this field which cuases
-    problems for Django.  To handle this we exclude the model field replaced_by and 
-    redefine as a CharField.  We also customize __init__, save, and clean_replaced_by
-    functions to handle initialization and saving as a FK.
-    '''
-    # need to define expiration_date to set required=False
-    expiration_date = forms.DateField(required=False)
-    file = DocumentField(required=False)
-    file2 = DocumentField(required=False)
-    # need to explicitly define status field so we can remove empty_label
-    status = forms.ModelChoiceField(queryset=IDStatus.objects,empty_label=None)
-    file_type_txt = forms.BooleanField(required=False)
-    file_type_pdf = forms.BooleanField(required=False)
-    file_type_ps = forms.BooleanField(required=False)
-    file_type_xml = forms.BooleanField(required=False)
-    replaced_by = forms.CharField(required=False)
-    lc_changes = forms.BooleanField(required=False)
+    #expiration_date = forms.DateField(required=False)
+    #state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft'),empty_label=None)
+    group = MyModelChoiceField(queryset=Group.objects.active_wgs().order_by('acronym'), required=True)
+    review_by_rfc_editor = forms.BooleanField(required=False)
     
     class Meta:
-        model = InternetDraft
-        # this list must include all fields that will not be presented on the edit
-        # form, otherwise the values will be lost
-        exclude = ('file_type','lc_sent_date','lc_changes','lc_expiration_date','b_sent_date',
-                 'b_discussion_date','b_approve_date','replaced_by','wgreturn_date',
-                 'dunn_sent_date','rfc_number','intended_status','expired_tombstone',
-                 'local_path')
+        model = Document
+        fields = ('title','group','review_by_rfc_editor','name','rev','pages','abstract','internal_comments')
                  
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):
         super(EditModelForm, self).__init__(*args, **kwargs)
         self.fields['title'].label='Document Name'
         self.fields['title'].widget=forms.Textarea()
-        self.fields['group'].widget=forms.Select(choices=GROUP_CHOICES)
-        self.fields['revision'].widget.attrs['size'] = 2
+        self.fields['rev'].widget.attrs['size'] = 2
         self.fields['abstract'].widget.attrs['cols'] = 72
         # setup special fields
         if self.instance:
-            if self.instance.replaced_by:
-                self.fields['replaced_by'].initial = self.instance.replaced_by.filename
-            if '.txt' in self.instance.file_type:
-                self.fields['file_type_txt'].initial = True
-            if '.pdf' in self.instance.file_type:
-                self.fields['file_type_pdf'].initial = True
-            if '.ps' in self.instance.file_type:
-                self.fields['file_type_ps'].initial = True
-            if '.xml' in self.instance.file_type:
-                self.fields['file_type_xml'].initial = True
-            # the database actually contains values of "YES", "NO", "", "-" in this field.
-            # only "YES" equals truth
-            if self.instance.lc_changes == 'YES':
-                self.fields['lc_changes'].initial = True
-            else:
-                self.fields['lc_changes'].initial = False
-
+            # setup replaced
+            self.fields['review_by_rfc_editor'].initial = bool(self.instance.tags.filter(slug='rfc-rev'))
+            
     def save(self, force_insert=False, force_update=False, commit=True):
         m = super(EditModelForm, self).save(commit=False)
-        if 'replaced_by' in self.changed_data:
-            rep = self.cleaned_data.get('replaced_by','')
-            if rep:
-                id = InternetDraft.objects.get(filename=rep)
-                m.replaced_by = id
-        if 'lc_changes' in self.changed_data:
-            if self.cleaned_data.get('lc_changes',''):
-                m.lc_changes = 'YES'
+        
+        if 'state' in self.changed_data:
+            m.set_state(self.cleaned_data['state'])
+        
+        if 'review_by_rfc_editor' in self.changed_data:
+            if self.cleaned_data.get('review_by_rfc_editor',''):
+                m.tags.add('rfc-rev')
             else:
-                m.lc_changes = 'NO'
-        # gather file types
-        if ('file_type_txt' in self.changed_data) or\
-           ('file_type_pdf' in self.changed_data) or\
-           ('file_type_ps' in self.changed_data) or\
-           ('file_type_xml' in self.changed_data):
-            types = []
-            if self.cleaned_data.get('file_type_txt',''):
-                types.append('.txt')
-            if self.cleaned_data.get('file_type_pdf',''):
-                types.append('.pdf')
-            if self.cleaned_data.get('file_type_ps',''):
-                types.append('.ps')
-            if self.cleaned_data.get('file_type_xml',''):
-                types.append('.xml')
-            m.file_type = ','.join(types)     
+                m.tags.remove('rfc-rev')
+        
+        # handle replaced by
+        
         if commit:
             m.save()
         return m
@@ -323,6 +280,7 @@ class EditModelForm(forms.ModelForm):
     def clean(self):
         super(EditModelForm, self).clean()
         cleaned_data = self.cleaned_data
+        """
         expiration_date = cleaned_data.get('expiration_date','')
         status = cleaned_data.get('status','')
         replaced = cleaned_data.get('replaced',False)
@@ -338,15 +296,16 @@ class EditModelForm(forms.ModelForm):
             raise forms.ValidationError('You have checked Replaced but status is %s' % (status))
         if replaced and not replaced_by:
             raise forms.ValidationError('You have checked Replaced but Replaced By field is empty')
+        """
         return cleaned_data
-                
+
 class EmailForm(forms.Form):
     # max_lengths come from db limits, cc is not limited
     to = forms.CharField(max_length=255)
     cc = forms.CharField(required=False)
     subject = forms.CharField(max_length=255)
     body = forms.CharField(widget=forms.Textarea())
-    
+
 class ExtendForm(forms.Form):
     revision_date = forms.DateField()
     
@@ -365,31 +324,34 @@ class ReplaceForm(forms.Form):
         if name == self.draft.filename:
             raise forms.ValidationError("ERROR: A draft can't replace itself")
         return name
-        
+
 class BaseRevisionModelForm(forms.ModelForm):
+    revision_date = forms.DateField()
+    
     class Meta:
-        model = InternetDraft
-        fields = ('title','revision_date','txt_page_count','abstract')
+        model = Document
+        fields = ('title','revision_date','pages','abstract')
 
 class RevisionFileForm(forms.Form):
     # it appears the file input widget is not stylable via css
     file = DocumentField()
     # we need this hidden field for validation
     # draft = forms.CharField(widget=forms.HiddenInput())
-    
+
 class RevisionModelForm(forms.ModelForm):
     # file = DocumentField()
+    revision_date = forms.DateField()
     
     class Meta:
-        model = InternetDraft
-        fields = ('title','revision_date','txt_page_count','abstract')
+        model = Document
+        fields = ('title','revision_date','pages','abstract')
     
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):
         super(RevisionModelForm, self).__init__(*args, **kwargs)
         self.fields['title'].label='Document Name'
         self.fields['title'].widget=forms.Textarea()
-        self.fields['txt_page_count'].label='Number of Pages'
+        self.fields['pages'].label='Number of Pages'
         
     # ensure basename is same as existing 
     '''
@@ -401,7 +363,7 @@ class RevisionModelForm(forms.ModelForm):
             raise forms.ValidationError("File doesn't match next revision # (%s)" % str(int(self.instance.revision)+1).zfill(2))
         return file
     '''
-    
+
 class RevisionForm(forms.Form):
     abstract = forms.CharField(widget=forms.Textarea())
     txt_page_count = forms.IntegerField(label='Number of Pages')
@@ -415,20 +377,46 @@ class RevisionForm(forms.Form):
             raise forms.ValidationError("Basename doesn't match (%s)" % self.instance.filename)
         return file
         
-class RfcForm(forms.ModelForm):
+class RfcModelForm(forms.ModelForm):
+    rfc_number = forms.IntegerField()
+    rfc_published_date = forms.DateField(initial=datetime.datetime.now)
+    #proposed_date = forms.DateField(required=False)
+    #draft_date = forms.DateField(required=False)
+    #standard_date = forms.DateField(required=False)
+    #historic_date = forms.DateField(required=False)
+    fyi_number = forms.IntegerField(required=False)
+    std_number = forms.IntegerField(required=False)
+    group = MyModelChoiceField(queryset=Group.objects.active_wgs().order_by('acronym'), required=True)
+    
     class Meta:
-        model = Rfc
-        exclude = ('lc_sent_date','lc_expiration_date','b_sent_date','b_approve_date','intended_status','last_modified_date')
+        model = Document
+        fields = ('title','group','pages','std_level','internal_comments')
     
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):
-        super(RfcForm, self).__init__(*args, **kwargs)
-        self.fields['area_acronym'].widget.choices = RFC_AREA_CHOICES
-        self.fields['group_acronym'].widget.choices = RFC_GROUP_CHOICES
+        super(RfcModelForm, self).__init__(*args, **kwargs)
         self.fields['title'].widget = forms.Textarea()
+        self.fields['std_level'].required = True
+    
+    def save(self, force_insert=False, force_update=False, commit=True):
+        obj = super(RfcModelForm, self).save(commit=False)
+        
+        # create DocAlias
+        DocAlias.objects.create(document=self.instance,name="rfc%d" % self.cleaned_data['rfc_number'])
+        
+        if commit:
+            obj.save()
+        return obj
+        
+    def clean_rfc_number(self):
+        rfc_number = self.cleaned_data['rfc_number']
+        if DocAlias.objects.filter(name='rfc' + str(rfc_number)):
+            raise forms.ValidationError("RFC %d already exists" % rfc_number)
+        return rfc_number
         
 class RfcObsoletesForm(forms.Form):
-    relation = forms.CharField(widget=forms.Select(choices=RFC_OBS_CHOICES),required=False)
+    #relation = forms.CharField(widget=forms.Select(choices=RFC_OBS_CHOICES),required=False)
+    relation = forms.ModelChoiceField(queryset=DocRelationshipName.objects.filter(slug__in=('updates','obs')),required=False)
     rfc = forms.IntegerField(required=False)
     
     # ensure that RFC exists
@@ -449,7 +437,7 @@ class RfcObsoletesForm(forms.Form):
         if (relation and not rfc) or (rfc and not relation):
             raise forms.ValidationError('You must select a relation and enter RFC #')
         return cleaned_data
-"""
+
 class SearchForm(forms.Form):
     intended_status = forms.CharField(max_length=25,widget=forms.Select(choices=SEARCH_IS_CHOICES),required=False)
     document_name = forms.CharField(max_length=80,label='Document title',required=False)
@@ -458,12 +446,7 @@ class SearchForm(forms.Form):
     status = forms.CharField(max_length=25,widget=forms.Select(choices=SEARCH_STATUS_CHOICES),required=False)
     revision_date_start = forms.DateField(required=False)
     revision_date_end = forms.DateField(required=False)
-"""
-class SubmissionDatesForm(forms.ModelForm):
-    class Meta:
-        model = IDDates
-        fields = ('date','id')
-        
+
 class WithdrawForm(forms.Form):
     type = forms.CharField(widget=forms.Select(choices=WITHDRAW_CHOICES),help_text='Select which type of withdraw to perform')
-"""   
+

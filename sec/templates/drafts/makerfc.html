@@ -9,7 +9,7 @@
 
 {% block breadcrumbs %}{{ block.super }} 
   &raquo; <a href="../../">Drafts</a>
-  &raquo; <a href="../">{{ draft.id_document_tag }}</a>
+  &raquo; <a href="../">{{ draft.name }}</a>
   &raquo; Make RFC
 {% endblock %}
 
@@ -24,17 +24,14 @@
         <tr><th><label for="id_title">RFC Name</label></th><td colspan="3">{{ form.title.errors }}{{ form.title }}</td></tr>
         <tr>
           <th><label for="id_rfc_number">RFC Number</label></th><td>{{ form.rfc_number.errors }}{{ form.rfc_number }}</td>
-          <th><label for="id_txt_page_count">No. of Pages</label></th><td>{{ form.txt_page_count.errors }}{{ form.txt_page_count }}</td>
+          <th><label for="id_txt_page_count">No. of Pages</label></th><td>{{ form.pages.errors }}{{ form.pages }}</td>
         </tr>
         <tr><th><label for="id_rfc_published_date">RFC Published Date</label></th><td>{{ form.rfc_published_date.errors }}{{ form.rfc_published_date }}</td></tr>
         <tr>
-          <th><label for="id_status">RFC Status</label></th><td>{{ form.status.errors }}{{ form.status }}</td>
-          <th><label for="id_online_version">Online Version</label></th><td>{{ form.online_version.errors }}{{ form.online_version }}</td>
+          <th><label for="id_status">RFC Std Level</label></th><td>{{ form.std_level.errors }}{{ form.std_level }}</td>
+          <th><label for="id_group_acronym">Group</label></th><td>{{ form.group.errors }}{{ form.group }}</td>
         </tr>
-        <tr>
-          <th><label for="id_area_acronym">Area</label></th><td>{{ form.area_acronym.errors }}{{ form.area_acronym }}</td>
-          <th><label for="id_group_acronym">Group</label></th><td>{{ form.group_acronym.errors }}{{ form.group_acronym }}</td>
-        </tr>
+        {% comment %}
         <tr>
           <th><label for="id_proposed_date">Proposed Date</label></th><td>{{ form.proposed_date.errors }}{{ form.proposed_date }}</td>
           <th><label for="id_draft_date">Draft Date</label></th><td>{{ form.draft_date.errors }}{{ form.draft_date }}</td>
@@ -43,11 +40,12 @@
           <th><label for="id_standard_date">Standard Date</label></th><td>{{ form.standard_date.errors }}{{ form.standard_date }}</td>
           <th><label for="id_historic_date">Historic Date</label></th><td>{{ form.historic_date.errors }}{{ form.historic_date }}</td>
         </tr>
+        {% endcomment %}
         <tr>
           <th><label for="id_fyi_number">FYI Number</label></th><td>{{ form.fyi_number.errors }}{{ form.fyi_number }}</td>
           <th><label for="id_std_number">STD Number</label></th><td>{{ form.std_number.errors }}{{ form.std_number }}</td>
         </tr>
-        <tr><th><label for="id_comments">Comments</label></th><td colspan="3">{{ form.comments.errors }}{{ form.comments }}</td></tr>
+        <tr><th><label for="id_comments">Comments</label></th><td colspan="3">{{ form.internal_comments.errors }}{{ form.internal_comments }}</td></tr>
       </table>
   </div> <!-- draft-view-col1 -->
   <div id="draft-view-col2">
@@ -55,7 +53,7 @@
       <h2>Author(s)</h2>
         <table>
         {% for author in draft.authors.all %}
-          <tr><td><a href="{% url sec.rolodex.views.view tag=author.person.person_or_org_tag %}">{{ author.person.first_name }} {{ author.person.last_name }}</a></td></tr>
+          <tr><td><a href="{% url sec.rolodex.views.view id=author.person.pk %}">{{ author.person.name }}</a></td></tr>
         {% endfor %}
         </table>
     </div> <!-- inline-related -->

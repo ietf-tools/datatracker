@@ -8,14 +8,14 @@
 
 {% block breadcrumbs %}{{ block.super }} 
   &raquo; <a href="../../">Drafts</a>
-  &raquo; <a href="../">{{ draft.id_document_tag }}</a>
+  &raquo; <a href="../">{{ draft.canonical_name }}</a>
   &raquo; Abstract
 {% endblock %}
 
 {% block content %}
 
 <div class="module draft-container">
-    <h2>View Abstract ({{ draft.filename }})</h2>
+    <h2>View Abstract - {{ draft.canonical_name }}</h2>
     <p>
       {{ draft.abstract }}
     </p> 
