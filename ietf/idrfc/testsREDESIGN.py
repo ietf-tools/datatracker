@@ -867,6 +867,8 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         # hack into expirable state
         draft.unset_state("draft-iesg")
+        draft.expires = datetime.datetime.now() + datetime.timedelta(days=10)
+        draft.save()
 
         self.assertEquals(len(list(get_soon_to_expire_ids(14))), 1)
         
@@ -967,7 +969,7 @@ class ExpireIDsTestCase(django.test.TestCase):
 
         # expire draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
-        draft.expires = datetime.datetime.now()
+        draft.expires = datetime.datetime.now() - datetime.timedelta(days=1)
         draft.save()
 
         e = DocEvent()
