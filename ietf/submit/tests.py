@@ -26,11 +26,16 @@ class SubmitTestCase(django.test.TestCase):
 
         self.repository_dir = os.path.abspath("tmp-submit-repository-dir")
         os.mkdir(self.repository_dir)
-        settings.IDSUBMIT_REPOSITORY_PATH = self.repository_dir
+        settings.INTERNET_DRAFT_PATH = settings.IDSUBMIT_REPOSITORY_PATH = self.repository_dir
 
+        self.archive_dir = os.path.abspath("tmp-submit-archive-dir")
+        os.mkdir(self.archive_dir)
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
+        
     def tearDown(self):
         shutil.rmtree(self.staging_dir)
         shutil.rmtree(self.repository_dir)
+        shutil.rmtree(self.archive_dir)
 
     def do_submission(self, name, rev):
         # break early in case of missing configuration
@@ -163,6 +168,11 @@ class SubmitTestCase(django.test.TestCase):
         name = draft.name
         rev = "%02d" % (int(draft.rev) + 1)
 
+        # write the old draft in a file so we can check it's moved away
+        old_rev = draft.rev
+        with open(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev)), 'w') as f:
+            f.write("a" * 2000)
+
         supply_submitter_url = self.do_submission(name, rev)
 
         # supply submitter info, then we get a confirmation email
@@ -202,6 +212,8 @@ class SubmitTestCase(django.test.TestCase):
         new_revision = draft.latest_event()
         self.assertEquals(new_revision.type, "new_revision")
         self.assertEquals(new_revision.by.name, "Test Name")
+        self.assertTrue(not os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev))))
+        self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, u"%s-%s.txt" % (name, rev))))
         self.assertEquals(draft.type_id, "draft")

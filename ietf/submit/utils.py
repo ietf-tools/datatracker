@@ -100,6 +100,8 @@ def perform_postREDESIGN(request, submission):
         draft = Document(name=submission.filename)
         draft.intended_std_level = None
 
+    prev_rev = draft.rev
+
     draft.type_id = "draft"
     draft.time = datetime.datetime.now()
     draft.title = submission.id_document_name
@@ -144,6 +146,9 @@ def perform_postREDESIGN(request, submission):
     e.desc = "New revision available"
     e.save()
 
+    # clean up old files
+    from ietf.idrfc.expire import move_draft_files_to_archive
+    move_draft_files_to_archive(draft, prev_rev)
 
     # automatic state changes
     state_change_msg = ""

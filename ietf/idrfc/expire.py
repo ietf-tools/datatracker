@@ -6,7 +6,7 @@ from django.db.models import Q
 
 import datetime, os, shutil, glob, re, itertools
 
-from ietf.idtracker.models import InternetDraft, IDDates, IDStatus, IDState, DocumentComment, IDAuthor,WGChair
+from ietf.idtracker.models import InternetDraft, IDDates, IDStatus, IDState, DocumentComment, IDAuthor, WGChair
 from ietf.utils.mail import send_mail, send_mail_subj
 from ietf.idrfc.utils import log_state_changed, add_document_comment
 from redesign.doc.models import Document, DocEvent, save_document_in_history, State
@@ -154,7 +154,7 @@ def send_expire_notice_for_idREDESIGN(doc):
 
 def expire_id(doc):
     def move_file(f):
-        src = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, f)
+        src = os.path.join(settings.INTERNET_DRAFT_PATH, f)
         dst = os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, f)
 
         if os.path.exists(src):
@@ -167,7 +167,7 @@ def expire_id(doc):
 
     new_revision = "%02d" % (int(doc.revision) + 1)
 
-    new_file = open(os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, "%s-%s.txt" % (doc.filename, new_revision)), 'w')
+    new_file = open(os.path.join(settings.INTERNET_DRAFT_PATH, "%s-%s.txt" % (doc.filename, new_revision)), 'w')
     txt = render_to_string("idrfc/expire_text.txt",
                            dict(doc=doc,
                                 authors=[a.person.email() for a in doc.authors.all()],
@@ -188,12 +188,9 @@ def expire_id(doc):
 
         add_document_comment(None, doc, "Document is expired by system")
 
-def expire_idREDESIGN(doc):
-    system = Person.objects.get(name="(System)")
-
-    # clean up files
+def move_draft_files_to_archive(doc, rev):
     def move_file(f):
-        src = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, f)
+        src = os.path.join(settings.INTERNET_DRAFT_PATH, f)
         dst = os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, f)
 
         if os.path.exists(src):
@@ -201,10 +198,15 @@ def expire_idREDESIGN(doc):
 
     file_types = ['txt', 'txt.p7s', 'ps', 'pdf']
     for t in file_types:
-        move_file("%s-%s.%s" % (doc.name, doc.rev, t))
+        move_file("%s-%s.%s" % (doc.name, rev, t))
 
-    # now change the state
-    
+def expire_idREDESIGN(doc):
+    # clean up files
+    move_draft_files_to_archive(doc, doc.rev)
+
+    # change the state
+    system = Person.objects.get(name="(System)")
+
     save_document_in_history(doc)
     if doc.latest_event(type='started_iesg_process'):
         dead_state = State.objects.get(type="draft-iesg", slug="dead")
@@ -230,7 +232,7 @@ def clean_up_id_files():
     """Move unidentified and old files out of the Internet Draft directory."""
     cut_off = datetime.date.today() - datetime.timedelta(days=InternetDraft.DAYS_TO_EXPIRE)
 
-    pattern = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, "draft-*.*")
+    pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
     files = []
     filename_re = re.compile('^(.*)-(\d\d)$')
 
@@ -290,7 +292,7 @@ def clean_up_id_filesREDESIGN():
     """Move unidentified and old files out of the Internet Draft directory."""
     cut_off = datetime.date.today()
 
-    pattern = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, "draft-*.*")
+    pattern = os.path.join(settings.INTERNET_DRAFT_PATH, "draft-*.*")
     files = []
     filename_re = re.compile('^(.*)-(\d\d)$')
     
