@@ -243,7 +243,7 @@ def insert_to_databaseREDESIGN(data):
             changed = True
 
         if doc.get_state_slug() != "rfc":
-            doc.set_state(State.objects.filter(type="draft", slug="rfc"))
+            doc.set_state(State.objects.get(type="draft", slug="rfc"))
             changed = True
 
         if doc.stream != stream_mapping[stream]:
