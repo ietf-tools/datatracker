@@ -208,7 +208,7 @@ def _get_history(doc, versions):
                 v = dict(v) # copy it, since we're modifying datetimes later
                 v['is_rev'] = True
                 results.insert(0, v)    
-    if doc.is_id_wrapper and doc.draft_status == "Expired" and doc._draft.expiration_date:
+    if not settings.USE_DB_REDESIGN_PROXY_CLASSES and doc.is_id_wrapper and doc.draft_status == "Expired" and doc._draft.expiration_date:
         results.append({'is_text':True, 'date':doc._draft.expiration_date, 'text':'Draft expired'})
     if not settings.USE_DB_REDESIGN_PROXY_CLASSES and doc.is_rfc_wrapper:
         text = 'RFC Published'
