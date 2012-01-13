@@ -105,7 +105,7 @@ class IETFWG(Group):
                                       group_type=lambda v: ("type", { 1: "wg" }[int(v)]),
                                       status=lambda v: ("state", { 1: "active" }[int(v)]),
                                       areagroup__area__status=lambda v: ("parent__state", { 1: "active" }[v]),
-                                      start_date__isnull=lambda v: None if v else ("groupevent__changestategroupevent__state__slug__in", ("proposed", "active"))
+                                      start_date__isnull=lambda v: None if v else ("groupevent__changestategroupevent__state__slug", "active"),
                                       ),
                                  always_filter=dict(type__in=("wg", "individ")))
 
@@ -125,8 +125,8 @@ class IETFWG(Group):
     #start_date = models.DateField(null=True, blank=True)
     @property
     def start_date(self):
-        e = self.latest_event(ChangeStateGroupEvent, type="changed_state", state="active")
-        return e.time.date() if e else None
+        e = GroupEvent.objects.filter(group=self, type="changed_state", changestategroupevent__state="active").order_by('time')[:1]
+        return e[0].time.date() if e else None
         
     #dormant_date = models.DateField(null=True, blank=True)
     #concluded_date = models.DateField(null=True, blank=True)

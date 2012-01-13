@@ -35,7 +35,7 @@ def nomcom(request):
                                 'regimes' : regimes })
 
 def nomcomREDESIGN(request):
-    from group.models import Group, ChangeStateGroupEvent
+    from group.models import Group, GroupEvent
     from ietf.announcements.models import Message
 
     address_re = re.compile("<.*>")
@@ -45,12 +45,12 @@ def nomcomREDESIGN(request):
     regimes = []
     
     for n in nomcoms:
-        e = n.latest_event(ChangeStateGroupEvent, type="changed_state", state="active")
-        n.start_year = e.time.year if e else 0
+        e = GroupEvent.objects.filter(group=n, type="changed_state", changestategroupevent__state="active").order_by('time')[:1]
+        n.start_year = e[0].time.year if e else 0
         if n.start_year <= 2003:
             continue
-        e = n.latest_event(ChangeStateGroupEvent, type="changed_state", state="conclude")
-        n.end_year = e.time.year if e else ""
+        e = GroupEvent.objects.filter(group=n, type="changed_state", changestategroupevent__state="conclude").order_by('time')[:1]
+        n.end_year = e[0].time.year if e else ""
 
         chair = n.role_set.select_related().get(name="chair")
         announcements = Message.objects.filter(related_groups=n).order_by('-time')
