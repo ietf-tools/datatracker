@@ -471,6 +471,7 @@ def import_from_idinternal(d, idinternal):
         # document expiration
         if c.comment_text == "Document is expired by system":
             e = DocEvent(type="expired_document")
+            c.comment_text = "Document has expired"
             save_docevent(d, e, c)
             handled = True
 
@@ -975,7 +976,7 @@ for index, o in enumerate(all_drafts.iterator()):
         e.time = o.expiration_date
         e.by = system
         e.doc = d
-        e.desc = "Document is expired by system"
+        e.desc = "Document has expired"
         e.save()
 
 
