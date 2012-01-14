@@ -1,0 +1,7 @@
+New version (-{{ rev }}) has been submitted for {{ doc }}.
+http://www.ietf.org/internet-drafts/{{ doc }}
+
+Diff from previous version:
+http://tools.ietf.org/rfcdiff?url2={{ doc_base }}
+
+IETF Secretariat.

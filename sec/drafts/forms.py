@@ -1,7 +1,3 @@
-import datetime
-import re
-from os.path import splitext
-
 from django import forms
 from django.forms.formsets import BaseFormSet
 
@@ -11,52 +7,18 @@ from redesign.group.models import Group
 
 from sec.utils.ams_utils import get_base, get_revision
 
+import datetime
+import re
+from os.path import splitext
+
 # ---------------------------------------------
 # Select Choices 
 # ---------------------------------------------
-
-IS_CHOICES = list(IntendedStdLevelName.objects.values_list('slug','name'))
-SEARCH_IS_CHOICES = IS_CHOICES[:]
-SEARCH_IS_CHOICES.insert(0,('',''))
-STATUS_CHOICES = list(State.objects.filter(type='draft').values_list('slug', 'name')) 
-SEARCH_STATUS_CHOICES = STATUS_CHOICES[:]
-SEARCH_STATUS_CHOICES.insert(0,('',''))
-
 WITHDRAW_CHOICES = (('ietf','Withdraw by IETF'),('author','Withdraw by Author'))
-
-ADD_GROUP_CHOICES = [ (g.acronym, g.acronym) for g in Group.objects.active_wgs().order_by('acronym') ]
-ADD_GROUP_CHOICES.insert(0,('',''))
-
-"""
-FILE_TYPE_CHOICES = (('.txt','.txt'),('.ps','.ps'),('.pdf','.pdf'))
-
-RFC_OBS_CHOICES = (('',''),('Obsoletes','Obsoletes'),('Updates','Updates'))
-
-# build active group and area choices
-groups = IETFWG.objects.filter(status=1).order_by('group_acronym')
-all_groups = IETFWG.objects.all().order_by('group_acronym')
-group_tuples = [(str(g.group_acronym.acronym_id),g.group_acronym.acronym) for g in groups]
-GROUP_CHOICES = sorted(group_tuples, key=lambda group_tuples: group_tuples[1])
-GROUP_CHOICES.insert(0,('',''))
-areas = Area.objects.filter(status=1).order_by('area_acronym')
-area_tuples = [(str(a.area_acronym.acronym_id),a.area_acronym.acronym) for a in areas]
-AREA_CHOICES = sorted(area_tuples, key=lambda area_tuples: area_tuples[1])
-AREA_CHOICES.insert(0,('',''))
-# RFC group and area choices are different because the field is not a typical foreign key
-rfc_group_tuples = [(g.group_acronym.acronym,g.group_acronym.acronym) for g in all_groups]
-RFC_GROUP_CHOICES = sorted(rfc_group_tuples, key=lambda rfc_group_tuples: rfc_group_tuples[1])
-RFC_GROUP_CHOICES.insert(0,('',''))
-rfc_area_tuples = [(a.area_acronym.acronym,a.area_acronym.acronym) for a in areas]
-RFC_AREA_CHOICES = sorted(rfc_area_tuples, key=lambda rfc_area_tuples: rfc_area_tuples[1])
-RFC_AREA_CHOICES.insert(0,('',''))
-
-ADD_GROUP_CHOICES = GROUP_CHOICES[:]
-ADD_GROUP_CHOICES.insert(0,('',''))
 
 # ---------------------------------------------
 # Custom Fields 
 # ---------------------------------------------
-"""
 class DocumentField(forms.FileField):
     '''A validating document upload field'''
     valid_file_extensions = ('txt','pdf','ps','xml')
@@ -91,35 +53,9 @@ class MyModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.acronym
 
-
-# ---------------------------------------------
-# Utility Functions 
-# ---------------------------------------------
-
-
 # ---------------------------------------------
 # Forms 
 # ---------------------------------------------
-
-class AddForm(forms.Form):
-    document_name = forms.CharField(max_length=80)
-    group = forms.CharField(max_length=12)
-    document_status = forms.CharField(widget=forms.Select(choices=(('1','Active'),)))
-    review = forms.BooleanField(label='Under review by RFC Editor',required=False) 
-    #file_name = forms.CharField(max_length=100)
-    #revision = forms.CharField(max_length=2)
-    #file_type = forms.CharField(max_length=4,widget=forms.Select(choices=FILE_TYPE_CHOICES))
-    file = forms.FileField()
-    start_date = forms.DateField()
-    number_of_pages = forms.IntegerField()
-    local_path = forms.CharField(max_length=40)
-    abstract = forms.CharField()
-    comments = forms.CharField()
-    replaced_by = forms.CharField()
-
-    def save():
-        pass
-
 class AddFileForm(forms.Form):
     # it appears the file input widget is not stylable via css
     file = DocumentField(unique=True)
@@ -415,7 +351,6 @@ class RfcModelForm(forms.ModelForm):
         return rfc_number
         
 class RfcObsoletesForm(forms.Form):
-    #relation = forms.CharField(widget=forms.Select(choices=RFC_OBS_CHOICES),required=False)
     relation = forms.ModelChoiceField(queryset=DocRelationshipName.objects.filter(slug__in=('updates','obs')),required=False)
     rfc = forms.IntegerField(required=False)
     
@@ -439,13 +374,13 @@ class RfcObsoletesForm(forms.Form):
         return cleaned_data
 
 class SearchForm(forms.Form):
-    intended_status = forms.CharField(max_length=25,widget=forms.Select(choices=SEARCH_IS_CHOICES),required=False)
-    document_name = forms.CharField(max_length=80,label='Document title',required=False)
-    group_acronym = forms.CharField(max_length=12,required=False)
-    filename = forms.CharField(max_length=80,required=False)
-    status = forms.CharField(max_length=25,widget=forms.Select(choices=SEARCH_STATUS_CHOICES),required=False)
-    revision_date_start = forms.DateField(required=False)
-    revision_date_end = forms.DateField(required=False)
+    intended_std_level = forms.ModelChoiceField(queryset=IntendedStdLevelName.objects,label="Intended Std Level",required=False)
+    document_title = forms.CharField(max_length=80,label='Document Title',required=False)
+    group = forms.CharField(max_length=12,required=False)
+    name = forms.CharField(max_length=80,required=False)
+    state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft'),required=False)
+    revision_date_start = forms.DateField(label='Revision Date (start)',required=False)
+    revision_date_end = forms.DateField(label='Revision Date (end)',required=False)
 
 class WithdrawForm(forms.Form):
     type = forms.CharField(widget=forms.Select(choices=WITHDRAW_CHOICES),help_text='Select which type of withdraw to perform')

@@ -15,21 +15,21 @@
 
 <div class="module draft-container">
     <h2>Draft - Submission Dates</h2>
-    <form enctype="multipart/form-data" action="" method="post">
-      {{ formset.management_form }}
-      
       <table class="full-width">
-      {% for form in formset.forms %}
-        <tr>
-          <th>{{ form.instance.description }}</th><td>{{ form.date }}</td><td>{{ form.id }}</td>
-        </tr>
-      {% endfor %}
-      <tr><th>Reset to next meeting defaults</th><td><button type="submit" name="submit" value="Reset">Reset</button></td></tr>  
+        <tr><td>First Cut Off (Initial Version)</td><td>{{ meeting.get_first_cut_off }}</td></tr>
+        <tr><td>Second Cut Off (Update Version)</td><td>{{ meeting.get_second_cut_off }}</td></tr>
+        <tr><td>IETF Monday</td><td>{{ meeting.get_ietf_monday }}</td></tr>
+        <tr><td>All I-Ds will be processed by</td><td></td></tr>
+        <tr><td>Monday after IETF</td><td></td></tr>
+        <tr><td>Date for list of approved V-00 submissions from WG Chairs</td><td></td></tr>
       </table>
       
-      {% include "includes/buttons_save_cancel.html" %}
-
-    </form>
+      <div class="button-group">
+      <ul>
+        <li><button onclick="history.go(-1);return true">Back</button></li>
+      </ul>
+      </div> <!-- button-group -->
+  
 </div> <!-- module -->
 
 {% endblock %}

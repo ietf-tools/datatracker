@@ -1,0 +1,34 @@
+--NextPart
+
+A new Internet-Draft is available from the on-line Internet-Drafts directories.
+{{ wg_message }}
+
+    Title         : {{ draft.title }}
+    Author(s)     : {{ authors }}
+    Filename      : {{ draft.name }}
+    Pages         : {{ draft.pages }} 
+    Date          : {{ start_date }} 
+    
+{{ draft.abstract }}
+
+A URL for this Internet-Draft is:
+http://www.ietf.org/internet-drafts/{{ draft.name }}
+
+Internet-Drafts are also available by anonymous FTP at:
+ftp://ftp.ietf.org/internet-drafts/
+
+Below is the data which will enable a MIME compliant mail reader
+implementation to automatically retrieve the ASCII version of the
+Internet-Draft.
+
+--NextPart
+Content-Type: Message/External-body;
+    name="{{ draft.name }}";
+    site="ftp.ietf.org";
+    access-type="anon-ftp";
+    directory="internet-drafts"
+
+Content-Type: text/plain
+Content-ID:     <{{ timestamp }}.I-D@ietf.org>
+
+--NextPart--

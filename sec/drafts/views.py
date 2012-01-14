@@ -11,9 +11,10 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
 
-from forms import *
-from sec.utils.ams_utils import get_base, get_email, get_start_date
 from email import *
+from forms import *
+from sec.sessions.views import get_meeting
+from sec.utils.ams_utils import get_base, get_email, get_start_date
 
 import datetime
 import glob
@@ -152,7 +153,7 @@ def do_extend(draft, request):
     draft.save()
     
     # save scheduled announcement
-    announcement_from_form(session['email'])
+    announcement_from_form(session['email'],by=request.user.get_profile())
     
     return
 
@@ -165,6 +166,8 @@ def do_replace(draft, request):
     '''
     """
     save_document_in_history(draft)
+    
+    # don't archive document prioir to expiration per Henrik
     
     replaced_by_name = request.session['data']['replaced_by']
     replaced_by_object = get_object_or_404(Document, name=replaced_by_name)
@@ -188,7 +191,7 @@ def do_replace(draft, request):
                                    target=draft,
                                    relationship=DocRelationshipName.objects.get(slug='replaces'))
     # send announcement
-    announcement_from_form(session['email'])
+    announcement_from_form(request.session['email'],by=request.user.get_profile())
     
     return
     """
@@ -219,7 +222,7 @@ def do_resurrect(draft, request):
                                        rev=draft.rev)
     
     # send announcement
-    announcement_from_form(request.session['email'])
+    announcement_from_form(request.session['email'],by=request.user.get_profile())
     
     return
 
@@ -271,10 +274,7 @@ def do_revision(draft, request):
     
     # send announcement if we are in IESG process
     if new_draft.get_state('draft-iesg'):
-        announcement_from_form(request.session['email'])
-    
-    # clear session data
-    request.session.clear()
+        announcement_from_form(request.session['email'],by=request.user.get_profile())
 
     return
 
@@ -313,7 +313,7 @@ def do_update(draft,request):
     promote_files(new_draft, request.session['file_type'])
     
     # send announcement
-    announcement_from_form(request.session['email'])
+    announcement_from_form(request.session['email'],by=request.user.get_profile())
     
     return
 
@@ -330,7 +330,7 @@ def do_withdraw(draft,request):
         draft.set_state(State.objects.get(type="draft", slug="auth-rm"))
     
     # send announcement
-    announcement_from_form(request.session['email'])
+    announcement_from_form(request.session['email'],by=request.user.get_profile())
     
     return
     
@@ -384,15 +384,19 @@ def add(request):
             
             # process files
             filename,revision,file_type_list = process_files(request.FILES)
-
+            name = get_base(filename)
+            
             # set fields (set stream or intended status?)
             draft.rev = revision
-            draft.name = get_base(filename)
+            draft.name = name
             draft.type = DocTypeName.objects.get(slug='draft')
             draft.save()
             
             # set state
             draft.set_state(State.objects.get(type="draft", slug="active"))
+            
+            # create DocAlias
+            DocAlias.objects.get_or_create(name=name, document=draft)
             
             # create DocEvent
             NewRevisionDocEvent.objects.create(type='new_revision',
@@ -436,7 +440,7 @@ def announce(request, id):
     email_form = EmailForm(get_email_initial(draft,type='new'))
                             
     announcement_from_form(email_form.data,
-                           to_val='i-d-announce@ietf.org',
+                           by=request.user.get_profile(),
                            from_val='Internet-Drafts@ietf.org',
                            content_type='Multipart/Mixed; Boundary="NextPart"')
             
@@ -559,6 +563,9 @@ def confirm(request, id):
 
         func(draft,request)
         
+        # clear session data
+        request.session.clear()
+    
         messages.success(request, '%s action performed successfully!' % action)
         url = reverse('drafts_view', kwargs={'id':id})
         return HttpResponseRedirect(url)
@@ -574,7 +581,7 @@ def confirm(request, id):
         'draft': draft},
         RequestContext(request, {}),
     )
-"""
+
 def dates(request):
     ''' 
     Manage ID Submission Dates
@@ -587,51 +594,13 @@ def dates(request):
 
     * none
     '''
-    DatesFormset = modelformset_factory(IDDates, form=SubmissionDatesForm, extra=0)
-    qset = IDDates.objects.all().order_by('id')
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            #url = reverse('drafts_search')
-            url = reverse('home')
-            return HttpResponseRedirect(url)
-            
-        if button_text == 'Reset':
-            formset = DatesFormset(queryset = qset)
-            # get date of next meeting
-            qs = Meeting.objects.filter(start_date__gte=datetime.datetime.now()).order_by('start_date')
-            if qs:
-                # the cutoff date calculations are hard coded becuase this data
-                # is not in the db
-                next_meeting = qs[0]
-                formset.forms[0].initial={'date':next_meeting.start_date-datetime.timedelta(days=20)}
-                formset.forms[1].initial={'date':next_meeting.start_date-datetime.timedelta(days=13)}
-                formset.forms[2].initial={'date':next_meeting.start_date+datetime.timedelta(days=1)}
-                formset.forms[3].initial={'date':next_meeting.start_date-datetime.timedelta(days=10)}
-                formset.forms[4].initial={'date':next_meeting.start_date+datetime.timedelta(days=8)}
-                formset.forms[5].initial={'date':next_meeting.start_date-datetime.timedelta(days=27)}
-                messages.success(request, 'Dates changed to meeting %s default' % next_meeting)
-            else:
-                messages.error(request, 'Error No meeting found with start_date after today')
-            
-        else:
-            formset = DatesFormset(request.POST)
-            if formset.is_valid():
-                formset.save()
-                
-                messages.success(request, 'Submission Dates modified successfully!')
-                url = reverse('drafts_search')
-                return HttpResponseRedirect(url)
-    else:
-        #form = SubmissionDatesForm()
-        formset = DatesFormset(queryset = qset)
+    meeting = get_meeting()
         
     return render_to_response('drafts/dates.html', {
-        'qset': qset,
-        'formset': formset},
+        'meeting':meeting},
         RequestContext(request, {}),
     )
-"""
+
 def edit(request, id):
     '''
     Since there's a lot going on in this function we are summarizing in the docstring.
@@ -717,7 +686,6 @@ def email(request, id):
         
         # for "revision" action skip email page and go directly to confirm
         if request.session['action'] == 'revision':
-            #assert False, form.data
             request.session['email'] = form.initial
             url = reverse('drafts_confirm', kwargs={'id':id})
             return HttpResponseRedirect(url)
@@ -951,25 +919,25 @@ def search(request):
         
         if form.is_valid():
             kwargs = {} 
-            intended_status = form.cleaned_data['intended_status']
-            document_name = form.cleaned_data['document_name']
-            group_acronym = form.cleaned_data['group_acronym']
-            filename = form.cleaned_data['filename']
-            status = form.cleaned_data['status']
+            intended_std_level = form.cleaned_data['intended_std_level']
+            title = form.cleaned_data['document_title']
+            group = form.cleaned_data['group']
+            name = form.cleaned_data['name']
+            state = form.cleaned_data['state']
             revision_date_start = form.cleaned_data['revision_date_start'] 
             revision_date_end = form.cleaned_data['revision_date_end'] 
             # construct seach query
-            if intended_status:
-                kwargs['intended_std_level'] = intended_status
-            if document_name:
-                kwargs['title__istartswith'] = document_name
-            if status:
+            if intended_std_level:
+                kwargs['intended_std_level'] = intended_std_level
+            if title:
+                kwargs['title__istartswith'] = title
+            if state:
                 kwargs['states__type'] = 'draft'
-                kwargs['states__slug'] = status
-            if filename:
-                kwargs['name__istartswith'] = filename
-            if group_acronym:
-                kwargs['group__acronym__istartswith'] = group_acronym
+                kwargs['states__slug'] = state
+            if name:
+                kwargs['name__istartswith'] = name
+            if group:
+                kwargs['group__acronym__istartswith'] = group
             if revision_date_start:
                 kwargs['docevent__type'] = 'new_revision'
                 kwargs['docevent__time__gte'] = revision_date_start
@@ -983,8 +951,8 @@ def search(request):
                 qs = Document.objects.all()
             results = qs.order_by('group__name')
     else:
-        # have status default to active
-        form = SearchForm(initial={'status':'1'})
+        active_state = State.objects.get(type='draft',slug='active')
+        form = SearchForm(initial={'state':active_state.pk})
 
     return render_to_response('drafts/search.html', {
         'results': results,

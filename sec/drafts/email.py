@@ -1,8 +1,12 @@
-from sec.utils.ams_utils import get_start_date
-from django.core.exceptions import ObjectDoesNotExist
-
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.template.loader import render_to_string
 
+from ietf.announcements.models import Message, SendQueue
+from ietf.announcements.send_scheduled import send_scheduled_announcement
+from redesign.doc.utils import active_ballot_positions
+from redesign.person.models import Person
+from sec.utils.ams_utils import get_start_date
 
 import datetime
 import glob
@@ -11,11 +15,11 @@ import time
 
 def announcement_from_form(data, **kwargs):
     '''
-    This function creates a new scheduled_announcements record.  Taking as input EmailForm.data
-    and key word arguments used to override some of the scheduled_announcement fields
+    This function creates a new message record.  Taking as input EmailForm.data
+    and key word arguments used to override some of the message fields
     '''
     # possible overrides
-    scheduled_by = kwargs.get('scheduled_by','IETFDEV')
+    by = kwargs.get('by',Person.objects.get(name='(System)'))
     from_val = kwargs.get('from_val','ID Tracker <internet-drafts-reply@ietf.org>')
     content_type = kwargs.get('content_type','')
     
@@ -25,21 +29,21 @@ def announcement_from_form(data, **kwargs):
     cc_val = data['cc']
     body = data['body']
     
-    """
-    sa = ScheduledAnnouncement(scheduled_by=scheduled_by,
-                               scheduled_date=datetime.date.today().isoformat(),
-                               scheduled_time=time.strftime('%H:%M:%S'),
-                               subject=subject,
-                               to_val=to_val,
-                               cc_val=cc_val,
-                               from_val=from_val,
-                               body=body,
-                               first_q=1,
-                               content_type=content_type)
-    sa.save()
-    return sa
-    """
-    pass
+    message = Message.objects.create(by=by,
+                                     subject=subject,
+                                     frm=from_val,
+                                     to=to_val,
+                                     cc=cc_val,
+                                     body=body,
+                                     content_type=content_type)
+    
+    # create SendQueue
+    send_queue = SendQueue.objects.create(by=by,message=message)
+    
+    # uncomment for testing
+    send_scheduled_announcement(send_queue)
+    
+    return message
     
 def get_authors(draft):
     """
@@ -118,27 +122,19 @@ def get_revision_emails(draft):
     2) the main AD, via id_internal.job_owner
     3) any ad who has marked "discuss" in the ballot associated with this id_internal
     """
-    emails = []
     # from legacy
     if not draft.get_state('draft-iesg'):
         return ''
-        
-    # get state_change_notice_to
-    emails.append(draft.notify)
     
-    # get job_owner
-    emails.append(draft.ad.email_address())
-    
-    # TODO
-    # get ballots discuss
-    # need to catch errors here because in some cases the referenced ballot_info
-    # record does not exist
-    #try:
-    #    position_list = id.ballot.positions.filter(discuss=1)
-    #    for p in position_list:
-    #        emails.append(p.ad.person.email())
-    #except ObjectDoesNotExist:
-    #    pass
+    emails = []
+    if draft.notify:
+        emails.append(draft.notify)
+    if draft.ad:
+        emails.append(draft.ad.role_email("ad").address)
+
+    for ad, pos in active_ballot_positions(draft).iteritems():
+        if pos and pos.pos_id == "discuss":
+            emails.append(ad.role_email("ad").address)
 
     return ', '.join(emails)
 
@@ -157,17 +153,19 @@ def get_fullcc_list(draft):
     for author in draft.authors.all():
         if author.address not in emails:
             emails[author.address] = '"%s"' % (author.person.name)
-    # add chairs
-    if draft.group.pk != 1027:
-        for chair in draft.group.role_set.filter(name='chair'):
-            if author.address not in emails:
-                emails[chair.address] = '"%s"' % (chair.person.name)
-    # add AD
-    if draft.group.type.slug == 'wg':    
-        emails['%s-ads@tools.ietf.org' % draft.group.acronym] = '"%s-ads"' % (draft.group.acronym)
-    elif draft.group.type.slug == 'rg':
-        email = draft.group.parent.role_set.filter(name='chair')[0].email
-        emails[email.address] = '"%s"' % (email.person.name)
+    
+    if draft.group.acronym != 'none':
+        # add chairs
+        for role in draft.group.role_set.filter(name='chair'):
+            if role.email.address not in emails:
+                emails[role.email.address] = '"%s"' % (role.person.name)
+        # add AD
+        if draft.group.type.slug == 'wg':    
+            emails['%s-ads@tools.ietf.org' % draft.group.acronym] = '"%s-ads"' % (draft.group.acronym)
+        elif draft.group.type.slug == 'rg':
+            email = draft.group.parent.role_set.filter(name='chair')[0].email
+            emails[email.address] = '"%s"' % (email.person.name)
+    
     # add sheperd
     if draft.shepherd:
         emails[draft.shepherd.email_address()] = '"%s"' % (draft.shepherd.name)
@@ -219,7 +217,7 @@ def get_email_initial(draft, type=None, input=None):
     entries have "Action" in subject whereas this app uses "ACTION"
     """
     # assert False, (draft, type, input)
-    expiration_date = datetime.date.today() + datetime.timedelta(185)
+    expiration_date = (datetime.date.today() + datetime.timedelta(185)).strftime('%B %d, %Y')
     new_revision = str(int(draft.rev)+1).zfill(2)
     new_filename = draft.name + '-' + new_revision + '.txt'
     curr_filename = draft.name + '-' + draft.rev + '.txt'
@@ -227,117 +225,53 @@ def get_email_initial(draft, type=None, input=None):
     data['cc'] = get_fullcc_list(draft)
     data['to'] = ''
     if type == 'extend':
+        context = {'doc':curr_filename,'expire_date':expiration_date}
         data['subject'] = 'Extension of Expiration Date for %s' % (curr_filename)
-        data['body'] = """As you requested, the expiration date for
-%s has been extended.  The draft
-will expire on %s unless it is replaced by an updated version, or the 
-Secretariat has been notified that the document is under official review by the
-IESG or has been passed to the IRSG or RFC Editor for review and/or publication
-as an RFC.
-
-IETF Secretariat.""" %(curr_filename, expiration_date.strftime('%B %d, %Y'))
+        data['body'] = render_to_string('drafts/message_extend.txt', context)
 
     elif type == 'new':
-        # from emailannouncement.cfm
         # if the ID belongs to a group other than "none" add line to message body
         if draft.group.type.slug == 'wg':
             wg_message = 'This draft is a work item of the %s Working Group of the IETF.' % draft.group.name
         else:
             wg_message = ''
+        context = {'wg_message':wg_message,
+                   'draft':draft,
+                   'authors':get_abbr_authors(draft),
+                   'start_date':get_start_date(draft),
+                   'timestamp':time.strftime("%Y-%m-%d%H%M%S", time.localtime())}
         data['to'] = 'i-d-announce@ietf.org'
         data['cc'] = draft.group.list_email
         data['subject'] = 'I-D ACTION:%s' % (curr_filename)
-        data['body'] = """--NextPart
-
-A new Internet-Draft is available from the on-line Internet-Drafts directories.
-%s
-
-    Title         : %s
-    Author(s)     : %s
-    Filename      : %s
-    Pages         : %s
-    Date          : %s
-    
-%s
-
-A URL for this Internet-Draft is:
-http://www.ietf.org/internet-drafts/%s
-
-Internet-Drafts are also available by anonymous FTP at:
-ftp://ftp.ietf.org/internet-drafts/
-
-Below is the data which will enable a MIME compliant mail reader
-implementation to automatically retrieve the ASCII version of the
-Internet-Draft.
-
---NextPart
-Content-Type: Message/External-body;
-    name="%s";
-    site="ftp.ietf.org";
-    access-type="anon-ftp";
-    directory="internet-drafts"
-
-Content-Type: text/plain
-Content-ID:     <%s.I-D@ietf.org>
-
---NextPart--
-""" % (wg_message,
-       draft.title,
-       get_abbr_authors(draft),
-       draft.name,
-       draft.pages,
-       get_start_date(draft),
-       draft.abstract,
-       draft.name,
-       draft.name,
-       time.strftime("%Y-%m-%d%H%M%S", time.localtime()))
+        data['body'] = render_to_string('drafts/message_new.txt', context)
 
     elif type == 'replace':
+        context = {'doc':curr_filename,'replaced_by':input['replaced_by']}
         data['subject'] = 'Replacement of %s with %s' % (curr_filename,input['replaced_by'])
-        data['body'] = """As you requested, %s has been marked as replaced by 
-%s in the IETF Internet-Drafts database.
-
-IETF Secretariat.""" % (curr_filename,input['replaced_by'])
+        data['body'] = render_to_string('drafts/message_replace.txt', context)
 
     elif type == 'resurrect':
         last_revision = get_last_revision(draft.name)
         last_filename = draft.name + '-' + last_revision + '.txt'
+        context = {'doc':last_filename,'expire_date':expiration_date}
         data['subject'] = 'Resurrection of %s' % (last_filename)
-        data['body'] = """As you requested, %s has been resurrected.  The draft will expire on
-%s unless it is replaced by an updated version, or the Secretariat has been notified that the
-document is under official review by the IESG or has been passed to the IRSG or RFC Editor for review and/or
-publication as an RFC.
-
-IETF Secretariat.""" % (last_filename, expiration_date.strftime('%B %d, %Y'))
+        data['body'] = render_to_string('drafts/message_resurrect.txt', context)
 
     elif type == 'revision':
+        context = {'rev':new_revision,'doc':new_filename,'doc_base':new_filename[:-4]}
         data['to'] = get_revision_emails(draft)
         data['cc'] = ''
         data['subject'] = 'New Version Notification - %s' % (new_filename)
-        data['body'] = """New version (-%s) has been submitted for %s.
-http://www.ietf.org/internet-drafts/%s
-
-Diff from previous version:
-http://tools.ietf.org/rfcdiff?url2=%s
-
-IETF Secretariat.""" % (new_revision, new_filename, new_filename, new_filename[:-4])
+        data['body'] = render_to_string('drafts/message_revision.txt', context)
 
     elif type == 'update':
+        context = {'doc':input['filename'],'expire_date':expiration_date}
         data['subject'] = 'Posting of %s' % (input['filename'])
-        data['body'] = """As you requested, %s an updated 
-version of an expired Internet-Draft, has been posted.  The draft will expire 
-on %s unless it is replaced by an updated version, or the 
-Secretariat has been notified that the document is under official review by the
-IESG or has been passed to the IRSG or RFC Editor for review and/or publication
-as an RFC.
-
-IETF Secretariat.""" % (input['filename'], expiration_date.strftime('%B %d, %Y'))
+        data['body'] = render_to_string('drafts/message_update.txt', context)
 
     elif type == 'withdraw':
+        context = {'doc':curr_filename,'by':input['type']}
         data['subject'] = 'Withdrawl of %s' % (curr_filename)
-        data['body'] = """As you requested, %s 
-has been marked as withdrawn by the IETF in the IETF Internet-Drafts database.
-
-IETF Secretariat.""" % (curr_filename)
+        data['body'] = render_to_string('drafts/message_withdraw.txt', context)
 
     return data

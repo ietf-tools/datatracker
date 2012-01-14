@@ -1,10 +1,10 @@
 <table id="draft-search-results" class="center" cellspacing="0">
   <thead>
     <tr> 
-      <th>Filename</th>
+      <th>Name</th>
       <th>Group</th>
       <th>Status</th>
-      <th>Intended Status</th>
+      <th>Intended Std Level</th>
     </tr>
   </thead>
   <tbody>
@@ -12,8 +12,8 @@
        <tr class="{% cycle 'row1' 'row2' %}">
          <td><a href="{% url drafts_view id=item.name %}">{{ item.name }}</a></td>
          <td>{{item.group.acronym}}</td>
-         <td>{{item.status}}</td>
-         <td>{{item.intended_status}}</td>
+         <td>{{item.get_state}}</td>
+         <td>{{item.intended_std_level}}</td>
        </tr>
     {% endfor %}
   </tbody>

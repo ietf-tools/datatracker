@@ -1,0 +1,6 @@
+As you requested, {{ doc }} has been resurrected.  The draft will expire on
+{{ expire_date }} unless it is replaced by an updated version, or the Secretariat has been notified that the
+document is under official review by the IESG or has been passed to the IRSG or RFC Editor for review and/or
+publication as an RFC.
+
+IETF Secretariat.
