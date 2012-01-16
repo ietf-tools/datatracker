@@ -33,10 +33,6 @@ class DocumentField(forms.FileField):
 
     def clean(self, data, initial=None):
         file = super(DocumentField, self).clean(data,initial)
-        # this is redundant to regex below
-        #ext = splitext(file.name)[1][1:].lower()
-        #if ext not in self.valid_file_extensions:
-        #    raise forms.ValidationError('Document types accepted: ' + ', '.join(self.valid_file_extensions))
         if file:
             # ensure file name complies with standard format
             m = re.search(r'.*-\d{2}\.(txt|pdf|ps|xml)', file.name)
@@ -49,7 +45,18 @@ class DocumentField(forms.FileField):
 
         return file
 
-class MyModelChoiceField(forms.ModelChoiceField):
+class GroupModelChoiceField(forms.ModelChoiceField):
+    '''
+    Custom ModelChoiceField sets queryset to include all active workgroups and the 
+    individual submission group, none.  Displays group acronyms as choices.  Call it without the
+    queryset argument, for example:
+    
+    group = GroupModelChoiceField(required=True)
+    '''
+    def __init__(self, *args, **kwargs):
+        kwargs['queryset'] = Group.objects.filter(type__in=('wg','individ'),state__in=('bof','proposed','active')).order_by('acronym')
+        super(GroupModelChoiceField, self).__init__(*args, **kwargs)
+    
     def label_from_instance(self, obj):
         return obj.acronym
 
@@ -57,14 +64,11 @@ class MyModelChoiceField(forms.ModelChoiceField):
 # Forms 
 # ---------------------------------------------
 class AddFileForm(forms.Form):
-    # it appears the file input widget is not stylable via css
     file = DocumentField(unique=True)
     
 class AddModelForm(forms.ModelForm):
-    #file = DocumentField(unique=True)
-    #file2 = DocumentField(required=False)
     start_date = forms.DateField()
-    group = MyModelChoiceField(queryset=Group.objects.active_wgs().order_by('acronym'), required=True)
+    group = GroupModelChoiceField(required=True,help_text='Use group "none" for Individual Submissions')
     
     class Meta:
         model = Document
@@ -77,36 +81,9 @@ class AddModelForm(forms.ModelForm):
         super(AddModelForm, self).__init__(*args, **kwargs)
         self.fields['title'].label='Document Name'
         self.fields['title'].widget=forms.Textarea()
-        #self.fields['group'].queryset=Group.objects.active_wgs().order_by('acronym')
-        #self.fields['group'].widget = MyModelChoiceField(queryset=Group.objects.active_wgs().order_by('acronym'))
         self.fields['start_date'].initial=datetime.date.today
         self.fields['pages'].label='Number of Pages'
         self.fields['internal_comments'].label='Comments'
-
-    # Validation: all upload files must have the same base name
-    '''
-    def clean(self):
-        super(AddModelForm, self).clean()
-        cleaned_data = self.cleaned_data
-        file = cleaned_data.get('file')
-        file2 = cleaned_data.get('file2')
-        if file and file2:
-            if get_base(file.name) != get_base(file2.name):
-                raise forms.ValidationError('Uploaded files must have the same base name.')
-
-        # Always return the full collection of cleaned data.
-        return cleaned_data
-
-    
-    def save(self, force_insert=False, force_update=False, commit=True):
-        self.intended_status = IDIntendedStatus.objects.get(intended_status_id=8)
-        assert False, self
-        m = super(AddModelForm, self).save(commit=False)
-        # do custom stuff
-        if commit:
-            m.save()
-        return m
-    '''
 
 class AuthorForm(forms.Form):
     #author_name = forms.CharField(max_length=100,label='Name',help_text="To see a list of people type the first name, or last name, or both.")
@@ -128,7 +105,7 @@ class AuthorForm(forms.Form):
 class BaseFileFormSet(BaseFormSet):
     '''
     This class is used when creating the formset factory for file upload,
-    so we can call perform vailations across multiple file upload forms
+    so we can call perform validations across multiple file upload forms
     '''
     def __init__(self, request, *args, **kwargs):
         self.request = request
@@ -139,7 +116,6 @@ class BaseFileFormSet(BaseFormSet):
         if any(self.errors):
             # Don't bother validating the formset unless each form is valid on its own
             return
-        #assert False, self.total_form_count()
         names = []
         for i in range(0, self.total_form_count()):
             form = self.forms[i]
@@ -168,13 +144,14 @@ class BaseFileFormSet(BaseFormSet):
 
 class EditModelForm(forms.ModelForm):
     #expiration_date = forms.DateField(required=False)
-    #state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft'),empty_label=None)
-    group = MyModelChoiceField(queryset=Group.objects.active_wgs().order_by('acronym'), required=True)
+    state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft'),empty_label=None)
+    iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='iesg'),empty_label=None)
+    group = GroupModelChoiceField(required=True)
     review_by_rfc_editor = forms.BooleanField(required=False)
     
     class Meta:
         model = Document
-        fields = ('title','group','review_by_rfc_editor','name','rev','pages','abstract','internal_comments')
+        fields = ('title','group','stream','review_by_rfc_editor','name','rev','pages','intended_std_level','abstract','internal_comments')
                  
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):
@@ -316,13 +293,7 @@ class RevisionForm(forms.Form):
 class RfcModelForm(forms.ModelForm):
     rfc_number = forms.IntegerField()
     rfc_published_date = forms.DateField(initial=datetime.datetime.now)
-    #proposed_date = forms.DateField(required=False)
-    #draft_date = forms.DateField(required=False)
-    #standard_date = forms.DateField(required=False)
-    #historic_date = forms.DateField(required=False)
-    fyi_number = forms.IntegerField(required=False)
-    std_number = forms.IntegerField(required=False)
-    group = MyModelChoiceField(queryset=Group.objects.active_wgs().order_by('acronym'), required=True)
+    group = GroupModelChoiceField(required=True)
     
     class Meta:
         model = Document
@@ -358,9 +329,7 @@ class RfcObsoletesForm(forms.Form):
     def clean_rfc(self):
         rfc = self.cleaned_data.get('rfc','')
         if rfc:
-            try:
-                test = Rfc.objects.get(rfc_number=rfc)
-            except Rfc.DoesNotExist:
+            if not Document.objects.filter(docalias__name="rfc%s" % rfc):
                 raise forms.ValidationError("RFC does not exist")
         return rfc
     
@@ -377,7 +346,7 @@ class SearchForm(forms.Form):
     intended_std_level = forms.ModelChoiceField(queryset=IntendedStdLevelName.objects,label="Intended Std Level",required=False)
     document_title = forms.CharField(max_length=80,label='Document Title',required=False)
     group = forms.CharField(max_length=12,required=False)
-    name = forms.CharField(max_length=80,required=False)
+    filename = forms.CharField(max_length=80,required=False)
     state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft'),required=False)
     revision_date_start = forms.DateField(label='Revision Date (start)',required=False)
     revision_date_end = forms.DateField(label='Revision Date (end)',required=False)

@@ -40,11 +40,11 @@
           <th><label for="id_standard_date">Standard Date</label></th><td>{{ form.standard_date.errors }}{{ form.standard_date }}</td>
           <th><label for="id_historic_date">Historic Date</label></th><td>{{ form.historic_date.errors }}{{ form.historic_date }}</td>
         </tr>
-        {% endcomment %}
         <tr>
           <th><label for="id_fyi_number">FYI Number</label></th><td>{{ form.fyi_number.errors }}{{ form.fyi_number }}</td>
           <th><label for="id_std_number">STD Number</label></th><td>{{ form.std_number.errors }}{{ form.std_number }}</td>
         </tr>
+        {% endcomment %}
         <tr><th><label for="id_comments">Comments</label></th><td colspan="3">{{ form.internal_comments.errors }}{{ form.internal_comments }}</td></tr>
       </table>
   </div> <!-- draft-view-col1 -->

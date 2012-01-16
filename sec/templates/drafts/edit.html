@@ -22,14 +22,16 @@
       <table class="full-width">
         <tr><td>Document Name:</td><td>{{ form.title.errors }}{{ form.title }}</td></tr>
         <tr><td>Group:</td><td>{{ form.group.errors }}{{ form.group }}</td></tr>
-        <!-- <tr><td>State:</td><td>{{ form.state.errors }}{{ form.state }}</td></tr> -->
+        <tr><td>State:</td><td>{{ form.state.errors }}{{ form.state }}</td></tr>
+        <tr><td>IESG State:</td><td>{{ form.iesg_state.errors }}{{ form.iesg_state }}</td></tr>
+        <tr><td>Stream:</td><td>{{ form.stream.errors }}{{ form.stream }}</td></tr>
         <tr><td>Under Review by RFC Editor:</td><td>{{ form.review_by_rfc_editor.errors }}{{ form.review_by_rfc_editor }}</td></tr>
         <tr><td>File Name:</td><td>{{ form.name.errors }}{{ form.name }} - {{ form.rev.errors }}{{ form.rev }}</td></tr>
         <tr><td>Number of Pages:</td><td>{{ form.pages.errors }}{{ form.pages }}</td></tr>
         <tr><td>Abstract:</td><td></td></tr>
         <tr><td colspan="4">{{ form.abstract.errors }}{{ form.abstract }}</td></tr>
         <tr><td>Expiration Date:</td><td>{{ form.expiration_date.errors }}{{ form.expiration_date }}</td></tr>
-        <tr><td>Intended Status:</td><td>{{ draft.intended_status }}</td></tr>
+        <tr><td>Intended Std Level:</td><td>{{ form.intended_std_level.errors }}{{ form.intended_std_level }}</td></tr>
         <tr><td>RFC Number:</td><td>{{ draft.rfc_number }}</td></tr>
         <tr><td>Comments:</td><td>{{ form.internal_comments.errors }}{{ form.internal_comments }}</td></tr>
         <tr><td>Replaced by:</td><td>{{ form.replaced_by.errors }}{{ form.replaced_by }}</td></tr>

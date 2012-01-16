@@ -779,15 +779,16 @@ def makerfc(request, id):
             # handle rfc_obsoletes formset
             # NOTE: because we are just adding RFCs in this form we don't need to worry
             # about the previous state of the obs forms
-            #for obs_form in obs_formset.forms:
-            #    if obs_form.has_changed():
-            #        rfc_acted_on = obs_form.cleaned_data.get('rfc','')
-            #        relation = obs_form.cleaned_data.get('relation','')
-            #        if rfc and relation:
-            #            # form validation ensures the rfc_acted_on exists, can safely use get
-            #            rfc_acted_on_obj = Rfc.objects.get(rfc_number=rfc_acted_on)
-            #            object = RfcObsolete(rfc=rfc,action=relation,rfc_acted_on=rfc_acted_on_obj)
-            #            object.save()
+            for obs_form in obs_formset.forms:
+                if obs_form.has_changed():
+                    rfc_acted_on = obs_form.cleaned_data.get('rfc','')
+                    target = DocAlias.objects.get(name="rfc%s" % rfc_acted_on)
+                    relation = obs_form.cleaned_data.get('relation','')
+                    if rfc and relation:
+                        # form validation ensures the rfc_acted_on exists, can safely use get
+                        RelatedDocument.objects.create(source=draft,
+                                                       target=target,
+                                                       relationship=DocRelationshipName.objects.get(slug=relation))
             
             messages.success(request, 'RFC created successfully!')
             url = reverse('drafts_view', kwargs={'id':id})
@@ -922,7 +923,7 @@ def search(request):
             intended_std_level = form.cleaned_data['intended_std_level']
             title = form.cleaned_data['document_title']
             group = form.cleaned_data['group']
-            name = form.cleaned_data['name']
+            name = form.cleaned_data['filename']
             state = form.cleaned_data['state']
             revision_date_start = form.cleaned_data['revision_date_start'] 
             revision_date_end = form.cleaned_data['revision_date_end'] 
@@ -1030,7 +1031,7 @@ def view(request, id):
     
     # TODO should I rewrite all these or just use proxy.InternetDraft?
     # add legacy fields
-    draft.id_tracker_state = draft.get_state('draft-iesg')
+    draft.iesg_state = draft.get_state('draft-iesg')
     draft.review_by_rfc_editor = bool(draft.tags.filter(slug='rfc-rev'))
     
     # can't assume there will be a new_revision record
