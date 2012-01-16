@@ -276,6 +276,7 @@ EVENT_TYPES = [
     # misc draft/RFC events
     ("changed_stream", "Changed document stream"),
     ("expired_document", "Expired document"),
+    ("extended_expiry", "Extended expiry of document"),
     ("requested_resurrect", "Requested resurrect"),
     ("completed_resurrect", "Completed resurrect"),
     ("published_rfc", "Published RFC"),
