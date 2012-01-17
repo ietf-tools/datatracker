@@ -40,6 +40,7 @@ from ietf.idtracker.models import Area, IETFWG
 from ietf.idrfc.views_search import SearchForm, search_query
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
 from ietf.ipr.models import IprDetail
+from redesign.group.models import Group
 
 
 def fill_in_charter_info(wg, include_drafts=False):
@@ -156,3 +157,22 @@ def wg_charter(request, acronym):
                                   RequestContext(request))
         
     return render_to_response('wginfo/wg_charter.html', {'wg': wg, 'concluded':concluded, 'proposed': proposed, 'selected':'charter'}, RequestContext(request))
+
+def get_wg_menu_context(wg, selected):
+    # it would probably be better to refactor this file into rendering
+    # the menu separately instead of each view having to include the information
+
+    return dict(wg=wg, concluded=wg.state_id == "conclude", proposed=wg.state_id == "proposed", selected=selected)
+
+def history(request, acronym):
+    wg = get_object_or_404(Group, acronym=acronym)
+
+    events = wg.groupevent_set.all().select_related('by').order_by('-time', '-id')
+
+    context = get_wg_menu_context(wg, "history")
+    context.update(dict(events=events,
+                        ))
+
+    wg.group_acronym = wg # hack for compatibility with old templates
+
+    return render_to_response('wginfo/history.html', context, RequestContext(request))

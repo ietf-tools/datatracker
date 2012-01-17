@@ -58,9 +58,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <h1>{{wg.group_acronym.name}} ({{wg.group_acronym.acronym}}){% if concluded %}<br/><span class="ietf-concluded-warning">(concluded WG)</span>{% endif %}{% if proposed %}<br/><span class="ietf-proposed-warning">(proposed WG)</span>{% endif %}</h1>
 
 <div class="ietf-navset">
-{% ifequal selected "documents" %}<span class="selected">Documents</span>{% else %}<a href="/wg/{{wg}}/">Documents</a>{% endifequal %} | 
-{% ifequal selected "charter" %}<span class="selected">Charter</span>{% else %}<a href="/wg/{{wg}}/charter/">Charter</a>{% endifequal %} | 
+{% ifequal selected "documents" %}<span class="selected">Documents</span>{% else %}<a href="{% url wginfo.views.wg_documents_html acronym=wg.group_acronym.acronym %}">Documents</a>{% endifequal %} |
+{% ifequal selected "charter" %}<span class="selected">Charter</span>{% else %}<a href="{% url wginfo.views.wg_charter acronym=wg.group_acronym.acronym %}">Charter</a>{% endifequal %} |
 {% wgchairs_admin_options wg %}
+<a {% if selected == "history" %}class="selected"{% else %}href="{% url wginfo.views.history acronym=wg.group_acronym.acronym %}"{% endif %}>History</a> |
 {% if wg.clean_email_archive|startswith:"http:" or wg.clean_email_archive|startswith:"ftp:" %}
 <a href="{{ wg.clean_email_archive }}">List Archive &#187;</a> | 
 {% endif %}

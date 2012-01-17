@@ -4,7 +4,7 @@ import textwrap
 from django import template
 from django.conf import settings
 from django.utils.html import escape, fix_ampersands
-from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter
+from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter, urlize, truncatewords_html
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 try:
@@ -439,6 +439,15 @@ def ad_area(user):
         if g:
             return g[0].acronym
     return None
+
+@register.filter
+def format_history_text(text):
+    """Run history text through some cleaning and add ellipsis if it's too long."""
+    full = mark_safe(sanitize_html(keep_spacing(linebreaksbr(urlize(mark_safe(text))))))
+    snipped = truncatewords_html(format_textarea(fill(text, 80)), 25)
+    if snipped[-3:] == "...":
+        return mark_safe(u'<div class="snipped">%s<div class="showAll">[show all]</div><div><div style="display:none" class="full">%s</div>' % (snipped, full))
+    return full
 
 def _test():
     import doctest

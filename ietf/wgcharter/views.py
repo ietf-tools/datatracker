@@ -84,7 +84,7 @@ def wg_main(request, name, rev, tab):
             "charter-ietf-"+str(gh.acronym)+"-"+str(ch.rev)+".txt", 
             os.path.join(file_path, "charter-ietf-"+gh.acronym+"-"+ch.rev+".txt"))
         active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active").distinct()
-        started_process = datetime.datetime.min
+        started_process = datetime.min
         e = wg.charter.latest_event(type="started_iesg_process")
         if e:
             started_process = e.time
@@ -148,17 +148,6 @@ def wg_main(request, name, rev, tab):
 
 def _get_history(wg, versions=None):
     results = []
-    for e in wg.groupevent_set.all().select_related('by').order_by('-time', 'id'):
-        info = {}
-                    
-        charter_history = find_history_active_at(wg.charter, e.time)
-        info['version'] = charter_history.rev if charter_history else wg.charter.rev
-        info['text'] = e.desc
-        info['by'] = e.by.name
-        info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
-        info['snipped'] = info['textSnippet'][-3:] == "..."
-        results.append({'comment':e, 'info':info, 'date':e.time, 'group': wg, 'is_com':True})
-
     for e in wg.charter.docevent_set.all().order_by('-time'):
         info = {}
         charter_history = find_history_active_at(wg.charter, e.time)
