@@ -57,6 +57,8 @@ class GroupURL(models.Model):
     group = models.ForeignKey(Group)
     name = models.CharField(max_length=255)
     url = models.URLField(verify_exists=False)
+    def __unicode__(self):
+	return u"%s (%s)" % (self.url, self.name)
 
 class GroupMilestone(models.Model):
     group = models.ForeignKey(Group)
@@ -76,6 +78,9 @@ class GroupStateTransitions(models.Model):
     group = models.ForeignKey(Group)
     state = models.ForeignKey('doc.State', help_text="State for which the next states should be overridden")
     next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
+
+    def __unicode__(self):
+	return u'%s "%s" -> %s' % (self.group.acronym, self.state.name, [s.name for s in self.next_states.all()])
 
 GROUP_EVENT_CHOICES = [
     ("changed_state", "Changed state"),
