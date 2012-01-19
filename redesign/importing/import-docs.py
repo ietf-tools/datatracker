@@ -773,6 +773,8 @@ if document_name_to_import:
 #all_drafts = all_drafts[all_drafts.count() - 1000:]
 #all_drafts = all_drafts.none()
 
+old_internetdraft_content_type_id = ContentType.objects.using("legacy").get(app_label="idtracker", model="internetdraft").pk
+
 for index, o in enumerate(all_drafts.iterator()):
     print "importing", o.id_document_tag, o.filename, index, "ballot %s" % o.idinternal.ballot_id if o.idinternal and o.idinternal.ballot_id else ""
     
@@ -807,9 +809,8 @@ for index, o in enumerate(all_drafts.iterator()):
 
     d.unset_state("draft-iesg")
     try:
-        # don't constrain on content type, it may be broken because of
-        # the two databases in uses
-        s = StateOld.objects.get(stateobjectrelation__content_id=o.pk)
+        s = StateOld.objects.get(stateobjectrelation__content_type=old_internetdraft_content_type_id,
+                                 stateobjectrelation__content_id=o.pk)
     except StateOld.DoesNotExist:
         s = None
 
