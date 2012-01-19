@@ -1135,7 +1135,6 @@ for index, o in enumerate(all_rfcs.iterator()):
                 res.append(x)
         return res
 
-    RelatedDocument.objects.filter(source=d).delete()
     for x in parse_relation_list(o.obsoletes):
         make_relation(x, relationship_obsoletes, False)
     for x in parse_relation_list(o.obsoleted_by):
