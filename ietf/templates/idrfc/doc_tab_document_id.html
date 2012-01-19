@@ -67,6 +67,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
+{% if stream_info.state %}
 {% ifequal stream_info.stream.name "IETF" %}
   <tr>
      <td>IETF WG State:</td>
@@ -85,7 +86,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    </tr>
    {% endif %}
 {% endifequal %}
-<tr><td>Document shepherd:</td><td>{{ stream_info.shepherd|default:"" }}</td></tr> 
+{% endif %}
+<tr><td>Document shepherd:</td><td>{{ stream_info.shepherd|default:"" }}</td></tr>
 
 <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
