@@ -23,8 +23,9 @@ from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, Document
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.mirror_rfc_index import get_std_level_mapping, get_stream_mapping
 from ietf.ietfworkflows.models import StreamedID, AnnotationTag, ContentType, ObjectHistoryEntry, ObjectWorkflowHistoryEntry, ObjectAnnotationTagHistoryEntry, ObjectStreamHistoryEntry, StateObjectRelationMetadata
-import workflows.utils
 from ietf.wgchairs.models import ProtoWriteUp
+
+from workflows.models import State as StateOld
 
 document_name_to_import = None
 if len(sys.argv) > 1:
@@ -805,7 +806,13 @@ for index, o in enumerate(all_drafts.iterator()):
         pass
 
     d.unset_state("draft-iesg")
-    s = workflows.utils.get_state(o)
+    try:
+        # don't constrain on content type, it may be broken because of
+        # the two databases in uses
+        s = StateOld.objects.get(stateobjectrelation__content_id=o.pk)
+    except StateOld.DoesNotExist:
+        s = None
+
     if s:
         try:
             # there may be a mismatch between the stream type and the
