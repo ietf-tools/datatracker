@@ -125,7 +125,8 @@ def get_workflow_history_for_draft(draft, entry_type=None):
 def get_annotation_tags_for_draft(draft):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         from redesign.name.proxy import AnnotationTagObjectRelationProxy
-        return AnnotationTagObjectRelationProxy.objects.filter(document=draft.pk)
+        from redesign.doc.utils import get_tags_for_stream_id
+        return AnnotationTagObjectRelationProxy.objects.filter(document=draft.pk, slug__in=get_tags_for_stream_id(draft.stream_id))
 
     ctype = ContentType.objects.get_for_model(draft)
     tags = AnnotationTagObjectRelation.objects.filter(content_type=ctype, content_id=draft.pk)
