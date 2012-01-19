@@ -13,7 +13,7 @@
 	       {% if not iprs %}
 		  <tr>
 		     <td></td>
-		     <td colspan="2"><b>{% block search_failed %}No IPR disclosures have been submitted by the <i>{{ q }}</i>{% endblock %}</b></td>
+		     <td colspan="2"><b>{% block search_failed %}No IPR disclosures have been submitted by <i>{{ q }}</i>{% endblock %}</b></td>
 		  </tr>
 	       {% else %}
 		  <tr><td colspan="3">Total number of IPR disclosures found: {{ count }} </td></tr>
