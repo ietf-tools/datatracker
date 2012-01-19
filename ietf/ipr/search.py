@@ -221,4 +221,8 @@ def search(request, type="", q="", id=""):
             else:
                 raise Http404("Unexpected search type in IPR query: %s" % type)
         return django.http.HttpResponseRedirect(request.path)
+
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        for wg in wgs:
+            wg.group_acronym = wg # proxy group_acronym for select box
     return render("ipr/search.html", {"wgs": wgs}, context_instance=RequestContext(request))
