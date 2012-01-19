@@ -6,9 +6,9 @@ from django.forms.formsets import formset_factory
 from django.utils import simplejson
 
 from ietf.ipr.models import IprDetail, IprContact, LICENSE_CHOICES, IprRfc, IprDraft, IprUpdate, SELECT_CHOICES, IprDocAlias
-#from sec.drafts.models import Rfc, InternetDraft
 
 from redesign.doc.models import DocAlias
+from sec.utils.draft import get_rfc_num
 
 def mytest(val):
     if val == '1':
@@ -148,12 +148,12 @@ class IprDetailForm(BetterModelForm):
                 self.fields['updated'].initial = updates[0].updated.ipr_id
 
             rfcs = {}
-            for rfc in self.instance.rfcs.all():
-                rfcs[rfc.document.rfc_number] = str(rfc.document.rfc_number)+" "+rfc.document.title
+            for rfc in self.instance.documents.filter(doc_alias__name__startswith='rfc'):
+                rfcs[rfc.doc_alias.id] = get_rfc_num(rfc.doc_alias.document)+" "+rfc.doc_alias.document.title
                 
             drafts = {}
-            for draft in self.instance.drafts.all():
-                drafts[draft.document.id_document_tag] = draft.document.filename
+            for draft in self.instance.documents.exclude(doc_alias__name__startswith='rfc'):
+                drafts[draft.doc_alias.id] = draft.doc_alias.document.name
             self.initial['rfc_num'] = simplejson.dumps(rfcs)
             self.initial['id_filename'] = simplejson.dumps(drafts)
         
@@ -259,7 +259,6 @@ class IprDetailForm(BetterModelForm):
         '''
         IprDocAlias.objects.filter(ipr=ipr_detail).delete()
         for doc in self.cleaned_data['rfc_num']:
-            #doc_alias = DocAlias.objects.get(id=doc)
             IprDocAlias.objects.create(ipr=ipr_detail,doc_alias=doc)
         for doc in self.cleaned_data['id_filename']:
             #doc_alias = DocAlias.objects.get(id=doc)

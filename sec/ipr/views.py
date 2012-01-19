@@ -1,4 +1,5 @@
 import re
+import itertools
 from datetime import datetime
 from textwrap import TextWrapper
 from smtplib import SMTPException
@@ -11,15 +12,14 @@ from django.utils.safestring import mark_safe
 from sec.lib import template, jsonapi
 from sec.ipr.managers import IprDetailManager
 from sec.ipr.forms import IprDetailForm, IPRContactFormset
-#from sec.drafts.models import Rfc, IDAuthor, RfcAuthor 
-#from sec.core.models import IESGLogin, EmailAddress, AreaDirector, AreaGroup, IETFWG, Acronym, PersonOrOrgInfo, InternetDraft, IDInternal
-#from sec.groups.models import WGChair
+from sec.utils.draft import get_rfc_num, is_draft
 import sec.settings as settings
 
 from ietf.ipr.models import IprDetail, IprUpdate, IprRfc, IprDraft, IprContact, LICENSE_CHOICES, STDONLY_CHOICES, IprNotification
 from ietf.utils.mail import send_mail_text
 
 from redesign.doc.models import DocAlias
+from redesign.group.models import Role
 
 @template('ipr/list.html')
 def admin_list(request):
@@ -67,7 +67,7 @@ def admin_post(request, ipr_id, from_page, command):
         ipr_dtl.save()
 
     #assert False, (ipr_dtl.ipr_id, ipr_dtl.is_pending)
-    redirect_url = '/sec/ipr/admin/notify/%s?from=%s' % (ipr_id, from_page)
+    redirect_url = '/ipr/admin/notify/%s?from=%s' % (ipr_id, from_page)
 
     return HttpResponseRedirect(redirect_url)
 # end admin_post
@@ -145,13 +145,16 @@ def admin_notify(request, ipr_id):
     submitter_text = get_submitter_text(ipr_id, updated_ipr_id, from_page)
 
     document_relatives = ''
-    drafts = IprDraft.objects.filter(ipr__ipr_id=ipr_id)
-    for draft in drafts:
-        document_relatives += get_document_relatives(ipr_id, draft, is_draft=1)
+    #drafts = IprDraft.objects.filter(ipr__ipr_id=ipr_id)
+    #for draft in drafts:
+    #    document_relatives += get_document_relatives(ipr_id, draft, is_draft=1)
 
-    rfcs = IprRfc.objects.filter(ipr__ipr_id=ipr_id)
-    for rfc in rfcs:
-        document_relatives += get_document_relatives(ipr_id, rfc, is_draft=0)
+    #rfcs = IprRfc.objects.filter(ipr__ipr_id=ipr_id)
+    #for rfc in rfcs:
+    #    document_relatives += get_document_relatives(ipr_id, rfc, is_draft=0)
+    # REDESIGN
+    for iprdocalias in ipr_dtl.documents.all():
+        document_relatives += get_document_relatives(ipr_dtl, iprdocalias.doc_alias)
 
     return dict(
         page_id = page_id,
@@ -163,11 +166,13 @@ def admin_notify(request, ipr_id):
 
 
 def get_generic_ad_text(id):
+    '''
+    This function builds an email to the General Area, Area Director
+    '''
     text = ''
-    person_or_org_tag = AreaDirector.objects.get(area=1008).person.pk
-    person_info = PersonOrOrgInfo.objects.get(person_or_org_tag=person_or_org_tag) 
-    gen_ad_name = "%s %s" % (person_info.first_name, person_info.last_name)
-    gen_ad_email = get_email(person_info)
+    role = Role.objects.filter(group__acronym='gen',name='ad')[0]
+    gen_ad_name = role.person.name
+    gen_ad_email = role.email.address
     ipr_dtl = IprDetail.objects.get(ipr_id=id)
     submitted_date, ipr_title = ipr_dtl.submitted_date, ipr_dtl.title
     email_body = TextWrapper(width=80, break_long_words=False).fill(
@@ -260,104 +265,54 @@ The IETF Secretariat
     return text
 # end get_submitter_text
 
-def get_document_relatives(ipr_id, rel, is_draft):
+def get_document_relatives(ipr_dtl, docalias):
+    '''
+    This function takes a IprDetail object and a DocAlias object and returns an email.
+    '''
     text = ''
+    doc = docalias.document
     doc_info, author_names, author_emails, cc_list = '', '', '', ''
-
-    if is_draft:
+    authors = doc.authors.all()
+    
+    if is_draft(doc):
         doc_info = 'Internet-Draft entitled "%s" (%s)' \
-            % (rel.document.title, rel.document.filename)
-        updated_id = rel.document.id_document_tag
-
-        authors = IDAuthor.objects.filter(document=rel.document.id_document_tag)
-    
-        # if the document is not associated with a group copy job owner or Gernal Area Director
-        if rel.document.group.acronym_id == 1027: 
-            try:
-                draft_internal = IDInternal.objects.get(draft=rel.document.id_document_tag, rfc_flag=0)            
-                if draft_internal.job_owner: 
-    
-                    person = IESGLogin.objects.filter(id=draft_internal.job_owner.pk)
-                    if person:
-                        cc_list = get_email(person[0].person)
-                else:
-                    pass
-                    '''
-                    FIXME: not implemented - complex and erroneous sql, ald_ad_id will always be null in perl
-                '''
-            except IDInternal.DoesNotExist:
-                person = AreaDirector.objects.get(area=1008)
-                if person:
-                    cc_list = get_email(person.person)
-                
-        else:
-            wg = IETFWG.objects.get(group_acronym=rel.document.group)
-            cc_list = get_wg_email_list(
-                rel.document.group,
-                wg.status.status_id
-            )
+            % (doc.title, doc.name)
+        updated_id = doc.pk
 
     else: # not i-draft, therefore rfc
-        # need to use a try clause due to db integrity problems
-        try:
-            group_acronym = rel.document.group_acronym
-        except Acronym.DoesNotExist:
-            group_acronym = Acronym.objects.get(acronym='none')
+        rfc_num = get_rfc_num(doc)
         doc_info = 'RFC entitled "%s" (RFC%s)' \
-            % (rel.document.title, rel.document.rfc_number)
-        updated_id = rel.document.rfc_number
+            % (doc.title, rfc_num)
+        updated_id = rfc_num
 
-        authors = RfcAuthor.objects.filter(rfc=rel.document.rfc_number)
-
-        # superfluous
-        #group_acronym_id = Acronym.objects.get(acronym=group_acronym)
-
-        # if group acronym is none copy General Area Director
-        if group_acronym.acronym_id == 1027:
-            person = AreaDirector.objects.get(area=1008)
-            if person:
-                cc_list = get_email(person.person)
-
+    # if the document is not associated with a group copy job owner or Gernal Area Director
+    if doc.group.acronym == 'none':
+        if doc.ad and is_draft(doc):
+            cc_list = doc.ad.role_email('ad').address
         else:
-            wg = IETFWG.objects.get(group_acronym=group_acronym)
-            cc_list = get_wg_email_list(
-                group_acronym.acronym_id,
-                wg.status.status_id
-            )
-    '''
-    for author in authors:
-        person_info = PersonOrOrgInfo.objects.get(person_or_org_tag=author.person.pk)
-        author_names += "%s %s, " % (person_info.first_name, person_info.last_name)
-        try:
-            author_emails += "%s, " % get_email(author.person)
-        except EmailAddress.DoesNotExist:
-            pass
-    '''
-    for author in authors:
-        try:
-            author_names += "%s %s, " % (author.person.first_name, author.person.last_name)
-            author_emails += "%s, " % author.person.email()
-        except PersonOrOrgInfo.DoesNotExist:
-            pass
-    
-    author_names = author_names.strip()
-    author_names = author_names[:len(author_names)-1]
+            role = Role.objects.filter(group__acronym='gen',name='ad')[0]
+            cc_list = role.email.address
+            
+    else:
+        cc_list = get_wg_email_list(doc.group)
 
+    author_emails = ','.join([a.address for a in authors])
+    author_names = ', '.join([a.person.name for a in authors])
+    
     cc_list += ", ipr-announce@ietf.org"
 
-    ipr_dtl = IprDetail.objects.get(ipr_id=ipr_id)
     submitted_date = ipr_dtl.submitted_date
     ipr_title = ipr_dtl.title
 
     email_body = '''
 An IPR disclosure that pertains to your %s was submitted to the IETF Secretariat on %s and has been posted on the "IETF Page of Intellectual Property Rights Disclosures" (https://datatracker.ietf.org/ipr/%s/). The title of the IPR disclosure is "%s."");
-    ''' % (doc_info, submitted_date, ipr_id, ipr_title)
+    ''' % (doc_info, submitted_date, ipr_dtl.ipr_id, ipr_title)
     wrapper = TextWrapper(width=80, break_long_words=False)
     email_body = wrapper.fill(email_body)
 
     text = '''
 <h4>Notification for %s</h4>
-<textarea name="notify_%s%s" rows=25 cols=80>
+<textarea name="notify_%s" rows=25 cols=80>
 To: %s
 From: IETF Secretariat <ietf-ipr@ietf.org>
 Subject: IPR Disclosure: %s
@@ -371,34 +326,24 @@ The IETF Secretariat
 
 </textarea>
 <br><br>
-    ''' % (doc_info, is_draft, updated_id, author_emails, ipr_title, cc_list, author_names, email_body)
+    ''' % (doc_info, updated_id, author_emails, ipr_title, cc_list, author_names, email_body)
     # FIXME: why isn't this working - done in template now, also
     return mark_safe(text)
 # end get_document_relatives
 
-def get_email(person_or_org):
-    try:
-        email = EmailAddress.objects.get(person_or_org=person_or_org, priority=1).address
-    except EmailAddress.DoesNotExist:
-        email = ''
-    return email
-
-def get_wg_email_list(group_acronym_id, wg_status_id):
+def get_wg_email_list(group):
+    '''This function takes a Working Group object and returns a string of comman separated email
+    addresses for the Area Directors and WG Chairs
+    '''
     result = []
-    area = AreaGroup.objects.get(group=group_acronym_id)
-    person_list = AreaDirector.objects.filter(area=area.area)
-    for person in person_list:
-        if person.person.email:
-            result.append(person.person.email())
+    roles = itertools.chain(Role.objects.filter(group=group.parent,name='ad'),
+                            Role.objects.filter(group=group,name='chair'))
+    for role in roles:
+        result.append(role.email.address)
 
-    wg = IETFWG.objects.get(group_acronym=group_acronym_id)
-    if wg.email_address:
-        result.append(wg.email_address)
-    person_list = WGChair.objects.filter(group_acronym=group_acronym_id)
-    for person in person_list:
-        if person.person.email:
-            result.append(person.person.email())
-
+    if group.list_email:
+        result.append(group.list_email)
+    
     return ', '.join(result)
 
 @template('ipr/delete.html')
@@ -407,7 +352,6 @@ def admin_delete(request, ipr_id):
     ipr_dtl.status = 2
     ipr_dtl.save()
     return HttpResponseRedirect(reverse('ipr_admin_list'))
-
 
 @template('ipr/notify.html')
 def old_submitter_notify(request, ipr_id):
@@ -581,10 +525,11 @@ def admin_detail(request, ipr_id):
                 ('Email:', contact_two.email)
             ]
 
+        # conversion
         #rfcs = ipr_dtl.rfcs.all()
         #drafts = ipr_dtl.drafts.all()
-        rfcs = ipr_dtl.documents.filter(doc_alias__document__state='rfc')
-        drafts = ipr_dtl.documents.exclude(doc_alias__document__state='rfc')
+        rfcs = ipr_dtl.documents.filter(doc_alias__name__startswith='rfc')
+        drafts = ipr_dtl.documents.exclude(doc_alias__name__startswith='rfc')
         titles_data, rfcs_data, drafts_data, designations_data = (), (), (), ()
         rfc_titles, draft_titles = [], []
         if rfcs:
@@ -593,7 +538,7 @@ def admin_detail(request, ipr_id):
             ]
             rfcs_data = tuple([
                 'RFC Number:',
-                [rfc.doc_alias.document.rfc_state for rfc in rfcs] #TODO fix this
+                [get_rfc_num(rfc.doc_alias.document) for rfc in rfcs]
             ])
         if drafts:
             draft_titles = [
@@ -807,9 +752,9 @@ def admin_update(request, ipr_id):
 
 def get_contact_initial_data(ipr_id):
     c1_data, c2_data, c3_data = (
-        {'contact_type' : 1, 'legend' : "II. Patent Holder's Contact for License Application "},
-        {'contact_type' : 2, 'legend' : "III. Contact Information for the IETF Participant Whose Personal Belief Triggered the Disclosure in this Template (Optional): "},
-        {'contact_type' : 3, 'legend' : "VII. Contact Information of Submitter of this Form (if different from IETF Participant in Section III above)"}
+        {'contact_type' : '1', 'legend' : "II. Patent Holder's Contact for License Application "},
+        {'contact_type' : '2', 'legend' : "III. Contact Information for the IETF Participant Whose Personal Belief Triggered the Disclosure in this Template (Optional): "},
+        {'contact_type' : '3', 'legend' : "VII. Contact Information of Submitter of this Form (if different from IETF Participant in Section III above)"}
     )
     ipr_dtl = IprDetail.objects.get(ipr_id=ipr_id)
     c1, c2, c3 = [ipr_dtl.contact.filter(contact_type=x).order_by('-pk') for x in [1,2,3]]
@@ -856,20 +801,7 @@ def ajax_rfc_num(request):
     if request.method != 'GET' or not request.GET.has_key('term'):
         return { 'success' : False, 'error' : 'No term submitted or not GET' }
     q = request.GET.get('term')
-    results = []
-    '''
-    try:
-        rfc = Rfc.objects.get(rfc_number=int(q))
-        results = [rfc]
-    except Rfc.DoesNotExist:
-        pass
-    rfcs = Rfc.objects.filter(rfc_number__startswith=int(q))
-    if rfcs.count() > 20:
-        rfcs = rfcs[:20]
-    elif rfcs.count() == 0:
-        return { 'success' : False, 'error' : "No results" }
-    results += list(rfcs)
-    '''
+    
     results = DocAlias.objects.filter(name__startswith='rfc%s' % q)
     if results.count() > 20:
         results = results[:20]

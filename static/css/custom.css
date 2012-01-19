@@ -263,11 +263,11 @@ input.draft-file-input {
     width: 40em;
 }
 
-.draft-container #id_txt_page_count {
+.draft-container #id_pages {
     width: 4em;
 }
 
-.draft-container #id_comments {
+.draft-container #id_internal_comments {
     height: 4em;
     width: 40em;
 }
@@ -289,6 +289,10 @@ input.draft-file-input {
     margin-right: 0.5em; */
     margin-left: 1em;
     display: block;
+}
+
+#draft-search-table th {
+    width: 15em;
 }
 
 #draft-view-col1 {
@@ -340,8 +344,12 @@ input.draft-file-input {
 }
 
 /* ------------- Group Tool ------------------ */
-#id_primary_area_director {
-    width: 210px;
+.awp-form input {
+    width: 30em;
+}
+
+#groups-add-table #id_name,#id_list_email,#id_list_subscribe,#id_list_archive {
+    width: 40em;
 }
 
 #group-description-form #id_description {

@@ -1,7 +1,9 @@
 from django import forms
+from django.db.models import Q
 
-from redesign.group.models import Group
-from redesign.name.models import GroupStateName, GroupTypeName
+from redesign.group.models import Group, GroupMilestone, Role
+from redesign.name.models import GroupStateName, GroupTypeName, RoleName
+from redesign.person.models import Person, Email
 
 from sec.areas.forms import AWPForm
 
@@ -59,69 +61,21 @@ def get_person(name):
 class DescriptionForm (forms.Form):
     description = forms.CharField(widget=forms.Textarea(attrs={'rows':'20'}),required=True)
 
-class GroupModelForm (forms.ModelForm):
-    # need to add this custom field
-    # primary_area = forms.CharField(max_length=80,widget=forms.Select(choices=AREA_CHOICES),required=True) 
-    # need to explicitly define status field so we can remove empty_label
-    proposed_date = forms.DateField()
-    started_date = forms.DateField()
-    concluded_date = forms.DateField()
-    # state = forms.ModelChoiceField(queryset=GroupStateName.objects,empty_label=None)
-    # area_director = forms.CharField()
-    
+class GroupMilestoneForm(forms.ModelForm):
     class Meta:
-        model = Group
-        #exclude = ('charter')
-        fields = ('acronym', 'name', 'type', 'proposed_date', 'started_date', 'concluded_date', 'state', 'iesg_state', 'parent', 'ad', 'list_email', 'list_subscribe', 'list_archive', 'comments')
-    # use this method to set attrs which keeps other meta info from model.  
-    def __init__(self, *args, **kwargs):
-        super(GroupModelForm, self).__init__(*args, **kwargs)
-        # take custom field, primary_area, from end of field list and
-        # put in correct position
-        # self.fields['area_director'].widget = forms.Select()
-        # self.fields.keyOrder.insert(6, self.fields.keyOrder.pop())
-            
-    # Validation: status and dates must agree
-    def clean(self):
-        super(GroupModelForm, self).clean()
-        cleaned_data = self.cleaned_data
-        concluded_date = cleaned_data.get('concluded_date')
-        dormant_date= cleaned_data.get('dormant_date')
-        state = cleaned_data.get('state')
-        concluded_status_object = WGStatus.objects.get(status_id=3)
-        dormant_status_object = WGStatus.objects.get(status_id=2)
-
-        if concluded_date and status != concluded_status_object:
-            raise forms.ValidationError('Concluded Date set but status is %s' % (status))
-
-        if status == concluded_status_object and not concluded_date:
-            raise forms.ValidationError('Status is Concluded but Concluded Date not set.')
-
-        if dormant_date and status != dormant_status_object:
-            raise forms.ValidationError('Dormant Date set but status is %s' % (status))
-
-        if status == dormant_status_object and not dormant_date:
-            raise forms.ValidationError('Status is Dormant but Dormant Date not set.')
-
-        # Always return the full collection of cleaned data.
-        return cleaned_data
-'''
-class GoalMilestoneForm(forms.ModelForm):
-    class Meta:
-        model = GoalMilestone
+        model = GroupMilestone
         exclude = ('done', 'last_modified_date')
 
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):
-        super(GoalMilestoneForm, self).__init__(*args, **kwargs)
-        #self.fields['description'].widget.attrs['rows'] = 1
-        self.fields['description'].widget=forms.TextInput(attrs={'size':'40'})
+        super(GroupMilestoneForm, self).__init__(*args, **kwargs)
+        self.fields['desc'].widget=forms.TextInput(attrs={'size':'60'})
         self.fields['expected_due_date'].widget.attrs['size'] = 10
         self.fields['done_date'].widget.attrs['size'] = 10
 
     # override save.  set done=Done if done_date set and not equal to "0000-00-00"
     def save(self, force_insert=False, force_update=False, commit=True):
-        m = super(GoalMilestoneForm, self).save(commit=False)
+        m = super(GroupMilestoneForm, self).save(commit=False)
         if 'done_date' in self.changed_data:
             if self.cleaned_data.get('done_date',''):
                 m.done = 'Done'
@@ -183,49 +137,65 @@ class GroupRoleForm(forms.Form):
         # Always return the full collection of cleaned data.
         return cleaned_data
 
-class NewGroupForm (forms.Form):
-    group_acronym = forms.CharField(max_length=12,required=True)
-    group_name = forms.CharField(max_length=80,widget=forms.TextInput(attrs={'size':'40'}),required=True)
-    group_type = forms.CharField(max_length=25,widget=forms.Select(choices=TYPE_CHOICES),required=True)
-    status = forms.CharField(max_length=25,widget=forms.Select(choices=NEW_STATUS_CHOICES),required=True)
-    proposed_date = forms.DateField(required=False)
-    primary_area = forms.CharField(max_length=80,widget=forms.Select(choices=SEARCH_AREA_CHOICES),required=True) 
-    # area director options start out empty
-    primary_area_director = forms.CharField(max_length=80,widget=forms.Select(),required=True) 
-    #meeting_scheduled = forms.BooleanField(required=False)
-    meeting_scheduled = forms.CharField(widget=forms.Select(choices=MEETING_CHOICES))
-    # secondary area
-    email_address = forms.EmailField(max_length=200,widget=forms.TextInput(attrs={'size':'40'}),required=False)
-    email_subscribe = forms.CharField(max_length=120,widget=forms.TextInput(attrs={'size':'40'}),required=False)
-    email_keyword = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'size':'40'}),required=False)
-    email_archive = forms.CharField(max_length=200,widget=forms.TextInput(attrs={'size':'40'}),required=False)
-    comments = forms.CharField(widget=forms.Textarea(attrs={'rows':'2'}),required=False)
-
-    def clean_group_acronym(self):
-        # get name, strip leading and trailing spaces
-        acronym = self.cleaned_data.get('group_acronym', '').strip()
-        # check for invalid characters
-        r1 = re.compile(r'[a-zA-Z0-9\-\.]+$')
-        if acronym and not r1.match(acronym):
-            raise forms.ValidationError("Enter a valid acronym (only letters,digits,period,hyphen allowed)") 
-        # ensure doesn't already exist
-        if Acronym.objects.filter(acronym=acronym):
-            raise forms.ValidationError("This acronym already exists.  Enter a unique one.") 
-        return acronym
-
-    def clean(self):
-        cleaned_data = self.cleaned_data
-        proposed_date = cleaned_data['proposed_date']
-        group_type = cleaned_data['group_type']
-       
-        if group_type == '1' and not proposed_date:
-            raise forms.ValidationError("Proposed Date is required.") 
+class GroupModelForm(forms.ModelForm):
+    type = forms.ModelChoiceField(queryset=GroupTypeName.objects.filter(slug__in=('rg','wg')),empty_label=None)
+    parent = forms.ModelChoiceField(queryset=Group.objects.filter(Q(type='area',state='active')|Q(acronym='irtf')))
+    ad = forms.ModelChoiceField(queryset=Person.objects.filter(role__name='ad'))
+    state = forms.ModelChoiceField(queryset=GroupStateName.objects.filter(name__in=('bof','proposed','active')))
+    
+    class Meta:
+        model = Group
+        fields = ('acronym','name','type','state','parent','ad','list_email','list_subscribe','list_archive','comments')
+    
+    def __init__(self, *args, **kwargs):
+        super(GroupModelForm, self).__init__(*args, **kwargs)
+        self.fields['list_email'].label = 'List Email'
+        self.fields['list_subscribe'].label = 'List Subscribe'
+        self.fields['list_archive'].label = 'List Archive'
+        self.fields['ad'].label = 'Area Director'
+        self.fields['comments'].widget.attrs['rows'] = 3
+        self.fields['parent'].label = 'Area'
+        
+        # make adjustments for edit
+        if self.instance:
+            self.fields['state'].queryset = GroupStateName.objects.exclude(name__in=('dormant','unknown'))
             
-        # Always return the full collection of cleaned data.
-        return cleaned_data
-'''
+    def clean(self):
+        if any(self.errors):
+            return self.cleaned_data
+        super(GroupModelForm, self).clean()
+            
+        type = self.cleaned_data['type']
+        parent = self.cleaned_data['parent']
+        state = self.cleaned_data['state']
+        irtf_area = Group.objects.get(acronym='irtf')
+        
+        # ensure proper parent for group type
+        if type.slug == 'rg' and parent != irtf_area:
+            raise forms.ValidationError('The Area for a research group must be %s' % irtf_area)
+            
+        if type.slug == 'rg' and state.name != 'active':
+            raise forms.ValidationError('You must choose "active" for research group state')
+            
+        return self.cleaned_data
 
-class SearchForm (forms.Form):
+class RoleForm(forms.ModelForm):
+    person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}))
+        
+    class Meta:
+        model = Role
+        
+    def __init__(self, *args, **kwargs):
+        super(RoleForm, self).__init__(*args,**kwargs)
+        self.fields['name'].label = 'Role Name'
+        self.fields['name'].queryset = RoleName.objects.filter(slug__in=('chair','editor','secr','techadv'))
+        self.fields['email'].queryset = Email.objects.none()
+        
+        if self.initial:
+            self.fields['email'].queryset = Email.objects.filter(person=self.instance.person)
+            self.initial['person'] = self.instance.person.name
+                
+class SearchForm(forms.Form):
     group_acronym = forms.CharField(max_length=12,required=False)
     group_name = forms.CharField(max_length=80,required=False)
     primary_area = forms.CharField(max_length=80,widget=forms.Select(choices=SEARCH_AREA_CHOICES),required=False) 

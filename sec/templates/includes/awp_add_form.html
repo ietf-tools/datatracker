@@ -6,7 +6,7 @@
   {% for form in awp_formset.forms %}
   <div class="inline-related{% if forloop.last %} last-related{% endif %}">
     <h3><b>Web Page:</b>&nbsp; #{{ forloop.counter }}</h3>
-    <table>
+    <table class="awp-form">
       {{ form.as_table }}
     </table>
   </div> <!-- iniline-related -->

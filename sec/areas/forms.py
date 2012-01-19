@@ -16,6 +16,12 @@ class AWPForm(forms.ModelForm):
     class Meta:
         model = GroupURL
 
+    def __init__(self, *args, **kwargs):
+        super(AWPForm, self).__init__(*args,**kwargs)
+        self.fields['url'].widget.attrs['width'] = 40
+        self.fields['name'].widget.attrs['width'] = 40
+        
+        
     # Validation: url without description and vice-versa 
     def clean(self):
         super(AWPForm, self).clean()

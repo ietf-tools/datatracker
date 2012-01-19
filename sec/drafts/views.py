@@ -15,6 +15,7 @@ from email import *
 from forms import *
 from sec.sessions.views import get_meeting
 from sec.utils.ams_utils import get_base, get_email, get_start_date
+from sec.utils.draft import get_rfc_num
 
 import datetime
 import glob
@@ -64,10 +65,6 @@ def get_doc_url(doc):
             name = aliases[0].name
     return urlreverse('drafts_view', kwargs={ 'id': name })
         
-def get_rfc_num(doc):
-    qs = doc.docalias_set.filter(name__startswith='rfc')
-    return qs[0].name[3:] if qs else None
-
 def handle_uploaded_file(f):
     '''
     Save uploaded draft files to temporary directory
@@ -951,6 +948,11 @@ def search(request):
             else:
                 qs = Document.objects.all()
             results = qs.order_by('group__name')
+            
+            # if there's just one result go straight to view
+            if len(results) == 1:
+                url = reverse('drafts_view', kwargs={'id':results[0].name})
+                return HttpResponseRedirect(url)
     else:
         active_state = State.objects.get(type='draft',slug='active')
         form = SearchForm(initial={'state':active_state.pk})

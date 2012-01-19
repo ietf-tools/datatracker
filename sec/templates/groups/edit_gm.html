@@ -1,0 +1,63 @@
+{% extends "base_site.html" %}
+
+{% block title %}Working Groups - Edit{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+  <script type="text/javascript" src="/js/dynamic_inlines.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../../">Working Groups</a>
+  &raquo; <a href="../../">{{ group.acronym }}</a>
+  &raquo; <a href="../">Goals and Milestones</a>
+  &raquo; Edit
+{% endblock %}
+
+{% block content %}
+
+<div class="module group-container">
+    <form id="edit-gm" enctype="multipart/form-data" action="" method="post">
+
+<div class="inline-group">
+  <div class="tabular inline-related">
+   <h2>Goals and Milestones</h2>
+   {{ formset.management_form }}
+   {{ formset.non_form_errors }}
+   <table class="full-width">
+     <thead><tr>
+     {% for field in formset.forms.0.visible_fields %}
+         <th>{{ field.label|capfirst }}</th>
+     {% endfor %}
+     </tr></thead>
+
+     <tbody>
+     {% for form in formset.forms %}
+        {% if form.non_field_errors %}
+        <tr><td colspan="3">{{ form.non_field_errors }}</td></tr>
+        {% endif %}
+        <tr class="{% cycle row1,row2 %}">
+
+          {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+          {% endfor %}
+          {% for field in form.visible_fields %}
+               <td>
+                 {{ field.errors }}
+                 {{ field }}
+               </td>
+          {% endfor %}
+        </tr>
+     {% endfor %}
+     </tbody>
+   </table>
+</div> <!-- tabular inline-related -->
+</div> <!-- inline-group -->
+
+    {% include "includes/buttons_save_cancel.html" %}
+
+    </form>
+</div> <!-- module -->
+
+
+{% endblock %}
