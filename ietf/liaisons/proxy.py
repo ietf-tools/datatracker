@@ -121,7 +121,7 @@ class LiaisonDetailProxy(LiaisonStatement):
 
     @property
     def uploads_set(self):
-        return UploadsProxy.objects.filter(liaisonstatement=self).order_by('name')
+        return UploadsProxy.objects.filter(liaisonstatement=self).order_by("name", "external_url")
     
     @property
     def liaisondetail_set(self):
@@ -155,10 +155,10 @@ class UploadsProxy(Document):
     #file_id = models.AutoField(primary_key=True)
     @property
     def file_id(self):
-        if self.external_url.startswith(self.name):
+        if not self.external_url or self.external_url.startswith(self.name):
             return self.name # new data
         else:
-            return int(self.external_url.split(".")[0][len(file):]) # old data
+            return int(self.external_url.split(".")[0][len("file"):]) # old data
     #file_title = models.CharField(blank=True, max_length=255)
     @property
     def file_title(self):
