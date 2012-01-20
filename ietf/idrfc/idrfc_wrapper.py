@@ -750,13 +750,13 @@ class BallotWrapper:
                 if pos.pos.slug == "discuss":
                     p["has_text"] = True
                     p["discuss_text"] = pos.discuss
-                    p["discuss_date"] = pos.discuss_time
+                    p["discuss_date"] = pos.discuss_time.date()
                     p["discuss_revision"] = rev
 
                 if pos.comment:
                     p["has_text"] = True
                     p["comment_text"] = pos.comment
-                    p["comment_date"] = pos.comment_time
+                    p["comment_date"] = pos.comment_time.date()
                     p["comment_revision"] = rev
 
                 positions.append(p)
