@@ -674,14 +674,6 @@ class BallotWriteupsTestCase(django.test.TestCase):
         # inactive
         create_pos(9, "yes")
 
-        # we need approval text to be able to submit
-        e = WriteupDocEvent()
-        e.doc = draft
-        e.by = Person.objects.get(name="Aread Irector")
-        e.type = "changed_ballot_approval_text"
-        e.text = "The document has been approved."
-        e.save()
-        
         mailbox_before = len(outbox)
         
         r = self.client.post(url, dict(
@@ -699,7 +691,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         self.assertTrue("comment3" in str(issue_email))
         self.assertTrue("discuss3" in str(issue_email))
         self.assertTrue("This is a test" in str(issue_email))
-        self.assertTrue("The document has been approved" in str(issue_email))
+        self.assertTrue("The IESG has approved" in str(issue_email))
 
     def test_edit_approval_text(self):
         draft = make_test_data()

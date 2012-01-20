@@ -932,8 +932,6 @@ def ballot_writeupnotesREDESIGN(request, name):
 
     login = request.user.get_profile()
 
-    approval = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
-    
     existing = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     if not existing:
         existing = generate_ballot_writeup(request, doc)
@@ -952,7 +950,7 @@ def ballot_writeupnotesREDESIGN(request, name):
                 e.text = t
                 e.save()
 
-            if "issue_ballot" in request.POST and approval:
+            if "issue_ballot" in request.POST:
                 if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, ad=login, time__gte=started_process.time):
                     # sending the ballot counts as a yes
                     pos = BallotPositionDocEvent(doc=doc, by=login)
@@ -961,6 +959,10 @@ def ballot_writeupnotesREDESIGN(request, name):
                     pos.pos_id = "yes"
                     pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.name)
                     pos.save()
+
+                approval = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
+                if not approval:
+                    approval = generate_approval_mail(request, doc)
 
                 msg = generate_issue_ballot_mail(request, doc)
                 send_mail_preformatted(request, msg)
@@ -989,7 +991,6 @@ def ballot_writeupnotesREDESIGN(request, name):
                                    ballot_issued=bool(doc.latest_event(type="sent_ballot_announcement")),
                                    ballot_writeup_form=form,
                                    need_intended_status=need_intended_status,
-                                   approval=approval,
                                    ),
                               context_instance=RequestContext(request))
 
