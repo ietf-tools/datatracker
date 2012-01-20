@@ -111,16 +111,16 @@ def perform_postREDESIGN(request, submission):
     draft.abstract = submission.abstract
     was_rfc = draft.get_state_slug() == "rfc"
 
-    if draft.name.startswith("draft-iab-"):
-        stream_slug = "iab"
-    elif draft.name.startswith("draft-irtf-"):
-        stream_slug = "irtf"
-    elif not draft.group_id or draft.group.type_id == "individ":
-        stream_slug = "ise"
-    else:
-        stream_slug = "ietf"
+    if not draft.stream:
+        if draft.name.startswith("draft-iab-"):
+            stream_slug = "iab"
+        elif draft.name.startswith("draft-irtf-"):
+            stream_slug = "irtf"
+        else:
+            stream_slug = "ietf"
 
-    draft.stream = StreamName.objects.get(slug=stream_slug)
+        draft.stream = StreamName.objects.get(slug=stream_slug)
+
     draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
     draft.save()
 
