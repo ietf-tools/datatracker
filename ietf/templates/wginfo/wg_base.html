@@ -73,7 +73,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if wg.clean_email_archive|startswith:"http:" or wg.clean_email_archive|startswith:"ftp:" %}
 <a href="{{ wg.clean_email_archive }}">List Archive &#187;</a> | 
 {% endif %}
-<a href="http://tools.ietf.org/wg/{{wg}}/">Tools WG Page &#187;</a>
+<a href="http://tools.ietf.org/wg/{{ wg.group_acronym.acronym }}/">Tools WG Page &#187;</a>
 </div>
 
 {% block wg_content %}
