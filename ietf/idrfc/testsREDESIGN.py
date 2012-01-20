@@ -250,11 +250,33 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date)
 
     def test_start_iesg_process_on_draft(self):
-        draft = make_test_data()
-        draft.ad = None
-        draft.save()
-        draft.unset_state("draft-iesg")
-        draft.docevent_set.all().delete()
+        make_test_data()
+
+        draft = Document.objects.create(
+            name="draft-ietf-mars-test2",
+            time=datetime.datetime.now(),
+            type_id="draft",
+            title="Testing adding a draft",
+            stream_id="ietf",
+            group=Group.objects.get(acronym="mars"),
+            abstract="Test test test.",
+            rev="01",
+            pages=2,
+            intended_std_level_id="ps",
+            shepherd=None,
+            ad=None,
+            expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+            )
+        doc_alias = DocAlias.objects.create(
+            document=draft,
+            name=draft.name,
+            )
+
+        DocumentAuthor.objects.create(
+            document=draft,
+            author=Email.objects.get(address="aread@ietf.org"),
+            order=1
+            )
         
         url = urlreverse('doc_edit_info', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
