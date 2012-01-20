@@ -476,7 +476,7 @@ def get_initial_notify(doc):
     receivers = []
     if doc.group.type_id == "individ":
         for a in doc.authors.all():
-            receivers.append(e.address)
+            receivers.append(a.address)
     else:
         receivers.append("%s-chairs@%s" % (doc.group.acronym, settings.TOOLS_SERVER))
         for editor in Email.objects.filter(role__name="editor", role__group=doc.group):
