@@ -547,7 +547,7 @@ def import_from_idinternal(d, idinternal):
 
                 if c.comment_text:
                     if "Due date has been changed" not in c.comment_text:
-                        print "COULDN'T HANDLE multi-line comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
+                        print "DID NOT HANDLE multi-line comment %s '%s'" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80])
 
         # all others are added as comments
         if not handled:
@@ -581,7 +581,7 @@ def import_from_idinternal(d, idinternal):
                     break
 
         if not handled:
-            print (u"COULDN'T HANDLE comment %s '%s' by %s" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80], c.created_by)).encode("utf-8")
+            print (u"DID NOT HANDLE comment %s '%s' by %s" % (c.id, c.comment_text.replace("\n", " ").replace("\r", "")[0:80], c.created_by)).encode("utf-8")
 
     e = d.latest_event()
     if e:
