@@ -7,6 +7,7 @@ from django.utils.html import escape, fix_ampersands
 from django.template.defaultfilters import linebreaksbr, wordwrap, stringfilter, urlize, truncatewords_html
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
+from django.utils import simplejson
 try:
     from email import utils as emailutils
 except ImportError:
@@ -448,6 +449,22 @@ def format_history_text(text):
     if snipped[-3:] == "...":
         return mark_safe(u'<div class="snipped">%s<div class="showAll">[show all]</div><div><div style="display:none" class="full">%s</div>' % (snipped, full))
     return full
+
+@register.filter
+def user_roles_json(user):
+    roles = {}
+    if user.is_authenticated():
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            from redesign.group.models import Role
+            for r in Role.objects.filter(person__user=user).select_related(depth=1):
+                if r.name_id == "secr" and r.group.acronym == "secretariat":
+                    roles["Secretariat"] = True
+                elif r.name_id == "ad" and r.group.type_id == "area" and r.group.state_id == "active":
+                    roles["Area Director"] = roles["Area_Director"] = True
+        else:
+            for g in user.groups:
+                roles[g.name] = True
+    return mark_safe(simplejson.dumps(roles))
 
 def _test():
     import doctest
