@@ -462,7 +462,7 @@ def user_roles_json(user):
                 elif r.name_id == "ad" and r.group.type_id == "area" and r.group.state_id == "active":
                     roles["Area Director"] = roles["Area_Director"] = True
         else:
-            for g in user.groups:
+            for g in user.groups.all():
                 roles[g.name] = True
     return mark_safe(simplejson.dumps(roles))
 
