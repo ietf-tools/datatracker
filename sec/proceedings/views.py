@@ -201,42 +201,29 @@ def get_materials_object(meeting_id,type,object_id):
             obj = get_object_or_404(Minute, id=object_id)
         
     return obj
-
-def get_next_slide_num(meeting,group):
-    '''
-    This function takes a meeting object (regular or interim) and a group object and returns the
-    next slide number to use for a newly added slide.
-    '''
-    # TODO candidate for method
-    if is_interim_meeting(meeting):
-        max_slide_num = InterimSlide.objects.filter(meeting=meeting,group_acronym_id=group.pk).aggregate(Max('slide_num'))['slide_num__max']
-    else:
-        max_slide_num = Slide.objects.filter(meeting=meeting,group_acronym_id=group.pk).aggregate(Max('slide_num'))['slide_num__max']
-    
-    if max_slide_num is None:
-        slide_num = '0'
-    else:
-        slide_num = max_slide_num + 1
-    return slide_num
-    
-def get_next_order_num(meeting,group):
-    '''
-    This function takes a meeting object (regular or interim) and a group object and returns the
-    next slide order number to use for a newly added slide.
-    '''
-    # TODO candidate for wrapper
-    if is_interim_meeting(meeting):
-        max_order_num = InterimSlide.objects.filter(meeting=meeting,group_acronym_id=group.pk).aggregate(Max('order_num'))['order_num__max']
-    else:
-        max_order_num = Slide.objects.filter(meeting=meeting,group_acronym_id=group.pk).aggregate(Max('order_num'))['order_num__max']
-    
-    if max_order_num is None:
-        order_num = '1'
-    else:
-        order_num = max_order_num + 1
-    
-    return order_num
 """
+def get_next_slide_num(session):
+    '''
+    This function takes a session object and returns the
+    next slide number to use for a newly added slide as a string.
+    '''
+    slides = session.materials.filter(type='slides').order_by('-name')
+    if slides:
+        last_num = slides[0].name.split('-')[-1]
+        return str(int(last_num) + 1)
+    else:
+        return '0'
+
+    
+def get_next_order_num(session):
+    '''
+    This function takes a session object and returns the
+    next slide order number to use for a newly added slide as an integer.
+    '''
+    max_order = session.materials.aggregate(Max('order'))['order__max']
+    
+    return max_order + 1 if max_order else 1
+
 # --- These could be properties/methods on meeting
 def get_proceedings_path(meeting,group):
     path = os.path.join(get_upload_root(meeting),group.acronym + '.html')
@@ -249,11 +236,11 @@ def get_proceedings_url(meeting,group):
         group.acronym)
     return url
 
-"""
+
 def handle_upload_file(file,filename,meeting,subdir): 
     '''
-    This function takes a file object, a filename and a meeting object (can be either Meeting
-    or InterimMeeting).  It saves the file to the appropriate directory, get_upload_root() + subdir.
+    This function takes a file object, a filename and a meeting object and subdir as string.
+    It saves the file to the appropriate directory, get_upload_root() + subdir.
     If the file is a zip file, it creates a new directory in 'slides', which is the basename of the
     zip file and unzips the file in the new directory.
     '''
@@ -262,11 +249,11 @@ def handle_upload_file(file,filename,meeting,subdir):
     base, extension = os.path.splitext(filename)
     
     if extension == '.zip':
-        path = os.path.join(meeting.get_upload_root(),subdir,base)
+        path = os.path.join(get_upload_root(meeting),subdir,base)
         if not os.path.exists(path):
             os.mkdir(path)
     else:
-        path = os.path.join(meeting.get_upload_root(),subdir)
+        path = os.path.join(get_upload_root(meeting),subdir)
         
     destination = open(os.path.join(path,filename), 'wb+')
     for chunk in file.chunks():
@@ -278,7 +265,7 @@ def handle_upload_file(file,filename,meeting,subdir):
         os.chdir(path)
         os.system('unzip %s' % filename)
 
-        
+"""        
 def log_activity(group_id,text,meeting_id,userid):
     '''
     Add a record to session_request_activites.  Based on legacy function
@@ -383,6 +370,8 @@ def delete_material(request,meeting_id,group_id,type,object_id):
     log_activity(group_id,text,meeting_id,request.person)
 
     obj.delete()
+    
+    # create DocEvent  deleted_document
     
     create_proceedings(meeting)
         
@@ -515,16 +504,17 @@ def main(request):
     if has_role(request.user,'Secretariat'):
         meetings = Meeting.objects.filter(type='ietf').order_by('number')
     else:
-        today = datetime.date.today()
-        cutoff_date = today + datetime.timedelta(days=59)
-        # TODO do we need frozen attribute?
-        meetings = Meeting.objects.filter(cut_off_date__gte=today).order_by('number')
+        # select meetings still within the cutoff period
+        meetings = Meeting.objects.filter(type='ietf',date__gt=datetime.datetime.today() - datetime.timedelta(days=settings.SUBMISSION_CORRECTION_DAYS)).order_by('number')
     
     interim_meetings = []
     for group in get_my_groups(request.user):
         # TODO right now interm meetings are tied to groups
         qs = Meeting.objects.filter(type='interim')
         interim_meetings.extend(qs)
+    
+    # TODO meeting must have an attribute to determine if it is open or not, for now using 
+    # frozen in the template
     
     return render_to_response('proceedings/main.html',{
         'meetings': meetings,
@@ -825,6 +815,11 @@ def upload_unified(request, meeting_id, group_id):
     
     meeting = get_object_or_404(Meeting, id=meeting_id)
     group = get_object_or_404(Group, id=group_id)
+    
+    # even though documents can be associated to a specific session, for now we are going to 
+    # associate to the first session and keep the UI the same
+    session = Session.objects.filter(meeting=meeting,group=group)[0]
+    
     # TODO are wgproceedingsactivities 
     #activities = WgProceedingsActivity.objects.filter(meeting_num=meeting_id,group_acronym_id=group_id)
     
@@ -844,7 +839,7 @@ def upload_unified(request, meeting_id, group_id):
     if request.method == 'POST':
         button_text = request.POST.get('submit','')
         if button_text == 'Back':
-            if meeting.type == 'interim':
+            if meeting.type.slug == 'interim':
                 url = reverse('proceedings_interim', kwargs={'group_id':group.pk})
             else:
                 url = reverse('proceedings_select', kwargs={'meeting_id':meeting_id})
@@ -857,88 +852,53 @@ def upload_unified(request, meeting_id, group_id):
             
             file = request.FILES[request.FILES.keys()[0]]
             file_ext = os.path.splitext(file.name)[1]
-            #if file_ext in ('.ppt','.pptx'):
-            #    in_q = 1
-            #else:
-            #    in_q = 0
-                
-            #Depending upon the material  type(ie Presentation/Agenda/Minute) perform relevant actions
-            #If Uploaded material is slide-presentation#
-            #------------------------------------------
-            if material_type == 1:
-                order_num = get_next_order_num(meeting,group)
-                slide_num = get_next_slide_num(meeting,group)
-                
-                filename = '%s-%s%s' % (group.acronym, slide_num, file_ext)
-                slide_type_id = Slide.REVERSE_SLIDE_TYPES[file_ext.lstrip('.').lower()]
-                subdir = 'slides'
-                handle_upload_file(file,filename,meeting,subdir)
-                slide_obj = slide_class(meeting=meeting,
-                                  group_acronym_id=group_id,
-                                  slide_num=slide_num,
-                                  order_num=order_num,
-                                  slide_type_id=slide_type_id,
-                                  slide_name=slide_name,
-                                  irtf=irtf,
-                                  interim=interim,
-                                  in_q=in_q)
-                slide_obj.save()
-                
-                # log activity
-                text = "slide, '%s', was uploaded" % slide_name
-                log_activity(group_id,text,meeting_id,request.person)
             
-            #If Uploaded material is agenda/minute#
-            #------------------------------------------
+            # handle slides
+            if material_type.slug == 'slides':
+                order_num = get_next_order_num(session)
+                slide_num = get_next_slide_num(session)
+                filename = 'slides-%s-%s-%s' % (meeting.number, group.acronym, slide_num)
+                obj = Document.objects.create(type=material_type,
+                                              group=group,
+                                              name=filename,
+                                              order=order_num,
+                                              title=slide_name)
+            
+            # handle minutes and agenda
             else:
-                filename = group.acronym + file_ext
-                if material_type == 2:
-                    subdir = 'minutes'
-                    if not interim:
-                        dynamic_model = get_model('proceedings','Minute')
-                    else:
-                        dynamic_model = get_model('proceedings','InterimMinute')
-                else:
-                    subdir = 'agenda'
-                    if not interim:
-                        dynamic_model = get_model('proceedings','WgAgenda')
-                    else:
-                        dynamic_model = get_model('proceedings','InterimAgenda')
-                
-                handle_upload_file(file,filename,meeting,subdir)
+                filename = '%s-%s-%s' % (material_type.slug,meeting.number,group.acronym)
+                # don't create new doc record if one arleady exists
+                obj, created = Document.objects.get_or_create(
+                    type=material_type,
+                    group=group,
+                    name=filename)
 
-                # because Minute and WgAgenda models have the same fields we can use
-                # one routine to create the new record if it doesn't already exist
-                obj, created = dynamic_model.objects.get_or_create(
-                    meeting=meeting,
-                    group_acronym_id=group_id,
-                    irtf=irtf,
-                    interim=interim,
-                    defaults={'filename':filename})
-
-                # log activity
-                text = "%s was uploaded" % subdir
-                log_activity(group_id,text,meeting_id,request.person)
+            disk_filename = filename + file_ext
+            handle_upload_file(file,disk_filename,meeting,material_type.slug)
                 
-            create_proceedings(meeting)
+            # create DocEvent uploaded_document
+            
+            # create session relationship
+            session.materials.add(obj)
+            
+            # generate proceedings
+            
+            #create_proceedings(meeting)
             messages.success(request,'File uploaded sucessfully')
     
     else:
-        form = UnifiedUploadForm(initial={'meeting_id':meeting.pk, 'group_id':group.pk})
+        form = UnifiedUploadForm(initial={'meeting_id':meeting.pk,'group_id':group.pk,'material_type':'slides'})
     
-    material = Document.objects.filter(timeslot__meeting=meeting,timeslot__session__group=group).distinct()
-    slides = material.filter(type='slides').order_by('order')
-    minutes = material.filter(type='minutes')
+    slides = session.materials.filter(type='slides').order_by('order')
+    minutes = session.materials.filter(type='minutes')
     minutes = minutes[0] if minutes else None
-    agenda = material.filter(type='agenda')
+    agenda = session.materials.filter(type='agenda')
     agenda = agenda[0] if agenda else None
     
     if os.path.exists(get_proceedings_path(meeting,group)):
         proceedings_url = get_proceedings_url(meeting, group)
     else: 
         proceedings_url = ''
-        
-    #assert False, (slides, slides.count())
     
     return render_to_response('proceedings/upload_unified.html', {
         #'activities': activities,

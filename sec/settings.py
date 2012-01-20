@@ -285,6 +285,12 @@ if USE_DB_REDESIGN_PROXY_CLASSES:
     AUTH_PROFILE_MODULE = 'person.Person'
     AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
+# AMS additions
+# for meetings materials upload
+MAX_UPLOAD_SIZE = 20971520
+PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
+
+
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *

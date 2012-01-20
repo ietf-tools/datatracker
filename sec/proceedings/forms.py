@@ -4,6 +4,7 @@ from django.db.models import Max
 from django.template.defaultfilters import filesizeformat
 
 from redesign.doc.models import Document
+from redesign.name.models import DocTypeName
 
 import os
 import re
@@ -61,7 +62,8 @@ class ReplaceSlideForm(forms.ModelForm):
 class UnifiedUploadForm(forms.Form):
     group_id = forms.CharField(widget=forms.HiddenInput())
     meeting_id = forms.CharField(widget=forms.HiddenInput())
-    material_type = forms.IntegerField(widget=forms.Select(choices=MATERIAL_TYPE_CHOICES),required=True)
+    #material_type = forms.IntegerField(widget=forms.Select(choices=MATERIAL_TYPE_CHOICES),required=True)
+    material_type = forms.ModelChoiceField(queryset=DocTypeName.objects.filter(name__in=('minutes','agenda','slides')),empty_label=None)
     slide_name = forms.CharField(label='Name of Presentation',max_length=255,required=False,help_text="For presentations only")
     file = forms.FileField(label='Select File',help_text='<div id="id_file_help">Note 1: You can only upload a presentation file in txt, pdf, doc, or ppt/pptx. System will not accept presentation files in any other format.<br><br>Note 2: All uploaded files will be available to the public immediately on the Preliminary Page. However, for the Proceedings, ppt/pptx files will be converted to html format and doc files will be converted to pdf format manually by the Secretariat staff.</div>')
     

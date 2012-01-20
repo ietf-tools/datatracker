@@ -23,7 +23,7 @@
       </thead>
       <tbody>
         {% for meeting in meetings %}
-          <tr class = "{% cycle 'row1' 'row2' %} {{ proceeding.frozen }} ">
+          <tr class = "{% cycle 'row1' 'row2' %}{% if meeting.frozen %} frozen{% endif %}">
             <td>
               <a href="{% url proceedings_view id=meeting.number %}">{{ meeting.number }}</a>
               {% ifequal meeting.frozen 1 %}&nbsp;&nbsp;[Frozen]{% endifequal %}	
