@@ -118,7 +118,7 @@ def can_edit_stream(user, draft):
     return is_secretariat(user)
 
 def can_adopt(user, draft):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES and draft.stream_id == "ise":
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES and draft.stream_id == "ietf" and draft.group.type_id == "individ":
         person = get_person_for_user(user)
         if not person:
             return False
