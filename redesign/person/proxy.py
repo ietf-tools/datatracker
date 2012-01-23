@@ -44,11 +44,9 @@ class IESGLogin(Person):
     #default_search = models.NullBooleanField()
     
     def __str__(self):
-        return self.name
-    def __unicode__(self):
-        return self.name
+        return self.plain_name()
     def is_current_ad(self):
-	return self in Person.objects.filter(role__name="ad", role__group__state="active").distinct()
+	return bool(self.role_set.filter(name="ad", group__state="active"))
     @staticmethod
     def active_iesg():
 	return IESGLogin.objects.filter(role__name="ad", role__group__state="active").distinct().order_by('name')

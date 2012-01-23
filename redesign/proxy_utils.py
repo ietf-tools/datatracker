@@ -4,12 +4,12 @@ from django.db.models.query import QuerySet
 def proxy_personify_role(role):
     """Turn role into person with email() method using email from role."""
     p = role.person
-    p.email = lambda: (p.name, role.email.address)
+    p.email = lambda: (p.plain_name(), role.email.address)
     return p
 
 def proxy_role_email(e):
     """Add email() method to person on email."""
-    e.person.email = lambda: (e.person.name, e.address)
+    e.person.email = lambda: (e.person.plain_name(), e.address)
     return e
 
 def chunks(l, n):

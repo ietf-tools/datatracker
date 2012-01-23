@@ -129,7 +129,7 @@ def get_or_create_email(o, create_fake):
             Alias.objects.create(name=p.name, person=p)
             if p.ascii != p.name:
                 Alias.objects.create(name=p.ascii, person=p)
-        
+
         e.person = p
         e.time = calc_email_import_time(priority)
         e.save()

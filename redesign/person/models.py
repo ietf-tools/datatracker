@@ -17,7 +17,7 @@ class PersonInfo(models.Model):
     affiliation = models.CharField(max_length=255, blank=True)
 
     def __unicode__(self):
-        return self.name
+        return self.plain_name()
     def name_parts(self):
         return name_parts(self.name)
     def ascii_parts(self):
@@ -28,6 +28,9 @@ class PersonInfo(models.Model):
         else:
             prefix, first, middle, last, suffix = self.ascii_parts()
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
+    def plain_name(self):
+        prefix, first, middle, last, suffix = name_parts(self.name)
+        return u" ".join([first, last])
     def role_email(self, role_name, group=None):
         """Lookup email for role for person, optionally on group which
         may be an object or the group acronym."""
@@ -58,8 +61,7 @@ class PersonInfo(models.Model):
             return ""
     def full_name_as_key(self):
         # this is mostly a remnant from the old views, needed in the menu
-        prefix, first, middle, last, suffix = name_parts(self.name)
-        return (u"%s %s" % (first, last)).lower().replace(" ", ".")
+        return self.plain_name().lower().replace(" ", ".")
     class Meta:
         abstract = True
 
@@ -96,11 +98,11 @@ class Email(models.Model):
         return self.address
 
     def get_name(self):
-        return self.person.name if self.person else self.address
+        return self.person.plain_name() if self.person else self.address
 
     def formatted_email(self):
         if self.person and self.person.name:
-            return u'"%s" <%s>' % (self.person.name, self.address)
+            return u'"%s" <%s>' % (self.person.plain_name(), self.address)
         else:
             return self.address
             

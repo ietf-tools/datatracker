@@ -300,7 +300,7 @@ def import_from_idinternal(d, idinternal):
                 e = BallotPositionDocEvent()
                 e.type = "changed_ballot_position"
                 e.ad = ad
-                e.desc = "[Ballot Position Update] New position, Yes, has been recorded by %s" % e.ad.name
+                e.desc = u"[Ballot Position Update] New position, Yes, has been recorded for %s" % e.ad.plain_name()
             
                 e.pos = ballot_position_mapping["Yes"]
                 e.discuss = last_pos.discuss if last_pos else ""
@@ -669,9 +669,9 @@ def import_from_idinternal(d, idinternal):
                 e.comment = last_pos.comment if last_pos else ""
                 e.comment_time = last_pos.comment_time if last_pos else None
                 if last_pos:
-                    e.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (ad.name, pos.name, last_pos.pos.name)
+                    e.desc = u"[Ballot Position Update] Position for %s has been changed to %s from %s" % (ad.plain_name(), pos.name, last_pos.pos.name)
                 else:
-                    e.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.name, ad.name)
+                    e.desc = u"[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.name, ad.plain_name())
                 e.save()
 
         # make sure we got the ballot issued event

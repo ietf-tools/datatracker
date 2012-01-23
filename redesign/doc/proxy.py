@@ -795,11 +795,11 @@ class DocumentComment(DocEvent):
     def get_absolute_url(self):
         return "/doc/%s/" % self.doc.name
     def get_author(self):
-        return self.by.name
+        return self.by.plain_name()
     def get_username(self):
         return unicode(self.by)
     def get_fullname(self):
-        return self.by.name
+        return self.by.plain_name()
     def datetime(self):
         return self.time
     def doc_id(self):

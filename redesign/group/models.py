@@ -97,7 +97,7 @@ class GroupEvent(models.Model):
     desc = models.TextField()
 
     def __unicode__(self):
-        return u"%s %s at %s" % (self.by.name, self.get_type_display().lower(), self.time)
+        return u"%s %s at %s" % (self.by.plain_name(), self.get_type_display().lower(), self.time)
 
     class Meta:
         ordering = ['-time', 'id']
@@ -111,10 +111,10 @@ class Role(models.Model):
     person = models.ForeignKey(Person)
     email = models.ForeignKey(Email, help_text="Email address used by person for this role")
     def __unicode__(self):
-        return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym or self.group.name)
+        return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
 
     def formatted_email(self):
-        return u'"%s" <%s>' % (self.person.name, self.email.address)
+        return u'"%s" <%s>' % (self.person.plain_name(), self.email.address)
 
 class RoleHistory(models.Model):
     # RoleHistory doesn't have a time field as it's not supposed to be
@@ -126,7 +126,7 @@ class RoleHistory(models.Model):
     person = models.ForeignKey(Person)
     email = models.ForeignKey(Email, help_text="Email address used by person for this role")
     def __unicode__(self):
-        return u"%s is %s in %s" % (self.email.get_name(), self.name.name, self.group.acronym)
+        return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym)
 
     class Meta:
         verbose_name_plural = "role histories"
