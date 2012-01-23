@@ -20,7 +20,7 @@ timezones.sort()
 class Meeting(models.Model):
     # number is either the number for IETF meetings, or some other
     # identifier for interim meetings/IESG retreats/liaison summits/...
-    number = models.CharField(max_length=64)
+    number = models.CharField(unique=True, max_length=64)
     type = models.ForeignKey(MeetingTypeName)
     # Date is useful when generating a set of timeslot for this meeting, but
     # is not used to determine date for timeslot instances thereafter, as
