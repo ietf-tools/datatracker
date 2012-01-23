@@ -120,7 +120,7 @@ def change_state(request, name, option=None):
 
                 if change and charter:
                     messages = {}
-                    messages['extrev'] = "The WG has been set to External review by %s. Please schedule discussion for the next IESG telechat." % login.name
+                    messages['extrev'] = "The WG has been set to External review by %s. Please schedule discussion for the next IESG telechat." % login.plain_name()
 
                     if message:
                         email_secretariat(request, wg, "state-%s" % charter_state.slug, message)
@@ -148,13 +148,13 @@ def change_state(request, name, option=None):
     else:
         if option == "recharter":
             hide = ['charter_state']
-            init = dict(initial_time=1, message="%s has initiated a recharter effort on the WG %s (%s)" % (login.name, wg.name, wg.acronym))
+            init = dict(initial_time=1, message="%s has initiated a recharter effort on the WG %s (%s)" % (login.plain_name(), wg.name, wg.acronym))
         elif option == "initcharter":
             hide = ['charter_state']
-            init = dict(initial_time=1, message="%s has initiated chartering of the proposed WG %s (%s)" % (login.name, wg.name, wg.acronym))
+            init = dict(initial_time=1, message="%s has initiated chartering of the proposed WG %s (%s)" % (login.plain_name(), wg.name, wg.acronym))
         elif option == "abandon":
             hide = ['initial_time', 'charter_state']
-            init = dict(message="%s has abandoned the chartering effort on the WG %s (%s)" % (login.name, wg.name, wg.acronym))
+            init = dict(message="%s has abandoned the chartering effort on the WG %s (%s)" % (login.plain_name(), wg.name, wg.acronym))
         else:
             hide = ['initial_time']
             init = dict(charter_state=wg.charter.get_state_slug(), state=wg.state_id)
@@ -218,7 +218,7 @@ class EditInfoForm(forms.Form):
         ad_pk = self.initial.get('ad')
         choices = self.fields['ad'].choices
         if ad_pk and ad_pk not in [pk for pk, name in choices]:
-            self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).name)]
+            self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
         # telechat choices
         dates = [d.date for d in TelechatDate.objects.active().order_by('date')]
         if 'telechat_date' in kwargs['initial']:

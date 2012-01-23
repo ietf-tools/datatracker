@@ -210,7 +210,7 @@ def assign_shepherd(user, internetdraft, shepherd):
     if not shepherd:
         e.desc = u"Unassigned shepherd"
     else:
-        e.desc = u"Changed shepherd to %s" % shepherd.name
+        e.desc = u"Changed shepherd to %s" % shepherd.plain_name()
     e.save()
 
     # update proxy too

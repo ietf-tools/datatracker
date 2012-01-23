@@ -20,7 +20,7 @@ def get_user_name(context):
     if 'user' in context and context['user'].is_authenticated():
         from person.models import Person
         try:
-            return context['user'].get_profile().name
+            return context['user'].get_profile().plain_name()
         except Person.DoesNotExist:
             return None
     

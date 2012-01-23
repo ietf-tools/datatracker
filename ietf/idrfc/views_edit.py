@@ -453,7 +453,7 @@ class EditInfoFormREDESIGN(forms.Form):
         ad_pk = self.initial.get('ad')
         choices = self.fields['ad'].choices
         if ad_pk and ad_pk not in [pk for pk, name in choices]:
-            self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).name)]
+            self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
         
         # telechat choices
         dates = [d.date for d in TelechatDate.objects.active().order_by('date')]

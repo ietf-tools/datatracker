@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Change position for {{ ad.name }} on {{ doc }}{% endblock %}
+{% block title %}Change position for {{ ad.plain_name }} on {{ doc }}{% endblock %}
 
 {% block morecss %}
 div.ballot-deferred {
@@ -33,7 +33,7 @@ form.position-form .comment-text {
 {% endblock %}
 
 {% block content %}
-<h1>Change position for {{ ad.name }} {{ doc }}</h1>
+<h1>Change position for {{ ad.plain_name }} {{ doc }}</h1>
 
 {% if ballot_deferred %}
 <div class="ballot-deferred">Ballot deferred by {{ ballot_deferred.by }} on {{ ballot_deferred.time|date:"Y-m-d" }}.</div>

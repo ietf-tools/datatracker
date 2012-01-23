@@ -94,7 +94,7 @@ class ManageDelegatesTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue("new delegate" in r.content)
-        self.assertTrue(Email.objects.get(address="plain@example.com").person.name in r.content)
+        self.assertTrue(Email.objects.get(address="plain@example.com").person.plain_name() in r.content)
         self.assertEquals(Role.objects.filter(name="delegate", group__acronym="mars", email__address="plain@example.com").count(), 1)
         self.assertEquals(history_before + 1, GroupHistory.objects.filter(acronym="mars").count())
 
@@ -162,7 +162,7 @@ class ManageShepherdsTestCase(django.test.TestCase):
         # get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
-        self.assertTrue(Person.objects.get(user__username="secretary").name in r.content)
+        self.assertTrue(Person.objects.get(user__username="secretary").plain_name() in r.content)
         q = PyQuery(r.content)
         self.assertEquals(len(q('input[type=submit][name=remove_shepherd]')), 1)
         
@@ -183,7 +183,7 @@ class ManageShepherdsTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue("Shepherd assigned" in r.content)
-        self.assertTrue(Email.objects.get(address="plain@example.com").person.name in r.content)
+        self.assertTrue(Email.objects.get(address="plain@example.com").person.plain_name() in r.content)
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
 
 class ManageWorkflowTestCase(django.test.TestCase):

@@ -307,7 +307,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             active_ads.sort(key=extract_last_name)
             inactive_ads.sort(key=extract_last_name)
 
-            self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.name) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
+            self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.plain_name()) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
             self.fields['subState'].choices = [('', 'any substate'), ('0', 'no substate')] + [(n.slug, n.name) for n in DocTagName.objects.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))]
         def clean_name(self):
             value = self.cleaned_data.get('name','')
@@ -574,7 +574,7 @@ def by_ad(request, name):
                                        | Q(pk__in=responsible)):
             if name == p.full_name_as_key():
                 ad_id = p.id
-                ad_name = p.name
+                ad_name = p.plain_name()
                 break
     else:
         for i in IESGLogin.objects.filter(user_level__in=[1,2]):

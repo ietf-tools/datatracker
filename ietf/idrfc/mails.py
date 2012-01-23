@@ -63,7 +63,7 @@ def email_adREDESIGN(request, doc, ad, changed_by, text, subject=None):
     to = ad.role_email("ad").formatted_email()
     send_mail(request, to,
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
-              "%s updated by %s" % (doc.file_tag(), changed_by.name),
+              "%s updated by %s" % (doc.file_tag(), changed_by.plain_name()),
               "idrfc/change_notice.txt",
               dict(text=html_to_text(text),
                    doc=doc,
@@ -325,9 +325,9 @@ def generate_approval_mail_approved(request, doc):
     other_director = Person.objects.filter(role__group__role__person=director, role__group__role__name="ad").exclude(pk=director.pk)
     
     if doc.group.type_id != "individ" and other_director:
-        contacts = "The IESG contact persons are %s and %s." % (director.name, other_director[0].name)
+        contacts = "The IESG contact persons are %s and %s." % (director.plain_name(), other_director[0].plain_name())
     else:
-        contacts = "The IESG contact person is %s." % director.name
+        contacts = "The IESG contact person is %s." % director.plain_name()
 
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
         
@@ -559,7 +559,7 @@ def generate_issue_ballot_mailREDESIGN(request, doc):
                 return "[   ]"
 
         fmt = u"%-21s%-10s%-11s%-9s%-10s" % (
-            p.ad.name[:21],
+            p.ad.plain_name()[:21],
             formatted(p.pos_id == "yes"),
             formatted(p.pos_id == "noobj"),
             formatted(p.pos_id == "discuss"),
@@ -577,7 +577,7 @@ def generate_issue_ballot_mailREDESIGN(request, doc):
         
     active_ad_positions.sort()
     inactive_ad_positions.sort()
-    ad_feedback.sort(key=lambda p: p.ad.name)
+    ad_feedback.sort(key=lambda p: p.ad.plain_name())
 
     e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
     last_call_expires = e.expires if e else None

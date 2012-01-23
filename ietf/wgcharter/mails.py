@@ -75,7 +75,7 @@ def generate_issue_ballot_mail(request, charter):
                 return "[   ]"
 
         fmt = u"%-21s%-6s%-6s%-8s%-7s" % (
-            p.ad.name,
+            p.ad.plain_name(),
             formatted(p.pos_id == "yes"),
             formatted(p.pos_id == "no"),
             formatted(p.pos_id == "block"),
@@ -93,7 +93,7 @@ def generate_issue_ballot_mail(request, charter):
         
     active_ad_positions.sort()
     inactive_ad_positions.sort()
-    ad_feedback.sort(key=lambda p: p.ad.name)
+    ad_feedback.sort(key=lambda p: p.ad.plain_name())
 
     e = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     approval_text = e.text if e else ""

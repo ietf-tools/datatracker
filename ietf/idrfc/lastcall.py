@@ -34,7 +34,7 @@ def request_last_callREDESIGN(request, doc):
     e.type = "requested_last_call"
     e.by = request.user.get_profile()
     e.doc = doc
-    e.desc = "Last call was requested by %s" % e.by.name
+    e.desc = "Last call was requested"
     e.save()
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:

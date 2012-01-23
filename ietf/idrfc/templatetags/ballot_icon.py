@@ -52,7 +52,7 @@ def get_user_name(context):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             from person.models import Person
             try:
-                return context['user'].get_profile().name
+                return context['user'].get_profile().plain_name()
             except Person.DoesNotExist:
                 return None
 

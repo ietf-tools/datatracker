@@ -35,7 +35,7 @@ def get_person_for_user(user):
         return None
     try:
         p = user.get_profile()
-        p.email = lambda: (p.name, p.email_address())
+        p.email = lambda: (p.plain_name(), p.email_address())
         return p
     except Person.DoesNotExist:
         return None

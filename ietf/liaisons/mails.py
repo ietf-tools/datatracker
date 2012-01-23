@@ -73,7 +73,7 @@ def send_sdo_reminder(sdo):
     
     subject = 'Request for update of list of authorized individuals'
     to_email = manager_role.email.address
-    name = manager_role.person.name
+    name = manager_role.person.plain_name()
 
     authorized_list = role_persons_with_fixed_email(sdo, "auth")
     body = render_to_string('liaisons/sdo_reminder.txt', dict(

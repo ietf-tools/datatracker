@@ -168,7 +168,7 @@ def _get_history(doc, versions):
                 info["dontmolest"] = True
                     
             info['text'] = e.desc
-            info['by'] = e.by.name
+            info['by'] = e.by.plain_name()
             info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
             info['snipped'] = info['textSnippet'][-3:] == "..." and e.type != "new_revision"
             results.append({'comment':e, 'info':info, 'date':e.time, 'is_com':True})

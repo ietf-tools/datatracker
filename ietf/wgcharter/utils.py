@@ -198,11 +198,10 @@ def update_telechat(request, doc, by, new_telechat_date):
     
     if on_agenda != prev_agenda:
         if on_agenda:
-            e.desc = "Placed on agenda for telechat - %s by %s" % (
-                new_telechat_date, by.name)
+            e.desc = "Placed on agenda for telechat - %s" % new_telechat_date
         else:
-            e.desc = "Removed from agenda for telechat by %s" % by.name
+            e.desc = "Removed from agenda for telechat"
         e.save()
     elif on_agenda and new_telechat_date != prev_telechat:
-        e.desc = "Telechat date has been changed to <b>%s</b> from <b>%s</b> by %s" % (new_telechat_date, prev_telechat, by.name)
+        e.desc = "Telechat date has been changed to <b>%s</b> from <b>%s</b>" % (new_telechat_date, prev_telechat)
         e.save()

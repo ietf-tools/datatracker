@@ -244,7 +244,7 @@ def get_notification_receivers(doc, extra_notify):
     persons = set()
     res = []
     for r in Role.objects.filter(group=doc.group, name__in=("chair", "delegate")):
-        res.append(u'"%s" <%s>' % (r.person.name, r.email.address))
+        res.append(u'"%s" <%s>' % (r.person.plain_name(), r.email.address))
         persons.add(r.person)
 
     for email in doc.authors.all():

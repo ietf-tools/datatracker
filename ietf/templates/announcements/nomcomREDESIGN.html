@@ -5,14 +5,14 @@
 
 <h1>IAB/IESG Nominating Committee</h1>
 
-<h3>Current Committee Chair: <a href="mailto:{{ curr_chair.email.address }}">{{ curr_chair.person.name }}</a></h3>
+<h3>Current Committee Chair: <a href="mailto:{{ curr_chair.email.address }}">{{ curr_chair.person.plain_name }}</a></h3>
 
 {% for regime in regimes %}
   <hr>
   <h1>Messages from {{ regime.group.start_year }} - {{ regime.group.end_year }}</h1>
 
   {# use person email address here rather than the generic nomcom-chair@ietf.org #}
-  <h4>Committee Chair: <a href="mailto:{{ regime.chair.person.email_address }}">{{ regime.chair.person.name }}</a></h4>
+  <h4>Committee Chair: <a href="mailto:{{ regime.chair.person.email_address }}">{{ regime.chair.person.plain_name }}</a></h4>
   <table class="ietf-table">
     <tr>
       <th width="10%">Date</th>

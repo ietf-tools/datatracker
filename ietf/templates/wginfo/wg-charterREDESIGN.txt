@@ -16,13 +16,13 @@
      {{ wg.areadirector.person.name|safe }} <{{wg.areadirector.address}}>
 {% if wg.techadvisors %}
  Tech Advisor{{ wg.techadvisors|pluralize }}:
-{% for techadvisor in wg.techadvisors %}     {{ techadvisor.person.name|safe }} <{{techadvisor.address}}>
+{% for techadvisor in wg.techadvisors %}     {{ techadvisor.person.plain_name|safe }} <{{techadvisor.address}}>
 {% endfor %}{% endif %}{% if wg.editors %}
  Editor{{ wg.editors|pluralize }}:
-{% for editor in wg.editors %}     {{ editor.person.name|safe }} <{{editor.person.address}}>
+{% for editor in wg.editors %}     {{ editor.person.plain_name|safe }} <{{editor.person.address}}>
 {% endfor %}{% endif %}{% if wg.secretaries %}
  Secretar{{ wg.secretaries|pluralize:"y,ies" }}:
-{% for secretary in wg.secretaries %}     {{ secretary.person.name|safe }} <{{secretary.person.address}}>
+{% for secretary in wg.secretaries %}     {{ secretary.person.plain_name|safe }} <{{secretary.person.address}}>
 {% endfor %}{% endif %}
  Mailing Lists:
      General Discussion: {{ wg.email_address }}

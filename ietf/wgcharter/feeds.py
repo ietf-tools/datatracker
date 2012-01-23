@@ -38,13 +38,13 @@ class GroupComments(Feed):
         for h in history:
             gh = find_history_active_at(obj, h['date'])
             if gh:
-                h['chairs'] = [x.email.person.name for x in gh.rolehistory_set.filter(name__slug="chair")]
-                h['secr'] = [x.email.person.name for x in gh.rolehistory_set.filter(name__slug="secr")]
-                h['techadv'] = [x.email.person.name for x in gh.rolehistory_set.filter(name__slug="techadv")]
+                h['chairs'] = [x.person.plain_name() for x in gh.rolehistory_set.filter(name__slug="chair")]
+                h['secr'] = [x.person.plain_name() for x in gh.rolehistory_set.filter(name__slug="secr")]
+                h['techadv'] = [x.person.plain_name() for x in gh.rolehistory_set.filter(name__slug="techadv")]
             else:
-                h['chairs'] = [x.email.person.name for x in obj.role_set.filter(name__slug="chair")]
-                h['secr'] = [x.email.person.name for x in obj.role_set.filter(name__slug="secr")]
-                h['techadv'] = [x.email.person.name for x in obj.role_set.filter(name__slug="techadv")]
+                h['chairs'] = [x.person.plain_name() for x in obj.role_set.filter(name__slug="chair")]
+                h['secr'] = [x.person.plain_name() for x in obj.role_set.filter(name__slug="secr")]
+                h['techadv'] = [x.person.plain_name() for x in obj.role_set.filter(name__slug="techadv")]
             dh = find_history_active_at(obj.charter, h['date'])
             if dh:
                 h['rev'] = dh.rev

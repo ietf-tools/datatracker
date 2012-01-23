@@ -44,7 +44,7 @@ class SearchForm(forms.Form):
         active_ads.sort(key=extract_last_name)
         inactive_ads.sort(key=extract_last_name)
         
-        self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.name) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
+        self.fields['ad'].choices = c = [('', 'any AD')] + [(ad.pk, ad.plain_name()) for ad in active_ads] + [('', '------------------')] + [(ad.pk, ad.name) for ad in inactive_ads]
         
     def clean_nameacronym(self):
         value = self.cleaned_data.get('nameacronym','')
@@ -287,7 +287,7 @@ def in_process(request):
 def json_emails(l):
     result = []
     for p in l:
-        result.append({"id": p.address + "", "name": p.person.name + " &lt;" + p.address + "&gt;"})
+        result.append({"id": p.address + "", "name": p.person.plain_name() + " &lt;" + p.address + "&gt;"})
     return simplejson.dumps(result)
 
 def search_person(request):

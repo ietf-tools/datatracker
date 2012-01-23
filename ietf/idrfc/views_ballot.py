@@ -296,17 +296,17 @@ def edit_positionREDESIGN(request, name):
 
             # figure out a description
             if not old_pos and pos.pos.slug != "norecord":
-                pos.desc = u"[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.name)
+                pos.desc = u"[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
             elif old_pos and pos.pos != old_pos.pos:
-                pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad.name, pos.pos.name, old_pos.pos.name)
+                pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad.plain_name(), pos.pos.name, old_pos.pos.name)
 
             if not pos.desc and changes:
-                pos.desc = u"Ballot %s text updated for %s" % (u" and ".join(changes), ad.name)
+                pos.desc = u"Ballot %s text updated for %s" % (u" and ".join(changes), ad.plain_name())
 
             # only add new event if we actually got a change
             if pos.desc:
                 if login != ad:
-                    pos.desc += u" by %s" % login.name
+                    pos.desc += u" by %s" % login.plain_name()
 
                 pos.save()
 
@@ -468,7 +468,7 @@ def send_ballot_commentREDESIGN(request, name):
         c = pos.comment
         subj.append("COMMENT")
 
-    ad_name_genitive = ad.name + "'" if ad.name.endswith('s') else ad.name + "'s"
+    ad_name_genitive = ad.plain_name() + "'" if ad.plain_name().endswith('s') else ad.plain_name() + "'s"
     subject = "%s %s on %s" % (ad_name_genitive, pos.pos.name if pos.pos else "No Position", doc.name + "-" + doc.rev)
     if subj:
         subject += ": (with %s)" % " and ".join(subj)
@@ -476,7 +476,7 @@ def send_ballot_commentREDESIGN(request, name):
     doc.filename = doc.name # compatibility attributes
     doc.revision_display = doc.rev
     body = render_to_string("idrfc/ballot_comment_mail.txt",
-                            dict(discuss=d, comment=c, ad=ad.name, doc=doc, pos=pos.pos))
+                            dict(discuss=d, comment=c, ad=ad.plain_name(), doc=doc, pos=pos.pos))
     frm = ad.role_email("ad").formatted_email()
     to = "The IESG <iesg@ietf.org>"
         
@@ -568,7 +568,7 @@ def defer_ballotREDESIGN(request, name):
         email_state_changed(request, doc, e.desc)
 
         update_telechat(request, doc, login, telechat_date)
-        email_ballot_deferred(request, doc, login.name, telechat_date)
+        email_ballot_deferred(request, doc, login.plain_name(), telechat_date)
 
         return HttpResponseRedirect(doc.get_absolute_url())
   
@@ -957,7 +957,7 @@ def ballot_writeupnotesREDESIGN(request, name):
                     pos.type = "changed_ballot_position"
                     pos.ad = login
                     pos.pos_id = "yes"
-                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.name)
+                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
                     pos.save()
 
                 approval = doc.latest_event(WriteupDocEvent, type="changed_ballot_approval_text")
@@ -972,7 +972,7 @@ def ballot_writeupnotesREDESIGN(request, name):
                 e = DocEvent(doc=doc, by=login)
                 e.by = login
                 e.type = "sent_ballot_announcement"
-                e.desc = "Ballot has been issued by %s" % login.name
+                e.desc = "Ballot has been issued"
                 e.save()
 
                 return render_to_response('idrfc/ballot_issued.html',
@@ -1358,7 +1358,7 @@ def make_last_callREDESIGN(request, name):
             
             e = LastCallDocEvent(doc=doc, by=login)
             e.type = "sent_last_call"
-            e.desc = "Last call sent by %s" % login.name
+            e.desc = "Last call sent"
             if form.cleaned_data['last_call_sent_date'] != e.time.date():
                 e.time = datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time())
             e.expires = form.cleaned_data['last_call_expiration_date']
