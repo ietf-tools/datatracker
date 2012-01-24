@@ -18,7 +18,7 @@ from ietf.idtracker.models import Acronym, EmailAddress
 from ietf.liaisons.models import *
 from ietf.doc.models import Document, DocAlias
 from ietf.person.models import *
-from ietf.importing.utils import old_person_to_person
+from redesign.importing.utils import old_person_to_person
 from ietf.name.models import *
 from ietf.name.utils import name
 

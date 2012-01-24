@@ -15,7 +15,7 @@ from ietf.idtracker.models import IESGLogin, AreaDirector, IETFWG, PersonOrOrgIn
 from ietf.ietfauth.models import LegacyWgPassword, LegacyLiaisonUser
 from ietf.liaisons.models import LiaisonDetail, LiaisonManagers, SDOAuthorizedIndividual
 from ietf.person.models import *
-from ietf.importing.utils import *
+from redesign.importing.utils import *
 
 # creates system person and email
 

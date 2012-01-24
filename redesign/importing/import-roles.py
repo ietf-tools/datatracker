@@ -15,7 +15,7 @@ from ietf.person.models import *
 from ietf.group.models import *
 from ietf.name.models import *
 from ietf.name.utils import name
-from ietf.importing.utils import get_or_create_email
+from redesign.importing.utils import get_or_create_email
 
 from ietf.idtracker.models import IESGLogin, AreaDirector, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
 from ietf.liaisons.models import LiaisonManagers, SDOAuthorizedIndividual
