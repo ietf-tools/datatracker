@@ -694,7 +694,8 @@ class InternetDraft(Document):
     #stream = models.CharField(max_length=15,blank=True,null=True)
     @property
     def stream(self):
-        return super(InternetDraft, self).stream.name
+        s = super(InternetDraft, self).stream
+        return s.name if s else None
 
     #wg = models.CharField(max_length=15,blank=True,null=True)
     @property
