@@ -9,6 +9,9 @@ from ietf.utils.mail import outbox
 
 from ietf.announcements.models import ScheduledAnnouncement
 
+from ietf.message.models import Message, SendQueue
+from ietf.person.models import Person
+
 class AnnouncementsUrlTestCase(SimpleUrlTestCase):
     def testUrls(self):
         self.doTestUrls(__file__)
@@ -67,9 +70,6 @@ class SendScheduledAnnouncementsTestCaseREDESIGN(django.test.TestCase):
     fixtures = ["names"]
 
     def test_send_plain_announcement(self):
-        from ietf.announcements.models import Message, SendQueue
-        from ietf.person.models import Person
-        
         make_test_data()
 
         msg = Message.objects.create(
@@ -99,9 +99,6 @@ class SendScheduledAnnouncementsTestCaseREDESIGN(django.test.TestCase):
         self.assertTrue(SendQueue.objects.get(id=q.id).sent_at)
 
     def test_send_mime_announcement(self):
-        from ietf.announcements.models import Message, SendQueue
-        from ietf.person.models import Person
-        
         make_test_data()
 
         msg = Message.objects.create(

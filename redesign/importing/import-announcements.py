@@ -15,8 +15,8 @@ management.setup_environ(settings)
 from ietf.person.models import *
 from ietf.group.models import *
 from ietf.name.utils import name
+from ietf.message.models import Message, SendQueue
 from ietf.importing.utils import old_person_to_person
-from ietf.announcements.models import Message, SendQueue
 from ietf.announcements.models import Announcement, PersonOrOrgInfo, AnnouncedTo, AnnouncedFrom, ScheduledAnnouncement
 from ietf.idtracker.models import IESGLogin
 

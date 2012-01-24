@@ -10,6 +10,8 @@ import re
 from ietf.idtracker.models import ChairsHistory
 from ietf.idtracker.models import Role
 from ietf.announcements.models import Announcement
+from ietf.group.models import Group, GroupEvent
+from ietf.message.models import Message
 
 def nomcom(request):
     curr_chair       = (ChairsHistory.objects.
@@ -35,9 +37,6 @@ def nomcom(request):
                                 'regimes' : regimes })
 
 def nomcomREDESIGN(request):
-    from ietf.group.models import Group, GroupEvent
-    from ietf.announcements.models import Message
-
     address_re = re.compile("<.*>")
     
     nomcoms = list(Group.objects.filter(acronym__startswith="nomcom").exclude(name="nomcom"))
@@ -73,10 +72,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     nomcom = nomcomREDESIGN
 
 
-def message_detail(request, object_id, queryset):
-    from ietf.group.models import Group
-    from ietf.announcements.models import Message
-
+def message_detail(request, object_id):
     # restrict to nomcom announcements for the time being
     nomcoms = Group.objects.filter(acronym__startswith="nomcom").exclude(acronym="nomcom")
     m = get_object_or_404(Message, id=object_id,
