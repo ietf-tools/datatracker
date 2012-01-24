@@ -116,16 +116,17 @@ def perform_postREDESIGN(request, submission):
             stream_slug = "iab"
         elif draft.name.startswith("draft-irtf-"):
             stream_slug = "irtf"
-        else:
+        elif draft.name.startswith("draft-ietf-") and (draft.group.type_id != "individ" or was_rfc):
             stream_slug = "ietf"
 
-        draft.stream = StreamName.objects.get(slug=stream_slug)
+        if stream_slug:
+            draft.stream = StreamName.objects.get(slug=stream_slug)
 
     draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
     draft.save()
 
     draft.set_state(State.objects.get(type="draft", slug="active"))
-    if draft.stream_id == "ietf":
+    if draft.stream_id == "ietf" and draft.group.type_id != "individ":
         # automatically set state "WG Document"
         draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
