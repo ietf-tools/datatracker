@@ -97,7 +97,9 @@ class NoWorkflowStateForm(StreamDraftForm):
                 e.time = doc.time
                 e.by = self.user.get_profile()
                 e.doc = doc
-                e.desc = u"Stream changed to <b>%s</b> from %s" % (new_stream.name, doc.stream.name)
+                e.desc = u"Changed to <b>%s</b>" % new_stream.name
+                if doc.stream:
+                    e.desc += u" from %s" % doc.stream.name
                 e.save()
                 doc.stream = new_stream
 

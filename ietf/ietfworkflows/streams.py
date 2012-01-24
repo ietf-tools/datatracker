@@ -27,7 +27,8 @@ def get_streamed_draft(draft):
 def get_stream_from_draft(draft):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         s = super(InternetDraft, draft).stream
-        s.with_groups = s.slug in ["ietf", "irtf"]
+        if s:
+            s.with_groups = s.slug in ["ietf", "irtf"]
         return s
 
     streamedid = get_streamed_draft(draft)

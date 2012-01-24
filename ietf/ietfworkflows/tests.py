@@ -23,10 +23,10 @@ class EditStreamInfoTestCase(django.test.TestCase):
 
     def test_adopt_document(self):
         draft = make_test_data()
-        draft.stream_id = "ise"
+        draft.stream = None
         draft.group = Group.objects.get(type="individ")
-        draft.unset_state("draft-stream-ietf")
         draft.save()
+        draft.unset_state("draft-stream-ietf")
 
         url = urlreverse('edit_adopt', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "marschairman", url)
