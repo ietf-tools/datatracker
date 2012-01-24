@@ -70,7 +70,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if stream_info.state %}
 {% ifequal stream_info.stream.name "IETF" %}
   <tr>
-     <td>IETF WG State:</td>
+     <td>IETF State:</td>
      <td>{{ stream_info.state.name }} ({{ stream_info.streamed.get_group }}) 
 	{% if stream_info.tags %}<br /><i>{% for tag in stream_info.tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
      </td>
