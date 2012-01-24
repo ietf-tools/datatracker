@@ -18,12 +18,12 @@ from ietf.ietfworkflows.accounts import is_secretariat
 from ietf.ietfworkflows.streams import (get_stream_from_draft, get_streamed_draft,
                                         get_stream_by_name, set_stream_for_draft)
 from ietf.ietfworkflows.constants import CALL_FOR_ADOPTION, IETF_STREAM
-from redesign.doc.utils import get_tags_for_stream_id
-from redesign.doc.models import save_document_in_history, DocEvent, Document
-from redesign.name.models import DocTagName, StreamName, RoleName
-from redesign.group.models import Group, GroupStateTransitions, Role
-from redesign.group.utils import save_group_in_history
-from redesign.person.models import Person, Email
+from ietf.doc.utils import get_tags_for_stream_id
+from ietf.doc.models import save_document_in_history, DocEvent, Document
+from ietf.name.models import DocTagName, StreamName, RoleName
+from ietf.group.models import Group, GroupStateTransitions, Role
+from ietf.group.utils import save_group_in_history
+from ietf.person.models import Person, Email
 
 class StreamDraftForm(forms.Form):
 
@@ -129,7 +129,7 @@ class NoWorkflowStateForm(StreamDraftForm):
             streamed.save()
 
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from redesign.doc.models import State
+            from ietf.doc.models import State
             to_state = State.objects.get(slug="c-adopt", type="draft-stream-%s" % self.draft.stream_id)
         else:
             to_state = get_state_by_name(CALL_FOR_ADOPTION)
@@ -199,7 +199,7 @@ class DraftTagsStateForm(StreamDraftForm):
 
     def get_next_states(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from redesign.doc.models import State
+            from ietf.doc.models import State
             state_type = "draft-stream-%s" % self.draft.stream_id
             s = self.draft.get_state(state_type)
             next_states = []
@@ -226,7 +226,7 @@ class DraftTagsStateForm(StreamDraftForm):
 
     def get_states(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from redesign.doc.models import State
+            from ietf.doc.models import State
             states = State.objects.filter(type="draft-stream-%s" % self.draft.stream_id)
             if self.draft.stream_id == "ietf" and self.draft.group:
                 unused_states = self.draft.group.unused_states.values_list("pk", flat=True)
@@ -265,7 +265,7 @@ class DraftTagsStateForm(StreamDraftForm):
     def save_state(self):
         comment = self.cleaned_data.get('comment')
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from redesign.doc.models import State
+            from ietf.doc.models import State
         state = State.objects.get(pk=self.cleaned_data.get('new_state'))
         weeks = self.cleaned_data.get('weeks')
         estimated_date = None

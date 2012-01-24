@@ -8,8 +8,8 @@ from ietf.idtracker.models import InternetDraft, DocumentComment, BallotInfo
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 
-from doc.models import Document, DocEvent, LastCallDocEvent, WriteupDocEvent, save_document_in_history, State
-from person.models import Person
+from ietf.doc.models import Document, DocEvent, LastCallDocEvent, WriteupDocEvent, save_document_in_history, State
+from ietf.person.models import Person
 
 def request_last_call(request, doc):
     try:

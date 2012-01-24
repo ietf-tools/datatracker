@@ -17,7 +17,7 @@ class LatestWgProceedingsActivity(Feed):
     def items(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             objs = []
-            from redesign.doc.models import Document
+            from ietf.doc.models import Document
             for doc in Document.objects.filter(type__in=("agenda", "minutes", "slides")).order_by('-time')[:60]:
                 obj = dict(
                     title=doc.type_id,

@@ -1,7 +1,7 @@
-from redesign.proxy_utils import TranslatingManager, proxy_role_email
+from ietf.utils.proxy import TranslatingManager, proxy_role_email
 
 from models import *
-from doc.models import Document # for charter text
+from ietf.doc.models import Document # for charter text
 from ietf.wgcharter.utils import get_charter_for_revision, approved_revision
 
 class Acronym(Group):
@@ -176,7 +176,7 @@ class IETFWG(Group):
 	return self.group_acronym.acronym
 
     def active_drafts(self):
-        from redesign.doc.proxy import InternetDraft
+        from ietf.doc.proxy import InternetDraft
 	return InternetDraft.objects.filter(group=self, states__type="draft", states__slug="active")
     # def choices():
     #     return [(wg.group_acronym_id, wg.group_acronym.acronym) for wg in IETFWG.objects.all().filter(group_type__type='WG').select_related().order_by('acronym.acronym')]

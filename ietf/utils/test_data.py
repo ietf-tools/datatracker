@@ -4,11 +4,11 @@ from django.contrib.auth.models import User
 from ietf.iesg.models import TelechatDate, WGAction
 from ietf.ipr.models import IprDetail, IprDocAlias
 from ietf.meeting.models import Meeting
-from redesign.doc.models import *
-from redesign.doc.utils import *
-from redesign.name.models import *
-from redesign.group.models import *
-from redesign.person.models import *
+from ietf.doc.models import *
+from ietf.doc.utils import *
+from ietf.name.models import *
+from ietf.group.models import *
+from ietf.person.models import *
 
 def make_test_data():
     # telechat dates

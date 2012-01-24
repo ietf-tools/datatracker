@@ -29,17 +29,17 @@ def output(name, qs):
 # pick all name models directly out of the module
 objects = []
 
-import redesign.name.models
-for n in dir(redesign.name.models):
+import ietf.name.models
+for n in dir(ietf.name.models):
     if n[:1].upper() == n[:1] and n.endswith("Name"):
-        model = getattr(redesign.name.models, n)
+        model = getattr(ietf.name.models, n)
         if not model._meta.abstract:
             objects.extend(model.objects.all())
 
 
-import redesign.doc.models # FIXME
-objects += redesign.doc.models.StateType.objects.all()
-objects += redesign.doc.models.State.objects.all()
+import ietf.doc.models # FIXME
+objects += ietf.doc.models.StateType.objects.all()
+objects += ietf.doc.models.State.objects.all()
 
 output("names", objects)
 

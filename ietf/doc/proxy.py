@@ -1,7 +1,7 @@
-from redesign.doc.models import *
-from redesign.person.models import Email 
-from redesign.proxy_utils import TranslatingManager
-from redesign.name.proxy import *
+from ietf.doc.models import *
+from ietf.person.models import Email 
+from ietf.utils.proxy import TranslatingManager
+from ietf.name.proxy import *
 
 from django.conf import settings
 
@@ -573,7 +573,7 @@ class InternetDraft(Document):
     def active_positions(self):
         """Returns a list of dicts, with AD and Position tuples"""
         from person.proxy import IESGLogin as IESGLoginProxy
-        from redesign.doc.utils import active_ballot_positions
+        from ietf.doc.utils import active_ballot_positions
 
         res = []
         for ad, pos in active_ballot_positions(self).iteritems():

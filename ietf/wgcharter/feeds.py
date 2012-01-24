@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from ietf.utils.history import find_history_active_at
 
-from redesign.group.models import Group
+from ietf.group.models import Group
 from ietf.wgcharter.views import _get_history, _get_html
 from wgcharter import markup_txt
 import datetime

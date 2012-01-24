@@ -1,6 +1,6 @@
-from redesign.proxy_utils import TranslatingManager
+from ietf.utils.proxy import TranslatingManager
 from ietf.liaisons.models import LiaisonStatement
-from redesign.doc.models import Document
+from ietf.doc.models import Document
 
 class LiaisonDetailProxy(LiaisonStatement):
     objects = TranslatingManager(dict(submitted_date="submitted",

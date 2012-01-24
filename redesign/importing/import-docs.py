@@ -13,12 +13,12 @@ management.setup_environ(settings)
 
 from django.template.defaultfilters import pluralize
 
-from redesign.doc.models import *
-from redesign.doc.utils import get_tags_for_stream_id
-from redesign.group.models import *
-from redesign.name.models import *
-from redesign.importing.utils import old_person_to_person, person_name, dont_save_queries
-from redesign.name.utils import name
+from ietf.doc.models import *
+from ietf.doc.utils import get_tags_for_stream_id
+from ietf.group.models import *
+from ietf.name.models import *
+from ietf.importing.utils import old_person_to_person, person_name, dont_save_queries
+from ietf.name.utils import name
 from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.mirror_rfc_index import get_std_level_mapping, get_stream_mapping

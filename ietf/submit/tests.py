@@ -11,9 +11,9 @@ from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 
-from redesign.person.models import Person, Email
-from redesign.group.models import Group, Role
-from redesign.doc.models import Document, BallotPositionDocEvent
+from ietf.person.models import Person, Email
+from ietf.group.models import Group, Role
+from ietf.doc.models import Document, BallotPositionDocEvent
 from ietf.submit.models import IdSubmissionDetail
 
 class SubmitTestCase(django.test.TestCase):

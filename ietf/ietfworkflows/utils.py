@@ -19,8 +19,8 @@ from ietf.ietfworkflows.models import (WGWorkflow, AnnotationTagObjectRelation,
                                        ObjectWorkflowHistoryEntry, ObjectStreamHistoryEntry)
 from ietf.idtracker.models import InternetDraft
 from ietf.utils.mail import send_mail
-from redesign.doc.models import Document, DocEvent, save_document_in_history, DocReminder, DocReminderTypeName
-from redesign.group.models import Role
+from ietf.doc.models import Document, DocEvent, save_document_in_history, DocReminder, DocReminderTypeName
+from ietf.group.models import Role
 
 WAITING_WRITEUP = 'WG Consensus: Waiting for Write-Up'
 FOLLOWUP_TAG = 'Doc Shepherd Follow-up Underway'
@@ -108,7 +108,7 @@ def get_workflow_for_draft(draft):
 
 def get_workflow_history_for_draft(draft, entry_type=None):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from redesign.doc.proxy import ObjectHistoryEntryProxy
+        from ietf.doc.proxy import ObjectHistoryEntryProxy
         return ObjectHistoryEntryProxy.objects.filter(doc=draft).order_by('-time', '-id').select_related('by')
 
     ctype = ContentType.objects.get_for_model(draft)
@@ -124,8 +124,8 @@ def get_workflow_history_for_draft(draft, entry_type=None):
 
 def get_annotation_tags_for_draft(draft):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from redesign.name.proxy import AnnotationTagObjectRelationProxy
-        from redesign.doc.utils import get_tags_for_stream_id
+        from ietf.name.proxy import AnnotationTagObjectRelationProxy
+        from ietf.doc.utils import get_tags_for_stream_id
         return AnnotationTagObjectRelationProxy.objects.filter(document=draft.pk, slug__in=get_tags_for_stream_id(draft.stream_id))
 
     ctype = ContentType.objects.get_for_model(draft)

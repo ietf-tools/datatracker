@@ -13,11 +13,11 @@ from mails import email_secretariat
 from ietf.ietfauth.decorators import group_required
 from ietf.iesg.models import TelechatDate
 
-from redesign.doc.models import *
-from redesign.name.models import *
-from redesign.person.models import *
-from redesign.group.models import *
-from redesign.group.utils import save_group_in_history
+from ietf.doc.models import *
+from ietf.name.models import *
+from ietf.person.models import *
+from ietf.group.models import *
+from ietf.group.utils import save_group_in_history
 
 from views_search import json_emails
     

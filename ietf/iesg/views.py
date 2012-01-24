@@ -213,7 +213,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     
 def agenda_docs(date, next_agenda):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from doc.models import TelechatDocEvent
+        from ietf.doc.models import TelechatDocEvent
         
         matches = IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date)
 
@@ -342,7 +342,7 @@ def agenda_documents_txt(request):
     docs = []
     for date in dates:
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from doc.models import TelechatDocEvent
+            from ietf.doc.models import TelechatDocEvent
             for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date):
                 if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
                     docs.append(d)
@@ -405,7 +405,7 @@ def handle_reschedule_form(request, idinternal, dates):
 def agenda_documents(request):
     dates = TelechatDates.objects.all()[0].dates()
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from doc.models import TelechatDocEvent
+        from ietf.doc.models import TelechatDocEvent
         idinternals = []
         for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date__in=dates):
             if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date in dates:
@@ -451,7 +451,7 @@ def telechat_docs_tarfile(request,year,month,day):
     from tempfile import mkstemp
     date=datetime.date(int(year),int(month),int(day))
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from doc.models import TelechatDocEvent
+        from ietf.doc.models import TelechatDocEvent
         docs = []
         for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date):
             if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:

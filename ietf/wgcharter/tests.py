@@ -11,11 +11,11 @@ from ietf.utils.test_utils import login_testing_unauthorized
 
 from pyquery import PyQuery
 
-from redesign.doc.models import *
-from redesign.group.models import *
-from redesign.group.utils import *
-from redesign.name.models import *
-from redesign.person.models import *
+from ietf.doc.models import *
+from ietf.group.models import *
+from ietf.group.utils import *
+from ietf.name.models import *
+from ietf.person.models import *
 from ietf.iesg.models import TelechatDate
 
 from utils import *

@@ -1,4 +1,4 @@
-from redesign.proxy_utils import TranslatingManager
+from ietf.utils.proxy import TranslatingManager
 from models import *
 
 class IDSubStateManager(TranslatingManager):
@@ -50,13 +50,13 @@ class AnnotationTagObjectRelationProxy(DocTagName):
 
 class StreamProxy(StreamName):
     def get_chairs(self):
-        from redesign.group.models import Role
-        from redesign.proxy_utils import proxy_personify_role
+        from ietf.group.models import Role
+        from ietf.utils.proxy import proxy_personify_role
         return [proxy_personify_role(r) for r in Role.objects.filter(group__acronym=self.slug, name="chair")]
 
     def get_delegates(self):
-        from redesign.group.models import Role
-        from redesign.proxy_utils import proxy_personify_role
+        from ietf.group.models import Role
+        from ietf.utils.proxy import proxy_personify_role
         return [proxy_personify_role(r) for r in Role.objects.filter(group__acronym=self.slug, name="delegate")]
 
     class Meta:

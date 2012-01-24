@@ -143,7 +143,7 @@ def new(request, type, update=None, submitter=None):
                 for rfc in rfclist:
                     try:
                         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                            from redesign.doc.models import DocAlias
+                            from ietf.doc.models import DocAlias
                             DocAlias.objects.get(name="rfc%s" % int(rfc))
                         else:
                             Rfc.objects.get(rfc_number=int(rfc))
@@ -168,7 +168,7 @@ def new(request, type, update=None, submitter=None):
                         rev = None
                     try:
                         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                            from redesign.doc.models import DocAlias
+                            from ietf.doc.models import DocAlias
                             id = DocAlias.objects.get(name=filename)
                             # proxy attribute for code below
                             id.revision = id.document.rev
@@ -285,7 +285,7 @@ def new(request, type, update=None, submitter=None):
                     name = draft[:-3]
                     rev = draft[-2:]
                     
-                    from redesign.doc.models import DocAlias
+                    from ietf.doc.models import DocAlias
                     models.IprDocAlias.objects.create(
                         doc_alias=DocAlias.objects.get(name=name),
                         ipr=instance,
@@ -298,7 +298,7 @@ def new(request, type, update=None, submitter=None):
             # Save IprRfc(s)
             for rfcnum in form.cleaned_data["rfclist"].split():
                 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    from redesign.doc.models import DocAlias
+                    from ietf.doc.models import DocAlias
                     models.IprDocAlias.objects.create(
                         doc_alias=DocAlias.objects.get(name="rfc%s" % int(rfcnum)),
                         ipr=instance,

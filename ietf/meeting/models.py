@@ -6,10 +6,10 @@ from django.db import models
 from django.conf import settings
 from timedeltafield import TimedeltaField
 
-from redesign.group.models import Group
-from redesign.person.models import Person
-from redesign.doc.models import Document
-from redesign.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName
+from ietf.group.models import Group
+from ietf.person.models import Person
+from ietf.doc.models import Document
+from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName
 
 countries = pytz.country_names.items()
 countries.sort(lambda x,y: cmp(x[1], y[1]))

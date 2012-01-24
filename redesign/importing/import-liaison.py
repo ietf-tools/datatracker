@@ -16,11 +16,11 @@ from django.template.defaultfilters import slugify
 
 from ietf.idtracker.models import Acronym, EmailAddress
 from ietf.liaisons.models import *
-from redesign.doc.models import Document, DocAlias
-from redesign.person.models import *
-from redesign.importing.utils import old_person_to_person
-from redesign.name.models import *
-from redesign.name.utils import name
+from ietf.doc.models import Document, DocAlias
+from ietf.person.models import *
+from ietf.importing.utils import old_person_to_person
+from ietf.name.models import *
+from ietf.name.utils import name
 
 
 # imports LiaisonDetail, OutgoingLiaisonApproval, Uploads

@@ -148,8 +148,8 @@ def insert_to_database(data):
     db.connection.close()
 
 def get_std_level_mapping():
-    from name.models import StdLevelName
-    from name.utils import name
+    from ietf.name.models import StdLevelName
+    from ietf.name.utils import name
     return {
         "Standard": name(StdLevelName, "std", "Standard"),
         "Draft Standard": name(StdLevelName, "ds", "Draft Standard"),
@@ -162,8 +162,8 @@ def get_std_level_mapping():
         }
 
 def get_stream_mapping():
-    from name.models import StreamName
-    from name.utils import name
+    from ietf.name.models import StreamName
+    from ietf.name.utils import name
 
     return {
         "Legacy": name(StreamName, "legacy", "Legacy"),
@@ -178,11 +178,11 @@ import django.db.transaction
 
 @django.db.transaction.commit_on_success
 def insert_to_databaseREDESIGN(data):
-    from redesign.person.models import Person
-    from redesign.doc.models import Document, DocAlias, DocEvent, RelatedDocument, State
-    from redesign.group.models import Group
-    from redesign.name.models import DocTagName, DocRelationshipName
-    from redesign.name.utils import name
+    from ietf.person.models import Person
+    from ietf.doc.models import Document, DocAlias, DocEvent, RelatedDocument, State
+    from ietf.group.models import Group
+    from ietf.name.models import DocTagName, DocRelationshipName
+    from ietf.name.utils import name
     
     system = Person.objects.get(name="(System)")
     std_level_mapping = get_std_level_mapping()

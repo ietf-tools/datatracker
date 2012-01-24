@@ -11,11 +11,11 @@ settings.USE_DB_REDESIGN_PROXY_CLASSES = False
 from django.core import management
 management.setup_environ(settings)
 
-from redesign.person.models import *
-from redesign.group.models import *
-from redesign.name.models import *
-from redesign.name.utils import name
-from redesign.importing.utils import get_or_create_email
+from ietf.person.models import *
+from ietf.group.models import *
+from ietf.name.models import *
+from ietf.name.utils import name
+from ietf.importing.utils import get_or_create_email
 
 from ietf.idtracker.models import IESGLogin, AreaDirector, PersonOrOrgInfo, WGChair, WGEditor, WGSecretary, WGTechAdvisor, ChairsHistory, Role as OldRole, Acronym, IRTFChair
 from ietf.liaisons.models import LiaisonManagers, SDOAuthorizedIndividual

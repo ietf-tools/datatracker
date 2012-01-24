@@ -15,7 +15,7 @@ management.setup_environ(settings)
 import workflows.models
 from ietf.ietfworkflows.models import StateDescription
 from ietf.idrfc.mirror_rfc_editor_queue import get_rfc_state_mapping
-from redesign.doc.models import *
+from ietf.doc.models import *
 
 # adds states for documents and import states from workflows.Workflow
 # and ietfworkflows.StateDescription

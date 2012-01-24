@@ -1,3 +1,6 @@
+# some helpers for the proxy layer bridging the gap between the legacy
+# and the redesigned schema, eventually this should all go
+
 from django.db.models.manager import Manager
 from django.db.models.query import QuerySet
 
@@ -14,9 +17,11 @@ def proxy_role_email(e):
 
 def chunks(l, n):
     """Split list l up in chunks of max size n."""
-    return (l[i:i+n] for i in range(0, len(l), n))
+    return (l[i:i+n] for i in xrange(0, len(l), n))
 
 class TranslatingQuerySet(QuerySet):
+    """Query set that can do some simple mappings of the filter args."""
+
     def translated_args(self, args):
         trans = self.translated_attrs
         res = []

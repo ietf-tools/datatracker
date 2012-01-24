@@ -241,7 +241,7 @@ def _get_versions(draft, include_replaced=True):
         draft_list = [draft]
 
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from redesign.doc.models import NewRevisionDocEvent
+        from ietf.doc.models import NewRevisionDocEvent
         for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=draft_list).select_related('doc').order_by("-time", "-id"):
             if not (e.doc.name == draft.name and e.rev == draft.rev):
                 ov.append(dict(draft_name=e.doc.name, revision=e.rev, date=e.time.date()))
@@ -260,7 +260,7 @@ def get_ballot(name):
     m = r.match(name)
 
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from doc.models import DocAlias
+        from ietf.doc.models import DocAlias
         alias = get_object_or_404(DocAlias, name=name)
         d = get_object_or_404(InternetDraft, name=alias.document.name)
         try:

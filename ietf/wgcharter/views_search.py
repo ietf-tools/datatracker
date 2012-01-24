@@ -11,11 +11,11 @@ from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpRespo
 from django.conf import settings
 from django.utils import simplejson
 
-from redesign.doc.models import Document, State
-from redesign.name.models import GroupStateName
-from redesign.group.models import Group
-from redesign.person.models import Person, Email
-from redesign.doc.utils import augment_with_telechat_date
+from ietf.doc.models import Document, State
+from ietf.name.models import GroupStateName
+from ietf.group.models import Group
+from ietf.person.models import Person, Email
+from ietf.doc.utils import augment_with_telechat_date
 
 class SearchForm(forms.Form):
     nameacronym = forms.CharField(required=False)

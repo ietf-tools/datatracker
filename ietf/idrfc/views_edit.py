@@ -27,9 +27,9 @@ from ietf.ietfworkflows.models import Stream
 from ietf.ietfworkflows.utils import update_stream
 from ietf.ietfworkflows.streams import get_stream_from_draft
 
-from redesign.doc.models import *
-from redesign.name.models import IntendedStdLevelName, DocTagName, StreamName
-from redesign.person.models import Person, Email
+from ietf.doc.models import *
+from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
+from ietf.person.models import Person, Email
 
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(IDState.objects.all(), empty_label=None, required=True)

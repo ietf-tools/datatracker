@@ -9,9 +9,9 @@ import datetime, os, shutil, glob, re, itertools
 from ietf.idtracker.models import InternetDraft, IDDates, IDStatus, IDState, DocumentComment, IDAuthor, WGChair
 from ietf.utils.mail import send_mail, send_mail_subj
 from ietf.idrfc.utils import log_state_changed, add_document_comment
-from redesign.doc.models import Document, DocEvent, save_document_in_history, State
-from redesign.name.models import DocTagName
-from redesign.person.models import Person, Email
+from ietf.doc.models import Document, DocEvent, save_document_in_history, State
+from ietf.name.models import DocTagName
+from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting
 
 def in_id_expire_freeze(when=None):

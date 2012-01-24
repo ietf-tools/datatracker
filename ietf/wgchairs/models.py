@@ -48,7 +48,7 @@ class ProtoWriteUp(models.Model):
         )
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from redesign.group.models import Role
+    from ietf.group.models import Role
     class WGDelegateProxy(Role):
         #person = models.ForeignKey(PersonOrOrgInfo) # same name
         #wg = models.ForeignKey(IETFWG)
@@ -62,7 +62,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         class Meta:
             proxy = True
 
-    from redesign.doc.models import WriteupDocEvent
+    from ietf.doc.models import WriteupDocEvent
     class ProtoWriteUpProxy(WriteupDocEvent):
         #person = models.ForeignKey(PersonOrOrgInfo, blank=False, null=False)
         @property

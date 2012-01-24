@@ -68,7 +68,7 @@ class SendScheduledAnnouncementsTestCaseREDESIGN(django.test.TestCase):
 
     def test_send_plain_announcement(self):
         from ietf.announcements.models import Message, SendQueue
-        from redesign.person.models import Person
+        from ietf.person.models import Person
         
         make_test_data()
 
@@ -100,7 +100,7 @@ class SendScheduledAnnouncementsTestCaseREDESIGN(django.test.TestCase):
 
     def test_send_mime_announcement(self):
         from ietf.announcements.models import Message, SendQueue
-        from redesign.person.models import Person
+        from ietf.person.models import Person
         
         make_test_data()
 

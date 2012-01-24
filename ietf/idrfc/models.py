@@ -101,4 +101,4 @@ class DraftVersions(models.Model):
 from django.conf import settings
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     RfcIndexOld = RfcIndex
-    from redesign.doc.proxy import RfcIndex
+    from ietf.doc.proxy import RfcIndex

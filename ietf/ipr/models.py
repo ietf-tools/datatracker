@@ -207,7 +207,7 @@ class IprUpdate(models.Model):
 
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_IPR"):
-    from doc.models import DocAlias
+    from ietf.doc.models import DocAlias
     
     class IprDocAlias(models.Model):
         ipr = models.ForeignKey(IprDetail, related_name='documents')
@@ -223,7 +223,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_IPR"):
     IprDraftOld = IprDraft
     IprRfcOld = IprRfc
 
-    from redesign.proxy_utils import TranslatingManager
+    from ietf.utils.proxy import TranslatingManager
     
     class IprDraftProxy(IprDocAlias):
         objects = TranslatingManager(dict(document="doc_alias__name"))
@@ -232,7 +232,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_IPR"):
         # document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
         @property
         def document(self):
-            from redesign.doc.proxy import DraftLikeDocAlias
+            from ietf.doc.proxy import DraftLikeDocAlias
             return DraftLikeDocAlias.objects.get(pk=self.doc_alias_id)
         
         #revision = models.CharField(max_length=2)
@@ -252,7 +252,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_IPR"):
         # document = models.ForeignKey(Rfc, db_column='rfc_number', related_name="ipr")
         @property
         def document(self):
-            from redesign.doc.proxy import DraftLikeDocAlias
+            from ietf.doc.proxy import DraftLikeDocAlias
             return DraftLikeDocAlias.objects.get(pk=self.doc_alias_id)
         
         #revision = models.CharField(max_length=2)

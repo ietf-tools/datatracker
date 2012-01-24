@@ -1,4 +1,4 @@
-from redesign.doc.models import *
+from ietf.doc.models import *
 
 def get_state_types(doc):
     res = []

@@ -1,6 +1,6 @@
-from redesign.group.models import Group, Role
-from redesign.person.models import Person
-from redesign.proxy_utils import proxy_personify_role
+from ietf.group.models import Group, Role
+from ietf.person.models import Person
+from ietf.utils.proxy import proxy_personify_role
 
 from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
                                     get_ietf_chair, get_iab_chair, get_iab_executive_director,
@@ -278,7 +278,7 @@ class AreaEntityManager(EntityManager):
 
     def __init__(self, pk=None, name=None, queryset=None):
         super(AreaEntityManager, self).__init__(pk, name, queryset)
-        from redesign.group.proxy import Area
+        from ietf.group.proxy import Area
         if self.queryset == None:
             self.queryset = Area.active_areas()
 
@@ -310,7 +310,7 @@ class WGEntityManager(EntityManager):
     def __init__(self, pk=None, name=None, queryset=None):
         super(WGEntityManager, self).__init__(pk, name, queryset)
         if self.queryset == None:
-            from redesign.group.proxy import IETFWG, Area
+            from ietf.group.proxy import IETFWG, Area
             self.queryset = IETFWG.objects.filter(group_type=1, status=IETFWG.ACTIVE, areagroup__area__status=Area.ACTIVE)
 
     def get_managed_list(self, query_filter=None):

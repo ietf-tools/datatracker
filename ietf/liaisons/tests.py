@@ -24,8 +24,8 @@ class LiaisonsUrlTestCase(SimpleUrlTestCase):
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
-    from redesign.person.models import Person, Email
-    from redesign.group.models import Group, Role
+    from ietf.person.models import Person, Email
+    from ietf.group.models import Group, Role
         
 def make_liaison_models():
     sdo = Group.objects.create(

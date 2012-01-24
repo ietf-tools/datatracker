@@ -10,7 +10,7 @@ from datetime import datetime, time
 import re
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from redesign.group.models import Group
+    from ietf.group.models import Group
     from ietf.liaisons.proxy import LiaisonDetailProxy as LiaisonDetail
     from ietf.liaisons.models import LiaisonStatement
 

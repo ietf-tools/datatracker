@@ -13,8 +13,8 @@ from ietf.idtracker.models import *
 from ietf.ipr.search import iprs_from_docs
 from ietf.ietfworkflows.streams import (get_stream_from_draft)
 from ietf.ietfworkflows.models import (Stream)
-from redesign.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias
-from redesign.person.models import Person
+from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias
+from ietf.person.models import Person
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.idinternal.state_change_notice_to.replace(';', ',').split(',')]

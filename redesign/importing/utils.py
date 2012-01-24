@@ -1,5 +1,5 @@
 from ietf.utils import unaccent
-from redesign.person.models import Person, Email, Alias
+from ietf.person.models import Person, Email, Alias
 from ietf.idtracker.models import EmailAddress
 import datetime
 

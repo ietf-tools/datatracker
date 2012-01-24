@@ -5,7 +5,7 @@ import datetime
 from django.db import models
 from django.contrib.auth.models import User
 
-from redesign.person.name import name_parts
+from ietf.person.name import name_parts
 
 class PersonInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system

@@ -1,4 +1,4 @@
-from redesign.proxy_utils import TranslatingManager
+from ietf.utils.proxy import TranslatingManager
 
 from models import *
 

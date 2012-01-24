@@ -4,9 +4,9 @@ from django import template
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
-from redesign.doc.models import GroupBallotPositionDocEvent
-from redesign.person.models import Person
-from redesign.group.models import Group
+from ietf.doc.models import GroupBallotPositionDocEvent
+from ietf.person.models import Person
+from ietf.group.models import Group
 
 register = template.Library()
 
@@ -18,7 +18,7 @@ def get_user_adid(context):
 
 def get_user_name(context):
     if 'user' in context and context['user'].is_authenticated():
-        from person.models import Person
+        from ietf.person.models import Person
         try:
             return context['user'].get_profile().plain_name()
         except Person.DoesNotExist:

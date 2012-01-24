@@ -35,7 +35,7 @@ def nomcom(request):
                                 'regimes' : regimes })
 
 def nomcomREDESIGN(request):
-    from group.models import Group, GroupEvent
+    from ietf.group.models import Group, GroupEvent
     from ietf.announcements.models import Message
 
     address_re = re.compile("<.*>")
@@ -74,7 +74,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
 
 def message_detail(request, object_id, queryset):
-    from group.models import Group
+    from ietf.group.models import Group
     from ietf.announcements.models import Message
 
     # restrict to nomcom announcements for the time being

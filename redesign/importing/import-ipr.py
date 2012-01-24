@@ -13,7 +13,7 @@ from django.core import management
 management.setup_environ(settings)
 
 from ietf.ipr.models import IprDraftOld, IprRfcOld, IprDocAlias, IprDetail
-from redesign.doc.models import DocAlias
+from ietf.doc.models import DocAlias
 
 # imports IprDraft and IprRfc, converting them to IprDocAlias links to Document
 

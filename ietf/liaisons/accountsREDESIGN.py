@@ -1,6 +1,6 @@
-from redesign.person.models import Person
-from redesign.group.models import Role
-from redesign.proxy_utils import proxy_personify_role
+from ietf.person.models import Person
+from ietf.group.models import Role
+from ietf.utils.proxy import proxy_personify_role
 
 LIAISON_EDIT_GROUPS = ['Secretariat'] # this is not working anymore, refers to old auth model
 

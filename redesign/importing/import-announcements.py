@@ -12,10 +12,10 @@ settings.IMPORTING_FROM_OLD_SCHEMA = True
 from django.core import management
 management.setup_environ(settings)
 
-from redesign.person.models import *
-from redesign.group.models import *
-from redesign.name.utils import name
-from redesign.importing.utils import old_person_to_person
+from ietf.person.models import *
+from ietf.group.models import *
+from ietf.name.utils import name
+from ietf.importing.utils import old_person_to_person
 from ietf.announcements.models import Message, SendQueue
 from ietf.announcements.models import Announcement, PersonOrOrgInfo, AnnouncedTo, AnnouncedFrom, ScheduledAnnouncement
 from ietf.idtracker.models import IESGLogin

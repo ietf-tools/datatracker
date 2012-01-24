@@ -22,9 +22,9 @@ from ietf.ietfworkflows.utils import (get_workflow_for_wg,
                                       get_annotation_tags_for_draft,
                                       get_state_for_draft, WAITING_WRITEUP,
                                       FOLLOWUP_TAG)
-from redesign.name.models import DocTagName
-from redesign.doc.models import State
-from redesign.doc.utils import get_tags_for_stream_id
+from ietf.name.models import DocTagName
+from ietf.doc.models import State
+from ietf.doc.utils import get_tags_for_stream_id
 
 def manage_delegates(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
@@ -94,8 +94,8 @@ def manage_workflow(request, acronym):
                               }, RequestContext(request))
 
 def manage_workflowREDESIGN(request, acronym):
-    from redesign.doc.models import State
-    from redesign.group.models import GroupStateTransitions
+    from ietf.doc.models import State
+    from ietf.group.models import GroupStateTransitions
 
     MANDATORY_STATES = ('c-adopt', 'wg-doc', 'sub-pub')
 
@@ -254,7 +254,7 @@ def managing_writeup(request, acronym, name):
     if not can_manage_writeup_of_a_document(user, doc):
         return HttpResponseForbidden('You do not have permission to access this page')
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from redesign.doc.models import State
+        from ietf.doc.models import State
         state = doc.get_state("draft-stream-%s" % doc.stream_id)
         can_edit = (state and state.slug == "writeupw") or can_manage_writeup_of_a_document_no_state(user, doc)
     else:

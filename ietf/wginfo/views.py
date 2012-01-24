@@ -40,12 +40,12 @@ from ietf.idtracker.models import Area, IETFWG
 from ietf.idrfc.views_search import SearchForm, search_query
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
 from ietf.ipr.models import IprDetail
-from redesign.group.models import Group
+from ietf.group.models import Group
 
 
 def fill_in_charter_info(wg, include_drafts=False):
-    from redesign.person.models import Email
-    from redesign.doc.models import DocAlias, RelatedDocument
+    from ietf.person.models import Email
+    from ietf.doc.models import DocAlias, RelatedDocument
 
     wg.areadirector = wg.ad.role_email("ad", wg.parent) if wg.ad else None
     wg.chairs = Email.objects.filter(role__group=wg, role__name="chair")
@@ -94,8 +94,8 @@ def wg_dir(request):
     return render_to_response('wginfo/wg-dir.html', {'areas':areas}, RequestContext(request))
 
 def wg_dirREDESIGN(request):
-    from redesign.group.models import Group, GroupURL
-    from redesign.person.models import Email
+    from ietf.group.models import Group, GroupURL
+    from ietf.person.models import Email
     
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:

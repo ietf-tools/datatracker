@@ -6,7 +6,7 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.mail import send_mail_text
 from ietf.liaisons.utils import role_persons_with_fixed_email
-from redesign.group.models import Role
+from ietf.group.models import Role
 
 def send_liaison_by_email(request, liaison, fake=False):
     if liaison.is_pending(): # this conditional should definitely be at the caller, not here

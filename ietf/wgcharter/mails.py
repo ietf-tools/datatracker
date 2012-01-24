@@ -11,8 +11,8 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
 from ietf.ipr.search import iprs_from_docs
-from redesign.doc.models import WriteupDocEvent, DocAlias, GroupBallotPositionDocEvent
-from redesign.person.models import Person
+from ietf.doc.models import WriteupDocEvent, DocAlias, GroupBallotPositionDocEvent
+from ietf.person.models import Person
 
 # These become part of the subject of the email
 types = {}

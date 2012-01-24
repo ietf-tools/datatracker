@@ -269,9 +269,9 @@ def search_query(query_original, sort_by=None):
     return (results,meta)
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from doc.models import *
-    from person.models import *
-    from group.models import *
+    from ietf.doc.models import *
+    from ietf.person.models import *
+    from ietf.group.models import *
 
     class SearchForm(forms.Form):
         name = forms.CharField(required=False)

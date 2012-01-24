@@ -81,7 +81,7 @@ class IetfUserProfile(models.Model):
                                                      last_name=l.last_name)
         except IESGLogin.DoesNotExist, PersonOrOrgInfo.DoesNotExist:
             person = None
-        from person.models import Email
+        from ietf.person.models import Email
         return Email.objects.get(address=person.email()[1])
 
     def __str__(self):

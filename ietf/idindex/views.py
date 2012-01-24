@@ -169,7 +169,7 @@ def redirect_filename(request, filename):
 
 def wgdocs_redirect_id(request, id):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from group.models import Group
+        from ietf.group.models import Group
         group = get_object_or_404(Group, id=id)
         return HttpResponsePermanentRedirect("/wg/%s/" % group.acronym)
 

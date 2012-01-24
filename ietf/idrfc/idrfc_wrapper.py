@@ -723,8 +723,8 @@ class BallotWrapper:
             self.old_init()
             return
 
-        from redesign.person.models import Person
-        from redesign.doc.models import BallotPositionDocEvent, NewRevisionDocEvent
+        from ietf.person.models import Person
+        from ietf.doc.models import BallotPositionDocEvent, NewRevisionDocEvent
 
         active_ads = Person.objects.filter(role__name="ad", role__group__state="active").distinct()
         

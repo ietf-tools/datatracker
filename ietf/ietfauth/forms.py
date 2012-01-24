@@ -11,7 +11,7 @@ from django.utils.translation import ugettext, ugettext_lazy as _
 
 from ietf.utils.mail import send_mail
 from ietf.utils import debug
-#from redesign.person.models import Person, Email
+#from ietf.person.models import Person, Email
 
 
 class RegistrationForm(forms.Form):

@@ -265,4 +265,4 @@ class StreamDelegate(models.Model):
     person = models.ForeignKey(PersonOrOrgInfo)
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from redesign.name.proxy import StreamProxy as Stream
+    from ietf.name.proxy import StreamProxy as Stream

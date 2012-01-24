@@ -60,8 +60,8 @@ class RescheduleOnAgendaTestCaseREDESIGN(django.test.TestCase):
 
     def test_reschedule(self):
         from ietf.utils.test_data import make_test_data
-        from redesign.person.models import Person
-        from doc.models import TelechatDocEvent
+        from ietf.person.models import Person
+        from ietf.doc.models import TelechatDocEvent
         
         draft = make_test_data()
 
@@ -365,7 +365,7 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
 
     def test_edit_wgaction(self):
         from ietf.utils.test_data import make_test_data
-        from redesign.person.models import Person
+        from ietf.person.models import Person
         
         make_test_data()
         
@@ -400,8 +400,8 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
         
     def test_add_possible_wg(self):
         from ietf.utils.test_data import make_test_data
-        from redesign.person.models import Person
-        from redesign.group.models import Group
+        from ietf.person.models import Person
+        from ietf.group.models import Group
         
         make_test_data()
         

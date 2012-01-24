@@ -435,7 +435,7 @@ def stable_dictsort(value, arg):
 @register.filter
 def ad_area(user):
     if user and user.is_authenticated():
-        from redesign.group.models import Group
+        from ietf.group.models import Group
         g = Group.objects.filter(role__name="ad", role__person__user=user)
         if g:
             return g[0].acronym
@@ -455,7 +455,7 @@ def user_roles_json(user):
     roles = {}
     if user.is_authenticated():
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from redesign.group.models import Role
+            from ietf.group.models import Role
             for r in Role.objects.filter(person__user=user).select_related(depth=1):
                 if r.name_id == "secr" and r.group.acronym == "secretariat":
                     roles["Secretariat"] = True

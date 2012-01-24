@@ -1,5 +1,5 @@
 from django.conf import settings
-from redesign.group.models import Role
+from ietf.group.models import Role
 
 def is_secretariat(user):
     if not user or not user.is_authenticated():

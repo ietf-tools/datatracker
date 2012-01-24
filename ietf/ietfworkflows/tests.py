@@ -12,11 +12,11 @@ from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from redesign.person.models import Person, Email
-    from redesign.group.models import Group, Role
-    from redesign.doc.models import Document, State
-    from redesign.doc.utils import *
-    from redesign.name.models import DocTagName
+    from ietf.person.models import Person, Email
+    from ietf.group.models import Group, Role
+    from ietf.doc.models import Document, State
+    from ietf.doc.utils import *
+    from ietf.name.models import DocTagName
 
 class EditStreamInfoTestCase(django.test.TestCase):
     fixtures = ['names']

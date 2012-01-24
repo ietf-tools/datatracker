@@ -91,8 +91,8 @@ class ScheduledAnnouncement(models.Model):
 if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_FROM_OLD_SCHEMA"):
     import datetime
 
-    from person.models import Email, Person
-    from group.models import Group
+    from ietf.person.models import Email, Person
+    from ietf.group.models import Group
 
     class Message(models.Model):
         time = models.DateTimeField(default=datetime.datetime.now)

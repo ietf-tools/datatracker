@@ -1155,10 +1155,10 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     IETFWGOld = IETFWG
     IRTFOld = IRTF
     AreaGroupOld = AreaGroup
-    from redesign.doc.proxy import InternetDraft, IDInternal, BallotInfo, Rfc, IDState
-    from redesign.name.proxy import IDSubState
-    from redesign.group.proxy import Area, Acronym, IETFWG, IRTF, AreaGroup
-    from redesign.person.proxy import IESGLogin
+    from ietf.doc.proxy import InternetDraft, IDInternal, BallotInfo, Rfc, IDState
+    from ietf.name.proxy import IDSubState
+    from ietf.group.proxy import Area, Acronym, IETFWG, IRTF, AreaGroup
+    from ietf.person.proxy import IESGLogin
 
 
 # changes done by convert-096.py:changed maxlength to max_length

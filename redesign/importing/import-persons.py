@@ -14,8 +14,8 @@ management.setup_environ(settings)
 from ietf.idtracker.models import IESGLogin, AreaDirector, IETFWG, PersonOrOrgInfo, IDAuthor
 from ietf.ietfauth.models import LegacyWgPassword, LegacyLiaisonUser
 from ietf.liaisons.models import LiaisonDetail, LiaisonManagers, SDOAuthorizedIndividual
-from redesign.person.models import *
-from redesign.importing.utils import *
+from ietf.person.models import *
+from ietf.importing.utils import *
 
 # creates system person and email
 

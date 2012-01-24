@@ -2,7 +2,7 @@
 
 from django.conf.urls.defaults import patterns, url
 from ietf.wgcharter import views, views_search, views_edit, views_ballot, views_submit
-from redesign.doc.models import State
+from ietf.doc.models import State
 
 urlpatterns = patterns('django.views.generic.simple',
     url(r'^help/state/$', 'direct_to_template', { 'template': 'wgcharter/states.html', 'extra_context': { 'states': State.objects.filter(type="charter") } }, name='help_charter_states'),

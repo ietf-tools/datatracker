@@ -12,9 +12,9 @@ from ietf.submit.models import TempIdAuthors
 from ietf.utils.mail import send_mail
 from ietf.utils import unaccent
 
-from redesign.doc.models import *
-from redesign.person.models import Person, Alias, Email
-from redesign.doc.utils import active_ballot_positions
+from ietf.doc.models import *
+from ietf.person.models import Person, Alias, Email
+from ietf.doc.utils import active_ballot_positions
 
 # Some useful states
 UPLOADED = 1

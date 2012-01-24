@@ -26,9 +26,9 @@ from ietf.utils.pipe import pipe
 
 from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches, WgProceedingsActivities, SessionConflict
 
-from redesign.group.models import Group
+from ietf.group.models import Group
 from ietf.utils.history import find_history_active_at
-from redesign.doc.models import Document
+from ietf.doc.models import Document
 
 
 @decorator_from_middleware(GZipMiddleware)
@@ -71,7 +71,7 @@ def show_html_materials(request, meeting_num=None):
                 seen_materials.add(t)
                 queryset_list.append(item)
 
-        from redesign.doc.models import Document
+        from ietf.doc.models import Document
         cache_version = Document.objects.filter(session__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
     else:
         queryset_list = WgMeetingSession.objects.filter(Q(meeting=meeting_num, group_acronym_id__gte = -2, status__id=4), Q(irtf__isnull=True) | Q(irtf=0))

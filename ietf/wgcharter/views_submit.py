@@ -9,9 +9,9 @@ from django.template import RequestContext
 from django.conf import settings
 
 from ietf.ietfauth.decorators import group_required
-from redesign.group.models import Group
-from redesign.doc.models import Document, DocHistory, DocEvent
-from redesign.group.utils import save_group_in_history
+from ietf.group.models import Group
+from ietf.doc.models import Document, DocHistory, DocEvent
+from ietf.group.utils import save_group_in_history
 
 from utils import next_revision, set_or_create_charter, save_charter_in_history
 

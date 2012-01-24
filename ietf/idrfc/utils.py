@@ -63,7 +63,7 @@ def log_state_changed(request, doc, by, email_watch_list=True, note=''):
     return change
 
 def log_state_changedREDESIGN(request, doc, by, prev_iesg_state, prev_iesg_tag):
-    from doc.models import DocEvent
+    from ietf.doc.models import DocEvent
 
     state = doc.get_state("draft-iesg")
 
@@ -130,7 +130,7 @@ def update_telechat(request, idinternal, new_telechat_date, new_returning_item=N
         idinternal.telechat_date = new_telechat_date
 
 def update_telechatREDESIGN(request, doc, by, new_telechat_date, new_returning_item=None):
-    from doc.models import TelechatDocEvent
+    from ietf.doc.models import TelechatDocEvent
     
     on_agenda = bool(new_telechat_date)
 

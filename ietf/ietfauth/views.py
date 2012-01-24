@@ -83,8 +83,8 @@ def ietf_loggedin(request):
 @login_required
 def profile(request):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from person.models import Person
-        from group.models import Role
+        from ietf.person.models import Person
+        from ietf.group.models import Role
         
         roles = []
         person = None

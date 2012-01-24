@@ -2,8 +2,8 @@ from django.conf import settings
 import re
 
 from datetime import datetime
-from redesign.group.models import GroupEvent, ChangeStateGroupEvent
-from redesign.doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor, DocEvent
+from ietf.group.models import GroupEvent, ChangeStateGroupEvent
+from ietf.doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor, DocEvent
 from ietf.utils.history import find_history_active_at
 
 def set_or_create_charter(wg):
@@ -182,7 +182,7 @@ def next_approved_revision(rev):
     return "%#02d" % (int(m.group('major')) + 1)
 
 def update_telechat(request, doc, by, new_telechat_date):
-    from doc.models import TelechatDocEvent
+    from ietf.doc.models import TelechatDocEvent
     
     on_agenda = bool(new_telechat_date)
 

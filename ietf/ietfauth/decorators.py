@@ -71,7 +71,7 @@ def has_role(user, role_names):
     if not user or not user.is_authenticated():
         return False
 
-    from redesign.person.models import Person
+    from ietf.person.models import Person
     
     try:
         person = user.get_profile()
@@ -90,7 +90,7 @@ def has_role(user, role_names):
     for r in role_names:
         filter_expr |= role_qs[r]
 
-    from redesign.group.models import Role
+    from ietf.group.models import Role
     return bool(Role.objects.filter(filter_expr)[:1])
 
 def role_required(*role_names):

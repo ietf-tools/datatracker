@@ -314,10 +314,10 @@ class Uploads(models.Model):
 # removed raw_id_admin
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_FROM_OLD_SCHEMA"):
-    from redesign.name.models import LiaisonStatementPurposeName
-    from redesign.doc.models import Document
-    from redesign.person.models import Email
-    from redesign.group.models import Group
+    from ietf.name.models import LiaisonStatementPurposeName
+    from ietf.doc.models import Document
+    from ietf.person.models import Email
+    from ietf.group.models import Group
     
     class LiaisonStatement(models.Model):
         title = models.CharField(blank=True, max_length=255)

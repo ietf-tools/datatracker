@@ -1,8 +1,8 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
-from redesign.name.models import *
-from redesign.person.models import Email, Person
+from ietf.name.models import *
+from ietf.person.models import Email, Person
 
 import datetime
 

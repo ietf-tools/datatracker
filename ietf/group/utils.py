@@ -1,4 +1,4 @@
-from redesign.group.models import *
+from ietf.group.models import *
 
 def save_group_in_history(group):
     def get_model_fields_as_dict(obj):

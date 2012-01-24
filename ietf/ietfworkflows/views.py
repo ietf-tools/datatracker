@@ -17,10 +17,10 @@ from ietf.ietfworkflows.utils import (get_workflow_history_for_draft,
                                       get_state_for_draft)
 from ietf.ietfworkflows.accounts import (can_edit_state, can_edit_stream,
                                          is_chair_of_stream, can_adopt)
-from redesign.doc.utils import get_tags_for_stream_id
-from redesign.name.models import DocTagName
-from redesign.group.utils import save_group_in_history
-from redesign.group.models import Group, Role
+from ietf.doc.utils import get_tags_for_stream_id
+from ietf.name.models import DocTagName
+from ietf.group.utils import save_group_in_history
+from ietf.group.models import Group, Role
 
 
 REDUCED_HISTORY_LEN = 20

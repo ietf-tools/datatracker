@@ -11,9 +11,9 @@ from django.utils import simplejson as json
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.core.exceptions import ObjectDoesNotExist
-from doc.models import GroupBallotPositionDocEvent, WriteupDocEvent
-from group.models import Group, GroupHistory
-from person.models import Person
+from ietf.doc.models import GroupBallotPositionDocEvent, WriteupDocEvent
+from ietf.group.models import Group, GroupHistory
+from ietf.person.models import Person
 from wgcharter import markup_txt
 from django.conf import settings
 

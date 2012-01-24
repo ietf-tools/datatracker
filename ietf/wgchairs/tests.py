@@ -12,10 +12,10 @@ from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    from redesign.person.models import Person, Email
-    from redesign.group.models import Group, GroupHistory, Role, GroupStateTransitions
-    from redesign.doc.models import Document, State, WriteupDocEvent
-    from redesign.name.models import DocTagName
+    from ietf.person.models import Person, Email
+    from ietf.group.models import Group, GroupHistory, Role, GroupStateTransitions
+    from ietf.doc.models import Document, State, WriteupDocEvent
+    from ietf.name.models import DocTagName
         
 class ManageDelegatesTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -111,7 +111,7 @@ class ManageShepherdsTestCase(django.test.TestCase):
         # setup test documents
         group = Group.objects.get(acronym="mars")
 
-        from redesign.doc.models import Document
+        from ietf.doc.models import Document
         common = dict(group=group,
                       ad=Person.objects.get(user__username="ad"),
                       type_id="draft")

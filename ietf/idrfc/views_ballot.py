@@ -25,8 +25,8 @@ from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 from ietf.idrfc.idrfc_wrapper import BallotWrapper
 
-from redesign.doc.models import *
-from redesign.name.models import BallotPositionName
+from ietf.doc.models import *
+from ietf.name.models import BallotPositionName
 
 
 BALLOT_CHOICES = (("yes", "Yes"),
@@ -242,7 +242,7 @@ def edit_positionREDESIGN(request, name):
         ad_id = request.GET.get('ad')
         if not ad_id:
             raise Http404()
-        from person.models import Person
+        from ietf.person.models import Person
         ad = get_object_or_404(Person, pk=ad_id)
 
     old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
@@ -451,7 +451,7 @@ def send_ballot_commentREDESIGN(request, name):
         ad_id = request.GET.get('ad')
         if not ad_id:
             raise Http404()
-        from person.models import Person
+        from ietf.person.models import Person
         ad = get_object_or_404(Person, pk=ad_id)
 
     pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)

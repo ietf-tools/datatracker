@@ -18,11 +18,11 @@ from ietf.utils.mail import send_mail_text
 
 from workflows.models import Transition
 
-from redesign.doc.models import WriteupDocEvent
-from redesign.person.models import Person, Email
-from redesign.group.models import Role, RoleName
-from redesign.group.utils import save_group_in_history
-from redesign.name.models import DocTagName
+from ietf.doc.models import WriteupDocEvent
+from ietf.person.models import Person, Email
+from ietf.group.models import Role, RoleName
+from ietf.group.utils import save_group_in_history
+from ietf.name.models import DocTagName
 
 
 class RelatedWGForm(forms.Form):
@@ -191,7 +191,7 @@ def assign_shepherd(user, internetdraft, shepherd):
     if internetdraft.shepherd == shepherd:
         return
     
-    from redesign.doc.models import save_document_in_history, DocEvent, Document
+    from ietf.doc.models import save_document_in_history, DocEvent, Document
 
     # saving the proxy object is a bit of a mess, so convert it to a
     # proper document

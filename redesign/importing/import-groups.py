@@ -13,13 +13,13 @@ management.setup_environ(settings)
 
 from django.template.defaultfilters import slugify
 
-from redesign.group.models import *
-from redesign.name.models import *
-from redesign.doc.models import State, StateType
-from redesign.doc.utils import get_tags_for_stream_id
-from redesign.doc.models import Document
-from redesign.name.utils import name
-from redesign.importing.utils import old_person_to_person
+from ietf.group.models import *
+from ietf.name.models import *
+from ietf.doc.models import State, StateType
+from ietf.doc.utils import get_tags_for_stream_id
+from ietf.doc.models import Document
+from ietf.name.utils import name
+from ietf.importing.utils import old_person_to_person
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role, AreaDirector
 from ietf.liaisons.models import SDOs
 from ietf.iesg.models import TelechatDates, Telechat, TelechatDate

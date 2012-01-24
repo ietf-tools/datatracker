@@ -15,9 +15,9 @@ from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
                                    ShowAttachmentsWidget, RelatedLiaisonWidget)
 from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
 from ietf.liaisons.proxy import LiaisonDetailProxy
-from redesign.group.models import Group
-from redesign.person.models import Person
-from redesign.doc.models import Document
+from ietf.group.models import Group
+from ietf.person.models import Person
+from ietf.doc.models import Document
 
 
 class LiaisonForm(forms.Form):

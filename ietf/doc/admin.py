@@ -3,8 +3,9 @@ from django.contrib import admin
 from django import forms
 
 from models import *
-from redesign.person.models import *
-from redesign.doc.utils import get_state_types
+from ietf.person.models import *
+from ietf.doc.utils import get_state_types
+from ietf.utils.admin import admin_link
 
 class StateTypeAdmin(admin.ModelAdmin):
     list_display = ["slug", "label"]
@@ -105,6 +106,7 @@ class DocAliasAdmin(admin.ModelAdmin):
     list_display = [ 'name', 'document_link', ]
     search_fields = [ 'name', 'document__name', ]
     raw_id_fields = ['document']
+    document_link = admin_link("document")
 admin.site.register(DocAlias, DocAliasAdmin)
 
 

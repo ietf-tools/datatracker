@@ -197,8 +197,8 @@ import django.db.transaction
 
 def get_rfc_tag_mapping():
     """Return dict with RFC Editor state name -> DocTagName"""
-    from redesign.name.models import DocTagName
-    from redesign.name.utils import name
+    from ietf.name.models import DocTagName
+    from ietf.name.utils import name
     
     return {
         'IANA': name(DocTagName, 'iana-crd', 'IANA coordination', "RFC-Editor/IANA Registration Coordination"),
@@ -208,7 +208,7 @@ def get_rfc_tag_mapping():
 
 def get_rfc_state_mapping():
     """Return dict with RFC Editor state name -> State"""
-    from redesign.doc.models import State, StateType
+    from ietf.doc.models import State, StateType
     t = StateType.objects.get(slug="draft-rfceditor")
     return {
         'AUTH': State.objects.get_or_create(type=t, slug='auth', name='AUTH', desc="Awaiting author action")[0],
@@ -227,8 +227,8 @@ def get_rfc_state_mapping():
 
 @django.db.transaction.commit_on_success
 def insert_into_databaseREDESIGN(drafts, refs):
-    from doc.models import Document
-    from name.models import DocTagName
+    from ietf.doc.models import Document
+    from ietf.name.models import DocTagName
 
     tags = get_rfc_tag_mapping()
     states = get_rfc_state_mapping()

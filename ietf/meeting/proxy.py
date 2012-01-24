@@ -2,7 +2,7 @@ import datetime
 
 from django.conf import settings
 
-from redesign.proxy_utils import TranslatingManager
+from ietf.utils.proxy import TranslatingManager
 from models import *
 
 class MeetingProxy(Meeting):
@@ -521,7 +521,7 @@ class IESGHistoryProxy(Person):
         from ietf.utils.history import find_history_active_at
         personhistory = find_history_active_at(role.person, time)
         self.from_object(personhistory or role.person)
-        from redesign.group.proxy import Area
+        from ietf.group.proxy import Area
         self.area = Area().from_object(role.group)
         return self
     #area = models.ForeignKey(Area, db_column='area_acronym_id')

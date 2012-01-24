@@ -18,11 +18,11 @@ import datetime
 from ietf.idtracker.models import AreaDirector, IETFWG, Acronym, IRTF, PersonOrOrgInfo
 from ietf.meeting.models import *
 from ietf.proceedings.models import Meeting as MeetingOld, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda, Minute, Slide, WgProceedingsActivities, NotMeetingGroup
-from redesign.person.models import *
-from redesign.doc.models import Document, DocAlias, State, DocEvent
-from redesign.importing.utils import old_person_to_person, dont_save_queries
-from redesign.name.models import *
-from redesign.name.utils import name
+from ietf.person.models import *
+from ietf.doc.models import Document, DocAlias, State, DocEvent
+from ietf.importing.utils import old_person_to_person, dont_save_queries
+from ietf.name.models import *
+from ietf.name.utils import name
 
 dont_save_queries()
 

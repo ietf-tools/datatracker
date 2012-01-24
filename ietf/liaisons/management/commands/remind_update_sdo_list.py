@@ -63,7 +63,7 @@ class Command(BaseCommand):
 
 
 def send_reminders_to_sdos(sdo_pk=None):
-    from redesign.group.models import Group
+    from ietf.group.models import Group
     from ietf.liaisons.mails import send_sdo_reminder
     
     sdos = Group.objects.filter(type="sdo").order_by('pk')

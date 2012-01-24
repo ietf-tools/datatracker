@@ -55,7 +55,7 @@ def patent_file_search(url, q):
 
 def search(request, type="", q="", id=""):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from group.models import Group
+        from ietf.group.models import Group
         wgs = Group.objects.filter(type="wg").exclude(acronym="2000").select_related().order_by("acronym")
     else:
         wgs = IETFWG.objects.filter(group_type__group_type_id=1).exclude(group_acronym__acronym='2000').select_related().order_by('acronym.acronym')
@@ -79,13 +79,13 @@ def search(request, type="", q="", id=""):
                     if q:
                         q = normalize_draftname(q)
                         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                            from redesign.doc.proxy import DraftLikeDocAlias
+                            from ietf.doc.proxy import DraftLikeDocAlias
                             start = DraftLikeDocAlias.objects.filter(name__contains=q, name__startswith="draft")
                         else:
                             start = InternetDraft.objects.filter(filename__contains=q)
                     if id:
                         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                            from redesign.doc.proxy import DraftLikeDocAlias
+                            from ietf.doc.proxy import DraftLikeDocAlias
                             start = DraftLikeDocAlias.objects.filter(name=id)
                         else:
                             try:
@@ -100,7 +100,7 @@ def search(request, type="", q="", id=""):
                         except:
                             q = -1
                         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                            from redesign.doc.proxy import DraftLikeDocAlias
+                            from ietf.doc.proxy import DraftLikeDocAlias
                             start = DraftLikeDocAlias.objects.filter(name__contains=q, name__startswith="rfc")
                         else:
                             start = Rfc.objects.filter(rfc_number=q)
@@ -163,7 +163,7 @@ def search(request, type="", q="", id=""):
             # Document list with IPRs
             elif type == "wg_search":
                 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    from redesign.doc.proxy import DraftLikeDocAlias
+                    from ietf.doc.proxy import DraftLikeDocAlias
                     try:
                         docs = list(DraftLikeDocAlias.objects.filter(document__group__acronym=q))
                         docs += list(DraftLikeDocAlias.objects.filter(document__relateddocument__target__in=docs, document__relateddocument__relationship="replaces"))
@@ -187,7 +187,7 @@ def search(request, type="", q="", id=""):
             # Document list with IPRs
             elif type == "title_search":
                 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    from redesign.doc.proxy import DraftLikeDocAlias
+                    from ietf.doc.proxy import DraftLikeDocAlias
                     try:
                         docs = list(DraftLikeDocAlias.objects.filter(document__title__icontains=q))
                     except:

@@ -82,8 +82,8 @@ def related_docs(doc, found = []):
 
 def related_docsREDESIGN(alias, _):
     """Get related document aliases to given alias through depth-first search."""
-    from redesign.doc.models import RelatedDocument
-    from redesign.doc.proxy import DraftLikeDocAlias
+    from ietf.doc.models import RelatedDocument
+    from ietf.doc.proxy import DraftLikeDocAlias
 
     mapping = dict(
         updates='that updated',

@@ -13,7 +13,7 @@ class IESGAgenda(Feed):
 
     def items(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from doc.models import TelechatDocEvent
+            from ietf.doc.models import TelechatDocEvent
             drafts = IDInternal.objects.filter(docevent__telechatdocevent__telechat_date__gte=datetime.date.min).distinct()
             for d in drafts:
                 d.latest_telechat_event = d.latest_event(TelechatDocEvent, type="scheduled_for_telechat")

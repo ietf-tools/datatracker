@@ -20,10 +20,10 @@ from ietf.ietfauth.decorators import has_role
 from mails import email_secretariat, generate_ballot_writeup, generate_issue_ballot_mail
 
 from utils import *
-from redesign.group.models import Group, GroupHistory, GroupEvent
-from redesign.group.utils import save_group_in_history
-from redesign.name.models import GroupBallotPositionName, GroupStateName
-from redesign.doc.models import *
+from ietf.group.models import Group, GroupHistory, GroupEvent
+from ietf.group.utils import save_group_in_history
+from ietf.name.models import GroupBallotPositionName, GroupStateName
+from ietf.doc.models import *
 
 def default_action_text(wg, charter, user, action):
    e = WriteupDocEvent(doc=charter, by=user)
@@ -149,7 +149,7 @@ def edit_position(request, name):
         ad_id = request.GET.get('ad')
         if not ad_id:
             raise Http404()
-        from person.models import Person
+        from ietf.person.models import Person
         ad = get_object_or_404(Person, pk=ad_id)
 
     old_pos = charter.latest_event(GroupBallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
@@ -285,7 +285,7 @@ def send_ballot_comment(request, name):
         ad_id = request.GET.get('ad')
         if not ad_id:
             raise Http404()
-        from person.models import Person
+        from ietf.person.models import Person
         ad = get_object_or_404(Person, pk=ad_id)
 
     pos = charter.latest_event(GroupBallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
