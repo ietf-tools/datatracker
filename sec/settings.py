@@ -162,7 +162,7 @@ INSTALLED_APPS = (
     'sec.meetings',
     'sec.proceedings',
     'sec.rolodex',
-    'sec.sessions',
+    'sec.sreq',
     'sec.telechat',
     'form_utils',
     'django_extensions',
@@ -189,7 +189,7 @@ INTERNAL_IPS = (
 SEC_AUTH_UNRESTRICTED_URLS = (
     (r'^/$'),
     (r'^/proceedings/'),
-    (r'^/sessions/'),
+    (r'^/sreq/'),
 )
 
 # no slash at end

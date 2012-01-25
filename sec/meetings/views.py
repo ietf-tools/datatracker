@@ -24,8 +24,8 @@ from ietf.meeting.models import Meeting, Session, Room, TimeSlot
 from ietf.group.models import Group
 from ietf.name.models import SessionStatusName, TimeSlotTypeName
 from sec.proceedings.views import build_choices
-from sec.sessions.forms import GroupSelectForm
-from sec.sessions.views import get_initial_session, session_conflicts_as_string
+from sec.sreq.forms import GroupSelectForm
+from sec.sreq.views import get_initial_session, session_conflicts_as_string
 from sec.utils.meeting import get_upload_root
 
 from forms import *

@@ -155,7 +155,7 @@ def send_notification(group,meeting,login,session,action):
     cc_list = get_cc_list(group, login)
     from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
     subject = '%s - New Meeting Session Request for IETF %s' % (group.acronym, meeting.number)
-    template = 'sessions/session_request_notification.txt'
+    template = 'sreq/session_request_notification.txt'
     
     # send email
     context = {}
@@ -180,7 +180,7 @@ def send_notification(group,meeting,login,session,action):
         if login.email_address().address not in cc_list:
             cc_list.append(login.email_address().address)
         subject = '%s - Request for meeting session approval for IETF %s' % (group.acronym, meeting.number)
-        template = 'sessions/session_approval_notification.txt'
+        template = 'sreq/session_approval_notification.txt'
         status_text = 'the %s Directors for approval' % group.parent
     send_mail(None,
               to_email,
@@ -249,7 +249,7 @@ def cancel(request, acronym):
     cc_list = get_cc_list(group, login)
     from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
     subject = '%s - Cancelling a meeting request for IETF %s' % (group.acronym, meeting.number)
-    send_mail(request, to_email, from_email, subject, 'sessions/session_cancel_notification.txt',
+    send_mail(request, to_email, from_email, subject, 'sreq/session_cancel_notification.txt',
               {'login':login,
                'group':group,
                'meeting':meeting}, cc=cc_list)
@@ -325,7 +325,7 @@ def confirm(request, acronym):
     # GET logic
     session_conflicts = session_conflicts_as_string(group, meeting)
     
-    return render_to_response('sessions/confirm.html', {
+    return render_to_response('sreq/confirm.html', {
         'session': form,
         'group': group,
         'session_conflicts': session_conflicts},
@@ -435,7 +435,7 @@ def edit(request, acronym):
     else:
         form = SessionForm(initial=initial)
     
-    return render_to_response('sessions/edit.html', {
+    return render_to_response('sreq/edit.html', {
         'meeting': meeting,
         'form': form,
         'group': group,
@@ -457,7 +457,7 @@ def main(request):
    
     if is_locked and not has_role(request.user,'Secretariat'):
         message = get_lock_message()
-        return render_to_response('sessions/locked.html', {
+        return render_to_response('sreq/locked.html', {
         'message': message},
         RequestContext(request, {}),
     )
@@ -495,7 +495,7 @@ def main(request):
         if group.session_set.filter(meeting=meeting,status='notmeet'):
             group.not_meeting = True
             
-    return render_to_response('sessions/main.html', {
+    return render_to_response('sreq/main.html', {
         'is_locked': is_locked,
         'form': form,
         'meeting': meeting,
@@ -552,7 +552,7 @@ def new(request, acronym):
     else:
         form = SessionForm()
         
-    return render_to_response('sessions/new.html', {
+    return render_to_response('sreq/new.html', {
         'meeting': meeting,
         'form': form,
         'group': group,
@@ -594,7 +594,7 @@ def no_session(request, acronym):
     cc_list = get_cc_list(group, login)
     from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
     subject = '%s - Not having a session at IETF %s' % (group.acronym, meeting.number)
-    send_mail(request, to_email, from_email, subject, 'sessions/not_meeting_notification.txt',
+    send_mail(request, to_email, from_email, subject, 'sreq/not_meeting_notification.txt',
               {'login':login,
                'group':group,
                'meeting':meeting}, cc=cc_list)
@@ -649,7 +649,7 @@ def tool_status(request):
         else:
             form = ToolStatusForm()
     
-    return render_to_response('sessions/tool_status.html', {
+    return render_to_response('sreq/tool_status.html', {
         'is_locked': is_locked,
         'form': form},
         RequestContext(request, {}),
@@ -692,7 +692,7 @@ def view(request, acronym):
     # build session dictionary (like querydict from new session request form) for use in template
     session = get_initial_session(sessions)
     
-    return render_to_response('sessions/view.html', {
+    return render_to_response('sreq/view.html', {
         'session': session,
         'activities': activities,
         'meeting': meeting,

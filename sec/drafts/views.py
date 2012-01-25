@@ -13,7 +13,7 @@ from django.utils import simplejson
 
 from email import *
 from forms import *
-from sec.sessions.views import get_meeting
+from sec.sreq.views import get_meeting
 from sec.utils.ams_utils import get_base, get_email, get_start_date
 from sec.utils.draft import get_rfc_num
 

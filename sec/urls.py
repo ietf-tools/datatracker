@@ -25,6 +25,6 @@ urlpatterns = patterns('',
     (r'^meetings/', include('sec.meetings.urls')),
     (r'^proceedings/', include('sec.proceedings.urls')),
     (r'^rolodex/', include('sec.rolodex.urls')),
-    (r'^sessions/', include('sec.sessions.urls')),
+    (r'^sreq/', include('sec.sreq.urls')),
     (r'^telechat/', include('sec.telechat.urls')),
 )

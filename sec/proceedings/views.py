@@ -16,7 +16,7 @@ from django.db.models import Max,Count,get_model
 from sec.utils.decorators import check_permissions, sec_only
 from sec.utils.group import get_my_groups
 from sec.utils.meeting import get_upload_root
-from sec.sessions.forms import GroupSelectForm
+from sec.sreq.forms import GroupSelectForm
 
 from ietf.doc.models import Document, DocEvent, State
 from ietf.group.models import Group
