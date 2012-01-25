@@ -791,21 +791,19 @@ for index, o in enumerate(all_drafts.iterator()):
     d.set_state(state_mapping[o.status.status])
 
     # try guess stream to have a default for old submissions
+    d.stream = None
     if o.filename.startswith("draft-iab-"):
         d.stream = stream_mapping["IAB"]
     elif o.filename.startswith("draft-irtf-"):
         d.stream = stream_mapping["IRTF"]
     elif o.idinternal and o.idinternal.via_rfc_editor:
         d.stream = stream_mapping["INDEPENDENT"]
-    else:
+    elif d.name.startswith("draft-ietf-") and (d.group.type_id != "individ" or state_mapping[o.status.status].slug == "rfc" or o.idinternal):
         d.stream = stream_mapping["IETF"]
 
-    try:
-        old_stream = StreamedID.objects.get(draft=o).stream
-        if old_stream:
-            d.stream = stream_mapping[old_stream.name]
-    except StreamedID.DoesNotExist:
-        pass
+    sid = StreamedID.objects.filter(draft=o)
+    if sid and sid[0].stream:
+        d.stream = stream_mapping[sid[0].stream.name]
 
     d.unset_state("draft-iesg")
     try:
@@ -814,7 +812,7 @@ for index, o in enumerate(all_drafts.iterator()):
     except StateOld.DoesNotExist:
         s = None
 
-    if s:
+    if s and not (s.name == "WG Document" and d.group.type_id == "individ"):
         try:
             # there may be a mismatch between the stream type and the
             # state because of a bug in the ietfworkflows code so try
@@ -822,6 +820,10 @@ for index, o in enumerate(all_drafts.iterator()):
             d.set_state(State.objects.get(name=s.name))
         except State.MultipleObjectsReturned:
             d.set_state(State.objects.get(type="draft-stream-%s" % d.stream_id, name=s.name))
+
+        # there was a bug in ietfworkflows so the group wasn't set on adopted documents
+        if s.name in ("Call for Adoption by WG Issued", "Adopted by a WG") and d.group.type_id == "individ" and o.replaced_by and o.replaced_by.group:
+            d.group = Group.objects.get(acronym=o.replaced_by.group.acronym)
 
     d.rev = o.revision_display()
     d.abstract = o.abstract
@@ -886,8 +888,7 @@ for index, o in enumerate(all_drafts.iterator()):
         d.rev = revs[0]
 
     # ietfworkflows history entries
-    ctype = ContentType.objects.get_for_model(o)
-    for h in ObjectHistoryEntry.objects.filter(content_type=ctype, content_id=o.pk).order_by('date', 'id'):
+    for h in ObjectHistoryEntry.objects.filter(content_type=old_internetdraft_content_type_id, content_id=o.pk).order_by('date', 'id'):
         e = DocEvent(type="changed_document")
         e.time = h.date
         e.by = old_person_to_person(h.person)
@@ -1007,8 +1008,7 @@ for index, o in enumerate(all_drafts.iterator()):
     # tags
     sync_tag(d, o.review_by_rfc_editor, tag_review_by_rfc_editor)
 
-    ctype = ContentType.objects.get_for_model(o)
-    used_tags = AnnotationTag.objects.filter(annotationtagobjectrelation__content_type=ctype, annotationtagobjectrelation__content_id=o.pk).values_list('name', flat=True)
+    used_tags = DocTagName.objects.filter(name__in=list(AnnotationTag.objects.filter(annotationtagobjectrelation__content_type=old_internetdraft_content_type_id, annotationtagobjectrelation__content_id=o.pk).values_list('name', flat=True))).values_list('slug', flat=True)
     possible_tags = get_tags_for_stream_id(d.stream_id)
     for name in possible_tags:
         if name == "need-rev" and o.idinternal and o.idinternal.cur_sub_state and o.idinternal.cur_sub_state.sub_state == "Revised ID Needed":
