@@ -32,12 +32,12 @@
            <ul>
            {% for group in unscheduled_groups %}
              <li>
-               <a href="{% url sessions_new group_id=group.pk %}">{{ group.acronym }}</a>
+               <a href="{% url sessions_new acronym=group.acronym %}">{{ group.acronym }}</a>
                {% if meeting in group.meetings_not_scheduled.all %}
                  <span class="required"> (Currently, this group does not plan to hold a session at IETF {{ meeting.meeting_num }})</span>
                {% else %}
                <!--
-                 &nbsp;&nbsp;<a href="{% url sessions_no_session group_id=group.pk %}"> - [ Group will not meet ]</a>
+                 &nbsp;&nbsp;<a href="{% url sessions_no_session acronym=group.acronym %}"> - [ Group will not meet ]</a>
                -->
                {% endif %}
              </li>

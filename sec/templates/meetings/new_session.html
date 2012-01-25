@@ -8,8 +8,8 @@
 
 {% block breadcrumbs %}{{ block.super }}
   &raquo; <a href="../../">Meetings</a>
-  &raquo; <a href="../">{{ session.meeting }}</a>
-  &raquo; {{ session.session_id }}
+  &raquo; <a href="../">{{ sessions.0.meeting }}</a>
+  &raquo; {{ group.name }}
 {% endblock %}
 
 {% block content %}
@@ -17,14 +17,16 @@
 <div class="module">
     <h2>Requested Information</h2>
     
-    {% if session %}
+    {% with legacy_session as session %}
+      {% if session %}
         {% include "includes/sessions_request_view.html" %}
         
         <p>Sesssion Status: {{session.status}}</p>
         {% if session.ts_status_id %}
             <span class="alert"><p>Third Session Status: {{ session.ts_status }}</p></span>
         {% endif %}
-    {% endif %}
+      {% endif %}
+    {% endwith %}
     
     <div class="inline-group">
     <h2>Sessions</h2>

@@ -1,4 +1,4 @@
-from redesign.group.models import Group
+from ietf.group.models import Group
 
 from ietf.ietfauth.decorators import has_role
 

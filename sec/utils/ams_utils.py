@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from redesign.person.models import Person
+from ietf.person.models import Person
 
 import glob
 import os

@@ -2,10 +2,10 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
 
-from ietf.announcements.models import Message, SendQueue
+from ietf.message.models import Message, SendQueue
 from ietf.announcements.send_scheduled import send_scheduled_announcement
-from redesign.doc.utils import active_ballot_positions
-from redesign.person.models import Person
+from ietf.doc.utils import active_ballot_positions
+from ietf.person.models import Person
 from sec.utils.ams_utils import get_start_date
 
 import datetime

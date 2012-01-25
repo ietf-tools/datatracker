@@ -12,8 +12,8 @@ and end with
 
 <td id="content1"><div id="content2">
 
-<h2>{{ meeting.get_group_name }} ({{ meeting.get_group_acronym }})</h2>
-<h3>Interim Meeting of {{ meeting.meeting_date }}</h3>
+<h2>{{ group.name }} ({{ group.acronym }})</h2>
+<h3>Interim Meeting of {{ meeting.date }}</h3>
 <i>Note: This is a snapshot as of {% now "Y-m-d" %}.  It may now be out of date.</i>
 <h3>
 {% if minutes_url %}
@@ -51,14 +51,14 @@ Agenda
             {% endfor %}
           </ul>
       {% endif %}
-      <h3>{{ area_name }} Area Director(s):</h3>
+      <h3>{{ group.parent.name }} Area Director(s):</h3>
       <ul>
       {% for ad in group.area_directors %}
         <li><a href="mailto:{{ ad.person.email }}">{{ ad.person.first_name }} {{ ad.person.last_name }}</a></li>
       {% endfor %}
       </ul>
       {% if group.wgtechadvisor_set.all %}
-          <h3>{{ area_name }} Advisor(s)</h3>
+          <h3>{{ group.parent.name }} Advisor(s)</h3>
           <ul>
             {% for advisor in group.wgtechadvisor_set.all %}
               <li><a href="mailto:{{ advisor.person.email }}">{{ advisor.person.first_name }} {{ advisor.person.last_name }}</a></li>

@@ -15,8 +15,8 @@ from ietf.ietfauth.decorators import has_role
 from ietf.utils.mail import send_mail
 from ietf.meeting.models import Meeting, Session, Constraint
 
-from redesign.group.models import Group, Role    
-from redesign.name.models import SessionStatusName, ConstraintName
+from ietf.group.models import Group, Role    
+from ietf.name.models import SessionStatusName, ConstraintName
 
 from forms import *
 
@@ -80,9 +80,9 @@ def get_lock_message():
 
 def get_meeting():
     '''
-    Function to get the current meeting.  Simply returns the meeting with the most recent date
+    Function to get the current IETF regular meeting.  Simply returns the meeting with the most recent date
     '''
-    return Meeting.objects.all().order_by('-date')[0]
+    return Meeting.objects.filter(type='ietf').order_by('-date')[0]
 
 def get_scheduled_groups(user, meeting):
     '''
@@ -90,11 +90,11 @@ def get_scheduled_groups(user, meeting):
     Returns a sorted list of those groups that have session requests
     and the user has access to
     '''
-    groups = Group.objects.active_wgs().filter(~Q(session__status='canceled'),
-                                               ~Q(session__status='notmeet'),
-                                               session__meeting=meeting).order_by('acronym').distinct()
+    all_groups = Group.objects.filter(type__in=('wg','rg'),state__in=('bof','proposed','active'))
+    groups = all_groups.filter(session__meeting=meeting,
+                               session__status__in=('schedw','apprw','appr','sched')).order_by('acronym').distinct()
     
-    # short circuit for secretariat
+    # short circuit for secretariat, return all groups
     if has_role(user,'Secretariat'):
         return groups
         
@@ -111,10 +111,11 @@ def get_unscheduled_groups(user, meeting):
     add those groups back in.
     If the user is a secretariat than all groups are considered.
     '''
-    no_session = Group.objects.active_wgs().exclude(session__meeting=meeting)
+    all_groups = Group.objects.filter(type__in=('wg','rg'),state__in=('bof','proposed','active'))
+    no_session = all_groups.exclude(session__meeting=meeting)
     # add groups with "cancelled" sessions
-    canceled = Group.objects.active_wgs().filter(session__meeting=meeting,session__status__slug='canceled').distinct()
-    not_meeting = Group.objects.active_wgs().filter(session__meeting=meeting,session__status__slug='notmeet').distinct()
+    canceled = all_groups.filter(session__meeting=meeting,session__status__slug='canceled').distinct()
+    not_meeting = all_groups.filter(session__meeting=meeting,session__status__slug='notmeet').distinct()
     unscheduled = sorted(
         chain(no_session,canceled,not_meeting),
         key = lambda instance: instance.acronym)
@@ -201,12 +202,12 @@ def session_conflicts_as_string(group, meeting):
 # View Functions
 # -------------------------------------------------
 @check_permissions
-def approve(request, group_id):
+def approve(request, acronym):
     '''
     This view approves the third session.  For use by ADs or Secretariat.
     '''
     meeting = get_meeting()
-    group = get_object_or_404(Group, id=group_id)
+    group = get_object_or_404(Group, acronym=acronym)
     session = Session.objects.get(meeting=meeting,group=group,status='apprw')
     
     if has_role(request.user,'Secretariat') or group.parent.role_set.filter(name='ad',person=request.user.get_profile()):
@@ -214,21 +215,21 @@ def approve(request, group_id):
         session.save()
         
         messages.success(request, 'Third session approved')
-        url = reverse('sessions_view', kwargs={'group_id':group_id})
+        url = reverse('sessions_view', kwargs={'acronym':acronym})
         return HttpResponseRedirect(url)
     else:
         # if an unauthorized user gets here return error
         messages.error(request, 'Not authorized to approve the third session')
-        url = reverse('sessions_view', kwargs={'group_id':group_id})
+        url = reverse('sessions_view', kwargs={'acronym':acronym})
         return HttpResponseRedirect(url)
 
 @check_permissions
-def cancel(request, group_id):
+def cancel(request, acronym):
     '''
     This view cancels a session request and sends a notification
     '''
     meeting = get_meeting()
-    group = get_object_or_404(Group, id=group_id)
+    group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
     login = request.user.get_profile()
     
@@ -257,7 +258,7 @@ def cancel(request, group_id):
     url = reverse('sessions')
     return HttpResponseRedirect(url)
 
-def confirm(request, group_id):
+def confirm(request, acronym):
     '''
     This view displays details of the new session that has been requested for the user
     to confirm for submission.
@@ -267,7 +268,7 @@ def confirm(request, group_id):
         raise Http404
     form = querydict.copy()
     meeting = get_meeting()
-    group = get_object_or_404(Group,id=group_id)
+    group = get_object_or_404(Group,acronym=acronym)
     login = request.user.get_profile()
     
     if request.method == 'POST':
@@ -332,12 +333,12 @@ def confirm(request, group_id):
     )
 
 @check_permissions
-def edit(request, group_id):    
+def edit(request, acronym):    
     '''
     This view allows the user to edit details of the session request
     '''
     meeting = get_meeting()
-    group = get_object_or_404(Group, id=group_id)
+    group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
     sessions_count = sessions.count()
     initial = get_initial_session(sessions)
@@ -347,7 +348,7 @@ def edit(request, group_id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('sessions_view', kwargs={'group_id':group_id})
+            url = reverse('sessions_view', kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
         
         form = SessionForm(request.POST,initial=initial)
@@ -428,7 +429,7 @@ def edit(request, group_id):
                 send_notification(group,meeting,login,form.cleaned_data,'update')
                 
             messages.success(request, 'Session Request updated')
-            url = reverse('sessions_view', kwargs={'group_id':group_id})
+            url = reverse('sessions_view', kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
                 
     else:
@@ -436,7 +437,6 @@ def edit(request, group_id):
     
     return render_to_response('sessions/edit.html', {
         'meeting': meeting,
-        #'session': session,
         'form': form,
         'group': group,
         'session_conflicts': session_conflicts},
@@ -466,10 +466,10 @@ def main(request):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Group will not meet':
-            url = reverse('sessions_no_session', kwargs={'group_id':request.POST['group']})
+            url = reverse('sessions_no_session', kwargs={'acronym':request.POST['group']})
             return HttpResponseRedirect(url)
         else:
-            redirect_url = reverse('sessions_new', kwargs={'group_id':request.POST['group']})
+            redirect_url = reverse('sessions_new', kwargs={'acronym':request.POST['group']})
             return HttpResponseRedirect(redirect_url)
         
     meeting = get_meeting()
@@ -505,13 +505,13 @@ def main(request):
     )
 
 @check_permissions
-def new(request, group_id):
+def new(request, acronym):
     '''
     This view gathers details for a new session request.  The user proceeds to confirm()
     to create the request.
     '''
     
-    group = get_object_or_404(Group, id=group_id)
+    group = get_object_or_404(Group, acronym=acronym)
     meeting = get_meeting()
     session_conflicts = session_conflicts_as_string(group, meeting)
     user = request.user
@@ -525,7 +525,7 @@ def new(request, group_id):
         form = SessionForm(request.POST)
         if form.is_valid():
             # check if request already exists for this group
-            if Session.objects.filter(group=group,meeting=meeting).exclude(status__in=('canceled','notmeet')): # TODO test exclude
+            if Session.objects.filter(group=group,meeting=meeting).exclude(status__in=('canceled','notmeet')):
                 messages.warning(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
                 url = reverse('sessions')
                 return HttpResponseRedirect(url)
@@ -533,11 +533,8 @@ def new(request, group_id):
             # save in user session
             request.session['session_form'] = form.data
             
-            url = reverse('sessions_confirm',kwargs={'group_id':group_id})
+            url = reverse('sessions_confirm',kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
-        else:
-            #assert False, form.errors
-            pass
             
     # the "previous" querystring causes the form to be returned
     # pre-populated with data from last meeeting's session request
@@ -546,7 +543,7 @@ def new(request, group_id):
         previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).order_by('id')
         if not previous_sessions:
             messages.warning(request, 'No session scheduled for this group at meeting: %s' % previous_meeting.number)
-            redirect_url = reverse('sessions_new', kwargs={'group_id':group_id})
+            redirect_url = reverse('sessions_new', kwargs={'acronym':acronym})
             return HttpResponseRedirect(redirect_url)
             
         initial = get_initial_session(previous_sessions)
@@ -564,7 +561,7 @@ def new(request, group_id):
     )
 
 @check_permissions
-def no_session(request, group_id):
+def no_session(request, acronym):
     '''
     The user has indicated that the named group will not be having a session this IETF meeting.
     Actions:
@@ -572,8 +569,17 @@ def no_session(request, group_id):
     - update session_activity log
     '''
     meeting = get_meeting()
-    group = get_object_or_404(Group, id=group_id)
+    group = get_object_or_404(Group, acronym=acronym)
     login = request.user.get_profile()
+    
+    # delete canceled record if there is one
+    Session.objects.filter(group=group,meeting=meeting,status='canceled').delete()
+
+    # skip if state is already notmeet
+    if Session.objects.filter(group=group,meeting=meeting,status='notmeet'):
+        messages.info(request, 'The group %s is already marked as not meeting' % group.acronym)
+        url = reverse('sessions')
+        return HttpResponseRedirect(url)
     
     session = Session(group=group,
                       meeting=meeting,
@@ -649,22 +655,30 @@ def tool_status(request):
         RequestContext(request, {}),
     )
 
-def view(request, group_id):
+def view(request, acronym):
     '''
     This view displays the session request info
     '''
     meeting = get_meeting()
-    group = get_object_or_404(Group, id=group_id)
+    group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(~Q(status__in=('canceled','notmeet')),meeting=meeting,group=group).order_by('id')
     
     # if there are no session requests yet, redirect to new session request page
     if not sessions:
-        redirect_url = reverse('sessions_new', kwargs={'group_id':group_id})
+        redirect_url = reverse('sessions_new', kwargs={'acronym':acronym})
         return HttpResponseRedirect(redirect_url)
     
     # TODO simulate activity records
-    activities = []
-    #activities = SessionRequestActivity.objects.filter(group_acronym_id=session.group_acronym_id,meeting=meeting)
+    activities = [{'act_date':sessions[0].requested.strftime('%b %d, %Y'),
+                   'act_time':sessions[0].requested.strftime('%H:%M:%S'),
+                   'activity':'New session was requested',
+                   'act_by':sessions[0].requested_by}]
+    if sessions[0].scheduled:
+        activities.append({'act_date':sessions[0].scheduled.strftime('%b %d, %Y'),
+                       'act_time':sessions[0].scheduled.strftime('%H:%M:%S'),
+                       'activity':'Session was scheduled',
+                       'act_by':'Secretariat'})
+    
     # other groups that list this group in their conflicts
     session_conflicts = session_conflicts_as_string(group, meeting)
     show_approve_button = False

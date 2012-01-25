@@ -1,9 +1,9 @@
 from django import forms
 from django.forms.formsets import BaseFormSet
 
-from redesign.doc.models import *
-from redesign.name.models import IntendedStdLevelName
-from redesign.group.models import Group
+from ietf.doc.models import *
+from ietf.name.models import IntendedStdLevelName
+from ietf.group.models import Group
 
 from sec.utils.ams_utils import get_base, get_revision
 

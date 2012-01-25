@@ -9,10 +9,10 @@ def abbr_status(value):
     """
     d = {'Proposed Standard':'PS',
          'Draft Standard':'DS',
-	 'Standard':'S',
-	 'Historic':'H',
-	 'Informational':'I',
-	 'Experimental':'E'}
+         'Standard':'S',
+         'Historic':'H',
+         'Informational':'I',
+         'Experimental':'E'}
 
     return d.get(value,value)
 

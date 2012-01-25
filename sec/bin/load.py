@@ -6,13 +6,15 @@ from sec import settings
 
 setup_environ(settings)
 
-from redesign.group.models import *
-from redesign.person.models import *
-from redesign.name.models import *
+from ietf.group.models import *
+from ietf.person.models import *
+from ietf.name.models import *
 
 
 '''
 This script loads data into the new db.
+to run first do
+export DJANGO_SETTINGS_MODULE=sec.settings
 '''
 records = [('IETF Announcement List','ietf-announce@ietf.org'),
            ('I-D Announcement List', 'i-d-announce@ietf.org'),
@@ -21,12 +23,13 @@ records = [('IETF Announcement List','ietf-announce@ietf.org'),
            ('BoF Chairs', 'bofchairs@ietf.org')]
                
 def add_user():
-    user = User.objects.create_user('test-chair')
-    person = Person(name='Test Chair',user=user)
-    person.save()
-    email = Email(address='testchair@amsl.com',person=person)
-    email.save()
-    group = Group.objects.get(name="ancp")
+    try:
+        user = User.objects.get(username='test-chair')
+    except User.DoesNotExist:
+	user = User.objects.create_user('test-chair',email='testchair@amsl.com')
+    person,x = Person.objects.get_or_create(name='Test Chair',user=user)
+    email,x = Email.objects.get_or_create(address='testchair@amsl.com',person=person)
+    group = Group.objects.get(acronym="ancp")
     role_name = RoleName.objects.get(slug='chair')
     r = Role(name=role_name,group=group,email=email,person=email.person)
     r.save()

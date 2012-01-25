@@ -18,8 +18,8 @@ import sec.settings as settings
 from ietf.ipr.models import IprDetail, IprUpdate, IprRfc, IprDraft, IprContact, LICENSE_CHOICES, STDONLY_CHOICES, IprNotification
 from ietf.utils.mail import send_mail_text
 
-from redesign.doc.models import DocAlias
-from redesign.group.models import Role
+from ietf.doc.models import DocAlias
+from ietf.group.models import Role
 
 @template('ipr/list.html')
 def admin_list(request):

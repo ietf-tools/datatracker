@@ -7,7 +7,7 @@ from django.template import RequestContext
 from ietf.ietfauth.decorators import group_required
 from ietf.utils.mail import send_mail_text
 from ietf.wgchairs.accounts import get_person_for_user
-from redesign.group.models import Group
+from ietf.group.models import Group
 from sec.utils.group import current_nomcom
 from sec.utils.decorators import check_for_cancel
 

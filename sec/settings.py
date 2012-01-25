@@ -132,11 +132,11 @@ INSTALLED_APPS = (
     'south',
     'workflows',
     'permissions',
-    'redesign.person',
-    'redesign.name',
-    'redesign.group',
-    'redesign.doc',
-    #'redesign.issue', #this is bogus leave it out
+    'ietf.person',
+    'ietf.name',
+    'ietf.group',
+    'ietf.doc',
+    #'ietf.issue', #this is bogus leave it out
     'ietf.announcements',
     'ietf.idindex',
     'ietf.idtracker',

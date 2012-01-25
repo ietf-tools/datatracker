@@ -1,9 +1,9 @@
 from django import forms
 from django.db.models import Q
 
-from redesign.group.models import Group, GroupMilestone, Role
-from redesign.name.models import GroupStateName, GroupTypeName, RoleName
-from redesign.person.models import Person, Email
+from ietf.group.models import Group, GroupMilestone, Role
+from ietf.name.models import GroupStateName, GroupTypeName, RoleName
+from ietf.person.models import Person, Email
 
 from sec.areas.forms import AWPForm
 

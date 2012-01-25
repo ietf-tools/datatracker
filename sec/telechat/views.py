@@ -7,10 +7,10 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
-from redesign.doc.models import DocEvent, Document, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
-from redesign.doc.proxy import InternetDraft
-from redesign.name.models import BallotPositionName
-from redesign.person.models import Person
+from ietf.doc.models import DocEvent, Document, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
+from ietf.doc.proxy import InternetDraft
+from ietf.name.models import BallotPositionName
+from ietf.person.models import Person
 from ietf.idrfc.lastcall import request_last_call
 from ietf.idrfc.mails import email_owner, email_state_changed
 from ietf.idrfc.utils import log_state_changed, add_document_comment

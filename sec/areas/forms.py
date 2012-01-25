@@ -1,7 +1,7 @@
 from django import forms
 
-from redesign.group.models import Group, GroupURL
-from redesign.name.models import GroupTypeName
+from ietf.group.models import Group, GroupURL
+from ietf.name.models import GroupTypeName
 
 import datetime
 import re

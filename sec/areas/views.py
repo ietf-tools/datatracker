@@ -8,9 +8,9 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
 
-from redesign.group.models import Group, GroupEvent, GroupURL, Role
-from redesign.name.models import RoleName
-from redesign.person.models import Person, Email
+from ietf.group.models import Group, GroupEvent, GroupURL, Role
+from ietf.name.models import RoleName
+from ietf.person.models import Person, Email
 from forms import *
 
 import re

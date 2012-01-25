@@ -5,7 +5,7 @@ from functools import wraps
 
 from ietf.ietfauth.decorators import has_role
 
-from redesign.group.models import Group
+from ietf.group.models import Group
 
 from itertools import chain
 
@@ -14,7 +14,6 @@ def check_for_cancel(redirect_url):
     Decorator to make a view redirect to the given url if the reuqest is a POST which contains
     a submit=Cancel.
     """
-    #assert False, redirect_url
     def decorator(func):
         @wraps(func)
         def inner(request, *args, **kwargs):
@@ -28,7 +27,10 @@ def check_permissions(func):
     """
     This decorator checks that the user making the request has access to the
     object being requested.  Expects one of the following four keyword
-    arguments: group_id, meeting_id, slide_id, session_id.  
+    arguments: 
+    
+    acronym: a group acronym
+    meeting_id, slide_id, session_id.  
     """
     def wrapper(request, *args, **kwargs):
         # short circuit.  secretariat user has full access
@@ -39,8 +41,8 @@ def check_permissions(func):
         #return func(request, *args, **kwargs)
         
         # get the parent group
-        if 'group_id' in kwargs:
-            group_id = kwargs['group_id']
+        if 'acronym' in kwargs:
+            acronym = kwargs['acronym']
         '''
         elif 'meeting_id' in kwargs:
             meeting = Meeting.objects.get(id=kwargs['meeting_id'])
@@ -66,7 +68,7 @@ def check_permissions(func):
         if request.user_is_ietf_iab_chair and group_id in ('-1','-2'):
             return func(request, *args, **kwargs)
         '''
-        group = get_object_or_404(Group,id=group_id)
+        group = get_object_or_404(Group,acronym=acronym)
         login = request.user.get_profile()
         all_roles = chain(
             group.role_set.filter(name__in=('chair','secr')),

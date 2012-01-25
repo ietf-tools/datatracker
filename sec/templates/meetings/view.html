@@ -21,12 +21,11 @@
       <table class="full-width">
         <col id="proceedings-view-first-col" />
         <tr><td>Start Date:</td><td> {{ meeting.date }}</td></tr>
-        <tr><td>End Date:</td><td> {{ meeting.end_date }} </td></tr>
         <tr><td>City:</td><td> {{ meeting.city }} </td></tr>
         <tr><td>Country:</td><td> {{ meeting.country }} </td></tr>
         <tr><td>Time Zone:</td><td> {{ meeting.time_zone }} </td></tr>
         <tr><td>Venue Name:</td><td> {{ meeting.venue_name }} </td></tr>
-        <tr><td>Venue Address:</td><td> {{ meeting.venue_address }} </td></tr>
+        <tr><td>Venue Address:</td><td> {{ meeting.venue_addr }} </td></tr>
         <tr><td>Break Area:</td><td> {{ meeting.break_area }} </td></tr>
         <tr><td>Registration Area:</td><td> {{ meeting.reg_area }} </td></tr>
       </table>
@@ -35,7 +34,7 @@
     <div class="button-group">
        <ul>
        	     <li><button onclick="window.location='{% url meetings_edit_meeting meeting_id=meeting.number %}'">Edit</button></li>
-             <li><button onclick="window.location='{% url meetings_schedule_sessions meeting_id=meeting.number %}'">Schedule WG Sessions</button></li>
+             <li><button onclick="window.location='{% url meetings_select_group meeting_id=meeting.number %}'">Schedule WG Sessions</button></li>
        </ul>
       </div> <!-- button-group -->
       

@@ -8,7 +8,7 @@
 
 {% block breadcrumbs %}{{ block.super }}
   &raquo; <a href="../../">Meetings</a>
-  &raquo; <a href="{% url meetings_schedule_sessions meeting_id=session.meeting.meeting_num %}">{{ session.meeting }}</a>
+  &raquo; <a href="{% url meetings_select_group meeting_id=session.meeting.number %}">{{ session.meeting }}</a>
   &raquo; {{ session.session_id }}
 {% endblock %}
 
@@ -44,7 +44,7 @@
        <ul>
          <li><button type="submit" name="submit" value="Save">Save</button></li>
          <li><button type="button" onclick="if (window.confirm('This group will be permanently removed from the agenda and scheduling tool')) { window.location='{% url meetings_remove_session session_id=session.session_id%}' };">Remove this group from agenda</button></li>
-         <li><button type="button" onclick="window.location='{% url meetings_schedule_sessions meeting_id=session.meeting.meeting_num %}'">Back</button></li>
+         <li><button type="button" onclick="window.location='{% url meetings_select_group meeting_id=session.meeting.number %}'">Back</button></li>
         </ul>
       </div> <!-- button-group -->
       

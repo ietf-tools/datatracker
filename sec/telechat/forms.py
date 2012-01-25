@@ -1,7 +1,7 @@
 from ietf.iesg.models import TelechatAgendaItem
-from redesign.doc.models import State
-from redesign.name.models import BallotPositionName, DocTagName
-from redesign.person.models import Person
+from ietf.doc.models import State
+from ietf.name.models import BallotPositionName, DocTagName
+from ietf.person.models import Person
 
 from django import forms
 

@@ -13,20 +13,14 @@ from django.template.loader import get_template
 from django.utils import simplejson
 from django.db.models import Max,Count,get_model
 
-#from sec.core.models import Acronym
-#from sec.core.forms import GroupSelectForm
-#from sec.drafts.models import InternetDraft, Rfc
-#from sec.proceedings.models import *
-#from sec.roles.models import Role
-#from sec.utils.decorators import sec_only, check_permissions
-#from sec.utils.shortcuts import get_group_or_404, get_meeting_or_404, get_my_groups
-
+from sec.utils.decorators import check_permissions, sec_only
 from sec.utils.group import get_my_groups
 from sec.utils.meeting import get_upload_root
 from sec.sessions.forms import GroupSelectForm
 
-from redesign.doc.models import Document
-from redesign.group.models import Group
+from ietf.doc.models import Document, DocEvent, State
+from ietf.group.models import Group
+from ietf.name.models import MeetingTypeName, SessionStatusName
 
 from ietf.ietfauth.decorators import has_role
 from ietf.meeting.models import Meeting, Session
@@ -47,12 +41,10 @@ import zipfile
 
 def build_choices(queryset):
     '''
-    This function takes a queryset (or list of objects) and builds a list of tuples for use 
-    as choices in a select widget.  First item is the object primary key, second is the object
-    name, str(obj).
+    This function takes a queryset (or list) of Groups and builds a list of tuples for use 
+    as choices in a select widget.  Using acronym for both value and label.
     '''
-    #choices = zip([ x.pk for x in queryset ], [ str(x) for x in queryset ])
-    choices = zip([ x.pk for x in queryset ], [ x.acronym for x in queryset ])
+    choices = [ (g.acronym,g.acronym) for g in queryset ]
     return sorted(choices, key=lambda choices: choices[1])
 """
 def create_interim_directory():
@@ -79,7 +71,7 @@ def create_interim_directory():
     f = open(path,'w')
     f.write(response.content)
     f.close()
-
+"""
 def create_proceedings(meeting):
     '''
     This function creates the proceedings.html document.  It gets called anytime there is an
@@ -98,36 +90,23 @@ def create_proceedings(meeting):
     '''
     
     # abort if not interim
-    if not is_interim_meeting(meeting):
+    if meeting.type.slug != 'interim':
         return
-        
-    # get all the objects we need for the template
-    # meeting = get_meeting_or_404(meeting_id)
-    year,month,day = parsedate(meeting.start_date)
-    group_name = meeting.get_group_acronym()
-    group = IETFWG.objects.get(group_acronym=meeting.group_acronym_id)
-    area_group = AreaGroup.objects.get(group=group.group_acronym)
-    area_name = area_group.area.area_acronym.name
-    slides = meeting.interimslide_set.all().order_by('order_num')
-    # drafts and rfcs are available from methods on group, but they aren't sorted
-    drafts = InternetDraft.objects.filter(group=meeting.group_acronym_id,
-                                                    status=1).order_by('start_date')
-    rfcs = Rfc.objects.filter(group_acronym=meeting.get_group_acronym()).order_by('rfc_number')
-    agenda_url = ''
-    minutes_url = ''
-    try:
-        agenda = InterimAgenda.objects.get(meeting=meeting,group_acronym_id=group.pk)
-        if os.path.exists(agenda.file_path):
-            agenda_url = agenda.url
-    except InterimAgenda.DoesNotExist:
-        pass
     
-    try:
-        minutes = InterimMinute.objects.get(meeting=meeting,group_acronym_id=group.pk)
-        if os.path.exists(minutes.file_path):
-            minutes_url = minutes.url
-    except InterimMinute.DoesNotExist:
-        pass
+    year,month,day = parsedate(meeting.date)
+    group = None # TODO associate group with interim meeting
+    
+    session = Session.objects.filter(meeting=meeting,group=group)[0]
+    
+    agenda,minutes,slides = get_material(session)
+    
+    drafts = Document.objects.filter(group=group,
+                                     type='draft',
+                                     states__slug='active').order_by('time')
+    # TODO order by RFC number
+    rfcs = Documents.objects.filter(group=group,
+                                    type='rfc',
+                                    states__slug='active').order_by('time')
     
     # the simplest way to display the charter is to place it in a <pre> block
     # however, because this forces a fixed-width font, different than the rest of
@@ -138,7 +117,6 @@ def create_proceedings(meeting):
     # proceedings.html
     response = render_to_response('proceedings/proceedings.html',{
         'agenda_url': agenda_url,
-        'area_name': area_name,
         'charter': charter,
         'drafts': drafts,
         'group': group,
@@ -161,7 +139,7 @@ def create_proceedings(meeting):
     
     # rebuild the directory
     create_interim_directory()
-"""
+
 def find_index(slide_id, qs):
     '''
     This function looks up a slide in a queryset of slides,
@@ -170,51 +148,47 @@ def find_index(slide_id, qs):
     for i in range(0,qs.count()):
         if str(qs[i].pk) == slide_id:
             return i
-"""
-def get_materials_object(meeting_id,type,object_id):
-    '''
-    This function takes
-    meeting_id: id of meeting
-    type: string [agenda|minute|slide]
-    object_id: the object id
-    
-    and returns the object instance
-    '''
-    interim = is_interim_meeting(meeting_id)
 
-    if type == 'slide':
-        if interim:
-            obj = get_object_or_404(InterimSlide, id=object_id)
-        else:
-            obj = get_object_or_404(Slide, id=object_id)        
+def get_material(session):
+    '''
+    This function takes a session object and returns a tuple of active materials:
+    agenda(Document), minutes(Document), slides(list of Documents)
+    '''
+    active_materials = session.materials.exclude(states__slug='deleted')
+    slides = active_materials.filter(type='slides').order_by('order')
+    minutes = active_materials.filter(type='minutes')
+    minutes = minutes[0] if minutes else None
+    agenda = active_materials.filter(type='agenda')
+    agenda = agenda[0] if agenda else None
     
-    elif type == 'agenda':
-        if interim:
-            obj = get_object_or_404(InterimAgenda, id=object_id)
-        else:
-            obj = get_object_or_404(WgAgenda, id=object_id)
+    return agenda,minutes,slides
+
+def get_next_interim_num():
+    '''
+    This function gets a list of interim meetings and returns a string to use for the
+    next interim meeting number "iNN"
+    '''
+    meetings = Meeting.objects.filter(type='interim')
+    nums = [ int(n.number[1:]) for n in meetings ]
+    nums.sort()
+    return 'i%s' % (nums[-1] + 1)
     
-    elif type == 'minute':
-        if interim:
-            obj = get_object_or_404(InterimMinute, id=object_id)
-        else:
-            obj = get_object_or_404(Minute, id=object_id)
-        
-    return obj
-"""
 def get_next_slide_num(session):
     '''
     This function takes a session object and returns the
     next slide number to use for a newly added slide as a string.
     '''
-    slides = session.materials.filter(type='slides').order_by('-name')
+    # slides = session.materials.filter(type='slides').order_by('-name')
+    # can't use this approach because if there's a slide out there that isn't
+    # related to the session somehow, we may get an error trying to create
+    # a docuument object with a duplicate name
+    slides = Document.objects.filter(type='slides',name__startswith='slides-%s-%s' % (session.meeting.number,session.group.acronym)).order_by('-name')
     if slides:
         last_num = slides[0].name.split('-')[-1]
         return str(int(last_num) + 1)
     else:
         return '0'
 
-    
 def get_next_order_num(session):
     '''
     This function takes a session object and returns the
@@ -235,8 +209,7 @@ def get_proceedings_url(meeting,group):
         meeting.number,
         group.acronym)
     return url
-
-
+    
 def handle_upload_file(file,filename,meeting,subdir): 
     '''
     This function takes a file object, a filename and a meeting object and subdir as string.
@@ -265,25 +238,11 @@ def handle_upload_file(file,filename,meeting,subdir):
         os.chdir(path)
         os.system('unzip %s' % filename)
 
-"""        
-def log_activity(group_id,text,meeting_id,userid):
-    '''
-    Add a record to session_request_activites.  Based on legacy function
-    input: group can be either IETFWG or IRTF
-    '''
-    # added this conditional because interim activity records are corrupting db
-    # TODO: remove this after schema migration
-    if int(meeting_id) > 200:
-        record = InterimActivity(group_acronym_id=group_id,meeting_num=meeting_id,activity=text,act_by=userid)
-    else:
-        record = WgProceedingsActivity(group_acronym_id=group_id,meeting_num=meeting_id,activity=text,act_by=userid)
-    record.save()
-    
 def make_directories(meeting):
     '''
     This function takes a meeting object and creates the appropriate materials directories
     '''
-    path = meeting.upload_root
+    path = get_upload_root(meeting)
     os.umask(0)
     if not os.path.exists(path):
         os.makedirs(path)
@@ -302,81 +261,34 @@ def parsedate(d):
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
-@sec_only
-def convert(request, meeting_id):
+@check_permissions
+def delete_material(request,meeting_id,acronym,name):
     '''
-    Handles the PPT to HTML conversion download/upload process.
-
-    Slides waiting in a list for conversion are listed and manual Upload/Download is
-
-    performed
- 
-
-    **Templates:**
-
-    * ``proceedings/convert.html``
-
-    **Template Variables:**
-
-    * meeting , proceeding, slide_info
-
+    This view handles deleting meeting materials.  We don't actually delete the
+    document object but set the state to deleted and add a 'deleted' DocEvent.
     '''
-    meeting = get_object_or_404(Meeting, meeting_num=meeting_id)
-    proceeding = get_object_or_404(Proceeding, meeting_num=meeting_id)
-
-    #Get the file names in queue waiting for the conversion
-    slide_list = Slide.objects.filter(meeting=meeting_id,in_q='1')
-
-    return render_to_response('proceedings/convert.html', {
-        'meeting': meeting,
-        'proceeding': proceeding,
-        'slide_list':slide_list},
-        RequestContext(request, {}),
-    )
-"""
-#@check_permissions
-def delete_material(request,meeting_id,group_id,type,object_id):
-    '''
-    This view handles deleting material objects and files.  
-    "type" argument must be a string [agenda|slide|minute]
-    '''
-    pass
-    """
-    obj = get_materials_object(meeting_id,type,object_id)
-    meeting = get_meeting_or_404(meeting_id)
+    doc = get_object_or_404(Document, name=name)
+    session = Session.objects.filter(meeting=meeting_id,group__acronym=acronym)[0]
     
-    path = obj.file_path
-    if os.path.exists(path):
-        os.remove(path)
-        
-    '''
-    TODO: special case for removing html directories
-    # for now this isn't supported
-    #if os.path.isdir(path):
-    #   shutil.rmtree(path)
-    # slide_type_id == 1 is a special type, indicates a direcory containing html docs
-        # we need to get the directory name and remove it
-        if obj.slide_type_id == 1:
-            slide_dir = os.path.splitext(obj.filename)[0]
-            path = os.path.join(settings.PROCEEDINGS_DIR,str(meeting_id),'slides',slide_dir)
-    '''
-    # log activity
-    if type == 'agenda':
-        text = "agenda was deleted"
-    elif type == 'minute':
-        text = "minutes was deleted"
-    elif type == 'slide':
-        text = "slide, '%s', was deleted" % obj.slide_name
-    log_activity(group_id,text,meeting_id,request.person)
-
-    obj.delete()
+    files = glob.glob(os.path.join(doc.get_file_path(),name) + '.*')
+    for file in files:
+        os.remove(file)
     
-    # create DocEvent  deleted_document
+    # leave it related
+    #session.materials.remove(doc)
     
-    create_proceedings(meeting)
+    state = State.objects.get(type=doc.type,slug='deleted')
+    doc.set_state(state)
+    
+    # create   deleted_document
+    DocEvent.objects.create(doc=doc,
+                            by=request.user.get_profile(),
+                            type='deleted')
+                                    
+    # create_proceedings(meeting)
         
     messages.success(request,'The material was deleted successfully')
-    url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting_id,'group_id':obj.group_acronym_id})
+    url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting_id,'acronym':acronym})
     return HttpResponseRedirect(url)
 
 @sec_only
@@ -385,46 +297,49 @@ def delete_interim_meeting(request, meeting_id):
     This view deletes the specified InterimMeeting and any material that has been
     uploaded for it.
     '''
-    meeting = get_object_or_404(InterimMeeting, meeting_num=meeting_id)
+    meeting = get_object_or_404(Meeting, id=meeting_id)
+    sessions = Session.objects.filter(meeting=meeting)
+    group = sessions[0].group
     
     # delete directories
-    path = meeting.get_upload_root()
+    path = get_upload_root(meeting)
+
+    # do a quick sanity check on this path before we go and delete it
+    parts = path.split('/')
+    assert parts[-1] == group.acronym
+    
     if os.path.exists(path):
         shutil.rmtree(path)
     
     meeting.delete()
+    sessions.delete()
 
-    url = reverse('proceedings_interim', kwargs={'group_id':meeting.group_acronym_id})
+    url = reverse('proceedings_interim', kwargs={'acronym':group.acronym})
     return HttpResponseRedirect(url)
 
-"""
-#@check_permissions
-def edit_slide(request, meeting_id, group_id, slide_id):
+@check_permissions
+def edit_slide(request, meeting_id, acronym, slide_id):
     '''
     This view allows the user to edit the name of a slide.
     '''
     # we need to pass group to the template for the breadcrumbs
-    group = get_object_or_404(Group, id=group_id)
+    group = get_object_or_404(Group, acronym=acronym)
     slide = get_object_or_404(Document, name=slide_id)
-    meeting = get_object_or_404(Meeting, number=meeting_id)
+    meeting = get_object_or_404(Meeting, id=meeting_id)
 
     if request.method == 'POST': # If the form has been submitted...
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting.id,'group_id':group.id})
+            url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting.id,'acronym':group.acronym})
             return HttpResponseRedirect(url)
             
         form = EditSlideForm(request.POST, instance=slide) # A form bound to the POST data
         if form.is_valid(): 
-            # TODO log activity
-            #text = "Title of a slide was changed to '%s' from '%s'" % (form.cleaned_data['slide_name'],form.initial['slide_name']) 
-            #log_activity(group_id,text,meeting_id,request.person)
-            
             form.save()
             
             # rebuild proceedings.html
             # create_proceedings(slide.meeting.pk)
-            url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting.id,'group_id':group_id})
+            url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting.id,'acronym':acronym})
             return HttpResponseRedirect(url)
     else:
         form = EditSlideForm(instance=slide)
@@ -436,15 +351,14 @@ def edit_slide(request, meeting_id, group_id, slide_id):
         'form':form},
         RequestContext(request, {}),
     )
-"""
-def interim(request, group_id):
+
+def interim(request, acronym):
     '''
     This view presents the user with a list of interim meetings for the specified group.
     The user can select a meeting to manage or create a new interim meeting by entering
     a date.
     '''
-    group_name = Acronym.objects.get(acronym_id=group_id).acronym
-    group = get_object_or_404(IETFWG, group_acronym=group_id)
+    group = get_object_or_404(Group, acronym=acronym)
     if request.method == 'POST': # If the form has been submitted...
         button_text = request.POST.get('submit', '')
         if button_text == 'Back':
@@ -453,23 +367,33 @@ def interim(request, group_id):
             
         form = InterimMeetingForm(request.POST) # A form bound to the POST data
         if form.is_valid():
-            start_date = form.cleaned_data['date']
-            meeting=InterimMeeting()
-            meeting.group_acronym_id = group_id
-            meeting.start_date = start_date
-            meeting.save()
+            date = form.cleaned_data['date']
+            num = get_next_interim_num()
+            meeting=Meeting.objects.create(type=MeetingTypeName.objects.get(slug='interim'),
+                                           date=date,
+                                           number=num)
+            
+            # create session to associate this meeting with a group
+            stat = SessionStatusName.objects.get(slug='sched')
+            Session.objects.create(meeting=meeting,
+                                   group=group,
+                                   requested_by=request.user.get_profile(),
+                                   requested_duration=datetime.timedelta(6000),
+                                   status=stat)
+                                   
             make_directories(meeting)
+
             messages.success(request, 'Meeting created')
-            url = reverse('proceedings_interim', kwargs={'group_id':group_id})
+            url = reverse('proceedings_interim', kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
     else:
-        form = InterimMeetingForm(initial={'group_acronym_id':group_id}) # An unbound form
+        form = InterimMeetingForm(initial={'group_acronym_id':acronym}) # An unbound form
         
-    meeting_list = InterimMeeting.objects.filter(group_acronym_id=group_id).order_by('start_date')
+    meetings = Meeting.objects.filter(type='interim',session__group__acronym=acronym).order_by('date')
+    
     return render_to_response('proceedings/interim_meeting.html',{
-        'group_name': group_name,
         'group': group,
-        'meeting_list':meeting_list,
+        'meetings':meetings,
         'form':form},
         RequestContext(request, {}),
     )
@@ -485,7 +409,7 @@ def interim_directory(request, sortby=None):
     return render_to_response('proceedings/interim_directory.html', {
     'meetings': meetings},
 )
-"""
+
 def main(request):
     '''
     List IETF Meetings.  If the user is Secratariat list includes all meetings otherwise
@@ -507,12 +431,13 @@ def main(request):
         # select meetings still within the cutoff period
         meetings = Meeting.objects.filter(type='ietf',date__gt=datetime.datetime.today() - datetime.timedelta(days=settings.SUBMISSION_CORRECTION_DAYS)).order_by('number')
     
-    interim_meetings = []
-    for group in get_my_groups(request.user):
-        # TODO right now interm meetings are tied to groups
-        qs = Meeting.objects.filter(type='interim')
-        interim_meetings.extend(qs)
+    groups = get_my_groups(request.user)
+    interim_meetings = Meeting.objects.filter(type='interim',session__group__in=groups)
+    # tac on group for use in templates
+    for m in interim_meetings:
+        m.group = m.session_set.all()[0].group
     
+    #assert False, (groups,interim_meetings)
     # TODO meeting must have an attribute to determine if it is open or not, for now using 
     # frozen in the template
     
@@ -521,47 +446,18 @@ def main(request):
         'interim_meetings': interim_meetings},
         RequestContext(request,{}), 
     )
-"""    
-@sec_only
-def modify(request,id):
-    '''
-    Handle status changes of Proceedings (Activate, Freeze)
 
-    **Templates:**
-
-    * none
-
-    Redirects to view page on success.
-
-    '''
-    proceeding = get_object_or_404(Proceeding, meeting_num=id)
-
-    if request.method == 'POST':
-        #Handles the freeze request
-        if request.POST.get('submit', '') == "Freeze":  
-            proceeding.frozen=1
-            proceeding.save()
-            messages.success(request, 'Proceedings have been freezed successfully!')
-
-        if request.POST.get('submit','') == "Activate":
-            proceeding.frozen=0
-            proceeding.save()
-            messages.success(request, 'Proceedings have been activated successfully!')
-
-        url = reverse('sec.proceedings.views.view', kwargs={'id':str(id)})
-        return HttpResponseRedirect(url)
-"""
-#@check_permissions
-def move_slide(request, meeting_id, group_id, slide_id, direction):
+@check_permissions
+def move_slide(request, meeting_id, acronym, slide_id, direction):
     '''
     This view will re-order slides.  In addition to meeting, group and slide IDs it takes
     a direction argument which is a string [up|down].
     '''
-    # TODO do we need to change the slide name while we're at it??
     slide = get_object_or_404(Document, name=slide_id)
     
     # get related slides via timeslot
-    qs = Document.objects.filter(type='slides',timeslot=slide.timeslot_set.all()[0]).order_by('order')
+    session = Session.objects.filter(meeting=meeting_id,group__acronym=acronym)[0]
+    qs = session.materials.exclude(states__slug='deleted').filter(type='slides').order_by('order')
     
     # if direction is up and we aren't already the first slide
     if direction == 'up' and slide_id != str(qs[0].pk):
@@ -579,88 +475,57 @@ def move_slide(request, meeting_id, group_id, slide_id, direction):
         slide.save()
         slide_after.save()
 
-    url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting_id,'group_id':group_id})
+    url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting_id,'acronym':acronym})
     return HttpResponseRedirect(url)
 
-#@check_permissions
-def replace_slide(request, meeting_id, group_id, slide_id):
+@check_permissions
+def replace_slide(request, meeting_id, acronym, slide_id):
     '''
     This view allows the user to upload a new file to replace a slide.
     '''
-    pass
-    """
     # we need to pass group to the template for the breadcrumbs
-    group = get_group_or_404(group_id)
-    slide = get_materials_object(meeting_id,'slide',slide_id)
+    group = get_object_or_404(Group, acronym=acronym)
+    slide = get_object_or_404(Document, name=slide_id)
+    meeting = get_object_or_404(Meeting, id=meeting_id)
 
     if request.method == 'POST': # If the form has been submitted...
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('proceedings_upload_unified', kwargs={'meeting_id':slide.meeting.pk,'group_id':slide.group_acronym_id})
+            url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting.pk,'acronym':acronym})
             return HttpResponseRedirect(url)
             
         form = ReplaceSlideForm(request.POST,request.FILES,instance=slide) # A form bound to the POST data
         if form.is_valid(): 
-            # log activity
-            text = "slide '%s' was re-uploaded" % (form.cleaned_data['slide_name']) 
-            log_activity(group_id,text,meeting_id,request.person)
-            
             new_slide = form.save(commit=False)
-            
-            # handle if the file extension changed
-            file = request.FILES[request.FILES.keys()[0]]
-            file_ext = os.path.splitext(file.name)[1]
-            if file_ext in ('.ppt','.pptx'):
-                new_slide.in_q = 1
-            else:
-                new_slide.in_q = 0
-            new_slide.slide_type_id = Slide.REVERSE_SLIDE_TYPES[file_ext.lstrip('.').lower()]
-            
+            new_slide.time = datetime.datetime.now()
             new_slide.save()
             
-            filename = '%s-%s%s' % (group.acronym, new_slide.slide_num, file_ext)
-            handle_upload_file(file,filename,new_slide.meeting,'slides')
-                
+            file = request.FILES[request.FILES.keys()[0]]
+            file_ext = os.path.splitext(file.name)[1]
+            disk_filename = new_slide.name + file_ext
+            handle_upload_file(file,disk_filename,meeting,'slides')
+            
+            # create DocEvent uploaded
+            DocEvent.objects.create(doc=slide,
+                                    by=request.user.get_profile(),
+                                    type='uploaded')
+                                    
             # rebuild proceedings.html
             # create_proceedings(slide.meeting.pk)
-            url = reverse('proceedings_upload_unified', kwargs={'meeting_id':slide.meeting.pk,'group_id':slide.group_acronym_id})
+            
+            url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting.id,'acronym':acronym})
             return HttpResponseRedirect(url)
     else:
         form = ReplaceSlideForm(instance=slide)
     
     return render_to_response('proceedings/replace_slide.html',{
         'group': group,
-        'interim': is_interim_meeting(meeting_id),
-        'meeting':slide.meeting,
+        'meeting':meeting,
         'slide':slide,
         'form':form},
         RequestContext(request, {}),
     )
-    
-@sec_only
-def status(request,id):
-    '''
-    Edits the status associated with proceedings: Freeze/Unfreeze proceeding status.
 
-    **Templates:**
-
-    * ``proceedings/view.html``
-
-    **Template Variables:**
-
-    * meeting , proceeding
-
-    '''
-
-    meeting = get_object_or_404(Meeting, meeting_num=id)
-    proceeding = get_object_or_404(Proceeding, meeting_num=id)
-
-    return render_to_response('proceedings/status.html', {
-        'meeting':meeting,
-        'proceeding':proceeding},
-        RequestContext(request,{}), 
-    )
-""" 
 def select(request, meeting_id):
     '''
     A screen to select which group you want to upload material for.  Works for Secretariat staff
@@ -668,7 +533,7 @@ def select(request, meeting_id):
     NOTE: only those groups with sessions scheduled for the given meeting will appear in drop-downs
     '''
     if request.method == 'POST':
-        redirect_url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting_id,'group_id':request.POST['group']})
+        redirect_url = reverse('proceedings_upload_unified', kwargs={'meeting_id':meeting_id,'acronym':request.POST['group']})
         return HttpResponseRedirect(redirect_url)
         
     meeting = get_object_or_404(Meeting, number=meeting_id)
@@ -696,7 +561,6 @@ def select(request, meeting_id):
         groups = get_my_groups(request.user)
         
         # initialize WG form
-        #group_id_list = [ g.group_acronym.acronym_id for g in groups ]
         groups_scheduled = [ a.group for a in all_sessions.filter(group__type='wg') if a.group in groups ]
         choices = build_choices(groups_scheduled)
         group_form = GroupSelectForm(choices=choices)
@@ -729,27 +593,23 @@ def select_interim(request):
     A screen to select which group you want to upload Interim material for.  Works for Secretariat staff
     and external (ADs, chairs, etc)
     '''
-    pass
-"""
     if request.method == 'POST':
-        redirect_url = reverse('proceedings_interim', kwargs={'group_id':request.POST['group']})
+        redirect_url = reverse('proceedings_interim', kwargs={'acronym':request.POST['group']})
         return HttpResponseRedirect(redirect_url)
     
     if request.user_is_secretariat:
         # initialize working groups form
-        #choices = build_choices(IETFWG.objects.filter(status=1, meeting_scheduled="YES"))
-        choices = build_choices(IETFWG.objects.filter(status=1))
+        choices = build_choices(Group.objects.active_wgs())
         group_form = GroupSelectForm(choices=choices)
         
         # per Alexa, not supporting Interim IRTF meetings at this time
         # intialize IRTF form
-        #choices = build_choices(IRTF.objects.all())
-        #choices = build_choices(IRTF.objects.filter(meeting_scheduled=True))
+        #choices = build_choices(Group.objects.filter(type='wg', state='active')
         #irtf_form = GroupSelectForm(choices=choices)
         
     else:
         # these forms aren't used for non-secretariat
-        groups = get_my_groups(request)
+        groups = get_my_groups(request.user)
         choices = build_choices(groups)
         group_form = GroupSelectForm(choices=choices)
         irtf_form = None
@@ -760,87 +620,26 @@ def select_interim(request):
         #'irtf_form': irtf_form,
         RequestContext(request,{}), 
     )
-    
-@sec_only
-def upload_presentation(request,id,slide_id):
-    '''
-    Handles the upload process for the converted slide files.
-      
-    The files are in PPT/PPTX format. Manual downlaod and conversion to PDF is performed. 
-    
-    **Templates:**
 
-    * ``proceedings/upload_presentation.html``
-
-    **Template Variables:**
-
-    * meeting,upload_presentation,slide
-
-    '''
-    meeting = get_object_or_404(Meeting, meeting_num=id)
-    slide = get_object_or_404(Slide,id=slide_id)
-
-    if request.method == 'POST':
-        upload_presentation  = UploadPresentationForm(request.POST,request.FILES)
-        if upload_presentation.is_valid():
-            file = request.FILES[request.FILES.keys()[0]]
-            base, extension = os.path.splitext(file.name)
-            file_name = '%s-%s%s' % (slide.group_name, slide.slide_num, extension)
-            handle_presentation_upload(file,file_name,meeting)
-            slide.slide_type_id = Slide.REVERSE_SLIDE_TYPES[extension.lstrip('.').lower()]
-            slide.slide_name = upload_presentation.cleaned_data['slide_name']
-            slide.in_q = 0
-            slide.save()
-
-            messages.success(request,'Presentation file uploaded sucessfully')
-            url = reverse('proceedings_convert', kwargs={'id':id})
-            return HttpResponseRedirect(url)
-
-    else:
-         upload_presentation = UploadPresentationForm(initial={'slide_name': slide.slide_name})
-
-    return render_to_response('proceedings/upload_presentation.html', {
-               'meeting': meeting,
-               'upload_presentation': upload_presentation,
-               'slide': slide},
-       RequestContext(request, {}),
-    )
-"""
-#@check_permissions
-def upload_unified(request, meeting_id, group_id):
+@check_permissions
+def upload_unified(request, meeting_id, acronym):
     '''
     This view is the main view for uploading / re-ordering material for regular and interim
     meetings.
     '''
     
     meeting = get_object_or_404(Meeting, id=meeting_id)
-    group = get_object_or_404(Group, id=group_id)
+    group = get_object_or_404(Group, acronym=acronym)
     
     # even though documents can be associated to a specific session, for now we are going to 
     # associate to the first session and keep the UI the same
     session = Session.objects.filter(meeting=meeting,group=group)[0]
     
-    # TODO are wgproceedingsactivities 
-    #activities = WgProceedingsActivity.objects.filter(meeting_num=meeting_id,group_acronym_id=group_id)
-    
-    # Initialize -------------------------------
-    #irtf = 0
-    #interim = 0
-    #slide_class = Slide
-
-    # this identification should happen at another layer, but all this will go away 
-    # with new db schema
-    #if 0 < int(group_id) < 100:
-    #    irtf = 1
-    #if is_interim_meeting(meeting_id):
-    #    interim = 1
-    #    slide_class = InterimSlide
-    
     if request.method == 'POST':
         button_text = request.POST.get('submit','')
         if button_text == 'Back':
             if meeting.type.slug == 'interim':
-                url = reverse('proceedings_interim', kwargs={'group_id':group.pk})
+                url = reverse('proceedings_interim', kwargs={'acronym':group.acronym})
             else:
                 url = reverse('proceedings_select', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
@@ -858,7 +657,7 @@ def upload_unified(request, meeting_id, group_id):
                 order_num = get_next_order_num(session)
                 slide_num = get_next_slide_num(session)
                 filename = 'slides-%s-%s-%s' % (meeting.number, group.acronym, slide_num)
-                obj = Document.objects.create(type=material_type,
+                doc = Document.objects.create(type=material_type,
                                               group=group,
                                               name=filename,
                                               order=order_num,
@@ -868,7 +667,7 @@ def upload_unified(request, meeting_id, group_id):
             else:
                 filename = '%s-%s-%s' % (material_type.slug,meeting.number,group.acronym)
                 # don't create new doc record if one arleady exists
-                obj, created = Document.objects.get_or_create(
+                doc, created = Document.objects.get_or_create(
                     type=material_type,
                     group=group,
                     name=filename)
@@ -876,24 +675,30 @@ def upload_unified(request, meeting_id, group_id):
             disk_filename = filename + file_ext
             handle_upload_file(file,disk_filename,meeting,material_type.slug)
                 
-            # create DocEvent uploaded_document
+            # set Doc state
+            state = State.objects.get(type=doc.type,slug='active')
+            doc.set_state(state)
             
             # create session relationship
-            session.materials.add(obj)
+            session.materials.add(doc)
             
-            # generate proceedings
+            # create DocEvent uploaded
+            DocEvent.objects.create(doc=doc,
+                                    by=request.user.get_profile(),
+                                    type='uploaded')
             
-            #create_proceedings(meeting)
+            # TODO create_proceedings(meeting)
             messages.success(request,'File uploaded sucessfully')
     
     else:
-        form = UnifiedUploadForm(initial={'meeting_id':meeting.pk,'group_id':group.pk,'material_type':'slides'})
+        form = UnifiedUploadForm(initial={'meeting_id':meeting.pk,'acronym':group.acronym,'material_type':'slides'})
     
-    slides = session.materials.filter(type='slides').order_by('order')
-    minutes = session.materials.filter(type='minutes')
-    minutes = minutes[0] if minutes else None
-    agenda = session.materials.filter(type='agenda')
-    agenda = agenda[0] if agenda else None
+    agenda,minutes,slides = get_material(session)
+    
+    # gather DocEvents
+    # include deleted material to catch deleted doc events
+    docs = session.materials.all()
+    docevents = DocEvent.objects.filter(doc__in=docs)
     
     if os.path.exists(get_proceedings_path(meeting,group)):
         proceedings_url = get_proceedings_url(meeting, group)
@@ -901,7 +706,7 @@ def upload_unified(request, meeting_id, group_id):
         proceedings_url = ''
     
     return render_to_response('proceedings/upload_unified.html', {
-        #'activities': activities,
+        'docevents': docevents,
         'meeting': meeting,
         'group': group,
         'minutes': minutes,
@@ -912,33 +717,6 @@ def upload_unified(request, meeting_id, group_id):
         RequestContext(request, {}),
     )
 
-def view(request, id):
-    '''
-    View Meeting information.
-
-    **Templates:**
-
-    * ``proceedings/view.html``
-
-    **Template Variables:**
-
-    * meeting , proceeding
-
-    '''
-    meeting = get_object_or_404(Meeting, number=id)
-    
-    if not has_role(request.user,'Secretariat'):
-        url = reverse('proceedings_select', kwargs={'meeting_id':id})
-        return HttpResponseRedirect(url)
-    
-    # set legacy values
-    meeting.frozen = 0
-    meeting.end_date = meeting.date + datetime.timedelta(days=6)
-    
-    return render_to_response('proceedings/view.html', {
-        'meeting': meeting},
-        RequestContext(request, {}),
-    )
 
 
 

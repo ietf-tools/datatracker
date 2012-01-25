@@ -7,19 +7,18 @@
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }}
-  {% if interim %}
-    &raquo; <a href="{% url proceedings_main %}">Proceedings</a>
+  {% ifequal meeting.type "interim" %}
+    &raquo; <a href="{% url proceedings %}">Proceedings</a>
     &raquo; <a href="{% url proceedings_select_interim %}">Interim Select Group</a>
-    &raquo; <a href="{% url proceedings_interim group_id=group.pk %}">{{ group.acronym }}</a>
-    &raquo; <a href="{% url proceedings_upload_unified meeting_id=meeting.pk group_id=group.pk %}">{{ meeting }}</a>
+    &raquo; <a href="{% url proceedings_interim acronym=group.acronym %}">{{ group.acronym }}</a>
+    &raquo; <a href="{% url proceedings_upload_unified meeting_id=meeting.pk acronym=group.acronym %}">{{ meeting }}</a>
     &raquo; {{ slide.slide_name }}
   {% else %}
-    &raquo; <a href="{% url proceedings_main %}">Proceedings</a>
-    &raquo; <a href="{% url proceedings_view id=meeting.pk %}">{{ meeting }}</a>
+    &raquo; <a href="{% url proceedings %}">Proceedings</a>
     &raquo; <a href="{% url proceedings_select meeting_id=meeting.pk %}">Select</a>
-    &raquo; <a href="{% url proceedings_upload_unified meeting_id=meeting.pk group_id=group.pk %}">{{ group.acronym }}</a>
+    &raquo; <a href="{% url proceedings_upload_unified meeting_id=meeting.pk acronym=group.acronym %}">{{ group.acronym }}</a>
     &raquo; {{ slide.slide_name }}
-  {% endif %}
+  {% endifequal %}
 
 {% endblock %}
 

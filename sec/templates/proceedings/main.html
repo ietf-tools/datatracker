@@ -25,7 +25,7 @@
         {% for meeting in meetings %}
           <tr class = "{% cycle 'row1' 'row2' %}{% if meeting.frozen %} frozen{% endif %}">
             <td>
-              <a href="{% url proceedings_view id=meeting.number %}">{{ meeting.number }}</a>
+              <a href="{% url proceedings_select meeting_id=meeting.number %}">{{ meeting.number }}</a>
               {% ifequal meeting.frozen 1 %}&nbsp;&nbsp;[Frozen]{% endifequal %}	
             </td>
           </tr>
@@ -52,7 +52,7 @@
         {% for meeting in interim_meetings %}
 
               <tr class = "{% cycle 'row1' 'row2' %}">
-                <td><a href="{% url proceedings_upload_unified meeting_id=meeting.pk group_id=meeting.group_acronym_id %}">{{ meeting.group_acronym|ljust:"8" }} - {{ meeting.start_date }}</a></td>
+                <td><a href="{% url proceedings_upload_unified meeting_id=meeting.pk acronym=meeting.group.acronym %}">{{ meeting.group.acronym|ljust:"8" }} - {{ meeting.date }}</a></td>
               </tr>
         {% endfor %}
       </tbody>

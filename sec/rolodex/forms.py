@@ -1,7 +1,7 @@
 from django import forms
 from django.core.validators import email_re
 
-from redesign.person.models import Email, Person
+from ietf.person.models import Email, Person
 
 import re
 

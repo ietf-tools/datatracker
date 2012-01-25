@@ -11,7 +11,7 @@ from django.template import RequestContext
 from django.utils import simplejson
 
 from sec.utils.meeting import CURRENT_MEETING
-from redesign.group.models import GroupEvent, GroupURL, Role
+from ietf.group.models import GroupEvent, GroupURL, Role
 from ietf.wginfo.views import fill_in_charter_info
 
 from forms import *

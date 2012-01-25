@@ -11,12 +11,11 @@
   {% ifequal meeting.type "interim" %}
     &raquo; <a href="{% url proceeding %}">Proceedings</a>
     &raquo; <a href="{% url proceedings_select_interim %}">Interim Select Group</a>
-    &raquo; <a href="{% url proceedings_interim group_id=group.pk %}">{{ group.acronym }}</a>
+    &raquo; <a href="{% url proceedings_interim acronym=group.acronym%}">{{ group.acronym }}</a>
     &raquo; {{ meeting }}
   {% else %}
     &raquo; <a href="{% url proceedings %}">Proceedings</a>
-    &raquo; <a href="{% url proceedings_view id=meeting.pk %}">{{ meeting }}</a>
-    &raquo; <a href="{% url proceedings_select meeting_id=meeting.pk %}">Select</a>
+    &raquo; <a href="{% url proceedings_select meeting_id=meeting.pk %}">{{ meeting }}</a>
     &raquo; {{ group.acronym }}
   {% endifequal %}
 
@@ -54,7 +53,7 @@
              {% if minutes %}
              <td><a href="{{ minutes.url }}" target="_blank">Minutes</td>
              <td>{{ minutes.name }}</td>
-             <td><a href="{% url proceedings_delete_material meeting_id=meeting.number group_id=group.pk type='minute' object_id=minutes.pk %}">Delete</a></td>
+             <td><a href="{% url proceedings_delete_material meeting_id=meeting.pk acronym=group.acronym name=minutes.name %}">Delete</a></td>
              {% else %}
              <td>Minutes</td>
              <td>(not uploaded)</td>
@@ -65,7 +64,7 @@
              {% if agenda %}
              <td><a href="{{ agenda.url }}" target="_blank">Agenda</a></td>
              <td>{{ agenda.name }}</td>
-             <td><a href="{% url proceedings_delete_material meeting_id=meeting.pk group_id=group.pk type='agenda' object_id=agenda.pk %}">Delete</a></td>
+             <td><a href="{% url proceedings_delete_material meeting_id=meeting.pk acronym=group.acronym name=agenda.name %}">Delete</a></td>
              {% else %}
              <td>Agenda</td>
              <td>(not uploaded)</td>
@@ -94,10 +93,10 @@
       </div> <!-- inline-group -->
 </div> <!-- module -->
 
-{% if activities %}
+{% if docevents %}
   <br>
   <div class="module interim-container">
-    {% include "includes/activities.html" %}
+    {% include "includes/docevents.html" %}
   </div>
 {% endif %}
 

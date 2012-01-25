@@ -60,25 +60,30 @@ class BaseMeetingTimeFormSet(forms.models.BaseInlineFormSet):
 # Forms
 #----------------------------------------------------------
 
-class AddMeetingForm(forms.ModelForm):
+class MeetingModelForm(forms.ModelForm):
     class Meta:
         model = Meeting
-"""        
-    def clean_meeting_num(self):
-        meeting_num = self.cleaned_data['meeting_num']
-        try:
-            m = Meeting.objects.get(meeting_num=meeting_num)
-        except Meeting.DoesNotExist:
-            return meeting_num
-        raise forms.ValidationError('Meeting number %s is already in use.' % meeting_num)
+        exclude = ('type')
+        
+    def clean_number(self):
+        number = self.cleaned_data['number']
+        # this is now handled by model unique=True
+        #if not self.instance.pk or 'number' in self.changed_data:
+        #    if Meeting.objects.filter(number=number):
+        #        raise forms.ValidationError('Meeting number %s is already in use.' % number)
+        if not number.isdigit():
+            raise forms.ValidationError('Meeting number must be an integer')
+        return number
+        
+    def save(self, force_insert=False, force_update=False, commit=True):
+        meeting = super(MeetingModelForm, self).save(commit=False)
+        meeting.type_id = 'ietf'
+        if commit:
+            meeting.save()
+        return meeting
         
 class AddTutorialForm(forms.ModelForm):
-    class Meta:
-        model = Acronym
-"""        
-class MeetingForm(forms.ModelForm):
-    class Meta:
-        model = Meeting
+    pass
         
 class MeetingRoomForm(forms.ModelForm):
     class Meta:
@@ -102,7 +107,6 @@ class MeetingTimeForm(forms.ModelForm):
                 raise forms.ValidationError('Time must be in the from NNNN-NNNN')
         return time_desc
         
-"""        
 class ExtraSessionForm(forms.Form):
     note = forms.CharField(max_length=255, required=False, label='Special Note from Scheduler')
     no_notify = forms.BooleanField(required=False, label="Do NOT notify this action")
@@ -116,21 +120,20 @@ class NewSessionForm(forms.Form):
     pass to init like GroupSelectForm
     '''
     time = forms.ChoiceField(label='Day and Time')
-    room = forms.ChoiceField()
+    room = forms.ModelChoiceField(queryset=Room.objects)
     combine = forms.BooleanField(required=False, label='Combine with next session')
     
     # setup the room and time options based on meeting passed in
     def __init__(self,*args,**kwargs):
         meeting = kwargs.pop('meeting')
-        self.meeting = meeting # Meeting.objects.get(meeting_num=meeting)
+        self.meeting = meeting
         super(NewSessionForm, self).__init__(*args,**kwargs)
-        room_choices = Room.objects.filter(meeting=meeting).values_list('id','room_name').order_by('room_name')
         all_times = TimeSlot.objects.filter(meeting=meeting).order_by('id')
         time_tuples = [(str(x.id), str(x)) for x in all_times]
         #time_choices = sorted(time_tuples, key=lambda time_tuples: time_tuples[1])
         self.fields['time'].choices = time_tuples
-        self.fields['room'].choices = room_choices
-
+        self.fields['room'].queryset = Room.objects.filter(meeting=meeting).order_by('name')
+        
     def clean(self):
         super(NewSessionForm, self).clean()
         if any(self.errors):
@@ -158,7 +161,7 @@ class NewSessionForm(forms.Form):
         
         '''
         return cleaned_data
-     
+"""
 class NonSessionForm(forms.ModelForm):
     class Meta:
         model = NonSession
@@ -181,3 +184,7 @@ class TimeSlotForm(forms.Form):
     day = forms.ChoiceField(choices=DAYS_CHOICES)
     time = forms.IntegerField()
     
+class TimeSlotModelForm(forms.ModelForm):
+    class Meta:
+        model = TimeSlot
+        exclude = ('location','show_location','session','modified')
