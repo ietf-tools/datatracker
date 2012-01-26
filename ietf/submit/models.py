@@ -26,7 +26,7 @@ class IdSubmissionDetail(models.Model):
     last_updated_time = models.CharField(null=True, blank=True, max_length=25)
     id_document_name = models.CharField(null=True, blank=True, max_length=255)
     group_acronym = models.ForeignKey(IETFWG, null=True, blank=True)
-    filename = models.CharField(null=True, blank=True, max_length=255)
+    filename = models.CharField(null=True, blank=True, max_length=255, db_index=True)
     creation_date = models.DateField(null=True, blank=True)
     submission_date = models.DateField(null=True, blank=True)
     remote_ip = models.CharField(null=True, blank=True, max_length=100)
