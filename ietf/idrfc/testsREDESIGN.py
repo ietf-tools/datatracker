@@ -257,7 +257,6 @@ class EditInfoTestCase(django.test.TestCase):
             time=datetime.datetime.now(),
             type_id="draft",
             title="Testing adding a draft",
-            stream_id="ietf",
             group=Group.objects.get(acronym="mars"),
             abstract="Test test test.",
             rev="01",
@@ -297,7 +296,7 @@ class EditInfoTestCase(django.test.TestCase):
 
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level_id),
-                                  stream=draft.stream_id,
+                                  stream="ietf",
                                   via_rfc_editor="1",
                                   ad=ad.pk,
                                   create_in_state=State.objects.get(type="draft-iesg", slug="watching").pk,

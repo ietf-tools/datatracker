@@ -141,6 +141,8 @@ class EditStreamInfoTestCase(django.test.TestCase):
 
     def test_set_stream(self):
         draft = make_test_data()
+        draft.stream = None
+        draft.save()
 
         url = urlreverse('edit_stream', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)

@@ -390,7 +390,9 @@ def update_stream(request, doc, comment, person, to_stream, extra_notify=[]):
         doc.save()
 
         e = DocEvent(type="changed_stream", time=doc.time, by=person, doc=doc)
-        e.desc = u"Stream changed to <b>%s</b> from %s" % (to_stream.name, from_stream.name)
+        e.desc = u"Stream changed to <b>%s</b>" % to_stream.name
+        if from_stream:
+            e.desc += u"from %s" % from_stream.name
         e.save()
 
         receivers = get_notification_receivers(doc, extra_notify)

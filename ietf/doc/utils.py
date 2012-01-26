@@ -8,10 +8,8 @@ def get_state_types(doc):
     
     res.append(doc.type_id)
 
-    #if doc.type_id in ("agenda", "minutes", "slides", "liai-att"):
-    #    res.append(doc.type_id)
     if doc.type_id == "draft":
-        if doc.stream_id != "legacy":
+        if doc.stream_id and doc.stream_id != "legacy":
             res.append("draft-stream-%s" % doc.stream_id)
 
         res.append("draft-iesg")

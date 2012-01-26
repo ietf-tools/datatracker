@@ -83,8 +83,12 @@ def is_authorized_in_draft_streamREDESIGN(user, draft):
     if is_secretariat(user):
         return True
 
-    # must be a chair or delegate of the stream group (or draft group)
     from ietf.doc.models import Document
+
+    if not super(Document, draft).stream:
+        return False
+
+    # must be a chair or delegate of the stream group (or draft group)
     group_req = Q(group__acronym=super(Document, draft).stream.slug)
     if draft.group and super(Document, draft).stream.slug == "ietf":
         group_req |= Q(group=draft.group)
@@ -118,7 +122,7 @@ def can_edit_stream(user, draft):
     return is_secretariat(user)
 
 def can_adopt(user, draft):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES and (not draft.stream or draft.stream_id == "ietf") and draft.group.type_id == "individ":
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES and (not draft.stream_id or draft.stream_id == "ietf") and draft.group.type_id == "individ":
         person = get_person_for_user(user)
         if not person:
             return False

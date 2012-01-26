@@ -199,6 +199,9 @@ class DraftTagsStateForm(StreamDraftForm):
 
     def get_next_states(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            if not self.draft.stream_id:
+                return []
+
             from ietf.doc.models import State
             state_type = "draft-stream-%s" % self.draft.stream_id
             s = self.draft.get_state(state_type)
@@ -226,6 +229,9 @@ class DraftTagsStateForm(StreamDraftForm):
 
     def get_states(self):
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            if not self.draft.stream_id:
+                return []
+
             from ietf.doc.models import State
             states = State.objects.filter(type="draft-stream-%s" % self.draft.stream_id)
             if self.draft.stream_id == "ietf" and self.draft.group:
