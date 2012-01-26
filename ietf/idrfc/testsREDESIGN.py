@@ -257,6 +257,7 @@ class EditInfoTestCase(django.test.TestCase):
             time=datetime.datetime.now(),
             type_id="draft",
             title="Testing adding a draft",
+            stream=None,
             group=Group.objects.get(acronym="mars"),
             abstract="Test test test.",
             rev="01",
@@ -312,9 +313,9 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.ad, ad)
         self.assertEquals(draft.note, "This is a note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
-        self.assertEquals(draft.docevent_set.count(), events_before + 3)
+        self.assertEquals(draft.docevent_set.count(), events_before + 4)
         events = list(draft.docevent_set.order_by('time', 'id'))
-        self.assertEquals(events[-3].type, "started_iesg_process")
+        self.assertEquals(events[-4].type, "started_iesg_process")
         self.assertEquals(len(outbox), mailbox_before)
 
 
