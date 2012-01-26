@@ -79,7 +79,7 @@ def create_submission_hash(sender, instance, **kwargs):
 models.signals.pre_save.connect(create_submission_hash, sender=IdSubmissionDetail)
 
 class IdApprovedDetail(models.Model):
-    filename = models.CharField(null=True, blank=True, max_length=255)
+    filename = models.CharField(null=True, blank=True, max_length=255, db_index=True)
     approved_status = models.IntegerField(null=True, blank=True)
     approved_person_tag = models.IntegerField(null=True, blank=True)
     approved_date = models.DateField(null=True, blank=True)
