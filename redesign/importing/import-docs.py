@@ -788,6 +788,8 @@ for index, o in enumerate(all_drafts.iterator()):
     d.title = o.title
     d.group = Group.objects.get(acronym=o.group.acronym)
 
+    d.states = []
+
     d.set_state(state_mapping[o.status.status])
 
     # try guess stream to have a default for old submissions
@@ -805,21 +807,38 @@ for index, o in enumerate(all_drafts.iterator()):
     if sid and sid[0].stream:
         d.stream = stream_mapping[sid[0].stream.name]
 
-    d.unset_state("draft-iesg")
     try:
         s = StateOld.objects.get(stateobjectrelation__content_type=old_internetdraft_content_type_id,
                                  stateobjectrelation__content_id=o.pk)
     except StateOld.DoesNotExist:
         s = None
 
-    if s and not (s.name == "WG Document" and d.group.type_id == "individ"):
+    if s:
         try:
             # there may be a mismatch between the stream type and the
             # state because of a bug in the ietfworkflows code so try
             # first without type constraint
-            d.set_state(State.objects.get(name=s.name))
+            new_s = State.objects.get(name=s.name)
         except State.MultipleObjectsReturned:
-            d.set_state(State.objects.get(type="draft-stream-%s" % d.stream_id, name=s.name))
+            new_s = State.objects.get(type="draft-stream-%s" % d.stream_id, name=s.name)
+
+        # fix some bugs in the old data
+        if s.name == "WG Document" and d.group.type_id == "individ":
+            skip = True
+
+            if d.name.startswith("draft-ietf"):
+                if d.name not in ("draft-ietf-proto-wgchair-tracker-ext", "draft-ietf-proto-iab-irtf-tracker-ext", "draft-ietf-sipping-nat-scenarios", "draft-ietf-sipping-sip-offeranswer"):
+                    skip = False
+
+                    group_acronym = d.name.split("-")[2]
+                    if group_acronym == "pppext":
+                        group_acronym = "trill"
+
+                    d.group = Group.objects.get(acronym=group_acronym)
+
+        if not skip:
+            d.set_state(new_s)
+
 
         # there was a bug in ietfworkflows so the group wasn't set on adopted documents
         if s.name in ("Call for Adoption by WG Issued", "Adopted by a WG") and d.group.type_id == "individ" and o.replaced_by and o.replaced_by.group:
