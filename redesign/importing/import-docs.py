@@ -823,6 +823,7 @@ for index, o in enumerate(all_drafts.iterator()):
             new_s = State.objects.get(type="draft-stream-%s" % d.stream_id, name=s.name)
 
         # fix some bugs in the old data
+        skip = False
         if s.name == "WG Document" and d.group.type_id == "individ":
             skip = True
 
