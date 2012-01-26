@@ -2,6 +2,7 @@ from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.conf import settings
+from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.idtracker.models import InternetDraft
 from ietf.ietfworkflows.models import Stream, StreamDelegate
@@ -72,6 +73,9 @@ def _edit_draft_stream(request, draft, form_class=DraftTagsStateForm):
         form.request = request
         if form.is_valid():
             form.save()
+            if form_class == NoWorkflowStateForm and settings.USE_DB_REDESIGN_PROXY_CLASSES:
+                return HttpResponseRedirect(urlreverse('ietf.ietfworkflows.views.edit_state', kwargs={ 'name': draft.filename } ))
+
             return HttpResponseRedirect('.')
     else:
         form = form_class(user=user, draft=draft)
