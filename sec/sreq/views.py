@@ -49,7 +49,8 @@ def get_initial_session(sessions):
     group = sessions[0].group
     conflicts = group.constraint_source_set.filter(meeting=meeting)
     initial = {}
-    initial['num_session'] = sessions.count() if sessions.count() != 3 else 2
+    # even if there are three sessions requested, the old form has 2 in this field
+    initial['num_session'] = sessions.count() if sessions.count() <= 2 else 2
     
     # accessing these foreign key fields throw errors if they are unset so we
     # need to catch these
@@ -177,8 +178,8 @@ def send_notification(group,meeting,login,session,action):
         to_email = get_ad_email_list(group)
         cc_list = get_chair_email_list(group)
         cc_list.append(SESSION_REQUEST_EMAIL)
-        if login.email_address().address not in cc_list:
-            cc_list.append(login.email_address().address)
+        if login.role_email(role_name='wg').address not in cc_list:
+            cc_list.append(login.role_email(role_name='wg').address)
         subject = '%s - Request for meeting session approval for IETF %s' % (group.acronym, meeting.number)
         template = 'sreq/session_approval_notification.txt'
         status_text = 'the %s Directors for approval' % group.parent
@@ -540,12 +541,12 @@ def new(request, acronym):
     # pre-populated with data from last meeeting's session request
     elif request.method == 'GET' and request.GET.has_key('previous'):
         previous_meeting = Meeting.objects.get(number=str(int(meeting.number) - 1))
-        previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).order_by('id')
+        previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).exclude(status__in=('notmeet','canceled')).order_by('id')
         if not previous_sessions:
-            messages.warning(request, 'No session scheduled for this group at meeting: %s' % previous_meeting.number)
+            messages.warning(request, 'This group did not meet at %s' % previous_meeting)
             redirect_url = reverse('sessions_new', kwargs={'acronym':acronym})
             return HttpResponseRedirect(redirect_url)
-            
+
         initial = get_initial_session(previous_sessions)
         form = SessionForm(initial=initial)
     

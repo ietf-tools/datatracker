@@ -26,17 +26,17 @@ import datetime
 def add_legacy_fields(group):
     '''
     This function takes a Group object as input and adds legacy attributes:
-    start_date,proposed_date,concluded_date,dormant_date,meeting_scheduled
+    start_date,proposed_date,concluded_date,meeting_scheduled
     '''
-    for event in group.groupevent_set.all():
-        if event.type == 'started':
+    # it's possible there could be multiple records of a certain type in which case
+    # we just return the latest record
+    for event in group.groupevent_set.all().order_by('time'):
+        if event.type == 'changed_state' and event.desc.startswith('Started'):
             group.start_date = event.time
-        if event.type == 'concluded':
+        if event.type == 'changed_state' and event.desc.startswith('Concluded'):
             group.concluded_date = event.time
-        if event.type == 'proposed':
+        if event.type == 'changed_state' and event.desc.startswith('Proposed'):
             group.proposed_date = event.time
-        if event.type == 'dormant':
-            group.dormant_date = event.time
     
     if group.session_set.filter(meeting__number=CURRENT_MEETING.number):
         group.meeting_scheduled = 'YES'
@@ -70,7 +70,7 @@ def get_ads(request):
 
 def add(request):
     ''' 
-    Add a new IETF Group..
+    Add a new IETF or IRTF Group
 
     **Templates:**
 
@@ -81,11 +81,11 @@ def add(request):
     * form, awp_formset
 
     '''
-    AWPFormSet = inlineformset_factory(Group, GroupURL, form=AWPForm, max_num=2)
+    AWPFormSet = inlineformset_factory(Group, GroupURL, form=AWPForm, max_num=2, can_delete=False)
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('groups_search')
+            url = reverse('groups')
             return HttpResponseRedirect(url)
 
         form = GroupModelForm(request.POST)
@@ -97,23 +97,25 @@ def add(request):
                 awp.group = group
                 awp.save()
 
-            # create GroupEvent
+            # create GroupEvent(s)
+            # always create started event
+            GroupEvent.objects.create(group=group,
+                                      type='changed_state',
+                                      by=request.user.get_profile(),
+                                      desc='Started group')
+                                          
             if group.state.slug == 'proposed':
                 GroupEvent.objects.create(group=group,
-                                          type='proposed',
-                                          by=request.user.get_profile())
-            else:
-                GroupEvent.objects.create(group=group,
-                                          type='started',
-                                          by=request.user.get_profile())
+                                          type='changed_state',
+                                          by=request.user.get_profile(),
+                                          desc='Proposed group')
             
             messages.success(request, 'The Group was created successfully!')
-            url = reverse('groups_view', kwargs={'name':group.acronym})
+            url = reverse('groups_view', kwargs={'acronym':group.acronym})
             return HttpResponseRedirect(url)
             
     else:
-        # display initial form, default to 'PWG' type
-        form = GroupModelForm()
+        form = GroupModelForm(initial={'state':'active','type':'wg'})
         awp_formset = AWPFormSet(prefix='awp')
 
     return render_to_response('groups/add.html', {
@@ -122,7 +124,7 @@ def add(request):
         RequestContext(request, {}),
     )
 
-def delete(request, id):
+def delete_role(request, acronym, id):
     """ 
     Handle deleting roles for groups (chair, editor, advisor, secretary)
 
@@ -133,24 +135,14 @@ def delete(request, id):
     Redirects to people page on success.
 
     """
-
-    group = get_object_or_404(IETFWG, group_acronym=id)
-
-    if request.method == 'POST':
-        # delete a role
-        if request.POST.get('submit', '') == "Delete":
-            table = request.POST.get('table', '')
-            tag = request.POST.get('tag', '')
-            obj = get_model('core',table)
-            instance = obj.objects.get(person=tag,group_acronym=group.group_acronym)
-            instance.delete()
-            messages.success(request, 'The entry was deleted successfully')
-
-    url = reverse('sec.groups.views.people', kwargs={'id':id})
+    group = get_object_or_404(Group, acronym=acronym)
+    role = get_object_or_404(Role, id=id)
+    role.delete()
+    messages.success(request, 'The entry was deleted successfully')
+    url = reverse('groups_people', kwargs={'acronym':acronym})
     return HttpResponseRedirect(url)
 
-
-def description(request, name):
+def description(request, acronym):
     """ 
     Edit IETF Group description
 
@@ -164,27 +156,24 @@ def description(request, name):
 
     """
 
-    group = get_object_or_404(Group, acronym=name)
+    group = get_object_or_404(Group, acronym=acronym)
     # TODO: does this need to use group.charter.name ???
     filename = os.path.join(settings.GROUP_DESCRIPTION_DIR,group.acronym + '.desc.txt')
 
     if request.method == 'POST':
         form = DescriptionForm(request.POST) 
         if request.POST['submit'] == "Cancel":
-            url = reverse('groups_view', kwargs={'name':name})
+            url = reverse('groups_view', kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
      
         if form.is_valid():
             description = form.cleaned_data['description'] 
-            try:
-                f = open(filename,'w')
-                f.write(description)
-                f.close()
-            except IOError, e:
-                return render_to_response('groups/error.html', { 'error': e},) 
+            f = open(filename,'w')
+            f.write(description)
+            f.close()
 
             messages.success(request, 'The Group Description was changed successfully')
-            url = reverse('groups_view', kwargs={'name':name})
+            url = reverse('groups_view', kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
     else:
         if os.path.isfile(filename):
@@ -203,9 +192,9 @@ def description(request, name):
         RequestContext(request, {}),
     )
 
-def edit(request, name):
+def edit(request, acronym):
     """ 
-    Edit IETF Group details
+    Edit Group details
 
     **Templates:**
 
@@ -213,34 +202,54 @@ def edit(request, name):
 
     **Template Variables:**
 
-    * form, awp_formset
+    * group, form, awp_formset
 
     """
 
-    group = get_object_or_404(Group, acronym=name)
+    group = get_object_or_404(Group, acronym=acronym)
     AWPFormSet = inlineformset_factory(Group, GroupURL, form=AWPForm, max_num=2)
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('groups_view', kwargs={'name':name})
+            url = reverse('groups_view', kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
 
         form = GroupModelForm(request.POST, instance=group)
         awp_formset = AWPFormSet(request.POST, instance=group)
         if form.is_valid() and awp_formset.is_valid():
             
-            if form.changed_data:    
-                # save group in history
+            if form.changed_data:
+                state = form.cleaned_data['state']
+                
+                # TODO save group in history (see save_doucment_history)
                 
                 form.save()
                 awp_formset.save()
                 
-                # create GroupEvent
+                # create appropriate GroupEvent
+                if 'state' in form.changed_data:
+                    if state.slug == 'proposed':
+                        GroupEvent.objects.create(group=group,
+                                                  type='changed_state',
+                                                  by=request.user.get_profile(),
+                                                  desc='Proposed group')
+                    elif state.slug == 'concluded':
+                        GroupEvent.objects.create(group=group,
+                                                  type='changed_state',
+                                                  by=request.user.get_profile(),
+                                                  desc='Concluded group')
+                    form.changed_data.remove('state')
+                    
+                # if anything else was changed
+                if form.changed_data:
+                    GroupEvent.objects.create(group=group,
+                                              type='info_changed',
+                                              by=request.user.get_profile())
                 
                 messages.success(request, 'The Group was changed successfully')
             
-            url = reverse('groups_view', kwargs={'name':name})
+            url = reverse('groups_view', kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
             
     else:
@@ -254,7 +263,7 @@ def edit(request, name):
         RequestContext(request, {}),
     )
 
-def edit_gm(request, name):
+def edit_gm(request, acronym):
     """ 
     Edit IETF Group Goal and Milestone details
 
@@ -268,24 +277,23 @@ def edit_gm(request, name):
 
     """
 
-    group = get_object_or_404(Group, acronym=name)
+    group = get_object_or_404(Group, acronym=acronym)
     GMFormset = inlineformset_factory(Group, GroupMilestone, form=GroupMilestoneForm, can_delete=True, extra=5)
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('sec.groups.views.view', kwargs={'id':id})
+            url = reverse('groups_view', kwargs={'name':name})
             return HttpResponseRedirect(url)
 
         formset = GMFormset(request.POST, instance=group, prefix='goalmilestone')
         if formset.is_valid():
             formset.save()
             messages.success(request, 'The Goals Milestones were changed successfully')
-            url = reverse('groups_view', kwargs={'name':name})
+            url = reverse('groups_view', kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
     else:
         formset = GMFormset(instance=group, prefix='goalmilestone')
-        pass
         
     return render_to_response('groups/edit_gm.html', {
         'group': group,
@@ -293,30 +301,9 @@ def edit_gm(request, name):
         RequestContext(request, {}),
     )
 
-def grouplist(request, id):
+def people(request, acronym):
     """ 
-    List IETF Groups, id=group acronym 
-
-    **Templates:**
-
-    * ``groups/list.html``
-
-    **Template Variables:**
-
-    * groups 
-
-    """
-
-    groups = IETFWG.objects.filter(group_acronym__acronym_id=id)
-
-    return render_to_response('groups/list.html', {
-        'groups': groups},
-        RequestContext(request, {}),
-    )
-
-def people(request, name):
-    """ 
-    Edit People associated with Groups, Chairs
+    Edit Group Roles (Chairs, Secretary, etc)
 
     **Templates:**
 
@@ -324,27 +311,33 @@ def people(request, name):
 
     **Template Variables:**
 
-    * driver, form, group
+    * form, group
 
     """
 
-    group = get_object_or_404(Group, acronym=name)
-    
-    RoleFormSet = inlineformset_factory(Group, Role, form=RoleForm, extra=2)
+    group = get_object_or_404(Group, acronym=acronym)
     
     if request.method == 'POST':
-        formset = RoleFormSet(request.POST,instance=group)
-        if formset.is_valid():
-            formset.save()
+        # we need to pass group for form validation
+        form = RoleForm(request.POST,group=group)
+        if form.is_valid():
+            name = form.cleaned_data['name']
+            person = form.cleaned_data['person']
+            email = form.cleaned_data['email']
+            
+            Role.objects.create(name=name,
+                                person=person,
+                                email=email,
+                                group=group)
 
-            messages.success(request, 'New %s added successfully!' % type)
-            url = reverse('groups_people', kwargs={'name':group.acronym})
+            messages.success(request, 'New %s added successfully!' % name)
+            url = reverse('groups_people', kwargs={'acronym':group.acronym})
             return HttpResponseRedirect(url)
     else:
-        formset = RoleFormSet(instance=group)
+        form = RoleForm(initial={'name':'chair'},group=group)
 
     return render_to_response('groups/people.html', {
-        'formset':formset,
+        'form':form,
         'group':group},
         RequestContext(request, {}),
     )
@@ -383,38 +376,39 @@ def search(request):
             if group_name:
                 kwargs['name__istartswith'] = group_name
             if primary_area:
-                kwargs['parent__acronym'] = primary_area
+                kwargs['parent'] = primary_area
             if state:
                 kwargs['state'] = state
             if type:
                 kwargs['type'] = type
             else:
-                kwargs['type__in'] = ['wg','ag','team']
+                #kwargs['type__in'] = ['wg','ag','team']
+                kwargs['type__in'] = ['wg','rg']
+            
             if meeting_scheduled == 'YES':
                 kwargs['session__meeting__number'] = CURRENT_MEETING.number
             # perform query
             if kwargs:
-                if meeting_scheduled == "NO":
-                    qs = Group.objects.filter(**kwargs).exclude(session__meeting__number=CURRENT_MEETING.number)
+                if meeting_scheduled == 'NO':
+                    qs = Group.objects.filter(**kwargs).exclude(session__meeting__number=CURRENT_MEETING.number).distinct()
                 else:
-                    qs = Group.objects.filter(**kwargs)
+                    qs = Group.objects.filter(**kwargs).distinct()
             else:
                 qs = Group.objects.all()
             results = qs.order_by('acronym')
             
             # if there's just one result go straight to view
             if len(results) == 1:
-                url = reverse('groups_view', kwargs={'name':results[0].acronym})
+                url = reverse('groups_view', kwargs={'acronym':results[0].acronym})
                 return HttpResponseRedirect(url)
             
-    # define GET argument to support link from area app 
+    # process GET argument to support link from area app 
     elif 'primary_area' in request.GET:
         area = request.GET.get('primary_area','')
         results = Group.objects.filter(parent__acronym=area,state='active').order_by('name')
         form = SearchForm({'primary_area':area})
     else:
-        # have status default to active
-        form = SearchForm(initial={'state':'active'})
+        form = SearchForm(initial={'state':'active','type':'wg'})
 
     # loop through results and tack on meeting_scheduled because it is no longer an
     # attribute of the meeting model
@@ -427,7 +421,7 @@ def search(request):
         RequestContext(request, {}),
     )
 
-def view(request, name):
+def view(request, acronym):
     """ 
     View IETF Group details
 
@@ -441,9 +435,8 @@ def view(request, name):
 
     """
 
-    group = get_object_or_404(Group, acronym=name)
+    group = get_object_or_404(Group, acronym=acronym)
     
-    # add on legacy fields
     add_legacy_fields(group)
     
     return render_to_response('groups/view.html', {
@@ -451,7 +444,7 @@ def view(request, name):
         RequestContext(request, {}),
     )
 
-def view_gm(request, name):
+def view_gm(request, acronym):
     """ 
     View IETF Group Goals and Milestones details
 
@@ -465,8 +458,7 @@ def view_gm(request, name):
 
     """
 
-    group = get_object_or_404(Group, acronym=name)
-    #assert False, group.groupmilestone_set.all()
+    group = get_object_or_404(Group, acronym=acronym)
 
     return render_to_response('groups/view_gm.html', {
         'group': group},

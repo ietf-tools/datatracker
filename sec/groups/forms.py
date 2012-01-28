@@ -12,48 +12,27 @@ import re
 # ---------------------------------------------
 # Select Choices 
 # ---------------------------------------------
-# Get select options from db.  add blank options to assist search
-# ie. so search will return groups of all types if that's what we want
-
-AREA_CHOICES = list(Group.objects.filter(type='area',state='active').values_list('acronym','name'))
-SEARCH_AREA_CHOICES = AREA_CHOICES[:]
-SEARCH_AREA_CHOICES.insert(0,('',''))
-
-TYPE_CHOICES = list(GroupTypeName.objects.filter(name__in=('WG','AG','Team')).values_list('slug', 'name')) 
-SEARCH_TYPE_CHOICES = TYPE_CHOICES[:]
-SEARCH_TYPE_CHOICES.insert(0,('',''))
-STATE_CHOICES = list(GroupStateName.objects.values_list('slug', 'name'))
-STATE_CHOICES.insert(0,('',''))
-
-# only "Active" status is valid for new groups 
-NEW_STATUS_CHOICES = (('1', 'Active'),) 
-ROLE_CHOICES = (
-    ('WGChair', 'Chair'),
-    ('WGEditor', 'Document Editor'),
-    ('WGTechAdvisor', 'Technical Advisor'),
-    ('WGSecretary', 'Secretary'))
-
 SEARCH_MEETING_CHOICES = (('',''),('NO','NO'),('YES','YES'))
-MEETING_CHOICES = (('NO','NO'),('YES','YES'))
 
 # ---------------------------------------------
 # Functions
 # ---------------------------------------------
-"""
 def get_person(name):
-    '''This function takes a string which is in the name autocomplete format "name - email (tag)" and returns a person object'''
+    '''
+    This function takes a string which is in the name autocomplete format "name - (id)"
+    and returns a person object
+    '''
  
     match = re.search(r'\((\d+)\)', name)
     if not match:
         return None
-    tag = match.group(1)
+    id = match.group(1)
     try:
-       person = PersonOrOrgInfo.objects.get(person_or_org_tag=tag)
-    except (PersonOrOrgInfo.ObjectDoesNoExist, PersonOrOrgInfo.MultipleObjectsReturned):
+       person = Person.objects.get(id=id)
+    except (Person.ObjectDoesNoExist, Person.MultipleObjectsReturned):
         return None
     return person
 
-"""
 # ---------------------------------------------
 # Forms
 # ---------------------------------------------
@@ -64,7 +43,7 @@ class DescriptionForm (forms.Form):
 class GroupMilestoneForm(forms.ModelForm):
     class Meta:
         model = GroupMilestone
-        exclude = ('done', 'last_modified_date')
+        exclude = ('done')
 
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):
@@ -73,75 +52,23 @@ class GroupMilestoneForm(forms.ModelForm):
         self.fields['expected_due_date'].widget.attrs['size'] = 10
         self.fields['done_date'].widget.attrs['size'] = 10
 
-    # override save.  set done=Done if done_date set and not equal to "0000-00-00"
+    # override save.  set done=True if done_date set
     def save(self, force_insert=False, force_update=False, commit=True):
         m = super(GroupMilestoneForm, self).save(commit=False)
         if 'done_date' in self.changed_data:
             if self.cleaned_data.get('done_date',''):
-                m.done = 'Done'
+                m.done = True
             else:
-                m.done = ''
+                m.done = False
         if commit:
             m.save()
         return m
-
-class GroupRoleForm(forms.Form):
-    role_type = forms.CharField(max_length=25,widget=forms.Select(choices=ROLE_CHOICES),required=False)
-    role_name = forms.CharField(max_length=100,label='Name',help_text="To see a list of people type the first name, or last name, or both.")
-    group = forms.CharField(widget=forms.HiddenInput())
-
-    # set css class=name-autocomplete for name field (to provide select list)
-    def __init__(self, *args, **kwargs):
-        super(GroupRoleForm, self).__init__(*args, **kwargs)
-        self.fields['role_name'].widget.attrs['class'] = 'name-autocomplete'
-
-    # check for tag within parenthesis to ensure name was selected from the list 
-    def clean_role_name(self):
-        name = self.cleaned_data.get('role_name', '')
-        m = re.search(r'(\d+)', name)
-        if name and not m:
-            raise forms.ValidationError("You must select an entry from the list!") 
-        return name
-
-    def clean(self):
-        # here we abort if there are any errors with individual fields
-        # One predictable problem is that the user types a name rather then
-        # selecting one from the list, as instructed to do.  We need to abort
-        # so the error is displayed before trying to call get_person()
-        if any(self.errors):
-            # Don't bother validating the formset unless each form is valid on its own
-            return
-
-        cleaned_data = self.cleaned_data
-        name = cleaned_data.get('role_name')
-        type = cleaned_data.get('role_type')
-        group = cleaned_data.get('group')
-        person = get_person(name)
-
-        if type == 'Chair':
-            if WGChair.objects.filter(person=person,group_acronym=group):
-                raise forms.ValidationError('ERROR: This is a duplicate entry')
-
-        if type == 'Document Editor':
-            if WGEditor.objects.filter(person=person,group_acronym=group):
-                raise forms.ValidationError('ERROR: This is a duplicate entry')
-
-        if type == 'Technical Advisor':
-            if WGTechAdvisor.objects.filter(person=person,group_acronym=group):
-                raise forms.ValidationError('ERROR: This is a duplicate entry')
-
-        if type == 'Secretary':
-            if WGSecretary.objects.filter(person=person,group_acronym=group):
-                raise forms.ValidationError('ERROR: This is a duplicate entry')
-
-        # Always return the full collection of cleaned data.
-        return cleaned_data
 
 class GroupModelForm(forms.ModelForm):
     type = forms.ModelChoiceField(queryset=GroupTypeName.objects.filter(slug__in=('rg','wg')),empty_label=None)
     parent = forms.ModelChoiceField(queryset=Group.objects.filter(Q(type='area',state='active')|Q(acronym='irtf')))
     ad = forms.ModelChoiceField(queryset=Person.objects.filter(role__name='ad'))
-    state = forms.ModelChoiceField(queryset=GroupStateName.objects.filter(name__in=('bof','proposed','active')))
+    state = forms.ModelChoiceField(queryset=GroupStateName.objects.exclude(slug__in=('dormant','unknown')),empty_label=None)
     
     class Meta:
         model = Group
@@ -155,10 +82,6 @@ class GroupModelForm(forms.ModelForm):
         self.fields['ad'].label = 'Area Director'
         self.fields['comments'].widget.attrs['rows'] = 3
         self.fields['parent'].label = 'Area'
-        
-        # make adjustments for edit
-        if self.instance:
-            self.fields['state'].queryset = GroupStateName.objects.exclude(name__in=('dormant','unknown'))
             
     def clean(self):
         if any(self.errors):
@@ -178,29 +101,61 @@ class GroupModelForm(forms.ModelForm):
             raise forms.ValidationError('You must choose "active" for research group state')
             
         return self.cleaned_data
-
-class RoleForm(forms.ModelForm):
-    person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}))
         
-    class Meta:
-        model = Role
-        
+class RoleForm(forms.Form):
+    name = forms.ModelChoiceField(RoleName.objects.filter(slug__in=('chair','editor','secr','techadv')),empty_label=None)
+    person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")
+    email = forms.CharField(widget=forms.Select(),help_text="Select an email")
+    
     def __init__(self, *args, **kwargs):
+        self.group = kwargs.pop('group')
         super(RoleForm, self).__init__(*args,**kwargs)
-        self.fields['name'].label = 'Role Name'
-        self.fields['name'].queryset = RoleName.objects.filter(slug__in=('chair','editor','secr','techadv'))
-        self.fields['email'].queryset = Email.objects.none()
         
-        if self.initial:
-            self.fields['email'].queryset = Email.objects.filter(person=self.instance.person)
-            self.initial['person'] = self.instance.person.name
-                
+    # check for id within parenthesis to ensure name was selected from the list 
+    def clean_person(self):
+        person = self.cleaned_data.get('person', '')
+        m = re.search(r'(\d+)', person)
+        if person and not m:
+            raise forms.ValidationError("You must select an entry from the list!") 
+        
+        # return person object
+        return get_person(person)
+    
+    # check that email exists and return the Email object
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        try:
+            obj = Email.objects.get(address=email)
+        except Email.ObjectDoesNoExist:
+            raise forms.ValidationError("Email address not found!")
+        
+        # return email object
+        return obj
+    
+    def clean(self):
+        # here we abort if there are any errors with individual fields
+        # One predictable problem is that the user types a name rather then
+        # selecting one from the list, as instructed to do.  We need to abort
+        # so the error is displayed before trying to call get_person()
+        if any(self.errors):
+            # Don't bother validating the formset unless each form is valid on its own
+            return
+        super(RoleForm, self).clean()
+        cleaned_data = self.cleaned_data
+        person = cleaned_data['person']
+        email = cleaned_data['email']
+        name = cleaned_data['name']
+        
+        if Role.objects.filter(name=name,group=self.group,person=person,email=email):
+            raise forms.ValidationError('ERROR: This is a duplicate entry')
+        
+        return cleaned_data
+        
 class SearchForm(forms.Form):
     group_acronym = forms.CharField(max_length=12,required=False)
     group_name = forms.CharField(max_length=80,required=False)
-    primary_area = forms.CharField(max_length=80,widget=forms.Select(choices=SEARCH_AREA_CHOICES),required=False) 
-    type = forms.CharField(max_length=25,widget=forms.Select(choices=SEARCH_TYPE_CHOICES),required=False)
+    primary_area = forms.ModelChoiceField(queryset=Group.objects.filter(type='area',state='active'),required=False)
+    type = forms.ModelChoiceField(queryset=GroupTypeName.objects.filter(slug__in=('rg','wg')),required=False)
     #meeting_scheduled = forms.BooleanField(required=False)
     meeting_scheduled = forms.CharField(widget=forms.Select(choices=SEARCH_MEETING_CHOICES),required=False)
-    state = forms.CharField(max_length=25,widget=forms.Select(choices=STATE_CHOICES),required=False)
-
+    state = forms.ModelChoiceField(queryset=GroupStateName.objects.exclude(slug__in=('dormant','unknown')),required=False)

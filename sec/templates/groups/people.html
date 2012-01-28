@@ -17,47 +17,51 @@
 
 {% block content %}
 
-<div class="module group-container">
-    <form id="groups-people" enctype="multipart/form-data" action="" method="post">
-
-<div class="inline-group">
-  <div class="tabular inline-related">
-   <h2>People</h2>
-   {{ formset.management_form }}
-   {{ formset.non_form_errors }}
-   <table class="full-width">
-     <thead><tr>
-     {% for field in formset.forms.0.visible_fields %}
-         <th>{{ field.label|capfirst }}</th>
-     {% endfor %}
-     </tr></thead>
-
-     <tbody>
-     {% for form in formset.forms %}
-        {% if form.non_field_errors %}
-        <tr><td colspan="3">{{ form.non_field_errors }}</td></tr>
-        {% endif %}
-        <tr class="{% cycle row1,row2 %}">
-
-          {% for hidden in form.hidden_fields %}
-            {{ hidden }}
-          {% endfor %}
-          {% for field in form.visible_fields %}
-               <td>
-                 {{ field.errors }}
-                 {{ field }}
-               </td>
-          {% endfor %}
+<div class="module">
+  <h2>People</h2>   
+    <table class="full-width">
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Action</th>
         </tr>
-     {% endfor %}
-     </tbody>
-   </table>
-</div> <!-- tabular inline-related -->
-</div> <!-- inline-group -->
+      </thead>
+      <tbody>
+        {% for role in group.role_set.all %}
+          <tr class="{% cycle row1,row2 %}">
+            <td>{{ role.name }}</td>
+            <td>{{ role.person }}</td>
+            <td>{{ role.email }}</td>
+            <td><a href="{% url groups_delete_role acronym=group.acronym id=role.id %}">Delete</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  
+    <div class="inline-related">
+      <!-- <hr><br> -->
+      <h3>Add Role</h3>
+      <form id="groups-people" action="" method="post">
+        {{ form.non_field_errors }}
+        <table class="full-width">
+          <tr>
+            <td>{{ form.name.errors }}{{ form.name }}</td>
+            <td>{{ form.person.errors }}{{ form.person }}{% if form.person.help_text %}<br>{{ form.person.help_text }}{% endif %}</td>
+            <td>{{ form.email.errors }}{{ form.email }}{% if form.email.help_text %}<br>{{ form.email.help_text }}{% endif %}</td>
+            <td><input type="submit" name="submit" value="Add" /></td>
+          </tr>
+        </table>    
+      </form>
+    </div> <!-- inline-related -->
 
-    {% include "includes/buttons_save_cancel.html" %}
-
-    </form>
+    <div class="button-group">
+      <ul>
+        <li><button onclick="window.location='../'">Back</button></li>
+      </ul>
+    </div> <!-- button-group -->
+    
 </div> <!-- module -->
 
 {% endblock %}

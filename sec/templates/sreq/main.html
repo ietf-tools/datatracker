@@ -35,10 +35,6 @@
                <a href="{% url sessions_new acronym=group.acronym %}">{{ group.acronym }}</a>
                {% if group.not_meeting %}
                  <span class="required"> (Currently, this group does not plan to hold a session at IETF {{ meeting.number }})</span>
-               {% else %}
-               <!--
-                 &nbsp;&nbsp;<a href="{% url sessions_no_session acronym=group.acronym %}"> - [ Group will not meet ]</a>
-               -->
                {% endif %}
              </li>
            {% endfor %}

@@ -22,7 +22,6 @@
         <tr><td>Status:</td><td>{{ group.state }}</td></tr>
         <tr><td>Type:</td><td>{{ group.type }}</td></tr>
         <tr><td>Start Date:</td><td>{{ group.start_date|date:"Y-m-d" }}</td></tr>
-        <tr><td>Dormant Date:</td><td>{{ group.dormant_date|date:"Y-m-d" }}</td></tr>
         <tr><td>Proposed Date:</td><td>{{ group.proposed_date|date:"Y-m-d" }}</td></tr>
         <tr><td>Concluded Date:</td><td>{{ group.concluded_date|date:"Y-m-d" }}</td></tr>
         {% comment %}
@@ -36,7 +35,11 @@
                 {% endif %}
             </td>
         </tr>
-        <tr><td>Primary Area Director:</td><td><a href="{% url rolodex_view id=group.ad.id %}">{{ group.ad }}</a></td></tr>
+        <tr><td>Primary Area Director:</td>
+            <td>{% if group.ad %}
+                  <a href="{% url rolodex_view id=group.ad.id %}">{{ group.ad }}</a>
+                {% endif %} 
+            </td></tr>
         <tr><td>Meeting Scheduled:</td><td>{{ group.meeting_scheduled}}</td></tr>
         <tr><td>Email Address:</td><td>{{ group.list_email }}</td></tr>
         <tr><td>Email Subscription:</td><td>{{ group.list_subscribe }}</td></tr>
