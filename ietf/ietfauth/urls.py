@@ -18,5 +18,4 @@ urlpatterns += patterns('ietf.ietfauth.views',
         url(r'^reset/$', 'password_reset_view', name='password_reset'),
         url(r'^reset/confirm/(?P<username>[\w.@+-]+)/(?P<date>[\d]+)/(?P<realm>[\w]+)/(?P<reset_hash>[a-f0-9]+)/$', 'confirm_password_reset', name='confirm_password_reset'),
         url(r'^ajax/check_username/$', 'ajax_check_username', name='ajax_check_username'),
-
 )

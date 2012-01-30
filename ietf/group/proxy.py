@@ -138,7 +138,7 @@ class IETFWG(Group):
     #meeting_scheduled = models.CharField(blank=True, max_length=3)
     @property
     def meeting_scheduled(self):
-        from meeting.models import Meeting
+        from ietf.meeting.models import Meeting
         latest_meeting = Meeting.objects.order_by('-date')[0]
         return "YES" if self.session_set.filter(meeting=latest_meeting) else "NO"
     #email_address = models.CharField(blank=True, max_length=60)

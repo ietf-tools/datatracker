@@ -49,7 +49,7 @@ def list_drafts(request):
                     mimetype="text/plain")
 
 def list_draftsREDESIGN(request):
-    from ipr.models import IprDocAlias
+    from ietf.ipr.models import IprDocAlias
     
     docipr = {}
 
