@@ -725,7 +725,7 @@ class InternetDraft(Document):
 
     @property
     def ipr(self):
-        from ipr.models import IprDraftProxy
+        from ietf.ipr.models import IprDraftProxy
         return IprDraftProxy.objects.filter(doc_alias__document=self.pk)
     
     class Meta:

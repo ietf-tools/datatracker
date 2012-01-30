@@ -9,7 +9,7 @@ from ietf.utils.history import find_history_active_at
 
 from ietf.group.models import Group
 from ietf.wgcharter.views import _get_history, _get_html
-from wgcharter import markup_txt
+from ietf.wgcharter import markup_txt
 import datetime
 import re, os
 

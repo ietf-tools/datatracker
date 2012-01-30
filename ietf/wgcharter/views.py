@@ -11,13 +11,13 @@ from django.utils import simplejson as json
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
 from ietf.doc.models import GroupBallotPositionDocEvent, WriteupDocEvent
 from ietf.group.models import Group, GroupHistory
 from ietf.person.models import Person
-from wgcharter import markup_txt
-from django.conf import settings
+from ietf.wgcharter import markup_txt
 
-from wgcharter.utils import *
+from ietf.wgcharter.utils import *
 from ietf.utils.history import find_history_active_at
 from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
  
