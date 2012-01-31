@@ -221,7 +221,12 @@ for o in IESGLogin.objects.all():
     if email and o.user_level == IESGLogin.SECRETARIAT_LEVEL:
         if not Role.objects.filter(name=secretary_role, person=email.person):
             Role.objects.create(name=secretary_role, group=Group.objects.get(acronym="secretariat"), person=email.person, email=email)
-    
+        u = email.person.user
+        if u:
+            u.is_staff = True
+            u.is_superuser = True
+            u.save()
+
 # AreaDirector
 for o in AreaDirector.objects.all():
     if not o.area:
