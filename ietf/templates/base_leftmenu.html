@@ -42,11 +42,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <li><a href="{% url doc_search_by_ad name=user.get_profile.person.full_name_as_key %}">My Documents</a></li>
   <li><a href="{% url ietf.iesg.views.agenda_documents %}">Next Telechat</a></li>
   <li><a href="{% url ietf.iesg.views.discusses %}">Discusses</a></li>
+  <li><a href="{% url ietf.iesg.views.working_group_actions %}">Working Groups</a></li>
   {# FIXME: wgcharter <li><a href="{% url wg_search_by_area name=user|ad_area %}">Working Groups</a></li> #}
 {% endif %}
 {% if user|in_group:"Secretariat" %}
 <li class="sect first">Secretariat</li>
   <li><a href="{% url ietf.iesg.views.telechat_dates %}">Telechat Dates</a></li>
+  <li><a href="{% url ietf.iesg.views.working_group_actions %}">Working Groups</a></li>
   {# FIXME: wgcharter <li><a href="{% url wg_search_in_process %}">Working Groups</a></li> #}
 {% endif %}
 {% if user %}
