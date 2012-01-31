@@ -27,9 +27,12 @@ from ietf.wgchairs.models import ProtoWriteUp
 
 from workflows.models import State as StateOld
 
-document_name_to_import = None
+import_docs_from = document_name_to_import = None
 if len(sys.argv) > 1:
-    document_name_to_import = sys.argv[1]
+    try:
+        import_docs_from = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d")
+    except:
+        document_name_to_import = sys.argv[1]
 
 dont_save_queries()
 
@@ -224,6 +227,8 @@ def iesg_login_to_person(l):
 def iesg_login_is_secretary(l):
     # Amy has two users, for some reason, we sometimes get the wrong one
     return l.user_level == IESGLogin.SECRETARIAT_LEVEL or (l.first_name == "Amy" and l.last_name == "Vezza")
+
+old_internetdraft_content_type_id = ContentType.objects.using("legacy").get(app_label="idtracker", model="internetdraft").pk
 
 # regexps for parsing document comments
 
@@ -765,15 +770,15 @@ def import_from_idinternal(d, idinternal):
 
 
 all_drafts = InternetDraft.objects.all().order_by('pk').select_related()
+if import_docs_from:
+    all_drafts = all_drafts.filter(last_modified_date__gte=import_docs_from)
+
 if document_name_to_import:
     if document_name_to_import.startswith("rfc"):
         all_drafts = all_drafts.filter(rfc_number=document_name_to_import[3:])
     else:
         all_drafts = all_drafts.filter(filename=document_name_to_import)
-#all_drafts = all_drafts[all_drafts.count() - 1000:]
-#all_drafts = all_drafts.none()
 
-old_internetdraft_content_type_id = ContentType.objects.using("legacy").get(app_label="idtracker", model="internetdraft").pk
 
 for index, o in enumerate(all_drafts.iterator()):
     print "importing", o.id_document_tag, o.filename, index, "ballot %s" % o.idinternal.ballot_id if o.idinternal and o.idinternal.ballot_id else ""

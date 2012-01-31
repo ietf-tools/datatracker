@@ -28,6 +28,11 @@ from redesign.importing.utils import *
 # should probably import
 # PersonOrOrgInfo/PostalAddress/EmailAddress/PhoneNumber fully
 
+import_docs_from = None
+if len(sys.argv) > 1:
+    import_docs_from = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d")
+
+
 # make sure special system user/email is created 
 print "creating (System) person and email"
 try:
@@ -174,7 +179,11 @@ for o in PersonOrOrgInfo.objects.filter(wgproceedingsactivities__id__gte=1).orde
     email = get_or_create_email(o, create_fake=True)
 
 # IDAuthor persons
-for o in IDAuthor.objects.all().order_by('id').select_related('person').iterator():
+all_authors = IDAuthor.objects.all().order_by('id').select_related('person')
+if import_docs_from:
+    all_authors = all_authors.filter(document__last_modified_date__gte=import_docs_from)
+
+for o in all_authors.iterator():
     print "importing IDAuthor", o.id, o.person_id, o.person.first_name.encode('utf-8'), o.person.last_name.encode('utf-8')
     email = get_or_create_email(o, create_fake=True)
 

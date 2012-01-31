@@ -24,6 +24,11 @@ from redesign.importing.utils import old_person_to_person, dont_save_queries
 from ietf.name.models import *
 from ietf.name.utils import name
 
+import_meetings_from = None
+if len(sys.argv) > 1:
+    import_meetings_from = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d")
+
+
 dont_save_queries()
 
 # imports Meeting, MeetingVenue, MeetingRoom, NonSession,
@@ -294,7 +299,11 @@ def import_materials(wg_meeting_session, session):
 
 obviously_bogus_date = datetime.date(1970, 1, 1)
 
-for o in WgMeetingSession.objects.all().order_by("pk").iterator():
+all_sessions = WgMeetingSession.objects.all().order_by("pk")
+if import_meetings_from:
+    all_sessions = all_sessions.filter(last_modified_date__gte=import_meetings_from)
+
+for o in all_sessions.iterator():
     # num_session is unfortunately not quite reliable, seems to be
     # right for 1 or 2 but not 3 and it's sometimes null
     sessions = o.num_session or 1
