@@ -771,7 +771,7 @@ def import_from_idinternal(d, idinternal):
 
 all_drafts = InternetDraft.objects.all().order_by('pk').select_related()
 if import_docs_from:
-    all_drafts = all_drafts.filter(last_modified_date__gte=import_docs_from)
+    all_drafts = all_drafts.filter(last_modified_date__gte=import_docs_from) | all_drafts.filter(idinternal__event_date__gte=import_docs_from)
 
 if document_name_to_import:
     if document_name_to_import.startswith("rfc"):
@@ -1098,7 +1098,11 @@ if all_drafts.count() != InternetDraft.objects.count():
     else:
         # if we didn't process all drafts, limit the RFCs to the ones we
         # did process
-        all_rfcs = all_rfcs.filter(rfc_number__in=set(d.rfc_number for d in all_drafts if d.rfc_number))
+        rfc_numbers = set(d.rfc_number for d in all_drafts if d.rfc_number)
+        if import_docs_from:
+            all_rfcs = all_rfcs.filter(rfc_number__in=rfc_numbers) | all_rfcs.filter(rfc_published_date__gte=import_docs_from)
+        else:
+            all_rfcs = all_rfcs.filter(rfc_number__in=rfc_numbers)
 
 for index, o in enumerate(all_rfcs.iterator()):
     print "importing rfc%s" % o.rfc_number, index
