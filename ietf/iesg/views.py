@@ -407,7 +407,7 @@ def agenda_documents(request):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         from ietf.doc.models import TelechatDocEvent
         idinternals = []
-        for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date__in=dates):
+        for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct():
             if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date in dates:
                 idinternals.append(d)
 
