@@ -14,8 +14,8 @@ setup_environ(settings)
 # script
 from django.core.serializers import serialize
 from django.db.models import Q 
-from idtracker.models import *
-from iesg.models import *
+from ietf.idtracker.models import *
+from ietf.iesg.models import *
 
 def output(name, qs):
     try:

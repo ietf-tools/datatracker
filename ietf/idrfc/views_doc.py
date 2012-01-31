@@ -51,6 +51,52 @@ from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.ietfworkflows.utils import get_full_info_for_draft
 
+def render_document_top(request, doc, tab):
+    tabs = []
+    tabs.append(("Document", "document", urlreverse("idrfc.views_doc.document_main", kwargs=dict(name=doc.name))))
+
+    if doc_type == "draft":
+        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("idrfc.views_doc.document_ballot", kwargs=dict(name=doc.name))))
+    elif doc_type == "charter":
+        tabs.append(("IESG Review", "ballot", urlreverse("idrfc.views_doc.document_ballot", kwargs=dict(name=doc.name))))
+
+    tabs.append(("IESG Writeups", "writeup", urlreverse("idrfc.views_doc.document_writeup", kwargs=dict(name=doc.name))))
+    tabs.append(("History", "history", urlreverse("idrfc.views_doc.document_history", kwargs=dict(name=doc.name))))
+
+    return render_to_string("idrfc/document_top.html",
+                            dict(doc=doc,
+                                 tabs=tabs,
+                                 selected=tab))
+
+
+def document_main(request, name):
+    if name.startswith("ietf-charter-"):
+        # FIXME: render top
+        # render content
+        # refactor history similarly? or use directly
+        # refactor writeup, generalize on names and links to edit
+        # refactor ballot to have multiple ballot typesiet
+
+        return render_to_response("idrfc/doc_tab_document.html",
+                                  {'content1':content1,
+                                   'content2':content2,
+                                   'doc': doc,
+                                   'tab': "document",
+                                   'include_text':include_text(request)},
+                              context_instance=RequestContext(request));
+
+
+    return document_main_idrfc(request, name, "document")
+
+def document_history(request, name):
+    return document_main_idrfc(request, name, "history")
+
+def document_writeup(request, name):
+    return document_main_idrfc(request, name, "writeup")
+
+def document_ballot(request, name):
+    return document_main_idrfc(request, name, "ballot")
+
 def document_debug(request, name):
     r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
@@ -114,9 +160,7 @@ def document_main_rfc(request, rfc_number, tab):
                               context_instance=RequestContext(request));
 
 @decorator_from_middleware(GZipMiddleware)
-def document_main(request, name, tab):
-    if tab is None:
-	tab = "document"
+def document_main_idrfc(request, name, tab):
     r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
     if m:
@@ -288,7 +332,7 @@ def get_ballot(name):
     ballot = BallotWrapper(id)
     return ballot, doc
 
-def document_ballot(request, name):
+def ballot_html(request, name):
     ballot, doc = get_ballot(name)
     return render_to_response('idrfc/doc_ballot.html', {'ballot':ballot, 'doc':doc}, context_instance=RequestContext(request))
 
@@ -301,3 +345,4 @@ def ballot_json(request, name):
     response = HttpResponse(mimetype='text/plain')
     response.write(json.dumps(ballot.dict(), indent=2))
     return response
+

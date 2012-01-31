@@ -21,8 +21,7 @@ Copyright The IETF Trust 2011, All Rights Reserved
 {% if user|in_group:"Area_Director,Secretariat" %}
 {% if not snapshot %}
 <div style="padding-bottom:2px;">
-{% ifnotequal wg.charter.get_state_slug "notrev" %}
-{% ifnotequal wg.charter.get_state_slug "approved" %}
+{% if wg.charter.get_state_slug  != "notrev" and wg.charter.get_state_slug != "approved" %}
 <span id="wg_edit_state_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url wg_startstop_process name=wg.acronym option='abandon' %}">Abandon effort</a></span></span>
 <span id="wg_edit_state_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url wg_change_state name=wg.acronym %}">Change state</a></span></span>
 {% ifnotequal wg.state_id "conclude" %}
@@ -30,19 +29,7 @@ Copyright The IETF Trust 2011, All Rights Reserved
 {% endifnotequal %}
 {% else %}
 <span id="wg_edit_state_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url wg_startstop_process name=wg.acronym option='recharter' %}">Recharter</a></span></span>
-{% endifnotequal %}
-{% else %}
-<span id="wg_edit_state_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url wg_startstop_process name=wg.acronym option='recharter' %}">Recharter</a></span></span>
-{% endifnotequal %}
-
-{% ifequal wg.state_id "active" %}{% ifequal wg.charter.get_state_slug "approved" %}
-<span id="wg_conclude_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url wg_conclude name=wg.acronym %}">Conclude WG</a></span></span>
-{% endifequal %}{% endifequal %}
-
-{% ifnotequal wg.state_id "conclude" %}
-<span id="wg_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url wg_edit_info name=wg.acronym %}">Edit WG</a></span></span>
-{% endifnotequal %}
-
+{% endif %}
 
 </div>
 {% endif %}{# if not snapshot #}

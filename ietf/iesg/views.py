@@ -33,6 +33,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import codecs, re, os, glob
+import datetime
+import tarfile
+
 from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup, Position, IESGLogin, Acronym
 from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
@@ -50,8 +53,8 @@ from ietf.idrfc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
-import datetime 
-import tarfile
+from redesign.doc.models import TelechatDocEvent
+from redesign.group.models import Group
 
 def date_threshold():
     """Return the first day of the month that is 185 days ago."""
@@ -208,6 +211,23 @@ def get_doc_sectionREDESIGN(id):
         s = s + "1"
     return s
 
+def get_wg_section(wg):
+    s = ""
+    charter_slug = None
+    if wg.charter:
+        charter_slug = wg.charter.get_state_slug()
+    if wg.state_id == "proposed":
+        if charter_slug == "intrev":
+            s = '411'
+        elif charter_slug == "iesgrev":
+            s = '412'
+    elif wg.state_id == "active":
+        if charter_slug == "intrev":
+            s = '421'
+        elif charter_slug == "iesgrev":
+            s = '422'
+    return s
+
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     get_doc_section = get_doc_sectionREDESIGN
     
@@ -253,15 +273,14 @@ def agenda_docs(date, next_agenda):
     return res
 
 def agenda_wg_actions(date):
-    mapping = {12:'411', 13:'412',22:'421',23:'422'}
-    matches = WGAction.objects.filter(agenda=1,telechat_date=date,category__in=mapping.keys()).order_by('category')
-    res = {}
-    for o in matches:
-        section_key = "s"+mapping[o.category]
+    matches = Group.objects.filter(charter__docevent__telechatdocevent__telechat_date=date)
+
+    res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
+    for wg in matches:
+        section_key = "s" + get_wg_section(wg)
         if section_key not in res:
             res[section_key] = []
-        area = AreaGroup.objects.get(group=o.group_acronym)
-        res[section_key].append({'obj':o, 'area':str(area.area)})
+        res[section_key].append({'obj':wg})
     return res
 
 def agenda_management_issues(date):

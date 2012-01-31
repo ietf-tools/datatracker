@@ -35,7 +35,7 @@ Snapshots: {% for d in versions reversed %}{% if forloop.first %}<strong>{% ifno
 <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
 <tr><td>WG State:</td><td> {{ wg.state|safe }} </td>
-{% ifnotequal wg.state_id "conclude" %}<tr><td><a href="/wgcharter/help/state/">Charter State</>:</td><td> {{ wg.charter.get_state|safe }} {% ifequal wg.state_id "proposed" %}{% ifnotequal wg.charter.get_state_slug "notrev" %}(Initial Chartering){% endifnotequal %}{% else %}{% ifnotequal wg.charter.get_state_slug "approved" %}(Rechartering){% endifnotequal %}{% endifequal %}</td>{% endifnotequal %}
+{% ifnotequal wg.state_id "conclude" %}<tr><td><a href="/wgcharter/help/state/">Charter State</a>:</td><td> {{ wg.charter.get_state|safe }} {% ifequal wg.state_id "proposed" %}{% ifnotequal wg.charter.get_state_slug "notrev" %}(Initial Chartering){% endifnotequal %}{% else %}{% ifnotequal wg.charter.get_state_slug "approved" %}(Rechartering){% endifnotequal %}{% endifequal %}</td>{% endifnotequal %}
 {% ifequal wg.state_id "proposed" %}
 {% if wg.comments %}
 <tr><td>Reason for chartering:</td><td>{{ wg.comments }}</td></tr>

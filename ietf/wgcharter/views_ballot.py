@@ -32,10 +32,10 @@ def default_action_text(wg, charter, user, action):
    e.desc = "WG action text was changed"
 
    info = {}
-   info['chairs'] = [{ 'name': x.email.person.name, 'email': x.email.address} for x in wg.role_set.filter(name="Chair")]
-   info['secr'] = [{ 'name': x.email.person.name, 'email': x.email.address} for x in wg.role_set.filter(name="Secr")]
-   info['techadv'] = [{ 'name': x.email.person.name, 'email': x.email.address} for x in wg.role_set.filter(name="Techadv")]
-   info['ad'] = {'name': wg.ad.name, 'email': wg.ad.email_address().address } if wg.ad else None,
+   info['chairs'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Chair")]
+   info['secr'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Secr")]
+   info['techadv'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Techadv")]
+   info['ad'] = {'name': wg.ad.plain_name(), 'email': wg.ad.role_email("ad").address } if wg.ad else None,
    info['list'] = wg.list_email if wg.list_email else None,
    info['list_subscribe'] = str(wg.list_subscribe) if wg.list_subscribe else None,
    info['list_archive'] = str(wg.list_archive) if wg.list_archive else None,
@@ -64,10 +64,10 @@ def default_review_text(wg, charter, user):
    e.type = "changed_review_announcement"
    e.desc = "WG review text was changed"
    info = {}
-   info['chairs'] = [{ 'name': x.person.name, 'email': x.email.address} for x in wg.role_set.filter(name="Chair")]
-   info['secr'] = [{ 'name': x.person.name, 'email': x.email.address} for x in wg.role_set.filter(name="Secr")]
-   info['techadv'] = [{ 'name': x.person.name, 'email': x.email.address} for x in wg.role_set.filter(name="Techadv")]
-   info['ad'] = {'name': wg.ad.name, 'email': wg.ad.role_email("ad").address } if wg.ad else None,
+   info['chairs'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Chair")]
+   info['secr'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Secr")]
+   info['techadv'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Techadv")]
+   info['ad'] = {'name': wg.ad.plain_name(), 'email': wg.ad.role_email("ad").address } if wg.ad else None,
    info['list'] = wg.list_email if wg.list_email else None,
    info['list_subscribe'] = wg.list_subscribe if wg.list_subscribe else None,
    info['list_archive'] = wg.list_archive if wg.list_archive else None,
@@ -205,15 +205,15 @@ def edit_position(request, name):
             if not old_pos and pos.pos.slug != "norecord":
                 pos.desc = u"[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.name)
             elif old_pos and pos.pos != old_pos.pos:
-                pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad.name, pos.pos.name, old_pos.pos.name)
+                pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad.plain_name(), pos.pos.name, old_pos.pos.name)
 
             if not pos.desc and changes:
-                pos.desc = u"Ballot %s text updated for %s" % (u" and ".join(changes), ad.name)
+                pos.desc = u"Ballot %s text updated for %s" % (u" and ".join(changes), ad.plain_name())
 
             # only add new event if we actually got a change
             if pos.desc:
                 if login != ad:
-                    pos.desc += u" by %s" % login.name
+                    pos.desc += u" by %s" % login.plain_name()
 
                 pos.save()
 
@@ -302,13 +302,13 @@ def send_ballot_comment(request, name):
         c = pos.comment
         subj.append("COMMENT")
 
-    ad_name_genitive = ad.name + "'" if ad.name.endswith('s') else ad.name + "'s"
+    ad_name_genitive = ad.plain_name() + "'" if ad.plain_name().endswith('s') else ad.plain_name() + "'s"
     subject = "%s %s on %s" % (ad_name_genitive, pos.pos.name if pos.pos else "No Position", charter.name + "-" + charter.rev)
     if subj:
         subject += ": (with %s)" % " and ".join(subj)
 
     body = render_to_string("wgcharter/ballot_comment_mail.txt",
-                            dict(block_comment=d, comment=c, ad=ad.name, charter=charter, pos=pos.pos))
+                            dict(block_comment=d, comment=c, ad=ad.plain_name(), charter=charter, pos=pos.pos))
     frm = ad.formatted_email()
     to = "The IESG <iesg@ietf.org>"
         
@@ -467,7 +467,7 @@ def ballot_writeupnotes(request, name):
                     pos.type = "changed_ballot_position"
                     pos.ad = login
                     pos.pos_id = "yes"
-                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.name)
+                    pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
                     pos.save()
 
                 msg = generate_issue_ballot_mail(request, charter)
@@ -476,7 +476,7 @@ def ballot_writeupnotes(request, name):
                 e = DocEvent(doc=charter, by=login)
                 e.by = login
                 e.type = "sent_ballot_announcement"
-                e.desc = "Ballot has been issued by %s" % login.name
+                e.desc = "Ballot has been issued"
                 e.save()
 
                 return render_to_response('wgcharter/ballot_issued.html',

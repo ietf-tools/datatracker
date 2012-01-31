@@ -36,7 +36,7 @@ class InternetDraft(Document):
     #group = models.ForeignKey(Acronym, db_column='group_acronym_id')
     @property
     def group(self):
-        from group.proxy import Acronym as AcronymProxy
+        from ietf.group.proxy import Acronym as AcronymProxy
         g = super(InternetDraft, self).group
         return AcronymProxy().from_object(g) if g else None
     #filename = models.CharField(max_length=255, unique=True)
@@ -365,13 +365,13 @@ class InternetDraft(Document):
     @property
     def mark_by(self):
         e = self.latest_event()
-        from person.proxy import IESGLogin as IESGLoginProxy
+        from ietf.person.proxy import IESGLogin as IESGLoginProxy
         return IESGLoginProxy().from_object(e.by) if e else None
 
     # job_owner = models.ForeignKey(IESGLogin, db_column='job_owner', related_name='documents')
     @property
     def job_owner(self):
-        from person.proxy import IESGLogin as IESGLoginProxy
+        from ietf.person.proxy import IESGLogin as IESGLoginProxy
         return IESGLoginProxy().from_object(self.ad) if self.ad else None
     
     #event_date = models.DateField(null=True)
@@ -383,7 +383,7 @@ class InternetDraft(Document):
     #area_acronym = models.ForeignKey(Area)
     @property
     def area_acronym(self):
-        from group.proxy import Area
+        from ietf.group.proxy import Area
         g = super(InternetDraft, self).group # be careful with group which is proxied
         if g and g.type_id != "individ":
             return Area().from_object(g.parent)
@@ -462,7 +462,7 @@ class InternetDraft(Document):
     @property
     def resurrect_requested_by(self):
         e = self.latest_event(type__in=("requested_resurrect", "completed_resurrect"))
-        from person.proxy import IESGLogin as IESGLoginProxy
+        from ietf.person.proxy import IESGLogin as IESGLoginProxy
         return IESGLoginProxy().from_object(e.by) if e and e.type == "requested_resurrect" else None
     
     #approved_in_minute = models.IntegerField(null=True, blank=True)
@@ -522,7 +522,7 @@ class InternetDraft(Document):
     @property
     def an_sent_by(self):
         e = self.latest_event(type="iesg_approved")
-        from person.proxy import IESGLogin as IESGLoginProxy
+        from ietf.person.proxy import IESGLogin as IESGLoginProxy
         return IESGLoginProxy().from_object(e.by) if e else None
 
     #defer = models.BooleanField()
@@ -535,7 +535,7 @@ class InternetDraft(Document):
     @property
     def defer_by(self):
         e = self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
-        from person.proxy import IESGLogin as IESGLoginProxy
+        from ietf.person.proxy import IESGLogin as IESGLoginProxy
         return IESGLoginProxy().from_object(e.by) if e else None
     
     #defer_date = models.DateField(null=True, blank=True)
@@ -572,7 +572,7 @@ class InternetDraft(Document):
     #     return remarks
     def active_positions(self):
         """Returns a list of dicts, with AD and Position tuples"""
-        from person.proxy import IESGLogin as IESGLoginProxy
+        from ietf.person.proxy import IESGLogin as IESGLoginProxy
         from ietf.doc.utils import active_ballot_positions
 
         res = []
@@ -892,7 +892,7 @@ class DraftLikeDocAlias(DocAlias):
 
     @property
     def ipr(self):
-        from ipr.models import IprDraftProxy
+        from ietf.ipr.models import IprDraftProxy
         return IprDraftProxy.objects.filter(doc_alias=self.pk)
     
     class Meta:

@@ -16,6 +16,7 @@ management.setup_environ(settings)
 
 from django.db.models import TextField, CharField
 
+from django.contrib.sites.models import Site
 from ietf.redirects.models import Redirect, Suffix, Command
 from ietf.iesg.models import TelechatAgendaItem, WGAction
 from ietf.ipr.models import IprSelecttype, IprLicensing, IprDetail, IprContact, IprNotification, IprUpdate
@@ -24,10 +25,12 @@ from django.contrib.auth.models import User
 
 known_models = {
     'base': [User],
-    'others': [Redirect, Suffix, Command,
+    'others': [Site,
+               Redirect, Suffix, Command,
                TelechatAgendaItem, WGAction,
                IprSelecttype, IprLicensing, IprDetail, IprContact, IprNotification, IprUpdate,
-               IdSubmissionStatus, IdSubmissionDetail, IdApprovedDetail, TempIdAuthors]
+               IdSubmissionStatus, IdSubmissionDetail, IdApprovedDetail,
+               TempIdAuthors]
     }
 
 models_to_copy = known_models[sys.argv[1]]
@@ -53,7 +56,6 @@ def insert_many_including_pk(objects, using="default", table=None):
     for o in objects:
         pars = []
         for f in fields:
-            #print f.name, f.pre_save(o, True)
             pars.append(f.get_db_prep_save(f.pre_save(o, True), connection=con))
         parameters.append(pars)
 
@@ -79,7 +81,12 @@ def clean_chunk(model, chunk):
 for model in models_to_copy:
     sys.stdout.write("copying %s " % model._meta.object_name)
     sys.stdout.flush()
-    table_name = "%s_%s" % (model._meta.app_label, model._meta.object_name.lower())
+
+    irregular_models = [Site]
+    if model in irregular_models:
+        table_name = Site._meta.db_table
+    else:
+        table_name = "%s_%s" % (model._meta.app_label, model._meta.object_name.lower())
 
     for chunk in queryset_chunks(model.objects.using("legacy").all(), 1000):
         clean_chunk(model, chunk)

@@ -21,6 +21,7 @@ from ietf.wgcharter.utils import *
 from ietf.utils.history import find_history_active_at
 from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
  
+# FIXME: delete
 def _get_html(key, filename):
     f = None
     try:
@@ -70,13 +71,13 @@ def wg_main(request, name, rev, tab):
     prev_list_archive = list(set([x.list_archive for x in wg.history_set.exclude(list_archive=wg.list_archive) if x.list_archive != u'']))
     if prev_list_archive != [u'']:
         info['prev_list_archive'] = prev_list_archive
-    info['chairs'] = [x.email.person.name for x in wg.role_set.filter(name__slug="chair")]
+    info['chairs'] = [x.person.plain_name() for x in wg.role_set.filter(name__slug="chair")]
     if hasattr(gh, 'rolehistory_set'):
-        info['history_chairs'] = [x.email.person.name for x in gh.rolehistory_set.filter(name__slug="chair")]
+        info['history_chairs'] = [x.person.plain_name() for x in gh.rolehistory_set.filter(name__slug="chair")]
     else:
-        info['history_chairs'] = [x.email.person.name for x in gh.role_set.filter(name__slug="chair")]
-    info['secr'] = [x.email.person.name for x in wg.role_set.filter(name__slug="secr")]
-    info['techadv'] = [x.email.person.name for x in wg.role_set.filter(name__slug="techadv")]
+        info['history_chairs'] = [x.person.plain_name() for x in gh.role_set.filter(name__slug="chair")]
+    info['secr'] = [x.person.plain_name() for x in wg.role_set.filter(name__slug="secr")]
+    info['techadv'] = [x.person.plain_name() for x in wg.role_set.filter(name__slug="techadv")]
 
     if ch:
         file_path = wg.charter.get_file_path() # Get from wg.charter
@@ -153,7 +154,7 @@ def _get_history(wg, versions=None):
         charter_history = find_history_active_at(wg.charter, e.time)
         info['version'] = charter_history.rev if charter_history else wg.charter.rev
         info['text'] = e.desc
-        info['by'] = e.by.name
+        info['by'] = e.by.plain_name()
         info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
         info['snipped'] = info['textSnippet'][-3:] == "..."
         if e.type == "new_revision":

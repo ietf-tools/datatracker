@@ -36,6 +36,7 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext, loader
 from django.http import HttpResponse
 from django.conf import settings
+from django.core.urlresolvers import reverse as urlreverse
 from ietf.idtracker.models import Area, IETFWG
 from ietf.idrfc.views_search import SearchForm, search_query
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
@@ -149,17 +150,25 @@ def wg_charter(request, acronym):
 
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         fill_in_charter_info(wg)
+        actions = []
+        if wg.state_id != "conclude":
+            actions.append(("Edit WG", urlreverse("wg_edit_info", kwargs=dict(name=wg.acronym))))
+
+        if wg.state_id == "active" and (not wg.charter or wg.charter.get_state_slug() == "approved"):
+            actions.append(("Conclude WG", urlreverse("wg_conclude", kwargs=dict(name=wg.acronym))))
+
+        context = get_wg_menu_context(wg, "charter")
+        context.update(dict(
+                actions=actions))
+
         return render_to_response('wginfo/wg_charterREDESIGN.html',
-                                  dict(wg=wg,
-                                       concluded=concluded,
-                                       proposed=proposed,
-                                       selected='charter'),
+                                  context,
                                   RequestContext(request))
         
     return render_to_response('wginfo/wg_charter.html', {'wg': wg, 'concluded':concluded, 'proposed': proposed, 'selected':'charter'}, RequestContext(request))
 
 def get_wg_menu_context(wg, selected):
-    # it would probably be better to refactor this file into rendering
+    # it would probably be better to refactor wginfo into rendering
     # the menu separately instead of each view having to include the information
 
     return dict(wg=wg, concluded=wg.state_id == "conclude", proposed=wg.state_id == "proposed", selected=selected)
