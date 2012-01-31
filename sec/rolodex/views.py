@@ -7,15 +7,9 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
-from ietf.person.models import Person, Email
+from ietf.person.models import Person, Email, Alias
 
-from models import *
 from forms import *
-
-# Special case rolodex record.  Seems like a bad idea to hardcode this record id but we need to do
-# this because this record is treated special, it is used specifically in the AreaDirector table
-# for TBD records.
-TBD_TAG='106956'
 
 # ---------------------------------------
 # Views 
@@ -33,15 +27,16 @@ def add(request):
 
     * form
     * results: the list of similar names to allow user to check for dupes
+    * name: the new name that is submitted
 
     """
     results = []
     name = None
     if request.method == 'POST':
-        form = NewPersonForm(request.POST)
+        form = NameForm(request.POST)
         if form.is_valid():
-            # save form in session
             request.session['post_data'] = request.POST
+            
             # search to see if contact already exists
             name = form.cleaned_data['name']
             results = Person.objects.filter(name=name)
@@ -49,7 +44,7 @@ def add(request):
                 return HttpResponseRedirect('../add-proceed/')
 
     else:
-        form = NewPersonForm()
+        form = NameForm()
 
     return render_to_response('rolodex/add.html', {
         'form': form,
@@ -68,47 +63,54 @@ def add_proceed(request):
 
     **Template Variables:**
 
-    * post_data: contact name fields, stored in session  
-    * email_form
+    * name: new contact name
+    * form
 
     """
     # if we get to this page from the add page, as expected, the session will have post_data.
     if request.session['post_data']:
         post_data = request.session['post_data']
     else:
-        messages.error('ERROR: unable to save session data')
+        messages.error('ERROR: unable to save session data (enable cookies)')
         url = reverse('rolodex_add')
         return HttpResponseRedirect(url)
+    
+    name = post_data['name']
 
-    if request.method =='POST':
-        name_form = NewPersonForm(request.session['post_data'])
-        # set name from header or use "INTERNAL" (from legacy app)
-        if request.META['REMOTE_USER']:
-            name = request.META['REMOTE_USER']
-        else:
-            name = 'INTERNAL'
-
-        email_form = NewEmailForm(request.POST)
-        if email_form.is_valid():
+    if request.method == 'POST':
+        form = NewPersonForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
             # save person here
-            new_person = name_form.save(commit=False)
-            new_person.save()
+            person = form.save()
 
             # save email
-            if email_form.cleaned_data['address']:
-                new_email = email_form.save(commit=False)
-                new_email.person = new_person
-                new_email.save()
+            Email.objects.create(address=email,
+                                 person=person)
 
+            # in theory a user record could exist which wasn't associated with a Person
+            try:
+                user = User.objects.create_user(email, email)
+            except IntegrityError:
+                user = User.objects.get(username=email)
+                
+            person.user = user
+            person.save()
+            
+            # create the Alias
+            Alias.objects.create(person=person,name=name)
+            if person.ascii != person.name:
+                Alias.objects.create(person=person,name=person.ascii)
+            
             messages.success(request, 'The Rolodex entry was added successfully')
-            url = reverse('rolodex._view', kwargs={'id': new_person.id})
+            url = reverse('rolodex_view', kwargs={'id': person.id})
             return HttpResponseRedirect(url)
     else:
-        email_form = NewEmailForm()
+        form = NewPersonForm(initial={'name':name,'ascii':name})
 
     return render_to_response('rolodex/add_proceed.html', {
-        'post_data': post_data,
-        'email_form': email_form},
+        'name': name,
+        'form': form},
         RequestContext(request, {}),
     )
 
@@ -161,7 +163,7 @@ def edit(request, id):
     """
     person = get_object_or_404(Person, id=id)
 
-    EmailFormset = inlineformset_factory(Person, Email, form=EmailForm, can_delete=False, extra=1)
+    EmailFormset = inlineformset_factory(Person, Email, form=EmailForm, can_delete=False, extra=0)
   
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
@@ -169,7 +171,7 @@ def edit(request, id):
             url = reverse('rolodex_view', kwargs={'id':id})
             return HttpResponseRedirect(url)
 
-        person_form = PersonForm(request.POST, instance=person)
+        person_form = EditPersonForm(request.POST, instance=person)
         email_formset = EmailFormset(request.POST, instance=person, prefix='email')
         if person_form.is_valid() and email_formset.is_valid():
             person_form.save()
@@ -180,7 +182,7 @@ def edit(request, id):
             return HttpResponseRedirect(url)
 
     else:
-        person_form = PersonForm(instance=person)
+        person_form = EditPersonForm(instance=person)
         # if any inlineformsets will be empty, need to initialize with extra=1
         # this is because the javascript for adding new forms requires a first one to copy
         if not person.email_set.all():
@@ -223,13 +225,16 @@ def search(request):
             if name:
                 kwargs['name__icontains'] = name
             if email:
-                kwargs['email__address__istartswith'] = email
+                #kwargs['email__address__istartswith'] = email
+                kwargs['person__email__address__istartswith'] = email
             if id:
-                kwargs['id'] = id
+                #kwargs['id'] = id
+                kwargs['person__id'] = id
             # perform query
             if kwargs:
-                qs = Person.objects.filter(**kwargs)
-
+                #qs = Person.objects.filter(**kwargs)
+                qs = Alias.objects.filter(**kwargs)
+                
             results = qs.order_by('name')
             
             if not results:

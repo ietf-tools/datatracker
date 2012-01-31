@@ -7,13 +7,14 @@
 
 {% block subsection %}
 <div id="telechat-content">
-<h1>Management Issues</h1>
-
-<ul>
-{% for issue in issues %}
-<li><h3>{{ issue.title }}</h3></li>
-{% endfor %}
-</ul>
+  <h1>Management Issues</h1>
+    <ul>
+      {% for issue in issues %}
+        <li><h3>{{ issue.title }}</h3></li>
+      {% endfor %}
+    </ul>
+    <br>
+    <a href="http://datatracker.ietf.org/admin/iesg/telechatagendaitem/" target="_blank">Add a new Management Issue</a>
 
 </div>
 

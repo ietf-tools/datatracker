@@ -10,10 +10,10 @@
   <tbody>
     {% for item in results %}
        <tr class="{% cycle 'row1' 'row2' %}">
-         <td><a href="{% url rolodex_view id=item.id %}">{{item.name}}</a></td>
-         <td>{{item.affiliation}}</td>
-         <td>{{item.email_address}}</td>
-         <td><a href="view/{{item.id}}/">{{item.id}}</a></td>
+         <td><a href="{% url rolodex_view id=item.person.id %}">{{item.name}}</a></td>
+         <td>{{item.person.affiliation}}</td>
+         <td>{{item.person.email_address}}</td>
+         <td>{{item.person.id}}</a></td>
        </tr>
     {% endfor %}
   </tbody>

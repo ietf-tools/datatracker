@@ -623,3 +623,9 @@ ul.doc-list li {
 .right-nav {
     float: right;
 }
+
+.telechat-warn h3 { 
+    color: white;
+    text-align: center;
+    background-color: #FF66FF;
+}

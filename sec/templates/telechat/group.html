@@ -2,6 +2,19 @@
 
 {% block subsection %}
 <div id="telechat_main">
-{{ group }}
+    <a href="./previous/"><< Previous</a>
+    <span class="right-nav"><a href="./next/">Next >></a></span>
+    <br />
+    <h3>
+      {% for line in header %}
+        {{ line }}<br />
+      {% endfor %}
+    </h3>
+    <br />
+
+    <h3>{{ group }} ({{ group.acronym }})</h3>
+    
+    <h3>{{ question }}</h3>
+
 </div>
 {% endblock %}

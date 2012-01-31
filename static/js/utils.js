@@ -55,18 +55,18 @@ function change_material_type(obj) {
 
 function init_proceedings_upload() {
   $('#id_material_type').change(function() {
-    if(this.value == "1") {
+    if(this.value == "slides") {
       //alert('Presentation handler called');
       $('div#id_file_help').html("Note 1: You can only upload a presentation file in txt, pdf, doc, or ppt/pptx. System will not accept presentation files in any other format.<br><br>Note 2: All uploaded files will be available to the public immediately on the Preliminary Page. However, for the Proceedings, ppt/pptx files will be converted to html format and doc files will be converted to pdf format manually by the Secretariat staff.");
       $('#id_slide_name').attr('disabled', false);
     }
-    if(this.value == "2") {
+    if(this.value == "minutes") {
       //alert('Minutes handler called');
       $('div#id_file_help').html("Note: You can only upload minutes in txt/html/ppt/pdf formats. System will not accept minutes in any other format.");
       $('#id_slide_name').attr('disabled', true);
       $('#id_slide_name').val('');
     }
-    if(this.value == "3") {
+    if(this.value == "agenda") {
       //alert('Agenda handler called');
       $('div#id_file_help').html("Note: You can only upload agendas in txt/html/ppt/pdf formats. System will not accept agendas in any other format.");
       $('#id_slide_name').attr('disabled', true);

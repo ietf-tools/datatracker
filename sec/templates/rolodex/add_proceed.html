@@ -8,14 +8,14 @@
 {% endblock %}
 
 {% block content %}
-<h1>Adding {{ post_data.name }}</h1>
+<h1>Adding {{ name }}</h1>
 
 <form action="" method="post">
 <div class="module">
-<h2>Email</h2>
-	<table>
-	 {{ email_form.as_table }}
-	</table>
+<h2>Info</h2>
+  <table>
+    {{ form.as_table }}
+  </table>
 </div> <!-- module -->
 
 

@@ -12,6 +12,7 @@ from django.utils import simplejson
 
 from sec.utils.meeting import CURRENT_MEETING
 from ietf.group.models import GroupEvent, GroupURL, Role
+from ietf.group.utils import save_group_in_history
 from ietf.wginfo.views import fill_in_charter_info
 
 from forms import *
@@ -222,7 +223,8 @@ def edit(request, acronym):
             if form.changed_data:
                 state = form.cleaned_data['state']
                 
-                # TODO save group in history (see save_doucment_history)
+                # save group
+                save_group_in_history(group)
                 
                 form.save()
                 awp_formset.save()
