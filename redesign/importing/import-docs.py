@@ -241,7 +241,7 @@ def date_in_match(match):
         d = 25
     return datetime.date(y, m, d)
 
-re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat(| - %s) by" % date_re_str)
+re_telechat_agenda = re.compile(r"(Placed on|Removed from) agenda for telechat( - %s|)" % date_re_str)
 re_telechat_changed = re.compile(r"Telechat date (was|has been) changed to (<b>)?%s(</b>)? from" % date_re_str)
 re_ballot_position = re.compile(r"\[Ballot Position Update\] (New position, (?P<position>.*), has been recorded( for (?P<for>\w+ \w+) |)|Position (|for (?P<for2>.*) )has been changed to (?P<position2>.*) from .*)(by (?P<by>.*)|)")
 re_ballot_issued = re.compile(r"Ballot has been issued")
@@ -251,7 +251,7 @@ re_draft_added = re.compile(r"Draft [Aa]dded (by .*)?( in state (?P<state>.*))?"
 re_last_call_requested = re.compile(r"Last Call was requested")
 re_document_approved = re.compile(r"IESG has approved and state has been changed to")
 re_document_disapproved = re.compile(r"(Do Not Publish|DNP) note has been sent to RFC Editor and state has been changed to")
-re_resurrection_requested = re.compile(r"(I-D |)Resurrection was requested by")
+re_resurrection_requested = re.compile(r"(I-D |)Resurrection was requested")
 re_completed_resurrect = re.compile(r"(This document has been resurrected|This document has been resurrected per RFC Editor's request|Resurrection was completed)")
 
 re_status_date_changed = re.compile(r"Status [dD]ate has been changed to (<b>)?" + date_re_str)
@@ -600,7 +600,7 @@ def import_from_idinternal(d, idinternal):
     if not idinternal.agenda:
         idinternal.telechat_date = None # normalize
 
-    if telechat_date != idinternal.telechat_date:
+    if idinternal.telechat_date != telechat_date:
         e = TelechatDocEvent(type="scheduled_for_telechat",
                           telechat_date=idinternal.telechat_date,
                           returning_item=bool(idinternal.returning_item))
@@ -612,7 +612,7 @@ def import_from_idinternal(d, idinternal):
         e.by = system
         args = ("Placed on", idinternal.telechat_date) if idinternal.telechat_date else ("Removed from", telechat_date)
         e.doc = d
-        e.desc = "%s agenda for telechat - %s by system" % args
+        e.desc = "%s agenda for telechat - %s" % args
         e.save()
 
     try:
