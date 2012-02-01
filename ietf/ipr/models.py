@@ -145,9 +145,9 @@ class IprDetail(models.Model):
 
 class IprContact(models.Model):
     TYPE_CHOICES = (
-	('1', 'Patent Holder Contact'),
-	('2', 'IETF Participant Contact'),
-	('3', 'Submitter Contact'),
+	(1, 'Patent Holder Contact'),
+	(2, 'IETF Participant Contact'),
+	(3, 'Submitter Contact'),
     )
     contact_id = models.AutoField(primary_key=True)
     ipr = models.ForeignKey(IprDetail, related_name="contact")
