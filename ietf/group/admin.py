@@ -101,7 +101,7 @@ admin.site.register(GroupURL)
 class RoleAdmin(admin.ModelAdmin):
     list_display = ["name", "person", "email", "group"]
     list_display_links = ["name"]
-    search_fields = ["name", "person", "email"]
+    search_fields = ["name__name", "person__name", "email__address"]
     list_filter = ["name"]
     ordering = ["id"]
     raw_id_fields = ["email", "person", "group"]
