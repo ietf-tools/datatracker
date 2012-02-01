@@ -1,6 +1,6 @@
 {% load wgchairs_tags %}
 
-        <tr class="{% cycle oddrow,evenrow %}">
+        <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}>
           <td class="title">
             <a href="{% url doc_view doc.filename %}">{{ doc.title }}</a>
           </td>

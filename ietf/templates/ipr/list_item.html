@@ -1,5 +1,5 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
-   <tr class="{% cycle oddrow,evenrow %}">
+   <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
       <td>{{ ipr.submitted_date }}</td>
       <td>{{ ipr.ipr_id }}</td>
       <td>
