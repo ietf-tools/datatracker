@@ -339,15 +339,6 @@ for o in IETFWG.objects.all().order_by("pk"):
         l = ""
     group.list_archive = l
 
-    charter = set_or_create_charter(group)
-    if group.state_id in ("active", "conclude"):
-        charter.rev = "01"
-        charter.set_state(State.objects.get(type="charter", slug="approved"))
-    else:
-        charter.rev = "00"
-        charter.set_state(State.objects.get(type="charter", slug="notrev"))
-    charter.save()
-
     group.comments = o.comments.strip() if o.comments else ""
     
     group.save()
@@ -399,5 +390,17 @@ for o in IETFWG.objects.all().order_by("pk"):
     import_date_event(group, "concluded", "conclude", "Concluded group")
     # dormant_date is empty on all so don't bother with that
             
+    charter = set_or_create_charter(group)
+    if group.state_id in ("active", "conclude"):
+        charter.rev = "01"
+        charter.set_state(State.objects.get(type="charter", slug="approved"))
+    else:
+        charter.rev = "00"
+        charter.set_state(State.objects.get(type="charter", slug="notrev"))
+    # the best estimate of the charter time is when we changed state
+    e = group.groupevent_set.order_by("-time")[:1]
+    charter.time = e[0].time if e else group.time
+    charter.save()
+
     # FIXME: missing fields from old: meeting_scheduled, email_keyword, meeting_scheduled_old
 
