@@ -268,8 +268,15 @@ def get_ballot(name):
                 raise Http404
         except BallotInfo.DoesNotExist:
             raise Http404
-        
-        return (BallotWrapper(d), RfcWrapper(d) if m else IdWrapper(d))
+
+        bw = BallotWrapper(d)
+        if m:
+            d.viewing_as_rfc = True
+            dw = RfcWrapper(d)
+        else:
+            dw = IdWrapper(d)
+
+        return (bw, dw)
         
     if m:
         rfc_number = int(m.group(1))
