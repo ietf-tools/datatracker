@@ -35,7 +35,12 @@ def active_ballot_positions(doc):
     active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active"))
     res = {}
 
-    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ad__in=active_ads).select_related('ad').order_by("-time", "-id")
+    start = datetime.datetime.min
+    e = doc.latest_event(type="started_iesg_process")
+    if e:
+        start = e.time
+
+    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ad__in=active_ads, time__gte=start).select_related('ad').order_by("-time", "-id")
 
     for pos in positions:
         if pos.ad not in res:
