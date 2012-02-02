@@ -168,7 +168,7 @@ table.center {
     width: auto;
     height: 2.5em;
     padding: 4px 7px;
-    background: white url(../images/admin/nav-bg.gif) 0 100% repeat-x;
+    background: white url(../img/admin/nav-bg.gif) 0 100% repeat-x;
     border: 0 solid #ccc;
     border-top: 1px solid #ccc;
     margin: 5px 0 0 0;
@@ -547,7 +547,7 @@ ul.session-buttons {
 #telechat-sidebar {
     float: left;
     width: 294px;
-    background: url("../images/admin/default-bg.gif") repeat-x scroll left top #7CA0C7;
+    background: url("../img/admin/default-bg.gif") repeat-x scroll left top #7CA0C7;
     color: white;
     min-height: 500px; 
     padding: 0 0 0 6px;
@@ -628,4 +628,23 @@ ul.doc-list li {
     color: white;
     text-align: center;
     background-color: #FF66FF;
+}
+
+.telechat-button {
+    height: 2.5em;
+    padding: 4px 7px;
+    width: auto;
+    margin: 0 auto;
+}
+
+.telechat-button ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 7px;
+    text-align: center;
+}
+
+.telechat-button li {
+    list-style-type: none;
+    text-align: center;
 }

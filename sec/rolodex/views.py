@@ -174,8 +174,18 @@ def edit(request, id):
         person_form = EditPersonForm(request.POST, instance=person)
         email_formset = EmailFormset(request.POST, instance=person, prefix='email')
         if person_form.is_valid() and email_formset.is_valid():
+            
+            
+            # handle aliases
+            for field in ('name','ascii','ascii_short'):
+                if field in person_form.changed_data:
+                    person.alias_set.filter(name=getattr(person,field)).delete()
+                    Alias.objects.get_or_create(person=person,name=person_form.cleaned_data[field])
+                    
             person_form.save()
             email_formset.save()
+            
+            # add new names to alias
             
             messages.success(request, 'The Rolodex entry was changed successfully')
             url = reverse('rolodex_view', kwargs={'id': id})
@@ -237,6 +247,11 @@ def search(request):
                 
             results = qs.order_by('name')
             
+            # if there's just one result go straight to view
+            if len(results) == 1:
+                url = reverse('rolodex_view', kwargs={'id':results[0].person.id})
+                return HttpResponseRedirect(url)
+                
             if not results:
                 not_found = 'No record found' 
     else:

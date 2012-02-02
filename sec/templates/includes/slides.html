@@ -14,8 +14,8 @@
        <tr class="{% cycle 'row1' 'row2' %}">
          <td><a href="{{ slide.url }}" target="_blank">{{ slide.title }}</a></td>
          <td>{{ slide.name }}{% if slide.in_q %}<span class="required"> *</span>{% endif %}</td>
-         <td>{% if forloop.first %}{% else %}<a href="{% url proceedings_move_slide meeting_id=meeting.pk acronym=group.acronym slide_id=slide.pk direction='up' %}"><img src="/images/admin/arrow-up.gif" alt="Up Arrow" border="0"/></a>{% endif %}</td>
-         <td>{% if forloop.last %}{% else %}<a href="{% url proceedings_move_slide meeting_id=meeting.pk acronym=group.acronym slide_id=slide.pk direction='down' %}"><img src="/images/admin/arrow-down.gif" alt="Up Arrow" border="0"/></a>{% endif %}</td>
+         <td>{% if forloop.first %}{% else %}<a href="{% url proceedings_move_slide meeting_id=meeting.pk acronym=group.acronym slide_id=slide.pk direction='up' %}"><img src="/img/admin/arrow-up.gif" alt="Up Arrow" border="0"/></a>{% endif %}</td>
+         <td>{% if forloop.last %}{% else %}<a href="{% url proceedings_move_slide meeting_id=meeting.pk acronym=group.acronym slide_id=slide.pk direction='down' %}"><img src="/img/admin/arrow-down.gif" alt="Up Arrow" border="0"/></a>{% endif %}</td>
          <td><a href="{% url proceedings_edit_slide meeting_id=meeting.pk acronym=group.acronym slide_id=slide.pk %}">Edit</a></td>
          <td><a href="{% url proceedings_replace_slide meeting_id=meeting.pk acronym=group.acronym slide_id=slide.pk %}">Replace</a></td>
          <td><a href="{% url proceedings_delete_material meeting_id=meeting.pk acronym=group.acronym name=slide.name %}">Delete</a></td>

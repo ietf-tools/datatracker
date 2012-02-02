@@ -145,7 +145,7 @@ class BaseFileFormSet(BaseFormSet):
 class EditModelForm(forms.ModelForm):
     #expiration_date = forms.DateField(required=False)
     state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft'),empty_label=None)
-    iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='iesg'),empty_label=None)
+    iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft-iesg'),required=False)
     group = GroupModelChoiceField(required=True)
     review_by_rfc_editor = forms.BooleanField(required=False)
     
@@ -160,6 +160,9 @@ class EditModelForm(forms.ModelForm):
         self.fields['title'].widget=forms.Textarea()
         self.fields['rev'].widget.attrs['size'] = 2
         self.fields['abstract'].widget.attrs['cols'] = 72
+        self.initial['state'] = self.instance.get_state()
+        self.initial['iesg_state'] = self.instance.get_state('draft-iesg')
+        
         # setup special fields
         if self.instance:
             # setup replaced
@@ -167,16 +170,25 @@ class EditModelForm(forms.ModelForm):
             
     def save(self, force_insert=False, force_update=False, commit=True):
         m = super(EditModelForm, self).save(commit=False)
+        state = self.cleaned_data['state']
+        iesg_state = self.cleaned_data['iesg_state']
         
         if 'state' in self.changed_data:
-            m.set_state(self.cleaned_data['state'])
+            m.set_state(state)
         
+        if 'iesg_state' in self.changed_data:
+            if iesg_state == None:
+                m.unset_state('draft-iesg')
+            else:
+                m.set_state(iesg_state)
+            
         if 'review_by_rfc_editor' in self.changed_data:
             if self.cleaned_data.get('review_by_rfc_editor',''):
                 m.tags.add('rfc-rev')
             else:
                 m.tags.remove('rfc-rev')
         
+        m.time = datetime.datetime.now()
         # handle replaced by
         
         if commit:

@@ -105,10 +105,6 @@ $(document).ready(function() {
   $("input:text:visible:enabled:first").focus();
 
   // custom focus settings --------------------------------
-  // set focus on first new_email field for bulk update
-  if ( $("form[id^=bulk-update-form]").length > 0){
-      $("input[id^=id_new_email]:first").focus();
-  }
   if ( $("form[id^=group-role-assignment-form]").length > 0){
       $("#id_role_type").focus();
   }

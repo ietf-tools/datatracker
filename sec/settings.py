@@ -107,7 +107,7 @@ ROOT_URLCONF = 'sec.urls'
 
 TEMPLATE_DIRS = (
     BASE_DIR + "/templates",
-    #'/a/home/rcross/devr/ietf/ietf/templates',
+    "/a/www/ietf-datatracker/web/ietf",
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -138,6 +138,8 @@ INSTALLED_APPS = (
     'ietf.doc',
     #'ietf.issue', #this is bogus leave it out
     'ietf.announcements',
+    'ietf.doc',
+    'ietf.group',
     'ietf.idindex',
     'ietf.idtracker',
     'ietf.ietfauth',
@@ -146,6 +148,7 @@ INSTALLED_APPS = (
     'ietf.liaisons',
     'ietf.mailinglists',
     'ietf.meeting',
+    'ietf.person',
     'ietf.proceedings',
     'ietf.redirects',
     'ietf.idrfc',
@@ -153,6 +156,7 @@ INSTALLED_APPS = (
     'ietf.submit',
     'ietf.ietfworkflows',
     'ietf.wgchairs',
+    'ietf.wgcharter',
     # new apps
     'sec.announcement',
     'sec.areas',

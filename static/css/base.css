@@ -470,19 +470,19 @@ ul.messages li {
 }
 
 .info {
-    background: #ffc url(../images/admin/icon_success.gif) 5px .3em no-repeat;
+    background: #ffc url(../img/admin/icon_success.gif) 5px .3em no-repeat;
 }
 
 .success {
-    background: #ffc url(../images/admin/icon_success.gif) 5px .3em no-repeat;
+    background: #ffc url(../img/admin/icon_success.gif) 5px .3em no-repeat;
 }
 
 .warning {
-    background: #ffc url(../images/admin/icon_alert.gif) 5px .3em no-repeat;
+    background: #ffc url(../img/admin/icon_alert.gif) 5px .3em no-repeat;
 }
 
 .error {
-    background: #ffc url(../images/admin/icon_error.gif) 5px .3em no-repeat;
+    background: #ffc url(../img/admin/icon_error.gif) 5px .3em no-repeat;
 }
 /******** /User feedback messages ********/
 

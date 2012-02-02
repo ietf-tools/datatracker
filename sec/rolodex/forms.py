@@ -7,7 +7,6 @@ from ietf.person.models import Email, Person
 
 import re
 
-
 class SearchForm(forms.Form):
     name = forms.CharField(max_length=50,required=False)
     email = forms.CharField(max_length=255,required=False)
@@ -34,19 +33,22 @@ class EditPersonForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(EditPersonForm, self).__init__(*args,**kwargs)
-        self.fields['user'] = forms.CharField(max_length=64,required=False)
-        self.initial['user'] = self.instance.user.username
+        self.fields['user'] = forms.CharField(max_length=64,required=False,help_text="Corresponds to Django User ID (usually email address)")
+        if self.instance.user:
+            self.initial['user'] = self.instance.user.username
         
     def clean_user(self):
         user = self.cleaned_data['user']
+        if user:
+            try:
+                user_obj = User.objects.get(username=user)
+            except User.DoesNotExist:
+                raise forms.ValidationError("User must be a valid Django username")
+            
+            return user_obj
+        else:
+            return None
         
-        try:
-            user_obj = User.objects.get(username=user)
-        except User.DoesNotExist:
-            raise ValidationError("User must be a valid Django username")
-        
-        return user_obj
-    
     """
     def save(self, force_insert=False, force_update=False, commit=True):
         obj = super(EditPersonForm, self).save(commit=False)

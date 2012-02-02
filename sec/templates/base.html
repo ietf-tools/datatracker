@@ -5,6 +5,9 @@
 <link rel="stylesheet" type="text/css" href="{% block stylesheet %}/css/base.css{% endblock %}" />
 <link rel="stylesheet" type="text/css" href="/css/forms.css" />
 <link rel="stylesheet" type="text/css" href="/css/custom.css" />
+{% if server_mode == "test" %}
+<link rel="stylesheet" type="text/css" href="/css/test.css" />
+{% endif %}
 {% block extrastyle %}{% endblock %}
 
 {% block extrahead %}

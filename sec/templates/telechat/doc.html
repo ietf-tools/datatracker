@@ -4,12 +4,11 @@
   &raquo; {{ date }}
 {% endblock %}
 
-
 {% block subsection %}
 <div id="telechat-content">
 {% if document %}
-    <a href="./previous/"><< Previous</a>
-    <span class="right-nav"><a href="./next/">Next >></a></span>
+    {% if not nav_start %}<a href="./previous/"><< Previous</a>{% endif %}
+    {% if not nav_end %}<span class="right-nav"><a href="./next/">Next >></a></span>{% endif %}
     <br />
     <h3>
       {% for line in header %}
@@ -22,6 +21,7 @@
     Token: {{ document.ad.name }}<br />
     Number of Open Positions: {{ open_positions }}<br />
     <br />
+    <div>
     <form action="" method="post">
     {{ formset.management_form }}
     <table id="telechat-positions-table">
@@ -37,19 +37,25 @@
     {% endfor %}
     </tr>
     </table>
-    <div class="button-group">
-      <button type="submit" name="submit" value="update_ballot">Update Ballot</button>
+    <div class="telechat-button">
+      <ul><li><button type="submit" name="submit" value="update_ballot">Update Ballot</button></li></ul>
     </div>
     </form>
+    </div>
     
+    <hr /><br />
     
     <form action="" method="post">
       <table>
       {{ state_form.as_table }}
       </table>
-      <button type="submit" name="submit" value="update_state">Update State</button>
+      <div class="telechat-button">
+        <ul><li><button type="submit" name="submit" value="update_state">Update State</button></li></ul>
+      </div>
     </form>
     
+    <hr /><br />
+       
     <a name="writeup"><h2>Ballot Writeup</h2></a>
     <pre>
     {{ writeup }}

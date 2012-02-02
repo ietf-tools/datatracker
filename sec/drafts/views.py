@@ -80,20 +80,6 @@ def handle_substate(doc):
     This function checks to see if the document has a revision needed tag, if so the
     tag gets changed to ad followup
     '''
-    """
-    if IDInternal.objects.filter(draft=draft.id_document_tag):
-        try:
-            id = IDInternal.objects.get(draft=draft.id_document_tag)
-            revised_state_obj = IDSubState.objects.get(sub_state_id=5)
-            followup_state_obj = IDSubState.objects.get(sub_state_id=2)
-            if id.cur_sub_state == revised_state_obj:
-                save_comment(draft, 'Sub state has been changed to <b>AD Follow up</b> from New ID Needed')
-                id.cur_sub_state = followup_state_obj
-                id.prev_sub_state = revised_state_obj
-                id.save()
-        except (ObjectDoesNotExist, MultipleObjectsReturned):
-            raise Exception('Error updating ID sub state')
-    """
     qs = doc.tags.filter(slug__in=('need-rev','rev-wglc','rev-ad','rev-iesg'))
     if qs:
         for tag in qs:
@@ -386,7 +372,7 @@ def add(request):
             # set fields (set stream or intended status?)
             draft.rev = revision
             draft.name = name
-            draft.type = DocTypeName.objects.get(slug='draft')
+            draft.type_id = 'draft'
             draft.save()
             
             # set state
@@ -628,16 +614,16 @@ def edit(request, id):
                 save_document_in_history(draft)
                 DocEvent.objects.create(type='changed_document',
                                         by=request.user.get_profile(),
-                                        doc=draft,
-                                        rev=draft.rev)
+                                        doc=draft)
                 form.save()
+                
                 messages.success(request, 'Draft modified successfully!')
             
             url = reverse('drafts_view', kwargs={'id':id})
             return HttpResponseRedirect(url)
         else:
-            assert False, form.errors
-            
+            #assert False, form.errors
+            pass
     else:
         form = EditModelForm(instance=draft)
     

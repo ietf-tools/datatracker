@@ -16,12 +16,10 @@ from ietf.person.models import Person
 from ietf.idrfc.lastcall import request_last_call
 from ietf.idrfc.mails import email_owner, email_state_changed
 from ietf.idrfc.utils import log_state_changed, add_document_comment
-#from ietf.idrfc.views_doc import get_ballot
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem, WGAction
 from ietf.iesg.views import _agenda_data
 
 from forms import *
-from models import *
 
 import datetime
 '''
@@ -29,7 +27,7 @@ EXPECTED CHANGES:
 - group pages will be just another doc, charter doc
 - charter docs to discuss will be passed in the 'docs' section of agenda
 - expand get_section_header to include section 4
-- get rid of get_group_header, and group() view
+- consolidate views (get rid of get_group_header,group,group_navigate)
 
 '''
 # -------------------------------------------------
@@ -45,12 +43,17 @@ _agenda_data: takes a request object and a date string
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
-def get_next_telechat_date():
+def get_doc_list(agenda):
     '''
-    This function returns the date of the next telechat
+    This function takes an agenda dictionary and returns a list of
+    Document names in the order they appear in the agenda sections 1-3.
     '''
-    return TelechatDate.objects.filter(date__gte=datetime.date.today()).order_by('date')[0].date
+    docs = []
+    for key in sorted(agenda['docs']):
+        docs.extend(agenda['docs'][key])
     
+    return [x['obj'].name for x in docs]
+
 def get_last_telechat_date():
     '''
     This function returns the date of the last telechat
@@ -58,6 +61,12 @@ def get_last_telechat_date():
     '''
     return TelechatDate.objects.filter(date__lt=datetime.date.today()).order_by('-date')[0].date
     #return '2011-11-01' # uncomment for testing
+    
+def get_next_telechat_date():
+    '''
+    This function returns the date of the next telechat
+    '''
+    return TelechatDate.objects.filter(date__gte=datetime.date.today()).order_by('date')[0].date
     
 def get_section_header(file,agenda):
     '''
@@ -77,22 +86,22 @@ def get_section_header(file,agenda):
             count = '%s of %s' % (v.index(test) + 1, len(v))
             break
     
-    header = [ '%s %s\n' % (section[1], h1[section[1]]) ]
-    header.append('%s.%s %s\n' % (section[1], section[2], h2a[section[2]] if section[1] == '2' else h2b[section[2]]))
-    header.append('%s.%s.%s %s\n' % (section[1], section[2], section[3], h3[section[3]]))
+    header = [ '%s %s' % (section[1], h1[section[1]]) ]
+    header.append('%s.%s %s' % (section[1], section[2], h2a[section[2]] if section[1] == '2' else h2b[section[2]]))
+    header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3[section[3]]))
     header.append(count)
     
     return header
     
-def get_group_header(group,agenda):
+def get_group_info(group,agenda):
     '''
     This function takes a group name and an agenda dictionary and returns the 
-    agenda section header as a string for use in the doc template
+    agenda section header as a string and the wgaction object for use in the template.
     '''
     h1 = {'4':'Working Group Actions'}
     h2 = {'1':'WG Creation','2':'WG Rechartering'}
-    h3a = {'1':'Proposed for IETF Review','2':'Proposed for IETF Approval'}
-    h3b = {'1':'Under Evalutaion for IETF Review','2':'Proposed for IETF Approval'}
+    h3a = {'1':'Proposed for IETF Review','2':'Proposed for Approval'}
+    h3b = {'1':'Under Evalutaion for IETF Review','2':'Proposed for Approval'}
     
     for k,v in agenda['wgs'].iteritems():
         c = 0
@@ -101,14 +110,15 @@ def get_group_header(group,agenda):
             if g['obj'].group_acronym_id == group.id:            
                 section = k
                 count = '%s of %s' % (c, len(v))
+                wgaction = g['obj']
                 break
     
-    header = [ '%s %s\n' % (section[1], h1[section[1]]) ]
-    header.append('%s.%s %s\n' % (section[1], section[2], h2[section[2]]))
-    header.append('%s.%s.%s %s\n' % (section[1], section[2], section[3], h3a[section[3]] if section[2] == '1' else h3b[section[3]]))
+    header = [ '%s %s' % (section[1], h1[section[1]]) ]
+    header.append('%s.%s %s' % (section[1], section[2], h2[section[2]]))
+    header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3a[section[3]] if section[2] == '1' else h3b[section[3]]))
     header.append(count)
     
-    return header
+    return header, wgaction
 
 def get_group_list(agenda):
     '''
@@ -121,7 +131,8 @@ def get_group_list(agenda):
     
     group_ids = [x['obj'].group_acronym_id for x in entries]
     groups = [ Group.objects.get(id=id) for id in group_ids ]
-    return groups
+    acronyms = [ g.acronym for g in groups ]
+    return acronyms
     
 def get_first_doc(agenda):
     '''
@@ -171,7 +182,6 @@ def doc_detail(request, date, name):
     This view displays the ballot information for the document, and lets the user make
     changes to ballot positions and document state.
     '''
-    #doc = Document.objects.get(docalias__name=name)
     doc = get_object_or_404(Document, docalias__name=name)
         
     started_process = doc.latest_event(type="started_iesg_process")
@@ -203,13 +213,23 @@ def doc_detail(request, date, name):
     agenda = _agenda_data(request, date=date)
     header = get_section_header(name,agenda) if name else ''
     
+    # nav button logic
+    doc_list = get_doc_list(agenda)
+    group_list = get_group_list(agenda)
+    nav_start = nav_end = False
+    if name == doc_list[0]:
+        nav_start = True
+    if name == doc_list[-1] and not group_list:
+        nav_end = True
+    
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
+        
         
         # logic from idrfc/views_ballot.py EditPositionRedesign
         if button_text == 'update_ballot':
             formset = BallotFormset(request.POST, initial=initial_ballot)
-            state_form = DocumentStateForm(initial=initial_state)
+            state_form = ChangeStateForm(initial=initial_state)
             for form in formset.forms:
                 # has_changed doesn't work?
                 if form.is_valid() and form.changed_data:
@@ -231,12 +251,11 @@ def doc_detail(request, date, name):
         
         # logic from idrfc/views_edit.py change_stateREDESIGN
         elif button_text == 'update_state':
-            state_form = ChangeStateForm(request.POST, initial=initial_state)
             formset = BallotFormset(initial=initial_ballot)
+            state_form = ChangeStateForm(request.POST, initial=initial_state)
             if state_form.is_valid():
                 state = state_form.cleaned_data['state']
                 tag = state_form.cleaned_data['substate']
-                comment = state_form.cleaned_data['comment'].strip()
                 prev = doc.get_state("draft-iesg")
 
                 # tag handling is a bit awkward since the UI still works
@@ -244,25 +263,20 @@ def doc_detail(request, date, name):
                 prev_tag = doc.tags.filter(slug__in=(TELECHAT_TAGS))
                 prev_tag = prev_tag[0] if prev_tag else None
     
-                if state != prev or tag != prev_tag:                
+                #if state != prev or tag != prev_tag:                
+                if state_form.changed_data:
                     save_document_in_history(doc)
-                    doc.set_state(state)
-                    if prev_tag:
-                        doc.tags.remove(prev_tag)
-                    if tag:
-                        doc.tags.add(tag)
+                    
+                    if 'state' in state_form.changed_data:
+                        doc.set_state(state)
+                    
+                    if 'substate' in state_form.changed_data:
+                        if prev_tag:
+                            doc.tags.remove(prev_tag)
+                        if tag:
+                            doc.tags.add(tag)
     
                     e = log_state_changed(request, doc, login, prev, prev_tag)
-                    
-                    if comment:
-                        c = DocEvent(type="added_comment")
-                        c.doc = doc
-                        c.by = login
-                        c.desc = comment
-                        c.save()
-    
-                        e.desc += "<br>" + comment
-                    
                     doc.time = e.time
                     doc.save()
     
@@ -287,7 +301,9 @@ def doc_detail(request, date, name):
         'header': header,
         'open_positions': open_positions,
         'state_form': state_form,
-        'writeup': doc.latest_event(WriteupDocEvent).text},
+        'writeup': doc.latest_event(WriteupDocEvent).text,
+        'nav_start': nav_start,
+        'nav_end': nav_end},
         RequestContext(request, {}),
     )
     
@@ -302,21 +318,16 @@ def doc_navigate(request, date, name, nav):
     agenda = _agenda_data(request, date=date)
     target = name
     
-    # build ordered list of documents from the agenda
-    docs = []
-    for key in sorted(agenda['docs']):
-        docs.extend(agenda['docs'][key])
-    
-    names = [x['obj'].name for x in docs]
+    names = get_doc_list(agenda)
     index = names.index(name)
     
     if nav == 'next' and index < len(names) - 1:
         target = names[index + 1]
     elif nav == 'next' and index == len(names) - 1:
         # go to first group doc if there is one
-        group_list = get_group_list(agenda)
-        if group_list:
-            url = reverse('telechat_group', kwargs={'date':date,'acronym':group_list[0].acronym})
+        groups = get_group_list(agenda)
+        if groups:
+            url = reverse('telechat_group', kwargs={'date':date,'acronym':groups[0]})
             return HttpResponseRedirect(url)
     elif nav == 'previous' and index != 0:
         target = names[index - 1]
@@ -331,24 +342,44 @@ def group(request, date, acronym):
     '''
     group = get_object_or_404(Group, acronym=acronym)
     agenda = _agenda_data(request, date=date)
-    header = get_group_header(group,agenda)
-    
-    # TODO set question
-    if header[1].startswith('4.1'):
-        question = ''
-    else:
-        question = 'Does anyone have an objection to the rechartering of this group?'
-    
+    header,wgaction = get_group_info(group,agenda)
+        
+    # nav button logic, we're assuming there'll always be regular docs
+    group_list = get_group_list(agenda)
+    nav_end = False
+    if acronym == group_list[-1]:
+        nav_end = True
+        
     return render_to_response('telechat/group.html', {
         'date':date,
         'group': group,
         'agenda': agenda,
-        'header': header},
+        'header': header,
+        'nav_end': nav_end,
+        'wgaction': wgaction},
         RequestContext(request, {}),
     )
     
 def group_navigate(request, date, acronym, nav):
-    pass
+    '''
+    This view facilitates navigation among WG Actions for the agenda
+    '''
+    agenda = _agenda_data(request, date=date)
+    target = acronym
+    groups = get_group_list(agenda)
+    index = groups.index(acronym)
+    
+    if nav == 'next' and index < len(groups) -1:
+        target = groups[index + 1]
+    elif nav == 'previous' and index != 0:
+        target = groups[index - 1]
+    elif nav == 'previous' and index == 0:
+        docs = get_doc_list(agenda)
+        url = reverse('telechat_doc_detail', kwargs={'date':date,'name':docs[-1]})
+        return HttpResponseRedirect(url)
+        
+    url = reverse('telechat_group', kwargs={'date':date,'acronym':target})
+    return HttpResponseRedirect(url)
 
 def main(request):
     '''
@@ -433,11 +464,12 @@ def roll_call(request, date):
     
     agenda = _agenda_data(request, date=date)
     ads = Person.objects.filter(role__name='ad')
+    sorted_ads = sorted(ads, key = lambda a: a.name_parts()[3])
     
     return render_to_response('telechat/roll_call.html', {
         'agenda': agenda,
         'date': date,
-        'people':ads},
+        'people':sorted_ads},
         RequestContext(request, {}),
     )
     

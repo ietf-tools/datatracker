@@ -1,5 +1,9 @@
 /* Following functions based off code written by Arne Brodowski
 http://www.arnebrodowski.de/blog/507-Add-and-remove-Django-Admin-Inlines-with-JavaScript.html
+
+2012-02-01 customized for new Rolodex.  Email formset doesn't have an id field, rather a "address"
+field as primary key.  Also for some reason the "active" boolean field doesn't get saved properly
+if the checkbox input has an empty "value" argument.
 */
 function increment_form_ids(el, to, name) {
     var from = to-1
@@ -8,12 +12,19 @@ function increment_form_ids(el, to, name) {
         var old_id = $(e).attr('id')
         $(e).attr('name', old_name.replace(from, to))
         $(e).attr('id', old_id.replace(from, to))
-        $(e).val('')
+        if ($(e).attr('type') != 'checkbox') {
+           $(e).val('')
+        }
     })
 }
 
 function add_inline_form(name) {
-    var first = $('#id_'+name+'-0-id').parents('.inline-related')
+    if (name=="email") {
+        var first = $('#id_'+name+'-0-address').parents('.inline-related')
+    }
+    else {
+        var first = $('#id_'+name+'-0-id').parents('.inline-related')
+    }
     // check to see if this is a stacked or tabular inline
     if (first.hasClass("tabular")) {
         var field_table = first.parent().find('table > tbody')
