@@ -145,13 +145,13 @@ class Document(DocumentInfo):
     def get_absolute_url(self):
         name = self.name
         if self.type_id == "charter":
-            return urlreverse('wg_view', kwargs={ 'name': self.group.acronym })
+            return urlreverse('wg_view', kwargs={ 'name': self.group.acronym }, urlconf="ietf.urls")
         elif self.type_id == "draft":
             if self.get_state_slug() == "rfc":
                 aliases = self.docalias_set.filter(name__startswith="rfc")
                 if aliases:
                     name = aliases[0].name
-            return urlreverse('doc_view', kwargs={ 'name': name })
+            return urlreverse('doc_view', kwargs={ 'name': name }, urlconf="ietf.urls")
 
     def file_tag(self):
         return u"<%s>" % self.filename_with_rev()
