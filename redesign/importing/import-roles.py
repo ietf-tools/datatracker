@@ -45,8 +45,8 @@ authorized_role = name(RoleName, "auth", "Authorized Individual")
 delegate_role = name(RoleName, "delegate", "Delegate")
 
 # import IANA authorized individuals
-for o in User.objects.filter(groups__name="IANA"):
-    print "Importing IANA group memeber", o
+for o in User.objects.using("legacy").filter(groups__name="IANA"):
+    print "Importing IANA group member", o
 
     if o.username == "amanda.barber@icann.org":
         o.username = "amanda.baber@icann.org"
