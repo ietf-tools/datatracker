@@ -301,7 +301,9 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             active_ads = list(Person.objects.filter(role__name="ad",
                                                     role__group__type="area",
                                                     role__group__state="active").distinct())
-            inactive_ads = list(Person.objects.filter(pk__in=responsible)
+            inactive_ads = list((Person.objects.filter(pk__in=responsible) | Person.objects.filter(role__name="pre-ad",
+                                                                                                  role__group__type="area",
+                                                                                                  role__group__state="active"))
                                 .exclude(pk__in=[x.pk for x in active_ads]))
             extract_last_name = lambda x: x.name_parts()[3]
             active_ads.sort(key=extract_last_name)
@@ -568,10 +570,11 @@ def by_ad(request, name):
     ad_name = None
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         responsible = Document.objects.values_list('ad', flat=True).distinct()
-        for p in Person.objects.filter(Q(role__name="ad",
+        for p in Person.objects.filter(Q(role__name__in=("pre-ad", "ad"),
                                          role__group__type="area",
                                          role__group__state="active")
-                                       | Q(pk__in=responsible)):
+                                       | Q(pk__in=responsible)).distinct():
+            print name, p.full_name_as_key()
             if name == p.full_name_as_key():
                 ad_id = p.id
                 ad_name = p.plain_name()

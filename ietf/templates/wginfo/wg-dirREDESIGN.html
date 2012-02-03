@@ -58,7 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    <p>Area Director{{ forloop.revcounter|pluralize }}:</p>
    <table style="margin-left: 2em" class="ietf-wg-table">
       {% endif %}
-      <tr><td><span class="square bgcolor{{forloop.counter}}">&nbsp;</span></td> <td><a href="mailto:{{ ad.address }}">{{ ad.person.plain_name }} &lt;{{ ad.address }}&gt;</a></td></tr>
+      <tr><td><span class="square bgcolor{{forloop.counter}}">&nbsp;</span></td> <td><a href="mailto:{{ ad.address }}">{{ ad.person.plain_name }} &lt;{{ ad.address }}&gt;</a>{% if ad.incoming %} (Incoming AD){% endif %}</td></tr>
       {% if forloop.last %}
    </table>
    {% endif %}

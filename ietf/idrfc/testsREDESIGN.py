@@ -500,6 +500,22 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertEquals(pos.discuss, "Test discuss text")
         self.assertTrue("New position" in pos.desc)
         self.assertTrue("by Sec" in pos.desc)
+
+    def test_cannot_edit_position_as_pre_ad(self):
+        draft = make_test_data()
+        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name))
+        
+        # transform to pre-ad
+        ad_role = Role.objects.filter(name="ad")[0]
+        ad_role.name_id = "pre-ad"
+        ad_role.save()
+
+        # we can see
+        login_testing_unauthorized(self, ad_role.person.user.username, url)
+
+        # but not touch
+        r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
+        self.assertEquals(r.status_code, 403)
         
     def test_send_ballot_comment(self):
         draft = make_test_data()

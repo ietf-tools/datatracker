@@ -436,7 +436,7 @@ def stable_dictsort(value, arg):
 def ad_area(user):
     if user and user.is_authenticated():
         from ietf.group.models import Group
-        g = Group.objects.filter(role__name="ad", role__person__user=user)
+        g = Group.objects.filter(role__name__in=("pre-ad", "ad"), role__person__user=user)
         if g:
             return g[0].acronym
     return None

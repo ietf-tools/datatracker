@@ -3,7 +3,7 @@
 
 import re, os
 from datetime import datetime, date, time, timedelta
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
@@ -15,7 +15,7 @@ from django.conf import settings
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.ietfauth.decorators import group_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.decorators import has_role, role_required
 from ietf.idtracker.models import *
 from ietf.iesg.models import *
 from ietf.ipr.models import IprDetail
@@ -222,7 +222,7 @@ class EditPositionFormREDESIGN(forms.Form):
            raise forms.ValidationError("You must enter a non-empty discuss")
        return entered_discuss
 
-@group_required('Area_Director','Secretariat')
+@role_required('Area Director','Secretariat')
 def edit_positionREDESIGN(request, name):
     """Vote and edit discuss and comment on Internet Draft as Area Director."""
     doc = get_object_or_404(Document, docalias__name=name)
@@ -238,7 +238,7 @@ def edit_positionREDESIGN(request, name):
         return_to_url = doc.get_absolute_url()
 
     # if we're in the Secretariat, we can select an AD to act as stand-in for
-    if not has_role(request.user, "Area Director"):
+    if has_role(request.user, "Secretariat"):
         ad_id = request.GET.get('ad')
         if not ad_id:
             raise Http404()
@@ -248,6 +248,10 @@ def edit_positionREDESIGN(request, name):
     old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
 
     if request.method == 'POST':
+        if not has_role(request.user, "Secretariat") and not ad.role_set.filter(name="ad", group__type="area", group__state="active"):
+            # prevent pre-ADs from voting
+            return HttpResponseForbidden("Must be a proper Area Director in an active area to cast ballot")
+        
         form = EditPositionForm(request.POST)
         if form.is_valid():
  

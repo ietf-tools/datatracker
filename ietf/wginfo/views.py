@@ -99,7 +99,16 @@ def wg_dirREDESIGN(request):
     
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:
-        area.ads = sorted(Email.objects.filter(role__group=area, role__name="ad").select_related("person"), key=lambda e: e.person.name_parts()[3])
+        area.ads = []
+        for e in Email.objects.filter(role__group=area, role__name="ad").select_related("person"):
+            e.incoming = False
+            area.ads.append(e)
+
+        for e in Email.objects.filter(role__group=area, role__name="pre-ad").select_related("person"):
+            e.incoming = True
+            area.ads.append(e)
+
+        area.ads.sort(key=lambda e: (e.incoming, e.person.name_parts()[3]))
         area.wgs = Group.objects.filter(parent=area, type="wg", state="active").order_by("acronym")
         area.urls = area.groupurl_set.all().order_by("name")
         for wg in area.wgs:

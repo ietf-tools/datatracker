@@ -79,7 +79,7 @@ def has_role(user, role_names):
         return False
 
     role_qs = {
-        "Area Director": Q(person=person, name="ad", group__type="area", group__state="active"),
+        "Area Director": Q(person=person, name__in=("pre-ad", "ad"), group__type="area", group__state="active"),
         "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
         "IANA": Q(person=person, name="auth", group__acronym="iana"),
         "WG Chair": Q(person=person,name="chair", group__type="wg", group__state="active"),
@@ -97,7 +97,7 @@ def role_required(*role_names):
     """View decorator for checking that the user is logged in and
     has one of the listed roles."""
     return passes_test_decorator(lambda u: has_role(u, role_names),
-                                 "Restricted to role%s %s" % ("s" if len(role_names) != 1 else "", ",".join(role_names)))
+                                 "Restricted to role%s %s" % ("s" if len(role_names) != 1 else "", ", ".join(role_names)))
     
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # overwrite group_required

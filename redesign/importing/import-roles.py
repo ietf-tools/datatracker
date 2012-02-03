@@ -33,6 +33,7 @@ from ietf.utils.history import *
 # SDOAuthorizedIndividual, WGDelegate
 
 area_director_role = name(RoleName, "ad", "Area Director")
+pre_area_director_role = name(RoleName, "pre-ad", "Incoming Area Director")
 chair_role = name(RoleName, "chair", "Chair")
 editor_role = name(RoleName, "editor", "Editor")
 secretary_role = name(RoleName, "secr", "Secretary")
@@ -237,14 +238,22 @@ for o in AreaDirector.objects.all():
     
     area = Group.objects.get(acronym=o.area.area_acronym.acronym)
 
-    r = Role.objects.filter(name=area_director_role,
+    role_type = area_director_role
+    
+    try:
+        if IESGLogin.objects.get(person=o.person).user_level == 4:
+            role_type = pre_area_director_role
+    except IESGLogin.DoesNotExist:
+        pass
+    
+    r = Role.objects.filter(name=role_type,
                             person=email.person)
     if r and r[0].group == "iesg":
         r[0].group = area
-        r[0].name = area_director_role
+        r[0].name = role_type
         r[0].save()
     else:
-        Role.objects.get_or_create(name=area_director_role, group=area, person=email.person, email=email)
+        Role.objects.get_or_create(name=role_type, group=area, person=email.person, email=email)
 
 # IESGHistory
 emails_for_time = {}
