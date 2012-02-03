@@ -19,7 +19,7 @@ def clean_email_address(addr):
 def person_name(person):
     def clean_prefix(n):
         n = clean(n)
-        if n in [".", "Mr.", "<s/", "e", "fas", "lk", "Miss", "Mr", "Mr,", "Mr.", "Mr..", "MRS", "Mrs.", "ms", "Ms,", "Ms.", "Ms.    L", "mw", "prefix", "q", "qjfglesjtg", "s", "te mr", "\Mr."]:
+        if n in [".", "Mr.", "<s/", "e", "fas", "lk", "Miss", "Mr", "Mr,", "Mr.", "Mr..", "MRS", "Mrs.", "ms", "Ms,", "Ms.", "Ms.    L", "mw", "prefix", "q", "qjfglesjtg", "s", "te mr", "\Mr.", "M.", "M"]:
             return "" # skip
 
         fixes = { "Dr": "Dr.", "Lt.Colonel": "Lt. Col.", "M": "M.", "Prof": "Prof.", "Prof.Dr.": "Prof. Dr.", "Professort": "Professor" }
