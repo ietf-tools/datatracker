@@ -226,6 +226,7 @@ IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
 IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
+INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
 # Override this in settings_local.py if needed
 #CACHE_MIDDLEWARE_SECONDS = 300

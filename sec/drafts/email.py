@@ -208,7 +208,7 @@ def get_email_initial(draft, type=None, input=None):
     """
     Takes a draft object, a string representing the email type:
     (extend,new,replace,resurrect,revision,update,withdraw) and
-    a dictonary of the action form input data (for use with replace, update).
+    a dictonary of the action form input data (for use with replace, update, extend).
     Returns a dictionary containing initial field values for a email notification.
     The dictionary consists of to, cc, subject, body.
     
@@ -225,7 +225,7 @@ def get_email_initial(draft, type=None, input=None):
     data['cc'] = get_fullcc_list(draft)
     data['to'] = ''
     if type == 'extend':
-        context = {'doc':curr_filename,'expire_date':expiration_date}
+        context = {'doc':curr_filename,'expire_date':input['expiration_date']}
         data['subject'] = 'Extension of Expiration Date for %s' % (curr_filename)
         data['body'] = render_to_string('drafts/message_extend.txt', context)
 
@@ -246,8 +246,12 @@ def get_email_initial(draft, type=None, input=None):
         data['body'] = render_to_string('drafts/message_new.txt', context)
 
     elif type == 'replace':
-        context = {'doc':curr_filename,'replaced_by':input['replaced_by']}
-        data['subject'] = 'Replacement of %s with %s' % (curr_filename,input['replaced_by'])
+        '''
+        input['replaced'] is a DocAlias
+        input['replaced_by'] is a Document
+        '''
+        context = {'doc':input['replaced'].name,'replaced_by':input['replaced_by'].name}
+        data['subject'] = 'Replacement of %s with %s' % (input['replaced'].name,input['replaced_by'].name)
         data['body'] = render_to_string('drafts/message_replace.txt', context)
 
     elif type == 'resurrect':

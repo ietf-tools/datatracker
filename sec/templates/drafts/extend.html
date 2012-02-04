@@ -15,10 +15,12 @@
 {% block content %}
 
 <div class="module draft-container">
-    <h2>Draft - Extend</h2>
+    <h2>Draft - Extend Expiry</h2>
+    
     <form enctype="multipart/form-data" action="" method="post">
       <table class="full-width">
-	{{ form.as_table }}
+        <tr><th><label>Current Expiration Date:</label></th><td>{{ draft.expires|date:"Y-m-d" }}</td></tr>
+        {{ form.as_table }}
       </table>
 
       {% include "includes/buttons_save_cancel.html" %}

@@ -17,59 +17,50 @@
 
 {% block content %}
 
-<div class="module draft-container">
-   <h2>Authors ({{ draft.name }})</h2>
-      <table class="full-width">
-        {% for author in authors %}
-            <tr>
-                <td><a href="{% url sec.rolodex.views.view id=author.person.pk %}">{{ author.person.name }}</a></td>
-                <td><button onclick="if (window.confirm('You are about to delete {{ author.person.name }} from the list.')) { window.location='{% url drafts_author_delete id=draft.name email=author.address %}' };">Delete</button></td>
-            </tr>
+<div class="module">
+  <h2>Authors</h2>   
+    <table class="full-width">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Order</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for author in draft.documentauthor_set.all %}
+          <tr class="{% cycle row1,row2 %}">
+            <td>{{ author.author.person }}</td>
+            <td>{{ author.author }}</td>
+            <td>{{ author.order }}</td>
+            <td><a href="{% url drafts_author_delete id=draft.pk oid=author.id %}">Delete</a></td>
+          </tr>
         {% endfor %}
-      </table>
+      </tbody>
+    </table>
+  
+    <div class="inline-related">
+      <!-- <hr><br> -->
+      <h3>Add Author</h3>
+      <form id="groups-people" action="" method="post">
+        {{ form.non_field_errors }}
+        <table class="full-width">
+          <tr>
+            <td>{{ form.person.errors }}{{ form.person }}{% if form.person.help_text %}<br>{{ form.person.help_text }}{% endif %}</td>
+            <td>{{ form.email.errors }}{{ form.email }}{% if form.email.help_text %}<br>{{ form.email.help_text }}{% endif %}</td>
+            <td><input type="submit" name="submit" value="Add" /></td>
+          </tr>
+        </table>    
+      </form>
+    </div> <!-- inline-related -->
 
-
-   <div class="inline-related">
-     <h2><b>New Author</b></h3>
-       
-       <form action="." method="post">
-       <div class="add-form">
-         {{ formset.management_form }}
-         {{ formset.non_form_errors }}
-         <table class="full-width">
-         <thead>
-             <tr>
-             {% for field in formset.forms.0.visible_fields %}
-                 <th>{{ field.label }}</th>
-             {% endfor %}
-             </tr>
-         </thead>
-         <tbody>
-         {% for form in formset.forms %}
-         {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
-              <tr class="{% cycle row1,row2 %}">
-              {# Include the hidden fields in the form #}
-              {% for hidden in form.hidden_fields %}
-                {{ hidden }}
-              {% endfor %}
-              {% for field in form.visible_fields %}
-                   <td>
-                     {{ field.errors }}
-                     {{ field }}
-                   </td>
-              {% endfor %}
-              </tr>
-          {% endfor %}
-         </tbody>
-         </table>
-         <p>To see a list of people type the first name, or last name, or both.</p>
-       </div>
-       
-   </div> <!-- iniline-related -->
-
-   {% include "includes/buttons_submit.html" %}
-   
-  </form>
+    <div class="button-group">
+      <ul>
+        <li><button onclick="window.location='../'">Done</button></li>
+      </ul>
+    </div> <!-- button-group -->
+    
 </div> <!-- module -->
 
 {% endblock %}

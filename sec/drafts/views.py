@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.urlresolvers import reverse
-from django.db.models import get_model
+from django.db.models import get_model, Max
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory, modelformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
@@ -13,6 +13,8 @@ from django.utils import simplejson
 
 from email import *
 from forms import *
+from ietf.name.models import StreamName
+from ietf.doc.models import Document, DocumentAuthor
 from sec.sreq.views import get_meeting
 from sec.utils.ams_utils import get_base, get_email, get_start_date
 from sec.utils.draft import get_rfc_num
@@ -78,13 +80,20 @@ def handle_uploaded_file(f):
 def handle_substate(doc):
     '''
     This function checks to see if the document has a revision needed tag, if so the
-    tag gets changed to ad followup
+    tag gets changed to ad followup, and a DocEvent is created.
     '''
     qs = doc.tags.filter(slug__in=('need-rev','rev-wglc','rev-ad','rev-iesg'))
     if qs:
         for tag in qs:
             doc.tags.remove(tag)
         doc.tags.add('ad-f-up')
+        
+        # add DocEvent
+        system = Person.objects.get(name="(system)")
+        DocEvent.objects.create(type="changed_document",
+                                doc=doc,
+                                desc="Sub state has been changed to <b>AD Followup</b> from <b>Revised ID Needed</b>",
+                                by=system)
         
 def process_files(files):
     '''
@@ -130,13 +139,19 @@ def do_extend(draft, request):
     - update revision_date
     - set extension_date
     '''
-    
-    #draft.revision_date = session['data']['revision_date']
-    #draft.extension_date = session['data']['revision_date']
+    save_document_in_history(draft)
+
+    draft.expires = request.session['data']['expiration_date']
+    draft.time = datetime.datetime.now()
     draft.save()
     
+    DocEvent.objects.create(type='changed_document',
+                            by=request.user.get_profile(),
+                            doc=draft,
+                            time=draft.time)
+                            
     # save scheduled announcement
-    announcement_from_form(session['email'],by=request.user.get_profile())
+    announcement_from_form(request.session['email'],by=request.user.get_profile())
     
     return
 
@@ -146,45 +161,36 @@ def do_replace(draft, request):
     - change state to Replaced
     - create replaced relationship
     - create DocEvent
-    '''
-    """
+    '''    
+    # ?? don't archive document prioir to expiration per Henrik
     save_document_in_history(draft)
     
-    # don't archive document prioir to expiration per Henrik
+    replaced = request.session['data']['replaced']          # a DocAlias
+    replaced_by = request.session['data']['replaced_by']    # a Document
     
-    replaced_by_name = request.session['data']['replaced_by']
-    replaced_by_object = get_object_or_404(Document, name=replaced_by_name)
+    # create DocEvent
+    # no replace DocEvent at this time (emails 1-13,1-14)
     
-    # create document_comment if applicable
-    # If the replacing document exists in IDInternal use pidtracker url in the comment
-    # otherwise just use the filename.
-    if draft.get_state('draft-iesg'):
-        comment = 'Document replaced by <a href="https://datatracker.ietf.org/public/pidtracker.cgi?command=view&dTag=%s&rfc_flag=0">%s</a>' % (replaced_by_object.id_document_tag,replaced_by_name)
-    else:
-        comment = 'Document replaced by %s' % (replaced_by_name)
-    
-    # handle comment
-    # handle_comment(draft,comment)
-    
-    # change state
+    # change state and update last modified
     draft.set_state(State.objects.get(type="draft", slug="repl"))
+    draft.time = datetime.datetime.now()
+    draft.save()
     
     # create relationship
-    RelatedDocument.objects.create(source=replaced_by_object,
-                                   target=draft,
+    RelatedDocument.objects.create(source=replaced_by,
+                                   target=replaced,
                                    relationship=DocRelationshipName.objects.get(slug='replaces'))
     # send announcement
     announcement_from_form(request.session['email'],by=request.user.get_profile())
     
     return
-    """
-    pass
     
 def do_resurrect(draft, request):
     '''
      Actions
     - restore last archived version
     - change state to Active
+    - reset expires
     - create DocEvent
     '''
     # restore latest revision documents file from archive
@@ -198,11 +204,17 @@ def do_resurrect(draft, request):
     # Update draft record
     draft.set_state(State.objects.get(type="draft", slug="active"))
     
+    # set expires
+    draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    draft.time = datetime.datetime.now()
+    draft.save()
+
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='completed_resurrect',
                                        by=request.user.get_profile(),
                                        doc=draft,
-                                       rev=draft.rev)
+                                       rev=draft.rev,
+                                       time=draft.time)
     
     # send announcement
     announcement_from_form(request.session['email'],by=request.user.get_profile())
@@ -220,7 +232,7 @@ def do_revision(draft, request):
     - upload new docs to live dir
     - save doc in history
     - increment revision 
-    - reset extension_date
+    - reset expires
     - create DocEvent
     - handle sub-state
     - schedule notification
@@ -238,9 +250,10 @@ def do_revision(draft, request):
     else:
         raise Exception('Problem with input data %s' % form.data)
 
-    # save filetypes and revision
+    # set revision and expires
     new_draft.rev = request.session['filename'][-2:]
-    # TODO: reset expiry date if necessary
+    new_draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    new_draft.time = datetime.datetime.now()
     new_draft.save()
     
     # create DocEvent
@@ -248,7 +261,8 @@ def do_revision(draft, request):
                                        by=request.user.get_profile(),
                                        doc=draft,
                                        rev=new_draft.rev,
-                                       desc='New revision available')
+                                       desc='New revision available',
+                                       time=draft.time)
 
     handle_substate(new_draft)
     
@@ -265,6 +279,7 @@ def do_update(draft,request):
     '''
      Actions
     - increment revision #
+    - reset expires
     - create DocEvent
     - do substate check
     - change state to Active
@@ -277,20 +292,24 @@ def do_update(draft,request):
         new_draft = form.save()
     else:
         raise Exception('Problem with input data %s' % form.data)
-    
-    # create DocEvent
-    NewRevisionDocEvent.objects.create(type='new_revision',
-                                       by=request.user.get_profile(),
-                                       doc=draft,
-                                       rev=new_draft.rev,
-                                       desc='New revision available')
 
     handle_substate(new_draft)
     
     # update draft record
     new_draft.rev = os.path.splitext(request.session['data']['filename'])[0][-2:]
-    new_draft.set_state(State.objects.get(type="draft", slug="active"))
+    new_draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    new_draft.time = datetime.datetime.now()
     new_draft.save()
+    
+    new_draft.set_state(State.objects.get(type="draft", slug="active"))
+    
+    # create DocEvent
+    NewRevisionDocEvent.objects.create(type='new_revision',
+                                       by=request.user.get_profile(),
+                                       doc=new_draft,
+                                       rev=new_draft.rev,
+                                       desc='New revision available',
+                                       time=new_draft.time)
     
     # move uploaded files to production directory
     promote_files(new_draft, request.session['file_type'])
@@ -312,6 +331,11 @@ def do_withdraw(draft,request):
     elif withdraw_type == 'author':
         draft.set_state(State.objects.get(type="draft", slug="auth-rm"))
     
+    draft.time = datetime.datetime.now()
+    draft.save()
+    
+    # no DocEvent ?
+
     # send announcement
     announcement_from_form(request.session['email'],by=request.user.get_profile())
     
@@ -373,10 +397,30 @@ def add(request):
             draft.rev = revision
             draft.name = name
             draft.type_id = 'draft'
+            draft.time = datetime.datetime.now()
+            
+            # set stream based on document name
+            if not draft.stream:
+                if draft.name.startswith("draft-iab-"):
+                    stream_slug = "iab"
+                elif draft.name.startswith("draft-irtf-"):
+                    stream_slug = "irtf"
+                elif draft.name.startswith("draft-ietf-") and (draft.group.type_id != "individ"):
+                    stream_slug = "ietf"
+            if stream_slug:
+                draft.stream = StreamName.objects.get(slug=stream_slug)
+                
+            # set expires
+            draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+
             draft.save()
             
             # set state
             draft.set_state(State.objects.get(type="draft", slug="active"))
+            
+            # automatically set state "WG Document"
+            if draft.stream_id == "ietf" and draft.group.type_id != "individ":
+                draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
             
             # create DocAlias
             DocAlias.objects.get_or_create(name=name, document=draft)
@@ -385,7 +429,9 @@ def add(request):
             NewRevisionDocEvent.objects.create(type='new_revision',
                                                by=request.user.get_profile(),
                                                doc=draft,
-                                               rev=draft.rev)
+                                               rev=draft.rev,
+                                               time=draft.time,
+                                               desc="New revision available")
             
             # move uploaded files to production directory
             promote_files(draft, file_type_list)
@@ -445,13 +491,11 @@ def approvals(request):
         RequestContext(request, {}),
     )
 """
-def author_delete(request, id, email):
+def author_delete(request, id, oid):
     '''
     This view deletes the specified author(email) from the draft
     '''
-    draft = get_object_or_404(Document, name=id)
-    author = get_object_or_404(Email, address=email)
-    DocumentAuthor.objects.get(document=draft, author=author).delete()
+    DocumentAuthor.objects.get(id=oid).delete()
     messages.success(request, 'The author was deleted successfully')
     url = reverse('drafts_authors', kwargs={'id':id})
     return HttpResponseRedirect(url)
@@ -466,50 +510,36 @@ def authors(request, id):
 
     **Template Variables:**
 
-    * form, draft, authors
+    * form, draft
 
     '''
     draft = get_object_or_404(Document, name=id)
-    authors = draft.authors.all()
-    AuthorFormset = formset_factory(AuthorForm, extra=10, max_num=10)
     
     if request.method == 'POST':
-        
-        # handle deleting an author
-        if request.POST.get('submit', '') == 'Delete':
-            tag = request.POST.get('author-tag', '')
-            idauthor = IDAuthor.objects.get(id=tag)
-            idauthor.delete()
-            messages.success(request, 'The author was deleted successfully')
-            formset = AuthorFormset(prefix='author')
+        form = AuthorForm(request.POST)
+        if form.is_valid():
+            author = form.cleaned_data['email']
+            authors = draft.documentauthor_set.all()
+            if authors:
+                order = authors.aggregate(Max('order')).values()[0] + 1
+            else:
+                order = 1
+            DocumentAuthor.objects.create(document=draft,author=author,order=order)
             
-        # handle adding an author
-        if request.POST.get('submit', '') == 'Submit':
-            formset = AuthorFormset(request.POST,prefix='author')
-            if formset.is_valid():
-                for form in formset.forms:
-                    if 'author_name' in form.cleaned_data:
-                        name = form.cleaned_data['author_name']
-                        email = get_email(name)
-                        da = DocumentAuthor(document=draft,author=Email.objects.get(address=email))
-                        da.save()
-
-                messages.success(request, 'Authors added successfully!')
-                action = request.session.get('action','')
-                if action == 'add':
-                    url = reverse('drafts_announce', kwargs={'id':id})
-                else:
-                    url = reverse('drafts_view', kwargs={'id':id})
-                return HttpResponseRedirect(url)
+            messages.success(request, 'Authors added successfully!')
+            action = request.session.get('action','')
+            if action == 'add':
+                url = reverse('drafts_announce', kwargs={'id':id})
+            else:
+                url = reverse('drafts_authors', kwargs={'id':id})
+            return HttpResponseRedirect(url)
 
     else: 
-        #form = AuthorForm()
-        formset = AuthorFormset(prefix='author')
+        form = AuthorForm()
 
     return render_to_response('drafts/authors.html', {
         'draft': draft,
-        'authors': authors,
-        'formset': formset},
+        'form': form},
         RequestContext(request, {}),
     )
 
@@ -615,6 +645,7 @@ def edit(request, id):
                 DocEvent.objects.create(type='changed_document',
                                         by=request.user.get_profile(),
                                         doc=draft)
+                # see EditModelForm.save() for detailed logic
                 form.save()
                 
                 messages.success(request, 'Draft modified successfully!')
@@ -659,6 +690,8 @@ def email(request, id):
     else:
         # the resurrect email body references the last revision number, handle
         # exception if no last revision found
+        # if this exception was handled closer to the source it would be easier to debug
+        # other problems with get_email_initial
         try:
             form = EmailForm(initial=get_email_initial(
                 draft,
@@ -698,7 +731,7 @@ def extend(request, id):
        
         form = ExtendForm(request.POST)
         if form.is_valid():
-            request.session['data'] = form.data
+            request.session['data'] = form.cleaned_data
             request.session['action'] = 'extend'
             url = reverse('drafts_email', kwargs={'id':id})
             return HttpResponseRedirect(url)
@@ -807,15 +840,15 @@ def replace(request, id):
             url = reverse('drafts_view', kwargs={'id':id})
             return HttpResponseRedirect(url)
        
-        form = ReplaceForm(draft, request.POST)
+        form = ReplaceForm(request.POST, draft=draft)
         if form.is_valid():
-            request.session['data'] = form.data
+            request.session['data'] = form.cleaned_data
             request.session['action'] = 'replace'
             url = reverse('drafts_email', kwargs={'id':id})
             return HttpResponseRedirect(url)
 
     else:
-        form = ReplaceForm(draft)
+        form = ReplaceForm(draft=draft)
 
     return render_to_response('drafts/replace.html', {
         'form': form,

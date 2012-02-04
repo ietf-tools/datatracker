@@ -6,6 +6,7 @@ from ietf.name.models import IntendedStdLevelName
 from ietf.group.models import Group
 
 from sec.utils.ams_utils import get_base, get_revision
+from sec.groups.forms import RoleForm, get_person
 
 import datetime
 import re
@@ -60,6 +61,14 @@ class GroupModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.acronym
 
+class AliasModelChoiceField(forms.ModelChoiceField):
+    '''
+    Custom ModelChoiceField, just uses Alias name in the select choices as opposed to the 
+    more confusing alias -> doc format used by DocAlias.__unicode__
+    '''    
+    def label_from_instance(self, obj):
+        return obj.name
+        
 # ---------------------------------------------
 # Forms 
 # ---------------------------------------------
@@ -72,8 +81,6 @@ class AddModelForm(forms.ModelForm):
     
     class Meta:
         model = Document
-        # remove replaced_by,review_by_rfc_editor fields from list per secretariat staff 09-27-10
-        # remove local_path per Glen, staff 12-02-10
         fields = ('title','group','stream','start_date','pages','abstract','internal_comments')
        
     # use this method to set attrs which keeps other meta info from model.  
@@ -86,22 +93,34 @@ class AddModelForm(forms.ModelForm):
         self.fields['internal_comments'].label='Comments'
 
 class AuthorForm(forms.Form):
-    #author_name = forms.CharField(max_length=100,label='Name',help_text="To see a list of people type the first name, or last name, or both.")
-    author_name = forms.CharField(max_length=100,label='Name')
-
-    # set css class=name-autocomplete for name field (to provide select list)
-    def __init__(self, *args, **kwargs):
-        super(AuthorForm, self).__init__(*args, **kwargs)
-        self.fields['author_name'].widget.attrs['class'] = 'name-autocomplete'
-
-    # check for tag within parenthesis to ensure name was selected from the list 
-    def clean_author_name(self):
-        name = self.cleaned_data.get('author_name', '')
-        m = re.search(r'(\d+)', name)
-        if name and not m:
+    '''
+    The generic javascript for populating the email list based on the name selected expects to
+    see an id_email field
+    '''
+    person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")
+    email = forms.CharField(widget=forms.Select(),help_text="Select an email")
+        
+    # check for id within parenthesis to ensure name was selected from the list 
+    def clean_person(self):
+        person = self.cleaned_data.get('person', '')
+        m = re.search(r'(\d+)', person)
+        if person and not m:
             raise forms.ValidationError("You must select an entry from the list!") 
-        return name
-
+        
+        # return person object
+        return get_person(person)
+    
+    # check that email exists and return the Email object
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        try:
+            obj = Email.objects.get(address=email)
+        except Email.ObjectDoesNoExist:
+            raise forms.ValidationError("Email address not found!")
+        
+        # return email object
+        return obj
+    
 class BaseFileFormSet(BaseFormSet):
     '''
     This class is used when creating the formset factory for file upload,
@@ -148,14 +167,16 @@ class EditModelForm(forms.ModelForm):
     iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft-iesg'),required=False)
     group = GroupModelChoiceField(required=True)
     review_by_rfc_editor = forms.BooleanField(required=False)
+    shepherd = forms.CharField(max_length=100,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")
     
     class Meta:
         model = Document
-        fields = ('title','group','stream','review_by_rfc_editor','name','rev','pages','intended_std_level','abstract','internal_comments')
+        fields = ('title','group','ad','shepherd','stream','review_by_rfc_editor','name','rev','pages','intended_std_level','abstract','internal_comments')
                  
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):
         super(EditModelForm, self).__init__(*args, **kwargs)
+        self.fields['ad'].queryset = Person.objects.filter(role__name='ad')
         self.fields['title'].label='Document Name'
         self.fields['title'].widget=forms.Textarea()
         self.fields['rev'].widget.attrs['size'] = 2
@@ -176,6 +197,7 @@ class EditModelForm(forms.ModelForm):
         if 'state' in self.changed_data:
             m.set_state(state)
         
+        # note we're not sending notices here, is this desired
         if 'iesg_state' in self.changed_data:
             if iesg_state == None:
                 m.unset_state('draft-iesg')
@@ -232,23 +254,27 @@ class EmailForm(forms.Form):
     body = forms.CharField(widget=forms.Textarea())
 
 class ExtendForm(forms.Form):
-    revision_date = forms.DateField()
+    expiration_date = forms.DateField()
     
 class ReplaceForm(forms.Form):
+    replaced = AliasModelChoiceField(DocAlias.objects.none(),empty_label=None,help_text='This document may have more than one alias.  Be sure to select the correct alias to replace.')
     replaced_by = forms.CharField(max_length=100,help_text='Enter the filename of the Draft which replaces this one.')
 
-    def __init__(self, draft, *args, **kwargs):
-        self.draft = draft
+    def __init__(self, *args, **kwargs):
+        self.draft = kwargs.pop('draft')
         super(ReplaceForm, self).__init__(*args, **kwargs)
+        self.fields['replaced'].queryset = DocAlias.objects.filter(document=self.draft)
         
     # field must contain filename of existing draft
     def clean_replaced_by(self):
         name = self.cleaned_data.get('replaced_by', '')
-        if name and not InternetDraft.objects.filter(filename=name):
-            raise forms.ValidationError("ERROR: Draft does not exist")
-        if name == self.draft.filename:
+        try:
+            doc = Document.objects.get(name=name)
+        except Document.DoesNotExist:
+            raise forms.ValidationError("ERROR: Draft does not exist: %s" % name)
+        if name == self.draft.name:
             raise forms.ValidationError("ERROR: A draft can't replace itself")
-        return name
+        return doc
 
 class BaseRevisionModelForm(forms.ModelForm):
     revision_date = forms.DateField()
