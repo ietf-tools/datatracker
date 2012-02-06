@@ -385,14 +385,20 @@ def import_from_idinternal(d, idinternal):
 
         # ballot discusses/comments
         if c.ballot in (DocumentComment.BALLOT_DISCUSS, DocumentComment.BALLOT_COMMENT):
+            skip = False
+
             e = BallotPositionDocEvent()
             e.type = "changed_ballot_position"
             e.ad = iesg_login_to_person(c.created_by)
             last_pos = d.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=e.ad)
             e.pos = last_pos.pos if last_pos else ballot_position_mapping[None]
-            c.comment_text = re_comment_discuss_by_tag.sub("", c.comment_text)
+            c.comment_text = re_comment_discuss_by_tag.sub("", c.comment_text).strip()
             if c.ballot == DocumentComment.BALLOT_DISCUSS:
                 e.discuss = c.comment_text
+
+                if not e.discuss and (not last_pos or not last_pos.discuss):
+                    skip = True # skip some bogus empty entries
+
                 e.discuss_time = c.datetime()
                 e.comment = last_pos.comment if last_pos else ""
                 e.comment_time = last_pos.comment_time if last_pos else None
@@ -406,15 +412,19 @@ def import_from_idinternal(d, idinternal):
                     # text/time, fudge the time so it's not null
                     e.discuss_time = c.datetime()
                 e.comment = c.comment_text
+                if not e.comment and (not last_pos or not last_pos.comment):
+                    skip = True # skip some bogus empty entries
+
                 e.comment_time = c.datetime()
                 # put header into description
                 c.comment_text = "[Ballot comment]\n" + c.comment_text
 
             # there are some bogus copies where a secretary has the
-            # same discuss comment as an AD, skip saving if this is
-            # one of those
-            if not (iesg_login_is_secretary(c.created_by)
-                and DocumentComment.objects.filter(ballot=c.ballot, document=c.document).exclude(created_by=c.created_by)):
+            # same discuss comment as an AD
+            if iesg_login_is_secretary(c.created_by) and DocumentComment.objects.filter(ballot=c.ballot, document=c.document).exclude(created_by=c.created_by):
+                skip = True
+
+            if not skip:
                 save_docevent(d, e, c)
                 
             handled = True
