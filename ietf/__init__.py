@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-__version__ = "3.65-dev"
+__version__ = "4.00rc1"
 
 __date__    = "$Date$"
 
