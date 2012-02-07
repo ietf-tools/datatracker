@@ -161,6 +161,9 @@ class IdWrapper:
         
         a = self.group_acronym()
         if a:
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES and self._draft.stream_id == "ietf" and self._draft.get_state_slug("draft-stream-ietf") == "c-adopt":
+                return "candidate for <a href='/wg/%s/'>%s WG</a>" % (a, a)
+
             return "<a href='/wg/%s/'>%s WG</a>" % (a, a)
 
         return ""
