@@ -128,7 +128,7 @@ def wg_documents(request, acronym):
     if not form.is_valid():
         raise ValueError("form did not validate")
     (docs,meta) = search_query(form.cleaned_data)
-    
+
     # get the related docs
     form_related = SearchForm({'by':'group', 'name':'-'+str(wg.group_acronym.acronym)+'-', 'activeDrafts':'on'})
     if not form_related.is_valid():
@@ -141,7 +141,24 @@ def wg_documents(request, acronym):
         if ( len(parts) >= 3):
             if parts[1] != "ietf" and parts[2].startswith(wg.group_acronym.acronym+"-"):
                 docs_related_pruned.append(d)
-    return wg, concluded, proposed, docs, meta, docs_related_pruned, meta_related
+
+    docs_related = docs_related_pruned
+
+    # move call for WG adoption to related
+    cleaned_docs = []
+    related_doc_names = set(d.id.draft_name for d in docs_related)
+    for d in docs:
+        if d.id and d.id._draft and d.id._draft.stream_id == "ietf" and d.id._draft.get_state_slug("draft-stream-ietf") == "c-adopt":
+            if d.id.draft_name not in related_doc_names:
+                docs_related.append(d)
+        else:
+            cleaned_docs.append(d)
+
+    docs = cleaned_docs
+
+    docs_related.sort(key=lambda d: d.id.draft_name)
+
+    return wg, concluded, proposed, docs, meta, docs_related, meta_related
 
 def wg_documents_txt(request, acronym):
     wg, concluded, proposed, docs, meta, docs_related, meta_related = wg_documents(request, acronym)
