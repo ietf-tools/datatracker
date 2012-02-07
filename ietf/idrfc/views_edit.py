@@ -103,9 +103,11 @@ def change_state(request, name):
                                    to_iesg_eval=to_iesg_eval),
                               context_instance=RequestContext(request))
 
+IESG_SUBSTATE_TAGS = ('point', 'ad-f-up', 'need-rev', 'extpty')
+
 class ChangeStateFormREDESIGN(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label=None, required=True)
-    substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty')), required=False)
+    substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=IESG_SUBSTATE_TAGS), required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
 @group_required('Area_Director','Secretariat')
@@ -171,7 +173,9 @@ def change_stateREDESIGN(request, name):
 
     else:
         state = doc.get_state("draft-iesg")
-        form = ChangeStateForm(initial=dict(state=state.pk if state else None))
+        t = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        form = ChangeStateForm(initial=dict(state=state.pk if state else None,
+                                            substate=t[0].pk if t else None))
 
     state = doc.get_state("draft-iesg")
     next_states = state.next_states.all() if state else None
