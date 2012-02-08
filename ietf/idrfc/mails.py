@@ -15,6 +15,7 @@ from ietf.ietfworkflows.streams import (get_stream_from_draft)
 from ietf.ietfworkflows.models import (Stream)
 from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias
 from ietf.person.models import Person
+from ietf.group.models import Group
 
 def email_state_changed(request, doc, text):
     to = [x.strip() for x in doc.idinternal.state_change_notice_to.replace(';', ',').split(',')]
@@ -362,7 +363,7 @@ def generate_approval_mail_rfc_editorREDESIGN(request, doc):
                 to.append(r.formatted_email())
         elif doc.stream_id == "irtf":
             # include IRTF chair
-            g = Group.objects.get(type='irtf')
+            g = Group.objects.get(acronym='irtf')
             for r in g.role_set.filter(name="chair").select_related():
                 to.append(r.formatted_email())
             # and IRSG
