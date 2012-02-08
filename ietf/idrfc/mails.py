@@ -352,22 +352,19 @@ def generate_approval_mail_rfc_editorREDESIGN(request, doc):
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
 
     to = []
-    if doc.group:
+    if doc.group.type_id != "individ":
         for r in doc.group.role_set.filter(name="chair").select_related():
             to.append(r.formatted_email())
 
-        if doc.stream_id == "ise":
-            # include ISE chair
-            g = Group.objects.get(type='individ')
-            for r in g.role_set.filter(name="chair").select_related():
-                to.append(r.formatted_email())
-        elif doc.stream_id == "irtf":
-            # include IRTF chair
-            g = Group.objects.get(acronym='irtf')
-            for r in g.role_set.filter(name="chair").select_related():
-                to.append(r.formatted_email())
-            # and IRSG
-            to.append('"Internet Research Steering Group" <irsg@irtf.org>')
+    if doc.stream_id in ("ise", "irtf"):
+        # include ISE/IRTF chairs
+        g = Group.objects.get(acronym=doc.stream_id)
+        for r in g.role_set.filter(name="chair").select_related():
+            to.append(r.formatted_email())
+
+    if doc.stream_id == "irtf":
+        # include IRSG
+        to.append('"Internet Research Steering Group" <irsg@irtf.org>')
 
     return render_to_string("idrfc/approval_mail_rfc_editor.txt",
                             dict(doc=doc,
