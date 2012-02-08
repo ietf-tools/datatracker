@@ -5,16 +5,18 @@ import datetime
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse as urlreverse
+from django.template.loader import render_to_string
 
 from ietf.idtracker.models import (InternetDraft, PersonOrOrgInfo, IETFWG,
                                    IDAuthor, EmailAddress, IESGLogin, BallotInfo)
 from ietf.submit.models import TempIdAuthors
-from ietf.utils.mail import send_mail
+from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils import unaccent
 
 from ietf.doc.models import *
 from ietf.person.models import Person, Alias, Email
 from ietf.doc.utils import active_ballot_positions
+from ietf.message.models import Message
 
 # Some useful states
 UPLOADED = 1
@@ -186,21 +188,38 @@ def send_announcements(submission, draft, state_change_msg):
 
 
 def announce_to_lists(request, submission):
-    subject = 'I-D Action: %s-%s.txt' % (submission.filename, submission.revision)
-    from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-    to_email = [settings.IDSUBMIT_ANNOUNCE_LIST_EMAIL]
     authors = []
     for i in submission.tempidauthors_set.order_by('author_order'):
         if not i.author_order:
             continue
         authors.append(i.get_full_name())
-    if submission.group_acronym:
-        cc = [submission.group_acronym.email_address]
+
+    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+        m = Message()
+        m.by = request.user.get_profile() if request.user.is_authenticated() else Person.objects.get(name="(System)")
+        m.subject = 'I-D Action: %s-%s.txt' % (submission.filename, submission.revision)
+        m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
+        m.to = settings.IDSUBMIT_ANNOUNCE_LIST_EMAIL
+        if submission.group_acronym:
+            m.cc = submission.group_acronym.email_address
+        m.body = render_to_string('submit/announce_to_lists.txt', dict(submission=submission,
+                                                                       authors=authors))
+        m.save()
+        m.related_docs.add(Document.objects.get(name=submission.filename))
+
+        send_mail_message(request, m)
     else:
-        cc = None
-    send_mail(request, to_email, from_email, subject, 'submit/announce_to_lists.txt',
-              {'submission': submission,
-               'authors': authors}, cc=cc)
+        subject = 'I-D Action: %s-%s.txt' % (submission.filename, submission.revision)
+        from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
+        to_email = [settings.IDSUBMIT_ANNOUNCE_LIST_EMAIL]
+        if submission.group_acronym:
+            cc = [submission.group_acronym.email_address]
+        else:
+            cc = None
+
+        send_mail(request, to_email, from_email, subject, 'submit/announce_to_lists.txt',
+                  {'submission': submission,
+                   'authors': authors}, cc=cc, save_message=True)
 
 
 def announce_new_version(request, submission, draft, state_change_msg):

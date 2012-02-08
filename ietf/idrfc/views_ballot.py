@@ -27,6 +27,7 @@ from ietf.idrfc.idrfc_wrapper import BallotWrapper
 
 from ietf.doc.models import *
 from ietf.name.models import BallotPositionName
+from ietf.message.utils import infer_message
 
 
 BALLOT_CHOICES = (("yes", "Yes"),
@@ -1248,10 +1249,16 @@ def approve_ballotREDESIGN(request, name):
         email_owner(request, doc, doc.ad, login, change_description)
 
         # send announcement
+
         send_mail_preformatted(request, announcement)
 
         if action == "to_announcement_list":
             email_iana(request, doc, "drafts-approval@icann.org", announcement)
+
+        msg = infer_message(announcement)
+        msg.by = login
+        msg.save()
+        msg.related_docs.add(doc)
 
         return HttpResponseRedirect(doc.get_absolute_url())
   
@@ -1340,6 +1347,11 @@ def make_last_callREDESIGN(request, name):
         if form.is_valid():
             send_mail_preformatted(request, announcement)
             email_iana(request, doc, "drafts-lastcall@icann.org", announcement)
+
+            msg = infer_message(announcement)
+            msg.by = login
+            msg.save()
+            msg.related_docs.add(doc)
 
             save_document_in_history(doc)
 

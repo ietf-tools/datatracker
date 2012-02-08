@@ -4,6 +4,7 @@ import datetime
 
 from ietf.person.models import Email, Person
 from ietf.group.models import Group
+from ietf.doc.models import Document
 
 class Message(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
@@ -16,9 +17,10 @@ class Message(models.Model):
     bcc = models.CharField(max_length=255, blank=True)
     reply_to = models.CharField(max_length=255, blank=True)
     body = models.TextField()
-    content_type = models.CharField(max_length=255, blank=True)
+    content_type = models.CharField(default="text/plain", max_length=255, blank=True)
 
     related_groups = models.ManyToManyField(Group, blank=True)
+    related_docs = models.ManyToManyField(Document, blank=True)
 
     class Meta:
         ordering = ['time']

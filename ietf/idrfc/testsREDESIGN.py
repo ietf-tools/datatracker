@@ -795,7 +795,7 @@ class ApproveBallotTestCase(django.test.TestCase):
 
         # approve
         mailbox_before = len(outbox)
-        
+
         r = self.client.post(url, dict())
         self.assertEquals(r.status_code, 302)
 
@@ -805,6 +805,7 @@ class ApproveBallotTestCase(django.test.TestCase):
         self.assertTrue("Protocol Action" in outbox[-2]['Subject'])
         # the IANA copy
         self.assertTrue("Protocol Action" in outbox[-1]['Subject'])
+        self.assertTrue("Protocol Action" in draft.message_set.order_by("-time")[0].subject)
 
     def test_disapprove_ballot(self):
         draft = make_test_data()
@@ -859,6 +860,7 @@ class MakeLastCallTestCase(django.test.TestCase):
         self.assertTrue("Last Call" in outbox[-4]['Subject'])
         # the IANA copy
         self.assertTrue("Last Call" in outbox[-3]['Subject'])
+        self.assertTrue("Last Call" in draft.message_set.order_by("-time")[0].subject)
 
 class ExpireIDsTestCase(django.test.TestCase):
     fixtures = ['names']

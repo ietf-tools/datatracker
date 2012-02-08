@@ -224,6 +224,7 @@ class SubmitTestCase(django.test.TestCase):
         self.assertEquals(draft.authors.all()[0].address, "testname@example.com")
         self.assertEquals(len(outbox), mailbox_before + 3)
         self.assertTrue((u"I-D Action: %s" % name) in outbox[-3]["Subject"])
+        self.assertTrue((u"I-D Action: %s" % name) in draft.message_set.order_by("-time")[0].subject)
         self.assertTrue("Test Name" in unicode(outbox[-3]))
         self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
         self.assertTrue(name in unicode(outbox[-2]))
