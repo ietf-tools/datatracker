@@ -224,9 +224,6 @@ def agenda_docs(date, next_agenda):
             if m.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
                 continue
             
-            if next_agenda and not m.agenda:
-                continue
-            
             if m.docalias_set.filter(name__startswith="rfc"):
                 rfcmatches.append(m)
             else:
