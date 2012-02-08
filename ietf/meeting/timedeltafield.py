@@ -8,6 +8,7 @@
 import datetime
 
 # Django
+import django
 from django import forms
 from django.db import models
 from django.utils.safestring import mark_safe
@@ -37,7 +38,7 @@ class TimedeltaField(models.Field):
             # else try to convert to int (e.g. from string)
             value = int(value)
         except (TypeError, ValueError):
-            raise exceptions.ValidationError(
+            raise django.core.exceptions.ValidationError(
                 _("This value must be an integer or a datetime.timedelta."))
 
         return datetime.timedelta(seconds=value)
