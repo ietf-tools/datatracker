@@ -336,7 +336,7 @@ class InternetDraft(Document):
     @property
     def agenda(self):
         e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-        return bool(e and e.telechat_date)
+        return bool(e and e.telechat_date and e.telechat_date >= datetime.date.today())
     
     #cur_state = models.ForeignKey(IDState, db_column='cur_state', related_name='docs')
     @property
