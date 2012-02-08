@@ -764,6 +764,17 @@ class BallotWriteupsTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("NOT be published" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
+
+        # test regenerate when it's via RFC Editor
+        draft.group = Group.objects.get(type="individ")
+        draft.stream_id = "irtf"
+        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+        draft.tags.add("via-rfc")
+
+        r = self.client.post(url, dict(regenerate_approval_text="1"))
+        self.assertEquals(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue("Subject: Results of IETF-conflict review" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
         
 class ApproveBallotTestCase(django.test.TestCase):
     fixtures = ['names']
