@@ -425,8 +425,14 @@ def minutes(request, date):
     '''
     This view shows a list of documents that were approved since the last telechat
     '''
-    last_date = get_last_telechat_date()
-    events = DocEvent.objects.filter(type='iesg_approved',time__gte=last_date)
+    # get the telechat previous to selected one
+    dates = [ t.date for t in TelechatDate.objects.all() ]
+    y,m,d = date.split('-')
+    current = datetime.date(int(y),int(m),int(d))
+    index = dates.index(current)
+    previous = dates[index + 1]
+    #assert False, (current,index)
+    events = DocEvent.objects.filter(type='iesg_approved',time__gte=previous,time__lt=current)
     docs = [ e.doc for e in events ]
     pa_docs = [ d for d in docs if d.intended_std_level.slug not in ('inf','exp','hist') ]
     da_docs = [ d for d in docs if d.intended_std_level.slug in ('inf','exp','hist') ]
@@ -436,7 +442,7 @@ def minutes(request, date):
     return render_to_response('telechat/minutes.html', {
         'agenda': agenda,
         'date': date,
-        'last_date': last_date,
+        'last_date': previous,
         'pa_docs': pa_docs,
         'da_docs': da_docs},
         RequestContext(request, {}),

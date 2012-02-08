@@ -3,6 +3,9 @@
 {% block title %}Drafts - Edit{% endblock %}
 
 {% block extrahead %}{{ block.super }}
+  <link rel="stylesheet" type="text/css" href="/css/jquery-ui-1.8.1.custom.css" />
+  <link rel="stylesheet" type="text/css" href="/css/jquery.ui.autocomplete.css" />
+  <script type="text/javascript" src="/js/jquery-ui-1.8.1.custom.min.js"></script>
   <script type="text/javascript" src="/js/utils.js"></script>
 {% endblock %}
 
@@ -24,6 +27,7 @@
         <tr><td>Group:</td><td>{{ form.group.errors }}{{ form.group }}</td></tr>
         <tr><td>Area Director:</td><td>{{ form.ad.errors }}{{ form.ad }}</td></tr>
         <tr><td>Shepherd:</td><td>{{ form.shepherd.errors }}{{ form.shepherd }}</td></tr>
+        <tr><td>Notify:</td><td>{{ form.notify.errors }}{{ form.notify }}</td></tr>
         <tr><td>State:</td><td>{{ form.state.errors }}{{ form.state }}</td></tr>
         <tr><td>IESG State:</td><td>{{ form.iesg_state.errors }}{{ form.iesg_state }}</td></tr>
         <tr><td>Stream:</td><td>{{ form.stream.errors }}{{ form.stream }}</td></tr>

@@ -73,6 +73,37 @@ NON_SESSION_INITIAL = ((0,all_refs[1]),
 # Helper Functions
 # --------------------------------------------------
 """
+def build_timeslots(meeting,room=None):
+    '''
+    This function takes a Meeting object and an optional room argument.  If room isn't passed we 
+    pre-creates the full set of timeslot records using the last meeting as a template.  
+    If room is passed pre-create timeslots for the new room.  Call this after saving new rooms 
+    or adding a room.
+    '''
+    slots = meeting.timeslot_set.filter(type='session')
+    if room:
+        rooms = [room]
+    else:
+        rooms = meeting.room_set.all()
+    if not slots or room:
+        last_meeting = get_last_meeting(meeting)
+        initial = []
+        timeslots = []
+        time_seen = set()
+        for t in last_meeting.timeslot_set.filter(type='session'):
+            if not t.time in time_seen:
+                time_seen.add(t.time)
+                timeslots.append(t)
+        for t in timeslots:
+            new_time = t.time
+            for room in rooms:
+                TimeSlot.objects.create(type_id='session',
+                                        meeting=meeting,
+                                        name=t.name,
+                                        time=new_time,
+                                        location=room,
+                                        duration=t.duration)
+
 def init_timeslot_records(meeting):
     '''
     This function gets called when a new meeting is created.  It creates empty timeslot records
@@ -389,7 +420,7 @@ def edit_meeting(request, meeting_id):
                 return HttpResponseRedirect(url)
 
         else:
-            url = reverse('meetings_meeting_detail', kwargs={'meeting_id':meeting_id})
+            url = reverse('meetings_view', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
     else:
         form = MeetingModelForm(instance=meeting)
@@ -732,9 +763,9 @@ def rooms(request, meeting_id):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
-    # if no rooms exist yet (new meeting) formset extra=5
-    rooms = meeting.room_set.all().order_by('name')
-    extra = 0 if rooms else 5
+    # if no rooms exist yet (new meeting) formset extra=10
+    first_time = not bool(meeting.room_set.all())
+    extra = 10 if first_time else 0
     RoomFormset = inlineformset_factory(Meeting, Room, form=MeetingRoomForm, formset=BaseMeetingRoomFormSet, can_delete=True, extra=extra)
 
     if request.method == 'POST':
@@ -746,6 +777,18 @@ def rooms(request, meeting_id):
         formset = RoomFormset(request.POST, instance=meeting, prefix='room')
         if formset.is_valid():
             formset.save()
+            
+            # if we are creating rooms for the first time create full set of timeslots
+            if first_time:
+                build_timeslots(meeting)
+                
+            # otherwise if we're modifying rooms
+            else:
+                # add timeslots for new rooms, deleting rooms automatically deletes timeslots
+                for form in formset.forms[formset.initial_form_count():]:
+                    if form.instance.pk:
+                        build_timeslots(meeting,room=form.instance)
+            
             messages.success(request, 'Meeting Rooms changed successfully')
             url = reverse('meetings_rooms', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
@@ -754,7 +797,6 @@ def rooms(request, meeting_id):
 
     return render_to_response('meetings/rooms.html', {
         'meeting': meeting,
-        'rooms': rooms,
         'formset': formset},
         RequestContext(request, {}),
     )
@@ -828,50 +870,39 @@ def times(request, meeting_id):
     prepopulated from the last meeting
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
-    #TimeSlotFormset = formset_factory(TimeSlotForm, extra=0)
-    TimeSlotFormset = inlineformset_factory(Meeting, TimeSlot, form=TimeSlotModelForm, can_delete=True)
+    TimeSlotFormset = formset_factory(TimeSlotForm, extra=0)
+    #TimeSlotFormset = inlineformset_factory(Meeting, TimeSlot, form=TimeSlotModelForm, can_delete=True)
     
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             url = reverse('meetings', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
-
-        formset = TimeSlotFormset(request.POST, prefix='time')
-        if formset.is_valid():
-            formset.save()
-            messages.success(request, 'Meeting Times changed successfully')
-            url = reverse('meetings_times', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
     else:
-        # if there are no timelsot records for this meeting yet, build a set of initial timeslots
-        # by copying meta data from the last meering
-        slots = meeting.timeslot_set.filter(type='session')
-        if not slots:
-            last_meeting = get_last_meeting(meeting)
-            type = TimeSlotTypeName.objects.get(slug='session')
-            initial = []
-            timeslots = []
-            time_seen = set()
-            for t in last_meeting.timeslot_set.filter(type='session'):
-                if not t.time in time_seen:
-                    time_seen.add(t.time)
-                    timeslots.append(t)
-            for t in timeslots:
-                new_time = t.time
-                initial.append({'type':type,
-                                'name':t.name,
-                                'time':new_time,
-                                'duration':t.duration})
-            # initial.sort() ?
+        initial = []
+        timeslots = []
+        time_seen = set()
+        for t in last_meeting.timeslot_set.filter(type='session'):
+            if not t.time in time_seen:
+                time_seen.add(t.time)
+                timeslots.append(t)
+        for t in timeslots:
+            new_time = t.time
+            initial.append({'name':t.name,
+                            'time':new_time,
+                            'duration':t.duration})
+        formset=TimeSlotFormset(initial=initial)
+        if meeting.room_set.all():
+            times = 'some times'
         else:
-            # set initial from actual recrods
-            pass
-        formset = TimeSlotFormset(initial=initial,prefix='time',instance=meeting)
-
+            times = None
+        
+            
     return render_to_response('meetings/times.html', {
         'meeting': meeting,
-        'formset': formset},
+        'formset': formset,
+        'times': times,
+        'initial':initial},
         RequestContext(request, {}),
     )
     

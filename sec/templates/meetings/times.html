@@ -3,10 +3,13 @@
 {% block subsection %}
 
 <div class="module role-container">
-    <h2>Rooms</h2>
+    <h2>Times</h2>
 
           <div class="inline-group">
            <div class="tabular inline-related">
+            {% if not times %}
+            <b>Rooms are not defined yet.  Be sure to enter all the rooms for this meeting first.</b>
+            {% endif %}
             <form id="meetings-meta-times" action="" method="post">
               {{ formset.management_form }}
               {{ formset.non_form_errors }}

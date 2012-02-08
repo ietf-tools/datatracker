@@ -248,6 +248,7 @@ def do_revision(draft, request):
     if form.is_valid():
         new_draft = form.save()
     else:
+        raise Exception(form.errors)
         raise Exception('Problem with input data %s' % form.data)
 
     # set revision and expires
@@ -892,7 +893,7 @@ def revision(request, id):
             filename,revision,file_type_list = process_files(request.FILES)
             
             # save state in session and proceed to email page
-            request.session['data'] = form.data
+            request.session['data'] = form.cleaned_data
             request.session['action'] = 'revision'
             request.session['filename'] = filename
             request.session['revision'] = revision
@@ -966,7 +967,8 @@ def search(request):
                 qs = Document.objects.filter(**kwargs)
             else:
                 qs = Document.objects.all()
-            results = qs.order_by('group__name')
+            #results = qs.order_by('group__name')
+            results = qs.order_by('name')
             
             # if there's just one result go straight to view
             if len(results) == 1:

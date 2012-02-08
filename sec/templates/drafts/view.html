@@ -24,6 +24,7 @@
         <tr><td>Group:</td><td>{% if draft.group %}<a href="{% url groups_view acronym=draft.group.acronym %}">{{ draft.group.acronym }}{% endif %}</td></tr>
         <tr><td>Area Director:</td><td>{{ draft.ad }}</td></tr>
         <tr><td>Shepherd:</td><td>{{ draft.shepherd }}</td></tr>
+        <tr><td>Notify:</td><td>{{ draft.notify }}</td></tr>
         <tr><td>Document State:</td><td>{{ draft.get_state }}</td></tr>
         <tr><td>IESG State:</td><td>{{ draft.iesg_state }}</td></tr>
         <tr><td>Stream:</td><td>{{ draft.stream }}</td></tr>

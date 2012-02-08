@@ -1,7 +1,8 @@
 from django import forms
 
+from ietf.person.models import Person, Email
 from ietf.group.models import Group, GroupURL
-from ietf.name.models import GroupTypeName
+from ietf.name.models import GroupTypeName, GroupStateName
 
 import datetime
 import re
@@ -44,7 +45,8 @@ class AreaForm(forms.ModelForm):
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):
         super(AreaForm, self).__init__(*args, **kwargs)
-        #self.fields['state'].widget=forms.Select(choices=STATE_CHOICES)
+        self.fields['state'].queryset = GroupStateName.objects.filter(slug__in=('active','conclude'))
+        self.fields['state'].empty_label = None
         self.fields['comments'].widget.attrs['rows'] = 2
 
 """
@@ -170,16 +172,24 @@ class AreaDirectorForm(forms.Form):
     def clean_ad_name(self):
         name = self.cleaned_data.get('ad_name', '')
         # check for tag within parenthesis to ensure name was selected from the list 
-        m = re.search(r'(\d+)', name)
-        if name and not m:
-            raise forms.ValidationError("You must select an entry from the list!") 
-        return name
+        m = re.search(r'\((\d+)\)', name)
+        if not name or not m:
+            raise forms.ValidationError("You must select an entry from the list!")
+        try:
+            id = m.group(1)
+            person = Person.objects.get(id=id)
+        except Person.DoesNotExist:
+            raise forms.ValidationError("ERROR finding Person with ID: %s" % id)
+        return person
 
     def clean_email(self):
         # this ChoiceField gets populated by javascript so skip regular validation
         # which raises an error
         email = self.cleaned_data['email']
-        if email:
-            return email
-        else:
+        if not email:
             raise forms.ValidationError("You must select an email.  If none are listed you'll need to add one first.")
+        try:
+            obj = Email.objects.get(address=email)
+        except Email.DoesNotExist:
+            raise forms.ValidationError("Can't find this email.")
+        return obj

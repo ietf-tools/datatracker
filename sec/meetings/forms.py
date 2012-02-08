@@ -1,7 +1,4 @@
 from django import forms
-#from sec.proceedings.models import SessionName, Proceeding
-#from sec.core.models import Acronym, MeetingRoom, MeetingTime, WgMeetingSession, TIME_ZONE_CHOICES
-#from models import *
 
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session
 import re
@@ -67,10 +64,6 @@ class MeetingModelForm(forms.ModelForm):
         
     def clean_number(self):
         number = self.cleaned_data['number']
-        # this is now handled by model unique=True
-        #if not self.instance.pk or 'number' in self.changed_data:
-        #    if Meeting.objects.filter(number=number):
-        #        raise forms.ValidationError('Meeting number %s is already in use.' % number)
         if not number.isdigit():
             raise forms.ValidationError('Meeting number must be an integer')
         return number
@@ -88,7 +81,7 @@ class AddTutorialForm(forms.ModelForm):
 class MeetingRoomForm(forms.ModelForm):
     class Meta:
         model = Room
-            
+
 class MeetingTimeForm(forms.ModelForm):
     class Meta:
         model = TimeSlot
@@ -181,6 +174,7 @@ class NonSessionForm(forms.ModelForm):
         
 """   
 class TimeSlotForm(forms.Form):
+    name = forms.CharField()
     day = forms.ChoiceField(choices=DAYS_CHOICES)
     time = forms.IntegerField()
     

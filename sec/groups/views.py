@@ -407,7 +407,7 @@ def search(request):
     # process GET argument to support link from area app 
     elif 'primary_area' in request.GET:
         area = request.GET.get('primary_area','')
-        results = Group.objects.filter(parent__acronym=area,state='active').order_by('name')
+        results = Group.objects.filter(parent__id=area,state='active').order_by('name')
         form = SearchForm({'primary_area':area})
     else:
         form = SearchForm(initial={'state':'active','type':'wg'})

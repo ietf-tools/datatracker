@@ -6,6 +6,7 @@ import sec.groups
 urlpatterns = patterns('sec.groups.views',
     url(r'^$', 'search', name='groups'),
     url(r'^add/$', 'add', name='groups_add'),
+    url(r'^search/$', 'search', name='groups_search'),
     #(r'^ajax/get_ads/$', 'get_ads'),
     url(r'^(?P<acronym>[A-Za-z0-9_\-\+]+)/$', 'view', name='groups_view'),
     url(r'^(?P<acronym>[A-Za-z0-9_\-\+]+)/delete/(?P<id>\d{1,6})/$', 'delete_role', name='groups_delete_role'),

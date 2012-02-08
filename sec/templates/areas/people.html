@@ -25,7 +25,7 @@
             <input type="hidden" name="tag" value="{{ director.person.id }}" />
             <tr>
               <td id="id-ad-name"><a href="">{{ director.person.name }}</a></td>
-              <td>{% if director.person.can_vote %}
+              <td>{% if director.name.slug == "ad" %}
                     Voting Enabled
                   {% else %}
                     <input type="submit" name="submit" value="Enable Voting" /></td>

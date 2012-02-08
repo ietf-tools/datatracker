@@ -171,7 +171,7 @@ class EditModelForm(forms.ModelForm):
     
     class Meta:
         model = Document
-        fields = ('title','group','ad','shepherd','stream','review_by_rfc_editor','name','rev','pages','intended_std_level','abstract','internal_comments')
+        fields = ('title','group','ad','shepherd','notify','stream','review_by_rfc_editor','name','rev','pages','intended_std_level','abstract','internal_comments')
                  
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):
@@ -183,6 +183,7 @@ class EditModelForm(forms.ModelForm):
         self.fields['abstract'].widget.attrs['cols'] = 72
         self.initial['state'] = self.instance.get_state()
         self.initial['iesg_state'] = self.instance.get_state('draft-iesg')
+        self.initial['shepherd'] = "%s - (%s)" % (self.instance.shepherd.name, self.instance.shepherd.id)
         
         # setup special fields
         if self.instance:
@@ -223,6 +224,16 @@ class EditModelForm(forms.ModelForm):
         if name and not InternetDraft.objects.filter(filename=name):
             raise forms.ValidationError("ERROR: Draft does not exist") 
         return name
+        
+    # check for id within parenthesis to ensure name was selected from the list 
+    def clean_shepherd(self):
+        person = self.cleaned_data.get('shepherd', '')
+        m = re.search(r'(\d+)', person)
+        if person and not m:
+            raise forms.ValidationError("You must select an entry from the list!") 
+        
+        # return person object
+        return get_person(person)
         
     def clean(self):
         super(EditModelForm, self).clean()
@@ -277,11 +288,10 @@ class ReplaceForm(forms.Form):
         return doc
 
 class BaseRevisionModelForm(forms.ModelForm):
-    revision_date = forms.DateField()
     
     class Meta:
         model = Document
-        fields = ('title','revision_date','pages','abstract')
+        fields = ('title','pages','abstract')
 
 class RevisionFileForm(forms.Form):
     # it appears the file input widget is not stylable via css
@@ -291,11 +301,11 @@ class RevisionFileForm(forms.Form):
 
 class RevisionModelForm(forms.ModelForm):
     # file = DocumentField()
-    revision_date = forms.DateField()
+    # revision_date = forms.DateField()
     
     class Meta:
         model = Document
-        fields = ('title','revision_date','pages','abstract')
+        fields = ('title','pages','abstract')
     
     # use this method to set attrs which keeps other meta info from model.  
     def __init__(self, *args, **kwargs):

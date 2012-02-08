@@ -9,6 +9,7 @@ from django.template import RequestContext
 from django.utils import simplejson
 
 from ietf.group.models import Group, GroupEvent, GroupURL, Role
+from ietf.group.utils import save_group_in_history
 from ietf.name.models import RoleName
 from ietf.person.models import Person, Email
 from forms import *
@@ -42,7 +43,7 @@ def getemails(request):
     results=[]
     id = request.GET.get('id','')
     person = Person.objects.get(id=id)
-    for item in person.email_set.all():
+    for item in person.email_set.filter(active=True):
         d = {'id': item.address, 'value': item.address}
         results.append(d)
         
@@ -120,8 +121,31 @@ def edit(request, name):
             form = AreaForm(request.POST, instance=area)
             awp_formset = AWPFormSet(request.POST, instance=area)
             if form.is_valid() and awp_formset.is_valid():
-                form.save()
+                state = form.cleaned_data['state']
+                
+                # save group
+                save_group_in_history(area)
+                
+                new_area = form.save()
+                new_area.time = datetime.datetime.now()
+                new_area.save()
                 awp_formset.save()
+                
+                # create appropriate GroupEvent
+                if 'state' in form.changed_data:
+                    ChangeStateGroupEvent.objects.create(group=new_area,
+                                                         type='changed_state',
+                                                         by=request.user.get_profile(),
+                                                         state=state,
+                                                         time=new_area.time)
+                    form.changed_data.remove('state')
+                    
+                # if anything else was changed
+                if form.changed_data:
+                    GroupEvent.objects.create(group=new_area,
+                                              type='info_changed',
+                                              by=request.user.get_profile(),
+                                              time=new_area.time)
                 
                 messages.success(request, 'The Area entry was changed successfully')
                 url = reverse('areas_view', kwargs={'name':name})
@@ -165,9 +189,15 @@ def list_areas(request):
 def people(request, name):
     """ 
     Edit People associated with Areas, Area Directors.
+    
+    # Legacy ------------------
     When a new Director is first added they get a user_level of 4, read-only.
     Then, when Director is made active (Enable Voting) user_level = 1.
-
+    
+    # New ---------------------
+    First Director's are assigned the Role 'pre-ad' Incoming Area director
+    Then they get 'ad' role
+    
     **Templates:**
 
     * ``areas/people.html``
@@ -177,7 +207,6 @@ def people(request, name):
     * directors, area
 
     """
-
     area = get_object_or_404(Group, type='area', acronym=name)
 
     if request.method == 'POST':
@@ -185,17 +214,11 @@ def people(request, name):
         if request.POST.get('submit', '') == "Add":
             form = AreaDirectorForm(request.POST)
             if form.is_valid():
-                ad_name = request.POST.get('ad_name', '')
-                email = request.POST.get('email', '')
-                m = re.search(r'\((\d+)\)', ad_name)
-                tag = m.group(1)
-                person = Person.objects.get(id=tag)
+                email = form.cleaned_data['email']
+                person = form.cleaned_data['ad_name']
 
                 # create role
-                role_name = RoleName.objects.get(name='Area Director')
-                email_obj = Email.objects.get(address=email)
-                role = Role(name=role_name,group=area,person=person,email=email_obj)
-                role.save()
+                Role.objects.create(name_id='pre-ad',group=area,email=email,person=person)
                 
                 messages.success(request, 'New Area Director added successfully!')
                 url = reverse('areas_view', kwargs={'name':name})
@@ -203,7 +226,7 @@ def people(request, name):
     else:
         form = AreaDirectorForm()
 
-    directors = area.role_set.filter(name__name='Area Director')
+    directors = area.role_set.filter(name__slug__in=('ad','pre-ad'))
     return render_to_response('areas/people.html', {
         'area': area,
         'form': form,
@@ -214,6 +237,7 @@ def people(request, name):
 def modify(request, name):
     """ 
     Handle state changes of Area Directors (enable voting, retire)
+    # Legacy --------------------------
     Enable Voting actions
     - user_level = 1
     - create TelechatUser object
@@ -222,7 +246,9 @@ def modify(request, name):
     - remove telechat_user row (to revoke voting rights)
     - update IETFWG(groups) set area_director = TBD 
     - remove area_director row
-
+    # New ------------------------------
+    Enable Voting: change Role from 'pre-ad' to 'ad'
+    Retire: change role to 'ex-ad'
 
     **Templates:**
 
@@ -239,25 +265,23 @@ def modify(request, name):
         tag = request.POST.get('tag', '')
         person = Person.objects.get(id=tag)
         
+        # TODO save in role history?
         # handle retire request
         if request.POST.get('submit', '') == "Retire":
             # change role
             # TODO: save in GroupHistory or something?
             role = Role.objects.get(group=area,name__name='Area Director',person=person)
-            role_name = RoleName.objects.get(name='Ex Area Director')
-            role.name = role_name
+            role.name_id = 'ex-ad'
             role.save()
             
             messages.success(request, 'The Area Director has been retired successfully!')
 
         # handle voting request
-        # per requirements, affiliated_org field shall be the person's name
         if request.POST.get('submit', '') == "Enable Voting":
-            # per Ole this feature is not used in the new system
-            #telechat_user_obj = TelechatUser(person_or_org_tag=tag,is_iesg=1,affiliated_org=name)
-            #telechat_user_obj.save()
-            #login.user_level = 1
-            #login.save()
+            role = Role.objects.get(group=area,name__slug='pre-ad',person=person)
+            role.name_id = 'ad'
+            role.save()
+            
             messages.success(request, 'Voting rights have been granted successfully!')
 
         url = reverse('areas_view', kwargs={'name':name})
@@ -278,11 +302,11 @@ def view(request, name):
     """
     area = get_object_or_404(Group, type='area', acronym=name)
     try:
-        area.start_date = area.groupevent_set.get(type='started').time
+        area.start_date = area.groupevent_set.order_by('time')[0].time
         area.concluded_date = area.groupevent_set.get(type='concluded').time
     except GroupEvent.DoesNotExist:
         pass
-    directors = area.role_set.filter(name__name='Area Director')
+    directors = area.role_set.filter(name__slug__in=('ad','pre-ad'))
     
     return render_to_response('areas/view.html', {
         'area': area,

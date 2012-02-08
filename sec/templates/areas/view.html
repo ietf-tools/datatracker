@@ -29,7 +29,7 @@
         <h2>Directors</h2>
         <table>
 	{% for director in directors %}
-          <tr><td><a href="">{{ director.person.name }}</a></td></tr>
+          <tr><td><a href="">{{ director.person.name }}</a>{% if director.name.slug == "pre-ad" %} (Incoming){% endif %}</td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-group -->
@@ -43,7 +43,7 @@
           <!-- <li><button onclick="window.location='../../'">Back</button></li> -->
           <li><button onclick="window.location='edit/'">Edit</button></li>
           <li><button onclick="window.location='people/'">People</button></li>
-          <li><button onclick="window.location='../../groups/search/?primary_area={{ area.acronym }}'">Groups</button></li>
+          <li><button onclick="window.location='{% url groups_search %}?primary_area={{ area.id }}'">Groups</button></li>
 	</ul>
       </div> <!-- button-group -->
 </div> <!-- module -->
