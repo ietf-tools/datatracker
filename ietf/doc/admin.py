@@ -113,13 +113,10 @@ admin.site.register(DocAlias, DocAliasAdmin)
 # events
 
 class DocEventAdmin(admin.ModelAdmin):
-    list_display = ["doc", "type", "by_raw", "time"]
+    list_display = ["doc", "type", "by", "time"]
+    search_fields = ["doc__name", "by__name"]
     raw_id_fields = ["doc", "by"]
 
-    def by_raw(self, instance):
-        return instance.by_id
-    by_raw.short_description = "By"
-    
 admin.site.register(DocEvent, DocEventAdmin)
 
 admin.site.register(NewRevisionDocEvent, DocEventAdmin)
