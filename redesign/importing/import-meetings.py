@@ -55,6 +55,7 @@ status_not_meeting = name(SessionStatusName, "notmeet", "Not meeting")
 
 session_status_mapping[0] = session_status_mapping[1] # assume broken statuses of 0 are actually cancelled
 
+other_slot = name(TimeSlotTypeName, "other", "Other")
 session_slot = name(TimeSlotTypeName, "session", "Session")
 break_slot = name(TimeSlotTypeName, "break", "Break")
 registration_slot = name(TimeSlotTypeName, "reg", "Registration")
@@ -361,6 +362,8 @@ for o in all_sessions.iterator():
 
                     if "Plenary" in timeslot.name:
                         timeslot.type = plenary_slot
+                    else:
+                        timeslot.type = other_slot
             else:
                 s.group = Group.objects.get(acronym=acronym.acronym)
         s.attendees = o.number_attendee
