@@ -48,8 +48,8 @@
       <div class="inline-related">
       <h2>Scheduled Sessions</h2>
         <ul>
-          {% for session in scheduled_sessions %}
-            <li><a href="{% url meetings_edit_session session_id=session.id %}">{{ session.group }}</a></li>
+          {% for group in scheduled_groups %}
+            <li><a href="{% url meetings_edit_session meeting_id=meeting.id acronym=group.acronym %}">{{ group.acronym }}</a></li>
           {% endfor %}
         </ul>
       </div><!-- inline-related-->

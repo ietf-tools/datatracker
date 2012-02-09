@@ -1,15 +1,17 @@
 from django import forms
 
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session
+from ietf.meeting.timedeltafield import TimedeltaFormField, TimedeltaWidget
+
 import re
 
-DAYS_CHOICES = ((0,'Monday'),
-                (1,'Tuesday'),
-                (2,'Wednesday'),
-                (3,'Thursday'),
-                (4,'Friday'),
-                (5,'Saturday'),
-                (6,'Sunday'))
+DAYS_CHOICES = ((-1,'Saturday'),
+                (0,'Sunday'),
+                (1,'Monday'),
+                (2,'Tuesday'),
+                (3,'Wednesday'),
+                (4,'Thursday'),
+                (5,'Friday'))
 
 """
 SESSION_CHOICES = list(SessionName.objects.values_list('session_name_id', 'session_name')) 
@@ -18,16 +20,15 @@ SESSION_CHOICES.insert(0,('0','-----------'))
 # Helper Functions
 #----------------------------------------------------------
 """
-def get_next_slot(slot_id):
-    '''Takes a Time object ID and returns the next time slot on the same day.
+def get_next_slot(slot):
+    '''Takes a TimeSlot object and returns the next TimeSlot same day, same room, if it is available.
     Returns None if there is no later slot.  For use with combine option.
     '''
-    # TODO is this correct?
-    slot = TimeSlot.objects.get(id=slot_id)
-    all_slots = TimeSlot.objects.filter(meeting=slot.meeting,time__startswith=slot.time.date()).order_by('time')
+    same_day_slots = TimeSlot.objects.filter(meeting=slot.meeting,location=slot.location,time__day=slot.time.day,session__isnull=True).order_by('time')
     try:
-        i = list(all_slots).index(slot)
-        return all_slots[i+1]
+        #assert False, (slot, same_day_slots)
+        i = list(same_day_slots).index(slot)
+        return same_day_slots[i+1]
     except IndexError:
         return None
 #----------------------------------------------------------
@@ -42,17 +43,13 @@ class BaseMeetingRoomFormSet(forms.models.BaseInlineFormSet):
             if sessions:
                 raise forms.ValidationError('Cannot delete meeting room %s.  Already assigned to some session.' % room.name)
                 
-class BaseMeetingTimeFormSet(forms.models.BaseInlineFormSet):
-    def clean(self):
-        '''Check that any times marked for deletion aren't in use'''
-        for form in self.deleted_forms:
-            # returns the MeetingTime object
-            meeting_time = form.cleaned_data['id']
-            # returns the MeetingTime object id
-            #id = form._raw_value('id')
-            rawqs = WgMeetingSession.objects.raw('SELECT * FROM wg_meeting_sessions where sched_time_id1=%s or sched_time_id2=%s or sched_time_id3=%s' % (meeting_time.id, meeting_time.id, meeting_time.id))
-            if len(list(rawqs)):
-                raise forms.ValidationError('Cannot delete meeting time slot %s.  Already assigned to some session.' % meeting_time)
+class TimeSlotModelChoiceField(forms.ModelChoiceField):
+    '''
+    Custom ModelChoiceField, changes the label to a more readable format
+    '''
+    def label_from_instance(self, obj):
+        
+        return "%s %s - %s" % (obj.time.strftime('%a %H:%M'),obj.name,obj.location)
 #----------------------------------------------------------
 # Forms
 #----------------------------------------------------------
@@ -109,50 +106,29 @@ class ExtraSessionForm(forms.Form):
         self.fields['note'].widget.attrs['size'] = 40
 
 class NewSessionForm(forms.Form):
-    '''Time and Room choices will default to current meeting.  If we need otherwise
-    pass to init like GroupSelectForm
-    '''
-    time = forms.ChoiceField(label='Day and Time')
-    room = forms.ModelChoiceField(queryset=Room.objects)
+    time = TimeSlotModelChoiceField(queryset=TimeSlot.objects,label='Day and Time')
+    session = forms.CharField(widget=forms.HiddenInput)
     combine = forms.BooleanField(required=False, label='Combine with next session')
     
-    # setup the room and time options based on meeting passed in
+    # setup the timeslot options based on meeting passed in
     def __init__(self,*args,**kwargs):
         meeting = kwargs.pop('meeting')
         self.meeting = meeting
         super(NewSessionForm, self).__init__(*args,**kwargs)
-        all_times = TimeSlot.objects.filter(meeting=meeting).order_by('id')
-        time_tuples = [(str(x.id), str(x)) for x in all_times]
-        #time_choices = sorted(time_tuples, key=lambda time_tuples: time_tuples[1])
-        self.fields['time'].choices = time_tuples
-        self.fields['room'].queryset = Room.objects.filter(meeting=meeting).order_by('name')
+        self.fields['time'].queryset = TimeSlot.objects.filter(meeting=meeting,session__isnull=True).order_by('time')
+
         
     def clean(self):
         super(NewSessionForm, self).clean()
         if any(self.errors):
             return
         cleaned_data = self.cleaned_data
-        room = cleaned_data['room']
         time = cleaned_data['time']
         if cleaned_data['combine']:
             slot = get_next_slot(cleaned_data['time'])
             if not slot:
                 raise forms.ValidationError('There is no next session to combine')
         
-        '''
-        # TODO needs to exclude itself from query
-        # error if session conflicts
-        sessions = WgMeetingSession.objects.filter(meeting=self.meeting,sched_room_id1=room,sched_time_id1=time)
-        if sessions:
-            raise forms.ValidationError('The %s group has already scheduled this room during this time' % (sessions[0].group))
-        sessions = WgMeetingSession.objects.filter(meeting=self.meeting,sched_room_id2=room,sched_time_id2=time)
-        if sessions:
-            raise forms.ValidationError('The %s group has already scheduled this room during this time' % (sessions[0].group))
-        sessions = WgMeetingSession.objects.filter(meeting=self.meeting,sched_room_id3=room,sched_time_id3=time)
-        if sessions:
-            raise forms.ValidationError('The %s group has already scheduled this room during this time' % (sessions[0].group))
-        
-        '''
         return cleaned_data
 """
 class NonSessionForm(forms.ModelForm):
@@ -174,9 +150,10 @@ class NonSessionForm(forms.ModelForm):
         
 """   
 class TimeSlotForm(forms.Form):
-    name = forms.CharField()
     day = forms.ChoiceField(choices=DAYS_CHOICES)
-    time = forms.IntegerField()
+    time = forms.TimeField()
+    duration = TimedeltaFormField(widget=TimedeltaWidget(attrs={'inputs':['hours','minutes']}))
+    name = forms.CharField()
     
 class TimeSlotModelForm(forms.ModelForm):
     class Meta:
