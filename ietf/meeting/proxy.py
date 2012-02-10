@@ -6,7 +6,7 @@ from ietf.utils.proxy import TranslatingManager
 from models import *
 
 class MeetingProxy(Meeting):
-    objects = TranslatingManager(dict(meeting_num="number"))
+    objects = TranslatingManager(dict(meeting_num="number"), always_filter=dict(type="ietf"))
                                       
     def from_object(self, base):
         for f in base._meta.fields:
