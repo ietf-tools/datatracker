@@ -52,6 +52,7 @@ session_status_mapping = {
     }
 
 status_not_meeting = name(SessionStatusName, "notmeet", "Not meeting")
+status_deleted = name(SessionStatusName, "deleted", "Deleted")
 
 session_status_mapping[0] = session_status_mapping[1] # assume broken statuses of 0 are actually cancelled
 
