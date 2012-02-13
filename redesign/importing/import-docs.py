@@ -27,11 +27,13 @@ from ietf.wgchairs.models import ProtoWriteUp
 
 from workflows.models import State as StateOld
 
-import_docs_from = document_name_to_import = None
+import_docs_from = document_name_to_import = document_id_to_import = None
 if len(sys.argv) > 1:
-    try:
+    if re.search("^\d+$", sys.argv[1]):
+        document_id_to_import = sys.argv[1]
+    elif re.search("^\d\d\d\d-\d\d-\d\d$", sys.argv[1]):
         import_docs_from = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d")
-    except:
+    else:
         document_name_to_import = sys.argv[1]
 
 dont_save_queries()
@@ -789,6 +791,8 @@ if document_name_to_import:
     else:
         all_drafts = all_drafts.filter(filename=document_name_to_import)
 
+if document_id_to_import:
+    all_drafts = all_drafts.filter(pk=document_id_to_import)
 
 for index, o in enumerate(all_drafts.iterator()):
     print "importing", o.id_document_tag, o.filename, index, "ballot %s" % o.idinternal.ballot_id if o.idinternal and o.idinternal.ballot_id else ""
