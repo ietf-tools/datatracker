@@ -71,6 +71,11 @@
     padding: 1em;
 }
 
+.message-right {
+    float: right;
+    color: Red;
+}
+
 .locked {
     float: right;
 }
@@ -389,6 +394,26 @@ input.draft-file-input {
     width: 90%;
 }
 
+#timeslot-form {
+    display: inline;
+}
+
+#timeslot-form #id_time,#id_duration {
+    width: 5em;
+}
+
+#timeslot-form #id_name {
+    width: 30em;
+}
+
+#timeslot-form th {
+    width: 60px;
+}
+
+#id_duration input {
+    width: 5em;
+}
+
 /* ----------- Proceeding Tool -------------------- */
 
 input#id_slide_name {
@@ -407,7 +432,7 @@ input#id_title {
 }
 
 .internal-form select {
-    width: 130px;
+    width: 100px;
 }
 
 #interim-directory-table td {

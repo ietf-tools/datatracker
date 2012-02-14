@@ -126,6 +126,9 @@ $(document).ready(function() {
   if ( $("form[id^=meetings-meta]").length > 0){
       $("button[type=submit]:first").focus();
   }
+  if ( $("form[id=meetings-schedule-form]").length > 0){
+      $("#id_form-0-time").focus();
+  }
 
 
   // unset Primary Area selection unless it appears as URL parameter 

@@ -29,7 +29,7 @@
         <h2>Directors</h2>
         <table>
 	{% for director in directors %}
-          <tr><td><a href="">{{ director.person.name }}</a>{% if director.name.slug == "pre-ad" %} (Incoming){% endif %}</td></tr>
+          <tr><td><a href="{% url rolodex_view id=director.person.id %}">{{ director.person.name }}</a>{% if director.name.slug == "pre-ad" %} (Incoming){% endif %}</td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-group -->

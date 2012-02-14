@@ -5,7 +5,7 @@ submitted by {{ login }}, a working group chair of {{ group.name }}.
 The third session requires your approval.
 
 To approve the session go to the session request view here:
-https://sec.ietf.org{% url sessions_view acronym=group.acronym %}
+https://pub.ietf.org{% url sessions_view acronym=group.acronym %}
 and click "Approve Third Session".
 
 Regards,

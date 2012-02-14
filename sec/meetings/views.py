@@ -28,43 +28,11 @@ import datetime
 # --------------------------------------------------
 # Globals
 # --------------------------------------------------
-INFO_TYPES = {'ack':'Acknowledgement',
-              'overview1':'IETF Overview Part 1',
-              'overview2':'IETF Overview Part 2',
-              'future_meeting':'Future Meeting',
-              'irtf':'IRTF Home Page in HTML'}
 
-"""             
-all_refs = NonSessionRef.objects.all().order_by('id')
-NON_SESSION_INITIAL = ((0,all_refs[1]),
-                       (1,all_refs[1]),
-                       (2,all_refs[1]),
-                       (3,all_refs[1]),
-                       (4,all_refs[1]),
-                       (5,all_refs[1]),
-                       (None,all_refs[3]),
-                       (None,all_refs[2]),
-                       (None,all_refs[0]),
-                       (1,all_refs[4]),
-                       (2,all_refs[4]),
-                       (3,all_refs[4]),
-                       (4,all_refs[4]),
-                       (5,all_refs[4]),
-                       (1,all_refs[5]),
-                       (2,all_refs[5]),
-                       (3,all_refs[5]),
-                       (4,all_refs[5]),
-                       (5,all_refs[5]),
-                       (1,all_refs[7]),
-                       (2,all_refs[7]),
-                       (3,all_refs[7]),
-                       (4,all_refs[7]),
-                       (5,all_refs[7]))
 
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-"""
 def build_timeslots(meeting,room=None):
     '''
     This function takes a Meeting object and an optional room argument.  If room isn't passed we 
@@ -97,6 +65,22 @@ def build_timeslots(meeting,room=None):
                                         location=room,
                                         duration=t.duration)
 
+def build_nonsession(meeting):
+    '''
+    This function takes a meeting object and creates Break and Registration records
+    for a new meeting, based on the last meeting
+    '''
+    last_meeting = get_last_meeting(meeting)
+    delta = meeting.date - last_meeting.date
+    for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other')):
+        new_time = slot.time + delta
+        TimeSlot.objects.create(type=slot.type,
+                                meeting=meeting,
+                                name=slot.name,
+                                time=new_time,
+                                duration=slot.duration,
+                                show_location=slot.show_location)
+                                
 def get_last_meeting(meeting):
     last_number = int(meeting.number) - 1
     return Meeting.objects.get(number=last_number)
@@ -166,17 +150,28 @@ def send_notification(request, sessions):
               context,
               cc=cc_list)
 
-"""
-def update_switches():
+def sort_groups(meeting):
     '''
-    Updates the "switches" table.  This just stores the date and time that the meeting agenda
-    was last updated.  This funtion should be called if a session is scheduled or edited.
+    Similar to sreq.views.sort_groups
+    Takes a Django User object and a Meeting object
+    Returns a tuple scheduled_groups, unscheduled groups.
     '''
-    rec = Switches.objects.get(name='agenda_updated')
-    rec.updated_date = datetime.date.today()
-    rec.updated_time = datetime.datetime.now().strftime("%H:%M:%S")
-    rec.save()
-"""
+    scheduled_groups = []
+    unscheduled_groups = []
+    sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched','notmeet','canceled'))
+    groups_with_sessions = [ s.group for s in sessions ]
+    gset = set(groups_with_sessions)
+    sorted_groups_with_sessions = sorted(gset, key = lambda instance: instance.acronym)
+    slots = TimeSlot.objects.filter(meeting=meeting,session__isnull=False)
+    groups_with_timeslots = [ s.session.group for s in slots ]
+    for group in sorted_groups_with_sessions:
+            if group in groups_with_timeslots:
+                scheduled_groups.append(group)
+            else:
+                unscheduled_groups.append(group)
+            
+    return scheduled_groups, unscheduled_groups
+    
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
@@ -218,44 +213,7 @@ def add(request):
         'form': form},
         RequestContext(request, {}),
     )
-
-
-def add_tutorial(request, meeting_id):
-    '''
-    This function essentially adds an entry to the acronym table.  The acronym_id set to the 
-    lowest (negative) acronym_id minus one. This designates the acronym as a tutorial and will 
-    now appear in the tutorial drop down list when scheduling sessions.
-    '''
-    pass
-    """
-    meeting = get_object_or_404(Meeting, meeting_num=meeting_id)
-
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting.pk})
-            return HttpResponseRedirect(url)
-            
-        form = AddTutorialForm(request.POST)
-        if form.is_valid():
-            acronym = form.save(commit=False)
-            new_id = Acronym.objects.all().aggregate(Min('acronym_id'))['acronym_id__min'] - 1
-            acronym.acronym_id = new_id
-            acronym.save()
-            
-            messages.success(request, 'The Tutorial was created successfully!')
-            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting.pk})
-            return HttpResponseRedirect(url)
-            
-    else:
-        form = AddTutorialForm()
-    
-    return render_to_response('meetings/add_tutorial.html', {
-        'form': form,
-        'meeting': meeting},
-        RequestContext(request, {}),
-    )
-        
+"""
 def blue_sheet(request):
     
     groups = IETFWG.objects.filter(meeting_scheduled="YES").select_related().order_by('group_acronym__acronym')
@@ -329,28 +287,6 @@ l End Time: __________ \\par \\par }
         'url': url,},
         RequestContext(request, {}),
     )
-            
-def clear_meeting_scheduled(request):
-    '''
-    This view implements the "Clear all groups who are Meeting" button of the legacy groups app.
-    See /a/cf/system/group/meeting/meeting2.cfm
-    The legacy app also concluded BOFs but Wanda said not to implement that.
-    '''
-    groups = IETFWG.objects.all()
-    for group in groups:
-        group.meeting_scheduled_old = group.meeting_scheduled
-        group.meeting_scheduled = 'NO'
-        group.save()
-        
-    irtfs = IRTF.objects.all()
-    for irtf in irtfs:
-        irtf.meeting_scheduled = False
-        irtf.save()
-        
-    messages.success(request, 'Cleared meeting_scheduled')
-    url = reverse('meetings')
-    return HttpResponseRedirect(url)
-    
 """
 def edit_meeting(request, meeting_id):
     '''
@@ -389,65 +325,6 @@ def edit_meeting(request, meeting_id):
         RequestContext(request,{}),
     )
 
-def edit_session(request, meeting_id, acronym):
-    '''
-    Edit session scheduling details
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_id)
-    group = get_object_or_404(Group, acronym=acronym)
-    sessions = Session.objects.filter(meeting=meeting,group=group)
-    
-    # NOTE special cases for Tutorials / BOFs
-    if group.type_id != 'wg':
-        show_request = False
-        num_session = 1
-    else:
-        show_request = True
-        num_session = sessions.count()
-    
-    # need to use curry here to pass custom variable to form init
-    NewSessionFormset = formset_factory(NewSessionForm, extra=0)
-    NewSessionFormset.form = staticmethod(curry(NewSessionForm, meeting=meeting))
-    
-    if request.method == 'POST':
-        formset = NewSessionFormset(request.POST)
-        extra_form = ExtraSessionForm(request.POST)
-        if formset.is_valid() and extra_form.is_valid():
-            for form in formset.forms:
-                pass
-            
-            #update_switches()
-            
-            # update session activity
-            #add_session_activity(group.pk,'Session was scheduled',meeting,request.person)
-            
-            # notify.  dont send if Tutorial, BOF or indicated on form
-            notification_message = "No notification has been sent to anyone for this session."
-            if not extra_form.cleaned_data.get('no_notify',False):
-                if group.state.slug != 'bof':
-                    send_notification(request, sessions)
-                    notification_message = "Notification sent."
-                            
-            messages.success(request, 'Session(s) Scheduled for %s.  %s' %  (group.acronym, notification_message))
-            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting.pk})
-            return HttpResponseRedirect(url)
-            
-    else:
-        # intitialize forms
-        initial = []
-
-
-        formset = NewSessionFormset(initial=initial)
-        extra_form = ExtraSessionForm(initial={'note':sessions[0].agenda_note})
-        
-    return render_to_response('meetings/edit_session.html', {
-        'extra_form': extra_form,
-        'show_request': show_request,
-        'session': session,
-        'formset': formset},
-        RequestContext(request, {}),
-    )
-
 def main(request):
     '''
     In this view the user can choose a meeting to manage or elect to create a new meeting.
@@ -466,176 +343,83 @@ def main(request):
         'meetings': meetings},
         RequestContext(request, {}),
     )
-    
-
-def new_session(request, meeting_id, acronym):
-    '''
-    Schedule a session
-    Requirements:
-    - display third session status if not 0
-    - display session request info if it exists
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_id)
-    group = get_object_or_404(Group, acronym=acronym)
-    sessions = Session.objects.filter(meeting=meeting_id,group=group)
-    legacy_session = get_initial_session(sessions)
-    session_conflicts = session_conflicts_as_string(group, meeting)
-    
-    # warn and redirect to edit if there is already a scheduled session for this group
-    if sessions:
-        if sessions[0].status == 'sched':
-            messages.error(request, 'The session for %s is already scheduled for meeting %s' % (sessions[0].group, meeting_id))
-            url = reverse('meetings_edit_session', kwargs={'session_id':sessions[0].id})
-            return HttpResponseRedirect(url)
-            
-    # set number of sessions
-    if sessions:
-        num_session = sessions.count()
-    else:
-        num_session = 1
-        
-    # need to use curry here to pass custom variable to form init
-    NewSessionFormset = formset_factory(NewSessionForm, extra=0)
-    NewSessionFormset.form = staticmethod(curry(NewSessionForm, meeting=meeting))
-
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
-
-        formset = NewSessionFormset(request.POST)
-        extra_form = ExtraSessionForm(request.POST)       
-        
-        if formset.is_valid() and extra_form.is_valid():
-            note = extra_form.cleaned_data['note']
-            
-            # create session now if it doesn't exist (tutorials, BOFs)
-            if not sessions:
-                session = Session(meeting=meeting,group=group,status_id='schedw')
-                session.save()
-                    
-            for form in formset.forms:
-                timeslot = form.cleaned_data['time']
-                id = form.cleaned_data['session']
-                session = Session.objects.get(id=id)
-                now = datetime.datetime.now()
-                
-                # handle "combine" option, this must be done before scheduling first slot
-                if form.cleaned_data.get('combine',None):
-                    # there must be a next slot or validation would have failed
-                    next_slot = get_next_slot(timeslot)
-                    next_slot.session = session
-                    next_slot.modified = now
-                    next_slot.save()
-                    
-                timeslot.session = session
-                timeslot.modified = now
-                timeslot.save()
-                
-                session.status_id = 'sched'
-                if note:
-                    session.agenda_note = note
-                session.scheduled = now
-                session.modified = now
-                session.save()
-                
-            #update_switches()
-            
-            # update session activity
-            #add_session_activity(group.id,'Session was scheduled',meeting,request.person)
-            
-            # notify.  dont send if Tutorial, BOF or indicated on form
-            notification_message = "No notification has been sent to anyone for this session."
-            if not extra_form.cleaned_data.get('no_notify',False):
-                if group.state.slug != 'bof':
-                    send_notification(request, sessions)
-                    notification_message = "Notification sent."
-                
-            messages.success(request, 'Session(s) Scheduled for %s.  %s' %  (group.acronym, notification_message))
-            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
-    else:
-        initial = [ {'session':x.id} for x in sessions ]
-        formset = NewSessionFormset(initial=initial)
-        extra_form = ExtraSessionForm()
-
-    return render_to_response('meetings/new_session.html', {
-        'legacy_session':legacy_session,
-        'group':group,
-        'extra_form': extra_form,
-        'formset': formset,
-        'meeting': meeting,
-        'sessions': sessions,
-        'session_conflicts':session_conflicts},
-        RequestContext(request, {}),
-    )
 
 def non_session(request, meeting_id):
     '''
     Display and edit "non-session" time slots, ie. registration, beverage and snack breaks
     '''
-    pass
-    """
-    meeting = get_object_or_404(Meeting, meeting_num=meeting_id)
+    meeting = get_object_or_404(Meeting, number=meeting_id)
     
-    # if the NonSession records don't exist yet (new meeting) create them
-    if not NonSession.objects.filter(meeting=meeting):
-        for record in NON_SESSION_INITIAL:
-            new = NonSession(day_id=record[0],
-                             non_session_ref=record[1],
-                             meeting=meeting)
-            new.save()
-        
-    NonSessionFormset = inlineformset_factory(Meeting, NonSession, form=NonSessionForm, can_delete=False,extra=0)
+    # if the Break/Registration records don't exist yet (new meeting) create them
+    if not TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other')):
+        build_nonsession(meeting)
+    
+    slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other')).order_by('time')
     
     if request.method == 'POST':
-        formset = NonSessionFormset(request.POST, instance=meeting, prefix='non_session')
-        if formset.is_valid():
-            formset.save()
+        form = NonSessionForm(request.POST)
+        if form.is_valid():
+            day = form.cleaned_data['day']
+            time = form.cleaned_data['time']
+            t = meeting.date + datetime.timedelta(days=int(day))
+            new_time = datetime.datetime(t.year,t.month,t.day,time.hour,time.minute)
+            
+            TimeSlot.objects.create(type=form.cleaned_data['type'],
+                                        meeting=meeting,
+                                        name=form.cleaned_data['name'],
+                                        time=new_time,
+                                        duration=form.cleaned_data['duration'],
+                                        show_location=form.cleaned_data['show_location'])
+            
             messages.success(request, 'Non-Sessions updated successfully')
             url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
     else:       
-        formset = NonSessionFormset(instance=meeting, prefix='non_session')
-    
+        form = NonSessionForm()
+        
     return render_to_response('meetings/non_session.html', {
-        'formset': formset,
+        'slots': slots,
+        'form': form,
         'meeting': meeting},
         RequestContext(request, {}),
     )
 
-def remove_session(request, session_id):
+def non_session_delete(request, meeting_id, slot_id):
     '''
-    Remove session from agenda.  Deletes WgMeetingSession record entirely, meaning new session
-    request will need to be submitted to re-schedule.
+    This function deletes the non-session TimeSlot
     '''
-    session = get_object_or_404(WgMeetingSession, session_id=session_id)
-    meeting = get_object_or_404(Meeting, meeting_num=session.meeting.meeting_num)
-    group = session.group
+    slot = get_object_or_404(TimeSlot, id=slot_id)
+    slot.delete()
     
-    # delete the conflicts
-    SessionConflict.objects.filter(meeting_num=meeting.meeting_num,group_acronym_id=group.pk).delete()
+    messages.success(request, 'Non-Session timeslot deleted successfully')
+    url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
+    return HttpResponseRedirect(url)
+
+def remove_session(request, meeting_id, acronym):
+    '''
+    Remove session from agenda.  Disassociate session from timeslot and set status
+    '''
+    meeting = get_object_or_404(Meeting, number=meeting_id)
+    group = get_object_or_404(Group, acronym=acronym)
+    sessions = Session.objects.filter(meeting=meeting_id,group=group)
+    now = datetime.datetime.now()
     
-    # update group record
-    # set specific values for IETFWG and IRTF, do nothing if group is a tutorial (Acronym)
-    if isinstance(group, IRTF):
-        group.meeting_scheduled = False
-        group.save()
-    if isinstance(group, IETFWG):
-        group.meeting_scheduled = 'NO'
-        group.save()
-    
-    # delete session record
-    session.delete()
+    for session in sessions:
+        timeslot = session.timeslot_set.all()[0]
+        timeslot.session = None
+        timeslot.modified = now
+        timeslot.save()
+        session.status_id = 'schedw'
+        session.modified = now
+        session.save()
     
     # log activity
-    add_session_activity(group.pk,'Session was removed from agenda',meeting,request.person)
+    # add_session_activity(group.pk,'Session was removed from agenda',meeting,request.person)
     
     messages.success(request, '%s Session removed from agenda' % (session.group))
-    url = reverse('meetings_select_group', kwargs={'meeting_id':meeting.meeting_num})
+    url = reverse('meetings_select_group', kwargs={'meeting_id':meeting_id})
     return HttpResponseRedirect(url)
-"""
+
 def rooms(request, meeting_id):
     '''
     Display and edit MeetingRoom records for the specified meeting
@@ -680,57 +464,133 @@ def rooms(request, meeting_id):
         RequestContext(request, {}),
     )
 
+def schedule(request, meeting_id, acronym):
+    '''
+    This view handles scheduling session requests to TimeSlots
+    '''
+    meeting = get_object_or_404(Meeting, number=meeting_id)
+    group = get_object_or_404(Group, acronym=acronym)
+    sessions = Session.objects.filter(meeting=meeting_id,group=group,status__in=('schedw','apprw','appr','sched','canceled'))
+    legacy_session = get_initial_session(sessions)
+    session_conflicts = session_conflicts_as_string(group, meeting)
+    initial = [ {'session':s.id,'time':s.timeslot_set.all()[0].pk if s.timeslot_set.all() else None,'note':s.agenda_note} for s in sessions ]
+    now = datetime.datetime.now()
+    
+    # need to use curry here to pass custom variable to form init
+    NewSessionFormset = formset_factory(NewSessionForm, extra=0)
+    NewSessionFormset.form = staticmethod(curry(NewSessionForm, meeting=meeting))
+    
+    if request.method == 'POST':
+        button_text = request.POST.get('submit', '')
+        if button_text == 'Cancel':
+            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting_id})
+            return HttpResponseRedirect(url)
+
+        formset = NewSessionFormset(request.POST,initial=initial)
+        extra_form = ExtraSessionForm(request.POST)       
+        
+        if formset.is_valid() and extra_form.is_valid():
+            # TODO formsets don't have has_changed until Django 1.3
+            has_changed = False
+            for form in formset.forms:
+                if form.has_changed():
+                    has_changed = True
+                    timeslot = form.cleaned_data['time']
+                    old = form.initial['time']
+                    initial_timeslot = TimeSlot.objects.get(id=old) if old else None
+                    id = form.cleaned_data['session']
+                    note = form.cleaned_data['note']
+                    session = Session.objects.get(id=id)
+                    
+                    if 'time' in form.changed_data:
+                        # clear the old timeslot
+                        if initial_timeslot:
+                            initial_timeslot.session = None
+                            initial_timeslot.modified = now
+                            initial_timeslot.save()
+                        if timeslot:
+                            timeslot.session = session
+                            timeslot.modified = now
+                            timeslot.save()
+                            session.status_id = 'sched'
+                        else:
+                            session.status_id = 'schedw'
+                            
+                        session.modified = now
+                        session.save()
+                    
+                    if 'note' in form.changed_data:
+                        session.agenda_note = note
+                        session.modified = now
+                        session.save()
+                    
+                    # handle "combine" option
+                    if 'combine' in form.changed_data:
+                        next_slot = get_next_slot(timeslot)
+                        if form.cleaned_data.get('combine',None):
+                            next_slot.session = session
+                        else:
+                            next.slot.session = None
+                        next_slot.modified = now
+                        next_slot.save()
+            
+            # notify.  dont send if Tutorial, BOF or indicated on form
+            notification_message = "No notification has been sent to anyone for this session."
+            if has_changed and not extra_form.cleaned_data.get('no_notify',False):
+                if group.state.slug != 'bof':
+                    send_notification(request, sessions)
+                    notification_message = "Notification sent."
+                
+            if has_changed:
+                messages.success(request, 'Session(s) Scheduled for %s.  %s' %  (group.acronym, notification_message))
+            
+            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting_id})
+            return HttpResponseRedirect(url)
+
+    else:
+        formset = NewSessionFormset(initial=initial)
+        extra_form = ExtraSessionForm()
+        
+    return render_to_response('meetings/schedule.html', {
+        'extra_form': extra_form,
+        'group': group,
+        'meeting': meeting,
+        'show_request': True,
+        'session': legacy_session,
+        'formset': formset},
+        RequestContext(request, {}),
+    )
+    
 def select_group(request, meeting_id):
     '''
-    This view presents lists of WGs, Tutorials, BOFs for the secretariat user to select from to 
-    schedule a session
-    WGs: those that have pending session requests are listed.
-    Tutorials: those that aren't already scheduled are listed
-    BOFs: all BOFs which aren't already scheduled are lists
-    IRTF: those that have pending session requests are listed.
+    In this view the user can select the group to schedule.  Only those groups that have
+    submitted session requests appear in the dropdowns.
+    
+    NOTE: BOF list includes Proposed Working Group type, per Wanda
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
     if request.method == 'POST':
-        redirect_url = reverse('meetings_new_session', kwargs={'meeting_id':meeting.number,'acronym':request.POST['group']})
+        redirect_url = reverse('meetings_schedule', kwargs={'meeting_id':meeting.number,'acronym':request.POST['group']})
         return HttpResponseRedirect(redirect_url)
             
-    # get groups that have been scheduled
-    
-    scheduled_groups = Group.objects.filter(session__meeting=meeting,session__timeslot__isnull=False).order_by('acronym')
+    # split groups into scheduled / unscheduled
+    scheduled_groups, unscheduled_groups = sort_groups(meeting)
     
     # prep group form
-    sessions = Session.objects.filter(~Q(status='sched'),group__type='wg',group__state='active',meeting=meeting)
-    choices = build_choices( [ s.group for s in sessions ] )
-    group_form = GroupSelectForm(choices=choices)
-    
-    # prep tutorial form
-    # TODO change this feature
-    #tutorials = Acronym.objects.filter(acronym_id__lt=0).order_by('name')
-    #unscheduled_tutorials = [ t for t in tutorials if t.acronym_id not in scheduled_group_ids ]
-    #tut_choices = zip([ x.pk for x in unscheduled_tutorials ],
-    #              [ x.name for x in unscheduled_tutorials ])
-    tutorial_form = GroupSelectForm(choices='')
+    wgs = filter(lambda a: a.type_id=='wg' and a.state_id=='active', unscheduled_groups)
+    group_form = GroupSelectForm(choices=build_choices(wgs))
     
     # prep BOFs form
-    # seems like these should appear in group list above but maybe no request is filled out for them
-    # include BOFs and PWG group types (3,2) per Wanda
-    #bofs = Acronym.objects.filter(ietfwg__group_type__in=(2,3),ietfwg__status=1).order_by('acronym')
-    bofs = Group.objects.filter(type='wg',state__in=('bof','proposed')).order_by('acronym')
-    unscheduled_bofs = [ b for b in bofs if b not in scheduled_groups ]
-    bof_choices = build_choices(unscheduled_bofs)
-    bof_form = GroupSelectForm(choices=bof_choices)
+    bofs = filter(lambda a: a.type_id=='wg' and a.state_id in ('bof','proposed'), unscheduled_groups)
+    bof_form = GroupSelectForm(choices=build_choices(bofs))
     
     # prep IRTF form
-
-    irtfs = Group.objects.filter(type='rg',state='active').order_by('acronym')
-    unscheduled_irtfs = [ i for i in irtfs if i not in scheduled_groups ]
-    irtf_choices = build_choices(unscheduled_irtfs)
-    irtf_form = GroupSelectForm(choices=irtf_choices)
+    irtfs = filter(lambda a: a.type_id=='rg' and a.state_id=='active', unscheduled_groups)
+    irtf_form = GroupSelectForm(choices=build_choices(irtfs))
     
     return render_to_response('meetings/select_group.html', {
         'group_form': group_form,
-        'tutorial_form': tutorial_form,
         'bof_form': bof_form,
         'irtf_form': irtf_form,
         'scheduled_groups': scheduled_groups,

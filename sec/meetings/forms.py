@@ -1,8 +1,11 @@
 from django import forms
+from django.db.models import Q
 
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session
 from ietf.meeting.timedeltafield import TimedeltaFormField, TimedeltaWidget
+from ietf.name.models import TimeSlotTypeName
 
+import itertools
 import re
 
 DAYS_CHOICES = ((-1,'Saturday'),
@@ -21,12 +24,12 @@ SESSION_CHOICES.insert(0,('0','-----------'))
 #----------------------------------------------------------
 """
 def get_next_slot(slot):
-    '''Takes a TimeSlot object and returns the next TimeSlot same day, same room, if it is available.
-    Returns None if there is no later slot.  For use with combine option.
+    '''Takes a TimeSlot object and returns the next TimeSlot same day and same room, None if there
+    aren't any.  You must check availability of the slot as we sometimes need to get the next
+    slot whether it's available or not.  For use with combine option.
     '''
-    same_day_slots = TimeSlot.objects.filter(meeting=slot.meeting,location=slot.location,time__day=slot.time.day,session__isnull=True).order_by('time')
+    same_day_slots = TimeSlot.objects.filter(meeting=slot.meeting,location=slot.location,time__day=slot.time.day).order_by('time')
     try:
-        #assert False, (slot, same_day_slots)
         i = list(same_day_slots).index(slot)
         return same_day_slots[i+1]
     except IndexError:
@@ -72,9 +75,6 @@ class MeetingModelForm(forms.ModelForm):
             meeting.save()
         return meeting
         
-class AddTutorialForm(forms.ModelForm):
-    pass
-        
 class MeetingRoomForm(forms.ModelForm):
     class Meta:
         model = Room
@@ -98,25 +98,37 @@ class MeetingTimeForm(forms.ModelForm):
         return time_desc
         
 class ExtraSessionForm(forms.Form):
-    note = forms.CharField(max_length=255, required=False, label='Special Note from Scheduler')
     no_notify = forms.BooleanField(required=False, label="Do NOT notify this action")
-    
-    def __init__(self,*args,**kwargs):
-        super(ExtraSessionForm, self).__init__(*args,**kwargs)
-        self.fields['note'].widget.attrs['size'] = 40
 
 class NewSessionForm(forms.Form):
-    time = TimeSlotModelChoiceField(queryset=TimeSlot.objects,label='Day and Time')
+    time = TimeSlotModelChoiceField(queryset=TimeSlot.objects,label='Day-Time-Room',required=False)
     session = forms.CharField(widget=forms.HiddenInput)
+    note = forms.CharField(max_length=255, required=False, label='Special Note from Scheduler')
     combine = forms.BooleanField(required=False, label='Combine with next session')
     
     # setup the timeslot options based on meeting passed in
     def __init__(self,*args,**kwargs):
         meeting = kwargs.pop('meeting')
-        self.meeting = meeting
         super(NewSessionForm, self).__init__(*args,**kwargs)
-        self.fields['time'].queryset = TimeSlot.objects.filter(meeting=meeting,session__isnull=True).order_by('time')
-
+        
+        # attach session object to the form so we can use it in the template
+        self.session_object = Session.objects.get(id=self.initial['session'])
+        
+        # if we are editing, timeslot queryset needs to include the timeslot the session was 
+        # assigned to in order to initialize the form
+        if self.initial['time']:
+            queryset = TimeSlot.objects.filter(Q(meeting=meeting,type='session',session__isnull=True)|
+                                               Q(session__id=self.initial['session']))
+        else:
+            queryset = TimeSlot.objects.filter(meeting=meeting,type='session',session__isnull=True)
+        self.fields['time'].queryset = queryset.order_by('time')
+    
+    def clean_time(self):
+        time = self.cleaned_data['time']
+        if time:
+            if not self.session_object.requested_duration <= time.duration:
+                raise forms.ValidationError('The requested session length is longer than the duration of this timeslot')
+        return time
         
     def clean(self):
         super(NewSessionForm, self).clean()
@@ -126,36 +138,18 @@ class NewSessionForm(forms.Form):
         time = cleaned_data['time']
         if cleaned_data['combine']:
             slot = get_next_slot(cleaned_data['time'])
-            if not slot:
+            if not slot or slot.session != None:
                 raise forms.ValidationError('There is no next session to combine')
         
         return cleaned_data
-"""
-class NonSessionForm(forms.ModelForm):
-    class Meta:
-        model = NonSession
-        
-    def __init__(self, *args, **kwargs):
-        super(NonSessionForm, self).__init__(*args, **kwargs)
-        self.fields['time_desc'].label = '%s %s' % (self.instance.non_session_ref,
-                                                    self.instance.day())
-    
-    def clean_time_desc(self):
-        time_desc = self.cleaned_data['time_desc']
-        if time_desc and time_desc != '0':
-            match = re.match(r'\d{4}-\d{4}', time_desc)
-            if not match:
-                raise forms.ValidationError('Time must be in the from NNNN-NNNN')
-        return time_desc
-        
-"""   
+
 class TimeSlotForm(forms.Form):
     day = forms.ChoiceField(choices=DAYS_CHOICES)
     time = forms.TimeField()
     duration = TimedeltaFormField(widget=TimedeltaWidget(attrs={'inputs':['hours','minutes']}))
     name = forms.CharField()
-    
-class TimeSlotModelForm(forms.ModelForm):
-    class Meta:
-        model = TimeSlot
-        exclude = ('location','show_location','session','modified')
+
+class NonSessionForm(TimeSlotForm):
+    # inherit TimeSlot and add Type field
+    type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(slug__in=('other','reg','break')),empty_label=None)
+    show_location = forms.BooleanField(required=False)

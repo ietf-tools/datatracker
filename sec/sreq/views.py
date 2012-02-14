@@ -27,7 +27,6 @@ import itertools
 # -------------------------------------------------
 # Globals
 # -------------------------------------------------
-
 SESSION_REQUEST_EMAIL = 'session-request@ietf.org'
 LOCKFILE = os.path.join(settings.PROCEEDINGS_DIR,'session_request.lock')
 # -------------------------------------------------
@@ -85,50 +84,25 @@ def get_meeting():
     '''
     return Meeting.objects.filter(type='ietf').order_by('-date')[0]
 
-def get_scheduled_groups(user, meeting):
+def sort_groups(user, meeting):
     '''
     Takes a Django User object and a Meeting object
-    Returns a sorted list of those groups that have session requests
-    and the user has access to
+    Returns a tuple scheduled_groups, unscheduled groups.  sorted lists of those groups that 
+    the user has access to, secretariat defaults to all groups
+    NOTE: right now get_my_groups does not inlcude RGs so they won't appear in the list
     '''
-    all_groups = Group.objects.filter(type__in=('wg','rg'),state__in=('bof','proposed','active'))
-    groups = all_groups.filter(session__meeting=meeting,
-                               session__status__in=('schedw','apprw','appr','sched')).order_by('acronym').distinct()
-    
-    # short circuit for secretariat, return all groups
-    if has_role(user,'Secretariat'):
-        return groups
-        
+    scheduled_groups = []
+    unscheduled_groups = []
     my_groups = get_my_groups(user)
-    
-    return [ val for val in my_groups if val in groups ]
-    
-def get_unscheduled_groups(user, meeting):
-    '''
-    This function takes a Django User object and a Meeting object.
-    It returns a sorted list of active groups that the user is related to 
-    (as chair or secretary) that do not already have sessions requests for the named meeting.
-    NOTE: session records exist for canceled sessions and groups not meeting so we need to 
-    add those groups back in.
-    If the user is a secretariat than all groups are considered.
-    '''
-    all_groups = Group.objects.filter(type__in=('wg','rg'),state__in=('bof','proposed','active'))
-    no_session = all_groups.exclude(session__meeting=meeting)
-    # add groups with "cancelled" sessions
-    canceled = all_groups.filter(session__meeting=meeting,session__status__slug='canceled').distinct()
-    not_meeting = all_groups.filter(session__meeting=meeting,session__status__slug='notmeet').distinct()
-    unscheduled = sorted(
-        chain(no_session,canceled,not_meeting),
-        key = lambda instance: instance.acronym)
-    
-    # short circuit for secretariat
-    if has_role(user,'Secretariat'):
-        return unscheduled
-        
-    my_groups = get_my_groups(user)
-    
-    #return unscheduled & my_groups
-    return [ val for val in my_groups if val in unscheduled ]
+    sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched'))
+    groups_with_sessions = [ s.group for s in sessions ]
+    for group in my_groups:
+            if group in groups_with_sessions:
+                scheduled_groups.append(group)
+            else:
+                unscheduled_groups.append(group)
+            
+    return scheduled_groups, unscheduled_groups
     
 def save_conflicts(group, meeting, conflicts, name):
     '''
@@ -227,7 +201,9 @@ def approve(request, acronym):
 @check_permissions
 def cancel(request, acronym):
     '''
-    This view cancels a session request and sends a notification
+    This view cancels a session request and sends a notification.
+    To cancel, or withdraw the request set status = deleted.
+    "canceled" status is used by the secretariat.
     '''
     meeting = get_meeting()
     group = get_object_or_404(Group, acronym=acronym)
@@ -237,9 +213,9 @@ def cancel(request, acronym):
     # delete conflicts
     Constraint.objects.filter(meeting=meeting,source=group).delete()
     
-    # mark sessions as canceled
+    # mark sessions as deleted
     for session in sessions:
-        session.status = SessionStatusName.objects.get(name='canceled')
+        session.status_id = 'deleted'
         session.save()
         
     # log activity
@@ -474,11 +450,9 @@ def main(request):
             return HttpResponseRedirect(redirect_url)
         
     meeting = get_meeting()
-    
-    scheduled_groups = get_scheduled_groups(request.user, meeting)
+    scheduled_groups,unscheduled_groups = sort_groups(request.user, meeting)
     
     # load form select with unscheduled groups
-    unscheduled_groups = get_unscheduled_groups(request.user, meeting)
     choices = zip([ g.pk for g in unscheduled_groups ],
                   [ str(g) for g in unscheduled_groups ])
     form = GroupSelectForm(choices=choices)
@@ -526,7 +500,7 @@ def new(request, acronym):
         form = SessionForm(request.POST)
         if form.is_valid():
             # check if request already exists for this group
-            if Session.objects.filter(group=group,meeting=meeting).exclude(status__in=('canceled','notmeet')):
+            if Session.objects.filter(group=group,meeting=meeting).exclude(status__in=('deleted','notmeet')):
                 messages.warning(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
                 url = reverse('sessions')
                 return HttpResponseRedirect(url)
@@ -541,7 +515,7 @@ def new(request, acronym):
     # pre-populated with data from last meeeting's session request
     elif request.method == 'GET' and request.GET.has_key('previous'):
         previous_meeting = Meeting.objects.get(number=str(int(meeting.number) - 1))
-        previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).exclude(status__in=('notmeet','canceled')).order_by('id')
+        previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).exclude(status__in=('notmeet','deleted')).order_by('id')
         if not previous_sessions:
             messages.warning(request, 'This group did not meet at %s' % previous_meeting)
             redirect_url = reverse('sessions_new', kwargs={'acronym':acronym})
@@ -662,7 +636,7 @@ def view(request, acronym):
     '''
     meeting = get_meeting()
     group = get_object_or_404(Group, acronym=acronym)
-    sessions = Session.objects.filter(~Q(status__in=('canceled','notmeet')),meeting=meeting,group=group).order_by('id')
+    sessions = Session.objects.filter(~Q(status__in=('canceled','notmeet','deleted')),meeting=meeting,group=group).order_by('id')
     
     # if there are no session requests yet, redirect to new session request page
     if not sessions:

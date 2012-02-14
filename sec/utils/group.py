@@ -2,6 +2,8 @@ from ietf.group.models import Group
 
 from ietf.ietfauth.decorators import has_role
 
+import itertools
+
 def current_nomcom():
     return Group.objects.get(acronym__startswith='nomcom',state__name="Active")
 
@@ -15,16 +17,16 @@ def get_my_groups(user):
     '''
     my_groups = []
     person = user.get_profile()
+    all_groups = Group.objects.filter(type__in=('wg','rg'),state__in=('bof','proposed','active')).order_by('acronym')
     
     if has_role(user,'Secretariat'):
-        return Group.objects.active_wgs().order_by('acronym')
-        
-    elif has_role(user,'Area Director'):
-        # we are assuming one person will not be area director for more than one area
-        return Group.objects.active_wgs().filter(parent=person.role_set.get(name__name='Area Director').group).order_by('acronym')
-        
-    elif has_role(user,['WG Chair','WG Secretary']):
-        return Group.objects.active_wgs().filter(role__person=person,role__name__in=('chair','secr')).order_by('acronym')
+        return all_groups
+    
+    # groups that person is Area Director
+    ad_groups = all_groups.filter(parent__role__person=person,parent__role__name='ad')
+    
+    # groups that person is chair or secretary of
+    groups = all_groups.filter(role__person=person,role__name__in=('chair','secr'))
 
     # otherwise return empty list
-    return []
+    return itertools.chain(ad_groups,groups)
