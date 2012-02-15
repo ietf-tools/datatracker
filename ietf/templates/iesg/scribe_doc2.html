@@ -38,10 +38,37 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <p><b>{{ doc.obj.document.filename }}</b></p>
 {% if doc.obj.ballot.active %}
   <ol>
+{% if USE_DB_REDESIGN_PROXY_CLASSES %}
+
+{% for p in doc.obj.active_positions|dictsort:"ad.plain_name" %}
+
+{% if p.pos and p.pos.pos_id == "discuss" %}
+<li><a name="{{doc.obj.document.filename}}+{{p.ad.plain_name|slugify}}+discuss">{{ p.ad.plain_name }}</a>: Discuss [{{ p.pos.discuss_time|date:"Y-m-d" }}]:<br>
+<pre>
+{{ p.pos.orig.discuss|fill:"80"|escape }}
+</pre>
+</li>
+{% endif %}
+
+{% if p.pos and p.pos.comment %}
+<li><a name="{{doc.obj.document.filename}}+{{p.ad.plain_name|slugify}}+comment">{{ p.ad.plain_name }}</a>: Comment [{{ p.pos.comment_time|date:"Y-m-d" }}]:<br>
+    <pre>{{ p.pos.comment|fill:"80"|escape }}</pre>
+</li>
+{% endif %}
+{% endfor %}
+
+{% else %}
+
 {% for position in doc.obj.ballot.positions.all|dictsort:"ad.last_name" %}{% ifequal position.discuss 1 %}    <li><a name="{{doc.obj.document.filename}}+{{position.ad|slugify}}+discuss">{{ position.ad }}</a>:{% for item in doc.obj.ballot.discusses.all %}{% ifequal position.ad item.ad %} Discuss [{{ item.date }}]:<br>
     <pre>
     {{ item.text|fill:"80"|escape }} 
     </pre>
 {% endifequal %}{% endfor %}{% endifequal %}{% for item in doc.obj.ballot.comments.all %}{% ifequal position.ad item.ad %}    <li><a name="{{doc.obj.document.filename}}+{{position.ad|slugify}}+comment">{{ position.ad }}</a>: Comment [{{ item.date }}]:<br>
     <pre>{{ item.text|fill:"80"|escape }}</pre>
-{% endifequal %}{% endfor %}{% endfor %}  </ol>{%endif %}
+{% endifequal %}{% endfor %}{% endfor %}
+
+{%endif %}
+
+</ol>
+
+{% endif%}

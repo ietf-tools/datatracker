@@ -819,6 +819,8 @@ class Position(BallotPositionDocEvent):
         for f in base._meta.fields:
             if not f.name in ('discuss',): # don't overwrite properties
                 setattr(self, f.name, getattr(base, f.name))
+
+        self.orig = base
         return self
     
     #ballot = models.ForeignKey(BallotInfo, related_name='positions')

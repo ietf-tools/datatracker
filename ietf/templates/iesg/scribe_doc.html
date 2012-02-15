@@ -51,7 +51,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% if USE_DB_REDESIGN_PROXY_CLASSES %}
 {% for p in doc.obj.active_positions|dictsort:"ad.plain_name" %}{% if p.pos %}{% ifequal p.pos.pos_id "discuss" %}<li><a href="#{{doc.obj.document.filename}}+{{p.pos.ad|slugify}}+discuss">{{ p.pos.ad.plain_name }}: Discuss [{{ p.pos.discuss_time.date }}]</a>:
         <br>...
-{% endifequal %}{% if p.pos.comment %}    <li><a href="#{{doc.obj.document.filename}}+{{position.ad|slugify}}+comment">{{ p.pos.ad.plain_name }}: Comment [{{ p.pos.comment_time.date }}]</a>:
+{% endifequal %}{% if p.pos.comment %}    <li><a href="#{{doc.obj.document.filename}}+{{p.ad.plain_name|slugify}}+comment">{{ p.pos.ad.plain_name }}: Comment [{{ p.pos.comment_time.date }}]</a>:
         <br>...
 {% endif %}{% endif %}{% endfor %}
 {% else %}
