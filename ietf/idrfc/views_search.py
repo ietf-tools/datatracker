@@ -301,9 +301,9 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             active_ads = list(Person.objects.filter(role__name="ad",
                                                     role__group__type="area",
                                                     role__group__state="active").distinct())
-            inactive_ads = list((Person.objects.filter(pk__in=responsible) | Person.objects.filter(role__name="pre-ad",
+            inactive_ads = list(((Person.objects.filter(pk__in=responsible) | Person.objects.filter(role__name="pre-ad",
                                                                                                   role__group__type="area",
-                                                                                                  role__group__state="active"))
+                                                                                                  role__group__state="active")).distinct())
                                 .exclude(pk__in=[x.pk for x in active_ads]))
             extract_last_name = lambda x: x.name_parts()[3]
             active_ads.sort(key=extract_last_name)
