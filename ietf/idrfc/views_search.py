@@ -43,16 +43,8 @@ from ietf.idrfc.idrfc_wrapper import IdWrapper,RfcWrapper,IdRfcWrapper
 from ietf.utils import normalize_draftname
 from django.conf import settings
 
-def addInputEvents(widget):
-    widget.attrs["oninput"] = 'inputEvent()'
-    widget.attrs["onpropertychange"] = 'propertyChange()'
-
-def addChangeEvent(widget):
-    widget.attrs["onchange"] = 'changeEvent()'
-
 class SearchForm(forms.Form):
     name = forms.CharField(required=False)
-    addInputEvents(name.widget)
     rfcs = forms.BooleanField(required=False,initial=True)
     activeDrafts = forms.BooleanField(required=False,initial=True)
     oldDrafts = forms.BooleanField(required=False,initial=False)
@@ -60,18 +52,12 @@ class SearchForm(forms.Form):
 
     by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state')], required=False, initial='wg', label='Foobar')
     author = forms.CharField(required=False)
-    addInputEvents(author.widget)
     group = forms.CharField(required=False)
-    addInputEvents(group.widget)
     area = forms.ModelChoiceField(Area.active_areas(), empty_label="any area", required=False)
-    addChangeEvent(area.widget)
     ad = forms.ChoiceField(choices=(), required=False)
-    addChangeEvent(ad.widget)
     state = forms.ModelChoiceField(IDState.objects.all(), empty_label="any state", required=False)
-    addChangeEvent(state.widget)
     subState = forms.ChoiceField(choices=(), required=False)
-    addChangeEvent(subState.widget)
-        
+
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
         self.fields['ad'].choices = [('', 'any AD')] + [(ad.id, "%s %s" % (ad.first_name, ad.last_name)) for ad in IESGLogin.objects.filter(user_level=1).order_by('last_name')] + [('-99', '------------------')] + [(ad.id, "%s %s" % (ad.first_name, ad.last_name)) for ad in IESGLogin.objects.filter(user_level=2).order_by('last_name')]
@@ -275,7 +261,6 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
     class SearchForm(forms.Form):
         name = forms.CharField(required=False)
-        addInputEvents(name.widget) # consider moving this to jQuery client-side instead
         rfcs = forms.BooleanField(required=False,initial=True)
         activeDrafts = forms.BooleanField(required=False,initial=True)
         oldDrafts = forms.BooleanField(required=False,initial=False)
@@ -283,17 +268,11 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
         by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state')], required=False, initial='wg', label='Foobar')
         author = forms.CharField(required=False)
-        addInputEvents(author.widget)
         group = forms.CharField(required=False)
-        addInputEvents(group.widget)
         area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), empty_label="any area", required=False)
-        addInputEvents(area.widget)
         ad = forms.ChoiceField(choices=(), required=False)
-        addInputEvents(ad.widget)
         state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label="any state", required=False)
-        addInputEvents(state.widget)
         subState = forms.ChoiceField(choices=(), required=False)
-        addInputEvents(subState.widget)
 
         def __init__(self, *args, **kwargs):
             super(SearchForm, self).__init__(*args, **kwargs)
