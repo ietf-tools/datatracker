@@ -132,7 +132,7 @@ class Session(models.Model):
     meeting (time and location is stored in a TimeSlot) - if multiple
     timeslots are needed, multiple sessions will have to be created.
     Training sessions and similar are modeled by filling in a
-    responsible group (e.g. Edu team) and filling in the name"""
+    responsible group (e.g. Edu team) and filling in the name."""
     meeting = models.ForeignKey(Meeting)
     name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting")
     group = models.ForeignKey(Group)    # The group type determines the session type.  BOFs also need to be added as a group.
@@ -140,7 +140,7 @@ class Session(models.Model):
     agenda_note = models.CharField(blank=True, max_length=255)
     requested = models.DateTimeField(default=datetime.datetime.now)
     requested_by = models.ForeignKey(Person)
-    requested_duration = TimedeltaField()
+    requested_duration = TimedeltaField(default=0)
     comments = models.TextField()
     status = models.ForeignKey(SessionStatusName)
     scheduled = models.DateTimeField(null=True, blank=True)
@@ -149,5 +149,8 @@ class Session(models.Model):
     materials = models.ManyToManyField(Document, blank=True)
 
     def __unicode__(self):
+        if self.meeting.type_id == "interim":
+            return self.meeting.number
+
         timeslots = self.timeslot_set.order_by('time')
         return u"%s: %s %s" % (self.meeting, self.group.acronym, timeslots[0].time.strftime("%H%M") if timeslots else "(unscheduled)")
