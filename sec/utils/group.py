@@ -1,4 +1,5 @@
 from ietf.group.models import Group
+from ietf.meeting.models import Session
 
 from ietf.ietfauth.decorators import has_role
 
@@ -30,3 +31,23 @@ def get_my_groups(user):
 
     # otherwise return empty list
     return itertools.chain(ad_groups,groups)
+    
+def groups_by_session(user, meeting):
+    '''
+    Takes a Django User object and a Meeting object
+    Returns a tuple scheduled_groups, unscheduled groups.  sorted lists of those groups that 
+    the user has access to, secretariat defaults to all groups
+    NOTE: right now get_my_groups does not inlcude RGs so they won't appear in the list
+    '''
+    groups_session = []
+    groups_no_session = []
+    my_groups = get_my_groups(user)
+    sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched'))
+    groups_with_sessions = [ s.group for s in sessions ]
+    for group in my_groups:
+            if group in groups_with_sessions:
+                groups_session.append(group)
+            else:
+                groups_no_session.append(group)
+            
+    return groups_session, groups_no_session

@@ -1,5 +1,6 @@
 from django.conf import settings
 from ietf.meeting.models import Meeting
+#from sec.utils.groups import get_my_groups
 
 import os
 
@@ -17,3 +18,4 @@ def get_upload_root(meeting):
                             meeting.date.strftime('%d'),
                             meeting.session_set.all()[0].group.acronym)
     return path
+

@@ -83,11 +83,11 @@ function init_proceedings_table() {
     // register button
     $("#proceedings-list-toggle").click(function() {
 	if (this.value == "Show All") {
-	    $('#proceedings-list-table tbody tr:not(.0)').show();
+	    $('#proceedings-list-table tbody tr:not(.open)').show();
 	    $(this).val("Show Active");
 	    $(this).text("Show Active");
 	} else if (this.value == "Show Active") {
-	    $('#proceedings-list-table tbody tr:not(.0)').hide();
+	    $('#proceedings-list-table tbody tr:not(.open)').hide();
 	    $(this).val("Show All");
 	    $(this).text("Show All");
 	}
@@ -95,7 +95,7 @@ function init_proceedings_table() {
 	restripe('#proceedings-list-table');
     });
     // hide non-active areas
-    $('#proceedings-list-table tbody tr:not(.0)').hide();
+    $('#proceedings-list-table tbody tr:not(.open)').hide();
     restripe('#proceedings-list-table');
   }
 }

@@ -15,7 +15,7 @@
     &raquo; {{ meeting }}
   {% else %}
     &raquo; <a href="{% url proceedings %}">Proceedings</a>
-    &raquo; <a href="{% url proceedings_select meeting_id=meeting.pk %}">{{ meeting }}</a>
+    &raquo; <a href="{% url proceedings_select meeting_num=meeting.number %}">{{ meeting }}</a>
     &raquo; {{ group.acronym }}
   {% endifequal %}
 
@@ -53,7 +53,7 @@
              {% if minutes %}
              <td><a href="{{ minutes.url }}" target="_blank">Minutes</td>
              <td>{{ minutes.name }}</td>
-             <td><a href="{% url proceedings_delete_material meeting_id=meeting.pk acronym=group.acronym name=minutes.name %}">Delete</a></td>
+             <td><a href="{% url proceedings_delete_material meeting_num=meeting.number acronym=group.acronym name=minutes.name %}">Delete</a></td>
              {% else %}
              <td>Minutes</td>
              <td>(not uploaded)</td>
@@ -64,7 +64,7 @@
              {% if agenda %}
              <td><a href="{{ agenda.url }}" target="_blank">Agenda</a></td>
              <td>{{ agenda.name }}</td>
-             <td><a href="{% url proceedings_delete_material meeting_id=meeting.pk acronym=group.acronym name=agenda.name %}">Delete</a></td>
+             <td><a href="{% url proceedings_delete_material meeting_num=meeting.number acronym=group.acronym name=agenda.name %}">Delete</a></td>
              {% else %}
              <td>Agenda</td>
              <td>(not uploaded)</td>

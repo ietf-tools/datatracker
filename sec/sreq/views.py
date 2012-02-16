@@ -9,7 +9,7 @@ from django.template import RequestContext
 
 from sec.utils.mail import get_ad_email_list, get_chair_email_list, get_cc_list
 from sec.utils.decorators import check_permissions, sec_only
-from sec.utils.group import get_my_groups
+from sec.utils.group import get_my_groups, groups_by_session
 
 from ietf.ietfauth.decorators import has_role
 from ietf.utils.mail import send_mail
@@ -84,26 +84,6 @@ def get_meeting():
     '''
     return Meeting.objects.filter(type='ietf').order_by('-date')[0]
 
-def sort_groups(user, meeting):
-    '''
-    Takes a Django User object and a Meeting object
-    Returns a tuple scheduled_groups, unscheduled groups.  sorted lists of those groups that 
-    the user has access to, secretariat defaults to all groups
-    NOTE: right now get_my_groups does not inlcude RGs so they won't appear in the list
-    '''
-    scheduled_groups = []
-    unscheduled_groups = []
-    my_groups = get_my_groups(user)
-    sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched'))
-    groups_with_sessions = [ s.group for s in sessions ]
-    for group in my_groups:
-            if group in groups_with_sessions:
-                scheduled_groups.append(group)
-            else:
-                unscheduled_groups.append(group)
-            
-    return scheduled_groups, unscheduled_groups
-    
 def save_conflicts(group, meeting, conflicts, name):
     '''
     This function takes a Group, Meeting a string which is a list of Groups acronyms (conflicts),
@@ -450,7 +430,7 @@ def main(request):
             return HttpResponseRedirect(redirect_url)
         
     meeting = get_meeting()
-    scheduled_groups,unscheduled_groups = sort_groups(request.user, meeting)
+    scheduled_groups,unscheduled_groups = groups_by_session(request.user, meeting)
     
     # load form select with unscheduled groups
     choices = zip([ g.pk for g in unscheduled_groups ],

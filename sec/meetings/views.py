@@ -14,6 +14,7 @@ from ietf.utils.mail import send_mail
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot
 from ietf.group.models import Group
 from ietf.name.models import SessionStatusName, TimeSlotTypeName
+from ietf.person.models import Person
 from sec.proceedings.views import build_choices
 from sec.sreq.forms import GroupSelectForm
 from sec.sreq.views import get_initial_session, session_conflicts_as_string
@@ -72,10 +73,23 @@ def build_nonsession(meeting):
     '''
     last_meeting = get_last_meeting(meeting)
     delta = meeting.date - last_meeting.date
-    for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other')):
+    # TODO not precreating other types because they require a room assoc.
+    for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg')):
         new_time = slot.time + delta
+        """
+        session = None
+        # create Session object for Tutorials to hold materials
+        if slot.type.slug == 'other':
+            session = Session(meeting=meeting,
+                              name=slot.name,
+                              group=Group.objects.get(acronym='none'),
+                              requested_by=Person.objects.get(name='(system)'),
+                              status_id='sched')
+            session.save()
+        """        
         TimeSlot.objects.create(type=slot.type,
                                 meeting=meeting,
+                                session=session,
                                 name=slot.name,
                                 time=new_time,
                                 duration=slot.duration,
@@ -361,15 +375,30 @@ def non_session(request, meeting_id):
         if form.is_valid():
             day = form.cleaned_data['day']
             time = form.cleaned_data['time']
+            name = form.cleaned_data['name']
+            type = form.cleaned_data['type']
+            duration = form.cleaned_data['duration']
             t = meeting.date + datetime.timedelta(days=int(day))
             new_time = datetime.datetime(t.year,t.month,t.day,time.hour,time.minute)
             
+            # create a dummy Session object to hold materials
+            session = None
+            if type.slug == 'other':
+                session = Session(meeting=meeting,
+                                  name=name,
+                                  group=Group.objects.get(acronym='none'),
+                                  requested_by=Person.objects.get(name='(system)'),
+                                  status_id='sched')
+                session.save()
+            
+            # create TimeSlot object
             TimeSlot.objects.create(type=form.cleaned_data['type'],
-                                        meeting=meeting,
-                                        name=form.cleaned_data['name'],
-                                        time=new_time,
-                                        duration=form.cleaned_data['duration'],
-                                        show_location=form.cleaned_data['show_location'])
+                                    meeting=meeting,
+                                    session=session,
+                                    name=name,
+                                    time=new_time,
+                                    duration=duration,
+                                    show_location=form.cleaned_data['show_location'])
             
             messages.success(request, 'Non-Sessions updated successfully')
             url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
@@ -389,6 +418,9 @@ def non_session_delete(request, meeting_id, slot_id):
     This function deletes the non-session TimeSlot
     '''
     slot = get_object_or_404(TimeSlot, id=slot_id)
+    # if this is a Tutorial, TimeSlot.type = 'other', delete corresponding Session object
+    if slot.type_id == 'other':
+        slot.session.delete()
     slot.delete()
     
     messages.success(request, 'Non-Session timeslot deleted successfully')
