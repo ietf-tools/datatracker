@@ -223,14 +223,17 @@ def agenda_docs(date, next_agenda):
         for m in matches:
             if m.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
                 continue
-            
+
+            e = m.latest_event(type="started_iesg_process")
+            m.balloting_started = e.time if e else datetime.datetime.min
+
             if m.docalias_set.filter(name__startswith="rfc"):
                 rfcmatches.append(m)
             else:
                 idmatches.append(m)
 
-        idmatches.sort(key=lambda d: d.start_date or datetime.date.min)
-        rfcmatches.sort(key=lambda d: d.start_date or datetime.date.min)
+        idmatches.sort(key=lambda d: d.balloting_started)
+        rfcmatches.sort(key=lambda d: d.balloting_started)
     else:
         if next_agenda:
             matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
