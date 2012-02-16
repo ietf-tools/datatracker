@@ -17,6 +17,8 @@ from ietf.doc.models import *
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.group.models import *
 from ietf.name.models import *
+from ietf.person.models import *
+from ietf.person.name import name_parts
 from redesign.importing.utils import old_person_to_person, person_name, dont_save_queries
 from ietf.name.utils import name
 from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
@@ -26,6 +28,8 @@ from ietf.ietfworkflows.models import StreamedID, AnnotationTag, ContentType, Ob
 from ietf.wgchairs.models import ProtoWriteUp
 
 from workflows.models import State as StateOld
+
+ALL_IDS_STATE = "all_ids.state"
 
 import_docs_from = document_name_to_import = document_id_to_import = None
 if len(sys.argv) > 1:
@@ -175,6 +179,85 @@ stream_state_reminder_type = name(DocReminderTypeName, "stream-s", "Stream state
 
 
 # helpers
+def extract_authors_from_dump():
+    authors_re = re.compile(r"docauthors='([^']*);....-..-..'")
+    name_email_re = re.compile(r"(.*) <([^>]+)>")
+    email_brackets_re = re.compile(r" <[^>]*>")
+    comma_re = re.compile(r".*,")
+    colon_re = re.compile(r".*:")
+
+    email_mapping = {
+        "barryleiba@computer.org": "barryleiba@gmail.com",
+        "greg.daley@eng.monash.edu.au": "gdaley@netstarnetworks.com",
+        "radia.perlman@sun.com": "radia@alum.mit.edu",
+        "lisa@osafoundation.org": "lisa.dusseault@gmail.com",
+        "lisa.dusseault@messagingarchitects.com": "lisa.dusseault@gmail.com",
+        "scott.lawrence@nortel.com": "scottlawrenc@avaya.com",
+        "charliep@computer.org": "charliep@computer.org, charles.perkins@earthlink.net",
+        "yaronf@checkpoint.com": "yaronf.ietf@gmail.com",
+        "mary.barnes@nortel.com": "mary.ietf.barnes@gmail.com",
+        "scottlawrenc@avaya.com": "xmlscott@gmail.com",
+        "henk@ripe.net": "henk@uijterwaal.nl",
+        "jonne.soininen@nsn.com": "jonne.soininen@renesasmobile.com",
+        "tom.taylor@rogers.com": "tom.taylor.stds@gmail.com",
+        "rahul@juniper.net": "raggarwa_1@yahoo.com",
+        "dward@juniper.net": "dward@cisco.com",
+        "alan.ford@roke.co.uk": "alanford@cisco.com",
+        }
+
+    res = {}
+
+    if not os.path.exists(ALL_IDS_STATE):
+        print "WARNING: proceeding without author information in all_ids.state"
+        return res
+
+    with open(ALL_IDS_STATE, "r") as author_source:
+        for line in author_source:
+            if line.startswith("#"):
+                continue
+
+            draft_name = line.split(" ")[1]
+
+            m = authors_re.search(line)
+            if not m:
+                continue
+
+            l = []
+            reliable = True
+            for a in m.group(1).replace("\\x27", "'").replace("\\'", "'").decode("latin-1").split(", "):
+                n = name_email_re.match(a)
+                if n:
+                    name = n.group(1)
+                    email = n.group(2)
+                else:
+                    name = a
+                    email = ""
+
+                if "@" not in email or not email:
+                    reliable = False
+
+                name = email_brackets_re.sub("", name)
+                name = comma_re.sub("", name)
+                name = colon_re.sub("", name)
+                name = name.strip()
+
+                if "VCARD" in name or len(name.split()) > 5:
+                    reliable = False
+
+                if not reliable:
+                    break
+
+                email = email_mapping.get(email, email)
+
+                l.append((name, email))
+
+            if reliable:
+                res[draft_name] = l
+
+    return res
+
+author_dump = extract_authors_from_dump()
+
 def save_docevent(doc, event, comment):
     event.time = comment.datetime()
     event.by = iesg_login_to_person(comment.created_by)
@@ -885,13 +968,45 @@ for index, o in enumerate(all_drafts.iterator()):
 
     # authors
     d.authors.clear()
-    for i, a in enumerate(o.authors.all().select_related("person").order_by('author_order', 'person')):
-        try:
-            e = Email.objects.get(address__iexact=a.email() or a.person.email()[1] or u"unknown-email-%s" % person_name(a.person).replace(" ", "-"))
-            # renumber since old numbers may be a bit borked
+
+    authors_from_dump = author_dump.get(d.name)
+    if authors_from_dump:
+        for i, a in enumerate(authors_from_dump):
+            name, email = a
+            try:
+                e = Email.objects.get(address__iexact=email)
+            except Email.DoesNotExist:
+                e = Email(address=email)
+
+                ps = Person.objects.filter(alias__name=name)
+                if ps:
+                    p = ps[0]
+                else:
+                    _, first, _, last, _ = name_parts(name)
+                    first = first.replace(".", "")
+
+                    ps = Person.objects.filter(name__regex=u".*%s.*%s.*" % (first, last))
+                    if len(ps) == 1:
+                        p = ps[0]
+                    else:
+                        from ietf.utils import unaccent
+                        p = Person.objects.create(name=name, ascii=unaccent.asciify(name))
+                        Alias.objects.create(name=p.name, person=p)
+                        if p.ascii != p.name:
+                            Alias.objects.create(name=p.ascii, person=p)
+
+                e.person = p
+                e.save()
+
             DocumentAuthor.objects.create(document=d, author=e, order=i)
-        except Email.DoesNotExist:
-            print "SKIPPED author", unicode(a.person).encode('utf-8')
+    else:
+        for i, a in enumerate(o.authors.all().select_related("person").order_by('author_order', 'person')):
+            try:
+                e = Email.objects.get(address__iexact=a.email() or a.person.email()[1] or u"unknown-email-%s" % person_name(a.person).replace(" ", "-"))
+                # renumber since old numbers may be a bit borked
+                DocumentAuthor.objects.create(document=d, author=e, order=i)
+            except Email.DoesNotExist:
+                print "SKIPPED author", unicode(a.person).encode('utf-8')
 
     # clear any already imported events
     d.docevent_set.all().delete()
