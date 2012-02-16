@@ -524,10 +524,13 @@ class EditPositionTestCase(django.test.TestCase):
 
         ad = Person.objects.get(name="Aread Irector")
         
-        BallotPositionDocEvent.objects.create(doc=draft, type="changed_ballot_position",
-                                      by=ad, ad=ad, pos=BallotPositionName.objects.get(slug="yes"),
-                                      comment="Test!",
-                                      comment_time=datetime.datetime.now())
+        BallotPositionDocEvent.objects.create(
+            doc=draft, type="changed_ballot_position",
+            by=ad, ad=ad, pos=BallotPositionName.objects.get(slug="discuss"),
+            discuss="This draft seems to be lacking a clearer title?",
+            discuss_time=datetime.datetime.now(),
+            comment="Test!",
+            comment_time=datetime.datetime.now())
         
         url = urlreverse('doc_send_ballot_comment', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
@@ -547,9 +550,11 @@ class EditPositionTestCase(django.test.TestCase):
         self.assertEquals(len(outbox), mailbox_before + 1)
         m = outbox[-1]
         self.assertTrue("COMMENT" in m['Subject'])
+        self.assertTrue("DISCUSS" in m['Subject'])
         self.assertTrue(draft.name in m['Subject'])
+        self.assertTrue("clearer title" in str(m))
         self.assertTrue("Test!" in str(m))
-        
+
         
 class DeferBallotTestCase(django.test.TestCase):
     fixtures = ['names']

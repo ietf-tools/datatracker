@@ -462,10 +462,10 @@ def send_ballot_commentREDESIGN(request, name):
     pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, time__gte=started_process.time)
     if not pos:
         raise Http404()
-    
+
     subj = []
     d = ""
-    if pos.pos == "discuss" and pos.discuss:
+    if pos.pos_id == "discuss" and pos.discuss:
         d = pos.discuss
         subj.append("DISCUSS")
     c = ""
