@@ -1,9 +1,7 @@
 $(function () {
     var form = jQuery("#search_form");
 
-    form.find(".search_field").click(function () {
-        changeBy();
-    });
+    form.find(".search_field input[name=by]").parents("label").click(changeBy);
 
     form.find(".search_field").find("input,select")
         .change(toggleSubmit).click(toggleSubmit).keyup(toggleSubmit);
