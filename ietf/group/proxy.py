@@ -198,28 +198,8 @@ class IETFWG(Group):
     # def drafts(self): # return a set of Rfc objects for this group
     #     return InternetDraft.objects.filter(group__exact=self.group_acronym)
     def charter_text(self): # return string containing WG description read from file
-        import os
-        from django.conf import settings
-        # get file path from settings. Syntesize file name from path, acronym, and suffix
-        try:
-            # Try getting charter from new charter tool
-            charter = Document.objects.get(docalias__name="charter-ietf-%s" % self.acronym)
-            ch = get_charter_for_revision(charter, charter.rev)
-            name = ch.name
-            rev = approved_revision(ch.rev)
-            filename = os.path.join(charter.get_file_path(), "%s-%s.txt" % (name, rev))
-            desc_file = open(filename)
-            desc = desc_file.read()
-            return desc
-        except:
-            try:
-                filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, self.acronym) + ".desc.txt"
-                desc_file = open(filename)
-                desc = desc_file.read()
-            except BaseException:    
-                desc = 'Error Loading Work Group Description'
-            return desc
-
+        from ietf.group.utils import get_charter_text
+        return get_charter_text(self)
     def additional_urls(self):
         return self.groupurl_set.all().order_by("name")
     def clean_email_archive(self):
