@@ -1,0 +1,36 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+<title>{% block title %}{% endblock %}</title>
+<script type="text/javascript" language="JavaScript" src="/css/ietf.js"></script>
+<link id="sheet4" href="/css/ietf4.css" rel="stylesheet" type="text/css" />
+<link id="sheet3" href="/css/ietf3.css" rel="stylesheet" type="text/css" />
+<link id="sheet2" href="/css/ietf2.css" rel="stylesheet" type="text/css" />
+<link id="sheet1" href="/css/ietf.css" rel="stylesheet" type="text/css" />
+
+{% block extrastyle %}{% endblock %}
+
+{% block extrahead %}
+{% endblock %}
+
+{% block blockbots %}{% endblock %}
+
+</head>
+
+<body onload="setStyle(0);">
+
+<!-- Container -->
+<div id="container">
+  
+  {% include "includes/ietf_menu.html" %}
+  
+  {% block content %}{% endblock %}
+
+  {% include "includes/ietf_footer.html" %}
+
+</div>
+<!-- END Container -->
+
+</body>
+</html>

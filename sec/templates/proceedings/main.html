@@ -41,21 +41,23 @@
     </div>
     
     <div id="proceedings-right-col">
-    <table id="proceedings-interim-table" class="full-width{% if request.user_is_secretariat %} secretariat{% endif %}">
-      <thead>
-        <tr>
-          <th>Interim Meeting</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for meeting in interim_meetings %}
-
-              <tr class = "{% cycle 'row1' 'row2' %}">
-                <td><a href="{% url proceedings_upload_unified meeting_num=meeting.number acronym=meeting.group.acronym %}">{{ meeting.group.acronym|ljust:"8" }} - {{ meeting.date }}</a></td>
-              </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      <div class="interim-scroll">
+        <table id="proceedings-interim-table" class="full-width{% if request.user_is_secretariat %} secretariat{% endif %}">
+          <thead>
+            <tr>
+              <th>Interim Meeting</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for meeting in interim_meetings %}
+    
+                  <tr class = "{% cycle 'row1' 'row2' %}">
+                    <td><a href="{% url proceedings_upload_unified meeting_num=meeting.number acronym=meeting.group.acronym %}">{{ meeting.group.acronym|ljust:"8" }} - {{ meeting.date }}</a></td>
+                  </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div> <!-- scroll -->
     <div class="button-group">
       <ul id="proceedings-interim-buttons">
         <li><button onclick="window.location='{% url proceedings_select_interim %}'">Create Interim Meeting</button></li>

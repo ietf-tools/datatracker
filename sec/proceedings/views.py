@@ -26,6 +26,7 @@ from ietf.ietfauth.decorators import has_role
 from ietf.meeting.models import Meeting, Session
 
 from forms import *
+from models import InterimMeeting
 
 import datetime
 import glob
@@ -46,7 +47,7 @@ def build_choices(queryset):
     '''
     choices = [ (g.acronym,g.acronym) for g in queryset ]
     return sorted(choices, key=lambda choices: choices[1])
-"""
+
 def create_interim_directory():
     '''
     Create static Interim Meeting directory pages that will live in a different URL space than
@@ -55,7 +56,7 @@ def create_interim_directory():
     
     # produce date sorted output
     page = 'proceedings.html'
-    meetings = InterimMeeting.objects.all().order_by('-start_date')
+    meetings = InterimMeeting.objects.order_by('-date')
     response = render_to_response('proceedings/interim_directory.html',{'meetings': meetings})
     path = os.path.join(settings.INTERIM_LISTING_DIR, page)
     f = open(path,'w')
@@ -65,13 +66,13 @@ def create_interim_directory():
     # produce group sorted output
     page = 'proceedings-bygroup.html'
     qs = InterimMeeting.objects.all()
-    meetings = sorted(qs, key=lambda a: a.group_acronym)
+    meetings = sorted(qs, key=lambda a: a.group().acronym)
     response = render_to_response('proceedings/interim_directory.html',{'meetings': meetings})
     path = os.path.join(settings.INTERIM_LISTING_DIR, page)
     f = open(path,'w')
     f.write(response.content)
     f.close()
-"""
+
 def create_proceedings(meeting):
     '''
     This function creates the proceedings.html document.  It gets called anytime there is an
@@ -90,44 +91,51 @@ def create_proceedings(meeting):
     '''
     
     # abort if not interim
-    if meeting.type.slug != 'interim':
+    if meeting.type_id != 'interim':
         return
     
-    year,month,day = parsedate(meeting.date)
-    group = None # TODO associate group with interim meeting
-    
+    # get InterimMeeting proxy object
+    interim_meeting = InterimMeeting.objects.get(id=meeting.id)
+    group = interim_meeting.group()
+    #year,month,day = parsedate(inerim_meeting.date)
     session = Session.objects.filter(meeting=meeting,group=group)[0]
-    
     agenda,minutes,slides = get_material(session)
+    chairs = group.role_set.filter(name='chair')
+    secretaries = group.role_set.filter(name='secr')
+    ads = group.parent.role_set.filter(name='ad')
+    tas = group.role_set.filter(name='techadv')
     
     drafts = Document.objects.filter(group=group,
                                      type='draft',
                                      states__slug='active').order_by('time')
     # TODO order by RFC number
-    rfcs = Documents.objects.filter(group=group,
+    rfcs = Document.objects.filter(group=group,
                                     type='rfc',
                                     states__slug='active').order_by('time')
     
     # the simplest way to display the charter is to place it in a <pre> block
     # however, because this forces a fixed-width font, different than the rest of
     # the document we modify the charter by adding replacing linefeeds with <br>'s
-    charter = group.charter_text().replace('\n','<br>')
+    # TODO charter = group.charter_text().replace('\n','<br>')
+    charter = None
     
     # rather than return the response as in a typical view function we save it as the snapshot
     # proceedings.html
     response = render_to_response('proceedings/proceedings.html',{
-        'agenda_url': agenda_url,
         'charter': charter,
         'drafts': drafts,
         'group': group,
-        'meeting':meeting,
-        'minutes_url': minutes_url,
+        'chairs': chairs,
+        'secretaries': secretaries,
+        'ads': ads,
+        'tas': tas,
+        'meeting':interim_meeting,
         'rfcs': rfcs,
         'slides': slides}
     )
     
     # save proceedings
-    proceedings_path = meeting.get_proceedings_path()
+    proceedings_path = interim_meeting.get_proceedings_path()
     
     f = open(proceedings_path,'w')
     f.write(response.content)
@@ -148,6 +156,40 @@ def find_index(slide_id, qs):
     for i in range(0,qs.count()):
         if str(qs[i].pk) == slide_id:
             return i
+
+def get_doc_filename(doc):
+    '''
+    This function takes a Document of type slides,minute or agenda and returns
+    the full path to the file on disk.  During migration of the system the
+    filename was saved in external_url, new files will also use this convention.
+    '''
+    session = doc.session_set.all()[0]
+    meeting = session.meeting
+    if doc.external_url:
+        return os.path.join(get_upload_root(meeting),doc.type.slug,doc.external_url)
+    else:
+        path = os.path.join(get_upload_root(meeting),doc.type.slug,doc.name)
+        files = glob.glob(path + '.*')
+        # TODO we might want to choose from among multiple files using some logic
+        return files[0]
+    
+def get_doc_url(doc):
+    session = doc.session_set.all()[0]
+    meeting = session.meeting
+    if doc.external_url:
+        filename = doc.external_url
+    else:
+        filename = os.path.basename(get_doc_filename(doc))
+    if meeting.type.slug == 'ietf':
+        url = '%s/proceedings/%s/slides/%s' % (settings.MEDIA_URL,meeting.number,filename)
+    elif meeting.type.slug == 'interim':
+        url = "%s/proceedings/interim/%s/%s/slides/%s" % (
+            settings.MEDIA_URL,
+            meeting.date.strftime('%Y/%m/%d'),
+            session.group.acronym,
+            filename)
+        
+    return url
 
 def get_material(session):
     '''
@@ -186,7 +228,11 @@ def get_next_slide_num(session):
     # can't use this approach because if there's a slide out there that isn't
     # related to the session somehow, we may get an error trying to create
     # a docuument object with a duplicate name
-    slides = Document.objects.filter(type='slides',name__startswith='slides-%s-%s' % (session.meeting.number,session.group.acronym)).order_by('-name')
+    if session.meeting.type_id == 'ietf':
+        pattern = 'slides-%s-%s' % (session.meeting.number,session.group.acronym)
+    elif session.meeting.type_id == 'interim':
+        pattern = 'slides-%s' % (session.meeting.number)
+    slides = Document.objects.filter(type='slides',name__startswith=pattern).order_by('-name')
     if slides:
         last_num = slides[0].name.split('-')[-1]
         return str(int(last_num) + 1)
@@ -204,14 +250,23 @@ def get_next_order_num(session):
 
 # --- These could be properties/methods on meeting
 def get_proceedings_path(meeting,group):
-    path = os.path.join(get_upload_root(meeting),group.acronym + '.html')
+    if meeting.type_id == 'ietf':
+        path = os.path.join(get_upload_root(meeting),group.acronym + '.html')
+    elif meeting.type_id == 'interim':
+        path = os.path.join(get_upload_root(meeting),'proceedings.html')
     return path
 
 def get_proceedings_url(meeting,group):
-    url = "%s/proceedings/%s/%s.html" % (
-        settings.MEDIA_URL,
-        meeting.number,
-        group.acronym)
+    if meeting.type_id == 'ietf':
+        url = "%s/proceedings/%s/%s.html" % (
+            settings.MEDIA_URL,
+            meeting.number,
+            group.acronym)
+    elif meeting.type_id == 'interim':
+        url = "%s/proceedings/interim/%s/%s/proceedings.html" % (
+            settings.MEDIA_URL,
+            meeting.date.strftime('%Y/%m/%d'),
+            group.acronym)
     return url
     
 def handle_upload_file(file,filename,meeting,subdir): 
@@ -287,7 +342,7 @@ def delete_material(request,meeting_num,acronym,name):
                             by=request.user.get_profile(),
                             type='deleted')
                                     
-    # create_proceedings(meeting)
+    create_proceedings(meeting)
         
     messages.success(request,'The material was deleted successfully')
     url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})
@@ -341,7 +396,7 @@ def edit_slide(request, meeting_num, acronym, slide_id):
             form.save()
             
             # rebuild proceedings.html
-            # create_proceedings(slide.meeting.pk)
+            create_proceedings(slide.meeting.pk)
             url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})
             return HttpResponseRedirect(url)
     else:
@@ -403,9 +458,9 @@ def interim_directory(request, sortby=None):
     
     if sortby == 'group':
         qs = InterimMeeting.objects.all()
-        meetings = sorted(qs, key=lambda a: a.group_acronym)
+        meetings = sorted(qs, key=lambda a: a.group.acronym)
     else:
-        meetings = InterimMeeting.objects.all().order_by('-start_date')
+        meetings = InterimMeeting.objects.all().order_by('-date')
 
     return render_to_response('proceedings/interim_directory.html', {
     'meetings': meetings},
@@ -432,7 +487,7 @@ def main(request):
         meetings = Meeting.objects.filter(type='ietf',date__gt=datetime.datetime.today() - datetime.timedelta(days=settings.SUBMISSION_CORRECTION_DAYS)).order_by('number')
     
     groups = get_my_groups(request.user)
-    interim_meetings = Meeting.objects.filter(type='interim',session__group__in=groups).order_by('number')
+    interim_meetings = Meeting.objects.filter(type='interim',session__group__in=groups).order_by('-date')
     # tac on group for use in templates
     for m in interim_meetings:
         m.group = m.session_set.all()[0].group
@@ -511,7 +566,7 @@ def replace_slide(request, meeting_num, acronym, slide_id):
                                     type='uploaded')
                                     
             # rebuild proceedings.html
-            # create_proceedings(slide.meeting.pk)
+            create_proceedings(slide.meeting.pk)
             
             url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})
             return HttpResponseRedirect(url)
@@ -637,23 +692,33 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
             if material_type.slug == 'slides':
                 order_num = get_next_order_num(session)
                 slide_num = get_next_slide_num(session)
-                filename = 'slides-%s-%s-%s' % (meeting.number, group.acronym, slide_num)
+                if meeting.type.slug == 'ietf':
+                    filename = 'slides-%s-%s-%s' % (meeting.number, group.acronym, slide_num)
+                elif meeting.type.slug == 'interim':
+                    filename = 'slides-%s-%s' % (meeting.number, slide_num)
+                disk_filename = filename + file_ext
                 doc = Document.objects.create(type=material_type,
                                               group=group,
                                               name=filename,
                                               order=order_num,
-                                              title=slide_name)
+                                              title=slide_name,
+                                              external_url=disk_filename)
             
             # handle minutes and agenda
             else:
-                filename = '%s-%s-%s' % (material_type.slug,meeting.number,group.acronym)
+                if meeting.type.slug == 'ietf':
+                    filename = '%s-%s-%s' % (material_type.slug,meeting.number,group.acronym)
+                elif meeting.type.slug == 'interim':
+                    filename = '%s-%s' % (material_type.slug,meeting.number)
+                disk_filename = filename + file_ext
                 # don't create new doc record if one arleady exists
                 doc, created = Document.objects.get_or_create(
                     type=material_type,
                     group=group,
-                    name=filename)
+                    name=filename,
+                    external_url=disk_filename)
 
-            disk_filename = filename + file_ext
+            
             handle_upload_file(file,disk_filename,meeting,material_type.slug)
                 
             # set Doc state
@@ -668,11 +733,11 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
                                     by=request.user.get_profile(),
                                     type='uploaded')
             
-            # TODO create_proceedings(meeting)
+            create_proceedings(meeting)
             messages.success(request,'File uploaded sucessfully')
     
     else:
-        form = UnifiedUploadForm(initial={'meeting_num':meeting_num,'acronym':group.acronym,'material_type':'slides'})
+        form = UnifiedUploadForm(initial={'meeting_id':meeting.id,'acronym':group.acronym,'material_type':'slides'})
     
     agenda,minutes,slides = get_material(session)
     
@@ -685,6 +750,15 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
         proceedings_url = get_proceedings_url(meeting, group)
     else: 
         proceedings_url = ''
+    
+    # TODO use get_absolute_url()
+    # tac on url
+    if minutes:
+        minutes.url = get_doc_url(minutes)
+    if agenda:
+        agenda.url = get_doc_url(agenda)
+    for slide in slides:
+        slide.url = get_doc_url(slide)
     
     return render_to_response('proceedings/upload_unified.html', {
         'docevents': docevents,

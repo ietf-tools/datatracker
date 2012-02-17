@@ -66,7 +66,7 @@ MEDIA_ROOT = BASE_DIR + "/../static/"
 
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
-MEDIA_URL = ''
+MEDIA_URL = 'http://www.ietf.org'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
@@ -290,10 +290,14 @@ if USE_DB_REDESIGN_PROXY_CLASSES:
     AUTH_PROFILE_MODULE = 'person.Person'
     AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
+CHARTER_PATH = '/a/www/ietf-ftp/charters/'
+CHARTER_TXT_URL = 'http://www.ietf.org/charters/'
+
 # AMS additions
 # for meetings materials upload
 MAX_UPLOAD_SIZE = 20971520
 PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
+INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific

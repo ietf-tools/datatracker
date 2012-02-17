@@ -52,7 +52,7 @@
            <tr>
              {% if minutes %}
              <td><a href="{{ minutes.url }}" target="_blank">Minutes</td>
-             <td>{{ minutes.name }}</td>
+             <td>{{ minutes.external_url }}</td>
              <td><a href="{% url proceedings_delete_material meeting_num=meeting.number acronym=group.acronym name=minutes.name %}">Delete</a></td>
              {% else %}
              <td>Minutes</td>
@@ -63,7 +63,7 @@
            <tr>
              {% if agenda %}
              <td><a href="{{ agenda.url }}" target="_blank">Agenda</a></td>
-             <td>{{ agenda.name }}</td>
+             <td>{{ agenda.external_url }}</td>
              <td><a href="{% url proceedings_delete_material meeting_num=meeting.number acronym=group.acronym name=agenda.name %}">Delete</a></td>
              {% else %}
              <td>Agenda</td>
