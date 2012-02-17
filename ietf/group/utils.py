@@ -35,7 +35,9 @@ def get_charter_text(group):
     # get file path from settings. Syntesize file name from path, acronym, and suffix
     try:
         # Try getting charter from new charter tool
-        charter = Document.objects.get(docalias__name="charter-ietf-%s" % self.acronym)
+        from ietf.wgcharter.utils import get_charter_for_revision, approved_revision
+
+        charter = group.charter
         ch = get_charter_for_revision(charter, charter.rev)
         name = ch.name
         rev = approved_revision(ch.rev)
@@ -45,7 +47,7 @@ def get_charter_text(group):
         return desc
     except:
         try:
-            filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, self.acronym) + ".desc.txt"
+            filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, group.acronym) + ".desc.txt"
             desc_file = open(filename)
             desc = desc_file.read()
         except:
