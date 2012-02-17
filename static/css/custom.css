@@ -424,6 +424,11 @@ input#id_title {
     width: 30em;
 }
 
+div.interim-scroll {
+    height: 300px;
+    overflow: auto;
+}
+
 .internal-form label {
     float: left;
     width: 100px;
