@@ -153,6 +153,21 @@ class Document(DocumentInfo):
                     name = aliases[0].name
             return urlreverse('doc_view', kwargs={ 'name': name }, urlconf="ietf.urls")
 
+        elif self.type_id in ('slides','agenda','minutes'):
+            session = self.session_set.all()[0]
+            meeting = session.meeting
+            filename = self.external_url
+            if meeting.type_id == 'ietf':
+                url = '%s/proceedings/%s/%s/%s' % (settings.MEDIA_URL,meeting.number,self.type_id,filename)
+            elif meeting.type_id == 'interim':
+                url = "%s/proceedings/interim/%s/%s/%s/%s" % (
+                    settings.MEDIA_URL,
+                    meeting.date.strftime('%Y/%m/%d'),
+                    session.group.acronym,
+                    self.type_id,
+                    filename)
+            return url
+
     def file_tag(self):
         return u"<%s>" % self.filename_with_rev()
 
