@@ -270,7 +270,7 @@ def modify(request, name):
         if request.POST.get('submit', '') == "Retire":
             # change role
             # TODO: save in GroupHistory or something?
-            role = Role.objects.get(group=area,name__name='Area Director',person=person)
+            role = Role.objects.get(group=area,name__in=('ad','pre-ad'),person=person)
             role.name_id = 'ex-ad'
             role.save()
             

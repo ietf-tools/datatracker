@@ -26,3 +26,13 @@ def display_duration(value):
            '7200':'2 Hours',
            '9000':'2.5 Hours'}
     return map[value]
+
+@register.filter
+def is_ppt(value):
+    '''
+    Checks if the value ends in ppt or pptx
+    '''
+    if value.endswith('ppt') or value.endswith('pptx'):
+        return True
+    else:
+        return False

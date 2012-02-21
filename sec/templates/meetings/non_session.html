@@ -13,6 +13,7 @@
           <th>Time</th>
           <th>Duration</th>
           <th>Name</th>
+          <th>Location</th>
           <th>Show Location</th>
           <th>Type</th>
           <th></th>
@@ -25,6 +26,11 @@
             <td>{{ item.time|date:"H:i" }}</td>
             <td>{{ item.duration }}</td>
             <td>{{ item.name }}</td>
+            {% if item.type.slug == "other" %}
+              <td><a href="{% url meetings_set_room meeting_id=meeting.id slot_id=item.id %}">{{ item.location }}</a></td>
+            {% else %}
+              <td>{{ item.location }}</td>
+            {% endif %}
             <td>{{ item.show_location }}</td>
             <td>{{ item.type }}</td>
             <td><a href="{% url meetings_non_session_delete meeting_id=meeting.id slot_id=item.id %}">Delete</a></td>

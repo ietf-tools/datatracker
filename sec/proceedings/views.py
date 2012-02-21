@@ -20,13 +20,16 @@ from sec.sreq.forms import GroupSelectForm
 
 from ietf.doc.models import Document, DocEvent, State
 from ietf.group.models import Group
+from ietf.group.proxy import IETFWG
+from ietf.group.utils import get_charter_text
+
 from ietf.name.models import MeetingTypeName, SessionStatusName
 
 from ietf.ietfauth.decorators import has_role
 from ietf.meeting.models import Meeting, Session
 
 from forms import *
-from models import InterimMeeting
+from models import InterimMeeting    # proxy model
 
 import datetime
 import glob
@@ -116,8 +119,9 @@ def create_proceedings(meeting):
     # the simplest way to display the charter is to place it in a <pre> block
     # however, because this forces a fixed-width font, different than the rest of
     # the document we modify the charter by adding replacing linefeeds with <br>'s
-    # TODO charter = group.charter_text().replace('\n','<br>')
-    charter = None
+    # TODO don't use proxy object
+    # proxy = IETFWG.objects.get(acronym=group.acronym)
+    charter = get_charter_text(group).replace('\n','<br>')
     
     # rather than return the response as in a typical view function we save it as the snapshot
     # proceedings.html
@@ -172,24 +176,6 @@ def get_doc_filename(doc):
         files = glob.glob(path + '.*')
         # TODO we might want to choose from among multiple files using some logic
         return files[0]
-    
-def get_doc_url(doc):
-    session = doc.session_set.all()[0]
-    meeting = session.meeting
-    if doc.external_url:
-        filename = doc.external_url
-    else:
-        filename = os.path.basename(get_doc_filename(doc))
-    if meeting.type.slug == 'ietf':
-        url = '%s/proceedings/%s/slides/%s' % (settings.MEDIA_URL,meeting.number,filename)
-    elif meeting.type.slug == 'interim':
-        url = "%s/proceedings/interim/%s/%s/slides/%s" % (
-            settings.MEDIA_URL,
-            meeting.date.strftime('%Y/%m/%d'),
-            session.group.acronym,
-            filename)
-        
-    return url
 
 def get_material(session):
     '''
@@ -317,6 +303,19 @@ def parsedate(d):
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
+@sec_only
+def build_proc(request,meeting_num):
+    '''
+    This is a utility or test view.  It simply rebuilds the proceedings.html for the specified
+    interim meeting.
+    '''
+    meeting = InterimMeeting.objects.get(number=meeting_num)
+    create_proceedings(meeting)
+    
+    messages.success(request,'proceedings.html was rebuilt')
+    url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':meeting.group().acronym})
+    return HttpResponseRedirect(url)
+    
 @check_permissions
 def delete_material(request,meeting_num,acronym,name):
     '''
@@ -327,9 +326,10 @@ def delete_material(request,meeting_num,acronym,name):
     meeting = Meeting.objects.get(number=meeting_num)
     session = Session.objects.filter(meeting=meeting.id,group__acronym=acronym)[0]
     
-    files = glob.glob(os.path.join(doc.get_file_path(),name) + '.*')
-    for file in files:
-        os.remove(file)
+    # don't delete the file, in the future may support undo feature
+    #files = glob.glob(os.path.join(doc.get_file_path(),name) + '.*')
+    #for file in files:
+    #    os.remove(file)
     
     # leave it related
     #session.materials.remove(doc)
@@ -437,6 +437,7 @@ def interim(request, acronym):
                                    requested_by=request.user.get_profile(),
                                    status_id='sched')
                                    
+            create_interim_directory()
             make_directories(meeting)
 
             messages.success(request, 'Meeting created')
@@ -715,8 +716,10 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
                 doc, created = Document.objects.get_or_create(
                     type=material_type,
                     group=group,
-                    name=filename,
-                    external_url=disk_filename)
+                    name=filename)
+                
+                doc.external_url=disk_filename
+                doc.save()
 
             
             handle_upload_file(file,disk_filename,meeting,material_type.slug)
@@ -750,15 +753,6 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
         proceedings_url = get_proceedings_url(meeting, group)
     else: 
         proceedings_url = ''
-    
-    # TODO use get_absolute_url()
-    # tac on url
-    if minutes:
-        minutes.url = get_doc_url(minutes)
-    if agenda:
-        agenda.url = get_doc_url(agenda)
-    for slide in slides:
-        slide.url = get_doc_url(slide)
     
     return render_to_response('proceedings/upload_unified.html', {
         'docevents': docevents,

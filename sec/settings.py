@@ -149,7 +149,7 @@ INSTALLED_APPS = (
     'ietf.mailinglists',
     'ietf.meeting',
     'ietf.person',
-    'ietf.proceedings',
+    #'ietf.proceedings', # deprecated
     'ietf.redirects',
     'ietf.idrfc',
     'ietf.wginfo',

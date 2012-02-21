@@ -73,10 +73,8 @@ def build_nonsession(meeting):
     '''
     last_meeting = get_last_meeting(meeting)
     delta = meeting.date - last_meeting.date
-    # TODO not precreating other types because they require a room assoc.
     for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg')):
         new_time = slot.time + delta
-        """
         session = None
         # create Session object for Tutorials to hold materials
         if slot.type.slug == 'other':
@@ -86,7 +84,7 @@ def build_nonsession(meeting):
                               requested_by=Person.objects.get(name='(system)'),
                               status_id='sched')
             session.save()
-        """        
+        
         TimeSlot.objects.create(type=slot.type,
                                 meeting=meeting,
                                 session=session,
@@ -404,7 +402,10 @@ def non_session(request, meeting_id):
             url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
     else:       
-        form = NonSessionForm()
+        form = NonSessionForm(initial={'show_location':True})
+    
+    if TimeSlot.objects.filter(meeting=meeting,type='other',location__isnull=True):
+        messages.warning(request, 'There are non-session items which do not have a room assigned')
         
     return render_to_response('meetings/non_session.html', {
         'slots': slots,
@@ -630,6 +631,38 @@ def select_group(request, meeting_id):
         RequestContext(request, {}),
     )
 
+def set_room(request, meeting_id, slot_id):
+    '''
+    Allows the user to assign a location to this non-session timeslot
+    '''
+    meeting = get_object_or_404(Meeting, number=meeting_id)
+    slot = get_object_or_404(TimeSlot, id=slot_id)
+
+    if request.method == 'POST':
+        button_text = request.POST.get('submit', '')
+        if button_text == 'Cancel':
+            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting_id})
+            return HttpResponseRedirect(url)
+            
+        form = RoomForm(request.POST,meeting=meeting)
+        if form.is_valid():
+            location = form.cleaned_data['location']
+            slot.location = location
+            slot.save()
+            
+            messages.success(request, 'Location saved')
+            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
+            return HttpResponseRedirect(url)
+        
+    else:
+        form = RoomForm(meeting=meeting)
+            
+    return render_to_response('meetings/set_room.html', {
+        'meeting': meeting,
+        'form': form},
+        RequestContext(request, {}),
+    )
+    
 def times(request, meeting_id):
     '''
     Display and edit time slots (TimeSlots).  It doesn't display every TimeSlot

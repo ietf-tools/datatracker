@@ -391,7 +391,7 @@ class RfcObsoletesForm(forms.Form):
         return cleaned_data
 
 class SearchForm(forms.Form):
-    intended_std_level = forms.ModelChoiceField(queryset=IntendedStdLevelName.objects,label="Intended Std Level",required=False)
+    intended_std_level = forms.ModelChoiceField(queryset=IntendedStdLevelName.objects,label="Intended Status",required=False)
     document_title = forms.CharField(max_length=80,label='Document Title',required=False)
     group = forms.CharField(max_length=12,required=False)
     filename = forms.CharField(max_length=80,required=False)

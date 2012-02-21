@@ -230,8 +230,8 @@ def doc_detail(request, date, name):
         if button_text == 'update_ballot':
             formset = BallotFormset(request.POST, initial=initial_ballot)
             state_form = ChangeStateForm(initial=initial_state)
+            has_changed = False
             for form in formset.forms:
-                # has_changed doesn't work?
                 if form.is_valid() and form.changed_data:
                     clean = form.cleaned_data
                     ad = Person.objects.get(id=clean['id'])
@@ -244,10 +244,12 @@ def doc_detail(request, date, name):
                     else:
                         pos.desc = '[Ballot Position Update] Position for %s has been changed to %s by %s' % (ad.name, pos.pos.name, login.name)
                     pos.save()
+                    has_changed = True
                     
-                    messages.success(request,'Ballot position changed.')
-                    url = reverse('telechat_doc_detail', kwargs={'date':date,'name':name})
-                    return HttpResponseRedirect(url)
+            if has_changed:
+                messages.success(request,'Ballot position changed.')
+            url = reverse('telechat_doc_detail', kwargs={'date':date,'name':name})
+            return HttpResponseRedirect(url)
         
         # logic from idrfc/views_edit.py change_stateREDESIGN
         elif button_text == 'update_state':

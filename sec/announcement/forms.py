@@ -10,6 +10,21 @@ from ietf.wgchairs.accounts import get_person_for_user
 
 ANNOUNCE_FROM_GROUPS = ['ietf','rsoc','iab',current_nomcom().acronym]
 ANNOUNCE_TO_GROUPS= ['ietf']
+
+# never really figured how to get this exact list from Role queries so it's hardcoded
+FROM_LIST = ('IETF Secretariat <ietf-secretariat@ietf.org>',
+             'IESG Secretary <iesg-secretary@ietf.org>',
+             'The IESG <iesg@ietf.org>',
+             'Internet-Drafts Administrator <internet-drafts@ietf.org>',
+             'IETF Agenda <agenda@ietf.org>',
+             'IETF Chair <chair@ietf.org>',
+             'IAB Chair <iab-chair@ietf.org> ',
+             'NomCom Chair <nomcom-chair@ietf.org>',
+             'IETF Registrar <ietf-registrar@ietf.org>',
+             'IETF Administrative Director <iad@ietf.org>',
+             'IETF Executive Director <exec-director@ietf.org>',
+             'The IAOC <bob.hinden@gmail.com>',
+             'The IETF Trust <tme@multicasttech.com>')
 # ---------------------------------------------
 # Helper Functions
 # ---------------------------------------------
@@ -19,10 +34,10 @@ def get_from_choices():
     all the Announced From choices.  Including
     leadership chairs and other entities.
     '''
-    groups = Group.objects.filter(acronym__in=ANNOUNCE_FROM_GROUPS)
-    roles = Role.objects.filter(group__in=(groups),name="Chair")
-    choices = [ '%s %s <%s>' % (r.group.acronym.upper(), r.name, r.email) for r in roles ]
-    return zip(choices,choices)
+    #groups = Group.objects.filter(acronym__in=ANNOUNCE_FROM_GROUPS)
+    #roles = Role.objects.filter(group__in=(groups),name="Chair")
+    #choices = [ '%s %s <%s>' % (r.group.acronym.upper(), r.name, r.email) for r in roles ]
+    return zip(FROM_LIST,FROM_LIST)
     
 def get_to_choices():
     groups = Group.objects.filter(acronym__in=ANNOUNCE_TO_GROUPS)
@@ -58,7 +73,7 @@ class AnnounceForm(forms.ModelForm):
         self.fields['to'].help_text = 'Select name OR select Other... and enter email below'
         self.fields['frm'].widget = forms.Select(choices=FROM_CHOICES)
         self.fields['frm'].label = 'From'
-        self.fields['nomcom'].label = 'NonCom message?'
+        self.fields['nomcom'].label = 'NomCom message?'
     
     def clean(self):
         super(AnnounceForm, self).clean()

@@ -143,6 +143,14 @@ class NewSessionForm(forms.Form):
         
         return cleaned_data
 
+class RoomForm(forms.Form):
+    location = forms.ModelChoiceField(queryset=Room.objects)
+    
+    def __init__(self,*args,**kwargs):
+        meeting = kwargs.pop('meeting')
+        super(RoomForm, self).__init__(*args,**kwargs)
+        self.fields['location'].queryset = Room.objects.filter(meeting=meeting)
+    
 class TimeSlotForm(forms.Form):
     day = forms.ChoiceField(choices=DAYS_CHOICES)
     time = forms.TimeField()

@@ -1,4 +1,4 @@
-#from django.contrib import messages
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
@@ -32,7 +32,7 @@ def main(request):
                        cc=message.cc,
                        bcc=message.bcc)
         
-        #messages.success(request, 'The announcement was sent.')
+        messages.success(request, 'The announcement was sent.')
         url = reverse('home')
         return HttpResponseRedirect(url)
    

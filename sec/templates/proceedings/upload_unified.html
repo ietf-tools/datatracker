@@ -42,7 +42,7 @@
            <tr>
                {% if proceedings_url %}
                  <td><a href="{{ proceedings_url|safe }}" target="_blank">Proceedings</a></td>
-                 <td></td>
+                 <td>proceedings.html</td>
                {% else %}
                  <td>Proceedings</td>
                  <td>Proceedings not yet generated</td>
@@ -51,7 +51,7 @@
            </tr>
            <tr>
              {% if minutes %}
-             <td><a href="{{ minutes.url }}" target="_blank">Minutes</td>
+             <td><a href="{{ minutes.get_absolute_url }}" target="_blank">Minutes</td>
              <td>{{ minutes.external_url }}</td>
              <td><a href="{% url proceedings_delete_material meeting_num=meeting.number acronym=group.acronym name=minutes.name %}">Delete</a></td>
              {% else %}
@@ -62,7 +62,7 @@
            </tr>
            <tr>
              {% if agenda %}
-             <td><a href="{{ agenda.url }}" target="_blank">Agenda</a></td>
+             <td><a href="{{ agenda.get_absolute_url }}" target="_blank">Agenda</a></td>
              <td>{{ agenda.external_url }}</td>
              <td><a href="{% url proceedings_delete_material meeting_num=meeting.number acronym=group.acronym name=agenda.name %}">Delete</a></td>
              {% else %}
