@@ -552,6 +552,7 @@ def import_from_idinternal(d, idinternal):
         # new version
         if c.comment_text == "New version available":
             e = NewRevisionDocEvent(type="new_revision", rev=c.version)
+            c.comment_text = "Added new revision"
             save_docevent(d, e, c)
             handled = True
 
@@ -1030,7 +1031,7 @@ for index, o in enumerate(all_drafts.iterator()):
             e.time = datetime.datetime.combine(v.revision_date, datetime.time(0, 0, 0)) + datetime.timedelta(seconds=int(v.revision))
             e.by = system
             e.doc = d
-            e.desc = "New version available"
+            e.desc = "Added new revision"
             e.save()
             known_revisions.add(v.revision)
 
