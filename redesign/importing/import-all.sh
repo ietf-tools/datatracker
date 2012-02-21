@@ -14,3 +14,5 @@ python import-announcements.py
 python import-docs.py
 python import-ipr.py # sets up links to drafts/RFCs so needs them
 python import-liaison.py
+
+python import-interim.py # requires ietf_ams database being set up
