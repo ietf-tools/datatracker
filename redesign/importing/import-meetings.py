@@ -20,7 +20,7 @@ from ietf.meeting.models import *
 from ietf.proceedings.models import Meeting as MeetingOld, MeetingVenue, MeetingRoom, NonSession, WgMeetingSession, WgAgenda, Minute, Slide, WgProceedingsActivities, NotMeetingGroup
 from ietf.person.models import *
 from ietf.doc.models import Document, DocAlias, State, DocEvent
-from redesign.importing.utils import old_person_to_person, dont_save_queries
+from redesign.importing.utils import old_person_to_person, dont_save_queries, make_revision_event
 from ietf.name.models import *
 from ietf.name.utils import name
 
@@ -261,7 +261,7 @@ def import_materials(wg_meeting_session, session):
                 d.external_url = o.filename # save filenames for now as they don't appear to be quite regular
             d.rev = "01"
             d.group = session.group
-
+            d.time = datetime.datetime.combine(session.meeting.date, datetime.time(0, 0, 0)) # we may have better estimate below
             d.save()
 
             d.set_state(State.objects.get(type=doctype, slug="active"))
@@ -271,6 +271,8 @@ def import_materials(wg_meeting_session, session):
             session.materials.add(d)
 
             # try to create a doc event to figure out who uploaded it
+            e = make_revision_event(d, system_person)
+
             t = d.type_id
             if d.type_id == "slides":
                 t = "slide, '%s" % d.title
@@ -280,20 +282,19 @@ def import_materials(wg_meeting_session, session):
                                                                 activity__endswith="was uploaded")[:1]
             if activities:
                 a = activities[0]
-                try:
-                    e = DocEvent.objects.get(doc=d, type="uploaded")
-                except DocEvent.DoesNotExist:
-                    e = DocEvent(doc=d, type="uploaded")
+
                 e.time = datetime.datetime.combine(a.act_date, datetime.time(*[int(s) for s in a.act_time.split(":")]))
                 try:
                     e.by = old_person_to_person(a.act_by) or system_person
                 except PersonOrOrgInfo.DoesNotExist:
-                    e.by = system_person
-                e.desc = u"Uploaded %s" % d.type_id
-                e.save()
+                    pass
+
+                d.time = e.time
+                d.save()
             else:
                 print "NO UPLOAD ACTIVITY RECORD for", d.name.encode("utf-8"), t.encode("utf-8"), wg_meeting_session.group_acronym_id, wg_meeting_session.meeting_id
 
+            e.save()
 
     import_material_kind(WgAgenda, agenda_doctype)
     import_material_kind(Minute, minutes_doctype)

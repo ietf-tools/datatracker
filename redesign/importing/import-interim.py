@@ -19,7 +19,7 @@ from ietf.idtracker.models import AreaDirector, IETFWG, Acronym, IRTF, PersonOrO
 from ietf.meeting.models import *
 from ietf.person.models import *
 from ietf.doc.models import Document, DocAlias, State, DocEvent
-from redesign.importing.utils import old_person_to_person, dont_save_queries
+from redesign.importing.utils import old_person_to_person, dont_save_queries, make_revision_event
 from redesign.interim.models import *
 from ietf.name.models import *
 from ietf.name.utils import name
@@ -78,6 +78,7 @@ for o in InterimMeetings.objects.using(database).order_by("start_date"):
     session.modified = datetime.datetime.combine(m.date, datetime.time(0, 0, 0))
     session.save()
 
+    meeting = m
     interim_meeting = o
 
     def import_material_kind(kind, doctype):
@@ -110,6 +111,7 @@ for o in InterimMeetings.objects.using(database).order_by("start_date"):
                 d.external_url = o.filename # save filenames for now as they don't appear to be quite regular
             d.rev = "01"
             d.group = session.group
+            d.time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0)) # we may have better estimate below
 
             d.save()
 
@@ -120,6 +122,8 @@ for o in InterimMeetings.objects.using(database).order_by("start_date"):
             session.materials.add(d)
 
             # try to create a doc event to figure out who uploaded it
+            e = make_revision_event(d, system_person)
+
             t = d.type_id
             if d.type_id == "slides":
                 t = "slide, '%s" % d.title
@@ -127,21 +131,22 @@ for o in InterimMeetings.objects.using(database).order_by("start_date"):
                                                           meeting_num=interim_meeting.meeting_num,
                                                           activity__startswith=t,
                                                           activity__endswith="was uploaded").using(database)[:1]
+
             if activities:
                 a = activities[0]
-                try:
-                    e = DocEvent.objects.get(doc=d, type="uploaded")
-                except DocEvent.DoesNotExist:
-                    e = DocEvent(doc=d, type="uploaded")
+
                 e.time = datetime.datetime.combine(a.act_date, a.act_time)
                 try:
                     e.by = old_person_to_person(PersonOrOrgInfo.objects.get(pk=a.act_by)) or system_person
                 except PersonOrOrgInfo.DoesNotExist:
-                    e.by = system_person
-                e.desc = u"Uploaded %s" % d.type_id
-                e.save()
+                    pass
+
+                d.time = e.time
+                d.save()
             else:
                 print "NO UPLOAD ACTIVITY RECORD for", d.name.encode("utf-8"), t.encode("utf-8"), interim_meeting.group_acronym_id, interim_meeting.meeting_num
+
+            e.save()
 
 
     import_material_kind(InterimAgenda, agenda_doctype)

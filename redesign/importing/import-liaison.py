@@ -18,7 +18,7 @@ from ietf.idtracker.models import Acronym, EmailAddress
 from ietf.liaisons.models import *
 from ietf.doc.models import Document, DocAlias
 from ietf.person.models import *
-from redesign.importing.utils import old_person_to_person
+from redesign.importing.utils import old_person_to_person, make_revision_event
 from ietf.name.models import *
 from ietf.name.utils import name
 
@@ -45,6 +45,7 @@ purpose_mapping[None] = purpose_mapping[0] = purpose_mapping[3] # map unknown to
 purpose_mapping[5] = purpose_mapping[3] # "Other" is mapped to "For information" as default
 
 system_email = Email.objects.get(person__name="(System)")
+system_person = Person.objects.get(name="(System)")
 obviously_bogus_date = datetime.date(1970, 1, 1)
 
 bodies = {
@@ -198,6 +199,12 @@ for o in LiaisonDetail.objects.all().order_by("pk"):
         attachment.save()
 
         DocAlias.objects.get_or_create(document=attachment, name=attachment.name)
+
+        e = make_revision_event(attachment, system_person)
+        if l.from_contact and l.from_contact.person:
+            e.by = l.from_contact.person
+            print e.by
+        e.save()
 
         l.attachments.add(attachment)
         

@@ -283,7 +283,6 @@ EVENT_TYPES = [
     ("changed_document", "Changed document metadata"),
     ("added_comment", "Added comment"),
 
-    ("uploaded", "Uploaded document"),
     ("deleted", "Deleted document"),
 
     # misc draft/RFC events

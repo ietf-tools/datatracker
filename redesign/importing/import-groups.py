@@ -19,7 +19,7 @@ from ietf.doc.models import State, StateType
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.doc.models import Document
 from ietf.name.utils import name
-from redesign.importing.utils import old_person_to_person
+from redesign.importing.utils import old_person_to_person, make_revision_event
 from ietf.idtracker.models import AreaGroup, IETFWG, Area, AreaGroup, Acronym, AreaWGURL, IRTF, ChairsHistory, Role, AreaDirector
 from ietf.liaisons.models import SDOs
 from ietf.iesg.models import TelechatDates, Telechat, TelechatDate
@@ -389,7 +389,8 @@ for o in IETFWG.objects.all().order_by("pk"):
     import_date_event(group, "start", "active", "Started group")
     import_date_event(group, "concluded", "conclude", "Concluded group")
     # dormant_date is empty on all so don't bother with that
-            
+
+    # import charter
     charter = set_or_create_charter(group)
     if group.state_id in ("active", "conclude"):
         charter.rev = "01"
@@ -401,6 +402,9 @@ for o in IETFWG.objects.all().order_by("pk"):
     e = group.groupevent_set.order_by("-time")[:1]
     charter.time = e[0].time if e else group.time
     charter.save()
+
+    e = make_revision_event(charter, system)
+    e.save()
 
     # FIXME: missing fields from old: meeting_scheduled, email_keyword, meeting_scheduled_old
 

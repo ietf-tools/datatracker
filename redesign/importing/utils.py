@@ -1,7 +1,9 @@
+import datetime
+
 from ietf.utils import unaccent
 from ietf.person.models import Person, Email, Alias
+from ietf.doc.models import NewRevisionDocEvent
 from ietf.idtracker.models import EmailAddress
-import datetime
 
 def clean_email_address(addr):
     addr = addr.replace("!", "@").replace("(at)", "@") # some obvious @ replacements
@@ -157,6 +159,19 @@ def possibly_import_other_priority_email(email, old_email):
     except Email.DoesNotExist:
         Email.objects.create(address=addr, person=email.person,
                              time=calc_email_import_time(old_email.priority))
+
+def make_revision_event(doc, system_person):
+    try:
+        e = NewRevisionDocEvent.objects.get(doc=doc, type="new_revision")
+    except NewRevisionDocEvent.DoesNotExist:
+        e = NewRevisionDocEvent(doc=doc, type="new_revision")
+    e.rev = doc.rev
+    e.time = doc.time
+    e.by = system_person
+    e.desc = "Added new revision"
+
+    return e
+    
 
 def dont_save_queries():
     # prevent memory from leaking when settings.DEBUG=True
