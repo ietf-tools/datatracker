@@ -957,7 +957,8 @@ class IDState(State):
     
     objects = TranslatingManager(dict(pk=lambda v: ("order", v, "type", "draft-iesg"),
                                       document_state_id=lambda v: ("order", v, "type", "draft-iesg"),
-                                      document_state_id__in=lambda v: ("order__in", v, "type", "draft-iesg")))
+                                      document_state_id__in=lambda v: ("order__in", v, "type", "draft-iesg")),
+                                 always_filter=dict(type="draft-iesg"))
     
     def from_object(self, base):
         for f in base._meta.fields:
@@ -983,7 +984,7 @@ class IDState(State):
     @property
     def nextstate(self):
         # simulate related queryset
-        return IDState.objects.filter(pk__in=[x.pk for x in self.next_states])
+        return IDState.objects.filter(pk__in=[x.pk for x in self.next_states.all()])
     
     @property
     def next_state(self):
