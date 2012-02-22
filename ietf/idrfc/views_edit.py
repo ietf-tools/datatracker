@@ -440,10 +440,10 @@ def edit_info(request, name):
                               context_instance=RequestContext(request))
 
 class EditInfoFormREDESIGN(forms.Form):
-    intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.all(), empty_label=None, required=True, label="Intended std. level")
+    intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.all(), empty_label="(None)", required=True, label="Intended std. level")
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
-    stream = forms.ModelChoiceField(StreamName.objects.all(), empty_label=None, required=True)
-    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Responsible AD", empty_label=None, required=True)
+    stream = forms.ModelChoiceField(StreamName.objects.all(), empty_label="(None)", required=True)
+    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
