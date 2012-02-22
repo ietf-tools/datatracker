@@ -553,7 +553,6 @@ def by_ad(request, name):
                                          role__group__type="area",
                                          role__group__state="active")
                                        | Q(pk__in=responsible)).distinct():
-            print name, p.full_name_as_key()
             if name == p.full_name_as_key():
                 ad_id = p.id
                 ad_name = p.plain_name()
