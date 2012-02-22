@@ -166,11 +166,11 @@ def get_stream_mapping():
     from ietf.name.utils import name
 
     return {
-        "Legacy": name(StreamName, "legacy", "Legacy"),
-        "IETF": name(StreamName, "ietf", "IETF"),
-        "INDEPENDENT": name(StreamName, "ise", "ISE", desc="Independent submission editor stream"),
-        "IAB": name(StreamName, "iab", "IAB"),
-        "IRTF": name(StreamName, "irtf", "IRTF"),
+        "IETF": name(StreamName, "ietf", "IETF", desc="IETF stream", order=1),
+        "INDEPENDENT": name(StreamName, "ise", "ISE", desc="Independent Submission Editor stream", order=2),
+        "IRTF": name(StreamName, "irtf", "IRTF", desc="Independent Submission Editor stream", order=3),
+        "IAB": name(StreamName, "iab", "IAB", desc="IAB stream", order=4),
+        "Legacy": name(StreamName, "legacy", "Legacy", desc="Legacy stream", order=5),
     }
 
 
