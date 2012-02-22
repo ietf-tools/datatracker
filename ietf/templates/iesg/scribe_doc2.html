@@ -40,7 +40,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
   <ol>
 {% if USE_DB_REDESIGN_PROXY_CLASSES %}
 
-{% for p in doc.obj.active_positions|dictsort:"ad.plain_name" %}
+{% for p in doc.obj.active_positions|dictsort:"ad.last_name" %}
 
 {% if p.pos and p.pos.pos_id == "discuss" %}
 <li><a name="{{doc.obj.document.filename}}+{{p.ad.plain_name|slugify}}+discuss">{{ p.ad.plain_name }}</a>: Discuss [{{ p.pos.discuss_time|date:"Y-m-d" }}]:<br>

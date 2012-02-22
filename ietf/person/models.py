@@ -31,6 +31,8 @@ class PersonInfo(models.Model):
     def plain_name(self):
         prefix, first, middle, last, suffix = name_parts(self.name)
         return u" ".join([first, last])
+    def last_name(self):
+        return name_parts(self.name)[3]
     def role_email(self, role_name, group=None):
         """Lookup email for role for person, optionally on group which
         may be an object or the group acronym."""
