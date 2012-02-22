@@ -1,6 +1,7 @@
 from django import forms
 from django.db.models import Q
 
+from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session
 from ietf.meeting.timedeltafield import TimedeltaFormField, TimedeltaWidget
 from ietf.name.models import TimeSlotTypeName
@@ -145,6 +146,7 @@ class NewSessionForm(forms.Form):
 
 class RoomForm(forms.Form):
     location = forms.ModelChoiceField(queryset=Room.objects)
+    group = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__in=('edu','ietf','iepg','tools')),help_text='Select a group to associate with this event.  For example Tutorials = Education, Code Sprint = Tools Team.',empty_label=None)
     
     def __init__(self,*args,**kwargs):
         meeting = kwargs.pop('meeting')

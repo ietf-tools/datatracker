@@ -9,6 +9,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template import Context
+from django.template.defaultfilters import slugify
 from django.template.loader import get_template
 from django.utils import simplejson
 from django.db.models import Max,Count,get_model
@@ -18,15 +19,13 @@ from sec.utils.group import get_my_groups, groups_by_session
 from sec.utils.meeting import get_upload_root
 from sec.sreq.forms import GroupSelectForm
 
-from ietf.doc.models import Document, DocEvent, State
+from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.proxy import IETFWG
 from ietf.group.utils import get_charter_text
-
-from ietf.name.models import MeetingTypeName, SessionStatusName
-
 from ietf.ietfauth.decorators import has_role
 from ietf.meeting.models import Meeting, Session
+from ietf.name.models import MeetingTypeName, SessionStatusName
 
 from forms import *
 from models import InterimMeeting    # proxy model
@@ -100,7 +99,6 @@ def create_proceedings(meeting):
     # get InterimMeeting proxy object
     interim_meeting = InterimMeeting.objects.get(id=meeting.id)
     group = interim_meeting.group()
-    #year,month,day = parsedate(inerim_meeting.date)
     session = Session.objects.filter(meeting=meeting,group=group)[0]
     agenda,minutes,slides = get_material(session)
     chairs = group.role_set.filter(name='chair')
@@ -119,8 +117,6 @@ def create_proceedings(meeting):
     # the simplest way to display the charter is to place it in a <pre> block
     # however, because this forces a fixed-width font, different than the rest of
     # the document we modify the charter by adding replacing linefeeds with <br>'s
-    # TODO don't use proxy object
-    # proxy = IETFWG.objects.get(acronym=group.acronym)
     charter = get_charter_text(group).replace('\n','<br>')
     
     # rather than return the response as in a typical view function we save it as the snapshot
@@ -144,10 +140,6 @@ def create_proceedings(meeting):
     f = open(proceedings_path,'w')
     f.write(response.content)
     f.close()
-    
-    # save the meeting object, which will cause "updated" field to be current
-    # reverted to legacy meeting table which does not have update field
-    # meeting.save()
     
     # rebuild the directory
     create_interim_directory()
@@ -608,9 +600,11 @@ def select(request, meeting_num):
         
     # initialize Training form, this select widget needs to have a session id, because it's
     # utilmately the session that we associate material with
+    # NOTE: there are two ways to query for the groups we want, the later seems more specific
     if has_role(request.user,'Secretariat'):
         choices = []
-        for session in Session.objects.filter(meeting=meeting,group__acronym='none'):
+        #for session in Session.objects.filter(meeting=meeting).exclude(name=""):
+        for session in Session.objects.filter(meeting=meeting,timeslot__type__in=('other','plenary')).order_by('name'):
             choices.append((session.id,session.timeslot_set.all()[0].name))
         training_form = GroupSelectForm(choices=choices)
     else:
@@ -661,16 +655,24 @@ def select_interim(request):
 def upload_unified(request, meeting_num, acronym=None, session_id=None):
     '''
     This view is the main view for uploading / re-ordering material for regular and interim
-    meetings.
+    meetings.  There are two urls.py entries which map to this view.  The acronym_id option is used
+    most often for groups of regular and interim meetings.  session_id is used for uploading 
+    material for Training sessions (where group is not a unique identifier).  We could have used
+    session_id all the time but this makes for an ugly URL which most of the time would be 
+    avoided by using acronym.
     '''
-    # TODO handle saving materials to all sessions for group
     meeting = get_object_or_404(Meeting, number=meeting_num)
+    now = datetime.datetime.now()
     if acronym:
         group = get_object_or_404(Group, acronym=acronym)
-        session = Session.objects.filter(meeting=meeting,group=group)[0]
+        sessions = Session.objects.filter(meeting=meeting,group=group)
+        session = sessions[0]
+        session_name = ''
     elif session_id:
+        sessions = None
         session = get_object_or_404(Session, id=int(session_id))
         group = Group.objects.get(acronym='none')
+        session_name = session.name
     
     if request.method == 'POST':
         button_text = request.POST.get('submit','')
@@ -688,39 +690,37 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
             
             file = request.FILES[request.FILES.keys()[0]]
             file_ext = os.path.splitext(file.name)[1]
-            
-            # handle slides
+
+            # set the filename
+            if meeting.type.slug == 'ietf':
+                filename = '%s-%s-%s' % (material_type.slug,meeting.number,group.acronym)
+            elif meeting.type.slug == 'interim':
+                filename = '%s-%s' % (material_type.slug,meeting.number)
             if material_type.slug == 'slides':
                 order_num = get_next_order_num(session)
                 slide_num = get_next_slide_num(session)
-                if meeting.type.slug == 'ietf':
-                    filename = 'slides-%s-%s-%s' % (meeting.number, group.acronym, slide_num)
-                elif meeting.type.slug == 'interim':
-                    filename = 'slides-%s-%s' % (meeting.number, slide_num)
-                disk_filename = filename + file_ext
-                doc = Document.objects.create(type=material_type,
-                                              group=group,
-                                              name=filename,
-                                              order=order_num,
-                                              title=slide_name,
-                                              external_url=disk_filename)
+                filename += "-%s" % slide_num
+            if session_name:
+                filename += "-%s" % slugify(session_name)
+            disk_filename = filename + file_ext
             
-            # handle minutes and agenda
+            # create the Document object, in the case of slides the name will always be unique
+            # so you'll get a new object, agenda and minutes will reuse doc object if it exists
+            doc, created = Document.objects.get_or_create(type=material_type,
+                                                          group=group,
+                                                          name=filename)
+            doc.external_url = disk_filename
+            doc.time = now
+            if created:
+                doc.rev = '1'
             else:
-                if meeting.type.slug == 'ietf':
-                    filename = '%s-%s-%s' % (material_type.slug,meeting.number,group.acronym)
-                elif meeting.type.slug == 'interim':
-                    filename = '%s-%s' % (material_type.slug,meeting.number)
-                disk_filename = filename + file_ext
-                # don't create new doc record if one arleady exists
-                doc, created = Document.objects.get_or_create(
-                    type=material_type,
-                    group=group,
-                    name=filename)
-                
-                doc.external_url=disk_filename
-                doc.save()
+                doc.rev = str(int(doc.rev) + 1)
+            if material_type.slug == 'slides':
+                doc.order=order_num
+                doc.title=slide_name
+            doc.save()
 
+            DocAlias.objects.get_or_create(name=doc.name, document=doc)
             
             handle_upload_file(file,disk_filename,meeting,material_type.slug)
                 
@@ -728,13 +728,21 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
             state = State.objects.get(type=doc.type,slug='active')
             doc.set_state(state)
             
-            # create session relationship
-            session.materials.add(doc)
+            # create session relationship, per Henrik we should associate documents to all sessions
+            # for the current meeting (until tools support different materials for diff sessions)
+            if sessions:
+                for s in sessions:
+                    s.materials.add(doc)
+            else:
+                session.materials.add(doc)
             
-            # create DocEvent uploaded
-            DocEvent.objects.create(doc=doc,
-                                    by=request.user.get_profile(),
-                                    type='uploaded')
+            # create NewRevisionDocEvent instead of uploaded, per Ole
+            NewRevisionDocEvent.objects.create(type='new_revision',
+                                       by=request.user.get_profile(),
+                                       doc=doc,
+                                       rev=doc.rev,
+                                       desc='New revision available',
+                                       time=now)
             
             create_proceedings(meeting)
             messages.success(request,'File uploaded sucessfully')
@@ -761,6 +769,7 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
         'minutes': minutes,
         'agenda': agenda,
         'form': form,
+        'session_name': session_name,   # for Tutorials, etc
         'slides':slides,
         'proceedings_url': proceedings_url},
         RequestContext(request, {}),

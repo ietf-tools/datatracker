@@ -192,6 +192,7 @@ INTERNAL_IPS = (
 # these, than non secretariat access is allowed.
 SEC_AUTH_UNRESTRICTED_URLS = (
     (r'^/$'),
+    (r'^/announcement/'),
     (r'^/proceedings/'),
     (r'^/sreq/'),
 )

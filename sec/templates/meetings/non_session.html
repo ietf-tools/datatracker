@@ -13,8 +13,9 @@
           <th>Time</th>
           <th>Duration</th>
           <th>Name</th>
+          <th>Group</th>
           <th>Location</th>
-          <th>Show Location</th>
+          <th>Show Loc.</th>
           <th>Type</th>
           <th></th>
         </tr>
@@ -26,6 +27,7 @@
             <td>{{ item.time|date:"H:i" }}</td>
             <td>{{ item.duration }}</td>
             <td>{{ item.name }}</td>
+            <td>{{ item.session.group.acronym }}</td>
             {% if item.type.slug == "other" %}
               <td><a href="{% url meetings_set_room meeting_id=meeting.id slot_id=item.id %}">{{ item.location }}</a></td>
             {% else %}

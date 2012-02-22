@@ -380,6 +380,8 @@ def non_session(request, meeting_id):
             new_time = datetime.datetime(t.year,t.month,t.day,time.hour,time.minute)
             
             # create a dummy Session object to hold materials
+            # NOTE: we're setting group to none here, but the set_room page will force user 
+            # to pick a legitimate group
             session = None
             if type.slug == 'other':
                 session = Session(meeting=meeting,
@@ -641,25 +643,32 @@ def set_room(request, meeting_id, slot_id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('meetings_select_group', kwargs={'meeting_id':meeting_id})
+            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
             
         form = RoomForm(request.POST,meeting=meeting)
         if form.is_valid():
             location = form.cleaned_data['location']
+            group = form.cleaned_data['group']
             slot.location = location
             slot.save()
+            # save group to session object
+            session = slot.session
+            session.group = group
+            session.save()
             
             messages.success(request, 'Location saved')
             url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
         
     else:
-        form = RoomForm(meeting=meeting)
+        initial = {'location':slot.location,'group':slot.session.group}
+        form = RoomForm(meeting=meeting,initial=initial)
             
     return render_to_response('meetings/set_room.html', {
         'meeting': meeting,
-        'form': form},
+        'form': form,
+        'slot': slot},
         RequestContext(request, {}),
     )
     

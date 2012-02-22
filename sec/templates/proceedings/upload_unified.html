@@ -16,7 +16,7 @@
   {% else %}
     &raquo; <a href="{% url proceedings %}">Proceedings</a>
     &raquo; <a href="{% url proceedings_select meeting_num=meeting.number %}">{{ meeting }}</a>
-    &raquo; {{ group.acronym }}
+    &raquo; {% if session_name %}{{ session_name }}{% else %}{{ group.acronym }}{% endif %}
   {% endifequal %}
 
 {% endblock %}
@@ -24,11 +24,7 @@
 {% block content %}
 
 <div class="module interim-container">
-    <h2>{% ifequal meeting.type "interim" %}
-          Interim Meeting {{ meeting }}
-        {% else %}
-          IETF {{ meeting }} - Upload Material - Group: {{ group.acronym }}
-        {% endifequal %}
+    <h2>{{ meeting }} - Upload Material - {% if session_name %}{{ session_name }}{% else %}Group: {{ group.acronym }}{% endif %}
     </h2>
        <table class="center">
          <thead>
