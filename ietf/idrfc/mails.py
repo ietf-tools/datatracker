@@ -295,7 +295,7 @@ def generate_approval_mailREDESIGN(request, doc):
     return e
 
 def generate_approval_mail_approved(request, doc):
-    doc.full_status = full_intended_status(doc.intended_std_level.name)
+    doc.full_status = full_intended_status(doc.intended_std_level)
     status = doc.full_status.replace("a ", "").replace("an ", "")
     
     if "an " in status:
@@ -346,7 +346,7 @@ def generate_approval_mail_approved(request, doc):
                             )
 
 def generate_approval_mail_rfc_editorREDESIGN(request, doc):
-    full_status = full_intended_status(doc.intended_std_level.name)
+    full_status = full_intended_status(doc.intended_std_level)
     status = full_status.replace("a ", "").replace("an ", "")
     disapproved = doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES
     doc_type = "RFC" if doc.get_state_slug() == "rfc" else "Internet Draft"
@@ -531,7 +531,7 @@ def generate_issue_ballot_mail(request, doc):
                             )
 
 def generate_issue_ballot_mailREDESIGN(request, doc):
-    full_status = full_intended_status(doc.intended_std_level.name)
+    full_status = full_intended_status(doc.intended_std_level)
     status = full_status.replace("a ", "").replace("an ", "")
 
     active_ads = Person.objects.filter(role__name="ad", role__group__state="active").distinct()
