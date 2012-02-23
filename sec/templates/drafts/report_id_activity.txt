@@ -1,0 +1,21 @@
+IETF Activity since last IETF Meeting
+--------------------
+
+IETF Activity since last IETF Meeting ({{ meeting.city }})
+
+{{ new|stringformat:"3s" }}    New I-Ds   ({{ updated }} of which were updated, some ({{ updated_more }}) more than once)
+{{ total_updated|stringformat:"3s" }}    I-Ds were updated   (Some more than once)
+{{ last_call|stringformat:"3s" }}    I-Ds Last Called
+{{ approved|stringformat:"3s" }}    I-Ds approved for publication
+
+In the final 4 weeks before meeting
+
+0 	 New I-Ds were received - 0% of total newbies since last meeting
+0 	 I-Ds were updated - 0% of total updated since last meeting
+
+		Week1	0	%
+		Week2	0	%
+		Week3	0	%
+		Week4	0	%
+
+The IESG Secretary.
