@@ -1018,9 +1018,10 @@ for index, o in enumerate(all_drafts.iterator()):
 
     # import missing revision changes from DraftVersions
     known_revisions = set(e.rev for e in NewRevisionDocEvent.objects.filter(doc=d, type="new_revision"))
-    draft_versions = list(DraftVersions.objects.filter(filename=d.name).order_by("revision"))
+    draft_versions = list(DraftVersions.objects.filter(filename=d.name))
     # DraftVersions is not entirely accurate, make sure we got the current one
     draft_versions.append(DraftVersions(filename=d.name, revision=o.revision_display(), revision_date=o.revision_date))
+    draft_versions.sort(key=lambda v: (v.revision, v.revision_date))
     for v in draft_versions:
         if v.revision not in known_revisions:
             e = NewRevisionDocEvent(type="new_revision")
