@@ -138,7 +138,12 @@ def delete_role(request, acronym, id):
     """
     group = get_object_or_404(Group, acronym=acronym)
     role = get_object_or_404(Role, id=id)
+    
+    # save group
+    save_group_in_history(group)
+                
     role.delete()
+    
     messages.success(request, 'The entry was deleted successfully')
     url = reverse('groups_people', kwargs={'acronym':acronym})
     return HttpResponseRedirect(url)
@@ -327,6 +332,9 @@ def people(request, acronym):
             person = form.cleaned_data['person']
             email = form.cleaned_data['email']
             
+            # save group
+            save_group_in_history(group)
+                
             Role.objects.create(name=name,
                                 person=person,
                                 email=email,

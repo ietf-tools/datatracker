@@ -67,12 +67,3 @@ def get_email(name):
     except (Person.ObjectDoesNoExist, Person.MultipleObjectsReturned):
         return None
     return person.email_address()
-
-def get_start_date(doc):
-    '''
-    This function takes a document object and returns the date of the first
-    new revision doc event
-    '''
-    # can't assume there will be a first new_revision record
-    event = doc.docevent_set.filter(type='new_revision').order_by('time')
-    return event[0].time.date() if event else None

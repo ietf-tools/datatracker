@@ -13,11 +13,12 @@ from django.utils import simplejson
 
 from email import *
 from forms import *
+from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
 from ietf.doc.models import Document, DocumentAuthor
 from sec.sreq.views import get_meeting
-from sec.utils.ams_utils import get_base, get_email, get_start_date
-from sec.utils.draft import get_rfc_num
+from sec.utils.ams_utils import get_base, get_email
+from sec.utils.draft import get_rfc_num, get_start_date
 
 import datetime
 import glob
@@ -341,7 +342,51 @@ def do_withdraw(draft,request):
     announcement_from_form(request.session['email'],by=request.user.get_profile())
     
     return
+# -------------------------------------------------
+# Reporting View Functions
+# -------------------------------------------------
+def report_id_activity(start,end):
     
+    from django.db.models import Min
+    
+    # get previous meeting
+    meeting = Meeting.objects.filter(date__lt=datetime.datetime.now(),type='ietf').order_by('-date')[0]
+    syear,smonth,sday = start.split('-')
+    eyear,emonth,eday = end.split('-')
+    sdate = datetime.datetime(int(syear),int(smonth),int(sday))
+    edate = datetime.datetime(int(eyear),int(emonth),int(eday))
+    
+    new_docs = Document.objects.filter(type='draft').annotate(start_date=Min('docevent__time')).filter(start_date__gte=sdate,start_date__lte=edate)
+    new = new_docs.count()
+    
+    updated = new_docs.exclude(rev='00').count()
+    updated_more = new_docs.exclude(rev__in=('00','01')).count()
+    
+    # calculate total documents updated, but not new (rev=00)
+    result = set()
+    events = DocEvent.objects.filter(doc__type='draft',type='new_revision',time__gte=sdate,time__lte=edate)
+    for e in events:
+        if e.doc.rev != '00':
+            result.add(e.doc)
+    total_updated = len(result)
+    
+    # calculate sent last call
+    last_call = DocEvent.objects.filter(type='sent_last_call',time__lte=edate,time__gte=sdate).count()
+    
+    # calculate approved
+    approved = DocEvent.objects.filter(type='iesg_approved',time__lte=edate,time__gte=sdate).count()
+    
+    context = {'meeting':meeting,
+               'new':new,
+               'updated':updated,
+               'updated_more':updated_more,
+               'total_updated':total_updated,
+               'last_call':last_call,
+               'approved':approved}
+    
+    report = render_to_string('drafts/report_id_activity.txt', context)
+    
+    return report
 # -------------------------------------------------
 # Standard View Functions
 # -------------------------------------------------

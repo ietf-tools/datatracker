@@ -646,7 +646,7 @@ def set_room(request, meeting_id, slot_id):
             url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
             return HttpResponseRedirect(url)
             
-        form = RoomForm(request.POST,meeting=meeting)
+        form = RoomForm(request.POST,meeting=meeting, session=slot.session)
         if form.is_valid():
             location = form.cleaned_data['location']
             group = form.cleaned_data['group']
@@ -662,8 +662,10 @@ def set_room(request, meeting_id, slot_id):
             return HttpResponseRedirect(url)
         
     else:
+        # we need to pass the session to the form in order to disallow changing
+        # of group after materials have been uploaded
         initial = {'location':slot.location,'group':slot.session.group}
-        form = RoomForm(meeting=meeting,initial=initial)
+        form = RoomForm(meeting=meeting,session=slot.session,initial=initial)
             
     return render_to_response('meetings/set_room.html', {
         'meeting': meeting,

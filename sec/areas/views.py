@@ -210,13 +210,15 @@ def people(request, name):
     area = get_object_or_404(Group, type='area', acronym=name)
 
     if request.method == 'POST':
-        # handle adding a new director 
         if request.POST.get('submit', '') == "Add":
             form = AreaDirectorForm(request.POST)
             if form.is_valid():
                 email = form.cleaned_data['email']
                 person = form.cleaned_data['ad_name']
 
+                # save group
+                save_group_in_history(area)
+                
                 # create role
                 Role.objects.create(name_id='pre-ad',group=area,email=email,person=person)
                 
@@ -265,11 +267,11 @@ def modify(request, name):
         tag = request.POST.get('tag', '')
         person = Person.objects.get(id=tag)
         
-        # TODO save in role history?
+        # save group
+        save_group_in_history(area)
+                
         # handle retire request
         if request.POST.get('submit', '') == "Retire":
-            # change role
-            # TODO: save in GroupHistory or something?
             role = Role.objects.get(group=area,name__in=('ad','pre-ad'),person=person)
             role.name_id = 'ex-ad'
             role.save()

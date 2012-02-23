@@ -146,13 +146,25 @@ class NewSessionForm(forms.Form):
 
 class RoomForm(forms.Form):
     location = forms.ModelChoiceField(queryset=Room.objects)
-    group = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__in=('edu','ietf','iepg','tools')),help_text='Select a group to associate with this event.  For example Tutorials = Education, Code Sprint = Tools Team.',empty_label=None)
+    group = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__in=('edu','ietf','iepg','tools','iesg','iab','iaoc')),
+        help_text='''Select a group to associate with this session.  For example:<br>
+                     Tutorials = Education,<br>
+                     Code Sprint = Tools Team,<br>
+                     Technical Plenary = IAB,<br>
+                     Administrative Plenary = IAOC or IESG''',empty_label=None)
     
     def __init__(self,*args,**kwargs):
         meeting = kwargs.pop('meeting')
+        self.session = kwargs.pop('session')
         super(RoomForm, self).__init__(*args,**kwargs)
         self.fields['location'].queryset = Room.objects.filter(meeting=meeting)
     
+    def clean_group(self):
+        group = self.cleaned_data['group']
+        if self.session.group != group and self.session.materials.all():
+            raise forms.ValidationError("ERROR: can't change group after materials have been uploaded")
+        return group
+        
 class TimeSlotForm(forms.Form):
     day = forms.ChoiceField(choices=DAYS_CHOICES)
     time = forms.TimeField()
