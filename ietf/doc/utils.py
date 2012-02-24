@@ -56,9 +56,34 @@ def get_rfc_number(doc):
     qs = doc.docalias_set.filter(name__startswith='rfc')
     return qs[0].name[3:] if qs else None
 
+def augment_with_start_time(docs):
+    """Add a started_time attribute to each document with the time of
+    the first revision."""
+    docs = list(docs)
+
+    docs_dict = {}
+    for d in docs:
+        docs_dict[d.pk] = d
+        d.start_time = None
+
+    seen = set()
+
+    for e in DocEvent.objects.filter(type="new_revision", doc__in=docs).order_by('time'):
+        if e.doc_id in seen:
+            continue
+
+        print e.time, e.doc_id
+
+        docs_dict[e.doc_id].start_time = e.time
+        seen.add(e.doc_id)
+
+    return docs
+
 def augment_with_telechat_date(docs):
     """Add a telechat_date attribute to each document with the
     scheduled telechat or None if it's not scheduled."""
+    docs = list(docs)
+
     docs_dict = {}
     for d in docs:
         docs_dict[d.pk] = d
