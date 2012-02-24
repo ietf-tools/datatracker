@@ -174,6 +174,10 @@ for o in WGChair.objects.all():
         print "SKIPPING WGChair", o.person, "with non-existing group", acronym
         continue
 
+    if group.acronym == "none":
+        print "SKIPPING WGChair", o.person, "with bogus group", group.acronym
+        continue
+
     print "importing WGChair", acronym, o.person
 
     email = get_or_create_email(o, create_fake=True)
