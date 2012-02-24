@@ -115,6 +115,9 @@ for o in OldRole.objects.all().order_by('pk'):
 
     if o.id == OldRole.RSOC_CHAIR:
         official_email, _ = Email.objects.get_or_create(address="rsoc-chair@iab.org")
+
+    if o.id == 9:
+        official_email, _ = Email.objects.get_or_create(address="rfc-ise@rfc-editor.org")
         
     group = Group.objects.get(acronym=acronym)
 
