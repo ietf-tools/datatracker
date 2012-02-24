@@ -297,13 +297,14 @@ def generate_approval_mailREDESIGN(request, doc):
 def generate_approval_mail_approved(request, doc):
     doc.full_status = full_intended_status(doc.intended_std_level)
     status = doc.full_status.replace("a ", "").replace("an ", "")
-    
-    if "an " in status:
-        action_type = "Document"
-    else:
+
+    if doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
         action_type = "Protocol"
-    
-    cc = settings.DOC_APPROVAL_EMAIL_CC
+    else:
+        action_type = "Document"
+
+    cc = []
+    cc.extend(settings.DOC_APPROVAL_EMAIL_CC)
 
     # the second check catches some area working groups (like
     # Transport Area Working Group)
