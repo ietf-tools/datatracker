@@ -259,7 +259,7 @@ def import_materials(wg_meeting_session, session):
                 session_name = session.name if session.name else session.group.acronym.upper()
                 d.title = u"%s for %s at %s" % (doctype.name, session_name, session.meeting)
                 d.external_url = o.filename # save filenames for now as they don't appear to be quite regular
-            d.rev = "01"
+            d.rev = "00"
             d.group = session.group
             d.time = datetime.datetime.combine(session.meeting.date, datetime.time(0, 0, 0)) # we may have better estimate below
             d.save()
