@@ -107,7 +107,10 @@ def perform_postREDESIGN(request, submission):
     draft.type_id = "draft"
     draft.time = datetime.datetime.now()
     draft.title = submission.id_document_name
-    draft.group_id = group_id
+    if not (group_id == NONE_WG and draft.group and draft.group.type_id == "area"):
+        # don't overwrite an assigned area if it's still an individual
+        # submission
+        draft.group_id = group_id
     draft.rev = submission.revision
     draft.pages = submission.txt_page_count
     draft.abstract = submission.abstract

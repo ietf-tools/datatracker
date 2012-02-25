@@ -1385,7 +1385,7 @@ def make_last_callREDESIGN(request, name):
         initial = {}
         initial["last_call_sent_date"] = date.today()
         expire_days = 14
-        if doc.group.type_id == "individ":
+        if doc.group.type_id in ("individ", "area"):
             expire_days = 28
 
         initial["last_call_expiration_date"] = date.today() + timedelta(days=expire_days)

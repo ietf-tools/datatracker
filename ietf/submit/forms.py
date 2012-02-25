@@ -229,6 +229,8 @@ class UploadForm(forms.Form):
         if existing_draft:
             group = existing_draft[0].group and existing_draft[0].group.ietfwg or None
             if group and group.pk != NONE_WG:
+                if settings.USE_DB_REDESIGN_PROXY_CLASSES and group.type_id == "area":
+                    return None
                 return group
             else:
                 return None

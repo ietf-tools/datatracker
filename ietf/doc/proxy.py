@@ -232,7 +232,11 @@ class InternetDraft(Document):
     def filename_with_rev(self):
         return "%s-%s.txt" % (self.filename, self.revision_display())
     def group_acronym(self):
-	return super(Document, self).group.acronym
+        g = super(Document, self).group
+        if g.type_id == "area":
+            return "none"
+        else:
+            return g.acronym
     def group_ml_archive(self):
 	return self.group.list_archive
     def idstate(self):
@@ -385,15 +389,11 @@ class InternetDraft(Document):
     def area_acronym(self):
         from ietf.group.proxy import Area
         g = super(InternetDraft, self).group # be careful with group which is proxied
-        if g and g.type_id != "individ":
-            return Area().from_object(g.parent)
-        elif self.ad:
-            # return area for AD
-            try:
-                area = Group.objects.get(role__name="ad", role__person=self.ad, state="active")
-                return Area().from_object(area)
-            except Group.DoesNotExist:
-                return None
+        if g:
+            if g.type_id == "area":
+                return Area().from_object(g)
+            elif g.type_id != "individ":
+                return Area().from_object(g.parent)
         else:
             return None
         

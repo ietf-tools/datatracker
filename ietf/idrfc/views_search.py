@@ -360,9 +360,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             docs = docs.filter(group__acronym=query["group"])
         elif by == "area":
             docs = docs.filter(Q(group__type="wg", group__parent=query["area"]) |
-                               Q(group__type="individ",
-                                 ad__role__name="ad",
-                                 ad__role__group=query["area"])).distinct()
+                               Q(group=query["area"])).distinct()
         elif by == "ad":
             docs = docs.filter(ad=query["ad"])
         elif by == "state":

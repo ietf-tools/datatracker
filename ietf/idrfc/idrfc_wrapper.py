@@ -158,7 +158,11 @@ class IdWrapper:
 
         if self._draft.group_id == Acronym.INDIVIDUAL_SUBMITTER:
             return "Individual"
-        
+
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            if self._draft.group and self._draft.group.type_id == "area":
+                return u"Individual in %s area" % self._draft.group.acronym
+
         a = self.group_acronym()
         if a:
             if settings.USE_DB_REDESIGN_PROXY_CLASSES and self._draft.stream_id == "ietf" and self._draft.get_state_slug("draft-stream-ietf") == "c-adopt":
@@ -174,7 +178,7 @@ class IdWrapper:
         if self._idinternal and self._idinternal.via_rfc_editor:
             return "www.ietf.org/mail-archive/web/"
 
-        if self._draft.group_id == Acronym.INDIVIDUAL_SUBMITTER:
+        if self._draft.group_id == Acronym.INDIVIDUAL_SUBMITTER or (settings.USE_DB_REDESIGN_PROXY_CLASSES and self._draft.group.type_id == "area"):
             return "www.ietf.org/mail-archive/web/"
         
         a = self._draft.group_ml_archive()
@@ -188,6 +192,8 @@ class IdWrapper:
 
     def group_acronym(self):
         if self._draft.group_id != 0 and self._draft.group != None and str(self._draft.group) != "none":
+            if settings.USE_DB_REDESIGN_PROXY_CLASSES and self._draft.group.type_id == "area":
+                return None
             return str(self._draft.group)
         else:
             return None

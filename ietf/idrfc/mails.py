@@ -151,7 +151,7 @@ def generate_last_call_announcementREDESIGN(request, doc):
     
     expiration_date = date.today() + timedelta(days=14)
     cc = []
-    if doc.group.type_id == "individ":
+    if doc.group.type_id in ("individ", "area"):
         group = "an individual submitter"
         expiration_date += timedelta(days=14)
     else:
@@ -308,7 +308,7 @@ def generate_approval_mail_approved(request, doc):
 
     # the second check catches some area working groups (like
     # Transport Area Working Group)
-    if doc.group.type_id not in ("area", "individ") and not doc.group.name.endswith("Working Group"):
+    if doc.group.type_id not in ("area", "individ", "ag") and not doc.group.name.endswith("Working Group"):
         doc.group.name_with_wg = doc.group.name + " Working Group"
         if doc.group.list_email:
             cc.append("%s mailing list <%s>" % (doc.group.acronym, doc.group.list_email))
@@ -318,7 +318,7 @@ def generate_approval_mail_approved(request, doc):
 
     doc.filled_title = textwrap.fill(doc.title, width=70, subsequent_indent=" " * 3)
 
-    if doc.group.type_id == "individ":
+    if doc.group.type_id in ("individ", "area"):
         made_by = "This document has been reviewed in the IETF but is not the product of an IETF Working Group."
     else:
         made_by = "This document is the product of the %s." % doc.group.name_with_wg
@@ -326,7 +326,7 @@ def generate_approval_mail_approved(request, doc):
     director = doc.ad
     other_director = Person.objects.filter(role__group__role__person=director, role__group__role__name="ad").exclude(pk=director.pk)
     
-    if doc.group.type_id != "individ" and other_director:
+    if doc.group.type_id not in ("individ", "area") and other_director:
         contacts = "The IESG contact persons are %s and %s." % (director.plain_name(), other_director[0].plain_name())
     else:
         contacts = "The IESG contact person is %s." % director.plain_name()

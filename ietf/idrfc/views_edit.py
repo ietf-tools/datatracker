@@ -443,6 +443,7 @@ class EditInfoFormREDESIGN(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.all(), empty_label="(None)", required=True, label="Intended RFC status")
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
     stream = forms.ModelChoiceField(StreamName.objects.all(), empty_label="(None)", required=True)
+    area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active"), empty_label="(None - individual submission)", required=False, label="Assigned to area")
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
@@ -478,7 +479,7 @@ class EditInfoFormREDESIGN(forms.Form):
 def get_initial_notify(doc):
     # set change state notice to something sensible
     receivers = []
-    if doc.group.type_id == "individ":
+    if doc.group.type_id in ("individ", "area"):
         for a in doc.authors.all():
             receivers.append(a.address)
     else:
@@ -546,9 +547,9 @@ def edit_infoREDESIGN(request, name):
             changes = []
 
             def desc(attr, new, old):
-                entry = "%(attr)s has been changed to <b>%(new)s</b> from <b>%(old)s</b>"
+                entry = "%(attr)s changed to <b>%(new)s</b> from <b>%(old)s</b>"
                 if new_document:
-                    entry = "%(attr)s has been changed to <b>%(new)s</b>"
+                    entry = "%(attr)s changed to <b>%(new)s</b>"
                 
                 return entry % dict(attr=attr, new=new, old=old)
             
@@ -576,6 +577,17 @@ def edit_infoREDESIGN(request, name):
                     
                 doc.note = r['note']
 
+            if doc.group.type_id in ("individ", "area"):
+                if not r["area"]:
+                    r["area"] = Group.objects.get(type="individ")
+
+                if r["area"] != doc.group:
+                    if r["area"].type_id == "area":
+                        changes.append(u"Assigned to <b>%s</b>" % r["area"].name)
+                    else:
+                        changes.append(u"No longer assigned to any area")
+                    doc.group = r["area"]
+
             for c in changes:
                 e = DocEvent(doc=doc, by=login)
                 e.desc = c
@@ -601,6 +613,7 @@ def edit_infoREDESIGN(request, name):
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
         init = dict(intended_std_level=doc.intended_std_level_id,
+                    area=doc.group_id,
                     ad=doc.ad_id,
                     stream=doc.stream_id,
                     notify=doc.notify,
@@ -616,7 +629,9 @@ def edit_infoREDESIGN(request, name):
         form.standard_fields = [x for x in form.standard_fields if x.name != "create_in_state"]
     if not has_role(request.user, 'Secretariat'):
         form.standard_fields = [x for x in form.standard_fields if x.name != "via_rfc_editor"]
-        
+    if doc.group.type_id not in ("individ", "area"):
+        form.standard_fields = [x for x in form.standard_fields if x.name != "area"]
+
     return render_to_response('idrfc/edit_infoREDESIGN.html',
                               dict(doc=doc,
                                    form=form,

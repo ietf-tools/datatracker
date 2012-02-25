@@ -101,7 +101,7 @@ def send_expire_warning_for_idREDESIGN(doc):
 
     to = [e.formatted_email() for e in doc.authors.all() if not e.address.startswith("unknown-email")]
     cc = None
-    if doc.group.type_id != "individ":
+    if doc.group.type_id in ("wg", "rg"):
         cc = [e.formatted_email() for e in Email.objects.filter(role__group=doc.group, role__name="chair") if not e.address.startswith("unknown-email")]
 
     s = doc.get_state("draft-iesg")
