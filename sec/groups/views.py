@@ -163,7 +163,7 @@ def description(request, acronym):
     """
 
     group = get_object_or_404(Group, acronym=acronym)
-    # TODO: does this need to use group.charter.name ???
+    # TODO: update to use new charter code
     filename = os.path.join(settings.GROUP_DESCRIPTION_DIR,group.acronym + '.desc.txt')
 
     if request.method == 'POST':

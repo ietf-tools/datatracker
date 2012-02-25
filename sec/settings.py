@@ -1,8 +1,6 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Feb 24 2012 
 
-# Django settings for ietf project.
-# BASE_DIR and "settings_local" are from
-# http://code.djangoproject.com/wiki/SplitSettings
+# Django settings for sec project.
 
 import os
 import syslog
@@ -10,12 +8,11 @@ syslog.openlog("django", syslog.LOG_PID, syslog.LOG_LOCAL0)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-import sys
-sys.path.append(os.path.abspath(BASE_DIR + "/.."))
-sys.path.append(os.path.abspath(BASE_DIR + "/../redesign"))
+#import sys
+#sys.path.append(os.path.abspath(BASE_DIR + "/.."))
+#sys.path.append(os.path.abspath(BASE_DIR + "/../redesign"))
 
-DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+DEBUG = False
 
 # Domain name of the IETF
 IETF_DOMAIN = 'ietf.org'
@@ -34,13 +31,7 @@ DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN +
 
 MANAGERS = ADMINS
 
-DATABASES = {
-    'default': {
-        'NAME': 'ietf_new',
-        'ENGINE': 'django.db.backends.mysql',
-        'USER': 'ietf',
-        }
-    }
+# DATABASES defined in settings_local.py
  
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -62,7 +53,7 @@ USE_I18N = False
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = BASE_DIR + "/../static/"
+MEDIA_ROOT = '/a/www/www6s'
 
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
@@ -114,6 +105,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.auth',
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
+    'django.core.context_processors.media',
     'django.core.context_processors.request',
     'django.contrib.messages.context_processors.messages',
     'sec.context_processors.server_mode',
@@ -129,34 +121,33 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.admindocs',
     'django.contrib.humanize',
+    'django.contrib.messages',
+    'django.contrib.formtools',
     'south',
     'workflows',
     'permissions',
-    'ietf.person',
-    'ietf.name',
-    'ietf.group',
-    'ietf.doc',
     #'ietf.issue', #this is bogus leave it out
     'ietf.announcements',
     'ietf.doc',
     'ietf.group',
     'ietf.idindex',
+    'ietf.idrfc',
     'ietf.idtracker',
-    'ietf.ietfauth',
     'ietf.iesg',
+    'ietf.ietfauth',
+    'ietf.ietfworkflows',
     'ietf.ipr',
     'ietf.liaisons',
     'ietf.mailinglists',
     'ietf.meeting',
+    'ietf.name',
     'ietf.person',
     #'ietf.proceedings', # deprecated
     'ietf.redirects',
-    'ietf.idrfc',
-    'ietf.wginfo',
     'ietf.submit',
-    'ietf.ietfworkflows',
     'ietf.wgchairs',
     'ietf.wgcharter',
+    'ietf.wginfo',
     # new apps
     'sec.announcement',
     'sec.areas',
@@ -172,21 +163,7 @@ INSTALLED_APPS = (
     'django_extensions',
 )
 
-INTERNAL_IPS = (
-# AMS servers
-        '76.104.192.221',
-	'64.170.98.32',
-	'64.170.98.86',
-        '12.22.58.30',
-        '12.22.58.31',
-        '12.22.58.32',
-        '12.22.58.33',
-        '12.22.58.34',
-
-# local
-        '127.0.0.1',
-        '::1',
-)
+# INTERNAL_IPS undefined in production
 
 # this is a tuple of regular expressions.  if the incoming URL matches one of
 # these, than non secretariat access is allowed.
@@ -204,9 +181,6 @@ IDTRACKER_BASE_URL = "http://datatracker.ietf.org"
 # 'production', 'test', 'development'
 # Override this in settings_local.py if it's not true
 SERVER_MODE = 'production'
-
-# The name of the method to use to invoke the test suite
-TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
 
 # WG Chair configuration
 MAX_WG_DELEGATES = 3
@@ -241,8 +215,6 @@ INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
-
-
 
 # Liaison Statement Tool settings
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'
@@ -299,7 +271,10 @@ CHARTER_TXT_URL = 'http://www.ietf.org/charters/'
 MAX_UPLOAD_SIZE = 20971520
 PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
-
+GROUP_DESCRIPTION_DIR = '/a/www/www6s/wg-descriptions'
+DEVELOPMENT = False
+BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
+BLUE_SHEET_URL = 'https://datatracker.ietf.org/documents/blue_sheet.rtf'
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
