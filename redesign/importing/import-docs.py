@@ -21,7 +21,7 @@ from ietf.person.models import *
 from ietf.person.name import name_parts
 from redesign.importing.utils import old_person_to_person, person_name, dont_save_queries
 from ietf.name.utils import name
-from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position
+from ietf.idtracker.models import InternetDraft, IDInternal, IESGLogin, DocumentComment, PersonOrOrgInfo, Rfc, IESGComment, IESGDiscuss, BallotInfo, Position, Area
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.mirror_rfc_index import get_std_level_mapping, get_stream_mapping
 from ietf.ietfworkflows.models import StreamedID, AnnotationTag, ContentType, ObjectHistoryEntry, ObjectWorkflowHistoryEntry, ObjectAnnotationTagHistoryEntry, ObjectStreamHistoryEntry, StateObjectRelationMetadata
@@ -353,8 +353,11 @@ def import_from_idinternal(d, idinternal):
     d.notify = idinternal.state_change_notice_to or ""
     d.note = (idinternal.note or "").replace('<br>', '\n').strip().replace('\n', '<br>')
 
-    if idinternal.area_acronym and d.group.type_id == "individ":
-        d.group = Group.objects.get(acronym=idinternal.area_acronym.area_acronym.acronym)
+    try:
+        if idinternal.area_acronym and d.group.type_id == "individ":
+            d.group = Group.objects.get(acronym=idinternal.area_acronym.area_acronym.acronym)
+    except Area.DoesNotExist:
+        pass
 
     d.save()
     
