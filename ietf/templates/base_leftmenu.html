@@ -52,8 +52,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <li><a href="{% url ietf.iesg.views.working_group_actions %}">Working Groups</a></li>
   {# FIXME: wgcharter <li><a href="{% url wg_search_in_process %}">Working Groups</a></li> #}
 {% endif %}
-{% if user %}
 {% get_user_managed_streams user as stream_list %}
+{% if stream_list %}
 <li class="sect{% if not user|in_group:"Area_Director,Secretariat" %} first{% endif %}">Streams</li>
   {% for stream in stream_list %}
   <li{% if forloop.last %} style="margin-bottom: 2px;"{% endif %}><a href="{% url stream_delegates stream.name %}">{{ stream.name }} stream</a></li>
