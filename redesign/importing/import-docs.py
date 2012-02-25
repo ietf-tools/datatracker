@@ -356,7 +356,7 @@ def import_from_idinternal(d, idinternal):
     try:
         if idinternal.area_acronym and d.group.type_id == "individ":
             d.group = Group.objects.get(acronym=idinternal.area_acronym.area_acronym.acronym)
-    except Area.DoesNotExist:
+    except (Area.DoesNotExist, AttributeError):
         pass
 
     d.save()
