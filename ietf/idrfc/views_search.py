@@ -450,7 +450,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
                     res.append(rfc_num)
                 elif d.get_state_slug() == "active":
                     if d.get_state("draft-iesg"):
-                        res.append(get_state("draft-iesg").order)
+                        res.append(d.get_state("draft-iesg").order)
                     else:
                         res.append(0)
             else:
