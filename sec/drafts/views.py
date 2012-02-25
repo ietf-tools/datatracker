@@ -356,7 +356,9 @@ def report_id_activity(start,end):
     sdate = datetime.datetime(int(syear),int(smonth),int(sday))
     edate = datetime.datetime(int(eyear),int(emonth),int(eday))
     
-    new_docs = Document.objects.filter(type='draft').annotate(start_date=Min('docevent__time')).filter(start_date__gte=sdate,start_date__lte=edate)
+    queryset = Document.objects.filter(type='draft').annotate(start_date=Min('docevent__time'))
+    #queryset = Document.objects.filter(type='draft').filter(docevent__type="new_revision",
+    new_docs = queryset.filter(start_date__gte=sdate,start_date__lte=edate)
     new = new_docs.count()
     
     updated = new_docs.exclude(rev='00').count()
@@ -375,6 +377,20 @@ def report_id_activity(start,end):
     
     # calculate approved
     approved = DocEvent.objects.filter(type='iesg_approved',time__lte=edate,time__gte=sdate).count()
+    
+    # get 4 weeks
+    monday = Meeting.get_ietf_monday()
+    cutoff = monday + datetime.timedelta(days=3)
+    ff1_date = cutoff - datetime.timedelta(days=28)
+    ff2_date = cutoff - datetime.timedelta(days=21)
+    ff3_date = cutoff - datetime.timedelta(days=14)
+    ff4_date = cutoff - datetime.timedelta(days=7)
+    ff1_new = queryset.filter(start_date__gte=ff1_date,start_date__lt=ff2_date)
+    ff2_new = queryset.filter(start_date__gte=ff2_date,start_date__lt=ff3_date)
+    ff1_new = queryset.filter(start_date__gte=ff3_date,start_date__lt=ff4_date)
+    ff1_new = queryset.filter(start_date__gte=ff4_date,start_date__lt=edate)
+    
+    
     
     context = {'meeting':meeting,
                'new':new,

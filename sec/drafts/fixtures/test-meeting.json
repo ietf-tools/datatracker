@@ -1,0 +1,82 @@
+[
+    {
+        "pk": 79, 
+        "model": "meeting.meeting", 
+        "fields": {
+            "city": "Beijing", 
+            "venue_name": "", 
+            "country": "CN", 
+            "time_zone": "Asia/Shanghai", 
+            "reg_area": "Valley Ballroom Foyer", 
+            "number": "79", 
+            "break_area": "Valley Ballroom Foyer", 
+            "date": "2010-11-07", 
+            "type": "ietf", 
+            "venue_addr": ""
+        }
+    }, 
+    {
+        "pk": 80, 
+        "model": "meeting.meeting", 
+        "fields": {
+            "city": "Prague", 
+            "venue_name": "", 
+            "country": "CZ", 
+            "time_zone": "Europe/Prague", 
+            "reg_area": "Congress Hall Foyer", 
+            "number": "80", 
+            "break_area": "Congress Hall Foyer", 
+            "date": "2011-03-27", 
+            "type": "ietf", 
+            "venue_addr": ""
+        }
+    }, 
+    {
+        "pk": 81, 
+        "model": "meeting.meeting", 
+        "fields": {
+            "city": "Quebec", 
+            "venue_name": "", 
+            "country": "CA", 
+            "time_zone": "", 
+            "reg_area": "2000 A", 
+            "number": "81", 
+            "break_area": "2000 BC", 
+            "date": "2011-07-24", 
+            "type": "ietf", 
+            "venue_addr": ""
+        }
+    }, 
+    {
+        "pk": 82, 
+        "model": "meeting.meeting", 
+        "fields": {
+            "city": "Taipei", 
+            "venue_name": "", 
+            "country": "TW", 
+            "time_zone": "", 
+            "reg_area": "1F North Extended", 
+            "number": "82", 
+            "break_area": "Common Area", 
+            "date": "2011-11-13", 
+            "type": "ietf", 
+            "venue_addr": ""
+        }
+    }, 
+    {
+        "pk": 83, 
+        "model": "meeting.meeting", 
+        "fields": {
+            "city": "Paris", 
+            "venue_name": "", 
+            "country": "FR", 
+            "time_zone": "Europe/Paris", 
+            "reg_area": "", 
+            "number": "83", 
+            "break_area": "", 
+            "date": "2012-03-25", 
+            "type": "ietf", 
+            "venue_addr": ""
+        }
+    }
+]
