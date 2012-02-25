@@ -1,5 +1,14 @@
+import re
+
 def name_parts(name):
     prefix, first, middle, last, suffix = "", "", "", "", ""
+
+    # if we got a name on the form "Hello There (Foo Bar)", get rid of
+    # the paranthesized part
+    name_with_paren_match = re.search("^([^(]+)\s*\(.*\)$", name)
+    if name_with_paren_match:
+        name = name_with_paren_match.group(1)
+
     parts = name.split()
     if parts[0] in ["Mr", "Mr.", "Mrs", "Mrs.", "Ms", "Ms.", "Miss", "Dr.", "Doctor", "Prof", "Prof.", "Professor", "Sir", "Lady", "Dame"]:
         prefix = parts[0];
@@ -18,3 +27,8 @@ def name_parts(name):
         last = parts[0]
     return prefix, first, middle, last, suffix
     
+
+if __name__ == "__main__":
+    import sys
+
+    print name_parts(" ".join(sys.argv[1:]))
