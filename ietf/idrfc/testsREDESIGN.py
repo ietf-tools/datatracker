@@ -773,6 +773,7 @@ class BallotWriteupsTestCase(django.test.TestCase):
         # test regenerate when it's via RFC Editor
         draft.group = Group.objects.get(type="individ")
         draft.stream_id = "irtf"
+        draft.save()
         draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
         draft.tags.add("via-rfc")
 
