@@ -352,6 +352,10 @@ def import_from_idinternal(d, idinternal):
     d.ad = iesg_login_to_person(idinternal.job_owner)
     d.notify = idinternal.state_change_notice_to or ""
     d.note = (idinternal.note or "").replace('<br>', '\n').strip().replace('\n', '<br>')
+
+    if idinternal.area_acronym and d.group.type_id == "individ":
+        d.group = Group.objects.get(acronym=idinternal.area_acronym.area_acronym.acronym)
+
     d.save()
     
     d.set_state(iesg_state_mapping[idinternal.cur_state.state])
