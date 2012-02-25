@@ -25,7 +25,7 @@ ADMINS = (
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
 
 # Override this in the settings_local.py file:
-SERVER_EMAIL = 'Django Server <django-project@' + TOOLS_SERVER + '>'
+#SERVER_EMAIL = 'Django Server <django-project@' + TOOLS_SERVER + '>'
 
 DEFAULT_FROM_EMAIL = 'IETF Secretariat <ietf-secretariat-reply@' + IETF_DOMAIN + '>'
 
