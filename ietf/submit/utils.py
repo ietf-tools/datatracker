@@ -117,6 +117,7 @@ def perform_postREDESIGN(request, submission):
     was_rfc = draft.get_state_slug() == "rfc"
 
     if not draft.stream:
+        stream_slug = None
         if draft.name.startswith("draft-iab-"):
             stream_slug = "iab"
         elif draft.name.startswith("draft-irtf-"):
