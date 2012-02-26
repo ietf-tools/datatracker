@@ -132,7 +132,7 @@ def perform_postREDESIGN(request, submission):
     draft.save()
 
     draft.set_state(State.objects.get(type="draft", slug="active"))
-    if draft.stream_id == "ietf" and draft.group.type_id != "individ":
+    if draft.stream_id == "ietf" and draft.group.type_id == "wg":
         # automatically set state "WG Document"
         draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
