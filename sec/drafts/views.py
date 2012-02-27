@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.urlresolvers import reverse
-from django.db.models import get_model, Max
+from django.db.models import get_model, Max, Q
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory, modelformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
@@ -16,6 +16,7 @@ from forms import *
 from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
 from ietf.doc.models import Document, DocumentAuthor
+from ietf.doc.utils import augment_with_start_time
 from sec.sreq.views import get_meeting
 from sec.utils.ams_utils import get_base, get_email
 from sec.utils.draft import get_rfc_num, get_start_date
@@ -356,27 +357,33 @@ def report_id_activity(start,end):
     sdate = datetime.datetime(int(syear),int(smonth),int(sday))
     edate = datetime.datetime(int(eyear),int(emonth),int(eday))
     
-    queryset = Document.objects.filter(type='draft').annotate(start_date=Min('docevent__time'))
-    #queryset = Document.objects.filter(type='draft').filter(docevent__type="new_revision",
-    new_docs = queryset.filter(start_date__gte=sdate,start_date__lte=edate)
+    #queryset = Document.objects.filter(type='draft').annotate(start_date=Min('docevent__time'))
+    new_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
+                                                            docevent__newrevisiondocevent__rev='00',
+                                                            docevent__time__gte=sdate,
+                                                            docevent__time__lte=edate)
     new = new_docs.count()
+    updated = 0
+    updated_more = 0
+    for d in new_docs:
+        updates = d.docevent_set.filter(type='new_revision',time__gte=sdate,time__lte=edate).count()
+        if updates > 1:
+            updated += 1
+        if updates > 2:
+            updated_more +=1
     
-    updated = new_docs.exclude(rev='00').count()
-    updated_more = new_docs.exclude(rev__in=('00','01')).count()
-    
-    # calculate total documents updated, but not new (rev=00)
+    # calculate total documents updated, not counting new, rev=00
     result = set()
-    events = DocEvent.objects.filter(doc__type='draft',type='new_revision',time__gte=sdate,time__lte=edate)
-    for e in events:
-        if e.doc.rev != '00':
-            result.add(e.doc)
+    events = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lte=edate)
+    for e in events.filter(type='new_revision').exclude(newrevisiondocevent__rev='00'):
+        result.add(e.doc)
     total_updated = len(result)
     
     # calculate sent last call
-    last_call = DocEvent.objects.filter(type='sent_last_call',time__lte=edate,time__gte=sdate).count()
+    last_call = events.filter(type='sent_last_call').count()
     
     # calculate approved
-    approved = DocEvent.objects.filter(type='iesg_approved',time__lte=edate,time__gte=sdate).count()
+    approved = events.filter(type='iesg_approved').count()
     
     # get 4 weeks
     monday = Meeting.get_ietf_monday()
@@ -385,12 +392,12 @@ def report_id_activity(start,end):
     ff2_date = cutoff - datetime.timedelta(days=21)
     ff3_date = cutoff - datetime.timedelta(days=14)
     ff4_date = cutoff - datetime.timedelta(days=7)
-    ff1_new = queryset.filter(start_date__gte=ff1_date,start_date__lt=ff2_date)
-    ff2_new = queryset.filter(start_date__gte=ff2_date,start_date__lt=ff3_date)
-    ff1_new = queryset.filter(start_date__gte=ff3_date,start_date__lt=ff4_date)
-    ff1_new = queryset.filter(start_date__gte=ff4_date,start_date__lt=edate)
     
-    
+    aug_docs = augment_with_start_time(new_docs)
+    ff1_new = aug_docs.filter(start_date__gte=ff1_date,start_date__lt=ff2_date)
+    ff2_new = aug_docs.filter(start_date__gte=ff2_date,start_date__lt=ff3_date)
+    ff1_new = aug_docs.filter(start_date__gte=ff3_date,start_date__lt=ff4_date)
+    ff1_new = aug_docs.filter(start_date__gte=ff4_date,start_date__lt=edate)
     
     context = {'meeting':meeting,
                'new':new,
@@ -481,7 +488,7 @@ def add(request):
             draft.set_state(State.objects.get(type="draft", slug="active"))
             
             # automatically set state "WG Document"
-            if draft.stream_id == "ietf" and draft.group.type_id != "individ":
+            if draft.stream_id == "ietf" and draft.group.type_id == "wg":
                 draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
             
             # create DocAlias
