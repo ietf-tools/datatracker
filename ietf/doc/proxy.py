@@ -495,6 +495,9 @@ class InternetDraft(Document):
     def docstate(self):
         s = self.get_state("draft-iesg")
         if s:
+            subs = self.cur_sub_state
+            if subs:
+                return "%s::%s" % (s.name, subs)
             return s.name
         else:
             return "I-D Exists"

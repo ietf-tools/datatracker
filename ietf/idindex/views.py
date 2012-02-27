@@ -43,16 +43,20 @@ import re
 import sys
 
 def all_id_txt():
-    all_ids = InternetDraft.objects.order_by('filename')
-    in_track_ids = all_ids.filter(idinternal__rfc_flag=0).exclude(idinternal__cur_state__in=IDInternal.INACTIVE_STATES)
-    exclude_ids = [item.id_document_tag for item in in_track_ids]
-    not_in_track = all_ids.exclude(id_document_tag__in=exclude_ids)
-    active = not_in_track.filter(status__status_id=IDInternal.ACTIVE)
-    published = not_in_track.filter(status__status_id=IDInternal.PUBLISHED)
-    expired = not_in_track.filter(status__status_id=IDInternal.EXPIRED)
-    withdrawn_submitter = not_in_track.filter(status__status_id=IDInternal.WITHDRAWN_SUBMITTER)
-    withdrawn_ietf = not_in_track.filter(status__status_id=IDInternal.WITHDRAWN_IETF)
-    replaced = not_in_track.filter(status__status_id=IDInternal.REPLACED)
+    # we need a distinct to prevent the queries below from multiplying the result
+    all_ids = InternetDraft.objects.order_by('name').exclude(name__startswith="rfc").distinct()
+
+    inactive_states = ["pub", "watching", "dead"]
+
+    in_track_ids = all_ids.exclude(states__type="draft", states__slug="rfc").filter(states__type="draft-iesg").exclude(states__type="draft-iesg", states__slug__in=inactive_states)
+    not_in_track = all_ids.filter(states__type="draft", states__slug="rfc") | all_ids.exclude(states__type="draft-iesg") | all_ids.filter(states__type="draft-iesg", states__slug__in=inactive_states)
+
+    active = not_in_track.filter(states__type="draft", states__slug="active")
+    published = not_in_track.filter(states__type="draft", states__slug="rfc")
+    expired = not_in_track.filter(states__type="draft", states__slug="expired")
+    withdrawn_submitter = not_in_track.filter(states__type="draft", states__slug="auth-rm")
+    withdrawn_ietf = not_in_track.filter(states__type="draft", states__slug="ietf-rm")
+    replaced = not_in_track.filter(states__type="draft", states__slug="repl")
 
     return loader.render_to_string("idindex/all_ids.txt",
                                    { 'in_track_ids':in_track_ids,
@@ -68,9 +72,9 @@ def all_id2_entry(id):
     # 0
     fields.append(id.filename+"-"+id.revision_display())
     # 1
-    fields.append(id.id_document_tag)
+    fields.append(-1) # this used to be id.id_document_tag, we don't have this identifier anymore
     # 2
-    status = id.status.status
+    status = str(id.get_state())
     fields.append(status)
     # 3
     iesgstate = id.idstate() if status=="Active" else ""
@@ -92,24 +96,17 @@ def all_id2_entry(id):
 
     # 8
     area = ""
-    if id.idinternal:
-        try:
-            area = id.idinternal.area_acronym
-        except Area.DoesNotExist:
-            pass
-    elif not group_acronym:
-        pass
-    else:
-        try:
-            area = id.group.ietfwg.area_acronym()
-        except IETFWG.DoesNotExist:
-            area = ""
+    if id.group.type_id == "area":
+        area = id.group.acronym
+    elif id.group.type_id == "wg" and id.group.parent:
+        area = id.group.parent.acronym
     fields.append(area)
     # 9
     fields.append(id.idinternal.job_owner if id.idinternal else "")
     # 10
-    if id.intended_status and id.intended_status.intended_status not in ("None","Request"):
-        fields.append(id.intended_status.intended_status)
+    s = id.intended_status
+    if s and str(s) not in ("None","Request"):
+        fields.append(str(s))
     else:
         fields.append("")
     # 11
@@ -132,11 +129,13 @@ def all_id2_entry(id):
         except PersonOrOrgInfo.DoesNotExist:
             pass
     fields.append(u", ".join(authors))
+
     return "\t".join([unicode(x) for x in fields])
     
 def all_id2_txt():
-    all_ids = InternetDraft.objects.order_by('filename').select_related('status__status','group__acronym','intended_status__intended_status')
-    data = "\n".join([all_id2_entry(id) for id in all_ids])
+    all_ids = InternetDraft.objects.order_by('name').exclude(name__startswith="rfc").select_related('group', 'group__parent', 'ad')
+    data = "\n".join(all_id2_entry(id) for id in all_ids)
+
     return loader.render_to_string("idindex/all_id2.txt",{'data':data})
 
 def id_index_txt():

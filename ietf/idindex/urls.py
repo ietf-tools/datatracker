@@ -17,7 +17,7 @@ urlpatterns = patterns('',
      (r'^all_id(?:_txt)?.html$', 'django.views.generic.simple.redirect_to', { 'url': 'http://www.ietf.org/id/all_id.txt' }),
 )
 
-if settings.SERVER_MODE != 'production' and not settings.USE_DB_REDESIGN_PROXY_CLASSES:
+if settings.SERVER_MODE != 'production':
     # these haven't been ported
     urlpatterns += patterns('',
         (r'^_test/all_id.txt$', views.test_all_id_txt),                        
