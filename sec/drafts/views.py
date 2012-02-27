@@ -470,14 +470,16 @@ def add(request):
             
             # set stream based on document name
             if not draft.stream:
+                stream_slug = None
                 if draft.name.startswith("draft-iab-"):
                     stream_slug = "iab"
                 elif draft.name.startswith("draft-irtf-"):
                     stream_slug = "irtf"
                 elif draft.name.startswith("draft-ietf-") and (draft.group.type_id != "individ"):
                     stream_slug = "ietf"
-            if stream_slug:
-                draft.stream = StreamName.objects.get(slug=stream_slug)
+                
+                if stream_slug:
+                    draft.stream = StreamName.objects.get(slug=stream_slug)
                 
             # set expires
             draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
