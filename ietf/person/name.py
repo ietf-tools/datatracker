@@ -14,7 +14,7 @@ def name_parts(name):
         prefix = parts[0];
         parts = parts[1:]
     if len(parts) > 2:
-        if parts[-1] in ["Jr", "Jr.", "II", "2nd", "III", "3rd", ]:
+        if parts[-1] in ["Jr", "Jr.", "II", "2nd", "III", "3rd", "Ph.D."]:
             suffix = parts[-1]
             parts = parts[:-1]
     if len(parts) > 2:
