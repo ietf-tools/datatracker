@@ -31,7 +31,7 @@ for t in slots:
         time_seen.add(t.time)
         timeslots.append(t)
 
-for t in time_seen():
+for t in time_seen:
     for room in rooms:
         if not TimeSlot.objects.filter(meeting=meeting,location=room,time=t):
             print "create timeslot meeting: %s, location: %s, time: %s" % (meeting, room,t)
