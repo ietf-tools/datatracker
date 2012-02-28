@@ -282,7 +282,7 @@ class UploadForm(forms.Form):
                 TempIdAuthors.objects.create(
                     id_document_tag=document_id,
                     first_name=full_name.strip(),
-                    email_address=email,
+                    email_address=(email or "").strip(),
                     author_order=order,
                     submission=detail)
             else:
