@@ -22,6 +22,7 @@ class AliasInline(admin.StackedInline):
 class PersonAdmin(admin.ModelAdmin):
     list_display = ["name", "short", "time", "user", ]
     search_fields = ["name", "ascii"]
+    raw_id_fields = ["user"]
     inlines = [ EmailInline, AliasInline, ]
 #    actions = None
 admin.site.register(Person, PersonAdmin)
