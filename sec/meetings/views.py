@@ -170,7 +170,8 @@ def sort_groups(meeting):
     '''
     scheduled_groups = []
     unscheduled_groups = []
-    sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched','notmeet','canceled'))
+    #sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched','notmeet','canceled'))
+    sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched','canceled'))
     groups_with_sessions = [ s.group for s in sessions ]
     gset = set(groups_with_sessions)
     sorted_groups_with_sessions = sorted(gset, key = lambda instance: instance.acronym)
