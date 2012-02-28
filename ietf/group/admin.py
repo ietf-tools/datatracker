@@ -11,7 +11,11 @@ from django.utils.functional import update_wrapper
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
 
-from models import *
+from ietf.group.models import *
+
+class RoleInline(admin.TabularInline):
+    model = Role
+    raw_id_fields = ["person", "email"]
 
 class GroupAdmin(admin.ModelAdmin):
     list_display = ["acronym", "name", "type", "role_list"]
@@ -20,6 +24,7 @@ class GroupAdmin(admin.ModelAdmin):
     search_fields = ["acronym", "name"]
     ordering = ["name"]
     raw_id_fields = ["charter", "parent", "ad"]
+    inlines = [RoleInline]
 
     def role_list(self, obj):
         roles = Role.objects.filter(group=obj).order_by("name", "person__name").select_related('person')
@@ -97,6 +102,12 @@ class GroupAdmin(admin.ModelAdmin):
 admin.site.register(Group, GroupAdmin)
 admin.site.register(GroupHistory)
 admin.site.register(GroupURL)
+class GroupMilestoneAdmin(admin.ModelAdmin):
+    list_display = ["group", "desc", "expected_due_date", "time"]
+    search_fields = ["group__name", "group__acronym", "desc"]
+    raw_id_fields = ["group"]
+
+admin.site.register(GroupMilestone, GroupMilestoneAdmin)
 
 class RoleAdmin(admin.ModelAdmin):
     list_display = ["name", "person", "email", "group"]

@@ -219,6 +219,10 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES or hasattr(settings, "IMPORTING_IPR"):
             else:
                 return u"%s which applies to %s" % (self.ipr, self.doc_alias.name)
 
+        class Meta:
+            verbose_name = "IPR document alias"
+            verbose_name_plural = "IPR document aliases"
+
     # proxy stuff
     IprDraftOld = IprDraft
     IprRfcOld = IprRfc

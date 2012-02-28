@@ -62,7 +62,7 @@ class GroupURL(models.Model):
 
 class GroupMilestone(models.Model):
     group = models.ForeignKey(Group)
-    desc = models.TextField()
+    desc = models.TextField(verbose_name="Description")
     expected_due_date = models.DateField()
     done = models.BooleanField()
     done_date = models.DateField(null=True, blank=True)

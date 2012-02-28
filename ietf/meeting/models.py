@@ -37,8 +37,12 @@ class Meeting(models.Model):
     break_area = models.CharField(blank=True, max_length=255)
     reg_area = models.CharField(blank=True, max_length=255)
     
-    def __str__(self):
-	return "IETF-%s" % (self.number)
+    def __unicode__(self):
+        if self.type_id == "ietf":
+            return "IETF-%s" % (self.number)
+        else:
+            return self.number
+
     def time_zone_offset(self):
         return pytz.timezone(self.time_zone).localize(datetime.datetime.combine(self.date, datetime.time(0, 0))).strftime("%z")
     def get_meeting_date (self,offset):
@@ -141,7 +145,7 @@ class Session(models.Model):
     requested = models.DateTimeField(default=datetime.datetime.now)
     requested_by = models.ForeignKey(Person)
     requested_duration = TimedeltaField(default=0)
-    comments = models.TextField()
+    comments = models.TextField(blank=True)
     status = models.ForeignKey(SessionStatusName)
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(default=datetime.datetime.now)
