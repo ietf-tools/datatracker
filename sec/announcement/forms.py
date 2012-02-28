@@ -25,6 +25,13 @@ FROM_LIST = ('IETF Secretariat <ietf-secretariat@ietf.org>',
              'IETF Executive Director <exec-director@ietf.org>',
              'The IAOC <bob.hinden@gmail.com>',
              'The IETF Trust <tme@multicasttech.com>')
+
+TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
+           'I-D Announcement List <i-d-announce@ietf.org>',
+           'The IESG <iesg@ietf.org>',
+           'Working Group Chairs <wgchairs@ietf.org>',
+           'BoF Chairs <bofchairs@ietf.org>',
+           'Other...')
 # ---------------------------------------------
 # Helper Functions
 # ---------------------------------------------
@@ -40,11 +47,11 @@ def get_from_choices():
     return zip(FROM_LIST,FROM_LIST)
     
 def get_to_choices():
-    groups = Group.objects.filter(acronym__in=ANNOUNCE_TO_GROUPS)
-    roles = Role.objects.filter(group__in=(groups),name="Announce")
-    choices = [ (r.email, r.person.name) for r in roles ]
-    choices.append(('Other...','Other...'),)
-    return choices
+    #groups = Group.objects.filter(acronym__in=ANNOUNCE_TO_GROUPS)
+    #roles = Role.objects.filter(group__in=(groups),name="Announce")
+    #choices = [ (r.email, r.person.name) for r in roles ]
+    #choices.append(('Other...','Other...'),)
+    return zip(TO_LIST,TO_LIST)
     
 # ---------------------------------------------
 # Select Choices 
