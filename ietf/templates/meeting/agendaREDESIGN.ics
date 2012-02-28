@@ -21,7 +21,7 @@ DTEND{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.me
 DTSTAMP:{{ now|date:"Ymd" }}T{{ now|date:"His" }}Z
 END:VEVENT
 {% endif %}{% endifchanged %}{% for session in slot.sessions %}{%for f in filter%}{%ifequal f session.acronym%}BEGIN:VEVENT
-UID:ietf-{{meeting.num}}-{{session.acronym}}-{{session.ordinality}}
+UID:ietf-{{meeting.num}}-{{session.acronym}}-{{session.pk}}
 SUMMARY:{% if session.area %}{% ifnotequal session.area "1plenary" %}{{session.acronym|upper}} - {% endifnotequal %}{% endif %}{{session.acronym_name}}
 LOCATION:{{session.room_id.room_name}}
 STATUS:TENTATIVE

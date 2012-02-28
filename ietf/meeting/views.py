@@ -448,6 +448,9 @@ def csv_agenda(request, num=None):
     rgs = IRTF.objects.all().order_by('acronym')
     areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
 
+    # we should really use the Python csv module or something similar
+    # rather than a template file which is one big mess
+
     return HttpResponse(render_to_string("meeting/agenda.csv",
         {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
          "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
