@@ -290,7 +290,7 @@ def edit_gm(request, acronym):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('groups_view', kwargs={'name':name})
+            url = reverse('groups_view', kwargs={'acronym':acronym})
             return HttpResponseRedirect(url)
 
         formset = GMFormset(request.POST, instance=group, prefix='goalmilestone')

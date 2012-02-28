@@ -29,13 +29,13 @@
             <td>{{ item.name }}</td>
             <td>{{ item.session.group.acronym }}</td>
             {% if item.type.slug == "other" %}
-              <td><a href="{% url meetings_set_room meeting_id=meeting.id slot_id=item.id %}">{{ item.location }}</a></td>
+              <td><a href="{% url meetings_set_room meeting_id=meeting.number slot_id=item.id %}">{{ item.location }}</a></td>
             {% else %}
               <td>{{ item.location }}</td>
             {% endif %}
             <td>{{ item.show_location }}</td>
             <td>{{ item.type }}</td>
-            <td><a href="{% url meetings_non_session_delete meeting_id=meeting.id slot_id=item.id %}">Delete</a></td>
+            <td><a href="{% url meetings_non_session_delete meeting_id=meeting.number slot_id=item.id %}">Delete</a></td>
           </tr>
         {% endfor %}
       </tbody>

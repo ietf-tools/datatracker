@@ -73,7 +73,7 @@ def build_nonsession(meeting):
     '''
     last_meeting = get_last_meeting(meeting)
     delta = meeting.date - last_meeting.date
-    for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg')):
+    for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other')):
         new_time = slot.time + delta
         session = None
         # create Session object for Tutorials to hold materials
@@ -105,11 +105,9 @@ def make_directories(meeting):
     os.umask(0)
     if not os.path.exists(path):
         os.makedirs(path)
-    os.mkdir(os.path.join(path,'slides'))
-    os.mkdir(os.path.join(path,'agenda'))
-    os.mkdir(os.path.join(path,'minutes'))
-    os.mkdir(os.path.join(path,'id'))
-    os.mkdir(os.path.join(path,'rfc'))
+    for d in ('slides','agenda','minutes','id','rfc'):
+        if not os.path.exists(os.path.join(path,d)):
+            os.mkdir(os.path.join(path,d))
 
 def send_notification(request, sessions):
     '''
@@ -639,6 +637,7 @@ def set_room(request, meeting_id, slot_id):
     Allows the user to assign a location to this non-session timeslot
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
+    #meeting = get_object_or_404(Meeting, id=meeting_id)
     slot = get_object_or_404(TimeSlot, id=slot_id)
 
     if request.method == 'POST':
