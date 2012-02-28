@@ -382,7 +382,7 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
 
         # change
         dates = TelechatDate.objects.active()
-        token_name = Person.objects.get(name="Ad No1").name_parts()[1]
+        token_name = Person.objects.get(name="Ad No1").plain_name()
         old = wga.pk
         r = self.client.post(url, dict(status_date=dates[0].date.isoformat(),
                                        token_name=token_name,
@@ -433,7 +433,7 @@ class WorkingGroupActionsTestCaseREDESIGN(django.test.TestCase):
 
         wgas_before = WGAction.objects.all().count()
         dates = TelechatDate.objects.active()
-        token_name = Person.objects.get(name="Ad No1").name_parts()[1]
+        token_name = Person.objects.get(name="Ad No1").plain_name()
         r = self.client.post(add_url,
                              dict(status_date=dates[0].date.isoformat(),
                                   token_name=token_name,

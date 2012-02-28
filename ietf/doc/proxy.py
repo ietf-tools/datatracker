@@ -321,7 +321,7 @@ class InternetDraft(Document):
     #token_name = models.CharField(blank=True, max_length=25)
     @property
     def token_name(self):
-        return self.ad.name
+        return self.ad.plain_name()
 
     #token_email = models.CharField(blank=True, max_length=255)
     @property

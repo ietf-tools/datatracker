@@ -663,7 +663,7 @@ def working_group_actions(request):
                               context_instance=RequestContext(request))
 
 class EditWGActionForm(forms.ModelForm):
-    token_name = forms.ChoiceField()
+    token_name = forms.ChoiceField(required=True)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
 
     class Meta:
@@ -674,7 +674,7 @@ class EditWGActionForm(forms.ModelForm):
         super(self.__class__, self).__init__(*args, **kwargs)
 
         # token name choices
-        self.fields['token_name'].choices = [(p.first_name, p.first_name) for p in IESGLogin.active_iesg().order_by('first_name')]
+        self.fields['token_name'].choices = [("", "(None)")] + [(p.plain_name(), p.plain_name()) for p in IESGLogin.active_iesg().order_by('first_name')]
         
         # telechat choices
         dates = TelechatDates.objects.all()[0].dates()
