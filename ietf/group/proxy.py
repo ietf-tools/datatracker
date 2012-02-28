@@ -233,6 +233,8 @@ class IRTF(Group):
     #meeting_scheduled = models.BooleanField(blank=True)
     def __str__(self):
 	return self.acronym
+    def __unicode__(self):
+	return self.acronym
     #def chairs(self): # return a set of IRTFChair objects for this work group
     #    return IRTFChair.objects.filter(irtf=self)
     class Meta:
