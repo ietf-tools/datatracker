@@ -25,26 +25,33 @@ class DocumentField(forms.FileField):
     
     def __init__(self, unique=False, *args, **kwargs):
         self.extension = kwargs.pop('extension')
-        if 'unique' in kwargs:
-            self.unique = kwargs.pop('unique')
-        else:
-            self.unique = False
+        self.filename = kwargs.pop('filename')
+        self.rev = kwargs.pop('rev')
         super(DocumentField, self).__init__(*args, **kwargs)
 
     def clean(self, data, initial=None):
         file = super(DocumentField, self).clean(data,initial)
         if file:
+            # validate general file format
+            m = re.search(r'.*-\d{2}\.(txt|pdf|ps|xml)', file.name)
+            if not m:
+                raise forms.ValidationError('File name must be in the form base-NN.[txt|pdf|ps|xml]')
+                
             # ensure file extension is correct
-            ext = os.path.splitext(file.name)[1]
+            base,ext = os.path.splitext(file.name)
             if ext != self.extension:
                 raise forms.ValidationError('Incorrect file extension: %s' % ext)
-            # ensure that base name is not already used
-            '''
-            if self.unique:
-                if Document.objects.filter(name=get_base(file.name)).count() > 0:
-                    raise forms.ValidationError('This document already exists! (%s)' % get_base(file.name)) 
-            '''
-            
+
+            # if this isn't a brand new submission we need to do some extra validations
+            if self.filename:
+                # validate filename
+                if base[:-3] != self.filename:
+                    raise forms.ValidationError, "Filename: %s doesn't match Draft filename." % base[:-3]
+                # validate revision
+                next_revision = str(int(self.rev)+1).zfill(2)
+                if base[-2:] != next_revision:
+                    raise forms.ValidationError, "Expected revision # %s" % (next_revision)
+                
         return file
 
 class GroupModelChoiceField(forms.ModelChoiceField):
@@ -118,46 +125,6 @@ class AuthorForm(forms.Form):
         
         # return email object
         return obj
-    
-class BaseFileFormSet(BaseFormSet):
-    '''
-    This class is used when creating the formset factory for file upload,
-    so we can call perform validations across multiple file upload forms
-    '''
-    def __init__(self, request, *args, **kwargs):
-        self.request = request
-        super(BaseFileFormSet, self).__init__(*args, **kwargs)
-        
-    def clean(self):
-        # Checks that all files have the same base
-        if any(self.errors):
-            # Don't bother validating the formset unless each form is valid on its own
-            return
-        names = []
-        for i in range(0, self.total_form_count()):
-            form = self.forms[i]
-            if form.has_changed():
-                file = form.cleaned_data['file']
-                base = splitext(file.name)[0]
-                if base not in names:
-                    names.append(base)
-        if len(names) > 1:
-            raise forms.ValidationError, "All files must have the same base name"
-        
-        # if 'draft' exists in the session dictionary we are uploading files to an existing
-        # draft (as opposed to adding a new draft) so do extra validations
-        if 'draft' in self.request.session:
-            draft = self.request.session['draft']
-            # Check that the upload base filename is the same as the draft base filename
-            upload_base = get_base(names[0])
-            draft_base = draft.name
-            if upload_base != draft_base:
-                raise forms.ValidationError, "The upload filename (%s) is different than the draft filename (%s)" % (upload_base, draft_base)
-                
-            # Check that the revision number of the upload file is current revision + 1
-            next_revision = str(int(draft.rev)+1).zfill(2)
-            if names[0][-2:] != next_revision:
-                raise forms.ValidationError, "Expected revision # %s" % (next_revision)
 
 class EditModelForm(forms.ModelForm):
     #expiration_date = forms.DateField(required=False)
@@ -365,18 +332,22 @@ class SearchForm(forms.Form):
     revision_date_end = forms.DateField(label='Revision Date (end)',required=False)
 
 class UploadForm(forms.Form):
-    txt = DocumentField(label=u'.txt format', required=True,extension='.txt')
-    xml = forms.FileField(label=u'.xml format', required=False)
-    pdf = forms.FileField(label=u'.pdf format', required=False)
-    ps = forms.FileField(label=u'.ps format', required=False)
-    
-    # verify extensions
-    # verify base matches draft
-    # verify expected revision
+    txt = DocumentField(label=u'.txt format', required=True,extension='.txt',filename=None,rev=None)
+    xml = DocumentField(label=u'.xml format', required=False,extension='.xml',filename=None,rev=None)
+    pdf = DocumentField(label=u'.pdf format', required=False,extension='.pdf',filename=None,rev=None)
+    ps = DocumentField(label=u'.ps format', required=False,extension='.ps',filename=None,rev=None)
+
     def __init__(self, *args, **kwargs):
         if 'draft' in kwargs:
             self.draft = kwargs.pop('draft')
+        else:
+            self.draft = None
         super(UploadForm, self).__init__(*args, **kwargs)
+        if self.draft:
+            for field in self.fields.itervalues():
+                field.filename = self.draft.name
+                field.rev = self.draft.rev
+                
         
     def clean(self):
         # Checks that all files have the same base
@@ -388,30 +359,28 @@ class UploadForm(forms.Form):
         pdf = self.cleaned_data['pdf']
         ps = self.cleaned_data['ps']
         
-        names = []
-        for file in (txt,xml,pdf,ps):
-            if file:
-                base = splitext(file.name)[0]
-                if base not in names:
-                    names.append(base)
-                
-        if len(names) > 1:
-            raise forms.ValidationError, "All files must have the same base name"
+        # we only need to do these validations for new drafts
+        if not self.draft:
+            names = []
+            for file in (txt,xml,pdf,ps):
+                if file:
+                    base = splitext(file.name)[0]
+                    if base not in names:
+                        names.append(base)
+                    
+            if len(names) > 1:
+                raise forms.ValidationError, "All files must have the same base name"
+        
+            # ensure that the basename is unique
+            base = splitext(txt.name)[0]
+            if Document.objects.filter(name=base[:-3]):
+                raise forms.ValidationError, "This doucment filename already exists: %s" % base[:-3]
+            
+            # ensure that rev is 00
+            if base[-2:] != '00':
+                raise forms.ValidationError, "New Drafts must start with 00 revision number."
         
         return self.cleaned_data
-        
-    def txt_clean(self):
-        txt = self.cleaned_data['txt']
-        if self.draft:
-            # Check that the upload base filename is the same as the draft base filename
-            upload_base = get_base(txt)
-            if upload_base != self.draft.name:
-                raise forms.ValidationError, "The upload filename (%s) is different than the draft filename (%s)" % (upload_base, self.draft.name)
-            # Check that the revision number of the upload file is current revision + 1
-            next_revision = str(int(draft.rev)+1).zfill(2)
-            if txt[-2:] != next_revision:
-                raise forms.ValidationError, "Expected revision # %s" % (next_revision)
-        return txt
 
 class WithdrawForm(forms.Form):
     type = forms.CharField(widget=forms.Select(choices=WITHDRAW_CHOICES),help_text='Select which type of withdraw to perform')

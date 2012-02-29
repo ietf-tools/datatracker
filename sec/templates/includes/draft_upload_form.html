@@ -1,0 +1,10 @@
+<div class="inline-group add-form">
+  <h2>Files</h2>
+  <table id="draft-file-table">
+     {{ upload_form.non_field_errors }}
+     <tr><th><label for="id_txt">.txt format<span class="required"> *</span></label></th><td>{{ upload_form.txt.errors }}{{ upload_form.txt }}</td></tr>
+     <tr><th><label for="id_xml">.xml format</label></th><td>{{ upload_form.xml.errors }}{{ upload_form.xml }}</td></tr>
+     <tr><th><label for="id_pdf">.pdf format</label></th><td>{{ upload_form.pdf.errors }}{{ upload_form.pdf }}</td></tr>
+     <tr><th><label for="id_ps">.ps format</label></th><td>{{ upload_form.ps.errors }}{{ upload_form.ps }}</td></tr>
+   </table>
+</div>

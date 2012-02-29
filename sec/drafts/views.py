@@ -41,7 +41,7 @@ def archive_draft_files(filename):
     '''
     if not os.path.isdir(settings.INTERNET_DRAFT_ARCHIVE_DIR):
         raise IOError('Internet-Draft archive directory does not exist (%s)' % settings.INTERNET_DRAFT_ARCHIVE_DIR)
-    files = glob.glob(os.path.join(settings.INTERNET_DRAFT_DIR,filename) + '.*')
+    files = glob.glob(os.path.join(settings.INTERNET_DRAFT_PATH,filename) + '.*')
     for file in files:
         shutil.move(file,settings.INTERNET_DRAFT_ARCHIVE_DIR)
     return
@@ -75,7 +75,6 @@ def handle_uploaded_file(f):
     '''
     Save uploaded draft files to temporary directory
     '''
-    #destination = open(os.path.join(settings.INTERNET_DRAFT_DIR, f.name), 'wb+')
     destination = open(os.path.join('/tmp', f.name), 'wb+')
     for chunk in f.chunks():
         destination.write(chunk)
@@ -133,12 +132,12 @@ def process_files(request,draft):
         filesize=txt_size,
         creation_date=wrapper.get_creation_date(),
         submission_date=datetime.date.today(),
-        idnits_message='',
-        temp_id_document_tag=0,
+        idnits_message='idnits bypassed by manual posting',
+        temp_id_document_tag=None,
         group_acronym_id=draft.group.id,
         remote_ip=request.META['REMOTE_ADDR'],
         first_two_pages=''.join(wrapper.pages[:2]),
-        status_id=1,
+        status_id=-2,
         abstract=draft.abstract,
         file_type=','.join(file_type_list))
     request.session['idsub'] = idsub
@@ -153,7 +152,7 @@ def promote_files(draft, types):
     filename = '%s-%s' % (draft.name,draft.rev)
     for ext in types:
         path = os.path.join('/tmp', filename + ext)
-        shutil.move(path,settings.INTERNET_DRAFT_DIR)
+        shutil.move(path,settings.INTERNET_DRAFT_PATH)
 
 # -------------------------------------------------
 # Action Button Functions
@@ -233,7 +232,7 @@ def do_resurrect(draft, request):
     latest,ext = os.path.splitext(sorted_files[-1])
     files = glob.glob(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR,latest) + '.*')
     for file in files:
-        shutil.move(file,settings.INTERNET_DRAFT_DIR)
+        shutil.move(file,settings.INTERNET_DRAFT_PATH)
     
     # Update draft record
     draft.set_state(State.objects.get(type="draft", slug="active"))
@@ -484,14 +483,12 @@ def add(request):
     '''
     request.session.clear()
     
-    #FileFormset = formset_factory(AddFileForm, formset=BaseFileFormSet, extra=4, max_num=4)
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             url = reverse('drafts_search')
             return HttpResponseRedirect(url)
 
-        #file_formset = FileFormset(request, request.POST, request.FILES, prefix='file')
         upload_form = UploadForm(request.POST, request.FILES)
         form = AddModelForm(request.POST)
         if form.is_valid() and upload_form.is_valid():
@@ -557,12 +554,10 @@ def add(request):
             
     else:
         form = AddModelForm()
-        #file_formset = FileFormset(request, prefix='file')
         upload_form = UploadForm()
         
     return render_to_response('drafts/add.html', {
         'form': form,
-        #'file_formset': file_formset},
         'upload_form': upload_form},
         RequestContext(request, {}),
     )
@@ -989,20 +984,14 @@ def revision(request, id):
 
     draft = get_object_or_404(Document, name=id)
     
-    #FileFormset = formset_factory(RevisionFileForm, formset=BaseFileFormSet, extra=4, max_num=4)
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             url = reverse('drafts_view', kwargs={'id':id})
             return HttpResponseRedirect(url)
         
-        #file_formset = FileFormset(request, request.POST, request.FILES, prefix='file')
         upload_form = UploadForm(request.POST, request.FILES, draft=draft)
         form = RevisionModelForm(request.POST, instance=draft)
-        # we need to save the draft id in the session so it is available for the file_formset
-        # validations
-        request.session['draft'] = draft
-        #if form.is_valid() and file_formset.is_valid():
         if form.is_valid() and upload_form.is_valid():
             # process files
             filename,revision,file_type_list = process_files(request,draft)
@@ -1019,12 +1008,10 @@ def revision(request, id):
 
     else:
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
-        #file_formset = FileFormset(request, prefix='file')
         upload_form = UploadForm(draft=draft)
         
     return render_to_response('drafts/revision.html', {
         'form': form,
-        #'file_formset': file_formset,
         'upload_form': upload_form,
         'draft': draft},
         RequestContext(request, {}),
@@ -1111,15 +1098,13 @@ def update(request, id):
     
     draft = get_object_or_404(Document, name=id)
     
-    #FileFormset = formset_factory(RevisionFileForm, formset=BaseFileFormSet, extra=4, max_num=4)
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             url = reverse('drafts_view', kwargs={'id':id})
             return HttpResponseRedirect(url)
-        
-        #file_formset = FileFormset(request, request.POST, request.FILES, prefix='file')
-        upload_form = UploadForm(request.POST, request.FILES)
+
+        upload_form = UploadForm(request.POST, request.FILES, draft=draft)
         form = RevisionModelForm(request.POST, instance=draft)
         if form.is_valid() and upload_form.is_valid():
             # process files
@@ -1137,12 +1122,10 @@ def update(request, id):
 
     else:
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
-        #file_formset = FileFormset(request, prefix='file')
-        upload_form = UploadForm()
+        upload_form = UploadForm(draft=draft)
         
     return render_to_response('drafts/revision.html', {
         'form': form,
-        #'file_formset': file_formset,
         'upload_form':upload_form,
         'draft': draft},
         RequestContext(request, {}),
