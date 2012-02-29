@@ -17,6 +17,8 @@ from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
 from ietf.doc.models import Document, DocumentAuthor
 from ietf.doc.utils import augment_with_start_time
+from ietf.submit.models import IdSubmissionDetail
+from ietf.utils.draft import Draft
 from sec.sreq.views import get_meeting
 from sec.utils.ams_utils import get_base, get_email
 from sec.utils.draft import get_rfc_num, get_start_date
@@ -97,20 +99,50 @@ def handle_substate(doc):
                                 desc="Sub state has been changed to <b>AD Followup</b> from <b>Revised ID Needed</b>",
                                 by=system)
         
-def process_files(files):
+def process_files(request,draft):
     '''
-    This function takes a list of file objects (ie from request.FILES), uploads
+    This function takes a request object and draft object.
+    It obtains the list of file objects (ie from request.FILES), uploads
     the files by calling handle_file_upload() and returns
     the basename, revision number and a list of file types.  Basename and revision
     are assumed to be the same for all because this is part of the validation process.
+    
+    It also creates the IdSubmissionDetail record WITHOUT saving, and places it in the
+    session for saving in the final action step.
     '''
+    files = request.FILES
     file = files[files.keys()[0]]
     filename = os.path.splitext(file.name)[0]
     revision = os.path.splitext(file.name)[0][-2:]
+    basename = get_base(filename)
     file_type_list = []
     for file in files.values():
-        file_type_list.append(os.path.splitext(file.name)[1])
+        extension = os.path.splitext(file.name)[1]
+        file_type_list.append(extension)
+        if extension == '.txt':
+            txt_size = file.size
+            wrapper = Draft(file.read())
         handle_uploaded_file(file)
+    
+    # create IdSubmissionDetail record, leaved unsaved
+    idsub = IdSubmissionDetail(
+        id_document_name=draft.title,
+        filename=basename,
+        revision=revision,
+        txt_page_count=draft.pages,
+        filesize=txt_size,
+        creation_date=wrapper.get_creation_date(),
+        submission_date=datetime.date.today(),
+        idnits_message='',
+        temp_id_document_tag=0,
+        group_acronym_id=draft.group.id,
+        remote_ip=request.META['REMOTE_ADDR'],
+        first_two_pages=''.join(wrapper.pages[:2]),
+        status_id=1,
+        abstract=draft.abstract,
+        file_type=','.join(file_type_list))
+    request.session['idsub'] = idsub
+    
     return (filename,revision,file_type_list)
 
 def promote_files(draft, types):
@@ -272,6 +304,9 @@ def do_revision(draft, request):
     # move uploaded files to production directory
     promote_files(new_draft, request.session['file_type'])
     
+    # save the submission record
+    request.session['idsub'].save()
+    
     # send announcement if we are in IESG process
     if new_draft.get_state('draft-iesg'):
         announcement_from_form(request.session['email'],by=request.user.get_profile())
@@ -316,6 +351,9 @@ def do_update(draft,request):
     
     # move uploaded files to production directory
     promote_files(new_draft, request.session['file_type'])
+    
+    # save the submission record
+    request.session['idsub'].save()
     
     # send announcement
     announcement_from_form(request.session['email'],by=request.user.get_profile())
@@ -446,20 +484,21 @@ def add(request):
     '''
     request.session.clear()
     
-    FileFormset = formset_factory(AddFileForm, formset=BaseFileFormSet, extra=4, max_num=4)
+    #FileFormset = formset_factory(AddFileForm, formset=BaseFileFormSet, extra=4, max_num=4)
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             url = reverse('drafts_search')
             return HttpResponseRedirect(url)
 
-        file_formset = FileFormset(request, request.POST, request.FILES, prefix='file')
+        #file_formset = FileFormset(request, request.POST, request.FILES, prefix='file')
+        upload_form = UploadForm(request.POST, request.FILES)
         form = AddModelForm(request.POST)
-        if form.is_valid() and file_formset.is_valid():
+        if form.is_valid() and upload_form.is_valid():
             draft = form.save(commit=False)
             
             # process files
-            filename,revision,file_type_list = process_files(request.FILES)
+            filename,revision,file_type_list = process_files(request, draft)
             name = get_base(filename)
             
             # set fields (set stream or intended status?)
@@ -503,9 +542,12 @@ def add(request):
                                                rev=draft.rev,
                                                time=draft.time,
                                                desc="New revision available")
-            
+        
             # move uploaded files to production directory
             promote_files(draft, file_type_list)
+            
+            # save the submission record
+            request.session['idsub'].save()
     
             request.session['action'] = 'add'
             
@@ -515,11 +557,13 @@ def add(request):
             
     else:
         form = AddModelForm()
-        file_formset = FileFormset(request, prefix='file')
-
+        #file_formset = FileFormset(request, prefix='file')
+        upload_form = UploadForm()
+        
     return render_to_response('drafts/add.html', {
         'form': form,
-        'file_formset': file_formset},
+        #'file_formset': file_formset},
+        'upload_form': upload_form},
         RequestContext(request, {}),
     )
 
@@ -855,7 +899,6 @@ def makerfc(request, id):
             rfc = form.save()
             
             # create DocEvent
-            # create DocEvent
             DocEvent.objects.create(type='published_rfc',
                                     by=request.user.get_profile(),
                                     doc=rfc)
@@ -946,39 +989,43 @@ def revision(request, id):
 
     draft = get_object_or_404(Document, name=id)
     
-    FileFormset = formset_factory(RevisionFileForm, formset=BaseFileFormSet, extra=4, max_num=4)
+    #FileFormset = formset_factory(RevisionFileForm, formset=BaseFileFormSet, extra=4, max_num=4)
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             url = reverse('drafts_view', kwargs={'id':id})
             return HttpResponseRedirect(url)
         
-        file_formset = FileFormset(request, request.POST, request.FILES, prefix='file')
+        #file_formset = FileFormset(request, request.POST, request.FILES, prefix='file')
+        upload_form = UploadForm(request.POST, request.FILES, draft=draft)
         form = RevisionModelForm(request.POST, instance=draft)
         # we need to save the draft id in the session so it is available for the file_formset
         # validations
         request.session['draft'] = draft
-        if form.is_valid() and file_formset.is_valid():
+        #if form.is_valid() and file_formset.is_valid():
+        if form.is_valid() and upload_form.is_valid():
             # process files
-            filename,revision,file_type_list = process_files(request.FILES)
+            filename,revision,file_type_list = process_files(request,draft)
             
-            # save state in session and proceed to email page
+            # save info in session and proceed to email page
             request.session['data'] = form.cleaned_data
             request.session['action'] = 'revision'
             request.session['filename'] = filename
             request.session['revision'] = revision
             request.session['file_type'] = file_type_list
-       
+            
             url = reverse('drafts_email', kwargs={'id':id})
             return HttpResponseRedirect(url)
 
     else:
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
-        file_formset = FileFormset(request, prefix='file')
+        #file_formset = FileFormset(request, prefix='file')
+        upload_form = UploadForm(draft=draft)
         
     return render_to_response('drafts/revision.html', {
         'form': form,
-        'file_formset': file_formset,
+        #'file_formset': file_formset,
+        'upload_form': upload_form,
         'draft': draft},
         RequestContext(request, {}),
     )
@@ -1064,18 +1111,19 @@ def update(request, id):
     
     draft = get_object_or_404(Document, name=id)
     
-    FileFormset = formset_factory(RevisionFileForm, formset=BaseFileFormSet, extra=4, max_num=4)
+    #FileFormset = formset_factory(RevisionFileForm, formset=BaseFileFormSet, extra=4, max_num=4)
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             url = reverse('drafts_view', kwargs={'id':id})
             return HttpResponseRedirect(url)
         
-        file_formset = FileFormset(request, request.POST, request.FILES, prefix='file')
-        form = RevisionModelForm(request.POST, request.FILES, instance=draft)
-        if form.is_valid() and file_formset.is_valid():
+        #file_formset = FileFormset(request, request.POST, request.FILES, prefix='file')
+        upload_form = UploadForm(request.POST, request.FILES)
+        form = RevisionModelForm(request.POST, instance=draft)
+        if form.is_valid() and upload_form.is_valid():
             # process files
-            filename,revision,file_type_list = process_files(request.FILES)
+            filename,revision,file_type_list = process_files(request,draft)
 
             # save state in session and proceed to email page
             request.session['data'] = form.data
@@ -1089,11 +1137,13 @@ def update(request, id):
 
     else:
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
-        file_formset = FileFormset(request, prefix='file')
+        #file_formset = FileFormset(request, prefix='file')
+        upload_form = UploadForm()
         
     return render_to_response('drafts/revision.html', {
         'form': form,
-        'file_formset': file_formset,
+        #'file_formset': file_formset,
+        'upload_form':upload_form,
         'draft': draft},
         RequestContext(request, {}),
     )

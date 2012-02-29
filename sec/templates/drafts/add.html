@@ -21,7 +21,13 @@
         {{ form.as_table }}
       </table>
       
-      {% include "includes/draft_file_formset.html" %}
+      <!-- {% include "includes/draft_file_formset.html" %} -->
+      <div class="inline-group add-form">
+        <h2>Files</h2>
+          <table id="draft-file-table">
+            {{ upload_form.as_table }}
+          </table>
+      </div>
       
       {% include "includes/buttons_save_cancel.html" %}
 

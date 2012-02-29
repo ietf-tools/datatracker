@@ -16,7 +16,7 @@ from forms import *
 # this seems to cause some kind of circular problem
 # @check_for_cancel(reverse('home'))
 
-@group_required('Area Director','Secretariat')
+@group_required('Area Director','Secretariat','Administrative Director')
 @check_for_cancel('../')
 def main(request):
 
