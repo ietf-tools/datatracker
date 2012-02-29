@@ -18,8 +18,8 @@ class GroupInfo(models.Model):
     list_archive = models.CharField(max_length=255, blank=True)
     comments = models.TextField(blank=True)
 
-    unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group")
-    unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group")
+    unused_states = models.ManyToManyField('doc.State', help_text="Document states that have been disabled for the group", blank=True)
+    unused_tags = models.ManyToManyField(DocTagName, help_text="Document tags that have been disabled for the group", blank=True)
 
     def __unicode__(self):
         return self.name
