@@ -200,7 +200,12 @@ def announce_to_lists(request, submission):
 
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         m = Message()
-        m.by = request.user.get_profile() if request.user.is_authenticated() else Person.objects.get(name="(System)")
+        m.by = Person.objects.get(name="(System)")
+        if request.user.is_authenticated():
+            try:
+                m.by = request.user.get_profile()
+            except Person.DoesNotExist:
+                pass
         m.subject = 'I-D Action: %s-%s.txt' % (submission.filename, submission.revision)
         m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
         m.to = settings.IDSUBMIT_ANNOUNCE_LIST_EMAIL
