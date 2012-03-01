@@ -25,6 +25,7 @@ class GroupAdmin(admin.ModelAdmin):
     ordering = ["name"]
     raw_id_fields = ["charter", "parent", "ad"]
     inlines = [RoleInline]
+    prepopulated_fields = {"acronym": ("name", )}
 
     def role_list(self, obj):
         roles = Role.objects.filter(group=obj).order_by("name", "person__name").select_related('person')

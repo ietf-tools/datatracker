@@ -34,7 +34,7 @@ class GroupManager(models.Manager):
 class Group(GroupInfo):
     objects = GroupManager()
 
-    acronym = models.CharField(max_length=40, unique=True, db_index=True)
+    acronym = models.SlugField(max_length=40, unique=True, db_index=True)
     charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
     
     def latest_event(self, *args, **filter_args):
