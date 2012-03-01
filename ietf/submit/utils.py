@@ -141,10 +141,10 @@ def perform_postREDESIGN(request, submission):
     update_authors(draft, submission)
 
     # new revision event
-    try:
-        a = submission.tempidauthors_set.get(author_order=0)
-        submitter = ensure_person_email_info_exists(a).person
-    except TempIdAuthors.DoesNotExist:
+    a = submission.tempidauthors_set.filter(author_order=0)
+    if a:
+        submitter = ensure_person_email_info_exists(a[0]).person
+    else:
         submitter = system
 
     e = NewRevisionDocEvent(type="new_revision", doc=draft, rev=draft.rev)
