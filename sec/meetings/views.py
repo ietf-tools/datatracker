@@ -570,10 +570,13 @@ def schedule(request, meeting_id, acronym):
             
             # notify.  dont send if Tutorial, BOF or indicated on form
             notification_message = "No notification has been sent to anyone for this session."
-            if has_changed and not extra_form.cleaned_data.get('no_notify',False):
-                if group.state.slug != 'bof':
-                    send_notification(request, sessions)
-                    notification_message = "Notification sent."
+            if (has_changed 
+                and not extra_form.cleaned_data.get('no_notify',False)
+                and group.state.slug != 'bof'
+                and session.timeslot_set.all()):       # and the session is scheduled, else skip
+                
+                send_notification(request, sessions)
+                notification_message = "Notification sent."
                 
             if has_changed:
                 messages.success(request, 'Session(s) Scheduled for %s.  %s' %  (group.acronym, notification_message))
