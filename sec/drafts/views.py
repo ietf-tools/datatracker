@@ -139,7 +139,9 @@ def process_files(request,draft):
         first_two_pages=''.join(wrapper.pages[:2]),
         status_id=-2,
         abstract=draft.abstract,
-        file_type=','.join(file_type_list))
+        file_type=','.join(file_type_list),
+        man_posted_date=datetime.date.today(),
+        man_posted_by=request.user.get_profile())
     request.session['idsub'] = idsub
     
     return (filename,revision,file_type_list)
