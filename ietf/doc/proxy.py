@@ -583,7 +583,7 @@ class InternetDraft(Document):
             res.append(dict(ad=IESGLoginProxy().from_object(ad), pos=Position().from_object(pos) if pos else None))
 
         res.sort(key=lambda x: x["ad"].last_name)
-        
+
 	return res
     
     def needed(self, standardsTrack=True):
@@ -820,7 +820,7 @@ class DocumentComment(DocEvent):
 class Position(BallotPositionDocEvent):
     def from_object(self, base):
         for f in base._meta.fields:
-            if not f.name in ('discuss',): # don't overwrite properties
+            if not f.name in ('discuss', "ad"): # don't overwrite properties
                 setattr(self, f.name, getattr(base, f.name))
 
         self.orig = base
@@ -832,6 +832,11 @@ class Position(BallotPositionDocEvent):
         return self.doc # FIXME: doesn't emulate old interface
     
     # ad = models.ForeignKey(IESGLogin) # same name
+    @property
+    def ad(self):
+        from ietf.person.proxy import IESGLogin
+        return IESGLogin().from_object(self.orig.ad if hasattr(self, "orig") else super(Position, self).ad)
+
     #yes = models.IntegerField(db_column='yes_col')
     @property
     def yes(self):
