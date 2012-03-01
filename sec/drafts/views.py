@@ -629,6 +629,16 @@ def authors(request, id):
     
     if request.method == 'POST':
         form = AuthorForm(request.POST)
+        button_text = request.POST.get('submit', '') 
+        if button_text == 'Done':
+            action = request.session.get('action','')
+            if action == 'add':
+                del request.session['action']
+                url = reverse('drafts_announce', kwargs={'id':id})
+            else:
+                url = reverse('drafts_view', kwargs={'id':id})
+            return HttpResponseRedirect(url)
+                
         if form.is_valid():
             author = form.cleaned_data['email']
             authors = draft.documentauthor_set.all()
@@ -638,12 +648,8 @@ def authors(request, id):
                 order = 1
             DocumentAuthor.objects.create(document=draft,author=author,order=order)
             
-            messages.success(request, 'Authors added successfully!')
-            action = request.session.get('action','')
-            if action == 'add':
-                url = reverse('drafts_announce', kwargs={'id':id})
-            else:
-                url = reverse('drafts_authors', kwargs={'id':id})
+            messages.success(request, 'Author added successfully!')
+            url = reverse('drafts_authors', kwargs={'id':id})
             return HttpResponseRedirect(url)
 
     else: 
