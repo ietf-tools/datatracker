@@ -11,7 +11,7 @@ from django.template import RequestContext
 from django.utils import simplejson
 
 from sec.utils.meeting import CURRENT_MEETING
-from ietf.group.models import GroupEvent, GroupURL, Role
+from ietf.group.models import ChangeStateGroupEvent, GroupEvent, GroupURL, Role
 from ietf.group.utils import save_group_in_history
 from ietf.wginfo.views import fill_in_charter_info
 
@@ -100,16 +100,11 @@ def add(request):
 
             # create GroupEvent(s)
             # always create started event
-            GroupEvent.objects.create(group=group,
-                                      type='changed_state',
-                                      by=request.user.get_profile(),
-                                      desc='Started group')
-                                          
-            if group.state.slug == 'proposed':
-                GroupEvent.objects.create(group=group,
-                                          type='changed_state',
-                                          by=request.user.get_profile(),
-                                          desc='Proposed group')
+            ChangeStateGroupEvent.objects.create(group=group,
+                                                 type='changed_state',
+                                                 by=request.user.get_profile(),
+                                                 state=group.state,
+                                                 desc='Started group')
             
             messages.success(request, 'The Group was created successfully!')
             url = reverse('groups_view', kwargs={'acronym':group.acronym})
@@ -236,16 +231,10 @@ def edit(request, acronym):
                 
                 # create appropriate GroupEvent
                 if 'state' in form.changed_data:
-                    if state.slug == 'proposed':
-                        GroupEvent.objects.create(group=group,
-                                                  type='changed_state',
-                                                  by=request.user.get_profile(),
-                                                  desc='Proposed group')
-                    elif state.slug == 'concluded':
-                        GroupEvent.objects.create(group=group,
-                                                  type='changed_state',
-                                                  by=request.user.get_profile(),
-                                                  desc='Concluded group')
+                    ChangeStateGroupEvent.objects.create(group=group,
+                                                         type='changed_state',
+                                                         by=request.user.get_profile(),
+                                                         state=state)
                     form.changed_data.remove('state')
                     
                 # if anything else was changed
@@ -253,6 +242,10 @@ def edit(request, acronym):
                     GroupEvent.objects.create(group=group,
                                               type='info_changed',
                                               by=request.user.get_profile())
+                
+                # if the acronym was changed we'll want to redirect using the new acronym below
+                if 'acronym' in form.changed_data:
+                    acronym = form.cleaned_data['acronym']
                 
                 messages.success(request, 'The Group was changed successfully')
             

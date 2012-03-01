@@ -41,6 +41,8 @@
 
  RFC    Stat    WG       Published         Title
 -------  -- ----------   ----------   -----------------------------------------
-{% for rfc in rfcs %}
-{{ rfc.canonical_name|upper }}  {{ rfc.intended_std_level.name|abbr_status|stringformat:"2s" }} ({{ rfc.group.acronym|stringformat:"8s" }})   date         {{ rfc.title }}
+{% for event in rfcs %}
+{{ event.doc.canonical_name|upper }}  {{ event.doc.intended_std_level.name|abbr_status|stringformat:"2s" }} ({{ event.doc.group.acronym|stringformat:"8s" }})   {{ event.time|date:"M d" }}       {{ event.doc.title }}
 {% endfor %}
+
+    {{ counts.std }} Standards Track;   {{ counts.bcp }} BCP;   {{ counts.exp }} Experimental;   {{ counts.inf }} Informational 

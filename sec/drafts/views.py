@@ -477,10 +477,19 @@ def report_progress_report(start_date,end_date):
                                                             docevent__time__gte=sdate,
                                                             docevent__time__lte=edate).distinct()
     
-    rfcs = Document.objects.filter(type='draft').filter(docevent__type='published_rfc',
-                                                            docevent__time__gte=sdate,
-                                                            docevent__time__lte=edate)
-                                                            
+    #rfcs = Document.objects.filter(type='draft').filter(docevent__type='published_rfc',
+    #                                                        docevent__time__gte=sdate,
+    #                                                        docevent__time__lte=edate)
+    
+    rfcs = DocEvent.objects.filter(type='published_rfc',
+                                   doc__type='draft',
+                                   time__gte=sdate,
+                                   time__lte=edate)
+    counts = {'std':rfcs.filter(doc__intended_std_level__in=('ps','ds','std')).count(),
+              'bcp':rfcs.filter(doc__intended_std_level='bcp').count(),
+              'exp':rfcs.filter(doc__intended_std_level='exp').count(),
+              'inf':rfcs.filter(doc__intended_std_level='inf').count()}
+              
     context = {'start_date':start_date,
                'end_date':end_date,
                'action_events':action_events,
@@ -488,7 +497,8 @@ def report_progress_report(start_date,end_date):
                'new_groups':new_groups,
                'concluded_groups':concluded_groups,
                'new_docs':new_docs,
-               'rfcs':rfcs}
+               'rfcs':rfcs,
+               'counts':counts}
     
     report = render_to_string('drafts/report_progress_report.txt', context)
     
