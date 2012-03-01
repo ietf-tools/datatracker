@@ -432,21 +432,65 @@ def report_id_activity(start,end):
     ff3_date = cutoff - datetime.timedelta(days=14)
     ff4_date = cutoff - datetime.timedelta(days=7)
     
-    aug_docs = augment_with_start_time(new_docs)
+    #aug_docs = augment_with_start_time(new_docs)
+    '''
     ff1_new = aug_docs.filter(start_date__gte=ff1_date,start_date__lt=ff2_date)
     ff2_new = aug_docs.filter(start_date__gte=ff2_date,start_date__lt=ff3_date)
-    ff1_new = aug_docs.filter(start_date__gte=ff3_date,start_date__lt=ff4_date)
-    ff1_new = aug_docs.filter(start_date__gte=ff4_date,start_date__lt=edate)
-    
+    ff3_new = aug_docs.filter(start_date__gte=ff3_date,start_date__lt=ff4_date)
+    ff4_new = aug_docs.filter(start_date__gte=ff4_date,start_date__lt=edate)
+    ff_new_iD = ff1_new + ff2_new + ff3_new + ff4_new
+    '''
     context = {'meeting':meeting,
                'new':new,
                'updated':updated,
                'updated_more':updated_more,
                'total_updated':total_updated,
                'last_call':last_call,
-               'approved':approved}
+               'approved':approved,
+               'ff_new_ID':0}
     
     report = render_to_string('drafts/report_id_activity.txt', context)
+    
+    return report
+    
+def report_progress_report(start_date,end_date):
+    syear,smonth,sday = start_date.split('-')
+    eyear,emonth,eday = end_date.split('-')
+    sdate = datetime.datetime(int(syear),int(smonth),int(sday))
+    edate = datetime.datetime(int(eyear),int(emonth),int(eday))
+    
+    docevents = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lte=edate)
+    action_events = docevents.filter(type='iesg_approved')
+    lc_events = docevents.filter(type='sent_last_call')
+    
+    new_groups =Group.objects.filter(type='wg',
+                                     groupevent__changestategroupevent__state='active',
+                                     groupevent__time__gte=sdate,
+                                     groupevent__time__lte=edate)
+    
+    concluded_groups = Group.objects.filter(type='wg',
+                                            groupevent__changestategroupevent__state='conclude',
+                                            groupevent__time__gte=sdate,
+                                            groupevent__time__lte=edate)
+                                  
+    new_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
+                                                            docevent__time__gte=sdate,
+                                                            docevent__time__lte=edate).distinct()
+    
+    rfcs = Document.objects.filter(type='draft').filter(docevent__type='published_rfc',
+                                                            docevent__time__gte=sdate,
+                                                            docevent__time__lte=edate)
+                                                            
+    context = {'start_date':start_date,
+               'end_date':end_date,
+               'action_events':action_events,
+               'lc_events':lc_events,
+               'new_groups':new_groups,
+               'concluded_groups':concluded_groups,
+               'new_docs':new_docs,
+               'rfcs':rfcs}
+    
+    report = render_to_string('drafts/report_progress_report.txt', context)
     
     return report
 # -------------------------------------------------

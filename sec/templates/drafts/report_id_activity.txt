@@ -10,8 +10,8 @@ IETF Activity since last IETF Meeting ({{ meeting.city }})
 
 In the final 4 weeks before meeting
 
-0 	 New I-Ds were received - 0% of total newbies since last meeting
-0 	 I-Ds were updated - 0% of total updated since last meeting
+{{ ff_new_ID|stringformat:"3s" }}    New I-Ds were received - 0% of total newbies since last meeting
+  0    I-Ds were updated - 0% of total updated since last meeting
 
 		Week1	0	%
 		Week2	0	%
