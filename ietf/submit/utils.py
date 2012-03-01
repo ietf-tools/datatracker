@@ -405,9 +405,10 @@ def update_authorsREDESIGN(draft, submission):
     for author in submission.tempidauthors_set.exclude(author_order=0).order_by('author_order'):
         email = ensure_person_email_info_exists(author)
 
-        try:
-            a = DocumentAuthor.objects.get(document=draft, author=email)
-        except DocumentAuthor.DoesNotExist:
+        a = DocumentAuthor.objects.filter(document=draft, author=email)
+        if a:
+            a = a[0]
+        else:
             a = DocumentAuthor(document=draft, author=email)
 
         a.order = author.author_order
