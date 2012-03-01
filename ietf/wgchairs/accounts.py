@@ -11,7 +11,7 @@ def is_area_director_for_group(person, group):
     return bool(group.area.area.areadirector_set.filter(person=person).count())
 
 def is_area_director_for_groupREDESIGN(person, group):
-    return bool(Role.objects.filter(group=group.parent, person=person, name=("ad", "pre-ad")))
+    return bool(Role.objects.filter(group=group.parent, person=person, name__in=("ad", "pre-ad")))
 
 
 def is_group_chair(person, group):
