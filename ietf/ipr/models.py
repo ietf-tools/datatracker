@@ -196,7 +196,6 @@ class IprRfc(models.Model):
         db_table = 'ipr_rfcs'
 
 class IprUpdate(models.Model):
-    id = models.IntegerField(primary_key=True)
     ipr = models.ForeignKey(IprDetail, related_name='updates')
     updated = models.ForeignKey(IprDetail, db_column='updated', related_name='updated_by')
     status_to_be = models.IntegerField(null=True, blank=True)
