@@ -173,5 +173,5 @@ class TimeSlotForm(forms.Form):
 
 class NonSessionForm(TimeSlotForm):
     # inherit TimeSlot and add Type field
-    type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(slug__in=('other','reg','break')),empty_label=None)
+    type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(slug__in=('other','reg','break','plenary')),empty_label=None)
     show_location = forms.BooleanField(required=False)

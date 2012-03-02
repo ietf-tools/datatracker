@@ -382,7 +382,7 @@ def non_session(request, meeting_id):
             # NOTE: we're setting group to none here, but the set_room page will force user 
             # to pick a legitimate group
             session = None
-            if type.slug == 'other':
+            if type.slug in ('other','plenary'):
                 session = Session(meeting=meeting,
                                   name=name,
                                   group=Group.objects.get(acronym='none'),

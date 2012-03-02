@@ -4,8 +4,8 @@ from django.shortcuts import render_to_response, get_object_or_404
 from functools import wraps
 
 from ietf.ietfauth.decorators import has_role
-
 from ietf.group.models import Group
+from ietf.meeting.models import Session
 
 from itertools import chain
 
@@ -37,22 +37,21 @@ def check_permissions(func):
         if has_role(request.user,'Secretariat'):
             return func(request, *args, **kwargs)
         
-        #TODO delete this
-        #return func(request, *args, **kwargs)
-        
         # get the parent group
         if 'acronym' in kwargs:
             acronym = kwargs['acronym']
-        '''
+            group = get_object_or_404(Group,acronym=acronym)
+        elif 'session_id' in kwargs:
+            session = get_object_or_404(Session, id=kwargs['session_id'])
+            group = session.group
+            '''
         elif 'meeting_id' in kwargs:
             meeting = Meeting.objects.get(id=kwargs['meeting_id'])
             group_id = meeting.group
         elif 'slide_id' in kwargs:
             slide = InterimFile.objects.get(id=kwargs['slide_id'])
             group_id = slide.meeting.group_acronym_id
-        elif 'session_id' in kwargs:
-            session = get_object_or_404(WgMeetingSession, session_id=kwargs['session_id'])
-            group_id = session.group_acronym_id
+        
             
         if has_role(request.user,'Area Director'):
             ad = AreaDirector.objects.get(person=request.person)
@@ -68,7 +67,7 @@ def check_permissions(func):
         if request.user_is_ietf_iab_chair and group_id in ('-1','-2'):
             return func(request, *args, **kwargs)
         '''
-        group = get_object_or_404(Group,acronym=acronym)
+        
         login = request.user.get_profile()
         all_roles = chain(
             group.role_set.filter(name__in=('chair','secr')),

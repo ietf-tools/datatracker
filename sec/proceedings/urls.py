@@ -7,6 +7,7 @@ from django.views.generic import list_detail
 urlpatterns = patterns('sec.proceedings.views',
     url(r'^$', 'main', name='proceedings'),
     url(r'^(?P<meeting_num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/$', 'select', name='proceedings_select'),
+    # NOTE: we have two entries here which both map to upload_unified, passing session_id or acronym
     url(r'^(?P<meeting_num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/(?P<session_id>\d{1,6})/$',
         'upload_unified', name='proceedings_upload_unified'),
     url(r'^(?P<meeting_num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',

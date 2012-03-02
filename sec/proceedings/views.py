@@ -671,7 +671,8 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
     elif session_id:
         sessions = None
         session = get_object_or_404(Session, id=int(session_id))
-        group = Group.objects.get(acronym='none')
+        #group = Group.objects.get(acronym='none')
+        group = session.group
         session_name = session.name
     
     if request.method == 'POST':
