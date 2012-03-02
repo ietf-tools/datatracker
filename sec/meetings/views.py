@@ -73,14 +73,14 @@ def build_nonsession(meeting):
     '''
     last_meeting = get_last_meeting(meeting)
     delta = meeting.date - last_meeting.date
-    for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other')):
+    for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other','plenary')):
         new_time = slot.time + delta
         session = None
         # create Session object for Tutorials to hold materials
-        if slot.type.slug == 'other':
+        if slot.type.slug in ('other','plenary'):
             session = Session(meeting=meeting,
                               name=slot.name,
-                              group=Group.objects.get(acronym='none'),
+                              group=slot.session.group,
                               requested_by=Person.objects.get(name='(system)'),
                               status_id='sched')
             session.save()
@@ -365,7 +365,7 @@ def non_session(request, meeting_id):
     if not TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other')):
         build_nonsession(meeting)
     
-    slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other')).order_by('time')
+    slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary')).order_by('-type__name',)
     
     if request.method == 'POST':
         form = NonSessionForm(request.POST)
