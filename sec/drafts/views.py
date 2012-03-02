@@ -17,7 +17,7 @@ from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
 from ietf.doc.models import Document, DocumentAuthor
 from ietf.doc.utils import augment_with_start_time
-from ietf.submit.models import IdSubmissionDetail
+from ietf.submit.models import IdSubmissionDetail, IdApprovedDetail
 from ietf.utils.draft import Draft
 from sec.sreq.views import get_meeting
 from sec.utils.ams_utils import get_base, get_email
@@ -642,7 +642,7 @@ def announce(request, id):
     messages.success(request, 'Announcement scheduled successfully!')
     url = reverse('drafts_view', kwargs={'id':id})
     return HttpResponseRedirect(url)
-"""
+
 def approvals(request):
     '''
     This view handles setting Initial Approval for drafts
@@ -656,7 +656,7 @@ def approvals(request):
         'approved': approved},
         RequestContext(request, {}),
     )
-"""
+
 def author_delete(request, id, oid):
     '''
     This view deletes the specified author(email) from the draft
