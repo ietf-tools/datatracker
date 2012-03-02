@@ -601,7 +601,7 @@ def select(request, meeting_num):
     # initialize Training form, this select widget needs to have a session id, because it's
     # utilmately the session that we associate material with
     # NOTE: there are two ways to query for the groups we want, the later seems more specific
-    if has_role(request.user,'Secretariat'):
+    if has_role(request.user,['Secretariat','IETF Chair','IAB Chair']):
         choices = []
         #for session in Session.objects.filter(meeting=meeting).exclude(name=""):
         for session in Session.objects.filter(meeting=meeting,timeslot__type__in=('other','plenary')).order_by('name'):

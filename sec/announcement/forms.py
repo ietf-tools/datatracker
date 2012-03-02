@@ -2,6 +2,8 @@ from django import forms
 from models import *
 from sec.utils.mail import MultiEmailField
 from sec.utils.group import current_nomcom
+
+from ietf.ietfauth.decorators import has_role
 from ietf.wgchairs.accounts import get_person_for_user
 
 # ---------------------------------------------
@@ -24,8 +26,9 @@ FROM_LIST = ('IETF Secretariat <ietf-secretariat@ietf.org>',
              'IETF Administrative Director <iad@ietf.org>',
              'IETF Executive Director <exec-director@ietf.org>',
              'The IAOC <bob.hinden@gmail.com>',
-             'The IETF Trust <tme@multicasttech.com>')
-
+             'The IETF Trust <tme@multicasttech.com>',
+             'RSOC Chair <rsoc-chair@iab.org>')
+             
 TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
            'I-D Announcement List <i-d-announce@ietf.org>',
            'The IESG <iesg@ietf.org>',
@@ -35,7 +38,7 @@ TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
 # ---------------------------------------------
 # Helper Functions
 # ---------------------------------------------
-def get_from_choices():
+def get_from_choices(user):
     '''
     This function returns a choices tuple containing
     all the Announced From choices.  Including
@@ -44,7 +47,19 @@ def get_from_choices():
     #groups = Group.objects.filter(acronym__in=ANNOUNCE_FROM_GROUPS)
     #roles = Role.objects.filter(group__in=(groups),name="Chair")
     #choices = [ '%s %s <%s>' % (r.group.acronym.upper(), r.name, r.email) for r in roles ]
-    return zip(FROM_LIST,FROM_LIST)
+    if has_role(user,'Secretariat'):
+        f = FROM_LIST
+    elif has_role(user,'IETF Chair'):
+        f = (FROM_LIST[2],FROM_LIST[5])
+    elif has_role(user,'IAB Chair'):
+        f = (FROM_LIST[6],)
+    elif has_role(user,'IAD'):
+        f = (FROM_LIST[9],)
+    elif has_role(user,'NomCom Chair'):
+        f = (FROM_LIST[7],)
+    elif has_role(user,'RSOC Chair'):
+        f = (FROM_LIST[13],)
+    return zip(f,f)
     
 def get_to_choices():
     #groups = Group.objects.filter(acronym__in=ANNOUNCE_TO_GROUPS)
@@ -58,7 +73,7 @@ def get_to_choices():
 # ---------------------------------------------
 #TO_CHOICES = tuple(AnnouncedTo.objects.values_list('announced_to_id','announced_to'))
 TO_CHOICES = get_to_choices()
-FROM_CHOICES = get_from_choices()
+#FROM_CHOICES = get_from_choices()
 
 # ---------------------------------------------
 # Forms
@@ -75,10 +90,11 @@ class AnnounceForm(forms.ModelForm):
         fields = ('nomcom', 'to','to_custom','frm','cc','bcc','reply_to','subject','body')
         
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
         super(AnnounceForm, self).__init__(*args, **kwargs)
         self.fields['to'].widget = forms.Select(choices=TO_CHOICES)
         self.fields['to'].help_text = 'Select name OR select Other... and enter email below'
-        self.fields['frm'].widget = forms.Select(choices=FROM_CHOICES)
+        self.fields['frm'].widget = forms.Select(choices=get_from_choices(user))
         self.fields['frm'].label = 'From'
         self.fields['nomcom'].label = 'NomCom message?'
     

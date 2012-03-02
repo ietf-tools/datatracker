@@ -17,11 +17,11 @@ from forms import *
 # @check_for_cancel(reverse('home'))
 
 #@group_required('Area Director','Secretariat','Administrative Director')
-@group_required('Area Director','Secretariat')
+@group_required('Secretariat','IAD','IETF Chair','IAB Chair')
 @check_for_cancel('../')
 def main(request):
 
-    form = AnnounceForm(request.POST or None)
+    form = AnnounceForm(request.POST or None,user=request.user)
     
     if form.is_valid():
         message = form.save(user=request.user,commit=True)
