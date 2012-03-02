@@ -179,7 +179,7 @@ import django.db.transaction
 @django.db.transaction.commit_on_success
 def insert_to_databaseREDESIGN(data):
     from ietf.person.models import Person
-    from ietf.doc.models import Document, DocAlias, DocEvent, RelatedDocument, State
+    from ietf.doc.models import Document, DocAlias, DocEvent, RelatedDocument, State, save_document_in_history
     from ietf.group.models import Group
     from ietf.name.models import DocTagName, DocRelationshipName
     from ietf.name.utils import name
@@ -233,26 +233,24 @@ def insert_to_databaseREDESIGN(data):
 
                 
         # check attributes
-        changed = False
+        changed_attributes = {}
+        changed_states = []
+        created_relations = []
+        other_changes = False
         if title != doc.title:
-            doc.title = title
-            changed = True
+            changed_attributes["title"] = title
 
         if std_level_mapping[current_status] != doc.std_level:
-            doc.std_level = std_level_mapping[current_status]
-            changed = True
+            changed_attributes["std_level"] = std_level_mapping[current_status]
 
         if doc.get_state_slug() != "rfc":
-            doc.set_state(State.objects.get(type="draft", slug="rfc"))
-            changed = True
+            changed_states.append(State.objects.get(type="draft", slug="rfc"))
 
         if doc.stream != stream_mapping[stream]:
-            doc.stream = stream_mapping[stream]
-            changed = True
+            changed_attributes["stream"] = stream_mapping[stream]
 
         if not doc.group and wg:
-            doc.group = Group.objects.get(acronym=wg)
-            changed = True
+            changed_attributes["group"] = Group.objects.get(acronym=wg)
 
         pubdate = datetime.strptime(rfc_published_date, "%Y-%m-%d")
         if not doc.latest_event(type="published_rfc", time=pubdate):
@@ -261,7 +259,10 @@ def insert_to_databaseREDESIGN(data):
             e.by = system
             e.desc = "RFC published"
             e.save()
-            changed = True
+            other_changes = True
+
+        if doc.get_state_slug("draft-iesg") == "rfcqueue":
+            changed_states.append(State.objects.get(type="draft-iesg", slug="pub"))
 
         def parse_relation_list(s):
             if not s:
@@ -282,35 +283,43 @@ def insert_to_databaseREDESIGN(data):
 
         for x in parse_relation_list(obsoletes):
             if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_obsoletes):
-                RelatedDocument.objects.create(source=doc, target=x, relationship=relationship_obsoletes)
-                changed = True
-        
+                created_relations.append(RelatedDocument(source=doc, target=x, relationship=relationship_obsoletes))
+
         for x in parse_relation_list(updates):
             if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_updates):
-                RelatedDocument.objects.create(source=doc, target=x, relationship=relationship_updates)
-                changed = True
-        
+                created_relations.append(RelatedDocument(source=doc, target=x, relationship=relationship_updates))
+
         if also:
             for a in also.lower().split(","):
                 if not DocAlias.objects.filter(name=a):
                     DocAlias.objects.create(name=a, document=doc)
-                    changed = True
+                    other_changes = True
 
         if has_errata:
             if not doc.tags.filter(pk=tag_has_errata.pk):
-                doc.tags.add(tag_has_errata)
-                changed = True
+                changed_attributes["tags"] = list(doc.tags.all()) + [tag_has_errata]
         else:
             if doc.tags.filter(pk=tag_has_errata.pk):
-                doc.tags.remove(tag_has_errata)
-                changed = True
+                changed_attributes["tags"] = set(doc.tags.all()) - set([tag_has_errata])
 
-        if changed:
-            if not created:
-                log("%s changed" % name)
+        if changed_attributes or changed_states or created_relations or other_changes:
+            # apply changes
+            save_document_in_history(doc)
+            for k, v in changed_attributes.iteritems():
+                setattr(doc, k, v)
+
+            for s in changed_states:
+                doc.set_state(s)
+
+            for o in created_relations:
+                o.save()
+
             doc.time = datetime.now()
             doc.save()
-            
+
+            if not created:
+                log("%s changed" % name)
+
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     insert_to_database = insert_to_databaseREDESIGN
