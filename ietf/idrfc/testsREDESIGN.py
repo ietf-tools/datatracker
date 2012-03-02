@@ -434,15 +434,15 @@ class EditPositionTestCase(django.test.TestCase):
         events_before = draft.docevent_set.count()
         
         r = self.client.post(url, dict(position="discuss",
-                                       discuss="This is a discussion test.",
-                                       comment="This is a test."))
+                                       discuss=" This is a discussion test. \n ",
+                                       comment=" This is a test. \n "))
         self.assertEquals(r.status_code, 302)
 
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
         self.assertEquals(pos.pos.slug, "discuss")
-        self.assertTrue("This is a discussion test." in pos.discuss)
+        self.assertTrue(" This is a discussion test." in pos.discuss)
         self.assertTrue(pos.discuss_time != None)
-        self.assertTrue("This is a test." in pos.comment)
+        self.assertTrue(" This is a test." in pos.comment)
         self.assertTrue(pos.comment_time != None)
         self.assertTrue("New position" in pos.desc)
         self.assertEquals(draft.docevent_set.count(), events_before + 3)
