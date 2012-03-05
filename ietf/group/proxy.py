@@ -103,7 +103,7 @@ class IETFWG(Group):
                                       group_acronym__acronym__contains="acronym__contains",
                                       email_archive__startswith="list_archive__startswith",
                                       group_type=lambda v: ("type", { 1: "wg" }[int(v)]),
-                                      status=lambda v: ("state", { 1: "active" }[int(v)]),
+                                      status=lambda v: ("state__in", { 1: ("active", "bof") }[int(v)]),
                                       areagroup__area__status=lambda v: ("parent__state", { 1: "active" }[v]),
                                       start_date__isnull=lambda v: None if v else ("groupevent__changestategroupevent__state__slug", "active"),
                                       ),
@@ -133,7 +133,7 @@ class IETFWG(Group):
     #status = models.ForeignKey(WGStatus)
     @property
     def status_id(self):
-        return { "active": 1, "dormant": 2, "conclude": 3, "proposed": 4 }[self.state_id]
+        return { "active": 1, "dormant": 2, "conclude": 3, "proposed": 4, "bof": 1 }[self.state_id]
     #area_director = models.ForeignKey(AreaDirector, null=True)
     #meeting_scheduled = models.CharField(blank=True, max_length=3)
     @property
