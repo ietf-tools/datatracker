@@ -269,6 +269,8 @@ def edit_positionREDESIGN(request, name):
             pos.comment = clean["comment"].rstrip()
             pos.comment_time = old_pos.comment_time if old_pos else None
             pos.discuss = clean["discuss"].rstrip()
+            if pos.pos_id != "discuss":
+                pos.discuss = ""
             pos.discuss_time = old_pos.discuss_time if old_pos else None
 
             changes = []
