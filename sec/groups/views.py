@@ -97,9 +97,10 @@ def add(request):
         if form.is_valid() and awp_formset.is_valid():
             group = form.save()
             for form in awp_formset.forms:
-                awp = form.save(commit=False)
-                awp.group = group
-                awp.save()
+                if form.has_changed():
+                    awp = form.save(commit=False)
+                    awp.group = group
+                    awp.save()
 
             # create GroupEvent(s)
             # always create started event
