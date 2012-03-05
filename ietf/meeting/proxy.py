@@ -183,7 +183,7 @@ class MeetingTimeProxy(TimeSlot):
         d.session_name = self.name
         return d
     def __str__(self):
-	return "[%d] |%s| %s" % (self.meeting.number, self.time.strftime('%A'), self.time_desc)
+	return "[%s] |%s| %s" % (self.meeting.number, self.time.strftime('%A'), self.time_desc)
     def sessions(self):
         if not hasattr(self, "sessions_cache"):
             self.sessions_cache = WgMeetingSessionProxy.objects.filter(meeting=self.meeting, time=self.time, type__in=("session", "plenary", "other"))
