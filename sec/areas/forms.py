@@ -21,7 +21,8 @@ class AWPForm(forms.ModelForm):
         super(AWPForm, self).__init__(*args,**kwargs)
         self.fields['url'].widget.attrs['width'] = 40
         self.fields['name'].widget.attrs['width'] = 40
-        
+        self.fields['url'].required = False
+        self.fields['name'].required = False
         
     # Validation: url without description and vice-versa 
     def clean(self):
