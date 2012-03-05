@@ -38,7 +38,7 @@ def expirable_documents():
     # we need to get those that either don't have a state or have a
     # state >= 42 (AD watching), unfortunately that doesn't appear to
     # be possible to get to work directly in Django 1.1
-    return itertools.chain(d.exclude(states__type="draft-iesg").distinct(), d.filter(states__type="draft-iesg", states__order__gte=42).distinct())
+    return itertools.chain(d.exclude(states__type="draft-iesg").distinct(), d.filter(states__type="draft-iesg", states__slug__in=("watching", "dead")).distinct())
 
 def get_soon_to_expire_ids(days):
     start_date = datetime.date.today() - datetime.timedelta(InternetDraft.DAYS_TO_EXPIRE - 1)
@@ -97,6 +97,9 @@ def send_expire_warning_for_id(doc):
                    cc_addrs)
 
 def send_expire_warning_for_idREDESIGN(doc):
+    if doc.get_state_slug("draft-iesg") == "dead":
+        return # don't warn about dead documents
+
     expiration = doc.expires.date()
 
     to = [e.formatted_email() for e in doc.authors.all() if not e.address.startswith("unknown-email")]
@@ -136,7 +139,7 @@ def send_expire_notice_for_id(doc):
                    state=doc.idstate()))
 
 def send_expire_notice_for_idREDESIGN(doc):
-    if not doc.ad:
+    if not doc.ad or doc.get_state_slug("draft-iesg") == "dead":
         return
 
     s = doc.get_state("draft-iesg")
