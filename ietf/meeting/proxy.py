@@ -439,7 +439,11 @@ class WgMeetingSessionProxy(TimeSlot):
         else:
             return self.session.group.name
     def area(self):
-        if not self.session or not self.session.group or not self.session.group.parent or not self.session.group.parent.type_id in ["area","irtf"]:
+        if not self.session or not self.session.group:
+            return ""
+        if self.session.group.type_id == "irtf":
+            return "irtf" 
+        if not self.session.group.parent or not self.session.group.parent.type_id in ["area","irtf"]:
             return ""
         return self.session.group.parent.acronym
     def area_name(self):
