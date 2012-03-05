@@ -31,13 +31,16 @@ def add_legacy_fields(group):
     '''
     # it's possible there could be multiple records of a certain type in which case
     # we just return the latest record
-    for event in group.groupevent_set.all().order_by('time'):
-        if event.type == 'changed_state' and event.desc.startswith('Started'):
-            group.start_date = event.time
-        if event.type == 'changed_state' and event.desc.startswith('Concluded'):
-            group.concluded_date = event.time
-        if event.type == 'changed_state' and event.desc.startswith('Proposed'):
-            group.proposed_date = event.time
+    query = GroupEvent.objects.filter(group=group, type="changed_state").order_by('time')
+    proposed = query.filter(changestategroupevent__state="proposed")
+    if proposed:
+        group.proposed_date = proposed[0].time
+    active = query.filter(changestategroupevent__state="active")
+    if active:
+        group.start_date = active[0].time
+    concluded = query.filter(changestategroupevent__state="conclude")
+    if concluded:
+        group.concluded_date = concluded[0].time
     
     if group.session_set.filter(meeting__number=CURRENT_MEETING.number):
         group.meeting_scheduled = 'YES'
@@ -120,6 +123,14 @@ def add(request):
         RequestContext(request, {}),
     )
 
+def blue_dot(request):
+    
+    context = ''
+    
+    report = render_to_string('groups/blue_dot_report.txt', context)
+    
+    return report
+    
 def delete_role(request, acronym, id):
     """ 
     Handle deleting roles for groups (chair, editor, advisor, secretary)
