@@ -70,7 +70,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% ifequal selected "charter" %}<span class="selected">Charter</span>{% else %}<a href="{% url ietf.wginfo.views.wg_charter acronym=wg.group_acronym.acronym %}">Charter</a>{% endifequal %} |
 {% wgchairs_admin_options wg %}
 <a {% if selected == "history" %}class="selected"{% else %}href="{% url ietf.wginfo.views.history acronym=wg.group_acronym.acronym %}"{% endif %}>History</a> |
-{% if wg.clean_email_archive|startswith:"http:" or wg.clean_email_archive|startswith:"ftp:" %}
+{% if wg.clean_email_archive|startswith:"http:" or wg.clean_email_archive|startswith:"https:" or wg.clean_email_archive|startswith:"ftp:" %}
 <a href="{{ wg.clean_email_archive }}">List Archive &#187;</a> | 
 {% endif %}
 <a href="http://tools.ietf.org/wg/{{ wg.group_acronym.acronym }}/">Tools WG Page &#187;</a>
