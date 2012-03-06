@@ -8,11 +8,13 @@ from django.forms.models import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
+from django.template.loader import render_to_string
 from django.utils import simplejson
 
 from sec.utils.meeting import CURRENT_MEETING
 from ietf.group.models import ChangeStateGroupEvent, GroupEvent, GroupURL, Role
 from ietf.group.utils import save_group_in_history
+from ietf.person.name import name_parts
 from ietf.wginfo.views import fill_in_charter_info
 
 from forms import *
@@ -126,11 +128,26 @@ def add(request):
 
 def blue_dot(request):
     
-    context = ''
+    people = Person.objects.filter(role__name__slug='chair',
+                                   role__group__type='wg',
+                                   role__group__state__slug__in=('active','bof')).distinct()
+    chairs = []
+    for person in people:
+        parts = person.name_parts()
+        groups = [ r.group.acronym for r in person.role_set.filter(name__slug='chair',
+                                                                   group__type='wg',
+                                                                   group__state__slug__in=('active','bof')) ]
+        entry = {'name':'%s, %s' % (parts[3], parts[1]),
+                 'groups': ', '.join(groups)}
+        chairs.append(entry)
     
-    report = render_to_string('groups/blue_dot_report.txt', context)
+    # sort the list
+    sorted_chairs = sorted(chairs, key = lambda a: a['name'])
     
-    return report
+    return render_to_response('groups/blue_dot_report.txt', {
+        'chairs':sorted_chairs},
+        RequestContext(request, {}), mimetype="text/plain",
+    )
     
 def delete_role(request, acronym, id):
     """ 

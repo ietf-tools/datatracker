@@ -183,7 +183,8 @@ def do_extend(draft, request):
     DocEvent.objects.create(type='changed_document',
                             by=request.user.get_profile(),
                             doc=draft,
-                            time=draft.time)
+                            time=draft.time,
+                            desc='extend_expiry')
                             
     # save scheduled announcement
     announcement_from_form(request.session['email'],by=request.user.get_profile())

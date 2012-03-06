@@ -30,7 +30,8 @@ def check_permissions(func):
     arguments: 
     
     acronym: a group acronym
-    meeting_id, slide_id, session_id.  
+    session_id: a session id (used for sessions of type other or plenary)
+    meeting_id, slide_id
     """
     def wrapper(request, *args, **kwargs):
         # short circuit.  secretariat user has full access

@@ -21,8 +21,8 @@
         <tr><td>Group Name:</td><td>{{ group.name }}</td></tr>
         <tr><td>Status:</td><td>{{ group.state }}</td></tr>
         <tr><td>Type:</td><td>{{ group.type }}</td></tr>
-        <tr><td>Start Date:</td><td>{{ group.start_date|date:"Y-m-d" }}</td></tr>
         <tr><td>Proposed Date:</td><td>{{ group.proposed_date|date:"Y-m-d" }}</td></tr>
+        <tr><td>Start Date:</td><td>{{ group.start_date|date:"Y-m-d" }}</td></tr>
         <tr><td>Concluded Date:</td><td>{{ group.concluded_date|date:"Y-m-d" }}</td></tr>
         {% comment %}
         Here we need to check that group.area_director and group.area_director.area are defined before referencing.
