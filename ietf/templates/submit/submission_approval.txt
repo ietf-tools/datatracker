@@ -1,6 +1,9 @@
-WG chair approval is needed for posting of {{ draft.filename }}-{{ draft.revision }} draft.
+WG chair approval is needed for posting of {{ draft.filename }}-{{ draft.revision }}.
 
-I-D Submission Tool URL: http://{{ domain }}/submit/status/{{ draft.submission_id }}/{{ draft.submission_hash }}/
+Go to this URL to approve the draft (note: you need to login to be
+able to approve):
+
+https://{{ domain }}/submit/status/{{ draft.submission_id }}/{{ draft.submission_hash }}/
 
 File name: {{ draft.filename }}
 Version: {{ draft.revision }}
