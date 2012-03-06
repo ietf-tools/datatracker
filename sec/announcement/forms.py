@@ -44,9 +44,7 @@ def get_from_choices(user):
     all the Announced From choices.  Including
     leadership chairs and other entities.
     '''
-    #groups = Group.objects.filter(acronym__in=ANNOUNCE_FROM_GROUPS)
-    #roles = Role.objects.filter(group__in=(groups),name="Chair")
-    #choices = [ '%s %s <%s>' % (r.group.acronym.upper(), r.name, r.email) for r in roles ]
+    person = user.get_profile()
     if has_role(user,'Secretariat'):
         f = FROM_LIST
     elif has_role(user,'IETF Chair'):
@@ -55,10 +53,21 @@ def get_from_choices(user):
         f = (FROM_LIST[6],)
     elif has_role(user,'IAD'):
         f = (FROM_LIST[9],)
-    elif has_role(user,'NomCom Chair'):
+    # NomCom, RSOC Chair, IAOC Chair aren't supported by has_role()
+    elif Role.objects.filter(name="chair",
+                             group__acronym__startswith="nomcom",
+                             group__state="active",
+                             group__type="ietf",
+                             person=person):
         f = (FROM_LIST[7],)
-    elif has_role(user,'RSOC Chair'):
+    elif Role.objects.filter(person=person,
+                             group__acronym='rsoc',
+                             name="chair"):
         f = (FROM_LIST[13],)
+    elif Role.objects.filter(person=person,
+                             group__acronym='iaoc',
+                             name="chair"):
+        f = (FROM_LIST[11],)
     return zip(f,f)
     
 def get_to_choices():
