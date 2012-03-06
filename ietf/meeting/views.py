@@ -231,28 +231,22 @@ def text_agenda(request, num=None):
             "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, },
         RequestContext(request)), mimetype="text/plain")
     
-def session_agenda(request, num, session, ext=None):
-    if ext:
-        extensions = [ ext.lstrip(".") ]
-    else:
-        extensions = ["html", "htm", "txt", "HTML", "HTM", "TXT", ]
-    for wg in [session, session.upper(), session.lower()]:
-        for e in extensions:
-            path = settings.AGENDA_PATH_PATTERN % {"meeting":num, "wg":wg, "ext":e}
-            if os.path.exists(path):
-                file = open(path)
-                text = file.read()
-                file.close()
-                if e.lower() == "txt":
-                    return HttpResponse(text, mimetype="text/plain")
-                elif e.lower() == "pdf":
-                    return HttpResponse(text, mimetype="application/pdf")
-                else:
-                    return HttpResponse(text)
-    if ext:
-        raise Http404("No %s agenda for the %s session of IETF %s is available" % (ext, session, num))
-    else:
-        raise Http404("No agenda for the %s session of IETF %s is available" % (session, num))
+def session_agenda(request, num, session):
+    d = Document.objects.filter(type="agenda", session__meeting__number=num, session__group__acronym=session)
+    if d:
+        agenda = d[0]
+        content = read_agenda_file(num, agenda)
+        _, ext = os.path.splitext(agenda.external_url)
+        ext = ext.lstrip(".").lower()
+
+        if ext == "txt":
+            return HttpResponse(content, mimetype="text/plain")
+        elif ext == "pdf":
+            return HttpResponse(content, mimetype="application/pdf")
+        else:
+            return HttpResponse(content)
+
+    raise Http404("No agenda for the %s session of IETF %s is available" % (session, num))
 
 def convert_to_pdf(doc_name):
     import subprocess
@@ -300,27 +294,30 @@ def convert_to_pdf(doc_name):
     pipe("ps2pdf "+psname+" "+outpath)
     os.unlink(psname)
 
+def read_agenda_file(num, doc):
+    path = os.path.join(settings.AGENDA_PATH, "%s/agenda/%s" % (num, doc.external_url))
+    if os.path.exists(path):
+        with open(path) as f:
+            return f.read()
+    else:
+        return None
 
 def session_draft_list(num, session):
     extensions = ["html", "htm", "txt", "HTML", "HTM", "TXT", ]
     result = []
     found = False
-    for wg in [session, session.upper(), session.lower()]:
-        for e in extensions:
-            path = settings.AGENDA_PATH_PATTERN % {"meeting":num, "wg":wg, "ext":e}
-            if os.path.exists(path):
-                file = open(path)
-                agenda = file.read()
-                file.close()
-                found = True
-                break
-        if found:
-           break
-    else:
-      raise Http404("No agenda for the %s session of IETF %s is available" % (session, num))
-    
-    drafts = set(re.findall('(draft-[-a-z0-9]*)',agenda))
 
+    drafts = set()
+
+    for agenda in Document.objects.filter(type="agenda", session__meeting__number=num, session__group__acronym=session):
+        content = read_agenda_file(num, agenda)
+        if content != None:
+            found = True
+            drafts.update(re.findall('(draft-[-a-z0-9]*)', content))
+
+    if not found:
+        raise Http404("No agenda for the %s group of IETF %s is available" % (session, num))
+    
     for draft in drafts:
         try:
             if (re.search('-[0-9]{2}$',draft)):
