@@ -1,5 +1,5 @@
 from django.conf.urls.defaults import *
-from django.views.generic.simple import direct_to_template, redirect_to
+from django.views.generic.simple import redirect_to
 import sec.ipr.views
 
 

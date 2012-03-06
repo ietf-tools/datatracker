@@ -1,7 +1,5 @@
 from django.conf.urls.defaults import *
 from django.contrib import admin
-from django.views.generic.simple import direct_to_template, redirect_to
-from django.views.generic import list_detail
 
 urlpatterns = patterns('sec.areas.views',
     url(r'^$', 'list_areas', name='areas'),

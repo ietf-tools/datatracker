@@ -1,8 +1,5 @@
 from django.conf.urls.defaults import *
 from django.contrib import admin
-from django.core.urlresolvers import reverse
-from django.views.generic.simple import direct_to_template, redirect_to
-from django.views.generic import list_detail
 
 urlpatterns = patterns('sec.proceedings.views',
     url(r'^$', 'main', name='proceedings'),
