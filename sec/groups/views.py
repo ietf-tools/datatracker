@@ -127,7 +127,9 @@ def add(request):
     )
 
 def blue_dot(request):
-    
+    '''
+    This is a report view.  It returns a text/plain listing of chairs for active and bof groups.
+    '''
     people = Person.objects.filter(role__name__slug='chair',
                                    role__group__type='wg',
                                    role__group__state__slug__in=('active','bof')).distinct()
