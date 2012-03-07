@@ -440,7 +440,7 @@ def edit_info(request, name):
                               context_instance=RequestContext(request))
 
 class EditInfoFormREDESIGN(forms.Form):
-    intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.all(), empty_label="(None)", required=True, label="Intended RFC status")
+    intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.filter(used=True), empty_label="(None)", required=True, label="Intended RFC status")
     via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
     stream = forms.ModelChoiceField(StreamName.objects.all(), empty_label="(None)", required=True)
     area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active"), empty_label="(None - individual submission)", required=False, label="Assigned to area")
