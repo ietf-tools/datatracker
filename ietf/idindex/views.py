@@ -89,7 +89,7 @@ def all_id2_entry(id):
     # 6
     fields.append(id.revision_date)
     # 7
-    group_acronym = id.group.acronym
+    group_acronym = "" if id.group.type_id == "area" else id.group.acronym 
     if group_acronym == "none":
         group_acronym = ""
     fields.append(group_acronym)
