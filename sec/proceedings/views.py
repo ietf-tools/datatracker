@@ -587,33 +587,48 @@ def select(request, meeting_num):
         return HttpResponseRedirect(redirect_url)
         
     meeting = get_object_or_404(Meeting, number=meeting_num)
-    
-    groups_session, groups_no_session = groups_by_session(request.user, meeting)
+    user = request.user
+    person = user.get_profile()
+    groups_session, groups_no_session = groups_by_session(user, meeting)
     
     # initialize group form
     wgs = filter(lambda x: x.type_id == 'wg',groups_session)
     group_form = GroupSelectForm(choices=build_choices(wgs))
         
-    # intialize IRTF form
-    rgs = filter(lambda x: x.type_id == 'rg',groups_session)
-    irtf_form = GroupSelectForm(choices=build_choices(rgs))
+    # intialize IRTF form, only show if user is sec or irtf chair
+    if has_role(user,'Secretariat') or person.role_set.filter(name='Chair',group__type='RG'):
+        rgs = filter(lambda x: x.type_id == 'rg',groups_session)
+        irtf_form = GroupSelectForm(choices=build_choices(rgs))
+    else:
+        irtf_form = None
         
     # initialize Training form, this select widget needs to have a session id, because it's
     # utilmately the session that we associate material with
     # NOTE: there are two ways to query for the groups we want, the later seems more specific
-    if has_role(request.user,['Secretariat','IETF Chair','IAB Chair']):
+    if has_role(user,'Secretariat'):
         choices = []
         #for session in Session.objects.filter(meeting=meeting).exclude(name=""):
-        for session in Session.objects.filter(meeting=meeting,timeslot__type__in=('other','plenary')).order_by('name'):
+        for session in Session.objects.filter(meeting=meeting,timeslot__type='other').order_by('name'):
             choices.append((session.id,session.timeslot_set.all()[0].name))
         training_form = GroupSelectForm(choices=choices)
     else:
         training_form = None
+    
+    # iniialize plenary form
+    if has_role(user,['Secretariat','IETF Chair','IAB Chair']):
+        choices = []
+        for session in Session.objects.filter(meeting=meeting,
+                                              timeslot__type='plenary').order_by('name'):
+            choices.append((session.id,session.timeslot_set.all()[0].name))
+        plenary_form = GroupSelectForm(choices=choices)
+    else:
+        plenary_form = None
         
     return render_to_response('proceedings/select.html', {
         'group_form': group_form,
         'irtf_form': irtf_form,
         'training_form': training_form,
+        'plenary_form': plenary_form,
         'meeting':meeting},
         RequestContext(request,{}), 
     )

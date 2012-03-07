@@ -46,8 +46,15 @@
            {% endif %}
            {% if training_form %}
              <form class="internal-form" action="" method="post">
-               <label for="id_group">Training</label>
+               <label for="id_group">Training / Other</label>
                {{ training_form.group }}
+               <input type="submit" name="submit" value="Select" />
+             </form>
+           {% endif %}
+           {% if plenary_form %}
+             <form class="internal-form" action="" method="post">
+               <label for="id_group">Plenaries</label>
+               {{ plenary_form.group }}
                <input type="submit" name="submit" value="Select" />
              </form>
            {% endif %}
