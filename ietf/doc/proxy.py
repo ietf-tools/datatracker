@@ -653,7 +653,10 @@ class InternetDraft(Document):
     #current_status = models.CharField(max_length=50,null=True)
     @property
     def current_status(self):
-        return self.std_level.name
+        if self.std_level:
+            return self.std_level.name
+        else:
+            return u"(None)"
 
     #updates = models.CharField(max_length=200,blank=True,null=True)
     @property
