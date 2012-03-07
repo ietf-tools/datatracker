@@ -53,6 +53,8 @@ def is_chair_of_stream(user, stream):
 def is_chair_of_streamREDESIGN(user, stream):
     if is_secretariat(user):
         return True
+    if isinstance(user, basestring):
+        return False
     return user.is_authenticated() and bool(Role.objects.filter(group__acronym=stream.slug, name="chair", person__user=user))
 
 
