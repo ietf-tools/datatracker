@@ -252,10 +252,20 @@ def insert_to_databaseREDESIGN(data):
         if not doc.group and wg:
             changed_attributes["group"] = Group.objects.get(acronym=wg)
 
-        pubdate = datetime.strptime(rfc_published_date, "%Y-%m-%d")
-        if not doc.latest_event(type="published_rfc", time=pubdate):
+        if not doc.latest_event(type="published_rfc"):
             e = DocEvent(doc=doc, type="published_rfc")
-            e.time = pubdate
+            pubdate = datetime.strptime(rfc_published_date, "%Y-%m-%d")
+            # unfortunately, pubdate doesn't include the correct day
+            # at the moment because the data only has month/year, so
+            # try to deduce it
+            synthesized = datetime.now()
+            if abs(pubdate - synthesized) > timedelta(days=60):
+                synthesized = pubdate
+            else:
+                direction = -1 if (pubdate - synthesized).total_seconds() < 0 else +1
+                while synthesized.month != pubdate.month or synthesized.year != pubdate.year:
+                    synthesized += timedelta(days=direction)
+            e.time = synthesized
             e.by = system
             e.desc = "RFC published"
             e.save()
