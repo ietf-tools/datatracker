@@ -145,10 +145,12 @@ $(document).ready(function() {
           source: "/areas/getpeople/",
           minLength: 3,
           select: function(event, ui) {
-              id = ui.item.label.match(/\d+/);
-              //alert(id);
+              //match number inside paren and then strip paren
+              id = ui.item.label.match(/\(\d+\)/);
+              val = id[0].replace(/[\(\)]/g, "");
+              //alert(id,val);
               //alert(id.match(/\d+/));
-              $.getJSON('/areas/getemails/',{"id":id[0]},function(data) {
+              $.getJSON('/areas/getemails/',{"id":val},function(data) {
                   $('#id_email option').remove();
                   $.each(data,function(i,item) {
                       $('#id_email').append('<option value="'+item.id+'">'+item.value+'</option>');
