@@ -86,6 +86,8 @@ def is_sdo_authorized_individual(person):
 
 
 def is_secretariat(user):
+    if isinstance(user, basestring):
+        return False
     return user.is_authenticated() and bool(Role.objects.filter(person__user=user, name="secr", group__acronym="secretariat"))
 
 
