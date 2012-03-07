@@ -28,7 +28,7 @@ from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, Meet
 
 from ietf.group.models import Group
 from ietf.utils.history import find_history_active_at
-from ietf.doc.models import Document
+from ietf.doc.models import Document, State
 
 
 @decorator_from_middleware(GZipMiddleware)
@@ -165,23 +165,25 @@ def agenda_infoREDESIGN(num=None):
             if g.state_id == "active":
                 ads.extend(IESGHistory().from_role(x, meeting_time) for x in g.role_set.filter(name="ad").select_related('group', 'person'))
     
-    plenary_agendas = Document.objects.filter(session__meeting=meeting, session__timeslot__type="plenary", type="agenda").distinct()
+    active_agenda = State.objects.get(type='agenda', slug='active')
+    plenary_agendas = Document.objects.filter(session__meeting=meeting, session__timeslot__type="plenary", type="agenda", ).distinct()
     plenaryw_agenda = plenaryt_agenda = "The Plenary has not been scheduled"
     for agenda in plenary_agendas:
-        # we use external_url at the moment, should probably regularize
-        # the filenames to match the document name instead
-        path = os.path.join(settings.AGENDA_PATH, meeting.number, "agenda", agenda.external_url)
-        try:
-            f = open(path)
-            s = f.read()
-            f.close()
-        except IOError:
-             s = "THE AGENDA HAS NOT BEEN UPLOADED YET"
+        if active_agenda in agenda.states.all():
+            # we use external_url at the moment, should probably regularize
+            # the filenames to match the document name instead
+            path = os.path.join(settings.AGENDA_PATH, meeting.number, "agenda", agenda.external_url)
+            try:
+                f = open(path)
+                s = f.read()
+                f.close()
+            except IOError:
+                 s = "THE AGENDA HAS NOT BEEN UPLOADED YET"
 
-        if "technical" in agenda.title.lower():
-            plenaryt_agenda = s
-        else:
-            plenaryw_agenda = s
+            if "technical" in agenda.name.lower():
+                plenaryt_agenda = s
+            else:
+                plenaryw_agenda = s
 
     return timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda
 
