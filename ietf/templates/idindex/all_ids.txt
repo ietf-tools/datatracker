@@ -1,10 +1,6 @@
 
 Internet-Drafts Status Summary
 
-Web version is available at
-https://datatracker.ietf.org/public/idindex.cgi
-
-
 {% for item in in_track_ids %}{{ item.filename }}-{{ item.revision_display }}	{{ item.revision_date|default_if_none:"" }}	In IESG processing - ID Tracker state <{{ item.idstate }}>	{# that last tab is on purpose #}
 {% endfor %}{%comment%}
 {%endcomment%}{% for item in active %}{{ item.filename }}-{{ item.revision_display }}	{{ item.revision_date|default_if_none:"" }}	{{ item.status.status }}	{# keep that last tab #}
