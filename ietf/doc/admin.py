@@ -20,6 +20,11 @@ class DocAliasInline(admin.TabularInline):
     model = DocAlias
     extra = 1
 
+class DocAuthorInline(admin.TabularInline):
+    model = DocumentAuthor
+    raw_id_fields = ['author', ]    
+    extra = 1
+
 # document form for managing states in a less confusing way
 
 class StatesWidget(forms.SelectMultiple):
@@ -83,7 +88,7 @@ class DocumentAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['type']
     raw_id_fields = ['authors', 'related', 'group', 'shepherd', 'ad']
-    inlines = [DocAliasInline]
+    inlines = [DocAliasInline, DocAuthorInline, ]
     form = DocumentForm
 
     def state(self, instance):
