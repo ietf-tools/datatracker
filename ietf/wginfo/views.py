@@ -121,7 +121,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
 def wg_documents(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
-    concluded = (wg.status_id != 1 and wg.status_id != 4)
+    concluded = wg.status_id in [ 2, 3, ]
     proposed = (wg.status_id == 4)
     form = SearchForm({'by':'group', 'group':str(wg.group_acronym.acronym),
                        'rfcs':'on', 'activeDrafts':'on'})
@@ -170,7 +170,7 @@ def wg_documents_html(request, acronym):
 
 def wg_charter(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
-    concluded = (wg.status_id != 1 and wg.status_id != 4)
+    concluded = wg.status_id in [ 2, 3, ]
     proposed = (wg.status_id == 4)
 
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
