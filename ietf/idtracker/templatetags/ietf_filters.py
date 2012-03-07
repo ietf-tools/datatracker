@@ -453,7 +453,7 @@ def format_history_text(text):
 @register.filter
 def user_roles_json(user):
     roles = {}
-    if user.is_authenticated():
+    if not isinstance(user, basestring) and user.is_authenticated():
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             from ietf.group.models import Role
             for r in Role.objects.filter(person__user=user).select_related(depth=1):
