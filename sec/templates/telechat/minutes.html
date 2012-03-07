@@ -11,13 +11,13 @@
   <h3>Protocol Action</h3>
   <ul>
     {% for doc in pa_docs %}
-      <li>{{ doc }}</li>
+      <li>{{ doc.name }}-{{ doc.rev }}&nbsp;&nbsp;({{ doc.intended_std_level }})</li>
     {% endfor %}
   </ul>
   <h3>Document Action</h3>
   <ul>
     {% for doc in da_docs %}
-      <li>{{ doc }}</li>
+      <li>{{ doc.name }}-{{ doc.rev }}&nbsp;&nbsp;({{ doc.intended_std_level }})</li>
     {% endfor %}
   </ul>
 </div>
