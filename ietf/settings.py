@@ -24,6 +24,7 @@ ADMINS = (
     ('IETF Django Developers', 'django-project@' + IETF_DOMAIN),
     ('GMail Tracker Archive', 'ietf.tracker.archive+errors@gmail.com'),
     ('Henrik Levkowetz', 'henrik@levkowetz.com'),
+    ('Ole Laursen', 'olau@iola.dk'),
 )
 
 # Server name of the tools server
@@ -38,18 +39,18 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'NAME': 'ietf_new',
+        'NAME': 'ietf_utf8',
         'ENGINE': 'django.db.backends.mysql',
         'USER': 'ietf',
         #'PASSWORD': 'ietf',
-        },
+    },
     'legacy': {
         'NAME': 'ietf',
         'ENGINE': 'django.db.backends.mysql',
         'USER': 'ietf',
         #'PASSWORD': 'ietf',
-        },
-    }
+    },
+}
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
