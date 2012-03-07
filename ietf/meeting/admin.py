@@ -26,6 +26,7 @@ admin.site.register(Meeting, MeetingAdmin)
 
 class TimeSlotAdmin(admin.ModelAdmin):
     list_display = ["meeting", "type", "name", "time", "duration", "location", "session_desc"]
+    list_filter = ["meeting", ]
     raw_id_fields = ["location", "session"]
     ordering = ["-time"]
 
@@ -57,8 +58,9 @@ admin.site.register(Constraint, ConstraintAdmin)
 
 class SessionAdmin(admin.ModelAdmin):
     list_display = ["meeting", "name", "group", "attendees", "requested", "status"]
+    list_filter = ["meeting", ]
     raw_id_fields = ["meeting", "group", "requested_by", "materials"]
-    search_fields = ["name", "group"]
+    search_fields = ["meeting__number", "name", "group__name"]
     ordering = ["-requested"]
 
     def name_lower(self, instance):
