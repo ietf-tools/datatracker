@@ -163,7 +163,7 @@ def _get_history(doc, versions):
 
             multiset_ballot_text = "This was part of a ballot set with: "
             if e.desc.startswith(multiset_ballot_text):
-                names = e.desc[len(multiset_ballot_text):].split(", ")
+                names = [ n.strip() for n in e.desc[len(multiset_ballot_text):].split(",") ]
                 e.desc = multiset_ballot_text + ", ".join(u'<a href="%s">%s</a>' % (urlreverse("doc_view", kwargs={'name': n }), n) for n in names)
                 info["dontmolest"] = True
                     
