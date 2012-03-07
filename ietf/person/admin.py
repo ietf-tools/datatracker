@@ -1,5 +1,6 @@
 from django.contrib import admin
 from models import *
+from name import name_parts
 
 class EmailAdmin(admin.ModelAdmin):
     list_display = ["address", "person", "time", "active", ]
@@ -20,7 +21,10 @@ class AliasInline(admin.StackedInline):
     model = Alias
 
 class PersonAdmin(admin.ModelAdmin):
-    list_display = ["name", "short", "time", "user", ]
+    def plain_name(self, obj):
+        prefix, first, middle, last, suffix = name_parts(obj.name)
+        return "%s %s" % (first, last)
+    list_display = ["name", "short", "plain_name", "time", "user", ]
     search_fields = ["name", "ascii"]
     raw_id_fields = ["user"]
     inlines = [ EmailInline, AliasInline, ]
