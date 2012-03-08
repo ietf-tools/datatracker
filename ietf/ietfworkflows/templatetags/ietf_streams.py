@@ -67,14 +67,24 @@ def edit_actions(context, wrapper):
         return None
     doc = wrapper
     draft = wrapper._draft
-    possible_actions = [
-        ("Adopt in WG", can_adopt(user, draft), urlreverse('edit_adopt', kwargs=dict(name=doc.draft_name))) if settings.USE_DB_REDESIGN_PROXY_CLASSES else ("", False, ""),
-        ("Change stream state", can_edit_state(user, draft), urlreverse('edit_state', kwargs=dict(name=doc.draft_name))),
-        ("Change stream", can_edit_stream(user, draft), urlreverse('edit_stream', kwargs=dict(name=doc.draft_name))),
-        ("Change shepherd", can_manage_shepherd_of_a_document(user, draft), urlreverse('doc_managing_shepherd', kwargs=dict(acronym=draft.group.acronym, name=draft.filename))),
-        ("Change stream writeup", can_manage_writeup_of_a_document(user, draft), urlreverse('doc_managing_writeup', kwargs=dict(acronym=draft.group.acronym, name=draft.filename))),
-        ]
-    return dict(actions=[(url, action_name) for action_name, active, url, in possible_actions if active])
+
+    actions = []
+    if can_adopt(user, draft):
+        actions.append(("Adopt in WG", urlreverse('edit_adopt', kwargs=dict(name=doc.draft_name))))
+
+    if can_edit_state(user, draft):
+        actions.append(("Change stream state", urlreverse('edit_state', kwargs=dict(name=doc.draft_name))))
+
+    if can_edit_stream(user, draft):
+        actions.append(("Change stream", urlreverse('edit_stream', kwargs=dict(name=doc.draft_name))))
+
+    if can_manage_shepherd_of_a_document(user, draft):
+        actions.append(("Change shepherd", urlreverse('doc_managing_shepherd', kwargs=dict(acronym=draft.group.acronym, name=draft.filename))))
+
+    if can_manage_writeup_of_a_document(user, draft):
+        actions.append(("Change stream writeup", urlreverse('doc_managing_writeup', kwargs=dict(acronym=draft.group.acronym, name=draft.filename))))
+
+    return dict(actions=actions)
 
 
 class StreamListNode(template.Node):
