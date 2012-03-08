@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Max
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory, modelformset_factory
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template import Context
@@ -26,6 +26,7 @@ from ietf.group.utils import get_charter_text
 from ietf.ietfauth.decorators import has_role
 from ietf.meeting.models import Meeting, Session
 from ietf.name.models import MeetingTypeName, SessionStatusName
+from ietf.person.models import Person
 
 from forms import *
 from models import InterimMeeting    # proxy model
@@ -473,6 +474,12 @@ def main(request):
     * meetings, interim_meetings, today
 
     '''
+    # getting numerous errors when people try to access using the wrong account
+    try:
+        person = request.user.get_profile()
+    except Person.DoesNotExist:
+        return HttpResponseForbidden('ACCESS DENIED: user=%s' % request.META['REMOTE_USER'])
+        
     if has_role(request.user,'Secretariat'):
         meetings = Meeting.objects.filter(type='ietf').order_by('number')
     else:
@@ -596,7 +603,7 @@ def select(request, meeting_num):
     group_form = GroupSelectForm(choices=build_choices(wgs))
         
     # intialize IRTF form, only show if user is sec or irtf chair
-    if has_role(user,'Secretariat') or person.role_set.filter(name='Chair',group__type='RG'):
+    if has_role(user,'Secretariat') or person.role_set.filter(name__slug='chair',group__type__slug='rg'):
         rgs = filter(lambda x: x.type_id == 'rg',groups_session)
         irtf_form = GroupSelectForm(choices=build_choices(rgs))
     else:
