@@ -215,7 +215,7 @@ def agenda_docs(date, next_agenda):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         from ietf.doc.models import TelechatDocEvent
         
-        matches = IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date)
+        matches = IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct()
 
         idmatches = []
         rfcmatches = []
@@ -343,7 +343,7 @@ def agenda_documents_txt(request):
     for date in dates:
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             from ietf.doc.models import TelechatDocEvent
-            for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date):
+            for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
                 if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
                     docs.append(d)
         else:
@@ -453,7 +453,7 @@ def telechat_docs_tarfile(request,year,month,day):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         from ietf.doc.models import TelechatDocEvent
         docs = []
-        for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date):
+        for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
             if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
                 docs.append(d)
     else:
