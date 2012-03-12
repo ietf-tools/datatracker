@@ -110,6 +110,10 @@ class RoleForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group')
         super(RoleForm, self).__init__(*args,**kwargs)
+        # this form is re-used in roles app, use different roles in select
+        #assert False, (self.group,self.group.type.slug)
+        if self.group.type.slug not in ('wg','rg'):
+            self.fields['name'].queryset = RoleName.objects.filter(slug__in=('chair','execdir','admdir'))
         
     # check for id within parenthesis to ensure name was selected from the list 
     def clean_person(self):

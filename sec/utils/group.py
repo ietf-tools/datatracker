@@ -18,7 +18,7 @@ def get_my_groups(user):
     '''
     my_groups = []
     person = user.get_profile()
-    all_groups = Group.objects.filter(type__in=('wg','rg','ag'),state__in=('bof','proposed','active')).order_by('acronym')
+    all_groups = Group.objects.filter(type__in=('wg','rg','ag','team'),state__in=('bof','proposed','active')).order_by('acronym')
     
     if has_role(user,'Secretariat'):
         return all_groups

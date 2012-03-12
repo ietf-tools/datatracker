@@ -599,7 +599,7 @@ def select(request, meeting_num):
     groups_session, groups_no_session = groups_by_session(user, meeting)
     
     # initialize group form
-    wgs = filter(lambda x: x.type_id in ('wg','ag'),groups_session)
+    wgs = filter(lambda x: x.type_id in ('wg','ag','team'),groups_session)
     group_form = GroupSelectForm(choices=build_choices(wgs))
         
     # intialize IRTF form, only show if user is sec or irtf chair

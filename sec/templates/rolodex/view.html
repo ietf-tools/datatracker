@@ -12,7 +12,7 @@
   <h2>{{ person.name }} ({{ person.id }})</h2>
   
 
-  <table>
+  <table id="rolodex-view-table">
     <tr><td>Name:</td><td>{{ person.name }}</td></tr>
     <tr><td>Ascii Name:</td><td>{{ person.ascii }}</td></tr>
     <tr><td>Short Name:</td><td>{{ person.ascii_short }}</td></tr>
@@ -25,7 +25,7 @@
   <div class="inline-related">
     <h3><b>Roles</b></h3>
     <p>
-      <table>
+      <table id="rolodex-email-table">
       {% for role in person.role_set.all %}
         <tr>
             <td>{{ role.name }} </td>

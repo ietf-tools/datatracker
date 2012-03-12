@@ -27,7 +27,7 @@
 	<h2>Email Addresses</h2>
         {{ email_formset.management_form }}
         {{ email_formset.non_form_errors }}
-	<table>
+	<table id="rolodex-email-table">
             <thead>
 		<tr>
 		{% for field in email_formset.forms.0 %}
