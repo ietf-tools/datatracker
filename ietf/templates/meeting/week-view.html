@@ -8,7 +8,7 @@
 var items = new Array();
 {% autoescape off %}
 {% for slot in timeslots %}{% for session in slot.sessions %}
-items.push({day:{{slot.day_id}}, time:"{{slot.time_desc}}", time_id:{{slot.time_id}}, name:"{{session.acronym_name}}", wg:"{{session.acronym}}", area:"{{session.area}}", room:"{{session.room_id.room_name}}", dayname:"{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}"{% if session.agenda_file %}, agenda:"/meeting/{{session.agenda_file}}"{% endif %}});{% endfor %}{% endfor %}
+items.push({day:{{slot.day_id}}, time:"{{slot.time_desc}}", time_id:{{slot.time_id}}, name:"{{session.acronym_name}}", wg:"{{session.acronym}}", area:"{{session.area}}", room:"{{session.room_id.room_name}}", dayname:"{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}"{% if session.agenda_file %}, agenda:"/meeting/{{ meeting.num }}/agenda/{{ session.acronym }}-agenda/"{% endif %}});{% endfor %}{% endfor %}
 {% endautoescape %}
 
 
