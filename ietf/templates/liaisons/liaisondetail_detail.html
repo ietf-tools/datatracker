@@ -89,7 +89,7 @@
 <td>Attachments:</td>
 <td>
 {% for file in object.uploads_set.all %}
-<a href="https://datatracker.ietf.org/documents/LIAISON/file{{ file.file_id }}{{ file.file_extension }}">{{ file.file_title }}</a>{% if not forloop.last %}<br/>{% endif %}
+<a href="https://datatracker.ietf.org/documents/LIAISON/{{ file.filename }}">{{ file.file_title }}</a>{% if not forloop.last %}<br/>{% endif %}
 {% empty %}
 (none)
 {% endfor %}
