@@ -156,7 +156,7 @@ INSTALLED_APPS = (
     'sec.ipr',
     'sec.meetings',
     'sec.proceedings',
-    'sec.roles',
+    #'sec.roles',
     'sec.rolodex',
     'sec.sreq',
     'sec.telechat',
