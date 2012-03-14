@@ -60,8 +60,13 @@ class InternetDraft(Document):
         possible_types = [".txt", ".pdf", ".xml", ".ps"]
         res = []
         for m in glob.glob(glob_path):
+            i = m.find(".")
+            if i == -1:
+                ext = ""
+            else:
+                ext = m[i:]
             for t in possible_types:
-                if m.endswith(t):
+                if t == ext:
                     res.append(t)
         return ",".join(res)
     #file_type = models.CharField(max_length=20)
