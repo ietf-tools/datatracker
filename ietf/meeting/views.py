@@ -234,7 +234,14 @@ def text_agenda(request, num=None):
         RequestContext(request)), mimetype="text/plain")
     
 def session_agenda(request, num, session):
-    d = Document.objects.filter(type="agenda", session__meeting__number=num, session__group__acronym=session)
+    d = Document.objects.filter(type="agenda", session__meeting__number=num)
+    if session == "plenaryt":
+        d = d.filter(session__name__icontains="technical", session__timeslot__type="plenary")
+    elif session == "plenaryw":
+        d = d.filter(session__name__icontains="admin", session__timeslot__type="plenary")
+    else:
+        d = d.filter(session__group__acronym=session)
+
     if d:
         agenda = d[0]
         content = read_agenda_file(num, agenda)
