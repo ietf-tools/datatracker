@@ -144,14 +144,11 @@ class Document(DocumentInfo):
 
     def get_absolute_url(self):
         name = self.name
-        if self.type_id == "charter":
-            return urlreverse('wg_view', kwargs={ 'name': self.group.acronym })
-        elif self.type_id == "draft":
-            if self.get_state_slug() == "rfc":
-                aliases = self.docalias_set.filter(name__startswith="rfc")
-                if aliases:
-                    name = aliases[0].name
-            return urlreverse('doc_view', kwargs={ 'name': name })
+        if self.type_id == "draft" and self.get_state_slug() == "rfc":
+            aliases = self.docalias_set.filter(name__startswith="rfc")
+            if aliases:
+                name = aliases[0].name
+        return urlreverse('doc_view', kwargs={ 'name': name }, urlconf="ietf.urls")
 
     def file_tag(self):
         return u"<%s>" % self.filename_with_rev()
@@ -201,6 +198,10 @@ class DocHistory(DocumentInfo):
     authors = models.ManyToManyField(Email, through=DocHistoryAuthor, blank=True)
     def __unicode__(self):
         return unicode(self.doc.name)
+
+    def canonical_name(self):
+        return self.name
+
     class Meta:
         verbose_name = "document history"
         verbose_name_plural = "document histories"
