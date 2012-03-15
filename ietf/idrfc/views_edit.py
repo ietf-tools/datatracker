@@ -772,10 +772,8 @@ def add_comment(request, name):
 
 @group_required('Area_Director', 'Secretariat', 'IANA')
 def add_commentREDESIGN(request, name):
-    """Add comment to Internet Draft."""
+    """Add comment to history of document."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.get_state("draft-iesg"):
-        raise Http404()
 
     login = request.user.get_profile()
 
@@ -789,8 +787,9 @@ def add_commentREDESIGN(request, name):
             e.desc = c
             e.save()
 
-            email_owner(request, doc, doc.ad, login,
-                        "A new comment added by %s" % login.name)
+            if doc.type_id == "draft":
+                email_owner(request, doc, doc.ad, login,
+                            "A new comment added by %s" % login.name)
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
         form = AddCommentForm()
