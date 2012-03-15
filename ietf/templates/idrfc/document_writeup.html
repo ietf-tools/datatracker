@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Writeups for {{ doc.name }}-{{ doc.rev }}{% endblock %}
+
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
+{% endblock %}
+
+{% block content %}
+{{ top|safe }}
+
+{% for title, text, url in writeups %}
+<div class="writeup">
+<h2>{{ title }}</h2>
+
+{% if can_edit %}<a href="{{ url }}" class="edit">Edit {{ title }}</a>{% endif %}
+
+<pre {% if can_edit %}class="editable"{% endif %}>
+{{ text }}
+</pre>
+</div>
+{% endfor%}
+
+{% endblock content %}

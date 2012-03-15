@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% load ietf_filters %}
+
+{% block title %}{{ doc.name }}-{{ doc.rev }}{% endblock %}
+
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
+{% endblock %}
+
+{% block content %}
+{{ top|safe }}
+
+<div class="snapshots">
+  Snapshots:
+  <span class="revisions">
+    {% for rev in revisions %}
+    <a {% if rev != doc.rev %}href="{% url doc_view name=doc.name %}{% if not forloop.first %}{{ rev }}/{% endif %}"{% endif %}>{{ rev }}</a>
+    {% endfor %}
+  </span>
+</div>
+
+<div class="ietf-box metabox">
+  <div>
+    {% if snapshot %}Snapshot of{% endif %}
+    {% if doc.get_state_slug != "approved" %}Proposed{% endif %}
+    Charter for {{ doc.group.name }}
+    (<a href="{% url wginfo.views.wg_charter acronym=doc.group.acronym %}">{{ doc.group.acronym }} {{ doc.group.type.name }}</a>)
+  </div>
+
+  <table id="metatable" width="100%">
+    <tr>
+      <td>WG State:</td>
+      <td>{{ doc.group.state.name }}</td>
+    </tr>
+    <tr>
+      <td><a href="/wgcharter/help/state/">Charter State</a>:</td>
+      <td>
+        <span title="{{ doc.get_state.desc }}">{{ doc.get_state.name }}</span>
+      {% if chartering == "initial" %}(Initial Chartering){% endif %}
+      {% if chartering == "rechartering" %}(Rechartering){% endif %}
+
+      {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
+      - <a href="{% url wg_change_state name=doc.group.acronym %}">Change state</a>
+      {% endif %}
+      </td>
+    </tr>
+
+    {% if chartering %}
+
+    {% if doc.group.comments %}
+    <tr>
+      {% if chartering == "initial" %}<td>Reason for chartering:</td>{% endif %}
+      {% if chartering == "rechartering" %}<td>Reason for rechartering:</td>{% endif %}
+      <td>{{ doc.group.comments }}</td>
+    </tr>
+    {% endif %}
+
+    {% if not snapshot %}
+    <tr>
+      <td>Telechat:</td>
+      <td>
+        {% if not doc.telechat %}Not on agenda{% else %}{{ doc.telechat.date|date:"Y-m-d" }}{% endif %}
+        {% if user|has_role:"Area Director,Secretariat" %}
+        - <a href="FIXME">Change</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% endif %}
+
+    <tr><td colspan='2'><hr size='1' noshade /></td></tr>
+
+    <tr><td>Last updated:</td><td> {{ doc.time|date:"Y-m-d" }}</td></tr>
+
+    {% endif %}
+
+    <tr><td colspan='2'><hr size='1' noshade /></td></tr>
+  </table>
+
+{% if not snapshot and user|has_role:"Area Director,Secretariat" %}
+
+{% if chartering  %}
+
+{% if doc.group.state_id != "conclude" %}
+<a href="{% url wg_submit name=doc.group.acronym %}">Edit charter</a>
+{% endif %}
+
+<a href="{% url wg_startstop_process name=doc.group.acronym option='abandon' %}">Abandon effort</a>
+
+{% else %}
+<a href="{% url wg_startstop_process name=doc.group.acronym option='recharter' %}">Recharter</a>
+{% endif %}
+
+{% endif %}
+
+  <div><a href="/feed/wgcomments/{{ doc.group.acronym }}/">Atom feed</a></div>
+</div>
+
+<p>Other versions: <a href="{{ txt_url }}">plain text</a></p>
+
+<h3>Charter {{ doc.name }}-{{ doc.rev }}</h3>
+
+<div class="markup_draft">
+{{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
+</div>
+
+
+{% endblock %}
+

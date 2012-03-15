@@ -41,10 +41,10 @@ urlpatterns = patterns('',
     (r'^in-last-call/$', views_search.in_last_call),
     url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad, name="doc_search_by_ad"),
 
-    url(r'^(?P<name>[A-Za-z0-9.-]+)/$', views_doc.document_main, name="doc_view"),
+    url(r'^(?P<name>[A-Za-z0-9.-]+)/((?P<rev>[0-9-]+)/)?$', views_doc.document_main, name="doc_view"),
     url(r'^(?P<name>[A-Za-z0-9.-]+)/history/$', views_doc.document_history),
     url(r'^(?P<name>[A-Za-z0-9.-]+)/writeup/$', views_doc.document_writeup),
-    url(r'^(?P<name>[A-Za-z0-9.-]+)/ballot/$', views_doc.document_ballot),
+    url(r'^(?P<name>[A-Za-z0-9.-]+)/ballot/((?P<ballot>[A-Za-z0-9.-]+)/)?$', views_doc.document_ballot),
     (r'^(?P<name>[A-Za-z0-9.-]+)/doc.json$', views_doc.document_debug),
     (r'^(?P<name>[A-Za-z0-9.-]+)/_ballot.data$', views_doc.ballot_html), # why is this url so weird instead of just ballot.html?
     (r'^(?P<name>[A-Za-z0-9.-]+)/ballot.tsv$', views_doc.ballot_tsv),
