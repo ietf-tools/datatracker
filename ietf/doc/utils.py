@@ -51,6 +51,16 @@ def get_rfc_number(doc):
     qs = doc.docalias_set.filter(name__startswith='rfc')
     return qs[0].name[3:] if qs else None
 
+def get_chartering_type(doc):
+    chartering = ""
+    if doc.get_state_slug() not in ("notrev", "approved"):
+        if doc.group.state_id == "proposed":
+            chartering = "initial"
+        elif doc.group.state_id == "active":
+            chartering = "rechartering"
+
+    return chartering
+
 def augment_with_telechat_date(docs):
     """Add a telechat_date attribute to each document with the
     scheduled telechat or None if it's not scheduled."""

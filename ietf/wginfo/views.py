@@ -42,6 +42,8 @@ from ietf.idrfc.views_search import SearchForm, search_query
 from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
 from ietf.ipr.models import IprDetail
 from ietf.group.models import Group
+from ietf.doc.models import State
+from ietf.doc.utils import get_chartering_type, augment_with_telechat_date
 
 
 def fill_in_charter_info(wg, include_drafts=False):
@@ -110,6 +112,21 @@ def wg_dirREDESIGN(request):
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     wg_dir = wg_dirREDESIGN
+
+def chartering_wgs(request):
+    charter_states = State.objects.filter(type="charter").exclude(slug__in=("approved", "notrev"))
+    groups = Group.objects.filter(type="wg", charter__states__in=charter_states).select_related("state", "charter")
+
+    augment_with_telechat_date([g.charter for g in groups])
+
+    for g in groups:
+        g.chartering_type = get_chartering_type(g.charter)
+
+    return render_to_response('wginfo/chartering_wgs.html',
+                              dict(charter_states=charter_states,
+                                   groups=groups),
+                              RequestContext(request))
+
 
 def wg_documents(request, acronym):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
