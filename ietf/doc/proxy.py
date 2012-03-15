@@ -56,23 +56,18 @@ class InternetDraft(Document):
             e = self.latest_event(type="new_revision")
         return e.time.date() if e else None
     # helper function
-    def get_file_type_matches_from(self, glob_path):
+    def get_file_type_matches_from(self, base_path):
         possible_types = [".txt", ".pdf", ".xml", ".ps"]
         res = []
-        for m in glob.glob(glob_path):
-            i = m.find(".")
-            if i == -1:
-                ext = ""
-            else:
-                ext = m[i:]
+        for m in glob.glob(base_path + '.*'):
             for t in possible_types:
-                if t == ext:
+                if base_path + t == m:
                     res.append(t)
         return ",".join(res)
     #file_type = models.CharField(max_length=20)
     @property
     def file_type(self):
-        return self.get_file_type_matches_from(os.path.join(settings.INTERNET_DRAFT_PATH, self.name + "-" + self.rev + ".*")) or ".txt"
+        return self.get_file_type_matches_from(os.path.join(settings.INTERNET_DRAFT_PATH, self.name + "-" + self.rev)) or ".txt"
     #txt_page_count = models.IntegerField()
     @property
     def txt_page_count(self):
@@ -716,7 +711,7 @@ class InternetDraft(Document):
     #file_formats = models.CharField(max_length=20,blank=True,null=True)
     @property
     def file_formats(self):
-        return self.get_file_type_matches_from(os.path.join(settings.RFC_PATH, "rfc" + str(self.rfc_number) + ".*")).replace(".", "").replace("txt", "ascii")
+        return self.get_file_type_matches_from(os.path.join(settings.RFC_PATH, "rfc" + str(self.rfc_number))).replace(".", "").replace("txt", "ascii")
 
     @property
     def positions(self):
