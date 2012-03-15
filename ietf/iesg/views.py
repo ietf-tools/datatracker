@@ -411,7 +411,9 @@ def agenda_documents(request):
             if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date in dates:
                 idinternals.append(d)
 
-        idinternals.sort(key=lambda d: (d.rfc_flag, d.start_date))
+                e = d.latest_event(type="started_iesg_process")
+                d.balloting_started = e.time if e else datetime.datetime.min
+        idinternals.sort(key=lambda d: d.balloting_started)
     else:
         idinternals = list(IDInternal.objects.filter(telechat_date__in=dates,primary_flag=1,agenda=1).order_by('rfc_flag', 'ballot'))
     for i in idinternals:
