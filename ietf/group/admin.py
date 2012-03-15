@@ -17,6 +17,9 @@ class RoleInline(admin.TabularInline):
     model = Role
     raw_id_fields = ["person", "email"]
 
+class GroupURLInline(admin.TabularInline):
+    model = GroupURL
+
 class GroupAdmin(admin.ModelAdmin):
     list_display = ["acronym", "name", "type", "role_list"]
     list_display_links = ["acronym", "name"]
@@ -24,7 +27,7 @@ class GroupAdmin(admin.ModelAdmin):
     search_fields = ["acronym", "name"]
     ordering = ["name"]
     raw_id_fields = ["charter", "parent", "ad"]
-    inlines = [RoleInline]
+    inlines = [RoleInline, GroupURLInline]
     prepopulated_fields = {"acronym": ("name", )}
 
     def role_list(self, obj):
@@ -101,8 +104,17 @@ class GroupAdmin(admin.ModelAdmin):
     
 
 admin.site.register(Group, GroupAdmin)
-admin.site.register(GroupHistory)
-admin.site.register(GroupURL)
+
+class GroupHistoryAdmin(admin.ModelAdmin):
+    list_display = ["acronym", "name", "type"]
+    list_display_links = ["acronym", "name"]
+    list_filter = ["type"]
+    search_fields = ["acronym", "name"]
+    ordering = ["name"]
+    raw_id_fields = ["group", "parent", "ad"]
+
+admin.site.register(GroupHistory, GroupHistoryAdmin)
+
 class GroupMilestoneAdmin(admin.ModelAdmin):
     list_display = ["group", "desc", "expected_due_date", "time"]
     search_fields = ["group__name", "group__acronym", "desc"]
