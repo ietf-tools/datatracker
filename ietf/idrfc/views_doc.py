@@ -51,6 +51,7 @@ from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.ietfworkflows.utils import get_full_info_for_draft
 from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, WriteupDocEvent
+from ietf.doc.utils import get_chartering_type
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
 
