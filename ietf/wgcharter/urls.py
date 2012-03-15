@@ -8,12 +8,8 @@ urlpatterns = patterns('django.views.generic.simple',
     url(r'^help/state/$', 'direct_to_template', { 'template': 'wgcharter/states.html', 'extra_context': { 'states': State.objects.filter(type="charter") } }, name='help_charter_states'),
 )
 urlpatterns += patterns('',
-    (r'^/?$', views_search.search_main),
     url(r'^create/$', views_edit.edit_info, name="wg_create"),
-    url(r'^search/$', views_search.search_results, name="wg_search"),
-    (r'^searchPerson/$', views_search.search_person),
-    url(r'^area/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_area, name="wg_search_by_area"),
-    url(r'^in_process/$', views_search.in_process, name="wg_search_in_process"),
+    (r'^searchPerson/$', views.search_person), # FIXME: fix URL
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/((?P<rev>[0-9][0-9](-[0-9][0-9])?)/)?((?P<tab>ballot|writeup|history)/)?$', views.wg_main, name="wg_view"),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/_ballot.data$', views.wg_ballot),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_edit.change_state, name='wg_change_state'),
