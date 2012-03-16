@@ -245,3 +245,14 @@ The IETF is an organized activity of the <a href="http://www.isoc.org">Internet 
 <br>Please send problem reports to <a href="mailto:ietf-action@ietf.org">ietf-action@ietf.org</a>.
 </p>
 {% endblock %}
+
+{% block scripts %}
+jQuery(function () {
+    jQuery("form").submit(function() {
+        if (this.submittedAlready)
+            return false;
+        else
+            this.submittedAlready = true;
+    });
+});
+{% endblock %}

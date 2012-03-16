@@ -13,3 +13,14 @@ Authorization key accepted. Please press the button below to finish Auto-Post of
 <input type="submit" value="Auto-Post" />
 </form>
 {% endblock %}
+
+{% block scripts %}
+jQuery(function () {
+    jQuery("form").submit(function() {
+        if (this.submittedAlready)
+            return false;
+        else
+            this.submittedAlready = true;
+    });
+});
+{% endblock %}
