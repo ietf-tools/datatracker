@@ -154,8 +154,9 @@ def perform_postREDESIGN(request, submission):
     e.save()
 
     # clean up old files
-    from ietf.idrfc.expire import move_draft_files_to_archive
-    move_draft_files_to_archive(draft, prev_rev)
+    if prev_rev != draft.rev:
+        from ietf.idrfc.expire import move_draft_files_to_archive
+        move_draft_files_to_archive(draft, prev_rev)
 
     # automatic state changes
     state_change_msg = ""
