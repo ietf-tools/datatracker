@@ -1,0 +1,143 @@
+#!/bin/bash
+
+version=0.20
+program=${0##*/}
+progdir=${0%/*}
+if [ "$progdir" = "$program" ]; then progdir="."; fi
+
+# ----------------------------------------------------------------------
+function usage() {
+    cat <<EOF
+NAME
+	$program - merge and commit a sprint branch
+
+SYNOPSIS
+	$program [OPTIONS] BRANCH SVNREV
+
+DESCRIPTION
+	Merge and commit a sprint branch
+
+EOF
+    echo -e "OPTIONS"
+    if   [ "$(uname)" = "Linux" ]; then
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
+    else
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
+    fi
+    cat <<EOF
+
+FILES
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@tools.ietf.org>
+
+COPYRIGHT
+	Copyright 2010 Henrik Levkowetz.
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or (at
+	your option) any later version. There is NO WARRANTY; not even the
+	implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+	PURPOSE. See the GNU General Public License for more details.
+	
+EOF
+
+}
+
+# ----------------------------------------------------------------------
+function die() {
+    echo -e "\n$program: error: $*" > /dev/stderr
+    exit 1
+}
+
+function note() { 
+	if [ -n "$VERBOSE" ]; then echo -e "$*"; fi
+}
+
+# ----------------------------------------------------------------------
+function version() {
+	echo -e "$program $version"
+}
+
+# ----------------------------------------------------------------------
+trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
+
+
+# ----------------------------------------------------------------------
+# Option parsing
+
+# Options
+shortopts=chvV
+longopts=commit,help,verbose,version
+
+# Default values
+
+if   [ "$(uname)" = "Linux" ]; then
+    args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    eval set -- "$args"
+    sed="sed -r"
+else
+    # Darwin, BSDs
+    args=$(getopt -o$shortopts $SV $*)
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    set -- $args
+    sed="sed -E"
+fi
+
+while true ; do
+    case "$1" in
+	-c| --commit)	ARG_COMMIT=1;;		#	 Run commit in addition to merge
+	-h| --help)	usage; exit;;		#	 Show this help, then exit
+	-v| --verbose)	VERBOSE=1;;		#	 Be more talkative
+	-V| --version)	version; exit;;		#	 Show program version, then exit
+	--)		shift; break;;
+	*) die "Internal error, inconsistent option specification: '$1'";;
+    esac
+    shift
+done
+
+# ----------------------------------------------------------------------
+# The program itself
+
+[[ $1 =~ @ ]] && set ${1/@/ }
+[ $# -ge 2 ] || die "Expected branch and repository revision on the command line"
+[ ${PWD##*/} = trunk ] || die "Expected this script to be run in trunk"
+branch=$1
+rev=$2
+fix=$3
+
+note "Extract who and what:"
+info=$(svn log http://svn.tools.ietf.org/svn/tools/ietfdb/ -r $rev --incremental)
+set $(echo "$info" | tail -n +2 | head -n 1 | tr "|" "\t")
+who=$2; echo -e "\n$who"
+comment=$(echo "$info" | tail -n +3); echo -e "$comment\n"
+
+note "Do the merge:"
+svn merge -c $rev http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$branch .
+
+mail -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c henrik@levkowetz.com <<-EOF
+Hi,
+
+This is an automatic merge info message.  Your code in personal/$branch@$rev
+has been merged to trunk, and will be part of the next release if nothing
+goes wrong during final testing.
+
+Regards,
+
+	Henrik
+	(via the mergesprintbranch script)
+EOF
+
+if [ "$ARG_COMMIT" ]; then
+    echo "Committing the merge:"
+    echo ""
+    svn commit -m "Merged [$rev] from $who: $comment $fix"
+else
+    echo "This merge has not been committed yet."
+    echo "To commit it, run this commit command:"
+    echo ""
+    echo "svn commit -m \"Merged [$rev] from $who: $comment $fix\""
+fi
+
