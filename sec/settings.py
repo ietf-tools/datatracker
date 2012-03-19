@@ -98,7 +98,7 @@ ROOT_URLCONF = 'sec.urls'
 
 TEMPLATE_DIRS = (
     BASE_DIR + "/templates",
-    "/a/www/ietf-datatracker/web/ietf",
+    "/a/www/ietf-datatracker/web/ietf/templates",
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
