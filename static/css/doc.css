@@ -1,0 +1,22 @@
+.metabox { width: 99%; margin-top:8px; padding:4px; margin-bottom:1em; }
+#metatable { border: 0; border-spacing: 0; }
+#metatable tr { vertical-align: top; }
+#metatable tr:first-child td:first-child { width: 15em; }
+
+.markup_draft pre { line-height: 1.2em; margin: 0; }
+.m_hdr, .m_ftr { color: #808080; }
+.m_ftr { border-bottom: 1px solid #a0a0a0; }
+.m_h { font-family: arial; font-weight:bold;}
+
+.snapshots { margin: 0.5em 0; }
+.snapshots .revisions a:first-child { font-weight: bold }
+
+.diffTool { padding: 8px 4px; margin: 8px 0;}
+.diffTool h2 { margin-top:0;margin-bottom:4px; }
+.diffTool label { display: inline-block; width: 3em; padding: 0 0.5em; }
+.diffTool form { margin: 0; }
+
+.history-actions { margin-bottom: 1em; padding-left: 1px; }
+
+.writeup pre.editable { background-color: #efefff; min-height: 3em; }
+.writeup a.edit { float: right; }
