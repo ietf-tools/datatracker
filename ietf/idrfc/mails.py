@@ -11,8 +11,6 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
 from ietf.ipr.search import iprs_from_docs
-from ietf.ietfworkflows.streams import (get_stream_from_draft)
-from ietf.ietfworkflows.models import (Stream)
 from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias
 from ietf.person.models import Person
 from ietf.group.models import Group
@@ -258,7 +256,8 @@ def generate_approval_mail_rfc_editor(request, doc):
     status = full_status.replace("a ", "").replace("an ", "")
     disapproved = doc.idinternal.cur_state_id in IDState.DO_NOT_PUBLISH_STATES
     doc_type = "RFC" if type(doc) == Rfc else "Internet Draft"
-    
+
+    from ietf.ietfworkflows.streams import get_stream_from_draft
     stream = get_stream_from_draft(doc)
     to = ", ".join([u"%s <%s>" % x.email() for x in stream.get_chairs_for_document(doc) ])
     if stream.name == "IRTF":
