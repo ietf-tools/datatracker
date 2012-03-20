@@ -15,7 +15,6 @@ form.change-state .actions {
   text-align: right;
   padding-top: 10px;
 }
-
 {% endblock %}
 
 {% block content %}
@@ -28,24 +27,26 @@ form.change-state .actions {
     {% for field in form.visible_fields %}
     <tr>
       {% if field.name == "initial_time" %}
-        {% if option == "recharter" %}
-        <th>{{ field.label_tag }}:</th>
-        <td>{{ field }}
-        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-        {% else %}
-        {% if option == "initcharter" %}
-        <th>{{ field.label_tag }}:</th>
-        <td>{{ field }}
-        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-        {% endif %}
-        {% endif %}
+      {% if option == "recharter" %}
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {% else %}
-        <th>{{ field.label_tag }}:</th>
-        <td>{{ field }}
-        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {% if option == "initcharter" %}
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {% endif %}
+      {% endif %}
+
+      {% else %}
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {% endif %}
+
       {% if field.name == "charter_state" and field.errors == "warning" %}
-        <ul><li>The initial review time hasn't elapsed. Select this checkbox to proceed anyway: <label><input type="checkbox" name="confirm_state" /></label></li></ul>
+      <ul><li>The initial review time hasn't elapsed. Select this checkbox to proceed anyway: <label><input type="checkbox" name="confirm_state" /></label></li></ul>
       {% else %}
         {{ field.errors }}
       {% endif %}
@@ -57,7 +58,7 @@ form.change-state .actions {
         {% if option %}
         <input type="submit" value="Submit"/>
         {% else %}
-        <a href="{% url wg_view name=wg.acronym %}">Back</a>
+        <a href="{% url doc_view name=wg.charter.name %}">Back</a>
         <input type="submit" value="Save"/>
         {% endif %}
       </td>
@@ -80,12 +81,7 @@ form.change-state .actions {
 
 {% block content_end %}
 <script type="text/javascript">
-  var message = {
-   "infrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to Informal IESG review by {{ login.name }}",
-   "intrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to Internal review by {{ login.name }}. Please place it on the next IESG telechat and inform the IAB.",
-   "extrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to External review by {{ login.name }}. Please send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: "
-  };
-
+  var messages = {{ messages|safe }};
 </script>
 <script type="text/javascript" src="/js/wg-change-state.js"></script>
 {% endblock %}
