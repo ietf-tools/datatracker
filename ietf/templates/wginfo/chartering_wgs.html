@@ -3,10 +3,16 @@
 {% block title %}Chartering or Re-Chartering Working Groups{% endblock %}
 
 {% block content %}
+{% load ietf_filters %}
+
 <h1>Chartering or Re-Chartering Working Groups</h1>
 
 <p>Groups with a charter in state
 {% for s in charter_states %}{% if not forloop.first %}, {% if forloop.last %}or {% endif %}{% endif %}<i>{{ s.name }}</i>{% endfor %}.</p>
+
+{% if user|has_role:"Area Director,Secretariat" %}
+<p><a href="{% url wg_create %}">Start new WG charter effort</a></p>
+{% endif %}
 
 {% if not groups %}
 <p><b>No groups found.</b></p>
