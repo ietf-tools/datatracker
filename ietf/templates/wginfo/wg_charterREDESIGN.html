@@ -61,7 +61,7 @@ is occasionally incorrect.</span>
     <td>Charter:</td>
     <td>
       {% if wg.charter %}
-      <a href="{% url wgcharter.views.wg_main name=wg.acronym %}">{{ wg.charter.name }}-{{ wg.charter.rev }}</a> ({{ wg.charter.get_state.name }})
+      <a href="{% url doc_view name=wg.charter.name %}">{{ wg.charter.name }}-{{ wg.charter.rev }}</a> ({{ wg.charter.get_state.name }})
       {% else %}
       none
       {% if user|has_role:"Area Director,Secretariat" %}
