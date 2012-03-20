@@ -133,6 +133,8 @@ table.ballot_icon td.ballot_icon_my { border: 3px outset black;}
 .ietf-highlight-r { padding:0 2px;background:#ffa0a0;}
 .ietf-divider { background: #2647a0; color: white; font-size:116%; padding:0.5em 1em; }
 
+table.history .snippet .showAll { color: blue; cursor: pointer; }
+
 .error-text {
 	font-size: 1.095em;
 	width: 48em;

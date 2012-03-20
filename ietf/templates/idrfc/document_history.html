@@ -68,21 +68,13 @@
     <td>{{ e.time|date:"Y-m-d" }}</td>
     <td>{{ e.rev }}</td>
     <td>{{ e.by|escape }}</td>
-    <td>{% if e.desc_snippet %}
-    <div class="snippet">{{ e.desc_snippet|safe }} <span class="showAll">[show all]</span></div>
-    <div class="full" style="display:none;">
-      {{ e.desc|fill:"80"|safe|urlize|linebreaksbr|keep_spacing|sanitize_html|safe }}
-    </div>
-    {% else %}
-      {{ e.desc|fill:"80"|safe|urlize|linebreaksbr|keep_spacing|sanitize_html|safe }}
-    {% endif %}
+    <td>{{ e.desc|format_history_text }}
     </td>
   </tr>
   {% endfor %}
-
 </table>
 {% endblock content %}
 
 {% block content_end %}
-<script type="text/javascript" src="/js/doc-history.js"></script>
+<script type="text/javascript" src="/js/history.js"></script>
 {% endblock content_end %}

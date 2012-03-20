@@ -50,7 +50,7 @@ from ietf.idrfc import markup_txt
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.ietfworkflows.utils import get_full_info_for_draft
-from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, WriteupDocEvent
+from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, WriteupDocEvent, TelechatDocEvent
 from ietf.doc.utils import get_chartering_type
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
@@ -121,17 +121,11 @@ def document_main(request, name, rev=None):
 
 
     if doc.type_id == "charter":
-        # FIXME: add editing of charters/telechat date
-        # FIXME: check sanity of edit buttons "Recharter"
-        # FIXME: clean up wgcharter code redundant with this
-
         filename = doc.name + "-" + doc.rev + ".txt"
 
         content = _get_html(filename, os.path.join(settings.CHARTER_PATH, filename), split=False)
 
-        telechat = None
-        if not snapshot:
-            telechat = doc.latest_event(type="scheduled_for_telechat")
+        telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
 
         return render_to_response("idrfc/document_charter.html",
                                   dict(doc=doc,
@@ -201,12 +195,6 @@ def document_history(request, name):
             cur_rev = "00"
 
         e.rev = cur_rev
-
-    # add snippets
-    for e in events:
-        e.desc_snippet = truncatewords_html(format_textarea(fill(e.desc, 80)), 3)
-        if not e.desc_snippet.endswith("..."):
-            e.desc_snippet = None
 
     return render_to_response("idrfc/document_history.html",
                               dict(doc=doc,

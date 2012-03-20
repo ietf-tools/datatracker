@@ -445,9 +445,9 @@ def ad_area(user):
 def format_history_text(text):
     """Run history text through some cleaning and add ellipsis if it's too long."""
     full = mark_safe(sanitize_html(keep_spacing(linebreaksbr(urlize(mark_safe(text))))))
-    snipped = truncatewords_html(format_textarea(fill(text, 80)), 25)
-    if snipped[-3:] == "...":
-        return mark_safe(u'<div class="snipped">%s<div class="showAll">[show all]</div><div><div style="display:none" class="full">%s</div>' % (snipped, full))
+    snippet = truncatewords_html(format_textarea(fill(text, 80)), 25)
+    if snippet[-3:] == "...":
+        return mark_safe(u'<div class="snippet">%s<span class="showAll">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
     return full
 
 @register.filter
