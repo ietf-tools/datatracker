@@ -58,11 +58,11 @@
 
     {% if not snapshot %}
     <tr>
-      <td>Telechat:</td>
+      <td>IESG telechat:</td>
       <td>
-        {% if not doc.telechat %}Not on agenda{% else %}{{ doc.telechat.date|date:"Y-m-d" }}{% endif %}
+        {% if not telechat %}Not on agenda{% else %}{{ telechat.telechat_date|date:"Y-m-d" }}{% endif %}
         {% if user|has_role:"Area Director,Secretariat" %}
-        - <a href="FIXME">Change</a>
+        - <a href="{% url charter_telechat_date name=doc.group.acronym %}">Change</a>
         {% endif %}
       </td>
     </tr>

@@ -80,16 +80,12 @@ def add_wg_comment(request, wg, text, ballot=None):
     e.desc = text
     e.save()
 
-def log_state_changed(request, doc, by, prev_state, note=''):
+def log_state_changed(request, doc, by, prev_state):
     e = DocEvent(doc=doc, by=by)
     e.type = "changed_document"
     e.desc = u"State changed to <b>%s</b> from %s" % (
         doc.get_state().name,
         prev_state.name if prev_state else "None")
-
-    if note:
-        e.desc += "<br>%s" % note
-
     e.save()
     return e
 
@@ -107,13 +103,10 @@ def log_group_state_changed(request, wg, by, note=''):
     e.save()
     return e
 
-def log_info_changed(request, wg, by, note=''):
+def log_info_changed(request, wg, by, change):
     e = GroupEvent(group=wg, by=by)
     e.type = "info_changed"
-    e.desc = "WG info changed: "
-    if note:
-        e.desc += "<br>%s" % note
-
+    e.desc = change
     e.save()
     return e
 
@@ -182,6 +175,8 @@ def next_approved_revision(rev):
     return "%#02d" % (int(m.group('major')) + 1)
 
 def update_telechat(request, doc, by, new_telechat_date):
+    # FIXME: fix auto-setting returning item problem and reuse
+    # function in idrfc/utils.py instead of this one
     from ietf.doc.models import TelechatDocEvent
     
     on_agenda = bool(new_telechat_date)

@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from django import forms
 from django.forms.util import ErrorList
+from django.utils import simplejson
 
 from utils import *
 from mails import email_secretariat
@@ -28,14 +29,8 @@ class ChangeStateForm(forms.Form):
     message = forms.CharField(widget=forms.Textarea, help_text="Message to the secretariat", required=False)
     comment = forms.CharField(widget=forms.Textarea, help_text="Comment for the WG history", required=False)
     def __init__(self, *args, **kwargs):
-        if 'queryset' in kwargs:
-            qs = kwargs.pop('queryset')
-        else:
-            qs = None
-        if 'hide' in kwargs:
-            self.hide = kwargs.pop('hide')
-        else:
-            self.hide = None
+        qs = kwargs.pop('queryset', None)
+        self.hide = kwargs.pop('hide', None)
         super(ChangeStateForm, self).__init__(*args, **kwargs)
         if qs:
             self.fields['charter_state'].queryset = qs
@@ -51,13 +46,14 @@ def change_state(request, name, option=None):
     # Get WG by acronym, redirecting if there's a newer acronym
     try:
         wg = Group.objects.get(acronym=name)
-        charter = set_or_create_charter(wg)
     except Group.DoesNotExist:
-        wglist = GroupHistory.objects.filter(acronym=name)
-        if wglist:
-            return redirect('wg_change_state', name=wglist[0].group.acronym)
+        old = GroupHistory.objects.filter(acronym=name)
+        if old:
+            return redirect('wg_change_state', name=old[0].group.acronym)
         else:
             raise Http404()
+
+    charter = set_or_create_charter(wg)
 
     initial_review = charter.latest_event(InitialReviewDocEvent, type="initial_review")
 
@@ -66,7 +62,9 @@ def change_state(request, name, option=None):
     if request.method == 'POST':
         form = ChangeStateForm(request.POST)
         if form.is_valid():
-            if initial_review and form.cleaned_data['charter_state'] and form.cleaned_data['charter_state'].slug != "infrev" and initial_review.expires > datetime.datetime.now() and not form.cleaned_data['confirm_state']:
+            clean = form.cleaned_data
+            if (initial_review and clean['charter_state'] and clean['charter_state'].slug != "infrev"
+                and initial_review.expires > datetime.datetime.now() and not clean['confirm_state']):
                 form._errors['charter_state'] = "warning"
             else:
                 if option == "initcharter" or option == "recharter":
@@ -79,11 +77,11 @@ def change_state(request, name, option=None):
                         charter_state = State.objects.get(type="charter", slug="approved")
                     charter_rev = approved_revision(charter.rev)
                 else:
-                    charter_state = form.cleaned_data['charter_state']
+                    charter_state = clean['charter_state']
                     charter_rev = charter.rev
 
-                comment = form.cleaned_data['comment']
-                message = form.cleaned_data['message']
+                comment = clean['comment'].rstrip()
+                message = clean['message']
                 
                 change = False
                 if charter:
@@ -98,17 +96,19 @@ def change_state(request, name, option=None):
                         charter.rev = charter_rev
                         
                         if option != "abandon":
-                            e = log_state_changed(request, charter, login, prev, comment)
+                            e = log_state_changed(request, charter, login, prev)
                         else:
                             # Special log for abandoned efforts
                             e = DocEvent(doc=charter, by=login)
                             e.type = "changed_document"
                             e.desc = "IESG has abandoned the chartering effort"
-                            
-                            if comment:
-                                e.desc += "<br>%s" % comment
-                                
                             e.save()
+
+                        if comment:
+                            c = DocEvent(type="added_comment", by=login)
+                            c.doc = doc
+                            c.desc = comment
+                            c.save()
 
                         charter.time = datetime.datetime.now()
                         charter.save()
@@ -135,16 +135,16 @@ def change_state(request, name, option=None):
                         e.desc = "IESG process started in state <b>%s</b>" % charter_state.name
                         e.save()
 
-                if charter_state.slug == "infrev" and form.cleaned_data["initial_time"] and form.cleaned_data["initial_time"] != 0:
+                if charter_state.slug == "infrev" and clean["initial_time"] and clean["initial_time"] != 0:
                     e = InitialReviewDocEvent()
                     e.type = "initial_review"
                     e.by = login
                     e.doc = charter
-                    e.expires = datetime.datetime.now() + datetime.timedelta(weeks=form.cleaned_data["initial_time"])
+                    e.expires = datetime.datetime.now() + datetime.timedelta(weeks=clean["initial_time"])
                     e.desc = "Initial review time expires %s" % e.expires.strftime("%Y-%m-%d")
                     e.save()
                 
-                return redirect('wg_view', name=wg.acronym)
+                return redirect('doc_view', name=charter.name)
     else:
         if option == "recharter":
             hide = ['charter_state']
@@ -161,12 +161,10 @@ def change_state(request, name, option=None):
         states = State.objects.filter(type="charter", slug__in=["infrev", "intrev", "extrev", "iesgrev"])
         form = ChangeStateForm(queryset=states, hide=hide, initial=init)
 
-    group_hists = GroupHistory.objects.filter(group=wg).exclude(state=wg.state).order_by("-time")[:1]
     prev_charter_state = None
-    if charter:
-        charter_hists = DocHistory.objects.filter(doc=charter).exclude(states__type="charter", states__slug=charter.get_state_slug()).order_by("-time")[:1]
-        if charter_hists:
-            prev_charter_state = charter_hists[0].get_state()
+    charter_hists = DocHistory.objects.filter(doc=charter).exclude(states__type="charter", states__slug=charter.get_state_slug()).order_by("-time")[:1]
+    if charter_hists:
+        prev_charter_state = charter_hists[0].get_state()
 
     title = {
         "initcharter": "Initiate chartering of WG %s" % wg.acronym,
@@ -176,14 +174,63 @@ def change_state(request, name, option=None):
     if not title:
         title = "Change state of WG %s" % wg.acronym
 
+    def charter_pk(slug):
+        return State.objects.get(type="charter", slug=slug).pk
+
+    messages = {
+        charter_pk("infrev"): "The WG %s (%s) has been set to Informal IESG review by %s." % (wg.name, wg.acronym, login.plain_name()),
+        charter_pk("intrev"): "The WG %s (%s) has been set to Internal review by %s. Please place it on the next IESG telechat and inform the IAB." % (wg.name, wg.acronym, login.plain_name()),
+        charter_pk("extrev"): "The WG %s (%s) has been set to External review by %s. Please send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: " % (wg.name, wg.acronym, login.plain_name()),
+        }
+
     return render_to_response('wgcharter/change_state.html',
                               dict(form=form,
                                    wg=wg,
                                    login=login,
                                    option=option,
                                    prev_charter_state=prev_charter_state,
-                                   title=title),
+                                   title=title,
+                                   messages=simplejson.dumps(messages)),
                               context_instance=RequestContext(request))
+
+class TelechatForm(forms.Form):
+    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+        dates = [d.date for d in TelechatDate.objects.active().order_by('date')]
+        init = kwargs['initial'].get("telechat_date")
+        if init and init not in dates:
+            dates.insert(0, init)
+
+        self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, d.strftime("%Y-%m-%d")) for d in dates]
+        
+
+def telechat_date(request, name):
+    wg = get_object_or_404(Group, acronym=name)
+    doc = set_or_create_charter(wg)
+    login = request.user.get_profile()
+
+    e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+
+    initial = dict(telechat_date=e.telechat_date if e else None)
+    if request.method == "POST":
+        form = TelechatForm(request.POST, initial=initial)
+
+        if form.is_valid():
+            update_telechat(request, doc, login, form.cleaned_data['telechat_date'])
+            return redirect("doc_view", name=doc.name)
+    else:
+        form = TelechatForm(initial=initial)
+
+    return render_to_response('wgcharter/edit_telechat_date.html',
+                              dict(doc=doc,
+                                   form=form,
+                                   user=request.user,
+                                   login=login),
+                              context_instance=RequestContext(request))
+
 def parse_emails_string(s):
     return Email.objects.filter(address__in=[x.strip() for x in s.split(",") if x.strip()]).select_related("person")
 
@@ -199,14 +246,10 @@ class EditInfoForm(forms.Form):
     list_subscribe = forms.CharField(max_length=255, required=False)
     list_archive = forms.CharField(max_length=255, required=False)
     urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", help_text="Format: http://site/url (optional description). Separate multiple entries with newline.", required=False)
-    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
 
     def __init__(self, *args, **kwargs):
         self.cur_acronym = kwargs.pop('cur_acronym')
-        if 'hide' in kwargs:
-            self.hide = kwargs.pop('hide')
-        else:
-            self.hide = None
+        self.hide = kwargs.pop('hide', None)
         super(self.__class__, self).__init__(*args, **kwargs)
 
         # hide requested fields
@@ -219,21 +262,13 @@ class EditInfoForm(forms.Form):
         choices = self.fields['ad'].choices
         if ad_pk and ad_pk not in [pk for pk, name in choices]:
             self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
-        # telechat choices
-        dates = [d.date for d in TelechatDate.objects.active().order_by('date')]
-        if 'telechat_date' in kwargs['initial']:
-            init = kwargs['initial']['telechat_date']
-            if init and init not in dates:
-                dates.insert(0, init)
-
-        self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, d.strftime("%Y-%m-%d")) for d in dates]
 
     def clean_acronym(self):
         acronym = self.cleaned_data['acronym']
         if self.cur_acronym and acronym != self.cur_acronym:
-            if Group.objects.filter(acronym=acronym):
-                raise forms.ValidationError("Acronym used in a previous WG. Please pick another.")
-            if GroupHistory.objects.filter(acronym=acronym):
+            if Group.objects.filter(acronym__iexact=acronym):
+                raise forms.ValidationError("Acronym used in an existing WG. Please pick another.")
+            if GroupHistory.objects.filter(acronym__iexact=acronym):
                 raise forms.ValidationError("Acronym used in a previous WG. Please pick another.")
         return acronym
 
@@ -249,23 +284,19 @@ class EditInfoForm(forms.Form):
     def clean_urls(self):
         return [x.strip() for x in self.cleaned_data["urls"].splitlines() if x.strip()]
 
-def format_urls(set, fs="\n"):
-    ostr = ""
-    for i,x in enumerate(set):
-        if i != 0:
-            ostr += fs
-        if x.name:
-            ostr += x.url + " (" + x.name + ")"
+def format_urls(urls, fs="\n"):
+    res = []
+    for u in urls:
+        if u.name:
+            res.append(u"%s (%s)" % (u.url, u.name))
         else:
-            ostr += x.url
-        
-    return ostr
+            res.append(u.url)
+    return fs.join(res)
         
 @group_required('Area_Director','Secretariat')
 def edit_info(request, name=None):
     """Edit or create a WG, notifying parties as
     necessary and logging changes as group events."""
-    import sys
     if request.path_info == reverse('wg_edit_info', kwargs={'name': name}):
         # Editing. Get group
         wg = get_object_or_404(Group, acronym=name)
@@ -277,14 +308,8 @@ def edit_info(request, name=None):
 
     login = request.user.get_profile()
 
-    if not new_wg:
-        e = charter.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-        initial_telechat_date = e.telechat_date if e else None
-    else:
-        initial_telechat_date = None
-
     if request.method == 'POST':
-        form = EditInfoForm(request.POST, initial=dict(telechat_date=initial_telechat_date), cur_acronym=wg.acronym if wg else None)
+        form = EditInfoForm(request.POST, cur_acronym=wg.acronym if wg else None)
         if form.is_valid():
             r = form.cleaned_data
             if not new_wg:
@@ -303,6 +328,7 @@ def edit_info(request, name=None):
                 e.state_id = "proposed"
                 e.desc = "Proposed group"
                 e.save()
+
             if not wg.charter:
                 # Create adjoined charter
                 charter = set_or_create_charter(wg)
@@ -318,9 +344,9 @@ def edit_info(request, name=None):
             changes = []
                 
             def desc(attr, new, old):
-                entry = "%(attr)s has been changed to <b>%(new)s</b> from <b>%(old)s</b>"
+                entry = "%(attr)s changed to <b>%(new)s</b> from %(old)s"
                 if new_wg:
-                    entry = "%(attr)s has been changed to <b>%(new)s</b>"
+                    entry = "%(attr)s changed to <b>%(new)s</b>"
                     
                 return entry % dict(attr=attr, new=new, old=old)
 
@@ -369,7 +395,7 @@ def edit_info(request, name=None):
             new_urls = r['urls']
             old_urls = format_urls(wg.groupurl_set.order_by('url'), ", ")
             if ", ".join(sorted(new_urls)) != old_urls:
-                changes.append(desc('urls', ", ".join(sorted(new_urls)), old_urls))
+                changes.append(desc('Urls', ", ".join(sorted(new_urls)), old_urls))
                 wg.groupurl_set.all().delete()
                 # Add new ones
                 for u in new_urls:
@@ -387,13 +413,11 @@ def edit_info(request, name=None):
                 for c in changes:
                     log_info_changed(request, wg, login, c)
 
-            update_telechat(request, wg.charter, login, r['telechat_date'])
-            
             wg.save()
             if new_wg:
                 return redirect('wg_startstop_process', name=wg.acronym, option="initcharter")
             else:
-                return redirect('wg_view', name=wg.acronym)
+                return redirect('wg_charter', acronym=wg.acronym)
     else: # form.is_valid()
         if not new_wg:
             init = dict(name=wg.name,
@@ -408,13 +432,12 @@ def edit_info(request, name=None):
                         list_subscribe=wg.list_subscribe if wg.list_subscribe else None,
                         list_archive=wg.list_archive if wg.list_archive else None,
                         urls=format_urls(wg.groupurl_set.all()),
-                        telechat_date=initial_telechat_date,
                         )
             hide = None
         else:
             init = dict(ad=login.id,
                         )
-            hide = ['chairs', 'techadv', 'list_email', 'list_subscribe', 'list_archive', 'urls', 'telechat_date']
+            hide = ['chairs', 'techadv', 'list_email', 'list_subscribe', 'list_archive', 'urls']
         form = EditInfoForm(initial=init, cur_acronym=wg.acronym if wg else None, hide=hide)
 
     return render_to_response('wgcharter/edit_info.html',
@@ -468,32 +491,3 @@ def conclude(request, name):
                               dict(form=form,
                                    wg=wg),
                               context_instance=RequestContext(request))
-
-class AddCommentForm(forms.Form):
-    comment = forms.CharField(required=True, widget=forms.Textarea)
-
-@group_required('Area_Director','Secretariat')
-def add_comment(request, name):
-    """Add comment to WG Record."""
-    wg = get_object_or_404(Group, acronym=name)
-
-    login = request.user.get_profile()
-
-    if request.method == 'POST':
-        form = AddCommentForm(request.POST)
-        if form.is_valid():
-            c = form.cleaned_data['comment']
-            
-            add_wg_comment(request, wg, c)
-
-            #email_owner(request, doc, doc.ad, login,
-            #            "A new comment added by %s" % login.name)
-            return redirect('wg_view', name=wg.acronym)
-    else:
-        form = AddCommentForm()
-  
-    return render_to_response('wgcharter/add_comment.html',
-                              dict(wg=wg,
-                                   form=form),
-                              context_instance=RequestContext(request))
-
