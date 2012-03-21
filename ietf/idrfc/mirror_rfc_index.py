@@ -53,6 +53,10 @@ def log(line):
     else:
         log_data += line + "\n"
 
+# python before 2.7 doesn't have the total_seconds method on datetime.timedelta.
+def total_seconds(td):
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+
 def parse(response):
     def getChildText(parentNode, tagName):
         for node in parentNode.childNodes:
@@ -262,7 +266,7 @@ def insert_to_databaseREDESIGN(data):
             if abs(pubdate - synthesized) > timedelta(days=60):
                 synthesized = pubdate
             else:
-                direction = -1 if (pubdate - synthesized).total_seconds() < 0 else +1
+                direction = -1 if total_seconds(pubdate - synthesized) < 0 else +1
                 while synthesized.month != pubdate.month or synthesized.year != pubdate.year:
                     synthesized += timedelta(days=direction)
             e.time = synthesized
