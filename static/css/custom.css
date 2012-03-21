@@ -483,9 +483,10 @@ div.interim-scroll {
 
 #proceedings-right-col {
     float: left;
-    width: 378px; 
+    width: 377px; 
     margin: 0;
     border-right: 1px solid #CCCCCC;
+    border-left: 1px solid #CCCCCC;
 }
 
 /* ------------ Role Tool -------------------- */
@@ -503,6 +504,14 @@ div.interim-scroll {
 }
 
 /* View Page */
+
+#rolodex-email-table input[type=text] {
+    width: 30em;
+}
+
+#rolodex-person-table input[type=text] {
+    width: 30em;
+}
 
 #rolodex-view-container td {
     padding: 2px;
