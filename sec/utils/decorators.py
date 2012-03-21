@@ -72,7 +72,7 @@ def check_permissions(func):
         login = request.user.get_profile()
         all_roles = chain(
             group.role_set.filter(name__in=('chair','secr')),
-            group.parent.role_set.filter(name='ad'))
+            group.parent.role_set.filter(name__in=('ad','chair')))
         if login in [ r.person for r in all_roles ]:
             return func(request, *args, **kwargs)
             

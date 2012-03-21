@@ -174,8 +174,6 @@ def edit(request, id):
         person_form = EditPersonForm(request.POST, instance=person)
         email_formset = EmailFormset(request.POST, instance=person, prefix='email')
         if person_form.is_valid() and email_formset.is_valid():
-            
-            
             # handle aliases
             for field in ('name','ascii','ascii_short'):
                 if field in person_form.changed_data:

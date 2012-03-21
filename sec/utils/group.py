@@ -15,22 +15,24 @@ def get_my_groups(user):
     secretariat - has access to all groups
     area director - has access to all groups in their area
     wg chair or secretary - has acceses to their own group
+    chair of irtf has access to all irtf groups
     '''
-    my_groups = []
+    my_groups = set()
     person = user.get_profile()
     all_groups = Group.objects.filter(type__in=('wg','rg','ag','team'),state__in=('bof','proposed','active')).order_by('acronym')
     
     if has_role(user,'Secretariat'):
         return all_groups
     
-    # groups that person is Area Director
-    ad_groups = all_groups.filter(parent__role__person=person,parent__role__name='ad')
+    for group in all_groups:
+        if group.role_set.filter(person=person,name__in=('chair','secr')):
+            my_groups.add(group)
+            continue
+        if group.parent and group.parent.role_set.filter(person=person,name__in=('ad','chair')):
+            my_groups.add(group)
+            continue
     
-    # groups that person is chair or secretary of
-    groups = all_groups.filter(role__person=person,role__name__in=('chair','secr'))
-
-    # otherwise return empty list
-    return itertools.chain(ad_groups,groups)
+    return list(my_groups)
     
 def groups_by_session(user, meeting):
     '''
