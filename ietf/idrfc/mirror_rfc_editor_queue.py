@@ -231,7 +231,7 @@ def insert_into_databaseREDESIGN(drafts, refs):
     from ietf.name.models import DocTagName
 
     tags = get_rfc_tag_mapping()
-    states = get_rfc_state_mapping()
+    state_map = get_rfc_state_mapping()
 
     rfc_editor_tags = tags.values()
     
@@ -242,20 +242,25 @@ def insert_into_databaseREDESIGN(drafts, refs):
 
     log("inserting new data...")
 
-    for name, date_received, state, stream_id in drafts:
+    for name, date_received, state_info, stream_id in drafts:
         try:
             d = Document.objects.get(name=name)
         except Document.DoesNotExist:
             log("unknown document %s" % name)
             continue
 
-        s = state.split(" ")
-        if s:
+        state_list = state_info.split(" ")
+        if state_list:
+            state = state_list[0]
+            # For now, ignore the '*R...' that's appeared for some states.
+            # FIXME : see if we need to add some refinement for this.
+            if '*' in state:
+                state = state.split("*")[0]
             # first is state
-            d.set_state(states[s[0]])
+            d.set_state(state_map[state])
 
             # remainding are tags
-            for x in s[1:]:
+            for x in state_list[1:]:
                 d.tags.add(tags[x])
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
