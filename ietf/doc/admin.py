@@ -111,14 +111,15 @@ class DocAliasAdmin(admin.ModelAdmin):
     list_display = [ 'name', 'document_link', ]
     search_fields = [ 'name', 'document__name', ]
     raw_id_fields = ['document']
-    document_link = admin_link("document")
 admin.site.register(DocAlias, DocAliasAdmin)
 
 
 # events
 
 class DocEventAdmin(admin.ModelAdmin):
-    list_display = ["doc", "type", "by", "time"]
+    def rev(obj):
+        return obj.doc.rev
+    list_display = ["doc", "type", "rev", "by", "time"]
     search_fields = ["doc__name", "by__name"]
     raw_id_fields = ["doc", "by"]
 

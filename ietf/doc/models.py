@@ -7,6 +7,7 @@ from django.conf import settings
 from ietf.group.models import *
 from ietf.name.models import *
 from ietf.person.models import Email, Person
+from ietf.utils.admin import admin_link
 
 import datetime, os
 
@@ -266,6 +267,7 @@ class DocAlias(models.Model):
     name = models.CharField(max_length=255, db_index=True)
     def __unicode__(self):
         return "%s-->%s" % (self.name, self.document.name)
+    document_link = admin_link("document")
     class Meta:
         verbose_name = "document alias"
         verbose_name_plural = "document aliases"
