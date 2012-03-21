@@ -84,7 +84,7 @@ def include_text(request):
     return include_text
 
 def document_main_rfc(request, rfc_number, tab):
-    rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
+    rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number, states__type="draft", states__slug="rfc")
     rfci.viewing_as_rfc = True
     doc = RfcWrapper(rfci)
 
