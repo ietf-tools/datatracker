@@ -44,7 +44,7 @@ class Meeting(models.Model):
             return self.number
 
     def time_zone_offset(self):
-        return pytz.timezone(self.time_zone).localize(datetime.datetime.combine(self.date, datetime.time(0, 0))).strftime("%z")
+        return pytz.timezone(self.time_zone).localize(datetime.datetime.combine(self.date, datetime.time(8, 0))).strftime("%z")
     def get_meeting_date (self,offset):
         return self.date + datetime.timedelta(days=offset)
 
