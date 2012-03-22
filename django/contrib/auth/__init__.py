@@ -64,11 +64,15 @@ def login(request, user):
     Persist a user id and a backend in the request. This way a user doesn't
     have to reauthenticate on every request.
     """
+    from MySQLdb import OperationalError
     if user is None:
         user = request.user
     # TODO: It would be nice to support different login methods, like signed cookies.
     user.last_login = datetime.datetime.now()
-    user.save()
+    try:
+        user.save()
+    except OperationalError:
+        pass
 
     if SESSION_KEY in request.session:
         if request.session[SESSION_KEY] != user.id:
