@@ -238,7 +238,7 @@ def get_email_initial(draft, type=None, input=None):
         context = {'wg_message':wg_message,
                    'draft':draft,
                    'authors':get_abbr_authors(draft),
-                   'start_date':get_start_date(draft),
+                   'revision_date':draft.latest_event(type='new_revision').time.date(),
                    'timestamp':time.strftime("%Y-%m-%d%H%M%S", time.localtime())}
         data['to'] = 'i-d-announce@ietf.org'
         data['cc'] = draft.group.list_email

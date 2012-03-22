@@ -7,7 +7,7 @@ A new Internet-Draft is available from the on-line Internet-Drafts directories.
     Author(s)     : {{ authors }}
     Filename      : {{ draft.name }}
     Pages         : {{ draft.pages }} 
-    Date          : {{ start_date }} 
+    Date          : {{ revision_date }} 
     
 {{ draft.abstract }}
 
