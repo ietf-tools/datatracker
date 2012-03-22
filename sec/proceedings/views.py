@@ -213,8 +213,9 @@ def get_next_slide_num(session):
         pattern = 'slides-%s' % (session.meeting.number)
     slides = Document.objects.filter(type='slides',name__startswith=pattern).order_by('-name')
     if slides:
-        last_num = slides[0].name.split('-')[-1]
-        return str(int(last_num) + 1)
+        nums = [ s.name.split('-')[-1] for s in slides ]
+        nums.sort(key=int)
+        return str(int(nums[-1]) + 1)
     else:
         return '0'
 
