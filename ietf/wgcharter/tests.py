@@ -5,6 +5,7 @@ from StringIO import StringIO
 
 import django.test
 from django.conf import settings
+from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
@@ -120,34 +121,6 @@ class WgStateTestCase(django.test.TestCase):
                 else:
                     self.assertTrue("State changed" in outbox[-1]['Subject'])
                     
-    def test_conclude(self):
-        make_test_data()
-
-        # And make a charter for group
-        group = Group.objects.get(acronym="mars")
-
-        # -- Test conclude WG --
-        url = urlreverse('wg_conclude', kwargs=dict(name=group.acronym))
-        login_testing_unauthorized(self, "secretary", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form textarea[name=instructions]')), 1)
-        
-        # faulty post
-        r = self.client.post(url, dict(instructions="")) # No instructions
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
-
-        # conclusion request
-        r = self.client.post(url, dict(instructions="Test instructions"))
-        self.assertEquals(r.status_code, 302)
-        # The WG remains active until the state is set to conclude via change_state
-        group = Group.objects.get(acronym=group.acronym)
-        self.assertEquals(group.state_id, "active")
 
 class WgInfoTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -159,106 +132,6 @@ class WgInfoTestCase(django.test.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.charter_dir)
-
-    def test_create(self):
-        make_test_data()
-
-        # -- Test WG creation --
-        url = urlreverse('wg_create')
-        login_testing_unauthorized(self, "secretary", url)
-
-        num_wgs = len(Group.objects.filter(type="wg"))
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=acronym]')), 1)
-        
-        # faulty post
-        r = self.client.post(url, dict(acronym="foobarbaz")) # No name
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
-        self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs)
-
-        # creation
-        r = self.client.post(url, dict(acronym="testwg", name="Testing WG"))
-        self.assertEquals(r.status_code, 302)
-        self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs + 1)
-        group = Group.objects.get(acronym="testwg")
-        self.assertEquals(group.name, "Testing WG")
-        # check that a charter was created with the correct name
-        self.assertEquals(group.charter.name, "charter-ietf-testwg")
-        # and that it has no revision
-        self.assertEquals(group.charter.rev, "")
-
-
-    def test_edit_info(self):
-        make_test_data()
-
-        # And make a charter for group
-        group = Group.objects.get(acronym="mars")
-
-        url = urlreverse('wg_edit_info', kwargs=dict(name=group.acronym))
-        login_testing_unauthorized(self, "secretary", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form select[name=parent]')), 1)
-        self.assertEquals(len(q('form input[name=acronym]')), 1)
-
-        # faulty post
-        Group.objects.create(name="Collision Test Group", acronym="collide")
-        r = self.client.post(url, dict(acronym="collide"))
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
-
-        # Create old acronym
-        group.acronym = "oldmars"
-        group.save()
-        save_group_in_history(group)
-        group.acronym = "mars"
-        group.save()
-
-        # post with warning
-        r = self.client.post(url, dict(acronym="oldmars"))
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
-        
-        # edit info
-        area = group.parent
-        ad = Person.objects.get(name="Aread Irector")
-        r = self.client.post(url,
-                             dict(name="Mars Not Special Interest Group",
-                                  acronym="mnsig",
-                                  parent=area.pk,
-                                  ad=ad.pk,
-                                  chairs="aread@ietf.org, ad1@ietf.org",
-                                  secretaries="aread@ietf.org, ad1@ietf.org, ad2@ietf.org",
-                                  techadv="aread@ietf.org",
-                                  list_email="mars@mail",
-                                  list_subscribe="subscribe.mars",
-                                  list_archive="archive.mars",
-                                  urls="http://mars.mars (MARS site)"
-                                  ))
-        self.assertEquals(r.status_code, 302)
-
-        group = Group.objects.get(acronym="mnsig")
-        self.assertEquals(group.name, "Mars Not Special Interest Group")
-        self.assertEquals(group.parent, area)
-        self.assertEquals(group.ad, ad)
-        for k in ("chair", "secr", "techadv"):
-            self.assertTrue(group.role_set.filter(name=k, email__address="aread@ietf.org"))
-        self.assertEquals(group.list_email, "mars@mail")
-        self.assertEquals(group.list_subscribe, "subscribe.mars")
-        self.assertEquals(group.list_archive, "archive.mars")
-        self.assertEquals(group.groupurl_set.all()[0].url, "http://mars.mars")
-        self.assertEquals(group.groupurl_set.all()[0].name, "MARS site")
 
     def test_edit_telechat_date(self):
         make_test_data()
@@ -323,31 +196,6 @@ class WgInfoTestCase(django.test.TestCase):
         charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
         self.assertEquals(charter.rev, next_revision(prev_rev))
         self.assertTrue("new_revision" in charter.latest_event().type)
-
-class WgAddCommentTestCase(django.test.TestCase):
-    fixtures = ['names']
-
-    def test_add_comment(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-        url = urlreverse('wg_add_comment', kwargs=dict(name=group.acronym))
-        login_testing_unauthorized(self, "secretary", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form textarea[name=comment]')), 1)
-
-        # request resurrect
-        comments_before = group.groupevent_set.filter(type="added_comment").count()
-
-        r = self.client.post(url, dict(comment="This is a test."))
-        self.assertEquals(r.status_code, 302)
-
-        self.assertEquals(group.groupevent_set.filter(type="added_comment").count(), comments_before + 1)
-        self.assertTrue("This is a test." in group.groupevent_set.filter(type="added_comment").order_by('-time')[0].desc)
 
 class WgEditPositionTestCase(django.test.TestCase):
     fixtures = ['names', 'ballot']

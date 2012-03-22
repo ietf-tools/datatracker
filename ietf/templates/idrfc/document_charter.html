@@ -46,9 +46,7 @@
       </td>
     </tr>
 
-    {% if chartering %}
-
-    {% if doc.group.comments %}
+    {% if chartering and doc.group.comments %}
     <tr>
       {% if chartering == "initial" %}<td>Reason for chartering:</td>{% endif %}
       {% if chartering == "rechartering" %}<td>Reason for rechartering:</td>{% endif %}
@@ -72,28 +70,28 @@
 
     <tr><td>Last updated:</td><td> {{ doc.time|date:"Y-m-d" }}</td></tr>
 
-    {% endif %}
-
     <tr><td colspan='2'><hr size='1' noshade /></td></tr>
   </table>
 
-{% if not snapshot and user|has_role:"Area Director,Secretariat" %}
+  <div class="actions">
+    {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
 
-{% if chartering  %}
+    {% if chartering  %}
 
-{% if doc.group.state_id != "conclude" %}
-<a href="{% url wg_submit name=doc.group.acronym %}">Edit charter</a>
-{% endif %}
+    {% if doc.group.state_id != "conclude" %}
+    <a href="{% url wg_submit name=doc.group.acronym %}">Edit charter text</a>
+    {% endif %}
 
-<a href="{% url wg_startstop_process name=doc.group.acronym option='abandon' %}">Abandon effort</a>
+    <a href="{% url wg_startstop_process name=doc.group.acronym option='abandon' %}">Abandon effort</a>
 
-{% else %}
-<a href="{% url wg_startstop_process name=doc.group.acronym option='recharter' %}">Recharter</a>
-{% endif %}
+    {% else %}
+    <a href="{% url wg_startstop_process name=doc.group.acronym option='recharter' %}">Recharter</a>
+    {% endif %}
 
-{% endif %}
+    {% endif %}
 
-  <div><a href="/feed/wgcomments/{{ doc.group.acronym }}/">Atom feed</a></div>
+    <a href="/feed/wgcomments/{{ doc.group.acronym }}/">Atom feed</a>
+  </div>
 </div>
 
 <p>Other versions: <a href="{{ txt_url }}">plain text</a></p>

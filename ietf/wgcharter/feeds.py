@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.history import find_history_active_at
 
 from ietf.group.models import Group
@@ -19,16 +19,16 @@ class GroupComments(Feed):
     description_template = "feeds/wg_charter_description.html"
     def get_object(self, bits):
 	if len(bits) != 1:
-	    raise ObjectDoesNotExist
+	    raise Group.DoesNotExist
         return Group.objects.get(acronym=bits[0])
 
     def title(self, obj):
-        return "WG Record changes for %s" % obj.acronym
+        return "WG changes for %s" % obj.acronym
 
     def link(self, obj):
-	if obj is None:
+	if not obj:
 	    raise FeedDoesNotExist
-	return reverse('wg_view', kwargs={'name': obj.acronym})
+	return urlreverse('wg_charter', kwargs={'acronym': obj.acronym})
 
     def description(self, obj):
 	return self.title(obj)
@@ -59,7 +59,7 @@ class GroupComments(Feed):
         return history
 
     def item_link(self, obj):
-        return reverse('wg_view', kwargs={'name': obj['group'].acronym})
+        return urlreverse('wg_charter', kwargs={'acronym': obj['group'].acronym})
 
     def item_pubdate(self, obj):
 	return obj['date']

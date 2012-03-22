@@ -11,6 +11,8 @@
 .snapshots { margin: 0.5em 0; }
 .snapshots .revisions a:first-child { font-weight: bold }
 
+.metabox .actions a { display: inline-block; margin-right: 0.4em; }
+
 .diffTool { padding: 8px 4px; margin: 8px 0;}
 .diffTool h2 { margin-top:0;margin-bottom:4px; }
 .diffTool label { display: inline-block; width: 3em; padding: 0 0.5em; }

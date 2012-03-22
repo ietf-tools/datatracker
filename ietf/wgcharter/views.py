@@ -243,14 +243,3 @@ def wg_ballot(request, name):
     info['pos_no_record'] = no_record
     return render_to_response('wgcharter/wg_ballot.html', {'info':info, 'wg':wg, 'doc': doc}, context_instance=RequestContext(request))
 
-
-def json_emails(l):
-    result = []
-    for p in l:
-        result.append({"id": p.address + "", "name": p.person.plain_name() + " &lt;" + p.address + "&gt;"})
-    return simplejson.dumps(result)
-
-def search_person(request):
-    if request.method == 'GET':
-        emails = Email.objects.filter(person__name__istartswith=request.GET.get('q','')).order_by('person__name')
-        return HttpResponse(json_emails(emails), mimetype='application/json')

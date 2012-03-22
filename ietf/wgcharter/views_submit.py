@@ -10,10 +10,10 @@ from django.conf import settings
 
 from ietf.ietfauth.decorators import group_required
 from ietf.group.models import Group
-from ietf.doc.models import Document, DocHistory, DocEvent
+from ietf.doc.models import Document, DocHistory, DocEvent, save_document_in_history
 from ietf.group.utils import save_group_in_history
 
-from utils import next_revision, set_or_create_charter, save_charter_in_history
+from utils import next_revision, set_or_create_charter
 
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Charter text", help_text="Edit the charter text", required=False)
@@ -57,7 +57,7 @@ def submit(request, name):
     if request.method == 'POST':
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
-            save_charter_in_history(charter)
+            save_document_in_history(charter)
             # Also save group history so we can search for it
             save_group_in_history(wg)
 
@@ -87,7 +87,7 @@ def submit(request, name):
         filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
         try:
             charter_text = open(filename, 'r')
-            init = dict(content = charter_text.read())
+            init = dict(content=charter_text.read())
         except IOError:
             init = {}
         form = UploadForm(initial = init)

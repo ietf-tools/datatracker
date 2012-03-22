@@ -2,7 +2,7 @@
 
 {% block title %}
 {% if wg %}
-Edit info on {{ wg.acronym }}
+Edit WG {{ wg.acronym }}
 {% else %}
 Create WG
 {% endif %}
@@ -42,7 +42,7 @@ form.edit-info #id_comments {
 {% block content %}
 {% load ietf_filters %}
 <h1>{% if wg %}
-Edit info on {{ wg.acronym }}
+Edit WG {{ wg.acronym }}
 {% else %}
 Create WG
 {% endif %}
@@ -55,7 +55,7 @@ Create WG
       <th>{{ field.label_tag }}:</th>
       <td>{{ field }}
       {% ifequal field.name "ad" %}
-      {% if user|in_group:"Area_Director" %}
+      {% if user|has_role:"Area Director" %}
       <label><input type="checkbox" name="ad" value="{{ login.pk }}" /> Assign to me</label>
       {% endif %}
       {% endifequal %}      
@@ -68,7 +68,7 @@ Create WG
       <td></td>
       <td class="actions">
 	{% if wg %}
-          <a href="{% url wg_view name=wg.acronym %}">Back</a>
+          <a href="{% url wg_charter acronym=wg.acronym %}">Back</a>
           <input type="submit" value="Save"/>
         {% else %}
           <input type="submit" value="Create"/>
@@ -79,24 +79,8 @@ Create WG
 </form>
 {% endblock %}
 
-{% block scripts %}
-$(document).ready(function () {
-    var chairs = eval($("#id_chairs").val()),
-        secretaries = eval($("#id_secretaries").val()),
-        techadv = eval($("#id_techadv").val());
-    $("#id_chairs").tokenInput("/wgcharter/searchPerson/", { hintText: "",
-                                                            preventDuplicates: true, 
-                                                            prePopulate: chairs });
-    $("#id_secretaries").tokenInput("/wgcharter/searchPerson/", { hintText: "",
-                                                                 preventDuplicates: true,
-                                                                 prePopulate: secretaries });
-    $("#id_techadv").tokenInput("/wgcharter/searchPerson/", { hintText: "",
-                                                             preventDuplicates: true,
-                                                             prePopulate: techadv });
-    $("#id_name").focus();
-});
-{% endblock %}
-
 {% block content_end %}
 <script type="text/javascript" src="/js/lib/jquery.tokeninput.js"></script>
+<script type="text/javascript" src="/js/lib/json2.js"></script>
+<script type="text/javascript" src="/js/emails-field.js"></script>
 {% endblock %}

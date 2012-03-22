@@ -14,82 +14,78 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.ietfauth.decorators import group_required
-from ietf.idtracker.templatetags.ietf_filters import in_group
-from ietf.ietfauth.decorators import has_role
-from mails import email_secretariat, generate_ballot_writeup, generate_issue_ballot_mail
-
-from utils import *
+from ietf.ietfauth.decorators import has_role, role_required
+from ietf.wgcharter.mails import email_secretariat, generate_ballot_writeup, generate_issue_ballot_mail
+from ietf.wgcharter.utils import *
 from ietf.group.models import Group, GroupHistory, GroupEvent
 from ietf.group.utils import save_group_in_history
 from ietf.name.models import GroupBallotPositionName, GroupStateName
 from ietf.doc.models import *
 
 def default_action_text(wg, charter, user, action):
-   e = WriteupDocEvent(doc=charter, by=user)
-   e.by = user
-   e.type = "changed_action_announcement"
-   e.desc = "WG action text was changed"
+    e = WriteupDocEvent(doc=charter, by=user)
+    e.by = user
+    e.type = "changed_action_announcement"
+    e.desc = "WG action text was changed"
 
-   info = {}
-   info['chairs'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Chair")]
-   info['secr'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Secr")]
-   info['techadv'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Techadv")]
-   info['ad'] = {'name': wg.ad.plain_name(), 'email': wg.ad.role_email("ad").address } if wg.ad else None,
-   info['list'] = wg.list_email if wg.list_email else None,
-   info['list_subscribe'] = str(wg.list_subscribe) if wg.list_subscribe else None,
-   info['list_archive'] = str(wg.list_archive) if wg.list_archive else None,
+    info = {}
+    info['chairs'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Chair")]
+    info['secr'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Secr")]
+    info['techadv'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Techadv")]
+    info['ad'] = {'name': wg.ad.plain_name(), 'email': wg.ad.role_email("ad").address } if wg.ad else None,
+    info['list'] = wg.list_email if wg.list_email else None,
+    info['list_subscribe'] = str(wg.list_subscribe) if wg.list_subscribe else None,
+    info['list_archive'] = str(wg.list_archive) if wg.list_archive else None,
 
-   filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
-   try:
-      charter_text = open(filename, 'r')
-      info['charter_txt'] = charter_text.read()
-   except IOError:
-      info['charter_txt'] = "Error: couldn't read charter text"
+    filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
+    try:
+        charter_text = open(filename, 'r')
+        info['charter_txt'] = charter_text.read()
+    except IOError:
+        info['charter_txt'] = "Error: couldn't read charter text"
 
-   e.text = render_to_string("wgcharter/action_text.txt",
-                            dict(wg=wg,
-                                 charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
-                                 action_type=action,
-                                 info=info,
-                                 )
-                            )
+        e.text = render_to_string("wgcharter/action_text.txt",
+                                  dict(wg=wg,
+                                       charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
+                                       action_type=action,
+                                       info=info,
+                                       ))
 
-   e.save()
-   return e
+        e.save()
+        return e
 
 def default_review_text(wg, charter, user):
-   e = WriteupDocEvent(doc=charter, by=user)
-   e.by = user
-   e.type = "changed_review_announcement"
-   e.desc = "WG review text was changed"
-   info = {}
-   info['chairs'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Chair")]
-   info['secr'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Secr")]
-   info['techadv'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Techadv")]
-   info['ad'] = {'name': wg.ad.plain_name(), 'email': wg.ad.role_email("ad").address } if wg.ad else None,
-   info['list'] = wg.list_email if wg.list_email else None,
-   info['list_subscribe'] = wg.list_subscribe if wg.list_subscribe else None,
-   info['list_archive'] = wg.list_archive if wg.list_archive else None,
+    e = WriteupDocEvent(doc=charter, by=user)
+    e.by = user
+    e.type = "changed_review_announcement"
+    e.desc = "WG review text was changed"
+    info = {}
+    info['chairs'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Chair")]
+    info['secr'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Secr")]
+    info['techadv'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Techadv")]
+    info['ad'] = {'name': wg.ad.plain_name(), 'email': wg.ad.role_email("ad").address } if wg.ad else None,
+    info['list'] = wg.list_email if wg.list_email else None,
+    info['list_subscribe'] = wg.list_subscribe if wg.list_subscribe else None,
+    info['list_archive'] = wg.list_archive if wg.list_archive else None,
 
-   info['bydate'] = (date.today() + timedelta(weeks=1)).isoformat()
+    info['bydate'] = (date.today() + timedelta(weeks=1)).isoformat()
 
-   filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
-   try:
-      charter_text = open(filename, 'r')
-      info['charter_txt'] = charter_text.read()
-   except IOError:
-      info['charter_txt'] = "Error: couldn't read charter text"
+    filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
+    try:
+        charter_text = open(filename, 'r')
+        info['charter_txt'] = charter_text.read()
+    except IOError:
+        info['charter_txt'] = "Error: couldn't read charter text"
 
-   e.text = render_to_string("wgcharter/review_text.txt",
-                            dict(wg=wg,
-                                 charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
-                                 info=info,
-                                 review_type="new" if wg.state_id == "proposed" else "recharter",
-                                 )
-                            )
-   e.save()
-   return e
+        e.text = render_to_string("wgcharter/review_text.txt",
+                                  dict(wg=wg,
+                                       charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
+                                       info=info,
+                                       review_type="new" if wg.state_id == "proposed" else "recharter",
+                                       )
+                                  )
+        e.save()
+        return e
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("no", "No"),
@@ -114,13 +110,13 @@ class EditPositionForm(forms.Form):
     return_to_url = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def clean_blocking(self):
-       entered_blocking = self.cleaned_data["block_comment"]
-       entered_pos = self.cleaned_data["position"]
-       if entered_pos.slug == "block" and not entered_blocking:
-           raise forms.ValidationError("You must enter a non-empty blocking comment")
-       return entered_blocking
+        entered_blocking = self.cleaned_data["block_comment"]
+        entered_pos = self.cleaned_data["position"]
+        if entered_pos.slug == "block" and not entered_blocking:
+            raise forms.ValidationError("You must enter a non-empty blocking comment")
+        return entered_blocking
 
-@group_required('Area_Director','Secretariat')
+@role_required('Area Director','Secretariat')
 def edit_position(request, name):
     """Vote and edit comments on Charter as Area Director."""
     try:
@@ -135,7 +131,7 @@ def edit_position(request, name):
     charter = set_or_create_charter(wg)
     started_process = charter.latest_event(type="started_iesg_process")
     if not started_process:
-       raise Http404
+        raise Http404
 
     ad = login = request.user.get_profile()
 
@@ -157,12 +153,12 @@ def edit_position(request, name):
     if request.method == 'POST':
         form = EditPositionForm(request.POST)
         if form.is_valid():
- 
+            
             # save the vote
             clean = form.cleaned_data
 
             if clean['return_to_url']:
-              return_to_url = clean['return_to_url']
+                return_to_url = clean['return_to_url']
 
             pos = GroupBallotPositionDocEvent(doc=charter, by=login)
             pos.type = "changed_ballot_position"
@@ -219,7 +215,7 @@ def edit_position(request, name):
 
                 for e in added_events:
                     e.save() # save them after the position is saved to get later id
-                        
+                    
                 charter.time = pos.time
                 charter.save()
 
@@ -252,7 +248,7 @@ def edit_position(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
-@group_required('Area_Director','Secretariat')
+@role_required('Area Director','Secretariat')
 def send_ballot_comment(request, name):
     """Email Charter ballot comment for area director."""
     try:
@@ -311,13 +307,13 @@ def send_ballot_comment(request, name):
                             dict(block_comment=d, comment=c, ad=ad.plain_name(), charter=charter, pos=pos.pos))
     frm = ad.formatted_email()
     to = "The IESG <iesg@ietf.org>"
-        
+    
     if request.method == 'POST':
         cc = [x.strip() for x in request.POST.get("cc", "").split(',') if x.strip()]
         send_mail_text(request, to, frm, subject, body, cc=", ".join(cc))
-            
+        
         return HttpResponseRedirect(return_to_url)
-  
+    
     return render_to_response('wgcharter/send_ballot_comment.html',
                               dict(charter=charter,
                                    subject=subject,
@@ -327,16 +323,16 @@ def send_ballot_comment(request, name):
                                    ad=ad,
                                    can_send=d or c,
                                    back_url=back_url,
-                                  ),
+                                   ),
                               context_instance=RequestContext(request))
-        
+
 class AnnouncementTextForm(forms.Form):
     announcement_text = forms.CharField(widget=forms.Textarea, required=True)
 
     def clean_announcement_text(self):
         return self.cleaned_data["announcement_text"].replace("\r", "")
 
-@group_required('Area_Director','Secretariat')
+@role_required('Area Director','Secretariat')
 def announcement_text(request, name, ann):
     """Editing of announcement text"""
     try:
@@ -358,10 +354,10 @@ def announcement_text(request, name, ann):
         existing = charter.latest_event(WriteupDocEvent, type="changed_review_announcement")
     if not existing:
         if ann == "action":
-           if next_approved_revision(wg.charter.rev) == "01":
-              existing = default_action_text(wg, charter, login, "Formed")
-           else:
-              existing = default_action_text(wg, charter, login, "Rechartered")
+            if next_approved_revision(wg.charter.rev) == "01":
+                existing = default_action_text(wg, charter, login, "Formed")
+            else:
+                existing = default_action_text(wg, charter, login, "Rechartered")
         elif ann == "review":
             existing = default_review_text(wg, charter, login)
 
@@ -381,28 +377,28 @@ def announcement_text(request, name, ann):
                 
                 charter.time = e.time
                 charter.save()
-            return redirect('wg_view', name=wg.acronym)
+            return redirect('doc_writeup', name=charter.name)
 
         if "regenerate_text" in request.POST:
-           if ann == "action":
-              if next_approved_revision(wg.charter.rev) == "01":
-                 e = default_action_text(wg, charter, login, "Formed")
-              else:
-                 e = default_action_text(wg, charter, login, "Rechartered")
-           elif ann == "review":
-              e = default_review_text(wg, charter, login)
-           # make sure form has the updated text
-           form = AnnouncementTextForm(initial=dict(announcement_text=e.text))
+            if ann == "action":
+                if next_approved_revision(wg.charter.rev) == "01":
+                    e = default_action_text(wg, charter, login, "Formed")
+                else:
+                    e = default_action_text(wg, charter, login, "Rechartered")
+            elif ann == "review":
+                e = default_review_text(wg, charter, login)
+            # make sure form has the updated text
+            form = AnnouncementTextForm(initial=dict(announcement_text=e.text))
 
         if "send_text" in request.POST and form.is_valid():
-           msg = form.cleaned_data['announcement_text']
-           import email
-           parsed_msg = email.message_from_string(msg.encode("utf-8"))
+            msg = form.cleaned_data['announcement_text']
+            import email
+            parsed_msg = email.message_from_string(msg.encode("utf-8"))
 
-           send_mail_text(request, parsed_msg["To"],
-                          parsed_msg["From"], parsed_msg["Subject"],
-                          parsed_msg.get_payload())
-           return redirect('wg_view', name=wg.acronym)
+            send_mail_text(request, parsed_msg["To"],
+                           parsed_msg["From"], parsed_msg["Subject"],
+                           parsed_msg.get_payload())
+            return redirect('doc_writeup', name=charter.name)
 
     return render_to_response('wgcharter/announcement_text.html',
                               dict(charter=charter,
@@ -418,7 +414,7 @@ class BallotWriteupForm(forms.Form):
     def clean_ballot_writeup(self):
         return self.cleaned_data["ballot_writeup"].replace("\r", "")
         
-@group_required('Area_Director','Secretariat')
+@role_required('Area Director','Secretariat')
 def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
     try:
@@ -495,7 +491,7 @@ def ballot_writeupnotes(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
-@group_required('Secretariat')
+@role_required('Secretariat')
 def approve_ballot(request, name):
     """Approve ballot, changing state, copying charter"""
     try:
@@ -513,10 +509,10 @@ def approve_ballot(request, name):
 
     e = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     if not e:
-       if next_approved_revision(wg.charter.rev) == "01":
-          announcement= default_action_text(wg, charter, login, "Formed").text
-       else:
-          announcement = default_action_text(wg, charter, login, "Rechartered").text
+        if next_approved_revision(wg.charter.rev) == "01":
+            announcement= default_action_text(wg, charter, login, "Formed").text
+        else:
+            announcement = default_action_text(wg, charter, login, "Rechartered").text
     else:
         announcement = e.text
 
@@ -524,7 +520,7 @@ def approve_ballot(request, name):
         new_state = GroupStateName.objects.get(slug="active")
         new_charter_state = State.objects.get(type="charter", slug="approved")
 
-        save_charter_in_history(charter)
+        save_document_in_history(charter)
         save_group_in_history(wg)
 
         prev_state = wg.state
@@ -540,7 +536,7 @@ def approve_ballot(request, name):
         change_description = e.desc + " and WG state has been changed to %s" % new_state.name
         
         e = log_state_changed(request, charter, login, prev_state)
-                    
+        
         wg.time = e.time
         wg.save()
 
@@ -548,15 +544,15 @@ def approve_ballot(request, name):
 
         filename = os.path.join(charter.get_file_path(), ch.name+"-"+ch.rev+".txt")
         try:
-           source = open(filename, 'rb')
-           raw_content = source.read()
+            source = open(filename, 'rb')
+            raw_content = source.read()
 
-           new_filename = os.path.join(charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (wg.acronym, next_approved_revision(ch.rev)))
-           destination = open(new_filename, 'wb+')
-           destination.write(raw_content)
-           destination.close()
+            new_filename = os.path.join(charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (wg.acronym, next_approved_revision(ch.rev)))
+            destination = open(new_filename, 'wb+')
+            destination.write(raw_content)
+            destination.close()
         except IOError:
-           raise Http404("Charter text %s" % filename)
+            raise Http404("Charter text %s" % filename)
 
         charter.rev = next_approved_revision(charter.rev)
         charter.save()
@@ -567,7 +563,7 @@ def approve_ballot(request, name):
         send_mail_preformatted(request, announcement)
 
         return HttpResponseRedirect(charter.get_absolute_url())
-  
+    
     return render_to_response('wgcharter/approve_ballot.html',
                               dict(charter=charter,
                                    announcement=announcement,

@@ -29,47 +29,6 @@ def set_or_create_charter(wg):
         wg.save()
     return charter
 
-def save_charter_in_history(charter):
-    '''This is a modified save_document_in_history that save the name 
-    as charter-ietf-wgacronym with wgacronym being the current Group
-    acronym. The charter Document may have an old name which is no longer
-    in use'''
-    def get_model_fields_as_dict(obj):
-        return dict((field.name, getattr(obj, field.name))
-                    for field in obj._meta.fields
-                    if field is not obj._meta.pk)
-
-    # copy fields
-    fields = get_model_fields_as_dict(charter)
-    fields["doc"] = charter
-    fields["name"] = 'charter-ietf-%s' % charter.chartered_group.acronym
-    
-    chist = DocHistory(**fields)
-    chist.save()
-
-    # copy many to many
-    for field in charter._meta.many_to_many:
-        if field.rel.through and field.rel.through._meta.auto_created:
-            setattr(chist, field.name, getattr(charter, field.name).all())
-
-    # copy remaining tricky many to many
-    def transfer_fields(obj, HistModel):
-        mfields = get_model_fields_as_dict(item)
-        # map charter -> chist
-        for k, v in mfields.iteritems():
-            if v == charter:
-                mfields[k] = chist
-        HistModel.objects.create(**mfields)
-
-    for item in RelatedDocument.objects.filter(source=charter):
-        transfer_fields(item, RelatedDocHistory)
-
-    for item in DocumentAuthor.objects.filter(document=charter):
-        transfer_fields(item, DocHistoryAuthor)
-                
-    return chist
-
-
 def add_wg_comment(request, wg, text, ballot=None):
     if request:
         login = request.user.get_profile()
@@ -100,13 +59,6 @@ def log_group_state_changed(request, wg, by, note=''):
     if note:
         e.desc += "<br>%s" % note
 
-    e.save()
-    return e
-
-def log_info_changed(request, wg, by, change):
-    e = GroupEvent(group=wg, by=by)
-    e.type = "info_changed"
-    e.desc = change
     e.save()
     return e
 

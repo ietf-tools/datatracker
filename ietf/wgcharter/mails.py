@@ -14,26 +14,26 @@ from ietf.ipr.search import iprs_from_docs
 from ietf.doc.models import WriteupDocEvent, DocAlias, GroupBallotPositionDocEvent
 from ietf.person.models import Person
 
-# These become part of the subject of the email
-types = {}
-types['state'] = "State changed"
-types['state-notrev'] = "State changed to Not currently under review"
-types['state-infrev'] = "State changed to Informal review"
-types['state-intrev'] = "State changed to Internal review"
-types['state-extrev'] = "State changed to External review"
-types['state-iesgrev'] = "State changed to IESG review"
-types['state-approved'] = "Charter approved"
-types['conclude'] = "Request closing of WG"
-
 def email_secretariat(request, wg, type, text):
     to = ["iesg-secretary@ietf.org"]
+
+    types = {}
+    types['state'] = "State changed"
+    types['state-notrev'] = "State changed to Not currently under review"
+    types['state-infrev'] = "State changed to Informal review"
+    types['state-intrev'] = "State changed to Internal review"
+    types['state-extrev'] = "State changed to External review"
+    types['state-iesgrev'] = "State changed to IESG review"
+    types['state-approved'] = "Charter approved"
+    types['conclude'] = "Request closing of WG"
+
+    subject = u"Regarding WG %s: %s" % (wg.acronym, types[type])
     
     text = strip_tags(text)
-    send_mail(request, to, None,
-              "Regarding WG %s: %s" % (wg.acronym, types[type]),
+    send_mail(request, to, None, subject,
               "wgcharter/email_secretariat.txt",
               dict(text=text,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse('wg_view', kwargs=dict(name=wg.acronym))))
+                   url=settings.IDTRACKER_BASE_URL + urlreverse('wg_charter', kwargs=dict(acronym=wg.acronym))))
 
 def generate_ballot_writeup(request, doc):
     e = WriteupDocEvent()
