@@ -171,6 +171,9 @@ class Document(DocumentInfo):
             a = self.docalias_set.filter(name__startswith="rfc")
             if a:
                 name = a[0].name
+        elif self.type_id == "charter":
+            return "charter-ietf-%s" % self.chartered_group.acronym
+
         return name
 
 class RelatedDocHistory(models.Model):
@@ -202,6 +205,10 @@ class DocHistory(DocumentInfo):
     def canonical_name(self):
         return self.name
 
+    def latest_event(self, *args, **kwargs):
+        kwargs["time__lte"] = self.time
+        return self.doc.latest_event(*args, **kwargs)
+
     class Meta:
         verbose_name = "document history"
         verbose_name_plural = "document histories"
@@ -215,7 +222,7 @@ def save_document_in_history(doc):
     # copy fields
     fields = get_model_fields_as_dict(doc)
     fields["doc"] = doc
-    fields["name"] = doc.name
+    fields["name"] = doc.canonical_name()
     
     dochist = DocHistory(**fields)
     dochist.save()
