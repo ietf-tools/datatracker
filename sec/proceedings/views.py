@@ -213,7 +213,12 @@ def get_next_slide_num(session):
         pattern = 'slides-%s' % (session.meeting.number)
     slides = Document.objects.filter(type='slides',name__startswith=pattern).order_by('-name')
     if slides:
-        nums = [ s.name.split('-')[-1] for s in slides ]
+        # we need this special case for plenary sessions because the name format is different
+        # it should be changed to match the rest
+        if session.group.acronym in ('iesg','iab'):
+            nums = [ s.name.split('-')[3] for s in slides ]
+        else:
+            nums = [ s.name.split('-')[-1] for s in slides ]
         nums.sort(key=int)
         return str(int(nums[-1]) + 1)
     else:
