@@ -395,7 +395,7 @@ def edit_slide(request, meeting_num, acronym, slide_id):
             form.save()
             
             # rebuild proceedings.html
-            create_proceedings(slide.meeting.pk)
+            create_proceedings(meeting)
             url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})
             return HttpResponseRedirect(url)
     else:
@@ -572,7 +572,7 @@ def replace_slide(request, meeting_num, acronym, slide_id):
                                     type='uploaded')
                                     
             # rebuild proceedings.html
-            create_proceedings(slide.meeting.pk)
+            create_proceedings(meeting)
             
             url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})
             return HttpResponseRedirect(url)
