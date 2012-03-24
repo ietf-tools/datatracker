@@ -1,5 +1,21 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+########################################################################
+########################################################################
+########################################################################
+#####                                                              #####
+#####   WARNING WARNING WARNING WARNING WARNING WARNING WARNING    #####
+#####                                                              #####
+#####   These models are old, deprecated, and should not be        #####
+#####   used. Use the models in the meetings directory             #####
+#####   instead.                                                   #####
+#####                                                              #####
+#####   WARNING WARNING WARNING WARNING WARNING WARNING WARNING    #####
+#####                                                              #####
+########################################################################
+########################################################################
+########################################################################
+
 from django.db import models
 from django.conf import settings
 from ietf.idtracker.models import Acronym, PersonOrOrgInfo, IRTF, AreaGroup, Area, IETFWG
