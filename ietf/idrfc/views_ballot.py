@@ -511,6 +511,23 @@ def send_ballot_commentREDESIGN(request, name):
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     send_ballot_comment = send_ballot_commentREDESIGN
 
+@group_required('Secretariat')
+def clear_ballot(request, name):
+    """Clear all positions and discusses.  This is actually accomplished by creating a new
+    started_iesg_process DocEvent."""
+    doc = get_object_or_404(Document, name=name)
+    if request.method == 'POST':
+        DocEvent.objects.create(type='started_iesg_process',
+                                doc=doc,
+                                by=request.user.get_profile(),
+                                desc='cleared_ballot')
+
+        return HttpResponseRedirect(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+
+    return render_to_response('idrfc/clear_ballot.html',
+                              dict(doc=doc,
+                                   back_url=doc.get_absolute_url()),
+                              context_instance=RequestContext(request))
 
 @group_required('Area_Director','Secretariat')
 def defer_ballot(request, name):
