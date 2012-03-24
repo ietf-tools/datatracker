@@ -4,6 +4,6 @@ __version__ = "4.00"
 
 __date__    = "$Date$"
 
-__rev__     = "$Rev: 3975"
+__rev__     = "$Rev$"
 
 __id__      = "$Id$"
