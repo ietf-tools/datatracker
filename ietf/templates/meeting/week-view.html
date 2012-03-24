@@ -7,10 +7,16 @@
 <script type="text/javascript">
 var items = new Array();
 {% autoescape off %}
-{% for slot in timeslots %}{% for session in slot.sessions %}
-items.push({day:{{slot.day_id}}, time:"{{slot.time_desc}}", time_id:{{slot.time_id}}, name:"{{session.acronym_name}}", wg:"{{session.acronym}}", area:"{{session.area}}", room:"{{session.room_id.room_name}}", dayname:"{{ slot.meeting_date|date:"l"|upper }}, {{ slot.meeting_date|date:"F j, Y" }}"{% if session.agenda_file %}, agenda:"/meeting/{{ meeting.num }}/agenda/{{ session.acronym }}-agenda/"{% endif %}});{% endfor %}{% endfor %}
+
+{% for slot in timeslots %} {% if slot.type.name in render_types %}
+items.push({day:{{slot.time|date:"w"}}, time:"{{slot.time|date:"Hi"}}-{{slot.end_time|date:"Hi"}}", duration:{{slot.duration.seconds}}, time_id:"{{slot.time|date:"mdHi"}}", type:"{{slot.type}}", {% if slot.session.name %}name:"{{slot.session.name}}",{% else %}{% if slot.type.name == "Break" %}name:"{{slot.name}}", area:"break", wg:"break",{% else %}name:"{{slot.session.group.name}}",wg:"{{slot.session.group.acronym}}",area:"{{slot.session.group.parent.acronym}}",{% endif %}{% endif %} {% if slot.show_location %}room:"{{slot.get_location}}",{% endif %} dayname:"{{ slot.time|date:"l"|upper }}, {{ slot.time|date:"F j, Y" }}"{% if slot.session.agenda %}, agenda:"http://www.ietf.org{{slot.session.agenda.get_absolute_url}}"{% endif %} });{% endif %}{% endfor %}
 {% endautoescape %}
 
+/* Saturday events need to be moved to the day -1 */
+for (var i = 0; i < items.length; i++)
+{
+  if (items[i].day == 6) { items[i].day = -1; }
+}
 
 var fg = {
   'app': "#008",
@@ -21,7 +27,8 @@ var fg = {
   'rtg': "#880",
   'sec': "#488",
   'tsv': "#484",
-  'irtf': "#448"
+  'irtf': "#448",
+  'break': "#000"
 };
 
 var bg = {
@@ -33,7 +40,8 @@ var bg = {
   'rtg': "#ffe",
   'sec': "#dff",
   'tsv': "#dfd",
-  'irtf': "#ddf"
+  'irtf': "#ddf",
+  'break': "#fff"
 };
 
 var day = [
@@ -87,20 +95,16 @@ function draw_calendar()
   {
     include[(frag[i]+"").toLowerCase()] = true;
   }
-  include[''] = true;
-  include['1plenary'] = true;
-  include['2plenary'] = true;
 
   /* Find our boundaries */
   for (i = 0; i < items.length; i++)
   {
-    if (include[(items[i].wg).toLowerCase()] 
-        || include[(items[i].area).toLowerCase()])
+    if (!("wg" in items[i]) || (include[(items[i].wg).toLowerCase()] 
+        || include[(items[i].area).toLowerCase()]))
     {
       var start_time = parseInt(items[i].time.substr(0,2),10) * 60 +
                        parseInt(items[i].time.substr(2,2),10);
-      var end_time   = parseInt(items[i].time.substr(5,2),10) * 60 +
-                       parseInt(items[i].time.substr(7,2),10);
+      var end_time = start_time + (items[i].duration / 60)
 
       if (!day_start || start_time < day_start) { day_start = start_time; }
       if (end_time > day_end) { day_end = end_time; }
@@ -203,13 +207,12 @@ function draw_calendar()
 
   for (i = 0; i < items.length; i++)
   {
-    if (include[(items[i].wg).toLowerCase()] 
-        || include[(items[i].area).toLowerCase()])
+    if (!("wg" in items[i])|| (include[(items[i].wg).toLowerCase()] 
+        || include[(items[i].area).toLowerCase()]))
     {
       var start_time = parseInt(items[i].time.substr(0,2),10) * 60 +
                        parseInt(items[i].time.substr(2,2),10);
-      var end_time   = parseInt(items[i].time.substr(5,2),10) * 60 +
-                       parseInt(items[i].time.substr(7,2),10);
+      var end_time = start_time + (items[i].duration / 60)
 
       var sess_width = day_width / sessions[items[i].time_id];
       var sess_height = ((end_time - start_time) * minute_height) 
@@ -269,7 +272,8 @@ function draw_calendar()
       div.appendChild(document.createElement("br"));
 
       var label = items[i].name;
-      if (fg[items[i].area])
+      if (label.length === 0) { label = "Free Slot"; }
+      if (items[i].wg && fg[items[i].area])
       {
         label = label + " (" + items[i].wg + ")";
       }
@@ -278,11 +282,14 @@ function draw_calendar()
       bold.style.fontWeight="bold";
       div.appendChild(bold);
 
-      div.appendChild(document.createElement("br"));
-      var italics = document.createElement("span");
-      italics.appendChild(document.createTextNode(items[i].room));
-      italics.style.fontStyle="oblique";
-      div.appendChild(italics);
+      if (items[i].room)
+      {
+        div.appendChild(document.createElement("br"));
+        var italics = document.createElement("span");
+        italics.appendChild(document.createTextNode(items[i].room));
+        italics.style.fontStyle="oblique";
+        div.appendChild(italics);
+      }
 
       e.appendChild(div);
 

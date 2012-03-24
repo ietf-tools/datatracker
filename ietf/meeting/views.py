@@ -5,6 +5,7 @@ import datetime
 import os
 import re
 import tarfile
+import pytz
 
 from tempfile import mkstemp
 
@@ -24,11 +25,15 @@ from ietf.idtracker.models import InternetDraft
 from ietf.idrfc.idrfc_wrapper import IdWrapper
 from ietf.utils.pipe import pipe
 
-from ietf.proceedings.models import Meeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches, WgProceedingsActivities, SessionConflict
-
-from ietf.group.models import Group
 from ietf.utils.history import find_history_active_at
 from ietf.doc.models import Document, State
+
+# Old model -- needs to be removed
+from ietf.proceedings.models import Meeting as OldMeeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches, WgProceedingsActivities, SessionConflict
+
+# New models
+from ietf.meeting.models import Meeting, Room, TimeSlot, Constraint, Session
+from ietf.group.models import Group
 
 
 @decorator_from_middleware(GZipMiddleware)
@@ -91,7 +96,7 @@ def show_html_materials(request, meeting_num=None):
                               context_instance=RequestContext(request))
 
 def current_materials(request):
-    meeting = Meeting.objects.order_by('-meeting_num')[0]
+    meeting = OldMeeting.objects.order_by('-meeting_num')[0]
     return HttpResponseRedirect( reverse(show_html_materials, args=[meeting.meeting_num]) )
 
 def get_plenary_agenda(meeting_num, id):
@@ -118,10 +123,10 @@ def agenda_info(num=None):
         try:
             timeslots = MeetingTime.objects.select_related().filter(meeting=n).order_by("day_id", "time_desc")
             update = Switches.objects.get(id=1)
-            meeting= Meeting.objects.get(meeting_num=n)
+            meeting= OldMeeting.objects.get(meeting_num=n)
             venue  = MeetingVenue.objects.get(meeting_num=n)
             break
-        except (MeetingTime.DoesNotExist, Switches.DoesNotExist, Meeting.DoesNotExist, MeetingVenue.DoesNotExist):
+        except (MeetingTime.DoesNotExist, Switches.DoesNotExist, OldMeeting.DoesNotExist, MeetingVenue.DoesNotExist):
             continue
     else:
         raise Http404("No meeting information for meeting %s available" % num)
@@ -136,10 +141,10 @@ def agenda_info(num=None):
 def agenda_infoREDESIGN(num=None):
     try:
         if num != None:
-            meeting = Meeting.objects.get(number=num)
+            meeting = OldMeeting.objects.get(number=num)
         else:
-            meeting = Meeting.objects.all().order_by('-date')[:1].get()
-    except Meeting.DoesNotExist:
+            meeting = OldMeeting.objects.all().order_by('-date')[:1].get()
+    except OldMeeting.DoesNotExist:
         raise Http404("No meeting information for meeting %s available" % num)
 
     # now go through the timeslots, only keeping those that are
@@ -413,39 +418,58 @@ def session_draft_pdf(request, num, session):
     os.unlink(pdfn)
     return HttpResponse(pdf_contents, mimetype="application/pdf")
 
+def get_meeting (num=None):
+    try:
+        if num != None:
+            meeting = OldMeeting.objects.get(number=num)
+        else:
+            meeting = OldMeeting.objects.all().order_by('-date')[:1].get()
+    except OldMeeting.DoesNotExist:
+        raise Http404("No meeting information for meeting %s available" % num)
+    return meeting
+
 def week_view(request, num=None):
-    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
-    rgs = IRTF.objects.all().order_by('acronym')
-    areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
-    conflicts = SessionConflict.objects.filter(meeting_num=meeting.meeting_num)
+    meeting = get_meeting(num)
+    timeslots = TimeSlot.objects.filter(meeting = meeting.number)
+
     template = "meeting/week-view.html"
     return render_to_response(template,
-            {"timeslots":timeslots, "update":update, "meeting":meeting, 
-             "venue":venue, "ads":ads, "plenaryw_agenda":plenaryw_agenda,
-             "plenaryt_agenda":plenaryt_agenda, "wg_list" : wgs, 
-             "rg_list" : rgs, "area_list" : areas, "conflicts":conflicts},
-             context_instance=RequestContext(request))
+            {"timeslots":timeslots,"render_types":["Session","Other","Break","Plenary"]}, context_instance=RequestContext(request))
 
 def ical_agenda(request, num=None):
-    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
-    rgs = IRTF.objects.all().order_by('acronym')
-    areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
+    # The timezone situation here remains tragic, but I've burned
+    # hours trying to figure out how to get the information I need
+    # in python. I can do this trivially in perl with its Ical module,
+    # but the icalendar module in python seems staggeringly less
+    # capable. There might be a path to success here, but I'm not
+    # completely convinced. So I'm going to spend some time
+    # working on more urgent matters for now. -Adam
+
+    meeting = get_meeting(num)
+
     q = request.META.get('QUERY_STRING','') or ""
     filter = q.lower().split(',');
     include = set(filter)
-    now = datetime.datetime.utcnow()
+    include_types = ["Plenary","Other"]
+    exclude = []
 
-    for slot in timeslots:
-        for session in slot.sessions():
-            if session.area() == '' or session.area().find('plenary') > 0 or (session.area().lower() in include):
-                filter.append(session.acronym())
+    # Process the special flags.
+    for item in include:
+        if item[0] == '-':
+            exclude.append(item[1:])
+        if item[0] == '~':
+            include_types.append(item[1:2].upper()+item[2:])
+
+    timeslots = TimeSlot.objects.filter(Q(meeting = meeting.number),
+        Q(type__name__in = include_types) |
+        Q(session__group__acronym__in = filter) |
+        Q(session__group__parent__acronym__in = filter)
+        ).exclude(Q(session__group__isnull = False),
+        Q(session__group__acronym__in = exclude) | 
+        Q(session__group__parent__acronym__in = exclude))
 
     return HttpResponse(render_to_string("meeting/agendaREDESIGN.ics" if settings.USE_DB_REDESIGN_PROXY_CLASSES else "meeting/agenda.ics",
-        {"filter":set(filter), "timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
-            "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, 
-            "now":now},
+        {"timeslots":timeslots, "meeting":meeting },
         RequestContext(request)), mimetype="text/calendar")
 
 def csv_agenda(request, num=None):

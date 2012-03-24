@@ -44,7 +44,7 @@ class Meeting(models.Model):
             return self.number
 
     def time_zone_offset(self):
-        return pytz.timezone(self.time_zone).localize(datetime.datetime.combine(self.date, datetime.time(0, 0))).strftime("%z")
+        return pytz.timezone(self.time_zone).localize(datetime.datetime.combine(self.date, datetime.time(8, 0))).strftime("%z")
     def get_meeting_date (self,offset):
         return self.date + datetime.timedelta(days=offset)
 
@@ -105,6 +105,9 @@ class TimeSlot(models.Model):
             
         return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
 
+    def end_time(self):
+        return self.time + self.duration
+
     def get_location(self):
         location = self.location
         if location:
@@ -151,6 +154,12 @@ class Session(models.Model):
     modified = models.DateTimeField(default=datetime.datetime.now)
 
     materials = models.ManyToManyField(Document, blank=True)
+
+    def agenda(self):
+        try:
+            return self.materials.get(type="agenda",states__type="agenda",states__slug="active")
+        except Exception, e:
+            return None
 
     def __unicode__(self):
         if self.meeting.type_id == "interim":

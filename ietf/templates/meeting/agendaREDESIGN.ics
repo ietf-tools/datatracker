@@ -9,27 +9,21 @@ TZOFFSETTO:{{meeting.time_zone_offset}}
 TZNAME:{{meeting.time_zone}}
 DTSTART:19700101T000000
 END:STANDARD
-END:VTIMEZONE
-{% endif %}{% for slot in timeslots %}{% ifchanged %}{% if slot.session_name and slot.break_info %}BEGIN:VEVENT
-UID:ietf-{{meeting.num}}-break-{{slot.time_id}}
-SUMMARY:{{slot.break_info.name}}
-{% if venue.break_area_name and slot.break_info.show_break_location %}LOCATION:{{venue.break_area_name}}
+END:VTIMEZONE{% endif %}{% for slot in timeslots %}
+BEGIN:VEVENT
+UID:ietf-{{slot.meeting.number}}-{{slot.pk}}
+SUMMARY:{% if slot.session.name %}{{slot.session.name}}{% else %}{% if slot.type.name == "Break" %}{{slot.name}}{% else %}{{slot.session.group.acronym|upper}} - {{slot.session.group.name}}{% endif%}{%endif%}
+{% if slot.show_location %}LOCATION:{{slot.get_location}}
 {% endif %}STATUS:TENTATIVE
 CLASS:PUBLIC
-DTSTART{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.meeting_date|date:"Ymd" }}T{{slot.break_info.time_desc|slice:":4"}}00
-DTEND{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.meeting_date|date:"Ymd" }}T{{slot.break_info.time_desc|slice:"5:9"}}00
-DTSTAMP:{{ now|date:"Ymd" }}T{{ now|date:"His" }}Z
-END:VEVENT
-{% endif %}{% endifchanged %}{% for session in slot.sessions %}{%for f in filter%}{%ifequal f session.acronym%}BEGIN:VEVENT
-UID:ietf-{{meeting.num}}-{{session.acronym}}-{{session.pk}}
-SUMMARY:{% if session.area %}{% ifnotequal session.area "1plenary" %}{{session.acronym|upper}} - {% endifnotequal %}{% endif %}{{session.acronym_name}}
-LOCATION:{{session.room_id.room_name}}
-STATUS:TENTATIVE
-CLASS:PUBLIC
-DTSTART{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.meeting_date|date:"Ymd" }}T{{slot.time_desc|slice:":4"}}00
-DTEND{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.meeting_date|date:"Ymd" }}T{{slot.time_desc|slice:"5:9"}}00
-DTSTAMP:{{ now|date:"Ymd" }}T{{ now|date:"His" }}Z
-{% if session.description %}DESCRIPTION:
- {{ session.description|escapejs }}
-{% endif %}END:VEVENT
-{%endifequal%}{%endfor%}{% endfor %}{% endfor %}END:VCALENDAR{% endautoescape %}
+DTSTART{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.time|date:"Ymd" }}T{{slot.time|date:"Hi"}}00
+DTEND{% if meeting.time_zone %};TZID="{{meeting.time_zone}}"{%endif%}:{{ slot.end_time|date:"Ymd" }}T{{slot.end_time|date:"Hi"}}00
+DTSTAMP:{{ slot.modified|date:"Ymd" }}T{{ slot.modified|date:"His" }}Z
+{% if slot.session.agenda %}URL:http://www.ietf.org{{slot.session.agenda.get_absolute_url}}
+DESCRIPTION:{{slot.name}}\n{% if slot.session.agenda_note %}
+ Note: {{slot.session.agenda_note}}\n{% endif %}{% for material in slot.session.materials.all %}
+ \n{{material.type}}{% if material.type.name != "Agenda" %}
+  ({{material.title}}){% endif %}:
+  http://www.ietf.org{{material.get_absolute_url}}\n{% endfor %}
+{% endif %}END:VEVENT{% endfor %}
+END:VCALENDAR{% endautoescape %}
