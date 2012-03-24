@@ -48,6 +48,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% endif %}
 
+{% if doc_ballot_edit_button and user|in_group:"Secretariat" %}
+<div style="margin-top:8px; margin-bottom:8px;"><span id="doc_clear_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url doc_clear_ballot name=doc.draft_name %}">Clear ballot</a></span></span></div>
+{% endif %}
+
 <p style="margin-top:1em;"><span class="square" style="background:#c00000;"></span><b>Discuss</b><br/>
 {% with ballot.get_discuss as positions %}{% include "idrfc/doc_ballot_list.html" %}{% endwith %}</p>
 
