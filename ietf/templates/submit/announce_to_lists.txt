@@ -18,4 +18,7 @@ ftp://ftp.ietf.org/internet-drafts/
 
 This Internet-Draft can be retrieved at:
 ftp://ftp.ietf.org/internet-drafts/{{ submission.filename }}-{{ submission.revision }}.txt
+
+The IETF datatracker page for this Internet-Draft is:
+https://datatracker.ietf.org/doc/{{ submission.filename }}/
 {% endautoescape %}
