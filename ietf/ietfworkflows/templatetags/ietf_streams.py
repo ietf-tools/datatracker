@@ -83,6 +83,8 @@ def edit_actions(context, wrapper):
 
     if can_manage_writeup_of_a_document(user, draft):
         actions.append(("Change stream writeup", urlreverse('doc_managing_writeup', kwargs=dict(acronym=draft.group.acronym, name=draft.filename))))
+    else:
+        actions.append(("View writeup", urlreverse('doc_managing_writeup', kwargs=dict(acronym=draft.group.acronym, name=draft.filename))))
 
     return dict(actions=actions)
 
