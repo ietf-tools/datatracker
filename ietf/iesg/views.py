@@ -53,8 +53,8 @@ from ietf.idrfc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
-from redesign.doc.models import TelechatDocEvent
-from redesign.group.models import Group
+from ietf.doc.models import Document, TelechatDocEvent
+from ietf.group.models import Group
 
 def date_threshold():
     """Return the first day of the month that is 185 days ago."""
@@ -273,14 +273,16 @@ def agenda_docs(date, next_agenda):
     return res
 
 def agenda_wg_actions(date):
-    matches = Group.objects.filter(charter__docevent__telechatdocevent__telechat_date=date)
-
     res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
-    for wg in matches:
-        section_key = "s" + get_wg_section(wg)
+    charters = Document.objects.filter(type="charter", docevent__telechatdocevent__telechat_date=date).distinct()
+    for c in charters:
+        if c.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
+            continue
+
+        section_key = "s" + get_wg_section(c.group)
         if section_key not in res:
             res[section_key] = []
-        res[section_key].append({'obj':wg})
+        res[section_key].append({'obj': c.group})
     return res
 
 def agenda_management_issues(date):

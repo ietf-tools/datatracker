@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endif %}
 
 <tr>
-<td>{{wg.obj.parent.name|upper}}</td>
+<td>{{ wg.obj.parent.acronym|upper }}</td>
 <td>{{ wg.obj.time|date:"M d"}}</td>
 <td>
 <a href="http://www.ietf.org/iesg/evaluation/charter-ietf-{{wg.obj.acronym}}-{{wg.obj.charter.rev}}.txt">
