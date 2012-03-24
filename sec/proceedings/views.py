@@ -609,7 +609,7 @@ def select(request, meeting_num):
     group_form = GroupSelectForm(choices=build_choices(wgs))
         
     # intialize IRTF form, only show if user is sec or irtf chair
-    if has_role(user,'Secretariat') or person.role_set.filter(name__slug='chair',group__type__slug='irtf'):
+    if has_role(user,'Secretariat') or person.role_set.filter(name__slug='chair',group__type__slug__in=('irtf','rg')):
         rgs = filter(lambda x: x.type_id == 'rg',groups_session)
         irtf_form = GroupSelectForm(choices=build_choices(rgs))
     else:
