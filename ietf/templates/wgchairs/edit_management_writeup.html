@@ -1,7 +1,7 @@
 {% extends "wginfo/wg_base.html" %}
 {% load ietf_filters wgchairs_tags %}
 
-{% block title %}Change protocol write-up for {{ doc }}{% endblock %}
+{% block title %} {% if can_edit %} Change {% else %} View {% endif %} protocol write-up for {{ doc }}{% endblock %}
 
 {% block wg_content %}
 
@@ -9,7 +9,7 @@
 <a href="{% url manage_shepherds wg.group_acronym.acronym %}">Return to shepherd list</a>
 </p>
 
-<h1>Change protocol write-up for {{ doc }}</h1>
+<h1> {% if can_edit %} Change {% else %} View {% endif %} protocol write-up for {{ doc }}</h1>
 
 <table class="ietf-table" style="width: 100%;">
 <tr><th>Draft state</th><th>Actual protocol write-up</th><th>Last updated</th></tr>
@@ -50,6 +50,7 @@ Please, <strong>note</strong> that the <strong>'Doc Shepherd Follow-up Underway'
 </form>
 </td></tr></table>
 {% else %}
+{% if authorized_user %}
 <table class="ietf-table" style="width: 100%;">    
   <tr><th>Edit protocol write-up</th></tr>
   <tr><td>
@@ -61,5 +62,6 @@ Please, <strong>note</strong> that the <strong>'Doc Shepherd Follow-up Underway'
   </p>
   </td></tr>
 </table>
+{% endif %}
 {% endif %}
 {% endblock %}

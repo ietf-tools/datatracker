@@ -251,8 +251,7 @@ def managing_writeup(request, acronym, name):
     wg = get_object_or_404(IETFWG, group_acronym__acronym=acronym, group_type=1)
     user = request.user
     doc = get_object_or_404(InternetDraft, filename=name)
-    if not can_manage_writeup_of_a_document(user, doc):
-        return HttpResponseForbidden('You do not have permission to access this page')
+    authorized_user = can_manage_writeup_of_a_document_no_state(user, doc)
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         from ietf.doc.models import State
         state = doc.get_state("draft-stream-%s" % doc.stream_id)
@@ -293,6 +292,7 @@ def managing_writeup(request, acronym, name):
                                            form=form,
                                            writeup=writeup,
                                            can_edit=can_edit,
+                                           authorized_user=authorized_user,
                                            ),
                                       context_instance=RequestContext(request))
         elif valid and not error:
@@ -312,5 +312,6 @@ def managing_writeup(request, acronym, name):
                                    writeup=writeup,
                                    followup=followup,
                                    can_edit=can_edit,
+                                   authorized_user=authorized_user,
                                    ),
                               context_instance=RequestContext(request))
