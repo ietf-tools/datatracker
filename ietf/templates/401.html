@@ -1,0 +1,20 @@
+{# Copyright The IETF Trust 2012, All Rights Reserved #}
+{% extends "base.html" %}
+{% block title %}401 Unauthorized{% endblock %}
+{% block content %}
+
+<img src="/images/ietflogo2e.png" height="80" width="140"/>
+
+<h2>Authentication Required</h2>
+
+<p>The server could not verify that you are authorized to view this page using
+the username and password you provided. You can now:</p>
+
+<ul>
+<li><a href="/accounts/login/">Attempt to login again</a></li>
+<li><a href="/accounts/reset/">Request a password reset</a></li>
+</ul>
+
+<p>If you think this is a server error, please contact <a
+   href="mailto:webtools@ietf.org">webtools@ietf.org</a>.</p>
+{% endblock %}
