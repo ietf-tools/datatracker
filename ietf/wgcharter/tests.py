@@ -21,56 +21,16 @@ from ietf.iesg.models import TelechatDate
 
 from utils import *
 
-class SearchTestCase(django.test.TestCase):
+class EditCharterTestCase(django.test.TestCase):
     fixtures = ['names']
 
-    def test_search(self):
-        make_test_data()
+    def setUp(self):
+        self.charter_dir = os.path.abspath("tmp-charter-dir")
+        os.mkdir(self.charter_dir)
+        settings.CHARTER_PATH = self.charter_dir
 
-        group = Group.objects.get(acronym="mars")
-        group.charter.set_state(State.objects.get(slug="infrev", type="charter"))
-
-        r = self.client.get("/wgcharter/")
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search"))
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search_in_process"))
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search_by_area", kwargs=dict(name=group.parent.acronym)))
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=%s" % group.name.replace(" ", "+"))
-        self.assertEquals(r.status_code, 302)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something")
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=acronym&acronym=some")
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=state&state=active&charter_state=")
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=state&state=&charter_state=%s" % State.objects.get(type="charter", slug="approved").pk)
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=ad&ad=%s" % Person.objects.get(name="Aread Irector").pk)
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=area&area=%s" % group.parent.pk)
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=anyfield&anyfield=something")
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=eacronym&eacronym=someold")
-        self.assertEquals(r.status_code, 200)
-        
-class WgStateTestCase(django.test.TestCase):
-    fixtures = ['names']
+    def tearDown(self):
+        shutil.rmtree(self.charter_dir)
 
     def test_change_state(self):
         make_test_data()
@@ -121,18 +81,6 @@ class WgStateTestCase(django.test.TestCase):
                 else:
                     self.assertTrue("State changed" in outbox[-1]['Subject'])
                     
-
-class WgInfoTestCase(django.test.TestCase):
-    fixtures = ['names']
-
-    def setUp(self):
-        self.charter_dir = os.path.abspath("tmp-charter-dir")
-        os.mkdir(self.charter_dir)
-        settings.CHARTER_PATH = self.charter_dir
-
-    def tearDown(self):
-        shutil.rmtree(self.charter_dir)
-
     def test_edit_telechat_date(self):
         make_test_data()
 
@@ -140,7 +88,7 @@ class WgInfoTestCase(django.test.TestCase):
         group = Group.objects.get(acronym="mars")
         charter = group.charter
 
-        url = urlreverse('wg_edit_info', kwargs=dict(name=group.acronym))
+        url = urlreverse('charter_telechat_date', kwargs=dict(name=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         # add to telechat
@@ -197,7 +145,7 @@ class WgInfoTestCase(django.test.TestCase):
         self.assertEquals(charter.rev, next_revision(prev_rev))
         self.assertTrue("new_revision" in charter.latest_event().type)
 
-class WgEditPositionTestCase(django.test.TestCase):
+class CharterPositionTestCase(django.test.TestCase):
     fixtures = ['names', 'ballot']
 
     def test_edit_position(self):
@@ -290,7 +238,7 @@ class WgEditPositionTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertTrue(len(q('form input[name=position]')) > 0)
 
-        # vote for rhousley
+        # vote for AD
         pos_before = charter.docevent_set.filter(type="changed_ballot_position").count()
         self.assertTrue(not charter.docevent_set.filter(type="changed_ballot_position", by__name="Sec Retary"))
         
@@ -349,7 +297,7 @@ class WgEditPositionTestCase(django.test.TestCase):
         self.assertTrue("BLOCKING COMMENT" in outbox[-1]['Subject'])
         self.assertTrue("COMMENT" in outbox[-1]['Subject'])
 
-class WgApproveBallotTestCase(django.test.TestCase):
+class CharterApproveBallotTestCase(django.test.TestCase):
     fixtures = ['names']
 
     def setUp(self):

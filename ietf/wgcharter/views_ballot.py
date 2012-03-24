@@ -44,15 +44,15 @@ def default_action_text(wg, charter, user, action):
     except IOError:
         info['charter_txt'] = "Error: couldn't read charter text"
 
-        e.text = render_to_string("wgcharter/action_text.txt",
-                                  dict(wg=wg,
-                                       charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
-                                       action_type=action,
-                                       info=info,
-                                       ))
+    e.text = render_to_string("wgcharter/action_text.txt",
+                              dict(wg=wg,
+                                   charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
+                                   action_type=action,
+                                   info=info,
+                                   ))
 
-        e.save()
-        return e
+    e.save()
+    return e
 
 def default_review_text(wg, charter, user):
     e = WriteupDocEvent(doc=charter, by=user)
@@ -77,15 +77,15 @@ def default_review_text(wg, charter, user):
     except IOError:
         info['charter_txt'] = "Error: couldn't read charter text"
 
-        e.text = render_to_string("wgcharter/review_text.txt",
-                                  dict(wg=wg,
-                                       charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
-                                       info=info,
-                                       review_type="new" if wg.state_id == "proposed" else "recharter",
-                                       )
-                                  )
-        e.save()
-        return e
+    e.text = render_to_string("wgcharter/review_text.txt",
+                              dict(wg=wg,
+                                   charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
+                                   info=info,
+                                   review_type="new" if wg.state_id == "proposed" else "recharter",
+                                   )
+                              )
+    e.save()
+    return e
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("no", "No"),
@@ -491,7 +491,7 @@ def ballot_writeupnotes(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
-@role_required('Secretariat')
+@role_required("Secretariat")
 def approve_ballot(request, name):
     """Approve ballot, changing state, copying charter"""
     try:
@@ -510,7 +510,7 @@ def approve_ballot(request, name):
     e = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     if not e:
         if next_approved_revision(wg.charter.rev) == "01":
-            announcement= default_action_text(wg, charter, login, "Formed").text
+            announcement = default_action_text(wg, charter, login, "Formed").text
         else:
             announcement = default_action_text(wg, charter, login, "Rechartered").text
     else:

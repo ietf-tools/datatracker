@@ -11,7 +11,7 @@ from django.utils import simplejson
 
 from utils import *
 from mails import email_secretariat
-from ietf.ietfauth.decorators import group_required
+from ietf.ietfauth.decorators import role_required
 from ietf.iesg.models import TelechatDate
 
 from ietf.doc.models import *
@@ -37,7 +37,7 @@ class ChangeStateForm(forms.Form):
             for f in self.hide:
                 self.fields[f].widget = forms.HiddenInput
 
-@group_required('Area_Director','Secretariat')
+@role_required("Area Director", "Secretariat")
 def change_state(request, name, option=None):
     """Change state of WG and charter, notifying parties as necessary
     and logging the change as a comment."""
@@ -203,6 +203,7 @@ class TelechatForm(forms.Form):
         self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, d.strftime("%Y-%m-%d")) for d in dates]
         
 
+@role_required("Area Director", "Secretariat")
 def telechat_date(request, name):
     wg = get_object_or_404(Group, acronym=name)
     doc = set_or_create_charter(wg)
