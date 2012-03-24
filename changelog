@@ -1,3 +1,14 @@
+ietfdb (4.00)
+
+  * This is the official release of the 4.00 series releases, which expects
+    the redesigned database schema, and thus has an all new models layer.
+
+    For a full changelog, please go tot he commit log for the iola/conversion
+    branch, web accessible at:
+       http://trac.tools.ietf.org/tools/ietfdb/log/branch/iola/conversion/
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2012 10:05:31 +0100
+
 ietfdb (3.64)
 
   This release contains the features and bugfixes from the IETF-82
