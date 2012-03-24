@@ -139,8 +139,8 @@ def edit(request, acronym=None, action="edit"):
                         save_document_in_history(c)
                         # and add a DocAlias
                         DocAlias.objects.create(
-                            name = "charter-ietf-%s" % r['acronym'],
-                            document = charter
+                            name="charter-ietf-%s" % r['acronym'],
+                            document=charter,
                             )
 
             # update the attributes, keeping track of what we're doing

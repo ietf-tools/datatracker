@@ -121,7 +121,7 @@ def document_main(request, name, rev=None):
 
 
     if doc.type_id == "charter":
-        filename = doc.name + "-" + doc.rev + ".txt"
+        filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
 
         content = _get_html(filename, os.path.join(settings.CHARTER_PATH, filename), split=False)
 

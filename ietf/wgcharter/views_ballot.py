@@ -37,7 +37,7 @@ def default_action_text(wg, charter, user, action):
     info['list_subscribe'] = str(wg.list_subscribe) if wg.list_subscribe else None,
     info['list_archive'] = str(wg.list_archive) if wg.list_archive else None,
 
-    filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
+    filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (wg.charter.canonical_name(), wg.charter.rev))
     try:
         charter_text = open(filename, 'r')
         info['charter_txt'] = charter_text.read()
@@ -70,7 +70,7 @@ def default_review_text(wg, charter, user):
 
     info['bydate'] = (date.today() + timedelta(weeks=1)).isoformat()
 
-    filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
+    filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (wg.charter.canonical_name(), wg.charter.rev))
     try:
         charter_text = open(filename, 'r')
         info['charter_txt'] = charter_text.read()
