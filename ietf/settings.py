@@ -233,9 +233,9 @@ IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 
 # Days from meeting to cut off dates on submit
-FIRST_CUTOFF_DAYS = 20
-SECOND_CUTOFF_DAYS = 13
-CUTOFF_HOUR = 24                        # midnight UTC
+FIRST_CUTOFF_DAYS = 19
+SECOND_CUTOFF_DAYS = 12
+CUTOFF_HOUR = 00                        # midnight UTC
 SUBMISSION_START_DAYS = -90
 SUBMISSION_CUTOFF_DAYS = 33
 SUBMISSION_CORRECTION_DAYS = 52

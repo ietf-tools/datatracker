@@ -66,7 +66,7 @@ class UploadForm(forms.Form):
                 self.cutoff_warning = 'The pre-meeting cutoff date for new documents (i.e., version -00 Internet-Drafts) was %s at %02sh UTC. You will not be able to submit a new document until %s, at %02sh UTC.<br>The I-D submission tool will be shut down at %02sh UTC today, and reopened at %02sh UTC on %s' % (first_cut_off, settings.CUTOFF_HOUR, ietf_monday, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, settings.CUTOFF_HOUR, ietf_monday)
                 self.in_first_cut_off = True
             else:  # Completely shut down of the tool
-                self.cutoff_warning = 'The cut off time for the I-D submission was %02sh, %s.<br>The I-D submission tool will be reopened at %02sh, %s' % (settings.CUTOFF_HOUR, second_cut_off, settings.CUTOFF_HOUR, ietf_monday)
+                self.cutoff_warning = 'The cut off time for the I-D submission was %02dh UTC, %s.<br>The I-D submission tool will be reopened at %02dh UTC, %s.' % (settings.CUTOFF_HOUR, second_cut_off, settings.CUTOFF_HOUR, ietf_monday)
                 self.shutdown = True
 
     def __unicode__(self):
