@@ -203,19 +203,18 @@ def get_next_slide_num(session):
     This function takes a session object and returns the
     next slide number to use for a newly added slide as a string.
     '''
-    # slides = session.materials.filter(type='slides').order_by('-name')
-    # can't use this approach because if there's a slide out there that isn't
-    # related to the session somehow, we may get an error trying to create
-    # a docuument object with a duplicate name
-    if session.meeting.type_id == 'ietf':
-        pattern = 'slides-%s-%s' % (session.meeting.number,session.group.acronym)
-    elif session.meeting.type_id == 'interim':
-        pattern = 'slides-%s' % (session.meeting.number)
-    slides = Document.objects.filter(type='slides',name__startswith=pattern).order_by('-name')
+    slides = session.materials.filter(type='slides').order_by('-name')
+    # was using alternate method to find slides to prevent case of ending up
+    # with a duplicate filename but ended up being problematic
+    #if session.meeting.type_id == 'ietf':
+    #    pattern = 'slides-%s-%s' % (session.meeting.number,session.group.acronym)
+    #elif session.meeting.type_id == 'interim':
+    #    pattern = 'slides-%s' % (session.meeting.number)
+    #slides = Document.objects.filter(type='slides',name__startswith=pattern).order_by('-name')
     if slides:
-        # we need this special case for plenary sessions because the name format is different
+        # we need this special case for non wg/rg sessions because the name format is different
         # it should be changed to match the rest
-        if session.group.acronym in ('iesg','iab'):
+        if session.group.type.slug not in ('wg','rg'):
             nums = [ s.name.split('-')[3] for s in slides ]
         else:
             nums = [ s.name.split('-')[-1] for s in slides ]
@@ -316,14 +315,16 @@ def build_proc(request,meeting_num):
     return HttpResponseRedirect(url)
     
 @check_permissions
-def delete_material(request,meeting_num,acronym,name):
+def delete_material(request,name):
     '''
     This view handles deleting meeting materials.  We don't actually delete the
     document object but set the state to deleted and add a 'deleted' DocEvent.
     '''
     doc = get_object_or_404(Document, name=name)
-    meeting = Meeting.objects.get(number=meeting_num)
-    session = Session.objects.filter(meeting=meeting.id,group__acronym=acronym)[0]
+    # derive other objects
+    session = doc.session_set.all()[0]
+    meeting = session.meeting
+    group = session.group
     
     # don't delete the file, in the future may support undo feature
     #files = glob.glob(os.path.join(doc.get_file_path(),name) + '.*')
@@ -344,7 +345,11 @@ def delete_material(request,meeting_num,acronym,name):
     create_proceedings(meeting)
         
     messages.success(request,'The material was deleted successfully')
-    url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})
+    if group.type.slug in ('wg','rg'):
+        url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'acronym':group.acronym})
+    else:
+        url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'session_id':session.id})
+        
     return HttpResponseRedirect(url)
 
 @sec_only
@@ -375,19 +380,24 @@ def delete_interim_meeting(request, meeting_num):
     return HttpResponseRedirect(url)
 
 @check_permissions
-def edit_slide(request, meeting_num, acronym, slide_id):
+def edit_slide(request, slide_id):
     '''
     This view allows the user to edit the name of a slide.
     '''
-    # we need to pass group to the template for the breadcrumbs
-    group = get_object_or_404(Group, acronym=acronym)
     slide = get_object_or_404(Document, name=slide_id)
-    meeting = get_object_or_404(Meeting, number=meeting_num)
-
+    # derive other objects
+    session = slide.session_set.all()[0]
+    meeting = session.meeting
+    group = session.group
+    
+    if group.type.slug in ('wg','rg'):
+        url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'acronym':group.acronym})
+    else:
+        url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'session_id':session.id})
+    
     if request.method == 'POST': # If the form has been submitted...
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':group.acronym})
             return HttpResponseRedirect(url)
             
         form = EditSlideForm(request.POST, instance=slide) # A form bound to the POST data
@@ -396,7 +406,6 @@ def edit_slide(request, meeting_num, acronym, slide_id):
             
             # rebuild proceedings.html
             create_proceedings(meeting)
-            url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})
             return HttpResponseRedirect(url)
     else:
         form = EditSlideForm(instance=slide)
@@ -509,15 +518,17 @@ def main(request):
     )
 
 @check_permissions
-def move_slide(request, meeting_num, acronym, slide_id, direction):
+def move_slide(request, slide_id, direction):
     '''
     This view will re-order slides.  In addition to meeting, group and slide IDs it takes
     a direction argument which is a string [up|down].
     '''
     slide = get_object_or_404(Document, name=slide_id)
     
-    # get related slides via timeslot
-    session = Session.objects.filter(meeting__number=meeting_num,group__acronym=acronym)[0]
+    # derive other objects
+    session = slide.session_set.all()[0]
+    meeting = session.meeting
+    group = session.group
     qs = session.materials.exclude(states__slug='deleted').filter(type='slides').order_by('order')
     
     # if direction is up and we aren't already the first slide
@@ -535,36 +546,46 @@ def move_slide(request, meeting_num, acronym, slide_id, direction):
         slide_after.order, slide.order = slide.order, slide_after.order
         slide.save()
         slide_after.save()
-
-    url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})
+    
+    if group.type.slug in ('wg','rg'):
+        url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'acronym':group.acronym})
+    else:
+        url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'session_id':session.id})
     return HttpResponseRedirect(url)
 
 @check_permissions
-def replace_slide(request, meeting_num, acronym, slide_id):
+def replace_slide(request, slide_id):
     '''
     This view allows the user to upload a new file to replace a slide.
     '''
-    # we need to pass group to the template for the breadcrumbs
-    group = get_object_or_404(Group, acronym=acronym)
     slide = get_object_or_404(Document, name=slide_id)
-    meeting = get_object_or_404(Meeting, number=meeting_num)
+    # derive other objects
+    session = slide.session_set.all()[0]
+    meeting = session.meeting
+    group = session.group
 
+    if group.type.slug in ('wg','rg'):
+        url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'acronym':group.acronym})
+    else:
+        url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'session_id':session.id})
+        
     if request.method == 'POST': # If the form has been submitted...
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})
             return HttpResponseRedirect(url)
             
         form = ReplaceSlideForm(request.POST,request.FILES,instance=slide) # A form bound to the POST data
         if form.is_valid(): 
             new_slide = form.save(commit=False)
             new_slide.time = datetime.datetime.now()
-            new_slide.save()
             
             file = request.FILES[request.FILES.keys()[0]]
             file_ext = os.path.splitext(file.name)[1]
             disk_filename = new_slide.name + file_ext
             handle_upload_file(file,disk_filename,meeting,'slides')
+            
+            new_slide.external_url = disk_filename
+            new_slide.save()
             
             # create DocEvent uploaded
             DocEvent.objects.create(doc=slide,
@@ -574,7 +595,6 @@ def replace_slide(request, meeting_num, acronym, slide_id):
             # rebuild proceedings.html
             create_proceedings(meeting)
             
-            url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':acronym})
             return HttpResponseRedirect(url)
     else:
         form = ReplaceSlideForm(instance=slide)
