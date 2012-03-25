@@ -269,7 +269,7 @@ CHARTER_TXT_URL = 'http://www.ietf.org/charters/'
 
 # AMS additions
 # for meetings materials upload
-MAX_UPLOAD_SIZE = 35840000
+MAX_UPLOAD_SIZE = 40960000
 PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 GROUP_DESCRIPTION_DIR = '/a/www/www6s/wg-descriptions'
