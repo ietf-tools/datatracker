@@ -21,7 +21,8 @@ def display_duration(value):
     """
     Maps a session requested duration from select index to 
     label."""
-    map = {'3600':'1 Hour',
+    map = {'1800':'30 Minutes',
+           '3600':'1 Hour',
            '5400':'1.5 Hours',
            '7200':'2 Hours',
            '9000':'2.5 Hours'}
