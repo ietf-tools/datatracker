@@ -4,6 +4,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from functools import wraps
 
 from ietf.ietfauth.decorators import has_role
+from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.meeting.models import Session
 
@@ -44,6 +45,10 @@ def check_permissions(func):
             group = get_object_or_404(Group,acronym=acronym)
         elif 'session_id' in kwargs:
             session = get_object_or_404(Session, id=kwargs['session_id'])
+            group = session.group
+        elif 'slide_id' in kwargs:
+            slide = get_object_or_404(Document, name=kwargs['slide_id'])
+            session = slide.session_set.all()[0]
             group = session.group
             '''
         elif 'meeting_id' in kwargs:
