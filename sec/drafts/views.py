@@ -433,6 +433,10 @@ def report_id_activity(start,end):
     ff3_date = cutoff - datetime.timedelta(days=14)
     ff4_date = cutoff - datetime.timedelta(days=7)
     
+    ff_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
+                                                           docevent__newrevisiondocevent__rev='00',
+                                                           docevent__time__gte=ff1_date,
+                                                           docevent__time__lte=cutoff)
     #aug_docs = augment_with_start_time(new_docs)
     '''
     ff1_new = aug_docs.filter(start_date__gte=ff1_date,start_date__lt=ff2_date)
@@ -448,7 +452,7 @@ def report_id_activity(start,end):
                'total_updated':total_updated,
                'last_call':last_call,
                'approved':approved,
-               'ff_new_ID':0}
+               'ff_new_ID':ff_docs.count()}
     
     report = render_to_string('drafts/report_id_activity.txt', context)
     
