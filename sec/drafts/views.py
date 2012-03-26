@@ -465,8 +465,8 @@ def report_id_activity(start,end):
                'approved':approved,
                'ff_new_count':ff_new_count,
                'ff_new_percent':ff_new_percent,
-               'ff_update_count':0,
-               'ff_update_percent':0}
+               'ff_update_count':ff_update_count,
+               'ff_update_percent':ff_update_percent}
     
     report = render_to_string('drafts/report_id_activity.txt', context)
     
