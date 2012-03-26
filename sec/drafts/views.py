@@ -438,7 +438,7 @@ def report_id_activity(start,end):
                                                            docevent__time__gte=ff1_date,
                                                            docevent__time__lte=cutoff)
     ff_new_count = ff_docs.count()
-    ff_new_percent = format(ff_new_count / new,'.0%')
+    ff_new_percent = format(ff_new_count / float(new),'.0%')
     
     # calculate total documents updated in final four weeks, not counting new, rev=00
     result = set()
@@ -446,7 +446,7 @@ def report_id_activity(start,end):
     for e in events.filter(type='new_revision').exclude(newrevisiondocevent__rev='00'):
         result.add(e.doc)
     ff_update_count = len(result)
-    ff_update_percent = format(ff_update_count / total_updated,'.0%')
+    ff_update_percent = format(ff_update_count / float(total_updated),'.0%')
     
     #aug_docs = augment_with_start_time(new_docs)
     '''
