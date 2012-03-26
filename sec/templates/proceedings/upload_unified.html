@@ -49,7 +49,7 @@
              {% if minutes %}
              <td><a href="{{ minutes.get_absolute_url }}" target="_blank">Minutes</td>
              <td>{{ minutes.external_url }}</td>
-             <td><a href="{% url proceedings_delete_material name=minutes.name %}">Delete</a></td>
+             <td><a href="{% url proceedings_delete_material slide_id=minutes.name %}">Delete</a></td>
              {% else %}
              <td>Minutes</td>
              <td>(not uploaded)</td>
@@ -60,7 +60,7 @@
              {% if agenda %}
              <td><a href="{{ agenda.get_absolute_url }}" target="_blank">Agenda</a></td>
              <td>{{ agenda.external_url }}</td>
-             <td><a href="{% url proceedings_delete_material name=agenda.name %}">Delete</a></td>
+             <td><a href="{% url proceedings_delete_material slide_id=agenda.name %}">Delete</a></td>
              {% else %}
              <td>Agenda</td>
              <td>(not uploaded)</td>

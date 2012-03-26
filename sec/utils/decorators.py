@@ -38,7 +38,7 @@ def check_permissions(func):
         # short circuit.  secretariat user has full access
         if has_role(request.user,'Secretariat'):
             return func(request, *args, **kwargs)
-        
+        #assert False, kwargs
         # get the parent group
         if 'acronym' in kwargs:
             acronym = kwargs['acronym']

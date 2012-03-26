@@ -20,7 +20,7 @@
          <td>{% if forloop.last %}{% else %}<a href="{% url proceedings_move_slide slide_id=slide.pk direction='down' %}"><img src="/img/admin/arrow-down.gif" alt="Up Arrow" border="0"/></a>{% endif %}</td>
          <td><a href="{% url proceedings_edit_slide slide_id=slide.pk %}">Edit</a></td>
          <td><a href="{% url proceedings_replace_slide slide_id=slide.pk %}">Replace</a></td>
-         <td><a href="{% url proceedings_delete_material name=slide.name %}">Delete</a></td>
+         <td><a href="{% url proceedings_delete_material slide_id=slide.name %}">Delete</a></td>
        </tr>
     {% endfor %}
   </tbody>

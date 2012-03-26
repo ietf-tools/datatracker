@@ -315,12 +315,12 @@ def build_proc(request,meeting_num):
     return HttpResponseRedirect(url)
     
 @check_permissions
-def delete_material(request,name):
+def delete_material(request,slide_id):
     '''
     This view handles deleting meeting materials.  We don't actually delete the
     document object but set the state to deleted and add a 'deleted' DocEvent.
     '''
-    doc = get_object_or_404(Document, name=name)
+    doc = get_object_or_404(Document, name=slide_id)
     # derive other objects
     session = doc.session_set.all()[0]
     meeting = session.meeting

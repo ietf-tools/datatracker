@@ -3,7 +3,7 @@ from django.contrib import admin
 
 urlpatterns = patterns('sec.proceedings.views',
     url(r'^$', 'main', name='proceedings'),
-    url(r'^delete/(?P<name>[A-Za-z0-9._\-\+]+)/$', 'delete_material', name='proceedings_delete_material'),
+    url(r'^delete/(?P<slide_id>[A-Za-z0-9._\-\+]+)/$', 'delete_material', name='proceedings_delete_material'),
     url(r'^edit-slide/(?P<slide_id>[A-Za-z0-9._\-\+]+)/$', 'edit_slide', name='proceedings_edit_slide'),
     url(r'^move-slide/(?P<slide_id>[A-Za-z0-9._\-\+]+)/(?P<direction>(up|down))/$',
         'move_slide', name='proceedings_move_slide'),
