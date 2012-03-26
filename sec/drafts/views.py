@@ -437,6 +437,17 @@ def report_id_activity(start,end):
                                                            docevent__newrevisiondocevent__rev='00',
                                                            docevent__time__gte=ff1_date,
                                                            docevent__time__lte=cutoff)
+    ff_new_count = ff_docs.count()
+    ff_new_percent = format(ff_new_count / new,'.0%')
+    
+    # calculate total documents updated in final four weeks, not counting new, rev=00
+    result = set()
+    events = DocEvent.objects.filter(doc__type='draft',time__gte=ff1_date,time__lte=cutoff)
+    for e in events.filter(type='new_revision').exclude(newrevisiondocevent__rev='00'):
+        result.add(e.doc)
+    ff_update_count = len(result)
+    ff_update_percent = format(ff_update_count / total_updated,'.0%')
+    
     #aug_docs = augment_with_start_time(new_docs)
     '''
     ff1_new = aug_docs.filter(start_date__gte=ff1_date,start_date__lt=ff2_date)
@@ -452,7 +463,10 @@ def report_id_activity(start,end):
                'total_updated':total_updated,
                'last_call':last_call,
                'approved':approved,
-               'ff_new_ID':ff_docs.count()}
+               'ff_new_count':ff_new_count,
+               'ff_new_percent':ff_new_percent,
+               'ff_update_count':0,
+               'ff_update_percent':0}
     
     report = render_to_string('drafts/report_id_activity.txt', context)
     
