@@ -766,7 +766,10 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
                 doc.rev = str(int(doc.rev) + 1)
             if material_type.slug == 'slides':
                 doc.order=order_num
-                doc.title=slide_name
+                if slide_name:
+                    doc.title = slide_name
+                else:
+                    doc.title = doc.name
             else:
                 doc.title = '%s for %s at %s' % (material_type.slug.capitalize(), group.acronym.upper(), meeting)
             doc.save()
