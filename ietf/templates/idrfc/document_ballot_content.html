@@ -1,0 +1,56 @@
+{% load ietf_filters %}
+
+<div class="ballot-sidebar">
+{% if editable and user|has_role:"Area Director,Secretariat" %}
+<div class="ballot-actions">
+{% if user|has_role:"Area Director" %}
+<div class="action"><a href="{% url doc_edit_position name=doc.name %}">Edit position</a></div>
+{% endif %}
+
+<div class="action">
+{% if deferred %}
+  <a href="{% url doc_undefer_ballot name=doc.name %}">Undefer ballot</a>
+  <div>Ballot deferred by {{ deferred.by }} on {{ deferred.time|date:"Y-m-d" }}.</div>
+{% else %}
+  <a href="{% url doc_defer_ballot name=doc.name %}">Defer ballot</a>
+{% endif %}
+</div>
+
+</div>
+{% endif %}
+
+{% for n, positions in position_groups %}
+<div class="position-group">
+  <div class="heading"><span class="square position-{{ n.slug }}"></span> {{ n.name }}</div>
+  {% for p in positions %}
+  <div>{% if p.old_ad %}[{% endif %}<a{% if user|has_role:"Secretariat" %} href="{% url doc_edit_position name=doc.name %}?ad={{ p.ad.pk }}" title="Click to edit the position of {{ p.ad.plain_name }}"{% endif %}>{{ p.ad.plain_name }}</a>{% if p.old_ad %}]{% endif %}{% if p.comment_text or p.discuss_text %}&nbsp;<a href="# {{ p.ad.get_name|slugify }}"><img src="/images/comment.png" width="14" height="12" alt="*" border="0"/></a>{% endif %}</div>
+  {% if p.old_positions %}<div class="was">(was {{ p.old_positions|join:", " }})</div>{% endif %}
+  {% empty %}
+  <i>none</i>
+  {% endfor %}
+</div>
+{% endfor %}
+
+</div>
+
+<h2 style="margin-top:12px;">Q: {{ ballot.ballot_type.question }}</h2>
+
+<p>Summary: <i>{{ summary }}</i></p>
+
+{% for p in positions|dictsort:"old_ad" %}
+{% if p.comment_text or p.discuss_text %}
+
+<h2 id="{{ p.ad.plain_name|slugify }}" class="ad-ballot-comment">{% if p.old_ad %}[{%endif%}{{ p.plain_name }}{% if p.old_ad %}]{%endif%}</h2>
+
+{% if p.discuss_text %}
+<p><b>{{ p.pos.name }} ({{ p.discuss_date }})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
+<pre>{{ p.discuss_text|fill:"80"|escape }}</pre>
+{% endif %}
+
+{% if p.comment_text %}
+<p><b>Comment ({{ p.comment_date }})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
+<pre>{{ p.comment_text|fill:"80"|escape }}</pre>
+{% endif %}
+
+{% endif %}
+{% endfor %}

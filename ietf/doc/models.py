@@ -299,6 +299,8 @@ EVENT_TYPES = [
     # IESG events
     ("started_iesg_process", "Started IESG process on document"),
 
+    ("created_ballot", "Created ballot"),
+    ("closed_ballot", "Closed ballot"),
     ("sent_ballot_announcement", "Sent ballot announcement"),
     ("changed_ballot_position", "Changed ballot position"),
     
@@ -335,7 +337,25 @@ class NewRevisionDocEvent(DocEvent):
     rev = models.CharField(max_length=16)
    
 # IESG events
+class BallotType(models.Model):
+    doc_type = models.ForeignKey(DocTypeName, blank=True, null=True)
+    slug = models.SlugField()
+    name = models.CharField(max_length=255)
+    question = models.TextField(blank=True)
+    used = models.BooleanField(default=True)
+    order = models.IntegerField(default=0)
+
+    def __unicode__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['order']
+
+class BallotDocEvent(DocEvent):
+    ballot_type = models.ForeignKey(BallotType)
+
 class BallotPositionDocEvent(DocEvent):
+#    ballot = models.ForeignKey(BallotDocEvent, null=True)
     ad = models.ForeignKey(Person)
     pos = models.ForeignKey(BallotPositionName, verbose_name="position", default="norecord")
     discuss = models.TextField(help_text="Discuss text if position is discuss", blank=True)

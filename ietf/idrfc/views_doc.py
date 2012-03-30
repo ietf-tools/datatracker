@@ -30,8 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re, os
-from datetime import datetime, time
+import re, os, datetime
 
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
@@ -50,8 +49,8 @@ from ietf.idrfc import markup_txt
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.ietfworkflows.utils import get_full_info_for_draft
-from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, WriteupDocEvent, TelechatDocEvent
-from ietf.doc.utils import get_chartering_type
+from ietf.doc.models import *
+from ietf.doc.utils import get_chartering_type, needed_ballot_positions
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
 
@@ -240,7 +239,74 @@ def document_writeup(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
+def document_ballot_content(request, name, ballot, editable=True):
+    doc = get_object_or_404(Document, docalias__name=name)
 
+    if ballot != None:
+        b = doc.latest_event(BallotDocEvent, type="created_ballot", id=ballot)
+    else:
+        b = doc.latest_event(BallotDocEvent, type="created_ballot")
+
+    if not b:
+        raise Http404()
+
+    deferred = None
+    if doc.get_state_slug("%s-iesg" % doc.type) == "defer":
+        # FIXME: fragile
+        deferred = doc.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
+
+    # collect positions
+    active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active").distinct())
+
+    positions = []
+    seen = {}
+    # FIXME: restrict on ballot
+    for e in BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position").select_related('ad', 'pos').order_by("-time", '-id'):
+        if e.ad not in seen:
+            e.old_ad = e.ad in active_ads
+            e.old_positions = []
+            positions.append(e)
+            seen[e.ad] = pos
+        else:
+            latest = seen[e.ad]
+            if latest.old_positions:
+                prev = latest.old_positions[-1]
+            else:
+                prev = latest
+
+            if e.pos != prev.pos:
+                latest.old_positions.append(pos)
+
+    # add any missing ADs through fake No Record events
+    for ad in active_ads:
+        if ad not in seen:
+            e = BallotPositionDocEvent(type="changed_ballot_position", doc=doc, ad=ad)
+            e.pos_id = "norecord"
+            e.old_ad = False
+            e.old_positions = []
+            positions.append(e)
+
+    # put into position groups
+    position_groups = []
+    for n in BallotPositionName.objects.filter(slug__in=[p.pos_id for p in positions]).order_by('order'):
+        g = (n, [p for p in positions if p.pos_id == n.slug])
+        if n.blocking:
+            position_groups.insert(0, g)
+        else:
+            position_groups.append(g)
+
+    summary = needed_ballot_positions(doc, [p for p in positions if not p.old_ad])
+
+    return render_to_string("idrfc/document_ballot_content.html",
+                              dict(doc=doc,
+                                   ballot=b,
+                                   position_groups=position_groups,
+                                   positions=positions,
+                                   editable=editable,
+                                   deferred=deferred,
+                                   summary=summary,
+                                   ),
+                              context_instance=RequestContext(request))
 
 def document_ballot(request, name, ballot=None):
     if name.lower().startswith("draft") or name.lower().startswith("rfc"):
@@ -249,9 +315,14 @@ def document_ballot(request, name, ballot=None):
     doc = get_object_or_404(Document, docalias__name=name)
     top = render_document_top(request, doc, "ballot")
 
-    # FIXME: port implementation from wgcharter
+    c = document_ballot_content(request, name, ballot, editable=True)
 
-    raise Http404()
+    return render_to_response("idrfc/document_ballot.html",
+                              dict(doc=doc,
+                                   top=top,
+                                   ballot_content=c,
+                                   ),
+                              context_instance=RequestContext(request))
 
 def document_debug(request, name):
     r = re.compile("^rfc([1-9][0-9]*)$")
@@ -424,11 +495,11 @@ def _get_history(doc, versions):
 
     # convert plain dates to datetimes (required for sorting)
     for x in results:
-        if not isinstance(x['date'], datetime):
+        if not isinstance(x['date'], datetime.datetime):
             if x['date']:
-                x['date'] = datetime.combine(x['date'], time(0,0,0))
+                x['date'] = datetime.datetime.combine(x['date'], datetime.time(0,0,0))
             else:
-                x['date'] = datetime(1970,1,1)
+                x['date'] = datetime.datetime(1970,1,1)
 
     results.sort(key=lambda x: x['date'])
     results.reverse()

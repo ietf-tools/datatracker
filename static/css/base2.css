@@ -171,3 +171,22 @@ form table .help {
 .big	{ font-size: 109.5%; margin: 0; padding: 0; }
 .large  { font-size: 120%; margin: 0; padding: 0; }
 .huge	{ font-size: 144%; margin: 0; padding: 0; }
+
+.position-discuss,
+.position-block    { background-color: #c00000;}
+.position-yes      { background-color: #80ff80;}
+.position-noobj    { background-color: #80ff80;}
+.position-abstain  { background-color: #ffff00;}
+.position-recuse   { background-color: #c0c0c0;}
+.position-norecord { background-color: #ffffff;}
+
+.ballot-sidebar { width: 13em; float: left; margin-top: 0.4em; margin-right: 1em; padding: 0.5em; background: #edf5ff; }
+.ballot-sidebar .action { margin-bottom: 1em; }
+.ballot-sidebar .position-group { margin-bottom: 1em; }
+.ballot-sidebar .position-group .heading { font-weight: bold; }
+.ballot-sidebar .position-group .square { border: 1px solid #000; display: inline-block; width: 10px; height: 10px; margin-right:4px; position: static; vertical-align: middle }
+.ballot-sidebar .position-group .was { padding-left: 10px; font-size:85%; }
+.ballot-sidebar .position-group:last-child { margin-bottom: 0; }
+
+h2.ad-ballot-comment { background: #2647A0; color: #fff; padding: 2px 4px; font-size: 108%; margin-top: 0;}
+
