@@ -11,8 +11,8 @@ from ietf.person.models import Email, Person
 import datetime, os
 
 class StateType(models.Model):
-    slug = models.CharField(primary_key=True, max_length=30) # draft, draft_iesg, charter, ...
-    label = models.CharField(max_length=255) # State, IESG state, WG state, ...
+    slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
+    label = models.CharField(max_length=255, help_text="Label that should be used (e.g. in admin) for state drop-down for this type of state") # State, IESG state, WG state, ...
 
     def __unicode__(self):
         return self.label
@@ -45,10 +45,10 @@ class DocumentInfo(models.Model):
     stream = models.ForeignKey(StreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
     group = models.ForeignKey(Group, blank=True, null=True) # WG, RG, IAB, IESG, Edu, Tools
 
-    abstract = models.TextField()
+    abstract = models.TextField(blank=True)
     rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
     pages = models.IntegerField(blank=True, null=True)
-    order = models.IntegerField(default=1)
+    order = models.IntegerField(default=1, blank=True)
     intended_std_level = models.ForeignKey(IntendedStdLevelName, blank=True, null=True)
     std_level = models.ForeignKey(StdLevelName, blank=True, null=True)
     ad = models.ForeignKey(Person, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)
