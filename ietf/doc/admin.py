@@ -1,3 +1,4 @@
+from django.template.defaultfilters import slugify
 from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django import forms
@@ -38,7 +39,7 @@ class StatesWidget(forms.SelectMultiple):
         html = []
         first = True
         for label, states in categorized_choices:
-            htmlid = "id_%s_%s" % (name, label)
+            htmlid = "id_%s_%s" % (name, slugify(label))
             
             html.append('<div style="clear:both;padding-top:%s">' % ("1em" if first else "0.5em"))
             html.append(u'<label for="%s">%s:</label>' % (htmlid, label))
