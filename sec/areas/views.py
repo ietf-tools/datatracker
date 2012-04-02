@@ -250,7 +250,7 @@ def modify(request, name):
     - remove area_director row
     # New ------------------------------
     Enable Voting: change Role from 'pre-ad' to 'ad'
-    Retire: change role to 'ex-ad'
+    Retire: save in history, delete role record, set group assn to TBD
 
     **Templates:**
 
@@ -273,8 +273,12 @@ def modify(request, name):
         # handle retire request
         if request.POST.get('submit', '') == "Retire":
             role = Role.objects.get(group=area,name__in=('ad','pre-ad'),person=person)
-            role.name_id = 'ex-ad'
-            role.save()
+            role.delete()
+            
+            # update groups that have this AD as primary AD
+            for group in Group.objects.filter(ad=person,type='wg',state__in=('active','bof')):
+                group.ad = None
+                group.save()
             
             messages.success(request, 'The Area Director has been retired successfully!')
 
