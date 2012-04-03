@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 __version__ = "4.01-dev"
