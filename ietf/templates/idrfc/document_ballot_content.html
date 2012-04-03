@@ -4,7 +4,7 @@
 {% if editable and user|has_role:"Area Director,Secretariat" %}
 <div class="ballot-actions">
 {% if user|has_role:"Area Director" %}
-<div class="action"><a href="{% url doc_edit_position name=doc.name %}">Edit position</a></div>
+<div class="action"><a href="{% url doc_edit_position name=doc.name,ballot_id=ballot.pk %}">Edit position</a></div>
 {% endif %}
 
 <div class="action">
@@ -23,7 +23,7 @@
 <div class="position-group">
   <div class="heading"><span class="square position-{{ n.slug }}"></span> {{ n.name }}</div>
   {% for p in positions %}
-  <div>{% if p.old_ad %}[{% endif %}<a{% if user|has_role:"Secretariat" %} href="{% url doc_edit_position name=doc.name %}?ad={{ p.ad.pk }}" title="Click to edit the position of {{ p.ad.plain_name }}"{% endif %}>{{ p.ad.plain_name }}</a>{% if p.old_ad %}]{% endif %}{% if p.comment_text or p.discuss_text %}&nbsp;<a href="# {{ p.ad.get_name|slugify }}"><img src="/images/comment.png" width="14" height="12" alt="*" border="0"/></a>{% endif %}</div>
+  <div>{% if p.old_ad %}[{% endif %}<a{% if user|has_role:"Secretariat" %} href="{% url doc_edit_position name=doc.name,ballot_id=ballot.pk %}?ad={{ p.ad.pk }}" title="Click to edit the position of {{ p.ad.plain_name }}"{% endif %}>{{ p.ad.plain_name }}</a>{% if p.old_ad %}]{% endif %}{% if p.comment_text or p.discuss_text %}&nbsp;<a href="#{{ p.ad.plain_name|slugify }}"><img src="/images/comment.png" width="14" height="12" alt="*" border="0"/></a>{% endif %}</div>
   {% if p.old_positions %}<div class="was">(was {{ p.old_positions|join:", " }})</div>{% endif %}
   {% empty %}
   <i>none</i>
@@ -37,20 +37,16 @@
 
 <p>Summary: <i>{{ summary }}</i></p>
 
-{% for p in positions|dictsort:"old_ad" %}
-{% if p.comment_text or p.discuss_text %}
+{% for p in text_positions %}
+<h2 id="{{ p.ad.plain_name|slugify }}" class="ad-ballot-comment">{% if p.old_ad %}[{% endif %}{{ p.ad.plain_name }}{% if p.old_ad %}]{% endif %}</h2>
 
-<h2 id="{{ p.ad.plain_name|slugify }}" class="ad-ballot-comment">{% if p.old_ad %}[{%endif%}{{ p.plain_name }}{% if p.old_ad %}]{%endif%}</h2>
-
-{% if p.discuss_text %}
-<p><b>{{ p.pos.name }} ({{ p.discuss_date }})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
-<pre>{{ p.discuss_text|fill:"80"|escape }}</pre>
+{% if p.discuss %}
+<p><b>{{ p.pos.name }} ({{ p.discuss_time|date:"Y-m-d" }})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
+<pre>{{ p.discuss|fill:"80"|escape }}</pre>
 {% endif %}
 
-{% if p.comment_text %}
-<p><b>Comment ({{ p.comment_date }})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
-<pre>{{ p.comment_text|fill:"80"|escape }}</pre>
-{% endif %}
-
+{% if p.comment %}
+<p><b>Comment ({{ p.comment_time|date:"Y-m-d" }})</b> <img src="/images/comment.png" width="14" height="12" alt=""/></p>
+<pre>{{ p.comment|fill:"80"|escape }}</pre>
 {% endif %}
 {% endfor %}

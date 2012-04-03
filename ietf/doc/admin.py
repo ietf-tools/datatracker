@@ -111,6 +111,8 @@ class DocAliasAdmin(admin.ModelAdmin):
 admin.site.register(DocAlias, DocAliasAdmin)
 
 
+admin.site.register(BallotType)
+
 # events
 
 class DocEventAdmin(admin.ModelAdmin):
@@ -124,12 +126,13 @@ class DocEventAdmin(admin.ModelAdmin):
 admin.site.register(DocEvent, DocEventAdmin)
 
 admin.site.register(NewRevisionDocEvent, DocEventAdmin)
+admin.site.register(BallotDocEvent, DocEventAdmin)
 admin.site.register(WriteupDocEvent, DocEventAdmin)
 admin.site.register(LastCallDocEvent, DocEventAdmin)
 admin.site.register(TelechatDocEvent, DocEventAdmin)
 
 class BallotPositionDocEventAdmin(DocEventAdmin):
-    raw_id_fields = ["doc", "by", "ad"]
+    raw_id_fields = ["doc", "by", "ad", "ballot"]
 
 admin.site.register(BallotPositionDocEvent, BallotPositionDocEventAdmin)
     

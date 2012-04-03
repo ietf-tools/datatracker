@@ -51,7 +51,7 @@ form.position-form .comment-text {
 
   <div style="clear:left"></div>
   
-  <div class="discuss-widgets" {% ifnotequal form.position.initial "discuss" %}style="display:none"{% endifnotequal %}>
+  <div class="discuss-widgets"{% if not show_discuss_text %} style="display:none"{% endif %}>
   <div class="discuss-text">
     {{ form.discuss.label_tag }}:
     {% if old_pos and old_pos.discuss_time %}<span class="last-edited">(last edited {{ old_pos.discuss_time }})</span>{% endif %}
@@ -76,5 +76,8 @@ form.position-form .comment-text {
 {% endblock %}
 
 {% block content_end %}
+<script>
+  var blockingPositions = {{ blocking_positions|safe }};
+</script>
 <script type="text/javascript" src="/js/doc-edit-position.js"></script>
 {% endblock %}

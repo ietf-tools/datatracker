@@ -11,22 +11,11 @@ class Migration(SchemaMigration):
         # Adding field 'BallotPositionName.blocking'
         db.add_column('name_ballotpositionname', 'blocking', self.gf('django.db.models.fields.BooleanField')(default=False), keep_default=False)
 
-        # Adding M2M table for field valid_document_types on 'BallotPositionName'
-        db.create_table('name_ballotpositionname_valid_document_types', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('ballotpositionname', models.ForeignKey(orm['name.ballotpositionname'], null=False)),
-            ('doctypename', models.ForeignKey(orm['name.doctypename'], null=False))
-        ))
-        db.create_unique('name_ballotpositionname_valid_document_types', ['ballotpositionname_id', 'doctypename_id'])
-
 
     def backwards(self, orm):
         
         # Deleting field 'BallotPositionName.blocking'
         db.delete_column('name_ballotpositionname', 'blocking')
-
-        # Removing M2M table for field valid_document_types on 'BallotPositionName'
-        db.delete_table('name_ballotpositionname_valid_document_types')
 
 
     models = {
@@ -37,8 +26,7 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'valid_document_types': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['name.DocTypeName']", 'symmetrical': 'False', 'blank': 'True'})
+            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
         'name.constraintname': {
             'Meta': {'ordering': "['order']", 'object_name': 'ConstraintName'},

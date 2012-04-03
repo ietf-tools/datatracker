@@ -239,15 +239,14 @@ def document_writeup(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
-def document_ballot_content(request, name, ballot, editable=True):
-    doc = get_object_or_404(Document, docalias__name=name)
-
-    if ballot != None:
-        b = doc.latest_event(BallotDocEvent, type="created_ballot", id=ballot)
+def document_ballot_content(request, doc, ballot_id, editable=True):
+    """Render HTML string with content of ballot page."""
+    if ballot_id != None:
+        ballot = doc.latest_event(BallotDocEvent, type="created_ballot", pk=ballot)
     else:
-        b = doc.latest_event(BallotDocEvent, type="created_ballot")
+        ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
 
-    if not b:
+    if not ballot:
         raise Http404()
 
     deferred = None
@@ -260,13 +259,12 @@ def document_ballot_content(request, name, ballot, editable=True):
 
     positions = []
     seen = {}
-    # FIXME: restrict on ballot
-    for e in BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position").select_related('ad', 'pos').order_by("-time", '-id'):
+    for e in BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ballot=ballot).select_related('ad', 'pos').order_by("-time", '-id'):
         if e.ad not in seen:
-            e.old_ad = e.ad in active_ads
+            e.old_ad = e.ad not in active_ads
             e.old_positions = []
             positions.append(e)
-            seen[e.ad] = pos
+            seen[e.ad] = e
         else:
             latest = seen[e.ad]
             if latest.old_positions:
@@ -275,7 +273,7 @@ def document_ballot_content(request, name, ballot, editable=True):
                 prev = latest
 
             if e.pos != prev.pos:
-                latest.old_positions.append(pos)
+                latest.old_positions.append(e)
 
     # add any missing ADs through fake No Record events
     for ad in active_ads:
@@ -290,6 +288,7 @@ def document_ballot_content(request, name, ballot, editable=True):
     position_groups = []
     for n in BallotPositionName.objects.filter(slug__in=[p.pos_id for p in positions]).order_by('order'):
         g = (n, [p for p in positions if p.pos_id == n.slug])
+        g[1].sort(key=lambda p: (p.old_ad, p.ad.plain_name()))
         if n.blocking:
             position_groups.insert(0, g)
         else:
@@ -297,25 +296,28 @@ def document_ballot_content(request, name, ballot, editable=True):
 
     summary = needed_ballot_positions(doc, [p for p in positions if not p.old_ad])
 
+    text_positions = [p for p in positions if p.discuss or p.comment]
+    text_positions.sort(key=lambda p: (p.old_ad, p.ad.plain_name()))
+
     return render_to_string("idrfc/document_ballot_content.html",
                               dict(doc=doc,
-                                   ballot=b,
+                                   ballot=ballot,
                                    position_groups=position_groups,
-                                   positions=positions,
+                                   text_positions=text_positions,
                                    editable=editable,
                                    deferred=deferred,
                                    summary=summary,
                                    ),
                               context_instance=RequestContext(request))
 
-def document_ballot(request, name, ballot=None):
+def document_ballot(request, name, ballot_id=None):
     if name.lower().startswith("draft") or name.lower().startswith("rfc"):
         return document_main_idrfc(request, name, "ballot")
 
     doc = get_object_or_404(Document, docalias__name=name)
     top = render_document_top(request, doc, "ballot")
 
-    c = document_ballot_content(request, name, ballot, editable=True)
+    c = document_ballot_content(request, doc, ballot_id, editable=True)
 
     return render_to_response("idrfc/document_ballot.html",
                               dict(doc=doc,

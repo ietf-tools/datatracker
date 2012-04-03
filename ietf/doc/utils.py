@@ -68,7 +68,7 @@ def needed_ballot_positions(doc, active_positions):
         answer.append("Needs a YES.")
     if blocking:
         if blocking:
-            answer.append("Has a %s." % blocking[0].name.upper())
+            answer.append("Has a %s." % blocking[0].pos.name.upper())
         else:
             answer.append("Has %d %s." % (len(blocking), blocking[0].name.upper()))
     needed = 1
@@ -125,6 +125,3 @@ def augment_with_telechat_date(docs):
         seen.add(e.doc_id)
 
     return docs
-
-
-
