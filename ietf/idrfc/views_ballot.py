@@ -1393,7 +1393,9 @@ def make_last_callREDESIGN(request, name):
             
             e = LastCallDocEvent(doc=doc, by=login)
             e.type = "sent_last_call"
-            e.desc = "Last call sent"
+            e.desc = "The following Last Call announcement was sent out:<br><br>"
+            e.desc += announcement
+
             if form.cleaned_data['last_call_sent_date'] != e.time.date():
                 e.time = datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time())
             e.expires = form.cleaned_data['last_call_expiration_date']
