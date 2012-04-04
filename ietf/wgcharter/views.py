@@ -106,12 +106,12 @@ def change_state(request, name, option=None):
                 if message:
                     email_secretariat(request, wg, "state-%s" % charter_state.slug, message)
 
-                if charter_state.slug == "intrev" and not charter.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug="r-extrev"):
+                if charter_state.slug == "intrev":
                     e = BallotDocEvent(type="created_ballot", by=login, doc=charter)
                     e.ballot_type = BallotType.objects.get(doc_type=charter.type, slug="r-extrev")
                     e.desc = u"Created ballot for approving charter for external review"
                     e.save()
-                elif charter_state.slug == "iesgrev" and not charter.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug="approve"):
+                elif charter_state.slug == "iesgrev":
                     e = BallotDocEvent(type="created_ballot", by=login, doc=charter)
                     e.ballot_type = BallotType.objects.get(doc_type=charter.type, slug="approve")
                     e.desc = u"Created ballot for approving charter"
@@ -490,7 +490,7 @@ def ballot_writeupnotes(request, name):
                 e.save()
 
             if "issue_ballot" in request.POST and approval:
-                if has_role(request.user, "Area Director") and not charter.latest_event(GroupBallotPositionDocEvent, ad=login, time__gte=started_process.time):
+                if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, ad=login, time__gte=started_process.time):
                     # sending the ballot counts as a yes
                     pos = GroupBallotPositionDocEvent(doc=charter, by=login)
                     pos.type = "changed_ballot_position"
