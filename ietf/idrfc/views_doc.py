@@ -57,17 +57,18 @@ from ietf.ietfauth.decorators import has_role
 
 def render_document_top(request, doc, tab):
     tabs = []
-    tabs.append(("Document", "document", urlreverse("ietf.idrfc.views_doc.document_main", kwargs=dict(name=doc.name))))
+    tabs.append(("Document", "document", urlreverse("ietf.idrfc.views_doc.document_main", kwargs=dict(name=doc.name)), True))
 
+    ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id == "draft":
         # if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
-        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=doc.name))))
+        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=doc.name)), ballot))
     elif doc.type_id == "charter":
-        tabs.append(("IESG Review", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=doc.name))))
+        tabs.append(("IESG Review", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=doc.name)), ballot))
 
     # FIXME: if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
-    tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=doc.name))))
-    tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=doc.name))))
+    tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=doc.name)), True))
+    tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=doc.name)), True))
 
     name = doc.canonical_name()
     if name.startswith("rfc"):
