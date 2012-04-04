@@ -37,9 +37,10 @@ for n in dir(ietf.name.models):
             objects.extend(model.objects.all())
 
 
-import ietf.doc.models # FIXME
+import ietf.doc.models # also pick some other name-like types while we're at it
 objects += ietf.doc.models.StateType.objects.all()
 objects += ietf.doc.models.State.objects.all()
+objects += ietf.doc.models.BallotType.objects.all()
 
 output("names", objects)
 

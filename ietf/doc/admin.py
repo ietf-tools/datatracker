@@ -104,14 +104,15 @@ class DocHistoryAdmin(admin.ModelAdmin):
 admin.site.register(DocHistory, DocHistoryAdmin)
 
 class DocAliasAdmin(admin.ModelAdmin):
-    list_display = [ 'name', 'document_link', ]
-    search_fields = [ 'name', 'document__name', ]
+    list_display = ['name', 'document_link']
+    search_fields = ['name', 'document__name']
     raw_id_fields = ['document']
     document_link = admin_link("document")
 admin.site.register(DocAlias, DocAliasAdmin)
 
-
-admin.site.register(BallotType)
+class BallotTypeAdmin(admin.ModelAdmin):
+    list_display = ["slug", "doc_type", "name", "question"]
+admin.site.register(BallotType, BallotTypeAdmin)
 
 # events
 

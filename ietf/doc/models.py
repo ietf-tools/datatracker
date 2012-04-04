@@ -15,7 +15,7 @@ class StateType(models.Model):
     label = models.CharField(max_length=255, help_text="Label that should be used (e.g. in admin) for state drop-down for this type of state") # State, IESG state, WG state, ...
 
     def __unicode__(self):
-        return self.label
+        return self.slug
 
 class State(models.Model):
     type = models.ForeignKey(StateType)
@@ -374,14 +374,6 @@ class TelechatDocEvent(DocEvent):
     telechat_date = models.DateField(blank=True, null=True)
     returning_item = models.BooleanField(default=False)
 
-# Charter ballot events
-class GroupBallotPositionDocEvent(DocEvent):
-    ad = models.ForeignKey(Person)
-    pos = models.ForeignKey(GroupBallotPositionName, verbose_name="position", default="norecord")
-    block_comment = models.TextField(help_text="Blocking comment if position is comment", blank=True)
-    block_comment_time = models.DateTimeField(help_text="Blocking comment was written", blank=True, null=True)
-    comment = models.TextField(help_text="Non-blocking comment", blank=True)
-    comment_time = models.DateTimeField(help_text="Time non-blocking comment was written", blank=True, null=True)
-
+# charter events
 class InitialReviewDocEvent(DocEvent):
     expires = models.DateTimeField(blank=True, null=True)

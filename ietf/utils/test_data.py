@@ -264,11 +264,12 @@ def make_test_data():
         )
 
     # draft has only one event
-    DocEvent.objects.create(
-        type="started_iesg_process",
+    BallotDocEvent.objects.create(
+        type="created_ballot",
+        ballot_type=BallotType.objects.get(doc_type="draft", slug="approve"),
         by=ad,
         doc=draft,
-        desc="Added draft",
+        desc="Created ballot",
         )
 
     # IPR

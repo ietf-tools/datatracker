@@ -240,7 +240,7 @@ def edit_positionREDESIGN(request, name, ballot_id):
     if 'HTTP_REFERER' in request.META:
         return_to_url = request.META['HTTP_REFERER']
     else:
-        return_to_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot=ballot_id))
+        return_to_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
     # if we're in the Secretariat, we can select an AD to act as stand-in for
     if not has_role(request.user, "Area Director"):
@@ -447,12 +447,12 @@ def send_ballot_commentREDESIGN(request, name, ballot_id):
 
     return_to_url = request.GET.get('return_to_url')
     if not return_to_url:
-        return_to_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot=ballot_id))
+        return_to_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
     if 'HTTP_REFERER' in request.META:
         back_url = request.META['HTTP_REFERER']
     else:
-        back_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot=ballot_id))
+        back_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
     # if we're in the Secretariat, we can select an AD to act as stand-in for
     if not has_role(request.user, "Area Director"):

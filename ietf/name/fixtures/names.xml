@@ -5,36 +5,49 @@
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">1</field>
+        <field type="BooleanField" name="blocking">False</field>
     </object>
     <object pk="noobj" model="name.ballotpositionname">
         <field type="CharField" name="name">No Objection</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">2</field>
+        <field type="BooleanField" name="blocking">False</field>
     </object>
     <object pk="discuss" model="name.ballotpositionname">
         <field type="CharField" name="name">Discuss</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">3</field>
+        <field type="BooleanField" name="blocking">False</field>
+    </object>
+    <object pk="block" model="name.ballotpositionname">
+        <field type="CharField" name="name">Block</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">3</field>
+        <field type="BooleanField" name="blocking">True</field>
     </object>
     <object pk="abstain" model="name.ballotpositionname">
         <field type="CharField" name="name">Abstain</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">4</field>
+        <field type="BooleanField" name="blocking">False</field>
     </object>
     <object pk="recuse" model="name.ballotpositionname">
         <field type="CharField" name="name">Recuse</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">5</field>
+        <field type="BooleanField" name="blocking">False</field>
     </object>
     <object pk="norecord" model="name.ballotpositionname">
         <field type="CharField" name="name">No Record</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">6</field>
+        <field type="BooleanField" name="blocking">False</field>
     </object>
     <object pk="conflict" model="name.constraintname">
         <field type="CharField" name="name">Conflicts with</field>
@@ -54,8 +67,8 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="replaces" model="name.docrelationshipname">
-        <field type="CharField" name="name">Replaces</field>
+    <object pk="obs" model="name.docrelationshipname">
+        <field type="CharField" name="name">Obsoletes</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
@@ -66,14 +79,38 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="obs" model="name.docrelationshipname">
-        <field type="CharField" name="name">Obsoletes</field>
+    <object pk="replaces" model="name.docrelationshipname">
+        <field type="CharField" name="name">Replaces</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
     <object pk="stream-s" model="name.docremindertypename">
         <field type="CharField" name="name">Stream state should change</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="iana-crd" model="name.doctagname">
+        <field type="CharField" name="name">IANA coordination</field>
+        <field type="TextField" name="desc">RFC-Editor/IANA Registration Coordination</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="ref" model="name.doctagname">
+        <field type="CharField" name="name">Holding for references</field>
+        <field type="TextField" name="desc">Holding for normative reference</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="missref" model="name.doctagname">
+        <field type="CharField" name="name">Missing references</field>
+        <field type="TextField" name="desc">Awaiting missing normative reference</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="errata" model="name.doctagname">
+        <field type="CharField" name="name">Has errata</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
@@ -90,20 +127,8 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="exp-tomb" model="name.doctagname">
-        <field type="CharField" name="name">Expired tombstone</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
     <object pk="app-min" model="name.doctagname">
         <field type="CharField" name="name">Approved in minute</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="errata" model="name.doctagname">
-        <field type="CharField" name="name">Has errata</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
@@ -246,6 +271,12 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">11</field>
     </object>
+    <object pk="charter" model="name.doctypename">
+        <field type="CharField" name="name">Charter</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="agenda" model="name.doctypename">
         <field type="CharField" name="name">Agenda</field>
         <field type="TextField" name="desc"></field>
@@ -272,12 +303,6 @@
     </object>
     <object pk="liai-att" model="name.doctypename">
         <field type="CharField" name="name">Liaison Attachment</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="charter" model="name.doctypename">
-        <field type="CharField" name="name">Charter</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
@@ -396,6 +421,12 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="irtf" model="name.grouptypename">
+        <field type="CharField" name="name">IRTF</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="ps" model="name.intendedstdlevelname">
         <field type="CharField" name="name">Proposed Standard</field>
         <field type="TextField" name="desc"></field>
@@ -405,7 +436,7 @@
     <object pk="ds" model="name.intendedstdlevelname">
         <field type="CharField" name="name">Draft Standard</field>
         <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
+        <field type="BooleanField" name="used">False</field>
         <field type="IntegerField" name="order">2</field>
     </object>
     <object pk="std" model="name.intendedstdlevelname">
@@ -480,8 +511,8 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="ex-ad" model="name.rolename">
-        <field type="CharField" name="name">Ex Area Director</field>
+    <object pk="pre-ad" model="name.rolename">
+        <field type="CharField" name="name">Incoming Area Director</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
@@ -582,6 +613,12 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="deleted" model="name.sessionstatusname">
+        <field type="CharField" name="name">Deleted</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="std" model="name.stdlevelname">
         <field type="CharField" name="name">Standard</field>
         <field type="TextField" name="desc"></field>
@@ -630,32 +667,38 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="legacy" model="name.streamname">
-        <field type="CharField" name="name">Legacy</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
     <object pk="ietf" model="name.streamname">
         <field type="CharField" name="name">IETF</field>
-        <field type="TextField" name="desc"></field>
+        <field type="TextField" name="desc">IETF stream</field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">1</field>
     </object>
     <object pk="ise" model="name.streamname">
         <field type="CharField" name="name">ISE</field>
-        <field type="TextField" name="desc">Independent submission editor stream</field>
+        <field type="TextField" name="desc">Independent Submission Editor stream</field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="iab" model="name.streamname">
-        <field type="CharField" name="name">IAB</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">2</field>
     </object>
     <object pk="irtf" model="name.streamname">
         <field type="CharField" name="name">IRTF</field>
+        <field type="TextField" name="desc">Independent Submission Editor stream</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">3</field>
+    </object>
+    <object pk="iab" model="name.streamname">
+        <field type="CharField" name="name">IAB</field>
+        <field type="TextField" name="desc">IAB stream</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">4</field>
+    </object>
+    <object pk="legacy" model="name.streamname">
+        <field type="CharField" name="name">Legacy</field>
+        <field type="TextField" name="desc">Legacy stream</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">5</field>
+    </object>
+    <object pk="other" model="name.timeslottypename">
+        <field type="CharField" name="name">Other</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
@@ -697,10 +740,10 @@
         <field type="CharField" name="label">RFC Editor state</field>
     </object>
     <object pk="draft-stream-ietf" model="doc.statetype">
-        <field type="CharField" name="label">WG state</field>
+        <field type="CharField" name="label">IETF state</field>
     </object>
     <object pk="draft-stream-irtf" model="doc.statetype">
-        <field type="CharField" name="label">RG state</field>
+        <field type="CharField" name="label">IRTF state</field>
     </object>
     <object pk="draft-stream-ise" model="doc.statetype">
         <field type="CharField" name="label">ISE state</field>
@@ -919,7 +962,7 @@
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">The document is now (finally!) being formally reviewed by the entire IESG. Documents are discussed in email or during a bi-weekly IESG telechat. In this phase, each AD reviews the document and airs any issues they may have. Unresolvable issues are documented as "discuss" comments that can be forwarded to the authors/WG. See the description of substates for additional details about the current state of the IESG discussion.</field>
         <field type="IntegerField" name="order">20</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="18"></object><object pk="10"></object><object pk="22"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="18"></object><object pk="9"></object><object pk="22"></object></field>
     </object>
     <object pk="18" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -937,7 +980,7 @@
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">The IESG has approved the document for publication, but the Secretariat has not yet sent out on official approval message.</field>
         <field type="IntegerField" name="order">27</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="17"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="10"></object></field>
     </object>
     <object pk="10" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -946,7 +989,7 @@
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">The IESG has approved the document for publication, and the Secretariat has sent out the official approval message to the RFC editor.</field>
         <field type="IntegerField" name="order">30</field>
-        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="9"></object></field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="17"></object></field>
     </object>
     <object pk="17" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
@@ -1580,5 +1623,32 @@
         <field type="TextField" name="desc"></field>
         <field type="IntegerField" name="order">2</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="1" model="doc.ballottype">
+        <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">charter</field>
+        <field type="SlugField" name="slug">r-extrev</field>
+        <field type="CharField" name="name">Ready for external review</field>
+        <field type="TextField" name="question">Is this charter ready for external review?</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="block"></object><object pk="abstain"></object><object pk="norecord"></object></field>
+    </object>
+    <object pk="2" model="doc.ballottype">
+        <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">charter</field>
+        <field type="SlugField" name="slug">approve</field>
+        <field type="CharField" name="name">Approve</field>
+        <field type="TextField" name="question">Do we approve of this charter?</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="block"></object><object pk="abstain"></object><object pk="norecord"></object></field>
+    </object>
+    <object pk="3" model="doc.ballottype">
+        <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">draft</field>
+        <field type="SlugField" name="slug">approve</field>
+        <field type="CharField" name="name">Approve</field>
+        <field type="TextField" name="question"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="discuss"></object><object pk="abstain"></object><object pk="recuse"></object><object pk="norecord"></object></field>
     </object>
 </django-objects>

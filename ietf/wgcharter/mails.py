@@ -1,7 +1,6 @@
 # generation of mails 
 
 import textwrap
-from datetime import datetime, date, time, timedelta
 
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
@@ -11,7 +10,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
 from ietf.ipr.search import iprs_from_docs
-from ietf.doc.models import WriteupDocEvent, DocAlias, GroupBallotPositionDocEvent
+from ietf.doc.models import WriteupDocEvent, DocAlias
 from ietf.person.models import Person
 
 def email_secretariat(request, wg, type, text):
@@ -33,7 +32,10 @@ def email_secretariat(request, wg, type, text):
     send_mail(request, to, None, subject,
               "wgcharter/email_secretariat.txt",
               dict(text=text,
-                   url=settings.IDTRACKER_BASE_URL + urlreverse('wg_charter', kwargs=dict(acronym=wg.acronym))))
+                   wg_url=settings.IDTRACKER_BASE_URL + urlreverse('wg_charter', kwargs=dict(acronym=wg.acronym)),
+                   charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=wg.charter.name)),
+                   )
+              )
 
 def generate_ballot_writeup(request, doc):
     e = WriteupDocEvent()
@@ -47,6 +49,7 @@ def generate_ballot_writeup(request, doc):
     return e
 
 def generate_issue_ballot_mail(request, charter):
+    raise NotImplemented
     active_ads = Person.objects.filter(email__role__name="ad", email__role__group__state="active").distinct()
     
     e = charter.latest_event(type="started_iesg_process")

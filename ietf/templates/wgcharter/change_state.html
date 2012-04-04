@@ -45,14 +45,13 @@ form.change-state .actions {
       {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {% endif %}
 
-      {% if field.name == "charter_state" and field.errors == "warning" %}
-      <ul><li>The initial review time hasn't elapsed. Select this checkbox to proceed anyway: <label><input type="checkbox" name="confirm_state" /></label></li></ul>
-      {% else %}
-        {{ field.errors }}
-      {% endif %}
+      {{ field.errors }}
       </td>
     </tr>
     {% endfor %}
+    {% if initial_review %}
+    <tr><td></td><td class="warning">Warning: Announced initial review time hasn't elapsed yet. It does so at {{ initial_review.expires }}.</td></tr>
+    {% endif %}
     <tr>
       <td colspan="2" class="actions">
         {% if option %}

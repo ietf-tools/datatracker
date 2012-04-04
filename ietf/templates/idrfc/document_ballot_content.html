@@ -33,6 +33,17 @@
 
 </div>
 
+<div class="ballot-content">
+
+{% if all_ballots and all_ballots|length > 1 %}
+<div class="other-ballots">
+  Other ballots:
+{% for b in all_ballots %}
+<a{% if b != ballot %} href="{% url doc_ballot name=doc.name,ballot_id=b.pk %}"{% endif %}>{{ b.ballot_type.name }} ({{ b.time|date:"Y-m-d" }})</a>
+{% endfor %}
+</div>
+{% endif %}
+
 <h2 style="margin-top:12px;">Q: {{ ballot.ballot_type.question }}</h2>
 
 <p>Summary: <i>{{ summary }}</i></p>
@@ -50,3 +61,5 @@
 <pre>{{ p.comment|fill:"80"|escape }}</pre>
 {% endif %}
 {% endfor %}
+
+</div>

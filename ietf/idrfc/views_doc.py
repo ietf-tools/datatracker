@@ -242,7 +242,7 @@ def document_writeup(request, name):
 def document_ballot_content(request, doc, ballot_id, editable=True):
     """Render HTML string with content of ballot page."""
     if ballot_id != None:
-        ballot = doc.latest_event(BallotDocEvent, type="created_ballot", pk=ballot)
+        ballot = doc.latest_event(BallotDocEvent, type="created_ballot", pk=ballot_id)
     else:
         ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
 
@@ -276,10 +276,11 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
                 latest.old_positions.append(e)
 
     # add any missing ADs through fake No Record events
+    norecord = BallotPositionName.objects.get(slug="norecord")
     for ad in active_ads:
         if ad not in seen:
             e = BallotPositionDocEvent(type="changed_ballot_position", doc=doc, ad=ad)
-            e.pos_id = "norecord"
+            e.pos = norecord
             e.old_ad = False
             e.old_positions = []
             positions.append(e)
@@ -299,6 +300,8 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     text_positions = [p for p in positions if p.discuss or p.comment]
     text_positions.sort(key=lambda p: (p.old_ad, p.ad.plain_name()))
 
+    all_ballots = BallotDocEvent.objects.filter(doc=doc, type="created_ballot")
+
     return render_to_string("idrfc/document_ballot_content.html",
                               dict(doc=doc,
                                    ballot=ballot,
@@ -307,6 +310,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
                                    editable=editable,
                                    deferred=deferred,
                                    summary=summary,
+                                   all_ballots=all_ballots,
                                    ),
                               context_instance=RequestContext(request))
 

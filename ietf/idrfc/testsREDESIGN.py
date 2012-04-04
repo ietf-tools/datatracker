@@ -418,7 +418,8 @@ class EditPositionTestCase(django.test.TestCase):
 
     def test_edit_position(self):
         draft = make_test_data()
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name))
+        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name,
+                                                          ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
         login_testing_unauthorized(self, "ad", url)
 
         ad = Person.objects.get(name="Aread Irector")
@@ -479,7 +480,8 @@ class EditPositionTestCase(django.test.TestCase):
         
     def test_edit_position_as_secretary(self):
         draft = make_test_data()
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name))
+        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name,
+                                                          ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
         ad = Person.objects.get(name="Aread Irector")
         url += "?ad=%s" % ad.pk
         login_testing_unauthorized(self, "secretary", url)
@@ -507,13 +509,16 @@ class EditPositionTestCase(django.test.TestCase):
         draft.save()
 
         ad = Person.objects.get(name="Aread Irector")
-        
+
+        ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
+
         BallotPositionDocEvent.objects.create(doc=draft, type="changed_ballot_position",
-                                      by=ad, ad=ad, pos=BallotPositionName.objects.get(slug="yes"),
-                                      comment="Test!",
-                                      comment_time=datetime.datetime.now())
+                                              by=ad, ballot=ballot, ad=ad, pos=BallotPositionName.objects.get(slug="yes"),
+                                              comment="Test!",
+                                              comment_time=datetime.datetime.now())
         
-        url = urlreverse('doc_send_ballot_comment', kwargs=dict(name=draft.name))
+        url = urlreverse('doc_send_ballot_comment', kwargs=dict(name=draft.name,
+                                                                ballot_id=ballot.pk))
         login_testing_unauthorized(self, "ad", url)
 
         # normal get
@@ -670,10 +675,13 @@ class BallotWriteupsTestCase(django.test.TestCase):
         url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
 
+        ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
+
         def create_pos(num, vote, comment="", discuss=""):
             ad = Person.objects.get(name="Ad No%s" % num)
             e = BallotPositionDocEvent()
             e.doc = draft
+            e.ballot = ballot
             e.by = ad
             e.ad = ad
             e.pos = BallotPositionName.objects.get(slug=vote)

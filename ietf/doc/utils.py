@@ -86,9 +86,9 @@ def needed_ballot_positions(doc, active_positions):
             answer.append("Needs %d more positions." % more)
     else:
         if blocking:
-            answer.append("Has enough positions to pass.")
+            answer.append("Has enough positions to pass once %s positions are resolved." % blocking[0].pos.name.upper())
         else:
-            answer.append("Has enough positions to pass once %s positions are resolved." % blocking[0].name.upper())
+            answer.append("Has enough positions to pass.")
 
     return " ".join(answer)
     

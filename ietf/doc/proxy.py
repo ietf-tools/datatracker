@@ -817,7 +817,7 @@ class DocumentComment(DocEvent):
 class Position(BallotPositionDocEvent):
     def from_object(self, base):
         for f in base._meta.fields:
-            if not f.name in ('discuss',): # don't overwrite properties
+            if not f.name in ('discuss', 'ballot'): # don't overwrite properties
                 setattr(self, f.name, getattr(base, f.name))
         return self
     

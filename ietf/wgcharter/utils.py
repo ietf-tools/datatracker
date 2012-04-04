@@ -1,7 +1,7 @@
-from django.conf import settings
-import re
+import re, datetime
 
-from datetime import datetime
+from django.conf import settings
+
 from ietf.group.models import GroupEvent, ChangeStateGroupEvent
 from ietf.doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor, DocEvent
 from ietf.utils.history import find_history_active_at
@@ -12,7 +12,7 @@ def set_or_create_charter(wg):
     except Document.DoesNotExist:
         charter = Document.objects.create(
             name="charter-ietf-" + wg.acronym,
-            time=datetime.now(),
+            time=datetime.datetime.now(),
             type_id="charter",
             title=wg.name,
             group=wg,
@@ -29,36 +29,12 @@ def set_or_create_charter(wg):
         wg.save()
     return charter
 
-def add_wg_comment(request, wg, text, ballot=None):
-    if request:
-        login = request.user.get_profile()
-    else:
-        login = None
-
-    e = GroupEvent(group=wg, type="added_comment", by=login)
-    e.desc = text
-    e.save()
-
 def log_state_changed(request, doc, by, prev_state):
     e = DocEvent(doc=doc, by=by)
     e.type = "changed_document"
     e.desc = u"State changed to <b>%s</b> from %s" % (
         doc.get_state().name,
         prev_state.name if prev_state else "None")
-    e.save()
-    return e
-
-def log_group_state_changed(request, wg, by, note=''):
-    e = ChangeStateGroupEvent(group=wg, by=by, type="changed_state")
-    e.state = wg.state
-    e.desc = { 'active': "Started group",
-               'propose': "Proposed group",
-               'conclude': "Concluded group",
-               }[wg.state_id]
-
-    if note:
-        e.desc += "<br>%s" % note
-
     e.save()
     return e
 

@@ -11,7 +11,7 @@
 {% for s in charter_states %}{% if not forloop.first %}, {% if forloop.last %}or {% endif %}{% endif %}<i>{{ s.name }}</i>{% endfor %}.</p>
 
 {% if user|has_role:"Area Director,Secretariat" %}
-<p><a href="{% url wg_create %}">Start new WG charter effort</a></p>
+<p><a href="{% url wg_create %}">Start chartering new WG</a></p>
 {% endif %}
 
 {% if not groups %}

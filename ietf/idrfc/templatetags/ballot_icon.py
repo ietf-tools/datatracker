@@ -75,7 +75,6 @@ def render_ballot_icon(context, doc):
             name = doc.document().filename()
         else:
             name = doc.document().filename
-        tracker_id = doc.draft_id
     else:
         if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
             ballot = doc._idinternal.ballot
@@ -83,10 +82,8 @@ def render_ballot_icon(context, doc):
             return ""
         if doc.is_rfc_wrapper:
             name = "rfc"+str(doc.rfc_number)
-            tracker_id = doc.rfc_number
         else:
             name = doc.draft_name
-            tracker_id = doc.tracker_id
     adId = get_user_adid(context)
     red = 0
     green = 0
@@ -109,10 +106,15 @@ def render_ballot_icon(context, doc):
             blank = blank + 1
         if adId and (p['ad'].id == adId):
             my = position_to_string(p['pos'])
-    return render_ballot_icon2(name, tracker_id, red,yellow,green,gray,blank, my, adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
+    return render_ballot_icon2(name, red,yellow,green,gray,blank, my, adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
 
-def render_ballot_icon2(draft_name, tracker_id, red,yellow,green,gray,blank, my,adId):
-    edit_position_url = urlreverse('doc_edit_position', kwargs=dict(name=draft_name))
+def render_ballot_icon2(draft_name, red,yellow,green,gray,blank, my,adId):
+    from ietf.doc.models import BallotDocEvent
+    ballots = BallotDocEvent.objects.filter(doc__docalias__name=draft_name).order_by("-time", "-id")
+    if ballots:
+        edit_position_url = urlreverse('doc_edit_position', kwargs=dict(name=draft_name, ballot_id=ballots[0].pk))
+    else:
+        edit_position_url = ""
     if adId:
         res_cm = ' oncontextmenu="editBallot(\''+str(edit_position_url)+'\');return false;"'
     else:

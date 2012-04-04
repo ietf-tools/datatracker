@@ -30,7 +30,7 @@ form.approve-ballot .announcement {
   </div>
 
   <div class="actions">
-    <a href="{% url wg_view name=wg.acronym %}">Back</a>
+    <a href="{% url doc_ballot name=wg.charter.name %}">Back</a>
     <input type="submit" value="Send out the announcement, close ballot and update revision"/>
   </div>
 </form>

@@ -71,27 +71,35 @@ def has_role(user, role_names):
     if not user or not user.is_authenticated():
         return False
 
-    from ietf.person.models import Person
-    
-    try:
-        person = user.get_profile()
-    except Person.DoesNotExist:
-        return False
+    if not hasattr(user, "roles_check_cache"):
+        user.roles_check_cache = {}
 
-    role_qs = {
-        "Area Director": Q(person=person, name="ad", group__type="area", group__state="active"),
-        "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
-        "IANA": Q(person=person, name="auth", group__acronym="iana"),
-        "WG Chair": Q(person=person,name="chair", group__type="wg", group__state="active"),
-        "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state="active"),
-        }
+    key = frozenset(role_names)
+    if key not in user.roles_check_cache:
 
-    filter_expr = Q()
-    for r in role_names:
-        filter_expr |= role_qs[r]
+        from ietf.person.models import Person
+        from ietf.group.models import Role
 
-    from ietf.group.models import Role
-    return bool(Role.objects.filter(filter_expr)[:1])
+        try:
+            person = user.get_profile()
+        except Person.DoesNotExist:
+            return False
+
+        role_qs = {
+            "Area Director": Q(person=person, name="ad", group__type="area", group__state="active"),
+            "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
+            "IANA": Q(person=person, name="auth", group__acronym="iana"),
+            "WG Chair": Q(person=person,name="chair", group__type="wg", group__state="active"),
+            "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state="active"),
+            }
+
+        filter_expr = Q()
+        for r in role_names:
+            filter_expr |= role_qs[r]
+
+        user.roles_check_cache[key] = bool(Role.objects.filter(filter_expr)[:1])
+
+    return user.roles_check_cache[key]
 
 def role_required(*role_names):
     """View decorator for checking that the user is logged in and

@@ -1,6 +1,0 @@
-{% load ietf_filters %}
-{% for p in positions %}
-{% for oad in info.old_ads %}{% ifequal oad p.ad %}[{%endifequal%}{% endfor %}<a{% if user|in_group:"Secretariat" %} href="{% url wg_edit_position name=wg.acronym %}?ad={{ p.ad_id }}" title="Click to edit the position of {{ p.ad }}"{% endif %}>{{p.ad}}</a>{% for oad in info.old_ads %}{% ifequal oad p.ad %}]{%endifequal%}{% endfor %}{% if p.comment or p.block_comment %}&nbsp;<a href="#{{p.ad|slugify}}"><img src="/images/comment.png" width="14" height="12" alt="*" border="0"/></a>{% endif %}<br/>
-{% empty %}
-<i>none</i>
-{% endfor %}

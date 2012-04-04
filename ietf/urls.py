@@ -9,7 +9,7 @@ from ietf.idtracker.feeds import DocumentComments, InLastCall
 from ietf.ipr.feeds import LatestIprDisclosures
 from ietf.proceedings.feeds import LatestWgProceedingsActivity
 from ietf.liaisons.feeds import Liaisons
-from ietf.wgcharter.feeds import GroupComments
+from ietf.wgcharter.feeds import GroupEvents
 
 from ietf.idtracker.sitemaps import IDTrackerMap, DraftMap
 from ietf.liaisons.sitemaps import LiaisonMap
@@ -25,7 +25,7 @@ feeds = {
     'iesg-agenda': IESGAgenda,
     'last-call': InLastCall,
     'comments': DocumentComments,
-    'wgcomments': GroupComments, 
+    'wg': GroupEvents,
     'ipr': LatestIprDisclosures,
     'liaison': Liaisons,
     'wg-proceedings' : LatestWgProceedingsActivity
