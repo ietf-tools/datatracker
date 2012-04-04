@@ -132,7 +132,7 @@ class EditModelForm(forms.ModelForm):
     iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft-iesg'),required=False)
     group = GroupModelChoiceField(required=True)
     review_by_rfc_editor = forms.BooleanField(required=False)
-    shepherd = forms.CharField(max_length=100,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")
+    shepherd = forms.CharField(max_length=100,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.",required=False)
     
     class Meta:
         model = Document
