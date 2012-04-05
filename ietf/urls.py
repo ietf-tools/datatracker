@@ -25,7 +25,7 @@ feeds = {
     'iesg-agenda': IESGAgenda,
     'last-call': InLastCall,
     'comments': DocumentComments,
-    'wg': GroupEvents,
+    'wgchanges': GroupEvents,
     'ipr': LatestIprDisclosures,
     'liaison': Liaisons,
     'wg-proceedings' : LatestWgProceedingsActivity

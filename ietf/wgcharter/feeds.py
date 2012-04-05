@@ -7,9 +7,13 @@ from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse as urlreverse
-from ietf.utils.history import find_history_active_at
+from django.template.defaultfilters import truncatewords_html
 
+from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
+from ietf.wgcharter.utils import *
+from ietf.utils.history import find_history_active_at
 from ietf.group.models import Group
+from ietf.idrfc.views_doc import _get_html
 
 def _get_history(wg, versions=None):
     results = []
@@ -46,11 +50,11 @@ def _get_history(wg, versions=None):
 
     # convert plain dates to datetimes (required for sorting)
     for x in results:
-        if not isinstance(x['date'], datetime):
+        if not isinstance(x['date'], datetime.datetime):
             if x['date']:
-                x['date'] = datetime.combine(x['date'], time(0,0,0))
+                x['date'] = datetime.datetime.combine(x['date'], datetime.time(0,0,0))
             else:
-                x['date'] = datetime(1970,1,1)
+                x['date'] = datetime.datetime(1970,1,1)
 
     results.sort(key=lambda x: x['date'])
     results.reverse()
@@ -93,12 +97,12 @@ class GroupEvents(Feed):
                 h['rev'] = dh.rev
                 h['charter'] = _get_html(
                     str(dh.name)+"-"+str(dh.rev)+",html", 
-                    os.path.join(dh.get_file_path(), dh.name+"-"+dh.rev+".txt"))
+                    os.path.join(dh.get_file_path(), dh.name+"-"+dh.rev+".txt"), False)
             else:
                 h['rev'] = obj.charter.rev
                 h['charter'] = _get_html(
                     "charter-ietf-"+str(obj.acronym)+"-"+str(obj.charter.rev)+",html", 
-                    os.path.join(obj.charter.get_file_path(), "charter-ietf-"+obj.acronym+"-"+obj.charter.rev+".txt"))
+                    os.path.join(obj.charter.get_file_path(), "charter-ietf-"+obj.acronym+"-"+obj.charter.rev+".txt"), False)
         return history
 
     def item_link(self, obj):
