@@ -5,6 +5,7 @@ import datetime
 import os
 import re
 import tarfile
+import pytz
 
 from tempfile import mkstemp
 
@@ -428,7 +429,6 @@ def get_meeting (num=None):
     return meeting
 
 def week_view(request, num=None):
-    #timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
     meeting = get_meeting(num)
     timeslots = TimeSlot.objects.filter(meeting = meeting.number)
 
@@ -437,24 +437,39 @@ def week_view(request, num=None):
             {"timeslots":timeslots,"render_types":["Session","Other","Break","Plenary"]}, context_instance=RequestContext(request))
 
 def ical_agenda(request, num=None):
-    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
-    rgs = IRTF.objects.all().order_by('acronym')
-    areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
+    # The timezone situation here remains tragic, but I've burned
+    # hours trying to figure out how to get the information I need
+    # in python. I can do this trivially in perl with its Ical module,
+    # but the icalendar module in python seems staggeringly less
+    # capable. There might be a path to success here, but I'm not
+    # completely convinced. So I'm going to spend some time
+    # working on more urgent matters for now. -Adam
+
+    meeting = get_meeting(num)
+
     q = request.META.get('QUERY_STRING','') or ""
     filter = q.lower().split(',');
     include = set(filter)
-    now = datetime.datetime.utcnow()
+    include_types = ["Plenary","Other"]
+    exclude = []
 
-    for slot in timeslots:
-        for session in slot.sessions():
-            if session.area() == '' or session.area().find('plenary') > 0 or (session.area().lower() in include):
-                filter.append(session.acronym())
+    # Process the special flags.
+    for item in include:
+        if item[0] == '-':
+            exclude.append(item[1:])
+        if item[0] == '~':
+            include_types.append(item[1:2].upper()+item[2:])
+
+    timeslots = TimeSlot.objects.filter(Q(meeting = meeting.number),
+        Q(type__name__in = include_types) |
+        Q(session__group__acronym__in = filter) |
+        Q(session__group__parent__acronym__in = filter)
+        ).exclude(Q(session__group__isnull = False),
+        Q(session__group__acronym__in = exclude) | 
+        Q(session__group__parent__acronym__in = exclude))
 
     return HttpResponse(render_to_string("meeting/agendaREDESIGN.ics" if settings.USE_DB_REDESIGN_PROXY_CLASSES else "meeting/agenda.ics",
-        {"filter":set(filter), "timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
-            "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, 
-            "now":now},
+        {"timeslots":timeslots, "meeting":meeting },
         RequestContext(request)), mimetype="text/calendar")
 
 def csv_agenda(request, num=None):
