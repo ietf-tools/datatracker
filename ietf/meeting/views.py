@@ -33,7 +33,7 @@ from ietf.proceedings.models import Meeting as OldMeeting, MeetingTime, WgMeetin
 
 # New models
 from ietf.meeting.models import Meeting, Room, TimeSlot, Constraint, Session
-from ietf.group.models import Group
+from ietf.group.models import Group, GroupManager
 
 
 @decorator_from_middleware(GZipMiddleware)
@@ -197,6 +197,34 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
 @decorator_from_middleware(GZipMiddleware)
 def html_agenda(request, num=None):
+    if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
+        user_agent = "iPhone"
+    elif 'user_agent' in request.REQUEST:
+        user_agent = request.REQUEST['user_agent']
+    elif 'HTTP_USER_AGENT' in request.META:
+        user_agent = request.META["HTTP_USER_AGENT"]
+    else:
+        user_agent = ""
+    if "iPhone" in user_agent:
+        return iphone_agenda(request, num)
+
+    meeting = get_meeting(num)
+    timeslots = TimeSlot.objects.filter(Q(meeting = meeting.number)).order_by('time','name')
+    modified = timeslots.aggregate(Max('modified'))['modified__max']
+
+    area_list = timeslots.filter(type = 'Session', session__group__parent__isnull = False).order_by('session__group__parent__acronym').distinct('session__group__parent__acronym').values_list('session__group__parent__acronym',flat=True)
+
+    wg_name_list = timeslots.filter(type = 'Session', session__group__isnull = False, session__group__parent__isnull = False).order_by('session__group__acronym').distinct('session__group').values_list('session__group__acronym',flat=True)
+
+    wg_list = Group.objects.filter(acronym__in = set(wg_name_list)).order_by('parent__acronym','acronym')
+
+    return HttpResponse(render_to_string("meeting/agenda.html",
+        {"timeslots":timeslots, "modified": modified, "meeting":meeting,
+         "area_list": area_list, "wg_list": wg_list ,
+         "show_inline": set(["txt","htm","html"]) },
+        RequestContext(request)), mimetype="text/html")
+
+def deprecated_PLEASE_REMOVE_ME(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
 
     groups_meeting = [];
@@ -209,26 +237,33 @@ def html_agenda(request, num=None):
     rgs = IRTF.objects.all().filter(acronym__in = groups_meeting).order_by('acronym')
     areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
 
-    if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
-        user_agent = "iPhone"
-    elif 'user_agent' in request.REQUEST:
-        user_agent = request.REQUEST['user_agent']
-    elif 'HTTP_USER_AGENT' in request.META:
-        user_agent = request.META["HTTP_USER_AGENT"]
-    else:
-        user_agent = ""
-    #print user_agent
-    if "iPhone" in user_agent:
-        template = "meeting/m_agenda.html"
-    else:
-        template = "meeting/agenda.html"
+    template = "meeting/agenda.html"
     return render_to_response(template,
             {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
                 "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, 
                 "wg_list" : wgs, "rg_list" : rgs, "area_list" : areas},
             context_instance=RequestContext(request))
 
+def iphone_agenda(request, num):
+    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
 
+    groups_meeting = [];
+    for slot in timeslots:
+        for session in slot.sessions():
+            groups_meeting.append(session.acronym())
+    groups_meeting = set(groups_meeting);
+
+    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).filter(group_acronym__acronym__in = groups_meeting).order_by('group_acronym__acronym')
+    rgs = IRTF.objects.all().filter(acronym__in = groups_meeting).order_by('acronym')
+    areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
+    template = "meeting/m_agenda.html"
+    return render_to_response(template,
+            {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
+                "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, 
+                "wg_list" : wgs, "rg_list" : rgs, "area_list" : areas},
+            context_instance=RequestContext(request))
+
+ 
 def text_agenda(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
     plenaryw_agenda = "   "+plenaryw_agenda.strip().replace("\n", "\n   ")

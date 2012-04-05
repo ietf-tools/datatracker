@@ -60,6 +60,10 @@ class DocumentInfo(models.Model):
     note = models.TextField(blank=True)
     internal_comments = models.TextField(blank=True)
 
+    def file_extension(self):
+        _,ext = os.path.splitext(self.external_url)
+        return ext.lstrip(".").lower()
+
     def get_file_path(self):
         if self.type_id == "draft":
             return settings.INTERNET_DRAFT_PATH
