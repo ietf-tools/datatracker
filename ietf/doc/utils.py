@@ -107,6 +107,25 @@ def get_chartering_type(doc):
 
     return chartering
 
+def ballot_open(doc, ballot_type_slug):
+    e = doc.latest_event(BallotDocEvent, ballot_type__slug=ballot_type_slug)
+    return e and not e.type == "closed_ballot"
+
+def create_ballot_if_not_open(doc, by, ballot_type_slug):
+    if not ballot_open(doc, ballot_type_slug):
+        e = BallotDocEvent(type="created_ballot", by=by, doc=doc)
+        e.ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_type_slug)
+        e.desc = u'Created "%s" ballot' % e.ballot_type.name
+        e.save()
+
+def close_open_ballots(doc, by):
+    for t in BallotType.objects.filter(doc_type=doc.type_id):
+        if ballot_open(doc, t.slug):
+            e = BallotDocEvent(type="closed_ballot", doc=doc, by=by)
+            e.ballot_type = t
+            e.desc = 'Closed "%s" ballot' % t.name
+            e.save()
+
 def augment_with_telechat_date(docs):
     """Add a telechat_date attribute to each document with the
     scheduled telechat or None if it's not scheduled."""

@@ -13,13 +13,13 @@ from ietf.utils.test_utils import login_testing_unauthorized
 from pyquery import PyQuery
 
 from ietf.doc.models import *
+from ietf.doc.utils import *
 from ietf.group.models import *
 from ietf.group.utils import *
 from ietf.name.models import *
 from ietf.person.models import *
 from ietf.iesg.models import TelechatDate
-
-from utils import *
+from ietf.wgcharter.utils import *
 
 class EditCharterTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -195,6 +195,7 @@ class CharterApproveBallotTestCase(django.test.TestCase):
 
         charter = Document.objects.get(name=charter.name)
         self.assertEquals(charter.get_state_slug(), "approved")
+        self.assertTrue(not ballot_open(charter, "approve"))
 
         self.assertEquals(charter.rev, "01")
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))))

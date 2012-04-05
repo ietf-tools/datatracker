@@ -16,6 +16,7 @@ from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.ietfauth.decorators import has_role, role_required
 from ietf.iesg.models import TelechatDate
 from ietf.doc.models import *
+from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots
 from ietf.name.models import *
 from ietf.person.models import *
 from ietf.group.models import *
@@ -25,7 +26,7 @@ from ietf.wgcharter.utils import *
 
 
 class ChangeStateForm(forms.Form):
-    charter_state = forms.ModelChoiceField(State.objects.filter(type="charter", slug__in=["infrev", "intrev", "extrev", "iesgrev", "approved"]), label="Charter state", empty_label=None, required=False)
+    charter_state = forms.ModelChoiceField(State.objects.filter(type="charter", slug__in=["infrev", "intrev", "extrev", "iesgrev"]), label="Charter state", empty_label=None, required=False)
     initial_time = forms.IntegerField(initial=0, label="Review time", help_text="(in weeks)", required=False)
     message = forms.CharField(widget=forms.Textarea, help_text="Optional message to the Secretariat", required=False)
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history", required=False)
@@ -90,6 +91,9 @@ def change_state(request, name, option=None):
                 if option != "abandon":
                     log_state_changed(request, charter, login, prev)
                 else:
+                    # kill hanging ballots
+                    close_open_ballots(charter, login)
+
                     # Special log for abandoned efforts
                     e = DocEvent(type="changed_document", doc=charter, by=login)
                     e.desc = "IESG has abandoned the chartering effort"
@@ -107,15 +111,9 @@ def change_state(request, name, option=None):
                     email_secretariat(request, wg, "state-%s" % charter_state.slug, message)
 
                 if charter_state.slug == "intrev":
-                    e = BallotDocEvent(type="created_ballot", by=login, doc=charter)
-                    e.ballot_type = BallotType.objects.get(doc_type=charter.type, slug="r-extrev")
-                    e.desc = u"Created ballot for approving charter for external review"
-                    e.save()
+                    create_ballot_if_not_open(charter, login, "r-extrev")
                 elif charter_state.slug == "iesgrev":
-                    e = BallotDocEvent(type="created_ballot", by=login, doc=charter)
-                    e.ballot_type = BallotType.objects.get(doc_type=charter.type, slug="approve")
-                    e.desc = u"Created ballot for approving charter"
-                    e.save()
+                    create_ballot_if_not_open(charter, login, "approve")
 
             if charter_state.slug == "infrev" and clean["initial_time"] and clean["initial_time"] != 0:
                 e = InitialReviewDocEvent(type="initial_review", by=login, doc=charter)
@@ -494,6 +492,8 @@ def approve_ballot(request, name):
         prev_charter_state = charter.get_state()
         wg.state = new_state
         charter.set_state(new_charter_state)
+
+        close_open_ballots(charter, login)
 
         e = DocEvent(doc=charter, by=login)
         e.type = "iesg_approved"
