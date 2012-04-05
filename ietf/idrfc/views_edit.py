@@ -790,14 +790,13 @@ def add_commentREDESIGN(request, name):
             if doc.type_id == "draft":
                 email_owner(request, doc, doc.ad, login,
                             "A new comment added by %s" % login.name)
-            return HttpResponseRedirect(doc.get_absolute_url())
+            return HttpResponseRedirect(urlreverse("doc_history", kwargs=dict(name=doc.name)))
     else:
         form = AddCommentForm()
   
     return render_to_response('idrfc/add_comment.html',
                               dict(doc=doc,
-                                   form=form,
-                                   back_url=doc.get_absolute_url()),
+                                   form=form),
                               context_instance=RequestContext(request))
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
