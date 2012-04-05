@@ -1228,6 +1228,10 @@ def approve_ballotREDESIGN(request, name):
     else:
         action = "to_announcement_list"
 
+    # NOTE: according to Michelle Cotton <michelle.cotton@icann.org>
+    # (as per 2011-10-24) IANA is scraping these messages for
+    # information so would like to know beforehand if the format
+    # changes (perhaps RFC 6359 will change that)
     announcement = approval_text + "\n\n" + ballot_writeup
         
     if request.method == 'POST':
