@@ -170,13 +170,14 @@ class CharterApproveBallotTestCase(django.test.TestCase):
 
         p = Person.objects.get(name="Aread Irector")
 
-        e = DocEvent()
-        e.type = "started_iesg_process"
-        e.by = p
-        e.doc = charter
-        e.desc = "IESG process started"
-        e.save()
-        
+        BallotDocEvent.objects.create(
+            type="created_ballot",
+            ballot_type=BallotType.objects.get(doc_type="charter", slug="approve"),
+            by=p,
+            doc=charter,
+            desc="Created ballot",
+            )
+
         charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
 
         # normal get

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Ballot for {{ charter.chartered_group }} issued{% endblock %}
+{% block title %}Ballot for {{ doc.name }} issued{% endblock %}
 
 {% block content %}
-<h1>Ballot for {{ charter.chartered_group }} issued</h1>
+<h1>Ballot for {{ doc.name }} issued</h1>
 
 <p>Ballot has been sent out.</p>
 
 <div class="actions">
-  <a href="{{ back_url }}">Back to WG</a>
+  <a href="{% url doc_writeup name=doc.name %}">Back to writeups</a>
 </div>
 {% endblock %}

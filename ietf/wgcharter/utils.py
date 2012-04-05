@@ -1,4 +1,4 @@
-import re, datetime
+import re, datetime, os
 
 from django.conf import settings
 
@@ -101,6 +101,14 @@ def next_approved_revision(rev):
         return "01"
     m = re.match(r"(?P<major>[0-9][0-9])(-(?P<minor>[0-9][0-9]))?", rev)
     return "%#02d" % (int(m.group('major')) + 1)
+
+def read_charter_text(doc):
+    filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+    try:
+        with open(filename, 'r') as f:
+            return f.read()
+    except IOError:
+        return "Error: couldn't read charter text"
 
 def update_telechat(request, doc, by, new_telechat_date):
     # FIXME: fix auto-setting returning item problem and reuse

@@ -1,9 +1,9 @@
 {% autoescape off %}To: Internet Engineering Steering Group <iesg@ietf.org>
 From: IESG Secretary <iesg-secretary@ietf.org>
 Reply-To: IESG Secretary <iesg-secretary@ietf.org>
-Subject: Evaluation: {{ charter.chartered_group }} ({{ charter.chartered_group.acronym }})
+Subject: Evaluation: {{ doc.name }}
 
-{% filter wordwrap:73 %}Evaluation for {{ charter.chartered_group }} ({{ charter.chartered_group.acronym }}) can be found at {{ charter_url }}
+{% filter wordwrap:73 %}Evaluation for {{ doc.title }} can be found at {{ doc_url }}
 {% endfilter %}
         Please return the full line with your position.
 
@@ -20,8 +20,8 @@ BLOCKING AND NON-BLOCKING COMMENTS
 ==================================
 {% filter wordwrap:79 %}{% for p in ad_feedback %}{{ p.ad }}:
 
-{% if p.block_comment %}Blocking comment [{{ p.time }}]:
-{{ p.block_comment }}
+{% if p.discuss %}Blocking comment [{{ p.time }}]:
+{{ p.discuss }}
 
 {% endif %}{% if p.comment %}Comment [{{ p.time }}]:
 {{ p.comment }}

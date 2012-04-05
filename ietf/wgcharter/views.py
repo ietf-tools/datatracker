@@ -294,71 +294,6 @@ def submit(request, name):
                                'wg': wg},
                               context_instance=RequestContext(request))
 
-def default_action_text(wg, charter, user, action):
-    e = WriteupDocEvent(doc=charter, by=user)
-    e.by = user
-    e.type = "changed_action_announcement"
-    e.desc = "WG action text was changed"
-
-    info = {}
-    info['chairs'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Chair")]
-    info['secr'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Secr")]
-    info['techadv'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Techadv")]
-    info['ad'] = {'name': wg.ad.plain_name(), 'email': wg.ad.role_email("ad").address } if wg.ad else None,
-    info['list'] = wg.list_email if wg.list_email else None,
-    info['list_subscribe'] = str(wg.list_subscribe) if wg.list_subscribe else None,
-    info['list_archive'] = str(wg.list_archive) if wg.list_archive else None,
-
-    filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (wg.charter.canonical_name(), wg.charter.rev))
-    try:
-        charter_text = open(filename, 'r')
-        info['charter_txt'] = charter_text.read()
-    except IOError:
-        info['charter_txt'] = "Error: couldn't read charter text"
-
-    e.text = render_to_string("wgcharter/action_text.txt",
-                              dict(wg=wg,
-                                   charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
-                                   action_type=action,
-                                   info=info,
-                                   ))
-
-    e.save()
-    return e
-
-def default_review_text(wg, charter, user):
-    e = WriteupDocEvent(doc=charter, by=user)
-    e.by = user
-    e.type = "changed_review_announcement"
-    e.desc = "WG review text was changed"
-    info = {}
-    info['chairs'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Chair")]
-    info['secr'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Secr")]
-    info['techadv'] = [{ 'name': x.person.plain_name(), 'email': x.email.address} for x in wg.role_set.filter(name="Techadv")]
-    info['ad'] = {'name': wg.ad.plain_name(), 'email': wg.ad.role_email("ad").address } if wg.ad else None,
-    info['list'] = wg.list_email if wg.list_email else None,
-    info['list_subscribe'] = wg.list_subscribe if wg.list_subscribe else None,
-    info['list_archive'] = wg.list_archive if wg.list_archive else None,
-
-    info['bydate'] = (date.today() + timedelta(weeks=1)).isoformat()
-
-    filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (wg.charter.canonical_name(), wg.charter.rev))
-    try:
-        charter_text = open(filename, 'r')
-        info['charter_txt'] = charter_text.read()
-    except IOError:
-        info['charter_txt'] = "Error: couldn't read charter text"
-
-    e.text = render_to_string("wgcharter/review_text.txt",
-                              dict(wg=wg,
-                                   charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
-                                   info=info,
-                                   review_type="new" if wg.state_id == "proposed" else "recharter",
-                                   )
-                              )
-    e.save()
-    return e
-
 class AnnouncementTextForm(forms.Form):
     announcement_text = forms.CharField(widget=forms.Textarea, required=True)
 
@@ -436,7 +371,7 @@ def announcement_text(request, name, ann):
     return render_to_response('wgcharter/announcement_text.html',
                               dict(charter=charter,
                                    announcement=ann,
-                                   back_url=charter.get_absolute_url(),
+                                   back_url=urlreverse("doc_writeup", kwargs=dict(name=charter.name)),
                                    announcement_text_form=form,
                                    ),
                               context_instance=RequestContext(request))
@@ -459,10 +394,10 @@ def ballot_writeupnotes(request, name):
         else:
             raise Http404
 
-    charter = set_or_create_charter(wg)
+    charter = wg.charter
 
-    started_process = charter.latest_event(type="started_iesg_process")
-    if not started_process:
+    ballot = charter.latest_event(BallotDocEvent, type="created_ballot")
+    if not ballot:
         raise Http404()
 
     login = request.user.get_profile()
@@ -477,7 +412,7 @@ def ballot_writeupnotes(request, name):
         
     form = BallotWriteupForm(initial=dict(ballot_writeup=existing.text))
 
-    if request.method == 'POST' and "save_ballot_writeup" in request.POST or "issue_ballot" in request.POST:
+    if request.method == 'POST' and ("save_ballot_writeup" in request.POST or "issue_ballot" in request.POST):
         form = BallotWriteupForm(request.POST)
         if form.is_valid():
             t = form.cleaned_data["ballot_writeup"]
@@ -490,16 +425,16 @@ def ballot_writeupnotes(request, name):
                 e.save()
 
             if "issue_ballot" in request.POST and approval:
-                if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, ad=login, time__gte=started_process.time):
+                if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=login, ballot=ballot):
                     # sending the ballot counts as a yes
-                    pos = GroupBallotPositionDocEvent(doc=charter, by=login)
+                    pos = BallotPositionDocEvent(doc=charter, by=login)
                     pos.type = "changed_ballot_position"
                     pos.ad = login
                     pos.pos_id = "yes"
                     pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
                     pos.save()
 
-                msg = generate_issue_ballot_mail(request, charter)
+                msg = generate_issue_ballot_mail(request, charter, ballot)
                 send_mail_preformatted(request, msg)
 
                 e = DocEvent(doc=charter, by=login)
@@ -509,14 +444,13 @@ def ballot_writeupnotes(request, name):
                 e.save()
 
                 return render_to_response('wgcharter/ballot_issued.html',
-                                          dict(charter=charter,
-                                               back_url=charter.get_absolute_url()),
+                                          dict(doc=charter,
+                                               ),
                                           context_instance=RequestContext(request))
                         
 
     return render_to_response('wgcharter/ballot_writeupnotes.html',
                               dict(charter=charter,
-                                   back_url=charter.get_absolute_url(),
                                    ballot_issued=bool(charter.latest_event(type="sent_ballot_announcement")),
                                    ballot_writeup_form=form,
                                    reissue=reissue,
