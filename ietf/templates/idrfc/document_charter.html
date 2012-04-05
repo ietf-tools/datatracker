@@ -42,6 +42,13 @@
 
       {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
       - <a href="{% url wg_change_state name=doc.group.acronym %}">Change state</a>
+
+      {% if chartering  %}
+      - <a href="{% url wg_startstop_process name=doc.group.acronym option='abandon' %}">Abandon effort</a>
+      {% else %}
+      - <a href="{% url wg_startstop_process name=doc.group.acronym option='recharter' %}">Recharter</a>
+      {% endif %}
+
       {% endif %}
       </td>
     </tr>
@@ -74,29 +81,17 @@
   </table>
 
   <div class="actions">
-    {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
-
-    {% if chartering  %}
-
-    {% if doc.group.state_id != "conclude" %}
-    <a href="{% url wg_submit name=doc.group.acronym %}">Edit charter text</a>
-    {% endif %}
-
-    <a href="{% url wg_startstop_process name=doc.group.acronym option='abandon' %}">Abandon effort</a>
-
-    {% else %}
-    <a href="{% url wg_startstop_process name=doc.group.acronym option='recharter' %}">Recharter</a>
-    {% endif %}
-
-    {% endif %}
-
-    <a href="/feed/wgcomments/{{ doc.group.acronym }}/">Atom feed</a>
+    <a href="/feed/wgchanges/{{ doc.group.acronym }}/">Atom feed</a>
   </div>
 </div>
 
 <p>Other versions: <a href="{{ txt_url }}">plain text</a></p>
 
-<h3>Charter {{ doc.name }}-{{ doc.rev }}</h3>
+<h3>Charter {{ doc.name }}-{{ doc.rev }}
+{% if user|has_role:"Area Director,Secretariat" and chartering and doc.group.state_id != "conclude" %}
+<a class="edit" href="{% url wg_submit name=doc.group.acronym %}">Edit charter text</a>
+{% endif %}
+</h3>
 
 <div class="markup_draft">
 {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}

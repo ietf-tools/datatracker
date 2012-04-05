@@ -22,3 +22,5 @@
 
 .writeup pre.editable { background-color: #efefff; min-height: 3em; }
 .writeup a.edit { float: right; }
+
+h3 a.edit { font-weight: normal; font-size: 13px; display: inline-block; margin-left: 0.5em;}
