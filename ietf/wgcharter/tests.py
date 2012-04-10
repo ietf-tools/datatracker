@@ -38,8 +38,7 @@ class EditCharterTestCase(django.test.TestCase):
         group = Group.objects.get(acronym="ames")
         charter = group.charter
 
-        # -- Test change state --
-        url = urlreverse('wg_change_state', kwargs=dict(name=group.acronym))
+        url = urlreverse('wg_change_state', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
         first_state = charter.get_state()
@@ -84,11 +83,10 @@ class EditCharterTestCase(django.test.TestCase):
     def test_edit_telechat_date(self):
         make_test_data()
 
-        # And make a charter for group
         group = Group.objects.get(acronym="mars")
         charter = group.charter
 
-        url = urlreverse('charter_telechat_date', kwargs=dict(name=group.acronym))
+        url = urlreverse('charter_telechat_date', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # add to telechat
@@ -120,11 +118,10 @@ class EditCharterTestCase(django.test.TestCase):
     def test_submit_charter(self):
         make_test_data()
 
-        # And make a charter for group
         group = Group.objects.get(acronym="mars")
         charter = group.charter
 
-        url = urlreverse('wg_submit', kwargs=dict(name=group.acronym))
+        url = urlreverse('wg_submit', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -162,7 +159,7 @@ class CharterApproveBallotTestCase(django.test.TestCase):
         group = Group.objects.get(acronym="ames")
         charter = group.charter
 
-        url = urlreverse('wg_approve_ballot', kwargs=dict(name=group.acronym))
+        url = urlreverse('wg_approve_ballot', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
         with open(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev)), "w") as f:

@@ -42,17 +42,8 @@ class ChangeStateForm(forms.Form):
 def change_state(request, name, option=None):
     """Change state of WG and charter, notifying parties as necessary
     and logging the change as a comment."""
-    # Get WG by acronym, redirecting if there's a newer acronym
-    try:
-        wg = Group.objects.get(acronym=name)
-    except Group.DoesNotExist:
-        old = GroupHistory.objects.filter(acronym=name)
-        if old:
-            return redirect('wg_change_state', name=old[0].group.acronym)
-        else:
-            raise Http404()
-
-    charter = set_or_create_charter(wg)
+    charter = get_object_or_404(Document, type="charter", name=name)
+    wg = charter.group
 
     initial_review = charter.latest_event(InitialReviewDocEvent, type="initial_review")
     if charter.get_state_slug() != "infrev" or (initial_review and initial_review.expires < datetime.datetime.now()):
@@ -162,7 +153,7 @@ def change_state(request, name, option=None):
 
     return render_to_response('wgcharter/change_state.html',
                               dict(form=form,
-                                   wg=wg,
+                                   doc=wg.charter,
                                    login=login,
                                    option=option,
                                    prev_charter_state=prev_charter_state,
@@ -187,8 +178,7 @@ class TelechatForm(forms.Form):
 
 @role_required("Area Director", "Secretariat")
 def telechat_date(request, name):
-    wg = get_object_or_404(Group, acronym=name)
-    doc = set_or_create_charter(wg)
+    doc = get_object_or_404(Document, type="charter", name=name)
     login = request.user.get_profile()
 
     e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
@@ -235,18 +225,9 @@ class UploadForm(forms.Form):
 
 @role_required('Area Director','Secretariat')
 def submit(request, name):
-    # Get WG by acronym, redirecting if there's a newer acronym
-    try:
-        wg = Group.objects.get(acronym=name)
-    except Group.DoesNotExist:
-        wglist = GroupHistory.objects.filter(acronym=name)
-        if wglist:
-            return redirect('charter_submit', name=wglist[0].group.acronym)
-        else:
-            raise Http404()
-    # Get charter
-    charter = set_or_create_charter(wg)
-    
+    charter = get_object_or_404(Document, type="charter", name=name)
+    wg = charter.group
+
     login = request.user.get_profile()
 
     if request.method == 'POST':
@@ -301,16 +282,8 @@ class AnnouncementTextForm(forms.Form):
 @role_required('Area Director','Secretariat')
 def announcement_text(request, name, ann):
     """Editing of announcement text"""
-    try:
-        wg = Group.objects.get(acronym=name)
-    except Group.DoesNotExist:
-        wglist = GroupHistory.objects.filter(acronym=name)
-        if wglist:
-            return redirect('wg_announcement_text', name=wglist[0].group.acronym)
-        else:
-            raise Http404
-
-    charter = set_or_create_charter(wg)
+    charter = get_object_or_404(Document, type="charter", name=name)
+    wg = charter.group
 
     login = request.user.get_profile()
 
@@ -383,16 +356,8 @@ class BallotWriteupForm(forms.Form):
 @role_required('Area Director','Secretariat')
 def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
-    try:
-        wg = Group.objects.get(acronym=name)
-    except Group.DoesNotExist:
-        wglist = GroupHistory.objects.filter(acronym=name)
-        if wglist:
-            return redirect('wg_ballot_writeupnotes', name=wglist[0].group.acronym)
-        else:
-            raise Http404
-
-    charter = wg.charter
+    charter = get_object_or_404(Document, type="charter", name=name)
+    wg = charter.group
 
     ballot = charter.latest_event(BallotDocEvent, type="created_ballot")
     if not ballot:
@@ -459,16 +424,8 @@ def ballot_writeupnotes(request, name):
 @role_required("Secretariat")
 def approve_ballot(request, name):
     """Approve ballot, changing state, copying charter"""
-    try:
-        wg = Group.objects.get(acronym=name)
-    except Group.DoesNotExist:
-        wglist = GroupHistory.objects.filter(acronym=name)
-        if wglist:
-            return redirect('wg_approve_ballot', name=wglist[0].group.acronym)
-        else:
-            raise Http404
-
-    charter = set_or_create_charter(wg)
+    charter = get_object_or_404(Document, type="charter", name=name)
+    wg = charter.group
 
     login = request.user.get_profile()
 

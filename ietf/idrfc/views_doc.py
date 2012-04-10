@@ -217,17 +217,17 @@ def document_writeup(request, name):
         e = doc.latest_event(WriteupDocEvent, type="changed_review_announcement")
         writeups.append(("WG Review Announcement",
                          e.text if e else "",
-                         urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.group.acronym, ann="review"))))
+                         urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="review"))))
 
         e = doc.latest_event(WriteupDocEvent, type="changed_action_announcement")
         writeups.append(("WG Action Announcement",
                          e.text if e else "",
-                         urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.group.acronym, ann="action"))))
+                         urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="action"))))
 
         e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
         writeups.append(("Ballot Announcement",
                          e.text if e else "",
-                         urlreverse("ietf.wgcharter.views.ballot_writeupnotes", kwargs=dict(name=doc.group.acronym))))
+                         urlreverse("ietf.wgcharter.views.ballot_writeupnotes", kwargs=dict(name=doc.name))))
 
     if not writeups:
         raise Http404()

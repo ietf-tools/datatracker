@@ -41,12 +41,12 @@
       {% if chartering == "rechartering" %}(Rechartering){% endif %}
 
       {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
-      - <a href="{% url wg_change_state name=doc.group.acronym %}">Change state</a>
+      - <a href="{% url wg_change_state name=doc.name %}">Change state</a>
 
       {% if chartering  %}
-      - <a href="{% url wg_startstop_process name=doc.group.acronym option='abandon' %}">Abandon effort</a>
+      - <a href="{% url wg_startstop_process name=doc.name option='abandon' %}">Abandon effort</a>
       {% else %}
-      - <a href="{% url wg_startstop_process name=doc.group.acronym option='recharter' %}">Recharter</a>
+      - <a href="{% url wg_startstop_process name=doc.name option='recharter' %}">Recharter</a>
       {% endif %}
 
       {% endif %}
@@ -67,7 +67,7 @@
       <td>
         {% if not telechat %}Not on agenda{% else %}{{ telechat.telechat_date|date:"Y-m-d" }}{% endif %}
         {% if user|has_role:"Area Director,Secretariat" %}
-        - <a href="{% url charter_telechat_date name=doc.group.acronym %}">Change</a>
+        - <a href="{% url charter_telechat_date name=doc.name %}">Change</a>
         {% endif %}
       </td>
     </tr>
@@ -89,7 +89,7 @@
 
 <h3>Charter {{ doc.name }}-{{ doc.rev }}
 {% if user|has_role:"Area Director,Secretariat" and chartering and doc.group.state_id != "conclude" %}
-<a class="edit" href="{% url wg_submit name=doc.group.acronym %}">Edit charter text</a>
+<a class="edit" href="{% url wg_submit name=doc.name %}">Edit charter text</a>
 {% endif %}
 </h3>
 

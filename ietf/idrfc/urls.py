@@ -30,7 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls.defaults import patterns, url, include
 from ietf.idrfc import views_doc, views_search, views_edit, views_ballot, views
 
 urlpatterns = patterns('',
@@ -65,4 +65,6 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9.-]+)/edit/approvaltext/$', views_ballot.ballot_approvaltext, name='doc_ballot_approvaltext'),
     url(r'^(?P<name>[A-Za-z0-9.-]+)/edit/approveballot/$', views_ballot.approve_ballot, name='doc_approve_ballot'),
     url(r'^(?P<name>[A-Za-z0-9.-]+)/edit/makelastcall/$', views_ballot.make_last_call, name='doc_make_last_call'),
+
+    (r'^(?P<name>[A-Za-z0-9.-]+)/charter/', include('ietf.wgcharter.urls')),
 )

@@ -20,7 +20,7 @@ form.change-state .actions {
 {% block content %}
 <h1>{{ title }}</h1>
 
-{% if "Change state" in title %}<p class="helptext">For help on the states, see the <a href="{% url help_charter_states %}">state table</a>.</p>{% endif %}
+{% if "Change state" in title %}<p class="helptext">For help on the states, see the <a href="{% url help_charter_states name=doc.name %}">state table</a>.</p>{% endif %}
 
 <form class="change-state" action="" method="post">
   <table>
@@ -57,7 +57,7 @@ form.change-state .actions {
         {% if option %}
         <input type="submit" value="Submit"/>
         {% else %}
-        <a href="{% url doc_view name=wg.charter.name %}">Back</a>
+        <a href="{% url doc_view name=doc.name %}">Back</a>
         <input type="submit" value="Save"/>
         {% endif %}
       </td>
@@ -82,5 +82,5 @@ form.change-state .actions {
 <script type="text/javascript">
   var messages = {{ messages|safe }};
 </script>
-<script type="text/javascript" src="/js/wg-change-state.js"></script>
+<script type="text/javascript" src="/js/charter-change-state.js"></script>
 {% endblock %}
