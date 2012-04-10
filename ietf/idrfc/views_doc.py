@@ -251,7 +251,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
         raise Http404()
 
     deferred = None
-    if doc.get_state_slug("%s-iesg" % doc.type) == "defer":
+    if doc.type_id == "draft" and doc.get_state_slug("draft-iesg") == "defer":
         # FIXME: fragile
         deferred = doc.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
 
