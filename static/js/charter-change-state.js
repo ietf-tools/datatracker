@@ -1,11 +1,16 @@
 jQuery(document).ready(function () {
-    function setMessageDraft() {
+    function stateChanged() {
         var v = $(this).val();
         jQuery("#id_message").val(messages[v] || "");
+
+        if (jQuery.inArray(+v, statesForBallotWoExtern) != -1)
+            jQuery("tr.ballot-wo-extern").show();
+        else
+            jQuery("tr.ballot-wo-extern").hide();
     }
 
-    jQuery("#id_charter_state").click(setMessageDraft).change(setMessageDraft).keydown(setMessageDraft);
+    jQuery("#id_charter_state").click(stateChanged).change(stateChanged).keydown(stateChanged);
 
-    if (jQuery("#id_message").val() == "")
-        jQuery("#id_charter_state").click();
+    // trigger event
+    jQuery("#id_charter_state").click();
 });

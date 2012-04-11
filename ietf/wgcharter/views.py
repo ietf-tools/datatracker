@@ -102,7 +102,10 @@ def change_state(request, name, option=None):
                     email_secretariat(request, wg, "state-%s" % charter_state.slug, message)
 
                 if charter_state.slug == "intrev":
-                    create_ballot_if_not_open(charter, login, "r-extrev")
+                    if request.POST.get("ballot_wo_extern"):
+                        create_ballot_if_not_open(charter, login, "r-wo-ext")
+                    else:
+                        create_ballot_if_not_open(charter, login, "r-extrev")
                 elif charter_state.slug == "iesgrev":
                     create_ballot_if_not_open(charter, login, "approve")
 
@@ -151,6 +154,8 @@ def change_state(request, name, option=None):
         state_pk("extrev"): "The WG %s (%s) has been set to External review by %s. Please send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: " % (wg.name, wg.acronym, login.plain_name()),
         }
 
+    states_for_ballot_wo_extern = State.objects.filter(type="charter", slug="intrev").values_list("pk", flat=True)
+
     return render_to_response('wgcharter/change_state.html',
                               dict(form=form,
                                    doc=wg.charter,
@@ -159,7 +164,9 @@ def change_state(request, name, option=None):
                                    prev_charter_state=prev_charter_state,
                                    title=title,
                                    initial_review=initial_review,
-                                   messages=simplejson.dumps(messages)),
+                                   messages=simplejson.dumps(messages),
+                                   states_for_ballot_wo_extern=simplejson.dumps(list(states_for_ballot_wo_extern)),
+                                   ),
                               context_instance=RequestContext(request))
 
 class TelechatForm(forms.Form):

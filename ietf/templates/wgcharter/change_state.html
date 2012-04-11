@@ -48,6 +48,12 @@ form.change-state .actions {
       {{ field.errors }}
       </td>
     </tr>
+    {% if field.name == "charter_state" and not option == "initcharter" %}
+    <tr class="ballot-wo-extern" style="display:none">
+      <td></td>
+      <td><label><input name="ballot_wo_extern" type="checkbox" /> Ask whether external review can be skipped in ballot</label></td>
+    </tr>
+    {% endif %}
     {% endfor %}
     {% if initial_review %}
     <tr><td></td><td class="warning">Warning: Announced initial review time hasn't elapsed yet. It does so at {{ initial_review.expires }}.</td></tr>
@@ -80,7 +86,8 @@ form.change-state .actions {
 
 {% block content_end %}
 <script type="text/javascript">
-  var messages = {{ messages|safe }};
+  var messages = {{ messages|safe }},
+      statesForBallotWoExtern = {{ states_for_ballot_wo_extern }};
 </script>
 <script type="text/javascript" src="/js/charter-change-state.js"></script>
 {% endblock %}
