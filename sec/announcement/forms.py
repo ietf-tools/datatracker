@@ -27,7 +27,8 @@ FROM_LIST = ('IETF Secretariat <ietf-secretariat@ietf.org>',
              'IETF Executive Director <exec-director@ietf.org>',
              'The IAOC <bob.hinden@gmail.com>',
              'The IETF Trust <tme@multicasttech.com>',
-             'RSOC Chair <rsoc-chair@iab.org>')
+             'RSOC Chair <rsoc-chair@iab.org>',
+             'ISOC Board of Trustees <eburger@standardstrack.com>')
              
 TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
            'I-D Announcement List <i-d-announce@ietf.org>',
