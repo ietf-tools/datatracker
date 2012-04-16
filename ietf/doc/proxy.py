@@ -175,32 +175,6 @@ class InternetDraft(Document):
     def expired_tombstone(self):
         return False
 
-    def calc_process_start_end(self):
-        import datetime
-        start, end = datetime.datetime.min, datetime.datetime.max
-        e = self.latest_event(type="started_iesg_process")
-        if e:
-            start = e.time
-            if self.get_state_slug() == "rfc" and self.name.startswith("draft") and not hasattr(self, "viewing_as_rfc"):
-                previous_process = self.latest_event(type="started_iesg_process", time__lt=e.time)
-                if previous_process:
-                    start = previous_process.time
-                    end = e.time
-        self._process_start = start
-        self._process_end = end
-
-    @property
-    def process_start(self):
-        if not hasattr(self, "_process_start"):
-            self.calc_process_start_end()
-        return self._process_start
-
-    @property
-    def process_end(self):
-        if not hasattr(self, "_process_end"):
-            self.calc_process_start_end()
-        return self._process_end
-
     #shepherd = BrokenForeignKey('PersonOrOrgInfo', null=True, blank=True, null_values=(0, )) # same name
 
     #idinternal = FKAsOneToOne('idinternal', reverse=True, query=models.Q(rfc_flag = 0))

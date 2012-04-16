@@ -26,6 +26,7 @@ from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
 from ietf.idrfc.idrfc_wrapper import BallotWrapper
 
+from ietf.doc.utils import *
 from ietf.doc.models import *
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
@@ -343,6 +344,7 @@ def edit_positionREDESIGN(request, name, ballot_id):
         form = EditPositionForm(initial=initial, ballot_type=ballot.ballot_type)
 
     blocking_positions = dict((p.pk, p.name) for p in form.fields["position"].queryset.all() if p.blocking)
+    print blocking_positions, form.fields["position"].queryset.all()
 
     ballot_deferred = None
     if doc.get_state_slug("%s-iesg" % doc.type_id) == "defer":
@@ -933,9 +935,6 @@ class BallotWriteupFormREDESIGN(forms.Form):
 def ballot_writeupnotesREDESIGN(request, name):
     """Editing of ballot write-up and notes"""
     doc = get_object_or_404(Document, docalias__name=name)
-    started_process = doc.latest_event(type="started_iesg_process")
-    if not started_process:
-        raise Http404()
 
     login = request.user.get_profile()
 
@@ -958,9 +957,13 @@ def ballot_writeupnotesREDESIGN(request, name):
                 e.save()
 
             if "issue_ballot" in request.POST:
-                if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, ad=login, time__gte=started_process.time):
+                create_ballot_if_not_open(doc, login, "approve")
+                ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
+
+                if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot):
                     # sending the ballot counts as a yes
                     pos = BallotPositionDocEvent(doc=doc, by=login)
+                    pos.ballot = ballot
                     pos.type = "changed_ballot_position"
                     pos.ad = login
                     pos.pos_id = "yes"
@@ -971,7 +974,7 @@ def ballot_writeupnotesREDESIGN(request, name):
                 if not approval:
                     approval = generate_approval_mail(request, doc)
 
-                msg = generate_issue_ballot_mail(request, doc)
+                msg = generate_issue_ballot_mail(request, doc, ballot)
                 send_mail_preformatted(request, msg)
 
                 email_iana(request, doc, 'drafts-eval@icann.org', msg)

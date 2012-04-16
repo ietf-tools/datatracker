@@ -35,14 +35,10 @@ def active_ballot_positions(doc, ballot=None):
     active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active"))
     res = {}
 
-    # FIXME: do something with ballot
+    if not ballot:
+        ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
 
-    start = datetime.datetime.min
-    e = doc.latest_event(type="started_iesg_process")
-    if e:
-        start = e.time
-
-    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ad__in=active_ads, time__gte=start).select_related('ad').order_by("-time", "-id")
+    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ad__in=active_ads, ballot=ballot).select_related('ad', 'pos').order_by("-time", "-id")
 
     for pos in positions:
         if pos.ad not in res:
@@ -75,7 +71,7 @@ def needed_ballot_positions(doc, active_positions):
     if doc.type_id == "draft" and doc.intended_std_level_id in ("bcp", "ps", "ds", "std"):
         # For standards-track, need positions from 2/3 of the
         # non-recused current IESG.
-        needed = len(active_positions) - recuse * 2 / 3
+        needed = len(active_positions) - len(recuse) * 2 / 3
 
     have = len(yes) + len(noobj) + len(blocking)
     if have < needed:
@@ -92,21 +88,6 @@ def needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
     
-
-def get_rfc_number(doc):
-    qs = doc.docalias_set.filter(name__startswith='rfc')
-    return qs[0].name[3:] if qs else None
-
-def get_chartering_type(doc):
-    chartering = ""
-    if doc.get_state_slug() not in ("notrev", "approved"):
-        if doc.group.state_id == "proposed":
-            chartering = "initial"
-        elif doc.group.state_id == "active":
-            chartering = "rechartering"
-
-    return chartering
-
 def ballot_open(doc, ballot_type_slug):
     e = doc.latest_event(BallotDocEvent, ballot_type__slug=ballot_type_slug)
     return e and not e.type == "closed_ballot"
@@ -125,6 +106,20 @@ def close_open_ballots(doc, by):
             e.ballot_type = t
             e.desc = 'Closed "%s" ballot' % t.name
             e.save()
+
+def get_rfc_number(doc):
+    qs = doc.docalias_set.filter(name__startswith='rfc')
+    return qs[0].name[3:] if qs else None
+
+def get_chartering_type(doc):
+    chartering = ""
+    if doc.get_state_slug() not in ("notrev", "approved"):
+        if doc.group.state_id == "proposed":
+            chartering = "initial"
+        elif doc.group.state_id == "active":
+            chartering = "rechartering"
+
+    return chartering
 
 def augment_with_telechat_date(docs):
     """Add a telechat_date attribute to each document with the

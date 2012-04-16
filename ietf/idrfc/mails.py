@@ -532,14 +532,13 @@ def generate_issue_ballot_mail(request, doc):
                                  )
                             )
 
-def generate_issue_ballot_mailREDESIGN(request, doc):
+def generate_issue_ballot_mailREDESIGN(request, doc, ballot):
     full_status = full_intended_status(doc.intended_std_level.name)
     status = full_status.replace("a ", "").replace("an ", "")
 
     active_ads = Person.objects.filter(role__name="ad", role__group__state="active").distinct()
     
-    e = doc.latest_event(type="started_iesg_process")
-    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", time__gte=e.time).order_by("-time", '-id').select_related('ad')
+    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ballot=ballot).order_by("-time", '-id').select_related('ad')
 
     # format positions and setup discusses and comments
     ad_feedback = []

@@ -271,10 +271,10 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
             if latest.old_positions:
                 prev = latest.old_positions[-1]
             else:
-                prev = latest
+                prev = latest.pos.name
 
-            if e.pos != prev.pos:
-                latest.old_positions.append(e)
+            if e.pos.name != prev:
+                latest.old_positions.append(e.pos.name)
 
     # add any missing ADs through fake No Record events
     norecord = BallotPositionName.objects.get(slug="norecord")
@@ -316,9 +316,6 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
                               context_instance=RequestContext(request))
 
 def document_ballot(request, name, ballot_id=None):
-    if name.lower().startswith("draft") or name.lower().startswith("rfc"):
-        return document_main_idrfc(request, name, "ballot")
-
     doc = get_object_or_404(Document, docalias__name=name)
     top = render_document_top(request, doc, "ballot")
 

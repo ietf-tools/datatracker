@@ -122,11 +122,7 @@ table.ietf-table { border-collapse:collapse; border:1px solid #7f7f7f; }
 
 table.ballot_icon { empty-cells: show; padding: 0; border-spacing: 0; border: 1px solid black; border-collapse: collapse; table-layout:fixed; min-width:35px; background:white; }
 table.ballot_icon td { border: 1px solid black; height: 7px; width: 6px; padding: 0;}
-td.ballot_icon_green { background:#80ff80; }
-td.ballot_icon_red { background: #c00000; color: yellow; }
-td.ballot_icon_gray { background: #c0c0c0; }
-td.ballot_icon_yellow { background: #ffff00; }
-table.ballot_icon td.ballot_icon_my { border: 3px outset black;}
+table.ballot_icon td.my { border: 3px outset black;}
 
 .ietf-small { font-size:85%; }
 .ietf-highlight-y { padding:0 2px;background:yellow;}
