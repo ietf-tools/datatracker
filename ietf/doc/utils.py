@@ -71,7 +71,7 @@ def needed_ballot_positions(doc, active_positions):
     if doc.type_id == "draft" and doc.intended_std_level_id in ("bcp", "ps", "ds", "std"):
         # For standards-track, need positions from 2/3 of the
         # non-recused current IESG.
-        needed = len(active_positions) - len(recuse) * 2 / 3
+        needed = (len(active_positions) - len(recuse)) * 2 // 3
 
     have = len(yes) + len(noobj) + len(blocking)
     if have < needed:
