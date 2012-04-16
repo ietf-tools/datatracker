@@ -1223,6 +1223,8 @@ def approve_ballotREDESIGN(request, name):
             new_state = State.objects.get(type="draft-iesg", slug="ann")
 
         # fixup document
+        close_open_ballots(doc, login)
+
         save_document_in_history(doc)
 
         prev = doc.get_state("draft-iesg")
