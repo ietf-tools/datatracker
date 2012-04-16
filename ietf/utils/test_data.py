@@ -263,7 +263,14 @@ def make_test_data():
         order=1
         )
 
-    # draft has only one event
+    # fill in some useful default events
+    DocEvent.objects.create(
+        type="started_iesg_process",
+        by=ad,
+        doc=draft,
+        desc="Started IESG process",
+        )
+
     BallotDocEvent.objects.create(
         type="created_ballot",
         ballot_type=BallotType.objects.get(doc_type="draft", slug="approve"),
