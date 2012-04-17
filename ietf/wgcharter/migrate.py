@@ -64,14 +64,7 @@ class DontSaveQueries(object):
 connection.queries = DontSaveQueries()
 
 relevant_docs = Document.objects.filter(type="draft", docevent__type__in=("changed_ballot_position", "sent_ballot_announcement")).distinct()
-
-for d in relevant_docs[:1].iterator():
-    # print ""
-    # print d.name
-    # for e in d.docevent_set.order_by("time", "id").select_related("ballotpositiondocevent"):
-    #     print e.time, e.type, "BINGO" if e.type == "sent_ballot_announcement" else ""
-
-
+for d in relevant_docs.iterator():
     ballot = None
     for e in d.docevent_set.order_by("time", "id").select_related("ballotpositiondocevent"):
         if e.type == "created_ballot":
@@ -86,7 +79,7 @@ for d in relevant_docs[:1].iterator():
             ballot.ballot_type = draft_ballot
             # place new event just before
             ballot.time = e.time - datetime.timedelta(seconds=1)
-            ballot.desc = u'Created "%s" ballot' % ballot.ballot_type.name
+            ballot.desc = u'Created "%s" ballot' % draft_ballot
             ballot.save()
 
             if e.type == "sent_ballot_announcement":
@@ -98,5 +91,14 @@ for d in relevant_docs[:1].iterator():
             e.ballotpositiondocevent.ballot = ballot
             e.ballotpositiondocevent.save()
 
+        if e.type in ("iesg_approved", "iesg_disapproved") and ballot:
+            c = BallotDocEvent(doc=e.doc, by=e.by)
+            c.type = "closed_ballot"
+            c.ballot_type = draft_ballot
+            # place new event just before
+            c.time = e.time - datetime.timedelta(seconds=1)
+            c.desc = u'Closed "%s" ballot' % draft_ballot.name
+            c.save()
+            ballot = None
 
-        # FIXME: close ballot
+            print "closed ballot for", d.name
