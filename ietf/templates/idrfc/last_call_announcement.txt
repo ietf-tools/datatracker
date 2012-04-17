@@ -1,13 +1,13 @@
-{% load ietf_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
 To: IETF-Announce <ietf-announce@ietf.org>{% if cc %}
 CC: {{ cc }}{% endif %}
 Reply-To: ietf@ietf.org
-Subject: Last Call: {{ doc.file_tag }} ({{ doc.title|clean_whitespace }}) to {{ status }}
+Subject: Last Call: {{ doc.file_tag }} ({{ doc.title|clean_whitespace }}) to {{ doc|std_level_prompt }}
 
 {% filter wordwrap:73 %}
 The IESG has received a request from {{ group }} to consider the following document{{ docs|pluralize }}:{% for d in docs %}
 - '{{ d.filled_title }}'
-  {{ d.file_tag }} as {{ d.full_status }}{% endfor %}
+  {{ d.file_tag }} as {{ d|std_level_prompt }}{% endfor %}
 
 The IESG plans to make a decision in the next few weeks, and solicits final comments on this action. Please send substantive comments to the ietf@ietf.org mailing lists by {{ expiration_date }}. Exceptionally, comments may be sent to iesg@ietf.org instead. In either case, please retain the beginning of the Subject line to allow automated sorting.{% endfilter %}
 
@@ -20,10 +20,7 @@ Abstract{{ docs|pluralize }}
 
 The file{{ urls|pluralize }} can be obtained via
 {% for u in urls %}{{ u }}
-{% endfor %}{% if impl_report %}
-Implementation Report can be accessed at
-http://www.ietf.org/iesg/implementation.html
-{% endif %}
+{% endfor %}
 IESG discussion can be tracked via
 {{ doc_url }}
 

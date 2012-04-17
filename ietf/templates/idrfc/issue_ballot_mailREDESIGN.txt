@@ -1,7 +1,7 @@
-{% autoescape off %}To: Internet Engineering Steering Group <iesg@ietf.org>
+{% load mail_filters %}{% autoescape off %}To: Internet Engineering Steering Group <iesg@ietf.org>
 From: IESG Secretary <iesg-secretary@ietf.org>
 Reply-To: IESG Secretary <iesg-secretary@ietf.org>
-Subject: Evaluation: {{ doc.file_tag }} to {{ status }}
+Subject: Evaluation: {{ doc.file_tag }} to {{ doc|std_level_prompt }}
 
 {% filter wordwrap:73 %}Evaluation for {{ doc.file_tag }} can be found at {{ doc_url }}
 

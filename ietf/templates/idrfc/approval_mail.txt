@@ -1,11 +1,11 @@
-{% load ietf_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
+{% load ietf_filters %}{%load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
 To: IETF-Announce <ietf-announce@ietf.org>{% if cc %}
 Cc: {{ cc }}{% endif %}
-Subject: {{ action_type }} Action: '{{ doc.title|clean_whitespace }}' to {{ status }} ({{ doc.filename_with_rev }})
+Subject: {{ action_type }} Action: '{{ doc.title|clean_whitespace }}' to {{ doc|std_level_prompt }} ({{ doc.filename_with_rev }})
 
 {% filter wordwrap:73 %}The IESG has approved the following document{{ docs|pluralize }}:{% for d in docs %}
 - '{{ d.filled_title }}'
-  ({{ d.filename_with_rev }}) as {{ d.full_status }}{% endfor %}
+  ({{ d.filename_with_rev }}) as {{ d|std_level_prompt }}{% endfor %}
 
 {{ made_by }}
 

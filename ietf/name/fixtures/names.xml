@@ -409,7 +409,7 @@
         <field type="IntegerField" name="order">2</field>
     </object>
     <object pk="std" model="name.intendedstdlevelname">
-        <field type="CharField" name="name">Standard</field>
+        <field type="CharField" name="name">Internet Standard</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">3</field>
@@ -583,7 +583,7 @@
         <field type="IntegerField" name="order">0</field>
     </object>
     <object pk="std" model="name.stdlevelname">
-        <field type="CharField" name="name">Standard</field>
+        <field type="CharField" name="name">Internet Standard</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>

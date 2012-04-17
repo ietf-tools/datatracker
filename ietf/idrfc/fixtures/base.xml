@@ -1083,7 +1083,7 @@
         <field type="CharField" name="intended_status">Proposed Standard</field>
     </object>
     <object pk="7" model="idtracker.idintendedstatus">
-        <field type="CharField" name="intended_status">Standard</field>
+        <field type="CharField" name="intended_status">Internet Standard</field>
     </object>
     <object pk="8" model="idtracker.idintendedstatus">
         <field type="CharField" name="intended_status">None</field>

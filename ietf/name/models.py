@@ -34,11 +34,11 @@ class DocTagName(NameModel):
     """Waiting for Reference, IANA Coordination, Revised ID Needed,
     External Party, AD Followup, Point Raised - Writeup Needed, ..."""
 class StdLevelName(NameModel):
-    """Proposed Standard, Draft Standard, Standard, Experimental,
+    """Proposed Standard, (Draft Standard), Internet Standard, Experimental,
     Informational, Best Current Practice, Historic, ..."""
 class IntendedStdLevelName(NameModel):
-    """Standards Track, Experimental, Informational, Best Current
-    Practice, Historic, ..."""
+    """Proposed Standard, (Draft Standard), Internet Standard, Experimental,
+    Informational, Best Current Practice, Historic, ..."""
 class DocReminderTypeName(NameModel):
     "Stream state"
 class BallotPositionName(NameModel):
