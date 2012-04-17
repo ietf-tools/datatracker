@@ -224,10 +224,11 @@ def document_writeup(request, name):
                          e.text if e else "",
                          urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="action"))))
 
-        e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
-        writeups.append(("Ballot Announcement",
-                         e.text if e else "",
-                         urlreverse("ietf.wgcharter.views.ballot_writeupnotes", kwargs=dict(name=doc.name))))
+        if doc.latest_event(BallotDocEvent, type="created_ballot"):
+            e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
+            writeups.append(("Ballot Announcement",
+                             e.text if e else "",
+                             urlreverse("ietf.wgcharter.views.ballot_writeupnotes", kwargs=dict(name=doc.name))))
 
     if not writeups:
         raise Http404()
