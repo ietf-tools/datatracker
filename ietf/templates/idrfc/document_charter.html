@@ -87,16 +87,23 @@
 
 <p>Other versions: <a href="{{ txt_url }}">plain text</a></p>
 
-<h3>Charter {{ doc.name }}-{{ doc.rev }}
+<h3>
+{% if doc.rev %}
+  Charter {{ doc.name }}-{{ doc.rev }}
+{% else %}
+  No text for {{ doc.name }} submitted yet
+{% endif %}
+
 {% if user|has_role:"Area Director,Secretariat" and chartering and doc.group.state_id != "conclude" %}
-<a class="edit" href="{% url wg_submit name=doc.name %}">Edit charter text</a>
+<a class="edit" href="{% url wg_submit name=doc.name %}">Change charter text</a>
 {% endif %}
 </h3>
 
+{% if doc.rev %}
 <div class="markup_draft">
 {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
 </div>
-
+{% endif %}
 
 {% endblock %}
 

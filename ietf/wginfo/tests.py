@@ -76,7 +76,6 @@ class WgOverviewTestCase(django.test.TestCase):
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
-        print
         self.assertEquals(len(q('table.ietf-doctable td.acronym a:contains("mars")')), 1)
 
 
