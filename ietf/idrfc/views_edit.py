@@ -28,7 +28,6 @@ from ietf.ietfworkflows.utils import update_stream
 from ietf.ietfworkflows.streams import get_stream_from_draft
 
 from ietf.doc.models import *
-from ietf.doc.utils import close_open_ballots
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
 from ietf.person.models import Person, Email
 
@@ -133,9 +132,6 @@ def change_stateREDESIGN(request, name):
             prev_tag = prev_tag[0] if prev_tag else None
 
             if state != prev or tag != prev_tag:
-                if state.slug == "dead":
-                    close_open_ballots(doc, login)
-
                 save_document_in_history(doc)
                 
                 doc.set_state(state)
