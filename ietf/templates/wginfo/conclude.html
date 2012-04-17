@@ -28,7 +28,7 @@ form.conclude .actions {
     {{ form.as_table }}
     <tr>
       <td colspan="2" class="actions">
-        <a href="{% url wg_view name=wg.acronym %}">Back</a>
+        <a href="{% url wg_charter acronym=wg.acronym %}">Back</a>
         <input type="submit" value="Send request"/>
       </td>
     </tr>
