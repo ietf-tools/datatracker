@@ -60,9 +60,13 @@ def render_ballot_icon(user, doc):
     if not doc:
         return ""
 
-    s = doc.get_state("draft-iesg")
-    if s and s.name not in BALLOT_ACTIVE_STATES:
-        return ""
+    if doc.type_id == "draft":
+        s = doc.get_state("draft-iesg")
+        if s and s.name not in BALLOT_ACTIVE_STATES:
+            return ""
+    elif doc.type_id == "charter":
+        if doc.get_state_slug() not in ("intrev", "iesgrev"):
+            return ""
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if not ballot:
@@ -112,7 +116,10 @@ class BallotIconNode(template.Node):
         self.doc_var = doc_var
     def render(self, context):
         doc = template.resolve_variable(self.doc_var, context)
-        return render_ballot_icon(context.get("user"), doc._idinternal)
+        if hasattr(doc, "_idinternal"):
+            # hack for old schema
+            doc = doc._idinternal
+        return render_ballot_icon(context.get("user"), doc)
 
 def do_ballot_icon(parser, token):
     try:
