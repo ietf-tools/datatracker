@@ -4,6 +4,7 @@
 
 {% block content %}
 {% load ietf_filters %}
+{% load ballot_icon %}
 
 <h1>Chartering or Re-Chartering Working Groups</h1>
 
@@ -19,7 +20,7 @@
 {% else %}
 <table class="ietf-table ietf-doctable">
 <tr>
-  <th>Acronym</th>
+  <th>Group</th>
   <th>Charter</th>
   <th>Date</th>
   <th colspan="2">Status</th>
@@ -27,7 +28,7 @@
 {% for g in groups %}
 <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
   <td class="acronym">
-    <a href="{% url wg_view name=g.acronym %}">{{ g.acronym }}</a>
+    <a href="{% url wg_charter acronym=g.acronym %}">{{ g.acronym }}</a>
   </td>
   <td class="title">
     <a href="{% url doc_view name=g.charter.name %}">{{ g.name }}</a>
@@ -42,10 +43,7 @@
     {% if g.charter.telechat_date %}<br/>IESG Telechat: {{ g.charter.telechat_date|date:"Y-m-d" }}{% endif %}
   </td>
   <td class="ballot">
-    {% comment %}
-    FIXME: add this back in when ballot situation is clear
-    {% if g.charter.get_state_slug == "iesgrev" %}{% wg_ballot_icon g.acronym %}{% endif %}
-    {% endcomment %}
+    {% ballot_icon g.charter %}
   </td>
 </tr>
 {% endfor %}
