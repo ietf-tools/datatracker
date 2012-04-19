@@ -1,4 +1,4 @@
-import re, os, string, datetime
+import re, os, string, datetime, shutil
 
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
@@ -57,13 +57,15 @@ def change_state(request, name, option=None):
             clean = form.cleaned_data
             if option == "initcharter" or option == "recharter":
                 charter_state = State.objects.get(type="charter", slug="infrev")
-                charter_rev = charter.rev
+                charter_rev = ""
             elif option == "abandon":
                 if wg.state_id == "proposed":
                     charter_state = State.objects.get(type="charter", slug="notrev")
                 else:
                     charter_state = State.objects.get(type="charter", slug="approved")
                 charter_rev = approved_revision(charter.rev)
+                if charter_rev == "00":
+                    charter_rev = ""
             else:
                 charter_state = clean['charter_state']
                 charter_rev = charter.rev
@@ -216,19 +218,13 @@ class UploadForm(forms.Form):
 
     def save(self, wg, rev):
         fd = self.cleaned_data['txt']
-        filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, rev))
-        if fd:
-            # A file was specified. Save it.
-            destination = open(filename, 'wb+')
-            for chunk in fd.chunks():
-                destination.write(chunk)
-            destination.close()
-        else:
-            # No file, save content
-            destination = open(filename, 'wb+')
-            content = self.cleaned_data['content']
-            destination.write(content)
-            destination.close()
+        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (wg.charter.canonical_name(), rev))
+        with open(filename, 'wb+') as destination:
+            if fd:
+                for chunk in fd.chunks():
+                    destination.write(chunk)
+            else:
+                destination.write(self.cleaned_data['content'])
 
 @role_required('Area Director','Secretariat')
 def submit(request, name):
@@ -237,6 +233,17 @@ def submit(request, name):
 
     login = request.user.get_profile()
 
+    if charter.rev == "":
+        prev_revs = charter.history_set.exclude(rev="").order_by('-rev').values_list('rev', flat=True)
+        if prev_revs:
+            charter.rev = prev_revs[0]
+
+    # Search history for possible collisions with abandoned efforts
+    prev_revs = set(charter.history_set.order_by('-time').values_list('rev', flat=True))
+    next_rev = next_revision(charter.rev)
+    while next_rev in prev_revs:
+        next_rev = next_revision(next_rev)
+
     if request.method == 'POST':
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -244,19 +251,13 @@ def submit(request, name):
             # Also save group history so we can search for it
             save_group_in_history(wg)
 
-            # Search history for possible collisions with abandoned efforts
-            rev_list = list(charter.history_set.order_by('-time').values_list('rev', flat=True))
-            next_rev = next_revision(charter.rev)
-            while next_rev in rev_list:
-                next_rev = next_revision(next_rev)
-
             charter.rev = next_rev
 
             e = DocEvent()
             e.type = "new_revision"
             e.by = login
             e.doc = charter
-            e.desc = "New version available: <b>charter-ietf-%s-%s.txt</b>" % (wg.acronym, charter.rev)
+            e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
             e.save()
             
             # Save file on disk
@@ -267,17 +268,18 @@ def submit(request, name):
 
             return HttpResponseRedirect(reverse('doc_view', kwargs={'name': charter.name}))
     else:
-        filename = os.path.join(settings.CHARTER_PATH, 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
+        init = { "content": ""}
+        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
         try:
-            charter_text = open(filename, 'r')
-            init = dict(content=charter_text.read())
+            with open(filename, 'r') as f:
+                init["content"] = f.read()
         except IOError:
-            init = {}
-        form = UploadForm(initial = init)
+            pass
+        form = UploadForm(initial=init)
     return render_to_response('wgcharter/submit.html',
                               {'form': form,
-                               'next_rev': next_revision(wg.charter.rev),
-                               'wg': wg},
+                               'next_rev': next_rev,
+                               'wg': wg },
                               context_instance=RequestContext(request))
 
 class AnnouncementTextForm(forms.Form):
@@ -429,8 +431,8 @@ def ballot_writeupnotes(request, name):
                               context_instance=RequestContext(request))
 
 @role_required("Secretariat")
-def approve_ballot(request, name):
-    """Approve ballot, changing state, copying charter"""
+def approve(request, name):
+    """Approve charter, changing state, fixing revision, copying file to final location."""
     charter = get_object_or_404(Document, type="charter", name=name)
     wg = charter.group
 
@@ -446,15 +448,10 @@ def approve_ballot(request, name):
         announcement = e.text
 
     if request.method == 'POST':
-        new_state = GroupStateName.objects.get(slug="active")
         new_charter_state = State.objects.get(type="charter", slug="approved")
+        prev_charter_state = charter.get_state()
 
         save_document_in_history(charter)
-        save_group_in_history(wg)
-
-        prev_state = wg.state
-        prev_charter_state = charter.get_state()
-        wg.state = new_state
         charter.set_state(new_charter_state)
 
         close_open_ballots(charter, login)
@@ -463,29 +460,30 @@ def approve_ballot(request, name):
         e.type = "iesg_approved"
         e.desc = "IESG has approved the charter"
         e.save()
-        
-        change_description = e.desc + " and WG state has been changed to %s" % new_state.name
-        
-        e = log_state_changed(request, charter, login, prev_state)
-        
-        wg.time = e.time
-        wg.save()
 
-        ch = get_charter_for_revision(wg.charter, wg.charter.rev)
+        change_description = e.desc
 
-        filename = os.path.join(charter.get_file_path(), ch.name+"-"+ch.rev+".txt")
+        new_state = GroupStateName.objects.get(slug="active")
+        if wg.state != new_state:
+            save_group_in_history(wg)
+            prev_state = wg.state
+            wg.state = new_state
+            wg.time = e.time
+            wg.save()
+            change_description += " and WG state has been changed to %s" % new_state.name
+        
+        e = log_state_changed(request, charter, login, prev_charter_state)
+
+        # copy file
         try:
-            source = open(filename, 'rb')
-            raw_content = source.read()
-
-            new_filename = os.path.join(charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (wg.acronym, next_approved_revision(ch.rev)))
-            destination = open(new_filename, 'wb+')
-            destination.write(raw_content)
-            destination.close()
+            old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+            new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
+            shutil.copy(old, new)
         except IOError:
             raise Http404("Charter text %s" % filename)
 
         charter.rev = next_approved_revision(charter.rev)
+        charter.time = e.time
         charter.save()
         
         email_secretariat(request, wg, "state-%s" % new_charter_state.slug, change_description)
@@ -495,7 +493,7 @@ def approve_ballot(request, name):
 
         return HttpResponseRedirect(charter.get_absolute_url())
     
-    return render_to_response('wgcharter/approve_ballot.html',
+    return render_to_response('wgcharter/approve.html',
                               dict(charter=charter,
                                    announcement=announcement,
                                    wg=wg),

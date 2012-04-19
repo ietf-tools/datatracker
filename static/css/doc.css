@@ -12,6 +12,8 @@
 .snapshots .revisions a:first-child { font-weight: bold }
 
 .metabox .actions a { display: inline-block; margin-right: 0.4em; }
+.metabox .ballot-summary { font-style: italic; }
+.metabox .telechat { margin-top: 0.2em; }
 
 .diffTool { padding: 8px 4px; margin: 8px 0;}
 .diffTool h2 { margin-top:0;margin-bottom:4px; }

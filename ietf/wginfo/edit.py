@@ -15,7 +15,6 @@ from ietf.name.models import *
 from ietf.person.models import *
 from ietf.group.models import *
 from ietf.group.utils import save_group_in_history
-from ietf.wgcharter.utils import set_or_create_charter
 from ietf.wgcharter.mails import email_secretariat
 from ietf.person.forms import EmailsField
 
@@ -77,13 +76,14 @@ def edit(request, acronym=None, action="edit"):
     if action == "edit":
         # Editing. Get group
         wg = get_object_or_404(Group, acronym=acronym)
-        charter = set_or_create_charter(wg)
+        if not wg.charter:
+            raise Http404
         new_wg = False
     elif action == "create":
         wg = None
         new_wg = True
     else:
-        raise Http404()
+        raise Http404
 
     login = request.user.get_profile()
 
@@ -91,9 +91,7 @@ def edit(request, acronym=None, action="edit"):
         form = WGForm(request.POST, cur_acronym=wg.acronym if wg else None)
         if form.is_valid():
             r = form.cleaned_data
-            if not new_wg:
-                gh = save_group_in_history(wg)
-            else:
+            if new_wg:
                 # Create WG
                 wg = Group(name=r["name"],
                            acronym=r["acronym"],
@@ -107,19 +105,32 @@ def edit(request, acronym=None, action="edit"):
                 e.state_id = "proposed"
                 e.desc = "Proposed group"
                 e.save()
+            else:
+                gh = save_group_in_history(wg)
 
             if not wg.charter:
-                # Create adjoined charter
-                charter = set_or_create_charter(wg)
-                charter.set_state(State.objects.get(type="charter", slug="infrev"))
-                charter.save()
-                
-                e = DocEvent(doc=charter, type="started_iesg_process")
-                e.time = datetime.datetime.now()
-                e.by = login
-                e.desc = "Started IESG process on charter"
-                e.save()
-                
+                try:
+                    charter = Document.objects.get(docalias__name="charter-ietf-%s" % wg.acronym)
+                except Document.DoesNotExist:
+                    charter = Document(
+                        name="charter-ietf-" + wg.acronym,
+                        type_id="charter",
+                        title=wg.name,
+                        group=wg,
+                        abstract=wg.name,
+                        rev="",
+                        )
+                    charter.save()
+                    charter.set_state(State.objects.get(type="charter", slug="infrev"))
+
+                    # Create an alias as well
+                    DocAlias.objects.create(
+                        name=charter.name,
+                        document=charter
+                        )
+
+                wg.charter = charter
+
             changes = []
                 
             def desc(attr, new, old):
@@ -140,7 +151,7 @@ def edit(request, acronym=None, action="edit"):
                         # and add a DocAlias
                         DocAlias.objects.create(
                             name="charter-ietf-%s" % r['acronym'],
-                            document=charter,
+                            document=c,
                             )
 
             # update the attributes, keeping track of what we're doing
@@ -189,7 +200,7 @@ def edit(request, acronym=None, action="edit"):
             wg.save()
 
             if new_wg:
-                return redirect('wg_startstop_process', name=wg.charter.name, option="initcharter")
+                return redirect('charter_startstop_process', name=wg.charter.name, option="initcharter")
 
             return redirect('wg_charter', acronym=wg.acronym)
     else: # form.is_valid()
@@ -200,7 +211,6 @@ def edit(request, acronym=None, action="edit"):
                         chairs=Email.objects.filter(role__group=wg, role__name="chair"),
                         secretaries=Email.objects.filter(role__group=wg, role__name="secr"),
                         techadv=Email.objects.filter(role__group=wg, role__name="techadv"),
-                        charter=wg.charter.name if wg.charter else None,
                         ad=wg.ad_id if wg.ad else None,
                         parent=wg.parent.id if wg.parent else None,
                         list_email=wg.list_email if wg.list_email else None,

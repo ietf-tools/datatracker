@@ -54,10 +54,10 @@ def needed_ballot_positions(doc, active_positions):
     '''Returns text answering the question "what does this document
     need to pass?".  The return value is only useful if the document
     is currently in IESG evaluation.'''
-    yes = [p for p in active_positions if p.pos_id == "yes"]
-    noobj = [p for p in active_positions if p.pos_id == "noobj"]
-    blocking = [p for p in active_positions if p.pos.blocking]
-    recuse = [p for p in active_positions if p.pos_id == "recuse"]
+    yes = [p for p in active_positions if p and p.pos_id == "yes"]
+    noobj = [p for p in active_positions if p and p.pos_id == "noobj"]
+    blocking = [p for p in active_positions if p and p.pos.blocking]
+    recuse = [p for p in active_positions if p and p.pos_id == "recuse"]
 
     answer = []
     if yes < 1:

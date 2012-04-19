@@ -1,8 +1,6 @@
 from ietf.utils.proxy import TranslatingManager, proxy_role_email
 
 from models import *
-from ietf.doc.models import Document # for charter text
-from ietf.wgcharter.utils import get_charter_for_revision, approved_revision
 
 class Acronym(Group):
     class LazyIndividualSubmitter(object):
@@ -203,15 +201,19 @@ class IETFWG(Group):
         # get file path from settings. Syntesize file name from path, acronym, and suffix
         try:
             # Try getting charter from new charter tool
-            charter = Document.objects.get(docalias__name="charter-ietf-%s" % self.acronym)
-            ch = get_charter_for_revision(charter, charter.rev)
-            name = ch.name
-            rev = approved_revision(ch.rev)
-            filename = os.path.join(charter.get_file_path(), "%s-%s.txt" % (name, rev))
-            desc_file = open(filename)
-            desc = desc_file.read()
-            return desc
-        except:
+            c = self.charter
+
+            # find the latest, preferably approved, revision
+            for h in self.charter.history_set.exclude(rev="").order_by("time"):
+                h_appr = "-" not in h.rev
+                c_appr = "-" not in c.rev
+                if (h.rev > c.rev and not (c_appr and not h_appr)) or (h_appr and not c_appr):
+                    c = h
+
+            filename = os.path.join(c.get_file_path(), "%s-%s.txt" % (c.canonical_name(), c.rev))
+            with open(filename) as f:
+                return f.read()
+        except IOError:
             try:
                 filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, self.acronym) + ".desc.txt"
                 desc_file = open(filename)

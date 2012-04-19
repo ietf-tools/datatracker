@@ -6,29 +6,6 @@ from ietf.group.models import GroupEvent, ChangeStateGroupEvent
 from ietf.doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor, DocEvent
 from ietf.utils.history import find_history_active_at
 
-def set_or_create_charter(wg):
-    try:
-        charter = Document.objects.get(docalias__name="charter-ietf-%s" % wg.acronym)
-    except Document.DoesNotExist:
-        charter = Document.objects.create(
-            name="charter-ietf-" + wg.acronym,
-            time=datetime.datetime.now(),
-            type_id="charter",
-            title=wg.name,
-            group=wg,
-            abstract=wg.name,
-            rev="",
-            )
-        # Create an alias as well
-        DocAlias.objects.create(
-            name=charter.name,
-            document=charter
-            )
-    if wg.charter != charter:
-        wg.charter = charter
-        wg.save()
-    return charter
-
 def log_state_changed(request, doc, by, prev_state):
     e = DocEvent(doc=doc, by=by)
     e.type = "changed_document"
@@ -41,24 +18,24 @@ def log_state_changed(request, doc, by, prev_state):
 def get_charter_for_revision(charter, r):
     if r == None:
         return None
-    else:
-        l = list(charter.history_set.filter(rev=r).order_by('-time'))
-        if l != []:
-            return l[0]
-        else:
-            # Get the lastest history entry
-            l = list(charter.history_set.all().order_by('-time'))
-            if l != []:
-                class FakeHistory(object):
-                    def __init__(self, name, rev, time):
-                        self.name = name
-                        self.rev = rev
-                        self.time = time
 
-                return FakeHistory(l[0].name, charter.rev, charter.time)
-            else:
-                # no history, just return charter
-                return charter
+    l = charter.history_set.filter(rev=r).order_by('-time')
+    if l:
+        return l[0]
+
+    # Get the lastest history entry
+    l = charter.history_set.all().order_by('-time')
+    if not l:
+        # no history, just return charter
+        return charter
+
+    class FakeHistory(object):
+        def __init__(self, name, rev, time):
+            self.name = name
+            self.rev = rev
+            self.time = time
+
+    return FakeHistory(l[0].name, charter.rev, charter.time)
 
 def get_group_for_revision(wg, r):
     if r == None:
@@ -111,8 +88,8 @@ def read_charter_text(doc):
         return "Error: couldn't read charter text"
 
 def update_telechat(request, doc, by, new_telechat_date):
-    # FIXME: fix auto-setting returning item problem and reuse
-    # function in idrfc/utils.py instead of this one
+    # FIXME: reuse function in idrfc/utils.py instead of this one
+    # (need to fix auto-setting returning item problem first though)
     from ietf.doc.models import TelechatDocEvent
     
     on_agenda = bool(new_telechat_date)

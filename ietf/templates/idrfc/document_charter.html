@@ -24,54 +24,66 @@
   <div>
     {% if snapshot %}Snapshot of{% endif %}
     {% if doc.get_state_slug != "approved" %}Proposed{% endif %}
-    Charter for {{ doc.group.name }}
-    (<a href="{% url wginfo.views.wg_charter acronym=doc.group.acronym %}">{{ doc.group.acronym }} {{ doc.group.type.name }}</a>)
+    Charter for {{ group.name }}
+    (<a href="{% url wginfo.views.wg_charter acronym=group.acronym %}">{{ group.acronym }} {{ group.type.name }}</a>)
   </div>
 
   <table id="metatable" width="100%">
     <tr>
       <td>WG State:</td>
-      <td>{{ doc.group.state.name }}</td>
+      <td>{{ group.state.name }}</td>
     </tr>
     <tr>
       <td><a href="/wgcharter/help/state/">Charter State</a>:</td>
       <td>
-        <span title="{{ doc.get_state.desc }}">{{ doc.get_state.name }}</span>
-      {% if chartering == "initial" %}(Initial Chartering){% endif %}
-      {% if chartering == "rechartering" %}(Rechartering){% endif %}
+        <div>
+        <a title="{{ doc.get_state.desc }}"{% if not snapshot and user|has_role:"Area Director,Secretariat" %} href="{% url charter_change_state name=doc.name %}"{% endif %}>{{ doc.get_state.name }}</a>
+        {% if chartering == "initial" %}(Initial Chartering){% endif %}
+        {% if chartering == "rechartering" %}(Rechartering){% endif %}
 
-      {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
-      - <a href="{% url wg_change_state name=doc.name %}">Change state</a>
+        {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
 
-      {% if chartering  %}
-      - <a href="{% url wg_startstop_process name=doc.name option='abandon' %}">Abandon effort</a>
-      {% else %}
-      - <a href="{% url wg_startstop_process name=doc.name option='recharter' %}">Recharter</a>
-      {% endif %}
 
-      {% endif %}
-      </td>
-    </tr>
+        {% if chartering  %}
+        - <a href="{% url charter_startstop_process name=doc.name option='abandon' %}">Abandon effort</a>
 
-    {% if chartering and doc.group.comments %}
-    <tr>
-      {% if chartering == "initial" %}<td>Reason for chartering:</td>{% endif %}
-      {% if chartering == "rechartering" %}<td>Reason for rechartering:</td>{% endif %}
-      <td>{{ doc.group.comments }}</td>
-    </tr>
-    {% endif %}
+        {% if request.user|has_role:"Secretariat" %}
+        - <a href="{% url charter_approve name=doc.name %}">Approve charter</a>
+        {% endif %}
 
-    {% if not snapshot %}
-    <tr>
-      <td>IESG telechat:</td>
-      <td>
-        {% if not telechat %}Not on agenda{% else %}{{ telechat.telechat_date|date:"Y-m-d" }}{% endif %}
-        {% if user|has_role:"Area Director,Secretariat" %}
-        - <a href="{% url charter_telechat_date name=doc.name %}">Change</a>
+        {% else %}
+        - <a href="{% url charter_startstop_process name=doc.name option='recharter' %}">Recharter</a>
+        {% endif %}
+
+        {% endif %}
+        </div>
+
+        {% if not snapshot and chartering %}
+        <div class="telechat">
+          {% if not telechat %}Not on agenda of IESG telechat{% else %}On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat{% endif %}
+          {% if user|has_role:"Area Director,Secretariat" %}
+          - <a href="{% url charter_telechat_date name=doc.name %}">Change</a>
+          {% endif %}
+        </div>
+
+        {% if ballot_summary %}
+        <div class="ballot-summary">
+          ({{ ballot_summary }})
+        </div>
+        {% endif %}
+
         {% endif %}
       </td>
     </tr>
+
+    {% if chartering and group.comments %}
+    <tr>
+      {% if chartering == "initial" %}<td>Reason for chartering:</td>{% endif %}
+      {% if chartering == "rechartering" %}<td>Reason for rechartering:</td>{% endif %}
+      <td>{{ group.comments }}</td>
+    </tr>
     {% endif %}
+
 
     <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
@@ -81,7 +93,7 @@
   </table>
 
   <div class="actions">
-    <a href="/feed/wgchanges/{{ doc.group.acronym }}/">Atom feed</a>
+    <a href="/feed/wgchanges/{{ group.acronym }}/">Atom feed</a>
   </div>
 </div>
 
@@ -94,8 +106,8 @@
   No text for {{ doc.name }} submitted yet
 {% endif %}
 
-{% if user|has_role:"Area Director,Secretariat" and chartering and doc.group.state_id != "conclude" %}
-<a class="edit" href="{% url wg_submit name=doc.name %}">Change charter text</a>
+{% if user|has_role:"Area Director,Secretariat" and chartering and group.state_id != "conclude" %}
+<a class="edit" href="{% url charter_submit name=doc.name %}">Change charter text</a>
 {% endif %}
 </h3>
 

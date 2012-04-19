@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Approve ballot for {{ wg.acronym }}{% endblock %}
+{% block title %}Approve {{ charter.canonical_name }}{% endblock %}
 
 {% block morecss %}
-form.approve-ballot pre {
+form.approve pre {
   margin: 0;
   padding: 4px;
   border-top: 4px solid #eee;
   border-bottom: 4px solid #eee;
 }
-form.approve-ballot .announcement {
+form.approve .announcement {
   overflow-x: auto;
   overflow-y: scroll;
   width: 800px;
@@ -19,18 +19,18 @@ form.approve-ballot .announcement {
 {% endblock %}
 
 {% block content %}
-<h1>Approve Ballot for {{ wg.acronym }}</h1>
+<h1>Approve {{ charter.canonical_name }}</h1>
 
 <div>IETF announcement:</div>
 
-<form class="approve-ballot" action="" method="POST">
+<form class="approve" action="" method="POST">
 
   <div class="announcement">
     <pre>{{ announcement }}</pre>
   </div>
 
   <div class="actions">
-    <a href="{% url doc_ballot name=wg.charter.name %}">Back</a>
+    <a href="{% url doc_view name=charter.name %}">Back</a>
     <input type="submit" value="Send out the announcement, close ballot and update revision"/>
   </div>
 </form>

@@ -50,7 +50,7 @@ from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.ietfworkflows.utils import get_full_info_for_draft
 from ietf.doc.models import *
-from ietf.doc.utils import get_chartering_type, needed_ballot_positions
+from ietf.doc.utils import get_chartering_type, needed_ballot_positions, active_ballot_positions
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
 
@@ -90,10 +90,11 @@ def document_main(request, name, rev=None):
         return document_main_idrfc(request, name, tab="document")
 
     doc = get_object_or_404(Document, docalias__name=name)
+    group = doc.group
 
     revisions = [ doc.rev ]
     for h in doc.history_set.order_by("-time"):
-        if not h.rev in revisions:
+        if h.rev and not h.rev in revisions:
             revisions.append(h.rev)
 
     snapshot = False
@@ -115,17 +116,23 @@ def document_main(request, name, rev=None):
         # find old group, too
         gh = find_history_active_at(doc.group, doc.time)
         if gh:
-            doc.group = gh
+            group = gh
 
     top = render_document_top(request, doc, "document")
 
+
+    telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+    if telechat and telechat.telechat_date < datetime.date.today():
+        telechat = None
 
     if doc.type_id == "charter":
         filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
 
         content = _get_html(filename, os.path.join(settings.CHARTER_PATH, filename), split=False)
 
-        telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+        ballot_summary = None
+        if doc.get_state_slug() in ("intrev", "iesgrev"):
+            ballot_summary = needed_ballot_positions(doc, active_ballot_positions(doc).values())
 
         return render_to_response("idrfc/document_charter.html",
                                   dict(doc=doc,
@@ -136,6 +143,8 @@ def document_main(request, name, rev=None):
                                        revisions=revisions,
                                        snapshot=snapshot,
                                        telechat=telechat,
+                                       ballot_summary=ballot_summary,
+                                       group=group,
                                        ),
                                   context_instance=RequestContext(request))
 

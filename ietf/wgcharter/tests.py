@@ -38,7 +38,7 @@ class EditCharterTestCase(django.test.TestCase):
         group = Group.objects.get(acronym="ames")
         charter = group.charter
 
-        url = urlreverse('wg_change_state', kwargs=dict(name=charter.name))
+        url = urlreverse('charter_change_state', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
         first_state = charter.get_state()
@@ -121,7 +121,7 @@ class EditCharterTestCase(django.test.TestCase):
         group = Group.objects.get(acronym="mars")
         charter = group.charter
 
-        url = urlreverse('wg_submit', kwargs=dict(name=charter.name))
+        url = urlreverse('charter_submit', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -153,16 +153,16 @@ class CharterApproveBallotTestCase(django.test.TestCase):
     def tearDown(self):
         shutil.rmtree(self.charter_dir)
 
-    def test_approve_ballot(self):
+    def test_approve(self):
         make_test_data()
 
         group = Group.objects.get(acronym="ames")
         charter = group.charter
 
-        url = urlreverse('wg_approve_ballot', kwargs=dict(name=charter.name))
+        url = urlreverse('charter_approve', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
-        with open(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev)), "w") as f:
+        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (charter.canonical_name(), charter.rev)), "w") as f:
             f.write("This is a charter.")
 
         p = Person.objects.get(name="Aread Irector")
