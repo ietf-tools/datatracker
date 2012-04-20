@@ -1,0 +1,39 @@
+{% extends "roles/base_roles.html" %}
+
+{% block subsection %}
+
+<div class="module role-container">
+    <h2>Liaisons Managers</h2>
+      <table class="full-width">
+        {% for liaison in liaisons %}
+            <tr>
+              <form action="." method="post">
+                <input type="hidden" name="liaison-tag" value="{{ liaison.person.person_or_org_tag }}"
+                <td><a href="{% url sec.rolodex.views.view tag=liaison.person.person_or_org_tag %}">{{ liaison.person.first_name }} {{ liaison.person.last_name }}</a></td>
+                <td>{{ liaison.person.affiliation }}</td>
+                <td>{{ liaison.affiliation }} Liaison</td>
+                <td><button type="submit" name="submit" value="Delete" onclick="return window.confirm('You are about to delete {{ liaison.person.first_name }} {{ liaison.person.last_name }} from the list.');">Delete</button>
+              </form>
+            </tr>
+        {% endfor %}
+      </table>
+
+          <div class="inline-related">
+            <h3><b>Add new Liaison</b></h3>
+            <p>
+            <form action="." method="post">
+            <table class="center">
+              {{ form.as_table }}
+            </table>
+          </div> <!-- iniline-related -->
+
+      <div class="button-group">
+        <ul>
+          <li><button type="submit" name="submit" value="Add">Add</button></li>
+        </ul>
+      </div> <!-- button-group -->
+      </form>
+</div> <!-- module -->
+
+
+{% endblock %}

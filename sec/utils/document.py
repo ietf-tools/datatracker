@@ -1,8 +1,10 @@
 def get_full_path(doc):
     '''
-    Returns for name of file on disk with path.  This should really be a method on doc
+    Returns for name of file on disk with full path.  This should really be a method on doc
     NOTE: this currently only works for material file types
     '''
+    import os
+    
     if doc.type_id not in ('slides','agenda','minutes') or not doc.external_url:
         return None
     return os.path.join(doc.get_file_path(), doc.external_url)

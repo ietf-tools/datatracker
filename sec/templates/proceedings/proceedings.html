@@ -12,28 +12,37 @@ and end with
 
 <td id="content1"><div id="content2">
 
-<h2>{{ meeting.group.name }} ({{ meeting.group.acronym }})</h2>
-<h3>Interim Meeting of {{ meeting.date }}</h3>
-<i>Note: This is a snapshot as of {% now "Y-m-d" %}.  It may now be out of date.</i>
+{% if meeting.type.slug == "ietf" %}
+   <p class="ptitle">{{ meeting }} Proceedings</p>
+   <p><a href="index.html#intro">Introduction</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#wgreports">Area, Working Goup &amp; BoF Reports</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#plenary">Plenaries</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#training">Training</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#irtf">Internet Research Task Force</a></p>
+   <h2>{{ group.name }} ({{ group.acronym }}) ({{ group.type }})</h2>
+{% else %}
+   <h2>{{ group.name }} ({{ group.acronym }})</h2>
+   <h3>Interim Meeting of {{ meeting.date }}</h3>
+{% endif %}
+
 <h3>
 {% if meeting.minutes %}
-<a href="{{ meeting.minutes.get_absolute_url }}">Minutes</a>
+  <a href="{{ meeting.minutes.get_absolute_url }}">Minutes</a>
 {% else %}
-Minutes
-{% endif %}
- |
- {% if meeting.agenda %}
-<a href="{{ meeting.agenda.get_absolute_url }}">Agenda</a>
+  Minutes
+{% endif %}&nbsp;&nbsp;|&nbsp;&nbsp;
+{% if meeting.type.slug == "ietf" %}
+  <a href="/audio/ietf{{ meeting.number }}/">Audio Archives</a>&nbsp;&nbsp;|&nbsp;&nbsp;
 {% else %}
-Agenda
+  {% if meeting.agenda %}
+    <a href="{{ meeting.agenda.get_absolute_url }}">Agenda</a>
+  {% else %}
+    Agenda
+  {% endif %}&nbsp;&nbsp;|&nbsp;&nbsp;
 {% endif %}
- | <a href="http://jabber.ietf.org/logs/{{ meeting.group.acronym }}/">Jabber Logs</a>
-{% if group.email_archive %}
- | <a href="{{ meeting.group.list_archive }}">Mailing List Archives</a>
+<a href="http://jabber.ietf.org/logs/{{ group.acronym }}/">Jabber Logs</a>&nbsp;&nbsp;|&nbsp;&nbsp;
+{% if group.list_archive %}
+  <a href="{{ group.list_archive }}">Mailing List Archives</a>
 {% endif %}
 </h3>
 
-<div id="content2"><p>Additional information is available at <a href="http://tools.ietf.org/wg/{{ meeting.group.acronym }}">tools.ietf.org/wg/{{ meeting.group.acronym }}</a>
+<p>Additional information is available at <a href="http://tools.ietf.org/wg/{{ group.acronym }}">tools.ietf.org/wg/{{ group.acronym }}</a>
 
 <table width="60%" border="0" cellspacing="2" cellpadding="2">
   <tr><td bgcolor="#EEEEFF">
@@ -57,8 +66,14 @@ Agenda
         <li><a href="mailto:{{ ad.email.address }}">{{ ad.person.name }}</a></li>
       {% endfor %}
       </ul>
+      {% if group.ad %}
+          <h3>{{ group.parent.name }} Advisor</h3>
+          <ul>
+              <li><a href="mailto:{{ group.ad.email_address }}">{{ group.ad }}</a></li>
+          </ul>
+      {% endif %}
       {% if tas %}
-          <h3>{{ group.parent.name }} Advisor(s)</h3>
+          <h3>Technical Advisor(s)</h3>
           <ul>
             {% for advisor in tas %}
               <li><a href="mailto:{{ advisor.email.address }}">{{ advisor.person.name }}</a></li>
@@ -67,23 +82,11 @@ Agenda
       {% endif %}
 <br /><br /></td></tr></table>
 
-{% comment %}
-<h2>Mailing Lists:</h2>
-General Discussion: {{ group.email_address }}<br />
-{% if group.email_keyword != '' %}
-To Subscribe: {{ group.email_subscribe }}<br />
-In Body: {{ group.email_keyword }}<br />
-{% else %}
-To Subscribe: <a href="{{ group.email_subscribe }}">{{ group.email_subscribe }}</a><br />
-{% endif %}
-Archive: <a href="{{ group.email_archive }}">{{ group.email_archive }}</a><br />
-{% endcomment %}
-
-<h2>Meeting Slides:</h2>
+<h3>Meeting Slides:</h3>
 {% if slides %}
 <ul>
   {% for slide in slides %}
-  <li><a href="{{ slide.get_absolute_url }}" target="_blank">{{ slide.name }}</a></li>
+  <li><a href="{{ slide.get_absolute_url }}" target="_blank">{{ slide.title }}</a></li>
   {% endfor %}
 </ul>
 {% else %}
@@ -91,37 +94,35 @@ Archive: <a href="{{ group.email_archive }}">{{ group.email_archive }}</a><br />
 {% endif %}
 
 {% if drafts %}
-<h2>Internet-Drafts:</h2>
+<h3>Internet-Drafts:</h3>
 <ul>
   {% for draft in drafts %}
-  <li><a href="{{ draft.get_absolute_url }}" target="_blank">{{ draft.name }}-{{ draft.rev }}</a></li>
+  <li><a href="{{ draft.url }}" target="_blank">{{ draft.title}}</a> ({{ draft.bytes }} bytes)</li>
   {% endfor %}
 </ul>
 {% else %}
-<h2>No Current Internet-Drafts</h2>
+<h3>No Current Internet-Drafts</h3>
 {% endif %}
 
 {% if rfcs %}
-<h2>Request for Comments:</h2>
-<table>
-  <tr align=left><th>RFC</th><th>Status</th><th>Title</th></tr>
+<h3>Request for Comments:</h3>
+<ul>
   {% for rfc in rfcs %}
-  <tr align=left>
-    <td width="90"><a href="{{ rfc.get_absolute_url }}" target="_blank">{{ rfc.canonical.name }}</a></td>
-    <td width="90">{{ rfc.std_level|abbr_status }}</td>
-    <td>{{ rfc.title }}</td>
-  </tr>
+    <li><a href="{{ rfc.url }}" target="_blank">{{ rfc.title }} ({{ rfc.num }})</a> ({{ rfc.bytes }} bytes)
+      {% if rfc.rmsg %}<font color="red"> {{rfc.rmsg }}</font>{% endif %}
+      {% if rfc.msg %}<font color="orange"> {{ rfc.msg }}</font>{% endif %}
+    </li>
   {% endfor %}
-</table>
+</ul>
 {% else %}
-<h2>No Request for Comments</h2>
+<h3>No Request for Comments</h3>
 {% endif %}
 
-<h2>Charter:</h2>
+<h3>Charter{% if ctime %} (as of {{ ctime|date:"Y-m-d" }}){% endif %}:</h3>
 <p>{{ charter|safe }}</p>
 
 {% if group.milestones %}
-<h2>Goals and Milestones:</h2>
+<h3>Goals and Milestones:</h3>
 <table>
   {% for milestone in group.milestone_set.all %}
   <tr align="left" valign="top">

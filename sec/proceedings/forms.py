@@ -13,7 +13,9 @@ import re
 # Globals
 # ---------------------------------------------
 
-VALID_SLIDE_EXTENSIONS = ['.doc','.docx','.pdf','.ppt','.pptx','.txt']
+VALID_SLIDE_EXTENSIONS = ('.doc','.docx','.pdf','.ppt','.pptx','.txt')
+VALID_MINUTES_EXTENSIONS = ('.txt','.html','.pdf')
+VALID_AGENDA_EXTENSIONS = ('.txt','.html')
 
 #----------------------------------------------------------
 # Forms
@@ -79,7 +81,7 @@ class UnifiedUploadForm(forms.Form):
         file = cleaned_data['file']
         ext = os.path.splitext(file.name)[1].lower()
 
-        if material_type == 'slides' and not slide_name:
+        if material_type.slug == 'slides' and not slide_name:
             raise forms.ValidationError('ERROR: Name of Presentaion cannot be blank')
         
         # only supporting PDFs per Alexa 04-05-2011
@@ -89,11 +91,13 @@ class UnifiedUploadForm(forms.Form):
         # validate file extensions based on material type (presentation,agenda,minutes)
         # valid extensions per online documentation: meeting-materials.html
         # 09-14-11 added ppt, pdf per Alexa
-        valid_other_extensions = ['.txt','.htm','.html','.ppt','.pdf']
-        if material_type == 'slides' and ext not in VALID_SLIDE_EXTENSIONS:
+        # 04-19-12 txt/html for agenda, +pdf for minutes per Russ
+        if material_type.slug == 'slides' and ext not in VALID_SLIDE_EXTENSIONS:
             raise forms.ValidationError('Only these file types supported for presentation slides: %s' % ','.join(VALID_SLIDE_EXTENSIONS))
-        if material_type in ('minutes','agenda') and ext not in valid_other_extensions:
-            raise forms.ValidationError('Only these file types supported for minutes and agendas: %s' % ','.join(valid_other_extensions))
+        if material_type.slug == 'agenda' and ext not in VALID_AGENDA_EXTENSIONS:
+            raise forms.ValidationError('Only these file types supported for agendas: %s' % ','.join(VALID_AGENDA_EXTENSIONS))
+        if material_type.slug == 'minutes' and ext not in VALID_MINUTES_EXTENSIONS:
+            raise forms.ValidationError('Only these file types supported for minutes: %s' % ','.join(VALID_MINUTES_EXTENSIONS))
         
         return cleaned_data
 

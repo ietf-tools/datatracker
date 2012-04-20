@@ -21,7 +21,7 @@ from ietf.submit.models import IdSubmissionDetail, IdApprovedDetail
 from ietf.utils.draft import Draft
 from sec.sreq.views import get_meeting
 from sec.utils.ams_utils import get_base, get_email
-from sec.utils.draft import get_rfc_num, get_start_date
+from sec.utils.document import get_rfc_num, get_start_date
 
 import datetime
 import glob

@@ -412,9 +412,6 @@ def management(request, date):
     
     agenda = _agenda_data(request, date=date)
     issues = TelechatAgendaItem.objects.filter(type=3).order_by('id')
-    #IssueFormset = modelformset_factory(TelechatAgendaItem, form=IssueModelForm, extra=0)
-    
-    #formset = IssueFormset(queryset = TelechatAgendaItem.objects.filter(type=3).order_by('id'))
     
     return render_to_response('telechat/management.html', {
         'agenda': agenda,
@@ -433,7 +430,6 @@ def minutes(request, date):
     current = datetime.date(int(y),int(m),int(d))
     index = dates.index(current)
     previous = dates[index + 1]
-    #assert False, (current,index)
     events = DocEvent.objects.filter(type='iesg_approved',time__gte=previous,time__lt=current)
     docs = [ e.doc for e in events ]
     pa_docs = [ d for d in docs if d.intended_std_level.slug not in ('inf','exp','hist') ]

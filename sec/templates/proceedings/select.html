@@ -57,9 +57,17 @@
                {{ plenary_form.group }}
                <input type="submit" name="submit" value="Select" />
              </form>
-           {% endif %}
-             
+           {% endif %}     
         </div> <!-- inline-related -->
+        {% if request.user_is_secretariat %}
+        <div class="inline-group">
+          <h2>Generate Proceedings</h2>
+          <p>Use this to generate official proceedings for the selected meeting.</p>
+          <ul class="none">
+            <li><button onclick="window.location='{% url proceedings_generate_proceedings meeting_num=meeting.number %}'">Generate Proceedings</button></li>
+          </ul>
+        </div> <!-- inline-group -->
+        {% endif %}
 </div> <!-- module -->
 
 {% endblock %}

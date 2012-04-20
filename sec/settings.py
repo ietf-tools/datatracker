@@ -140,6 +140,7 @@ INSTALLED_APPS = (
     'ietf.liaisons',
     'ietf.mailinglists',
     'ietf.meeting',
+    'ietf.message',
     'ietf.name',
     'ietf.person',
     #'ietf.proceedings', # deprecated
@@ -156,7 +157,7 @@ INSTALLED_APPS = (
     'sec.ipr',
     'sec.meetings',
     'sec.proceedings',
-    #'sec.roles',
+    'sec.roles',
     'sec.rolodex',
     'sec.sreq',
     'sec.telechat',

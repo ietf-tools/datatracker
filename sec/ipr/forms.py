@@ -8,7 +8,7 @@ from django.utils import simplejson
 from ietf.ipr.models import IprDetail, IprContact, LICENSE_CHOICES, IprRfc, IprDraft, IprUpdate, SELECT_CHOICES, IprDocAlias
 
 from ietf.doc.models import DocAlias
-from sec.utils.draft import get_rfc_num
+from sec.utils.document import get_rfc_num
 
 def mytest(val):
     if val == '1':

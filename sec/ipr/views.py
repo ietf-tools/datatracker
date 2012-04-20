@@ -12,7 +12,7 @@ from django.utils.safestring import mark_safe
 from sec.lib import template, jsonapi
 from sec.ipr.managers import IprDetailManager
 from sec.ipr.forms import IprDetailForm, IPRContactFormset
-from sec.utils.draft import get_rfc_num, is_draft
+from sec.utils.document import get_rfc_num, is_draft
 import sec.settings as settings
 
 from ietf.ipr.models import IprDetail, IprUpdate, IprRfc, IprDraft, IprContact, LICENSE_CHOICES, STDONLY_CHOICES, IprNotification

@@ -3,6 +3,7 @@ from models import *
 from sec.utils.mail import MultiEmailField
 from sec.utils.group import current_nomcom
 
+from ietf.message.models import Message
 from ietf.ietfauth.decorators import has_role
 from ietf.wgchairs.accounts import get_person_for_user
 
@@ -13,7 +14,7 @@ from ietf.wgchairs.accounts import get_person_for_user
 ANNOUNCE_FROM_GROUPS = ['ietf','rsoc','iab',current_nomcom().acronym]
 ANNOUNCE_TO_GROUPS= ['ietf']
 
-# never really figured how to get this exact list from Role queries so it's hardcoded
+# this list isn't currently available as a Role query so it's hardcoded
 FROM_LIST = ('IETF Secretariat <ietf-secretariat@ietf.org>',
              'IESG Secretary <iesg-secretary@ietf.org>',
              'The IESG <iesg@ietf.org>',

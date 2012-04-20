@@ -11,7 +11,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils import simplejson
 
-from sec.utils.meeting import CURRENT_MEETING
+from sec.utils.meeting import get_current_meeting
 from ietf.group.models import ChangeStateGroupEvent, GroupEvent, GroupURL, Role
 from ietf.group.utils import save_group_in_history
 from ietf.person.name import name_parts
@@ -35,6 +35,8 @@ def add_legacy_fields(group):
     # we just return the latest record
     query = GroupEvent.objects.filter(group=group, type="changed_state").order_by('time')
     proposed = query.filter(changestategroupevent__state="proposed")
+    meeting = get_current_meeting()
+    
     if proposed:
         group.proposed_date = proposed[0].time
     active = query.filter(changestategroupevent__state="active")
@@ -44,7 +46,7 @@ def add_legacy_fields(group):
     if concluded:
         group.concluded_date = concluded[0].time
     
-    if group.session_set.filter(meeting__number=CURRENT_MEETING.number):
+    if group.session_set.filter(meeting__number=meeting.number):
         group.meeting_scheduled = 'YES'
     else:
         group.meeting_scheduled = 'NO'
@@ -403,7 +405,9 @@ def search(request):
             primary_area = form.cleaned_data['primary_area']
             meeting_scheduled = form.cleaned_data['meeting_scheduled']
             state = form.cleaned_data['state']
-            type = form.cleaned_data['type'] 
+            type = form.cleaned_data['type']
+            meeting = get_current_meeting()
+            
             # construct seach query
             if group_acronym:
                 kwargs['acronym__istartswith'] = group_acronym
@@ -420,11 +424,11 @@ def search(request):
                 kwargs['type__in'] = ['wg','rg']
             
             if meeting_scheduled == 'YES':
-                kwargs['session__meeting__number'] = CURRENT_MEETING.number
+                kwargs['session__meeting__number'] = meeting.number
             # perform query
             if kwargs:
                 if meeting_scheduled == 'NO':
-                    qs = Group.objects.filter(**kwargs).exclude(session__meeting__number=CURRENT_MEETING.number).distinct()
+                    qs = Group.objects.filter(**kwargs).exclude(session__meeting__number=meeting.number).distinct()
                 else:
                     qs = Group.objects.filter(**kwargs).distinct()
             else:

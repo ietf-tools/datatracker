@@ -1,0 +1,35 @@
+{% extends "base_site.html" %}
+
+{% block title %}Roles{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Sessions
+{% endblock %}
+{% block instructions %}
+  <a href="" target="_blank">Instructions</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Role Tool</h2>
+         <div class="inline-related">
+           <h3><b>Select Group</b></h3>
+           <p>Select a Group to change roles.</p>
+           <form>
+             {{ group_form.as_p }}
+           </form>
+         </div> <!-- inline-related -->
+         <br>
+         <div class="inline-related">
+         <h2></h2>
+         <h3><b>Role Details</b></h3>
+         </div> <!-- inline-related -->
+</div> <!-- module -->
+
+{% endblock %}
+

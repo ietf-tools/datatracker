@@ -7,7 +7,7 @@
 from settings import *
 DATABASES = {
     'default': {
-        'NAME': 'test.db',
+        'NAME': os.path.join(BASE_DIR,'test.db'),
         'ENGINE': 'django.db.backends.sqlite3',
         },
     }
