@@ -16,10 +16,15 @@ def get_my_groups(user):
     area director - has access to all groups in their area
     wg chair or secretary - has acceses to their own group
     chair of irtf has access to all irtf groups
+    
+    If user=None than all groups are returned.
     '''
     my_groups = set()
-    person = user.get_profile()
     all_groups = Group.objects.filter(type__in=('wg','rg','ag','team'),state__in=('bof','proposed','active')).order_by('acronym')
+    if user == None:
+        return all_groups
+    else:
+        person = user.get_profile()
     
     if has_role(user,'Secretariat'):
         return all_groups
@@ -39,7 +44,7 @@ def groups_by_session(user, meeting):
     Takes a Django User object and a Meeting object
     Returns a tuple scheduled_groups, unscheduled groups.  sorted lists of those groups that 
     the user has access to, secretariat defaults to all groups
-    NOTE: right now get_my_groups does not inlcude RGs so they won't appear in the list
+    If user=None than all groups are returned.
     '''
     groups_session = []
     groups_no_session = []

@@ -1,3 +1,12 @@
+def get_full_path(doc):
+    '''
+    Returns for name of file on disk with path.  This should really be a method on doc
+    NOTE: this currently only works for material file types
+    '''
+    if doc.type_id not in ('slides','agenda','minutes') or not doc.external_url:
+        return None
+    return os.path.join(doc.get_file_path(), doc.external_url)
+    
 def get_rfc_num(doc):
     qs = doc.docalias_set.filter(name__startswith='rfc')
     return qs[0].name[3:] if qs else None
