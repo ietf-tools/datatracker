@@ -15,49 +15,6 @@ def log_state_changed(request, doc, by, prev_state):
     e.save()
     return e
 
-def get_charter_for_revision(charter, r):
-    if r == None:
-        return None
-
-    l = charter.history_set.filter(rev=r).order_by('-time')
-    if l:
-        return l[0]
-
-    # Get the lastest history entry
-    l = charter.history_set.all().order_by('-time')
-    if not l:
-        # no history, just return charter
-        return charter
-
-    class FakeHistory(object):
-        def __init__(self, name, rev, time):
-            self.name = name
-            self.rev = rev
-            self.time = time
-
-    return FakeHistory(l[0].name, charter.rev, charter.time)
-
-def get_group_for_revision(wg, r):
-    if r == None:
-        return None
-    else:
-        l = list(wg.charter.history_set.filter(rev=r).order_by('-time'))
-        if l != []:
-            o = list(wg.history_set.filter(time__lte=l[0].time).order_by('-time'))
-            if o != []:
-                return o[0]
-            else:
-                return wg
-        else:
-            return wg
-
-def prev_revision(rev):
-    m = re.match(r"(?P<major>[0-9][0-9])(-(?P<minor>[0-9][0-9]))?", rev)
-    if m.group('minor') and m.group('minor') != "00":
-        return "%s-%#02d" % (m.group('major'), int(m.group('minor')) - 1)
-    else:
-        return None
-
 def next_revision(rev):
     if rev == "":
         return "00-00"
