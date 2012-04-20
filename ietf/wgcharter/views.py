@@ -262,11 +262,9 @@ def submit(request, name):
 
             charter.rev = next_rev
 
-            e = DocEvent()
-            e.type = "new_revision"
-            e.by = login
-            e.doc = charter
+            e = NewRevisionDocEvent(doc=charter, by=login, type="new_revision")
             e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
+            e.rev = charter.rev
             e.save()
             
             # Save file on disk
@@ -465,6 +463,22 @@ def approve(request, name):
 
         close_open_ballots(charter, login)
 
+        # according to spec, 00-02 becomes 01, so copy file and record new revision
+        try:
+            old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+            new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
+            shutil.copy(old, new)
+        except IOError:
+            raise Http404("Charter text %s" % filename)
+
+        charter.rev = next_approved_revision(charter.rev)
+
+        e = NewRevisionDocEvent(doc=charter, by=login, type="new_revision")
+        e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
+        e.rev = charter.rev
+        e.save()
+
+        # approve
         e = DocEvent(doc=charter, by=login)
         e.type = "iesg_approved"
         e.desc = "IESG has approved the charter"
@@ -483,15 +497,6 @@ def approve(request, name):
         
         e = log_state_changed(request, charter, login, prev_charter_state)
 
-        # copy file
-        try:
-            old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-            new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
-            shutil.copy(old, new)
-        except IOError:
-            raise Http404("Charter text %s" % filename)
-
-        charter.rev = next_approved_revision(charter.rev)
         charter.time = e.time
         charter.save()
         

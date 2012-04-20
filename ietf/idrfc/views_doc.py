@@ -177,7 +177,8 @@ def document_history(request, name):
 
                 url = ""
                 if name.startswith("charter"):
-                    url = settings.CHARTER_TXT_URL + e.doc.name + e.rev + ".txt"
+                    h = find_history_active_at(e.doc, e.time)
+                    url = settings.CHARTER_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
                 elif name.startswith("draft"):
                     # rfcdiff tool has special support for IDs
                     url = e.doc.name + "-" + e.rev
