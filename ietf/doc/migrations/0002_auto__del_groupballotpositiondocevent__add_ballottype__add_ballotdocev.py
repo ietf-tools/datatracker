@@ -8,6 +8,21 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
+        # Deleting model 'GroupBallotPositionDocEvent'
+        db.delete_table('doc_groupballotpositiondocevent')
+
+        # Adding model 'BallotType'
+        db.create_table('doc_ballottype', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('doc_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.DocTypeName'], null=True, blank=True)),
+            ('slug', self.gf('django.db.models.fields.SlugField')(max_length=50, db_index=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('question', self.gf('django.db.models.fields.TextField')(blank=True)),
+            ('used', self.gf('django.db.models.fields.BooleanField')(default=True)),
+            ('order', self.gf('django.db.models.fields.IntegerField')(default=0)),
+        ))
+        db.send_create_signal('doc', ['BallotType'])
+
         # Adding M2M table for field positions on 'BallotType'
         db.create_table('doc_ballottype_positions', (
             ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
@@ -16,14 +31,39 @@ class Migration(SchemaMigration):
         ))
         db.create_unique('doc_ballottype_positions', ['ballottype_id', 'ballotpositionname_id'])
 
+        # Adding model 'BallotDocEvent'
+        db.create_table('doc_ballotdocevent', (
+            ('docevent_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['doc.DocEvent'], unique=True, primary_key=True)),
+            ('ballot_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['doc.BallotType'])),
+        ))
+        db.send_create_signal('doc', ['BallotDocEvent'])
+
         # Adding field 'BallotPositionDocEvent.ballot'
         db.add_column('doc_ballotpositiondocevent', 'ballot', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['doc.BallotDocEvent'], null=True), keep_default=False)
 
 
     def backwards(self, orm):
         
+        # Adding model 'GroupBallotPositionDocEvent'
+        db.create_table('doc_groupballotpositiondocevent', (
+            ('block_comment', self.gf('django.db.models.fields.TextField')(blank=True)),
+            ('comment', self.gf('django.db.models.fields.TextField')(blank=True)),
+            ('ad', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Person'])),
+            ('comment_time', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
+            ('block_comment_time', self.gf('django.db.models.fields.DateTimeField')(null=True, blank=True)),
+            ('pos', self.gf('django.db.models.fields.related.ForeignKey')(default='norecord', to=orm['name.GroupBallotPositionName'])),
+            ('docevent_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['doc.DocEvent'], unique=True, primary_key=True)),
+        ))
+        db.send_create_signal('doc', ['GroupBallotPositionDocEvent'])
+
+        # Deleting model 'BallotType'
+        db.delete_table('doc_ballottype')
+
         # Removing M2M table for field positions on 'BallotType'
         db.delete_table('doc_ballottype_positions')
+
+        # Deleting model 'BallotDocEvent'
+        db.delete_table('doc_ballotdocevent')
 
         # Deleting field 'BallotPositionDocEvent.ballot'
         db.delete_column('doc_ballotpositiondocevent', 'ballot_id')
@@ -184,16 +224,6 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '1'})
         },
-        'doc.groupballotpositiondocevent': {
-            'Meta': {'ordering': "['-time', '-id']", 'object_name': 'GroupBallotPositionDocEvent', '_ormbases': ['doc.DocEvent']},
-            'ad': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']"}),
-            'block_comment': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'block_comment_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'comment': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'comment_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'docevent_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['doc.DocEvent']", 'unique': 'True', 'primary_key': 'True'}),
-            'pos': ('django.db.models.fields.related.ForeignKey', [], {'default': "'norecord'", 'to': "orm['name.GroupBallotPositionName']"})
-        },
         'doc.initialreviewdocevent': {
             'Meta': {'ordering': "['-time', '-id']", 'object_name': 'InitialReviewDocEvent', '_ormbases': ['doc.DocEvent']},
             'docevent_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['doc.DocEvent']", 'unique': 'True', 'primary_key': 'True'}),
@@ -275,8 +305,7 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'valid_document_types': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['name.DocTypeName']", 'symmetrical': 'False', 'blank': 'True'})
+            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
         'name.docrelationshipname': {
             'Meta': {'ordering': "['order']", 'object_name': 'DocRelationshipName'},
@@ -304,14 +333,6 @@ class Migration(SchemaMigration):
         },
         'name.doctypename': {
             'Meta': {'ordering': "['order']", 'object_name': 'DocTypeName'},
-            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'name.groupballotpositionname': {
-            'Meta': {'ordering': "['order']", 'object_name': 'GroupBallotPositionName'},
             'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),

@@ -60,10 +60,10 @@ class Migration(SchemaMigration):
             ('title', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('stream', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.StreamName'], null=True, blank=True)),
             ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'], null=True, blank=True)),
-            ('abstract', self.gf('django.db.models.fields.TextField')(blank=True)),
+            ('abstract', self.gf('django.db.models.fields.TextField')()),
             ('rev', self.gf('django.db.models.fields.CharField')(max_length=16, blank=True)),
             ('pages', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('order', self.gf('django.db.models.fields.IntegerField')(default=1, blank=True)),
+            ('order', self.gf('django.db.models.fields.IntegerField')(default=1)),
             ('intended_std_level', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.IntendedStdLevelName'], null=True, blank=True)),
             ('std_level', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.StdLevelName'], null=True, blank=True)),
             ('ad', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='ad_document_set', null=True, to=orm['person.Person'])),
@@ -119,10 +119,10 @@ class Migration(SchemaMigration):
             ('title', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('stream', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.StreamName'], null=True, blank=True)),
             ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'], null=True, blank=True)),
-            ('abstract', self.gf('django.db.models.fields.TextField')(blank=True)),
+            ('abstract', self.gf('django.db.models.fields.TextField')()),
             ('rev', self.gf('django.db.models.fields.CharField')(max_length=16, blank=True)),
             ('pages', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('order', self.gf('django.db.models.fields.IntegerField')(default=1, blank=True)),
+            ('order', self.gf('django.db.models.fields.IntegerField')(default=1)),
             ('intended_std_level', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.IntendedStdLevelName'], null=True, blank=True)),
             ('std_level', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.StdLevelName'], null=True, blank=True)),
             ('ad', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='ad_dochistory_set', null=True, to=orm['person.Person'])),
@@ -188,25 +188,6 @@ class Migration(SchemaMigration):
             ('rev', self.gf('django.db.models.fields.CharField')(max_length=16)),
         ))
         db.send_create_signal('doc', ['NewRevisionDocEvent'])
-
-        # Adding model 'BallotType'
-        db.create_table('doc_ballottype', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('doc_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.DocTypeName'], null=True, blank=True)),
-            ('slug', self.gf('django.db.models.fields.SlugField')(max_length=50, db_index=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('question', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('used', self.gf('django.db.models.fields.BooleanField')(default=True)),
-            ('order', self.gf('django.db.models.fields.IntegerField')(default=0)),
-        ))
-        db.send_create_signal('doc', ['BallotType'])
-
-        # Adding model 'BallotDocEvent'
-        db.create_table('doc_ballotdocevent', (
-            ('docevent_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['doc.DocEvent'], unique=True, primary_key=True)),
-            ('ballot_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['doc.BallotType'])),
-        ))
-        db.send_create_signal('doc', ['BallotDocEvent'])
 
         # Adding model 'BallotPositionDocEvent'
         db.create_table('doc_ballotpositiondocevent', (
@@ -315,12 +296,6 @@ class Migration(SchemaMigration):
         # Deleting model 'NewRevisionDocEvent'
         db.delete_table('doc_newrevisiondocevent')
 
-        # Deleting model 'BallotType'
-        db.delete_table('doc_ballottype')
-
-        # Deleting model 'BallotDocEvent'
-        db.delete_table('doc_ballotdocevent')
-
         # Deleting model 'BallotPositionDocEvent'
         db.delete_table('doc_ballotpositiondocevent')
 
@@ -377,11 +352,6 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
         },
-        'doc.ballotdocevent': {
-            'Meta': {'ordering': "['-time', '-id']", 'object_name': 'BallotDocEvent', '_ormbases': ['doc.DocEvent']},
-            'ballot_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['doc.BallotType']"}),
-            'docevent_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['doc.DocEvent']", 'unique': 'True', 'primary_key': 'True'})
-        },
         'doc.ballotpositiondocevent': {
             'Meta': {'ordering': "['-time', '-id']", 'object_name': 'BallotPositionDocEvent', '_ormbases': ['doc.DocEvent']},
             'ad': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']"}),
@@ -391,16 +361,6 @@ class Migration(SchemaMigration):
             'discuss_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
             'docevent_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['doc.DocEvent']", 'unique': 'True', 'primary_key': 'True'}),
             'pos': ('django.db.models.fields.related.ForeignKey', [], {'default': "'norecord'", 'to': "orm['name.BallotPositionName']"})
-        },
-        'doc.ballottype': {
-            'Meta': {'ordering': "['order']", 'object_name': 'BallotType'},
-            'doc_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.DocTypeName']", 'null': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'question': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'slug': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
         'doc.docalias': {
             'Meta': {'object_name': 'DocAlias'},
@@ -419,7 +379,7 @@ class Migration(SchemaMigration):
         },
         'doc.dochistory': {
             'Meta': {'object_name': 'DocHistory'},
-            'abstract': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'abstract': ('django.db.models.fields.TextField', [], {}),
             'ad': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'ad_dochistory_set'", 'null': 'True', 'to': "orm['person.Person']"}),
             'authors': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['person.Email']", 'symmetrical': 'False', 'through': "orm['doc.DocHistoryAuthor']", 'blank': 'True'}),
             'doc': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'history_set'", 'to': "orm['doc.Document']"}),
@@ -432,7 +392,7 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'note': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'notify': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '1', 'blank': 'True'}),
+            'order': ('django.db.models.fields.IntegerField', [], {'default': '1'}),
             'pages': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'related': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['doc.DocAlias']", 'symmetrical': 'False', 'through': "orm['doc.RelatedDocHistory']", 'blank': 'True'}),
             'rev': ('django.db.models.fields.CharField', [], {'max_length': '16', 'blank': 'True'}),
@@ -462,7 +422,7 @@ class Migration(SchemaMigration):
         },
         'doc.document': {
             'Meta': {'object_name': 'Document'},
-            'abstract': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'abstract': ('django.db.models.fields.TextField', [], {}),
             'ad': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'ad_document_set'", 'null': 'True', 'to': "orm['person.Person']"}),
             'authors': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['person.Email']", 'symmetrical': 'False', 'through': "orm['doc.DocumentAuthor']", 'blank': 'True'}),
             'expires': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
@@ -473,7 +433,7 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'primary_key': 'True'}),
             'note': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'notify': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'order': ('django.db.models.fields.IntegerField', [], {'default': '1', 'blank': 'True'}),
+            'order': ('django.db.models.fields.IntegerField', [], {'default': '1'}),
             'pages': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'related': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "'reversely_related_document_set'", 'blank': 'True', 'through': "orm['doc.RelatedDocument']", 'to': "orm['doc.DocAlias']"}),
             'rev': ('django.db.models.fields.CharField', [], {'max_length': '16', 'blank': 'True'}),
@@ -561,7 +521,7 @@ class Migration(SchemaMigration):
         },
         'group.group': {
             'Meta': {'object_name': 'Group'},
-            'acronym': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '40', 'db_index': 'True'}),
+            'acronym': ('django.db.models.fields.SlugField', [], {'unique': 'True', 'max_length': '40', 'db_index': 'True'}),
             'ad': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['person.Person']", 'null': 'True', 'blank': 'True'}),
             'charter': ('django.db.models.fields.related.OneToOneField', [], {'blank': 'True', 'related_name': "'chartered_group'", 'unique': 'True', 'null': 'True', 'to': "orm['doc.Document']"}),
             'comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
@@ -574,18 +534,16 @@ class Migration(SchemaMigration):
             'state': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.GroupStateName']", 'null': 'True'}),
             'time': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.GroupTypeName']", 'null': 'True'}),
-            'unused_states': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['doc.State']", 'symmetrical': 'False'}),
-            'unused_tags': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['name.DocTagName']", 'symmetrical': 'False'})
+            'unused_states': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['doc.State']", 'symmetrical': 'False', 'blank': 'True'}),
+            'unused_tags': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['name.DocTagName']", 'symmetrical': 'False', 'blank': 'True'})
         },
         'name.ballotpositionname': {
             'Meta': {'ordering': "['order']", 'object_name': 'BallotPositionName'},
-            'blocking': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
-            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'valid_document_types': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['name.DocTypeName']", 'symmetrical': 'False', 'blank': 'True'})
+            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
         'name.docrelationshipname': {
             'Meta': {'ordering': "['order']", 'object_name': 'DocRelationshipName'},
