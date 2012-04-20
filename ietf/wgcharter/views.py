@@ -55,20 +55,27 @@ def change_state(request, name, option=None):
         form = ChangeStateForm(request.POST)
         if form.is_valid():
             clean = form.cleaned_data
-            if option == "initcharter" or option == "recharter":
+            charter_rev = charter.rev
+
+            if option in ("initcharter", "recharter"):
                 charter_state = State.objects.get(type="charter", slug="infrev")
-                charter_rev = ""
+                # make sure we have the latest revision set, if we
+                # abandoned a charter before, we could have reset the
+                # revision to latest approved
+                prev_revs = charter.history_set.order_by('-rev')[:1]
+                if prev_revs and prev_revs[0].rev > charter_rev:
+                    charter_rev = prev_revs[0].rev
+
+                if "-" not in charter_rev:
+                    charter_rev = charter_rev + "-00"
             elif option == "abandon":
                 if wg.state_id == "proposed":
                     charter_state = State.objects.get(type="charter", slug="notrev")
                 else:
                     charter_state = State.objects.get(type="charter", slug="approved")
-                charter_rev = approved_revision(charter.rev)
-                if charter_rev == "00":
-                    charter_rev = ""
+                    charter_rev = approved_revision(charter.rev)
             else:
                 charter_state = clean['charter_state']
-                charter_rev = charter.rev
 
             comment = clean['comment'].rstrip()
             message = clean['message']
@@ -117,6 +124,8 @@ def change_state(request, name, option=None):
                 e.desc = "Initial review time expires %s" % e.expires.strftime("%Y-%m-%d")
                 e.save()
 
+            if option in ("initcharter", "recharter"):
+                return redirect('charter_submit', name=charter.name)
             return redirect('doc_view', name=charter.name)
     else:
         if option == "recharter":
@@ -233,16 +242,16 @@ def submit(request, name):
 
     login = request.user.get_profile()
 
-    if charter.rev == "":
-        prev_revs = charter.history_set.exclude(rev="").order_by('-rev').values_list('rev', flat=True)
-        if prev_revs:
-            charter.rev = prev_revs[0]
+    not_uploaded_yet = charter.rev.endswith("-00") and not os.path.exists(os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev)))
 
-    # Search history for possible collisions with abandoned efforts
-    prev_revs = set(charter.history_set.order_by('-time').values_list('rev', flat=True))
-    next_rev = next_revision(charter.rev)
-    while next_rev in prev_revs:
-        next_rev = next_revision(next_rev)
+    if not_uploaded_yet:
+        next_rev = charter.rev
+    else:
+        # Search history for possible collisions with abandoned efforts
+        prev_revs = list(charter.history_set.order_by('-time').values_list('rev', flat=True))
+        next_rev = next_revision(charter.rev)
+        while next_rev in prev_revs:
+            next_rev = next_revision(next_rev)
 
     if request.method == 'POST':
         form = UploadForm(request.POST, request.FILES)

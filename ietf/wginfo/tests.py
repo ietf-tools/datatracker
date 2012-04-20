@@ -117,16 +117,13 @@ class WgEditTestCase(django.test.TestCase):
         self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs + 1)
         group = Group.objects.get(acronym="testwg")
         self.assertEquals(group.name, "Testing WG")
-        # check that a charter was created with the correct name
         self.assertEquals(group.charter.name, "charter-ietf-testwg")
-        # and that it has no revision
-        self.assertEquals(group.charter.rev, "")
+        self.assertEquals(group.charter.rev, "00-00")
 
 
     def test_edit_info(self):
         make_test_data()
 
-        # And make a charter for group
         group = Group.objects.get(acronym="mars")
 
         url = urlreverse('wg_edit', kwargs=dict(acronym=group.acronym))
@@ -146,7 +143,7 @@ class WgEditTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
 
-        # Create old acronym
+        # create old acronym
         group.acronym = "oldmars"
         group.save()
         save_group_in_history(group)
@@ -192,10 +189,8 @@ class WgEditTestCase(django.test.TestCase):
     def test_conclude(self):
         make_test_data()
 
-        # And make a charter for group
         group = Group.objects.get(acronym="mars")
 
-        # -- Test conclude WG --
         url = urlreverse('wg_conclude', kwargs=dict(acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -211,9 +206,11 @@ class WgEditTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertTrue(len(q('form ul.errorlist')) > 0)
 
-        # conclusion request
+        # request conclusion
+        mailbox_before = len(outbox)
         r = self.client.post(url, dict(instructions="Test instructions"))
         self.assertEquals(r.status_code, 302)
-        # The WG remains active until the state is set to conclude via change_state
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        # the WG remains active until the Secretariat takes action
         group = Group.objects.get(acronym=group.acronym)
         self.assertEquals(group.state_id, "active")

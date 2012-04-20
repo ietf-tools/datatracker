@@ -118,7 +118,7 @@ def edit(request, acronym=None, action="edit"):
                         title=wg.name,
                         group=wg,
                         abstract=wg.name,
-                        rev="",
+                        rev="00-00",
                         )
                     charter.save()
                     charter.set_state(State.objects.get(type="charter", slug="infrev"))
