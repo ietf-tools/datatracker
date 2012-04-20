@@ -463,21 +463,6 @@ def approve(request, name):
 
         close_open_ballots(charter, login)
 
-        # according to spec, 00-02 becomes 01, so copy file and record new revision
-        try:
-            old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-            new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
-            shutil.copy(old, new)
-        except IOError:
-            raise Http404("Charter text %s" % filename)
-
-        charter.rev = next_approved_revision(charter.rev)
-
-        e = NewRevisionDocEvent(doc=charter, by=login, type="new_revision")
-        e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
-        e.rev = charter.rev
-        e.save()
-
         # approve
         e = DocEvent(doc=charter, by=login)
         e.type = "iesg_approved"
@@ -497,9 +482,23 @@ def approve(request, name):
         
         e = log_state_changed(request, charter, login, prev_charter_state)
 
+        # according to spec, 00-02 becomes 01, so copy file and record new revision
+        try:
+            old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+            new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
+            shutil.copy(old, new)
+        except IOError:
+            raise Http404("Charter text %s" % filename)
+
+        e = NewRevisionDocEvent(doc=charter, by=login, type="new_revision")
+        e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
+        e.rev = next_approved_revision(charter.rev)
+        e.save()
+
+        charter.rev = e.rev
         charter.time = e.time
         charter.save()
-        
+
         email_secretariat(request, wg, "state-%s" % new_charter_state.slug, change_description)
 
         # send announcement
