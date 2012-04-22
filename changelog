@@ -1,5 +1,8 @@
 ietfdb (4.01)
 
+  * Made various fixes to test cases in order to support the new code and
+    database setup.
+
   * Merged [4265] from adam@nostrum.com: 
     Migrated HTML agenda to new data model. This has several improvements, 
     as well, such as clearer marking of BOFs. 
@@ -41,7 +44,7 @@ ietfdb (4.01)
 
   * Added a fix to catch summer/wintertime changes.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  18 Apr 2012 15:29:59 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Apr 2012 20:38:00 +0200
 
 ietfdb (4.00)
 
