@@ -1,3 +1,48 @@
+ietfdb (4.01)
+
+  * Merged [4265] from adam@nostrum.com: 
+    Migrated HTML agenda to new data model. This has several improvements, 
+    as well, such as clearer marking of BOFs. 
+
+  * Merged [4226] from adam@nostrum.com: 
+    Updated agenda.ics to use new data model. Also, tons more efficient. 
+    Additionally, the description field now includes links to relevant meeting 
+    materials. 
+
+  * Merged [4224] from york@isoc.org: 
+    Related to #816 - Modified base.html so that the logo is clickable as 
+    well as the text. 
+
+  * Merged [4223] from york@isoc.org: 
+    Related to #817 - added a 401.html page for responding to 
+    authentication failures 
+
+  * Merged [4212] from rcross@amsl.com: 
+    Ticket #673 Add ability to clear ballot 
+
+  * Merged [4214] from york@isoc.org: 
+    Fixes #816 - Turns datatracker.ietf.org into a clickable link 
+
+  * Merged [4213] from suresh.krishnan@ericsson.com: 
+    Making doc writeup available as read-only text to regular users who are 
+    not shepherd/AD/Secretariat etc. 
+    Adding a link for viewing a writeup to the main datatracker page.  
+
+  * Merged [4205] from shane@time-travellers.org: 
+    Added a link to the datatracker main document page when we announce a 
+    new document 
+
+  * Merged [4207] from adam@nostrum.com: 
+    Ported week view over to use the new meeting data model 
+
+  * Merged [4204] from shane@time-travellers.org: 
+    Adds a link to the datatracker main document page in the new-version 
+    notification messages 
+
+  * Added a fix to catch summer/wintertime changes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Apr 2012 15:29:59 +0200
+
 ietfdb (4.00)
 
   * This is the official release of the 4.00 series releases, which expects

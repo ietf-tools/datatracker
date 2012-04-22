@@ -263,7 +263,8 @@ class ManageWriteupTestCase(django.test.TestCase):
         self.assertTrue(not draft.tags.filter(slug="sheph-u"))
 
         url = urlreverse('doc_managing_writeup', kwargs=dict(acronym=draft.group.acronym, name=draft.name))
-        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.client.login(remote_user="secretary")
 
         # get
         r = self.client.get(url)
