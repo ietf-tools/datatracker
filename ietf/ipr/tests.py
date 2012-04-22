@@ -50,40 +50,40 @@ class IprUrlTestCase(SimpleUrlTestCase):
 
 # this test should be ported to run on a test database instead of the
 # real database, and possibly expanded
-class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
-    SPECIFIC_DISCLOSURE = {
-        'legal_name':'Testing Only Please Ignore',
-        'hold_name':'Test Holder',
-        'hold_telephone':'555-555-0100',
-        'hold_email':'test.holder@example.com',
-        'ietf_name':'Test Participant',
-        'ietf_telephone':'555-555-0101',
-        'ietf_email':'test.participant@example.com',
-        'rfclist':'1149',
-        'draftlist':'draft-burdis-http-sasl-00',
-        'patents':'none',
-        'date_applied':'never',
-        'country':'nowhere',
-        'licensing_option':'5',
-        'subm_name':'Test Submitter',
-        'subm_telephone':'555-555-0102',
-        'subm_email':'test.submitter@example.com'
-        }
-
-    def setUp(self):
-        self.setUpRealDatabase()
-    def tearDown(self):
-        self.tearDownRealDatabase()
-
-    def testNewSpecific(self):
-        print "     Testing IPR disclosure submission"
-        empty_outbox()
-        c = Client()
-        response = c.post('/ipr/new-specific/', self.SPECIFIC_DISCLOSURE)
-        self.assertEquals(response.status_code, 200)
-        self.assert_("Your IPR disclosure has been submitted" in response.content)
-        self.assertEquals(len(outbox), 1)
-        print "OK   (1 email found in test outbox)"
+# class NewIprTestCase(unittest.TestCase,RealDatabaseTest):
+#     SPECIFIC_DISCLOSURE = {
+#         'legal_name':'Testing Only Please Ignore',
+#         'hold_name':'Test Holder',
+#         'hold_telephone':'555-555-0100',
+#         'hold_email':'test.holder@example.com',
+#         'ietf_name':'Test Participant',
+#         'ietf_telephone':'555-555-0101',
+#         'ietf_email':'test.participant@example.com',
+#         'rfclist':'1149',
+#         'draftlist':'draft-burdis-http-sasl-00',
+#         'patents':'none',
+#         'date_applied':'never',
+#         'country':'nowhere',
+#         'licensing_option':'5',
+#         'subm_name':'Test Submitter',
+#         'subm_telephone':'555-555-0102',
+#         'subm_email':'test.submitter@example.com'
+#         }
+# 
+#     def setUp(self):
+#         self.setUpRealDatabase()
+#     def tearDown(self):
+#         self.tearDownRealDatabase()
+# 
+#     def testNewSpecific(self):
+#         print "     Testing IPR disclosure submission"
+#         empty_outbox()
+#         c = Client()
+#         response = c.post('/ipr/new-specific/', self.SPECIFIC_DISCLOSURE)
+#         self.assertEquals(response.status_code, 200)
+#         self.assert_("Your IPR disclosure has been submitted" in response.content)
+#         self.assertEquals(len(outbox), 1)
+#         print "OK   (1 email found in test outbox)"
         
     
 class IprFileTestCase(unittest.TestCase):
