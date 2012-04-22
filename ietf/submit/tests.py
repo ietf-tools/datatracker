@@ -1,4 +1,7 @@
-import datetime, os, shutil
+import datetime
+import os
+import shutil
+import re
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -74,6 +77,7 @@ class SubmitTestCase(django.test.TestCase):
         submission = IdSubmissionDetail.objects.get(filename=name)
         self.assertEquals(submission.group_acronym.acronym, "mars")
         self.assertEquals(submission.tempidauthors_set.count(), 1)
+        self.assertTrue(re.search('\s+Summary:\s+0\s+errors|No nits found', submission.idnits_message))
         author = submission.tempidauthors_set.all()[0]
         self.assertEquals(author.first_name, "Test Name")
 
