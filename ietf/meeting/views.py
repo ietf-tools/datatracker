@@ -344,6 +344,10 @@ def convert_to_pdf(doc_name):
     os.unlink(psname)
 
 def read_agenda_file(num, doc):
+    # XXXX FIXME: the path fragment in the code below should be moved to
+    # settings.py.  The *_PATH settings should be generalized to format()
+    # style python format, something like this:
+    #  DOC_PATH_FORMAT = { "agenda": "/foo/bar/agenda-{meeting.number}/agenda-{meeting-number}-{doc.group}*", }
     path = os.path.join(settings.AGENDA_PATH, "%s/agenda/%s" % (num, doc.external_url))
     if os.path.exists(path):
         with open(path) as f:
