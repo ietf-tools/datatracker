@@ -4,6 +4,22 @@
 
 {% block extrahead %}{{ block.super }}
   <script type="text/javascript" src="/js/utils.js"></script>
+  
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $("#id_group").css("background-color","gray");
+      $.ajaxSetup ({  
+        cache: false  
+      });
+    
+      
+      $('#id_group').change(function(){
+        var loadUrl = "/roles/ajax/get-roles/";
+        $("#roles-list").load(loadUrl + $(this).val());  
+      });
+    });
+    
+  </script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
@@ -20,7 +36,7 @@
          <div class="inline-related">
            <h3><b>Select Group</b></h3>
            <p>Select a Group to change roles.</p>
-           <form>
+           <form id="roles-form".>
              {{ group_form.as_p }}
            </form>
          </div> <!-- inline-related -->
@@ -28,6 +44,7 @@
          <div class="inline-related">
          <h2></h2>
          <h3><b>Role Details</b></h3>
+         <div id="roles-list"></div>
          </div> <!-- inline-related -->
 </div> <!-- module -->
 

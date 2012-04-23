@@ -27,7 +27,21 @@ def build_choices(queryset):
     '''
     choices = [ (g.acronym,g.acronym) for g in queryset ]
     return sorted(choices, key=lambda choices: choices[1])
+
+# -------------------------------------------------
+# AJAX Functions
+# -------------------------------------------------
+def ajax_get_roles(request, acronym):
+    '''
+    Ajax function which takes a group acronym and returns the
+    roles for the group in the form of a table
+    '''
+    group = get_object_or_404(Group, acronym=acronym)
     
+    return render_to_response('roles/roles.html', {
+        'roles': group.role_set.all()},
+        RequestContext(request, {}),
+    )
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
