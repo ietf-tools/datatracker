@@ -425,7 +425,7 @@ class OutgoingLiaisonForm(LiaisonForm):
         # If the from entity is one in wich the user has full privileges the to entity could be anyone
         if from_code in [i[0] for i in all_entities]:
             return to_code
-        sdo_codes = ['sdo_%s' % i.pk for i in liaison_manager_sdos(self.person)]
+        sdo_codes = ['sdo_%s' % i.pk for i in liaison_manager_sdos(person)]
         if to_code in sdo_codes:
             return to_code
         entity = self.get_to_entity()
