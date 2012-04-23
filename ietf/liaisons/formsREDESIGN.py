@@ -16,7 +16,7 @@ from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
 from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
 from ietf.liaisons.proxy import LiaisonDetailProxy
 from ietf.group.models import Group
-from ietf.person.models import Person
+from ietf.person.models import Person, Email
 from ietf.doc.models import Document
 
 
@@ -313,6 +313,14 @@ class IncomingLiaisonForm(LiaisonForm):
         self.fields['from_field'].choices = [('sdo_%s' % i.pk, i.name) for i in sdos.order_by("name")]
         self.fields['from_field'].widget.submitter = unicode(self.person)
 
+    def set_replyto_field(self):
+        e = Email.objects.filter(person=self.person, role__group__state="active", role__name__in=["liaiman", "auth"])
+        if e:
+            addr = e[0].address
+        else:
+            addr = self.person.email_address()
+        self.fields['replyto'].initial = addr
+
     def set_organization_field(self):
         self.fields['organization'].choices = self.hm.get_all_incoming_entities()
 
@@ -359,6 +367,14 @@ class OutgoingLiaisonForm(LiaisonForm):
             self.fields['from_field'].choices = self.hm.get_entities_for_person(self.person)
         self.fields['from_field'].widget.submitter = unicode(self.person)
         self.fieldsets[0] = ('From', ('from_field', 'replyto', 'approved'))
+
+    def set_replyto_field(self):
+        e = Email.objects.filter(person=self.person, role__group__state="active", role__name__in=["ad", "chair"])
+        if e:
+            addr = e[0].address
+        else:
+            addr = self.person.email_address()
+        self.fields['replyto'].initial = addr
 
     def set_organization_field(self):
         # If the user is a liaison manager and is nothing more, reduce the To field to his SDOs
