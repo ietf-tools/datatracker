@@ -97,8 +97,9 @@ class GroupModelForm(forms.ModelForm):
         if type.slug == 'rg' and parent != irtf_area:
             raise forms.ValidationError('The Area for a research group must be %s' % irtf_area)
             
-        if type.slug == 'rg' and state.slug != 'active':
-            raise forms.ValidationError('You must choose "active" for research group state')
+        # an RG can't be proposed
+        if type.slug == 'rg' and state.slug not in ('active','conclude'):
+            raise forms.ValidationError('You must choose "active" or "concluded" for research group state')
             
         return self.cleaned_data
         
