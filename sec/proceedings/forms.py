@@ -14,8 +14,8 @@ import re
 # ---------------------------------------------
 
 VALID_SLIDE_EXTENSIONS = ('.doc','.docx','.pdf','.ppt','.pptx','.txt')
-VALID_MINUTES_EXTENSIONS = ('.txt','.html','.pdf')
-VALID_AGENDA_EXTENSIONS = ('.txt','.html')
+VALID_MINUTES_EXTENSIONS = ('.txt','.html','.htm','.pdf')
+VALID_AGENDA_EXTENSIONS = ('.txt','.html','.htm')
 
 #----------------------------------------------------------
 # Forms
