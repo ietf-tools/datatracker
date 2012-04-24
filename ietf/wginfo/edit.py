@@ -1,6 +1,6 @@
 # edit/create view for WGs
 
-import re, os, string, datetime
+import re, os, string, datetime, shutil
 
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse
@@ -142,14 +142,8 @@ def edit(request, acronym=None, action="edit"):
                 if r[attr] != v:
                     changes.append(desc(name, r[attr], v))
                     setattr(wg, attr, r[attr])
-                    if attr == "acronym":
-                        c = wg.charter
-                        save_document_in_history(c)
-                        # and add a DocAlias
-                        DocAlias.objects.create(
-                            name="charter-ietf-%s" % r['acronym'],
-                            document=c,
-                            )
+
+            prev_acronym = wg.acronym
 
             # update the attributes, keeping track of what we're doing
             diff('name', "Name")
@@ -159,7 +153,18 @@ def edit(request, acronym=None, action="edit"):
             diff('list_email', "Mailing list email")
             diff('list_subscribe', "Mailing list subscribe address")
             diff('list_archive', "Mailing list archive")
-            
+
+            if not new_wg and wg.acronym != prev_acronym:
+                save_document_in_history(wg.charter)
+                DocAlias.objects.get_or_create(
+                    name="charter-ietf-%s" % wg.acronym,
+                    document=wg.charter,
+                    )
+                old = os.path.join(wg.charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (prev_acronym, wg.charter.rev))
+                if os.path.exists(old):
+                    new = os.path.join(wg.charter.get_file_path(), 'charter-ietf-%s-%s.txt' % (wg.acronym, wg.charter.rev))
+                    shutil.copy(old, new)
+
             # update roles
             for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors")]:
                 new = r[attr]

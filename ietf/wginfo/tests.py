@@ -157,6 +157,8 @@ class WgEditTestCase(django.test.TestCase):
         self.assertTrue(len(q('form ul.errorlist')) > 0)
         
         # edit info
+        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
+            f.write("This is a charter.")
         area = group.parent
         ad = Person.objects.get(name="Aread Irector")
         r = self.client.post(url,
@@ -185,6 +187,7 @@ class WgEditTestCase(django.test.TestCase):
         self.assertEquals(group.list_archive, "archive.mars")
         self.assertEquals(group.groupurl_set.all()[0].url, "http://mars.mars")
         self.assertEquals(group.groupurl_set.all()[0].name, "MARS site")
+        self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))))
 
     def test_conclude(self):
         make_test_data()
