@@ -34,13 +34,7 @@ class WGForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.cur_acronym = kwargs.pop('cur_acronym')
-        self.hide = kwargs.pop('hide', None)
         super(self.__class__, self).__init__(*args, **kwargs)
-
-        # hide requested fields
-        if self.hide:
-            for f in self.hide:
-                self.fields[f].widget = forms.HiddenInput
 
         # if previous AD is now ex-AD, append that person to the list
         ad_pk = self.initial.get('ad')
@@ -49,7 +43,10 @@ class WGForm(forms.Form):
             self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
 
     def clean_acronym(self):
-        acronym = self.cleaned_data['acronym']
+        acronym = self.cleaned_data['acronym'].strip().lower()
+
+        if not re.match(r'^[-\w]+$', acronym):
+            raise forms.ValidationError("Acronym is invalid, may only contain letters, numbers and dashes.")
         if self.cur_acronym and acronym != self.cur_acronym:
             if Group.objects.filter(acronym__iexact=acronym):
                 raise forms.ValidationError("Acronym used in an existing WG. Please pick another.")
@@ -95,8 +92,8 @@ def edit(request, acronym=None, action="edit"):
                 # Create WG
                 wg = Group(name=r["name"],
                            acronym=r["acronym"],
-                           type=GroupTypeName.objects.get(name="WG"),
-                           state=GroupStateName.objects.get(name="Proposed"))
+                           type=GroupTypeName.objects.get(slug="wg"),
+                           state=GroupStateName.objects.get(slug="proposed"))
                 wg.save()
                 
                 e = ChangeStateGroupEvent(group=wg, type="changed_state")
@@ -218,12 +215,10 @@ def edit(request, acronym=None, action="edit"):
                         list_archive=wg.list_archive if wg.list_archive else None,
                         urls=format_urls(wg.groupurl_set.all()),
                         )
-            hide = None
         else:
             init = dict(ad=login.id if has_role(request.user, "Area Director") else None,
                         )
-            hide = ['chairs', 'techadv', 'list_email', 'list_subscribe', 'list_archive', 'urls']
-        form = WGForm(initial=init, cur_acronym=wg.acronym if wg else None, hide=hide)
+        form = WGForm(initial=init, cur_acronym=wg.acronym if wg else None)
 
     return render_to_response('wginfo/edit.html',
                               dict(wg=wg,
