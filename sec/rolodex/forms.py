@@ -40,11 +40,12 @@ class EditPersonForm(forms.ModelForm):
     def clean_user(self):
         user = self.cleaned_data['user']
         if user:
+            # if Django User object exists return it, otherwise create one
             try:
                 user_obj = User.objects.get(username=user)
             except User.DoesNotExist:
-                raise forms.ValidationError("User must be a valid Django username")
-            
+                user_obj = User.objects.create_user(user,user)
+                
             return user_obj
         else:
             return None
