@@ -2,7 +2,7 @@
 
 {% load ietf_filters %}
 
-{% block title %}{{ doc.name }}-{{ doc.rev }}{% endblock %}
+{% block title %}{{ doc.canonical_name }}-{{ doc.rev }}{% endblock %}
 
 {% block pagehead %}
 <link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
@@ -99,7 +99,7 @@
 
 <p>Other versions: <a href="{{ txt_url }}">plain text</a></p>
 
-<h3>Charter {{ doc.name }}-{{ doc.rev }}
+<h3>Charter {{ doc.canonical_name }}-{{ doc.rev }}
 
 {% if user|has_role:"Area Director,Secretariat" and chartering and group.state_id != "conclude" %}
 <a class="edit" href="{% url charter_submit name=doc.name %}">Change charter text</a>
