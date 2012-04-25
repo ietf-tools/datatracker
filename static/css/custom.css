@@ -124,6 +124,12 @@ ul.none li {
     color: red;
 }
 
+.wait {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 td.border-right {
     border-right: #ccc 1px solid;
     padding: 0;
