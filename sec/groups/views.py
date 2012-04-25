@@ -264,17 +264,23 @@ def edit(request, acronym):
                 
                 # create appropriate GroupEvent
                 if 'state' in form.changed_data:
+                    if state.name == 'Active':
+                        desc = 'Started group'
+                    else:
+                        desc = state.name + ' group'
                     ChangeStateGroupEvent.objects.create(group=group,
                                                          type='changed_state',
                                                          by=request.user.get_profile(),
-                                                         state=state)
+                                                         state=state,
+                                                         desc=desc)
                     form.changed_data.remove('state')
                     
                 # if anything else was changed
                 if form.changed_data:
                     GroupEvent.objects.create(group=group,
                                               type='info_changed',
-                                              by=request.user.get_profile())
+                                              by=request.user.get_profile(),
+                                              desc='Info Changed')
                 
                 # if the acronym was changed we'll want to redirect using the new acronym below
                 if 'acronym' in form.changed_data:
