@@ -39,6 +39,7 @@ def ajax_get_roles(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
     
     return render_to_response('roles/roles.html', {
+        'group': group,
         'roles': group.role_set.all()},
         RequestContext(request, {}),
     )
@@ -96,18 +97,17 @@ def chair(request, type):
         RequestContext(request, {}),
     )
 
-def delete_role(request, type, id):
+def delete_role(request, acronym, id):
     """ 
-    Handle deleting roles for groups (chair, editor, advisor, secretary)
+    Handle deleting roles
 
     **Templates:**
 
     * none
 
-    Redirects to people page on success.
-
     """
     role = get_object_or_404(Role, id=id)
+    group = get_object_or_404(Group, acronym=acronym)
 
     # save group
     save_group_in_history(role.group)
@@ -117,7 +117,7 @@ def delete_role(request, type, id):
     messages.success(request, 'The entry was deleted successfully')
     url = reverse('roles')
     return HttpResponseRedirect(url)
-    
+
 def liaisons(request):
     """ 
     View Liaison members, add or delete a member 
@@ -181,10 +181,37 @@ def main(request):
     '''
     Main view for generic Roles App
     '''
-    groups = Group.objects.filter(type='sdo').order_by('acronym')
-    group_form = GroupSelectForm(choices=build_choices(groups))
+    groups = Group.objects.filter(type__in=('sdo','ietf')).order_by('acronym')
+    choices=build_choices(groups)
+    choices.insert(0,('','------------'))
+    group_form = GroupSelectForm(choices=choices)
     
+    # TODO this is temp
+    group = Group.objects.get(acronym='3gpp')
+    
+    if request.method == 'POST':
+        role_form = RoleForm(request.POST,group=group)
+        if role_form.is_valid():
+            name = role_form.cleaned_data['name']
+            person = role_form.cleaned_data['person']
+            email = role_form.cleaned_data['email']
+            
+            # save group
+            save_group_in_history(group)
+                
+            Role.objects.create(name=name,
+                                person=person,
+                                email=email,
+                                group=group)
+
+            messages.success(request, 'New %s added successfully!' % name)
+            url = reverse('groups_people', kwargs={'acronym':group.acronym})
+            return HttpResponseRedirect(url)
+    else:
+        role_form = RoleForm(initial={'name':'chair'},group=group)
+        
     return render_to_response('roles/main.html', {
-        'group_form': group_form},
+        'group_form': group_form,
+        'role_form': role_form},
         RequestContext(request, {}),
     )

@@ -65,7 +65,7 @@ class GroupMilestoneForm(forms.ModelForm):
         return m
 
 class GroupModelForm(forms.ModelForm):
-    type = forms.ModelChoiceField(queryset=GroupTypeName.objects.filter(slug__in=('rg','wg')),empty_label=None)
+    type = forms.ModelChoiceField(queryset=GroupTypeName.objects.filter(slug__in=('rg','wg','ag','ietf','sdo')),empty_label=None)
     parent = forms.ModelChoiceField(queryset=Group.objects.filter(Q(type='area',state='active')|Q(acronym='irtf')))
     ad = forms.ModelChoiceField(queryset=Person.objects.filter(role__name='ad',role__group__state='active'),required=False)
     state = forms.ModelChoiceField(queryset=GroupStateName.objects.exclude(slug__in=('dormant','unknown')),empty_label=None)
@@ -113,7 +113,7 @@ class RoleForm(forms.Form):
         super(RoleForm, self).__init__(*args,**kwargs)
         # this form is re-used in roles app, use different roles in select
         if self.group.type.slug not in ('wg','rg'):
-            self.fields['name'].queryset = RoleName.objects.filter(slug__in=('chair','execdir','admdir'))
+            self.fields['name'].queryset = RoleName.objects.all()
         
     # check for id within parenthesis to ensure name was selected from the list 
     def clean_person(self):
@@ -159,7 +159,7 @@ class SearchForm(forms.Form):
     group_acronym = forms.CharField(max_length=12,required=False)
     group_name = forms.CharField(max_length=80,required=False)
     primary_area = forms.ModelChoiceField(queryset=Group.objects.filter(type='area',state='active'),required=False)
-    type = forms.ModelChoiceField(queryset=GroupTypeName.objects.filter(slug__in=('rg','wg')),required=False)
+    type = forms.ModelChoiceField(queryset=GroupTypeName.objects.filter(slug__in=('rg','wg','ag','ietf','sdo')),required=False)
     #meeting_scheduled = forms.BooleanField(required=False)
     meeting_scheduled = forms.CharField(widget=forms.Select(choices=SEARCH_MEETING_CHOICES),required=False)
     state = forms.ModelChoiceField(queryset=GroupStateName.objects.exclude(slug__in=('dormant','unknown')),required=False)
