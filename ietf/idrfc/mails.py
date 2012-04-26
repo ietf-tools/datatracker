@@ -586,10 +586,6 @@ def generate_issue_ballot_mailREDESIGN(request, doc):
     e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     ballot_writeup = e.text if e else ""
 
-    # NOTE: according to Michelle Cotton <michelle.cotton@icann.org>
-    # (as per 2011-10-24) IANA is scraping these messages for
-    # information so would like to know beforehand if the format
-    # changes (perhaps RFC 6359 will change that)
     return render_to_string("idrfc/issue_ballot_mailREDESIGN.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),

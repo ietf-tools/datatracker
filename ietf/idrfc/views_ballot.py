@@ -1228,6 +1228,10 @@ def approve_ballotREDESIGN(request, name):
     else:
         action = "to_announcement_list"
 
+    # NOTE: according to Michelle Cotton <michelle.cotton@icann.org>
+    # (as per 2011-10-24) IANA is scraping these messages for
+    # information so would like to know beforehand if the format
+    # changes (perhaps RFC 6359 will change that)
     announcement = approval_text + "\n\n" + ballot_writeup
         
     if request.method == 'POST':
@@ -1393,7 +1397,9 @@ def make_last_callREDESIGN(request, name):
             
             e = LastCallDocEvent(doc=doc, by=login)
             e.type = "sent_last_call"
-            e.desc = "Last call sent"
+            e.desc = "The following Last Call announcement was sent out:<br><br>"
+            e.desc += announcement
+
             if form.cleaned_data['last_call_sent_date'] != e.time.date():
                 e.time = datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time())
             e.expires = form.cleaned_data['last_call_expiration_date']

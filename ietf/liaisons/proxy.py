@@ -136,7 +136,7 @@ class LiaisonDetailProxy(LiaisonStatement):
     def from_sdo(self):
         return self.from_group if self.from_group and self.from_group.type_id == "sdo" else None
     def from_email(self):
-        self.from_contact.address
+        return self.from_contact.address
     def get_absolute_url(self):
 	return '/liaison/%d/' % self.detail_id
     class Meta:

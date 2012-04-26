@@ -79,13 +79,6 @@ def log_state_changedREDESIGN(request, doc, by, prev_iesg_state, prev_iesg_tag):
     e = DocEvent(doc=doc, by=by)
     e.type = "changed_document"
     e.desc = u"State changed to <b>%s</b> from %s" % (state_name, prev_state_name)
-
-    if state.slug == "lc":
-        writeup = doc.latest_event(WriteupDocEvent, type="changed_last_call_text")
-        if writeup and writeup.text:
-            e.desc += "<br><br><b>The following Last Call Announcement was sent out:</b><br><br>"
-            e.desc += writeup.text.replace("\n", "<br><br>")
-
     e.save()
     return e
 

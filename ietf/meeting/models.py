@@ -53,19 +53,19 @@ class Meeting(models.Model):
 
     @classmethod
     def get_first_cut_off(cls):
-        date = cls.objects.all().order_by('-date')[0].date
+        date = cls.objects.all().filter(type="ietf").order_by('-date')[0].date
         offset = datetime.timedelta(days=settings.FIRST_CUTOFF_DAYS)
         return date - offset
 
     @classmethod
     def get_second_cut_off(cls):
-        date = cls.objects.all().order_by('-date')[0].date
+        date = cls.objects.all().filter(type="ietf").order_by('-date')[0].date
         offset = datetime.timedelta(days=settings.SECOND_CUTOFF_DAYS)
         return date - offset
 
     @classmethod
     def get_ietf_monday(cls):
-        date = cls.objects.all().order_by('-date')[0].date
+        date = cls.objects.all().filter(type="ietf").order_by('-date')[0].date
         return date + datetime.timedelta(days=-date.weekday(), weeks=1)
 
     # the various dates are currently computed
