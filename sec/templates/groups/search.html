@@ -1,19 +1,19 @@
 {% extends "base_site.html" %}
 
-{% block title %}Working Groups - Search{% endblock %}
+{% block title %}Groups - Search{% endblock %}
 
 {% block extrahead %}{{ block.super }}
   <script type="text/javascript" src="/js/utils.js"></script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
-  &raquo; Working Groups
+  &raquo; Groups
 {% endblock %}
 
 {% block content %}
 
 <div class="module group-container">
-    <h2>Working Group - Search</h2>
+    <h2>Groups - Search</h2>
     <form enctype="multipart/form-data" action="" method="post">
       <table class="full-width">
 	{{ form.as_table }}

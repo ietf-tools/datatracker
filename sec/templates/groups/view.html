@@ -1,13 +1,13 @@
 {% extends "base_site.html" %}
 
-{% block title %}Working Groups - View{% endblock %}
+{% block title %}Groups - View{% endblock %}
 
 {% block extrahead %}{{ block.super }}
   <script type="text/javascript" src="/js/utils.js"></script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
-  &raquo; <a href="../">Working Groups</a>
+  &raquo; <a href="../">Groups</a>
   &raquo; {{ group.acronym }}
 {% endblock %}
 
@@ -15,7 +15,7 @@
 
 <div class="module group-container">
   <div id="groups-view-col1">
-    <h2>Working Group - View</h2>
+    <h2>Groups - View</h2>
       <table >
         <tr><td>Group Acronym:</td><td>{{ group.acronym }}</td></tr>
         <tr><td>Group Name:</td><td>{{ group.name }}</td></tr>
