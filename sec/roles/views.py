@@ -186,8 +186,8 @@ def main(request):
     choices.insert(0,('','------------'))
     group_form = GroupSelectForm(choices=choices)
     
-    # TODO this is temp
-    group = Group.objects.get(acronym='3gpp')
+    # prime form with random sdo group so all roles are available
+    group = Group.objects.filter(type='sdo')[0]
     
     if request.method == 'POST':
         role_form = RoleForm(request.POST,group=group)
@@ -195,6 +195,9 @@ def main(request):
             name = role_form.cleaned_data['name']
             person = role_form.cleaned_data['person']
             email = role_form.cleaned_data['email']
+            acronym = role_form.cleaned_data['group_acronym']
+            
+            group = Group.objects.get(acronym=acronym)
             
             # save group
             save_group_in_history(group)
@@ -205,11 +208,15 @@ def main(request):
                                 group=group)
 
             messages.success(request, 'New %s added successfully!' % name)
-            url = reverse('groups_people', kwargs={'acronym':group.acronym})
+            url = reverse('roles') + '?group=%s' % group.acronym
             return HttpResponseRedirect(url)
+    
     else:
         role_form = RoleForm(initial={'name':'chair'},group=group)
-        
+        # accept get argument to select group if we're returning after a change
+        if 'group' in request.GET:
+            group_form = GroupSelectForm(choices=choices,initial={'group':request.GET['group']})
+            
     return render_to_response('roles/main.html', {
         'group_form': group_form,
         'role_form': role_form},

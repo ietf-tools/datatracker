@@ -107,6 +107,7 @@ class RoleForm(forms.Form):
     name = forms.ModelChoiceField(RoleName.objects.filter(slug__in=('chair','editor','secr','techadv')),empty_label=None)
     person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")
     email = forms.CharField(widget=forms.Select(),help_text="Select an email")
+    group_acronym = forms.CharField(widget=forms.HiddenInput(),required=False)
     
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group')
