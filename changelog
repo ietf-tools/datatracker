@@ -1,3 +1,36 @@
+ietfdb (4.02)
+  Merged [4288] from rjsparks@nostrum.com: 
+
+  * Made several changes to correctly use the new (RFC6410)  "Internet Standard" level
+    in email that gets sent at various stages in the handling of documents.  Fixes bug 821.
+
+  Merged branch/iola/migration-fixes@4319, containing these changesets from olau@iola.dk:
+
+  * [4319]: Only query for regular IETF meetings when calculating cut off dates
+    (reported by Ryan Cross).
+
+  * [4311]: Fix bug in liaison form that prevents Secretariat users from posting
+    statements on behalf of SDO liaison managers in some cases.
+
+  * [4310]: Fix problem with direct replyto path in liaison form not using role
+    emails (reported by Stephanie McCammon).
+
+  * [4307]: Fix missing return in liaison proxy, fixes problem with from email
+    on https://datatracker.ietf.org/liaison/1154/ as reported by Stephanie
+    McCammon.
+
+  * [4260]: Move note about IANA scraping messages, apparently I managed to
+    put it in the wrong place (they're of course scraping draft approvals, not
+    the ballot announcements).
+
+  * [4253]: Move last call announcement text to last call event rather than
+    stuffing it inside the state change event.
+
+  * [4252]: Declare coding system to work around annoying problem when the
+    date produced by SVN is localized.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Apr 2012 22:27:36 +0200
+
 ietfdb (4.01)
 
   * Made various fixes to test cases in order to support the new code and
