@@ -494,20 +494,22 @@ def ical_agenda(request, num=None):
 
     # Process the special flags.
     for item in include:
-        if item[0] == '-':
-            exclude.append(item[1:])
-        if item[0] == '~':
-            include_types.append(item[1:2].upper()+item[2:])
+        if item:
+            if item[0] == '-':
+                exclude.append(item[1:])
+            if item[0] == '~':
+                include_types.append(item[1:2].upper()+item[2:])
 
     timeslots = TimeSlot.objects.filter(Q(meeting = meeting.number),
         Q(type__name__in = include_types) |
         Q(session__group__acronym__in = filter) |
         Q(session__group__parent__acronym__in = filter)
-        ).exclude(Q(session__group__isnull = False),
-        Q(session__group__acronym__in = exclude) | 
-        Q(session__group__parent__acronym__in = exclude))
+        )#.exclude(Q(session__group__isnull = False),
+        #Q(session__group__acronym__in = exclude) | 
+        #Q(session__group__parent__acronym__in = exclude))
 
-    return HttpResponse(render_to_string("meeting/agendaREDESIGN.ics" if settings.USE_DB_REDESIGN_PROXY_CLASSES else "meeting/agenda.ics",
+#    return HttpResponse(render_to_string("meeting/agendaREDESIGN.ics" if settings.USE_DB_REDESIGN_PROXY_CLASSES else "meeting/agenda.ics",
+    return HttpResponse(render_to_string("meeting/agendaREDESIGN.ics",
         {"timeslots":timeslots, "meeting":meeting },
         RequestContext(request)), mimetype="text/calendar")
 
