@@ -1,0 +1,24 @@
+{% if set.wg %}
+  <h4>Working Groups</h4>
+  <ul>
+  {% for group in set.wg %}
+    <li><a href="{{ group.proceedings_url }}">{{ group.name }} ({{group.acronym}})</a></li>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% if set.bof %}
+  <h4>BoFs</h4>
+  <ul>
+  {% for group in set.bof %}
+    <li><a href="{{ group.proceedings_url }}">{{ group.name }} ({{group.acronym}})</a></li>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% if set.ag %}
+  <h4>Area Group</h4>
+  <ul>
+  {% for group in set.ag %}
+    <li><a href="{{ group.proceedings_url }}">{{ group.name }} ({{group.acronym}})</a></li>
+  {% endfor %}
+  </ul>
+{% endif %}

@@ -8,13 +8,30 @@ from django.shortcuts import render_to_response
 from ietf.group.models import Group
 from ietf.meeting.models import Session
 from ietf.doc.models import Document, RelatedDocument
+from itertools import chain
 from sec.utils.document import get_rfc_num
+from sec.utils.group import groups_by_session
 from sec.utils.meeting import get_upload_root, get_proceedings_path, get_material
 from models import InterimMeeting    # proxy model
 
 import datetime
 import os
 import shutil
+
+def copy_files(meeting):
+    '''
+    This function copies all the static html pages from the last meeting
+    NOTE: it won't overwrite files already there because these may be 
+    modified manually
+    '''
+    file_list = ['acknowledgement.html','overview.html','irtf.html']
+    last_meeting = str(int(meeting.number) - 1)
+    
+    for file in file_list:
+        source = os.path.join(settings.PROCEEDINGS_DIR,last_meeting,file)
+        target = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,file)
+        if not os.path.exists(target):
+            shutil.copy(source,target)
 
 def create_interim_directory():
     '''
@@ -153,11 +170,31 @@ def create_proceedings(meeting, group):
         create_interim_directory()
 
 def gen_areas(context):
-    groups_met, groups_not = groups_by_session(None,context['meeting'])
-    for area in context['areas']:
-        #
-        html = render_to_response('proceedings/area.html',context)
-        path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'%s.html' % area.acronym)
+    meeting = context['meeting']
+    gmet, gnot = groups_by_session(None,meeting)
+    
+    # append proceedings URL
+    for group in gmet + gnot:
+        group.proceedings_url = "%s/proceedings/%s/%s.html" % (settings.MEDIA_URL,meeting.number,group.acronym)
+    
+    for (counter,area) in enumerate(context['areas'], start=1):    
+        groups_met = {'wg':filter(lambda a: a.parent==area and a.state.slug!='bof' and a.type_id=='wg',gmet),
+                      'bof':filter(lambda a: a.parent==area and a.state.slug=='bof' and a.type_id=='wg',gmet),
+                      'ag':filter(lambda a: a.parent==area and a.type_id=='ag',gmet)}
+                      
+        groups_not = {'wg':filter(lambda a: a.parent==area and a.state.slug!='bof' and a.type_id=='wg',gnot),
+                      'bof':filter(lambda a: a.parent==area and a.state.slug=='bof' and a.type_id=='wg',gnot),
+                      'ag':filter(lambda a: a.parent==area and a.type_id=='ag',gnot)}
+                      
+        html = render_to_response('proceedings/area.html',{
+            'area': area,
+            'meeting': meeting,
+            'groups_met': groups_met,
+            'groups_not': groups_not,
+            'index': counter}
+        )
+        
+        path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'%s.html' % area.acronym)
         write_html(path,html.content)
     
 def gen_index(context):
@@ -165,6 +202,66 @@ def gen_index(context):
     path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'index.html')
     write_html(path,index.content)
 
+def gen_plenaries(context):
+    meeting = context['meeting']
+    admin_session = Session.objects.get(meeting=meeting,name__contains='Administration Plenary')
+    admin_slides = admin_session.materials.filter(type='slides')
+    admin_minutes = admin_session.materials.filter(type='minutes')
+    admin = render_to_response('proceedings/plenary.html',{
+        'title': 'Administrative',
+        'meeting': meeting,
+        'slides': admin_slides,
+        'minutes': admin_minutes}
+    )
+    path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'administrative-plenary.html')
+    write_html(path,admin.content)
+    
+    tech_session = Session.objects.get(meeting=meeting,name__contains='Technical Plenary')
+    tech_slides = tech_session.materials.filter(type='slides')
+    tech_minutes = tech_session.materials.filter(type='minutes')
+    tech = render_to_response('proceedings/plenary.html',{
+        'title': 'Technical',
+        'meeting': meeting,
+        'slides': tech_slides,
+        'minutes': tech_minutes}
+    )
+    path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'technical-plenary.html')
+    write_html(path,tech.content)
+
+def gen_research(context):
+    meeting = context['meeting']
+    gmet, gnot = groups_by_session(None,meeting)
+    
+    groups = filter(lambda a: a.type_id=='rg', gmet)
+    
+    # append proceedings URL
+    for group in groups:
+        group.proceedings_url = "%s/proceedings/%s/%s.html" % (settings.MEDIA_URL,meeting.number,group.acronym)
+    
+    html = render_to_response('proceedings/rg_irtf.html',{
+        'meeting': meeting,
+        'groups': groups}
+    )
+    
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'rg_irtf.html')
+    write_html(path,html.content)
+        
+def gen_training(context):
+    meeting = context['meeting']
+    timeslots = context['others']
+    sessions = [ t.session for t in timeslots ]
+    for counter,session in enumerate(sessions, start=1):
+        slides = session.materials.filter(type='slides')
+        minutes = session.materials.filter(type='minutes')
+        html = render_to_response('proceedings/training.html',{
+            'title': '4.%s %s' % (counter, session.name),
+            'meeting': meeting,
+            'slides': slides,
+            'minutes': minutes}
+        )
+        path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'train-%s.html' % counter )
+        write_html(path,html.content)
+    
 def write_html(path,content):
     f = open(path,'w')
     f.write(content)

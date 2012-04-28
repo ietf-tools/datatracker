@@ -381,16 +381,21 @@ def generate_proceedings(request, meeting_num):
     meeting
     '''
     meeting = get_object_or_404(Meeting, number=meeting_num)
-    areas = Group.objects.filter(type='area',state='active')
-    others = TimeSlot.objects.filter(meeting=meeting,type='other')
+    areas = Group.objects.filter(type='area',state='active').order_by('name')
+    others = TimeSlot.objects.filter(meeting=meeting,type='other').order_by('time')
     context = {'meeting':meeting,
                'areas':areas,
                'others':others}
     
+    copy_files(meeting)
+    # progess report
+    # agenda
+    # attendees
     gen_index(context)
-    #gen_areas(context)
-    #gen_plenaries()
-    #gen_training()
+    gen_areas(context)
+    gen_plenaries(context)
+    gen_training(context)
+    gen_research(context)
     
     url = '%s/proceedings/%s' % (settings.MEDIA_URL, meeting_num)
     return HttpResponseRedirect(url)

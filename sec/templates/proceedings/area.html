@@ -1,0 +1,20 @@
+{% extends "proceedings/proceedings_template.html" %}
+
+{% block content %}
+
+{% include "includes/proceeding_title.html" %}
+
+<h2>2.{{ index }} {{ area.name }}</h2>
+
+<h3>Groups that met at {{ meeting }}</h3>
+{% with groups_met as set %}
+  {% include "includes/proceeding_area.html" %}
+{% endwith %}
+
+<h3>Groups that did not meet at {{ meeting }}</h3>
+{% with groups_not as set %}
+  {% include "includes/proceeding_area.html" %}
+{% endwith %}
+
+
+{% endblock %}
