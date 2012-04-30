@@ -88,7 +88,7 @@ for d in relevant_docs.iterator():
                 print "MISSING ballot issue event, added ballot for", d.name
 
         if e.type == "changed_ballot_position" and not e.ballotpositiondocevent.ballot:
-            e.ballotpositiondocevent.ballot = ballot
+            e.ballotpositiondocevent.ballot_id = ballot.id
             e.ballotpositiondocevent.save()
 
         if e.type in ("iesg_approved", "iesg_disapproved") and ballot:
