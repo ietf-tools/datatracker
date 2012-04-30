@@ -1,4 +1,5 @@
-Follow this link to get full access to the submission of
-I-D {{ submission.filename }}-{{ submission.revision }}:
+{% autoescape off %}Follow this link to get full access to the submission of
+{{ submission.filename }}-{{ submission.revision }}:
 
 {{ url|safe }}
+{% endautoescape %}

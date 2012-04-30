@@ -1,6 +1,7 @@
-{{ doc.file_tag|safe }} was just expired.
+{% autoescape off %}{{ doc.file_tag|safe }} was just expired.
 This draft is in the state "{{ state }}" in the ID Tracker.
 
 
 Thanks,
 IETF Secretariat.
+{% endautoescape %}

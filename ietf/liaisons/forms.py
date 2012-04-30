@@ -361,7 +361,7 @@ class OutgoingLiaisonForm(LiaisonForm):
         person = self.fake_person or self.person
         for i in self.hm.get_entities_for_person(person):
             all_entities += i[1]
-        # If the from entity is one in wich the user has full privileges the to entity could be anyone
+        # If the from entity is one in which the user has full privileges the to entity could be anyone
         if from_code in [i[0] for i in all_entities]:
             return to_code
         sdo_codes = ['sdo_%s' % i.sdo.pk for i in person.liaisonmanagers_set.all().distinct()]
