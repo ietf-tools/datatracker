@@ -356,7 +356,7 @@ class BallotDocEvent(DocEvent):
     ballot_type = models.ForeignKey(BallotType)
 
 class BallotPositionDocEvent(DocEvent):
-    ballot = models.ForeignKey(BallotDocEvent, null=True)
+    ballot = models.ForeignKey(BallotDocEvent, null=True, default=None) # default=None is a temporary migration period fix, should be removed when charter branch is live
     ad = models.ForeignKey(Person)
     pos = models.ForeignKey(BallotPositionName, verbose_name="position", default="norecord")
     discuss = models.TextField(help_text="Discuss text if position is discuss", blank=True)
