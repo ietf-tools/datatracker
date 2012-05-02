@@ -502,8 +502,8 @@ def approve(request, name):
             raise Http404("Charter text %s" % filename)
 
         e = NewRevisionDocEvent(doc=charter, by=login, type="new_revision")
-        e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
         e.rev = next_approved_revision(charter.rev)
+        e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), e.rev)
         e.save()
 
         charter.rev = e.rev
