@@ -1,0 +1,9 @@
+<h1>{{ doc.title }}<br/>{{ name }}</h1>
+
+<div id="mytabs" class="yui-navset">
+<ul class="yui-nav">
+  {% for name, t, url, active in tabs %}
+  <li {% if t == selected %}class="selected"{% endif %}{% if not active %}class="disabled"{% endif %}><a{% if active %} href="{{ url }}"{% endif %}><em>{{ name }}</em></a></li>
+  {% endfor %}
+</ul>
+</div>

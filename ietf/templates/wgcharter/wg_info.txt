@@ -3,22 +3,22 @@
 Current Status: {{ wg.state.name }} Working Group
 
 Chairs:
-{% for p in info.chairs %}  {{ p.plain_name }} <{{p.email}}>
+{% for r in chairs %}  {{ r.person.plain_name }} <{{r.email.address}}>
 {% endfor %}
 Secretaries:
-{% for p in info.secr %}  {{ p.plain_name }} <{{p.email}}>
+{% for r in secr %}  {{ r.person.plain_name }} <{{r.email.address}}>
 {% endfor %}
 Technical advisors:
-{% for p in info.techadv %}  {{ p.plain_name }} <{{p.email}}>
+{% for r in techadv %}  {{ r.person.plain_name }} <{{r.email.address}}>
 {% endfor %}
 Assigned Area Director:
-  {{ info.ad.0.plain_name }} <{{ info.ad.0.email }}>
+{% if wg.ad %}  {{ wg.ad.plain_name }} <{{ ad_email }}>{% endif %}
 
 Mailing list:
-  Address: {{ info.list.0 }}
-  To Subscribe: {{ info.list_subscribe.0 }}
-  Archive: {{ info.list_archive.0 }}
+  Address: {{ wg.list_email }}
+  To Subscribe: {{ wg.list_subscribe }}
+  Archive: {{ wg.list_archive }}
   
 Charter:
 
-{{ info.charter_txt }}
+{{ charter_text }}

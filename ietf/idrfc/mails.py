@@ -333,11 +333,10 @@ def email_ballot_deferred(request, doc, by, telechat_date):
 def generate_issue_ballot_mail(request, doc):
     pass
 
-def generate_issue_ballot_mailREDESIGN(request, doc):
+def generate_issue_ballot_mailREDESIGN(request, doc, ballot):
     active_ads = Person.objects.filter(role__name="ad", role__group__state="active").distinct()
     
-    e = doc.latest_event(type="started_iesg_process")
-    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", time__gte=e.time).order_by("-time", '-id').select_related('ad')
+    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ballot=ballot).order_by("-time", '-id').select_related('ad')
 
     # format positions and setup discusses and comments
     ad_feedback = []

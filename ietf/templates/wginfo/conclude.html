@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Request closing of WG {{ wg.acronym }}{% endblock %}
+
+{% block morecss %}
+#id_instructions {
+  width: 40em;
+}
+
+form.conclude .actions {
+  text-align: right;
+  padding-top: 10px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Request closing of {{ wg.acronym }}</h1>
+
+<p>
+   Please provide instructions regarding the disposition of each
+   active Internet-Draft (such as to withdraw the draft, move it to
+   another WG, convert it to an individual submission, and so on),
+   wording for the closure announcement, and the status of the WG
+   mailing list (will it remain open or should it be closed).
+</p>
+<form class="conclude" action="" method="post">
+  <table>
+    {{ form.as_table }}
+    <tr>
+      <td colspan="2" class="actions">
+        <a href="{% url wg_charter acronym=wg.acronym %}">Back</a>
+        <input type="submit" value="Send request"/>
+      </td>
+    </tr>
+  </table>
+</form>
+
+{% endblock %}

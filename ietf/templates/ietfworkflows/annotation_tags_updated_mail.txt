@@ -1,3 +1,4 @@
+{% autoescape off %}
 The annotation tags of document {{ doc }} have been updated. See more information below.
 
 Annotation tags set: {{ entry.setted }}
@@ -7,3 +8,4 @@ Author of the change: {{ entry.person }}
 
 Comment:
 {{ entry.comment }}
+{% endautoescape %}

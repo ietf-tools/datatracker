@@ -36,14 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {{ title2 }}<br>
 {{ title3 }} ({{ forloop.counter }} of {{ section_wgs|length }})</h3>
 
-<p><b>{{ wg.obj.group_acronym.name }} ({{wg.obj.group_acronym}})<br>
-{% if wg.obj.token_name %}    
-Token: {{ wg.obj.token_name }}
-{% endif %}</b></p>
-
-{% if wg.obj.note %}
-<p>Note: {{wg.obj.note|striptags}}</p>
-{% endif %}
+<p><b>{{ wg.obj.name }} ({{wg.obj.acronym}})<br>
 
 {% if title3|startswith:"4.1.1" %}
   <p>Does anyone have an objection to the charter being sent for

@@ -20,7 +20,7 @@ form #id_ballot_writeup {
   {{ ballot_writeup_form.ballot_writeup }}
   
   <div class="actions">
-    <a href="{{ charter.get_absolute_url }}">Back</a>
+    <a href="{% url doc_writeup name=charter.name %}">Back</a>
     <input type="submit" name="save_ballot_writeup" value="Save Ballot Writeup" />
     <input style="margin-left: 8px" type="submit" name="issue_ballot" value="Save and {% if reissue %}Re-{% endif %}Issue Ballot" />
   </div>

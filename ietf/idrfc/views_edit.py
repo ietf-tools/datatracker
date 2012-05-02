@@ -791,10 +791,8 @@ def add_comment(request, name):
 
 @group_required('Area_Director', 'Secretariat', 'IANA')
 def add_commentREDESIGN(request, name):
-    """Add comment to Internet Draft."""
+    """Add comment to history of document."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.get_state("draft-iesg"):
-        raise Http404()
 
     login = request.user.get_profile()
 
@@ -808,16 +806,16 @@ def add_commentREDESIGN(request, name):
             e.desc = c
             e.save()
 
-            email_owner(request, doc, doc.ad, login,
-                        "A new comment added by %s" % login.name)
-            return HttpResponseRedirect(doc.get_absolute_url())
+            if doc.type_id == "draft":
+                email_owner(request, doc, doc.ad, login,
+                            "A new comment added by %s" % login.name)
+            return HttpResponseRedirect(urlreverse("doc_history", kwargs=dict(name=doc.name)))
     else:
         form = AddCommentForm()
   
     return render_to_response('idrfc/add_comment.html',
                               dict(doc=doc,
-                                   form=form,
-                                   back_url=doc.get_absolute_url()),
+                                   form=form),
                               context_instance=RequestContext(request))
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:

@@ -36,80 +36,110 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% block wg_titledetail %}Charter{% endblock %}
 
 {% block wg_content %}
-
 <div class="ietf-box ietf-wg-details">
 {% if concluded %}
 <span class="ietf-concluded-warning">Note: The data for concluded WGs
 is occasionally incorrect.</span>
 {% endif %}
 <table>
-<tr>
-<td colspan="2">
-<b>Personnel</b>
-</td>
-</tr>
+  <tr><th colspan="2">Group</th></tr>
 
-<tr valign="top">
-<td style="width:14ex;">Chair{{ wg.chairs|pluralize }}:</td>
-<td>
-{% for chair in wg.chairs %}
-<a href="mailto:{{ chair.address }}">{{ chair.person.name }} &lt;{{ chair.address }}&gt;</a><br/>
-{% endfor %}
-</td></tr>
-<tr><td>Area Director:</td>
-<td>
-{% if not wg.ad %}?{% else %}
-<a href="mailto:{{ wg.areadirector.address }}">{{ wg.ad.name }} &lt;{{ wg.areadirector.address }}&gt;</a>{% endif %}
-</td>
-</tr>
-{% if wg.techadvisors %}
-<tr>
-<td>Tech Advisor{{ wg.techadvisors|pluralize }}:</td>
-<td>
-{% for techadvisor in wg.techadvisors %}
-<a href="mailto:{{ techadvisor.address }}">{{ techadvisor.person.name }} &lt;{{ techadvisor.address }}&gt;</a><br/>
-{% endfor %}
-</td></tr>
-{% endif %}
-{% if wg.editors %}
-<td>Editor{{ wg.editors|pluralize }}:</td>
-<td>
-{% for editor in wg.editors %}
-<a href="mailto:{{ editor.address }}">{{ editor.person.name }} &lt;{{ editor.address }}&gt;</a><br/>
-{% endfor %}
-</td></tr>
-{% endif %}
-{% if wg.secretaries %}
-<tr><td>Secretar{{ wg.secretaries|pluralize:"y,ies" }}:</td>
-<td>
-{% for secretary in wg.secretaries %}
-<a href="mailto:{{ secretary.address }}">{{ secretary.person.name }} &lt;{{ secretary.address }}&gt;</a><br/>
-{% endfor %}
-</td></tr>
-{% endif %}
+  <tr valign="top">
+    <td style="width:14ex;">Name:</td>
+    <td>{{ wg.name }}</td>
+  </tr>
 
-<tr>
-<td colspan="2">
-<br/><b>Mailing List</b>
-</td>
-</tr>
+  <tr><td>Acronym:</td><td>{{ wg.acronym }}</td></tr>
 
-<tr><td>Address:</td><td>{{ wg.email_address|urlize }}</td></tr>
-<tr><td>To Subscribe:</td><td>{{ wg.email_subscribe|urlize }}</td></tr>
-<tr><td>Archive:</td><td>{{ wg.clean_email_archive|urlize }}</td></tr> 
+  {% if wg.parent %}
+  <tr><td>Area:</td><td>{{ wg.parent.name }} ({{ wg.parent.acronym }})</td></tr>
+  {% endif %}
 
-{% if not concluded %}
-<tr>
-<td colspan="2">
-<br/><b>Jabber Chat</b>
-</td>
-</tr>
+  <tr><td>State:</td><td>{{ wg.state.name }}</td></tr>
 
-<tr><td>Room Address:</td><td><a href="xmpp:{{wg}}@jabber.ietf.org">xmpp:{{wg}}@jabber.ietf.org</a></td></tr>
-<tr><td>Logs:</td><td><a href="http://jabber.ietf.org/logs/{{wg}}/">http://jabber.ietf.org/logs/{{wg}}/</a></td></tr>
-{% endif %}
+  <tr>
+    <td>Charter:</td>
+    <td>
+      {% if wg.charter %}
+      <a href="{% url doc_view name=wg.charter.name %}">{{ wg.charter.name }}-{{ wg.charter.rev }}</a> ({{ wg.charter.get_state.name }})
+      {% else %}
+      none
+      {% if user|has_role:"Area Director,Secretariat" %}
+      - <a href="{% url wgcharter.views_submit.submit name=wg.acronym %}">Submit Charter</a>
+      {% endif %}
+      {% endif %}
+    </td>
+  </tr>
+
+  <tr><th colspan="2">Personnel</th></tr>
+
+  <tr valign="top">
+    <td>Chair{{ wg.chairs|pluralize }}:</td>
+    <td>
+      {% for chair in wg.chairs %}
+      <a href="mailto:{{ chair.address }}">{{ chair.person.plain_name }} &lt;{{ chair.address }}&gt;</a><br/>
+      {% endfor %}
+  </td>
+  </tr>
+
+  <tr><td>Area Director:</td>
+  <td>
+    {% if not wg.ad %}?{% else %}
+    <a href="mailto:{{ wg.areadirector.address }}">{{ wg.ad.plain_name }} &lt;{{ wg.areadirector.address }}&gt;</a>{% endif %}
+  </td>
+  </tr>
+  {% if wg.techadvisors %}
+  <tr>
+    <td>Tech Advisor{{ wg.techadvisors|pluralize }}:</td>
+    <td>
+      {% for techadvisor in wg.techadvisors %}
+      <a href="mailto:{{ techadvisor.address }}">{{ techadvisor.person.plain_name }} &lt;{{ techadvisor.address }}&gt;</a><br/>
+      {% endfor %}
+    </td>
+  </tr>
+  {% endif %}
+  {% if wg.editors %}
+  <td>Editor{{ wg.editors|pluralize }}:</td>
+  <td>
+    {% for editor in wg.editors %}
+    <a href="mailto:{{ editor.address }}">{{ editor.person.plain_name }} &lt;{{ editor.address }}&gt;</a><br/>
+    {% endfor %}
+  </td></tr>
+  {% endif %}
+  {% if wg.secretaries %}
+  <tr>
+    <td>Secretar{{ wg.secretaries|pluralize:"y,ies" }}:</td>
+    <td>
+      {% for secretary in wg.secretaries %}
+      <a href="mailto:{{ secretary.address }}">{{ secretary.person.plain_name }} &lt;{{ secretary.address }}&gt;</a><br/>
+      {% endfor %}
+    </td>
+  </tr>
+  {% endif %}
+
+  <tr><th colspan="2">Mailing List</th></tr>
+
+  <tr><td>Address:</td><td>{{ wg.email_address|urlize }}</td></tr>
+  <tr><td>To Subscribe:</td><td>{{ wg.email_subscribe|urlize }}</td></tr>
+  <tr><td>Archive:</td><td>{{ wg.clean_email_archive|urlize }}</td></tr>
+
+  {% if not concluded %}
+  <tr><th colspan="2">Jabber Chat</th></tr>
+
+  <tr><td>Room Address:</td><td><a href="xmpp:{{ wg.acronym }}@jabber.ietf.org">xmpp:{{ wg.acronym }}@jabber.ietf.org</a></td></tr>
+  <tr><td>Logs:</td><td><a href="http://jabber.ietf.org/logs/{{ wg.acronym }}/">http://jabber.ietf.org/logs/{{ wg.acronym }}/</a></td></tr>
+  {% endif %}
 
 </table>
+
+{% if user|has_role:"Area Director,Secretariat" %}
+<div style="margin: 2px; margin-top: 2em;">
+  {% for name, url in actions %}
+  <a href="{{ url }}">{{ name }}</a>
+  {% if not forloop.last %}|{% endif %}
+  {% endfor %}
+</div>
+{% endif %}
 </div>
 
 {% if wg.additional_urls %}

@@ -42,7 +42,8 @@ class IntendedStdLevelName(NameModel):
 class DocReminderTypeName(NameModel):
     "Stream state"
 class BallotPositionName(NameModel):
-    """ Yes, No Objection, Abstain, Discuss, Recuse """
+    """ Yes, No Objection, Abstain, Discuss, Block, Recuse """
+    blocking = models.BooleanField(default=False)
 class GroupBallotPositionName(NameModel):
     """ Yes, No, Block, Abstain """
 class MeetingTypeName(NameModel):

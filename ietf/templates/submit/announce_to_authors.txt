@@ -1,4 +1,7 @@
-A new version of I-D, {{ submission.filename }}-{{ submission.revision }}.txt has been successfully submitted by {{ submitter }} and posted to the IETF repository.
+{% autoescape off %}
+A new version of I-D, {{ submission.filename }}-{{ submission.revision }}.txt
+has been successfully submitted by {{ submitter }} and posted to the
+IETF repository.
 
 Filename:	 {{ submission.filename }}
 Revision:	 {{ submission.revision }}
@@ -6,6 +9,10 @@ Title:		 {{ submission.id_document_name }}
 Creation date:	 {{ submission.creation_date|date:"Y-m-d" }}
 WG ID:		 {{ wg }}
 Number of pages: {{ submission.txt_page_count }}
+URL:             http://www.ietf.org/internet-drafts/{{ submission.filename }}-{{ submission.revision }}.txt
+Status:          http://datatracker.ietf.org/doc/{{ submission.filename }}
+Htmlized:        http://tools.ietf.org/html/submission.filename }}-{{ submission.revision }}
+{% ifnotequal submission.revision "00" %}Diff:            http://tools.ietf.org/rfcdiff?url2={{ submission.filename }}-{{ submission.revision }}{% endifnotequal %}
 
 Abstract:
 {{ submission.abstract }}
@@ -13,3 +20,4 @@ Abstract:
 {{ submission.comment_to_sec|default:"" }}
 
 The IETF Secretariat
+{% endautoescape %}

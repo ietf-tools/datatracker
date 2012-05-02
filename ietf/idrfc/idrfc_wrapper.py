@@ -742,7 +742,9 @@ class BallotWrapper:
 
         new_revisions = list(NewRevisionDocEvent.objects.filter(doc=self.ballot, type="new_revision").order_by('-time', '-id'))
 
-	for pos in BallotPositionDocEvent.objects.filter(doc=self.ballot, type="changed_ballot_position", time__gte=self.ballot.process_start, time__lte=self.ballot.process_end).select_related('ad').order_by("-time", '-id'):
+        ballot = self.ballot.latest_event(BallotDocEvent, type="created_ballot")
+
+	for pos in BallotPositionDocEvent.objects.filter(doc=self.ballot, type="changed_ballot_position", ballot=ballot).select_related('ad').order_by("-time", '-id'):
             if pos.ad not in seen:
                 p = dict(ad_name=pos.ad.plain_name(),
                          ad_username=pos.ad.pk, # ought to rename this in doc_ballot_list

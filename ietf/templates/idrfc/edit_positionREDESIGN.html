@@ -45,13 +45,15 @@ form.position-form .comment-text {
   <span class="actions">
     <input type="submit" name="send_mail" value="Save and send email"/>
     <input type="submit" value="Save"/>
+    {% if doc.type_id == "draft" %}
     {% if ballot_deferred %}<input type="submit" name="Undefer" value="Undefer"/>{% else %}<input type="submit" name="Defer" value="Defer"/>{% endif %}
+    {% endif %}
   </span>
   </div>
 
   <div style="clear:left"></div>
   
-  <div class="discuss-widgets" {% ifnotequal form.position.initial "discuss" %}style="display:none"{% endifnotequal %}>
+  <div class="discuss-widgets"{% if not show_discuss_text %} style="display:none"{% endif %}>
   <div class="discuss-text">
     {{ form.discuss.label_tag }}:
     {% if old_pos and old_pos.discuss_time %}<span class="last-edited">(last edited {{ old_pos.discuss_time }})</span>{% endif %}
@@ -76,5 +78,8 @@ form.position-form .comment-text {
 {% endblock %}
 
 {% block content_end %}
+<script>
+  var blockingPositions = {{ blocking_positions|safe }};
+</script>
 <script type="text/javascript" src="/js/doc-edit-position.js"></script>
 {% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Chartering or Re-Chartering Working Groups{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+{% load ballot_icon %}
+
+<h1>Chartering or Re-Chartering Working Groups</h1>
+
+<p>Groups with a charter in state
+{% for s in charter_states %}{% if not forloop.first %}, {% if forloop.last %}or {% endif %}{% endif %}<i>{{ s.name }}</i>{% endfor %}.</p>
+
+{% if user|has_role:"Area Director,Secretariat" %}
+<p><a href="{% url wg_create %}">Start chartering new WG</a></p>
+{% endif %}
+
+{% if not groups %}
+<p><b>No groups found.</b></p>
+{% else %}
+<table class="ietf-table ietf-doctable">
+<tr>
+  <th>Group</th>
+  <th>Charter</th>
+  <th>Date</th>
+  <th colspan="2">Status</th>
+</tr>
+{% for g in groups %}
+<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+  <td class="acronym">
+    <a href="{% url wg_charter acronym=g.acronym %}">{{ g.acronym }}</a>
+  </td>
+  <td class="title">
+    <a href="{% url doc_view name=g.charter.name %}">{{ g.name }}</a>
+  </td>
+  <td class="date">{{ g.charter.time|date:"Y-m-d" }}</td>
+  <td class="status">
+    {{ g.charter.get_state.name }}
+    {% if g.chartering_type == "initial" %}(Initial Chartering){% endif %}
+    {% if g.chartering_type == "recharter" %}(Rechartering){% endif %}
+    {% if not g.chartering_type and g.state_id != "active" %}({{ g.state.name }}){% endif %}
+
+    {% if g.charter.telechat_date %}<br/>IESG Telechat: {{ g.charter.telechat_date|date:"Y-m-d" }}{% endif %}
+  </td>
+  <td class="ballot">
+    {% ballot_icon g.charter %}
+  </td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}

@@ -5,6 +5,7 @@ from StringIO import StringIO
 
 import django.test
 from django.conf import settings
+from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
@@ -12,64 +13,24 @@ from ietf.utils.test_utils import login_testing_unauthorized
 from pyquery import PyQuery
 
 from ietf.doc.models import *
+from ietf.doc.utils import *
 from ietf.group.models import *
 from ietf.group.utils import *
 from ietf.name.models import *
 from ietf.person.models import *
 from ietf.iesg.models import TelechatDate
+from ietf.wgcharter.utils import *
 
-from utils import *
-
-class SearchTestCase(django.test.TestCase):
+class EditCharterTestCase(django.test.TestCase):
     fixtures = ['names']
 
-    def test_search(self):
-        make_test_data()
+    def setUp(self):
+        self.charter_dir = os.path.abspath("tmp-charter-dir")
+        os.mkdir(self.charter_dir)
+        settings.CHARTER_PATH = self.charter_dir
 
-        group = Group.objects.get(acronym="mars")
-        group.charter.set_state(State.objects.get(slug="infrev", type="charter"))
-
-        r = self.client.get("/wgcharter/")
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search"))
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search_in_process"))
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search_by_area", kwargs=dict(name=group.parent.acronym)))
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=%s" % group.name.replace(" ", "+"))
-        self.assertEquals(r.status_code, 302)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something")
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=acronym&acronym=some")
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=state&state=active&charter_state=")
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=state&state=&charter_state=%s" % State.objects.get(type="charter", slug="approved").pk)
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=ad&ad=%s" % Person.objects.get(name="Aread Irector").pk)
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=area&area=%s" % group.parent.pk)
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=anyfield&anyfield=something")
-        self.assertEquals(r.status_code, 200)
-
-        r = self.client.get(urlreverse("wg_search") + "?nameacronym=something&by=eacronym&eacronym=someold")
-        self.assertEquals(r.status_code, 200)
-        
-class WgStateTestCase(django.test.TestCase):
-    fixtures = ['names']
+    def tearDown(self):
+        shutil.rmtree(self.charter_dir)
 
     def test_change_state(self):
         make_test_data()
@@ -77,8 +38,7 @@ class WgStateTestCase(django.test.TestCase):
         group = Group.objects.get(acronym="ames")
         charter = group.charter
 
-        # -- Test change state --
-        url = urlreverse('wg_change_state', kwargs=dict(name=group.acronym))
+        url = urlreverse('charter_change_state', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
         first_state = charter.get_state()
@@ -97,177 +57,36 @@ class WgStateTestCase(django.test.TestCase):
         self.assertEquals(charter.get_state(), first_state)
         
         # change state
-        for slug in ("intrev", "extrev", "iesgrev", "approved"):
+        for slug in ("intrev", "extrev", "iesgrev"):
             s = State.objects.get(type="charter", slug=slug)
             events_before = charter.docevent_set.count()
             mailbox_before = len(outbox)
         
-            r = self.client.post(url, dict(state="active", charter_state=s.pk, message="test message"))
+            r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
             self.assertEquals(r.status_code, 302)
         
             charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
             self.assertEquals(charter.get_state_slug(), slug)
-            self.assertEquals(charter.docevent_set.count(), events_before + 1)
-            self.assertTrue("State changed" in charter.docevent_set.all()[0].desc)
+            self.assertTrue(charter.docevent_set.count() > events_before)
+            if slug in ("intrev", "iesgrev"):
+                self.assertEquals(charter.docevent_set.all()[0].type, "created_ballot")
+                self.assertTrue("State changed" in charter.docevent_set.all()[1].desc)
+            else:
+                self.assertTrue("State changed" in charter.docevent_set.all()[0].desc)
             if slug == "extrev":
-                self.assertEquals(len(outbox), mailbox_before + 2)
+                self.assertEquals(len(outbox), mailbox_before + 1)
                 self.assertTrue("State changed" in outbox[-1]['Subject'])
-                self.assertTrue("State changed" in outbox[-2]['Subject'])
             else:
                 self.assertEquals(len(outbox), mailbox_before + 1)
-                if slug == "approved":
-                    self.assertTrue("Charter approved" in outbox[-1]['Subject'])
-                else:
-                    self.assertTrue("State changed" in outbox[-1]['Subject'])
+                self.assertTrue("State changed" in outbox[-1]['Subject'])
                     
-    def test_conclude(self):
-        make_test_data()
-
-        # And make a charter for group
-        group = Group.objects.get(acronym="mars")
-
-        # -- Test conclude WG --
-        url = urlreverse('wg_conclude', kwargs=dict(name=group.acronym))
-        login_testing_unauthorized(self, "secretary", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form textarea[name=instructions]')), 1)
-        
-        # faulty post
-        r = self.client.post(url, dict(instructions="")) # No instructions
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
-
-        # conclusion request
-        r = self.client.post(url, dict(instructions="Test instructions"))
-        self.assertEquals(r.status_code, 302)
-        # The WG remains active until the state is set to conclude via change_state
-        group = Group.objects.get(acronym=group.acronym)
-        self.assertEquals(group.state_id, "active")
-
-class WgInfoTestCase(django.test.TestCase):
-    fixtures = ['names']
-
-    def setUp(self):
-        self.charter_dir = os.path.abspath("tmp-charter-dir")
-        os.mkdir(self.charter_dir)
-        settings.CHARTER_PATH = self.charter_dir
-
-    def tearDown(self):
-        shutil.rmtree(self.charter_dir)
-
-    def test_create(self):
-        make_test_data()
-
-        # -- Test WG creation --
-        url = urlreverse('wg_create')
-        login_testing_unauthorized(self, "secretary", url)
-
-        num_wgs = len(Group.objects.filter(type="wg"))
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form input[name=acronym]')), 1)
-        
-        # faulty post
-        r = self.client.post(url, dict(acronym="foobarbaz")) # No name
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
-        self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs)
-
-        # creation
-        r = self.client.post(url, dict(acronym="testwg", name="Testing WG"))
-        self.assertEquals(r.status_code, 302)
-        self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs + 1)
-        group = Group.objects.get(acronym="testwg")
-        self.assertEquals(group.name, "Testing WG")
-        # check that a charter was created with the correct name
-        self.assertEquals(group.charter.name, "charter-ietf-testwg")
-        # and that it has no revision
-        self.assertEquals(group.charter.rev, "")
-
-
-    def test_edit_info(self):
-        make_test_data()
-
-        # And make a charter for group
-        group = Group.objects.get(acronym="mars")
-
-        url = urlreverse('wg_edit_info', kwargs=dict(name=group.acronym))
-        login_testing_unauthorized(self, "secretary", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form select[name=parent]')), 1)
-        self.assertEquals(len(q('form input[name=acronym]')), 1)
-
-        # faulty post
-        Group.objects.create(name="Collision Test Group", acronym="collide")
-        r = self.client.post(url, dict(acronym="collide"))
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
-
-        # Create old acronym
-        group.acronym = "oldmars"
-        group.save()
-        save_group_in_history(group)
-        group.acronym = "mars"
-        group.save()
-
-        # post with warning
-        r = self.client.post(url, dict(acronym="oldmars"))
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form ul.errorlist')) > 0)
-        
-        # edit info
-        area = group.parent
-        ad = Person.objects.get(name="Aread Irector")
-        r = self.client.post(url,
-                             dict(name="Mars Not Special Interest Group",
-                                  acronym="mnsig",
-                                  parent=area.pk,
-                                  ad=ad.pk,
-                                  chairs="aread@ietf.org, ad1@ietf.org",
-                                  secretaries="aread@ietf.org, ad1@ietf.org, ad2@ietf.org",
-                                  techadv="aread@ietf.org",
-                                  list_email="mars@mail",
-                                  list_subscribe="subscribe.mars",
-                                  list_archive="archive.mars",
-                                  urls="http://mars.mars (MARS site)"
-                                  ))
-        self.assertEquals(r.status_code, 302)
-
-        group = Group.objects.get(acronym="mnsig")
-        self.assertEquals(group.name, "Mars Not Special Interest Group")
-        self.assertEquals(group.parent, area)
-        self.assertEquals(group.ad, ad)
-        for k in ("chair", "secr", "techadv"):
-            self.assertTrue(group.role_set.filter(name=k, email__address="aread@ietf.org"))
-        self.assertEquals(group.list_email, "mars@mail")
-        self.assertEquals(group.list_subscribe, "subscribe.mars")
-        self.assertEquals(group.list_archive, "archive.mars")
-        self.assertEquals(group.groupurl_set.all()[0].url, "http://mars.mars")
-        self.assertEquals(group.groupurl_set.all()[0].name, "MARS site")
-
     def test_edit_telechat_date(self):
         make_test_data()
 
-        # And make a charter for group
         group = Group.objects.get(acronym="mars")
         charter = group.charter
 
-        url = urlreverse('wg_edit_info', kwargs=dict(name=group.acronym))
+        url = urlreverse('charter_telechat_date', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # add to telechat
@@ -299,11 +118,10 @@ class WgInfoTestCase(django.test.TestCase):
     def test_submit_charter(self):
         make_test_data()
 
-        # And make a charter for group
         group = Group.objects.get(acronym="mars")
         charter = group.charter
 
-        url = urlreverse('wg_submit', kwargs=dict(name=group.acronym))
+        url = urlreverse('charter_submit', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -324,184 +142,7 @@ class WgInfoTestCase(django.test.TestCase):
         self.assertEquals(charter.rev, next_revision(prev_rev))
         self.assertTrue("new_revision" in charter.latest_event().type)
 
-class WgAddCommentTestCase(django.test.TestCase):
-    fixtures = ['names']
-
-    def test_add_comment(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-        url = urlreverse('wg_add_comment', kwargs=dict(name=group.acronym))
-        login_testing_unauthorized(self, "secretary", url)
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('form textarea[name=comment]')), 1)
-
-        # request resurrect
-        comments_before = group.groupevent_set.filter(type="added_comment").count()
-
-        r = self.client.post(url, dict(comment="This is a test."))
-        self.assertEquals(r.status_code, 302)
-
-        self.assertEquals(group.groupevent_set.filter(type="added_comment").count(), comments_before + 1)
-        self.assertTrue("This is a test." in group.groupevent_set.filter(type="added_comment").order_by('-time')[0].desc)
-
-class WgEditPositionTestCase(django.test.TestCase):
-    fixtures = ['names', 'ballot']
-
-    def test_edit_position(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-        charter = group.charter
-
-        url = urlreverse('wg_edit_position', kwargs=dict(name=group.acronym))
-        login_testing_unauthorized(self, "ad", url)
-
-        p = Person.objects.get(name="Aread Irector")
-
-        e = DocEvent()
-        e.type = "started_iesg_process"
-        e.by = p
-        e.doc = charter
-        e.desc = "IESG process started"
-        e.save()
-        
-        charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
-        charter.save()
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form input[name=position]')) > 0)
-        self.assertEquals(len(q('form textarea[name=comment]')), 1)
-
-        # vote
-        pos_before = charter.docevent_set.filter(type="changed_ballot_position").count()
-        self.assertTrue(not charter.docevent_set.filter(type="changed_ballot_position", by__name="Aread Irector"))
-        
-        r = self.client.post(url, dict(position="block",
-                                       block_comment="This is a blocking test.",
-                                       comment="This is a test."))
-        self.assertEquals(r.status_code, 302)
-
-        self.assertEquals(charter.docevent_set.filter(type="changed_ballot_position").count(), pos_before + 1)
-        e = charter.latest_event(GroupBallotPositionDocEvent)
-        self.assertTrue("This is a blocking test." in e.block_comment)
-        self.assertTrue("This is a test." in e.comment)
-        self.assertTrue(e.pos_id, "block")
-
-        # recast vote
-        pos_before = charter.docevent_set.filter(type="changed_ballot_position").count()
-        
-        r = self.client.post(url, dict(position="yes"))
-        self.assertEquals(r.status_code, 302)
-
-        self.assertEquals(charter.docevent_set.filter(type="changed_ballot_position").count(), pos_before + 1)
-        e = charter.latest_event(GroupBallotPositionDocEvent)
-        self.assertTrue(e.pos_id, "yes")
-
-        # clear vote
-        pos_before = charter.docevent_set.filter(type="changed_ballot_position").count()
-        
-        r = self.client.post(url, dict(position="norecord"))
-        self.assertEquals(r.status_code, 302)
-
-        self.assertEquals(charter.docevent_set.filter(type="changed_ballot_position").count(), pos_before + 1)
-        e = charter.latest_event(GroupBallotPositionDocEvent)
-        self.assertTrue(e.pos_id, "norecord")
-
-    def test_edit_position_as_secretary(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-        charter = group.charter
-
-        url = urlreverse('wg_edit_position', kwargs=dict(name=group.acronym))
-        p = Person.objects.get(name="Aread Irector")
-        url += "?ad=%d" % p.id
-        login_testing_unauthorized(self, "secretary", url)
-
-        e = DocEvent()
-        e.type = "started_iesg_process"
-        e.by = p
-        e.doc = charter
-        e.desc = "IESG process started"
-        e.save()
-        
-        charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
-        charter.save()
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form input[name=position]')) > 0)
-
-        # vote for rhousley
-        pos_before = charter.docevent_set.filter(type="changed_ballot_position").count()
-        self.assertTrue(not charter.docevent_set.filter(type="changed_ballot_position", by__name="Sec Retary"))
-        
-        r = self.client.post(url, dict(position="no"))
-        self.assertEquals(r.status_code, 302)
-
-        self.assertEquals(charter.docevent_set.filter(type="changed_ballot_position").count(), pos_before + 1)
-        e = charter.latest_event(GroupBallotPositionDocEvent)
-        self.assertTrue(e.pos_id, "no")
-        
-    def test_send_ballot_comment(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-        charter = group.charter
-
-        url = urlreverse('wg_send_ballot_comment', kwargs=dict(name=group.acronym))
-        login_testing_unauthorized(self, "ad", url)
-
-        p = Person.objects.get(name="Aread Irector")
-
-        e = DocEvent()
-        e.type = "started_iesg_process"
-        e.by = p
-        e.doc = charter
-        e.desc = "IESG process started"
-        e.save()
-        
-        charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
-        charter.save()
-
-        GroupBallotPositionDocEvent.objects.create(
-            doc=charter,
-            by=p,
-            type="changed_ballot_position",
-            pos=GroupBallotPositionName.objects.get(slug="block"),
-            ad=p,
-            block_comment="This is a block test",
-            comment="This is a test",
-            )
-
-        # normal get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q('form input[name="cc"]')) > 0)
-
-        # send
-        p = Person.objects.get(name="Aread Irector")
-        mailbox_before = len(outbox)
-        
-        r = self.client.post(url, dict(cc="test@example.com", cc_state_change="1"))
-        self.assertEquals(r.status_code, 302)
-
-        self.assertEquals(len(outbox), mailbox_before + 1)
-        self.assertTrue("BLOCKING COMMENT" in outbox[-1]['Subject'])
-        self.assertTrue("COMMENT" in outbox[-1]['Subject'])
-
-class WgApproveBallotTestCase(django.test.TestCase):
+class CharterApproveBallotTestCase(django.test.TestCase):
     fixtures = ['names']
 
     def setUp(self):
@@ -512,27 +153,28 @@ class WgApproveBallotTestCase(django.test.TestCase):
     def tearDown(self):
         shutil.rmtree(self.charter_dir)
 
-    def test_approve_ballot(self):
+    def test_approve(self):
         make_test_data()
 
         group = Group.objects.get(acronym="ames")
         charter = group.charter
 
-        url = urlreverse('wg_approve_ballot', kwargs=dict(name=group.acronym))
+        url = urlreverse('charter_approve', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
-        with open(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev)), "w") as f:
+        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (charter.canonical_name(), charter.rev)), "w") as f:
             f.write("This is a charter.")
 
         p = Person.objects.get(name="Aread Irector")
 
-        e = DocEvent()
-        e.type = "started_iesg_process"
-        e.by = p
-        e.doc = charter
-        e.desc = "IESG process started"
-        e.save()
-        
+        BallotDocEvent.objects.create(
+            type="created_ballot",
+            ballot_type=BallotType.objects.get(doc_type="charter", slug="approve"),
+            by=p,
+            doc=charter,
+            desc="Created ballot",
+            )
+
         charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
 
         # normal get
@@ -550,6 +192,7 @@ class WgApproveBallotTestCase(django.test.TestCase):
 
         charter = Document.objects.get(name=charter.name)
         self.assertEquals(charter.get_state_slug(), "approved")
+        self.assertTrue(not ballot_open(charter, "approve"))
 
         self.assertEquals(charter.rev, "01")
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))))

@@ -12,11 +12,11 @@ from ietf.utils.admin import admin_link
 import datetime, os
 
 class StateType(models.Model):
-    slug = models.CharField(primary_key=True, max_length=30) # draft, draft_iesg, charter, ...
-    label = models.CharField(max_length=255) # State, IESG state, WG state, ...
+    slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
+    label = models.CharField(max_length=255, help_text="Label that should be used (e.g. in admin) for state drop-down for this type of state") # State, IESG state, WG state, ...
 
     def __unicode__(self):
-        return self.label
+        return self.slug
 
 class State(models.Model):
     type = models.ForeignKey(StateType)
@@ -46,10 +46,10 @@ class DocumentInfo(models.Model):
     stream = models.ForeignKey(StreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
     group = models.ForeignKey(Group, blank=True, null=True) # WG, RG, IAB, IESG, Edu, Tools
 
-    abstract = models.TextField()
+    abstract = models.TextField(blank=True)
     rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
     pages = models.IntegerField(blank=True, null=True)
-    order = models.IntegerField(default=1)
+    order = models.IntegerField(default=1, blank=True)
     intended_std_level = models.ForeignKey(IntendedStdLevelName, verbose_name="Intended standardization level", blank=True, null=True)
     std_level = models.ForeignKey(StdLevelName, verbose_name="Standardization level", blank=True, null=True)
     ad = models.ForeignKey(Person, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)
@@ -149,15 +149,10 @@ class Document(DocumentInfo):
 
     def get_absolute_url(self):
         name = self.name
-        if self.type_id == "charter":
-            return urlreverse('wg_view', kwargs={ 'name': self.group.acronym }, urlconf="ietf.urls")
-        elif self.type_id == "draft":
-            if self.get_state_slug() == "rfc":
-                aliases = self.docalias_set.filter(name__startswith="rfc")
-                if aliases:
-                    name = aliases[0].name
-            return urlreverse('doc_view', kwargs={ 'name': name }, urlconf="ietf.urls")
-
+        if self.type_id == "draft" and self.get_state_slug() == "rfc":
+            aliases = self.docalias_set.filter(name__startswith="rfc")
+            if aliases:
+                name = aliases[0].name
         elif self.type_id in ('slides','agenda','minutes'):
             session = self.session_set.all()[0]
             meeting = session.meeting
@@ -172,6 +167,9 @@ class Document(DocumentInfo):
                     self.type_id,
                     filename)
             return url
+        return urlreverse('doc_view', kwargs={ 'name': name }, urlconf="ietf.urls")
+
+
 
     def file_tag(self):
         return u"<%s>" % self.filename_with_rev()
@@ -194,6 +192,9 @@ class Document(DocumentInfo):
             a = self.docalias_set.filter(name__startswith="rfc")
             if a:
                 name = a[0].name
+        elif self.type_id == "charter":
+            return "charter-ietf-%s" % self.chartered_group.acronym
+
         return name
 
 class RelatedDocHistory(models.Model):
@@ -216,11 +217,19 @@ class DocHistoryAuthor(models.Model):
 
 class DocHistory(DocumentInfo):
     doc = models.ForeignKey(Document, related_name="history_set")
-    name = models.CharField(max_length=255) # WG charter names can change if the group acronym changes
+    name = models.CharField(max_length=255) # WG charter canonical names can change if the group acronym changes
     related = models.ManyToManyField('DocAlias', through=RelatedDocHistory, blank=True)
     authors = models.ManyToManyField(Email, through=DocHistoryAuthor, blank=True)
     def __unicode__(self):
         return unicode(self.doc.name)
+
+    def canonical_name(self):
+        return self.name
+
+    def latest_event(self, *args, **kwargs):
+        kwargs["time__lte"] = self.time
+        return self.doc.latest_event(*args, **kwargs)
+
     class Meta:
         verbose_name = "document history"
         verbose_name_plural = "document histories"
@@ -234,7 +243,7 @@ def save_document_in_history(doc):
     # copy fields
     fields = get_model_fields_as_dict(doc)
     fields["doc"] = doc
-    fields["name"] = doc.name
+    fields["name"] = doc.canonical_name()
     
     dochist = DocHistory(**fields)
     dochist.save()
@@ -311,6 +320,8 @@ EVENT_TYPES = [
     # IESG events
     ("started_iesg_process", "Started IESG process on document"),
 
+    ("created_ballot", "Created ballot"),
+    ("closed_ballot", "Closed ballot"),
     ("sent_ballot_announcement", "Sent ballot announcement"),
     ("changed_ballot_position", "Changed ballot position"),
     
@@ -347,7 +358,26 @@ class NewRevisionDocEvent(DocEvent):
     rev = models.CharField(max_length=16)
    
 # IESG events
+class BallotType(models.Model):
+    doc_type = models.ForeignKey(DocTypeName, blank=True, null=True)
+    slug = models.SlugField()
+    name = models.CharField(max_length=255)
+    question = models.TextField(blank=True)
+    used = models.BooleanField(default=True)
+    order = models.IntegerField(default=0)
+    positions = models.ManyToManyField(BallotPositionName, blank=True)
+
+    def __unicode__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['order']
+
+class BallotDocEvent(DocEvent):
+    ballot_type = models.ForeignKey(BallotType)
+
 class BallotPositionDocEvent(DocEvent):
+    ballot = models.ForeignKey(BallotDocEvent, null=True, default=None) # default=None is a temporary migration period fix, should be removed when charter branch is live
     ad = models.ForeignKey(Person)
     pos = models.ForeignKey(BallotPositionName, verbose_name="position", default="norecord")
     discuss = models.TextField(help_text="Discuss text if position is discuss", blank=True)
@@ -365,14 +395,6 @@ class TelechatDocEvent(DocEvent):
     telechat_date = models.DateField(blank=True, null=True)
     returning_item = models.BooleanField(default=False)
 
-# Charter ballot events
-class GroupBallotPositionDocEvent(DocEvent):
-    ad = models.ForeignKey(Person)
-    pos = models.ForeignKey(GroupBallotPositionName, verbose_name="position", default="norecord")
-    block_comment = models.TextField(help_text="Blocking comment if position is comment", blank=True)
-    block_comment_time = models.DateTimeField(help_text="Blocking comment was written", blank=True, null=True)
-    comment = models.TextField(help_text="Non-blocking comment", blank=True)
-    comment_time = models.DateTimeField(help_text="Time non-blocking comment was written", blank=True, null=True)
-
+# charter events
 class InitialReviewDocEvent(DocEvent):
     expires = models.DateTimeField(blank=True, null=True)

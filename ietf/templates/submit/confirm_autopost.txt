@@ -1,7 +1,8 @@
-Follow this link to confirm your Auto-Post of
-I-D {{ draft.filename }}-{{ draft.revision }}:
+{% autoescape off %}Follow this link to confirm your Auto-Post of
+{{ draft.filename }}-{{ draft.revision }}:
 
 I-D Submission Tool URL: {{ confirm_url|safe }}
 
 Remember that you can cancel the submission from:
 {{ status_url|safe }}
+{% endautoescape %}

@@ -1,4 +1,4 @@
-WG chair approval is needed for posting of {{ draft.filename }}-{{ draft.revision }}.
+{% autoescape off %}WG chair approval is needed for posting of {{ draft.filename }}-{{ draft.revision }}.
 
 Go to this URL to approve the draft (note: you need to login to be
 able to approve):
@@ -21,3 +21,4 @@ Submitter: {{ submitter.get_full_name }} <{{ submitter.email_address }}>
 Authors:
 {% for author in authors %}{{ author.get_full_name }} <{{ author.email.1 }}>
 {% endfor %}
+{% endautoescape %}

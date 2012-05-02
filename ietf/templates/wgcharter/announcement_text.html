@@ -23,7 +23,7 @@ form #id_announcement_text {
   </div>
 
 {% load ietf_filters %}
-{% if user|in_group:"Secretariat" %}
+{% if user|has_role:"Secretariat" %}
   <div class="actions">
     <input type="submit" name="send_text" value="Send WG {{ announcement }} announcement" />
   </div>

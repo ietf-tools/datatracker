@@ -1,8 +1,6 @@
 from ietf.utils.proxy import TranslatingManager, proxy_role_email
 
 from models import *
-from ietf.doc.models import Document # for charter text
-from ietf.wgcharter.utils import get_charter_for_revision, approved_revision
 
 class Acronym(Group):
     class LazyIndividualSubmitter(object):

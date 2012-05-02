@@ -1,5 +1,5 @@
 jQuery(function () {
-    jQuery("table.history .snipped .showAll").click(function () {
-        jQuery(this).parents("snipped").hide().siblings("full").show();
+    jQuery("table.history .snippet .showAll").click(function () {
+        jQuery(this).parents(".snippet").hide().siblings(".full").show();
     });
 });

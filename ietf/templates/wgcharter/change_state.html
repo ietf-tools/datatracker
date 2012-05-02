@@ -15,49 +15,55 @@ form.change-state .actions {
   text-align: right;
   padding-top: 10px;
 }
-
 {% endblock %}
 
 {% block content %}
 <h1>{{ title }}</h1>
 
-{% if "Change state" in title %}<p class="helptext">For help on the states, see the <a href="{% url help_charter_states %}">state table</a>.</p>{% endif %}
+{% if "Change state" in title %}<p class="helptext">For help on the states, see the <a href="{% url help_charter_states name=doc.name %}">state table</a>.</p>{% endif %}
 
 <form class="change-state" action="" method="post">
   <table>
     {% for field in form.visible_fields %}
     <tr>
       {% if field.name == "initial_time" %}
-        {% if option == "recharter" %}
-        <th>{{ field.label_tag }}:</th>
-        <td>{{ field }}
-        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-        {% else %}
-        {% if option == "initcharter" %}
-        <th>{{ field.label_tag }}:</th>
-        <td>{{ field }}
-        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-        {% endif %}
-        {% endif %}
+      {% if option == "recharter" %}
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {% else %}
-        <th>{{ field.label_tag }}:</th>
-        <td>{{ field }}
-        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {% if option == "initcharter" %}
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {% endif %}
-      {% if field.name == "charter_state" and field.errors == "warning" %}
-        <ul><li>The initial review time hasn't elapsed. Select this checkbox to proceed anyway: <label><input type="checkbox" name="confirm_state" /></label></li></ul>
+      {% endif %}
+
       {% else %}
-        {{ field.errors }}
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
       {% endif %}
+
+      {{ field.errors }}
       </td>
     </tr>
+    {% if field.name == "charter_state" and not option == "initcharter" %}
+    <tr class="ballot-wo-extern" style="display:none">
+      <td></td>
+      <td><label><input name="ballot_wo_extern" type="checkbox" /> Ask whether external review can be skipped in ballot</label></td>
+    </tr>
+    {% endif %}
     {% endfor %}
+    {% if initial_review %}
+    <tr><td></td><td class="warning">Warning: Announced initial review time hasn't elapsed yet. It does so at {{ initial_review.expires }}.</td></tr>
+    {% endif %}
     <tr>
       <td colspan="2" class="actions">
         {% if option %}
         <input type="submit" value="Submit"/>
         {% else %}
-        <a href="{% url wg_view name=wg.acronym %}">Back</a>
+        <a href="{% url doc_view name=doc.name %}">Back</a>
         <input type="submit" value="Save"/>
         {% endif %}
       </td>
@@ -80,12 +86,8 @@ form.change-state .actions {
 
 {% block content_end %}
 <script type="text/javascript">
-  var message = {
-   "infrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to Informal IESG review by {{ login.name }}",
-   "intrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to Internal review by {{ login.name }}. Please place it on the next IESG telechat and inform the IAB.",
-   "extrev": "The WG {{ wg.name }} ({{ wg.acronym }}) has been set to External review by {{ login.name }}. Please send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: "
-  };
-
+  var messages = {{ messages|safe }},
+      statesForBallotWoExtern = {{ states_for_ballot_wo_extern }};
 </script>
-<script type="text/javascript" src="/js/wg-change-state.js"></script>
+<script type="text/javascript" src="/js/charter-change-state.js"></script>
 {% endblock %}

@@ -35,21 +35,23 @@ def get_charter_text(group):
     # get file path from settings. Syntesize file name from path, acronym, and suffix
     try:
         # Try getting charter from new charter tool
-        from ietf.wgcharter.utils import get_charter_for_revision, approved_revision
+        c = group.charter
 
-        charter = group.charter
-        ch = get_charter_for_revision(charter, charter.rev)
-        name = ch.name
-        rev = approved_revision(ch.rev)
-        filename = os.path.join(charter.get_file_path(), "%s-%s.txt" % (name, rev))
-        desc_file = open(filename)
-        desc = desc_file.read()
-        return desc
-    except:
+        # find the latest, preferably approved, revision
+        for h in group.charter.history_set.exclude(rev="").order_by("time"):
+            h_appr = "-" not in h.rev
+            c_appr = "-" not in c.rev
+            if (h.rev > c.rev and not (c_appr and not h_appr)) or (h_appr and not c_appr):
+                c = h
+
+        filename = os.path.join(c.get_file_path(), "%s-%s.txt" % (c.canonical_name(), c.rev))
+        with open(filename) as f:
+            return f.read()
+    except IOError:
         try:
             filename = os.path.join(settings.IETFWG_DESCRIPTIONS_PATH, group.acronym) + ".desc.txt"
             desc_file = open(filename)
             desc = desc_file.read()
-        except:
+        except BaseException:    
             desc = 'Error Loading Work Group Description'
         return desc

@@ -35,11 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {{ title2 }}
 {% endif %}{{ title3 }}
 {% for wg in section_wgs %}
-  o {{ wg.obj.group_acronym.name }} ({{wg.obj.group_acronym}})
-{% if wg.obj.token_name %}    Token: {{ wg.obj.token_name }}
-{% endif %}
-{% if wg.obj.note %}    {% filter wordwrap:"68"|indent|indent %}Note: {{wg.obj.note|striptags}}{% endfilter %}
-{% endif %}
+  o {{ wg.obj.name }} ({{wg.obj.acronym}})
 {% empty %}
   NONE
 {% endfor %}

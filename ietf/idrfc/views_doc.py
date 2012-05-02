@@ -30,11 +30,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re, os
-from datetime import datetime, time
+import re, os, datetime
 
 from django.http import HttpResponse, Http404
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.template.defaultfilters import truncatewords_html
@@ -50,6 +49,299 @@ from ietf.idrfc import markup_txt
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.ietfworkflows.utils import get_full_info_for_draft
+from ietf.doc.models import *
+from ietf.doc.utils import get_chartering_type, needed_ballot_positions, active_ballot_positions
+from ietf.utils.history import find_history_active_at
+from ietf.ietfauth.decorators import has_role
+
+
+def render_document_top(request, doc, tab):
+    tabs = []
+    tabs.append(("Document", "document", urlreverse("ietf.idrfc.views_doc.document_main", kwargs=dict(name=doc.name)), True))
+
+    ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
+    if doc.type_id == "draft":
+        # if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
+        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=doc.name)), ballot))
+    elif doc.type_id == "charter":
+        tabs.append(("IESG Review", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=doc.name)), ballot))
+
+    # FIXME: if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
+    tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=doc.name)), True))
+    tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=doc.name)), True))
+
+    name = doc.canonical_name()
+    if name.startswith("rfc"):
+        name = "RFC %s" % name[3:]
+    else:
+        name += "-" + doc.rev
+
+    return render_to_string("idrfc/document_top.html",
+                            dict(doc=doc,
+                                 tabs=tabs,
+                                 selected=tab,
+                                 name=name))
+
+
+def document_main(request, name, rev=None):
+    if name.lower().startswith("draft") or name.lower().startswith("rfc"):
+        if rev != None: # no support for old revisions at the moment
+            raise Http404()
+        return document_main_idrfc(request, name, tab="document")
+
+    print name
+    print Document.objects.filter(name=name)
+    doc = get_object_or_404(Document, docalias__name=name)
+    print doc
+    group = doc.group
+    print group
+    
+    revisions = [ doc.rev ]
+    for h in doc.history_set.order_by("-time"):
+        if h.rev and not h.rev in revisions:
+            revisions.append(h.rev)
+
+    snapshot = False
+
+    if rev != None:
+        if rev == doc.rev:
+            return redirect('doc_view', name=name)
+
+        # find the entry in the history
+        for h in doc.history_set.order_by("-time"):
+            if rev == h.rev:
+                snapshot = True
+                doc = h
+                break
+
+        if not snapshot:
+            return redirect('doc_view', name=name)
+
+        # find old group, too
+        gh = find_history_active_at(doc.group, doc.time)
+        if gh:
+            group = gh
+
+    top = render_document_top(request, doc, "document")
+
+
+    telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+    if telechat and telechat.telechat_date < datetime.date.today():
+        telechat = None
+
+    if doc.type_id == "charter":
+        filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
+
+        content = _get_html(filename, os.path.join(settings.CHARTER_PATH, filename), split=False)
+
+        ballot_summary = None
+        if doc.get_state_slug() in ("intrev", "iesgrev"):
+            ballot_summary = needed_ballot_positions(doc, active_ballot_positions(doc).values())
+
+        return render_to_response("idrfc/document_charter.html",
+                                  dict(doc=doc,
+                                       top=top,
+                                       chartering=get_chartering_type(doc),
+                                       content=content,
+                                       txt_url=settings.CHARTER_TXT_URL + filename,
+                                       revisions=revisions,
+                                       snapshot=snapshot,
+                                       telechat=telechat,
+                                       ballot_summary=ballot_summary,
+                                       group=group,
+                                       ),
+                                  context_instance=RequestContext(request))
+
+    raise Http404()
+
+
+def document_history(request, name):
+    # todo: remove need for specific handling of drafts by porting the
+    # two event text hacks
+    if name.lower().startswith("draft") or name.lower().startswith("rfc"):
+        return document_main_idrfc(request, name, "history")
+
+
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "history")
+
+    diff_documents = [ doc ]
+    diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
+
+    # pick up revisions from events
+    diff_revisions = []
+    seen = set()
+
+    diffable = name.startswith("draft") or name.startswith("charter")
+
+    if diffable:
+        for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents).select_related('doc').order_by("-time", "-id"):
+            if not (e.doc.name, e.rev) in seen:
+                seen.add((e.doc.name, e.rev))
+
+                url = ""
+                if name.startswith("charter"):
+                    h = find_history_active_at(e.doc, e.time)
+                    url = settings.CHARTER_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
+                elif name.startswith("draft"):
+                    # rfcdiff tool has special support for IDs
+                    url = e.doc.name + "-" + e.rev
+
+                diff_revisions.append((e.doc.name, e.rev, e.time, url))
+
+    # grab event history
+    events = doc.docevent_set.all().order_by("-time", "-id").select_related("by")
+
+    # fill in revision numbers
+    event_revisions = list(NewRevisionDocEvent.objects.filter(doc=doc).order_by('time', 'id').values('rev', 'time'))
+
+    cur_rev = doc.rev
+    if doc.get_state_slug() == "rfc":
+        cur_rev = "RFC"
+
+    for e in events:
+        while event_revisions and e.time < event_revisions[-1]["time"]:
+            event_revisions.pop()
+
+        if event_revisions:
+            cur_rev = event_revisions[-1]["rev"]
+        else:
+            cur_rev = "00"
+
+        e.rev = cur_rev
+
+    return render_to_response("idrfc/document_history.html",
+                              dict(doc=doc,
+                                   top=top,
+                                   diff_revisions=diff_revisions,
+                                   events=events,
+                                   ),
+                              context_instance=RequestContext(request))
+
+def document_writeup(request, name):
+    if name.lower().startswith("draft") or name.lower().startswith("rfc"):
+        # todo: migrate idrfc to pattern below
+        return document_main_idrfc(request, name, "writeup")
+
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "writeup")
+
+    writeups = []
+    if doc.type_id == "charter":
+        e = doc.latest_event(WriteupDocEvent, type="changed_review_announcement")
+        writeups.append(("WG Review Announcement",
+                         e.text if e else "",
+                         urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="review"))))
+
+        e = doc.latest_event(WriteupDocEvent, type="changed_action_announcement")
+        writeups.append(("WG Action Announcement",
+                         e.text if e else "",
+                         urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="action"))))
+
+        if doc.latest_event(BallotDocEvent, type="created_ballot"):
+            e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
+            writeups.append(("Ballot Announcement",
+                             e.text if e else "",
+                             urlreverse("ietf.wgcharter.views.ballot_writeupnotes", kwargs=dict(name=doc.name))))
+
+    if not writeups:
+        raise Http404()
+
+    return render_to_response("idrfc/document_writeup.html",
+                              dict(doc=doc,
+                                   top=top,
+                                   writeups=writeups,
+                                   can_edit=has_role(request.user, ("Area Director", "Secretariat")),
+                                   ),
+                              context_instance=RequestContext(request))
+
+def document_ballot_content(request, doc, ballot_id, editable=True):
+    """Render HTML string with content of ballot page."""
+    if ballot_id != None:
+        ballot = doc.latest_event(BallotDocEvent, type="created_ballot", pk=ballot_id)
+    else:
+        ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
+
+    if not ballot:
+        raise Http404()
+
+    deferred = None
+    if doc.type_id == "draft" and doc.get_state_slug("draft-iesg") == "defer":
+        # FIXME: fragile
+        deferred = doc.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
+
+    # collect positions
+    active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active").distinct())
+
+    positions = []
+    seen = {}
+    for e in BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ballot=ballot).select_related('ad', 'pos').order_by("-time", '-id'):
+        if e.ad not in seen:
+            e.old_ad = e.ad not in active_ads
+            e.old_positions = []
+            positions.append(e)
+            seen[e.ad] = e
+        else:
+            latest = seen[e.ad]
+            if latest.old_positions:
+                prev = latest.old_positions[-1]
+            else:
+                prev = latest.pos.name
+
+            if e.pos.name != prev:
+                latest.old_positions.append(e.pos.name)
+
+    # add any missing ADs through fake No Record events
+    norecord = BallotPositionName.objects.get(slug="norecord")
+    for ad in active_ads:
+        if ad not in seen:
+            e = BallotPositionDocEvent(type="changed_ballot_position", doc=doc, ad=ad)
+            e.pos = norecord
+            e.old_ad = False
+            e.old_positions = []
+            positions.append(e)
+
+    # put into position groups
+    position_groups = []
+    for n in BallotPositionName.objects.filter(slug__in=[p.pos_id for p in positions]).order_by('order'):
+        g = (n, [p for p in positions if p.pos_id == n.slug])
+        g[1].sort(key=lambda p: (p.old_ad, p.ad.plain_name()))
+        if n.blocking:
+            position_groups.insert(0, g)
+        else:
+            position_groups.append(g)
+
+    summary = needed_ballot_positions(doc, [p for p in positions if not p.old_ad])
+
+    text_positions = [p for p in positions if p.discuss or p.comment]
+    text_positions.sort(key=lambda p: (p.old_ad, p.ad.plain_name()))
+
+    all_ballots = BallotDocEvent.objects.filter(doc=doc, type="created_ballot")
+
+    return render_to_string("idrfc/document_ballot_content.html",
+                              dict(doc=doc,
+                                   ballot=ballot,
+                                   position_groups=position_groups,
+                                   text_positions=text_positions,
+                                   editable=editable,
+                                   deferred=deferred,
+                                   summary=summary,
+                                   all_ballots=all_ballots,
+                                   ),
+                              context_instance=RequestContext(request))
+
+def document_ballot(request, name, ballot_id=None):
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "ballot")
+
+    c = document_ballot_content(request, doc, ballot_id, editable=True)
+
+    return render_to_response("idrfc/document_ballot.html",
+                              dict(doc=doc,
+                                   top=top,
+                                   ballot_content=c,
+                                   ),
+                              context_instance=RequestContext(request))
 
 def document_debug(request, name):
     r = re.compile("^rfc([1-9][0-9]*)$")
@@ -63,18 +355,21 @@ def document_debug(request, name):
         doc = IdWrapper(draft=id)
     return HttpResponse(doc.to_json(), mimetype='text/plain')
 
-def _get_html(key, filename):
+def _get_html(key, filename, split=True):
     f = None
     try:
         f = open(filename, 'rb')
         raw_content = f.read()
     except IOError:
-        return ("Error; cannot read ("+key+")", "")
+        error = "Error; cannot read ("+key+")"
+        if split:
+            return (error, "")
+        else:
+            return error
     finally:
         if f:
             f.close()
-    (c1,c2) = markup_txt.markup(raw_content)
-    return (c1,c2)
+    return markup_txt.markup(raw_content, split)
 
 def include_text(request):
     include_text = request.GET.get( 'include_text' )
@@ -114,9 +409,7 @@ def document_main_rfc(request, rfc_number, tab):
                               context_instance=RequestContext(request));
 
 @decorator_from_middleware(GZipMiddleware)
-def document_main(request, name, tab):
-    if tab is None:
-	tab = "document"
+def document_main_idrfc(request, name, tab):
     r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
     if m:
@@ -221,11 +514,11 @@ def _get_history(doc, versions):
 
     # convert plain dates to datetimes (required for sorting)
     for x in results:
-        if not isinstance(x['date'], datetime):
+        if not isinstance(x['date'], datetime.datetime):
             if x['date']:
-                x['date'] = datetime.combine(x['date'], time(0,0,0))
+                x['date'] = datetime.datetime.combine(x['date'], datetime.time(0,0,0))
             else:
-                x['date'] = datetime(1970,1,1)
+                x['date'] = datetime.datetime(1970,1,1)
 
     results.sort(key=lambda x: x['date'])
     results.reverse()
@@ -295,7 +588,7 @@ def get_ballot(name):
     ballot = BallotWrapper(id)
     return ballot, doc
 
-def document_ballot(request, name):
+def ballot_html(request, name):
     ballot, doc = get_ballot(name)
     return render_to_response('idrfc/doc_ballot.html', {'ballot':ballot, 'doc':doc}, context_instance=RequestContext(request))
 
@@ -308,3 +601,4 @@ def ballot_json(request, name):
     response = HttpResponse(mimetype='text/plain')
     response.write(json.dumps(ballot.dict(), indent=2))
     return response
+

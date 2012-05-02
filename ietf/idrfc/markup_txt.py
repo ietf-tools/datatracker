@@ -34,7 +34,7 @@ from django.utils.html import escape
 import string
 import re
 
-def markup(content):
+def markup(content, split=True):
     # normalize line endings to LF only
     content = content.replace("\r\n", "\n")
     content = content.replace("\r", "\n")
@@ -63,8 +63,10 @@ def markup(content):
 
     content = re.sub("\n\n([0-9]+\\.|[A-Z]\\.[0-9]|Appendix|Status of|Abstract|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index)(.*)(?=\n\n)", """\n\n<span class="m_h">\g<1>\g<2></span>""", content)
 
-    n = content.find("\n", 5000)
-    content1 = "<pre>"+content[:n+1]+"</pre>\n"
-    content2 = "<pre>"+content[n+1:]+"</pre>\n"
-
-    return (content1, content2)
+    if split:
+        n = content.find("\n", 5000)
+        content1 = "<pre>"+content[:n+1]+"</pre>\n"
+        content2 = "<pre>"+content[n+1:]+"</pre>\n"
+        return (content1, content2)
+    else:
+        return "<pre>" + content + "</pre>\n"

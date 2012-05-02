@@ -36,16 +36,11 @@ from django.conf import settings
 from ietf.idtracker.models import IDInternal, BallotInfo
 from ietf.idrfc.idrfc_wrapper import position_to_string, BALLOT_ACTIVE_STATES
 from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
+from ietf.ietfauth.decorators import has_role
+from ietf.doc.utils import active_ballot_positions
+from ietf.doc.models import BallotDocEvent
 
 register = template.Library()
-
-def get_user_adid(context):
-    if 'user' in context and in_group(context['user'], "Area_Director"):
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            return context['user'].get_profile().id
-        return context['user'].get_profile().iesg_login_id()
-    else:
-        return None
 
 def get_user_name(context):
     if 'user' in context and context['user'].is_authenticated():
@@ -60,103 +55,71 @@ def get_user_name(context):
         if person:
             return str(person)
     return None
-    
-def render_ballot_icon(context, doc):
-    if isinstance(doc,IDInternal):
-        try:
-            ballot = doc.ballot
-            if not ballot.ballot_issued:
-                return ""
-        except BallotInfo.DoesNotExist:
-            return ""
-        if str(doc.cur_state) not in BALLOT_ACTIVE_STATES:
-            return ""
-        if doc.rfc_flag and not settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            name = doc.document().filename()
-        else:
-            name = doc.document().filename
-        tracker_id = doc.draft_id
-    else:
-        if doc.in_ietf_process() and doc.ietf_process.has_active_iesg_ballot():
-            ballot = doc._idinternal.ballot
-        else:
-            return ""
-        if doc.is_rfc_wrapper:
-            name = "rfc"+str(doc.rfc_number)
-            tracker_id = doc.rfc_number
-        else:
-            name = doc.draft_name
-            tracker_id = doc.tracker_id
-    adId = get_user_adid(context)
-    red = 0
-    green = 0
-    yellow = 0
-    gray = 0
-    blank = 0
-    my = None
-    for p in ballot.active_positions():
-        if not p['pos']:
-            blank = blank + 1
-        elif (p['pos'].yes > 0) or (p['pos'].noobj > 0):
-            green = green + 1
-        elif (p['pos'].discuss > 0):
-            red = red + 1
-        elif (p['pos'].abstain > 0):
-            yellow = yellow + 1
-        elif (p['pos'].recuse > 0):
-            gray = gray + 1
-        else:
-            blank = blank + 1
-        if adId and (p['ad'].id == adId):
-            my = position_to_string(p['pos'])
-    return render_ballot_icon2(name, tracker_id, red,yellow,green,gray,blank, my, adId)+"<!-- adId="+str(adId)+" my="+str(my)+"-->"
 
-def render_ballot_icon2(draft_name, tracker_id, red,yellow,green,gray,blank, my,adId):
-    edit_position_url = urlreverse('doc_edit_position', kwargs=dict(name=draft_name))
-    if adId:
-        res_cm = ' oncontextmenu="editBallot(\''+str(edit_position_url)+'\');return false;"'
-    else:
-        res_cm = ''
-    res = '<table class="ballot_icon" title="IESG Evaluation Record (click to show more, right-click to edit position)" onclick="showBallot(\'' + draft_name + '\',\'' + str(edit_position_url) + '\')"'+res_cm+'>'
-    for y in range(3):
-        res = res + "<tr>"
-        for x in range(5):
-            myMark = False
-            if red > 0:
-                c = "ballot_icon_red"
-                red = red - 1
-                myMark = (my == "Discuss")
-            elif yellow > 0:
-                c = "ballot_icon_yellow"
-                yellow = yellow - 1
-                myMark = (my == "Abstain")
-            elif green > 0:
-                c = "ballot_icon_green"
-                green = green - 1
-                myMark = (my == "Yes") or (my == "No Objection")
-            elif gray > 0:
-                c = "ballot_icon_gray"
-                gray = gray - 1
-                myMark = (my == "Recuse")
-            else:
-                c = ""
-                myMark = (y == 2) and (x == 4) and (my == "No Record")
-            if myMark:
-                res = res + '<td class="'+c+' ballot_icon_my" />' 
-                my = None
-            else:
-                res = res + '<td class="'+c+'" />'
-        res = res + '</tr>'
-    res = res + '</table>'
-    return res
+def render_ballot_icon(user, doc):
+    if not doc:
+        return ""
 
-       
+    if doc.type_id == "draft":
+        s = doc.get_state("draft-iesg")
+        if s and s.name not in BALLOT_ACTIVE_STATES:
+            return ""
+    elif doc.type_id == "charter":
+        if doc.get_state_slug() not in ("intrev", "iesgrev"):
+            return ""
+
+    ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
+    if not ballot:
+        return ""
+
+    edit_position_url = urlreverse('doc_edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk))
+
+    def sort_key(t):
+        _, pos = t
+        if not pos:
+            return (2, 0)
+        elif pos.pos.blocking:
+            return (0, pos.pos.order)
+        else:
+            return (1, pos.pos.order)
+
+    positions = list(active_ballot_positions(doc, ballot).items())
+    positions.sort(key=sort_key)
+
+    cm = ""
+    if has_role(user, "Area Director"):
+        cm = ' oncontextmenu="editBallot(\''+str(edit_position_url)+'\');return false;"'
+
+    res = ['<table class="ballot_icon" title="IESG Evaluation Record (click to show more, right-click to edit position)" onclick="showBallot(\'' + doc.name + '\',\'' + str(edit_position_url) + '\')"' + cm + '>']
+
+    res.append("<tr>")
+
+    for i, (ad, pos) in enumerate(positions):
+        if i > 0 and i % 5 == 0:
+            res.append("</tr>")
+            res.append("<tr>")
+
+        c = "position-%s" % (pos.pos.slug if pos else "norecord")
+
+        if ad == user.get_profile():
+            c += " my"
+
+        res.append('<td class="%s" />' % c)
+
+    res.append("</tr>")
+    res.append("</table>")
+
+    return "".join(res)
+
 class BallotIconNode(template.Node):
     def __init__(self, doc_var):
         self.doc_var = doc_var
     def render(self, context):
         doc = template.resolve_variable(self.doc_var, context)
-        return render_ballot_icon(context, doc)
+        if hasattr(doc, "_idinternal"):
+            # hack for old schema
+            doc = doc._idinternal
+        return render_ballot_icon(context.get("user"), doc)
 
 def do_ballot_icon(parser, token):
     try:
