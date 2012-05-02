@@ -245,9 +245,10 @@ def submit(request, name):
     not_uploaded_yet = charter.rev.endswith("-00") and not os.path.exists(os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev)))
 
     if not_uploaded_yet:
+        # this case is special - we recently chartered or rechartered and have no file yet
         next_rev = charter.rev
     else:
-        # Search history for possible collisions with abandoned efforts
+        # search history for possible collisions with abandoned efforts
         prev_revs = list(charter.history_set.order_by('-time').values_list('rev', flat=True))
         next_rev = next_revision(charter.rev)
         while next_rev in prev_revs:
@@ -276,7 +277,17 @@ def submit(request, name):
             return HttpResponseRedirect(reverse('doc_view', kwargs={'name': charter.name}))
     else:
         init = { "content": ""}
-        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+        c = charter
+
+        if not_uploaded_yet:
+            # use text from last approved revision
+            last_approved = charter.rev.split("-")[0]
+            h = charter.history_set.filter(rev=last_approved).order_by("-time", "-id")
+            if h:
+                c = h[0]
+
+        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (c.canonical_name(), c.rev))
+
         try:
             with open(filename, 'r') as f:
                 init["content"] = f.read()
@@ -491,8 +502,8 @@ def approve(request, name):
             raise Http404("Charter text %s" % filename)
 
         e = NewRevisionDocEvent(doc=charter, by=login, type="new_revision")
-        e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
         e.rev = next_approved_revision(charter.rev)
+        e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), e.rev)
         e.save()
 
         charter.rev = e.rev

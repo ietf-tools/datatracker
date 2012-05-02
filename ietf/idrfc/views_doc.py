@@ -50,7 +50,7 @@ from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.ietfworkflows.utils import get_full_info_for_draft
 from ietf.doc.models import *
-from ietf.doc.utils import get_chartering_type, needed_ballot_positions, active_ballot_positions
+from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
 
@@ -96,10 +96,12 @@ def document_main(request, name, rev=None):
     group = doc.group
     print group
     
-    revisions = [ doc.rev ]
-    for h in doc.history_set.order_by("-time"):
+    revisions = []
+    for h in doc.history_set.order_by("time", "id"):
         if h.rev and not h.rev in revisions:
             revisions.append(h.rev)
+    if not doc.rev in revisions:
+        revisions.append(doc.rev)
 
     snapshot = False
 
@@ -192,23 +194,7 @@ def document_history(request, name):
     # grab event history
     events = doc.docevent_set.all().order_by("-time", "-id").select_related("by")
 
-    # fill in revision numbers
-    event_revisions = list(NewRevisionDocEvent.objects.filter(doc=doc).order_by('time', 'id').values('rev', 'time'))
-
-    cur_rev = doc.rev
-    if doc.get_state_slug() == "rfc":
-        cur_rev = "RFC"
-
-    for e in events:
-        while event_revisions and e.time < event_revisions[-1]["time"]:
-            event_revisions.pop()
-
-        if event_revisions:
-            cur_rev = event_revisions[-1]["rev"]
-        else:
-            cur_rev = "00"
-
-        e.rev = cur_rev
+    augment_events_with_revision(doc, events)
 
     return render_to_response("idrfc/document_history.html",
                               dict(doc=doc,
@@ -257,13 +243,21 @@ def document_writeup(request, name):
 
 def document_ballot_content(request, doc, ballot_id, editable=True):
     """Render HTML string with content of ballot page."""
+    all_ballots = list(BallotDocEvent.objects.filter(doc=doc, type="created_ballot").order_by("time"))
+    augment_events_with_revision(doc, all_ballots)
+
+    ballot = None
     if ballot_id != None:
-        ballot = doc.latest_event(BallotDocEvent, type="created_ballot", pk=ballot_id)
-    else:
-        ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
+        ballot_id = int(ballot_id)
+        for b in all_ballots:
+            if b.id == ballot_id:
+                ballot = b
+                break
+    elif all_ballots:
+        ballot = all_ballots[-1]
 
     if not ballot:
-        raise Http404()
+        raise Http404
 
     deferred = None
     if doc.type_id == "draft" and doc.get_state_slug("draft-iesg") == "defer":
@@ -316,7 +310,12 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     text_positions = [p for p in positions if p.discuss or p.comment]
     text_positions.sort(key=lambda p: (p.old_ad, p.ad.plain_name()))
 
-    all_ballots = BallotDocEvent.objects.filter(doc=doc, type="created_ballot")
+    ballot_open = not BallotDocEvent.objects.filter(doc=doc,
+                                                    type__in=("closed_ballot", "created_ballot"),
+                                                    time__gt=ballot.time,
+                                                    ballot_type=ballot.ballot_type)
+    if not ballot_open:
+        editable = False
 
     return render_to_string("idrfc/document_ballot_content.html",
                               dict(doc=doc,
@@ -324,6 +323,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
                                    position_groups=position_groups,
                                    text_positions=text_positions,
                                    editable=editable,
+                                   ballot_open=ballot_open,
                                    deferred=deferred,
                                    summary=summary,
                                    all_ballots=all_ballots,

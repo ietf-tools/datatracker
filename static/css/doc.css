@@ -9,7 +9,7 @@
 .m_h { font-family: arial; font-weight:bold;}
 
 .snapshots { margin: 0.5em 0; }
-.snapshots .revisions a:first-child { font-weight: bold }
+.snapshots .revisions a:last-child { font-weight: bold; }
 
 .metabox .actions a { display: inline-block; margin-right: 0.4em; }
 .metabox .ballot-summary { font-style: italic; }
