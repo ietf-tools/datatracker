@@ -21,7 +21,7 @@ from ietf.person.forms import EmailsField
 
 class WGForm(forms.Form):
     name = forms.CharField(max_length=255, label="WG Name", required=True)
-    acronym = forms.CharField(max_length=8, label="WG Acronym", required=True)
+    acronym = forms.CharField(max_length=10, label="WG Acronym", required=True)
     chairs = EmailsField(label="WG Chairs", required=False)
     secretaries = EmailsField(label="WG Secretaries", required=False)
     techadv = EmailsField(label="WG Technical Advisors", required=False)
