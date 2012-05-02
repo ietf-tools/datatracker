@@ -121,6 +121,28 @@ def get_chartering_type(doc):
 
     return chartering
 
+def augment_events_with_revision(doc, events):
+    """Take a set of events for doc and add a .rev attribute with the
+    revision they refer to by checking NewRevisionDocEvents."""
+
+    event_revisions = list(NewRevisionDocEvent.objects.filter(doc=doc).order_by('time', 'id').values('id', 'rev', 'time'))
+
+    cur_rev = doc.rev
+    if doc.get_state_slug() == "rfc":
+        cur_rev = "RFC"
+
+    for e in sorted(events, key=lambda e: (e.time, e.id), reverse=True):
+        while event_revisions and (e.time, e.id) < (event_revisions[-1]["time"], event_revisions[-1]["id"]):
+            event_revisions.pop()
+
+        if event_revisions:
+            cur_rev = event_revisions[-1]["rev"]
+        else:
+            cur_rev = "00"
+
+        e.rev = cur_rev
+
+
 def augment_with_telechat_date(docs):
     """Add a telechat_date attribute to each document with the
     scheduled telechat or None if it's not scheduled."""

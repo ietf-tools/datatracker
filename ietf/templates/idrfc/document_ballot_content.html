@@ -39,14 +39,18 @@
 
 {% if all_ballots and all_ballots|length > 1 %}
 <div class="other-ballots">
-  Other ballots:
+  Available ballots:
 {% for b in all_ballots %}
-<a{% if b != ballot %} href="{% url doc_ballot name=doc.name,ballot_id=b.pk %}"{% endif %}>{{ b.ballot_type.name }} ({{ b.time|date:"Y-m-d" }})</a>
+<a{% if b != ballot %} href="{% url doc_ballot name=doc.name,ballot_id=b.pk %}"{% endif %}>{{ b.ballot_type.name }} ({{ b.rev }})</a>
 {% endfor %}
 </div>
 {% endif %}
 
 <h2 style="margin-top:12px;">{{ ballot.ballot_type.question }}</h2>
+
+{% if not ballot_open %}
+<p>Note: This ballot was opened for revision {{ ballot.rev }} and is now closed.</p>
+{% endif %}
 
 <p>Summary: <i>{{ summary }}</i></p>
 
