@@ -60,7 +60,7 @@ def needed_ballot_positions(doc, active_positions):
     recuse = [p for p in active_positions if p and p.pos_id == "recuse"]
 
     answer = []
-    if yes < 1:
+    if len(yes) < 1:
         answer.append("Needs a YES.")
     if blocking:
         if blocking:
