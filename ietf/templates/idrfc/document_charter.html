@@ -15,7 +15,7 @@
   Snapshots:
   <span class="revisions">
     {% for rev in revisions %}
-    <a {% if rev != doc.rev %}href="{% url doc_view name=doc.name %}{% if not forloop.first %}{{ rev }}/{% endif %}"{% endif %}>{{ rev }}</a>
+    <a {% if rev != doc.rev %}href="{% url doc_view name=doc.name %}{% if not forloop.last %}{{ rev }}/{% endif %}"{% endif %}>{{ rev }}</a>
     {% endfor %}
   </span>
 </div>

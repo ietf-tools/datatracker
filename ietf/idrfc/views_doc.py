@@ -92,10 +92,12 @@ def document_main(request, name, rev=None):
     doc = get_object_or_404(Document, docalias__name=name)
     group = doc.group
 
-    revisions = [ doc.rev ]
-    for h in doc.history_set.order_by("-time"):
+    revisions = []
+    for h in doc.history_set.order_by("time", "id"):
         if h.rev and not h.rev in revisions:
             revisions.append(h.rev)
+    if not doc.rev in revisions:
+        revisions.append(doc.rev)
 
     snapshot = False
 
