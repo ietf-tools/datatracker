@@ -13,7 +13,7 @@
 <div class="writeup">
 <h2>{{ title }}</h2>
 
-{% if can_edit %}<a href="{{ url }}" class="edit">Edit {{ title }}</a>{% endif %}
+{% if can_edit %}<a href="{{ url }}" class="edit">{% if text %}Edit{% else %}Generate{% endif %} {{ title }}</a>{% endif %}
 
 <pre {% if can_edit %}class="editable"{% endif %}>
 {{ text }}
