@@ -390,7 +390,7 @@ def generate_proceedings(request, meeting_num):
     copy_files(meeting)
     # progess report
     # agenda
-    # attendees
+    gen_attendees(context)
     gen_index(context)
     gen_areas(context)
     gen_plenaries(context)
@@ -478,6 +478,37 @@ def move_slide(request, slide_id, direction):
         url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'session_id':session.id})
     return HttpResponseRedirect(url)
 
+@sec_only
+def process_pdfs(request, meeting_num):
+    '''
+    This function is used to update the database once meeting materials in PPT format
+    are converted to PDF format and uploaded to the server.  It basically finds every PowerPoint
+    slide document for the given meeting and checks to see if there is a PDF version.  If there
+    is external_url is changed.  Then when proceedings are generated the URL will refer to the 
+    PDF document.
+    '''
+    warn_count = 0
+    count = 0
+    ppt = Document.objects.filter(session__meeting=meeting_num,type='slides',external_url__endswith='.ppt').exclude(states__slug='deleted')
+    pptx = Document.objects.filter(session__meeting=meeting_num,type='slides',external_url__endswith='.pptx').exclude(states__slug='deleted')
+    for doc in itertools.chain(ppt,pptx):
+        base,ext = os.path.splitext(doc.external_url)
+        pdf_file = base + '.pdf'
+        path = os.path.join(settings.PROCEEDINGS_DIR,meeting_num,'slides',pdf_file)
+        if os.path.exists(path):
+            doc.external_url = pdf_file
+            doc.save()
+            count += 1
+        else:
+            warn_count += 1
+    
+    if warn_count:
+        messages.warning(request, '%s PDF files processed.  %s PowerPoint files still not converted.' % (count, warn_count))
+    else:
+        messages.success(request, '%s PDF files processed' % count)
+    url = reverse('proceedings_select', kwargs={'meeting_num':meeting_num})
+    return HttpResponseRedirect(url)
+    
 @check_permissions
 def replace_slide(request, slide_id):
     '''

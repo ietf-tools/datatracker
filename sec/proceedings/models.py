@@ -59,3 +59,15 @@ class InterimMeeting(Meeting):
             return url
         else:
             return ''
+
+class Registration(models.Model):
+    rsn = models.AutoField(primary_key=True)
+    fname = models.CharField(max_length=255)
+    lname = models.CharField(max_length=255)
+    company = models.CharField(max_length=255)
+    country = models.CharField(max_length=2)
+    
+    def __unicode__(self):
+        return "%s %s" % (fname, lname)
+    class Meta:
+        db_table = 'registrations'

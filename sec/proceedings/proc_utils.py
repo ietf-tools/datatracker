@@ -9,6 +9,7 @@ from ietf.group.models import Group
 from ietf.meeting.models import Session
 from ietf.doc.models import Document, RelatedDocument
 from itertools import chain
+from sec.proceedings.models import Registration
 from sec.utils.document import get_rfc_num
 from sec.utils.group import groups_by_session
 from sec.utils.meeting import get_upload_root, get_proceedings_path, get_material
@@ -196,6 +197,19 @@ def gen_areas(context):
         
         path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'%s.html' % area.acronym)
         write_html(path,html.content)
+
+def gen_attendees(context):
+    meeting = context['meeting']
+    
+    attendees = Registration.objects.using('ietf' + meeting.number).all().order_by('lname')
+    
+    html = render_to_response('proceedings/attendee.html',{
+        'meeting': meeting,
+        'attendees': attendees}
+    )
+    
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'attendee.html')
+    write_html(path,html.content)
     
 def gen_index(context):
     index = render_to_response('proceedings/index.html',context)
