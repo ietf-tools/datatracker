@@ -118,7 +118,7 @@ def edit(request, acronym=None, action="edit"):
                         rev="00-00",
                         )
                     charter.save()
-                    charter.set_state(State.objects.get(type="charter", slug="infrev"))
+                    charter.set_state(State.objects.get(type="charter", slug="notrev"))
 
                     # Create an alias as well
                     DocAlias.objects.create(
