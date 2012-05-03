@@ -433,7 +433,7 @@ class InternetDraft(Document):
     #via_rfc_editor = models.IntegerField(null=True, blank=True)
     @property
     def via_rfc_editor(self):
-        return bool(self.tags.filter(slug='via-rfc'))
+        return self.stream_id in ('ise','irtf')
     
     #state_change_notice_to = models.CharField(blank=True, max_length=255)
     @property

@@ -301,40 +301,6 @@ class DraftTagsStateForm(StreamDraftForm):
                 e.save()
 
 
-class DraftStreamForm(StreamDraftForm):
-
-    comment = forms.CharField(widget=forms.Textarea)
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        stream = forms.ModelChoiceField(StreamName.objects.exclude(slug="legacy"))
-    else:
-        stream = forms.ModelChoiceField(Stream.objects.all())
-
-    template = 'ietfworkflows/stream_form.html'
-
-    def __init__(self, *args, **kwargs):
-        super(DraftStreamForm, self).__init__(*args, **kwargs)
-        self.stream = get_stream_from_draft(self.draft)
-        self.tags = [i.annotation_tag for i in get_annotation_tags_for_draft(self.draft)]
-        if self.stream:
-            self.fields['stream'].initial = self.stream.pk
-
-    def save(self):
-        comment = self.cleaned_data.get('comment').strip()
-        to_stream = self.cleaned_data.get('stream')
-
-        update_stream(self.request, self.draft,
-                      comment=comment,
-                      person=self.person,
-                      to_stream=to_stream)
-
-        if comment:
-            e = DocEvent(type="added_comment")
-            e.time = self.draft.time
-            e.by = self.person
-            e.doc_id = self.draft.pk
-            e.desc = comment
-            e.save()
-
 class StreamDelegatesForm(forms.Form):
     email = forms.EmailField()
 

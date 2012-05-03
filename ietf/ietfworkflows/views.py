@@ -7,7 +7,6 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.idtracker.models import InternetDraft
 from ietf.ietfworkflows.models import Stream, StreamDelegate
 from ietf.ietfworkflows.forms import (DraftTagsStateForm,
-                                      DraftStreamForm,
                                       NoWorkflowStateForm,
                                       StreamDelegatesForm)
 from ietf.ietfworkflows.streams import (get_stream_from_draft,
@@ -113,12 +112,6 @@ def edit_state(request, name):
         return HttpResponseForbidden("You don't have permission to access this view")
     return _edit_draft_stream(request, draft, DraftTagsStateForm)
 
-
-def edit_stream(request, name):
-    draft = get_object_or_404(InternetDraft, filename=name)
-    if not can_edit_stream(request.user, draft):
-        return HttpResponseForbidden("You don't have permission to access this view")
-    return _edit_draft_stream(request, draft, DraftStreamForm)
 
 
 def stream_delegates(request, stream_name):

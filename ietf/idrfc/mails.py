@@ -142,7 +142,7 @@ def generate_approval_mail_rfc_editor(request, doc):
 DO_NOT_PUBLISH_IESG_STATES = ("nopubadw", "nopubanw")
 
 def generate_approval_mailREDESIGN(request, doc):
-    if doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES or doc.tags.filter(slug='via-rfc'):
+    if doc.get_state_slug("draft-iesg") in DO_NOT_PUBLISH_IESG_STATES or doc.stream_id in ('ise','irtf'):
         mail = generate_approval_mail_rfc_editor(request, doc)
     else:
         mail = generate_approval_mail_approved(request, doc)
