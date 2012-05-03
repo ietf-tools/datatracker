@@ -51,9 +51,14 @@ def add_legacy_fields(group):
     else:
         group.meeting_scheduled = 'NO'
         
-    # add roles
-    fill_in_charter_info(group)
-# -------------------------------------------------
+    group.chairs = group.role_set.filter(name="chair")
+    group.techadvisors = group.role_set.filter(name="techadv")
+    group.editors = group.role_set.filter(name="editor")
+    group.secretaries = group.role_set.filter(name="secretaries")
+    
+    #fill_in_charter_info(group)
+    
+#--------------------------------------------------
 # AJAX Functions
 # -------------------------------------------------
 '''
@@ -427,7 +432,7 @@ def search(request):
                 kwargs['type'] = type
             else:
                 #kwargs['type__in'] = ['wg','ag','team']
-                kwargs['type__in'] = ['wg','rg']
+                kwargs['type__in'] = ('wg','rg','ietf','ag','sdo')
             
             if meeting_scheduled == 'YES':
                 kwargs['session__meeting__number'] = meeting.number

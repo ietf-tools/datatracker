@@ -58,8 +58,8 @@
       <div class="inline-related">
         <h2>Chairperson(s)</h2>
         <table>
-	{% for email in group.chairs %}
-          <tr><td><a href="{% url rolodex_view id=email.person.id %}">{{ email.person }}</a></td></tr>
+        {% for role in group.chairs %}
+          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->
@@ -67,8 +67,8 @@
       <div class="inline-related">
         <h2>Document Editor(s)</h2>
         <table>
-        {% for email in group.editors %}
-          <tr><td><a href="{% url rolodex_view id=email.person.id %}">{{ email.person }}</a></td></tr>
+        {% for role in group.editors %}
+          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->
@@ -76,8 +76,8 @@
       <div class="inline-related">
         <h2>Technical Advisor(s)</h2>
         <table>
-        {% for email in group.techadvisors %}
-          <tr><td><a href="{% url rolodex_view id=email.person.id %}">{{ email.person }}</a></td></tr>
+        {% for role in group.techadvisors %}
+          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->
@@ -85,8 +85,8 @@
       <div class="inline-related">
         <h2>Secretary(ies)</h2>
         <table>
-        {% for email in group.secretaries %}
-          <tr><td><a href="{% url rolodex_view id=email.person.id %}">{{ email.person }}</a></td></tr>
+        {% for role in group.secretaries %}
+          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->

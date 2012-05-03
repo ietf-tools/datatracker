@@ -6,7 +6,8 @@ from ietf.ietfauth.decorators import has_role
 import itertools
 
 def current_nomcom():
-    return Group.objects.get(acronym__startswith='nomcom',state__name="Active")
+    qs = Group.objects.filter(acronym__startswith='nomcom',state__name="Active").order_by('-time')
+    return qs[0]
 
 def get_my_groups(user):
     '''

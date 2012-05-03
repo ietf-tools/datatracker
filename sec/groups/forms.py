@@ -66,7 +66,7 @@ class GroupMilestoneForm(forms.ModelForm):
 
 class GroupModelForm(forms.ModelForm):
     type = forms.ModelChoiceField(queryset=GroupTypeName.objects.filter(slug__in=('rg','wg','ag','ietf','sdo')),empty_label=None)
-    parent = forms.ModelChoiceField(queryset=Group.objects.filter(Q(type='area',state='active')|Q(acronym='irtf')))
+    parent = forms.ModelChoiceField(queryset=Group.objects.filter(Q(type='area',state='active')|Q(acronym='irtf')),required=False)
     ad = forms.ModelChoiceField(queryset=Person.objects.filter(role__name='ad',role__group__state='active'),required=False)
     state = forms.ModelChoiceField(queryset=GroupStateName.objects.exclude(slug__in=('dormant','unknown')),empty_label=None)
     
@@ -82,7 +82,16 @@ class GroupModelForm(forms.ModelForm):
         self.fields['ad'].label = 'Area Director'
         self.fields['comments'].widget.attrs['rows'] = 3
         self.fields['parent'].label = 'Area'
-            
+    
+    def clean_parent(self):
+        parent = self.cleaned_data['parent']
+        type = self.cleaned_data['type']
+        
+        if type.slug in ('ag','wg','rg') and not parent:
+            raise forms.ValidationError("This field is required.")
+        
+        return parent
+        
     def clean(self):
         if any(self.errors):
             return self.cleaned_data

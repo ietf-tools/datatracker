@@ -46,57 +46,6 @@ def ajax_get_roles(request, acronym):
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
-
-def chair(request, type):
-    """ 
-    View IETF/IAB/NOMCOM Chair history.  Assign a new Chair. 
-
-    **Templates:**
-
-    * ``roles/ietf.html``
-
-    **Template Variables:**
-
-    * chairs, type
-
-    """
-    group = get_object_or_404(Group, acronym=type)
-    chairs = []
-    roles = Role.objects.filter(group=group,name__slug='chair')
-    
-    if request.method == 'POST':
-        # handle adding a new director 
-        if request.POST.get('submit', '') == "Add":
-            form = RoleForm(request.POST,group=group)
-            if form.is_valid():
-                name = form.cleaned_data['name']
-                person = form.cleaned_data['person']
-                email = form.cleaned_data['email']
-                
-                # save group
-                save_group_in_history(group)
-                    
-                Role.objects.create(name=name,
-                                    person=person,
-                                    email=email,
-                                    group=group)
-    
-                messages.success(request, 'New %s added successfully!' % name)
-                url = reverse('roles_chair', kwargs={'type':type})
-                return HttpResponseRedirect(url)
-            
-    else:
-        form = RoleForm(initial={'name':'chair'},group=group)
-
-    return render_to_response('roles/chairs.html', {
-        'form': form,
-        'type': type,
-        'roles': roles,
-        'group': group,
-        'chairs': chairs},
-        RequestContext(request, {}),
-    )
-
 def delete_role(request, acronym, id):
     """ 
     Handle deleting roles
@@ -115,67 +64,8 @@ def delete_role(request, acronym, id):
     role.delete()
     
     messages.success(request, 'The entry was deleted successfully')
-    url = reverse('roles')
+    url = reverse('roles') + '?group=%s' % group.acronym
     return HttpResponseRedirect(url)
-
-def liaisons(request):
-    """ 
-    View Liaison members, add or delete a member 
-
-    **Templates:**
-
-    * ``roles/liaisons.html``
-
-    **Template Variables:**
-
-    * liaisons 
-
-    """
-    '''
-    if request.method == 'POST':
-        # handle adding a new Liaison 
-        if request.POST.get('submit', '') == "Add":
-            form = LiaisonForm(request.POST)
-            if form.is_valid():
-                affiliation = request.POST.get('affiliation', '')
-                name = request.POST.get('liaison_name', '')
-                # get person record
-                m = re.search(r'\((\d+)\)', name)
-                tag = m.group(1)
-                person = PersonOrOrgInfo.objects.get(person_or_org_tag=tag)
-                liaison = LiaisonsMembers(person=person,affiliation=affiliation)
-                liaison.save()
-                
-                messages.success(request, 'The Liaison was added successfully!')
-                url = reverse('roles_liaisons')
-                return HttpResponseRedirect(url)
-
-        # handle deleting a Liaison 
-        if request.POST.get('submit', '') == "Delete":
-            tag = request.POST.get('liaison-tag', '')
-            try:
-                liaison = LiaisonsMembers.objects.get(person=tag)
-            except:
-                # use ERROR message level once upgraded to Django 1.2
-                messages.error(request, 'Error locating liaisons record.')
-                url = reverse('roles_liaisons')
-                return HttpResponseRedirect(url)
-
-            liaison.delete()
-            messages.success(request, 'The liaison was deleted successfully')
-            form = LiaisonForm()
-    else:
-        form = LiaisonForm()
-
-    liaisons = LiaisonsMembers.objects.all()
-    '''
-    liaisons = None
-    form = None
-    return render_to_response('roles/liaisons.html', {
-        'form': form,
-        'liaisons': liaisons},
-        RequestContext(request, {}),
-    )
 
 def main(request):
     '''
