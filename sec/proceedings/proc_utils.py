@@ -61,10 +61,14 @@ def create_interim_directory():
     
 def create_proceedings(meeting, group):
     '''
-    This function creates the proceedings.html document.  It gets called anytime there is an
+    This function creates the  proceedings html document.  It gets called anytime there is an
     update to the meeting or the slides for the meeting.
+    NOTE: execution is aborted if the meeting is older than 79 because the format changed.
     '''
-    
+    # abort, old format
+    if meeting.type_id == 'ietf' and int(meeting.number) < 79:
+        return
+        
     session = Session.objects.filter(meeting=meeting,group=group)[0]
     agenda,minutes,slides = get_material(session)
     chairs = group.role_set.filter(name='chair')
