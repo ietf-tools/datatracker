@@ -116,8 +116,12 @@ def change_state(request, name, option=None):
                         create_ballot_if_not_open(charter, login, "r-wo-ext")
                     else:
                         create_ballot_if_not_open(charter, login, "r-extrev")
+                elif charter_state.slug == "extrev":
+                    default_review_text(wg, charter, login)
                 elif charter_state.slug == "iesgrev":
                     create_ballot_if_not_open(charter, login, "approve")
+
+                    default_action_text(wg, charter, login)
 
             if charter_state.slug == "infrev" and clean["initial_time"] and clean["initial_time"] != 0:
                 e = InitialReviewDocEvent(type="initial_review", by=login, doc=charter)
@@ -322,10 +326,7 @@ def announcement_text(request, name, ann):
         existing = charter.latest_event(WriteupDocEvent, type="changed_review_announcement")
     if not existing:
         if ann == "action":
-            if next_approved_revision(wg.charter.rev) == "01":
-                existing = default_action_text(wg, charter, login, "Formed")
-            else:
-                existing = default_action_text(wg, charter, login, "Rechartered")
+            existing = default_action_text(wg, charter, login)
         elif ann == "review":
             existing = default_review_text(wg, charter, login)
 
@@ -349,10 +350,7 @@ def announcement_text(request, name, ann):
 
         if "regenerate_text" in request.POST:
             if ann == "action":
-                if next_approved_revision(wg.charter.rev) == "01":
-                    e = default_action_text(wg, charter, login, "Formed")
-                else:
-                    e = default_action_text(wg, charter, login, "Rechartered")
+                e = default_action_text(wg, charter, login)
             elif ann == "review":
                 e = default_review_text(wg, charter, login)
             # make sure form has the updated text
@@ -460,10 +458,7 @@ def approve(request, name):
 
     e = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     if not e:
-        if next_approved_revision(wg.charter.rev) == "01":
-            announcement = default_action_text(wg, charter, login, "Formed").text
-        else:
-            announcement = default_action_text(wg, charter, login, "Rechartered").text
+        announcement = default_action_text(wg, charter, login).text
     else:
         announcement = e.text
 
