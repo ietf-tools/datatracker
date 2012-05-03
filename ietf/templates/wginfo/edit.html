@@ -52,7 +52,7 @@ Create WG
   <table>
     {% for field in form.visible_fields %}
     <tr>
-      <th>{{ field.label_tag }}:</th>
+      <th>{{ field.label_tag }}: {% if field.field.required %}*{% endif %}</th>
       <td>{{ field }}
       {% ifequal field.name "ad" %}
       {% if user|has_role:"Area Director" %}
