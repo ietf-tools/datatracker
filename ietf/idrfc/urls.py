@@ -32,6 +32,7 @@
 
 from django.conf.urls.defaults import patterns, url, include
 from ietf.idrfc import views_doc, views_search, views_edit, views_ballot, views
+from ietf.doc.models import State
 
 urlpatterns = patterns('',
     (r'^/?$', views_search.search_main),
@@ -68,3 +69,9 @@ urlpatterns = patterns('',
 
     (r'^(?P<name>[A-Za-z0-9.-]+)/charter/', include('ietf.wgcharter.urls')),
 )
+
+urlpatterns += patterns('django.views.generic.simple',
+    url(r'^help/state/charter/$', 'direct_to_template', { 'template': 'wgcharter/states.html', 'extra_context': { 'states': State.objects.filter(type="charter") } }, name='help_charter_states'),
+)
+
+
