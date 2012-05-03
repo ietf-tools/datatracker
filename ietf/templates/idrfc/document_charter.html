@@ -101,7 +101,7 @@
 
 <h3>Charter {{ doc.canonical_name }}-{{ doc.rev }}
 
-{% if user|has_role:"Area Director,Secretariat" and chartering and group.state_id != "conclude" %}
+{% if not snapshot and user|has_role:"Area Director,Secretariat" and chartering and group.state_id != "conclude" %}
 <a class="edit" href="{% url charter_submit name=doc.name %}">Change charter text</a>
 {% endif %}
 </h3>
