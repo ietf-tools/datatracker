@@ -49,9 +49,9 @@ class WGForm(forms.Form):
             raise forms.ValidationError("Acronym is invalid, may only contain letters, numbers and dashes.")
         if acronym != self.cur_acronym:
             if Group.objects.filter(acronym__iexact=acronym):
-                raise forms.ValidationError("Acronym used in an existing WG. Please pick another.")
+                raise forms.ValidationError("Acronym used in an existing group. Please pick another.")
             if GroupHistory.objects.filter(acronym__iexact=acronym):
-                raise forms.ValidationError("Acronym used in a previous WG. Please pick another.")
+                raise forms.ValidationError("Acronym used in a previous group. Please pick another.")
         return acronym
 
     def clean_urls(self):
