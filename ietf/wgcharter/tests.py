@@ -67,18 +67,19 @@ class EditCharterTestCase(django.test.TestCase):
         
             charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
             self.assertEquals(charter.get_state_slug(), slug)
-            self.assertTrue(charter.docevent_set.count() > events_before)
+            events_now = charter.docevent_set.count()
+            self.assertTrue(events_now > events_before)
+
+            def find_event(t):
+                return [e for e in charter.docevent_set.all()[:events_now - events_before] if e.type == t]
+
+            self.assertTrue("State changed" in find_event("changed_document")[0].desc)
+
             if slug in ("intrev", "iesgrev"):
-                self.assertEquals(charter.docevent_set.all()[0].type, "created_ballot")
-                self.assertTrue("State changed" in charter.docevent_set.all()[1].desc)
-            else:
-                self.assertTrue("State changed" in charter.docevent_set.all()[0].desc)
-            if slug == "extrev":
-                self.assertEquals(len(outbox), mailbox_before + 1)
-                self.assertTrue("State changed" in outbox[-1]['Subject'])
-            else:
-                self.assertEquals(len(outbox), mailbox_before + 1)
-                self.assertTrue("State changed" in outbox[-1]['Subject'])
+                self.assertTrue(find_event("created_ballot"))
+
+            self.assertEquals(len(outbox), mailbox_before + 1)
+            self.assertTrue("State changed" in outbox[-1]['Subject'])
                     
     def test_edit_telechat_date(self):
         make_test_data()
