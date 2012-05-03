@@ -403,7 +403,7 @@ def ballot_writeupnotes(request, name):
         
     form = BallotWriteupForm(initial=dict(ballot_writeup=existing.text))
 
-    if request.method == 'POST' and ("save_ballot_writeup" in request.POST or "issue_ballot" in request.POST):
+    if request.method == 'POST' and ("save_ballot_writeup" in request.POST or "send_ballot" in request.POST):
         form = BallotWriteupForm(request.POST)
         if form.is_valid():
             t = form.cleaned_data["ballot_writeup"]
@@ -415,7 +415,7 @@ def ballot_writeupnotes(request, name):
                 e.text = t
                 e.save()
 
-            if "issue_ballot" in request.POST and approval:
+            if "send_ballot" in request.POST and approval:
                 if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=login, ballot=ballot):
                     # sending the ballot counts as a yes
                     pos = BallotPositionDocEvent(doc=charter, by=login)
@@ -431,7 +431,7 @@ def ballot_writeupnotes(request, name):
                 e = DocEvent(doc=charter, by=login)
                 e.by = login
                 e.type = "sent_ballot_announcement"
-                e.desc = "Ballot has been issued"
+                e.desc = "Ballot has been sent"
                 e.save()
 
                 return render_to_response('wgcharter/ballot_issued.html',

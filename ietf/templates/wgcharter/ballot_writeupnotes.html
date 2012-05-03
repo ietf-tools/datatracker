@@ -22,7 +22,7 @@ form #id_ballot_writeup {
   <div class="actions">
     <a href="{% url doc_writeup name=charter.name %}">Back</a>
     <input type="submit" name="save_ballot_writeup" value="Save Ballot Writeup" />
-    <input style="margin-left: 8px" type="submit" name="issue_ballot" value="Save and {% if reissue %}Re-{% endif %}Issue Ballot" />
+    <input style="margin-left: 8px" type="submit" name="send_ballot" value="Save and {% if reissue %}Re-{% endif %}Send Ballot to the IESG" />
   </div>
 </form>
 
