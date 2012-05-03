@@ -52,7 +52,11 @@
         {% endif %}
 
         {% else %}
-        - <a href="{% url charter_startstop_process name=doc.name option='recharter' %}">Recharter</a>
+          {% if group.state_id == "proposed" or group.state_id == "bof" %}
+          - <a href="{% url charter_startstop_process name=doc.name option='initcharter' %}">Charter</a>
+          {% else %}
+          - <a href="{% url charter_startstop_process name=doc.name option='recharter' %}">Recharter</a>
+          {% endif %}
         {% endif %}
 
         {% endif %}
