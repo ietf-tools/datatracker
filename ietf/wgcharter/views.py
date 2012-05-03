@@ -116,12 +116,10 @@ def change_state(request, name, option=None):
                         create_ballot_if_not_open(charter, login, "r-wo-ext")
                     else:
                         create_ballot_if_not_open(charter, login, "r-extrev")
-                elif charter_state.slug == "extrev":
                     default_review_text(wg, charter, login)
+                    default_action_text(wg, charter, login)
                 elif charter_state.slug == "iesgrev":
                     create_ballot_if_not_open(charter, login, "approve")
-
-                    default_action_text(wg, charter, login)
 
             if charter_state.slug == "infrev" and clean["initial_time"] and clean["initial_time"] != 0:
                 e = InitialReviewDocEvent(type="initial_review", by=login, doc=charter)
