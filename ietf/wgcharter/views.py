@@ -16,7 +16,7 @@ from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.ietfauth.decorators import has_role, role_required
 from ietf.iesg.models import TelechatDate
 from ietf.doc.models import *
-from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots
+from ietf.doc.utils import *
 from ietf.name.models import *
 from ietf.person.models import *
 from ietf.group.models import *
@@ -175,6 +175,7 @@ def change_state(request, name, option=None):
                                    prev_charter_state=prev_charter_state,
                                    title=title,
                                    initial_review=initial_review,
+                                   chartering_type=get_chartering_type(charter),
                                    messages=simplejson.dumps(messages),
                                    states_for_ballot_wo_extern=simplejson.dumps(list(states_for_ballot_wo_extern)),
                                    ),
