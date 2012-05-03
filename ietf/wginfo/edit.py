@@ -47,7 +47,7 @@ class WGForm(forms.Form):
 
         if not re.match(r'^[-\w]+$', acronym):
             raise forms.ValidationError("Acronym is invalid, may only contain letters, numbers and dashes.")
-        if self.cur_acronym and acronym != self.cur_acronym:
+        if acronym != self.cur_acronym:
             if Group.objects.filter(acronym__iexact=acronym):
                 raise forms.ValidationError("Acronym used in an existing WG. Please pick another.")
             if GroupHistory.objects.filter(acronym__iexact=acronym):
