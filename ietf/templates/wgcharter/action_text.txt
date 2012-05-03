@@ -2,7 +2,7 @@
 To: IETF-Announce <ietf-announce@ietf.org>
 Subject: WG Action: {{ action_type }} {{ wg.name }} ({{ wg.acronym }})
 
-{% filter wordwrap:73 %}{% ifequal action_type "Formed" %}A new IETF working group has been formed in the {{ wg.parent.name }}.{% endifequal %}{% ifequal action_type "Rechartered" %}The {{ wg.name }} ({{ wg.acronym }}) working group in the {{ wg.parent.name }} of the IETF has been rechartered.{% endifequal %} For additional information please contact the Area Directors or the WG Chair.
+{% filter wordwrap:73 %}{% ifequal action_type "Formed" %}A new IETF working group has been formed in the {{ wg.parent.name }}.{% endifequal %}{% ifequal action_type "Rechartered" %}The {{ wg.name }} ({{ wg.acronym }}) working group in the {{ wg.parent.name }} of the IETF has been rechartered.{% endifequal %} For additional information please contact the Area Directors or the WG Chair{{ chairs|pluralize}}.
 
 {% include "wgcharter/wg_info.txt" %}
 
