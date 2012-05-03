@@ -1,19 +1,21 @@
 {% autoescape off %}{{ ad }} has entered the following ballot position for
-{{ doc.filename }}-{{ doc.revision_display }}: {{ pos.name }}
+{{ doc.name }}-{{ doc.rev }}: {{ pos.name }}
 
 When responding, please keep the subject line intact and reply to all
 email addresses included in the To and CC lines. (Feel free to cut this
 introductory paragraph, however.)
 
+{% if doc.type_id == "draft" %}
 Please refer to http://www.ietf.org/iesg/statement/discuss-criteria.html
 for more information about IESG DISCUSS and COMMENT positions.
+{% endif %}
 
 {% if not discuss and not comment %}
-There is no DISCUSS or COMMENT text associated with this position.
+There are no remarks associated with this position.
 {% endif %}
 
 {% if discuss %}----------------------------------------------------------------------
-DISCUSS:
+{{ blocking_name }}:
 ----------------------------------------------------------------------
 
 {{ discuss|safe|wordwrap:73 }}
