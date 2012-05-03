@@ -10,6 +10,7 @@ from django import forms
 from django.forms.util import ErrorList
 from django.utils import simplejson
 from django.utils.html import strip_tags
+from django.utils.safestring import mark_safe
 from django.conf import settings
 
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
@@ -28,7 +29,7 @@ from ietf.wgcharter.utils import *
 class ChangeStateForm(forms.Form):
     charter_state = forms.ModelChoiceField(State.objects.filter(type="charter", slug__in=["infrev", "intrev", "extrev", "iesgrev"]), label="Charter state", empty_label=None, required=False)
     initial_time = forms.IntegerField(initial=0, label="Review time", help_text="(in weeks)", required=False)
-    message = forms.CharField(widget=forms.Textarea, help_text="Optional message to the Secretariat", required=False)
+    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change state without notifying the Secretariat", required=False, label=mark_safe("Message to<br> Secretariat"))
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history", required=False)
     def __init__(self, *args, **kwargs):
         self.hide = kwargs.pop('hide', None)
