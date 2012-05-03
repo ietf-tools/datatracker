@@ -241,7 +241,7 @@ def search(request):
             # perform query
             if kwargs:
                 #qs = Person.objects.filter(**kwargs)
-                qs = Alias.objects.filter(**kwargs)
+                qs = Alias.objects.filter(**kwargs).distinct()
                 
             results = qs.order_by('name')
             
