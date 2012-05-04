@@ -1,4 +1,90 @@
+ietfdb (4.03)
+
+  Merged in [4364] from rjsparks@nostrum.com: 
+  * Expose how many pages each document contains on the docs on future 
+    telechats page. Fixes bug #828 
+
+  Merged in fixes to the charter branch (r4345 - r4353 and r4354 - r4381)
+  from olau@iola.dk.:
+
+  * Check and sanitize text file upload (code is factored out in a new
+    helper so it can be reused elsewhere in the future).
+
+  * Move charter state help to /doc/help/state/charter/.
+
+  * Say "generate" rather than "edit" when there's no text in the boxes
+
+  * Don't show diff box if there's only 1 entry (and itself).
+
+  * Say "Charter" rather than "Recharter" on the charter /doc/ page if the 
+    group is proposed or a BoF.
+
+  * Treat BoF as proposed WG.
+
+  * s/WG/group/ in acronym clash error.
+
+  * Add a star to the required fields.
+
+  * Fix test broken by previous commit.
+
+  * Fix buggy new group acronym check.
+
+  * Amend previous commit to generate writeups on entering internal review 
+    instead.
+
+  * Generate action and review text automatically.
+
+  * Make phrasing sligtly more clear.
+
+  * Make it move obvious what the change state view actually does by
+    rephrasing the form.
+
+  * Fix some phrasing bugs.
+
+  * Fix terminology confusion and say "send ballot" rather than "issue
+    ballot" to clear up that it is not actually created.
+
+  * Fix wording of send ballot comment, the actual text was still specific
+    to drafts.
+
+  * Don't show edit button for snapshots.
+
+  * Fix bug in hiding "external review needed" checkbox.
+
+  * Create charters in state notrev instead of intrev, as a side effect
+    this fixes a problem with comments not being saved when starting
+    review on charter.
+
+  * Use revision numbers to identify ballots and put a warning on closed 
+    ballots.
+
+  * Fix bug in event description when copying over the final approved
+    charter file.
+
+  * Offer text from latest approved revision in case there's no initial text
+    for a recharter submit form.
+
+  * Reverse direction of revisions on charter /doc/ page to match 
+    tools.ietf.org/html/draft-*.
+
+  * Change max acronym length to 10 instead of 8
+
+  From Henrik:
+
+  * Fixed the signature of DocEventAdmin method (needs explicit 'self' parameter)
+
+  * Added various fixes and correction of merge errors.
+
+  * Merged in fixes to the migration from olau@iola.dk.
+
+  * Merged in the charter branch from olau@iola.dk.
+
+  * Added a from Adam with a tweak from Henrik for empty .ics files
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  04 May 2012 14:17:33 +0200
+
 ietfdb (4.02)
+
   Merged [4288] from rjsparks@nostrum.com: 
 
   * Made several changes to correctly use the new (RFC6410)  "Internet Standard" level
