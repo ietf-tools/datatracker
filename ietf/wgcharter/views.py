@@ -10,13 +10,15 @@ from django import forms
 from django.forms.util import ErrorList
 from django.utils import simplejson
 from django.utils.html import strip_tags
+from django.utils.safestring import mark_safe
 from django.conf import settings
 
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
+from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.ietfauth.decorators import has_role, role_required
 from ietf.iesg.models import TelechatDate
 from ietf.doc.models import *
-from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots
+from ietf.doc.utils import *
 from ietf.name.models import *
 from ietf.person.models import *
 from ietf.group.models import *
@@ -28,7 +30,7 @@ from ietf.wgcharter.utils import *
 class ChangeStateForm(forms.Form):
     charter_state = forms.ModelChoiceField(State.objects.filter(type="charter", slug__in=["infrev", "intrev", "extrev", "iesgrev"]), label="Charter state", empty_label=None, required=False)
     initial_time = forms.IntegerField(initial=0, label="Review time", help_text="(in weeks)", required=False)
-    message = forms.CharField(widget=forms.Textarea, help_text="Optional message to the Secretariat", required=False)
+    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change state without notifying the Secretariat", required=False, label=mark_safe("Message to<br> Secretariat"))
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history", required=False)
     def __init__(self, *args, **kwargs):
         self.hide = kwargs.pop('hide', None)
@@ -115,6 +117,8 @@ def change_state(request, name, option=None):
                         create_ballot_if_not_open(charter, login, "r-wo-ext")
                     else:
                         create_ballot_if_not_open(charter, login, "r-extrev")
+                    default_review_text(wg, charter, login)
+                    default_action_text(wg, charter, login)
                 elif charter_state.slug == "iesgrev":
                     create_ballot_if_not_open(charter, login, "approve")
 
@@ -175,6 +179,7 @@ def change_state(request, name, option=None):
                                    prev_charter_state=prev_charter_state,
                                    title=title,
                                    initial_review=initial_review,
+                                   chartering_type=get_chartering_type(charter),
                                    messages=simplejson.dumps(messages),
                                    states_for_ballot_wo_extern=simplejson.dumps(list(states_for_ballot_wo_extern)),
                                    ),
@@ -225,13 +230,14 @@ class UploadForm(forms.Form):
     def clean_content(self):
         return self.cleaned_data["content"].replace("\r", "")
 
+    def clean_txt(self):
+        return get_cleaned_text_file_content(self.cleaned_data["txt"])
+
     def save(self, wg, rev):
-        fd = self.cleaned_data['txt']
         filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (wg.charter.canonical_name(), rev))
-        with open(filename, 'wb+') as destination:
-            if fd:
-                for chunk in fd.chunks():
-                    destination.write(chunk)
+        with open(filename, 'wb') as destination:
+            if self.cleaned_data['txt']:
+                destination.write(self.cleaned_data['txt'])
             else:
                 destination.write(self.cleaned_data['content'])
 
@@ -242,7 +248,8 @@ def submit(request, name):
 
     login = request.user.get_profile()
 
-    not_uploaded_yet = charter.rev.endswith("-00") and not os.path.exists(os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev)))
+    path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+    not_uploaded_yet = charter.rev.endswith("-00") and not os.path.exists(path)
 
     if not_uploaded_yet:
         # this case is special - we recently chartered or rechartered and have no file yet
@@ -320,10 +327,7 @@ def announcement_text(request, name, ann):
         existing = charter.latest_event(WriteupDocEvent, type="changed_review_announcement")
     if not existing:
         if ann == "action":
-            if next_approved_revision(wg.charter.rev) == "01":
-                existing = default_action_text(wg, charter, login, "Formed")
-            else:
-                existing = default_action_text(wg, charter, login, "Rechartered")
+            existing = default_action_text(wg, charter, login)
         elif ann == "review":
             existing = default_review_text(wg, charter, login)
 
@@ -347,10 +351,7 @@ def announcement_text(request, name, ann):
 
         if "regenerate_text" in request.POST:
             if ann == "action":
-                if next_approved_revision(wg.charter.rev) == "01":
-                    e = default_action_text(wg, charter, login, "Formed")
-                else:
-                    e = default_action_text(wg, charter, login, "Rechartered")
+                e = default_action_text(wg, charter, login)
             elif ann == "review":
                 e = default_review_text(wg, charter, login)
             # make sure form has the updated text
@@ -402,7 +403,7 @@ def ballot_writeupnotes(request, name):
         
     form = BallotWriteupForm(initial=dict(ballot_writeup=existing.text))
 
-    if request.method == 'POST' and ("save_ballot_writeup" in request.POST or "issue_ballot" in request.POST):
+    if request.method == 'POST' and ("save_ballot_writeup" in request.POST or "send_ballot" in request.POST):
         form = BallotWriteupForm(request.POST)
         if form.is_valid():
             t = form.cleaned_data["ballot_writeup"]
@@ -414,7 +415,7 @@ def ballot_writeupnotes(request, name):
                 e.text = t
                 e.save()
 
-            if "issue_ballot" in request.POST and approval:
+            if "send_ballot" in request.POST and approval:
                 if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=login, ballot=ballot):
                     # sending the ballot counts as a yes
                     pos = BallotPositionDocEvent(doc=charter, by=login)
@@ -430,7 +431,7 @@ def ballot_writeupnotes(request, name):
                 e = DocEvent(doc=charter, by=login)
                 e.by = login
                 e.type = "sent_ballot_announcement"
-                e.desc = "Ballot has been issued"
+                e.desc = "Ballot has been sent"
                 e.save()
 
                 return render_to_response('wgcharter/ballot_issued.html',
@@ -458,10 +459,7 @@ def approve(request, name):
 
     e = charter.latest_event(WriteupDocEvent, type="changed_action_announcement")
     if not e:
-        if next_approved_revision(wg.charter.rev) == "01":
-            announcement = default_action_text(wg, charter, login, "Formed").text
-        else:
-            announcement = default_action_text(wg, charter, login, "Rechartered").text
+        announcement = default_action_text(wg, charter, login).text
     else:
         announcement = e.text
 

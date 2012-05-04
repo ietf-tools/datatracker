@@ -48,7 +48,7 @@ form.change-state .actions {
       {{ field.errors }}
       </td>
     </tr>
-    {% if field.name == "charter_state" and not option == "initcharter" %}
+    {% if field.name == "charter_state" and chartering_type == "rechartering" %}
     <tr class="ballot-wo-extern" style="display:none">
       <td></td>
       <td><label><input name="ballot_wo_extern" type="checkbox" /> Ask whether external review can be skipped in ballot</label></td>
@@ -64,7 +64,7 @@ form.change-state .actions {
         <input type="submit" value="Submit"/>
         {% else %}
         <a href="{% url doc_view name=doc.name %}">Back</a>
-        <input type="submit" value="Save"/>
+        <input type="submit" value="Save and (possibly) notify Secretariat"/>
         {% endif %}
       </td>
     </tr>

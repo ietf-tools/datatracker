@@ -136,7 +136,7 @@ def augment_with_start_time(docs):
 def get_chartering_type(doc):
     chartering = ""
     if doc.get_state_slug() not in ("notrev", "approved"):
-        if doc.group.state_id == "proposed":
+        if doc.group.state_id in ("proposed", "bof"):
             chartering = "initial"
         elif doc.group.state_id == "active":
             chartering = "rechartering"

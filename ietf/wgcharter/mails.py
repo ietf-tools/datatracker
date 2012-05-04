@@ -48,7 +48,12 @@ def generate_ballot_writeup(request, doc):
     
     return e
 
-def default_action_text(wg, charter, user, action):
+def default_action_text(wg, charter, user):
+    if next_approved_revision(wg.charter.rev) == "01":
+        action = "Formed"
+    else:
+        action = "Rechartered"
+
     e = WriteupDocEvent(doc=charter, by=user)
     e.by = user
     e.type = "changed_action_announcement"

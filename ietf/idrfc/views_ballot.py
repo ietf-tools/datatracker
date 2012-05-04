@@ -475,9 +475,11 @@ def send_ballot_commentREDESIGN(request, name, ballot_id):
 
     subj = []
     d = ""
+    blocking_name = "DISCUSS"
     if pos.pos.blocking and pos.discuss:
         d = pos.discuss
-        subj.append(pos.pos.name.upper())
+        blocking_name = pos.pos.name.upper()
+        subj.append(blocking_name)
     c = ""
     if pos.comment:
         c = pos.comment
@@ -488,10 +490,13 @@ def send_ballot_commentREDESIGN(request, name, ballot_id):
     if subj:
         subject += ": (with %s)" % " and ".join(subj)
 
-    doc.filename = doc.name # compatibility attributes
-    doc.revision_display = doc.rev
     body = render_to_string("idrfc/ballot_comment_mail.txt",
-                            dict(discuss=d, comment=c, ad=ad.plain_name(), doc=doc, pos=pos.pos))
+                            dict(discuss=d,
+                                 comment=c,
+                                 ad=ad.plain_name(),
+                                 doc=doc,
+                                 pos=pos.pos,
+                                 blocking_name=blocking_name,))
     frm = ad.role_email("ad").formatted_email()
     to = "The IESG <iesg@ietf.org>"
         

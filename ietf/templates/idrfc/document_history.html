@@ -11,7 +11,7 @@
 {% block content %}
 {{ top|safe }}
 
-{% if diff_revisions %}
+{% if diff_revisions and diff_revisions|length > 1 %}
 <div class="ietf-box diffTool">
   <h2>Diffs</h2>
 
