@@ -170,9 +170,7 @@ def wg_charter(request, acronym):
         actions = []
         if wg.state_id != "conclude":
             actions.append(("Edit WG", urlreverse("wg_edit", kwargs=dict(acronym=wg.acronym))))
-
-        if wg.state_id == "active" and (not wg.charter or wg.charter.get_state_slug() == "approved"):
-            actions.append(("Conclude WG", urlreverse("wg_conclude", kwargs=dict(acronym=wg.acronym))))
+            actions.append(("Request closing WG", urlreverse("wg_conclude", kwargs=dict(acronym=wg.acronym))))
 
         context = get_wg_menu_context(wg, "charter")
         context.update(dict(
