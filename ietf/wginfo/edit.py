@@ -251,6 +251,11 @@ def conclude(request, acronym):
 
             email_secretariat(request, wg, "conclude", instructions)
 
+            e = GroupEvent(group=wg, by=login)
+            e.type = "requested_close"
+            e.desc = "Requested closing group"
+            e.save()
+
             return redirect('wg_charter', acronym=wg.acronym)
     else:
         form = ConcludeForm()

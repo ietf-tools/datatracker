@@ -55,7 +55,14 @@ is occasionally incorrect.</span>
   <tr><td>Area:</td><td>{{ wg.parent.name }} ({{ wg.parent.acronym }})</td></tr>
   {% endif %}
 
-  <tr><td>State:</td><td>{{ wg.state.name }}</td></tr>
+  <tr>
+    <td>State:</td>
+    <td>{{ wg.state.name }}
+      {% if requested_close %}
+      (but in the process of being closed)
+      {% endif %}
+    </td>
+  </tr>
 
   <tr>
     <td>Charter:</td>
