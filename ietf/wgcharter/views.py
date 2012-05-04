@@ -47,8 +47,10 @@ def change_state(request, name, option=None):
     charter = get_object_or_404(Document, type="charter", name=name)
     wg = charter.group
 
+    chartering_type = get_chartering_type(charter)
+
     initial_review = charter.latest_event(InitialReviewDocEvent, type="initial_review")
-    if charter.get_state_slug() != "infrev" or (initial_review and initial_review.expires < datetime.datetime.now()):
+    if charter.get_state_slug() != "infrev" or (initial_review and initial_review.expires < datetime.datetime.now()) or chartering_type == "rechartering":
         initial_review = None
 
     login = request.user.get_profile()
@@ -112,7 +114,7 @@ def change_state(request, name, option=None):
                 if message:
                     email_secretariat(request, wg, "state-%s" % charter_state.slug, message)
 
-                email_state_changed(request, charter, "State changed to %s from %s." % (charter_state, prev))
+                email_state_changed(request, charter, "State changed to %s." % charter_state)
 
                 if charter_state.slug == "intrev":
                     if request.POST.get("ballot_wo_extern"):
@@ -135,8 +137,8 @@ def change_state(request, name, option=None):
             return redirect('doc_view', name=charter.name)
     else:
         if option == "recharter":
-            hide = ['charter_state']
-            init = dict(initial_time=1, message="%s has initiated a recharter effort on the WG %s (%s)" % (login.plain_name(), wg.name, wg.acronym))
+            hide = ['initial_time', 'charter_state', 'message']
+            init = dict()
         elif option == "initcharter":
             hide = ['charter_state']
             init = dict(initial_time=1, message="%s has initiated chartering of the proposed WG %s (%s)" % (login.plain_name(), wg.name, wg.acronym))
@@ -181,7 +183,7 @@ def change_state(request, name, option=None):
                                    prev_charter_state=prev_charter_state,
                                    title=title,
                                    initial_review=initial_review,
-                                   chartering_type=get_chartering_type(charter),
+                                   chartering_type=chartering_type,
                                    messages=simplejson.dumps(messages),
                                    states_for_ballot_wo_extern=simplejson.dumps(list(states_for_ballot_wo_extern)),
                                    ),
