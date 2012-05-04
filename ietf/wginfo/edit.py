@@ -240,14 +240,7 @@ class ConcludeForm(forms.Form):
 @role_required('Area Director','Secretariat')
 def conclude(request, acronym):
     """Request the closing of a WG, prompting for instructions."""
-    try:
-        wg = Group.objects.get(acronym=acronym)
-    except Group.DoesNotExist:
-        wglist = GroupHistory.objects.filter(acronym=acronym)
-        if wglist:
-            return redirect('wg_conclude', acronym=wglist[0].group.acronym)
-        else:
-            raise Http404
+    wg = get_object_or_404(Group, acronym=acronym)
 
     login = request.user.get_profile()
 
