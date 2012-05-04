@@ -235,7 +235,7 @@ def edit(request, acronym=None, action="edit"):
 
 
 class ConcludeForm(forms.Form):
-    instructions = forms.CharField(widget=forms.Textarea, required=True)
+    instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True)
 
 @role_required('Area Director','Secretariat')
 def conclude(request, acronym):
