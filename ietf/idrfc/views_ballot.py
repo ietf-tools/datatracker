@@ -274,7 +274,7 @@ def edit_positionREDESIGN(request, name, ballot_id):
             pos.comment = clean["comment"].rstrip()
             pos.comment_time = old_pos.comment_time if old_pos else None
             pos.discuss = clean["discuss"].rstrip()
-            if pos.pos_id != "discuss":
+            if not pos.pos.blocking:
                 pos.discuss = ""
             pos.discuss_time = old_pos.discuss_time if old_pos else None
 
