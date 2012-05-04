@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Set notification list for {{ doc.name }}{% endblock %}
+
+{% block morecss %}
+form.edit-notify td input#id_notify { width: 40em; }
+form.edit-notify td.actions { padding-top: 1em; }
+{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+<h1>Set notification list for {{ doc.name }}</h1>
+
+<form class="edit-notify" action="" method="POST">
+  <table>
+    <tr>
+      <th>{{ form.notify.label_tag }}:</th>
+      <td>{{ form.notify }}
+      <div class="help">{{ form.notify.help_text }}</div>
+      {{ form.notify.errors }}
+      </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td class="actions">
+        <a href="{% url doc_view name=doc.name %}">Back</a>
+        <input type="submit" value="Save"/>
+      </td>
+    </tr>
+  </table>
+</form>
+{% endblock %}

@@ -88,8 +88,16 @@
     </tr>
     {% endif %}
 
-
     <tr><td colspan='2'><hr size='1' noshade /></td></tr>
+
+    <tr>
+      <td>Send notices to:</td>
+      <td>{{ doc.notify|default:"none" }}
+          {% if user|has_role:"Area Director,Secretariat" %}
+          - <a href="{% url charter_edit_notify name=doc.name %}">Change</a>
+          {% endif %}
+      </td>
+    </tr>
 
     <tr><td>Last updated:</td><td> {{ doc.time|date:"Y-m-d" }}</td></tr>
 
@@ -97,7 +105,7 @@
   </table>
 
   <div class="actions">
-    <a href="/feed/wgchanges/{{ group.acronym }}/">Atom feed</a>
+    <a href="/feed/group-changes/{{ group.acronym }}/">Atom feed</a>
   </div>
 </div>
 

@@ -9,7 +9,7 @@ from django.template import RequestContext
 from django import forms
 from django.forms.util import ErrorList
 from django.utils import simplejson
-from django.utils.html import strip_tags
+from django.utils.html import strip_tags, escape
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
@@ -111,6 +111,8 @@ def change_state(request, name, option=None):
 
                 if message:
                     email_secretariat(request, wg, "state-%s" % charter_state.slug, message)
+
+                email_state_changed(request, charter, "State changed to %s from %s." % (charter_state, prev))
 
                 if charter_state.slug == "intrev":
                     if request.POST.get("ballot_wo_extern"):
@@ -222,6 +224,49 @@ def telechat_date(request, name):
                                    user=request.user,
                                    login=login),
                               context_instance=RequestContext(request))
+
+class NotifyForm(forms.Form):
+    notify = forms.CharField(max_length=255, help_text="List of email addresses to receive state notifications, separated by comma", label="Notification list", required=False)
+
+    def clean_notify(self):
+        return self.cleaned_data["notify"].strip()
+
+@role_required("Area Director", "Secretariat")
+def edit_notify(request, name):
+    doc = get_object_or_404(Document, type="charter", name=name)
+    login = request.user.get_profile()
+
+    init = {'notify': doc.notify}
+
+    if request.method == "POST":
+        form = NotifyForm(request.POST, initial=init)
+        if form.is_valid():
+            n = form.cleaned_data["notify"]
+            if n != doc.notify:
+                save_document_in_history(doc)
+
+                e = DocEvent(doc=doc, by=login)
+                e.desc = "Notification list changed to %s" % (escape(n) or "none")
+                if doc.notify:
+                    e.desc += " from %s" % escape(doc.notify)
+                e.type = "changed_document"
+                e.save()
+
+                doc.notify = n
+                doc.time = e.time
+                doc.save()
+
+            return redirect("doc_view", name=doc.name)
+    else:
+        form = NotifyForm(initial=init)
+
+    return render_to_response('wgcharter/edit_notify.html',
+                              dict(doc=doc,
+                                   form=form,
+                                   user=request.user,
+                                   login=login),
+                              context_instance=RequestContext(request))
+
 
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Charter text", help_text="Edit the charter text", required=False)
