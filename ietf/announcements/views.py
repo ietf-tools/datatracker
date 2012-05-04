@@ -4,7 +4,6 @@ from django.views.generic.simple import direct_to_template
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.db.models import Q
-from django.core.exceptions import ObjectDoesNotExist
 
 import re
 
@@ -52,18 +51,17 @@ def nomcomREDESIGN(request):
         e = GroupEvent.objects.filter(group=n, type="changed_state", changestategroupevent__state="conclude").order_by('time')[:1]
         n.end_year = e[0].time.year if e else ""
 
-        # A nomcom chair may not exist even if the nomcom NN group has been created:
-        try:
-            chair = n.role_set.select_related().get(name="chair")
-            announcements = Message.objects.filter(related_groups=n).order_by('-time')
-            for a in announcements:
-                a.to_name = address_re.sub("", a.to)
+        r = n.role_set.select_related().filter(name="chair") 
+        chair = None 
+        if r: 
+            chair = r[0] 
+        announcements = Message.objects.filter(related_groups=n).order_by('-time')
+        for a in announcements:
+            a.to_name = address_re.sub("", a.to)
 
-            regimes.append(dict(chair=chair,
-                                announcements=announcements,
-                                group=n))
-        except ObjectDoesNotExist:
-            pass
+        regimes.append(dict(chair=chair,
+                            announcements=announcements,
+                            group=n))
 
     regimes.sort(key=lambda x: x["group"].start_year, reverse=True)
 
