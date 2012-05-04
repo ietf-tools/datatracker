@@ -131,9 +131,20 @@ class EditCharterTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertEquals(len(q('form input[name=txt]')), 1)
 
+        # faulty post
+        test_file = StringIO("\x10\x11\x12") # post binary file
+        test_file.name = "unnamed"
+
+        r = self.client.post(url, dict(txt=test_file))
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue("does not appear to be a text file" in r.content)
+
+        # post
         prev_rev = charter.rev
 
-        test_file = StringIO("hello world")
+        latin_1_snippet = '\xe5' * 10
+        utf_8_snippet = '\xc3\xa5' * 10
+        test_file = StringIO("Windows line\r\nMac line\rUnix line\n" + latin_1_snippet)
         test_file.name = "unnamed"
 
         r = self.client.post(url, dict(txt=test_file))
@@ -142,6 +153,10 @@ class EditCharterTestCase(django.test.TestCase):
         charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
         self.assertEquals(charter.rev, next_revision(prev_rev))
         self.assertTrue("new_revision" in charter.latest_event().type)
+
+        with open(os.path.join(self.charter_dir, charter.canonical_name() + "-" + charter.rev + ".txt")) as f:
+            self.assertEquals(f.read(),
+                              "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
 class CharterApproveBallotTestCase(django.test.TestCase):
     fixtures = ['names']

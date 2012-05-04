@@ -14,6 +14,7 @@ from django.utils.safestring import mark_safe
 from django.conf import settings
 
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
+from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.ietfauth.decorators import has_role, role_required
 from ietf.iesg.models import TelechatDate
 from ietf.doc.models import *
@@ -229,13 +230,14 @@ class UploadForm(forms.Form):
     def clean_content(self):
         return self.cleaned_data["content"].replace("\r", "")
 
+    def clean_txt(self):
+        return get_cleaned_text_file_content(self.cleaned_data["txt"])
+
     def save(self, wg, rev):
-        fd = self.cleaned_data['txt']
         filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (wg.charter.canonical_name(), rev))
-        with open(filename, 'wb+') as destination:
-            if fd:
-                for chunk in fd.chunks():
-                    destination.write(chunk)
+        with open(filename, 'wb') as destination:
+            if self.cleaned_data['txt']:
+                destination.write(self.cleaned_data['txt'])
             else:
                 destination.write(self.cleaned_data['content'])
 
@@ -246,7 +248,8 @@ def submit(request, name):
 
     login = request.user.get_profile()
 
-    not_uploaded_yet = charter.rev.endswith("-00") and not os.path.exists(os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev)))
+    path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+    not_uploaded_yet = charter.rev.endswith("-00") and not os.path.exists(path)
 
     if not_uploaded_yet:
         # this case is special - we recently chartered or rechartered and have no file yet
