@@ -20,7 +20,7 @@ form.change-state .actions {
 {% block content %}
 <h1>{{ title }}</h1>
 
-{% if "Change state" in title %}<p class="helptext">For help on the states, see the <a href="{% url help_charter_states name=doc.name %}">state table</a>.</p>{% endif %}
+{% if "Change state" in title %}<p class="helptext">For help on the states, see the <a href="{% url help_charter_states %}">state table</a>.</p>{% endif %}
 
 <form class="change-state" action="" method="post">
   <table>
