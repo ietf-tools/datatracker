@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from django import forms
 from django.utils import simplejson
+from django.utils.html import mark_safe
 
 from ietf.ietfauth.decorators import role_required, has_role
 
@@ -49,9 +50,9 @@ class WGForm(forms.Form):
             raise forms.ValidationError("Acronym is invalid, may only contain letters, numbers and dashes.")
         if acronym != self.cur_acronym:
             if Group.objects.filter(acronym__iexact=acronym):
-                raise forms.ValidationError("Acronym used in an existing group. Please pick another.")
+                raise forms.ValidationError(mark_safe("The acronym belongs to an existing group. Please pick another,<br/> or go to <a href='%s'>recharter %s</a>" % (reverse("doc_view", None, kwargs={"name":"charter-ietf-%s"%acronym, }), acronym)))
             if GroupHistory.objects.filter(acronym__iexact=acronym):
-                raise forms.ValidationError("Acronym used in a previous group. Please pick another.")
+                raise forms.ValidationError("The acronym has been used by a previous group. Please pick another.")
         return acronym
 
     def clean_urls(self):
