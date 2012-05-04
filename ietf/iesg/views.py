@@ -466,6 +466,7 @@ def agenda_documents(request):
                 iprs = IprRfc.objects.filter(document=w.rfc.rfc_number) 
             w.iprCount = len(iprs)
             w.reschedule_form = i.reschedule_form
+            w.pages = i.pages
             res[section_key].append(w)
         telechats.append({'date':date, 'docs':res})
     return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats, 'hide_telechat_date':True})
