@@ -33,7 +33,9 @@ class WGForm(forms.Form):
     urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", help_text="Format: http://site/path (Optional description). Separate multiple entries with newline.", required=False)
 
     def __init__(self, *args, **kwargs):
-        self.cur_acronym = kwargs.pop('cur_acronym')
+        self.wg = kwargs.pop('wg', None)
+        self.confirmed = kwargs.pop('confirmed', False)
+
         super(self.__class__, self).__init__(*args, **kwargs)
 
         # if previous AD is now ex-AD, append that person to the list
@@ -42,16 +44,49 @@ class WGForm(forms.Form):
         if ad_pk and ad_pk not in [pk for pk, name in choices]:
             self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
 
+        self.confirm_msg = ""
+        self.autoenable_confirm = False
+
     def clean_acronym(self):
+        self.confirm_msg = ""
+        self.autoenable_confirm = False
+
         acronym = self.cleaned_data['acronym'].strip().lower()
 
-        if not re.match(r'^[-\w]+$', acronym):
+        # be careful with acronyms, requiring confirmation to take existing or override historic
+
+        if self.wg and acronym == self.wg.acronym:
+            return acronym # no change, no check
+
+        if not re.match(r'^[-a-z0-9]+$', acronym):
             raise forms.ValidationError("Acronym is invalid, may only contain letters, numbers and dashes.")
-        if acronym != self.cur_acronym:
-            if Group.objects.filter(acronym__iexact=acronym):
-                raise forms.ValidationError("Acronym used in an existing group. Please pick another.")
-            if GroupHistory.objects.filter(acronym__iexact=acronym):
-                raise forms.ValidationError("Acronym used in a previous group. Please pick another.")
+
+        existing = Group.objects.filter(acronym__iexact=acronym)
+        if existing:
+            existing = existing[0]
+
+        if not self.wg and existing and existing.type_id == "wg":
+            if self.confirmed:
+                return acronym # take over confirmed
+
+            if existing.state_id == "bof":
+                self.confirm_msg = "Turn BoF %s into proposed WG and start chartering it" % existing.acronym
+                self.autoenable_confirm = True
+                raise forms.ValidationError("Warning: Acronym used for an existing BoF (%s)." % existing.name)
+            else:
+                self.confirm_msg = "Set state of %s WG to proposed and start chartering it" % existing.acronym
+                self.autoenable_confirm = False
+                raise forms.ValidationError("Warning: Acronym used for an existing WG (%s, %s)." % (existing.name, existing.state.name if existing.state else "unknown state"))
+
+        if existing:
+            raise forms.ValidationError("Acronym used for an existing group (%s)." % existing.name)
+
+        old = GroupHistory.objects.filter(acronym__iexact=acronym, type="wg")
+        if old and not self.confirmed:
+            self.confirm_msg = "Confirm reusing acronym %s" % old[0].acronym
+            self.autoenable_confirm = False
+            raise forms.ValidationError("Warning: Acronym used for a historic WG.")
+
         return acronym
 
     def clean_urls(self):
@@ -71,10 +106,7 @@ def edit(request, acronym=None, action="edit"):
     """Edit or create a WG, notifying parties as
     necessary and logging changes as group events."""
     if action == "edit":
-        # Editing. Get group
         wg = get_object_or_404(Group, acronym=acronym)
-        if not wg.charter:
-            raise Http404
         new_wg = False
     elif action == "create":
         wg = None
@@ -85,27 +117,34 @@ def edit(request, acronym=None, action="edit"):
     login = request.user.get_profile()
 
     if request.method == 'POST':
-        form = WGForm(request.POST, cur_acronym=wg.acronym if wg else None)
+        form = WGForm(request.POST, wg=wg, confirmed=request.POST.get("confirmed", False))
         if form.is_valid():
-            r = form.cleaned_data
+            clean = form.cleaned_data
             if new_wg:
-                # Create WG
-                wg = Group(name=r["name"],
-                           acronym=r["acronym"],
-                           type=GroupTypeName.objects.get(slug="wg"),
-                           state=GroupStateName.objects.get(slug="proposed"))
-                wg.save()
-                
+                # get ourselves a proposed WG
+                try:
+                    wg = Group.objects.get(acronym=clean["acronym"])
+
+                    save_group_in_history(wg)
+                    wg.state = GroupStateName.objects.get(slug="proposed")
+                    wg.time = datetime.datetime.now()
+                    wg.save()
+                except Group.DoesNotExist:
+                    wg = Group.objects.create(name=clean["name"],
+                                              acronym=clean["acronym"],
+                                              type=GroupTypeName.objects.get(slug="wg"),
+                                              state=GroupStateName.objects.get(slug="proposed"))
+
                 e = ChangeStateGroupEvent(group=wg, type="changed_state")
-                e.time = datetime.datetime.now()
+                e.time = wg.time
                 e.by = login
                 e.state_id = "proposed"
                 e.desc = "Proposed group"
                 e.save()
             else:
-                gh = save_group_in_history(wg)
+                save_group_in_history(wg)
 
-            if not wg.charter:
+            if not wg.charter:  # make sure we have a charter
                 try:
                     charter = Document.objects.get(docalias__name="charter-ietf-%s" % wg.acronym)
                 except Document.DoesNotExist:
@@ -139,9 +178,9 @@ def edit(request, acronym=None, action="edit"):
 
             def diff(attr, name):
                 v = getattr(wg, attr)
-                if r[attr] != v:
-                    changes.append(desc(name, r[attr], v))
-                    setattr(wg, attr, r[attr])
+                if clean[attr] != v:
+                    changes.append(desc(name, clean[attr], v))
+                    setattr(wg, attr, clean[attr])
 
             prev_acronym = wg.acronym
 
@@ -167,7 +206,7 @@ def edit(request, acronym=None, action="edit"):
 
             # update roles
             for attr, slug, title in [('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors")]:
-                new = r[attr]
+                new = clean[attr]
                 old = Email.objects.filter(role__group=wg, role__name=slug).select_related("person")
                 if set(new) != set(old):
                     changes.append(desc(title,
@@ -178,7 +217,7 @@ def edit(request, acronym=None, action="edit"):
                         Role.objects.get_or_create(name_id=slug, email=e, group=wg, person=e.person)
 
             # update urls
-            new_urls = r['urls']
+            new_urls = clean['urls']
             old_urls = format_urls(wg.groupurl_set.order_by('url'), ", ")
             if ", ".join(sorted(new_urls)) != old_urls:
                 changes.append(desc('Urls', ", ".join(sorted(new_urls)), old_urls))
@@ -223,7 +262,7 @@ def edit(request, acronym=None, action="edit"):
         else:
             init = dict(ad=login.id if has_role(request.user, "Area Director") else None,
                         )
-        form = WGForm(initial=init, cur_acronym=wg.acronym if wg else None)
+        form = WGForm(initial=init, wg=wg)
 
     return render_to_response('wginfo/edit.html',
                               dict(wg=wg,
