@@ -96,7 +96,7 @@ def show_html_materials(request, meeting_num=None):
                               context_instance=RequestContext(request))
 
 def current_materials(request):
-    meeting = OldMeeting.objects.order_by('-meeting_num')[0]
+    meeting = OldMeeting.objects.exclude(number__startswith='interim-').order_by('-meeting_num')[0]
     return HttpResponseRedirect( reverse(show_html_materials, args=[meeting.meeting_num]) )
 
 def get_plenary_agenda(meeting_num, id):
