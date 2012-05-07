@@ -53,9 +53,9 @@
 
         {% else %}
           {% if group.state_id == "proposed" or group.state_id == "bof" %}
-          - <a href="{% url charter_startstop_process name=doc.name option='initcharter' %}">Charter</a>
+          - <a href="{% url charter_submit name=doc.name option='initcharter' %}">Start chartering</a>
           {% else %}
-          - <a href="{% url charter_startstop_process name=doc.name option='recharter' %}">Recharter</a>
+          - <a href="{% url charter_submit name=doc.name option='recharter' %}">Recharter</a>
           {% endif %}
         {% endif %}
 

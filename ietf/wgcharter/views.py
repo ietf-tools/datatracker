@@ -132,8 +132,6 @@ def change_state(request, name, option=None):
                 e.desc = "Initial review time expires %s" % e.expires.strftime("%Y-%m-%d")
                 e.save()
 
-            if option in ("initcharter", "recharter"):
-                return redirect('charter_submit', name=charter.name)
             return redirect('doc_view', name=charter.name)
     else:
         if option == "recharter":
@@ -289,7 +287,7 @@ class UploadForm(forms.Form):
                 destination.write(self.cleaned_data['content'])
 
 @role_required('Area Director','Secretariat')
-def submit(request, name):
+def submit(request, name, option=None):
     charter = get_object_or_404(Document, type="charter", name=name)
     wg = charter.group
 
@@ -328,7 +326,10 @@ def submit(request, name):
             charter.time = datetime.datetime.now()
             charter.save()
 
-            return HttpResponseRedirect(reverse('doc_view', kwargs={'name': charter.name}))
+            if option:
+                return redirect('charter_startstop_process', name=charter.name, option=option)
+            else:
+                return redirect("doc_view", name=charter.name)
     else:
         init = { "content": ""}
         c = charter

@@ -241,7 +241,7 @@ def edit(request, acronym=None, action="edit"):
             wg.save()
 
             if new_wg:
-                return redirect('charter_startstop_process', name=wg.charter.name, option="initcharter")
+                return redirect('charter_submit', name=wg.charter.name, option="initcharter")
 
             return redirect('wg_charter', acronym=wg.acronym)
     else: # form.is_valid()

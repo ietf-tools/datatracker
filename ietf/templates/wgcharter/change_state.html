@@ -63,7 +63,7 @@ form.change-state .actions {
     <tr>
       <td colspan="2" class="actions">
         {% if option == "initcharter" or option == "recharter" %}
-        <input type="submit" value="Save and continue to submission of charter text"/>
+        <input type="submit" value="Initiate chartering"/>
         {% endif %}
         {% if not option or option == "abandon" %}
         <a href="{% url doc_view name=doc.name %}">Back</a>
