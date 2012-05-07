@@ -141,10 +141,10 @@ def change_state(request, name, option=None):
             init = dict()
         elif option == "initcharter":
             hide = ['charter_state']
-            init = dict(initial_time=1, message="%s has initiated chartering of the proposed WG %s (%s)" % (login.plain_name(), wg.name, wg.acronym))
+            init = dict(initial_time=1, message="%s has initiated chartering of the proposed WG %s (%s)." % (login.plain_name(), wg.name, wg.acronym))
         elif option == "abandon":
             hide = ['initial_time', 'charter_state']
-            init = dict(message="%s has abandoned the chartering effort on the WG %s (%s)" % (login.plain_name(), wg.name, wg.acronym))
+            init = dict(message="%s has abandoned the chartering effort on the WG %s (%s)." % (login.plain_name(), wg.name, wg.acronym))
         else:
             hide = ['initial_time']
             s = charter.get_state()

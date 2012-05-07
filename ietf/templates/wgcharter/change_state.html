@@ -20,7 +20,9 @@ form.change-state .actions {
 {% block content %}
 <h1>{{ title }}</h1>
 
-{% if "Change state" in title %}<p class="helptext">For help on the states, see the <a href="{% url help_charter_states %}">state table</a>.</p>{% endif %}
+{% if not option %}
+<p class="helptext">For help on the states, see the <a href="{% url help_charter_states %}">state table</a>.</p>
+{% endif %}
 
 <form class="change-state" action="" method="post">
   <table>
@@ -60,9 +62,10 @@ form.change-state .actions {
     {% endif %}
     <tr>
       <td colspan="2" class="actions">
-        {% if option %}
-        <input type="submit" value="Submit"/>
-        {% else %}
+        {% if option == "initcharter" or option == "recharter" %}
+        <input type="submit" value="Save and continue to submission of charter text"/>
+        {% endif %}
+        {% if not option or option == "abandon" %}
         <a href="{% url doc_view name=doc.name %}">Back</a>
         <input type="submit" value="Save and (possibly) notify Secretariat"/>
         {% endif %}
