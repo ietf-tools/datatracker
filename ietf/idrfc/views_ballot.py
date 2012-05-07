@@ -344,7 +344,6 @@ def edit_positionREDESIGN(request, name, ballot_id):
         form = EditPositionForm(initial=initial, ballot_type=ballot.ballot_type)
 
     blocking_positions = dict((p.pk, p.name) for p in form.fields["position"].queryset.all() if p.blocking)
-    print blocking_positions, form.fields["position"].queryset.all()
 
     ballot_deferred = None
     if doc.get_state_slug("%s-iesg" % doc.type_id) == "defer":
