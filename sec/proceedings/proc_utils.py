@@ -5,9 +5,10 @@ This module contains all the functions for generating static proceedings pages
 '''
 from django.conf import settings
 from django.shortcuts import render_to_response
-from ietf.group.models import Group
-from ietf.meeting.models import Session
-from ietf.doc.models import Document, RelatedDocument
+from ietf.group.models import Group, Role
+from ietf.meeting.models import Session, TimeSlot
+from ietf.meeting.views import agenda_info
+from ietf.doc.models import Document, RelatedDocument, DocEvent
 from itertools import chain
 from sec.proceedings.models import Registration
 from sec.utils.document import get_rfc_num
@@ -15,9 +16,14 @@ from sec.utils.group import groups_by_session
 from sec.utils.meeting import get_upload_root, get_proceedings_path, get_material
 from models import InterimMeeting    # proxy model
 
+from urllib2 import urlopen
 import datetime
 import os
 import shutil
+
+# -------------------------------------------------
+# Helper Functions
+# -------------------------------------------------
 
 def copy_files(meeting):
     '''
@@ -33,6 +39,53 @@ def copy_files(meeting):
         target = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,file)
         if not os.path.exists(target):
             shutil.copy(source,target)
+
+def get_progress_stats(sdate,edate):
+    '''
+    This function takes a date range and produces a dictionary of statistics / objects for use
+    in a progress report.
+    '''
+    data = {}
+    data['sdate'] = sdate
+    data['edate'] = edate
+    data['docevents'] = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lte=edate)
+    data['action_events'] = data['docevents'].filter(type='iesg_approved')
+    data['lc_events'] = data['docevents'].filter(type='sent_last_call')
+    
+    data['new_groups'] = Group.objects.filter(type='wg',
+                                              groupevent__changestategroupevent__state='active',
+                                              groupevent__time__gte=sdate,
+                                              groupevent__time__lte=edate)
+    
+    data['concluded_groups'] = Group.objects.filter(type='wg',
+                                                    groupevent__changestategroupevent__state='conclude',
+                                                    groupevent__time__gte=sdate,
+                                                    groupevent__time__lte=edate)
+                                  
+    data['new_docs'] = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
+                                                                    docevent__time__gte=sdate,
+                                                                    docevent__time__lte=edate).distinct()
+    
+    data['rfcs'] = DocEvent.objects.filter(type='published_rfc',
+                                           doc__type='draft',
+                                           time__gte=sdate,
+                                           time__lte=edate)
+                                   
+    data['counts'] = {'std':data['rfcs'].filter(doc__intended_std_level__in=('ps','ds','std')).count(),
+                      'bcp':data['rfcs'].filter(doc__intended_std_level='bcp').count(),
+                      'exp':data['rfcs'].filter(doc__intended_std_level='exp').count(),
+                      'inf':data['rfcs'].filter(doc__intended_std_level='inf').count()}
+    
+    return data
+    
+def write_html(path,content):
+    f = open(path,'w')
+    f.write(content)
+    f.close()
+    
+# -------------------------------------------------
+# End Helper Functions
+# -------------------------------------------------
 
 def create_interim_directory():
     '''
@@ -174,6 +227,10 @@ def create_proceedings(meeting, group):
     if meeting.type == 'interim':
         create_interim_directory()
 
+# -------------------------------------------------
+# Functions for generating Proceedings Pages
+# -------------------------------------------------
+
 def gen_areas(context):
     meeting = context['meeting']
     gmet, gnot = groups_by_session(None,meeting)
@@ -202,6 +259,34 @@ def gen_areas(context):
         path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'%s.html' % area.acronym)
         write_html(path,html.content)
 
+def gen_acknowledgement(context):
+    meeting = context['meeting']
+    
+    html = render_to_response('proceedings/acknowledgement.html',{
+        'meeting': meeting}
+    )
+    
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'acknowledgement.html')
+    write_html(path,html.content)
+    
+def gen_agenda(context):
+    meeting = context['meeting']
+    
+    # grab the agenda from datatracker
+    #url = 'https://datatracker.ietf.org/meeting/%s/agenda.html' % meeting.number
+    #html = urlopen(url).read()
+    
+    #timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(meeting.number)
+    timeslots = TimeSlot.objects.filter(meeting=meeting).order_by('time')
+    
+    html = render_to_response('proceedings/agenda.html',{
+        'meeting': meeting,
+        'timeslots': timeslots}
+    )
+    
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'agenda.html')
+    write_html(path,html.content)
+    
 def gen_attendees(context):
     meeting = context['meeting']
     
@@ -220,6 +305,22 @@ def gen_index(context):
     path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'index.html')
     write_html(path,index.content)
 
+def gen_overview(context):
+    meeting = context['meeting']
+    
+    ietf_chair = Role.objects.get(group__acronym='ietf',name='chair')
+    ads = Role.objects.filter(group__type='area',group__state='active',name='ad')
+    sorted_ads = sorted(ads, key = lambda a: a.person.name_parts()[3])
+    
+    html = render_to_response('proceedings/overview.html',{
+        'meeting': meeting,
+        'ietf_chair': ietf_chair,
+        'ads': sorted_ads}
+    )
+    
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'overview.html')
+    write_html(path,html.content)
+    
 def gen_plenaries(context):
     meeting = context['meeting']
     admin_session = Session.objects.get(meeting=meeting,name__contains='Administration Plenary')
@@ -246,6 +347,19 @@ def gen_plenaries(context):
     path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'technical-plenary.html')
     write_html(path,tech.content)
 
+def gen_progress(context):
+    meeting = context['meeting']
+    
+    start_date = meeting.get_submission_start_date()
+    end_date = meeting.get_submission_cut_off_date()
+    data = get_progress_stats(start_date,end_date)
+    data['meeting'] = meeting
+    
+    html = render_to_response('proceedings/progress.html',data)
+    
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'progress-report.html')
+    write_html(path,html.content)
+    
 def gen_research(context):
     meeting = context['meeting']
     gmet, gnot = groups_by_session(None,meeting)
@@ -280,7 +394,3 @@ def gen_training(context):
         path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'train-%s.html' % counter )
         write_html(path,html.content)
     
-def write_html(path,content):
-    f = open(path,'w')
-    f.write(content)
-    f.close()

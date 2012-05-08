@@ -1,0 +1,65 @@
+{% extends "proceedings/proceedings_template.html" %}
+
+{% block content %}
+
+{% include "includes/proceeding_title.html" %}
+
+<h3>Agenda of IETF {{ meeting.number }}</h2>
+{{ meeting.date|date:"F d,Y" }}<br />
+(<a href="agenda.txt">Plain Text Agenda</a>)<br />
+<p>*** Click on an acronym of the group to get a charter page ***<br />
+*** Click on a name of the group to get a meeting agenda ***</p>
+
+<table id="agenda">
+{% for slot in timeslots %}
+    {% ifchanged  %}
+      <tr class="meeting-date">
+         <td colspan="6">
+           <h2 class="ietf-divider">{{ slot.time|date:"l"|upper }}, {{ slot.time|date:"F j, Y" }}</h2>
+         </td>
+      </tr>
+   {% endifchanged %}
+   {% ifchanged %}
+      <tr class="time-title">
+         <td colspan="1">
+           <b>{{slot.time|date:"Hi"}}-{{slot.end_time|date:"Hi"}}</b>
+         </td>
+         <td colspan="5">
+           <b>{{slot.name}}</b>
+           {% if slot.type.name != 'Session' %} -
+           {% if slot.show_location %}{{slot.get_location|escape}}{% endif %}
+           {% endif %}
+         </td>
+      </tr>
+   {% endifchanged %}
+    {% if slot.type.name = 'Session' %} {% if slot.session.group %}
+     <tr id="{{meeting.number}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}" class="grouprow">
+       <td style="width:100px">{% if slot.show_location %}{{slot.get_location|escape}}{% endif %}</td>
+       <td>{{slot.session.group.parent.acronym|upper}}</td>
+       <td>
+           {% if slot.session.group.charter %}<a href="{{slot.session.group.charter.get_absolute_url}}">{{slot.session.group.acronym}}</a>
+           {% else %}{{slot.session.group.acronym}}{% endif %}</td>
+       <td>
+         <img src="/images/color-palette-4x4.gif" alt="" onclick="pickAgendaColor('{{meeting.number}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}',this);" title="color tag this line"/ class="noprint">
+           {% if slot.session.agenda %}<a href="/meeting/{{ meeting.number }}/agenda/{{ slot.session.group.acronym }}/">{{slot.session.group.name}}</a>
+           {% else %}{{slot.session.group.name}}{% endif %}
+           {% if slot.session.group.state.name = "BOF" %} BOF {% endif %}
+           {% if slot.session.agenda_note %}
+           <br/><span class="note">{{slot.session.agenda_note}}</span>{% endif %}</td>
+       
+     </tr>
+
+   {% endif %} {% endif %}
+   {% if slot.type.name = 'Plenary' %}
+     <tr>
+       <td></td>
+       <td colspan="5">
+         <iframe width="100%" height="1px" src="/meeting/{{ meeting.number }}/agenda/{{ slot.session.group.acronym }}/" onload="r(this)"></iframe>
+       </td>
+     </tr>
+   {% endif %}
+
+{% endfor %}
+</table>
+
+{% endblock %}

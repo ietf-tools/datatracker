@@ -377,8 +377,7 @@ def interim_directory(request, sortby=None):
 @sec_only
 def generate_proceedings(request, meeting_num):
     '''
-    This view prompts for a meeting number then produces official proceedings pages for that
-    meeting
+    This view produces official proceedings pages for the given meeting
     '''
     meeting = get_object_or_404(Meeting, number=meeting_num)
     areas = Group.objects.filter(type='area',state='active').order_by('name')
@@ -387,9 +386,11 @@ def generate_proceedings(request, meeting_num):
                'areas':areas,
                'others':others}
     
-    copy_files(meeting)
-    # progess report
-    # agenda
+    #copy_files(meeting)
+    gen_acknowledgement(context)
+    gen_overview(context)
+    #gen_progress(context)
+    gen_agenda(context)
     gen_attendees(context)
     gen_index(context)
     gen_areas(context)

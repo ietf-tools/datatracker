@@ -19,6 +19,7 @@ from ietf.doc.models import Document, DocumentAuthor
 from ietf.doc.utils import augment_with_start_time
 from ietf.submit.models import IdSubmissionDetail, IdApprovedDetail
 from ietf.utils.draft import Draft
+from sec.proceedings.proc_utils import get_progress_stats
 from sec.sreq.views import get_meeting
 from sec.utils.ams_utils import get_base, get_email
 from sec.utils.document import get_rfc_num, get_start_date
@@ -478,46 +479,7 @@ def report_progress_report(start_date,end_date):
     sdate = datetime.datetime(int(syear),int(smonth),int(sday))
     edate = datetime.datetime(int(eyear),int(emonth),int(eday))
     
-    docevents = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lte=edate)
-    action_events = docevents.filter(type='iesg_approved')
-    lc_events = docevents.filter(type='sent_last_call')
-    
-    new_groups =Group.objects.filter(type='wg',
-                                     groupevent__changestategroupevent__state='active',
-                                     groupevent__time__gte=sdate,
-                                     groupevent__time__lte=edate)
-    
-    concluded_groups = Group.objects.filter(type='wg',
-                                            groupevent__changestategroupevent__state='conclude',
-                                            groupevent__time__gte=sdate,
-                                            groupevent__time__lte=edate)
-                                  
-    new_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
-                                                            docevent__time__gte=sdate,
-                                                            docevent__time__lte=edate).distinct()
-    
-    #rfcs = Document.objects.filter(type='draft').filter(docevent__type='published_rfc',
-    #                                                        docevent__time__gte=sdate,
-    #                                                        docevent__time__lte=edate)
-    
-    rfcs = DocEvent.objects.filter(type='published_rfc',
-                                   doc__type='draft',
-                                   time__gte=sdate,
-                                   time__lte=edate)
-    counts = {'std':rfcs.filter(doc__intended_std_level__in=('ps','ds','std')).count(),
-              'bcp':rfcs.filter(doc__intended_std_level='bcp').count(),
-              'exp':rfcs.filter(doc__intended_std_level='exp').count(),
-              'inf':rfcs.filter(doc__intended_std_level='inf').count()}
-              
-    context = {'start_date':start_date,
-               'end_date':end_date,
-               'action_events':action_events,
-               'lc_events':lc_events,
-               'new_groups':new_groups,
-               'concluded_groups':concluded_groups,
-               'new_docs':new_docs,
-               'rfcs':rfcs,
-               'counts':counts}
+    context = get_progress_stats(sdate,edate)
     
     report = render_to_string('drafts/report_progress_report.txt', context)
     
