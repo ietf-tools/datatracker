@@ -591,7 +591,8 @@ def admin_detail(request, ipr_id):
             ('Date(s) granted or applied for:', ipr_dtl.date_applied),
             ('Country:', ipr_dtl.country),
             ('Additional Notes:', ipr_dtl.notes),
-            ('B. Does your disclosure relate to an unpublished pending patent application?', 'YES' if ipr_dtl.applies_to_all else 'NO'),
+            #('B. Does your disclosure relate to an unpublished pending patent application?', 'YES' if ipr_dtl.applies_to_all else 'NO'),
+            ('B. Does your disclosure relate to an unpublished pending patent application?', 'YES' if ipr_dtl.is_pending == 1 else 'NO'),
             disclosure_c
         ]
 
