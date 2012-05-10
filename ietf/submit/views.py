@@ -110,7 +110,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
             auto_post_form = AutoPostForm(draft=detail, validation=validation, data=request.POST)
             if auto_post_form.is_valid():
                 try:
-                    preapproval = Preapproval.objects.get(filename=detail.filename)
+                    preapproval = Preapproval.objects.get(name=detail.filename)
                 except Preapproval.DoesNotExist:
                     preapproval = None
 
