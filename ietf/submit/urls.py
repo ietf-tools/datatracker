@@ -14,6 +14,9 @@ urlpatterns = patterns('ietf.submit.views',
     url(r'^status/(?P<submission_id>\d+)/(?P<submission_hash>[a-f\d]+)/$', 'draft_status', name='draft_status_by_hash'),
     url(r'^status/(?P<submission_id>\d+)/(?P<submission_hash>[a-f\d]+)/cancel/$', 'draft_cancel', name='draft_cancel_by_hash'),
     url(r'^status/(?P<submission_id>\d+)/(?P<submission_hash>[a-f\d]+)/edit/$', 'draft_edit', name='draft_edit_by_hash'),
+    url(r'^approvals/$', 'approvals', name='submit_approvals'),
+    url(r'^approvals/addpreapproval/$', 'add_preapproval', name='submit_add_preapproval'),
+    url(r'^approvals/cancelpreapproval/(?P<preapproval_id>[a-f\d]+)/$', 'cancel_preapproval', name='submit_cancel_preapproval'),
 )
 
 urlpatterns += patterns('django.views.generic.simple',

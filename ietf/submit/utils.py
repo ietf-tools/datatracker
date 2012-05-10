@@ -9,9 +9,10 @@ from django.template.loader import render_to_string
 
 from ietf.idtracker.models import (InternetDraft, PersonOrOrgInfo, IETFWG,
                                    IDAuthor, EmailAddress, IESGLogin, BallotInfo)
-from ietf.submit.models import TempIdAuthors
+from ietf.submit.models import TempIdAuthors, IdSubmissionDetail, Preapproval
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils import unaccent
+from ietf.ietfauth.decorators import has_role
 
 from ietf.doc.models import *
 from ietf.person.models import Person, Alias, Email
@@ -456,6 +457,33 @@ def remove_docs(submission):
         source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
         if os.path.exists(source):
             os.unlink(source)
+
+def get_approvable_submissions(user):
+    if not user.is_authenticated():
+        return []
+
+    res = IdSubmissionDetail.objects.filter(status=INITIAL_VERSION_APPROVAL_REQUESTED).order_by('-submission_date')
+    if has_role(user, "Secretariat"):
+        return res
+
+    # those we can reach as chairs
+    return res.filter(group_acronym__role__name="chair", group_acronym__role__person__user=user)
+
+def get_preapprovals(user):
+    if not user.is_authenticated():
+        return []
+
+    posted = IdSubmissionDetail.objects.distinct().filter(status__in=[POSTED, POSTED_BY_SECRETARIAT]).values_list('filename', flat=True)
+    res = Preapproval.objects.exclude(name__in=posted).order_by("-time").select_related('by')
+    if has_role(user, "Secretariat"):
+        return res
+
+    acronyms = [g.acronym for g in Group.objects.filter(role__person__user=user, type="wg")]
+
+    res = res.filter(name__regex="draft-[^-]+-(%s)-.*" % "|".join(acronyms))
+
+    return res
+
 
 
 class DraftValidation(object):
