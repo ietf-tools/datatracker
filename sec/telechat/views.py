@@ -205,7 +205,11 @@ def doc_detail(request, date, name):
     
     tags = doc.tags.filter(slug__in=TELECHAT_TAGS)
     tag = tags[0].pk if tags else None
-    
+    if doc.latest_event(WriteupDocEvent):
+        writeup = doc.latest_event(WriteupDocEvent).text
+    else:
+        writeup = 'This document has no writeup'
+        
     initial_state = {'state':doc.get_state('draft-iesg').pk,
                      'substate':tag}
     
@@ -303,7 +307,7 @@ def doc_detail(request, date, name):
         'header': header,
         'open_positions': open_positions,
         'state_form': state_form,
-        'writeup': doc.latest_event(WriteupDocEvent).text,
+        'writeup': writeup,
         'nav_start': nav_start,
         'nav_end': nav_end},
         RequestContext(request, {}),
