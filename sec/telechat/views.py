@@ -205,8 +205,9 @@ def doc_detail(request, date, name):
     
     tags = doc.tags.filter(slug__in=TELECHAT_TAGS)
     tag = tags[0].pk if tags else None
-    if doc.latest_event(WriteupDocEvent, type='changed_ballot_writeup_text'):
-        writeup = doc.latest_event(WriteupDocEvent).text
+    latest = doc.latest_event(WriteupDocEvent, type='changed_ballot_writeup_text')
+    if latest:
+        writeup = latest.text
     else:
         writeup = 'This document has no writeup'
         
