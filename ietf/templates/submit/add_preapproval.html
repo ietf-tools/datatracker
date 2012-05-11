@@ -35,7 +35,7 @@ like <code>.txt</code> in the name.</p>
 {% if user|has_role:"Secretariat" %}
 <p>Only WG submissions are subject to approval and are thus pre-approvable.</p>
 {% else %}
-<p>As WG Chair of {{ groups|length }} group{{ groups|pluralize }} you can pre-approve draft names on the form:
+<p>As WG Chair{% if groups|length > 1 %} of {{ groups|length }} groups{% endif %} you can pre-approve draft names on the form:
   <table>
   {% for g in groups %}
     <tr><td class="name-template">draft-ietf-{{ g.acronym }}-<i>something</i></td></tr>
