@@ -9,17 +9,21 @@ import os
 
 NUM_SESSION_CHOICES = (('','--Please select'),('1','1'),('2','2'))
 LENGTH_SESSION_CHOICES = (('','--Please select'),('1800','30 minutes'),('3600','1 hour'),('5400','1.5 hours'), ('7200','2 hours'),('9000','2.5 hours'))
-WG_CHOICES = list( Group.objects.filter(type__in=('wg','rg'),state__in=('bof','proposed','active')).values_list('acronym','acronym').order_by('acronym'))
+WG_CHOICES = list( Group.objects.filter(type__in=('wg','rg','ag'),state__in=('bof','proposed','active')).values_list('acronym','acronym').order_by('acronym'))
 WG_CHOICES.insert(0,('','--Select WG(s)'))
 
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
 def check_conflict(groups):
+    '''
+    Takes a string which is a list of group acronyms.  Checks that they are all active groups
+    '''
     # convert to python list (allow space or comma separated lists)
     items = groups.replace(',',' ').split()
+    active_groups = Group.objects.filter(type__in=('wg','ag','rg'), state__in=('bof','proposed','active'))
     for group in items:
-        if not validate_group(group):
+        if not active_groups.filter(acronym=group):
             raise forms.ValidationError("Invalid or inactive group acronym: %s" % group)
             
 def join_conflicts(data):
@@ -33,16 +37,6 @@ def join_conflicts(data):
         items = groups.replace(',',' ').split()
         conflicts.extend(items)
     return conflicts
-    
-def validate_group(acronym):
-    '''
-    Takes a string which is a group acronym.  Returns true if it is an acronym
-    of a active group
-    '''
-    if Group.objects.active_wgs().filter(acronym=acronym):
-        return True
-
-    return False
 
 # -------------------------------------------------
 # Forms
