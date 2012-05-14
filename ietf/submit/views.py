@@ -261,10 +261,15 @@ def approvals(request):
     approvals = get_approvable_submissions(request.user)
     preapprovals = get_preapprovals(request.user)
 
+    days = 30
+    recently_approved = get_recently_approved(request.user, datetime.date.today() - datetime.timedelta(days=days))
+
     return render_to_response('submit/approvals.html',
                               {'selected': 'approvals',
                                'approvals': approvals,
-                               'preapprovals': preapprovals },
+                               'preapprovals': preapprovals,
+                               'recently_approved': recently_approved,
+                               'days': days },
                               context_instance=RequestContext(request))
 
 

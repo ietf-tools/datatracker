@@ -466,7 +466,7 @@ def get_approvable_submissions(user):
     if has_role(user, "Secretariat"):
         return res
 
-    # those we can reach as chairs
+    # those we can reach as chair
     return res.filter(group_acronym__role__name="chair", group_acronym__role__person__user=user)
 
 def get_preapprovals(user):
@@ -484,7 +484,16 @@ def get_preapprovals(user):
 
     return res
 
+def get_recently_approved(user, since):
+    if not user.is_authenticated():
+        return []
 
+    res = IdSubmissionDetail.objects.distinct().filter(status__in=[POSTED, POSTED_BY_SECRETARIAT], submission_date__gte=since, revision="00").order_by('-submission_date')
+    if has_role(user, "Secretariat"):
+        return res
+
+    # those we can reach as chair
+    return res.filter(group_acronym__role__name="chair", group_acronym__role__person__user=user)
 
 class DraftValidation(object):
 

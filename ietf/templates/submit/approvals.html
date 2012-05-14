@@ -3,8 +3,8 @@
 
 {% block morecss %}
 {{ block.super }}
-table.approvals td, table.preapprovals td,
-table.approvals th, table.preapprovals th { text-align: left; padding-right: 8px; padding-bottom: 4px; }
+table.approvals td, table.preapprovals td, table.recently-approved td,
+table.approvals th, table.preapprovals th, table.recently-approved th { text-align: left; padding-right: 8px; padding-bottom: 4px; }
 
 table.preapprovals tr td a.cancel { visibility: hidden; }
 table.preapprovals tr:hover { background-color: #eee; }
@@ -34,7 +34,7 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
 </table>
 {% endif %}
 
-<h2 id="preapprovals">Pre-approved submissions not yet used</h2>
+<h2 id="preapprovals">Pre-approved drafts not yet submitted</h2>
 
 {% if user|has_role:"Secretariat,WG Chair" %}
 <p>You can <a href="{% url submit_add_preapproval %}">add a pre-approval</a>.</p>
@@ -56,6 +56,26 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
   <td>{{ p.time|date:"Y-m-d" }}</td>
   <td>{{ p.by }}</td>
   <td><a class="cancel" href="{% url submit_cancel_preapproval preapproval_id=p.id %}">cancel pre-approval</a></td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+<h2 id="recently-approved">Approved drafts within the past {{ days }} days</h2>
+
+{% if not recently_approved %}
+<p>No drafts approved.</p>
+{% else %}
+
+<table cellspacing="0" class="recently-approved">
+<tr>
+  <th>Draft</th>
+  <th>Submitted</th>
+</tr>
+{% for d in recently_approved %}
+<tr>
+  <td><a href="{% url doc_view d.filename %}">{{ d.filename }}</a></td>
+  <td>{{ d.submission_date }}</td>
 </tr>
 {% endfor %}
 </table>

@@ -373,10 +373,12 @@ class ApprovalsTestCase(django.test.TestCase):
 
         IdSubmissionDetail.objects.create(filename="draft-ietf-mars-foo",
                                           group_acronym_id=Group.objects.get(acronym="mars").pk,
+                                          submission_date=datetime.date.today(),
                                           revision="00",
                                           status_id=POSTED)
         IdSubmissionDetail.objects.create(filename="draft-ietf-mars-bar",
                                           group_acronym_id=Group.objects.get(acronym="mars").pk,
+                                          submission_date=datetime.date.today(),
                                           revision="00",
                                           status_id=INITIAL_VERSION_APPROVAL_REQUESTED)
 
@@ -389,6 +391,7 @@ class ApprovalsTestCase(django.test.TestCase):
         self.assertEquals(len(q('.approvals a:contains("draft-ietf-mars-bar")')), 1)
         self.assertEquals(len(q('.preapprovals td:contains("draft-ietf-mars-foo")')), 0)
         self.assertEquals(len(q('.preapprovals td:contains("draft-ietf-mars-baz")')), 1)
+        self.assertEquals(len(q('.recently-approved a:contains("draft-ietf-mars-foo")')), 1)
 
     def test_add_preapproval(self):
         make_test_data()
