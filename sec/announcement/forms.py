@@ -1,4 +1,6 @@
 from django import forms
+from django.core.validators import validate_email
+
 from models import *
 from sec.utils.mail import MultiEmailField
 from sec.utils.group import current_nomcom
@@ -38,8 +40,32 @@ TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
            'BoF Chairs <bofchairs@ietf.org>',
            'Other...')
 # ---------------------------------------------
+# Custom Fields
+# ---------------------------------------------
+
+class MultiEmailField(forms.Field):
+    def to_python(self, value):
+        "Normalize data to a list of strings."
+
+        # Return an empty list if no input was given.
+        if not value:
+            return []
+        values = value.split(',')
+        return [ x.strip() for x in values ]
+        
+    def validate(self, value):
+        "Check if value consists only of valid emails."
+
+        # Use the parent's handling of required fields, etc.
+        super(MultiEmailField, self).validate(value)
+
+        for email in value:
+            validate_email(email)
+            
+# ---------------------------------------------
 # Helper Functions
 # ---------------------------------------------
+
 def get_from_choices(user):
     '''
     This function returns a choices tuple containing
@@ -92,8 +118,7 @@ TO_CHOICES = get_to_choices()
 
 class AnnounceForm(forms.ModelForm):
     nomcom = forms.BooleanField(required=False)
-    to_custom = forms.EmailField(required=False,label='')
-    # use MultiEmailField once Django 1.2 is deployed
+    to_custom = MultiEmailField(required=False,label='')
     #cc = MultiEmailField(required=False)
     
     class Meta:

@@ -63,7 +63,7 @@ def main(request):
         messages.success(request, 'The announcement was sent.')
         url = reverse('home')
         return HttpResponseRedirect(url)
-   
+
     return render_to_response('announcement/main.html', {
         'form': form},
         RequestContext(request, {}),
