@@ -134,12 +134,12 @@ def get_proceedings_path(meeting,group):
         path = os.path.join(get_upload_root(meeting),'proceedings.html')
     return path
 
-def get_proceedings_url(meeting,group):
+def get_proceedings_url(meeting,group=None):
     if meeting.type_id == 'ietf':
-        url = "%s/proceedings/%s/%s.html" % (
-            settings.MEDIA_URL,
-            meeting.number,
-            group.acronym)
+        url = "%sproceedings/%s/" % (settings.MEDIA_URL,meeting.number)
+        if group:
+            url = url + "%s.html" % group.acronym
+            
     elif meeting.type_id == 'interim':
         url = "%s/proceedings/interim/%s/%s/proceedings.html" % (
             settings.MEDIA_URL,
@@ -196,6 +196,50 @@ def parsedate(d):
     '''
     return (d.strftime('%Y'),d.strftime('%m'),d.strftime('%d'))
     
+# -------------------------------------------------
+# AJAX Functions
+# -------------------------------------------------
+@sec_only
+def ajax_generate_proceedings(request, meeting_num):
+    '''
+    Ajax function which takes a meeting number and generates the proceedings
+    pages for the meeting.  It returns a snippet of HTML that gets placed in the 
+    Secretariat Only section of the select page.
+    '''
+    meeting = get_object_or_404(Meeting, number=meeting_num)
+    areas = Group.objects.filter(type='area',state='active').order_by('name')
+    others = TimeSlot.objects.filter(meeting=meeting,type='other').order_by('time')
+    context = {'meeting':meeting,
+               'areas':areas,
+               'others':others}
+    proceedings_url = get_proceedings_url(meeting)
+    
+    # the acknowledgement page can be edited manually so only produce if it doesn't already exist
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'acknowledgement.html')
+    if not os.path.exists(path):
+        gen_acknowledgement(context)
+    gen_overview(context)
+    gen_progress(context)
+    gen_agenda(context)
+    gen_attendees(context)
+    gen_index(context)
+    gen_areas(context)
+    gen_plenaries(context)
+    gen_training(context)
+    gen_irtf(context)
+    gen_research(context)
+    gen_group_pages(context)
+    
+    # get the time proceedings were generated
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'index.html')
+    last_run = datetime.datetime.fromtimestamp(os.path.getmtime(path))
+        
+    return render_to_response('includes/proceedings_functions.html',{
+        'meeting':meeting,
+        'last_run':last_run,
+        'proceedings_url':proceedings_url},
+        RequestContext(request,{}), 
+    )
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
@@ -374,33 +418,6 @@ def interim_directory(request, sortby=None):
     'meetings': meetings},
 )
 
-@sec_only
-def generate_proceedings(request, meeting_num):
-    '''
-    This view produces official proceedings pages for the given meeting
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_num)
-    areas = Group.objects.filter(type='area',state='active').order_by('name')
-    others = TimeSlot.objects.filter(meeting=meeting,type='other').order_by('time')
-    context = {'meeting':meeting,
-               'areas':areas,
-               'others':others}
-    
-    #copy_files(meeting)
-    gen_acknowledgement(context)
-    gen_overview(context)
-    #gen_progress(context)
-    gen_agenda(context)
-    gen_attendees(context)
-    gen_index(context)
-    gen_areas(context)
-    gen_plenaries(context)
-    gen_training(context)
-    gen_research(context)
-    
-    url = '%s/proceedings/%s' % (settings.MEDIA_URL, meeting_num)
-    return HttpResponseRedirect(url)
-    
 def main(request):
     '''
     List IETF Meetings.  If the user is Secratariat list includes all meetings otherwise
@@ -580,6 +597,14 @@ def select(request, meeting_num):
     user = request.user
     person = user.get_profile()
     groups_session, groups_no_session = groups_by_session(user, meeting)
+    proceedings_url = get_proceedings_url(meeting)
+    
+    # get the time proceedings were generated
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'index.html')
+    if os.path.exists(path):
+        last_run = datetime.datetime.fromtimestamp(os.path.getmtime(path))
+    else:
+        last_run = None
     
     # initialize group form
     wgs = filter(lambda x: x.type_id in ('wg','ag','team'),groups_session)
@@ -619,7 +644,9 @@ def select(request, meeting_num):
         'irtf_form': irtf_form,
         'training_form': training_form,
         'plenary_form': plenary_form,
-        'meeting':meeting},
+        'meeting': meeting,
+        'last_run': last_run,
+        'proceedings_url': proceedings_url},
         RequestContext(request,{}), 
     )
 
@@ -676,7 +703,6 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
     elif session_id:
         sessions = None
         session = get_object_or_404(Session, id=int(session_id))
-        #group = Group.objects.get(acronym='none')
         group = session.group
         session_name = session.name
     
@@ -768,8 +794,9 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
     docs = session.materials.all()
     docevents = DocEvent.objects.filter(doc__in=docs)
     
-    if os.path.exists(get_proceedings_path(meeting,group)):
-        proceedings_url = get_proceedings_url(meeting, group)
+    path = get_proceedings_path(meeting,group)
+    if os.path.exists(path):
+        proceedings_url = path
     else: 
         proceedings_url = ''
     

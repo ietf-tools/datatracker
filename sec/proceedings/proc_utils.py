@@ -6,7 +6,7 @@ This module contains all the functions for generating static proceedings pages
 from django.conf import settings
 from django.shortcuts import render_to_response
 from ietf.group.models import Group, Role
-from ietf.meeting.models import Session, TimeSlot
+from ietf.meeting.models import Session, TimeSlot, Meeting
 from ietf.meeting.views import agenda_info
 from ietf.doc.models import Document, RelatedDocument, DocEvent
 from itertools import chain
@@ -24,22 +24,16 @@ import shutil
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
-
-def copy_files(meeting):
+def comp(timeslot):
     '''
-    This function copies all the static html pages from the last meeting
-    NOTE: it won't overwrite files already there because these may be 
-    modified manually
+    This takes a timeslot object and returns a key to sort by the area acronym or None
     '''
-    file_list = ['acknowledgement.html','overview.html','irtf.html']
-    last_meeting = str(int(meeting.number) - 1)
+    try:
+        key = timeslot.session.group.parent.acronym
+    except AttributeError:
+        key = None
+    return key
     
-    for file in file_list:
-        source = os.path.join(settings.PROCEEDINGS_DIR,last_meeting,file)
-        target = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,file)
-        if not os.path.exists(target):
-            shutil.copy(source,target)
-
 def get_progress_stats(sdate,edate):
     '''
     This function takes a date range and produces a dictionary of statistics / objects for use
@@ -70,7 +64,12 @@ def get_progress_stats(sdate,edate):
                                            doc__type='draft',
                                            time__gte=sdate,
                                            time__lte=edate)
-                                   
+    
+    # attach the ftp URL for use in the template
+    for event in data['rfcs']:
+        num = get_rfc_num(event.doc)
+        event.ftp_url = 'ftp://ftp.ietf.org/rfc/rfc%s.txt' % num
+        
     data['counts'] = {'std':data['rfcs'].filter(doc__intended_std_level__in=('ps','ds','std')).count(),
                       'bcp':data['rfcs'].filter(doc__intended_std_level='bcp').count(),
                       'exp':data['rfcs'].filter(doc__intended_std_level='exp').count(),
@@ -122,8 +121,15 @@ def create_proceedings(meeting, group):
     if meeting.type_id == 'ietf' and int(meeting.number) < 79:
         return
         
-    session = Session.objects.filter(meeting=meeting,group=group)[0]
-    agenda,minutes,slides = get_material(session)
+    sessions = Session.objects.filter(meeting=meeting,group=group)
+    if sessions:
+        session = sessions[0]
+        agenda,minutes,slides = get_material(session)
+    else:
+        agenda = None
+        minutes = None
+        slides = None
+        
     chairs = group.role_set.filter(name='chair')
     secretaries = group.role_set.filter(name='secr')
     ads = group.parent.role_set.filter(name='ad')
@@ -147,9 +153,12 @@ def create_proceedings(meeting, group):
         target = os.path.join(meeting_root,'id')
         if not os.path.exists(target):
             os.makedirs(target)
-        shutil.copy(source,target)
+        if os.path.exists(source):
+            shutil.copy(source,target)
+            draft.bytes = os.path.getsize(source)
+        else:
+            draft.bytes = 0
         draft.url = url_root + "id/%s" % draft.filename_with_rev()
-        draft.bytes = os.path.getsize(source)
     
     for rfc in rfcs:
         # TODO should use get_file_path() here but is incorrect for rfcs
@@ -272,20 +281,26 @@ def gen_acknowledgement(context):
 def gen_agenda(context):
     meeting = context['meeting']
     
-    # grab the agenda from datatracker
-    #url = 'https://datatracker.ietf.org/meeting/%s/agenda.html' % meeting.number
-    #html = urlopen(url).read()
-    
     #timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(meeting.number)
-    timeslots = TimeSlot.objects.filter(meeting=meeting).order_by('time')
+    timeslots = TimeSlot.objects.filter(meeting=meeting)
+    
+    # sort by area then time
+    sort1 = sorted(timeslots, key = comp)
+    sort2 = sorted(sort1, key = lambda a: a.time)
     
     html = render_to_response('proceedings/agenda.html',{
         'meeting': meeting,
-        'timeslots': timeslots}
+        'timeslots': sort2}
     )
     
     path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'agenda.html')
     write_html(path,html.content)
+    
+    # get the text agenda from datatracker
+    url = 'https://datatracker.ietf.org/meeting/%s/agenda.txt' % meeting.number
+    text = urlopen(url).read()
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'agenda.txt')
+    write_html(path,text)
     
 def gen_attendees(context):
     meeting = context['meeting']
@@ -300,11 +315,27 @@ def gen_attendees(context):
     path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'attendee.html')
     write_html(path,html.content)
     
+def gen_group_pages(context):
+    meeting = context['meeting']
+    
+    for group in Group.objects.filter(type__in=('wg','ag','rg'), state__in=('bof','proposed','active')):
+        create_proceedings(meeting,group)
+        
 def gen_index(context):
     index = render_to_response('proceedings/index.html',context)
     path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'index.html')
     write_html(path,index.content)
 
+def gen_irtf(context):
+    meeting = context['meeting']
+    irtf_chair = Role.objects.filter(group__acronym='irtf',name='chair')[0]
+    
+    html = render_to_response('proceedings/irtf.html',{
+        'irtf_chair':irtf_chair}
+    )
+    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'irtf.html')
+    write_html(path,html.content)
+    
 def gen_overview(context):
     meeting = context['meeting']
     
@@ -350,8 +381,12 @@ def gen_plenaries(context):
 def gen_progress(context):
     meeting = context['meeting']
     
-    start_date = meeting.get_submission_start_date()
-    end_date = meeting.get_submission_cut_off_date()
+    # proceedings are run sometime after the meeting, so end date = the previous meeting
+    # date and start date = the date of the meeting before that
+    now = datetime.date.today()
+    meetings = Meeting.objects.filter(type='ietf',date__lt=now).order_by('-date')
+    start_date = meetings[1].date
+    end_date = meetings[0].date
     data = get_progress_stats(start_date,end_date)
     data['meeting'] = meeting
     

@@ -1,0 +1,17 @@
+
+          <p>Use this to generate official proceedings for the selected meeting.</p>
+          <ul class="none">
+            <li>
+              <button id="generate-button">Generate Proceedings</button>
+              &nbsp;&nbsp;Last run: 
+              {% if last_run %}
+                {{ last_run|date:"M d, Y H:i" }}&nbsp;&nbsp;<a href="{{ proceedings_url }}">Proceedings</a>
+              {% else %}
+                Never
+              {% endif %}
+            </li>
+          </ul>
+          <p>Use this to process meeting materials files that have been converted to PDF and uploaded to the server.</p>
+          <ul class="none">
+            <li><button onclick="window.location='{% url proceedings_process_pdfs meeting_num=meeting.number %}'">Process PDFs</button></li>
+          </ul>

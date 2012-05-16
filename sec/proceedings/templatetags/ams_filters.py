@@ -13,7 +13,9 @@ def abbr_status(value):
          'Standard':'S',
          'Historic':'H',
          'Informational':'I',
-         'Experimental':'E'}
+         'Experimental':'E',
+         'Best Current Practice':'BCP',
+         'Internet Standard':'IS'}
 
     return d.get(value,value)
 
@@ -22,13 +24,25 @@ def display_duration(value):
     """
     Maps a session requested duration from select index to 
     label."""
-    map = {'1800':'30 Minutes',
+    map = {'0':'None',
+           '1800':'30 Minutes',
            '3600':'1 Hour',
            '5400':'1.5 Hours',
            '7200':'2 Hours',
            '9000':'2.5 Hours'}
     return map[value]
 
+@register.filter
+def get_published_date(rfc):
+    '''
+    Returns the published date for a RFC Document
+    '''
+    event = rfc.latest_event(type='published_rfc')
+    if event:
+        return event.time
+    else:
+        return None
+        
 @register.filter
 def is_ppt(value):
     '''

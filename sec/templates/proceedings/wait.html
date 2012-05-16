@@ -1,0 +1,30 @@
+{% extends "base_site.html" %}
+
+{% block title %}Proceeding manager{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; Proceedings
+{% endblock %}
+
+{% block content %}
+
+<div  class="module" >
+    <h2>Proceedings</h2>
+    <hr />
+    <h2>{{ message }}</h2>
+    <img class='loading' src='/img/ajax-loader.gif' alt='loading...' />
+</div> <!-- module -->
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/upload_footer.html" %}
+{% endblock %}
+~
+~
+~
+

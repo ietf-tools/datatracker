@@ -4,7 +4,29 @@
 
 {% block extrahead %}{{ block.super }}
   <script type="text/javascript" src="/js/utils.js"></script>
+  
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $.ajaxSetup ({  
+        cache: false  
+      });
+      
+      $('#generate-button').click(function(){
+          var loadUrl = "/proceedings/ajax/generate-proceedings/";
+          var ajax_load = "<p><h4 align='center'>Generating Proceedings.  This may take a few minutes.</h3><img class='loading' src='/img/ajax-loader.gif' alt='loading...' /></p>";
+          var url = window.location.pathname;
+          var parts = url.split("/");
+          //alert(parts[2]);
+          var meeting_num = parts[2];
+          $("#private-functions").html(ajax_load).load(loadUrl + meeting_num);
+      });
+      
+    
+    });
+    
+  </script>
 {% endblock %}
+
 
 {% block breadcrumbs %}{{ block.super }} 
   &raquo; <a href="{% url proceedings %}">Proceedings</a>
@@ -61,16 +83,13 @@
         </div> <!-- inline-related -->
         
         {% if request.user_is_secretariat %}
-        <div class="inline-group">
+        <div class="inline-related">
           <h2>Secretariat Only Functions</h2>
-          <p>Use this to generate official proceedings for the selected meeting.</p>
-          <ul class="none">
-            <li><button onclick="window.location='{% url proceedings_generate_proceedings meeting_num=meeting.number %}'">Generate Proceedings</button></li>
-          </ul>
-          <p>Use this to process meeting materials files that have been converted to PDF and uploaded to the server.</p>
-          <ul class="none">
-            <li><button onclick="window.location='{% url proceedings_process_pdfs meeting_num=meeting.number %}'">Process PDFs</button></li>
-          </ul>
+          <div id="private-functions">
+            
+            {% include "includes/proceedings_functions.html" %}
+            
+          </div> <!-- private-functions -->
         </div> <!-- inline-group -->
         {% endif %}
         

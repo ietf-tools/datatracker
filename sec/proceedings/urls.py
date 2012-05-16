@@ -3,12 +3,12 @@ from django.contrib import admin
 
 urlpatterns = patterns('sec.proceedings.views',
     url(r'^$', 'main', name='proceedings'),
+     url(r'^ajax/generate-proceedings/(?P<meeting_num>\d{1,3})/$', 'ajax_generate_proceedings', name='proceedings_ajax_generate_proceedings'),
     # special offline URL for testing proceedings build
     url(r'^build/(?P<meeting_num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',
         'build', name='proceedings_build'),
     url(r'^delete/(?P<slide_id>[A-Za-z0-9._\-\+]+)/$', 'delete_material', name='proceedings_delete_material'),
     url(r'^edit-slide/(?P<slide_id>[A-Za-z0-9._\-\+]+)/$', 'edit_slide', name='proceedings_edit_slide'),
-    url(r'^generate-proceedings/(?P<meeting_num>\d{1,3})/$', 'generate_proceedings', name='proceedings_generate_proceedings'),
     url(r'^move-slide/(?P<slide_id>[A-Za-z0-9._\-\+]+)/(?P<direction>(up|down))/$',
         'move_slide', name='proceedings_move_slide'),
     url(r'^process-pdfs/(?P<meeting_num>\d{1,3})/$', 'process_pdfs', name='proceedings_process_pdfs'),

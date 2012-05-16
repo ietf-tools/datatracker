@@ -1,4 +1,5 @@
 {% extends "proceedings/proceedings_template.html" %}
+{% load ams_filters %}
 
 {% block content %}
 
@@ -13,22 +14,26 @@
 
 <h4>{{ new_groups.count }} New Working Group(s) formed this period</h4>
 {% for group in new_groups %}
-&nbsp;&nbsp;&nbsp;{{ group.name }} ({{ group.acronym }})
+&nbsp;&nbsp;&nbsp;{{ group.name }} ({{ group.acronym }})<br />
 {% endfor %}
 
 <h4>{{ concluded_groups.count }} Working Group(s) concluded this period</h4>
 {% for group in concluded_groups %}
-&nbsp;&nbsp;&nbsp;{{ group.name }} ({{ group.acronym }})
+&nbsp;&nbsp;&nbsp;{{ group.name }} ({{ group.acronym }})<br />
 {% endfor %}
 
 <h4>{{ rfcs.count }} RFCs published this period</h4>
-<table>
+{{ counts.std }} Standards Track; {{ counts.bcp }} BCP; {{ counts.exp }} Experimental; {{ counts.inf }} Informational<br />
+<br />
+
+<table cellpadding="3" cellspacing="2">
   {% for rfc in rfcs %}
     <tr>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
+      <td><a href="{{ rfc.ftp_url }}">{{ rfc.doc.canonical_name|upper }}</a></td>
+      <td>{{ rfc.doc.intended_std_level.name|abbr_status }}</td>
+      <td>({{ rfc.doc.group.acronym }})</td>
+      <td>{{ rfc.time|date:"F Y" }}</td>
+      <td>{{ rfc.doc.title }}</td>
     </tr>
   {% endfor %}
 </table>
