@@ -136,7 +136,7 @@ def get_proceedings_path(meeting,group):
 
 def get_proceedings_url(meeting,group=None):
     if meeting.type_id == 'ietf':
-        url = "%sproceedings/%s/" % (settings.MEDIA_URL,meeting.number)
+        url = "%s/proceedings/%s/" % (settings.MEDIA_URL,meeting.number)
         if group:
             url = url + "%s.html" % group.acronym
             
