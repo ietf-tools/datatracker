@@ -22,16 +22,16 @@ and end with
 {% endif %}
 
 <h3>
-{% if meeting.minutes %}
-  <a href="{{ meeting.minutes.get_absolute_url }}">Minutes</a>
+{% if minutes %}
+  <a href="{{ minutes.get_absolute_url }}">Minutes</a>
 {% else %}
   Minutes
 {% endif %}&nbsp;&nbsp;|&nbsp;&nbsp;
 {% if meeting.type.slug == "ietf" %}
   <a href="/audio/ietf{{ meeting.number }}/">Audio Archives</a>&nbsp;&nbsp;|&nbsp;&nbsp;
 {% else %}
-  {% if meeting.agenda %}
-    <a href="{{ meeting.agenda.get_absolute_url }}">Agenda</a>
+  {% if agenda %}
+    <a href="{{ agenda.get_absolute_url }}">Agenda</a>
   {% else %}
     Agenda
   {% endif %}&nbsp;&nbsp;|&nbsp;&nbsp;
