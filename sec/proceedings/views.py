@@ -796,7 +796,7 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
     
     path = get_proceedings_path(meeting,group)
     if os.path.exists(path):
-        proceedings_url = path
+        proceedings_url = get_proceedings_url(meeting,group)
     else: 
         proceedings_url = ''
     

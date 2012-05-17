@@ -220,9 +220,11 @@ def create_proceedings(meeting, group):
         'secretaries': secretaries,
         'ads': ads,
         'tas': tas,
-        'meeting':meeting,
+        'meeting': meeting,
         'rfcs': rfcs,
-        'slides': slides}
+        'slides': slides,
+        'minutes': minutes,
+        'agenda': agenda}
     )
     
     # save proceedings
