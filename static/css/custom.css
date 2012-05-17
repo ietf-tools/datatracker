@@ -360,7 +360,7 @@ input.draft-file-input {
     width: 30em;
 }
 
-#groups-add-table #id_name,#id_list_email,#id_list_subscribe,#id_list_archive {
+#groups-table #id_name,#id_list_email,#id_list_subscribe,#id_list_archive {
     width: 40em;
 }
 
