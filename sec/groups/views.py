@@ -430,9 +430,8 @@ def search(request):
                 kwargs['state'] = state
             if type:
                 kwargs['type'] = type
-            else:
-                #kwargs['type__in'] = ['wg','ag','team']
-                kwargs['type__in'] = ('wg','rg','ietf','ag','sdo')
+            #else:
+            #    kwargs['type__in'] = ('wg','rg','ietf','ag','sdo','team')
             
             if meeting_scheduled == 'YES':
                 kwargs['session__meeting__number'] = meeting.number
