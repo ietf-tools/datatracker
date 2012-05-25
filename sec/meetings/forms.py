@@ -17,13 +17,16 @@ DAYS_CHOICES = ((-1,'Saturday'),
                 (4,'Thursday'),
                 (5,'Friday'))
 
-"""
-SESSION_CHOICES = list(SessionName.objects.values_list('session_name_id', 'session_name')) 
-SESSION_CHOICES.insert(0,('0','-----------'))
+# using Django week_day lookup values (Sunday=1)
+SESSION_DAYS = ((2,'Monday'),
+                (3,'Tuesday'),
+                (4,'Wednesday'),
+                (5,'Thursday'),
+                (6,'Friday'))
+                
 #----------------------------------------------------------
 # Helper Functions
 #----------------------------------------------------------
-"""
 def get_next_slot(slot):
     '''Takes a TimeSlot object and returns the next TimeSlot same day and same room, None if there
     aren't any.  You must check availability of the slot as we sometimes need to get the next
@@ -35,6 +38,22 @@ def get_next_slot(slot):
         return same_day_slots[i+1]
     except IndexError:
         return None
+    
+def get_times(meeting,day):
+    '''
+    Takes a Meeting object and an integer representing the week day (sunday=1).  
+    Returns a list of tuples for use in a ChoiceField.  The value is a timeslot id, 
+    The label is [start_time]-[end_time].
+    '''
+    # pick a random room
+    rooms = Room.objects.filter(meeting=meeting)
+    if rooms:
+        room = rooms[0]
+    else:
+        room = None
+    slots = TimeSlot.objects.filter(meeting=meeting,time__week_day=day,location=room).order_by('time')
+    choices = [ (t.time.strftime('%H%M'), '%s-%s' % (t.time.strftime('%H%M'), t.end_time().strftime('%H%M'))) for t in slots ]
+    return choices
 #----------------------------------------------------------
 # Base Classes
 #----------------------------------------------------------
@@ -80,29 +99,14 @@ class MeetingRoomForm(forms.ModelForm):
     class Meta:
         model = Room
 
-class MeetingTimeForm(forms.ModelForm):
-    class Meta:
-        model = TimeSlot
-        fields = ('day_id', 'time_desc', 'session_name_id')
-        
-    def __init__(self, *args, **kwargs):
-        super(MeetingTimeForm, self).__init__(*args, **kwargs)
-        self.fields['day_id'].widget = forms.Select(choices=DAYS_CHOICES)
-        self.fields['session_name_id'].widget = forms.Select(choices=SESSION_CHOICES)
-    
-    def clean_time_desc(self):
-        time_desc = self.cleaned_data['time_desc']
-        if time_desc and time_desc != '0':
-            match = re.match(r'\d{4}-\d{4}', time_desc)
-            if not match:
-                raise forms.ValidationError('Time must be in the from NNNN-NNNN')
-        return time_desc
-        
 class ExtraSessionForm(forms.Form):
     no_notify = forms.BooleanField(required=False, label="Do NOT notify this action")
 
 class NewSessionForm(forms.Form):
-    time = TimeSlotModelChoiceField(queryset=TimeSlot.objects,label='Day-Time-Room',required=False)
+    #time = TimeSlotModelChoiceField(queryset=TimeSlot.objects,label='Day-Time-Room',required=False)
+    day = forms.ChoiceField(choices=SESSION_DAYS)
+    time = forms.ChoiceField()
+    room = forms.ModelChoiceField(queryset=Room.objects.none)
     session = forms.CharField(widget=forms.HiddenInput)
     note = forms.CharField(max_length=255, required=False, label='Special Note from Scheduler')
     combine = forms.BooleanField(required=False, label='Combine with next session')
@@ -114,22 +118,12 @@ class NewSessionForm(forms.Form):
         
         # attach session object to the form so we can use it in the template
         self.session_object = Session.objects.get(id=self.initial['session'])
+        self.fields['room'].queryset = Room.objects.filter(meeting=meeting)
+        self.fields['time'].choices = get_times(meeting,self.initial['day'])
         
-        # if we are editing, timeslot queryset needs to include the timeslot the session was 
-        # assigned to in order to initialize the form
-        if self.initial['time']:
-            queryset = TimeSlot.objects.filter(Q(meeting=meeting,type='session',session__isnull=True)|
-                                               Q(session__id=self.initial['session']))
-        else:
-            queryset = TimeSlot.objects.filter(meeting=meeting,type='session',session__isnull=True)
-        self.fields['time'].queryset = queryset.order_by('time')
-    
     def clean_time(self):
-        time = self.cleaned_data['time']
-        if time:
-            if not self.session_object.requested_duration <= time.duration:
-                raise forms.ValidationError('The requested session length is longer than the duration of this timeslot')
-        return time
+        # skip the time validation because we're populating options from javascript
+        return self.cleaned_data['time']
         
     def clean(self):
         super(NewSessionForm, self).clean()

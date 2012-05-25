@@ -421,6 +421,10 @@ input.draft-file-input {
     width: 5em;
 }
 
+tr.break td {
+    border-top: 2px solid black;
+}
+
 /* ----------- Proceeding Tool -------------------- */
 
 input#id_slide_name {

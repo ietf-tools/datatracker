@@ -3,6 +3,7 @@ from django.conf.urls.defaults import *
 urlpatterns = patterns('sec.meetings.views',
     url(r'^$', 'main', name='meetings'),
     url(r'^add/$', 'add', name='meetings_add'),
+    url(r'^ajax/get-times/(?P<meeting_id>\d{1,6})/(?P<day>\d)/$', 'ajax_get_times', name='meetings_ajax_get_times'),
     #url(r'^blue_sheet/$', 'blue_sheet', name='meetings_blue_sheet'),
     url(r'^(?P<meeting_id>\d{1,6})/$', 'view', name='meetings_view'),
     url(r'^(?P<meeting_id>\d{1,6})/edit/$', 'edit_meeting',

@@ -11,7 +11,6 @@
         <tr>
           <th>Day</th>
           <th>Time</th>
-          <th>Duration</th>
           <th>Name</th>
           <th>Group</th>
           <th>Location</th>
@@ -22,10 +21,9 @@
       </thead>
       <tbody>
         {% for item in slots %}
-          <tr class="{% cycle row1,row2 %}">
+          <tr class="{% cycle row1,row2 %}{% ifchanged item.type %} break{% endifchanged %}">
             <td>{{ item.time|date:"D" }}</td>
-            <td>{{ item.time|date:"H:i" }}</td>
-            <td>{{ item.duration }}</td>
+            <td>{{ item.time|date:"H:i" }}-{{ item.end_time|date:"H:i" }}</td>
             <td>{{ item.name }}</td>
             <td>{{ item.session.group.acronym }}</td>
             {% if item.type.slug == 'other' or item.type.slug == 'plenary' %}

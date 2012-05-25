@@ -9,6 +9,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.functional import curry
+from django.utils import simplejson
 
 from ietf.utils.mail import send_mail
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot
@@ -25,11 +26,6 @@ from forms import *
 
 import os
 import datetime
-
-# --------------------------------------------------
-# Globals
-# --------------------------------------------------
-
 
 # --------------------------------------------------
 # Helper Functions
@@ -73,6 +69,7 @@ def build_nonsession(meeting):
     '''
     last_meeting = get_last_meeting(meeting)
     delta = meeting.date - last_meeting.date
+    system = Person.objects.get(name='(system)')
     for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other','plenary')):
         new_time = slot.time + delta
         session = None
@@ -81,7 +78,7 @@ def build_nonsession(meeting):
             session = Session(meeting=meeting,
                               name=slot.name,
                               group=slot.session.group,
-                              requested_by=Person.objects.get(name='(system)'),
+                              requested_by=system,
                               status_id='sched')
             session.save()
         
@@ -183,6 +180,23 @@ def sort_groups(meeting):
             
     return scheduled_groups, unscheduled_groups
     
+# -------------------------------------------------
+# AJAX Functions
+# -------------------------------------------------
+def ajax_get_times(request, meeting_id, day):
+    '''
+    Ajax function to get timeslot times for a given day.
+    returns JSON format response: [{id:start_time, value:start_time-end_time},...]
+    '''
+    # TODO strip duplicates if there are any  
+    results=[]
+    room = Room.objects.filter(meeting__number=meeting_id)[0]
+    slots = TimeSlot.objects.filter(meeting__number=meeting_id,time__week_day=day,location=room).order_by('time')
+    for slot in slots:
+        d = {'id': slot.time.strftime('%H%M'), 'value': '%s-%s' % (slot.time.strftime('%H%M'), slot.end_time().strftime('%H%M'))}
+        results.append(d)
+        
+    return HttpResponse(simplejson.dumps(results), mimetype='application/javascript')
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
@@ -504,11 +518,24 @@ def schedule(request, meeting_id, acronym):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     group = get_object_or_404(Group, acronym=acronym)
-    sessions = Session.objects.filter(meeting=meeting_id,group=group,status__in=('schedw','apprw','appr','sched','canceled'))
+    sessions = Session.objects.filter(meeting=meeting,group=group,status__in=('schedw','apprw','appr','sched','canceled'))
     legacy_session = get_initial_session(sessions)
     session_conflicts = session_conflicts_as_string(group, meeting)
-    initial = [ {'session':s.id,'time':s.timeslot_set.all()[0].pk if s.timeslot_set.all() else None,'note':s.agenda_note} for s in sessions ]
     now = datetime.datetime.now()
+        
+    # build initial
+    initial = []
+    for s in sessions:
+        d = {'session':s.id,
+             'note':s.agenda_note}
+        qs = s.timeslot_set.all()
+        if qs:
+            d['room'] = qs[0].location.id
+            d['day'] = qs[0].time.isoweekday() % 7 + 1     # adjust to django week_day
+            d['time'] = qs[0].time.strftime('%H%M')
+        else:
+            d['day'] = 2
+        initial.append(d)
     
     # need to use curry here to pass custom variable to form init
     NewSessionFormset = formset_factory(NewSessionForm, extra=0)
@@ -529,19 +556,50 @@ def schedule(request, meeting_id, acronym):
             for form in formset.forms:
                 if form.has_changed():
                     has_changed = True
-                    timeslot = form.cleaned_data['time']
-                    old = form.initial['time']
-                    initial_timeslot = TimeSlot.objects.get(id=old) if old else None
                     id = form.cleaned_data['session']
                     note = form.cleaned_data['note']
+                    room = form.cleaned_data['room']
+                    time = form.cleaned_data['time']
+                    day = form.cleaned_data['day']
                     session = Session.objects.get(id=id)
+                    if session.timeslot_set.all():
+                        initial_timeslot = session.timeslot_set.all()[0]
+                    else:
+                        initial_timeslot = None
+                        
+                    # find new timeslot
+                    new_day = meeting.date + datetime.timedelta(days=int(day)-1)
+                    hour = datetime.time(int(time[:2]),int(time[2:]))
+                    new_time = datetime.datetime.combine(new_day,hour)
+                    qs = TimeSlot.objects.filter(meeting=meeting,time=new_time,location=room)
+                    if qs.filter(session=None):
+                        timeslot = qs.filter(session=None)[0]
+                    else:
+                        # we need to create another, identical timeslot
+                        timeslot = TimeSlot.objects.create(meeting=qs[0].meeting,
+                                                           type=qs[0].type,
+                                                           name=qs[0].name,
+                                                           time=qs[0].time,
+                                                           duration=qs[0].duration,
+                                                           location=qs[0].location,
+                                                           show_location=qs[0].show_location,
+                                                           modified=now)
+                        messages.warning(request, 'WARNING: There are now two sessions scheduled for the timeslot: %s' % timeslot)
                     
-                    if 'time' in form.changed_data:
+                    if any(x in form.changed_data for x in ('day','time','room')):
                         # clear the old timeslot
                         if initial_timeslot:
-                            initial_timeslot.session = None
-                            initial_timeslot.modified = now
-                            initial_timeslot.save()
+                            # if the initial timeslot is one of multiple we should delete it
+                            tqs = TimeSlot.objects.filter(meeting=meeting,
+                                                          type='session',
+                                                          time=initial_timeslot.time,
+                                                          location=initial_timeslot.location)
+                            if tqs.count() > 1:
+                                initial_timeslot.delete()
+                            else:
+                                initial_timeslot.session = None
+                                initial_timeslot.modified = now
+                                initial_timeslot.save()
                         if timeslot:
                             timeslot.session = session
                             timeslot.modified = now
@@ -698,7 +756,7 @@ def times(request, meeting_id):
     for t in timeslots:
         slots.append({'name':t.name,
                       'time':t.time,
-                      'duration':t.duration})
+                      'end_time':t.end_time()})
     times = sorted(slots, key=lambda a: a['time'])
                           
     if request.method == 'POST':
@@ -725,7 +783,7 @@ def times(request, meeting_id):
         
     else:
         form = TimeSlotForm()
-        
+
     return render_to_response('meetings/times.html', {
         'form': form,
         'meeting': meeting,
