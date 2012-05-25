@@ -235,7 +235,7 @@ def create_proceedings(meeting, group):
     f.close()
     
     # rebuild the directory
-    if meeting.type == 'interim':
+    if meeting.type.slug == 'interim':
         create_interim_directory()
 
 # -------------------------------------------------
