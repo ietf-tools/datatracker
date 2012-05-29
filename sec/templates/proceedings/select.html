@@ -12,13 +12,11 @@
       });
       
       $('#generate-button').click(function(){
-          var loadUrl = "/proceedings/ajax/generate-proceedings/";
           var ajax_load = "<p><h4 align='center'>Generating Proceedings.  This may take a few minutes.</h3><img class='loading' src='/img/ajax-loader.gif' alt='loading...' /></p>";
           var url = window.location.pathname;
           var parts = url.split("/");
-          //alert(parts[2]);
-          var meeting_num = parts[2];
-          $("#private-functions").html(ajax_load).load(loadUrl + meeting_num);
+          var loadUrl = "/proceedings/ajax/generate-proceedings/" + parts[2] + "/";
+          $("#private-functions").html(ajax_load).load(loadUrl);
       });
       
     
