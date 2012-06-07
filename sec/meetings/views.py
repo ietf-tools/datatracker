@@ -16,6 +16,7 @@ from ietf.meeting.models import Meeting, Session, Room, TimeSlot
 from ietf.group.models import Group
 from ietf.name.models import SessionStatusName, TimeSlotTypeName
 from ietf.person.models import Person
+from sec.meetings.blue_sheets import create_blue_sheets
 from sec.proceedings.views import build_choices
 from sec.sreq.forms import GroupSelectForm
 from sec.sreq.views import get_initial_session, session_conflicts_as_string
@@ -102,7 +103,7 @@ def make_directories(meeting):
     os.umask(0)
     if not os.path.exists(path):
         os.makedirs(path)
-    for d in ('slides','agenda','minutes','id','rfc'):
+    for d in ('slides','agenda','minutes','id','rfc','bluesheets'):
         if not os.path.exists(os.path.join(path,d)):
             os.mkdir(os.path.join(path,d))
 
@@ -238,72 +239,16 @@ def add(request):
         'form': form},
         RequestContext(request, {}),
     )
-"""
-def blue_sheet(request):
-    
-    groups = IETFWG.objects.filter(meeting_scheduled="YES").select_related().order_by('group_acronym__acronym')
-    meeting = Meeting.objects.all().order_by('-meeting_num')[0]
-    
-    file = open(settings.BLUE_SHEET_PATH, 'w')
-    
-    header = '''{\\rtf1\\ansi\\ansicpg1252\\uc1 \\deff0\\deflang1033\\deflangfe1033
- {\\fonttbl{\\f0\\froman\\fcharset0\\fprq2{\\*\\panose 02020603050405020304}Times New Roman;}}
- {\\colortbl;\\red0\\green0\\blue0;\\red0\\green0\\blue255;\\red0\\green255\\blue255;\\red0\\green255\\blue0;
-\\red255\\green0\\blue255;\\red255\\green0\\blue0;\\red255\\green255\\blue0;\\red255\\green255\\blue255;
-\\red0\\green0\\blue128;\\red0\\green128\\blue128;\\red0\\green128\\blue0;\\red128\\green0\\blue128;
-\\red128\\green0\\blue0;\\red128\\green128\\blue0;\\red128\\green128\\blue128;
-\\red192\\green192\\blue192;}
- \\widowctrl\\ftnbj\\aenddoc\\hyphcaps0\\formshade\\viewkind1\\viewscale100\\pgbrdrhead\\pgbrdrfoot
- \\fet0\\sectd \\pgnrestart\\linex0\\endnhere\\titlepg\\sectdefaultcl'''
 
-    file.write(header)
+def blue_sheet(request, meeting_id):
+    '''
+    A function to create the blue sheets for the specified Meeting
+    '''
+    meeting = get_object_or_404(Meeting, number=meeting_id)
     
-    for group in groups:
-        group_header = ''' {\\header \\pard\\plain \\s15\\qr\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright \\fs20\\cgrid
- { Meeting # %s  %s (%s) \\par }
- \\pard \\s15\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright
- {\\b\\fs24 Mailing List: %s 
- \\par
- \\par \\tab The NOTE WELL statement included in your registration packet applies to this meeting.
- \\par
- \\par                               NAME                                                  EMAIL ADDRESS
- \\par \\tab
- \\par }}
- {\\footer \\pard\\plain \\s16\\qc\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright \\fs20\\cgrid {\\cs17 Page }
- {\\field{\\*\\fldinst {\\cs17  PAGE }}}
- { \\par }}
-  {\\headerf \\pard\\plain \\s15\\qr\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright \\fs20\\cgrid
-  {\\b\\fs24 Meeting # %s %s (%s) \\par }}
- {\\footerf \\pard\\plain \\s16\\qc\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright \\fs20\\cgrid
-  {Page 1 \\par }}
-  \\pard\\plain \\qc\\nowidctlpar\\widctlpar\\adjustright \\fs20\\cgrid
-  {\\b\\fs32 %s IETF Working Group Roster \\par }
-  \\pard \\nowidctlpar\\widctlpar\\adjustright
-  {\\fs28 \\par Working Group Session: %s \\par \\par }
-{\\b \\fs24 Mailing List: %s                    Actual Start Time: __________        \\par \\par Chairperson:_______________________________     Actua
-l End Time: __________ \\par \\par }
- {\\tab \\tab      }
-{\\par \\tab The NOTE WELL statement included in your registration packet applies to this meeting. \\par \\par
-\\b NAME\\tab \\tab \\tab \\tab \\tab \\tab EMAIL ADDRESS \\par }
-  \\pard \\fi-90\\li90\\nowidctlpar\\widctlpar\\adjustright
- {\\fs16''' % (meeting.meeting_num, group.acronym, group.group_type, group.email_address, meeting.meeting_num, group.acronym, group.group_type, meeting.meeting_num, group.group_name, group.email_address)
-        file.write(group_header)
-        for x in range(1,131):
-            line = '''\\par %s._________________________________________________ \\tab _____________________________________________________
- \\par
- ''' % x
-            file.write(line)
-            
-        footer = '''}
-\\pard \\nowidctlpar\\widctlpar\\adjustright
-{\\fs16 \\sect }
-\\sectd \\pgnrestart\\linex0\\endnhere\\titlepg\\sectdefaultcl
-'''
-        file.write(footer)
-
-    file.write('\n}')
-    file.close()
-
+    groups = Group.objects.filter(session__meeting=meeting).order_by('acronym')
+    create_blue_sheets(meeting, groups)
+    
     url = settings.BLUE_SHEET_URL
     
     messages.success(request, 'Blue Sheet Doc created')
@@ -312,7 +257,17 @@ l End Time: __________ \\par \\par }
         'url': url,},
         RequestContext(request, {}),
     )
-"""
+
+def blue_sheet_redirect(request):
+    '''
+    This is the generic blue sheet URL.  It gets the next IETF meeting and redirects
+    to the meeting specific URL.
+    '''
+    today = datetime.date.today()
+    meeting = Meeting.objects.filter(date__gt=today,type='ietf').order_by('date')[0]
+    url = reverse('meetings_blue_sheet', kwargs={'meeting_id':meeting.number})
+    return HttpResponseRedirect(url)
+
 def edit_meeting(request, meeting_id):
     '''
     Edit Meeting information.
@@ -445,11 +400,13 @@ def non_session_delete(request, meeting_id, slot_id):
 
 def remove_session(request, meeting_id, acronym):
     '''
-    Remove session from agenda.  Disassociate session from timeslot and set status
+    Remove session from agenda.  Disassociate session from timeslot and set status.
+    According to Wanda this option is used when people cancel, so the Session
+    request should be deleted as well.
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     group = get_object_or_404(Group, acronym=acronym)
-    sessions = Session.objects.filter(meeting=meeting_id,group=group)
+    sessions = Session.objects.filter(meeting=meeting,group=group)
     now = datetime.datetime.now()
     
     for session in sessions:
@@ -457,15 +414,12 @@ def remove_session(request, meeting_id, acronym):
         timeslot.session = None
         timeslot.modified = now
         timeslot.save()
-        session.status_id = 'schedw'
+        session.status_id = 'canceled'
         session.modified = now
         session.save()
     
-    # log activity
-    # add_session_activity(group.pk,'Session was removed from agenda',meeting,request.person)
-    
-    messages.success(request, '%s Session removed from agenda' % (session.group))
-    url = reverse('meetings_select_group', kwargs={'meeting_id':meeting_id})
+    messages.success(request, '%s Session removed from agenda' % (group.acronym))
+    url = reverse('meetings_select_group', kwargs={'meeting_id':meeting.number})
     return HttpResponseRedirect(url)
 
 def rooms(request, meeting_id):

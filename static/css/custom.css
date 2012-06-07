@@ -42,9 +42,9 @@
     font-size: 10px;
 }
 
-.inline-group th, td {
+/*.inline-group th, td {
     padding: 3px;
-}
+}*/
 
 .object-tools {
     float: left;
@@ -63,7 +63,7 @@
     color: red;
 }
 
-.breadcrumbs td, th {
+.breadcrumbs td {
     border-bottom: none;
 }
 
@@ -107,7 +107,7 @@
 .login {
     float: right;
     color: white;
-    font-size: 11px;
+    font-size: 12px;
     vertical-align: bottom;
     padding-right: 10px;
 }
@@ -250,13 +250,25 @@ ul#list-nav a.current {
 }
 
 /* ----------- Announce Tool -------------------- */
-#announce-table input[type="text"], textarea {
+#announce-table input[type="text"] {
     width: 40em;
+}
+
+#announce-table #id_body {
+    width: 40em;
+}
+
+#announce-table td {
+    border-bottom: none;
+}
+
+#announce-table th {
+    border-bottom: none;
 }
 
 /* ----------- Area Tool -------------------- */
 
-#areas-list-table td, th {
+#areas-list-table td {
     padding-left: 1em;
     padding-right: 1em;
 }
@@ -335,6 +347,10 @@ input.draft-file-input {
     padding: 0;
 }
 
+#draft-edit-table #id_name {
+    width: 30em;
+}
+
 #draft-email-table #id_cc {
     width: 60em;
 }
@@ -351,6 +367,18 @@ input.draft-file-input {
     width: 60em;
 }
 
+#draft-search-form #id_document_title {
+    width: 40em;
+}
+
+#draft-search-form #id_group {
+    width: 40em;
+}
+
+#draft-search-form #id_filename {
+    width: 40em;
+}
+
 #draft-obsoletes-table input[type="text"] {
     width: 3.5em;
 }
@@ -361,6 +389,10 @@ input.draft-file-input {
 }
 
 #groups-table #id_name,#id_list_email,#id_list_subscribe,#id_list_archive {
+    width: 40em;
+}
+
+#groups-table #id_comments {
     width: 40em;
 }
 
@@ -399,10 +431,6 @@ input.draft-file-input {
 
 #additional-info-form #id_text {
     width: 90%;
-}
-
-#timeslot-form {
-    display: inline;
 }
 
 #timeslot-form #id_time,#id_duration {
@@ -456,14 +484,14 @@ div.interim-scroll {
     padding-right: 2em;
 }
 
-#proceedings-interim-table td, th {
+#proceedings-interim-table td {
     white-space:pre-wrap;
     padding-left: 1em;
     padding-right: 1em;
     /* font-family: "Courier",monospace; */
 }
 
-#proceedings-list-table td, th {
+#proceedings-list-table td {
     padding-left: 1em;
     padding-right: 1em;
 }
@@ -521,6 +549,10 @@ div.interim-scroll {
 }
 
 #rolodex-person-table input[type=text] {
+    width: 30em;
+}
+
+#id_address {
     width: 30em;
 }
 
@@ -697,4 +729,49 @@ ul.doc-list li {
 .telechat-button li {
     list-style-type: none;
     text-align: center;
+}
+
+/* ------------- Redesign  ---------------- */
+table.amstable {
+    background-color: #F2F2E6;
+}
+
+table.amstable th {
+    color: #666666;
+    font-size: 12px;
+    font-weight: normal !important;
+    padding-left: 1em;
+    padding-right: 1em;
+    text-align: right;
+}
+
+table.amsview th {
+    border-bottom: none;
+    color: #666666;
+    font-size: 13px;
+    padding: 4px 10px 4px 4px;
+    text-align: right;
+    vertical-align: middle;
+}
+
+table.amsview td {
+    border-bottom: none;
+    vertical-align: middle;
+    padding: 4px 10px 4px 4px;
+}
+
+.button-group { 
+    background: #F2F2E6;
+}
+
+td, th, li, h2 {
+    font-size: 12px;
+}
+
+.module h2 {
+    font-size: 12px;
+}
+
+thead th {
+    font-size: 12px;
 }

@@ -8,13 +8,14 @@
     {% if awp_formset.can_delete %}<span class="delete">{{ form.DELETE }} Delete</span>{% endif %}
   </h3>
   {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
-  <table id="area-awp-table">
+  <table id="area-awp-table" class="full-width amstable">
+    <col width="150">
     <tr>
-      <td>URL:</td>
+      <th>URL:</th>
       <td>{{ form.url.errors }}{{ form.url }}</td>
     </tr>
     <tr>
-      <td>Name:</td>
+      <th>Name:</th>
       <td>{{ form.name.errors }}{{ form.name }}</td>
     </tr>
     {{ form.id }}

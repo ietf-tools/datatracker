@@ -16,6 +16,7 @@
 <div class="module">
     <h2>Area - View</h2>
       <table class="full-width">
+        <col width="150">
         <tr><td>Area Acronym:</td><td>{{ area.acronym }}</td></tr>
         <tr><td>Area Name:</td><td>{{ area.name }}</td></tr>
         <tr><td>Status:</td><td>{{ area.state }}</td></tr>
@@ -27,7 +28,7 @@
 
       <div class="inline-related">
         <h2>Directors</h2>
-        <table>
+        <table  class="full-width">
 	{% for director in directors %}
           <tr><td><a href="{% url rolodex_view id=director.person.id %}">{{ director.person.name }}</a>{% if director.name.slug == "pre-ad" %} (Incoming){% endif %}</td></tr>
         {% endfor %}

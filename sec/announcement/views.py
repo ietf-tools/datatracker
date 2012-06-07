@@ -44,13 +44,31 @@ def check_access(user):
 # @check_for_cancel(reverse('home'))
 @check_for_cancel('../')
 def main(request):
-
+    '''
+    Main view for Announcement tool.  Authrozied users can fill out email details: header, body, etc
+    and send.
+    '''
     if not check_access(request.user):
         return HttpResponseForbidden('Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, IAOC, NomCom.')
     
     form = AnnounceForm(request.POST or None,user=request.user)
     
     if form.is_valid():
+        request.session['data'] = form.cleaned_data
+        
+        url = reverse('announcement_confirm')
+        return HttpResponseRedirect(url)
+
+    return render_to_response('announcement/main.html', {
+        'form': form},
+        RequestContext(request, {}),
+    )
+
+@check_for_cancel('../')
+def confirm(request):
+    
+    if request.method == 'POST':
+        form = AnnounceForm(request.session['data'],user=request.user)
         message = form.save(user=request.user,commit=True)
         send_mail_text(None, 
                        message.to,
@@ -59,12 +77,23 @@ def main(request):
                        message.body,
                        cc=message.cc,
                        bcc=message.bcc)
+
+        # clear session
+        request.session.clear()
         
         messages.success(request, 'The announcement was sent.')
-        url = reverse('home')
+        url = reverse('announcement')
         return HttpResponseRedirect(url)
-
-    return render_to_response('announcement/main.html', {
-        'form': form},
+    
+    data = request.session['data']
+    
+    if data['to'] == 'Other...':
+        to = ','.join(data['to_custom'])
+    else:
+        to = data['to']
+        
+    return render_to_response('announcement/confirm.html', {
+        'message': data,
+        'to': to},
         RequestContext(request, {}),
     )

@@ -14,14 +14,20 @@
 
 <div class="module">
     <h2>Announcement</h2>
-
     
     <form action="" method="POST">
     <table class="new-style" id="announce-table">
-        <tr><th>To:</th><td>{{ message.to }}</td></tr>
+        <tr><th>To:</th><td>{{ to }}</td></tr>
         <tr><th>From:</th><td>{{ message.frm }}</td></tr>
-        <tr><th>CC:</th><td>{{ message.cc}}</td></tr>
+        <tr><th>Cc:</th><td>{{ message.cc}}</td></tr>
+        <tr><th>Bcc:</th><td>{{ message.bcc }}</td></tr>
+        <tr><th>Reply To:</th><td>{{ message.reply_to}}</td></tr>
+        <tr><th>Subject:</th><td>{{ message.subject }}</td></tr>
     </table>
+    <br />
+    <hr />
+    <br />
+    <p>{{ message.body }}</p>
     
     <div class="button-group">
       <ul id="announcement-button-list">

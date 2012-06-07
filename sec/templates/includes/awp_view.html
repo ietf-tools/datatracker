@@ -3,7 +3,8 @@
   {% for item in awps %}
   <div class="inline-related{% if forloop.last %} last-related{% endif %}">
     <h3><b>Web Page:</b>&nbsp; #{{ forloop.counter }}</h3>
-    <table>
+    <table class="full-width">
+      <col width="150">
       <tr><td>URL:</td><td>{{ item.url }}</td><tr>
       <tr><td>Name:</td><td>{{ item.name }}</td></tr>
     </table>

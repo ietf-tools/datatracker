@@ -97,14 +97,9 @@ def get_next_slide_num(session):
     This function takes a session object and returns the
     next slide number to use for a newly added slide as a string.
     '''
+    
+    """
     slides = session.materials.filter(type='slides').order_by('-name')
-    # was using alternate method to find slides to prevent case of ending up
-    # with a duplicate filename but ended up being problematic
-    #if session.meeting.type_id == 'ietf':
-    #    pattern = 'slides-%s-%s' % (session.meeting.number,session.group.acronym)
-    #elif session.meeting.type_id == 'interim':
-    #    pattern = 'slides-%s' % (session.meeting.number)
-    #slides = Document.objects.filter(type='slides',name__startswith=pattern).order_by('-name')
     if slides:
         # we need this special case for non wg/rg sessions because the name format is different
         # it should be changed to match the rest
@@ -112,6 +107,14 @@ def get_next_slide_num(session):
             nums = [ s.name.split('-')[3] for s in slides ]
         else:
             nums = [ s.name.split('-')[-1] for s in slides ]
+    """
+    if session.meeting.type_id == 'ietf':
+        pattern = 'slides-%s-%s' % (session.meeting.number,session.group.acronym)
+    elif session.meeting.type_id == 'interim':
+        pattern = 'slides-%s' % (session.meeting.number)
+    slides = Document.objects.filter(type='slides',name__startswith=pattern)
+    if slides:
+        nums = [ s.name.split('-')[-1] for s in slides ]
         nums.sort(key=int)
         return str(int(nums[-1]) + 1)
     else:
@@ -639,6 +642,14 @@ def select(request, meeting_num):
     else:
         plenary_form = None
         
+    # count PowerPoint files waiting to be converted
+    if has_role(user,'Secretariat'):
+        ppt = Document.objects.filter(session__meeting=meeting_num,type='slides',external_url__endswith='.ppt').exclude(states__slug='deleted')
+        pptx = Document.objects.filter(session__meeting=meeting_num,type='slides',external_url__endswith='.pptx').exclude(states__slug='deleted')
+        ppt_count = ppt.count() + pptx.count()
+    else:
+        ppt_count = 0
+        
     return render_to_response('proceedings/select.html', {
         'group_form': group_form,
         'irtf_form': irtf_form,
@@ -646,7 +657,8 @@ def select(request, meeting_num):
         'plenary_form': plenary_form,
         'meeting': meeting,
         'last_run': last_run,
-        'proceedings_url': proceedings_url},
+        'proceedings_url': proceedings_url,
+        'ppt_count': ppt_count},
         RequestContext(request,{}), 
     )
 
@@ -728,12 +740,18 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
                 filename = '%s-%s-%s' % (material_type.slug,meeting.number,group.acronym)
             elif meeting.type.slug == 'interim':
                 filename = '%s-%s' % (material_type.slug,meeting.number)
+            
+            # Todo
+            # remove per Russ for shorter URLs
+            if session_name:
+                filename += "-%s" % slugify(session_name)
+            # --------------------------------
+            
             if material_type.slug == 'slides':
                 order_num = get_next_order_num(session)
                 slide_num = get_next_slide_num(session)
                 filename += "-%s" % slide_num
-            if session_name:
-                filename += "-%s" % slugify(session_name)
+            
             disk_filename = filename + file_ext
             
             # create the Document object, in the case of slides the name will always be unique

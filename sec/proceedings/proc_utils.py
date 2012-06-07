@@ -20,6 +20,7 @@ from urllib2 import urlopen
 import datetime
 import os
 import shutil
+import stat
 
 # -------------------------------------------------
 # Helper Functions
@@ -81,6 +82,7 @@ def write_html(path,content):
     f = open(path,'w')
     f.write(content)
     f.close()
+    os.chmod(path,0664)
     
 # -------------------------------------------------
 # End Helper Functions
@@ -132,7 +134,10 @@ def create_proceedings(meeting, group):
         
     chairs = group.role_set.filter(name='chair')
     secretaries = group.role_set.filter(name='secr')
-    ads = group.parent.role_set.filter(name='ad')
+    if group.parent:        # Certain groups like Tools Team do no have a parent
+        ads = group.parent.role_set.filter(name='ad')
+    else:
+        ads = None
     tas = group.role_set.filter(name='techadv')
     
     docs = Document.objects.filter(group=group,type='draft').order_by('time')
@@ -233,6 +238,7 @@ def create_proceedings(meeting, group):
     f = open(proceedings_path,'w')
     f.write(response.content)
     f.close()
+    os.chmod(proceedings_path, 0664)
     
     # rebuild the directory
     if meeting.type.slug == 'interim':

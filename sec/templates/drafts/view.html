@@ -18,7 +18,7 @@
 <div class="module draft-container">
   <div id="draft-view-col1">
     <h2>Draft - View</h2>
-      <table >
+      <table class="full-width">
         <tr><td>Document Name:</td><td>{{ draft.title }}</td></tr>
         <tr><td>Area:</td><td>{% if draft.group.parent %}<a href="{% url areas_view name=draft.group.parent.acronym %}">{{ draft.group.parent }}{% endif %}</td></tr>
         <tr><td>Group:</td><td>{% if draft.group %}<a href="{% url groups_view acronym=draft.group.acronym %}">{{ draft.group.acronym }}{% endif %}</td></tr>
@@ -69,7 +69,7 @@
   <div id="draft-view-col2">
       <div class="inline-related">
         <h2>Author(s)</h2>
-        <table>
+        <table class="full-width">
         {% for author in draft.documentauthor_set.all %}
           <tr><td><a href="{% url rolodex_view id=author.author.person.id %}">{{ author.author.person.name }}</a></td></tr>
         {% endfor %}

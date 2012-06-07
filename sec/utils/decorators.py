@@ -19,6 +19,7 @@ def check_for_cancel(redirect_url):
         @wraps(func)
         def inner(request, *args, **kwargs):
             if request.method == 'POST' and request.POST.get('submit',None) == 'Cancel':
+                request.session.clear()
                 return HttpResponseRedirect(redirect_url)
             return func(request, *args, **kwargs)
         return inner

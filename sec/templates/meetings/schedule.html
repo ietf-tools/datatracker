@@ -58,21 +58,23 @@
           {% for form in formset.forms %}
             <div class="inline-related{% if forloop.last %} last-related{% endif %}">
               <h3><b>Session:</b>&nbsp; #{{ forloop.counter }}{% if form.session_object.status.slug == 'apprw' %}<span class="message-right">Waiting for Approval</span>{% endif %}</h3>
-              <table>
+              <table class="full-width amstable">
+                <col width="200">
                 {{ form }}
               </table>
             </div> <!-- inline-related -->
           {% endfor %}
     </div> <!-- inline-group -->
     
-    <table>
-    {{ extra_form }}
+    <table class="full-width amstable">
+      <col width="200">
+      {{ extra_form }}
     </table>
     
       <div class="button-group">
        <ul>
          <li><button type="submit" name="submit" value="Save">Save</button></li>
-         <li><button type="button" onclick="if (window.confirm('This group will be permanently removed from the agenda and scheduling tool')) { window.location='{% url meetings_remove_session meeting_id=meeting.id acronym=group.acronym %}' };">Remove this group from agenda</button></li>
+         <li><button type="button" onclick="if (window.confirm('This group will be permanently removed from the agenda and scheduling tool')) { window.location='{% url meetings_remove_session meeting_id=meeting.number acronym=group.acronym %}' };">Remove this group from agenda</button></li>
          <li><button type="button" onclick="window.location='{% url meetings_select_group meeting_id=meeting.number %}'">Back</button></li>
         </ul>
       </div> <!-- button-group -->

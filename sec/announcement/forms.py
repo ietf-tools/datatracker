@@ -50,9 +50,14 @@ class MultiEmailField(forms.Field):
         # Return an empty list if no input was given.
         if not value:
             return []
-        values = value.split(',')
-        return [ x.strip() for x in values ]
         
+        import types
+        if isinstance(value, types.StringTypes):
+            values = value.split(',')
+            return [ x.strip() for x in values ]
+        else:
+            return value
+            
     def validate(self, value):
         "Check if value consists only of valid emails."
 
@@ -130,6 +135,7 @@ class AnnounceForm(forms.ModelForm):
         super(AnnounceForm, self).__init__(*args, **kwargs)
         self.fields['to'].widget = forms.Select(choices=TO_CHOICES)
         self.fields['to'].help_text = 'Select name OR select Other... and enter email below'
+        self.fields['cc'].help_text = 'Use comma separated lists for emails (Cc, Bcc, Reply To)'
         self.fields['frm'].widget = forms.Select(choices=get_from_choices(user))
         self.fields['frm'].label = 'From'
         self.fields['nomcom'].label = 'NomCom message?'

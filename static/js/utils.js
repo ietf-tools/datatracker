@@ -108,7 +108,7 @@ $(document).ready(function() {
   if ( $("form[id^=group-role-assignment-form]").length > 0){
       $("#id_role_type").focus();
   }
-  if ( $("form[id=drafts-search-form]").length > 0){
+  if ( $("form[id=draft-search-form]").length > 0){
       $("#id_filename").focus();
   }
   if ( $("form[id=drafts-add-form]").length > 0){
