@@ -7,3 +7,4 @@ SERVER_MODE = 'test'
 
 IPR_DOCUMENT_PATH = '/home/ietf/adm/IPR/'
 
+SITE_ID = 1
