@@ -101,7 +101,7 @@ def render_ballot_icon(user, doc):
 
         c = "position-%s" % (pos.pos.slug if pos else "norecord")
 
-        if ad == user.get_profile():
+        if hasattr(user, "get_profile") and ad == user.get_profile():
             c += " my"
 
         res.append('<td class="%s" />' % c)
