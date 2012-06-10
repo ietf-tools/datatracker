@@ -40,6 +40,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 
 from pyquery import PyQuery
+import debug
 
 from ietf.doc.models import *
 from ietf.name.models import *
@@ -505,7 +506,8 @@ class EditPositionTestCase(django.test.TestCase):
 
     def test_cannot_edit_position_as_pre_ad(self):
         draft = make_test_data()
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name))
+        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name,
+                                                     ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
         
         # transform to pre-ad
         ad_role = Role.objects.filter(name="ad")[0]

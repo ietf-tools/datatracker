@@ -37,6 +37,20 @@ def email_secretariat(request, wg, type, text):
                    )
               )
 
+def email_state_changed(request, doc, text):
+    to = [e.strip() for e in doc.notify.replace(';', ',').split(',')]
+    if not to:
+        return
+    
+    text = strip_tags(text)
+    text += "\n\n"
+    text += "URL: %s" % (settings.IDTRACKER_BASE_URL + doc.get_absolute_url())
+
+    send_mail_text(request, to, None,
+                   "State changed: %s-%s" % (doc.canonical_name(), doc.rev),
+                   text)
+
+    
 def generate_ballot_writeup(request, doc):
     e = WriteupDocEvent()
     e.type = "changed_ballot_writeup_text"

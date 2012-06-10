@@ -68,11 +68,14 @@ class SearchForm(forms.Form):
     def clean(self):
         q = self.cleaned_data
         # Reset query['by'] if needed
-        for k in ('author','group','area','ad'):
-            if (q['by'] == k) and not q[k]:
+        if 'by' not in q:
+            q['by'] = None            
+        else:
+            for k in ('author','group','area','ad'):
+                if (q['by'] == k) and not q[k]:
+                    q['by'] = None
+            if (q['by'] == 'state') and not (q['state'] or q['subState']):
                 q['by'] = None
-        if (q['by'] == 'state') and not (q['state'] or q['subState']):
-            q['by'] = None
         # Reset other fields
         for k in ('author','group','area','ad'):
             if q['by'] != k:
@@ -296,11 +299,14 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         def clean(self):
             q = self.cleaned_data
             # Reset query['by'] if needed
-            for k in ('author','group','area','ad'):
-                if (q['by'] == k) and (k not in q or not q[k]):
+            if 'by' not in q:
+                q['by'] = None            
+            else:
+                for k in ('author','group','area','ad'):
+                    if (q['by'] == k) and (k not in q or not q[k]):
+                        q['by'] = None
+                if (q['by'] == 'state') and (not 'state' in q or not 'subState' in q or not (q['state'] or q['subState'])):
                     q['by'] = None
-            if (q['by'] == 'state') and (not 'state' in q or not 'subState' in q or not (q['state'] or q['subState'])):
-                q['by'] = None
             # Reset other fields
             for k in ('author','group','area','ad'):
                 if q['by'] != k:

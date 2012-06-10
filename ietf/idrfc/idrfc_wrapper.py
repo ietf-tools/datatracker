@@ -33,6 +33,7 @@
 from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, IESGDiscuss, IESGLogin, DocumentComment, Acronym, IDState
 from ietf.idrfc.models import RfcEditorQueue
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
+from ietf.doc.models import BallotDocEvent
 
 import re
 from datetime import date

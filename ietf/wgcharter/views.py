@@ -9,7 +9,7 @@ from django.template import RequestContext
 from django import forms
 from django.forms.util import ErrorList
 from django.utils import simplejson
-from django.utils.html import strip_tags
+from django.utils.html import strip_tags, escape
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
@@ -47,8 +47,10 @@ def change_state(request, name, option=None):
     charter = get_object_or_404(Document, type="charter", name=name)
     wg = charter.group
 
+    chartering_type = get_chartering_type(charter)
+
     initial_review = charter.latest_event(InitialReviewDocEvent, type="initial_review")
-    if charter.get_state_slug() != "infrev" or (initial_review and initial_review.expires < datetime.datetime.now()):
+    if charter.get_state_slug() != "infrev" or (initial_review and initial_review.expires < datetime.datetime.now()) or chartering_type == "rechartering":
         initial_review = None
 
     login = request.user.get_profile()
@@ -112,6 +114,8 @@ def change_state(request, name, option=None):
                 if message:
                     email_secretariat(request, wg, "state-%s" % charter_state.slug, message)
 
+                email_state_changed(request, charter, "State changed to %s." % charter_state)
+
                 if charter_state.slug == "intrev":
                     if request.POST.get("ballot_wo_extern"):
                         create_ballot_if_not_open(charter, login, "r-wo-ext")
@@ -128,19 +132,17 @@ def change_state(request, name, option=None):
                 e.desc = "Initial review time expires %s" % e.expires.strftime("%Y-%m-%d")
                 e.save()
 
-            if option in ("initcharter", "recharter"):
-                return redirect('charter_submit', name=charter.name)
             return redirect('doc_view', name=charter.name)
     else:
         if option == "recharter":
-            hide = ['charter_state']
-            init = dict(initial_time=1, message='%s has initiated a recharter effort on the WG:\n "%s" (%s)' % (login.plain_name(), wg.name, wg.acronym))
+            hide = ['initial_time', 'charter_state', 'message']
+            init = dict()
         elif option == "initcharter":
             hide = ['charter_state']
-            init = dict(initial_time=1, message='%s has initiated chartering of the proposed WG:\n "%s" (%s)' % (login.plain_name(), wg.name, wg.acronym))
+            init = dict(initial_time=1, message='%s has initiated chartering of the proposed WG:\n "%s" (%s).' % (login.plain_name(), wg.name, wg.acronym))
         elif option == "abandon":
             hide = ['initial_time', 'charter_state']
-            init = dict(message='%s has abandoned the chartering effort on the WG: "%s" (%s)' % (login.plain_name(), wg.name, wg.acronym))
+            init = dict(message='%s has abandoned the chartering effort on the WG:\n "%s" (%s).' % (login.plain_name(), wg.name, wg.acronym))
         else:
             hide = ['initial_time']
             s = charter.get_state()
@@ -165,8 +167,8 @@ def change_state(request, name, option=None):
 
     messages = {
         state_pk("infrev"): 'The WG "%s" (%s) has been set to Informal IESG review by %s.' % (wg.name, wg.acronym, login.plain_name()),
-        state_pk("intrev"): 'The WG "%s" (%s) has been set to Internal review by %s. Please place it on the next IESG telechat and inform the IAB.' % (wg.name, wg.acronym, login.plain_name()),
-        state_pk("extrev"): 'The WG "%s" (%s) has been set to External review by %s. Please send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (wg.name, wg.acronym, login.plain_name()),
+        state_pk("intrev"): 'The WG "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat and inform the IAB.' % (wg.name, wg.acronym, login.plain_name()),
+        state_pk("extrev"): 'The WG "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (wg.name, wg.acronym, login.plain_name()),
         }
 
     states_for_ballot_wo_extern = State.objects.filter(type="charter", slug="intrev").values_list("pk", flat=True)
@@ -179,7 +181,7 @@ def change_state(request, name, option=None):
                                    prev_charter_state=prev_charter_state,
                                    title=title,
                                    initial_review=initial_review,
-                                   chartering_type=get_chartering_type(charter),
+                                   chartering_type=chartering_type,
                                    messages=simplejson.dumps(messages),
                                    states_for_ballot_wo_extern=simplejson.dumps(list(states_for_ballot_wo_extern)),
                                    ),
@@ -223,6 +225,49 @@ def telechat_date(request, name):
                                    login=login),
                               context_instance=RequestContext(request))
 
+class NotifyForm(forms.Form):
+    notify = forms.CharField(max_length=255, help_text="List of email addresses to receive state notifications, separated by comma", label="Notification list", required=False)
+
+    def clean_notify(self):
+        return self.cleaned_data["notify"].strip()
+
+@role_required("Area Director", "Secretariat")
+def edit_notify(request, name):
+    doc = get_object_or_404(Document, type="charter", name=name)
+    login = request.user.get_profile()
+
+    init = {'notify': doc.notify}
+
+    if request.method == "POST":
+        form = NotifyForm(request.POST, initial=init)
+        if form.is_valid():
+            n = form.cleaned_data["notify"]
+            if n != doc.notify:
+                save_document_in_history(doc)
+
+                e = DocEvent(doc=doc, by=login)
+                e.desc = "Notification list changed to %s" % (escape(n) or "none")
+                if doc.notify:
+                    e.desc += " from %s" % escape(doc.notify)
+                e.type = "changed_document"
+                e.save()
+
+                doc.notify = n
+                doc.time = e.time
+                doc.save()
+
+            return redirect("doc_view", name=doc.name)
+    else:
+        form = NotifyForm(initial=init)
+
+    return render_to_response('wgcharter/edit_notify.html',
+                              dict(doc=doc,
+                                   form=form,
+                                   user=request.user,
+                                   login=login),
+                              context_instance=RequestContext(request))
+
+
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Charter text", help_text="Edit the charter text", required=False)
     txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file", required=False)
@@ -242,7 +287,7 @@ class UploadForm(forms.Form):
                 destination.write(self.cleaned_data['content'])
 
 @role_required('Area Director','Secretariat')
-def submit(request, name):
+def submit(request, name, option=None):
     charter = get_object_or_404(Document, type="charter", name=name)
     wg = charter.group
 
@@ -281,7 +326,10 @@ def submit(request, name):
             charter.time = datetime.datetime.now()
             charter.save()
 
-            return HttpResponseRedirect(reverse('doc_view', kwargs={'name': charter.name}))
+            if option:
+                return redirect('charter_startstop_process', name=charter.name, option=option)
+            else:
+                return redirect("doc_view", name=charter.name)
     else:
         init = { "content": ""}
         c = charter

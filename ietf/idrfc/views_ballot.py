@@ -13,6 +13,8 @@ from django.utils.html import strip_tags
 from django.utils import simplejson
 from django.conf import settings
 
+import debug
+
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.ietfauth.decorators import group_required, role_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
@@ -274,8 +276,10 @@ def edit_positionREDESIGN(request, name, ballot_id):
             pos.comment = clean["comment"].rstrip()
             pos.comment_time = old_pos.comment_time if old_pos else None
             pos.discuss = clean["discuss"].rstrip()
-            if not pos.pos.blocking:
+            if not pos.pos_id == "discuss":
                 pos.discuss = ""
+#            if not pos.pos.blocking:
+#                pos.discuss = ""
             pos.discuss_time = old_pos.discuss_time if old_pos else None
 
             changes = []
@@ -350,7 +354,6 @@ def edit_positionREDESIGN(request, name, ballot_id):
         form = EditPositionForm(initial=initial, ballot_type=ballot.ballot_type)
 
     blocking_positions = dict((p.pk, p.name) for p in form.fields["position"].queryset.all() if p.blocking)
-    print blocking_positions, form.fields["position"].queryset.all()
 
     ballot_deferred = None
     if doc.get_state_slug("%s-iesg" % doc.type_id) == "defer":
@@ -363,7 +366,7 @@ def edit_positionREDESIGN(request, name, ballot_id):
                                    return_to_url=return_to_url,
                                    old_pos=old_pos,
                                    ballot_deferred=ballot_deferred,
-                                   show_discuss_text=old_pos and old_pos.pos.blocking,
+                                   show_discuss_text=old_pos and old_pos.pos_id=="discuss",
                                    blocking_positions=simplejson.dumps(blocking_positions),
                                    ),
                               context_instance=RequestContext(request))
@@ -476,7 +479,7 @@ def send_ballot_commentREDESIGN(request, name, ballot_id):
     subj = []
     d = ""
     blocking_name = "DISCUSS"
-    if pos.pos.blocking and pos.discuss:
+    if pos.pos_id == "discuss" and pos.discuss:
         d = pos.discuss
         blocking_name = pos.pos.name.upper()
         subj.append(blocking_name)

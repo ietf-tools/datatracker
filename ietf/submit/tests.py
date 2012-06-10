@@ -16,7 +16,7 @@ from ietf.utils.mail import outbox
 
 from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role
-from ietf.doc.models import Document, BallotPositionDocEvent
+from ietf.doc.models import Document, BallotDocEvent, BallotPositionDocEvent
 from ietf.submit.models import IdSubmissionDetail
 
 class SubmitTestCase(django.test.TestCase):
@@ -163,6 +163,7 @@ class SubmitTestCase(django.test.TestCase):
 
         # make a discuss to see if the AD gets an email
         ballot_position = BallotPositionDocEvent()
+        ballot_position.ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
         ballot_position.pos_id = "discuss"
         ballot_position.type = "changed_ballot_position"
         ballot_position.doc = draft
@@ -234,7 +235,7 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue(name in unicode(outbox[-2]))
         self.assertTrue("mars" in unicode(outbox[-2]))
         self.assertTrue(draft.ad.role_email("ad").address in unicode(outbox[-2]))
-        self.assertTrue(ballot_position.ad.email_address() in unicode(outbox[-2]))
+        self.assertTrue(ballot_position.ad.role_email("ad").address in unicode(outbox[-2]))
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
         self.assertTrue(name in unicode(outbox[-1]))
         self.assertTrue("mars" in unicode(outbox[-1]))

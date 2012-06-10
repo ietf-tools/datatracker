@@ -116,6 +116,22 @@ class EditCharterTestCase(django.test.TestCase):
         charter = Document.objects.get(name=charter.name)
         self.assertTrue(not charter.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date)
 
+    def test_edit_notify(self):
+        make_test_data()
+
+        charter = Group.objects.get(acronym="mars").charter
+
+        url = urlreverse('charter_edit_notify', kwargs=dict(name=charter.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # post
+        self.assertTrue(not charter.notify)
+        r = self.client.post(url, dict(notify="someone@example.com, someoneelse@example.com"))
+        self.assertEquals(r.status_code, 302)
+
+        charter = Document.objects.get(name=charter.name)
+        self.assertEquals(charter.notify, "someone@example.com, someoneelse@example.com")
+
     def test_submit_charter(self):
         make_test_data()
 

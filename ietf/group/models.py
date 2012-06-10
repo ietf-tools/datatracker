@@ -86,6 +86,7 @@ GROUP_EVENT_CHOICES = [
     ("changed_state", "Changed state"),
     ("added_comment", "Added comment"),
     ("info_changed", "Changed metadata"),
+    ("requested_close", "Requested closing group"),
     ]
 
 class GroupEvent(models.Model):

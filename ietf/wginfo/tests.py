@@ -120,6 +120,38 @@ class WgEditTestCase(django.test.TestCase):
         self.assertEquals(group.charter.name, "charter-ietf-testwg")
         self.assertEquals(group.charter.rev, "00-00")
 
+    def test_create_based_on_existing(self):
+        make_test_data()
+
+        url = urlreverse('wg_create')
+        login_testing_unauthorized(self, "secretary", url)
+
+        group = Group.objects.get(acronym="mars")
+
+        # try hijacking area - faulty
+        r = self.client.post(url, dict(name="Test", acronym=group.parent.acronym))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertEquals(len(q('form input[name="confirmed"]')), 0) # can't confirm us out of this
+
+        # try elevating BoF to WG
+        group.state_id = "bof"
+        group.save()
+
+        r = self.client.post(url, dict(name="Test", acronym=group.acronym))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertEquals(len(q('form input[name="confirmed"]')), 1)
+
+        self.assertEquals(Group.objects.get(acronym=group.acronym).state_id, "bof")
+
+        # confirm elevation
+        r = self.client.post(url, dict(name="Test", acronym=group.acronym, confirmed="1"))
+        self.assertEquals(r.status_code, 302)
+        self.assertEquals(Group.objects.get(acronym=group.acronym).state_id, "proposed")
+        self.assertEquals(Group.objects.get(acronym=group.acronym).name, "Test")
 
     def test_edit_info(self):
         make_test_data()
