@@ -29,6 +29,8 @@ class PersonInfo(models.Model):
             prefix, first, middle, last, suffix = self.ascii_parts()
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
     def plain_name(self):
+        if self.ascii_short:
+            return self.ascii_short
         prefix, first, middle, last, suffix = name_parts(self.name)
         return u" ".join([first, last])
     def last_name(self):
