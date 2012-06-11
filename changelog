@@ -1,6 +1,41 @@
-ietfdb (4.03)
+ietfdb (4.20)
 
-  Merged in [4364] from rjsparks@nostrum.com: 
+  This release introduces major new functionality for managing WG charters
+  as documents.  A large number of related and unrelated fixes has also been
+  included, an almost complete list is available below, latest first:
+
+  * Added a debug utility module on the same level as south,html5lib etc.
+
+  * Don't try to call get_profile() on a user if the method isn't available.
+
+  * Merged in fixes from Ole, from branch/charter:r4382-4407, and some 
+    changes from Henrik (removing the use of pos.blocked in views_ballot.py, 
+    and setting a ballot id in idrfc/testsREDESIGN.py) to make 
+    idrfc.EditPositionTestCase succeed.
+
+  * Don't include interim meetings in those considered for the default 
+    meeting number for the '/meeting/' url.
+
+  * Tweaked the error messages for acronym collisions in the create-wg form.
+
+  * Added quotes around the WG name in the state change text, for better 
+    readability.
+
+  * Applied a fix to missing nomcom chair in [4384] instead of [4385].
+
+  * Made arguments to url help_charter_states match the definition in 
+    ietf/idrfc/urls.py.
+
+  * Fixed a bug in picking up blocking text (patch provided by olau@iola.dk).
+
+  * Added a parameter to make the commitlog script useful for other branches 
+    than the current.
+
+  * Catch exception which is raised if a nomcom NN group has been created, 
+    but no nomcom chair has been announced and added yet.
+
+  Merged in [4364] from rjsparks@nostrum.com:
+
   * Expose how many pages each document contains on the docs on future 
     telechats page. Fixes bug #828 
 
@@ -21,7 +56,7 @@ ietfdb (4.03)
 
   * Treat BoF as proposed WG.
 
-  * s/WG/group/ in acronym clash error.
+  * s/WG/group/ in acronym clash error message.
 
   * Add a star to the required fields.
 
@@ -69,7 +104,7 @@ ietfdb (4.03)
 
   * Change max acronym length to 10 instead of 8
 
-  From Henrik:
+  Additional fixes from Henrik:
 
   * Fixed the signature of DocEventAdmin method (needs explicit 'self' parameter)
 
@@ -79,9 +114,11 @@ ietfdb (4.03)
 
   * Merged in the charter branch from olau@iola.dk.
 
-  * Added a from Adam with a tweak from Henrik for empty .ics files
+  From Adam:
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  04 May 2012 14:17:33 +0200
+  * Added a fix for empty .ics files
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jun 2012 18:40:14 +0000
 
 ietfdb (4.02)
 
