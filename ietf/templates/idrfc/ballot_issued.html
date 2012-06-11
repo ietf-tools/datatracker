@@ -7,8 +7,8 @@
 
 <p>Ballot has been sent out.</p>
 
-{% if doc.idinternal.telechat_date %}
-<p>The document is currently on the {{ doc.idinternal.telechat_date }} telechat agenda.</p>
+{% if doc.telechat_date %}
+<p>The document is currently on the {{ doc.telechat_date }} telechat agenda.</p>
 {% else %}
 <p>The document is not on any telechat agenda.</p>
 {% endif %}
