@@ -16,7 +16,7 @@ The IETF datatracker status page for this draft is:
 https://datatracker.ietf.org/doc/{{ submission.filename }}
 
 There's also a htmlized version available at:
-http://tools.ietf.org/html/submission.filename }}-{{ submission.revision }}
+http://tools.ietf.org/html/{{ submission.filename }}-{{ submission.revision }}
 {% if submission.revision != "00" %}
 A diff from previous version is available at:
 http://tools.ietf.org/rfcdiff?url2={{ submission.filename }}-{{ submission.revision }}
