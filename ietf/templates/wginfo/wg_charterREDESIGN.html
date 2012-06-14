@@ -72,7 +72,7 @@ is occasionally incorrect.</span>
       {% else %}
       none
       {% if user|has_role:"Area Director,Secretariat" %}
-      - <a href="{% url wgcharter.views_submit.submit name=wg.acronym %}">Submit Charter</a>
+      - <a href="{% url wgcharter.views.submit acronym=wg.acronym %}">Submit Charter</a>
       {% endif %}
       {% endif %}
     </td>

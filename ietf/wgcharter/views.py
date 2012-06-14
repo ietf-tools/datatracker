@@ -287,7 +287,9 @@ class UploadForm(forms.Form):
                 destination.write(self.cleaned_data['content'])
 
 @role_required('Area Director','Secretariat')
-def submit(request, name, option=None):
+def submit(request, name=None, acronym=None, option=None):
+    if acronym and not name:
+        name = "charter-ietf-" + acronym
     charter = get_object_or_404(Document, type="charter", name=name)
     wg = charter.group
 
