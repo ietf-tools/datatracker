@@ -11,9 +11,10 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils import simplejson
 
+#from sec.utils.group import get_charter_text
 from sec.utils.meeting import get_current_meeting
 from ietf.group.models import ChangeStateGroupEvent, GroupEvent, GroupURL, Role
-from ietf.group.utils import save_group_in_history
+from ietf.group.utils import save_group_in_history, get_charter_text
 from ietf.person.name import name_parts
 from ietf.wginfo.views import fill_in_charter_info
 
@@ -158,6 +159,29 @@ def blue_dot(request):
         RequestContext(request, {}), mimetype="text/plain",
     )
     
+def charter(request, acronym):
+    """ 
+    View Group Charter
+
+    **Templates:**
+
+    * ``groups/charter.html``
+
+    **Template Variables:**
+
+    * group, charter_text
+
+    """
+
+    group = get_object_or_404(Group, acronym=acronym)
+    charter_text = get_charter_text(group)
+
+    return render_to_response('groups/charter.html', {
+        'group': group,
+        'charter_text': charter_text},
+        RequestContext(request, {}),
+    )
+
 def delete_role(request, acronym, id):
     """ 
     Handle deleting roles for groups (chair, editor, advisor, secretary)
@@ -180,56 +204,6 @@ def delete_role(request, acronym, id):
     messages.success(request, 'The entry was deleted successfully')
     url = reverse('groups_people', kwargs={'acronym':acronym})
     return HttpResponseRedirect(url)
-
-def description(request, acronym):
-    """ 
-    Edit IETF Group description
-
-    **Templates:**
-
-    * ``groups/description.html``
-
-    **Template Variables:**
-
-    * group, form 
-
-    """
-
-    group = get_object_or_404(Group, acronym=acronym)
-    # TODO: update to use new charter code
-    filename = os.path.join(settings.GROUP_DESCRIPTION_DIR,group.acronym + '.desc.txt')
-
-    if request.method == 'POST':
-        form = DescriptionForm(request.POST) 
-        if request.POST['submit'] == "Cancel":
-            url = reverse('groups_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
-     
-        if form.is_valid():
-            description = form.cleaned_data['description'] 
-            f = open(filename,'w')
-            f.write(description)
-            f.close()
-
-            messages.success(request, 'The Group Description was changed successfully')
-            url = reverse('groups_view', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
-    else:
-        if os.path.isfile(filename):
-            f = open(filename,'r')
-            value = f.read()
-            f.close()
-        else:
-            value = 'Description file not found: %s.\nType new description here.' % filename 
-
-        data = { 'description': value }
-        form = DescriptionForm(data)
-
-    return render_to_response('groups/description.html', {
-        'group': group,
-        'form': form},
-        RequestContext(request, {}),
-    )
 
 def edit(request, acronym):
     """ 

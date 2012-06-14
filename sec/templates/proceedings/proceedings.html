@@ -93,6 +93,15 @@ and end with
 <p>No Slides Present</p>
 {% endif %}
 
+{% if bluesheets %}
+  <h3>Blue Sheets:</h3>
+  <ul>
+    {% for item in bluesheets %}
+      <li><a href="{{ item.url }}" target="_blank">{{ item.name }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
 {% if drafts %}
 <h3>Internet-Drafts:</h3>
 <ul>
@@ -119,7 +128,7 @@ and end with
 {% endif %}
 
 <h3>Charter{% if ctime %} (as of {{ ctime|date:"Y-m-d" }}){% endif %}:</h3>
-<p>{{ charter|safe }}</p>
+<p>{% if charter %}{{ charter|safe }}{% else %}Charter not found{% endif %}</p>
 
 {% if group.milestones %}
 <h3>Goals and Milestones:</h3>

@@ -265,7 +265,7 @@ if USE_DB_REDESIGN_PROXY_CLASSES:
     AUTH_PROFILE_MODULE = 'person.Person'
     AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
-CHARTER_PATH = '/a/www/ietf-ftp/charters/'
+CHARTER_PATH = '/a/www/ietf-ftp/charter/'
 CHARTER_TXT_URL = 'http://www.ietf.org/charters/'
 
 # AMS additions

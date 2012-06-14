@@ -627,7 +627,7 @@ def select_group(request, meeting_id):
     scheduled_groups, unscheduled_groups = sort_groups(meeting)
     
     # prep group form
-    wgs = filter(lambda a: a.type_id=='wg' and a.state_id=='active', unscheduled_groups)
+    wgs = filter(lambda a: a.type_id in ('wg','ag') and a.state_id=='active', unscheduled_groups)
     group_form = GroupSelectForm(choices=build_choices(wgs))
     
     # prep BOFs form

@@ -277,6 +277,14 @@ ul#list-nav a.current {
     width: 40em;
 }
 
+#area-add-table #id_comments {
+    width: 40em;
+}
+
+#area-add-table #id_name {
+    width: 40em;
+}
+
 /* ------------- Draft Tool ------------------ */
 input.draft-file-input {
     width: 40em;

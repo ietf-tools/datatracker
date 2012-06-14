@@ -1,14 +1,28 @@
+from django.conf import settings
 from ietf.group.models import Group
 from ietf.meeting.models import Session
 
 from ietf.ietfauth.decorators import has_role
 
 import itertools
+import os
 
 def current_nomcom():
     qs = Group.objects.filter(acronym__startswith='nomcom',state__name="Active").order_by('-time')
     return qs[0]
 
+def get_charter_text(group):
+    '''
+    Takes a group object and returns the text or the group's charter as a string
+    '''
+    charter = group.charter
+    path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+    f = file(path,'r')
+    text = f.read()
+    f.close()
+    
+    return text
+    
 def get_my_groups(user):
     '''
     Takes a Django user object (from request)
@@ -59,3 +73,4 @@ def groups_by_session(user, meeting):
                 groups_no_session.append(group)
             
     return groups_session, groups_no_session
+    

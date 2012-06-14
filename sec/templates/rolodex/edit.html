@@ -19,15 +19,13 @@
     <table id="rolodex-person-table" class="full-width amstable"">
       {{ person_form.as_table }}
     </table>
-</div> <!-- module --> 
 
-<div class="inline-group">
-    <div class="tabular inline-related{% if forloop.last %} last-related{% endif %}">
-	<fieldset class="module aligned ">
+    <div class="inline-group">
+    <div class="tabular inline-related">
 	<h2>Email Addresses</h2>
         {{ email_formset.management_form }}
         {{ email_formset.non_form_errors }}
-	<table id="rolodex-email-table">
+	<table id="rolodex-email-table" class="full-width">
             <thead>
 		<tr>
 		{% for field in email_formset.forms.0 %}
@@ -55,12 +53,13 @@
 	     {% endfor %}
             </tbody>
 	</table>
-	</fieldset>
-    </div> <!-- tabular inline-related last_related -->
-</div> <!-- inline-group -->
-
+	</div>
+    </div> <!-- inline-related last_related -->
 
 {% include "includes/buttons_save_cancel.html" %}
 
 </form>
+
+</div> <!-- module --> 
+
 {% endblock %}

@@ -6,6 +6,7 @@ This module contains all the functions for generating static proceedings pages
 from django.conf import settings
 from django.shortcuts import render_to_response
 from ietf.group.models import Group, Role
+from ietf.group.utils import get_charter_text
 from ietf.meeting.models import Session, TimeSlot, Meeting
 from ietf.meeting.views import agenda_info
 from ietf.doc.models import Document, RelatedDocument, DocEvent
@@ -18,6 +19,7 @@ from models import InterimMeeting    # proxy model
 
 from urllib2 import urlopen
 import datetime
+import glob
 import os
 import shutil
 import stat
@@ -113,13 +115,13 @@ def create_interim_directory():
     f.write(response.content)
     f.close()
     
-def create_proceedings(meeting, group):
+def create_proceedings(meeting, group, is_final=False):
     '''
     This function creates the  proceedings html document.  It gets called anytime there is an
     update to the meeting or the slides for the meeting.
     NOTE: execution is aborted if the meeting is older than 79 because the format changed.
     '''
-    # abort, old format
+    # abort, proceedings from meetings before 79 have a different format, don't overwrite
     if meeting.type_id == 'ietf' and int(meeting.number) < 79:
         return
         
@@ -141,10 +143,7 @@ def create_proceedings(meeting, group):
     tas = group.role_set.filter(name='techadv')
     
     docs = Document.objects.filter(group=group,type='draft').order_by('time')
-    drafts = docs.filter(states__slug='active')
-    rfcs = docs.filter(states__slug='rfc')
-    
-    # stage Documents and add bytes/url for use in template
+
     meeting_root = get_upload_root(meeting)
     if meeting.type.slug == 'ietf':
         url_root = "%s/proceedings/%s/" % (settings.MEDIA_URL,meeting.number)
@@ -153,70 +152,91 @@ def create_proceedings(meeting, group):
             settings.MEDIA_URL,
             meeting.date.strftime('%Y/%m/%d'),
             group.acronym)
-    for draft in drafts:
-        source = os.path.join(draft.get_file_path(),draft.filename_with_rev())
-        target = os.path.join(meeting_root,'id')
-        if not os.path.exists(target):
-            os.makedirs(target)
-        if os.path.exists(source):
-            shutil.copy(source,target)
-            draft.bytes = os.path.getsize(source)
-        else:
-            draft.bytes = 0
-        draft.url = url_root + "id/%s" % draft.filename_with_rev()
     
-    for rfc in rfcs:
-        # TODO should use get_file_path() here but is incorrect for rfcs
-        rfc_num = get_rfc_num(rfc)
-        filename = "rfc%s.txt" % rfc_num
-        alias = rfc.docalias_set.filter(name='rfc%s' % rfc_num)
-        source = os.path.join(settings.RFC_PATH,filename)
-        target = os.path.join(meeting_root,'rfc')
-        rfc.rmsg = ''
-        rfc.msg = ''
+    # Only do these tasks if we are running official proceedings generation,
+    # otherwise skip them for expediency.  This procedure is called any time meeting 
+    # materials are uploaded/deleted, and we don't want to do all this work each time.
+    
+    if is_final:
+        # ----------------------------------------------------------------------
+        # Find active Drafts and RFCs, copy them to id and rfc directories
         
-        if not os.path.exists(target):
-            os.makedirs(target)
-        shutil.copy(source,target)
-        rfc.url = url_root + "rfc/%s" % filename
-        rfc.bytes = os.path.getsize(source)
-        rfc.num = "RFC %s" % rfc_num
-        # check related documents
-        # check obsoletes
-        related = rfc.relateddocument_set.all()
-        for item in related.filter(relationship='obs'):
-            rfc.msg += 'obsoletes %s ' % item.target.name
-            #rfc.msg += ' '.join(item.__str__().split()[1:])
-        updates_list = [x.target.name.upper() for x in related.filter(relationship='updates')]
-        if updates_list:
-            rfc.msg += 'updates ' + ','.join(updates_list)
-        # check reverse related
-        rdocs = RelatedDocument.objects.filter(target=alias)
-        for item in rdocs.filter(relationship='obs'):
-            rfc.rmsg += 'obsoleted by RFC %s ' % get_rfc_num(item.source)
-        updated_list = ['RFC %s' % get_rfc_num(x.source) for x in rdocs.filter(relationship='updates')]
-        if updated_list:
-            rfc.msg += 'updated by ' + ','.join(updated_list)
+        drafts = docs.filter(states__slug='active')
+        for draft in drafts:
+            source = os.path.join(draft.get_file_path(),draft.filename_with_rev())
+            target = os.path.join(meeting_root,'id')
+            if not os.path.exists(target):
+                os.makedirs(target)
+            if os.path.exists(source):
+                shutil.copy(source,target)
+                draft.bytes = os.path.getsize(source)
+            else:
+                draft.bytes = 0
+            draft.url = url_root + "id/%s" % draft.filename_with_rev()
+            
+        rfcs = docs.filter(states__slug='rfc')
+        for rfc in rfcs:
+            # TODO should use get_file_path() here but is incorrect for rfcs
+            rfc_num = get_rfc_num(rfc)
+            filename = "rfc%s.txt" % rfc_num
+            alias = rfc.docalias_set.filter(name='rfc%s' % rfc_num)
+            source = os.path.join(settings.RFC_PATH,filename)
+            target = os.path.join(meeting_root,'rfc')
+            rfc.rmsg = ''
+            rfc.msg = ''
+            
+            if not os.path.exists(target):
+                os.makedirs(target)
+            shutil.copy(source,target)
+            rfc.url = url_root + "rfc/%s" % filename
+            rfc.bytes = os.path.getsize(source)
+            rfc.num = "RFC %s" % rfc_num
+            # check related documents
+            # check obsoletes
+            related = rfc.relateddocument_set.all()
+            for item in related.filter(relationship='obs'):
+                rfc.msg += 'obsoletes %s ' % item.target.name
+                #rfc.msg += ' '.join(item.__str__().split()[1:])
+            updates_list = [x.target.name.upper() for x in related.filter(relationship='updates')]
+            if updates_list:
+                rfc.msg += 'updates ' + ','.join(updates_list)
+            # check reverse related
+            rdocs = RelatedDocument.objects.filter(target=alias)
+            for item in rdocs.filter(relationship='obs'):
+                rfc.rmsg += 'obsoleted by RFC %s ' % get_rfc_num(item.source)
+            updated_list = ['RFC %s' % get_rfc_num(x.source) for x in rdocs.filter(relationship='updates')]
+            if updated_list:
+                rfc.msg += 'updated by ' + ','.join(updated_list)
+        # ----------------------------------------------------------------------
+        # check for blue sheets
+        pattern = os.path.join(meeting_root,'bluesheets','bluesheets-%s-%s-*' % (meeting.number,group.acronym.lower()))
+        files = glob.glob(pattern)
+        bluesheets = []
+        for name in files:
+            basename = os.path.basename(name)
+            obj = {'name': basename,
+                   'url': url_root + "blueshseets/" + basename}
+            bluesheets.append(obj)
+        bluesheets = sorted(bluesheets, key = lambda x: x['name'])
+        # ----------------------------------------------------------------------
+    else:
+        drafts = rfcs = bluesheets = None
         
     # the simplest way to display the charter is to place it in a <pre> block
     # however, because this forces a fixed-width font, different than the rest of
     # the document we modify the charter by adding replacing linefeeds with <br>'s
-    # TODO when get_charter_text() works we should use it
-    #charter = get_charter_text(group).replace('\n','<br>')
-    ctime = None
-    cpath = os.path.join(settings.GROUP_DESCRIPTION_DIR,'%s.desc.txt' % group.acronym.lower())
-    if os.path.exists(cpath):
-        f = open(cpath,'r')
-        desc = f.read()
-        f.close()
-        ctime = datetime.datetime.fromtimestamp(os.path.getmtime(cpath))
-        charter = desc.replace('\n','<br>')
+    if group.charter:
+        charter = get_charter_text(group).replace('\n','<br />')
+        ctime = group.charter.time
     else:
-        charter = 'Charter not found.'
+        charter = None
+        ctime = None
+    
     
     # rather than return the response as in a typical view function we save it as the snapshot
     # proceedings.html
     response = render_to_response('proceedings/proceedings.html',{
+        'bluesheets': bluesheets,
         'charter': charter,
         'ctime': ctime,
         'drafts': drafts,
@@ -327,7 +347,7 @@ def gen_group_pages(context):
     meeting = context['meeting']
     
     for group in Group.objects.filter(type__in=('wg','ag','rg'), state__in=('bof','proposed','active')):
-        create_proceedings(meeting,group)
+        create_proceedings(meeting,group,is_final=True)
         
 def gen_index(context):
     index = render_to_response('proceedings/index.html',context)
