@@ -13,13 +13,13 @@
 {% block content %}
 
 <div class="module draft-container">
-    <h2>Draft - Search</h2>
+    <h2>Draft - Search <span class="unlocked"><a href="add/" class="addlink">Add</a></span></h2>
     <form id="draft-search-form" enctype="multipart/form-data" action="" method="post">
       <table id="draft-search-table" class="full-width amstable">
         {{ form.as_table }}
       </table>
 
-      {% include "includes/buttons_search_add.html" %}
+      {% include "includes/buttons_search.html" %}
 
     </form>
 

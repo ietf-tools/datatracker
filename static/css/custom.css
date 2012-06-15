@@ -57,7 +57,9 @@
     border: 1px solid #FF8080;
 }
 
-/* ------------------ General Styles ---------------- */
+/* ==========================================================================
+   General Styles
+   ========================================================================== */
 
 .alert {
     color: red;
@@ -99,7 +101,7 @@
     text-decoration: underline;
 }
 
-.locked a:hover {
+.unlocked a:hover {
     color: Blue;
     text-decoration: underline;
 }
@@ -158,7 +160,8 @@ table.center {
     text-align: right;
 }
 
-/* ----------------- Buttons ------------------------ */
+/* Buttons
+   ========================================================================== */
 
 .action-group ul {
     list-style-type: none;
@@ -203,7 +206,8 @@ button.fancy:hover {
     background-color: #ffc; 
 }
 
-/* ------------ Navigation Bar --------------------- */
+/* Navigation Bar
+   ========================================================================== */
 
 #nav {
     padding: 0;
@@ -249,7 +253,10 @@ ul#list-nav a.current {
     background-color: #7CA0C7;
 }
 
-/* ----------- Announce Tool -------------------- */
+/* ==========================================================================
+   Announcement Tool
+   ========================================================================== */
+   
 #announce-table input[type="text"] {
     width: 40em;
 }
@@ -266,7 +273,9 @@ ul#list-nav a.current {
     border-bottom: none;
 }
 
-/* ----------- Area Tool -------------------- */
+/* ==========================================================================
+   Area Tool
+   ========================================================================== */
 
 #areas-list-table td {
     padding-left: 1em;
@@ -285,7 +294,10 @@ ul#list-nav a.current {
     width: 40em;
 }
 
-/* ------------- Draft Tool ------------------ */
+/* ==========================================================================
+   Draft Tool
+   ========================================================================== */
+   
 input.draft-file-input {
     width: 40em;
 }
@@ -391,7 +403,10 @@ input.draft-file-input {
     width: 3.5em;
 }
 
-/* ------------- Group Tool ------------------ */
+/* ==========================================================================
+   Group Tool
+   ========================================================================== */
+   
 .awp-form input {
     width: 30em;
 }
@@ -434,8 +449,9 @@ input.draft-file-input {
     padding: 0;
 }
 
-
-/* ------------ Meeting Tool -------------------- */
+/* ==========================================================================
+   Meeting Tool
+   ========================================================================== */
 
 #additional-info-form #id_text {
     width: 90%;
@@ -461,7 +477,9 @@ tr.break td {
     border-top: 2px solid black;
 }
 
-/* ----------- Proceeding Tool -------------------- */
+/* ==========================================================================
+   Proceedings Tool
+   ========================================================================== */
 
 input#id_slide_name {
     width: 30em;
@@ -536,66 +554,30 @@ div.interim-scroll {
     border-left: 1px solid #CCCCCC;
 }
 
-/* ------------ Role Tool -------------------- */
+/* ==========================================================================
+   Role Tool
+   ========================================================================== */
 
 .name-autocomplete {
     width: 300px;
 }
 
-/* ------------- Rolodex Tool  ---------------- */
+/* ==========================================================================
+   Rolodex Tool
+   ========================================================================== */
 
-/* Search Page */
-
-#rolodex-search-form {
-    width: 50%;
-}
-
-/* View Page */
-
-#rolodex-email-table input[type=text] {
+form[id^="rolodex-"] input[type=text] {
     width: 30em;
 }
 
-#rolodex-person-table input[type=text] {
+form[id^="rolodex-"] #id_address {
     width: 30em;
+    height: 7em;
 }
 
-#id_address {
-    width: 30em;
-}
-
-#rolodex-view-container td {
-    padding: 2px;
-    border-bottom: none;
-}
-
-#rolodex-view-container th {
-    background: #DCDCDC;
-}
-
-#view-table {
-    margin: 0;
-    padding: 0;
-}
-
-#view-table td {
-    width: 380px;
-    padding-left: 4px;
-}
- 
-#view-address-table {
-    margin-left: 2px;
-}
-
-#view-address-table td {
-    width: 50%;
-}
-
-#view-phone-table {
-    margin-bottom: 1em;
-}
-
-/* ------------- Sessions Tool  ---------------- */
+/* ==========================================================================
+   Session Request Tool
+   ========================================================================== */
 
 tr.bg1 {
     background: #CCCCCC;
@@ -632,7 +614,9 @@ ul.session-buttons {
     padding-left: 0;
 }
 
-/* ------------- Telechat Tool  ---------------- */
+/* ==========================================================================
+   Telechat Tool
+   ========================================================================== */
 
 #telechat-sidebar {
     float: left;
@@ -739,7 +723,10 @@ ul.doc-list li {
     text-align: center;
 }
 
-/* ------------- Redesign  ---------------- */
+/* ==========================================================================
+   Redesign Section
+   ========================================================================== */
+   
 table.amstable {
     background-color: #F2F2E6;
 }

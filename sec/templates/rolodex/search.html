@@ -12,23 +12,16 @@
 
 {% block content %}
 <div class="module">
-    <h2>Search / Add</h2>
-      <table class="full-width">
-      <tr>
-      <td id="rolodex-search-form" class="border-right">
-      <form id="search-form" action="." method="post">
+    <h2>Rolodex - Search <span class="unlocked"><a href="add/" class="addlink">Add</a></span></h2>
+      <form id="rolodex-search-form" action="." method="post">
         <table class="full-width amstable">
+          <col width="200">
           {{ form.as_table }}
-          <tr><td class="button-group" align="center" colspan="2"><button type="submit" name="submit" value="Search">Search</button></td></tr>
         </table>
+        
+        {% include "includes/buttons_search.html" %}
       </form>
-      </td>
-      <td valign="top" align="center">
-      <p>To add a new contact click...</p>
-      <p><button onclick="window.location='add/'">Add New Contact</button></p>
-      </td>
-      </tr>
-      </table>
+
 </div> <!-- module -->
 
 <div class="module">

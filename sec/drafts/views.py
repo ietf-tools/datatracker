@@ -523,7 +523,7 @@ def add(request):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            url = reverse('drafts_search')
+            url = reverse('drafts')
             return HttpResponseRedirect(url)
 
         upload_form = UploadForm(request.POST, request.FILES)
