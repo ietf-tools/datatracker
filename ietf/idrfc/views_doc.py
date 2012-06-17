@@ -89,12 +89,8 @@ def document_main(request, name, rev=None):
             raise Http404()
         return document_main_idrfc(request, name, tab="document")
 
-    print name
-    print Document.objects.filter(name=name)
     doc = get_object_or_404(Document, docalias__name=name)
-    print doc
     group = doc.group
-    print group
     
     revisions = []
     for h in doc.history_set.order_by("time", "id"):
