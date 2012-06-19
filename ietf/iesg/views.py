@@ -274,10 +274,12 @@ def agenda_docs(date, next_agenda):
 
 def agenda_wg_actions(date):
     res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
-    charters = Document.objects.filter(type="charter", docevent__telechatdocevent__telechat_date=date).distinct()
+    charters = Document.objects.filter(type="charter", docevent__telechatdocevent__telechat_date=date).select_related("group").distinct()
     for c in charters:
         if c.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
             continue
+
+        c.group.txt_link = settings.CHARTER_TXT_URL + "%s-%s.txt" % (c.canonical_name(), c.rev)
 
         section_key = "s" + get_wg_section(c.group)
         if section_key not in res:
