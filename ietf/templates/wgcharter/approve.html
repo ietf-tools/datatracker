@@ -19,7 +19,7 @@ form.approve .announcement {
 {% endblock %}
 
 {% block content %}
-<h1>Approve {{ charter.canonical_name }}</h1>
+<h1>Approve {{ charter.canonical_name }}-{{ charter.rev }}</h1>
 
 <div>IETF announcement:</div>
 
@@ -31,6 +31,7 @@ form.approve .announcement {
 
   <div class="actions">
     <a href="{% url doc_view name=charter.name %}">Back</a>
+    <a href="{% url charter_edit_announcement name=charter.canonical_name,ann="action" %}?next=approve">Go to edit/regenerate announcement page</a>
     <input type="submit" value="Send out the announcement, close ballot and update revision"/>
   </div>
 </form>
