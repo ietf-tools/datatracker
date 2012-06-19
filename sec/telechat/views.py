@@ -107,7 +107,7 @@ def get_group_info(group,agenda):
         c = 0
         for g in v:
             c += 1
-            if g['obj'].group_acronym_id == group.id:            
+            if g['obj'] == group:            
                 section = k
                 count = '%s of %s' % (c, len(v))
                 wgaction = g['obj']
@@ -128,10 +128,13 @@ def get_group_list(agenda):
     entries = []
     for key in sorted(agenda['wgs']):
         entries.extend(agenda['wgs'][key])
-    
+    """
     group_ids = [x['obj'].group_acronym_id for x in entries]
     groups = [ Group.objects.get(id=id) for id in group_ids ]
     acronyms = [ g.acronym for g in groups ]
+    return acronyms
+    """
+    acronyms = [x['obj'].acronym for x in entries]
     return acronyms
     
 def get_first_doc(agenda):

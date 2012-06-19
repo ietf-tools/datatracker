@@ -152,6 +152,7 @@ INSTALLED_APPS = (
     # new apps
     'sec.announcement',
     'sec.areas',
+    'sec.console',
     'sec.drafts',
     'sec.groups',
     'sec.ipr',
