@@ -5,7 +5,4 @@ Subject: WG Review: {{ wg.name }} ({{ wg.acronym }})
 
 {% filter wordwrap:73 %}{% ifequal review_type "new" %}A new IETF working group has been proposed in the {{ wg.parent.name }}.{% endifequal %}{% ifequal review_type "recharter" %}The {{ wg.name }} ({{wg.acronym}}) working group in the {{ wg.parent.name }} of the IETF is undergoing rechartering.{% endifequal %} The IESG has not made any determination yet. The following draft charter was submitted, and is provided for informational purposes only. Please send your comments to the IESG mailing list (iesg at ietf.org) by {{ review_date }}.
 
-{% include "wgcharter/wg_info.txt" %}
-
-{% endfilter %}
-{% endautoescape %}
+{% include "wgcharter/wg_info.txt" %}{% endfilter %}{% endautoescape %}

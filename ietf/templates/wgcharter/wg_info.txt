@@ -22,3 +22,7 @@ Current Status: {{ wg.state.name }} Working Group
 Charter of Working Group:
 
 {{ charter_text }}
+
+Milestones:
+{% for milestone in milestones %}  {% if milestone.done %}Done    {% else %}{{ milestone.expected_due_date|date:"M Y" }}{% endif %} - {{ milestone.desc|safe }}
+{% endfor %}
