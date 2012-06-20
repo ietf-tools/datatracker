@@ -16,6 +16,8 @@ from django.utils.translation import ugettext_lazy as _
 
 #Djangotools
 #from djangotools.utils.southutils import add_introspection_rules_from_baseclass
+from south.modelsinspector import add_introspection_rules
+
 
 SECS_PER_DAY=3600*24
 
@@ -65,6 +67,7 @@ class TimedeltaField(models.Field):
 
 #South Plugin registrieren
 #add_introspection_rules_from_baseclass(TimedeltaField, ["^djangotools\.dbfields\.TimedeltaField"])
+add_introspection_rules([], ["^ietf\.meeting\.timedeltafield\.TimedeltaField"])
 
 class TimedeltaFormField(forms.Field):
     default_error_messages = {

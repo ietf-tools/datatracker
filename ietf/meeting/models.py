@@ -145,6 +145,7 @@ class Session(models.Model):
     responsible group (e.g. Edu team) and filling in the name."""
     meeting = models.ForeignKey(Meeting)
     name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting")
+    short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames")
     group = models.ForeignKey(Group)    # The group type determines the session type.  BOFs also need to be added as a group.
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)
