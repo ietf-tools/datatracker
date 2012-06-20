@@ -208,63 +208,7 @@ def dehtmlify_textarea_text(s):
     return s.replace("<br>", "\n").replace("<b>", "").replace("</b>", "").replace("  ", " ")
 
 class EditInfoForm(forms.Form):
-    intended_status = forms.ModelChoiceField(IDIntendedStatus.objects.all(), empty_label=None, required=True)
-    area_acronym = forms.ModelChoiceField(Area.active_areas(), required=True, empty_label='None Selected')
-    via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
-    stream = forms.ModelChoiceField(Stream.objects.all(), empty_label=None, required=True)
-    job_owner = forms.ModelChoiceField(IESGLogin.objects.filter(user_level__in=(IESGLogin.AD_LEVEL, IESGLogin.INACTIVE_AD_LEVEL)).order_by('user_level', 'last_name'), label="Responsible AD", empty_label=None, required=True)
-    create_in_state = forms.ModelChoiceField(IDState.objects.filter(document_state_id__in=(IDState.PUBLICATION_REQUESTED, IDState.AD_WATCHING)), empty_label=None, required=False)
-    state_change_notice_to = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
-    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
-    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
-    returning_item = forms.BooleanField(required=False)
-
-    def __init__(self, *args, **kwargs):
-        old_ads = kwargs.pop('old_ads')
-        
-        super(self.__class__, self).__init__(*args, **kwargs)
-
-        job_owners = IESGLogin.objects.in_bulk([t[0] for t in self.fields['job_owner'].choices])
-        choices = [("","None Selected"), ]
-        if old_ads:
-            # separate active ADs from inactive
-            separated = False
-            for t in self.fields['job_owner'].choices:
-                if job_owners[t[0]].user_level != IESGLogin.AD_LEVEL and not separated:
-                    choices.append(("", "----------------"))
-                    separated = True
-                choices.append(t)
-            self.fields['job_owner'].choices = choices
-        else:
-            # remove old ones
-            for t in self.fields['job_owner'].choices:
-               if job_owners[t[0]].user_level==IESGLogin.AD_LEVEL:
-                 choices.append(t)
-            self.fields['job_owner'].choices = choices
-        
-        # telechat choices
-        dates = TelechatDates.objects.all()[0].dates()
-        init = kwargs['initial']['telechat_date']
-        if init and init not in dates:
-            dates.insert(0, init)
-
-        choices = [("", "(not on agenda)")]
-        for d in dates:
-            choices.append((d, d.strftime("%Y-%m-%d")))
-
-        self.fields['telechat_date'].choices = choices
-
-#        if kwargs['initial']['area_acronym'] == Acronym.INDIVIDUAL_SUBMITTER:
-#            # default to "gen"
-#            kwargs['initial']['area_acronym'] = 1008
-        
-        # returning item is rendered non-standard
-        self.standard_fields = [x for x in self.visible_fields() if x.name not in ('returning_item',)]
-
-    def clean_note(self):
-        # note is stored munged in the database
-        return self.cleaned_data['note'].replace('\n', '<br>').replace('\r', '').replace('  ', '&nbsp; ')
-
+    pass
 
 def get_initial_state_change_notice(doc):
     # set change state notice to something sensible
@@ -311,7 +255,6 @@ def edit_info(request, name):
                                     # would be better to use NULL to
                                     # signify an empty ballot
                                     ballot_id=get_new_ballot_id(),
-                                    via_rfc_editor = False,
                                     )
 
     if doc.idinternal.agenda:
@@ -321,7 +264,11 @@ def edit_info(request, name):
 
     if request.method == 'POST':
         form = EditInfoForm(request.POST,
-                            old_ads=False,
+                            #old_ads needs to be True here - sometimes the user needs to touch 
+                            #the information on an older document and the AD associated with it 
+                            #should remain the same - if th old ADs aren't offered, the form
+		            #won't let the user proceed without doing the wrong thing
+                            old_ads=True,
                             initial=dict(telechat_date=initial_telechat_date,
                                          area_acronym=doc.idinternal.area_acronym_id))
 
@@ -380,8 +327,6 @@ def edit_info(request, name):
             update_telechat(request, doc.idinternal,
                             r['telechat_date'], r['returning_item'])
 
-            if in_group(request.user, 'Secretariat'):
-                doc.idinternal.via_rfc_editor = bool(r['via_rfc_editor'])
 
             doc.idinternal.email_display = str(doc.idinternal.job_owner)
             doc.idinternal.token_name = str(doc.idinternal.job_owner)
@@ -420,8 +365,6 @@ def edit_info(request, name):
 
         form = EditInfoForm(old_ads=False, initial=init)
 
-    if not in_group(request.user, 'Secretariat'):
-        form.standard_fields = [x for x in form.standard_fields if x.name != "via_rfc_editor"]
 
     if not new_document:
         form.standard_fields = [x for x in form.standard_fields if x.name != "create_in_state"]
@@ -441,7 +384,6 @@ def edit_info(request, name):
 
 class EditInfoFormREDESIGN(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.filter(used=True), empty_label="(None)", required=True, label="Intended RFC status")
-    via_rfc_editor = forms.BooleanField(required=False, label="Via IRTF or RFC Editor")
     stream = forms.ModelChoiceField(StreamName.objects.all(), empty_label="(None)", required=True)
     area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active"), empty_label="(None - individual submission)", required=False, label="Assigned to area")
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
@@ -597,13 +539,6 @@ def edit_infoREDESIGN(request, name):
             update_telechat(request, doc, login,
                             r['telechat_date'], r['returning_item'])
 
-            if has_role(request.user, 'Secretariat'):
-                via_rfc = DocTagName.objects.get(slug="via-rfc")
-                if r['via_rfc_editor']:
-                    doc.tags.add(via_rfc)
-                else:
-                    doc.tags.remove(via_rfc)
-
             doc.time = datetime.datetime.now()
 
             if changes and not new_document:
@@ -627,8 +562,6 @@ def edit_infoREDESIGN(request, name):
     # optionally filter out some fields
     if not new_document:
         form.standard_fields = [x for x in form.standard_fields if x.name != "create_in_state"]
-    if not has_role(request.user, 'Secretariat'):
-        form.standard_fields = [x for x in form.standard_fields if x.name != "via_rfc_editor"]
     if doc.group.type_id not in ("individ", "area"):
         form.standard_fields = [x for x in form.standard_fields if x.name != "area"]
 

@@ -154,19 +154,19 @@ class IdWrapper:
         return self.ietf_process != None
     
     def submission(self):
-        if self._idinternal and self._idinternal.via_rfc_editor:
-            return "Via IRTF or RFC Editor"
+        
+        if self._draft.stream_id != u'ietf':
+            return self._draft.stream
 
         if self._draft.group_id == Acronym.INDIVIDUAL_SUBMITTER:
             return "Individual"
 
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            if self._draft.group and self._draft.group.type_id == "area":
-                return u"Individual in %s area" % self._draft.group.acronym
+        if self._draft.group and self._draft.group.type_id == "area":
+            return u"Individual in %s area" % self._draft.group.acronym
 
         a = self.group_acronym()
         if a:
-            if settings.USE_DB_REDESIGN_PROXY_CLASSES and self._draft.stream_id == "ietf" and self._draft.get_state_slug("draft-stream-ietf") == "c-adopt":
+            if self._draft.stream_id == "ietf" and self._draft.get_state_slug("draft-stream-ietf") == "c-adopt":
                 return "candidate for <a href='/wg/%s/'>%s WG</a>" % (a, a)
 
             return "<a href='/wg/%s/'>%s WG</a>" % (a, a)
@@ -176,7 +176,7 @@ class IdWrapper:
         
     def search_archive(self):
 
-        if self._idinternal and self._idinternal.via_rfc_editor:
+        if self._idinternal and self._idinternal.stream in ("IRTF","ISE"):
             return "www.ietf.org/mail-archive/web/"
 
         if self._draft.group_id == Acronym.INDIVIDUAL_SUBMITTER or (settings.USE_DB_REDESIGN_PROXY_CLASSES and self._draft.group.type_id == "area"):
@@ -207,7 +207,7 @@ class IdWrapper:
         elif self.draft_name.startswith("draft-irtf-"):
             return 3
         elif self._idinternal:
-            if self._idinternal.via_rfc_editor > 0:
+            if self._idinternal.stream == "ISE":
                 return 4
             else:
                 return 1

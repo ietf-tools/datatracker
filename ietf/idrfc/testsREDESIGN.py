@@ -173,7 +173,6 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEquals(len(q('form select[name=intended_std_level]')), 1)
-        self.assertEquals(len(q('form input[name=via_rfc_editor]')), 1)
 
         prev_ad = draft.ad
         # faulty post
@@ -193,7 +192,6 @@ class EditInfoTestCase(django.test.TestCase):
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level.pk),
                                   stream=draft.stream_id,
-                                  via_rfc_editor="1",
                                   ad=str(new_ad.pk),
                                   notify="test@example.com",
                                   note="New note",
@@ -202,7 +200,6 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue(draft.tags.filter(slug="via-rfc"))
         self.assertEquals(draft.ad, new_ad)
         self.assertEquals(draft.note, "New note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="telechat_date"))
@@ -218,7 +215,6 @@ class EditInfoTestCase(django.test.TestCase):
 
         data = dict(intended_std_level=str(draft.intended_std_level_id),
                     stream=draft.stream_id,
-                    via_rfc_editor="1",
                     ad=str(draft.ad_id),
                     notify="test@example.com",
                     note="",
@@ -287,7 +283,6 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEquals(len(q('form select[name=intended_std_level]')), 1)
-        self.assertEquals(len(q('form input[name=via_rfc_editor]')), 1)
         self.assertTrue('@' in q('form input[name=notify]')[0].get('value'))
 
         # add
@@ -299,7 +294,6 @@ class EditInfoTestCase(django.test.TestCase):
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level_id),
                                   stream="ietf",
-                                  via_rfc_editor="1",
                                   ad=ad.pk,
                                   create_in_state=State.objects.get(type="draft-iesg", slug="watching").pk,
                                   notify="test@example.com",
@@ -309,7 +303,6 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue(draft.tags.filter(slug="via-rfc"))
         self.assertEquals(draft.get_state_slug("draft-iesg"), "watching")
         self.assertEquals(draft.ad, ad)
         self.assertEquals(draft.note, "This is a note")
@@ -780,12 +773,11 @@ class BallotWriteupsTestCase(django.test.TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("NOT be published" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
 
-        # test regenerate when it's via RFC Editor
+        # test regenerate when it's a conflict review
         draft.group = Group.objects.get(type="individ")
         draft.stream_id = "irtf"
         draft.save()
         draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
-        draft.tags.add("via-rfc")
 
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEquals(r.status_code, 200)

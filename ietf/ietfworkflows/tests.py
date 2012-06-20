@@ -139,37 +139,6 @@ class EditStreamInfoTestCase(django.test.TestCase):
         self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
 
-    def test_set_stream(self):
-        draft = make_test_data()
-        draft.stream = None
-        draft.save()
-
-        url = urlreverse('edit_stream', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "secretary", url)
-        
-        # get
-        r = self.client.get(url)
-        self.assertEquals(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEquals(len(q('select[name=stream]')), 1)
-
-        # set state
-        mailbox_before = len(outbox)
-        events_before = draft.docevent_set.count()
-        r = self.client.post(url,
-                             dict(comment="some comment",
-                                  stream="irtf",
-                                  ))
-        self.assertEquals(r.status_code, 302)
-
-        draft = Document.objects.get(pk=draft.pk)
-        self.assertEquals(draft.stream_id, "irtf")
-        self.assertEquals(draft.docevent_set.count() - events_before, 2)
-        self.assertEquals(len(outbox), mailbox_before + 1)
-        self.assertTrue("stream changed" in outbox[-1]["Subject"].lower())
-        self.assertTrue("wgchairman@ietf.org" in unicode(outbox[-1]))
-        self.assertTrue("wgdelegate@ietf.org" in unicode(outbox[-1]))
-
     def test_manage_stream_delegates(self):
         make_test_data()
 

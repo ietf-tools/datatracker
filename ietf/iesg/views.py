@@ -63,52 +63,20 @@ def date_threshold():
     return ret
 
 def inddocs(request):
-   if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-      queryset_list_ind = [d for d in InternetDraft.objects.filter(tags__slug="via-rfc", docevent__type="iesg_approved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_approved"]
-      queryset_list_ind.sort(key=lambda d: d.b_approve_date, reverse=True)
+    queryset_list_ind = [d for d in InternetDraft.objects.filter(stream__in=("IRTF","ISE"), docevent__type="iesg_approved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_approved"]
+    queryset_list_ind.sort(key=lambda d: d.b_approve_date, reverse=True)
 
-      queryset_list_ind_dnp = [d for d in IDInternal.objects.filter(tags__slug="via-rfc", docevent__type="iesg_disapproved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_disapproved"]
-      queryset_list_ind_dnp.sort(key=lambda d: d.dnp_date, reverse=True)
+    queryset_list_ind_dnp = [d for d in IDInternal.objects.filter(stream__in=("IRTF","ISE"), docevent__type="iesg_disapproved").distinct() if d.latest_event(type__in=("iesg_disapproved", "iesg_approved")).type == "iesg_disapproved"]
+    queryset_list_ind_dnp.sort(key=lambda d: d.dnp_date, reverse=True)
 
-      return render_to_response('iesg/independent_doc.html',
-                                dict(object_list=queryset_list_ind,
-                                     object_list_dnp=queryset_list_ind_dnp),
-                                context_instance=RequestContext(request))
+    return render_to_response('iesg/independent_doc.html',
+                              dict(object_list=queryset_list_ind,
+                                   object_list_dnp=queryset_list_ind_dnp),
+                              context_instance=RequestContext(request))
    
-   queryset_list_ind = InternetDraft.objects.filter(idinternal__via_rfc_editor=1, idinternal__rfc_flag=0, idinternal__noproblem=1, idinternal__dnp=0).order_by('-b_approve_date')
-   queryset_list_ind_dnp = IDInternal.objects.filter(via_rfc_editor = 1,rfc_flag=0,dnp=1).order_by('-dnp_date')
-   return object_list(request, queryset=queryset_list_ind, template_name='iesg/independent_doc.html', allow_empty=True, extra_context={'object_list_dnp':queryset_list_ind_dnp })
 
 def wgdocs(request,cat):
-   is_recent = 0
-   queryset_list=[]
-   queryset_list_doc=[]
-   if cat == 'new':
-      is_recent = 1
-      queryset = InternetDraft.objects.filter(b_approve_date__gte = date_threshold(), intended_status__in=[1,2,6,7],idinternal__via_rfc_editor=0,idinternal__primary_flag=1).order_by("-b_approve_date")
-      queryset_doc = InternetDraft.objects.filter(b_approve_date__gte = date_threshold(), intended_status__in=[3,5],idinternal__via_rfc_editor=0, idinternal__primary_flag=1).order_by("-b_approve_date")
-   elif cat == 'prev':
-      queryset = InternetDraft.objects.filter(b_approve_date__lt = date_threshold(), b_approve_date__gte = '1997-12-1', intended_status__in=[1,2,6,7],idinternal__via_rfc_editor=0,idinternal__primary_flag=1).order_by("-b_approve_date")
-      queryset_doc = InternetDraft.objects.filter(b_approve_date__lt = date_threshold(), b_approve_date__gte = '1998-10-15', intended_status__in=[3,5],idinternal__via_rfc_editor=0,idinternal__primary_flag=1).order_by("-b_approve_date")
-   else:
-     raise Http404
-   for item in list(queryset):
-      queryset_list.append(item)
-      try:
-        ballot_id=item.idinternal.ballot_id
-      except AttributeError:
-        ballot_id=0
-      for sub_item in list(InternetDraft.objects.filter(idinternal__ballot=ballot_id,idinternal__primary_flag=0)):
-         queryset_list.append(sub_item)
-   for item2 in list(queryset_doc):
-      queryset_list_doc.append(item2)
-      try:
-        ballot_id=item2.idinternal.ballot_id
-      except AttributeError:
-        ballot_id=0
-      for sub_item2 in list(InternetDraft.objects.filter(idinternal__ballot=ballot_id,idinternal__primary_flag=0)):
-         queryset_list_doc.append(sub_item2)
-   return render_to_response( 'iesg/ietf_doc.html', {'object_list': queryset_list, 'object_list_doc':queryset_list_doc, 'is_recent':is_recent}, context_instance=RequestContext(request) )
+   pass
 
 def wgdocsREDESIGN(request,cat):
     is_recent = 0
@@ -122,7 +90,7 @@ def wgdocsREDESIGN(request,cat):
     if cat == 'new':
         is_recent = 1
         
-        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__gte=threshold, intended_std_level__in=proto_levels + doc_levels).exclude(tags__slug="via-rfc").distinct()
+        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__gte=threshold, intended_std_level__in=proto_levels + doc_levels).exclude(stream__in=("ISE","IRTF")).distinct()
         for d in drafts:
             if d.b_approve_date and d.b_approve_date >= threshold:
                 if d.intended_std_level_id in proto_levels:
@@ -134,7 +102,7 @@ def wgdocsREDESIGN(request,cat):
         # proto
         start_date = datetime.date(1997, 12, 1)
         
-        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__lt=threshold, docevent__time__gte=start_date, intended_std_level__in=proto_levels).exclude(tags__slug="via-rfc").distinct()
+        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__lt=threshold, docevent__time__gte=start_date, intended_std_level__in=proto_levels).exclude(stream__in=("ISE","IRTF")).distinct()
 
         for d in drafts:
             if d.b_approve_date and start_date <= d.b_approve_date < threshold:
@@ -143,7 +111,7 @@ def wgdocsREDESIGN(request,cat):
         # doc
         start_date = datetime.date(1998, 10, 15)
         
-        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__lt=threshold, docevent__time__gte=start_date, intended_std_level__in=doc_levels).exclude(tags__slug="via-rfc").distinct()
+        drafts = InternetDraft.objects.filter(docevent__type="iesg_approved", docevent__time__lt=threshold, docevent__time__gte=start_date, intended_std_level__in=doc_levels).exclude(stream__in=("ISE","IRTF")).distinct()
 
         for d in drafts:
             if d.b_approve_date and start_date <= d.b_approve_date < threshold:
@@ -166,28 +134,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     
 
 def get_doc_section(id):
-    states = [16,17,18,19,20,21]
-    if id.document().intended_status.intended_status_id in [1,2,6,7]:
-        s = "2"
-    else:
-        s = "3"
-    if id.rfc_flag == 0:
-        g = id.document().group_acronym()
-    else:
-        g = id.document().group_acronym
-    if g and str(g) != 'none':
-        s = s + "1"
-    elif (s == "3") and id.via_rfc_editor > 0:
-        s = s + "3"
-    else:
-        s = s + "2"
-    if not id.rfc_flag and id.cur_state.document_state_id not in states:
-        s = s + "3"
-    elif id.returning_item > 0:
-        s = s + "2"
-    else:
-        s = s + "1"
-    return s
+    pass
 
 def get_doc_sectionREDESIGN(id):
     states = [16,17,18,19,20,21]
@@ -199,7 +146,7 @@ def get_doc_sectionREDESIGN(id):
     g = id.document().group_acronym()
     if g and str(g) != 'none':
         s = s + "1"
-    elif (s == "3") and id.via_rfc_editor:
+    elif (s == "3") and id.stream in ("ISE","IRTF"):
         s = s + "3"
     else:
         s = s + "2"
@@ -370,7 +317,7 @@ def agenda_documents_txt(request):
         else:
             docs.extend(IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1))
     t = loader.get_template('iesg/agenda_documents.txt')
-    c = Context({'docs':docs})
+    c = Context({'docs':docs,'special_stream_list':['ISE','IRTF']})
     return HttpResponse(t.render(c), mimetype='text/plain')
 
 class RescheduleForm(forms.Form):
