@@ -55,20 +55,20 @@ from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
 
 
-def render_document_top(request, doc, tab):
+def render_document_top(request, doc, tab, name):
     tabs = []
-    tabs.append(("Document", "document", urlreverse("ietf.idrfc.views_doc.document_main", kwargs=dict(name=doc.name)), True))
+    tabs.append(("Document", "document", urlreverse("ietf.idrfc.views_doc.document_main", kwargs=dict(name=name)), True))
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id == "draft":
         # if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
-        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=doc.name)), ballot))
+        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=name)), ballot))
     elif doc.type_id == "charter":
-        tabs.append(("IESG Review", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=doc.name)), ballot))
+        tabs.append(("IESG Review", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=name)), ballot))
 
     # FIXME: if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
-    tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=doc.name)), True))
-    tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=doc.name)), True))
+    tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=name)), True))
+    tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=name)), True))
 
     name = doc.canonical_name()
     if name.startswith("rfc"):
@@ -120,7 +120,7 @@ def document_main(request, name, rev=None):
         if gh:
             group = gh
 
-    top = render_document_top(request, doc, "document")
+    top = render_document_top(request, doc, "document", name)
 
 
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
@@ -159,9 +159,8 @@ def document_history(request, name):
     if name.lower().startswith("draft") or name.lower().startswith("rfc"):
         return document_main_idrfc(request, name, "history")
 
-
     doc = get_object_or_404(Document, docalias__name=name)
-    top = render_document_top(request, doc, "history")
+    top = render_document_top(request, doc, "history", name)
 
     diff_documents = [ doc ]
     diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
@@ -206,7 +205,7 @@ def document_writeup(request, name):
         return document_main_idrfc(request, name, "writeup")
 
     doc = get_object_or_404(Document, docalias__name=name)
-    top = render_document_top(request, doc, "writeup")
+    top = render_document_top(request, doc, "writeup", name)
 
     writeups = []
     if doc.type_id == "charter":
@@ -328,7 +327,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
 
 def document_ballot(request, name, ballot_id=None):
     doc = get_object_or_404(Document, docalias__name=name)
-    top = render_document_top(request, doc, "ballot")
+    top = render_document_top(request, doc, "ballot", name)
 
     c = document_ballot_content(request, doc, ballot_id, editable=True)
 

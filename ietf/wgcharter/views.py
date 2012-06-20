@@ -397,7 +397,11 @@ def announcement_text(request, name, ann):
                 
                 charter.time = e.time
                 charter.save()
-            return redirect('doc_writeup', name=charter.name)
+
+            if request.GET.get("next", "") == "approve":
+                return redirect('charter_approve', name=charter.canonical_name())
+
+            return redirect('doc_writeup', name=charter.canonical_name())
 
         if "regenerate_text" in request.POST:
             if ann == "action":

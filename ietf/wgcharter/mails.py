@@ -79,6 +79,7 @@ def default_action_text(wg, charter, user):
                                    chairs=wg.role_set.filter(name="chair"),
                                    secr=wg.role_set.filter(name="secr"),
                                    techadv=wg.role_set.filter(name="techadv"),
+                                   milestones=wg.groupmilestone_set.all(),
                                    ad_email=wg.ad.role_email("ad") if wg.ad else None,
                                    action_type=action,
                                    ))
@@ -98,6 +99,7 @@ def default_review_text(wg, charter, user):
                                    chairs=wg.role_set.filter(name="chair"),
                                    secr=wg.role_set.filter(name="secr"),
                                    techadv=wg.role_set.filter(name="techadv"),
+                                   milestones=wg.groupmilestone_set.all(),
                                    ad_email=wg.ad.role_email("ad") if wg.ad else None,
                                    review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
                                    review_type="new" if wg.state_id == "proposed" else "recharter",
