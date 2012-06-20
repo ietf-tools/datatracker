@@ -156,7 +156,10 @@ class Document(DocumentInfo):
         elif self.type_id in ('slides','agenda','minutes'):
             session = self.session_set.all()[0]
             meeting = session.meeting
-            filename = self.external_url
+            if self.type_id in ('agenda','minutes'):
+                filename = os.path.splitext(self.external_url)[0]
+            else:
+                filename = self.external_url
             if meeting.type_id == 'ietf':
                 url = '%s/proceedings/%s/%s/%s' % (settings.MEDIA_URL,meeting.number,self.type_id,filename)
             elif meeting.type_id == 'interim':
