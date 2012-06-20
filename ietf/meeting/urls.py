@@ -1,13 +1,16 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.conf.urls.defaults import patterns
+from django.views.generic.simple import redirect_to
+
 from ietf.meeting import views
 
 urlpatterns = patterns('',
     (r'^(?P<meeting_num>\d+)/materials.html$', views.show_html_materials),
     (r'^agenda/$', views.html_agenda),
     (r'^agenda(?:.html)?$', views.html_agenda),
-    (r'^requests.html$', views.meeting_requests),
+    (r'^requests.html$', redirect_to, {"url": '/meeting/requests', "permanent": True}),
+    (r'^requests$', views.meeting_requests),
     (r'^agenda.txt$', views.text_agenda),
     (r'^agenda/agenda.ics$', views.ical_agenda),
     (r'^agenda.ics$', views.ical_agenda),
@@ -15,7 +18,8 @@ urlpatterns = patterns('',
     (r'^agenda/week-view.html$', views.week_view),
     (r'^week-view.html$', views.week_view),
     (r'^(?P<num>\d+)/agenda(?:.html)?/?$', views.html_agenda),
-    (r'^(?P<num>\d+)/requests.html$', views.meeting_requests),
+    (r'^(?P<num>\d+)/requests.html$', redirect_to, {"url": '/meeting/%(num)s/requests', "permanent": True}),
+    (r'^(?P<num>\d+)/requests$', views.meeting_requests),
     (r'^(?P<num>\d+)/agenda.txt$', views.text_agenda),
     (r'^(?P<num>\d+)/agenda.ics$', views.ical_agenda),
     (r'^(?P<num>\d+)/agenda.csv$', views.csv_agenda),
