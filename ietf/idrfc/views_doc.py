@@ -356,7 +356,7 @@ def _get_html(key, filename, split=True):
         f = open(filename, 'rb')
         raw_content = f.read()
     except IOError:
-        error = "Error; cannot read ("+key+")"
+        error = "Error; cannot read '%s'" % key
         if split:
             return (error, "")
         else:

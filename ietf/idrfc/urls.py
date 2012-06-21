@@ -68,7 +68,7 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._-]+)/edit/approveballot/$', views_ballot.approve_ballot, name='doc_approve_ballot'),
     url(r'^(?P<name>[A-Za-z0-9._-]+)/edit/makelastcall/$', views_ballot.make_last_call, name='doc_make_last_call'),
 
-    (r'^(?P<name>[A-Za-z0-9._-]+)/charter/', include('ietf.wgcharter.urls')),
+    (r'^(?P<name>charter-[A-Za-z0-9.-]+)/', include('ietf.wgcharter.urls')),
 )
 
 urlpatterns += patterns('django.views.generic.simple',
