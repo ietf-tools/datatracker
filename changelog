@@ -14,13 +14,13 @@ ietfdb (4.21)
     consistent, this is needed because we still have different views for
     /doc/rfcXXXX/ and /doc/draft-foo-bar/
 
-  * Fix regexp fix - [.-_] does not mean "dot or dash or underscore", it
+  * Fix regexp fix - [.-_] does not mean 'dot or dash or underscore', it
     means all characters between dot and underscore
 
   * Include _ in allowed document name regexp, we currently have 7 drafts
     with _ in the database despite it not being valid - they can be found
     with:
-    select name from doc_document where name like '%\_%' and type_id = "draft";
+    select name from doc_document where name like '%\_%' and type_id = 'draft';
 
   * Fix flow of approval of charters/announcement of the WG action based
     on feedback from Cindy Morgan, now there's a link on the approval page
@@ -47,13 +47,13 @@ ietfdb (4.21)
     consistent, this is needed because we still have different views for
     /doc/rfcXXXX/ and /doc/draft-foo-bar/
 
-  * Fix regexp fix - [.-_] does not mean "dot or dash or underscore", it
+  * Fix regexp fix - [.-_] does not mean 'dot or dash or underscore', it
     means all characters between dot and underscore
 
   * Include _ in allowed document name regexp, we currently have 7 drafts
     with _ in the database despite it not being valid - they can be found
     with:
-    select name from doc_document where name like '%\_%' and type_id = "draft";
+    select name from doc_document where name like '%\_%' and type_id = 'draft';
 
   * Fix flow of approval of charters/announcement of the WG action based
     on feedback from Cindy Morgan, now there's a link on the approval page
@@ -81,7 +81,7 @@ ietfdb (4.21)
 
   From adam@nostrum.com:
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jun 2012 18:40:14 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Jun 2012 01:01:06 +0000
 
 ietfdb (4.20)
 
@@ -132,11 +132,11 @@ ietfdb (4.20)
 
   * Move charter state help to /doc/help/state/charter/.
 
-  * Say "generate" rather than "edit" when there's no text in the boxes
+  * Say 'generate' rather than 'edit' when there's no text in the boxes
 
   * Don't show diff box if there's only 1 entry (and itself).
 
-  * Say "Charter" rather than "Recharter" on the charter /doc/ page if the 
+  * Say 'Charter' rather than 'Recharter' on the charter /doc/ page if the 
     group is proposed or a BoF.
 
   * Treat BoF as proposed WG.
@@ -161,15 +161,15 @@ ietfdb (4.20)
 
   * Fix some phrasing bugs.
 
-  * Fix terminology confusion and say "send ballot" rather than "issue
-    ballot" to clear up that it is not actually created.
+  * Fix terminology confusion and say 'send ballot' rather than 'issue
+    ballot' to clear up that it is not actually created.
 
   * Fix wording of send ballot comment, the actual text was still specific
     to drafts.
 
   * Don't show edit button for snapshots.
 
-  * Fix bug in hiding "external review needed" checkbox.
+  * Fix bug in hiding 'external review needed' checkbox.
 
   * Create charters in state notrev instead of intrev, as a side effect
     this fixes a problem with comments not being saved when starting
