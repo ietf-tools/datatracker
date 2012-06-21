@@ -1,19 +1,16 @@
-import re
+import re, datetime
 
 from django.conf import settings
 from django.db import models
 from django.utils.hashcompat import md5_constructor
 
 from ietf.idtracker.models import IETFWG
+from ietf.person.models import Person
 
 
 class IdSubmissionStatus(models.Model):
     status_id = models.IntegerField(primary_key=True)
     status_value = models.CharField(blank=True, max_length=255)
-
-    class Meta:
-        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            db_table = 'id_submission_status'
 
     def __unicode__(self):
         return self.status_value
@@ -50,9 +47,8 @@ class IdSubmissionDetail(models.Model):
     idnits_failed = models.IntegerField(null=True, blank=True)
     submission_hash = models.CharField(null=True, blank=True, max_length=255)
 
-    class Meta:
-        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            db_table = 'id_submission_detail'
+    def __unicode__(self):
+        return u"%s-%s" % (self.filename, self.revision)
 
     def create_hash(self):
         self.submission_hash = md5_constructor(settings.SECRET_KEY + self.filename).hexdigest()
@@ -78,20 +74,14 @@ def create_submission_hash(sender, instance, **kwargs):
 
 models.signals.pre_save.connect(create_submission_hash, sender=IdSubmissionDetail)
 
-class IdApprovedDetail(models.Model):
-    filename = models.CharField(null=True, blank=True, max_length=255, db_index=True)
-    approved_status = models.IntegerField(null=True, blank=True)
-    approved_person_tag = models.IntegerField(null=True, blank=True)
-    approved_date = models.DateField(null=True, blank=True)
-    recorded_by = models.IntegerField(null=True, blank=True)
-
-    class Meta:
-        if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            db_table = 'id_approved_detail'
+class Preapproval(models.Model):
+    """Pre-approved draft submission name."""
+    name = models.CharField(max_length=255, db_index=True)
+    by = models.ForeignKey(Person)
+    time = models.DateTimeField(default=datetime.datetime.now)
 
     def __unicode__(self):
-        return "%s (%s)" % (self.filename, self.approved_status)
-
+        return self.name
 
 class TempIdAuthors(models.Model):
     id_document_tag = models.IntegerField()

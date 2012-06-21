@@ -17,7 +17,7 @@ from ietf.utils.mail import outbox
 from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role
 from ietf.doc.models import Document, BallotDocEvent, BallotPositionDocEvent
-from ietf.submit.models import IdSubmissionDetail
+from ietf.submit.models import IdSubmissionDetail, Preapproval
 
 class SubmitTestCase(django.test.TestCase):
     fixtures = ['names', 'idsubmissionstatus']
@@ -358,7 +358,82 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue("Full URL for managing submission" in outbox[-1]["Subject"])
         self.assertTrue(name in outbox[-1]["Subject"])
 
+class ApprovalsTestCase(django.test.TestCase):
+    fixtures = ['names', 'idsubmissionstatus']
 
-if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    # the above tests only work with the new schema
-    del SubmitTestCase 
+    def test_approvals(self):
+        make_test_data()
+
+        url = urlreverse('submit_approvals')
+        self.client.login(remote_user="marschairman")
+
+        from ietf.submit.views import POSTED, INITIAL_VERSION_APPROVAL_REQUESTED
+
+        Preapproval.objects.create(name="draft-ietf-mars-foo", by=Person.objects.get(user__username="marschairman"))
+        Preapproval.objects.create(name="draft-ietf-mars-baz", by=Person.objects.get(user__username="marschairman"))
+
+        IdSubmissionDetail.objects.create(filename="draft-ietf-mars-foo",
+                                          group_acronym_id=Group.objects.get(acronym="mars").pk,
+                                          submission_date=datetime.date.today(),
+                                          revision="00",
+                                          status_id=POSTED)
+        IdSubmissionDetail.objects.create(filename="draft-ietf-mars-bar",
+                                          group_acronym_id=Group.objects.get(acronym="mars").pk,
+                                          submission_date=datetime.date.today(),
+                                          revision="00",
+                                          status_id=INITIAL_VERSION_APPROVAL_REQUESTED)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        self.assertEquals(len(q('.approvals a:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEquals(len(q('.approvals a:contains("draft-ietf-mars-bar")')), 1)
+        self.assertEquals(len(q('.preapprovals td:contains("draft-ietf-mars-foo")')), 0)
+        self.assertEquals(len(q('.preapprovals td:contains("draft-ietf-mars-baz")')), 1)
+        self.assertEquals(len(q('.recently-approved a:contains("draft-ietf-mars-foo")')), 1)
+
+    def test_add_preapproval(self):
+        make_test_data()
+
+        url = urlreverse('submit_add_preapproval')
+        login_testing_unauthorized(self, "marschairman", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('input[type=submit]')), 1)
+
+        # faulty post
+        r = self.client.post(url, dict(name="draft-test-nonexistingwg-something"))
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue("errorlist" in r.content)
+
+        # add
+        name = "draft-ietf-mars-foo"
+        r = self.client.post(url, dict(name=name))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEquals(len(Preapproval.objects.filter(name=name)), 1)
+
+    def test_cancel_preapproval(self):
+        make_test_data()
+
+        preapproval = Preapproval.objects.create(name="draft-ietf-mars-foo", by=Person.objects.get(user__username="marschairman"))
+
+        url = urlreverse('submit_cancel_preapproval', kwargs=dict(preapproval_id=preapproval.pk))
+        login_testing_unauthorized(self, "marschairman", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('input[type=submit]')), 1)
+
+        # cancel
+        r = self.client.post(url, dict(action="cancel"))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEquals(len(Preapproval.objects.filter(name=preapproval.name)), 0)

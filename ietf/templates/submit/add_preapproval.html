@@ -1,0 +1,74 @@
+{% extends "submit/submit_base.html" %}
+{% block title %}Add Pre-Approval{% endblock %}
+
+{% block morecss %}
+{{ block.super }}
+p { max-width: 50em; }
+.name-template { padding: 0.2em 0.5em; background-color: #eee; cursor: pointer; transition: background-color 0.3s; }
+.name-template:hover { background-color: #aaa; }
+form.add-preapproval input[name=name] { width: 30em; }
+ul.errorlist { color: #a00; padding: 0px; margin: 0px; list-style-type: none; }
+form .actions { padding-top: 1em; text-align: right; }
+form .actions a { display: inline-block; margin-right: 1em; }
+{% endblock %}
+
+{% load ietf_filters %}
+
+{% block submit_content %}
+
+<h2>Add Pre-Approval</h2>
+
+<p>You can register a pre-approved draft name. Then the WG Chair
+approval step of WG -00 submissions is suspended for that draft name
+so a future submission is posted to the data tracker immediately.</p>
+
+<p>When the revision 00 draft is submitted, the pre-approval will not
+be shown anymore as it has fulfilled its purpose (only revision 00 submissions are
+subject to approval). If the draft never shows up, you can instead
+later cancel the pre-approval to get rid of it.</p>
+
+<h3>Instructions</h3>
+
+<p>Do not include <code>-00</code> and do not include a file extension
+like <code>.txt</code> in the name.</p>
+
+{% if user|has_role:"Secretariat" %}
+<p>Only WG submissions are subject to approval and are thus pre-approvable.</p>
+{% else %}
+<p>As WG Chair{% if groups|length > 1 %} of {{ groups|length }} groups{% endif %} you can pre-approve draft names on the form:
+  <table>
+  {% for g in groups %}
+    <tr><td class="name-template">draft-ietf-{{ g.acronym }}-<i>something</i></td></tr>
+  {% endfor %}
+  </table>
+</p>
+{% endif %}
+
+<form class="add-preapproval" action="" method="post">
+  <table>
+    <tr>
+      <td>{{ form.name.label_tag }}</td>
+      <td>{{ form.name }}</td>
+    </tr>
+    {% if form.name.errors %}
+    <tr><td colspan="2">{{ form.name.errors }}</td></tr>
+    {% endif %}
+
+    <tr>
+      <td class="actions" colspan="2">
+      <a href="{% url submit_approvals %}#preapprovals">Back</a>
+      <input type="submit" value="Add pre-approval" />
+      </td>
+    </tr>
+  </table>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+jQuery(function () {
+    jQuery(".name-template").click(function (){
+        jQuery("form.add-preapproval input[name=name]").val(jQuery(this).text().replace("something", ""));
+    });
+});
+{% endblock %}

@@ -8,15 +8,11 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.core.exceptions import ObjectDoesNotExist
 
-from ietf.submit.models import IdSubmissionDetail, IdApprovedDetail
-from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm
-from ietf.submit.utils import (DraftValidation, perform_post, remove_docs,
-                               get_person_for_user, is_secretariat,
-                               request_full_url, UPLOADED,
-                               WAITING_AUTHENTICATION, CANCELED,
-                               INITIAL_VERSION_APPROVAL_REQUESTED,
-                               MANUAL_POST_REQUESTED, POSTED)
+from ietf.submit.models import IdSubmissionDetail, Preapproval
+from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm, PreapprovalForm
+from ietf.submit.utils import *
 from ietf.utils.mail import send_mail
+from ietf.ietfauth.decorators import has_role, role_required
 
 
 def submit_index(request):
@@ -114,23 +110,18 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
             auto_post_form = AutoPostForm(draft=detail, validation=validation, data=request.POST)
             if auto_post_form.is_valid():
                 try:
-                    approved_detail = IdApprovedDetail.objects.get(filename=detail.filename)
-                except ObjectDoesNotExist:
-                    approved_detail = None
-                if detail.group_acronym and not approved_detail:
+                    preapproval = Preapproval.objects.get(name=detail.filename)
+                except Preapproval.DoesNotExist:
+                    preapproval = None
+
+                if detail.revision == '00' and detail.group_acronym and not preapproval:
                     detail.status_id = INITIAL_VERSION_APPROVAL_REQUESTED
                     detail.save()
-                else:
-                    approved_detail = True
 
-                if detail.revision == '00' and not approved_detail:
                     submitter = auto_post_form.save_submitter_info()
                     subject = 'New draft waiting for approval: %s' % detail.filename
                     from_email = settings.IDSUBMIT_FROM_EMAIL
-                    to_email = []
-                    if detail.group_acronym:
-                        to_email += [i.person.email()[1] for i in detail.group_acronym.wgchair_set.all()]
-                    to_email = list(set(to_email))
+                    to_email = list(set(i.person.email()[1] for i in detail.group_acronym.wgchair_set.all()))
                     if to_email:
                         authors = detail.tempidauthors_set.exclude(author_order=0).order_by('author_order')
                         send_mail(request, to_email, from_email, subject, 'submit/submission_approval.txt',
@@ -265,3 +256,62 @@ def full_url_request(request, submission_id):
     request_full_url(request, detail)
     message = ('success', 'An email has been sent to draft authors to inform them of the full access url')
     return draft_status(request, submission_id, message=message)
+
+def approvals(request):
+    approvals = get_approvable_submissions(request.user)
+    preapprovals = get_preapprovals(request.user)
+
+    days = 30
+    recently_approved = get_recently_approved(request.user, datetime.date.today() - datetime.timedelta(days=days))
+
+    return render_to_response('submit/approvals.html',
+                              {'selected': 'approvals',
+                               'approvals': approvals,
+                               'preapprovals': preapprovals,
+                               'recently_approved': recently_approved,
+                               'days': days },
+                              context_instance=RequestContext(request))
+
+
+@role_required("Secretariat", "WG Chair")
+def add_preapproval(request):
+    groups = Group.objects.filter(type="wg").exclude(state="conclude").order_by("acronym").distinct()
+
+    if not has_role(request.user, "Secretariat"):
+        groups = groups.filter(role__person=request.user.get_profile())
+
+    if request.method == "POST":
+        form = PreapprovalForm(request.POST)
+        form.groups = groups
+        if form.is_valid():
+            p = Preapproval()
+            p.name = form.cleaned_data["name"]
+            p.by = request.user.get_profile()
+            p.save()
+
+            return HttpResponseRedirect(urlreverse("submit_approvals") + "#preapprovals")
+    else:
+        form = PreapprovalForm()
+
+    return render_to_response('submit/add_preapproval.html',
+                              {'selected': 'approvals',
+                               'groups': groups,
+                               'form': form },
+                              context_instance=RequestContext(request))
+
+@role_required("Secretariat", "WG Chair")
+def cancel_preapproval(request, preapproval_id):
+    preapproval = get_object_or_404(Preapproval, pk=preapproval_id)
+
+    if not preapproval in get_preapprovals(request.user):
+        raise HttpResponseForbidden("You do not have permission to cancel this preapproval.")
+
+    if request.method == "POST" and request.POST.get("action", "") == "cancel":
+        preapproval.delete()
+
+        return HttpResponseRedirect(urlreverse("submit_approvals") + "#preapprovals")
+
+    return render_to_response('submit/cancel_preapproval.html',
+                              {'selected': 'approvals',
+                               'preapproval': preapproval },
+                              context_instance=RequestContext(request))

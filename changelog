@@ -1,3 +1,88 @@
+ietfdb (4.21)
+
+  This is a bugfix release for the charter release (4.20) with some
+  extra changes which were pending.
+
+  From olau@iola.dk:  
+
+  * Replace get_profile() hack with a test on the user instead, this
+    also makes the ballot icon more robust against users without profiles
+    (which shouldn't happen, but apparently we sometimes get one which
+    results in a crash rather than something more graceful)
+
+  * Give the incoming name to the top renderer so the links are internally
+    consistent, this is needed because we still have different views for
+    /doc/rfcXXXX/ and /doc/draft-foo-bar/
+
+  * Fix regexp fix - [.-_] does not mean "dot or dash or underscore", it
+    means all characters between dot and underscore
+
+  * Include _ in allowed document name regexp, we currently have 7 drafts
+    with _ in the database despite it not being valid - they can be found
+    with:
+    select name from doc_document where name like '%\_%' and type_id = "draft";
+
+  * Fix flow of approval of charters/announcement of the WG action based
+    on feedback from Cindy Morgan, now there's a link on the approval page
+    to go to the edit page which sends you back upon saving, and the edit
+    page doesn't provide a button to send the announcement since you
+    should do that on the approve page (instead it provides a link).
+
+  * Include current milestones in charter action/review announcements,
+    fixes issue #835.
+
+  * Add CC for group mailing list in action/review emails, fixes issue #837.
+
+  * Fix link to charter .txt file on agenda page
+
+  * Apparently, CHARTER_TXT_URL http://www.ietf.org/charters/ is really
+    http://www.ietf.org/charter/, fix this in the settings.py file
+
+  * Replace get_profile() hack with a test on the user instead, this
+    also makes the ballot icon more robust against users without profiles
+    (which shouldn't happen, but apparently we sometimes get one which
+    results in a crash rather than something more graceful)
+
+  * Give the incoming name to the top renderer so the links are internally
+    consistent, this is needed because we still have different views for
+    /doc/rfcXXXX/ and /doc/draft-foo-bar/
+
+  * Fix regexp fix - [.-_] does not mean "dot or dash or underscore", it
+    means all characters between dot and underscore
+
+  * Include _ in allowed document name regexp, we currently have 7 drafts
+    with _ in the database despite it not being valid - they can be found
+    with:
+    select name from doc_document where name like '%\_%' and type_id = "draft";
+
+  * Fix flow of approval of charters/announcement of the WG action based
+    on feedback from Cindy Morgan, now there's a link on the approval page
+    to go to the edit page which sends you back upon saving, and the edit
+    page doesn't provide a button to send the announcement since you
+    should do that on the approve page (instead it provides a link).
+
+  * Include current milestones in charter action/review announcements,
+    fixes issue #835.
+
+  * Add CC for group mailing list in action/review emails, fixes issue #837.
+
+  * Fix link to charter .txt file on agenda page
+
+  From rjsparks@nostrum.com:
+
+  * Expose how many pages each document contains on the docs on future
+    telechats page.  Fixes bug #828
+
+  *  Replaced the concept of a tag (via-rfc) identifying ise or irtf document
+    (previously the idinternal.via_rfc_editor boolean) with looking at the
+    document's stream.  Removed the stream editing form - that functionality
+    is on the edit info form.  Put the old-ADs back into the list of choices
+    when editing a document's info.  This (re) fixes bug #749
+
+  From adam@nostrum.com:
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jun 2012 18:40:14 +0000
+
 ietfdb (4.20)
 
   This release introduces major new functionality for managing WG charters

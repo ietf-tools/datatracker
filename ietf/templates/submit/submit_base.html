@@ -16,10 +16,11 @@
 <h1>IETF Internet-Draft Submission </h1>
 
 <div class="ietf-navset">
-{% ifequal selected "index" %}<span class="selected">Upload</span>{% else %}<a href="{% url submit_index %}">Upload</a>{% endifequal %} |
-{% ifequal selected "status" %}<span class="selected">Status</span>{% else %}<a href="{% url submit_status %}">Status</a>{% endifequal %} |
-{% ifequal selected "instructions" %}<span class="selected">Tool Instructions</span>{% else %}<a href="{% url submit_tool_instructions %}">Tool Instructions</a>{% endifequal %} |
-{% ifequal selected "notewell" %}<span class="selected">NOTE WELL</span>{% else %}<a href="{% url submit_note_well %}">NOTE WELL</a>{% endifequal %} 
+{% if selected == "index" %}<span class="selected">Upload</span>{% else %}<a href="{% url submit_index %}">Upload</a>{% endif %} |
+{% if selected == "status" %}<span class="selected">Status</span>{% else %}<a href="{% url submit_status %}">Status</a>{% endif %} |
+{% if selected == "instructions" %}<span class="selected">Tool Instructions</span>{% else %}<a href="{% url submit_tool_instructions %}">Tool Instructions</a>{% endif %} |
+{% if selected == "notewell" %}<span class="selected">NOTE WELL</span>{% else %}<a href="{% url submit_note_well %}">NOTE WELL</a>{% endif %} |
+{% if selected == "approvals" %}<span class="selected">Approvals</span>{% else %}<a href="{% url submit_approvals %}">Approvals</a>{% endif %}
 </div>
 
 {% if form.cutoff_warning %}

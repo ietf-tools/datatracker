@@ -21,9 +21,9 @@ class IdSubmissionDetailAdmin(admin.ModelAdmin):
 
 admin.site.register(IdSubmissionDetail, IdSubmissionDetailAdmin)
 
-class IdApprovedDetailAdmin(admin.ModelAdmin):
+class PreapprovalAdmin(admin.ModelAdmin):
     pass
-admin.site.register(IdApprovedDetail, IdApprovedDetailAdmin)    
+admin.site.register(Preapproval, PreapprovalAdmin)
 
 class TempIdAuthorsAdmin(admin.ModelAdmin):
     ordering = ["-id"]

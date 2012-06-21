@@ -14,8 +14,8 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.idtracker.models import InternetDraft, IETFWG
 from ietf.proceedings.models import Meeting
-from ietf.submit.models import IdSubmissionDetail, TempIdAuthors
-from ietf.submit.utils import MANUAL_POST_REQUESTED, NONE_WG, UPLOADED, WAITING_AUTHENTICATION
+from ietf.submit.models import IdSubmissionDetail, TempIdAuthors, Preapproval
+from ietf.submit.utils import MANUAL_POST_REQUESTED, NONE_WG, UPLOADED, WAITING_AUTHENTICATION, POSTED, POSTED_BY_SECRETARIAT
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
@@ -547,3 +547,33 @@ class MetaDataForm(AutoPostForm):
                 'submitter': submitter
                 },
                   cc=cc)
+
+
+class PreapprovalForm(forms.Form):
+    name = forms.CharField(max_length=255, required=True, label="Pre-approved name", initial="draft-ietf-")
+
+    def clean_name(self):
+        n = self.cleaned_data['name'].strip().lower()
+
+        if not n.startswith("draft-"):
+            raise forms.ValidationError("Name doesn't start with \"draft-\".")
+        if len(n.split(".")) > 1 and len(n.split(".")[-1]) == 3:
+            raise forms.ValidationError("Name appears to end with a file extension .%s - do not include an extension." % n.split(".")[-1])
+
+        components = n.split("-")
+        if components[-1] == "00":
+            raise forms.ValidationError("Name appears to end with a revision number -00 - do not include the revision.")
+        if len(components) < 4:
+            raise forms.ValidationError("Name has less than four dash-delimited components - can't form a valid WG draft name.")
+        if not components[-1]:
+            raise forms.ValidationError("Name ends with a dash.")
+        acronym = components[2]
+        if acronym not in self.groups.values_list('acronym', flat=True):
+            raise forms.ValidationError("WG acronym not recognized as one you can approve drafts for.")
+
+        if Preapproval.objects.filter(name=n):
+            raise forms.ValidationError("Pre-approval for this name already exists.")
+        if IdSubmissionDetail.objects.filter(status__in=[POSTED, POSTED_BY_SECRETARIAT ], filename=n):
+            raise forms.ValidationError("A draft with this name has already been submitted and accepted. A pre-approval would not make any difference.")
+
+        return n

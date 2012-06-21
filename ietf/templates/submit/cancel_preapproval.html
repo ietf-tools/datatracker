@@ -1,0 +1,23 @@
+{% extends "submit/submit_base.html" %}
+{% block title %}Cancel Pre-Approval{% endblock %}
+
+{% block morecss %}
+{{ block.super }}
+form.actions { margin-top: 1em; }
+form.actions a { display: inline-block; margin-right: 1em; }
+{% endblock %}
+
+{% block submit_content %}
+
+<h2>Cancel Pre-Approval</h2>
+
+Pre-approval of <b>{{ preapproval.name }}</b> by {{ preapproval.by }}
+on {{ preapproval.time }}.
+
+<form class="actions" action="" method="post">
+  <a href="{% url submit_approvals %}#preapprovals">Back</a>
+  <input type="hidden" name="action" value="cancel" />
+  <input type="submit" value="Cancel pre-approval" />
+</form>
+
+{% endblock %}
