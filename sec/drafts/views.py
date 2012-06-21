@@ -17,7 +17,7 @@ from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName
 from ietf.doc.models import Document, DocumentAuthor
 from ietf.doc.utils import augment_with_start_time
-from ietf.submit.models import IdSubmissionDetail, IdApprovedDetail
+from ietf.submit.models import IdSubmissionDetail
 from ietf.utils.draft import Draft
 from sec.proceedings.proc_utils import get_progress_stats
 from sec.sreq.views import get_meeting
