@@ -437,7 +437,7 @@ def telechat_docs_tarfile(request,year,month,day):
     mfh, mfn = mkstemp()
     manifest = open(mfn, "w")
     for doc in docs:
-        doc_path = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, doc.draft.filename+"-"+doc.draft.revision_display()+".txt")
+        doc_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.draft.filename+"-"+doc.draft.revision_display()+".txt")
         if os.path.exists(doc_path):
             try:
                 tarstream.add(doc_path, str(doc.draft.filename+"-"+doc.draft.revision_display()+".txt"))

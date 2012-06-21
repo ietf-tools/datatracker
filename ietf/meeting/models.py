@@ -124,6 +124,7 @@ class TimeSlot(models.Model):
             location = ""
             
         return location
+
         
     
 class Constraint(models.Model):
@@ -171,3 +172,6 @@ class Session(models.Model):
 
         timeslots = self.timeslot_set.order_by('time')
         return u"%s: %s %s" % (self.meeting, self.group.acronym, timeslots[0].time.strftime("%H%M") if timeslots else "(unscheduled)")
+
+    def constraints(self):
+        return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')

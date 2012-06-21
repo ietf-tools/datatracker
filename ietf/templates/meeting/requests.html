@@ -2,102 +2,59 @@
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% block title %}IETF {{ meeting.num }} Meeting Timeslot Requests{% endblock %}
 {% block morecss %}
-h2 { border-style: none none solid none }
+@media print {
+  .title { font-size: 1.0cm !important; padding-top: 6cm; text-align: center;}
+  .loc { text-align:center; font-size: 0.75cm} 
+}
+.loc { width: 100% }
+h2 { border-style: none none solid none ; page-break-before: always;}
 h3 { color: #0000a0 }
 th { text-align: right; vertical-align: text-top; }
+.even { background-color: #fff; }
+.odd { background-color: #ddf; }
+.h { text-align: center; border-style: none none solid none; border-width: 1px;}
+.conflict { background-color: #fbb; }
+.conflic2 { background-color: #fd6; }
+.conflic3 { background-color: #ff8; }
+.status { text-align: center; background-color: #004; color: #fff; }
+.no-req {border-style: solid; border-width: 1px; padding: 5px; font-weight:bold ; background-color: #333; color: #fff}
+
 {% endblock morecss %}
 
 {% block content %}
-<h1>IETF {{ meeting.num }} Meeting Timeslot Requests</h1>
+<h1 class="title">IETF {{ meeting.number }} Meeting Timeslot Requests</h1>
+<div class="loc">{{meeting.city}}, {{meeting.country}} -- {{meeting.venue_name}} </div>
 
-{# cache for 15 minutes -- XXX need to add criteria #}
-{% load cache %}
-{% cache 900 meeting.num %}
-{% endcache %}
-
-{% regroup sessions|dictsort:"area" by area as area_list %}
-{% for area in area_list %}
-  {% if area.grouper %}{% ifnotequal area.grouper|upper "1PLENARY" %}
-    <h2>{{area.grouper|upper}}</h2>
-
-    <h3>Summary</h3>
-    <table>
-      {% for session in area.list|dictsort:"acronym" %}
-        {% if session.length_session1 %}
-          <tr>
-            <th>{{session.acronym|upper}}: </th>
-            <td>
-              {{session.length_session1_desc}}
-              {% ifnotequal session.length_session2 "0" %}
-               + {{session.length_session2_desc}}
-              {% endifnotequal %}
-              {% ifnotequal session.length_session3 "0" %}
-               + {{session.length_session3_desc}}
-              {% endifnotequal %}
-            </td>
-          </tr>
-        {% endif %}
-      {% endfor %}
-      <tr><th>Unscheduled:</th><td>
-      {% for wg in wgs %}
-        {% ifequal wg.area_acronym|upper area.grouper|upper %}
-          {% ifequal wg.meeting_scheduled|upper "NO" %}
-            {{wg|upper}}
-          {% endifequal %}
-        {% endifequal %}
-      {% endfor %}
-      </td></tr>
-    </table>
-
-
-    {% for session in area.list|dictsort:"acronym" %}
-      {% if session.length_session1 %}
-      <h3>{{session.acronym|upper}}</h3>
-      <table>
-        <tr><th>Requested&nbsp;By: </th>
-          <td>{{session.requested_by}} on {{session.requested_date}}
-          {% ifnotequal session.requested_date session.last_modified_date %}
-            (modified {{session.last_modified_date}})
-          {% endifnotequal %}
-          </td>
-        </tr>
-        <tr>
-          <th>Session&nbsp;Length: </th>
-          <td>
-            {{session.length_session1_desc}}
-            {% ifnotequal session.length_session2 "0" %}
-             + {{session.length_session2_desc}}
-            {% endifnotequal %}
-            {% ifnotequal session.length_session3 "0" %}
-             + {{session.length_session3_desc}}
-            {% endifnotequal %}
-          </td>
-        </tr>
-        {% if session.conflict1 %}
-          <tr><th>Primary&nbsp;Conflicts: </th><td>{{session.conflict1}}</td></tr>
-        {% endif %}
-        {% if session.conflict2 %}
-          <tr><th>Secondary&nbsp;Conflicts: </th><td>{{session.conflict2}}</td></tr>
-        {% endif %}
-        {% if session.conflict3 %}
-          <tr><th>Tertiary&nbsp;Conflicts: </th><td>{{session.conflict3}}</td></tr>
-        {% endif %}
-        {% if session.conflict_other %}
-          <tr><th>Other&nbsp;Conflicts: </th><td>{{session.conflict_other}}</td></tr>
-        {% endif %}
-        {% if session.special_req %}
-          <tr><th>Special&nbsp;Requests: </th><td>{{session.special_req}}</td></tr>
-        {% endif %}
-        {% if session.ad_comments  %}
-          <tr><th>AD&nbsp;Comments: </th><td>{{session.ad_comments}}</td></tr>
-        {% endif %}
-      <table>
-      {% endif %}
-
-    {%endfor%}
-  {% endifnotequal %}{% endif %}
+<table>
+{% for session in sessions %}
+{% if session.group.parent %}
+{% ifchanged %} 
+</table>
+<h2><a name="{{session.group.parent.acronym}}">{{session.group.parent.acronym|upper}} - {{session.group.parent.name}}</a></h2>
+<div class="no-req">No schedule request:{% for group in groups_not_meeting %}{%ifequal group.parent.id session.group.parent.id %} {{group.acronym|upper}}{%endifequal%}{% endfor %}</div></br>
+<table>
+<tr>
+  <td class="h"></td>
+  <th class="h">Duration</th>
+  <th class="h">Size</th>
+  <th class="h">Requested By</th>
+  <th class="h">Conflicts</th>
+  <th class="h">Special Requests</th>
+{% endifchanged %}
+{%ifchanged%}
+<tr><td class="status" colspan="6"><!-- {{session.group.parent.id}} -->{{session.status}}</td></tr>
+{%endifchanged%}
+<tr class="{% if forloop.counter|divisibleby:2 %}even{% else %}odd{% endif %}">
+  <th valign="top">{{session.group.acronym|upper}}</th>
+  <td valign="top" align="center">{% if not session.requested_duration %}<i>{{session.status}}</i>{%else%} {{session.requested_duration|stringformat:"s"|slice:"0:4"}} {% endif %}</td>
+  <td valign="top" align="center">{{session.attendees}}</td>
+  <td valign="top">
+    <a href="mailto:{{session.requested_by.email_address}}">{{session.requested_by}}</a>
+  </td>
+  <td width="35%" valign="top">{%if session.requested_duration%}<span>{% for constraint in session.constraints %}{%ifchanged%}</span><span class="{{constraint.name.slug}}">{%endifchanged%} {{constraint.source.acronym}}{%ifnotequal constraint.source.parent.id constraint.target.parent.id%} ({{constraint.source.parent.acronym}}){%endifnotequal%}{%if not forloop.last %},{%endif%} {% endfor %}</span>{%endif%}</td>
+  <td width="35%" valign="top">{% if session.comments %}<i><font color="#800000">{{session.comments|linebreaksbr}}</font></i>{% endif %}</td>
+</tr>
+{% endif %}
 {% endfor %}
-<br>
-
-
-{% endblock %}
+</table>
+{% endblock %} 
