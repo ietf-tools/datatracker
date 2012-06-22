@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}
+Set Telechat Date for {{ doc.name }}
+{% endblock %}
+
+{% block morecss %}
+form.telechat-date td.actions {
+  padding-top: 1em;
+}
+{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+<h1>Set Telechat Date for {{ doc.name }}</h1>
+
+<form class="telechat-date" action="" method="POST">
+  <table>
+    {{ form.as_table }}
+    <tr>
+      <td></td>
+      <td class="actions">
+        <a href="{% url doc_view name=doc.name %}">Back</a>
+        <input type="submit" value="Save"/>
+      </td>
+    </tr>
+  </table>
+</form>
+{% endblock %}

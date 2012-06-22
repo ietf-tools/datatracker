@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% comment %}
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endcomment %}
-{% load ietf_filters %}{% load ballot_icon %}
+{% load ietf_filters %}{% load ballot_icon_redesign %}
 
 {% if title2_first %}{% if title1_first %}<h2>{{ title1 }}</h2>
 {% if title1|startswith:"2." %}
@@ -69,12 +69,20 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
     review and should therefore not be published without IETF review
     and IESG approval.<br/>
     <br />
+    <b>(Old instructions)</b>
     The document shepherd must propose one of these responses in the
     document write-up in the Data Tracker, and the document shepherd
     may supply text for an IESG Note in the write-up. The Area
     Director ballot positions indicate consensus with the response
     proposed by the document shepherd and agreement that the IESG
     should request inclusion of the IESG Note.<br/>
+    <br />
+    <b>(New instructions)</b>
+    The document shepherd must propose one of these responses in the
+    conflict-review document, and the document shepherd may supply text 
+    for an IESG Note in that document. The Area Director ballot positions 
+    indicate consensus with the response proposed by the document shepherd 
+    and agreement that the IESG should request inclusion of the IESG Note.<br/>
     <br />
     Other matters may be recorded in comments, and the comments will
     be passed on to the RFC Editor as community review of the document.
@@ -89,26 +97,27 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <table class="agenda-doc">
 <tbody>
 <tr><td>
-{% if doc.obj.rfc_flag %}
-<a href="/doc/rfc{{doc.obj.document.rfc_number}}">{{doc.obj.document.filename}}</a>
-<a href="http://www.rfc-editor.org/rfc/rfc{{doc.obj.document.rfc_number}}/">[txt]</a>
+<a href="{% url doc_view name=doc.obj.canonical_name %}">{{doc.obj.canonical_name}}</a>
+{% with doc.obj.rfc_number as rfc_number %}
+{% if rfc_number %}
+<a href="http://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">[txt]</a>
 {% else %}
-<a href="/doc/{{doc.obj.document.filename}}/">{{doc.obj.document.displayname|safe}}</a>
-<a href="http://www.ietf.org/id/{{doc.obj.document.filename}}-{{doc.obj.document.revision}}.txt">[txt]</a>
+<a href="http://www.ietf.org/id/{{doc.obj.name}}-{{doc.obj.rev}}.txt">[txt]</a>
 {% endif %}
+{% endwith %}
 
-<br/>{{ doc.obj.document.title|escape }} ({{ doc.obj.document.intended_status }})
+<br/>{{ doc.obj.title|escape }} ({{ doc.obj.intended_std_level }})
 
 
 {% if doc.obj.note %}
 <br/>Note: {{ doc.obj.note|unescape }}
 {% endif %}
 
-{% if doc.obj.draft.ipr.all %}
+{% if doc.obj.ipr %}
 <br />
 <h5>IPR:</h5>
    <ul>
-   {% for ipr in doc.obj.draft.ipr.all %}
+   {% for ipr in doc.obj.ipr %}
       {% ifequal ipr.ipr.status 1 %}
       <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a></li>
       {% endifequal %}
@@ -117,10 +126,12 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 
 {% endif %}
 
-<br/>Token: {{ doc.obj.token_name|escape }} ({{doc.obj.area_acronym}} area)
-{% if doc.obj.ballot.defer %}
-<br/>Was deferred by {{doc.obj.ballot.defer_by}} on {{doc.obj.ballot.defer_date}}
+<br/>Token: {{ doc.obj.ad }} ({{doc.obj.area_acronym}} area)
+{% with doc.obj.active_defer_event as defer %}
+{% if defer %}
+<br/>Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}
 {% endif %}
+{% endwith %}
 </td><td style="padding-left:20px; width: 50px;">
 {% ballot_icon doc.obj %}
 </td></tr></tbody></table>

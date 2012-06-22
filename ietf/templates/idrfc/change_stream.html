@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Change stream for {{ doc }}{% endblock %}
+
+{% block morecss %}
+form.change-stream select {
+  width: 22em;
+}
+form.change-stream .actions {
+  text-align: right;
+  padding-top: 10px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Change stream for {{ doc }}</h1>
+
+<form class="change-stream" action="" method="post">
+  <table>
+    {{ form.as_table }}
+    <tr>
+      <td colspan="2" class="actions">
+        <a href="{{ doc.get_absolute_url }}">Back</a>
+        <input type="submit" value="Save"/>
+      </td>
+    </tr>
+  </table>
+</form>
+{% endblock %}

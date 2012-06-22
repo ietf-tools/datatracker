@@ -470,3 +470,107 @@ class IesgUrlTestCase(SimpleUrlTestCase):
         else:
             return content
 
+#Tests added since database redesign that speak the new clases
+
+from ietf.doc.models import Document,TelechatDocEvent,State
+from ietf.group.models import Person
+class DeferUndeferTestCase(django.test.TestCase):
+
+    fixtures=['names']
+
+    def helper_test_defer(self,name):
+
+        doc = Document.objects.get(name=name)
+        url = urlreverse('doc_defer_ballot',kwargs=dict(name=doc.name))
+
+        login_testing_unauthorized(self, "ad", url)
+
+        # some additional setup
+        dates = TelechatDate.objects.active().order_by("date")
+        first_date = dates[0].date
+        second_date = dates[1].date
+
+        e = TelechatDocEvent(type="scheduled_for_telechat",
+                             doc = doc,
+                             by = Person.objects.get(name="Aread Irector"),
+                             telechat_date = first_date,
+                             returning_item = False, 
+                            )
+        e.save()
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form.defer')),1)
+
+        # defer
+        self.assertEquals(doc.telechat_date,first_date)
+        r = self.client.post(url,dict())
+        self.assertEquals(r.status_code, 302)
+        doc = Document.objects.get(name=name)
+        self.assertEquals(doc.telechat_date,second_date)
+        self.assertTrue(doc.returning_item())
+        defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'])
+        if doc.type_id in defer_states:
+           self.assertEquals(doc.get_state(defer_states[doc.type_id][0]).slug,defer_states[doc.type_id][1])
+
+
+    def helper_test_undefer(self,name):
+
+        doc = Document.objects.get(name=name)
+        url = urlreverse('doc_undefer_ballot',kwargs=dict(name=doc.name))
+
+        login_testing_unauthorized(self, "ad", url)
+
+        # some additional setup
+        dates = TelechatDate.objects.active().order_by("date")
+        first_date = dates[0].date
+        second_date = dates[1].date
+
+        e = TelechatDocEvent(type="scheduled_for_telechat",
+                             doc = doc,
+                             by = Person.objects.get(name="Aread Irector"),
+                             telechat_date = second_date,
+                             returning_item = True, 
+                            )
+        e.save()
+        defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'])
+        if doc.type_id in defer_states:
+            doc.set_state(State.objects.get(type=defer_states[doc.type_id][0],slug=defer_states[doc.type_id][1]))
+            doc.save()
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form.undefer')),1)
+
+        # undefer
+        self.assertEquals(doc.telechat_date,second_date)
+        r = self.client.post(url,dict())
+        self.assertEquals(r.status_code, 302)
+        doc = Document.objects.get(name=name)
+        self.assertEquals(doc.telechat_date,first_date)
+        self.assertTrue(doc.returning_item()) 
+        undefer_states = dict(draft=['draft-iesg','iesg-eva'],conflrev=['conflrev','iesgeval'])
+        if doc.type_id in undefer_states:
+           self.assertEquals(doc.get_state(undefer_states[doc.type_id][0]).slug,undefer_states[doc.type_id][1])
+
+    def test_defer_draft(self):
+        self.helper_test_defer('draft-ietf-mars-test')
+
+    def test_defer_conflict_review(self):
+        self.helper_test_defer('conflict-review-imaginary-irtf-submission')
+
+    def test_undefer_draft(self):
+        self.helper_test_undefer('draft-ietf-mars-test')
+
+    def test_undefer_conflict_review(self):
+        self.helper_test_undefer('conflict-review-imaginary-irtf-submission')
+
+    # when charters support being deferred, be sure to test them here
+
+    def setUp(self):
+        from ietf.utils.test_data import make_test_data
+        make_test_data()

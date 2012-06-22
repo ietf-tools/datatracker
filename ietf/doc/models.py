@@ -200,6 +200,113 @@ class Document(DocumentInfo):
 
         return name
 
+    #TODO can/should this be a function instead of a property? Currently a view uses it as a property
+    @property
+    def telechat_date(self):
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+        return e.telechat_date if e else None
+
+    def area_acronym(self):
+        g = self.group
+        if g:
+            if g.type_id == "area":
+                return g.acronym
+            elif g.type_id != "individ":
+                return g.parent.acronym
+        else:
+            return None
+    
+    def group_acronym(self):
+        g = self.group
+        if g and g.type_id != "area":
+            return g.acronym
+        else:
+            return "none"
+
+    def on_upcoming_agenda(self):
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+        return bool(e and e.telechat_date and e.telechat_date >= datetime.date.today())
+
+    def returning_item(self):
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+        return e.returning_item if e else None
+
+    # This is brittle. Resist the temptation to make it more brittle by combining the search against those description
+    # strings to one command. It is coincidence that those states have the same description - one might change.
+    # Also, this needs further review - is it really the case that there would be no other changed_document events
+    # between when the state was changed to defer and when some bit of code wants to know if we are deferred? Why
+    # isn't this just returning whether the state is currently a defer state for that document type?
+    def active_defer_event(self):
+        if self.type_id == "draft" and self.get_state_slug("draft-iesg") == "defer":
+            return self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
+        elif self.type_id == "conflrev" and self.get_state_slug("conflrev") == "defer":
+            return self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
+        return None
+
+    def displayname_with_link(self):
+        return '<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev)
+
+    def rfc_number(self):
+        qs = self.docalias_set.filter(name__startswith='rfc')
+        return qs[0].name[3:] if qs else None
+
+    def replaced_by(self):
+        return [ rel.source for alias in self.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='replaces') ]
+
+    def friendly_state(self):
+        """ Return a concise text description of the document's current state """
+        if self.type_id=='draft':
+            # started_iesg_process is is how the redesigned database schema (as of May2012) captured what 
+            # used to be "has an IDInternal", aka *Wrapper.in_ietf_process()=True
+            in_iesg_process = self.latest_event(type='started_iesg_process')
+            iesg_state_summary=None
+            if in_iesg_process:
+                iesg_state = self.states.get(type='draft-iesg')
+                # This knowledge about which tags are reportable IESG substate tags is duplicated in idrfc
+                IESG_SUBSTATE_TAGS = ('point', 'ad-f-up', 'need-rev', 'extpty')
+                iesg_substate = self.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
+                # There really shouldn't be more than one tag in iesg_substate, but this will do something sort-of-sensible if there is
+                iesg_state_summary = iesg_state.name
+                if iesg_substate:
+                     iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
+             
+            if self.get_state_slug() == "rfc":
+                return "<a href=\"%s\">RFC %d</a>" % (urlreverse('doc_view', args=['rfc%d' % self.rfc_number]), self.rfc_number)
+            elif self.get_state_slug() == "repl":
+                rs = self.replaced_by()
+                if rs:
+                    return "Replaced by "+", ".join("<a href=\"%s\">%s</a>" % (urlreverse('doc_view', args=[name]),name) for name in rs)
+                else:
+                    return "Replaced"
+            elif self.get_state_slug() == "active":
+                if in_iesg_process:
+                    if iesg_state.slug == "dead":
+                        # Many drafts in the draft-iesg "Dead" state are not dead
+                        # in other state machines; they're just not currently under 
+                        # IESG processing. Show them as "I-D Exists (IESG: Dead)" instead...
+                        return "I-D Exists (IESG: "+iesg_state_summary+")"
+                    elif iesg_state.slug == "lc":
+                        expiration_date = str(self.latest_event(LastCallDocEvent,type="sent_last_call").expires.date())
+                        return iesg_state_summary + " (ends "+expiration_date+")"
+                    else:
+                        return iesg_state_summary
+                else:
+                    return "I-D Exists"
+            else:
+                if in_iesg_process  and iesg_state.slug == "dead":
+                    return self.get_state().name +" (IESG: "+iesg_state_summary+")"
+                # Expired/Withdrawn by Submitter/IETF
+                return self.get_state().name
+        else:
+           return self.get_state().name
+
+    def ipr(self):
+        """Returns the IPR disclosures against this document (as a queryset over IprDocAlias)."""
+        from ietf.ipr.models import IprDocAlias
+        return IprDocAlias.objects.filter(doc_alias__document=self)
+
+
+
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')
     target = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set")

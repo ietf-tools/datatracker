@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Approve {{ review.canonical_name }}{% endblock %}
+
+{% block morecss %}
+form #id_announcement_text {
+  overflow-x: auto;
+  overflow-y: scroll;
+  width: 800px;
+  height: 400px;
+  border: 1px solid #bbb;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Approve {{ review.canonical_name }}</h1>
+
+<form class="approve" action="" method="POST">
+
+  <table>
+    {% for field in form.visible_fields %}
+    <tr>
+      <td>
+      <div>{{ field.label_tag }}:</div>
+        {{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td class="actions">
+        <a href="{% url doc_view name=review.name %}">Back</a>
+        <input type="submit" value="Send out the announcement and close the ballot"/>
+      </td>
+    </tr>
+  </table>
+</form>
+{% endblock %}

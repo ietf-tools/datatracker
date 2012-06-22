@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Begin IETF conflict review : {{doc_to_review.canonical_name}}-{{doc_to_review.rev}}{% endblock %}
+
+{% block morecss %}
+form.start-conflict-review #id_notify {
+  width: 600px;
+}
+form.start-conflict-review .actions {
+  padding-top: 20px;
+}
+.warning {
+  font-weight: bold;
+  color: #a00;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Begin IETF conflict review for {{doc_to_review.canonical_name}}-{{doc_to_review.rev}}</h1>
+
+<p class="helptext">For help on the initial state choice, see the <a href="{% url help_conflict_review_states %}">state table</a>.</p>
+
+<form class="start-conflict-review" action="" method="post">
+  <table>
+    {% for field in form.visible_fields %}
+    <tr>
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+
+      {{ field.errors }}
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td colspan="2" class="actions">
+        <a href="{% url doc_view name=doc_to_review.name %}">Back</a>
+        <input type="submit" value="Submit"/>
+      </td>
+    </tr>
+  </table>
+</form>
+
+{% endblock %}

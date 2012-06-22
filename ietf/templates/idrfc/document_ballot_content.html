@@ -7,7 +7,7 @@
 <div class="action"><a href="{% url doc_edit_position name=doc.name,ballot_id=ballot.pk %}">Edit position</a></div>
 {% endif %}
 
-{% if doc.type_id == "draft" %}
+{% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
 <div class="action">
 {% if deferred %}
   <a href="{% url doc_undefer_ballot name=doc.name %}">Undefer ballot</a>

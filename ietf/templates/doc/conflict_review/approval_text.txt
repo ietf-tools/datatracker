@@ -1,0 +1,30 @@
+{% load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
+To: {{ review.notify }}
+Cc: The IESG <iesg@ietf.org>, <iana@iana.org>, <ietf-announce@ietf.org> 
+Subject: Results of IETF-conflict review for {{conflictdoc.canonical_name}}-{{conflictdoc.rev}}
+
+{% filter wordwrap:73 %}The IESG has completed a review of {{conflictdoc.canonical_name}}-{{conflictdoc.rev}} consistent with RFC5742.
+
+{% if review.get_state_slug == 'appr-reqnopub-pend' %}
+The IESG recommends that '{{ conflictdoc.title }}' {{ conflictdoc.file_tag|safe }} NOT be published as {{ conflictdoc|std_level_prompt_with_article }}.
+{% else %}
+The IESG has no problem with the publication of '{{ conflictdoc.title }}' {{ conflictdoc.file_tag|safe }} as {{ conflictdoc|std_level_prompt_with_article }}.
+{% endif %}
+
+The IESG would also like the {{receiver}} to review the comments in the datatracker related to this document and determine whether or not they merit incorporation into the document. Comments may exist in both the ballot and the history log.
+
+The IESG review is documented at:
+{{review_url}}
+
+A URL of the reviewed Internet Draft is:
+{{conflictdoc_url}}
+
+The process for such documents is described at
+http://www.rfc-editor.org/indsubs.html
+
+Thank you,
+
+The IESG Secretary
+
+{% endfilter %}
+{% endautoescape %}

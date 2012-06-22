@@ -45,7 +45,7 @@ form.position-form .comment-text {
   <span class="actions">
     <input type="submit" name="send_mail" value="Save and send email"/>
     <input type="submit" value="Save"/>
-    {% if doc.type_id == "draft" %}
+    {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
     {% if ballot_deferred %}<input type="submit" name="Undefer" value="Undefer"/>{% else %}<input type="submit" name="Defer" value="Defer"/>{% endif %}
     {% endif %}
   </span>

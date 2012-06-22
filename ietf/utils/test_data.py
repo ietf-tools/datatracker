@@ -32,7 +32,7 @@ def make_test_data():
         state_id="active",
         type_id="ietf",
         parent=None)
-    for x in ["irtf", "iab", "ise"]:
+    for x in ["irtf", "iab", "ise", "iesg"]:
         Group.objects.create(
             name=x.upper(),
             acronym=x,
@@ -178,6 +178,25 @@ def make_test_data():
                 group=areahist,
                 person=p,
                 email=email)
+    
+    # stream chairs
+    for stream in ['ietf','irtf','iab','iesg']:
+        u = User.objects.create( username= ("%schair"%stream) )
+        p = Person.objects.create(
+            name="%s chair"%stream,
+            ascii="%s chair"%stream,
+            user = u,
+            )
+        chairmail = Email.objects.create(
+            address="%schair@ietf.org"%stream,
+            person = p,
+            )
+        Role.objects.create(
+            name_id = "chair",
+            group = Group.objects.get(acronym=stream),
+            person = p,
+            email = chairmail,
+            )
 
     # group chair
     u = User.objects.create(username="marschairman")
@@ -313,5 +332,20 @@ def make_test_data():
         break_area="Lounge",
         reg_area="Lobby",
         )
+
+    # an independent submission before review
+    doc = Document.objects.create(name='draft-imaginary-independent-submission',type_id='draft')
+    DocAlias.objects.create(      name='draft-imaginary-independent-submission',document=doc)
+
+    # an irtf submission mid review
+    doc = Document.objects.create(     name='draft-imaginary-irtf-submission',type_id='draft')
+    docalias = DocAlias.objects.create(name='draft-imaginary-irtf-submission',document=doc)
+    doc.stream = StreamName.objects.get(slug='irtf')
+    doc.save()
+    crdoc = Document.objects.create(name='conflict-review-imaginary-irtf-submission',type_id='conflrev',rev='00',notify="fsm@ietf.org")
+    DocAlias.objects.create(        name='conflict-review-imaginary-irtf-submission',document=crdoc)
+    crdoc.set_state(State.objects.get(name='Needs Shepherd',type__slug='conflrev'))
+    crdoc.save()
+    crdoc.relateddocument_set.create(target=docalias,relationship_id='conflrev')
     
     return draft

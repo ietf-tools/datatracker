@@ -38,6 +38,31 @@ def email_state_changedREDESIGN(request, doc, text):
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     email_state_changed = email_state_changedREDESIGN
+
+def email_stream_changed(request, doc, old_stream, new_stream, text=""):
+    """Email the change text to the notify group and to the stream chairs"""
+    to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
+    from group.models import Role as RedesignRole
+
+    # These use comprehension to deal with conditions when there might be more than one chair listed for a stream
+    if old_stream:
+        to.extend([x.person.formatted_email() for x in RedesignRole.objects.filter(group__acronym=old_stream.slug,name='chair')])
+    if new_stream:
+        to.extend([x.person.formatted_email() for x in RedesignRole.objects.filter(group__acronym=new_stream.slug,name='chair')])
+
+    if not to:
+        return
+    
+    if not text:
+        text = u"Stream changed to <b>%s</b> from %s"% (new_stream,old_stream)
+    text = strip_tags(text)
+
+    send_mail(request, to, None,
+              "ID Tracker Stream Change Notice: %s" % doc.file_tag(),
+              "idrfc/stream_changed_email.txt",
+              dict(text=text,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+    
     
 def html_to_text(html):
     return strip_tags(html.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("<br>", "\n"))

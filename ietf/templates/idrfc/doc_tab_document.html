@@ -56,10 +56,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <span id="doc_resurrect_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_resurrect name=doc.draft_name %}">Resurrect</a></span></span>
 {% endif %}
 {% else %}
-{% if doc.in_ietf_process %}
-<span id="doc_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;">{% url doc_edit_info name=doc.draft_name as doc_edit_url %}{% if doc_edit_url %}<span class="first-child"><a href="{{doc_edit_url}}">Edit</a></span>{% endif %}</span>
+{% if stream_info.stream.name == 'ISE' or stream_info.stream.name == 'IRTF' %}
+{% if user|in_group:"Secretariat" and not info.conflict_reviews %}
+<span id="doc_conflict_review_button" class="yui-button yui-link-button" style="margin-left:2px;">{% url conflict_review_start name=doc.draft_name as start_review_url %}{% if start_review_url %}<span class="first-child"><a href="{{start_review_url}}">Begin IETF Conflict Review</a></span>{% endif %}</span>
+{% endif %}
 {% else %}
-<span id="doc_add_button" class="yui-button yui-link-button" style="margin-left:2px;">{% url doc_edit_info name=doc.draft_name as doc_edit_url %}{% if doc_edit_url %}<span class="first-child"><a href="{{doc_edit_url}}">Add</a></span>{% endif %}</span>
+ {% if stream_info.stream.name == 'IETF'%}{%if doc.in_ietf_process %}
+  {% comment %}
+   <span id="doc_edit_info_button" class="yui-button yui-link-button" style="margin-left:2px;">{% url doc_edit_info name=doc.draft_name as doc_edit_url %}{% if doc_edit_url %}<span class="first-child"><a href="{{doc_edit_url}}">Edit</a></span>{% endif %}</span>
+  {% endcomment %}
+ {% else %}
+   <span id="doc_add_button" class="yui-button yui-link-button" style="margin-left:2px;">{% url doc_edit_info name=doc.draft_name as doc_edit_url %}{% if doc_edit_url %}<span class="first-child"><a href="{{doc_edit_url}}">Begin IESG Processing</a></span>{% endif %}</span>
+  {% endif %}{% endif %}
 {% endif %}
 {% endifequal %}
 
