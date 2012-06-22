@@ -7,7 +7,7 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        
+        pass
         # Adding model 'Meeting'
 
         # Adding model 'Room'
@@ -22,7 +22,7 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
-        
+        pass
         # Deleting model 'Meeting'
 
         # Deleting model 'Room'
