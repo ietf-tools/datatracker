@@ -65,7 +65,7 @@ def build_timeslots(meeting,room=None):
 
 def build_nonsession(meeting):
     '''
-    This function takes a meeting object and creates Break and Registration records
+    This function takes a meeting object and creates non-session records
     for a new meeting, based on the last meeting
     '''
     last_meeting = get_last_meeting(meeting)
@@ -78,6 +78,7 @@ def build_nonsession(meeting):
         if slot.type.slug in ('other','plenary'):
             session = Session(meeting=meeting,
                               name=slot.name,
+                              short=slot.session.short,
                               group=slot.session.group,
                               requested_by=system,
                               status_id='sched')
@@ -326,7 +327,7 @@ def main(request):
 
 def non_session(request, meeting_id):
     '''
-    Display and edit "non-session" time slots, ie. registration, beverage and snack breaks
+    Display and add "non-session" time slots, ie. registration, beverage and snack breaks
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
@@ -342,6 +343,7 @@ def non_session(request, meeting_id):
             day = form.cleaned_data['day']
             time = form.cleaned_data['time']
             name = form.cleaned_data['name']
+            short = form.cleaned_data['short']
             type = form.cleaned_data['type']
             duration = form.cleaned_data['duration']
             t = meeting.date + datetime.timedelta(days=int(day))
@@ -354,6 +356,7 @@ def non_session(request, meeting_id):
             if type.slug in ('other','plenary'):
                 session = Session(meeting=meeting,
                                   name=name,
+                                  short=short,
                                   group=Group.objects.get(acronym='none'),
                                   requested_by=Person.objects.get(name='(system)'),
                                   status_id='sched')
@@ -398,6 +401,55 @@ def non_session_delete(request, meeting_id, slot_id):
     url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
     return HttpResponseRedirect(url)
 
+def non_session_edit(request, meeting_id, slot_id):
+    '''
+    Allows the user to assign a location to this non-session timeslot
+    '''
+    meeting = get_object_or_404(Meeting, number=meeting_id)
+    slot = get_object_or_404(TimeSlot, id=slot_id)
+
+    if request.method == 'POST':
+        button_text = request.POST.get('submit', '')
+        if button_text == 'Cancel':
+            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
+            return HttpResponseRedirect(url)
+            
+        form = NonSessionEditForm(request.POST,meeting=meeting, session=slot.session)
+        if form.is_valid():
+            location = form.cleaned_data['location']
+            group = form.cleaned_data['group']
+            name = form.cleaned_data['name']
+            short = form.cleaned_data['short']
+            slot.location = location
+            slot.name = name
+            slot.save()
+            # save group to session object
+            session = slot.session
+            session.group = group
+            session.name = name
+            session.short = short
+            session.save()
+            
+            messages.success(request, 'Location saved')
+            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
+            return HttpResponseRedirect(url)
+        
+    else:
+        # we need to pass the session to the form in order to disallow changing
+        # of group after materials have been uploaded
+        initial = {'location':slot.location,
+                   'group':slot.session.group,
+                   'name':slot.session.name,
+                   'short':slot.session.short}
+        form = NonSessionEditForm(meeting=meeting,session=slot.session,initial=initial)
+            
+    return render_to_response('meetings/non_session_edit.html', {
+        'meeting': meeting,
+        'form': form,
+        'slot': slot},
+        RequestContext(request, {}),
+    )
+    
 def remove_session(request, meeting_id, acronym):
     '''
     Remove session from agenda.  Disassociate session from timeslot and set status.
@@ -644,48 +696,6 @@ def select_group(request, meeting_id):
         'irtf_form': irtf_form,
         'scheduled_groups': scheduled_groups,
         'meeting': meeting},
-        RequestContext(request, {}),
-    )
-
-def set_room(request, meeting_id, slot_id):
-    '''
-    Allows the user to assign a location to this non-session timeslot
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_id)
-    #meeting = get_object_or_404(Meeting, id=meeting_id)
-    slot = get_object_or_404(TimeSlot, id=slot_id)
-
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
-            
-        form = RoomForm(request.POST,meeting=meeting, session=slot.session)
-        if form.is_valid():
-            location = form.cleaned_data['location']
-            group = form.cleaned_data['group']
-            slot.location = location
-            slot.save()
-            # save group to session object
-            session = slot.session
-            session.group = group
-            session.save()
-            
-            messages.success(request, 'Location saved')
-            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
-            return HttpResponseRedirect(url)
-        
-    else:
-        # we need to pass the session to the form in order to disallow changing
-        # of group after materials have been uploaded
-        initial = {'location':slot.location,'group':slot.session.group}
-        form = RoomForm(meeting=meeting,session=slot.session,initial=initial)
-            
-    return render_to_response('meetings/set_room.html', {
-        'meeting': meeting,
-        'form': form,
-        'slot': slot},
         RequestContext(request, {}),
     )
     

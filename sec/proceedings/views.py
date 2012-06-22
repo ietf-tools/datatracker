@@ -741,9 +741,10 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
             elif meeting.type.slug == 'interim':
                 filename = '%s-%s' % (material_type.slug,meeting.number)
             
-            # Todo
-            # remove per Russ for shorter URLs
-            if session_name:
+            # NonSession material, use short name for shorter URLs
+            if session.short:
+                filename += "-%s" % session.short
+            elif session_name:
                 filename += "-%s" % slugify(session_name)
             # --------------------------------
             

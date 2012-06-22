@@ -138,7 +138,9 @@ class NewSessionForm(forms.Form):
         
         return cleaned_data
 
-class RoomForm(forms.Form):
+class NonSessionEditForm(forms.Form):
+    name = forms.CharField(help_text='Name that appears on the agenda')
+    short = forms.CharField(max_length=32,help_text='Enter an abbreviated session name (used for material file names)')
     location = forms.ModelChoiceField(queryset=Room.objects)
     group = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__in=('edu','ietf','iepg','tools','iesg','iab','iaoc')),
         help_text='''Select a group to associate with this session.  For example:<br>
@@ -150,7 +152,7 @@ class RoomForm(forms.Form):
     def __init__(self,*args,**kwargs):
         meeting = kwargs.pop('meeting')
         self.session = kwargs.pop('session')
-        super(RoomForm, self).__init__(*args,**kwargs)
+        super(NonSessionEditForm, self).__init__(*args,**kwargs)
         self.fields['location'].queryset = Room.objects.filter(meeting=meeting)
     
     def clean_group(self):
@@ -163,9 +165,10 @@ class TimeSlotForm(forms.Form):
     day = forms.ChoiceField(choices=DAYS_CHOICES)
     time = forms.TimeField()
     duration = TimedeltaFormField(widget=TimedeltaWidget(attrs={'inputs':['hours','minutes']}))
-    name = forms.CharField()
+    name = forms.CharField(help_text='Name that appears on the agenda')
 
 class NonSessionForm(TimeSlotForm):
-    # inherit TimeSlot and add Type field
+    # inherit TimeSlot and add extra fields
+    short = forms.CharField(max_length=32,help_text='Enter an abbreviated session name (used for material file names)')
     type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(slug__in=('other','reg','break','plenary')),empty_label=None)
     show_location = forms.BooleanField(required=False)

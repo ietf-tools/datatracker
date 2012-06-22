@@ -453,6 +453,10 @@ input.draft-file-input {
    Meeting Tool
    ========================================================================== */
 
+#non-session-edit-form input[type="text"] {
+    width: 30em;
+}
+
 #additional-info-form #id_text {
     width: 90%;
 }

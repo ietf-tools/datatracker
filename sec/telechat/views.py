@@ -96,7 +96,7 @@ def get_section_header(file,agenda):
 def get_group_info(group,agenda):
     '''
     This function takes a group name and an agenda dictionary and returns the 
-    agenda section header as a string and the wgaction object for use in the template.
+    agenda section header as a string.
     '''
     h1 = {'4':'Working Group Actions'}
     h2 = {'1':'WG Creation','2':'WG Rechartering'}
@@ -110,7 +110,6 @@ def get_group_info(group,agenda):
             if g['obj'] == group:            
                 section = k
                 count = '%s of %s' % (c, len(v))
-                wgaction = g['obj']
                 break
     
     header = [ '%s %s' % (section[1], h1[section[1]]) ]
@@ -118,7 +117,7 @@ def get_group_info(group,agenda):
     header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3a[section[3]] if section[2] == '1' else h3b[section[3]]))
     header.append(count)
     
-    return header, wgaction
+    return header
 
 def get_group_list(agenda):
     '''
@@ -352,7 +351,7 @@ def group(request, date, acronym):
     '''
     group = get_object_or_404(Group, acronym=acronym)
     agenda = _agenda_data(request, date=date)
-    header,wgaction = get_group_info(group,agenda)
+    header = get_group_info(group,agenda)
         
     # nav button logic, we're assuming there'll always be regular docs
     group_list = get_group_list(agenda)
@@ -365,8 +364,7 @@ def group(request, date, acronym):
         'group': group,
         'agenda': agenda,
         'header': header,
-        'nav_end': nav_end,
-        'wgaction': wgaction},
+        'nav_end': nav_end},
         RequestContext(request, {}),
     )
     
