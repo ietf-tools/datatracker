@@ -273,6 +273,11 @@ ul#list-nav a.current {
     border-bottom: none;
 }
 
+#announce-confirm {
+    color: black;
+    font-family: "Courier New",Courier,monospace;
+}
+
 /* ==========================================================================
    Area Tool
    ========================================================================== */
