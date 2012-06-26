@@ -217,3 +217,252 @@ class WgEditTestCase(django.test.TestCase):
         # the WG remains active until the Secretariat takes action
         group = Group.objects.get(acronym=group.acronym)
         self.assertEquals(group.state_id, "active")
+
+class MilestoneTestCase(django.test.TestCase):
+    fixtures = ["names"]
+
+    def create_test_milestones(self):
+        draft = make_test_data()
+
+        group = Group.objects.get(acronym="mars")
+
+        m1 = GroupMilestone.objects.create(group=group,
+                                           desc="Test 1",
+                                           due=datetime.date.today(),
+                                           resolved="",
+                                           state_id="active")
+        m1.docs = [draft]
+
+        m2 = GroupMilestone.objects.create(group=group,
+                                           desc="Test 2",
+                                           due=datetime.date.today(),
+                                           resolved="",
+                                           state_id="charter")
+        m2.docs = [draft]
+
+        return (m1, m2, group)
+
+
+    def test_milestone_sets(self):
+        m1, m2, group = self.create_test_milestones()
+
+        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(m1.desc in r.content)
+        self.assertTrue(m2.desc not in r.content)
+
+        url = urlreverse('wg_edit_charter_milestones', kwargs=dict(acronym=group.acronym))
+
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        self.assertTrue(m1.desc not in r.content)
+        self.assertTrue(m2.desc in r.content)
+
+    def test_add_milestone(self):
+        m1, m2, group = self.create_test_milestones()
+
+        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+
+        milestones_before = GroupMilestone.objects.count()
+        events_before = group.groupevent_set.count()
+        docs = Document.objects.filter(type="draft").values_list("name", flat=True)
+
+        due = datetime.date.today() + datetime.timedelta(days=365)
+
+        # faulty post
+        r = self.client.post(url, { 'prefix': "m-1",
+                                    'm-1-id': -1,
+                                    'm-1-desc': "", # no description
+                                    'm-1-due': due.strftime("%Y-%m-%d"),
+                                    'm-1-resolved': "",
+                                    'm-1-docs': ",".join(docs),
+                                    })
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        self.assertEquals(GroupMilestone.objects.count(), milestones_before)
+
+        # add
+        r = self.client.post(url, { 'prefix': "m-1",
+                                    'm-1-id': -1,
+                                    'm-1-desc': "Test 3",
+                                    'm-1-due': due.strftime("%Y-%m-%d"),
+                                    'm-1-resolved': "",
+                                    'm-1-docs': ",".join(docs),
+                                    })
+        self.assertEquals(r.status_code, 302)
+        self.assertEquals(GroupMilestone.objects.count(), milestones_before + 1)
+        self.assertEquals(group.groupevent_set.count(), events_before + 1)
+
+        m = GroupMilestone.objects.get(desc="Test 3")
+        self.assertEquals(m.state_id, "active")
+        self.assertEquals(m.due, due)
+        self.assertEquals(m.resolved, "")
+        self.assertEquals(set(m.docs.values_list("name", flat=True)), set(docs))
+        self.assertTrue("Added milestone" in m.milestonegroupevent_set.all()[0].desc)
+
+    def test_add_milestone_as_chair(self):
+        m1, m2, group = self.create_test_milestones()
+
+        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, "marschairman", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+
+        milestones_before = GroupMilestone.objects.count()
+        events_before = group.groupevent_set.count()
+        due = datetime.date.today() + datetime.timedelta(days=365)
+
+        # add
+        r = self.client.post(url, { 'prefix': "m-1",
+                                    'm-1-id': -1,
+                                    'm-1-desc': "Test 3",
+                                    'm-1-due': due.strftime("%Y-%m-%d"),
+                                    'm-1-resolved': "",
+                                    'm-1-docs': "",
+                                    })
+        self.assertEquals(r.status_code, 302)
+        self.assertEquals(GroupMilestone.objects.count(), milestones_before + 1)
+
+        m = GroupMilestone.objects.get(desc="Test 3")
+        self.assertEquals(m.state_id, "review")
+        self.assertEquals(group.groupevent_set.count(), events_before + 1)
+        self.assertTrue("for review" in m.milestonegroupevent_set.all()[0].desc)
+
+    def test_accept_milestone(self):
+        m1, m2, group = self.create_test_milestones()
+        m1.state_id = "review"
+        m1.save()
+
+        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, "ad", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+
+        events_before = group.groupevent_set.count()
+        due = datetime.date.today() + datetime.timedelta(days=365)
+
+        # add
+        r = self.client.post(url, { 'prefix': "m1",
+                                    'm1-id': m1.id,
+                                    'm1-desc': m1.desc,
+                                    'm1-due': m1.due.strftime("%Y-%m-%d"),
+                                    'm1-resolved': m1.resolved,
+                                    'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
+                                    'm1-accept': "checked",
+                                    })
+        self.assertEquals(r.status_code, 302)
+
+        m = GroupMilestone.objects.get(pk=m1.pk)
+        self.assertEquals(m.state_id, "active")
+        self.assertEquals(group.groupevent_set.count(), events_before + 1)
+        self.assertTrue("from review to active" in m.milestonegroupevent_set.all()[0].desc)
+        
+    def test_delete_milestone(self):
+        m1, m2, group = self.create_test_milestones()
+
+        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        milestones_before = GroupMilestone.objects.count()
+        events_before = group.groupevent_set.count()
+
+        # delete
+        r = self.client.post(url, { 'prefix': "m1",
+                                    'm1-id': m1.id,
+                                    'm1-desc': m1.desc,
+                                    'm1-due': m1.due.strftime("%Y-%m-%d"),
+                                    'm1-resolved': "",
+                                    'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
+                                    'm1-delete': "checked",
+                                    })
+        self.assertEquals(r.status_code, 302)
+        self.assertEquals(GroupMilestone.objects.count(), milestones_before)
+        self.assertEquals(group.groupevent_set.count(), events_before + 1)
+
+        m = GroupMilestone.objects.get(pk=m1.pk)
+        self.assertEquals(m.state_id, "deleted")
+        self.assertTrue("Deleted milestone" in m.milestonegroupevent_set.all()[0].desc)
+
+    def test_edit_milestone(self):
+        m1, m2, group = self.create_test_milestones()
+
+        url = urlreverse('wg_edit_milestones', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        milestones_before = GroupMilestone.objects.count()
+        events_before = group.groupevent_set.count()
+        docs = Document.objects.filter(type="draft").values_list("name", flat=True)
+
+        due = datetime.date.today() + datetime.timedelta(days=365)
+
+        # faulty post
+        r = self.client.post(url, { 'prefix': "m1",
+                                    'm1-id': m1.id,
+                                    'm1-desc': "", # no description
+                                    'm1-due': due.strftime("%Y-%m-%d"),
+                                    'm1-resolved': "",
+                                    'm1-docs': ",".join(docs),
+                                    })
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        m = GroupMilestone.objects.get(pk=m1.pk)
+        self.assertEquals(GroupMilestone.objects.count(), milestones_before)
+        self.assertEquals(m.due, m1.due)
+
+        # add
+        r = self.client.post(url, { 'prefix': "m1",
+                                    'm1-id': m1.id,
+                                    'm1-desc': "Test 2 - changed",
+                                    'm1-due': due.strftime("%Y-%m-%d"),
+                                    'm1-resolved': "Done",
+                                    'm1-resolved_checkbox': "checked",
+                                    'm1-docs': ",".join(docs),
+                                    })
+        self.assertEquals(r.status_code, 302)
+        self.assertEquals(GroupMilestone.objects.count(), milestones_before)
+        self.assertEquals(group.groupevent_set.count(), events_before + 1)
+
+        m = GroupMilestone.objects.get(pk=m1.pk)
+        self.assertEquals(m.state_id, "active")
+        self.assertEquals(m.due, due)
+        self.assertEquals(m.resolved, "Done")
+        self.assertEquals(set(m.docs.values_list("name", flat=True)), set(docs))
+        self.assertTrue("Changed milestone" in m.milestonegroupevent_set.all()[0].desc)
+
+    def test_reset_charter_milestones(self):
+        m1, m2, group = self.create_test_milestones()
+
+        url = urlreverse('wg_reset_charter_milestones', kwargs=dict(acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(q('input[name=milestone]').val(), str(m1.pk))
+
+        events_before = group.charter.docevent_set.count()
+
+        # reset
+        r = self.client.post(url, dict(milestone=[str(m1.pk)]))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEquals(GroupMilestone.objects.get(pk=m1.pk).state_id, "active")
+        self.assertEquals(GroupMilestone.objects.get(pk=m2.pk).state_id, "deleted")
+        self.assertEquals(GroupMilestone.objects.filter(due=m1.due, desc=m1.desc, state="charter").count(), 1)
+
+        self.assertEquals(group.charter.docevent_set.count(), events_before + 2) # 1 delete, 1 add

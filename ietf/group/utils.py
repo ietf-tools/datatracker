@@ -3,33 +3,21 @@ import os
 from django.conf import settings
 
 from ietf.group.models import *
+from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
 
 
 def save_group_in_history(group):
-    def get_model_fields_as_dict(obj):
-        return dict((field.name, getattr(obj, field.name))
-                    for field in obj._meta.fields
-                    if field is not obj._meta.pk)
-
-    # copy fields
-    fields = get_model_fields_as_dict(group)
-    del fields["charter"] # Charter is saved canonically on Group
-    fields["group"] = group
-    
-    grouphist = GroupHistory(**fields)
-    grouphist.save()
+    h = get_history_object_for(group)
+    h.save()
 
     # save RoleHistory
     for role in group.role_set.all():
         rh = RoleHistory(name=role.name, group=grouphist, email=role.email, person=role.person)
         rh.save()
 
-    # copy many to many
-    for field in group._meta.many_to_many:
-        if field.rel.through and field.rel.through._meta.auto_created:
-            setattr(grouphist, field.name, getattr(group, field.name).all())
+    copy_many_to_many_for_history(h, group)
 
-    return grouphist
+    return h
 
 def get_charter_text(group):
     # get file path from settings. Syntesize file name from path, acronym, and suffix
@@ -55,3 +43,12 @@ def get_charter_text(group):
         except BaseException:    
             desc = 'Error Loading Work Group Description'
         return desc
+
+def save_milestone_in_history(milestone):
+    h = get_history_object_for(milestone)
+    h.milestone = milestone
+    h.save()
+
+    copy_many_to_many_for_history(h, milestone)
+
+    return h

@@ -19,7 +19,7 @@
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">3</field>
-        <field type="BooleanField" name="blocking">False</field>
+        <field type="BooleanField" name="blocking">True</field>
     </object>
     <object pk="block" model="name.ballotpositionname">
         <field type="CharField" name="name">Block</field>
@@ -307,35 +307,29 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="no" model="name.groupballotpositionname">
-        <field type="CharField" name="name">No</field>
+    <object pk="active" model="name.groupmilestonestatename">
+        <field type="CharField" name="name">Active</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">1</field>
     </object>
-    <object pk="yes" model="name.groupballotpositionname">
-        <field type="CharField" name="name">Yes</field>
+    <object pk="deleted" model="name.groupmilestonestatename">
+        <field type="CharField" name="name">Deleted</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">2</field>
     </object>
-    <object pk="abstain" model="name.groupballotpositionname">
-        <field type="CharField" name="name">Abstain</field>
+    <object pk="review" model="name.groupmilestonestatename">
+        <field type="CharField" name="name">For review</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">3</field>
     </object>
-    <object pk="block" model="name.groupballotpositionname">
-        <field type="CharField" name="name">Block</field>
+    <object pk="charter" model="name.groupmilestonestatename">
+        <field type="CharField" name="name">Chartering/rechartering</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="norecord" model="name.groupballotpositionname">
-        <field type="CharField" name="name">No record</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">4</field>
     </object>
     <object pk="bof" model="name.groupstatename">
         <field type="CharField" name="name">BOF</field>
@@ -628,7 +622,7 @@
     <object pk="ds" model="name.stdlevelname">
         <field type="CharField" name="name">Draft Standard</field>
         <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
+        <field type="BooleanField" name="used">False</field>
         <field type="IntegerField" name="order">0</field>
     </object>
     <object pk="ps" model="name.stdlevelname">
@@ -1630,25 +1624,34 @@
         <field type="CharField" name="name">Ready for external review</field>
         <field type="TextField" name="question">Is this charter ready for external review?</field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">1</field>
         <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="block"></object><object pk="abstain"></object><object pk="norecord"></object></field>
     </object>
-    <object pk="2" model="doc.ballottype">
-        <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">charter</field>
-        <field type="SlugField" name="slug">approve</field>
-        <field type="CharField" name="name">Approve</field>
-        <field type="TextField" name="question">Do we approve of this charter?</field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-        <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="block"></object><object pk="abstain"></object><object pk="norecord"></object></field>
-    </object>
-    <object pk="3" model="doc.ballottype">
+    <object pk="4" model="doc.ballottype">
         <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">approve</field>
         <field type="CharField" name="name">Approve</field>
         <field type="TextField" name="question"></field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">1</field>
         <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="discuss"></object><object pk="abstain"></object><object pk="recuse"></object><object pk="norecord"></object></field>
+    </object>
+    <object pk="2" model="doc.ballottype">
+        <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">charter</field>
+        <field type="SlugField" name="slug">r-wo-ext</field>
+        <field type="CharField" name="name">Ready w/o external review</field>
+        <field type="TextField" name="question">Is this charter ready for external review? Is this charter ready for approval without external review?</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">2</field>
+        <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="block"></object><object pk="abstain"></object><object pk="norecord"></object></field>
+    </object>
+    <object pk="3" model="doc.ballottype">
+        <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">charter</field>
+        <field type="SlugField" name="slug">approve</field>
+        <field type="CharField" name="name">Approve</field>
+        <field type="TextField" name="question">Do we approve of this charter?</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">3</field>
+        <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="block"></object><object pk="abstain"></object><object pk="norecord"></object></field>
     </object>
 </django-objects>

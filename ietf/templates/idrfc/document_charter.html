@@ -44,7 +44,7 @@
         {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
 
 
-        {% if chartering  %}
+        {% if chartering %}
         - <a href="{% url charter_startstop_process name=doc.name option='abandon' %}">Abandon effort</a>
 
         {% if request.user|has_role:"Secretariat" %}
@@ -110,10 +110,24 @@
 {% endif %}
 </h3>
 
-{% if doc.rev %}
+{% if doc.rev != "" %}
 <div class="markup_draft">
 {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
 </div>
+{% endif %}
+
+{% if not snapshot and chartering %}
+<h3>Proposed Milestones
+{% if user|has_role:"Area Director,Secretariat" %}
+<a class="edit" href="{% url wg_edit_charter_milestones acronym=doc.group.acronym %}">Edit charter milestones</a>
+{% endif %}
+</h3>
+
+{% if milestones %}
+{% include "wginfo/milestones.html" %}
+{% else %}
+<p>No milestones for charter found.</p>
+{% endif %}
 {% endif %}
 
 {% endblock %}
