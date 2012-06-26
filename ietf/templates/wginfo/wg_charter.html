@@ -35,87 +35,129 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ietf_filters %}
 {% block wg_titledetail %}Charter{% endblock %}
 
-{% block wg_content %}
+{% block morecss %}
+{{ block.super }}
+h2 a.edit { font-weight: normal; font-size: 13px; display: inline-block; margin-left: 0.5em; }
+{% endblock %}
 
+{% block wg_content %}
 <div class="ietf-box ietf-wg-details">
 {% if concluded %}
 <span class="ietf-concluded-warning">Note: The data for concluded WGs
 is occasionally incorrect.</span>
 {% endif %}
 <table>
-<tr>
-<td colspan="2">
-<b>Personnel</b>
-</td>
-</tr>
+  <tr><th colspan="2">Group</th></tr>
 
-<tr valign="top">
-<td style="width:14ex;">Chair{{ wg.chairs.count|pluralize:",s" }}:</td>
-<td>
-{% for chair in wg.chairs %}
-<a href="mailto:{{ chair.person.email.1 }}">{{ chair.person|escape }} &lt;{{ chair.person.email.1 }}&gt;</a><br/>
-{% endfor %}
-</td></tr>
-<tr><td>Area Director:</td>
-<td>
-{% ifequal wg.area_director.person.email.1 "noreply@ietf.org" %}?{%else%}
-<a href="mailto:{{ wg.area_director.person.email.1 }}">{{ wg.area_director.person }} &lt;{{wg.area_director.person.email.1 }}&gt;</a>{% endifequal %}
-</td>
-</tr>
-{% if wg.wgtechadvisor_set.count %}
-<tr>
-<td>Tech Advisor{{ wg.wgtechadvisor_set.count|pluralize:",s" }}:</td>
-<td>
-{% for techadvisor in wg.wgtechadvisor_set.all %}
-<a href="mailto:{{ techadvisor.person.email.1 }}">{{ techadvisor.person }} &lt;{{ techadvisor.person.email.1 }}&gt;</a><br/>
-{% endfor %}
-</td></tr>
-{% endif %}
-{% if wg.wgeditor_set.count %}
-<td>Editor{{ wg.wgeditor_set.count|pluralize:",s" }}:</td>
-<td>
-{% for editor in wg.wgeditor_set.all %}
-<a href="mailto:{{ editor.person.email.1 }}">{{ editor.person }} &lt;{{ editor.person.email.1 }}&gt;</a><br/>
-{% endfor %}
-</td></tr>
-{% endif %}
-{% if wg.secretaries %}
-<tr><td>Secretar{{ wg.secretaries.count|pluralize:"y,ies" }}:</td>
-<td>
-{% for secretary in wg.secretaries %}
-<a href="mailto:{{ secretary.person.email.1 }}">{{ secretary.person }} &lt;{{ secretary.person.email.1 }}&gt;</a><br/>
-{% endfor %}
-</td></tr>
-{% endif %}
+  <tr valign="top">
+    <td style="width:14ex;">Name:</td>
+    <td>{{ wg.name }}</td>
+  </tr>
 
-<tr>
-<td colspan="2">
-<br/><b>Mailing List</b>
-</td>
-</tr>
+  <tr><td>Acronym:</td><td>{{ wg.acronym }}</td></tr>
 
-<tr><td>Address:</td><td>{{ wg.email_address|urlize }}</td></tr>
-<tr><td>To Subscribe:</td><td>{{ wg.email_subscribe|urlize }}</td></tr>
-<tr><td>Archive:</td><td>{{ wg.clean_email_archive|urlize }}</td></tr> 
+  {% if wg.parent %}
+  <tr><td>Area:</td><td>{{ wg.parent.name }} ({{ wg.parent.acronym }})</td></tr>
+  {% endif %}
 
-{% if not concluded %}
-<tr>
-<td colspan="2">
-<br/><b>Jabber Chat</b>
-</td>
-</tr>
+  <tr>
+    <td>State:</td>
+    <td>{{ wg.state.name }}
+      {% if requested_close %}
+      (but in the process of being closed)
+      {% endif %}
+    </td>
+  </tr>
 
-<tr><td>Room Address:</td><td><a href="xmpp:{{wg}}@jabber.ietf.org">xmpp:{{wg}}@jabber.ietf.org</a></td></tr>
-<tr><td>Logs:</td><td><a href="http://jabber.ietf.org/logs/{{wg}}/">http://jabber.ietf.org/logs/{{wg}}/</a></td></tr>
-{% endif %}
+  <tr>
+    <td>Charter:</td>
+    <td>
+      {% if wg.charter %}
+      <a href="{% url doc_view name=wg.charter.name %}">{{ wg.charter.name }}-{{ wg.charter.rev }}</a> ({{ wg.charter.get_state.name }})
+      {% else %}
+      none
+      {% if user|has_role:"Area Director,Secretariat" %}
+      - <a href="{% url wgcharter.views.submit acronym=wg.acronym %}">Submit Charter</a>
+      {% endif %}
+      {% endif %}
+    </td>
+  </tr>
+
+  <tr><th colspan="2">Personnel</th></tr>
+
+  <tr valign="top">
+    <td>Chair{{ wg.chairs|pluralize }}:</td>
+    <td>
+      {% for chair in wg.chairs %}
+      <a href="mailto:{{ chair.address }}">{{ chair.person.plain_name }} &lt;{{ chair.address }}&gt;</a><br/>
+      {% endfor %}
+  </td>
+  </tr>
+
+  <tr><td>Area Director:</td>
+  <td>
+    {% if not wg.ad %}?{% else %}
+    <a href="mailto:{{ wg.areadirector.address }}">{{ wg.ad.plain_name }} &lt;{{ wg.areadirector.address }}&gt;</a>{% endif %}
+  </td>
+  </tr>
+  {% if wg.techadvisors %}
+  <tr>
+    <td>Tech Advisor{{ wg.techadvisors|pluralize }}:</td>
+    <td>
+      {% for techadvisor in wg.techadvisors %}
+      <a href="mailto:{{ techadvisor.address }}">{{ techadvisor.person.plain_name }} &lt;{{ techadvisor.address }}&gt;</a><br/>
+      {% endfor %}
+    </td>
+  </tr>
+  {% endif %}
+  {% if wg.editors %}
+  <td>Editor{{ wg.editors|pluralize }}:</td>
+  <td>
+    {% for editor in wg.editors %}
+    <a href="mailto:{{ editor.address }}">{{ editor.person.plain_name }} &lt;{{ editor.address }}&gt;</a><br/>
+    {% endfor %}
+  </td></tr>
+  {% endif %}
+  {% if wg.secretaries %}
+  <tr>
+    <td>Secretar{{ wg.secretaries|pluralize:"y,ies" }}:</td>
+    <td>
+      {% for secretary in wg.secretaries %}
+      <a href="mailto:{{ secretary.address }}">{{ secretary.person.plain_name }} &lt;{{ secretary.address }}&gt;</a><br/>
+      {% endfor %}
+    </td>
+  </tr>
+  {% endif %}
+
+  <tr><th colspan="2">Mailing List</th></tr>
+
+  <tr><td>Address:</td><td>{{ wg.email_address|urlize }}</td></tr>
+  <tr><td>To Subscribe:</td><td>{{ wg.email_subscribe|urlize }}</td></tr>
+  <tr><td>Archive:</td><td>{{ wg.clean_email_archive|urlize }}</td></tr>
+
+  {% if not concluded %}
+  <tr><th colspan="2">Jabber Chat</th></tr>
+
+  <tr><td>Room Address:</td><td><a href="xmpp:{{ wg.acronym }}@jabber.ietf.org">xmpp:{{ wg.acronym }}@jabber.ietf.org</a></td></tr>
+  <tr><td>Logs:</td><td><a href="http://jabber.ietf.org/logs/{{ wg.acronym }}/">http://jabber.ietf.org/logs/{{ wg.acronym }}/</a></td></tr>
+  {% endif %}
 
 </table>
+
+{% if user|has_role:"Area Director,Secretariat" %}
+<div style="margin: 2px; margin-top: 2em;">
+  {% for name, url in actions %}
+  <a href="{{ url }}">{{ name }}</a>
+  {% if not forloop.last %}|{% endif %}
+  {% endfor %}
+</div>
+{% endif %}
 </div>
 
 {% if wg.additional_urls %}
 <p>In addition to the charter maintained by the IETF Secretariat, there is additional information about this working group on the Web at: 
 {% for url in wg.additional_urls %}
-<a href="{{ url.url }}">{{ url.description}}</a>{% if not forloop.last %}, {% endif %}
+<a href="{{ url.url }}">{{ url.name }}</a>{% if not forloop.last %}, {% endif %}
 {% endfor %}
 </p>
 {% endif %}
@@ -123,31 +165,16 @@ is occasionally incorrect.</span>
 <h2>Description of Working Group</h2>
 <p>{{ wg.charter_text|escape|format_charter|safe }}</p>
 
-<h2>Goals and Milestones</h2>
-<table>
-{% for milestone in wg.milestones %}
-  <tr>
-   <td width="80px">
-      {% ifequal milestone.done 'Done' %} Done
-      {% else %}
-      {%ifequal milestone.expected_due_date.month 1 %}Jan{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 2 %}Feb{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 3 %}Mar{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 4 %}Apr{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 5 %}May{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 6 %}Jun{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 7 %}Jul{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 8 %}Aug{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 9 %}Sep{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 10 %}Oct{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 11 %}Nov{% endifequal %}
-      {%ifequal milestone.expected_due_date.month 12 %}Dec{% endifequal %}
-      {{ milestone.expected_due_date.year }}
-      {% endifequal %}
-    </td>
-    <td>{{ milestone.description|escape }}
-  </td></tr>
-{% endfor %}
-</table>
-{% endblock wg_content %}
+<h2>Goals and Milestones
+{% if user|has_role:"Area Director,Secretariat" or is_chair %}
+<a class="edit" href="{% url wg_edit_milestones acronym=wg.acronym %}">Add or edit milestones</a>
+{% endif %}
+</h2>
 
+{% with wg.milestones as milestones %}{% include "wginfo/milestones.html" %}{% endwith %}
+
+{% if milestones_in_review %}
+<p>{{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
+under review.</p>
+{% endif %}
+{% endblock wg_content %}

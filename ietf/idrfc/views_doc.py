@@ -91,7 +91,7 @@ def document_main(request, name, rev=None):
 
     doc = get_object_or_404(Document, docalias__name=name)
     group = doc.group
-    
+
     revisions = []
     for h in doc.history_set.order_by("time", "id"):
         if h.rev and not h.rev in revisions:
@@ -136,10 +136,17 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() in ("intrev", "iesgrev"):
             ballot_summary = needed_ballot_positions(doc, active_ballot_positions(doc).values())
 
+        chartering = get_chartering_type(doc)
+
+        # inject milestones from group
+        milestones = None
+        if chartering and not snapshot:
+            milestones = doc.group.groupmilestone_set.filter(state="charter")
+
         return render_to_response("idrfc/document_charter.html",
                                   dict(doc=doc,
                                        top=top,
-                                       chartering=get_chartering_type(doc),
+                                       chartering=chartering,
                                        content=content,
                                        txt_url=settings.CHARTER_TXT_URL + filename,
                                        revisions=revisions,
@@ -147,6 +154,7 @@ def document_main(request, name, rev=None):
                                        telechat=telechat,
                                        ballot_summary=ballot_summary,
                                        group=group,
+                                       milestones=milestones,
                                        ),
                                   context_instance=RequestContext(request))
 

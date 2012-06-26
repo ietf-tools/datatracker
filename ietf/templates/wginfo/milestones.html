@@ -1,0 +1,12 @@
+{# assumes milestones is in context #}
+
+<table>
+{% for milestone in milestones %}
+  <tr>
+    <td width="80px">
+      {% if milestone.resolved %}{{ milestone.resolved }}{% else %}{{ milestone.due|date:"M Y" }}{% endif %}
+    </td>
+    <td>{{ milestone.desc|escape }}</td>
+  </tr>
+{% endfor %}
+</table>

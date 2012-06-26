@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block morecss %}
+tr.milestone td { padding: 0.2em 0; cursor: pointer; vertical-align: top; }
+tr.milestone:hover { background-color: #e8f0fa; }
+td.due { width: 5em; }
+.milestone .needs-accept  { font-style: italic; display: inline-block; margin-left: 0.5em; color: #2647a0; }
+.edit-milestone { display: none; }
+.edit-milestone.delete, .edit-milestone.delete input { color: #aaa !important; }
+.edit-milestone table { margin: 0.3em 0; }
+.edit-milestone table td { padding: 0.1em; }
+.edit-milestone .desc input { width: 50em; }
+.edit-milestone .due input { width: 6em; }
+.edit-milestone input[type=checkbox] { vertical-align: middle; margin: 0 0.2em 0 0.8em;}
+.edit-milestone .resolved label { vertical-align: middle; }
+.edit-milestone .delete label { vertical-align: middle; }
+.edit-milestone .accept label { vertical-align: middle; }
+.edit-milestone .docs td { vertical-align: top; }
+
+ul.errorlist { border-width: 0px; padding: 0px; margin: 0px; display: inline-block; }
+ul.errorlist li { color: #a00; margin: 0px; padding: 0px; list-style: none; }
+p.help { font-style: italic; }
+p.error { color: #a00; font-size: larger; }
+tr.milestone.add { font-style: italic; }
+{% endblock %}
+
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/token-input.css"></link>
+{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+<h1>{{ title }}</h1>
+
+<p class="help">{% if forms %}Click a milestone to edit it.{% endif %}
+
+{% if needs_review %}
+Note that as {{ group.type.name }} Chair you cannot edit descriptions of existing
+milestones and milestones you add are subject to review by the Area
+Director.
+{% endif %}
+</p>
+
+{% if can_reset %}
+<p>
+You can <a href="{% url wg_reset_charter_milestones acronym=group.acronym %}">reset
+this list</a> to the currently in-use milestones for the {{ group.acronym }} {{ group.type.name }}.
+</p>
+{% endif %}
+
+{% if form_errors %}
+<p class="error">There were errors, see below.</p>
+{% endif %}
+
+<form action="" method="post" id="milestones-form">
+<table cellspacing="0" cellpadding="0">
+{% for form in forms %}
+<tr class="milestone">
+  <td class="due">{% if form.milestone.resolved %}{{ form.milestone.resolved }}{% else %}{{ form.milestone.due|date:"M Y" }}{% endif %}</td>
+  <td>
+    {{ form.milestone.desc }}
+    {% if form.needs_review %}<span class="needs-accept">awaiting accept</span>{% endif %}
+  </td>
+</tr>
+
+<tr class="edit-milestone"><td colspan="2">{% include "wginfo/milestone_form.html" %}</td></tr>
+{% endfor %}
+<tr class="milestone add"><td></td><td>Add {% if milestone_set == "chartering" %}charter{% endif%} milestone {% if needs_review %}for AD review{% endif %}</td></tr>
+<tr class="edit-milestone template"><td colspan="2">{% with empty_form as form %}{% include "wginfo/milestone_form.html" %}{% endwith %}</td></tr>
+</table>
+
+<div class="actions">
+  <a href="{% if milestone_set == "charter" %}{% url doc_view name=group.charter.canonical_name %}{% else %}{% url wg_charter acronym=group.acronym %}{% endif %}">Back</a>
+  <input type="submit" value="Save"/>
+</div>
+
+</form>
+{% endblock %}
+
+{% block content_end %}
+<script type="text/javascript" src="/js/lib/jquery.tokeninput.js"></script>
+<script type="text/javascript" src="/js/lib/json2.js"></script>
+<script type="text/javascript" src="/js/lib/jquery.maskedinput.js"></script>
+<script type="text/javascript" src="/js/tokenized-field.js"></script>
+<script>
+  var finishedMilestoneText = "{{ finished_milestone_text|escapejs }}";
+</script>
+<script type="text/javascript" src="/js/edit-milestones.js"></script>
+{% endblock %}
