@@ -191,3 +191,5 @@ form table .help {
 
 .ballot-content h2.ad-ballot-comment { background: #2647A0; color: #fff; padding: 2px 4px; font-size: 108%; margin-top: 0;}
 
+table.milestones td.due { vertical-align: top; width: 80px; }
+table.milestones .doc { display: block; padding-left: 1em; }
