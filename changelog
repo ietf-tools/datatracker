@@ -1,3 +1,39 @@
+ietfdb (4.30)
+
+  This is a feature release which provides the community document tracking
+  functionality defined in RFC 6293.
+
+  * Merged community tracking branch from esanchez@yaco.es, 
+    r3175-3679,3713-3830.
+
+  From henrik@levkowetz.com:
+
+  * Changed the group link on the personal doc list page to use the group 
+    acronym instead of whole name, and made the acronym a link to the wg 
+    documents page.
+
+  * Tweaked the display of explicitly added documents (saying 'explicitly' 
+    rather than 'manually', and including the active/expired/rfc state of the 
+    document.
+
+  * When adding a rule for I-Ds, only apply the selection to active I-Ds,
+    not those which are expired or published.
+
+  * Changes to the rule specifications for document tracking lists: 
+    Simplify the filter rules, show acronym in wg and area selection lists, 
+    list only ADs of active areas.
+
+  * Fixups to the merged code, to match the code refactoring done to trunk
+    after the split off of the community development branch.
+
+  * Removed the grep based searches in utils.py; they are too costly.  If 
+    tracing lists based on word search is needed, another implementation must 
+    be found.
+
+  * Minor cleanup.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Jun 2012 12:57:11 +0200
+
 ietfdb (4.21)
 
   This is a bugfix release for the charter release (4.20) with some
@@ -123,7 +159,7 @@ ietfdb (4.21)
 
   * Other minor fixes
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jun 2012 18:40:14 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jun 2012 18:40:14 +0200
 
 ietfdb (4.20)
 
@@ -245,7 +281,7 @@ ietfdb (4.20)
 
   * Added a fix for empty .ics files
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jun 2012 18:40:14 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jun 2012 18:40:14 +0200
 
 ietfdb (4.02)
 
