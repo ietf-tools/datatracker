@@ -74,7 +74,7 @@ In order to add some individual documents to your list you have to:
 <div class="{{ entry.type }}">
   <select>
   {% for option in  entry.options %}
-    <option value={{ option.0 }}>{{ option.1 }}</option>
+    <option value={{ option.0 }}>{{ option.1|safe }}</option>
   {% endfor %}
   </select>
 </div>
