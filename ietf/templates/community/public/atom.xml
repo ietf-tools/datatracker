@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title type="text">{{ title }}</title>
+    <subtitle type="text">{{ subtitle }}</subtitle>
+    <id>{{ id }}</id>
+    <updated>{{ updated|date:"Y-m-d\TH:i:s" }}Z</updated>
+    <link rel="alternate" type="text/html" hreflang="en" href="http://{{ request.get_host }}/"/>
+    <link rel="self" type="application/atom+xml" href="http://{{ request.get_host }}{{ request.get_full_path }}"/>
+
+    {% for entry in entries %}
+    <entry>
+        <title>{{ entry.doc.title }}</title>
+
+        <link href="{{ entry.doc.get_absolute_url }}"/>
+
+        <id>{{ entry.id }}</id>
+        
+        <updated>{{ entry.time|date:"Y-m-d\TH:i:s" }}Z</updated>
+        
+        <published>{{ entry.time|date:"Y-m-d\TH:i:s" }}</published>
+        
+        <author>
+            <name>{{ entry.by }}</name>
+        </author>
+
+        <summary>{{ entry.desc|striptags }}</summary>
+
+    </entry>
+    {% endfor %}
+    
+</feed>

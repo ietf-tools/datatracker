@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block pagehead %}
+<link rel="alternate" type="application/rss+xml" title="Changes on {{ cl.long_name }} RSS Feed" href="../changes/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Significant changes on {{ cl.long_name }} RSS Feed" href="../changes/significant/feed/" />
+{% endblock %}
+
+{% block title %}{{ cl.long_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ cl.long_name }}</h1>
+<p>
+Subscribe to notification email list:
+</p>
+<ul>
+  <li><a href="../subscribe/">All changes email list</a></li>
+  <li><a href="../subscribe/significant/">Significant changes email list</a></li>
+</ul>
+{% include "community/view_list.html" %}
+{% endblock %}

@@ -1,0 +1,15 @@
+{% autoescape off %}
+Hello,
+
+This is a notification from {{ clist.long_name }}.
+
+Document: {{ notification.doc }}
+
+Change:
+{{ notification.desc }}
+
+Best regards,
+
+        The datatracker login manager service
+        (for the IETF Secretariat)
+{% endautoescape %}

@@ -33,7 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% endcomment %}
 {% load wg_menu %} 
-{% load ietf_filters ietf_streams %}
+{% load ietf_filters ietf_streams community_tags %}
+{% load ietf_filters community_tags %}
 <ul>
 <li class="sect first">Accounts</li>
   <li><a href="{% url account_index %}">New Account</a></li>
@@ -76,6 +77,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <li><a href="http://tools.ietf.org/wg/concluded">Concluded WGs</a></li>
   <li><a href="http://www.ietf.org/list/nonwg.html">Non-WG Lists</a></li>
  
+{% get_user_managed_lists user as community_lists %}
+{% if community_lists %}
+<li class="sect">Community ID lists</li>
+   <li><a href="{{ community_lists.personal.get_manage_url }}">{{ community_lists.personal.short_name }}</a>
+   {% for cl in community_lists.group %}
+   <li><a href="{{ cl.get_manage_url }}">{{ cl.short_name }}</a>
+   {% endfor %}
+{% endif %}
+
 <li class="sect">Drafts&nbsp;&amp;&nbsp;RFCs</li>
   <li><a href="/doc/">Search</a></li>
   <li><form action="/doc/search/" method="get" style="padding-bottom:0;margin-bottom:0;"><input type="text" style="margin-left:10px; width:100px; border:1px solid #89d;" name="name" /><input type="hidden" name="activeDrafts" value="on"/><input type="hidden" name="rfcs" value="on"/></form></li>

@@ -1,0 +1,44 @@
+{% load community_tags %}
+
+{% with cl.get_rfcs_and_drafts as documents %}
+{% with dc.get_active_fields as fields %}
+<h2>Drafts</h2>
+<table class="ietf-table">
+<tr>
+  {% for field in fields %}
+  <th>{{ field.description }}</th>
+  {% endfor %}
+</tr>
+{% for doc in documents.1 %}
+<tr class="{% cycle oddrow,evenrow %}">
+  {% for field in fields %}
+  <td>
+    {% show_field field doc %}
+  </td>
+  {% endfor %}
+</tr>
+{% endfor %}
+</table>
+{% endwith %}
+
+<h2>RFCs</h2>
+{% with dc.get_active_fields as fields %}
+<table class="ietf-table">
+<tr>
+  {% for field in fields %}
+  <th>{{ field.description }}</th>
+  {% endfor %}
+</tr>
+{% for doc in documents.0 %}
+<tr class="{% cycle oddrow,evenrow %}">
+  {% for field in fields %}
+  <td>
+    {% show_field field doc %}
+  </td>
+  {% endfor %}
+</tr>
+{% endfor %}
+</table>
+{% endwith %}
+
+{% endwith %}

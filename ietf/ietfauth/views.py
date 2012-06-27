@@ -35,20 +35,25 @@
 import datetime
 import hashlib
 
+from django.conf import settings
 from django.template import RequestContext
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.conf import settings
+from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+from django.utils import simplejson
 from django.utils.http import urlquote
-
 from django.contrib.auth.models import User
 from django.utils import simplejson as json
 from django.utils.translation import ugettext as _
 
-from forms import *
+#from forms import *
+from ietf.ietfauth.forms import (RegistrationForm, PasswordForm,
+                                 RecoverPasswordForm)
 
 
 def index(request):
@@ -61,7 +66,8 @@ def url_login(request, user, passwd):
         if user.is_active:
             login(request, user)
             return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
-    return HttpResponse("Not authenticated?", status=500)        
+    return HttpResponse("Not authenticated?", status=500)
+
 
 def ietf_login(request):
     if not request.user.is_authenticated():
@@ -71,6 +77,7 @@ def ietf_login(request):
     request.session.set_test_cookie()
     return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
 
+
 def ietf_loggedin(request):
     if not request.session.test_cookie_worked():
         return HttpResponse("You need to enable cookies")
@@ -79,13 +86,14 @@ def ietf_loggedin(request):
     if not redirect_to or '//' in redirect_to or ' ' in redirect_to:
         redirect_to = settings.LOGIN_REDIRECT_URL
     return HttpResponseRedirect(redirect_to)
-    
+
+
 @login_required
 def profile(request):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         from ietf.person.models import Person
         from ietf.group.models import Role
-        
+
         roles = []
         person = None
         try:
@@ -93,14 +101,13 @@ def profile(request):
             roles = Role.objects.filter(person=person)
         except Person.DoesNotExist:
             pass
-        
+
         return render_to_response('registration/profileREDESIGN.html',
                                   dict(roles=roles,
                                        person=person),
                                   context_instance=RequestContext(request))
-    
-    return render_to_response('registration/profile.html', context_instance=RequestContext(request))
 
+    return render_to_response('registration/profile.html', context_instance=RequestContext(request))
 
 def create_account(request):
     success = False
@@ -178,7 +185,7 @@ def ajax_check_username(request):
     username = request.GET.get('username', '')
     error = False
     if User.objects.filter(username=username).count():
-        error = _('This email is already in use')
+        error = _('This email address is already registered')
     return HttpResponse(json.dumps({'error': error}), mimetype='text/plain')
     
 def test_email(request):

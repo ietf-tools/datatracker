@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription to {{ cl.long_name }}{% endblock %}
+
+{% block content %}
+<h1>Subscription to {{ cl.long_name }}</h1>
+<p>
+You email address {{ email }} has been successfully subscribed to {{ cl.long_name }}
+</p>
+<p>
+<a href="{{ cl.get_public_url }}">Return to the list view</a>
+</p>
+{% endblock %}

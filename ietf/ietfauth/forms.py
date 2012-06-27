@@ -11,7 +11,7 @@ from django.utils.translation import ugettext, ugettext_lazy as _
 
 from ietf.utils.mail import send_mail
 from ietf.utils import debug
-#from ietf.person.models import Person, Email
+from ietf.person.models import Person, Email
 
 
 class RegistrationForm(forms.Form):
@@ -96,34 +96,64 @@ class PasswordForm(forms.Form):
         return self.cleaned_data.get('password1')
 
     def create_user(self):
-#         user = User.objects.create(username=self.username,
-#                                    email=self.username)
-#         person = Person.objects.create(user=user,
-#                                        name=self.username,
-#                                        ascii=self.username)
-#         Email.objects.create(person=person,
-#                              address=self.username)
-#         return user
-        return None
+        user = User.objects.create(username=self.username,
+                                   email=self.username)
+        email = Email.objects.filter(address=self.username)
+        person = None
+        if email.count():
+            email = email[0]
+            if email.person:
+                person = email.person
+        else:
+            email = None
+        if not person:
+            person = Person.objects.create(user=user,
+                                           name=self.username,
+                                           ascii=self.username)
+        if not email:
+            email = Email.objects.create(address=self.username,
+                                         person=person)
+        email.person = person
+        email.save()
+        person.user = user
+        person.save()
+        return user
 
     def get_user(self):
         return User.objects.get(username=self.username)
 
-    @debug.trace
+    def save_password_file(self):
+        if getattr(settings, 'USE_PYTHON_HTDIGEST', None):
+            pass_file = settings.HTPASSWD_FILE
+            realm = settings.HTDIGEST_REALM
+            password = self.get_password()
+            username = self.username
+            prefix = '%s:%s:' % (username, realm)
+            key = hashlib.md5(prefix + password).hexdigest()
+            f = open(pass_file, 'r+')
+            pos = f.tell()
+            line = f.readline()
+            while line:
+                if line.startswith(prefix):
+                    break
+                pos=f.tell()
+                line = f.readline()
+            f.seek(pos)
+            f.write('%s%s\n' % (prefix, key))
+            f.close()
+        else:
+            p = subprocess.Popen([settings.HTPASSWD_COMMAND, "-b", settings.HTPASSWD_FILE, self.username, self.get_password()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = p.communicate()
+
     def save(self):
-#         if self.update_user:
-#             user = self.get_user()
-#         else:
-#             user = self.create_user()
-#         user.set_password(self.get_password())
-#         user.save()
-#         return user
-        debug.show("[settings.HTPASSWD_COMMAND, settings.HTPASSWD_FILE, self.username, self.get_password()]")
-        p = subprocess.Popen([settings.HTPASSWD_COMMAND, "-b", settings.HTPASSWD_FILE, self.username, self.get_password()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = p.communicate()
-        debug.show('stdout')
-        debug.show('stderr')        
-        return p.returncode
+        if self.update_user:
+            user = self.get_user()
+        else:
+            user = self.create_user()
+        user.set_password(self.get_password())
+        user.save()
+        self.save_password_file()
+        return user
 
 class TestEmailForm(forms.Form):
     email = forms.EmailField(required=False)

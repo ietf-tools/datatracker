@@ -52,6 +52,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 YAHOO.util.Event.onContentReady("search_submit_button", function () {
     var oButton = new YAHOO.widget.Button("search_submit_button", {});
 });      
+{% if meta.searching %}
+(function ($) {
+    $(document).ready(function () {
+        $('.addtolist a').click(function() {
+            var trigger = $(this);
+            $.ajax({
+                url: trigger.attr('href'),
+                type: 'GET',
+                cache: false,
+                dataType: 'json',
+                success: function(response){
+                    if (response.success) {
+                        trigger.replaceWith('added');
+                    }
+                }
+            });
+            return false;
+        });
+    });
+})(jQuery);
+{% endif %}
 {% endblock scripts %}
 
 {% block js %}

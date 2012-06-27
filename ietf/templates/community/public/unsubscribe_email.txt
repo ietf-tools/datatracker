@@ -1,0 +1,12 @@
+{% autoescape off %}
+Hello,
+
+In order to complete the cancelation of your subscription to {% if significant %}significant {% endif %}changes on {{ clist.long_name }}, please follow this link or copy it and paste it in your web browser:
+
+http://{{ domain }}{% if significant %}{% url confirm_significant_unsubscription clist.id to_email today auth %}{% else %}{% url confirm_unsubscription clist.id to_email today auth %}{% endif %}
+
+Best regards,
+
+        The datatracker login manager service
+        (for the IETF Secretariat)
+{% endautoescape %}

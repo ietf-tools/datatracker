@@ -158,6 +158,7 @@ INSTALLED_APPS = (
     'ietf.ietfworkflows',
     'ietf.wgchairs',
     'ietf.wgcharter',
+    'ietf.community',
 )
 
 INTERNAL_IPS = (
