@@ -15,7 +15,7 @@
 <div id="mytabs" class="yui-navset">
 <ul class="yui-nav">
   <li class="selected"><a href="#view"><em>Documents</em></a></li>
-  <li><a href="#documents"><em>Manually added</em></a></li>
+  <li><a href="#documents"><em>Explicitly added</em></a></li>
   <li><a href="#rules"><em>Rules</em></a></li>
   <li><a href="#custom"><em>Display customization</em></a></li>
   <li><a href="#info"><em>Exports</em></a></li>
@@ -28,19 +28,20 @@
 </div>
 
 <div id="documents">
-<h2>Documents manually added to this list</h2>
+<h2>Documents explicitly included, from a document search.</a></h2>
 <p>
 In order to add some individual documents to your list you have to:
 </p>
 <ul>
-   <li>Search the document or documents you want to add using <a href="/doc/search">the datatracker searcher</a>.</li>
+   <li>Search the document or documents you want to add using <a href="/doc/search">the datatracker search form</a>.</li>
    <li>In the search result you'll find a link to add individual documents to your list.</li>
 </ul>
 <table class="ietf-table">
- <tr><th>Name</th><th>Title</th><th>Remove from list</th></tr>
+ <tr><th>Name</th><th>State</th><th>Title</th><th>Remove from list</th></tr>
 {% for doc in cl.added_ids.all %}
 <tr class="{% cycle oddrow,evenrow %}">
   <td>{{ doc }}</td>
+  <td>{{ doc.get_state }}</td>
   <td><a href="{{ doc.get_absolute_url }}"</a>{{ doc.title }}</td>
   <td><a href="{% url community_remove_document cl.pk doc.pk %}">Remove</a></td>
 </tr>
