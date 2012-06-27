@@ -64,9 +64,9 @@ class WGField(DisplayField):
 
     def get_value(self, document, raw=False):
         if raw:
-            return document.group.acronym if document.group else ''
+            return document.group.acronym
         else:
-            return '<a href="%s">%s</a>' % (urlreverse('wg_docs', kwargs={'acronym':document.group.acronym}), document.group.acronym) if document.group else ''
+            return '<a href="%s">%s</a>' % (urlreverse('wg_docs', kwargs={'acronym':document.group.acronym}), document.group.acronym) if (document.group and document.group.acronym != 'none')  else ''
 
 
 class ADField(DisplayField):
