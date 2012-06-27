@@ -3,7 +3,7 @@ import datetime
 from django.db.models import Q
 from ietf.ietfworkflows.utils import get_state_for_draft
 
-from redesign.doc.models import DocAlias, DocEvent
+from ietf.doc.models import DocAlias, DocEvent
 
 
 class DisplayField(object):

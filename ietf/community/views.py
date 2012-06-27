@@ -14,8 +14,8 @@ from django.utils.http import urlquote
 
 from ietf.community.models import CommunityList, Rule, EmailSubscription, ListNotification
 from ietf.community.forms import RuleForm, DisplayForm, SubscribeForm, UnSubscribeForm
-from redesign.group.models import Group
-from redesign.doc.models import Document, DocEvent
+from ietf.group.models import Group
+from ietf.doc.models import Document, DocEvent
 
 
 def _manage_list(request, clist):

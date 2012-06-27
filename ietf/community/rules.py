@@ -2,9 +2,9 @@ from django.db.models import Q
 
 from ietf.community.utils import get_documents_with
 
-from redesign.doc.models import Document
-from redesign.group.models import Group
-from redesign.person.models import Person
+from ietf.doc.models import Document
+from ietf.group.models import Group
+from ietf.person.models import Person
 
 
 class RuleManager(object):

@@ -2,8 +2,7 @@ import subprocess
 
 from django.conf import settings
 
-from redesign.doc.models import Document
-
+from ietf.doc.models import Document
 
 def search_files(files, text):
     p = subprocess.Popen(['grep', "-l", text] + files, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
