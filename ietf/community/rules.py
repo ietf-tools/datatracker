@@ -93,37 +93,37 @@ class ShepherdRule(RuleManager):
         return Document.objects.filter(type='draft', states__slug='active').filter(shepherd__name__icontains=self.value).distinct()
 
 
-class ReferenceToRFCRule(RuleManager):
-    codename = 'reference_to_rfc'
-    description = 'All I-Ds that have a reference to a particular RFC'
-
-    def get_documents(self):
-        return Document.objects.filter(type='draft', states__slug='active').filter(relateddocument__target__document__states='rfc', relateddocument__target__document__name__icontains=self.value).distinct()
-
-
-class ReferenceToIDRule(RuleManager):
-    codename = 'reference_to_id'
-    description = 'All I-Ds that have a reference to a particular I-D'
-
-    def get_documents(self):
-        return Document.objects.filter(type='draft', states__slug='active').filter(relateddocument__target__document__type='draft', relateddocument__target__document__name__icontains=self.value).distinct()
-
-
-class ReferenceFromRFCRule(RuleManager):
-    codename = 'reference_from_rfc'
-    description = 'All I-Ds that are referenced by a particular RFC'
-
-    def get_documents(self):
-        return Document.objects.filter(type='draft', states__slug='active').filter(relateddocument__source__states='rfc', relateddocument__source__name__icontains=self.value).distinct()
-
-
-
-class ReferenceFromIDRule(RuleManager):
-    codename = 'reference_from_id'
-    description = 'All I-Ds that are referenced by a particular I-D'
-
-    def get_documents(self):
-        return Document.objects.filter(type='draft', states__slug='active').filter(relateddocument__source__type='draft', relateddocument__source__name__icontains=self.value).distinct()
+# class ReferenceToRFCRule(RuleManager):
+#     codename = 'reference_to_rfc'
+#     description = 'All I-Ds that have a reference to a particular RFC'
+# 
+#     def get_documents(self):
+#         return Document.objects.filter(type='draft', states__slug='active').filter(relateddocument__target__document__states__slug='rfc', relateddocument__target__name__icontains=self.value).distinct()
+# 
+# 
+# class ReferenceToIDRule(RuleManager):
+#     codename = 'reference_to_id'
+#     description = 'All I-Ds that have a reference to a particular I-D'
+# 
+#     def get_documents(self):
+#         return Document.objects.filter(type='draft', states__slug='active').filter(relateddocument__target__document__type='draft', relateddocument__target__name__icontains=self.value).distinct()
+# 
+# 
+# class ReferenceFromRFCRule(RuleManager):
+#     codename = 'reference_from_rfc'
+#     description = 'All I-Ds that are referenced by a particular RFC'
+# 
+#     def get_documents(self):
+#         return Document.objects.filter(type='draft', states__slug='active').filter(relateddocument__source__states__slug='rfc', relateddocument__source__name__icontains=self.value).distinct()
+# 
+# 
+# 
+# class ReferenceFromIDRule(RuleManager):
+#     codename = 'reference_from_id'
+#     description = 'All I-Ds that are referenced by a particular I-D'
+# 
+#     def get_documents(self):
+#         return Document.objects.filter(type='draft', states__slug='active').filter(relateddocument__source__type='draft', relateddocument__source__name__icontains=self.value).distinct()
 
 
 class WithTextRule(RuleManager):
