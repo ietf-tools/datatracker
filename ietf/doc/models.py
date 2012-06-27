@@ -197,7 +197,12 @@ class Document(DocumentInfo):
                 name = a[0].name
         elif self.type_id == "charter":
             return "charter-ietf-%s" % self.chartered_group.acronym
+        return name
 
+    def display_name(self):
+        name = self.canonical_name()
+        if name.startswith('rfc'):
+            name = name.upper()
         return name
 
 class RelatedDocHistory(models.Model):
