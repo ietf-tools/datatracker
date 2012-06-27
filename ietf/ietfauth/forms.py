@@ -5,12 +5,10 @@ import subprocess
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.sites.models import Site
-from django.utils.translation import ugettext, ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 
 from ietf.utils.mail import send_mail
-from ietf.utils import debug
 from ietf.person.models import Person, Email
 
 

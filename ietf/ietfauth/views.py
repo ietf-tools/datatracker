@@ -38,23 +38,13 @@ import hashlib
 from django.conf import settings
 from django.template import RequestContext
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import render_to_response
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.http import HttpResponseRedirect, HttpResponse, Http404
-from django.shortcuts import render_to_response
-from django.template import RequestContext
-from django.utils import simplejson
 from django.utils.http import urlquote
-from django.contrib.auth.models import User
 from django.utils import simplejson as json
 from django.utils.translation import ugettext as _
-
-#from forms import *
-from ietf.ietfauth.forms import (RegistrationForm, PasswordForm,
-                                 RecoverPasswordForm)
-
 
 def index(request):
     return render_to_response('registration/index.html', context_instance=RequestContext(request))
@@ -68,7 +58,6 @@ def url_login(request, user, passwd):
             return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
     return HttpResponse("Not authenticated?", status=500)
 
-
 def ietf_login(request):
     if not request.user.is_authenticated():
         # This probably means an exception occured inside IetfUserBackend
@@ -76,7 +65,6 @@ def ietf_login(request):
     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
     request.session.set_test_cookie()
     return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
-
 
 def ietf_loggedin(request):
     if not request.session.test_cookie_worked():
@@ -86,7 +74,6 @@ def ietf_loggedin(request):
     if not redirect_to or '//' in redirect_to or ' ' in redirect_to:
         redirect_to = settings.LOGIN_REDIRECT_URL
     return HttpResponseRedirect(redirect_to)
-
 
 @login_required
 def profile(request):
