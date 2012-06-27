@@ -157,7 +157,6 @@ def edit_milestones(request, acronym, milestone_set="current"):
                     if c["delete"]:
                         save_milestone_in_history(m)
 
-                        m.time = datetime.datetime.now()
                         m.state_id = "deleted"
                         m.save()
 
@@ -298,7 +297,6 @@ def reset_charter_milestones(request, acronym):
         for m in charter_milestones:
             save_milestone_in_history(m)
 
-            m.time = datetime.datetime.now()
             m.state_id = "deleted"
             m.save()
 
@@ -315,7 +313,6 @@ def reset_charter_milestones(request, acronym):
                                               desc=m.desc,
                                               due=m.due,
                                               resolved=m.resolved,
-                                              time=datetime.datetime.now(),
                                               )
             m.docs = m.docs.all()
 

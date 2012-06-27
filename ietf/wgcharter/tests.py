@@ -174,7 +174,7 @@ class EditCharterTestCase(django.test.TestCase):
             self.assertEquals(f.read(),
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
-class CharterApproveBallotTestCase(django.test.TestCase):
+class ApproveCharterTestCase(django.test.TestCase):
     fixtures = ['names']
 
     def setUp(self):
@@ -209,6 +209,28 @@ class CharterApproveBallotTestCase(django.test.TestCase):
 
         charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
 
+        due_date = datetime.date.today() + datetime.timedelta(days=180)
+        m1 = GroupMilestone.objects.create(group=group,
+                                           state_id="active",
+                                           desc="Has been copied",
+                                           due=due_date,
+                                           resolved="")
+        m2 = GroupMilestone.objects.create(group=group,
+                                           state_id="active",
+                                           desc="To be deleted",
+                                           due=due_date,
+                                           resolved="")
+        m3 = GroupMilestone.objects.create(group=group,
+                                           state_id="charter",
+                                           desc="Has been copied",
+                                           due=due_date,
+                                           resolved="")
+        m4 = GroupMilestone.objects.create(group=group,
+                                           state_id="charter",
+                                           desc="New charter milestone",
+                                           due=due_date,
+                                           resolved="")
+
         # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
@@ -232,3 +254,8 @@ class CharterApproveBallotTestCase(django.test.TestCase):
         self.assertEquals(len(outbox), mailbox_before + 2)
         self.assertTrue("WG Action" in outbox[-1]['Subject'])
         self.assertTrue("Charter approved" in outbox[-2]['Subject'])
+
+        self.assertEquals(group.groupmilestone_set.filter(state="charter").count(), 0)
+        self.assertEquals(group.groupmilestone_set.filter(state="active").count(), 2)
+        self.assertEquals(group.groupmilestone_set.filter(state="active", desc=m1.desc).count(), 1)
+        self.assertEquals(group.groupmilestone_set.filter(state="active", desc=m4.desc).count(), 1)

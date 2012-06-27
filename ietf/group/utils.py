@@ -12,7 +12,7 @@ def save_group_in_history(group):
 
     # save RoleHistory
     for role in group.role_set.all():
-        rh = RoleHistory(name=role.name, group=grouphist, email=role.email, person=role.person)
+        rh = RoleHistory(name=role.name, group=h, email=role.email, person=role.person)
         rh.save()
 
     copy_many_to_many_for_history(h, group)
