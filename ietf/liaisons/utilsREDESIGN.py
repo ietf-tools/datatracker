@@ -124,6 +124,34 @@ class IABEntity(Entity):
         return result
 
 
+class IAB_IESG_Entity(Entity):
+
+    poc = [IABEntity.chair, IABEntity.director, FakePerson(**IETFCHAIR)]
+    cc = [FakePerson(**IAB), FakePerson(**IESG)]
+
+    def __init__(self, name, obj=None):
+        self.name = name
+        self.obj = obj
+        self.iab = IABEntity(name, obj)
+        self.iesg = IETFEntity(name, obj)
+
+    def get_from_cc(self, person):
+        return list(set(self.iab.get_from_cc(person) + self.iesg.get_from_cc(person)))
+
+    def needs_approval(self, person=None):
+        if not self.iab.needs_approval(person):
+            return False
+        if not self.iesg.needs_approval(person):
+            return False
+        return True
+
+    def can_approve(self):
+        return list(set(self.iab.can_approve() + self.iesg.can_approve()))
+
+    def full_user_list(self):
+        return list(set(self.iab.full_user_list() + self.iesg.full_user_list()))
+
+
 class AreaEntity(Entity):
 
     def get_poc(self):
@@ -274,6 +302,30 @@ class IABEntityManager(EntityManager):
         return []
 
 
+class IAB_IESG_EntityManager(EntityManager):
+
+    def __init__(self, *args, **kwargs):
+        super(IAB_IESG_EntityManager, self).__init__(*args, **kwargs)
+        self.entity = IAB_IESG_Entity(name=self.name)
+
+    def get_entity(self, pk=None):
+        return self.entity
+
+    def can_send_on_behalf(self, person):
+        if (is_iabchair(person) or
+            is_iab_executive_director(person) or
+            is_ietfchair(person)):
+            return self.get_managed_list()
+        return []
+
+    def can_approve_list(self, person):
+        if (is_iabchair(person) or
+            is_iab_executive_director(person) or
+            is_ietfchair(person)):
+            return self.get_managed_list()
+        return []
+
+
 class AreaEntityManager(EntityManager):
 
     def __init__(self, pk=None, name=None, queryset=None):
@@ -363,6 +415,7 @@ class IETFHierarchyManager(object):
         self.managers = {'ietf': IETFEntityManager(pk='ietf', name=u'The IETF'),
                          'iesg': IETFEntityManager(pk='iesg', name=u'The IESG'),
                          'iab': IABEntityManager(pk='iab', name=u'The IAB'),
+                         'iabiesg': IAB_IESG_EntityManager(pk='iabiesg', name=u'The IESG and the IAB'),
                          'area': AreaEntityManager(pk='area', name=u'IETF Areas'),
                          'wg': WGEntityManager(pk='wg', name=u'IETF Working Groups'),
                          'sdo': SDOEntityManager(pk='sdo', name=u'Standards Development Organizations'),
@@ -390,7 +443,7 @@ class IETFHierarchyManager(object):
     def get_all_incoming_entities(self):
         entities = []
         results = []
-        for key in ['ietf', 'iesg', 'iab']:
+        for key in ['ietf', 'iesg', 'iab', 'iabiesg']:
             results += self.managers[key].get_managed_list()
         entities.append(('Main IETF Entities', results))
         entities.append(('IETF Areas', self.managers['area'].get_managed_list()))
@@ -405,7 +458,7 @@ class IETFHierarchyManager(object):
     def get_entities_for_person(self, person):
         entities = []
         results = []
-        for key in ['ietf', 'iesg', 'iab']:
+        for key in ['ietf', 'iesg', 'iab', 'iabiesg']:
             results += self.managers[key].can_send_on_behalf(person)
         if results:
             entities.append(('Main IETF Entities', results))
@@ -419,7 +472,7 @@ class IETFHierarchyManager(object):
 
     def get_all_can_approve_codes(self, person):
         entities = []
-        for key in ['ietf', 'iesg', 'iab']:
+        for key in ['ietf', 'iesg', 'iab', 'iabiesg']:
             entities += self.managers[key].can_approve_list(person)
         entities += self.managers['area'].can_approve_list(person)
         entities += self.managers['wg'].can_approve_list(person)
