@@ -1,7 +1,5 @@
 from django.db.models import Q
 
-from ietf.community.utils import get_documents_with
-
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.person.models import Person
@@ -130,10 +128,10 @@ class ReferenceFromIDRule(RuleManager):
 
 class WithTextRule(RuleManager):
     codename = 'with_text'
-    description = 'All I-Ds that contain a particular text string'
+    description = 'All I-Ds that contain a particular text string in the name'
 
     def get_documents(self):
-        return get_documents_with(self.value).distinct()
+        return Document.objects.filter(type__name='Draft').filter(name__icontains=self.value).distinct()
 
 
 TYPES_OF_RULES = [(i.codename, i.description) for i in RuleManager.__subclasses__()]

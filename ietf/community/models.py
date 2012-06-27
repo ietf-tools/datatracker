@@ -7,8 +7,8 @@ from django.db import models
 from django.db.models import signals, Q
 
 from ietf.utils.mail import send_mail
-from redesign.doc.models import Document, DocEvent
-from redesign.group.models import Group, Role
+from ietf.doc.models import Document, DocEvent
+from ietf.group.models import Group, Role
 
 from ietf.community.rules import TYPES_OF_RULES, RuleManager
 from ietf.community.display import (TYPES_OF_SORT, DisplayField,
