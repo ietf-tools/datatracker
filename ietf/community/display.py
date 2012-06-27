@@ -1,8 +1,9 @@
 import datetime
 
 from django.db.models import Q
-from ietf.ietfworkflows.utils import get_state_for_draft
+from django.core.urlresolvers import reverse as urlreverse
 
+from ietf.ietfworkflows.utils import get_state_for_draft
 from ietf.doc.models import DocAlias, DocEvent
 
 
@@ -62,7 +63,7 @@ class WGField(DisplayField):
     description = 'Associated WG or RG'
 
     def get_value(self, document, raw=False):
-        return document.group or ''
+        return '<a href="%s">%s</a>' % (urlreverse('wg_docs', kwargs={'acronym':document.group.acronym}), document.group.acronym) if document.group else ''
 
 
 class ADField(DisplayField):
