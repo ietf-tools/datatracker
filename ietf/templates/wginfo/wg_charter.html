@@ -162,10 +162,10 @@ is occasionally incorrect.</span>
 </p>
 {% endif %}
 
-<h2>Description of Working Group</h2>
+<h2>Charter for Working Group</h2>
 <p>{{ wg.charter_text|escape|format_charter|safe }}</p>
 
-<h2>Goals and Milestones
+<h2>Milestones
 {% if user|has_role:"Area Director,Secretariat" or is_chair %}
 <a class="edit" href="{% url wg_edit_milestones acronym=wg.acronym %}">Add or edit milestones</a>
 {% endif %}
@@ -174,7 +174,7 @@ is occasionally incorrect.</span>
 {% with wg.milestones as milestones %}{% include "wginfo/milestones.html" %}{% endwith %}
 
 {% if milestones_in_review %}
-<p>{{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
-under review.</p>
+<p>+ {{ milestones_in_review|length }} new milestone{{ milestones_in_review|pluralize }}
+currently in Area Director review.</p>
 {% endif %}
 {% endblock wg_content %}
