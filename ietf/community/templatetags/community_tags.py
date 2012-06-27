@@ -2,7 +2,7 @@ from django import template
 from django.template.loader import render_to_string
 
 from ietf.community.models import CommunityList
-from redesign.group.models import Role
+from ietf.group.models import Role
 
 
 register = template.Library()
