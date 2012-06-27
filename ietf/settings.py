@@ -44,12 +44,12 @@ DATABASES = {
         'USER': 'ietf',
         #'PASSWORD': 'ietf',
     },
-    'legacy': {
-        'NAME': 'ietf',
-        'ENGINE': 'django.db.backends.mysql',
-        'USER': 'ietf',
-        #'PASSWORD': 'ietf',
-    },
+#    'legacy': {
+#        'NAME': 'ietf',
+#        'ENGINE': 'django.db.backends.mysql',
+#        'USER': 'ietf',
+#        #'PASSWORD': 'ietf',
+#    },
 }
 
 # Local time zone for this installation. Choices can be found here:
@@ -86,7 +86,7 @@ ADMIN_MEDIA_PREFIX = '/media/'
 AUTH_PROFILE_MODULE = 'person.Person'
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
-DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
+#DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
 
 SESSION_COOKIE_AGE = 43200 # 12 hours
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
