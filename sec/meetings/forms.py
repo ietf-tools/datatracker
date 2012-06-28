@@ -42,8 +42,24 @@ def get_next_slot(slot):
 def get_times(meeting,day):
     '''
     Takes a Meeting object and an integer representing the week day (sunday=1).  
-    Returns a list of tuples for use in a ChoiceField.  The value is a timeslot id, 
+    Returns a list of tuples for use in a ChoiceField.  The value is start_time, 
     The label is [start_time]-[end_time].
+    '''
+    # pick a random room
+    rooms = Room.objects.filter(meeting=meeting)
+    if rooms:
+        room = rooms[0]
+    else:
+        room = None
+    slots = TimeSlot.objects.filter(meeting=meeting,time__week_day=day,location=room).order_by('time')
+    choices = [ (t.time.strftime('%H%M'), '%s-%s' % (t.time.strftime('%H%M'), t.end_time().strftime('%H%M'))) for t in slots ]
+    return choices
+    
+def get_times2(meeting):
+    '''
+    Takes a Meeting object and returns a list of tuples for use in a ChoiceField.
+    The value is start_time, the label is [start_time]-[end_time].  We are aggregating all days of the
+    meeting in ordr 
     '''
     # pick a random room
     rooms = Room.objects.filter(meeting=meeting)
@@ -73,6 +89,15 @@ class TimeSlotModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         
         return "%s %s - %s" % (obj.time.strftime('%a %H:%M'),obj.name,obj.location)
+        
+class TimeChoiceField(forms.ChoiceField):
+    '''
+    We are modifying the time choice field with javascript so the value submitted may not have
+    been in the initial select list.  Just override valid_value validaion.
+    '''
+    def valid_value(self, value):
+        return True
+        
 #----------------------------------------------------------
 # Forms
 #----------------------------------------------------------
@@ -103,9 +128,8 @@ class ExtraSessionForm(forms.Form):
     no_notify = forms.BooleanField(required=False, label="Do NOT notify this action")
 
 class NewSessionForm(forms.Form):
-    #time = TimeSlotModelChoiceField(queryset=TimeSlot.objects,label='Day-Time-Room',required=False)
     day = forms.ChoiceField(choices=SESSION_DAYS)
-    time = forms.ChoiceField()
+    time = TimeChoiceField()
     room = forms.ModelChoiceField(queryset=Room.objects.none)
     session = forms.CharField(widget=forms.HiddenInput)
     note = forms.CharField(max_length=255, required=False, label='Special Note from Scheduler')
@@ -120,10 +144,6 @@ class NewSessionForm(forms.Form):
         self.session_object = Session.objects.get(id=self.initial['session'])
         self.fields['room'].queryset = Room.objects.filter(meeting=meeting)
         self.fields['time'].choices = get_times(meeting,self.initial['day'])
-        
-    def clean_time(self):
-        # skip the time validation because we're populating options from javascript
-        return self.cleaned_data['time']
         
     def clean(self):
         super(NewSessionForm, self).clean()
@@ -140,7 +160,7 @@ class NewSessionForm(forms.Form):
 
 class NonSessionEditForm(forms.Form):
     name = forms.CharField(help_text='Name that appears on the agenda')
-    short = forms.CharField(max_length=32,help_text='Enter an abbreviated session name (used for material file names)')
+    short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)')
     location = forms.ModelChoiceField(queryset=Room.objects)
     group = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__in=('edu','ietf','iepg','tools','iesg','iab','iaoc')),
         help_text='''Select a group to associate with this session.  For example:<br>
@@ -169,6 +189,6 @@ class TimeSlotForm(forms.Form):
 
 class NonSessionForm(TimeSlotForm):
     # inherit TimeSlot and add extra fields
-    short = forms.CharField(max_length=32,help_text='Enter an abbreviated session name (used for material file names)')
+    short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)')
     type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(slug__in=('other','reg','break','plenary')),empty_label=None)
     show_location = forms.BooleanField(required=False)
