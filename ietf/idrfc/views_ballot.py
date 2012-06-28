@@ -222,6 +222,7 @@ def edit_positionREDESIGN(request, name, ballot_id):
                                    return_to_url=return_to_url,
                                    old_pos=old_pos,
                                    ballot_deferred=ballot_deferred,
+                                   ballot = ballot,
                                    show_discuss_text=old_pos and old_pos.pos_id=="discuss",
                                    blocking_positions=simplejson.dumps(blocking_positions),
                                    ),

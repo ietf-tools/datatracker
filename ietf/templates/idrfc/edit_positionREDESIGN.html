@@ -30,10 +30,17 @@ form.position-form #id_comment {
 form.position-form .comment-text {
   margin-top: 20px;
 }
+div.question {
+   font-size: 173%;
+   padding-left: 5px;
+   padding-bottom: 10px;
+}
 {% endblock %}
 
 {% block content %}
-<h1>Change position for {{ ad.plain_name }} {{ doc }}</h1>
+<h1>Change position for {{ ad.plain_name }} on {{ doc }}</h1>
+
+<div class="question">{{ ballot.ballot_type.question }}</div>
 
 {% if ballot_deferred %}
 <div class="ballot-deferred">Ballot deferred by {{ ballot_deferred.by }} on {{ ballot_deferred.time|date:"Y-m-d" }}.</div>
