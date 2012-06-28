@@ -131,25 +131,39 @@ def submit(request, name):
         next_rev = "%02d" % (int(review.rev)+1) 
 
     if request.method == 'POST':
-        form = UploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            save_document_in_history(review)
+        if "submit_response" in request.POST:
+            form = UploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                save_document_in_history(review)
 
-            review.rev = next_rev
+                review.rev = next_rev
 
-            e = NewRevisionDocEvent(doc=review, by=login, type="new_revision")
-            e.desc = "New version available: <b>%s-%s.txt</b>" % (review.canonical_name(), review.rev)
-            e.rev = review.rev
-            e.save()
+                e = NewRevisionDocEvent(doc=review, by=login, type="new_revision")
+                e.desc = "New version available: <b>%s-%s.txt</b>" % (review.canonical_name(), review.rev)
+                e.rev = review.rev
+                e.save()
             
-            # Save file on disk
-            form.save(review)
+                # Save file on disk
+                form.save(review)
 
-            review.time = datetime.datetime.now()
-            review.save()
+                review.time = datetime.datetime.now()
+                review.save()
 
-            return HttpResponseRedirect(reverse('doc_view', kwargs={'name': review.name}))
+                return HttpResponseRedirect(reverse('doc_view', kwargs={'name': review.name}))
+
+        elif "reset_text" in request.POST:
+
+            init = { "content": render_to_string("doc/conflict_review/review_choices.txt",dict())}
+            form = UploadForm(initial=init)
+
+        # Protect against handcrufted malicious posts
+        else:
+            form = None
+
     else:
+        form = None
+
+    if not form:
         init = { "content": ""}
 
         if not_uploaded_yet:

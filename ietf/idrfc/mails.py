@@ -42,7 +42,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 def email_stream_changed(request, doc, old_stream, new_stream, text=""):
     """Email the change text to the notify group and to the stream chairs"""
     to = [x.strip() for x in doc.notify.replace(';', ',').split(',')]
-    from group.models import Role as RedesignRole
+    from ietf.group.models import Role as RedesignRole
 
     # These use comprehension to deal with conditions when there might be more than one chair listed for a stream
     if old_stream:

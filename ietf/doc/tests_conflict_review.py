@@ -276,7 +276,7 @@ class ConflictReviewSubmitTestCase(django.test.TestCase):
         path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
         self.assertEquals(doc.rev,u'00')
         self.assertFalse(os.path.exists(path))
-        r = self.client.post(url,dict(content="Some initial review text\n"))
+        r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
         self.assertEquals(r.status_code,302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEquals(doc.rev,u'00')
@@ -309,14 +309,14 @@ class ConflictReviewSubmitTestCase(django.test.TestCase):
         #  how client.post populates Content-Type?
         test_file = StringIO("\x10\x11\x12") # post binary file
         test_file.name = "unnamed"
-        r = self.client.post(url, dict(txt=test_file))
+        r = self.client.post(url, dict(txt=test_file,submit_response="1"))
         self.assertEquals(r.status_code, 200)
         self.assertTrue("does not appear to be a text file" in r.content)
 
         # sane post uploading a file
         test_file = StringIO("This is a new proposal.")
         test_file.name = "unnamed"
-        r = self.client.post(url,dict(txt=test_file))
+        r = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEquals(r.status_code, 302)
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEquals(doc.rev,u'01')
@@ -325,6 +325,12 @@ class ConflictReviewSubmitTestCase(django.test.TestCase):
             self.assertEquals(f.read(),"This is a new proposal.")
             f.close()
         self.assertTrue( "submission-01" in doc.latest_event(NewRevisionDocEvent).desc)
+
+        # verify reset text button works
+        r = self.client.post(url,dict(reset_text="1"))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('textarea')[0].text.startswith("[Edit this page"))
         
     def setUp(self):
         make_test_data()
