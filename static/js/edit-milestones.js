@@ -8,8 +8,19 @@ jQuery(function () {
             idCounter = v - 1;
     });
 
+    function setSubmitButtonState() {
+        var action, label;
+        if (jQuery("#milestones-form input[name$=desc]:visible").length > 0)
+            action = "review";
+        else
+            action = "save";
 
-    jQuery("tr.milestone").click(function () {
+        var submit = jQuery("#milestones-form input[type=submit]");
+        submit.val(submit.data("label-" + action));
+        jQuery("#milestones-form input[name=action]").val(action);
+    }
+
+    jQuery("#milestones-form tr.milestone").click(function () {
         var row = jQuery(this), editRow = row.next("tr.edit-milestone");
 
         if (row.hasClass("add")) {
@@ -45,6 +56,8 @@ jQuery(function () {
 
         editRow.find('input[name$="expanded_for_editing"]').val("True");
         editRow.find('input[name$="desc"]').focus();
+
+        setSubmitButtonState();
     });
 
     function setResolvedState() {
@@ -74,8 +87,10 @@ jQuery(function () {
         var top = jQuery(this).closest(".edit-milestone");
 
         if (jQuery(this).is(":checked")) {
-            if (+top.find('input[name$="id"]').val() < 0)
+            if (+top.find('input[name$="id"]').val() < 0) {
                 top.remove();
+                setSubmitButtonState();
+            }
             else
                 top.addClass("delete")
         }
@@ -93,8 +108,7 @@ jQuery(function () {
 
     setInputMasks(jQuery("#milestone-form .edit-milestone").not(".template"));
 
-    jQuery('#milestones-form .edit-milestone input[name$="expanded_for_editing"]').each(function () {
-        if (this.value == "True")
-            jQuery(this).closest(".edit-milestone").prev().click();
+    jQuery('#milestones-form .edit-milestone .errorlist').each(function () {
+        jQuery(this).closest(".edit-milestone").prev().click();
     });
 });

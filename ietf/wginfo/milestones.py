@@ -39,8 +39,6 @@ class MilestoneForm(forms.Form):
     accept = forms.ChoiceField(choices=(("accept", "Accept"), ("reject", "Reject and delete"), ("noaction", "No action")),
                                required=False, initial="noaction", widget=forms.RadioSelect)
 
-    expanded_for_editing = forms.BooleanField(required=False, initial=False, widget=forms.HiddenInput)
-
     def __init__(self, *args, **kwargs):
         m = self.milestone = kwargs.pop("instance", None)
 
@@ -119,19 +117,124 @@ def edit_milestones(request, acronym, milestone_set="current"):
 
     milestones_dict = dict((str(m.id), m) for m in milestones)
 
-    def add_event(m, desc):
-        if milestone_set == "charter":
-            DocEvent.objects.create(doc=group.charter, type="changed_charter_milestone",
-                                    by=login, desc=desc)
-        else:
-            MilestoneGroupEvent.objects.create(group=group, type="changed_milestone",
-                                               by=login, desc=desc, milestone=m)
+    def set_attributes_from_form(f, m):
+        c = f.cleaned_data
+        m.group = group
+        if milestone_set == "current":
+            if needs_review:
+                m.state = GroupMilestoneStateName.objects.get(slug="review")
+            else:
+                m.state = GroupMilestoneStateName.objects.get(slug="active")
+        elif milestone_set == "charter":
+            m.state = GroupMilestoneStateName.objects.get(slug="charter")
+        m.desc = c["desc"]
+        m.due = c["due"]
+        m.resolved = c["resolved"]
+
+    def save_milestone_form(f):
+        c = f.cleaned_data
+
+        if f.milestone:
+            m = f.milestone
+
+            named_milestone = 'milestone "%s"' % m.desc
+            if milestone_set == "charter":
+                named_milestone = "charter " + named_milestone
+
+            if c["delete"]:
+                save_milestone_in_history(m)
+
+                m.state_id = "deleted"
+                m.save()
+
+                return 'Deleted %s' % named_milestone
+
+            # compute changes
+            history = None
+
+            changes = ['Changed %s' % named_milestone]
+
+            if m.state_id == "review" and not needs_review and c["accept"] != "noaction":
+                if not history:
+                    history = save_milestone_in_history(m)
+
+                if c["accept"] == "accept":
+                    m.state_id = "active"
+                    changes.append("changed state from review to active, accepting new milestone")
+                elif c["accept"] == "reject":
+                    m.state_id = "deleted"
+                    changes.append("changed state from review to deleted, rejecting new milestone")
+
+
+            if c["desc"] != m.desc and not needs_review:
+                if not history:
+                    history = save_milestone_in_history(m)
+                m.desc = c["desc"]
+                changes.append('changed description to "%s"' % m.desc)
+
+            if c["due"] != m.due:
+                if not history:
+                    history = save_milestone_in_history(m)
+                m.due = c["due"]
+                changes.append('changed due date to %s' % m.due.strftime("%Y-%m-%d"))
+
+            resolved = c["resolved"]
+            if resolved != m.resolved:
+                if resolved and not m.resolved:
+                    changes.append('resolved as "%s"' % resolved)
+                elif not resolved and m.resolved:
+                    changes.append("reverted to not being resolved")
+                elif resolved and m.resolved:
+                    changes.append('changed resolution to "%s"' % resolved)
+
+                if not history:
+                    history = save_milestone_in_history(m)
+
+                m.resolved = resolved
+
+            new_docs = set(c["docs"])
+            old_docs = set(m.docs.all())
+            if new_docs != old_docs:
+                added = new_docs - old_docs
+                if added:
+                    changes.append('added %s to milestone' % ", ".join(d.name for d in added))
+
+                removed = old_docs - new_docs
+                if removed:
+                    changes.append('removed %s from milestone' % ", ".join(d.name for d in removed))
+
+                if not history:
+                    history = save_milestone_in_history(m)
+
+                m.docs = new_docs
+
+            if len(changes) > 1:
+                m.save()
+
+                return ", ".join(changes)
+
+        else: # new milestone
+            m = f.milestone = GroupMilestone()
+            set_attributes_from_form(f, m)
+            m.save()
+
+            m.docs = c["docs"]
+
+            named_milestone = 'milestone "%s"' % m.desc
+            if milestone_set == "charter":
+                named_milestone = "charter " + named_milestone
+
+            if m.state_id in ("active", "charter"):
+                return 'Added %s, due %s' % (named_milestone, m.due.strftime("%Y-%m-%d"))
+            elif m.state_id == "review":
+                return 'Added %s for review, due %s' % (named_milestone, m.due.strftime("%Y-%m-%d"))
 
     finished_milestone_text = "Done"
 
     form_errors = False
 
     if request.method == 'POST':
+        # parse out individual milestone forms
         for prefix in request.POST.getlist("prefix"):
             if not prefix: # empty form
                 continue
@@ -144,116 +247,29 @@ def edit_milestones(request, acronym, milestone_set="current"):
 
             form_errors = form_errors or not f.is_valid()
 
-        if not form_errors:
+        action = request.POST.get("action", "review")
+        if action == "review":
             for f in forms:
-                c = f.cleaned_data
+                if not f.is_valid():
+                    continue
 
-                if f.milestone:
-                    m = f.milestone
+                # let's fill in the form milestone so we can output it in the template
+                if not f.milestone:
+                    f.milestone = GroupMilestone()
+                set_attributes_from_form(f, f.milestone)
+        elif action == "save" and not form_errors:
+            for f in forms:
+                change = save_milestone_form(f)
 
-                    named_milestone = 'milestone "%s"' % m.desc
-                    if milestone_set == "charter":
-                        named_milestone = "charter " + named_milestone
+                if not change:
+                    continue
 
-                    if c["delete"]:
-                        save_milestone_in_history(m)
-
-                        m.state_id = "deleted"
-                        m.save()
-
-                        add_event(m, 'Deleted %s' % named_milestone)
-
-                        continue
-
-                    # compute changes
-                    history = None
-
-                    changes = ['Changed %s' % named_milestone]
-
-                    if m.state_id == "review" and not needs_review and c["accept"] != "noaction":
-                        if not history:
-                            history = save_milestone_in_history(m)
-
-                        if c["accept"] == "accept":
-                            m.state_id = "active"
-                            changes.append("changed state from review to active, accepting new milestone")
-                        elif c["accept"] == "reject":
-                            m.state_id = "deleted"
-                            changes.append("changed state from review to deleted, rejecting new milestone")
-
-
-                    if c["desc"] != m.desc and not needs_review:
-                        if not history:
-                            history = save_milestone_in_history(m)
-                        m.desc = c["desc"]
-                        changes.append('changed description to "%s"' % m.desc)
-
-                    if c["due"] != m.due:
-                        if not history:
-                            history = save_milestone_in_history(m)
-                        m.due = c["due"]
-                        changes.append('changed due date to %s' % m.due.strftime("%Y-%m-%d"))
-
-                    resolved = c["resolved"]
-                    if resolved != m.resolved:
-                        if resolved and not m.resolved:
-                            changes.append('resolved as "%s"' % resolved)
-                        elif not resolved and m.resolved:
-                            changes.append("reverted to not being resolved")
-                        elif resolved and m.resolved:
-                            changes.append('changed resolution to "%s"' % resolved)
-
-                        if not history:
-                            history = save_milestone_in_history(m)
-
-                        m.resolved = resolved
-
-                    new_docs = set(c["docs"])
-                    old_docs = set(m.docs.all())
-                    if new_docs != old_docs:
-                        added = new_docs - old_docs
-                        if added:
-                            changes.append('added %s to milestone' % ", ".join(d.name for d in added))
-
-                        removed = old_docs - new_docs
-                        if removed:
-                            changes.append('removed %s from milestone' % ", ".join(d.name for d in removed))
-
-                        if not history:
-                            history = save_milestone_in_history(m)
-
-                        m.docs = new_docs
-
-                    if len(changes) > 1:
-                        add_event(m, ", ".join(changes))
-
-                        m.save()
-
-                else: # new milestone
-                    m = GroupMilestone()
-                    m.group = group
-                    if milestone_set == "current":
-                        if needs_review:
-                            m.state = GroupMilestoneStateName.objects.get(slug="review")
-                        else:
-                            m.state = GroupMilestoneStateName.objects.get(slug="active")
-                    elif milestone_set == "charter":
-                        m.state = GroupMilestoneStateName.objects.get(slug="charter")
-                    m.desc = c["desc"]
-                    m.due = c["due"]
-                    m.resolved = c["resolved"]
-                    m.save()
-
-                    m.docs = c["docs"]
-
-                    named_milestone = 'milestone "%s"' % m.desc
-                    if milestone_set == "charter":
-                        named_milestone = "charter " + named_milestone
-
-                    if m.state_id in ("active", "charter"):
-                        add_event(m, 'Added %s, due %s' % (named_milestone, m.due.strftime("%Y-%m-%d")))
-                    elif m.state_id == "review":
-                        add_event(m, 'Added %s for review, due %s' % (named_milestone, m.due.strftime("%Y-%m-%d")))
+                if milestone_set == "charter":
+                    DocEvent.objects.create(doc=group.charter, type="changed_charter_milestone",
+                                            by=login, desc=change)
+                else:
+                    MilestoneGroupEvent.objects.create(group=group, type="changed_milestone",
+                                                       by=login, desc=change, milestone=f.milestone)
 
             if milestone_set == "charter":
                 return redirect('doc_view', name=group.charter.canonical_name())
@@ -266,6 +282,8 @@ def edit_milestones(request, acronym, milestone_set="current"):
     can_reset = milestone_set == "charter" and get_chartering_type(group.charter) == "rechartering"
 
     empty_form = MilestoneForm(needs_review=needs_review)
+
+    forms.sort(key=lambda f: f.milestone.due if f.milestone else datetime.date.max)
 
     return render_to_response('wginfo/edit_milestones.html',
                               dict(group=group,

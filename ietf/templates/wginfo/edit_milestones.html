@@ -37,6 +37,8 @@ tr.milestone.add { font-style: italic; }
 {% load ietf_filters %}
 <h1>{{ title }}</h1>
 
+<noscript>This page depends on Javascript being enabled to work properly.</noscript>
+
 <p class="help">{% if forms %}Click a milestone to edit it.{% endif %}
 
 {% if needs_review %}
@@ -76,7 +78,8 @@ this list</a> to the currently in-use milestones for the {{ group.acronym }} {{ 
 
 <div class="actions">
   <a href="{% if milestone_set == "charter" %}{% url doc_view name=group.charter.canonical_name %}{% else %}{% url wg_charter acronym=group.acronym %}{% endif %}">Back</a>
-  <input type="submit" value="Save"/>
+  <input type="submit" data-label-save="Save" data-label-review="Review changes" value="Save"/>
+  <input type="hidden" name="action" value="save">
 </div>
 
 </form>

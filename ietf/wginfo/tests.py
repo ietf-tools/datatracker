@@ -316,6 +316,7 @@ class MilestoneTestCase(django.test.TestCase):
                                     'm-1-due': due.strftime("%Y-%m-%d"),
                                     'm-1-resolved': "",
                                     'm-1-docs': ",".join(docs),
+                                    'action': "save",
                                     })
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
@@ -329,6 +330,7 @@ class MilestoneTestCase(django.test.TestCase):
                                     'm-1-due': due.strftime("%Y-%m-%d"),
                                     'm-1-resolved': "",
                                     'm-1-docs': ",".join(docs),
+                                    'action': "save",
                                     })
         self.assertEquals(r.status_code, 302)
         self.assertEquals(GroupMilestone.objects.count(), milestones_before + 1)
@@ -362,6 +364,7 @@ class MilestoneTestCase(django.test.TestCase):
                                     'm-1-due': due.strftime("%Y-%m-%d"),
                                     'm-1-resolved': "",
                                     'm-1-docs': "",
+                                    'action': "save",
                                     })
         self.assertEquals(r.status_code, 302)
         self.assertEquals(GroupMilestone.objects.count(), milestones_before + 1)
@@ -394,6 +397,7 @@ class MilestoneTestCase(django.test.TestCase):
                                     'm1-resolved': m1.resolved,
                                     'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
                                     'm1-accept': "accept",
+                                    'action': "save",
                                     })
         self.assertEquals(r.status_code, 302)
 
@@ -419,6 +423,7 @@ class MilestoneTestCase(django.test.TestCase):
                                     'm1-resolved': "",
                                     'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
                                     'm1-delete': "checked",
+                                    'action': "save",
                                     })
         self.assertEquals(r.status_code, 302)
         self.assertEquals(GroupMilestone.objects.count(), milestones_before)
@@ -447,6 +452,7 @@ class MilestoneTestCase(django.test.TestCase):
                                     'm1-due': due.strftime("%Y-%m-%d"),
                                     'm1-resolved': "",
                                     'm1-docs': ",".join(docs),
+                                    'action': "save",
                                     })
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
@@ -463,6 +469,7 @@ class MilestoneTestCase(django.test.TestCase):
                                     'm1-resolved': "Done",
                                     'm1-resolved_checkbox': "checked",
                                     'm1-docs': ",".join(docs),
+                                    'action': "save",
                                     })
         self.assertEquals(r.status_code, 302)
         self.assertEquals(GroupMilestone.objects.count(), milestones_before)
