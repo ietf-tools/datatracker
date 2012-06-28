@@ -17,6 +17,7 @@ from ietf.doc.models import Document, DocEvent
 from ietf.doc.utils import get_chartering_type
 from ietf.group.models import *
 from ietf.group.utils import save_group_in_history, save_milestone_in_history
+from ietf.wginfo.mails import email_milestones_changed
 
 def json_doc_names(docs):
     return simplejson.dumps([{"id": doc.pk, "name": doc.name } for doc in docs])
@@ -160,23 +161,23 @@ def edit_milestones(request, acronym, milestone_set="current"):
 
                 if c["accept"] == "accept":
                     m.state_id = "active"
-                    changes.append("changed state from review to active, accepting new milestone")
+                    changes.append("set state to active from review, accepting new milestone")
                 elif c["accept"] == "reject":
                     m.state_id = "deleted"
-                    changes.append("changed state from review to deleted, rejecting new milestone")
+                    changes.append("set state to deleted from review, rejecting new milestone")
 
 
             if c["desc"] != m.desc and not needs_review:
                 if not history:
                     history = save_milestone_in_history(m)
                 m.desc = c["desc"]
-                changes.append('changed description to "%s"' % m.desc)
+                changes.append('set description to "%s"' % m.desc)
 
             if c["due"] != m.due:
                 if not history:
                     history = save_milestone_in_history(m)
+                changes.append('set due date to %s from %s' % (c["due"].strftime("%Y-%m-%d"), m.due.strftime("%Y-%m-%d")))
                 m.due = c["due"]
-                changes.append('changed due date to %s' % m.due.strftime("%Y-%m-%d"))
 
             resolved = c["resolved"]
             if resolved != m.resolved:
@@ -185,7 +186,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
                 elif not resolved and m.resolved:
                     changes.append("reverted to not being resolved")
                 elif resolved and m.resolved:
-                    changes.append('changed resolution to "%s"' % resolved)
+                    changes.append('set resolution to "%s"' % resolved)
 
                 if not history:
                     history = save_milestone_in_history(m)
@@ -258,6 +259,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
                     f.milestone = GroupMilestone()
                 set_attributes_from_form(f, f.milestone)
         elif action == "save" and not form_errors:
+            changes = []
             for f in forms:
                 change = save_milestone_form(f)
 
@@ -270,6 +272,11 @@ def edit_milestones(request, acronym, milestone_set="current"):
                 else:
                     MilestoneGroupEvent.objects.create(group=group, type="changed_milestone",
                                                        by=login, desc=change, milestone=f.milestone)
+
+                changes.append(change)
+
+            if milestone_set == "current":
+                email_milestones_changed(request, group, u"\n\n".join(c + "." for c in changes))
 
             if milestone_set == "charter":
                 return redirect('doc_view', name=group.charter.canonical_name())

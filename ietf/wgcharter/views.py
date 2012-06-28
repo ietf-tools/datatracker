@@ -586,7 +586,7 @@ def approve(request, name):
                     o.save()
                     MilestoneGroupEvent.objects.create(
                         group=group, type="changed_milestone", by=login,
-                        desc="Changed milestone \"%s\", changed state from review to active" % o.desc,
+                        desc="Changed milestone \"%s\", set state to active from review" % o.desc,
                         milestone=o)
 
                 del milestones_to_delete[i]

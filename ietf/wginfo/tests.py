@@ -462,6 +462,7 @@ class MilestoneTestCase(django.test.TestCase):
         self.assertEquals(m.due, m1.due)
 
         # add
+        mailbox_before = len(outbox)
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': "Test 2 - changed",
@@ -481,6 +482,8 @@ class MilestoneTestCase(django.test.TestCase):
         self.assertEquals(m.resolved, "Done")
         self.assertEquals(set(m.docs.values_list("name", flat=True)), set(docs))
         self.assertTrue("Changed milestone" in m.milestonegroupevent_set.all()[0].desc)
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue("Milestones changed" in outbox[-1]["Subject"])
 
     def test_reset_charter_milestones(self):
         m1, m2, group = self.create_test_milestones()
