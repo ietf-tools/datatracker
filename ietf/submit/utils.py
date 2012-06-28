@@ -11,6 +11,7 @@ from ietf.idtracker.models import (InternetDraft, PersonOrOrgInfo, IETFWG,
                                    IDAuthor, EmailAddress, IESGLogin, BallotInfo)
 from ietf.submit.models import TempIdAuthors, IdSubmissionDetail, Preapproval
 from ietf.utils.mail import send_mail, send_mail_message
+from ietf.utils.log import log
 from ietf.utils import unaccent
 from ietf.ietfauth.decorators import has_role
 
@@ -449,8 +450,13 @@ def move_docs(submission):
     for ext in submission.file_type.split(','):
         source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
         dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s%s' % (submission.filename, submission.revision, ext))
-        os.rename(source, dest)
-
+        if os.path.exists(source):
+            os.rename(source, dest)
+        else:
+            if os.path.exists(dest):
+                log("Intended to move '%s' to '%s', but found source missing while destination exists.", send_mail=True)
+            else:
+                raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
 def remove_docs(submission):
     for ext in submission.file_type.split(','):
