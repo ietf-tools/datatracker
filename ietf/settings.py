@@ -6,7 +6,7 @@
 
 import os
 import syslog
-syslog.openlog("django", syslog.LOG_PID, syslog.LOG_LOCAL0)
+syslog.openlog("datatracker", syslog.LOG_PID, syslog.LOG_USER)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
