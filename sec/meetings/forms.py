@@ -6,6 +6,7 @@ from ietf.meeting.models import Meeting, Room, TimeSlot, Session
 from ietf.meeting.timedeltafield import TimedeltaFormField, TimedeltaWidget
 from ietf.name.models import TimeSlotTypeName
 
+import datetime
 import itertools
 import re
 
@@ -54,22 +55,7 @@ def get_times(meeting,day):
     slots = TimeSlot.objects.filter(meeting=meeting,time__week_day=day,location=room).order_by('time')
     choices = [ (t.time.strftime('%H%M'), '%s-%s' % (t.time.strftime('%H%M'), t.end_time().strftime('%H%M'))) for t in slots ]
     return choices
-    
-def get_times2(meeting):
-    '''
-    Takes a Meeting object and returns a list of tuples for use in a ChoiceField.
-    The value is start_time, the label is [start_time]-[end_time].  We are aggregating all days of the
-    meeting in ordr 
-    '''
-    # pick a random room
-    rooms = Room.objects.filter(meeting=meeting)
-    if rooms:
-        room = rooms[0]
-    else:
-        room = None
-    slots = TimeSlot.objects.filter(meeting=meeting,time__week_day=day,location=room).order_by('time')
-    choices = [ (t.time.strftime('%H%M'), '%s-%s' % (t.time.strftime('%H%M'), t.end_time().strftime('%H%M'))) for t in slots ]
-    return choices
+
 #----------------------------------------------------------
 # Base Classes
 #----------------------------------------------------------
@@ -137,13 +123,13 @@ class NewSessionForm(forms.Form):
     
     # setup the timeslot options based on meeting passed in
     def __init__(self,*args,**kwargs):
-        meeting = kwargs.pop('meeting')
+        self.meeting = kwargs.pop('meeting')
         super(NewSessionForm, self).__init__(*args,**kwargs)
         
         # attach session object to the form so we can use it in the template
         self.session_object = Session.objects.get(id=self.initial['session'])
-        self.fields['room'].queryset = Room.objects.filter(meeting=meeting)
-        self.fields['time'].choices = get_times(meeting,self.initial['day'])
+        self.fields['room'].queryset = Room.objects.filter(meeting=self.meeting)
+        self.fields['time'].choices = get_times(self.meeting,self.initial['day'])
         
     def clean(self):
         super(NewSessionForm, self).clean()
@@ -151,9 +137,16 @@ class NewSessionForm(forms.Form):
             return
         cleaned_data = self.cleaned_data
         time = cleaned_data['time']
+        day = cleaned_data['day']
+        room = cleaned_data['room']
         if cleaned_data['combine']:
-            slot = get_next_slot(cleaned_data['time'])
-            if not slot or slot.session != None:
+            # calculate datetime object from inputs, get current slot, feed to get_next_slot()
+            day_obj = self.meeting.get_meeting_date(int(day)-1)
+            hour = datetime.time(int(time[:2]),int(time[2:]))
+            time_obj = datetime.datetime.combine(day_obj,hour)
+            slot = TimeSlot.objects.get(meeting=self.meeting,time=time_obj,location=room)
+            next_slot = get_next_slot(slot)
+            if not next_slot or next_slot.session != None:
                 raise forms.ValidationError('There is no next session to combine')
         
         return cleaned_data
