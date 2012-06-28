@@ -414,8 +414,7 @@ def email_iana(request, doc, to, msg):
         send_mail_text(request, "To: IANA <%s>" % to,
                        parsed_msg["From"], parsed_msg["Subject"],
                        parsed_msg.get_payload(),
-                       extra=extra,
-                       bcc="fenner@research.att.com")
+                       extra=extra)
 
 def email_ianaREDESIGN(request, doc, to, msg):
     # fix up message and send it with extra info on doc in headers
@@ -430,8 +429,7 @@ def email_ianaREDESIGN(request, doc, to, msg):
     send_mail_text(request, "IANA <%s>" % to,
                    parsed_msg["From"], parsed_msg["Subject"],
                    parsed_msg.get_payload(),
-                   extra=extra,
-                   bcc="fenner@research.att.com")
+                   extra=extra)
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     email_iana = email_ianaREDESIGN
