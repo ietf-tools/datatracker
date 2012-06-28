@@ -34,11 +34,9 @@
   {% if form.needs_review %}
   <tr class="needs-review">
     <td>Review:</td>
-    <td>This milestone is not public yet, awaiting AD acceptance.
-
-    {% if not needs_review %}
-    <span class="accept">{{ form.accept }} {{ form.accept.label_tag }}</span>
-    {% endif %}
+    <td class="accept">
+      This milestone is not active yet, awaiting
+      AD acceptance{% if needs_review %}.{% else %}: {{ form.accept }}{% endif %}
     </td>
   </tr>
   {% endif %}

@@ -36,7 +36,8 @@ class MilestoneForm(forms.Form):
 
     docs = forms.CharField(max_length=10000, required=False)
 
-    accept = forms.BooleanField(required=False, initial=False)
+    accept = forms.ChoiceField(choices=(("accept", "Accept"), ("reject", "Reject and delete"), ("noaction", "No action")),
+                               required=False, initial="noaction", widget=forms.RadioSelect)
 
     expanded_for_editing = forms.BooleanField(required=False, initial=False, widget=forms.HiddenInput)
 
@@ -169,11 +170,16 @@ def edit_milestones(request, acronym, milestone_set="current"):
 
                     changes = ['Changed %s' % named_milestone]
 
-                    if m.state_id == "review" and not needs_review and c["accept"]:
+                    if m.state_id == "review" and not needs_review and c["accept"] != "noaction":
                         if not history:
                             history = save_milestone_in_history(m)
-                        m.state_id = "active"
-                        changes.append("changed state from review to active")
+
+                        if c["accept"] == "accept":
+                            m.state_id = "active"
+                            changes.append("changed state from review to active, accepting new milestone")
+                        elif c["accept"] == "reject":
+                            m.state_id = "deleted"
+                            changes.append("changed state from review to deleted, rejecting new milestone")
 
 
                     if c["desc"] != m.desc and not needs_review:

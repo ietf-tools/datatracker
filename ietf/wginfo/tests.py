@@ -393,7 +393,7 @@ class MilestoneTestCase(django.test.TestCase):
                                     'm1-due': m1.due.strftime("%Y-%m-%d"),
                                     'm1-resolved': m1.resolved,
                                     'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
-                                    'm1-accept': "checked",
+                                    'm1-accept': "accept",
                                     })
         self.assertEquals(r.status_code, 302)
 
