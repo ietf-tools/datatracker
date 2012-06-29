@@ -15,6 +15,7 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
 
 {% block submit_content %}
 
+{% if user.is_authenticated %}
 <h2 id="approvals">Submissions you can approve</h2>
 
 {% if not approvals %}
@@ -80,5 +81,18 @@ table.preapprovals tr:hover td a.cancel { visibility: visible; }
 {% endfor %}
 </table>
 {% endif %}
+{% else %}
+<h2>Submission approvals</h2>
+<p>
 
+   This is where Chairs and Secretariat can approve and pre-approve document
+   submissions which require approval, such as WG -00 drafts.
+
+</p>
+<p>
+
+   You need to <a href="https://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">sign in</a> in order to handle approvals.
+
+</p>
+{% endif %}
 {% endblock %}
