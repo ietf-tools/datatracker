@@ -14,7 +14,7 @@ from pprint import pformat
 __report_indent = [4]
 increment = 2
 debug = True
-syslog.openlog("debug", syslog.LOG_PID, syslog.LOG_USER)
+#syslog.openlog("debug", syslog.LOG_PID, syslog.LOG_USER)
 
 def set_indent(i):
     __report_indent[0] = i
