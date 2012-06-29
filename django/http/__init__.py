@@ -292,7 +292,7 @@ class CompatCookie(SimpleCookie):
     def _loose_set(self, key, real_value, coded_value):
         try:
             self._strict_set(key, real_value, coded_value)
-        except CookieError:
+        except:
             self.bad_cookies.append(key)
             dict.__setitem__(self, key, None)
 
