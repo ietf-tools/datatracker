@@ -288,7 +288,10 @@ class UploadForm(forms.Form):
 
 @role_required('Area Director','Secretariat')
 def submit(request, name=None, acronym=None, option=None):
-    if acronym and not name:
+    if name:
+        if not name.startswith('charter-'):
+            name = "charter-ietf-" + name
+    elif acronym:
         name = "charter-ietf-" + acronym
     charter = get_object_or_404(Document, type="charter", name=name)
     wg = charter.group
