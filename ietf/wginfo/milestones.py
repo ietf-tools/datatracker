@@ -62,13 +62,17 @@ class MilestoneForm(forms.Form):
 
         super(MilestoneForm, self).__init__(*args, **kwargs)
 
+        # figure out what to prepopulate many-to-many field with
         pre = ""
         if not self.is_bound:
             pre = self.initial.get("docs", "")
         else:
             pre = self["docs"].data or ""
 
-        self.fields["docs"].prepopulate = json_doc_names(parse_doc_names(pre))
+        # this is ugly, but putting it on self["docs"] is buggy with a
+        # bound/unbound form in Django 1.2
+        self.docs_names = parse_doc_names(pre)
+        self.docs_prepopulate = json_doc_names(self.docs_names)
 
     def clean_docs(self):
         s = self.cleaned_data["docs"]
@@ -322,7 +326,7 @@ def reset_charter_milestones(request, acronym):
         try:
             milestone_ids = [int(v) for v in request.POST.getlist("milestone")]
         except ValueError as e:
-            return HttpResponseBadRequest("errror in list of ids - %s" % e)
+            return HttpResponseBadRequest("error in list of ids - %s" % e)
 
         # delete existing
         for m in charter_milestones:

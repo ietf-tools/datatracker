@@ -9,7 +9,7 @@
     <td>
       <div>{{ milestone.desc|escape }}</div>
       {% for d in milestone.docs.all %}
-      <a class="doc" href="{% url doc_view name=d.name %}">{{ d.name }}</div>
+      <a class="doc" href="{% url doc_view name=d.name %}">{{ d.name }}</a>
       {% endfor %}
     </td>
   </tr>

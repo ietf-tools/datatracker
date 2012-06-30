@@ -16,7 +16,7 @@ jQuery(function () {
             action = "save";
 
         var submit = jQuery("#milestones-form input[type=submit]");
-        submit.val(submit.data("label-" + action));
+        submit.val(submit.data("label" + action));
         jQuery("#milestones-form input[name=action]").val(action);
     }
 

@@ -7,6 +7,7 @@ tr.milestone td { padding: 0.2em 0; cursor: pointer; vertical-align: top; }
 tr.milestone:hover { background-color: #e8f0fa; }
 td.due { width: 5em; }
 .milestone .needs-accept  { font-style: italic; display: inline-block; margin-left: 0.5em; color: #2647a0; }
+.milestone .doc { display: block; padding-left: 1em; }
 .edit-milestone { display: none; }
 .edit-milestone.delete, .edit-milestone.delete input { color: #aaa !important; }
 .edit-milestone table { margin: 0.3em 0; }
@@ -65,8 +66,12 @@ this list</a> to the currently in-use milestones for the {{ group.acronym }} {{ 
 <tr class="milestone">
   <td class="due">{% if form.milestone.resolved %}{{ form.milestone.resolved }}{% else %}{{ form.milestone.due|date:"M Y" }}{% endif %}</td>
   <td>
-    {{ form.milestone.desc }}
-    {% if form.needs_review %}<span class="needs-accept">awaiting accept</span>{% endif %}
+    <div>{{ form.milestone.desc }}
+    {% if form.needs_review %}<span class="needs-accept">awaiting accept</span>{% endif %}</div>
+
+    {% for d in form.docs_names %}
+    <div class="doc">{{ d }}</div>
+    {% endfor %}
   </td>
 </tr>
 
@@ -78,7 +83,7 @@ this list</a> to the currently in-use milestones for the {{ group.acronym }} {{ 
 
 <div class="actions">
   <a href="{% if milestone_set == "charter" %}{% url doc_view name=group.charter.canonical_name %}{% else %}{% url wg_charter acronym=group.acronym %}{% endif %}">Back</a>
-  <input type="submit" data-label-save="Save" data-label-review="Review changes" value="Save"/>
+  <input type="submit" data-labelsave="Save" data-labelreview="Review changes" value="Save"/>
   <input type="hidden" name="action" value="save">
 </div>
 
