@@ -47,6 +47,7 @@ from ietf.group.models import *
 from ietf.group.utils import *
 from ietf.name.models import *
 from ietf.person.models import *
+from ietf.wginfo.mails import *
 
 
 class WgInfoUrlTestCase(SimpleUrlTestCase):
@@ -404,7 +405,7 @@ class MilestoneTestCase(django.test.TestCase):
         m = GroupMilestone.objects.get(pk=m1.pk)
         self.assertEquals(m.state_id, "active")
         self.assertEquals(group.groupevent_set.count(), events_before + 1)
-        self.assertTrue("from review to active" in m.milestonegroupevent_set.all()[0].desc)
+        self.assertTrue("to active from review" in m.milestonegroupevent_set.all()[0].desc)
         
     def test_delete_milestone(self):
         m1, m2, group = self.create_test_milestones()
@@ -508,3 +509,130 @@ class MilestoneTestCase(django.test.TestCase):
         self.assertEquals(GroupMilestone.objects.filter(due=m1.due, desc=m1.desc, state="charter").count(), 1)
 
         self.assertEquals(group.charter.docevent_set.count(), events_before + 2) # 1 delete, 1 add
+
+    def test_send_review_needed_reminders(self):
+        draft = make_test_data()
+
+        group = Group.objects.get(acronym="mars")
+        person = Person.objects.get(user__username="marschairman")
+
+        m1 = GroupMilestone.objects.create(group=group,
+                                           desc="Test 1",
+                                           due=datetime.date.today(),
+                                           resolved="",
+                                           state_id="review")
+        MilestoneGroupEvent.objects.create(
+            group=group, type="changed_milestone",
+            by=person, desc='Added milestone "%s"' % m1.desc, milestone=m1,
+            time=datetime.datetime.now() - datetime.timedelta(seconds=60))
+
+        # send
+        mailbox_before = len(outbox)
+        for g in groups_with_milestones_needing_review():
+            email_milestone_review_reminder(g)
+
+        self.assertEquals(len(outbox), mailbox_before) # too early to send reminder
+
+
+        # add earlier added milestone
+        m2 = GroupMilestone.objects.create(group=group,
+                                           desc="Test 2",
+                                           due=datetime.date.today(),
+                                           resolved="",
+                                           state_id="review")
+        MilestoneGroupEvent.objects.create(
+            group=group, type="changed_milestone",
+            by=person, desc='Added milestone "%s"' % m2.desc, milestone=m2,
+            time=datetime.datetime.now() - datetime.timedelta(days=10))
+
+        # send
+        mailbox_before = len(outbox)
+        for g in groups_with_milestones_needing_review():
+            email_milestone_review_reminder(g)
+
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue(group.acronym in outbox[-1]["Subject"])
+        self.assertTrue(m1.desc in unicode(outbox[-1]))
+        self.assertTrue(m2.desc in unicode(outbox[-1]))
+
+    def test_send_milestones_due_reminders(self):
+        draft = make_test_data()
+
+        group = Group.objects.get(acronym="mars")
+        person = Person.objects.get(user__username="marschairman")
+
+        early_warning_days = 30
+
+        m1 = GroupMilestone.objects.create(group=group,
+                                           desc="Test 1",
+                                           due=datetime.date.today(),
+                                           resolved="Done",
+                                           state_id="active")
+        m2 = GroupMilestone.objects.create(group=group,
+                                           desc="Test 2",
+                                           due=datetime.date.today() + datetime.timedelta(days=early_warning_days - 10),
+                                           resolved="",
+                                           state_id="active")
+
+        # send
+        mailbox_before = len(outbox)
+        for g in groups_needing_milestones_due_reminder(early_warning_days):
+            email_milestones_due(g, early_warning_days)
+
+        self.assertEquals(len(outbox), mailbox_before) # none found
+
+        m1.resolved = ""
+        m1.save()
+
+        m2.due = datetime.date.today() + datetime.timedelta(days=early_warning_days)
+        m2.save()
+
+        # send
+        mailbox_before = len(outbox)
+        for g in groups_needing_milestones_due_reminder(early_warning_days):
+            email_milestones_due(g, early_warning_days)
+
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue(group.acronym in outbox[-1]["Subject"])
+        self.assertTrue(m1.desc in unicode(outbox[-1]))
+        self.assertTrue(m2.desc in unicode(outbox[-1]))
+
+    def test_send_milestones_overdue_reminders(self):
+        draft = make_test_data()
+
+        group = Group.objects.get(acronym="mars")
+        person = Person.objects.get(user__username="marschairman")
+
+        m1 = GroupMilestone.objects.create(group=group,
+                                           desc="Test 1",
+                                           due=datetime.date.today() - datetime.timedelta(days=200),
+                                           resolved="Done",
+                                           state_id="active")
+        m2 = GroupMilestone.objects.create(group=group,
+                                           desc="Test 2",
+                                           due=datetime.date.today() - datetime.timedelta(days=10),
+                                           resolved="",
+                                           state_id="active")
+
+        # send
+        mailbox_before = len(outbox)
+        for g in groups_needing_milestones_overdue_reminder(grace_period=30):
+            email_milestones_overdue(g)
+
+        self.assertEquals(len(outbox), mailbox_before) # none found
+
+        m1.resolved = ""
+        m1.save()
+
+        m2.due = datetime.date.today() - datetime.timedelta(days=300)
+        m2.save()
+        
+        # send
+        mailbox_before = len(outbox)
+        for g in groups_needing_milestones_overdue_reminder(grace_period=30):
+            email_milestones_overdue(g)
+
+        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertTrue(group.acronym in outbox[-1]["Subject"])
+        self.assertTrue(m1.desc in unicode(outbox[-1]))
+        self.assertTrue(m2.desc in unicode(outbox[-1]))

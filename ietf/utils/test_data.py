@@ -147,6 +147,9 @@ def make_test_data():
         person=p,
         email=email)
 
+    mars_wg.ad = ad
+    mars_wg.save()
+
     # create a bunch of ads for swarm tests
     for i in range(1, 10):
         u = User.objects.create(username="ad%s" % i)
