@@ -193,3 +193,5 @@ form table .help {
 
 table.milestones td.due { vertical-align: top; width: 80px; }
 table.milestones .doc { display: block; padding-left: 1em; }
+
+.stream-state .milestone { display: inline-block; font-size: smaller; background-color: #d5dde6; padding: 0 0.2em; margin-left: 0.3em; }

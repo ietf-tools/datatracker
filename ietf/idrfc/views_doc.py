@@ -439,6 +439,7 @@ def document_main_idrfc(request, name, tab):
                                'doc':doc, 'info':info, 'tab':tab,
 			       'include_text':include_text(request),
                                'stream_info': get_full_info_for_draft(id),
+                               'milestones': id.groupmilestone_set.filter(state="active"),
                                'versions':versions, 'history':history},
                               context_instance=RequestContext(request));
 

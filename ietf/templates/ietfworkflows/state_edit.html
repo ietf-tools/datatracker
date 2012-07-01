@@ -29,6 +29,19 @@ table.edit-form-tags ul li { padding: 0px; }
 <a href="{% url doc_view draft.filename %}">Return to document view</a>
 </p>
 </div>
+
+{% if state and state.slug == "wg-doc" and not milestones %}
+<p>This document is not part of any milestone. You may wish to <a href="{% url wg_edit_milestones acronym=draft.group.acronym %}">add it to one</a>.</p>
+{% endif %}
+
+{% if state and state.slug == "sub-pub" and milestones %}
+<p>This document is part of {% if milestones|length > 1 %}{{ milestones|length }}
+milestones{% else %}a milestone{% endif %}. Now that the draft is
+submitted to IESG for publication, you may wish to
+<a href="{% url wg_edit_milestones acronym=draft.group.acronym %}">update the
+milestone{{ milestones|pluralize }}</a>.</p>
+{% endif %}
+
 <table class="ietf-table" style="width: 100%;">
 <tr>
 <th>Current stream</th>

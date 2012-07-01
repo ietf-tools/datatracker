@@ -83,6 +83,7 @@ def _edit_draft_stream(request, draft, form_class=DraftTagsStateForm):
     stream = get_stream_from_draft(draft)
     history = get_workflow_history_for_draft(draft, 'objectworkflowhistoryentry')
     tags = get_annotation_tags_for_draft(draft)
+    milestones = draft.groupmilestone_set.all()
     return render_to_response('ietfworkflows/state_edit.html',
                               {'draft': draft,
                                'state': state,
@@ -91,6 +92,7 @@ def _edit_draft_stream(request, draft, form_class=DraftTagsStateForm):
                                'history': history,
                                'tags': tags,
                                'form': form,
+                               'milestones': milestones,
                               },
                               context_instance=RequestContext(request))
 
