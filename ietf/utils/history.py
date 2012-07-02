@@ -1,8 +1,9 @@
 def find_history_active_at(obj, time):
-    """Assumes obj has a corresponding history object (e.g. obj could
-    be Person with a corresponding PersonHistory model), then returns
-    the history object active at time, or None if the object itself
-    was active at the time.
+    """Assumes obj has a corresponding history model (e.g. obj could
+    be Person with a corresponding PersonHistory model), then either
+    returns the object itself if it was active at time, or the history
+    object active at time, or None if time predates the object and its
+    history (assuming history is complete).
 
     For this to work, the history model must use
     related_name="history_set" for the foreign key connecting to the
@@ -11,7 +12,7 @@ def find_history_active_at(obj, time):
     old time when the time field changes.
     """
     if obj.time <= time:
-        return None
+        return obj
 
     histories = obj.history_set.order_by('-time')
 
