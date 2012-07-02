@@ -24,9 +24,9 @@ def find_history_active_at(obj, time):
 
 def get_history_object_for(obj):
     """Construct history object for obj, i.e. instantiate history
-    object, copy relevant attributes and set a link to obj, but done
+    object, copy relevant attributes and set a link to obj, but don't
     save. Any customizations can be done by the caller afterwards.
-    Many-to-many fields are not copied.
+    Many-to-many fields are not copied (impossible without save).
 
     The history model must use related_name="history_set" for the
     foreign key connecting to the live model for this function to be
