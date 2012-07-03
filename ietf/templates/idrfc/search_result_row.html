@@ -37,7 +37,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
 {% if user.is_authenticated and show_add_to_list %}
 <td class="addtolist">
-<a href="{% url community_add_document doc.id.draft_name %}" title="Add to your personal ID list"><img src="/images/add_to_list.png" alt="Add to your personal ID list" /></a>
+{% if doc.id %}
+    <a href="{% url community_add_document doc.id.draft_name %}" title="Add to your personal ID list"><img src="/images/add_to_list.png" alt="Add to your personal ID list" /></a>
+{% else %}
+    <a href="{% url community_add_document doc.rfc.filename %}" title="Add to your personal ID list"><img src="/images/add_to_list.png" alt="Add to your personal ID list" /></a>
+{% endif %}
 </td>
 {% endif %}
 <td class="doc">

@@ -15,7 +15,7 @@ from django.utils.http import urlquote
 from ietf.community.models import CommunityList, Rule, EmailSubscription, ListNotification
 from ietf.community.forms import RuleForm, DisplayForm, SubscribeForm, UnSubscribeForm
 from ietf.group.models import Group
-from ietf.doc.models import Document, DocEvent
+from ietf.doc.models import Document, DocEvent, DocAlias
 
 
 def _manage_list(request, clist):
@@ -77,7 +77,7 @@ def add_document(request, document_name):
         path = urlquote(request.get_full_path())
         tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
         return HttpResponseRedirect('%s?%s=%s' % tup)
-    doc = get_object_or_404(Document, name=document_name)
+    doc = get_object_or_404(DocAlias, name=document_name).document
     clist = CommunityList.objects.get_or_create(user=request.user)[0]
     clist.update()
     return add_document_to_list(request, clist, doc)
@@ -89,7 +89,7 @@ def remove_document(request, list_id, document_name):
         path = urlquote(request.get_full_path())
         tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
         return HttpResponseRedirect('%s?%s=%s' % tup)
-    doc = get_object_or_404(Document, name=document_name)
+    doc = get_object_or_404(DocAlias, name=document_name).document
     clist.added_ids.remove(doc)
     clist.update()
     return HttpResponseRedirect(clist.get_manage_url())

@@ -43,6 +43,7 @@ from django.db import models
 from django.core.urlresolvers import reverse
 from django.conf import settings
 import types
+import debug
 
 BALLOT_ACTIVE_STATES = ['In Last Call',
                         'Waiting for Writeup',
@@ -390,6 +391,12 @@ class RfcWrapper:
         else:
             # TODO: get AD name of the draft
             return None
+    def filename(self):
+        debug.show('self')
+        debug.show('self._rfc')
+        debug.show('self._rfcindex')
+        debug.show('self._rfcindex.filename')
+        return self._rfcindex.filename
 
     @models.permalink
     def get_absolute_url(self):
