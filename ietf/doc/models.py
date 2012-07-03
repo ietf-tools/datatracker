@@ -357,7 +357,7 @@ class DocEvent(models.Model):
     desc = models.TextField()
 
     def __unicode__(self):
-        return u"%s %s at %s" % (self.by.plain_name(), self.get_type_display().lower(), self.time)
+        return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
 
     class Meta:
         ordering = ['-time', '-id']
