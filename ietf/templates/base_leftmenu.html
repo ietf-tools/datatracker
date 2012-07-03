@@ -1,4 +1,4 @@
-{% comment %}
+{% comment %}<!--
 Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
@@ -30,7 +30,7 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
-
+-->
 {% endcomment %}
 {% load wg_menu %} 
 {% load ietf_filters ietf_streams community_tags %}
@@ -77,19 +77,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <li><a href="http://tools.ietf.org/wg/concluded">Concluded WGs</a></li>
   <li><a href="http://www.ietf.org/list/nonwg.html">Non-WG Lists</a></li>
  
+
+<li class="sect">Drafts&nbsp;&amp;&nbsp;RFCs</li>
+  <li><a href="/doc/">Document search:</a></li>
+  <li><form action="/doc/search/" method="get" style="padding-bottom:0;margin-bottom:0;"><input type="text" style="margin-left:10px; width:100px; border:1px solid #89d;" name="name" /><input type="hidden" name="activeDrafts" value="on"/><input type="hidden" name="rfcs" value="on"/></form></li>
+  <li><a href="{% url submit_index %}">Submit a draft</a></li> 
+{% if user|in_group:"WG Chair" %}
+  <li><a href="{% url submit_approvals %}">Approve a draft</a></li> 
+{% endif %}
 {% get_user_managed_lists user as community_lists %}
 {% if community_lists %}
-<li class="sect">Community ID lists</li>
-   <li><a href="{{ community_lists.personal.get_manage_url }}">{{ community_lists.personal.short_name }}</a>
+   <li><a href="{{ community_lists.personal.get_manage_url }}">{{ community_lists.personal.short_name }}</a>&nbsp;
    {% for cl in community_lists.group %}
    <li><a href="{{ cl.get_manage_url }}">{{ cl.short_name }}</a>
    {% endfor %}
+{% else %}
+   <li><a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in to track drafts</a></li>
 {% endif %}
-
-<li class="sect">Drafts&nbsp;&amp;&nbsp;RFCs</li>
-  <li><a href="/doc/">Search</a></li>
-  <li><form action="/doc/search/" method="get" style="padding-bottom:0;margin-bottom:0;"><input type="text" style="margin-left:10px; width:100px; border:1px solid #89d;" name="name" /><input type="hidden" name="activeDrafts" value="on"/><input type="hidden" name="rfcs" value="on"/></form></li>
-  <li><a href="{% url submit_index %}">Submit a draft</a></li> 
 
 
 <li class="sect">Meetings</li>
