@@ -88,7 +88,7 @@ table.agenda-doc > tbody > tr { vertical-align:top; }
 
 <h2>5. IAB News We Can Use</h2>
 
-<h2>{% if private or user|in_group:"Area_Director,Secretariat" %}<a href="https://datatracker.ietf.org/cgi-bin/display_news.cgi?template_type=3">6. Management Issues</a>{%else%}6. Management Issues{%endif%}</h2>
+<h2>6. Management Issues</h2>
 <div id="section6">
 {% for m in mgmt %}
 <h3>6.{{forloop.counter}} {{m.title|escape}}</h3>
