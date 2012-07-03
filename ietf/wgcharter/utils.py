@@ -4,7 +4,6 @@ from django.conf import settings
 
 from ietf.group.models import GroupEvent, ChangeStateGroupEvent
 from ietf.doc.models import Document, DocAlias, DocHistory, RelatedDocument, DocumentAuthor, DocEvent
-from ietf.utils.history import find_history_active_at
 
 def log_state_changed(request, doc, by, prev_state):
     e = DocEvent(doc=doc, by=by)

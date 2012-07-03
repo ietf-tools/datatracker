@@ -1,6 +1,6 @@
-import re, os, string, datetime, shutil
+import re, os, string, datetime, shutil, textwrap
 
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
@@ -15,6 +15,7 @@ from django.conf import settings
 
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role, role_required
 from ietf.iesg.models import TelechatDate
 from ietf.doc.models import *
@@ -626,3 +627,58 @@ def approve(request, name):
                                    announcement=announcement),
                               context_instance=RequestContext(request))
 
+def charter_with_milestones_txt(request, name, rev):
+    charter = get_object_or_404(Document, type="charter", docalias__name=name)
+
+    revision_event = charter.latest_event(NewRevisionDocEvent, type="new_revision", rev=rev)
+    if not revision_event:
+        return HttpResponseNotFound("Revision %s not found in database" % rev)
+
+    # read charter text
+    c = find_history_active_at(charter, revision_event.time) or charter
+    filename = '%s-%s.txt' % (c.canonical_name(), rev)
+
+    charter_text = ""
+
+    try:
+        with open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
+            charter_text = f.read()
+    except IOError:
+        charter_text = "Error reading charter text %s" % filename
+
+
+    # find milestones
+
+    chartering = "-" in rev
+    if chartering:
+        need_state = "charter"
+    else:
+        need_state = "active"
+
+    # slight complication - we can assign milestones to a revision up
+    # until the point where the next superseding revision is
+    # published, so that time shall be our limit
+    e = charter.docevent_set.filter(time__gt=revision_event.time, type="new_revision").order_by("time")
+    if not chartering:
+        e = e.exclude(newrevisiondocevent__rev__contains="-")
+
+    if e:
+        # subtract a margen of error
+        just_before_next_rev = e[0].time - datetime.timedelta(seconds=5)
+    else:
+        just_before_next_rev = datetime.datetime.now()
+
+    wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent=" " * 11, width=80, break_long_words=False)
+
+    milestones = []
+    for m in charter.chartered_group.groupmilestone_set.all():
+        mh = find_history_active_at(m, just_before_next_rev)
+        if mh and mh.state_id == need_state:
+            mh.desc_filled = wrapper.fill(mh.desc)
+            milestones.append(mh)
+
+    return render_to_response('wgcharter/charter_with_milestones.txt',
+                              dict(charter_text=charter_text,
+                                   milestones=milestones),
+                              context_instance=RequestContext(request),
+                              mimetype="text/plain")
