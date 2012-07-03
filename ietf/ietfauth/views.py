@@ -46,6 +46,8 @@ from django.utils.http import urlquote
 from django.utils import simplejson as json
 from django.utils.translation import ugettext as _
 
+from ietf.ietfauth.forms import RegistrationForm, PasswordForm
+
 def index(request):
     return render_to_response('registration/index.html', context_instance=RequestContext(request))
 
