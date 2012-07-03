@@ -78,7 +78,7 @@ def run_tests_1(test_labels, *args, **kwargs):
         settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
         test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")] + ['redirects.TemplateCoverageTestCase',]
     if settings.SITE_ID != 1:
-        print "     Changing SITE_ID to '1' during testing, to avoid failures due to a missing site entry in the test DB."
+        print "     Changing SITE_ID to '1' during testing."
         settings.SITE_ID = 1
     assert(not settings.IDTRACKER_BASE_URL.endswith('/'))
     kwargs["verbosity"] = 0
