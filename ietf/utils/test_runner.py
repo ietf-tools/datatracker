@@ -33,10 +33,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import socket
+
 from django.conf import settings
 from django.template import TemplateDoesNotExist
+from django.test.simple import run_tests as django_run_tests
+
 import ietf.utils.mail
-from ietf.utils.mail import outbox as outbox
 
 loaded_templates = set()
 test_database_name = None
@@ -72,19 +74,22 @@ def run_tests_1(test_labels, *args, **kwargs):
     connection.creation.__class__.create_test_db = safe_create_1
     old_destroy = connection.creation.__class__.destroy_test_db
     connection.creation.__class__.destroy_test_db = safe_destroy_0_1
-    from django.test.simple import run_tests
     if not test_labels:
         settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
         test_labels = [x.split(".")[-1] for x in settings.INSTALLED_APPS if x.startswith("ietf")] + ['redirects.TemplateCoverageTestCase',]
+    if settings.SITE_ID != 1:
+        print "     Changing SITE_ID to '1' during testing, to avoid failures due to a missing site entry in the test DB."
+        settings.SITE_ID = 1
+    assert(not settings.IDTRACKER_BASE_URL.endswith('/'))
     kwargs["verbosity"] = 0
-    run_tests(test_labels, *args, **kwargs)
+    django_run_tests(test_labels, *args, **kwargs)
 
 def run_tests(*args, **kwargs):
     # Tests that involve switching back and forth between the real
     # database and the test database are way too dangerous to run
     # against the production database
-    if socket.gethostname().startswith("core3"):
-        raise EnvironmentError("Refusing to run tests on core3")
+    if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
+        raise EnvironmentError("Refusing to run tests on production server")
     ietf.utils.mail.test_mode = True
     run_tests_1(*args, **kwargs)
     
