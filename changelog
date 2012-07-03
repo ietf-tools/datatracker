@@ -6,14 +6,58 @@ ietfdb (4.30)
   * Merged community tracking branch from esanchez@yaco.es, 
     r3175-3679,3713-3830.
 
+  Some additional fixes and smaller upgrades have also been included, as
+  follows:
+
+  From esanchez@yaco.es:
+
+  * Patch to add a new IETF liaison-sending entity "IESG and IAB".
+
+  From olau@iola.dk:
+
+  * Small patch to avoid constant 500 traceback when someone tries to push an
+    invalid cookie.
+
   From henrik@levkowetz.com:
+
+  * Fix a bug which made the community tracking code crash when search 
+    results would show an old RFC without an associated draft.
+
+  * Tweak the menubar listing of community tracking to show when login is 
+    needed, some other text tweaks, and fitting the I-D tracking links under 
+    Drafts and RFCs where they seem to belon.g
+
+  * Minor cleanup of test_runner.py. Added guards against settings which 
+    can make tests inexplicably fail.  Updated check to avoid running tests on 
+    production server.
+
+  * Remove old non-functional "management issues" link from IESG agenda 
+    section 6 title.
+
+  * Add a way to reach charter urls given a wg name rather than the charter 
+    document name.
+
+  * Add some help for chairs which fuss about not being able to clearly see 
+    that they need to be logged in in order to handle approvals.
+
+  * Behave slightly more gracefully if a submission has already been moved 
+    into place, and we are asked to do it again.
+
+  * Disable the reference-to/referenced-by rules of the community app;
+    they will only produce hits after we populate the document relationship
+    table with reference information.
+
+  * Simplify "document by WG" display name code.
+
+  * Correct typo in community draft tracking subscription confirmation 
+    email.
 
   * Changed the group link on the personal doc list page to use the group 
     acronym instead of whole name, and made the acronym a link to the wg 
     documents page.
 
-  * Tweaked the display of explicitly added documents (saying 'explicitly' 
-    rather than 'manually', and including the active/expired/rfc state of the 
+  * Tweaked the display of explicitly added documents (saying "explicitly" 
+    rather than "manually", and including the active/expired/rfc state of the 
     document.
 
   * When adding a rule for I-Ds, only apply the selection to active I-Ds,
@@ -30,9 +74,9 @@ ietfdb (4.30)
     tracing lists based on word search is needed, another implementation must 
     be found.
 
-  * Minor cleanup.
+  * Other minor cleanup.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  27 Jun 2012 12:57:11 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Jul 2012 17:01:08 +0200
 
 ietfdb (4.21)
 
