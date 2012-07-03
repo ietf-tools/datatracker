@@ -70,7 +70,6 @@ class GroupMilestoneInfo(models.Model):
     desc = models.CharField(verbose_name="Description", max_length=500)
     due = models.DateField()
     resolved = models.CharField(max_length=50, blank=True, help_text="Explanation of why milestone is resolved (usually \"Done\"), or empty if still due")
-    time = models.DateTimeField(auto_now=True)
 
     docs = models.ManyToManyField('doc.Document', blank=True)
 
@@ -81,9 +80,10 @@ class GroupMilestoneInfo(models.Model):
 	ordering = ['due', 'id']
 
 class GroupMilestone(GroupMilestoneInfo):
-    pass
+    time = models.DateTimeField(auto_now=True)
 
 class GroupMilestoneHistory(GroupMilestoneInfo):
+    time = models.DateTimeField()
     milestone = models.ForeignKey(GroupMilestone, related_name="history_set")
 
 class GroupStateTransitions(models.Model):
