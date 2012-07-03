@@ -343,17 +343,17 @@ def reset_charter_milestones(request, acronym):
 
         # add current
         for m in current_milestones.filter(id__in=milestone_ids):
-            m = GroupMilestone.objects.create(group=m.group,
-                                              state_id="charter",
-                                              desc=m.desc,
-                                              due=m.due,
-                                              resolved=m.resolved,
-                                              )
-            m.docs = m.docs.all()
+            new = GroupMilestone.objects.create(group=m.group,
+                                                state_id="charter",
+                                                desc=m.desc,
+                                                due=m.due,
+                                                resolved=m.resolved,
+                                                )
+            new.docs = m.docs.all()
 
             DocEvent.objects.create(type="changed_charter_milestone",
                                     doc=group.charter,
-                                    desc='Added milestone "%s", due %s, from current group milestones' % (m.desc, m.due.strftime("%Y-%m-%d")),
+                                    desc='Added milestone "%s", due %s, from current group milestones' % (new.desc, new.due.strftime("%Y-%m-%d")),
                                     by=login,
                                     )
 
