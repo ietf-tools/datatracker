@@ -544,55 +544,46 @@ def _get_versions(draft, include_replaced=True):
     return ov
 
 def get_ballot(name):
-    r = re.compile("^rfc([1-9][0-9]*)$")
-    m = r.match(name)
-
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from ietf.doc.models import DocAlias
-        alias = get_object_or_404(DocAlias, name=name)
-        d = get_object_or_404(InternetDraft, name=alias.document.name)
-        try:
-            if not d.ballot.ballot_issued:
-                raise Http404
-        except BallotInfo.DoesNotExist:
-            raise Http404
-
-        bw = BallotWrapper(d)
-        if m:
-            d.viewing_as_rfc = True
-            dw = RfcWrapper(d)
-        else:
-            dw = IdWrapper(d)
-
-        return (bw, dw)
-        
-    if m:
-        rfc_number = int(m.group(1))
-        rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
-        id = get_object_or_404(IDInternal, rfc_flag=1, draft=rfc_number)
-        doc = RfcWrapper(rfci, idinternal=id)
-    else:
-        id = get_object_or_404(IDInternal, rfc_flag=0, draft__filename=name)
-        doc = IdWrapper(id) 
+    from ietf.doc.models import DocAlias
+    alias = get_object_or_404(DocAlias, name=name)
+    d = alias.document
+    id = get_object_or_404(InternetDraft, name=d.name)
     try:
         if not id.ballot.ballot_issued:
             raise Http404
     except BallotInfo.DoesNotExist:
         raise Http404
 
-    ballot = BallotWrapper(id)
-    return ballot, doc
+    try:
+        b = d.latest_event(BallotDocEvent, type="created_ballot")
+    except BallotDocEvent.DoesNotExist:
+        raise Http404
+
+    bw = BallotWrapper(id)               # XXX Fixme: Eliminate this as we go forward
+
+    # Python caches ~100 regex'es -- explicitly compiling it inside a method
+    # (where you then throw away the compiled version!) doesn't make sense at
+    # all.
+    if re.search("^rfc([1-9][0-9]*)$", name):
+        id.viewing_as_rfc = True
+        dw = RfcWrapper(id)
+    else:
+        dw = IdWrapper(id)
+    # XXX Fixme: Eliminate 'dw' as we go forward
+
+
+    return (bw, dw, b, d)
 
 def ballot_html(request, name):
-    ballot, doc = get_ballot(name)
-    return render_to_response('idrfc/doc_ballot.html', {'ballot':ballot, 'doc':doc}, context_instance=RequestContext(request))
+    bw, dw, ballot, doc = get_ballot(name)
+    return render_to_response('idrfc/doc_ballot.html', {'bw':bw, 'dw':dw, 'ballot':ballot, 'doc':doc}, context_instance=RequestContext(request))
 
 def ballot_tsv(request, name):
-    ballot, doc = get_ballot(name)
+    ballot, doc, b, d = get_ballot(name)
     return HttpResponse(render_to_string('idrfc/ballot.tsv', {'ballot':ballot}, RequestContext(request)), content_type="text/plain")
 
 def ballot_json(request, name):
-    ballot, doc = get_ballot(name)
+    ballot, doc, b, d = get_ballot(name)
     response = HttpResponse(mimetype='text/plain')
     response.write(json.dumps(ballot.dict(), indent=2))
     return response
