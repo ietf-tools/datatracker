@@ -44,8 +44,8 @@ class RegistrationForm(forms.Form):
         email = self.cleaned_data.get('email', '')
         if not email:
             return email
-#         if User.objects.filter(username=email).count():
-#             raise forms.ValidationError(_('Email already in use'))
+        if User.objects.filter(username=email).count():
+            raise forms.ValidationError(_('An account with the email address you provided already exists.'))
         return email
 
 
@@ -80,7 +80,7 @@ class PasswordForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.username = kwargs.pop('username')
-        self.update_user = kwargs.pop('update_user', False)
+        self.update_user = User.objects.filter(username=self.username).count() > 0
         super(PasswordForm, self).__init__(*args, **kwargs)
 
     def clean_password2(self):

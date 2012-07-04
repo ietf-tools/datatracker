@@ -114,8 +114,8 @@ def create_account(request):
                               context_instance=RequestContext(request))
 
 
-def confirm_account(request, username, date, realm, registration_hash):
-    valid = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, date, username, realm)).hexdigest() == registration_hash
+def process_confirmation(request, username, date, realm, hash):
+    valid = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, date, username, realm)).hexdigest() == hash
     if not valid:
         raise Http404
     request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
@@ -125,11 +125,14 @@ def confirm_account(request, username, date, realm, registration_hash):
     if request.method == 'POST':
         form = PasswordForm(request.POST, username=username)
         if form.is_valid():
-            form.save()
-            # TODO: Add the user in the htdigest file
+            form.save()                 # Also updates the httpd password file
             success = True
     else:
         form = PasswordForm(username=username)
+    return form, username, success
+
+def confirm_account(request, username, date, realm, hash):
+    form, username, success = process_confirmation(request, username, date, realm, hash)
     return render_to_response('registration/confirm.html',
                               {'form': form, 'email': username, 'success': success},
                               context_instance=RequestContext(request))
@@ -151,19 +154,8 @@ def password_reset_view(request):
                               context_instance=RequestContext(request))
 
 
-def confirm_password_reset(request, username, date, realm, reset_hash):
-    valid = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, date, username, realm)).hexdigest() == reset_hash
-    if not valid:
-        raise Http404
-    success = False
-    if request.method == 'POST':
-        form = PasswordForm(request.POST, update_user=True, username=username)
-        if form.is_valid():
-            form.save()
-            # TODO: Update the user in the htdigest file
-            success = True
-    else:
-        form = PasswordForm(username=username)
+def confirm_password_reset(request, username, date, realm, hash):
+    form, username, success = process_confirmation(request, username, date, realm, hash)
     return render_to_response('registration/change_password.html',
                               {'form': form,
                                'success': success,
