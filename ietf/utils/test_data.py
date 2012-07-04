@@ -58,6 +58,7 @@ def make_test_data():
         state_id="active",
         type_id="wg",
         parent=area,
+        list_email="mars-wg@ietf.org",
         )
     charter = Document.objects.create(
         name="charter-ietf-" + group.acronym,
@@ -80,6 +81,7 @@ def make_test_data():
         state_id="proposed",
         type_id="wg",
         parent=area,
+        list_email="ames-wg@ietf.org",
         )
     charter = Document.objects.create(
         name="charter-ietf-" + group.acronym,
