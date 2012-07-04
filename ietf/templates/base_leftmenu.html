@@ -87,9 +87,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endif %}
 {% get_user_managed_lists user as community_lists %}
 {% if community_lists %}
-   <li><a href="{{ community_lists.personal.get_manage_url }}">{{ community_lists.personal.short_name }}</a>&nbsp;
+   <li><a href="{{ community_lists.personal.get_manage_url }}">My tracked docs</a>&nbsp;</li>
    {% for cl in community_lists.group %}
-   <li><a href="{{ cl.get_manage_url }}">{{ cl.short_name }}</a>
+   <li><a href="{{ cl.get_manage_url }}">WG {{ cl.short_name }} docs</a></li>
    {% endfor %}
 {% else %}
    <li><a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in to track drafts</a></li>

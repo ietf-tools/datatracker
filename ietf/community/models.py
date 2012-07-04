@@ -41,9 +41,9 @@ class CommunityList(models.Model):
 
     def short_name(self):
         if self.user:
-            return 'My tracked I-Ds'
+            return 'mine'
         else:
-            return '%s tracked I-Ds' % self.group.acronym
+            return '%s' % self.group.acronym
 
     def long_name(self):
         if self.user:
