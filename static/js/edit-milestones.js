@@ -10,7 +10,7 @@ jQuery(function () {
 
     function setSubmitButtonState() {
         var action, label;
-        if (jQuery("#milestones-form input[name$=desc]:visible").length > 0)
+        if (jQuery("#milestones-form input[name$=due]:visible").length > 0)
             action = "review";
         else
             action = "save";
