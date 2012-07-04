@@ -41,13 +41,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if doc.resurrect_requested_by %}(resurrect requested by {{ doc.resurrect_requested_by }}){% endif %} 
 {% endifequal %} </td>
 
-<tr><td>Document Stream:</td><td> {{ stream_info.stream.name|default:"No stream defined" }}</td></tr> 
+<tr><td>Document Stream:</td><td> 
+{% with user|in_group:"Area_Director,Secretariat" as add_link %} 
+{% if add_link %}<a class="editlink" href="{% url doc_change_stream name=doc.draft_name %}">{% endif %}
+{% if stream_info.stream %}{{ stream_info.stream.name|default:"No stream defined" }}{% else %}No stream defined{% endif %}
+{% if add_link %}</a>{% endif %}
+{% endwith %}
+</td></tr> 
 
 <tr><td>Last updated:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
 
 {% with doc.replaces as r %}{% if r %}<tr><td>Replaces:</td><td> {% filter urlize_ietf_docs %}{{ r|join:", "}}{% endfilter %}</td></tr>{% endif %}{% endwith %}
 
-<tr><td>Intended RFC status:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.intended_maturity_level|default:"-"  }}{% else %}-{%endif%}</td></tr> 
+{% with info.conflict_reviews as r %}{% if r %}<tr><td>IETF Conflict Review:</td><td> {% filter urlize_ietf_docs %}{{ r|join:","}}{% endfilter %}</td></tr>{% endif %} {% endwith %}
+
+<tr><td>Intended RFC status:</td><td>
+{% with user|in_group:"Area_Director,Secretariat" as add_link %}
+{% if add_link %}<a class="editlink" href="{% url doc_change_intended_status name=doc.draft_name %}">{% endif %}
+{{ doc.underlying_document.intended_std_level|default:"-"  }}
+{% if add_link %}</a>{% endif %}
+{% endwith %}
+</td></tr> 
 
 {% ifequal doc.draft_status "Active" %}
 <tr><td>Other versions:</td><td>
@@ -63,7 +77,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <a href="http://tools.ietf.org/html/{{doc.draft_name_and_revision}}">html</a>
 </td></tr>
 {% endifequal %}
-
 
 <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
@@ -94,7 +107,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <tr><td><a href="/idtracker/help/state/">IESG State</>:</td><td>
 {% if doc.in_ietf_process and user|in_group:"Area_Director,Secretariat" %}
-<a href="{% url doc_change_state name=doc.draft_name %}"> {{ doc.friendly_state|safe }} </a>
+<a class="editlink" href="{% url doc_change_state name=doc.draft_name %}"> {{ doc.friendly_state|safe }} </a>
 {% else %}
  {{ doc.friendly_state|safe }} 
 {% endif %}
@@ -102,14 +115,36 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% ifequal doc.draft_status "Expired" %}
 {% if doc.resurrect_requested_by %}(resurrect requested by {{ doc.resurrect_requested_by }}){% endif %}
 {% endifequal %}
-{% if doc.in_ietf_process %}{% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}{% if doc.ietf_process.has_active_iesg_ballot %}<br/><i>({{ doc.ietf_process.iesg_ballot_needed }})</i>{%endif%}{%endif%}
+{% with user|in_group:"Area_Director,Secretariat" as add_link %}
+{% if add_link %}<a class="editlink" href="{% url doc_change_telechat_date name=doc.draft_name %}">{% endif %}
+{% if doc.underlying_document.telechat_date %}<br/>On agenda of {{ doc.underlying_document.telechat_date }} IESG telechat {% if doc.underlying_document.returning_item %} (returning item){% endif %}{% else %}{%if add_link %}<br/>Not on an upcoming telechat agenda{% endif %}{% endif %}
+{% if add_link %}</a>{% endif %}
+{% if doc.ietf_process.has_active_iesg_ballot %}<br/><i>({{ doc.ietf_process.iesg_ballot_needed }})</i>{%endif%}
+{% endwith %}
 </td></tr>
 {# <tr><td>Submission:</td><td>{{ doc.submission|safe }}</td></tr> #}
-<tr><td>Responsible AD:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.ad_name|default:"-"|escape }}{%else%}-{%endif%}</td></tr>
-{% if doc.in_ietf_process and doc.ietf_process.iesg_note %}<tr><td>IESG Note:</td><td>{{ doc.ietf_process.iesg_note|format_textarea|safe }}</td></tr>{% endif %}
-{% if user|in_group:"Area_Director,Secretariat" %}
-{% if doc.in_ietf_process %}<tr><td>Send notices to:</td><td>{{ doc.ietf_process.state_change_notice_to}}</td></tr>{% endif %}
-{% endif %}{# if user|in_group:... #}
+<tr><td>Responsible AD:</td><td>
+{% with user|in_group:"Area_Director,Secretariat" as add_link %}
+{% if add_link %}<a class="editlink" href="{% url doc_change_ad name=doc.draft_name %}">{% endif %}
+{% if doc.in_ietf_process %}{{ doc.ietf_process.ad_name|default:"-"|escape }}{%else%}-{%endif%}
+{% if add_link %}</a>{% endif %}
+{% endwith %}
+</td></tr>
+{% if doc.in_ietf_process and doc.ietf_process.iesg_note %}<tr><td>
+IESG Note:</td><td>
+{% with user|in_group:"Area_Director,Secretariat" as add_link %}
+{% if add_link %}<a class="editlink" href="{% url doc_change_iesg_note name=doc.draft_name %}">{% endif %}
+{{ doc.ietf_process.iesg_note|format_textarea|safe }}
+{% if add_link %}</a>{% endif %}
+{% endwith %}
+</td></tr>{% endif %}
+<tr><td>Send notices to:</td><td>
+{% with user|in_group:"Area_Director,Secretariat" as add_link %} 
+{% if add_link %}<a class="editlink" href="{% url doc_change_notify name=doc.draft_name %}">{% endif %}
+{{ doc.underlying_document.notify|default:"No addresses provided"}}
+{% if add_link %}</a>{% endif %}
+{% endwith %}
+</td></tr>
 
 <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Edit IESG note for {{ doc.name }}{% endblock %}
+
+{% block morecss %}
+form.edit-iesg-note #id_note {
+  width: 600px;
+  height: 150px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Edit IESG note for {{ doc.name }}</h1>
+
+<form class="edit-iesg-note" action="" method="POST">
+  <table>
+    {% for field in form.visible_fields %}
+    <tr>
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      {{ field.errors }}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td></td>
+      <td class="actions">
+        <a href="{{ doc.get_absolute_url }}">Back</a>
+        <input type="submit" value="Save"/>
+      </td>
+    </tr>
+  </table>
+</form>
+{% endblock %}

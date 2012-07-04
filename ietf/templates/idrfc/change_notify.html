@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block morecss %}
+form.edit-info #id_notify {
+  width: 600px;
+}
+.warning {
+  font-weight: bold;
+  color: #a00;
+}
+{% endblock %}
+
+{% block title %}
+Edit notification addresses for {{ doc.canonical_name }}-{{ doc.rev }}
+{% endblock %}
+
+{% block content %}
+<h1>Edit notification addresses for {{ doc.canonical_name }}-{{ doc.rev }}</h1>
+
+<form class="edit-info" action="" enctype="multipart/form-data" method="POST">
+  <table>
+    {% for field in form.visible_fields %}
+    <tr>
+      <th>{{ field.label_tag }}:</th>
+      <td>
+        {{ field }}
+	{% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td></td>
+      <td class="actions">
+        <a href="{% url doc_view name=doc.canonical_name %}">Back</a>
+        <input type="submit" name="save_addresses" value="Save" />
+        <input type="submit" name="regenerate_addresses" value="Regenerate Address List" />
+      </td>
+    </tr>
+  </table>
+</form>
+
+{% endblock %}

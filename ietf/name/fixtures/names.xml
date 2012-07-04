@@ -19,7 +19,7 @@
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">3</field>
-        <field type="BooleanField" name="blocking">False</field>
+        <field type="BooleanField" name="blocking">True</field>
     </object>
     <object pk="block" model="name.ballotpositionname">
         <field type="CharField" name="name">Block</field>
@@ -81,6 +81,12 @@
     </object>
     <object pk="replaces" model="name.docrelationshipname">
         <field type="CharField" name="name">Replaces</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="conflrev" model="name.docrelationshipname">
+        <field type="CharField" name="name">conflict reviews</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
@@ -303,6 +309,18 @@
     </object>
     <object pk="liai-att" model="name.doctypename">
         <field type="CharField" name="name">Liaison Attachment</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="maturity" model="name.doctypename">
+        <field type="CharField" name="name">Maturity Change</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="conflrev" model="name.doctypename">
+        <field type="CharField" name="name">Conflict Review</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
@@ -628,7 +646,7 @@
     <object pk="ds" model="name.stdlevelname">
         <field type="CharField" name="name">Draft Standard</field>
         <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
+        <field type="BooleanField" name="used">False</field>
         <field type="IntegerField" name="order">0</field>
     </object>
     <object pk="ps" model="name.stdlevelname">
@@ -766,6 +784,9 @@
     <object pk="charter" model="doc.statetype">
         <field type="CharField" name="label">State</field>
     </object>
+    <object pk="conflrev" model="doc.statetype">
+        <field type="CharField" name="label">Conflict Review State</field>
+    </object>
     <object pk="81" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">agenda</field>
         <field type="SlugField" name="slug">active</field>
@@ -837,6 +858,96 @@
         <field type="TextField" name="desc">The charter is approved by the IESG.</field>
         <field type="IntegerField" name="order">0</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="89" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">needshep</field>
+        <field type="CharField" name="name">Needs Shepherd</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">A conflict review has been requested, but a shepherding AD has not yet been assigned</field>
+        <field type="IntegerField" name="order">1</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="90"></object><object pk="97"></object><object pk="98"></object></field>
+    </object>
+    <object pk="90" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">adrev</field>
+        <field type="CharField" name="name">AD Review</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">The sponsoring AD is reviewing the document and preparing a proposed response</field>
+        <field type="IntegerField" name="order">2</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="91"></object><object pk="97"></object><object pk="98"></object></field>
+    </object>
+    <object pk="91" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">iesgeval</field>
+        <field type="CharField" name="name">IESG Evaluation</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">The IESG is considering the proposed conflict review response</field>
+        <field type="IntegerField" name="order">3</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="92"></object><object pk="93"></object><object pk="94"></object><object pk="97"></object><object pk="98"></object></field>
+    </object>
+    <object pk="92" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">defer</field>
+        <field type="CharField" name="name">IESG Evaluation - Defer</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">The evaluation of the proposed conflict review response has been deferred to the next telechat</field>
+        <field type="IntegerField" name="order">4</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="91"></object><object pk="93"></object><object pk="94"></object><object pk="97"></object><object pk="98"></object></field>
+    </object>
+    <object pk="93" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">appr-reqnopub-pend</field>
+        <field type="CharField" name="name">Approved Request to Not Publish - announcement to be sent</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">The IESG has approved the conflict review response (a request to not publish), but the secretariat has not yet sent the response</field>
+        <field type="IntegerField" name="order">5</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="95"></object><object pk="97"></object></field>
+    </object>
+    <object pk="94" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">appr-noprob-pend</field>
+        <field type="CharField" name="name">Approved No Problem - announcement to be sent</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">The IESG has approved the conflict review response, but the secretariat has not yet sent the response</field>
+        <field type="IntegerField" name="order">6</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="96"></object><object pk="97"></object></field>
+    </object>
+    <object pk="95" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">appr-reqnopub-sent</field>
+        <field type="CharField" name="name">Approved Request to Not Publish - announcement sent</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">The secretariat has delivered the IESG's approved conflict review response (a request to not publish) to the requester</field>
+        <field type="IntegerField" name="order">7</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="96" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">appr-noprob-sent</field>
+        <field type="CharField" name="name">Approved No Problem - announcement sent</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">The secretariat has delivered the IESG's approved conflict review response to the requester</field>
+        <field type="IntegerField" name="order">8</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="97" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">withdraw</field>
+        <field type="CharField" name="name">Withdrawn</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">The request for conflict review was withdrawn</field>
+        <field type="IntegerField" name="order">9</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="89"></object></field>
+    </object>
+    <object pk="98" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">dead</field>
+        <field type="CharField" name="name">Dead</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">The conflict review has been abandoned</field>
+        <field type="IntegerField" name="order">10</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"><object pk="89"></object></field>
     </object>
     <object pk="1" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft</field>
@@ -1624,31 +1735,49 @@
         <field type="IntegerField" name="order">2</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
+    <object pk="5" model="doc.ballottype">
+        <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">conflrev</field>
+        <field type="SlugField" name="slug">conflrev</field>
+        <field type="CharField" name="name">Approve</field>
+        <field type="TextField" name="question">Is this the correct conflict review response?</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="discuss"></object><object pk="abstain"></object><object pk="recuse"></object><object pk="norecord"></object></field>
+    </object>
     <object pk="1" model="doc.ballottype">
         <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">charter</field>
         <field type="SlugField" name="slug">r-extrev</field>
         <field type="CharField" name="name">Ready for external review</field>
         <field type="TextField" name="question">Is this charter ready for external review?</field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">1</field>
         <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="block"></object><object pk="abstain"></object><object pk="norecord"></object></field>
     </object>
-    <object pk="2" model="doc.ballottype">
-        <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">charter</field>
-        <field type="SlugField" name="slug">approve</field>
-        <field type="CharField" name="name">Approve</field>
-        <field type="TextField" name="question">Do we approve of this charter?</field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-        <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="block"></object><object pk="abstain"></object><object pk="norecord"></object></field>
-    </object>
-    <object pk="3" model="doc.ballottype">
+    <object pk="4" model="doc.ballottype">
         <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">draft</field>
         <field type="SlugField" name="slug">approve</field>
         <field type="CharField" name="name">Approve</field>
         <field type="TextField" name="question"></field>
         <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
+        <field type="IntegerField" name="order">1</field>
         <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="discuss"></object><object pk="abstain"></object><object pk="recuse"></object><object pk="norecord"></object></field>
+    </object>
+    <object pk="2" model="doc.ballottype">
+        <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">charter</field>
+        <field type="SlugField" name="slug">r-wo-ext</field>
+        <field type="CharField" name="name">Ready w/o external review</field>
+        <field type="TextField" name="question">Is this charter ready for external review? Is this charter ready for approval without external review?</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">2</field>
+        <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="block"></object><object pk="abstain"></object><object pk="norecord"></object></field>
+    </object>
+    <object pk="3" model="doc.ballottype">
+        <field to="name.doctypename" name="doc_type" rel="ManyToOneRel">charter</field>
+        <field type="SlugField" name="slug">approve</field>
+        <field type="CharField" name="name">Approve</field>
+        <field type="TextField" name="question">Do we approve of this charter?</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">3</field>
+        <field to="name.ballotpositionname" name="positions" rel="ManyToManyRel"><object pk="yes"></object><object pk="noobj"></object><object pk="block"></object><object pk="abstain"></object><object pk="norecord"></object></field>
     </object>
 </django-objects>

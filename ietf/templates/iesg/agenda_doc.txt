@@ -38,12 +38,12 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% if title2_first %}{% if title1_first %}{{ title1 }}{% endif %}
 {{ title2 }}
 {% endif %}{{ title3 }}
-{% for doc in section_docs %}
-  o {{doc.obj.document.filename}}{% if not doc.obj.rfc_flag %}-{{doc.obj.document.revision}}{% endif %}
-    {% filter wordwrap:"68"|indent|indent %}{{ doc.obj.document.title }} ({{ doc.obj.document.intended_status }}){% endfilter %}
+{% for doc in section_docs %}{% with doc.obj.rfc_number as rfc_number %}
+  o {{doc.obj.canonical_name}}{% if not rfc_number %}-{{doc.obj.rev}}{% endif %}{% endwith %}
+    {% filter wordwrap:"68"|indent|indent %}{{ doc.obj.title }} ({{ doc.obj.intended_std_level }}){% endfilter %}
 {% if doc.obj.note %}{# note: note is not escaped #}    {% filter wordwrap:"68"|indent|indent %}Note: {{ doc.obj.note|striptags }}{% endfilter %}
-{% endif %}    Token: {{ doc.obj.token_name }}
-{% if doc.obj.ballot.defer %}    Was deferred by {{doc.obj.ballot.defer_by}} on {{doc.obj.ballot.defer_date}}{% endif %}
+{% endif %}    Token: {{ doc.obj.ad }}
+{% with doc.obj.active_defer_event as defer %}{% if defer %}    Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}{% endif %}{% endwith %}
 {% empty %}
   NONE
 {% endfor %}

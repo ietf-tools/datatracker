@@ -26,6 +26,11 @@ class DocAuthorInline(admin.TabularInline):
     raw_id_fields = ['author', ]    
     extra = 1
 
+class RelatedDocumentInline(admin.TabularInline):
+    model = RelatedDocument
+    raw_id_fields = ['target']
+    extra = 1
+
 # document form for managing states in a less confusing way
 
 class StatesWidget(forms.SelectMultiple):
@@ -89,7 +94,7 @@ class DocumentAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['type']
     raw_id_fields = ['authors', 'related', 'group', 'shepherd', 'ad']
-    inlines = [DocAliasInline, DocAuthorInline, ]
+    inlines = [DocAliasInline, DocAuthorInline, RelatedDocumentInline, ]
     form = DocumentForm
 
     def state(self, instance):
@@ -113,6 +118,11 @@ class DocAliasAdmin(admin.ModelAdmin):
     search_fields = ['name', 'document__name']
     raw_id_fields = ['document']
 admin.site.register(DocAlias, DocAliasAdmin)
+
+class RelatedDocumentAdmin(admin.ModelAdmin):
+    search_fields = ['source__name','target__name']
+    raw_id_fields = ['source','target']
+admin.site.register(RelatedDocument,RelatedDocumentAdmin)
 
 class BallotTypeAdmin(admin.ModelAdmin):
     list_display = ["slug", "doc_type", "name", "question"]

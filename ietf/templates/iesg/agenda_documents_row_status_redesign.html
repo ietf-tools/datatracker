@@ -1,0 +1,6 @@
+{% extends "doc/status_columns.html" %}
+{% block extra_status %}
+{% if doc.type.slug == 'draft' %}
+<br/>Intended status: {{doc.intended_std_level}}
+{% endif %}
+{% endblock %}

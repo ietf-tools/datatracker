@@ -35,6 +35,8 @@ from ietf.name.models import BallotPositionName
 from ietf.message.utils import infer_message
 from ietf.person.models import Person
 
+from ietf.doc.utils import log_state_changed
+
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
                   ("discuss", "Discuss"),
@@ -65,155 +67,11 @@ def get_ballot_info(ballot, area_director):
     return (pos, discuss, comment)
 
 class EditPositionForm(forms.Form):
-    position = forms.ChoiceField(choices=BALLOT_CHOICES, widget=forms.RadioSelect, required=False)
-    discuss_text = forms.CharField(required=False, widget=forms.Textarea)
-    comment_text = forms.CharField(required=False, widget=forms.Textarea)
-    return_to_url = forms.CharField(required=False, widget=forms.HiddenInput)
-    def clean_discuss_text(self):
-       entered_discuss = self.cleaned_data["discuss_text"]
-       entered_pos = self.cleaned_data["position"]
-       if entered_pos == "discuss" and not entered_discuss:
-         print "Raising discuss ",entered_pos," ",entered_discuss
-         raise forms.ValidationError("You must enter a non-empty discuss")
-       return entered_discuss
+    pass
 
 @group_required('Area_Director','Secretariat')
 def edit_position(request, name):
-    """Vote and edit discuss and comment on Internet Draft as Area Director."""
-    doc = get_object_or_404(InternetDraft, filename=name)
-    if not doc.idinternal:
-        raise Http404()
-
-    ad = login = IESGLogin.objects.get(login_name=request.user.username)
-
-    if 'HTTP_REFERER' in request.META:
-      return_to_url = request.META['HTTP_REFERER']
-    else:
-      return_to_url = doc.idinternal.get_absolute_url()
-
-
-    # if we're in the Secretariat, we can select an AD to act as stand-in for
-    if not in_group(request.user, "Area_Director"):
-        ad_username = request.GET.get('ad')
-        if not ad_username:
-            raise Http404()
-        ad = get_object_or_404(IESGLogin, login_name=ad_username)
-
-    pos, discuss, comment = get_ballot_info(doc.idinternal.ballot, ad)
-
-    if request.method == 'POST':
-        form = EditPositionForm(request.POST)
-        if form.is_valid():
-             # save the vote
-            clean = form.cleaned_data
-
-            if clean['return_to_url']:
-              return_to_url = clean['return_to_url']
-
-            vote = clean['position']
-            if pos:
-                # mark discuss as cleared (quirk from old system)
-                if pos.discuss:
-                    pos.discuss = -1
-            else:
-                pos = Position(ballot=doc.idinternal.ballot, ad=ad)
-                pos.discuss = 0
-                
-            old_vote = position_to_ballot_choice(pos)
-            
-            pos.yes = pos.noobj = pos.abstain = pos.recuse = 0
-            if vote:
-                setattr(pos, vote, 1)
-
-            if pos.id:
-                if vote:
-                    pos.save()
-                else:
-                    pos.delete()
-                if vote != old_vote:
-                    add_document_comment(request, doc, "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad, position_label(vote), position_label(old_vote)))
-            elif vote:
-                pos.save()
-                add_document_comment(request, doc, "[Ballot Position Update] New position, %s, has been recorded" % position_label(vote))
-
-            # save discuss
-            if (discuss and clean['discuss_text'] != discuss.text) or (clean['discuss_text'] and not discuss):
-                if not discuss:
-                    discuss = IESGDiscuss(ballot=doc.idinternal.ballot, ad=ad)
-
-                discuss.text = clean['discuss_text']
-                discuss.date = date.today()
-                discuss.revision = doc.revision_display()
-                discuss.active = True
-                discuss.save()
-
-                if discuss.text:
-                    add_document_comment(request, doc, discuss.text,
-                                         ballot=DocumentComment.BALLOT_DISCUSS)
-
-            if pos.discuss < 1:
-                IESGDiscuss.objects.filter(ballot=doc.idinternal.ballot, ad=pos.ad).update(active=False)
-
-            # similar for comment (could share code with discuss, but
-            # it's maybe better to coalesce them in the model instead
-            # than doing a clever hack here)
-            if (comment and clean['comment_text'] != comment.text) or (clean['comment_text'] and not comment):
-                if not comment:
-                    comment = IESGComment(ballot=doc.idinternal.ballot, ad=ad)
-
-                comment.text = clean['comment_text']
-                comment.date = date.today()
-                comment.revision = doc.revision_display()
-                comment.active = True
-                comment.save()
-
-                if comment.text:
-                    add_document_comment(request, doc, comment.text,
-                                         ballot=DocumentComment.BALLOT_COMMENT)
-            
-            doc.idinternal.event_date = date.today()
-            doc.idinternal.save()
-
-            if request.POST.get("send_mail"):
-                qstr = "?return_to_url=%s" % return_to_url
-                if request.GET.get('ad'):
-                    qstr += "&ad=%s" % request.GET.get('ad')
-                return HttpResponseRedirect(urlreverse("doc_send_ballot_comment", kwargs=dict(name=doc.filename)) + qstr)
-            else:
-              if request.POST.get("Defer"):
-                  return HttpResponseRedirect(urlreverse("doc_defer_ballot", kwargs=dict(name=doc)))
-              else:
-                  if request.POST.get("Undefer"):
-                      return HttpResponseRedirect(urlreverse("doc_undefer_ballot", kwargs=dict(name=doc)))
-                  else:
-                      return HttpResponseRedirect(return_to_url)
-    else:
-        initial = {}
-        if pos:
-            initial['position'] = position_to_ballot_choice(pos)
-
-        if discuss:
-            initial['discuss_text'] = discuss.text
-
-        if comment:
-            initial['comment_text'] = comment.text
-
-        if return_to_url:
-            initial['return_to_url'] = return_to_url
-            
-        form = EditPositionForm(initial=initial)
-  
-
-    return render_to_response('idrfc/edit_position.html',
-                              dict(doc=doc,
-                                   form=form,
-                                   discuss=discuss,
-                                   comment=comment,
-                                   ad=ad,
-                                   return_to_url=return_to_url,
-                                   ballot=BallotWrapper(doc.idinternal)
-                                   ),
-                              context_instance=RequestContext(request))
+    pass
 
 class EditPositionFormREDESIGN(forms.Form):
     position = forms.ModelChoiceField(queryset=BallotPositionName.objects.all(), widget=forms.RadioSelect, initial="norecord", required=True)
@@ -355,9 +213,7 @@ def edit_positionREDESIGN(request, name, ballot_id):
 
     blocking_positions = dict((p.pk, p.name) for p in form.fields["position"].queryset.all() if p.blocking)
 
-    ballot_deferred = None
-    if doc.get_state_slug("%s-iesg" % doc.type_id) == "defer":
-        ballot_deferred = doc.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
+    ballot_deferred = doc.active_defer_event()
 
     return render_to_response('idrfc/edit_positionREDESIGN.html',
                               dict(doc=doc,
@@ -366,6 +222,7 @@ def edit_positionREDESIGN(request, name, ballot_id):
                                    return_to_url=return_to_url,
                                    old_pos=old_pos,
                                    ballot_deferred=ballot_deferred,
+                                   ballot = ballot,
                                    show_discuss_text=old_pos and old_pos.pos_id=="discuss",
                                    blocking_positions=simplejson.dumps(blocking_positions),
                                    ),
@@ -547,43 +404,15 @@ def clear_ballot(request, name):
 
 @group_required('Area_Director','Secretariat')
 def defer_ballot(request, name):
-    """Signal post-pone of Internet Draft ballot, notifying relevant parties."""
-    doc = get_object_or_404(InternetDraft, filename=name)
-    if not doc.idinternal:
-        raise Http404()
-
-    login = IESGLogin.objects.get(login_name=request.user.username)
-    telechat_date = TelechatDates.objects.all()[0].date2
-
-    if request.method == 'POST':
-        doc.idinternal.ballot.defer = True
-        doc.idinternal.ballot.defer_by = login
-        doc.idinternal.ballot.defer_date = date.today()
-        doc.idinternal.ballot.save()
-        
-        doc.idinternal.change_state(IDState.objects.get(document_state_id=IDState.IESG_EVALUATION_DEFER), None)
-        doc.idinternal.agenda = True
-        doc.idinternal.telechat_date = telechat_date
-        doc.idinternal.event_date = date.today()
-        doc.idinternal.save()
-
-        email_ballot_deferred(request, doc, login, telechat_date)
-        
-        log_state_changed(request, doc, login)
-
-        return HttpResponseRedirect(doc.idinternal.get_absolute_url())
-  
-    return render_to_response('idrfc/defer_ballot.html',
-                              dict(doc=doc,
-                                   telechat_date=telechat_date,
-                                   back_url=doc.idinternal.get_absolute_url()),
-                              context_instance=RequestContext(request))
+    pass
 
 @group_required('Area_Director','Secretariat')
 def defer_ballotREDESIGN(request, name):
-    """Signal post-pone of Internet Draft ballot, notifying relevant parties."""
+    """Signal post-pone of ballot, notifying relevant parties."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.get_state("draft-iesg"):
+    if doc.type_id not in ('draft','conflrev'):
+        raise Http404()
+    if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
         raise Http404()
 
     login = request.user.get_profile()
@@ -592,15 +421,17 @@ def defer_ballotREDESIGN(request, name):
     if request.method == 'POST':
         save_document_in_history(doc)
 
-        prev = doc.get_state("draft-iesg")
-        doc.set_state(State.objects.get(type="draft-iesg", slug='defer'))
+        prev_state = doc.friendly_state()
+        if doc.type_id == 'draft':
+            doc.set_state(State.objects.get(type="draft-iesg", slug='defer'))
+            prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+            prev_tag = prev_tag[0] if prev_tag else None
+            if prev_tag:
+                doc.tags.remove(prev_tag)
+        elif doc.type_id == 'conflrev':
+            doc.set_state(State.objects.get(type='conflrev', slug='defer'))
 
-        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
-        prev_tag = prev_tag[0] if prev_tag else None
-        if prev_tag:
-            doc.tags.remove(prev_tag)
-
-        e = log_state_changed(request, doc, login, prev, prev_tag)
+        e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
         
         doc.time = e.time
         doc.save()
@@ -623,38 +454,15 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
 @group_required('Area_Director','Secretariat')
 def undefer_ballot(request, name):
-    """Delete deferral of Internet Draft ballot."""
-    doc = get_object_or_404(InternetDraft, filename=name)
-    if not doc.idinternal:
-        raise Http404()
-
-    login = IESGLogin.objects.get(login_name=request.user.username)
-    telechat_date = TelechatDates.objects.all()[0].date1
-    
-    if request.method == 'POST':
-        doc.idinternal.ballot.defer = False
-        doc.idinternal.ballot.save()
-        
-        doc.idinternal.change_state(IDState.objects.get(document_state_id=IDState.IESG_EVALUATION), None)
-        doc.idinternal.telechat_date = telechat_date
-        doc.idinternal.event_date = date.today()
-        doc.idinternal.save()
-
-        log_state_changed(request, doc, login)
-        
-        return HttpResponseRedirect(doc.idinternal.get_absolute_url())
-  
-    return render_to_response('idrfc/undefer_ballot.html',
-                              dict(doc=doc,
-                                   telechat_date=telechat_date,
-                                   back_url=doc.idinternal.get_absolute_url()),
-                              context_instance=RequestContext(request))
+    pass
 
 @group_required('Area_Director','Secretariat')
 def undefer_ballotREDESIGN(request, name):
-    """Delete deferral of Internet Draft ballot."""
+    """undo deferral of ballot ballot."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.get_state("draft-iesg"):
+    if doc.type_id not in ('draft','conflrev'):
+        raise Http404()
+    if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
         raise Http404()
 
     login = request.user.get_profile()
@@ -663,19 +471,22 @@ def undefer_ballotREDESIGN(request, name):
     if request.method == 'POST':
         save_document_in_history(doc)
 
-        prev = doc.get_state("draft-iesg")
-        doc.set_state(State.objects.get(type="draft-iesg", slug='iesg-eva'))
+        prev_state = doc.friendly_state()
+        if doc.type_id == 'draft':
+            doc.set_state(State.objects.get(type="draft-iesg", slug='iesg-eva'))
+            prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+            prev_tag = prev_tag[0] if prev_tag else None
+            if prev_tag:
+                doc.tags.remove(prev_tag)
+        elif doc.type_id == 'conflrev':
+            doc.set_state(State.objects.get(type='conflrev',slug='iesgeval'))
 
-        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
-        prev_tag = prev_tag[0] if prev_tag else None
-        if prev_tag:
-            doc.tags.remove(prev_tag)
-
-        e = log_state_changed(request, doc, login, prev, prev_tag)
+        e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
         
         doc.time = e.time
         doc.save()
 
+        update_telechat(request, doc, login, telechat_date)
         email_state_changed(request, doc, e.desc)
         
         return HttpResponseRedirect(doc.get_absolute_url())
