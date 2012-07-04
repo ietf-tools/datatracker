@@ -51,12 +51,30 @@ class StatusField(DisplayField):
     description = 'Status in the IETF process'
 
     def get_value(self, document, raw=False):
-        for i in ('draft', 'draft-stream-ietf', 'draft-stream-irtf', 'draft-stream-ise', 'draft-stream-iab', 'draft'):
-            state = document.get_state(i)
-            if state:
-                return state
-        return ''
-
+        draft_state = document.get_state('draft')
+        stream_state = document.get_state('draft-stream-%s' % (document.stream.slug)) if document.stream else None
+        iesg_state = document.get_state('draft-iesg')
+        rfceditor_state = document.get_state('draft-rfceditor')
+        if draft_state.slug == 'rfc':
+            state = draft_state.name
+        elif rfceditor_state:
+            state = "%s<br/>%s<br/>%s" % (stream_state.name, iesg_state.name, rfceditor_state.name)
+        elif iesg_state:
+            state = "%s<br/>%s" % (stream_state.name, iesg_state.name)
+        elif stream_state:
+            state = stream_state.name
+        else:
+            state = ""
+        #
+        if draft_state.slug == 'rfc':
+            tags = ""
+        else:
+            tags = [ tag.name for tag in document.tags.all() ]
+            if tags:
+                tags = '[%s]' % ",".join(tags)
+            else:
+                tags = ''
+        return '%s%s' % (state, tags)
 
 class WGField(DisplayField):
     codename = 'wg_rg'
