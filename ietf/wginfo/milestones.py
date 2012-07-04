@@ -280,7 +280,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
                 changes.append(change)
 
             if milestone_set == "current":
-                email_milestones_changed(request, group, u"\n\n".join(c + "." for c in changes))
+                email_milestones_changed(request, group, changes)
 
             if milestone_set == "charter":
                 return redirect('doc_view', name=group.charter.canonical_name())

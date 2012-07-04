@@ -462,7 +462,7 @@ class MilestoneTestCase(django.test.TestCase):
         self.assertEquals(GroupMilestone.objects.count(), milestones_before)
         self.assertEquals(m.due, m1.due)
 
-        # add
+        # edit
         mailbox_before = len(outbox)
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
@@ -483,8 +483,11 @@ class MilestoneTestCase(django.test.TestCase):
         self.assertEquals(m.resolved, "Done")
         self.assertEquals(set(m.docs.values_list("name", flat=True)), set(docs))
         self.assertTrue("Changed milestone" in m.milestonegroupevent_set.all()[0].desc)
-        self.assertEquals(len(outbox), mailbox_before + 1)
+        self.assertEquals(len(outbox), mailbox_before + 2)
+        self.assertTrue("Milestones changed" in outbox[-2]["Subject"])
+        self.assertTrue(group.ad.role_email("ad").address in str(outbox[-2]))
         self.assertTrue("Milestones changed" in outbox[-1]["Subject"])
+        self.assertTrue(group.list_email in str(outbox[-1]))
 
     def test_reset_charter_milestones(self):
         m1, m2, group = self.create_test_milestones()

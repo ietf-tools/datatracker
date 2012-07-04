@@ -1,6 +1,6 @@
 # generation of mails 
 
-import textwrap, datetime
+import textwrap, datetime, re
 
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
@@ -12,7 +12,17 @@ from ietf.utils.mail import send_mail, send_mail_text
 
 from ietf.group.models import *
 
-def email_milestones_changed(request, group, text):
+def email_milestones_changed(request, group, changes):
+    def wrap_up_email(to, text):
+        text = wrap(strip_tags(text), 70)
+        text += "\n\n"
+        text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + urlreverse("wg_charter", kwargs=dict(acronym=group.acronym)))
+
+        send_mail_text(request, to, None,
+                       u"Milestones changed for %s %s" % (group.acronym, group.type.name),
+                       text)
+
+    # first send to AD and chairs
     to = []
     if group.ad:
         to.append(group.ad.role_email("ad").formatted_email())
@@ -20,13 +30,15 @@ def email_milestones_changed(request, group, text):
     for r in group.role_set.filter(name="chair"):
         to.append(r.formatted_email())
 
-    text = wrap(strip_tags(text), 70)
-    text += "\n\n"
-    text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + urlreverse("wg_charter", kwargs=dict(acronym=group.acronym)))
+    if to:
+        wrap_up_email(to, u"\n\n".join(c + "." for c in changes))
 
-    send_mail_text(request, to, None,
-                   u"Milestones changed for %s %s" % (group.acronym, group.type.name),
-                   text)
+    # then send to WG
+    if group.list_email:
+        review_re = re.compile("Added .* for review, due")
+        to = [ group.list_email ]
+        wrap_up_email(to, u"\n\n".join(c + "." for c in changes if not review_re.match(c)))
+
 
 def email_milestone_review_reminder(group, grace_period=7):
     """Email reminders about milestones needing review to AD."""
