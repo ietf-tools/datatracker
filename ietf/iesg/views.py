@@ -54,7 +54,7 @@ from ietf.ietfauth.decorators import group_required, role_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
 from ietf.ipr.models import IprRfc, IprDraft, IprDetail
 from ietf.doc.models import Document, TelechatDocEvent
-from ietf.group.models import Group
+from ietf.group.models import Group, GroupMilestone
 
 def date_threshold():
     """Return the first day of the month that is 185 days ago."""
@@ -509,9 +509,26 @@ def discusses(request):
     return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
 
 
-@group_required('Secretariat')
-def telechat_dates(request):
-    return HttpResponseRedirect("/admin/iesg/telechatdate/")
+@role_required('Area Director', 'Secretariat')
+def milestones_needing_review(request):
+    # collect milestones, grouped on AD and group
+    ads = {}
+    for m in GroupMilestone.objects.filter(state="review").exclude(group__state="concluded", group__ad=None).distinct().select_related("group", "group__ad"):
+        groups = ads.setdefault(m.group.ad, {})
+        milestones = groups.setdefault(m.group, [])
+        milestones.append(m)
+
+    ad_list = []
+    for ad, groups in ads.iteritems():
+        ad_list.append(ad)
+        ad.groups_needing_review = sorted(groups, key=lambda g: g.acronym)
+        for g, milestones in groups.iteritems():
+            g.milestones_needing_review = sorted(milestones, key=lambda m: m.due)
+
+    return render_to_response('iesg/milestones_needing_review.html',
+                              dict(ads=sorted(ad_list, key=lambda ad: ad.plain_name()),
+                                   ),
+                              context_instance=RequestContext(request))
 
 def parse_wg_action_file(path):
     f = open(path, 'rU')
