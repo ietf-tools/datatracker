@@ -369,5 +369,5 @@ def reset_charter_milestones(request, acronym):
 
 
 def ajax_search_docs(request, acronym):
-    docs = Document.objects.filter(name__icontains=request.GET.get('q',''), group__acronym=acronym, type="draft").order_by('name').distinct()[:20]
+    docs = Document.objects.filter(name__icontains=request.GET.get('q',''), type="draft").order_by('name').distinct()[:20]
     return HttpResponse(json_doc_names(docs), mimetype='application/json')
