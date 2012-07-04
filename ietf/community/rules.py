@@ -34,7 +34,7 @@ class WgAsociatedRule(RuleManager):
         return Document.objects.filter(type='draft', states__slug='active').filter(group__acronym=self.value).distinct()
 
     def options(self):
-        return [(i.acronym, "%s &mdash; %s"%(i.acronym, i.name)) for i in Group.objects.filter(type='wg', state='active').distinct().order_by('name')]
+        return [(i.acronym, "%s &mdash; %s"%(i.acronym, i.name)) for i in Group.objects.filter(type='wg', state='active').distinct().order_by('acronym')]
 
     def show_value(self):
         try:
