@@ -411,7 +411,7 @@ class EditPositionTestCase(django.test.TestCase):
 
     def test_edit_position(self):
         draft = make_test_data()
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name,
+        url = urlreverse('ietf.idrfc.views_ballot.edit_position', kwargs=dict(name=draft.name,
                                                           ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
         login_testing_unauthorized(self, "ad", url)
 
@@ -473,7 +473,7 @@ class EditPositionTestCase(django.test.TestCase):
         
     def test_edit_position_as_secretary(self):
         draft = make_test_data()
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name,
+        url = urlreverse('ietf.idrfc.views_ballot.edit_position', kwargs=dict(name=draft.name,
                                                           ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
         ad = Person.objects.get(name="Aread Irector")
         url += "?ad=%s" % ad.pk
@@ -498,7 +498,7 @@ class EditPositionTestCase(django.test.TestCase):
 
     def test_cannot_edit_position_as_pre_ad(self):
         draft = make_test_data()
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name,
+        url = urlreverse('ietf.idrfc.views_ballot.edit_position', kwargs=dict(name=draft.name,
                           ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
         
         # transform to pre-ad
