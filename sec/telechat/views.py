@@ -436,11 +436,11 @@ def minutes(request, date):
     current = datetime.date(int(y),int(m),int(d))
     index = dates.index(current)
     previous = dates[index + 1]
-    events = DocEvent.objects.filter(type='iesg_approved',time__gte=previous,time__lt=current)
+    events = DocEvent.objects.filter(type='iesg_approved',time__gte=previous,time__lt=current,doc__type='draft')
     docs = [ e.doc for e in events ]
     pa_docs = [ d for d in docs if d.intended_std_level.slug not in ('inf','exp','hist') ]
     da_docs = [ d for d in docs if d.intended_std_level.slug in ('inf','exp','hist') ]
-
+    
     agenda = _agenda_data(request, date=date)
     
     return render_to_response('telechat/minutes.html', {
