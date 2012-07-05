@@ -32,76 +32,11 @@ from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
 from ietf.person.models import Person, Email
 
 class ChangeStateForm(forms.Form):
-    state = forms.ModelChoiceField(IDState.objects.all(), empty_label=None, required=True)
-    substate = forms.ModelChoiceField(IDSubState.objects.all(), required=False)
-    note = forms.CharField(widget=forms.Textarea, label="Comment", required=False)
+    pass
 
 @group_required('Area_Director','Secretariat')
 def change_state(request, name):
-    """Change state of Internet Draft, notifying parties as necessary
-    and logging the change as a comment."""
-    doc = get_object_or_404(InternetDraft, filename=name)
-    if not doc.idinternal or doc.status.status == "Expired":
-        raise Http404()
-
-    login = IESGLogin.objects.get(login_name=request.user.username)
-
-    if request.method == 'POST':
-        form = ChangeStateForm(request.POST)
-        if form.is_valid():
-            state = form.cleaned_data['state']
-            sub_state = form.cleaned_data['substate']
-            note = form.cleaned_data['note']
-            internal = doc.idinternal
-            if state != internal.cur_state or sub_state != internal.cur_sub_state:
-                internal.change_state(state, sub_state)
-                internal.event_date = date.today()
-                internal.mark_by = login
-                internal.save()
-
-                change = log_state_changed(request, doc, login, note=note)
-                email_owner(request, doc, internal.job_owner, login, change)
-
-                if internal.cur_state.document_state_id == IDState.LAST_CALL_REQUESTED:
-                    request_last_call(request, doc)
-
-                    return render_to_response('idrfc/last_call_requested.html',
-                                              dict(doc=doc,
-                                                   url=doc.idinternal.get_absolute_url()),
-                                              context_instance=RequestContext(request))
-                
-            return HttpResponseRedirect(internal.get_absolute_url())
-
-    else:
-        init = dict(state=doc.idinternal.cur_state_id,
-                    substate=doc.idinternal.cur_sub_state_id)
-        form = ChangeStateForm(initial=init)
-
-    next_states = IDNextState.objects.filter(cur_state=doc.idinternal.cur_state)
-    prev_state_formatted = format_document_state(doc.idinternal.prev_state,
-                                                 doc.idinternal.prev_sub_state)
-
-    try:
-       ballot_issued = doc.idinternal.ballot.ballot_issued
-    except BallotInfo.DoesNotExist:
-       ballot_issued = False
-
-    to_iesg_eval = None
-    if not ballot_issued:
-       try:
-         to_iesg_eval = next_states.filter(next_state=IDState.IESG_EVALUATION)[0]
-       except IndexError:
-         pass
-       if to_iesg_eval:
-          next_states = next_states.exclude(next_state=IDState.IESG_EVALUATION)
-
-    return render_to_response('idrfc/change_state.html',
-                              dict(form=form,
-                                   doc=doc,
-                                   prev_state_formatted=prev_state_formatted,
-                                   next_states=next_states,
-                                   to_iesg_eval=to_iesg_eval),
-                              context_instance=RequestContext(request))
+    pass
 
 IESG_SUBSTATE_TAGS = ('point', 'ad-f-up', 'need-rev', 'extpty')
 
@@ -203,6 +138,115 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     change_state = change_stateREDESIGN
     ChangeStateForm = ChangeStateFormREDESIGN
 
+class ChangeStreamForm(forms.Form):
+    stream = forms.ModelChoiceField(StreamName.objects.exclude(slug="legacy"), required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False)
+
+@group_required('Area_Director','Secretariat')
+def change_stream(request, name):
+    """Change the stream of a Document of type 'draft' , notifying parties as necessary
+    and logging the change as a comment."""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.type_id=='draft':
+        raise Http404()
+
+    login = request.user.get_profile()
+
+    if request.method == 'POST':
+        form = ChangeStreamForm(request.POST)
+        if form.is_valid():
+            new_stream = form.cleaned_data['stream']
+            comment = form.cleaned_data['comment'].strip()
+            old_stream = doc.stream
+
+            if new_stream != old_stream:
+                save_document_in_history(doc)
+                
+                doc.stream = new_stream
+
+                e = DocEvent(doc=doc,by=login,type='changed_document')
+                e.desc = u"Stream changed to <b>%s</b> from %s"% (new_stream,old_stream) 
+                e.save()
+
+                email_desc = e.desc
+
+                if comment:
+                    c = DocEvent(doc=doc,by=login,type="added_comment")
+                    c.desc = comment
+                    c.save()
+                    email_desc += "\n"+c.desc
+                
+                doc.time = e.time
+                doc.save()
+
+                email_stream_changed(request, doc, old_stream, new_stream, email_desc)
+
+            return HttpResponseRedirect(doc.get_absolute_url())
+
+    else:
+        stream = doc.stream
+        form = ChangeStreamForm(initial=dict(stream=stream))
+
+    return render_to_response('idrfc/change_stream.html',
+                              dict(form=form,
+                                   doc=doc,
+                                   ),
+                              context_instance=RequestContext(request))
+
+class ChangeIntentionForm(forms.Form):
+    intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.filter(used=True), empty_label="(None)", required=True, label="Intended RFC status")
+    comment = forms.CharField(widget=forms.Textarea, required=False)
+
+@group_required('Area_Director','Secretariat')
+def change_intention(request, name):
+    """Change the intended publication status of a Document of type 'draft' , notifying parties 
+       as necessary and logging the change as a comment."""
+    doc = get_object_or_404(Document, docalias__name=name)
+    if not doc.type_id=='draft':
+        raise Http404()
+
+    login = request.user.get_profile()
+
+    if request.method == 'POST':
+        form = ChangeIntentionForm(request.POST)
+        if form.is_valid():
+            new_level = form.cleaned_data['intended_std_level']
+            comment = form.cleaned_data['comment'].strip()
+            old_level = doc.intended_std_level
+
+            if new_level != old_level:
+                save_document_in_history(doc)
+                
+                doc.intended_std_level = new_level
+
+                e = DocEvent(doc=doc,by=login,type='changed_document')
+                e.desc = u"Intended Status changed to <b>%s</b> from %s"% (new_level,old_level) 
+                e.save()
+
+                email_desc = e.desc
+
+                if comment:
+                    c = DocEvent(doc=doc,by=login,type="added_comment")
+                    c.desc = comment
+                    c.save()
+                    email_desc += "\n"+c.desc
+                
+                doc.time = e.time
+                doc.save()
+
+                email_owner(request, doc, doc.ad, login, email_desc)
+
+            return HttpResponseRedirect(doc.get_absolute_url())
+
+    else:
+        intended_std_level = doc.intended_std_level
+        form = ChangeIntentionForm(initial=dict(intended_std_level=intended_std_level))
+
+    return render_to_response('idrfc/change_intended_status.html',
+                              dict(form=form,
+                                   doc=doc,
+                                   ),
+                              context_instance=RequestContext(request))
 
 def dehtmlify_textarea_text(s):
     return s.replace("<br>", "\n").replace("<b>", "").replace("</b>", "").replace("  ", " ")
@@ -234,157 +278,10 @@ def get_new_ballot_id():
     
 @group_required('Area_Director','Secretariat')
 def edit_info(request, name):
-    """Edit various Internet Draft attributes, notifying parties as
-    necessary and logging changes as document comments."""
-    doc = get_object_or_404(InternetDraft, filename=name)
-    if doc.status.status == "Expired":
-        raise Http404()
-
-    login = IESGLogin.objects.get(login_name=request.user.username)
-
-    new_document = False
-    if not doc.idinternal:
-        new_document = True
-        doc.idinternal = IDInternal(draft=doc,
-                                    rfc_flag=type(doc) == Rfc,
-                                    cur_state_id=IDState.PUBLICATION_REQUESTED,
-                                    prev_state_id=IDState.PUBLICATION_REQUESTED,
-                                    state_change_notice_to=get_initial_state_change_notice(doc),
-                                    primary_flag=1,
-                                    area_acronym_id=Acronym.INDIVIDUAL_SUBMITTER,
-                                    # would be better to use NULL to
-                                    # signify an empty ballot
-                                    ballot_id=get_new_ballot_id(),
-                                    )
-
-    if doc.idinternal.agenda:
-        initial_telechat_date = doc.idinternal.telechat_date
-    else:
-        initial_telechat_date = None
-
-    if request.method == 'POST':
-        form = EditInfoForm(request.POST,
-                            #old_ads needs to be True here - sometimes the user needs to touch 
-                            #the information on an older document and the AD associated with it 
-                            #should remain the same - if th old ADs aren't offered, the form
-		            #won't let the user proceed without doing the wrong thing
-                            old_ads=True,
-                            initial=dict(telechat_date=initial_telechat_date,
-                                         area_acronym=doc.idinternal.area_acronym_id))
-
-        if form.is_valid():
-            changes = []
-            r = form.cleaned_data
-            entry = "%s has been changed to <b>%s</b> from <b>%s</b>"
-            if new_document:
-                doc.idinternal.cur_state_id=r['create_in_state'].document_state_id
-                doc.idinternal.prev_state_id=r['create_in_state'].document_state_id
-                # Django barfs in the diff below because these fields
-                # can't be NULL
-                doc.idinternal.job_owner = r['job_owner']
-                if 'area_acronym' in r:
-                    doc.idinternal.area_acronym = r['area_acronym']
-                
-                replaces = doc.replaces_set.all()
-                if replaces and replaces[0].idinternal:
-                    c = "Earlier history may be found in the Comment Log for <a href=\"%s\">%s</a>" % (replaces[0], replaces[0].idinternal.get_absolute_url())
-                    add_document_comment(request, doc, c)
-                    
-            orig_job_owner = doc.idinternal.job_owner
-
-            # update the attributes, keeping track of what we're doing
-
-            # coalesce some of the changes into one comment, mail them below
-            def diff(obj, attr, name):
-                v = getattr(obj, attr)
-                if r[attr] != v:
-                    changes.append(entry % (name, r[attr], v))
-                    setattr(obj, attr, r[attr])
-
-            diff(doc, 'intended_status', "Intended Status")
-            if 'area_acronym' in r and r['area_acronym']:
-                diff(doc.idinternal, 'area_acronym', 'Area acronym')
-            diff(doc.idinternal, 'job_owner', 'Responsible AD')
-            diff(doc.idinternal, 'state_change_notice_to', "State Change Notice email list")
-
-            if changes and not new_document:
-                add_document_comment(request, doc, "<br>".join(changes))
-
-            # handle note (for some reason the old Perl code didn't
-            # include that in the changes)
-            if r['note'] != doc.idinternal.note:
-                if not r['note']:
-                    if doc.idinternal.note:
-                        add_document_comment(request, doc, "Note field has been cleared")
-                else:
-                    if doc.idinternal.note:
-                        add_document_comment(request, doc, "[Note]: changed to '%s'" % r['note'])
-                    else:
-                        add_document_comment(request, doc, "[Note]: '%s' added" % r['note'])
-                    
-                doc.idinternal.note = r['note']
-
-            update_telechat(request, doc.idinternal,
-                            r['telechat_date'], r['returning_item'])
-
-
-            doc.idinternal.email_display = str(doc.idinternal.job_owner)
-            doc.idinternal.token_name = str(doc.idinternal.job_owner)
-            doc.idinternal.token_email = doc.idinternal.job_owner.person.email()[1]
-            doc.idinternal.mark_by = login
-            doc.idinternal.event_date = date.today()
-            doc.idinternal.status_date = date.today()
-
-            
-            update_stream(request, doc,
-                          "Setting stream while adding document to the tracker",
-                           person=request.user.get_profile().person(),
-                           to_stream = r['stream']
-                          )
-
-            if changes and not new_document:
-                email_owner(request, doc, orig_job_owner, login, "\n".join(changes))
-            if new_document:
-                add_document_comment(request, doc, "Draft added in state %s" % doc.idinternal.cur_state.state)
-                
-            doc.idinternal.save()
-            doc.save()
-            return HttpResponseRedirect(doc.idinternal.get_absolute_url())
-    else:
-        stream=get_stream_from_draft(doc)
-        stream_id = stream.id if stream else None 
-        init = dict(intended_status=doc.intended_status_id,
-                    area_acronym=doc.idinternal.area_acronym_id,
-                    job_owner=doc.idinternal.job_owner_id,
-                    state_change_notice_to=doc.idinternal.state_change_notice_to,
-                    note=dehtmlify_textarea_text(doc.idinternal.note),
-                    telechat_date=initial_telechat_date,
-                    returning_item=doc.idinternal.returning_item,
-                    stream=stream_id
-                    )
-
-        form = EditInfoForm(old_ads=False, initial=init)
-
-
-    if not new_document:
-        form.standard_fields = [x for x in form.standard_fields if x.name != "create_in_state"]
-
-    try:
-       ballot_issued = doc.idinternal.ballot.ballot_issued
-    except BallotInfo.DoesNotExist:
-       ballot_issued = False
-        
-    return render_to_response('idrfc/edit_info.html',
-                              dict(doc=doc,
-                                   form=form,
-                                   user=request.user,
-                                   login=login,
-                                   ballot_issued=ballot_issued),
-                              context_instance=RequestContext(request))
+    pass
 
 class EditInfoFormREDESIGN(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.filter(used=True), empty_label="(None)", required=True, label="Intended RFC status")
-    stream = forms.ModelChoiceField(StreamName.objects.all(), empty_label="(None)", required=True)
     area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active"), empty_label="(None - individual submission)", required=False, label="Assigned to area")
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
@@ -504,7 +401,6 @@ def edit_infoREDESIGN(request, name):
             # update the attributes, keeping track of what we're doing
             diff('intended_std_level', "Intended Status")
             diff('ad', "Responsible AD")
-            diff('stream', "Stream")
             diff('notify', "State Change Notice email list")
 
             if r['note'] != doc.note:
@@ -550,7 +446,6 @@ def edit_infoREDESIGN(request, name):
         init = dict(intended_std_level=doc.intended_std_level_id,
                     area=doc.group_id,
                     ad=doc.ad_id,
-                    stream=doc.stream_id,
                     notify=doc.notify,
                     note=dehtmlify_textarea_text(doc.note),
                     telechat_date=initial_telechat_date,
@@ -753,3 +648,182 @@ def add_commentREDESIGN(request, name):
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
      add_comment = add_commentREDESIGN
+
+class NotifyForm(forms.Form):
+    notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
+
+
+@group_required('Area_Director','Secretariat')
+def edit_notices(request, name):
+    """Change the set of email addresses document change notificaitions go to."""
+
+    doc = get_object_or_404(Document, type="draft", name=name)
+
+    if request.method == 'POST':
+
+        if "save_addresses" in request.POST:
+            form = NotifyForm(request.POST)
+            if form.is_valid():
+
+                doc.notify = form.cleaned_data['notify']
+                doc.save()
+
+                login = request.user.get_profile()
+                c = DocEvent(type="added_comment", doc=doc, by=login)
+                c.desc = "Notification list changed to : "+doc.notify
+                c.save()
+
+                return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+
+        elif "regenerate_addresses" in request.POST:
+            init = { "notify" : get_initial_notify(doc) }
+            form = NotifyForm(initial=init)
+
+        # Protect from handcrufted POST
+        else:
+            init = { "notify" : doc.notify }
+            form = NotifyForm(initial=init)
+
+    else:
+
+        init = { "notify" : doc.notify }
+        form = NotifyForm(initial=init)
+
+    return render_to_response('idrfc/change_notify.html',
+                              {'form':   form,
+                               'doc': doc,
+                              },
+                              context_instance = RequestContext(request))
+
+class TelechatForm(forms.Form):
+    telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False)
+    returning_item = forms.BooleanField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+        dates = [d.date for d in TelechatDate.objects.active().order_by('date')]
+        init = kwargs['initial'].get("telechat_date")
+        if init and init not in dates:
+            dates.insert(0, init)
+
+        self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, d.strftime("%Y-%m-%d")) for d in dates]
+        
+
+@group_required("Area Director", "Secretariat")
+def telechat_date(request, name):
+    doc = get_object_or_404(Document, type="draft", name=name)
+    login = request.user.get_profile()
+
+    e = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+    initial_returning_item = bool(e and e.returning_item)
+
+    initial = dict(telechat_date=e.telechat_date if e else None,
+                   returning_item = initial_returning_item,
+                  )
+    if request.method == "POST":
+        form = TelechatForm(request.POST, initial=initial)
+
+        if form.is_valid():
+            update_telechat(request, doc, login, form.cleaned_data['telechat_date'],form.cleaned_data['returning_item'])
+            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+    else:
+        form = TelechatForm(initial=initial)
+
+    return render_to_response('idrfc/edit_telechat_date.html',
+                              dict(doc=doc,
+                                   form=form,
+                                   user=request.user,
+                                   login=login),
+                              context_instance=RequestContext(request))
+
+
+class IESGNoteForm(forms.Form):
+    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
+
+    def clean_note(self):
+        # note is stored munged in the database
+        return self.cleaned_data['note'].replace('\n', '<br>').replace('\r', '').replace('  ', '&nbsp; ')
+
+@group_required("Area Director", "Secretariat")
+def edit_iesg_note(request, name):
+    doc = get_object_or_404(Document, type="draft", name=name)
+    login = request.user.get_profile()
+
+    initial = dict(note=dehtmlify_textarea_text(doc.note))
+
+    if request.method == "POST":
+        form = IESGNoteForm(request.POST, initial=initial)
+
+        if form.is_valid():
+            new_note = form.cleaned_data['note']
+            if new_note != doc.note:
+                if not new_note:
+                    if doc.note:
+                        log_message = "Note field has been cleared"
+                else:
+                    if doc.note:
+                        log_message = "Note changed to '%s'" % new_note
+                    else:
+                        log_message = "Note added '%s'" % new_note
+
+                doc.note = new_note
+                doc.save()
+
+                c = DocEvent(type="added_comment", doc=doc, by=login)
+                c.desc = log_message
+                c.save()
+
+            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+    else:
+        form = IESGNoteForm(initial=initial)
+
+    return render_to_response('idrfc/edit_iesg_note.html',
+                              dict(doc=doc,
+                                   form=form,
+                                   ),
+                              context_instance=RequestContext(request))
+
+class AdForm(forms.Form):
+    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), 
+                                label="Shepherding AD", empty_label="(None)", required=True)
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+        # if previous AD is now ex-AD, append that person to the list
+        ad_pk = self.initial.get('ad')
+        choices = self.fields['ad'].choices
+        if ad_pk and ad_pk not in [pk for pk, name in choices]:
+            self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
+
+@group_required("Area Director", "Secretariat")
+def edit_ad(request, name):
+    """Change the shepherding Area Director for this draft."""
+
+    doc = get_object_or_404(Document, type="draft", name=name)
+
+    if request.method == 'POST':
+        form = AdForm(request.POST)
+        if form.is_valid():
+
+            doc.ad = form.cleaned_data['ad']
+            doc.save()
+    
+            login = request.user.get_profile()
+            c = DocEvent(type="added_comment", doc=doc, by=login)
+            c.desc = "Shepherding AD changed to "+doc.ad.name
+            c.save()
+
+            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+
+    else:
+        init = { "ad" : doc.ad_id }
+        form = AdForm(initial=init)
+
+    return render_to_response('idrfc/change_ad.html',
+                              {'form':   form,
+                               'doc': doc,
+                              },
+                              context_instance = RequestContext(request))
+

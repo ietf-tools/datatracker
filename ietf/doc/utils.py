@@ -1,3 +1,9 @@
+import os
+from django.conf import settings
+
+# Should this move from idrfc to doc?
+from ietf.idrfc import markup_txt
+
 from ietf.doc.models import *
 
 def get_state_types(doc):
@@ -29,6 +35,15 @@ def get_tags_for_stream_id(stream_id):
         return ["w-dep", "w-review", "need-rev", "iesg-com"]
     else:
         return []
+
+# This, and several other utilities here, assume that there is only one active ballot for a document at any point in time.
+# If that assumption is violated, they will only expose the most recently created ballot
+def active_ballot(doc):
+    """Returns the most recently created ballot if it isn't closed."""
+    ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
+    open = ballot_open(doc,ballot.ballot_type.slug) if ballot else False
+    return ballot if open else None
+     
 
 def active_ballot_positions(doc, ballot=None):
     """Return dict mapping each active AD to a current ballot position (or None if they haven't voted)."""
@@ -106,10 +121,6 @@ def close_open_ballots(doc, by):
             e.desc = 'Closed "%s" ballot' % t.name
             e.save()
 
-def get_rfc_number(doc):
-    qs = doc.docalias_set.filter(name__startswith='rfc')
-    return qs[0].name[3:] if qs else None
-
 def augment_with_start_time(docs):
     """Add a started_time attribute to each document with the time of
     the first revision."""
@@ -165,23 +176,31 @@ def augment_events_with_revision(doc, events):
         e.rev = cur_rev
 
 
-def augment_with_telechat_date(docs):
-    """Add a telechat_date attribute to each document with the
-    scheduled telechat or None if it's not scheduled."""
-    docs = list(docs)
+def get_document_content(key, filename, split=True, markup=True):
+    f = None
+    try:
+        f = open(filename, 'rb')
+        raw_content = f.read()
+    except IOError:
+        error = "Error; cannot read ("+key+")"
+        if split:
+            return (error, "")
+        else:
+            return error
+    finally:
+        if f:
+            f.close()
+    if markup:
+        return markup_txt.markup(raw_content,split)
+    else:
+        return raw_content
 
-    docs_dict = {}
-    for d in docs:
-        docs_dict[d.pk] = d
-        d.telechat_date = None
+def log_state_changed(request, doc, by, new_description, old_description):
+    from ietf.doc.models import DocEvent
 
-    seen = set()
+    e = DocEvent(doc=doc, by=by)
+    e.type = "changed_document"
+    e.desc = u"State changed to <b>%s</b> from %s" % (new_description, old_description)
+    e.save()
+    return e
 
-    for e in TelechatDocEvent.objects.filter(type="scheduled_for_telechat", doc__in=docs).order_by('-time'):
-        if e.doc_id in seen:
-            continue
-
-        docs_dict[e.doc_id].telechat_date = e.telechat_date
-        seen.add(e.doc_id)
-
-    return docs

@@ -272,6 +272,11 @@ class IdWrapper:
     def displayname_with_link(self):
         return '<a href="%s">%s</a>' % (self.get_absolute_url(), self.draft_name_and_revision())
 
+    def underlying_document(self):
+        """ Expose the Document object underneath the proxy """
+        from ietf.doc.models import Document
+        return Document.objects.get(docalias__name=self.draft_name)
+
     def to_json(self):
         result = jsonify_helper(self, ['draft_name', 'draft_status', 'latest_revision', 'rfc_number', 'title', 'tracker_id', 'publication_date','rfc_editor_state', 'replaced_by', 'replaces', 'in_ietf_process', 'file_types', 'group_acronym', 'stream_id','friendly_state', 'abstract', 'ad_name'])
         if self.in_ietf_process():
@@ -741,7 +746,7 @@ class BallotWrapper:
             return
 
         from ietf.person.models import Person
-        from ietf.doc.models import BallotPositionDocEvent, NewRevisionDocEvent
+        from ietf.doc.models import BallotPositionDocEvent, NewRevisionDocEvent, BallotDocEvent
 
         active_ads = Person.objects.filter(role__name="ad", role__group__state="active").distinct()
         

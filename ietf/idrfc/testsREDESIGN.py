@@ -293,7 +293,6 @@ class EditInfoTestCase(django.test.TestCase):
 
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level_id),
-                                  stream="ietf",
                                   ad=ad.pk,
                                   create_in_state=State.objects.get(type="draft-iesg", slug="watching").pk,
                                   notify="test@example.com",
@@ -307,9 +306,9 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(draft.ad, ad)
         self.assertEquals(draft.note, "This is a note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
-        self.assertEquals(draft.docevent_set.count(), events_before + 4)
+        self.assertEquals(draft.docevent_set.count(), events_before + 3)
         events = list(draft.docevent_set.order_by('time', 'id'))
-        self.assertEquals(events[-4].type, "started_iesg_process")
+        self.assertEquals(events[-3].type, "started_iesg_process")
         self.assertEquals(len(outbox), mailbox_before)
 
 
@@ -412,7 +411,7 @@ class EditPositionTestCase(django.test.TestCase):
 
     def test_edit_position(self):
         draft = make_test_data()
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name,
+        url = urlreverse('ietf.idrfc.views_ballot.edit_position', kwargs=dict(name=draft.name,
                                                           ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
         login_testing_unauthorized(self, "ad", url)
 
@@ -474,7 +473,7 @@ class EditPositionTestCase(django.test.TestCase):
         
     def test_edit_position_as_secretary(self):
         draft = make_test_data()
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name,
+        url = urlreverse('ietf.idrfc.views_ballot.edit_position', kwargs=dict(name=draft.name,
                                                           ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
         ad = Person.objects.get(name="Aread Irector")
         url += "?ad=%s" % ad.pk
@@ -499,8 +498,8 @@ class EditPositionTestCase(django.test.TestCase):
 
     def test_cannot_edit_position_as_pre_ad(self):
         draft = make_test_data()
-        url = urlreverse('doc_edit_position', kwargs=dict(name=draft.name,
-                                                     ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
+        url = urlreverse('ietf.idrfc.views_ballot.edit_position', kwargs=dict(name=draft.name,
+                          ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
         
         # transform to pre-ad
         ad_role = Role.objects.filter(name="ad")[0]
@@ -1435,3 +1434,152 @@ class MirrorScriptTestCases(unittest.TestCase,RealDatabaseTest):
         self.assertEquals(len(refs), 3)
         print "OK"
 
+
+class IndividualInfoFormsTestCase(django.test.TestCase):
+
+    fixtures = ['names']
+
+    def test_doc_change_stream(self):
+        url = urlreverse('doc_change_stream', kwargs=dict(name=self.docname))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form.change-stream')),1) 
+
+        # shift to ISE stream
+        messages_before = len(outbox)
+        r = self.client.post(url,dict(stream="ise",comment="7gRMTjBM"))
+        self.assertEquals(r.status_code,302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertEquals(self.doc.stream_id,'ise')
+        self.assertEquals(len(outbox),messages_before+1)
+        self.assertTrue('Stream Change Notice' in outbox[-1]['Subject'])
+        self.assertTrue('7gRMTjBM' in str(outbox[-1]))
+        self.assertTrue('7gRMTjBM' in self.doc.latest_event(DocEvent,type='added_comment').desc)
+        # Would be nice to test that the stream managers were in the To header...
+
+        # shift to an unknown stream (it must be possible to throw a document out of any stream)
+        r = self.client.post(url,dict(stream=""))
+        self.assertEquals(r.status_code,302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertEquals(self.doc.stream,None)
+
+    def test_doc_change_notify(self):
+        url = urlreverse('doc_change_notify', kwargs=dict(name=self.docname))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form input[name=notify]')),1)
+
+        # Provide a list
+        r = self.client.post(url,dict(notify="TJ2APh2P@ietf.org",save_addresses="1"))
+        self.assertEquals(r.status_code,302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertEquals(self.doc.notify,'TJ2APh2P@ietf.org')
+        
+        # Ask the form to regenerate the list
+        r = self.client.post(url,dict(regenerate_addresses="1"))
+        self.assertEquals(r.status_code,200)
+        self.doc = Document.objects.get(name=self.docname)
+        # Regenerate does not save!
+        self.assertEquals(self.doc.notify,'TJ2APh2P@ietf.org')
+        q = PyQuery(r.content)
+        self.assertTrue('TJ2Aph2P' not in q('form input[name=notify]')[0].value)
+
+    def test_doc_change_intended_status(self):
+        url = urlreverse('doc_change_intended_status', kwargs=dict(name=self.docname))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form.change-intended-status')),1)
+
+        # don't allow status level to be cleared
+        r = self.client.post(url,dict(intended_std_level=""))
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        
+        # change intended status level
+        messages_before = len(outbox)
+        r = self.client.post(url,dict(intended_std_level="bcp",comment="ZpyQFGmA"))
+        self.assertEquals(r.status_code,302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertEquals(self.doc.intended_std_level_id,'bcp')
+        self.assertEquals(len(outbox),messages_before+1)
+        self.assertTrue('ZpyQFGmA' in str(outbox[-1]))
+        self.assertTrue('ZpyQFGmA' in self.doc.latest_event(DocEvent,type='added_comment').desc)
+       
+    def test_doc_change_telechat_date(self):
+        url = urlreverse('doc_change_telechat_date', kwargs=dict(name=self.docname))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form.telechat-date')),1)
+
+        # set a date
+        self.assertFalse(self.doc.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
+        telechat_date = TelechatDate.objects.active().order_by('date')[0].date
+        r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
+        self.assertEquals(r.status_code,302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertEquals(self.doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,telechat_date)
+
+        # Take the doc back off any telechat
+        r = self.client.post(url,dict(telechat_date=""))
+        self.assertEquals(r.status_code, 302)
+        self.assertEquals(self.doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,None)
+        
+    def test_doc_change_iesg_note(self):
+        url = urlreverse('doc_change_iesg_note', kwargs=dict(name=self.docname))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form.edit-iesg-note')),1)
+
+        # No validation code to test
+
+        # post - testing that the munge code exists in note.clean...
+        r = self.client.post(url,dict(note='ZpyQFGmA\nZpyQFGmA'))
+        self.assertEquals(r.status_code,302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertEquals(self.doc.note,'ZpyQFGmA<br>ZpyQFGmA')
+        self.assertTrue('ZpyQFGmA' in self.doc.latest_event(DocEvent,type='added_comment').desc)
+
+    def test_doc_change_ad(self):
+        url = urlreverse('doc_change_ad', kwargs=dict(name=self.docname))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form select[name=ad]')),1)
+        
+        # change ads
+        ad2 = Person.objects.get(name='Ad No2')
+        r = self.client.post(url,dict(ad=str(ad2.pk)))
+        self.assertEquals(r.status_code,302)
+        self.doc = Document.objects.get(name=self.docname)
+        self.assertEquals(self.doc.ad,ad2)
+        self.assertTrue(self.doc.latest_event(DocEvent,type="added_comment").desc.startswith('Shepherding AD changed'))
+
+    def setUp(self):
+        make_test_data()
+        self.docname='draft-ietf-mars-test'
+        self.doc = Document.objects.get(name=self.docname)
+        

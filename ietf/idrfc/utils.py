@@ -167,9 +167,9 @@ def update_telechatREDESIGN(request, doc, by, new_telechat_date, new_returning_i
         # we didn't reschedule but flipped returning item bit - let's
         # just explain that
         if returning:
-            e.desc = "Added as returning item on telechat"
+            e.desc = "Set telechat returning item indication"
         else:
-            e.desc = "Removed as returning item on telechat"
+            e.desc = "Removed telechat returning item indication"
 
     e.save()
 

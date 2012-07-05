@@ -49,6 +49,21 @@ div.diffTool { padding: 8px 4px; margin: 8px 0;}
 .m_hdr, .m_ftr { color: #808080; }
 .m_ftr { border-bottom: 1px solid #a0a0a0; }
 .m_h { font-family: arial; font-weight:bold;}
+
+a.editlink {
+  background-image: url("/images/pencil.png");
+  background-size:10px;
+  background-position: right top;
+  background-attachment: scroll;
+  background-repeat: no-repeat;
+  padding-right: 12px;
+} 
+
+a.editlink:link {text-decoration:none; color:inherit;}
+a.editlink:visited {text-decoration:none; color:inherit;}
+a.editlink:hover {text-decoration:underline;}
+a.editlink:active {text-decoration:underline;}
+
 {% endblock %}
 
 {% block pagehead %}

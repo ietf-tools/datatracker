@@ -72,7 +72,7 @@ def render_ballot_icon(user, doc):
     if not ballot:
         return ""
 
-    edit_position_url = urlreverse('doc_edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk))
+    edit_position_url = urlreverse('ietf.idrfc.views_ballot.edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk))
 
     def sort_key(t):
         _, pos = t
