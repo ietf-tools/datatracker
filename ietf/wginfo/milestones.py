@@ -1,6 +1,6 @@
 # WG milestone editing views
 
-import re, os, string, datetime, shutil
+import re, os, string, datetime, shutil, calendar
 
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse
@@ -29,7 +29,8 @@ class MilestoneForm(forms.Form):
     id = forms.IntegerField(required=True, widget=forms.HiddenInput)
 
     desc = forms.CharField(max_length=500, label="Milestone", required=True)
-    due = forms.DateField(required=True, label="Due date")
+    due_month = forms.TypedChoiceField(choices=(), required=True, coerce=int)
+    due_year = forms.TypedChoiceField(choices=(), required=True, coerce=int)
     resolved_checkbox = forms.BooleanField(required=False, label="Resolved")
     resolved = forms.CharField(max_length=50, required=False)
 
@@ -50,7 +51,8 @@ class MilestoneForm(forms.Form):
                 kwargs["initial"] = {}
             kwargs["initial"].update(dict(id=m.pk,
                                           desc=m.desc,
-                                          due=m.due,
+                                          due_month=m.due.month,
+                                          due_year=m.due.year,
                                           resolved_checkbox=bool(m.resolved),
                                           resolved=m.resolved,
                                           docs=",".join(m.docs.values_list("pk", flat=True)),
@@ -61,6 +63,20 @@ class MilestoneForm(forms.Form):
             self.needs_review = m.state_id == "review"
 
         super(MilestoneForm, self).__init__(*args, **kwargs)
+
+        # set choices for due date
+        this_year = datetime.date.today().year
+
+        self.fields["due_month"].choices = [(m, datetime.date(this_year, m, 1).strftime("%B")) for m in range(1, 13)]
+
+        years = [ y for y in range(this_year, this_year + 10)]
+
+        initial = self.initial.get("due_year")
+        if initial and initial not in years:
+            years.insert(0, initial)
+
+        self.fields["due_year"].choices = zip(years, map(str, years))
+
 
         # figure out what to prepopulate many-to-many field with
         pre = ""
@@ -122,6 +138,11 @@ def edit_milestones(request, acronym, milestone_set="current"):
 
     milestones_dict = dict((str(m.id), m) for m in milestones)
 
+    def due_month_year_to_date(c):
+        y = c["due_year"]
+        m = c["due_month"]
+        return datetime.date(y, m, calendar.monthrange(y, m)[1])
+
     def set_attributes_from_form(f, m):
         c = f.cleaned_data
         m.group = group
@@ -133,7 +154,7 @@ def edit_milestones(request, acronym, milestone_set="current"):
         elif milestone_set == "charter":
             m.state = GroupMilestoneStateName.objects.get(slug="charter")
         m.desc = c["desc"]
-        m.due = c["due"]
+        m.due = due_month_year_to_date(c)
         m.resolved = c["resolved"]
 
     def save_milestone_form(f):
@@ -177,11 +198,13 @@ def edit_milestones(request, acronym, milestone_set="current"):
                 m.desc = c["desc"]
                 changes.append('set description to "%s"' % m.desc)
 
-            if c["due"] != m.due:
+
+            c_due = due_month_year_to_date(c)
+            if c_due != m.due:
                 if not history:
                     history = save_milestone_in_history(m)
-                changes.append('set due date to %s from %s' % (c["due"].strftime("%Y-%m-%d"), m.due.strftime("%Y-%m-%d")))
-                m.due = c["due"]
+                changes.append('set due date to %s from %s' % (c_due.strftime("%B %Y"), m.due.strftime("%B %Y")))
+                m.due = c_due
 
             resolved = c["resolved"]
             if resolved != m.resolved:
@@ -230,9 +253,9 @@ def edit_milestones(request, acronym, milestone_set="current"):
                 named_milestone = "charter " + named_milestone
 
             if m.state_id in ("active", "charter"):
-                return 'Added %s, due %s' % (named_milestone, m.due.strftime("%Y-%m-%d"))
+                return 'Added %s, due %s' % (named_milestone, m.due.strftime("%B %Y"))
             elif m.state_id == "review":
-                return 'Added %s for review, due %s' % (named_milestone, m.due.strftime("%Y-%m-%d"))
+                return 'Added %s for review, due %s' % (named_milestone, m.due.strftime("%B %Y"))
 
     finished_milestone_text = "Done"
 
@@ -353,7 +376,7 @@ def reset_charter_milestones(request, acronym):
 
             DocEvent.objects.create(type="changed_charter_milestone",
                                     doc=group.charter,
-                                    desc='Added milestone "%s", due %s, from current group milestones' % (new.desc, new.due.strftime("%Y-%m-%d")),
+                                    desc='Added milestone "%s", due %s, from current group milestones' % (new.desc, new.due.strftime("%B %Y")),
                                     by=login,
                                     )
 

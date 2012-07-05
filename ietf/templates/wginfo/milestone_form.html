@@ -18,8 +18,8 @@
   </tr>
   {% if form.desc.errors %}<tr><td></td><td colspan="2">{{ form.desc.errors }}</td></tr>{% endif %}
   <tr>
-    <td>{{ form.due.label_tag }}:</td>
-    <td><span class="due">{{ form.due }}</span> {{ form.due.errors }}
+    <td>Due date:</td>
+    <td><span class="due">{{ form.due_month }} {{ form.due_year }}</span> {{ form.due_month.errors }} {{ form.due_year.errors }}
     <span class="resolved">{{ form.resolved_checkbox }} {{ form.resolved_checkbox.label_tag }} {{ form.resolved }}</span>
      {{ form.resolved.errors }}
     </td>

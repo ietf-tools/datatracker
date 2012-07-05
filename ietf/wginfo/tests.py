@@ -30,7 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os, unittest, shutil
+import os, unittest, shutil, calendar
 
 import django.test
 from django.conf import settings
@@ -275,6 +275,9 @@ class MilestoneTestCase(django.test.TestCase):
 
         return (m1, m2, group)
 
+    def last_day_of_month(self, d):
+        return datetime.date(d.year, d.month, calendar.monthrange(d.year, d.month)[1])
+
 
     def test_milestone_sets(self):
         m1, m2, group = self.create_test_milestones()
@@ -308,13 +311,14 @@ class MilestoneTestCase(django.test.TestCase):
         events_before = group.groupevent_set.count()
         docs = Document.objects.filter(type="draft").values_list("name", flat=True)
 
-        due = datetime.date.today() + datetime.timedelta(days=365)
+        due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
 
         # faulty post
         r = self.client.post(url, { 'prefix': "m-1",
-                                    'm-1-id': -1,
+                                    'm-1-id': "-1",
                                     'm-1-desc': "", # no description
-                                    'm-1-due': due.strftime("%Y-%m-%d"),
+                                    'm-1-due_month': str(due.month),
+                                    'm-1-due_year': str(due.year),
                                     'm-1-resolved': "",
                                     'm-1-docs': ",".join(docs),
                                     'action': "save",
@@ -326,9 +330,10 @@ class MilestoneTestCase(django.test.TestCase):
 
         # add
         r = self.client.post(url, { 'prefix': "m-1",
-                                    'm-1-id': -1,
+                                    'm-1-id': "-1",
                                     'm-1-desc': "Test 3",
-                                    'm-1-due': due.strftime("%Y-%m-%d"),
+                                    'm-1-due_month': str(due.month),
+                                    'm-1-due_year': str(due.year),
                                     'm-1-resolved': "",
                                     'm-1-docs': ",".join(docs),
                                     'action': "save",
@@ -356,13 +361,14 @@ class MilestoneTestCase(django.test.TestCase):
 
         milestones_before = GroupMilestone.objects.count()
         events_before = group.groupevent_set.count()
-        due = datetime.date.today() + datetime.timedelta(days=365)
+        due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
 
         # add
         r = self.client.post(url, { 'prefix': "m-1",
                                     'm-1-id': -1,
                                     'm-1-desc': "Test 3",
-                                    'm-1-due': due.strftime("%Y-%m-%d"),
+                                    'm-1-due_month': str(due.month),
+                                    'm-1-due_year': str(due.year),
                                     'm-1-resolved': "",
                                     'm-1-docs': "",
                                     'action': "save",
@@ -388,18 +394,20 @@ class MilestoneTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 200)
 
         events_before = group.groupevent_set.count()
-        due = datetime.date.today() + datetime.timedelta(days=365)
+        due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
 
         # add
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': m1.desc,
-                                    'm1-due': m1.due.strftime("%Y-%m-%d"),
+                                    'm1-due_month': str(m1.due.month),
+                                    'm1-due_year': str(m1.due.year),
                                     'm1-resolved': m1.resolved,
                                     'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
                                     'm1-accept': "accept",
                                     'action': "save",
                                     })
+        print r.content
         self.assertEquals(r.status_code, 302)
 
         m = GroupMilestone.objects.get(pk=m1.pk)
@@ -420,7 +428,8 @@ class MilestoneTestCase(django.test.TestCase):
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': m1.desc,
-                                    'm1-due': m1.due.strftime("%Y-%m-%d"),
+                                    'm1-due_month': str(m1.due.month),
+                                    'm1-due_year': str(m1.due.year),
                                     'm1-resolved': "",
                                     'm1-docs': ",".join(m1.docs.values_list("name", flat=True)),
                                     'm1-delete': "checked",
@@ -444,13 +453,14 @@ class MilestoneTestCase(django.test.TestCase):
         events_before = group.groupevent_set.count()
         docs = Document.objects.filter(type="draft").values_list("name", flat=True)
 
-        due = datetime.date.today() + datetime.timedelta(days=365)
+        due = self.last_day_of_month(datetime.date.today() + datetime.timedelta(days=365))
 
         # faulty post
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': "", # no description
-                                    'm1-due': due.strftime("%Y-%m-%d"),
+                                    'm1-due_month': str(due.month),
+                                    'm1-due_year': str(due.year),
                                     'm1-resolved': "",
                                     'm1-docs': ",".join(docs),
                                     'action': "save",
@@ -467,7 +477,8 @@ class MilestoneTestCase(django.test.TestCase):
         r = self.client.post(url, { 'prefix': "m1",
                                     'm1-id': m1.id,
                                     'm1-desc': "Test 2 - changed",
-                                    'm1-due': due.strftime("%Y-%m-%d"),
+                                    'm1-due_month': str(due.month),
+                                    'm1-due_year': str(due.year),
                                     'm1-resolved': "Done",
                                     'm1-resolved_checkbox': "checked",
                                     'm1-docs': ",".join(docs),
@@ -566,6 +577,9 @@ class MilestoneTestCase(django.test.TestCase):
 
         early_warning_days = 30
 
+        # due dates here aren't aligned on the last day of the month,
+        # but everything should still work
+
         m1 = GroupMilestone.objects.create(group=group,
                                            desc="Test 1",
                                            due=datetime.date.today(),
@@ -606,6 +620,9 @@ class MilestoneTestCase(django.test.TestCase):
         group = Group.objects.get(acronym="mars")
         person = Person.objects.get(user__username="marschairman")
 
+        # due dates here aren't aligned on the last day of the month,
+        # but everything should still work
+
         m1 = GroupMilestone.objects.create(group=group,
                                            desc="Test 1",
                                            due=datetime.date.today() - datetime.timedelta(days=200),
@@ -627,7 +644,7 @@ class MilestoneTestCase(django.test.TestCase):
         m1.resolved = ""
         m1.save()
 
-        m2.due = datetime.date.today() - datetime.timedelta(days=300)
+        m2.due = self.last_day_of_month(datetime.date.today() - datetime.timedelta(days=300))
         m2.save()
         
         # send

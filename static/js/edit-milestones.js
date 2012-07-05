@@ -10,7 +10,7 @@ jQuery(function () {
 
     function setSubmitButtonState() {
         var action, label;
-        if (jQuery("#milestones-form input[name$=due]:visible").length > 0)
+        if (jQuery("#milestones-form input[name$=delete]:visible").length > 0)
             action = "review";
         else
             action = "save";
@@ -46,7 +46,6 @@ jQuery(function () {
 
             editRow.removeClass("template");
             setupTokenizedField(editRow.find(".tokenized-field")); // from tokenized-field.js
-            setInputMasks(editRow);
             editRow.show();
         }
         else {
@@ -101,12 +100,6 @@ jQuery(function () {
     jQuery("#milestones-form .edit-milestone .delete input[type=checkbox]")
         .each(setDeleteState)
         .live("change", setDeleteState);
-
-    function setInputMasks(editRows) {
-        editRows.find(".due input").mask("9999-99-99");
-    }
-
-    setInputMasks(jQuery("#milestone-form .edit-milestone").not(".template"));
 
     jQuery('#milestones-form .edit-milestone .errorlist').each(function () {
         jQuery(this).closest(".edit-milestone").prev().click();
