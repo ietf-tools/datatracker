@@ -33,15 +33,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->{% endcomment %}
 {% load ietf_filters %}
 <table class="ietf-ballot"><tr valign="top"><td class="left">
-
 {% if doc_ballot_edit_button and user|in_group:"Area_Director,Secretariat" %}
 {% if user|in_group:"Area_Director" %}
 <div style="margin-top:8px; margin-bottom:8px;"><span id="doc_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url idrfc.views_ballot.edit_position name=doc.name,ballot_id=ballot.pk %}">Edit position</a></span></span></div>
 {% endif %}
 
-{% if bw.was_deferred %}
+{% if doc.active_defer_event %}
 <div style="margin-top:8px; margin-bottom:8px;"><span id="doc_undefer_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url doc_undefer_ballot name=doc.name,ballot_id=ballot.pk %}">Undefer ballot</a></span></span></div>
-<div style="margin-top:8px; margin-bottom:8px;">Ballot deferred by {{ bw.deferred_by }} on {{ bw.deferred_date }}.</div>
+<div style="margin-top:8px; margin-bottom:8px;">Ballot deferred by {{ doc.active_defer_event.by }} on {{ doc.active_defer_event.time|date:"Y-m-d" }}.</div>
 {% else %}
 <div style="margin-top:8px; margin-bottom:8px;"><span id="doc_defer_ballot_button" class="yui-button yui-link-button"><span class="first-child"><a href="{% url doc_defer_ballot name=doc.name,ballot_id=ballot.pk %}">Defer ballot</a></span></span></div>
 {% endif %}
