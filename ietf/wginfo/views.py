@@ -205,7 +205,7 @@ def wg_charter(request, acronym):
     context = get_wg_menu_context(wg, "charter")
     context.update(dict(
             actions=actions,
-            is_chair=wg.role_set.filter(name="chair", person__user=request.user),
+            is_chair=request.user.is_authenticated() and wg.role_set.filter(name="chair", person__user=request.user),
             milestones_in_review=wg.groupmilestone_set.filter(state="review"),
             requested_close=requested_close,
             ))
