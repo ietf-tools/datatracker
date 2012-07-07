@@ -11,16 +11,15 @@ class Migration(SchemaMigration):
         # Deleting model 'GroupBallotPositionName'
         db.delete_table('name_groupballotpositionname')
 
-        # looks like this is actually included at the moment
         # Adding model 'GroupMilestoneStateName'
-        # db.create_table('name_groupmilestonestatename', (
-        #     ('slug', self.gf('django.db.models.fields.CharField')(max_length=8, primary_key=True)),
-        #     ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-        #     ('desc', self.gf('django.db.models.fields.TextField')(blank=True)),
-        #     ('used', self.gf('django.db.models.fields.BooleanField')(default=True)),
-        #     ('order', self.gf('django.db.models.fields.IntegerField')(default=0)),
-        # ))
-        # db.send_create_signal('name', ['GroupMilestoneStateName'])
+        db.create_table('name_groupmilestonestatename', (
+            ('slug', self.gf('django.db.models.fields.CharField')(max_length=8, primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('desc', self.gf('django.db.models.fields.TextField')(blank=True)),
+            ('used', self.gf('django.db.models.fields.BooleanField')(default=True)),
+            ('order', self.gf('django.db.models.fields.IntegerField')(default=0)),
+        ))
+        db.send_create_signal('name', ['GroupMilestoneStateName'])
 
     def backwards(self, orm):
         
@@ -35,7 +34,7 @@ class Migration(SchemaMigration):
         db.send_create_signal('name', ['GroupBallotPositionName'])
 
         # Deleting model 'GroupMilestoneStateName'
-        # db.delete_table('name_groupmilestonestatename')
+        db.delete_table('name_groupmilestonestatename')
 
 
     models = {
