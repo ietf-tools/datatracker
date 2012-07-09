@@ -13,7 +13,7 @@ from django.utils.html import strip_tags, escape
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
-from ietf.utils.mail import send_mail_text, send_mail_preformatted
+from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role, role_required
@@ -414,13 +414,7 @@ def announcement_text(request, name, ann):
             form = AnnouncementTextForm(initial=dict(announcement_text=e.text))
 
         if "send_text" in request.POST and form.is_valid():
-            msg = form.cleaned_data['announcement_text']
-            import email
-            parsed_msg = email.message_from_string(msg.encode("utf-8"))
-
-            send_mail_text(request, parsed_msg["To"],
-                           parsed_msg["From"], parsed_msg["Subject"],
-                           parsed_msg.get_payload())
+            send_mail_preformatted(request, form.cleaned_data['announcement_text'])
             return redirect('doc_writeup', name=charter.name)
 
     return render_to_response('wgcharter/announcement_text.html',
