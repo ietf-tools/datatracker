@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
-{% block title %}IETF {{ meeting.num }} Meeting Agenda{% endblock %}
+{% block title %}IETF {{ meeting.number }} Meeting Agenda{% endblock %}
 
 {% block morecss %}
 table#agenda { border: 0; border-collapse:collapse; }
@@ -162,16 +162,29 @@ img.hidden { display: none; }
 
   }
 
-  /* Resizes an IFRAME to fit its contents and attempts to convert to a div */
+  /* Resizes an IFRAME to fit its contents. */
   function r(iframe)
   {
     try
     {
       iframe.height = 1;
+      iframe.style.border = "solid";
+      iframe.style.borderWidth = "1px";
+      iframe.style.margin = "0";
+      iframe.style.padding = "10px";
+      iframe.style.overflow = "auto";
       docHeight = iframe.contentWindow.document.body.scrollHeight;
       iframe.height = docHeight;
     }
     catch (e) { return; }
+
+    /* The following code works really well UNLESS some crazy chair
+       decides to submit a text agenda that is, say, 500 columns wide.
+       But this tends to happen. So, until I find a way to stop
+       that brand of crazy from breaking the world, I'm disabling
+       this code. Too bad, really -- it made the page much nicer to
+       use. */
+    return;
 
     if (iframe.contentWindow.document.body.innerHTML)
     {
@@ -236,16 +249,16 @@ img.hidden { display: none; }
 {% endblock pagehead %}
 {% block bodyAttrs %}onload='setGroupState();updateAgendaColors()'{% endblock %}
 {% block content %}
-<h1>IETF {{ meeting.num }} Meeting Agenda</h1>
-<p>{{ meeting.city }}, {{ meeting.start_date|date:"F j" }}-{% ifnotequal meeting.start_date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}<br />
+<h1>IETF {{ meeting.number }} Meeting Agenda</h1>
+<p>{{ meeting.city }}, {{ meeting.date|date:"F j" }} &#8211; {% ifnotequal meeting.date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}<br />
 Updated {{ modified|date:"Y-m-d H:i:s T" }}</p>
 <div class="noprint">
-(There's also a <a href="/meeting/{{meeting.num}}/agenda.txt">plaintext agenda</a> and a <a href="http://tools.ietf.org/agenda/{{meeting.num}}/">tools-style agenda</a> available)</div>
+(There's also a <a href="/meeting/{{meeting.number}}/agenda.txt">plaintext agenda</a> and a <a href="http://tools.ietf.org/agenda/{{meeting.number}}/">tools-style agenda</a> available)</div>
 
 <p><strong>IETF agendas are subject to change, up to and during the meeting.</strong></p>
 
 {# cache this part for 15 minutes -- it takes 3-6 seconds to generate #}
-{% load cache %}{% cache 900 ietf_meeting_agenda meeting.num %}
+{% load cache %}{% cache 900 ietf_meeting_agenda meeting.number %}
 
 You can customize the agenda below to show only selected working group sessions.  To be able to return to the customized view later, bookmark the resulting URL:
 <div class="noprint" onclick="toggle_wg_selector()">
@@ -291,34 +304,34 @@ You can customize the agenda below to show only selected working group sessions.
          <td colspan="5">
            {{slot.name}}
            {% if slot.type.name != 'Session' %} - 
-           {% if slot.show_location %}<a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{ slot.get_location|slugify }}">{{slot.get_location|escape}}</a>{% endif %}
+           {% if slot.show_location %}<a href="http://tools.ietf.org/agenda/{{meeting.number}}/venue/?room={{ slot.get_location|slugify }}">{{slot.get_location|escape}}</a>{% endif %}
            {% endif %}
          </td>
       </tr>
    {% endifchanged %}
    {% if slot.type.name = 'Session' %} {% if slot.session.group %}
-     <tr id="{{meeting.num}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}" class="grouprow">
+     <tr id="{{meeting.number}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}" class="grouprow">
        <td>
-       <td>{% if slot.show_location %}<a href="http://tools.ietf.org/agenda/{{meeting.num}}/venue/?room={{ slot.get_location|slugify }}">{{slot.get_location|escape}}</a>{% endif %}</td>
+       <td>{% if slot.show_location %}<a href="http://tools.ietf.org/agenda/{{meeting.number}}/venue/?room={{ slot.get_location|slugify }}">{{slot.get_location|escape}}</a>{% endif %}</td>
        <td>{{slot.session.group.parent.acronym|upper}}</td>
        <td>
            {% if slot.session.group.charter %}<a href="{{slot.session.group.charter.get_absolute_url}}">{{slot.session.group.acronym}}</a>
            {% else %}{{slot.session.group.acronym}}{% endif %}</td>
        <td>
-         <img src="/images/color-palette-4x4.gif" alt="" onclick="pickAgendaColor('{{meeting.num}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}',this);" title="color tag this line"/ class="noprint">
-           {% if slot.session.agenda %}<a href="/meeting/{{ meeting.num }}/agenda/{{ slot.session.group.acronym }}/">{{slot.session.group.name}}</a>
+         <img src="/images/color-palette-4x4.gif" alt="" onclick="pickAgendaColor('{{meeting.number}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}',this);" title="color tag this line"/ class="noprint">
+           {% if slot.session.agenda %}<a href="/meeting/{{ meeting.number }}/agenda/{{ slot.session.group.acronym }}/">{{slot.session.group.name}}</a>
            {% else %}{{slot.session.group.name}}{% endif %}
            {% if slot.session.group.state.name = "BOF" %} BOF {% endif %}
            {% if slot.session.agenda_note %}
            <br/><span class="note">{{slot.session.agenda_note}}</span>{% endif %}</td>
-       <td class="materials">{% if slot.session.agenda %}drafts:&nbsp;<a href="/meeting/{{meeting.num}}/agenda/{{slot.session.group.acronym}}-drafts.tgz">tar</a>|<a href="/meeting/{{ meeting.num }}/agenda/{{slot.session.group.acronym}}-drafts.pdf">pdf</a>{%endif%}</td>
+       <td class="materials">{% if slot.session.agenda %}drafts:&nbsp;<a href="/meeting/{{meeting.number}}/agenda/{{slot.session.group.acronym}}-drafts.tgz">tar</a>|<a href="/meeting/{{ meeting.number }}/agenda/{{slot.session.group.acronym}}-drafts.pdf">pdf</a>{%endif%}</td>
      </tr>
-     <tr id="{{meeting.num}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}" class="groupagenda">
+     <tr id="{{meeting.number}}-{{slot.time|date:"D-Hi"|lower}}-{{slot.session.group.parent.acronym|upper}}-{{slot.session.group.acronym|lower}}" class="groupagenda">
        <td></td>
        <td colspan="5">
           {% if slot.session.agenda %}
           {% if slot.session.agenda.file_extension in show_inline%}
-          <iframe width="100%" height="1px" src="about:blank" xsrc="/meeting/{{ meeting.num }}/agenda/{{ slot.session.group.acronym }}/" onload="r(this)"></iframe>
+          <iframe width="100%" height="1px" src="about:blank" xsrc="/meeting/{{ meeting.number }}/agenda/{{ slot.session.group.acronym }}/" onload="r(this)"></iframe>
           {% else %}
           <b><i>Agenda submitted in {{slot.session.agenda.file_extension|upper}} format</i></b>
           {% endif %}
@@ -333,7 +346,7 @@ You can customize the agenda below to show only selected working group sessions.
      <tr>
        <td></td>
        <td colspan="5">
-         <iframe width="100%" height="1px" src="/meeting/{{ meeting.num }}/agenda/{{ slot.session.group.acronym }}/" onload="r(this)"></iframe>
+         <iframe width="100%" height="1px" src="/meeting/{{ meeting.number }}/agenda/{{ slot.session.group.acronym }}/" onload="r(this)"></iframe>
        </td>
      </tr>
    {% endif %}

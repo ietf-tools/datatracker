@@ -36,7 +36,7 @@ class Meeting(models.Model):
     venue_addr = models.TextField(blank=True)
     break_area = models.CharField(blank=True, max_length=255)
     reg_area = models.CharField(blank=True, max_length=255)
-    
+
     def __unicode__(self):
         if self.type_id == "ietf":
             return "IETF-%s" % (self.number)
@@ -50,6 +50,9 @@ class Meeting(models.Model):
 
     def get_meeting_date (self,offset):
         return self.date + datetime.timedelta(days=offset)
+
+    def end_date(self):
+        return self.get_meeting_date(5)
 
     @classmethod
     def get_first_cut_off(cls):

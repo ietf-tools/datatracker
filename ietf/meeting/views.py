@@ -209,7 +209,7 @@ def html_agenda(request, num=None):
         return iphone_agenda(request, num)
 
     meeting = get_meeting(num)
-    timeslots = TimeSlot.objects.filter(Q(meeting = meeting.number)).order_by('time','name')
+    timeslots = TimeSlot.objects.filter(Q(meeting__id = meeting.id)).order_by('time','name')
     modified = timeslots.aggregate(Max('modified'))['modified__max']
 
     area_list = timeslots.filter(type = 'Session', session__group__parent__isnull = False).order_by('session__group__parent__acronym').distinct('session__group__parent__acronym').values_list('session__group__parent__acronym',flat=True)
@@ -223,26 +223,6 @@ def html_agenda(request, num=None):
          "area_list": area_list, "wg_list": wg_list ,
          "show_inline": set(["txt","htm","html"]) },
         RequestContext(request)), mimetype="text/html")
-
-def deprecated_PLEASE_REMOVE_ME(request, num=None):
-    timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-
-    groups_meeting = [];
-    for slot in timeslots:
-        for session in slot.sessions():
-            groups_meeting.append(session.acronym())
-    groups_meeting = set(groups_meeting);
-
-    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).filter(group_acronym__acronym__in = groups_meeting).order_by('group_acronym__acronym')
-    rgs = IRTF.objects.all().filter(acronym__in = groups_meeting).order_by('acronym')
-    areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
-
-    template = "meeting/agenda.html"
-    return render_to_response(template,
-            {"timeslots":timeslots, "update":update, "meeting":meeting, "venue":venue, "ads":ads,
-                "plenaryw_agenda":plenaryw_agenda, "plenaryt_agenda":plenaryt_agenda, 
-                "wg_list" : wgs, "rg_list" : rgs, "area_list" : areas},
-            context_instance=RequestContext(request))
 
 def iphone_agenda(request, num):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
@@ -457,19 +437,16 @@ def session_draft_pdf(request, num, session):
     os.unlink(pdfn)
     return HttpResponse(pdf_contents, mimetype="application/pdf")
 
-def get_meeting (num=None):
-    try:
-        if num != None:
-            meeting = OldMeeting.objects.get(number=num)
-        else:
-            meeting = OldMeeting.objects.all().order_by('-date')[:1].get()
-    except OldMeeting.DoesNotExist:
-        raise Http404("No meeting information for meeting %s available" % num)
+def get_meeting(num=None):
+    if (num == None):
+        meeting = Meeting.objects.filter(type="ietf").order_by("-date")[:1].get()
+    else:
+        meeting = get_object_or_404(Meeting, number=num)
     return meeting
 
 def week_view(request, num=None):
     meeting = get_meeting(num)
-    timeslots = TimeSlot.objects.filter(meeting = meeting.number)
+    timeslots = TimeSlot.objects.filter(meeting__id = meeting.id)
 
     template = "meeting/week-view.html"
     return render_to_response(template,
@@ -500,7 +477,7 @@ def ical_agenda(request, num=None):
             if item[0] == '~':
                 include_types.append(item[1:2].upper()+item[2:])
 
-    timeslots = TimeSlot.objects.filter(Q(meeting = meeting.number),
+    timeslots = TimeSlot.objects.filter(Q(meeting__id = meeting.id),
         Q(type__name__in = include_types) |
         Q(session__group__acronym__in = filter) |
         Q(session__group__parent__acronym__in = filter)
@@ -508,7 +485,6 @@ def ical_agenda(request, num=None):
         #Q(session__group__acronym__in = exclude) | 
         #Q(session__group__parent__acronym__in = exclude))
 
-#    return HttpResponse(render_to_string("meeting/agendaREDESIGN.ics" if settings.USE_DB_REDESIGN_PROXY_CLASSES else "meeting/agenda.ics",
     return HttpResponse(render_to_string("meeting/agendaREDESIGN.ics",
         {"timeslots":timeslots, "meeting":meeting },
         RequestContext(request)), mimetype="text/calendar")
@@ -528,11 +504,7 @@ def csv_agenda(request, num=None):
         RequestContext(request)), mimetype="text/csv")
 
 def meeting_requests(request, num=None) :
-    if (num == None):
-        meeting = Meeting.objects.filter(type="ietf").order_by("date").reverse()[0]
-    else:
-        meeting = get_object_or_404(Meeting, number=num)
-
+    meeting = get_meeting(num)
     sessions = Session.objects.filter(meeting__number=meeting.number,group__parent__isnull = False).exclude(requested_by=0).order_by("group__parent__acronym","status__slug","group__acronym")
 
     groups_not_meeting = Group.objects.filter(state='Active',type__in=['WG','RG','BOF']).exclude(acronym__in = [session.group.acronym for session in sessions]).order_by("parent__acronym","acronym")
