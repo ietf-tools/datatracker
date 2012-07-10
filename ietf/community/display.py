@@ -74,7 +74,7 @@ class StatusField(DisplayField):
                 tags = '[%s]' % ",".join(tags)
             else:
                 tags = ''
-        return '%s%s' % (state, tags)
+        return '%s<br/>%s' % (state, tags)
 
 class WGField(DisplayField):
     codename = 'wg_rg'
