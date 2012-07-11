@@ -174,8 +174,12 @@ def charter(request, acronym):
     """
 
     group = get_object_or_404(Group, acronym=acronym)
-    charter_text = get_charter_text(group)
-
+    # TODO: get_charter_text() should be updated to return None
+    if group.charter:
+        charter_text = get_charter_text(group)
+    else:
+        charter_text = ''
+        
     return render_to_response('groups/charter.html', {
         'group': group,
         'charter_text': charter_text},

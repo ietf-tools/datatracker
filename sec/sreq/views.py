@@ -184,6 +184,10 @@ def cancel(request, acronym):
     This view cancels a session request and sends a notification.
     To cancel, or withdraw the request set status = deleted.
     "canceled" status is used by the secretariat.
+    
+    NOTE: this function can also be called after a session has been
+    scheduled during the period when the session request tool is 
+    reopened.  In this case be sure to clear the timeslot assignment as well.
     '''
     meeting = get_meeting()
     group = get_object_or_404(Group, acronym=acronym)
@@ -197,6 +201,12 @@ def cancel(request, acronym):
     for session in sessions:
         session.status_id = 'deleted'
         session.save()
+        
+        # clear timeslot assignment if already scheduled
+        if session.timeslot_set.all():
+            timeslot = session.timeslot_set.all()[0]
+            timeslot.session = None
+            timeslot.save()
         
     # log activity
     #add_session_activity(group,'Session was cancelled',meeting,user)

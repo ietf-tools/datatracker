@@ -17,7 +17,7 @@
 <div class="module group-container">
     <h2>Groups - Charter</h2>
     <pre>
-    {{ charter_text }}
+    {% if charter_txt %}{{ charter_text }}{% else %}Charter not found.{% endif %}
     </pre>
 </div> <!-- module -->
 

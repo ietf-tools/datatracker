@@ -96,6 +96,15 @@ def get_last_meeting(meeting):
     last_number = int(meeting.number) - 1
     return Meeting.objects.get(number=last_number)
     
+def is_combined(session):
+    '''
+    Check to see if this session is using two combined timeslots
+    '''
+    if session.timeslot_set.count() > 1:
+        return True
+    else:
+        return False
+        
 def make_directories(meeting):
     '''
     This function takes a meeting object and creates the appropriate materials directories
@@ -345,6 +354,7 @@ def non_session(request, meeting_id):
             name = form.cleaned_data['name']
             short = form.cleaned_data['short']
             type = form.cleaned_data['type']
+            group = form.cleaned_data['group']
             duration = form.cleaned_data['duration']
             t = meeting.date + datetime.timedelta(days=int(day))
             new_time = datetime.datetime(t.year,t.month,t.day,time.hour,time.minute)
@@ -357,7 +367,7 @@ def non_session(request, meeting_id):
                 session = Session(meeting=meeting,
                                   name=name,
                                   short=short,
-                                  group=Group.objects.get(acronym='none'),
+                                  group=group,
                                   requested_by=Person.objects.get(name='(system)'),
                                   status_id='sched')
                 session.save()
@@ -389,12 +399,19 @@ def non_session(request, meeting_id):
 
 def non_session_delete(request, meeting_id, slot_id):
     '''
-    This function deletes the non-session TimeSlot
+    This function deletes the non-session TimeSlot.  For "other" and "plenary" timeslot types
+    we need to delete the corresponding Session object as well.  Check for uploaded material 
+    first.
     '''
     slot = get_object_or_404(TimeSlot, id=slot_id)
-    # if this is a Tutorial, TimeSlot.type = 'other', delete corresponding Session object
-    if slot.type_id == 'other':
-        slot.session.delete()
+    if slot.type_id in ('other','plenary'):
+        if slot.session.materials.exclude(states__slug='deleted'):
+            messages.error(request, 'Materials have already been uploaded for "%s".  You must delete those before deleting the timeslot.' % slot.name)
+            url = reverse('meetings_non_session', kwargs={'meeting_id':meeting_id})
+            return HttpResponseRedirect(url)
+            
+        else:
+            slot.session.delete()
     slot.delete()
     
     messages.success(request, 'Non-Session timeslot deleted successfully')
@@ -541,6 +558,8 @@ def schedule(request, meeting_id, acronym):
             d['time'] = qs[0].time.strftime('%H%M')
         else:
             d['day'] = 2
+        if is_combined(s):
+            d['combine'] = True
         initial.append(d)
     
     # need to use curry here to pass custom variable to form init
@@ -567,6 +586,7 @@ def schedule(request, meeting_id, acronym):
                     room = form.cleaned_data['room']
                     time = form.cleaned_data['time']
                     day = form.cleaned_data['day']
+                    combine = form.cleaned_data.get('combine',None)
                     session = Session.objects.get(id=id)
                     if session.timeslot_set.all():
                         initial_timeslot = session.timeslot_set.all()[0]
@@ -622,15 +642,16 @@ def schedule(request, meeting_id, acronym):
                         session.modified = now
                         session.save()
                     
-                    # handle "combine" option
+                    # COMBINE SECTION ----------------------
                     if 'combine' in form.changed_data:
                         next_slot = get_next_slot(timeslot)
-                        if form.cleaned_data.get('combine',None):
+                        if combine:
                             next_slot.session = session
                         else:
                             next.slot.session = None
                         next_slot.modified = now
                         next_slot.save()
+                    # ---------------------------------------
             
             # notify.  dont send if Tutorial, BOF or indicated on form
             notification_message = "No notification has been sent to anyone for this session."
@@ -672,7 +693,13 @@ def select_group(request, meeting_id):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
     if request.method == 'POST':
-        redirect_url = reverse('meetings_schedule', kwargs={'meeting_id':meeting.number,'acronym':request.POST['group']})
+        group = request.POST.get('group',None)
+        if group:
+            redirect_url = reverse('meetings_schedule', kwargs={'meeting_id':meeting_id,'acronym':group})
+        else:
+            redirect_url = reverse('meetings_select_group',kwargs={'meeting_id':meeting_id})
+            messages.error(request, 'No group selected')
+            
         return HttpResponseRedirect(redirect_url)
             
     # split groups into scheduled / unscheduled

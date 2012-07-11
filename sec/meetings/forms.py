@@ -184,4 +184,17 @@ class NonSessionForm(TimeSlotForm):
     # inherit TimeSlot and add extra fields
     short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)')
     type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(slug__in=('other','reg','break','plenary')),empty_label=None)
+    group = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__in=('edu','ietf','iepg','tools','iesg','iab','iaoc')),help_text='Required for Session types: other, plenary',required=False)
     show_location = forms.BooleanField(required=False)
+
+    def clean(self):
+        super(NonSessionForm, self).clean()
+        if any(self.errors):
+            return
+        cleaned_data = self.cleaned_data
+        group = cleaned_data['group']
+        type = cleaned_data['type']
+        if type.slug in ('other','plenary') and not group:
+            raise forms.ValidationError('ERROR: a group selection is required')
+        
+        return cleaned_data

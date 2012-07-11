@@ -1,5 +1,19 @@
 from django.conf import settings
 
+'''
+RTF quick reference (from Word2007RTFSpec9.doc):
+\fs24       : sets the font size to 24 half points
+\header     : header on all pages
+\headerf    : header on first page only
+\pard       : resets any previous paragraph formatting
+\plain      : resets any previous character formatting
+\qr         : right-aligned
+\tqc        : centered tab
+\tqr        : flush-right tab
+\tx         : tab position in twips (1440/inch) from the left margin
+\nowidctlpar    : no window/orphan control
+\widctlpar      : window/orphan control
+'''
 
 def create_blue_sheets(meeting, groups):
     file = open(settings.BLUE_SHEET_PATH, 'w')
@@ -22,9 +36,9 @@ def create_blue_sheets(meeting, groups):
  \\pard \\s15\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright
  {\\b\\fs24
  \\par
- \\par \\tab The NOTE WELL statement included in your registration packet applies to this meeting.
+ \\par \\tab The NOTE WELL statement included in your registration packet applies to this meeting.  Participants acknowledge that these attendance records will be made available to the public.
  \\par
- \\par                               NAME                                                  EMAIL ADDRESS
+ \\par                               NAME                                 ORGANIZATIONAL AFFILIATION
  \\par \\tab
  \\par }}
  {\\footer \\pard\\plain \\s16\\qc\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright \\fs20\\cgrid {\\cs17 Page }
@@ -40,8 +54,9 @@ def create_blue_sheets(meeting, groups):
   {\\fs28 \\par Working Group Session: %s \\par \\par }
 {\\b \\fs24 Mailing List: %s \\tx5300\\tab Actual Start Time: __________     \\par \\par Chairperson:_______________________________     Actual End Time: __________ \\par \\par }
  {\\tab \\tab      }
-{\\par \\tab The NOTE WELL statement included in your registration packet applies to this meeting. \\par \\par
-\\b \\tab\\tab\\tab NAME\\tab \\tab \\tab \\tab \\tab EMAIL ADDRESS \\par }
+{\\par \\tab The NOTE WELL statement included in your registration packet applies to this meeting.  Participants acknowledge that these attendance records will be made available to the public. \\par 
+\\par \\b \\tab \\tab \\tab NAME \\tab \\tab \\tab \\tab ORGANIZATIONAL AFFILIATION
+\\par }
   \\pard \\fi-90\\li90\\nowidctlpar\\widctlpar\\adjustright
  {\\fs16
 ''' % (group.list_email,
@@ -56,7 +71,7 @@ def create_blue_sheets(meeting, groups):
        group.list_email)
        
         file.write(group_header)
-        for x in range(1,118):
+        for x in range(1,117):
             line = '''\\par %s._________________________________________________ \\tab _____________________________________________________
  \\par
  ''' % x
