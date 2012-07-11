@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.23"
+version = "0.26"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -52,6 +52,11 @@ progdir = os.path.dirname(sys.argv[0])
 opt_debug = False
 opt_timestamp = False
 opt_trace = False
+opt_authorinfo = False
+opt_getauthors = False
+opt_attributes = False
+# Don't forget to add the option variable to the globals list in _main below
+
 
 # The following is an alias list for short forms which starts with a
 # different letter than the long form.
@@ -70,6 +75,7 @@ longform = {
 }
 longform = dict([ (short+" ", longform[short]+" ") for short in longform ])
 
+month_names = [ 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec' ]
 
 # ----------------------------------------------------------------------
 # Functions
@@ -114,7 +120,8 @@ def acronym_match(s, l):
 
 class Draft():
 
-    def __init__(self, text):
+    def __init__(self, text, source):
+        self.source = source
         self.rawtext = text
 
         text = re.sub(".\x08", "", text)    # Get rid of inkribbon backspace-emphasis
@@ -135,9 +142,27 @@ class Draft():
             for pagestart in range(0, len(self.lines), 58):
                 self.pages += [ "\n".join(self.lines[pagestart:pagestart+54]) ]
 
-        self.filename, self.revision = self._parse_draftname()
-        
+        try:
+            self.filename, self.revision = self._parse_draftname()
+        except ValueError, e:
+            _warn("While processing '%s': %s" % (self.source, e))
+            try:
+                path, base = self.source.rsplit("/", 1)
+            except ValueError:
+                path, base = "", self.source
+            if base.startswith("draft-"):
+                name, ext = base.split(".", 1)
+                revmatch = re.search("\d\d$", name)
+                if revmatch:
+                    self.filename = name[:-3]
+                    self.revision = name[-2:]
+                else:
+                    raise ValueError(e+"\n"+self.source)
+            else:
+                raise ValueError(e+"\n"+self.source)
+
         self._authors = None
+        self._authors_with_firm = None
         self._author_info = None
         self._abstract = None
         self._pagecount = None
@@ -149,10 +174,15 @@ class Draft():
     def _parse_draftname(self):
         draftname_regex = r"(draft-[a-z0-9-]*)-(\d\d)(\w|\.txt|\n|$)"
         draftname_match = re.search(draftname_regex, self.pages[0])
+        rfcnum_regex = r"(Re[qg]uests? [Ff]or Commm?ents?:? +|Request for Comments: RFC |RFC-|RFC )((# ?)?[0-9]+)( |,|\n|$)"
+        rfcnum_match = re.search(rfcnum_regex, self.pages[0])
         if draftname_match:
             return (draftname_match.group(1), draftname_match.group(2) )
+        elif rfcnum_match:
+            return ("rfc"+rfcnum_match.group(2), None )
         else:
             self.errors["draftname"] = "Could not find the draft name and revision on the first page."
+            raise ValueError, self.errors["draftname"] + "\n'"+self.text.strip()[:240] + "'..."
             return ("", "")
 
     # ----------------------------------------------------------------------
@@ -252,7 +282,6 @@ class Draft():
     def get_creation_date(self):
         if self._creation_date:
             return self._creation_date
-        month_names = [ 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec' ]
         date_regexes = [
             r'^(?P<month>\w+)\s+(?P<day>\d{1,2}),?\s+(?P<year>\d{4})',
             r'^(?P<day>\d{1,2}),?\s+(?P<month>\w+)\s+(?P<year>\d{4})',
@@ -265,9 +294,16 @@ class Draft():
             r'\s{3,}(?P<month>\w+)\s+(?P<year>\d{4})',
         ]
 
+        dates = []
+        text = self.pages[0]
         for regex in date_regexes:
-            match = re.search(regex, self.pages[0], re.MULTILINE)
+            match = re.search(regex, text, re.MULTILINE)
             if match:
+                start = match.start()
+                if not "expires" in text[start-10:start].lower():
+                    dates += [(start, match)]
+        dates.sort()
+        for start, match in dates:
                 md = match.groupdict()
                 mon = md['month'][0:3].lower()
                 day = int( md.get( 'day', 0 ) )
@@ -370,8 +406,17 @@ class Draft():
             self.extract_authors()
         return self._authors
 
-    def get_author_info(self):
-        """Returns a list of tuples, with each tuple containing (given_names, surname, email).  Email will be None if unknown."""
+    def get_authors_with_firm(self):
+        """Returns a list of strings with author name and email within angle brackets"""
+        if self._authors_with_firm == None:
+            self.extract_authors()
+        return self._authors_with_firm
+        
+
+    def get_author_list(self):
+        """Returns a list of tuples, with each tuple containing (given_names,
+        surname, email, company).  Email will be None if unknown.
+        """
         if self._author_info == None:
             self.extract_authors()
         return self._author_info
@@ -381,17 +426,23 @@ class Draft():
 
         """
         aux = {
-            "honor" : r"(?:Dr\.?|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
+            "honor" : r"(?:[A-Z]\.|Dr\.?|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
             "prefix": r"([Dd]e|Hadi|van|van de|van der|Ver|von|[Ee]l)",
             "suffix": r"(jr.?|Jr.?|II|2nd|III|3rd|IV|4th)",
-            "first" : r"([A-Z][-A-Za-z]*)((\.?[- ]{1,2}[A-Za-z]+)*)",
+            "first" : r"([A-Z][-A-Za-z]*)(( ?\([A-Z][-A-Za-z]*\))?(\.?[- ]{1,2}[A-Za-z]+)*)",
             "last"  : r"([-A-Za-z']{2,})",
+            "months": r"(January|February|March|April|May|June|July|August|September|October|November|December)",
+            "mabbr" : r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?",
             }
+        authcompanyformats = [
+            r" {6}(?P<author>(%(first)s[ \.]{1,3})+((%(prefix)s )?%(last)s)( %(suffix)s)?), (?P<company>[^.]+\.?)$" % aux,
+            r" {6}(?P<author>(%(first)s[ \.]{1,3})+((%(prefix)s )?%(last)s)( %(suffix)s)?) *\((?P<company>[^.]+\.?)\)$" % aux,
+        ]
         authformats = [
-            r" {6}(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)([, ]?(.+\.?|\(.+\.?|\)))?$" % aux,
+            r" {6}((%(first)s[ \.]{1,3})+((%(prefix)s )?%(last)s)( %(suffix)s)?)(, ([^.]+\.?|\([^.]+\.?|\)))?,?$" % aux,
             r" {6}(((%(prefix)s )?%(last)s)( %(suffix)s)?, %(first)s)?$" % aux,
             r" {6}(%(last)s)$" % aux,
-            ]
+        ]
         multiauthformats = [
             (
                 r" {6}(%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)(, ?%(first)s[ \.]{1,3}((%(prefix)s )?%(last)s)( %(suffix)s)?)+$" % aux,
@@ -400,13 +451,25 @@ class Draft():
         ]
         editorformats = [
             r"(?:, | )([Ee]d\.?|\([Ee]d\.?\)|[Ee]ditor)$",
-            ]
+        ]
+        companyformats = [
+            r" {6}(([A-Za-z'][-A-Za-z0-9.& ']+)(,? ?Inc\.?))$",
+            r" {6}(([A-Za-z'][-A-Za-z0-9.& ']+)(,? ?Ltd\.?))$",
+            r" {6}(([A-Za-z'][-A-Za-z0-9.& ']+)(/([A-Za-z'][-A-Za-z0-9.& ']+))+)$",
+            r" {6}([a-z0-9.-]+)$",
+            r" {6}(([A-Za-z'][-A-Za-z0-9.&']+)( [A-Za-z'][-A-Za-z0-9.&']+)*)$",
+            r" {6}(([A-Za-z'][-A-Za-z0-9.']+)( & [A-Za-z'][-A-Za-z0-9.']+)*)$",
+            r" {6}\((.+)\)$",
+            r" {6}(\w+\s?\(.+\))$",
+        ]
+
+        dateformat = r"(((%(month)s|%(mabbr)s) \d+, |\d+ (%(month)s|%(mabbr)s),? |\d+/\d+/)\d\d\d\d|\d\d\d\d-\d\d-\d\d)$"
 
         address_section = r"^ *([0-9]+\.)? *(Author|Editor)('s|s'|s|\(s\)) (Address|Addresses|Information)"
 
         ignore = [
             "Standards Track", "Current Practice", "Internet Draft", "Working Group",
-            "No Affiliation", 
+            "Expiration Date", 
             ]
 
         def make_authpat(hon, first, last, suffix):
@@ -416,6 +479,7 @@ class Draft():
                 return s
             first = dotexp(first)
             last = dotexp(last)
+            first = re.sub("[()]", " ", first)
             if " " in first:
                 # if there's a middle part, let it be optional
                 first, middle = first.split(" ", 1)
@@ -430,15 +494,19 @@ class Draft():
             return authpat
 
         authors = []
-        author_info = []
         companies = []
+        author_info = []
+        companies_seen = []
+        self._docheader = ""
 
         # Collect first-page author information first
         have_blankline = False
         have_draftline = False
         prev_blankline = False
         for line in self.lines[:30]:
-            #_debug( "**" + line)
+            self._docheader += line+"\n"
+            author_on_line = False
+            _debug( "**" + line)
             leading_space = len(re.findall("^ *", line)[0])
             line_len = len(line.rstrip())
             trailing_space = line_len <= 72 and 72 - line_len or 0
@@ -451,6 +519,9 @@ class Draft():
                 if (leading_space > 5 and abs(leading_space - trailing_space) < 5):
                     _debug("Breaking for centered line")
                     break
+                if re.search(dateformat, line):
+                    if authors:
+                        _debug("Breaking for dateformat after author name")
                 for editorformat in editorformats:
                     if re.search(editorformat, line):
                         line = re.sub(editorformat, "", line)
@@ -458,35 +529,86 @@ class Draft():
                 for lineformat, authformat in multiauthformats:
                     match = re.search(lineformat, line)
                     if match:
-                        #_debug("Multiauth format: '%s'" % lineformat)
+                        _debug("Multiauth format: '%s'" % lineformat)
                         author_list = re.findall(authformat, line)
                         authors += [ a[0] for a in author_list ]
+                        companies += [ None for a in author_list ]
+                        author_on_line = True
                         #_debug("\nLine:   " + line)
                         #_debug("Format: " + authformat)
                         for author in author_list:
                             _debug("Author: '%s'" % author[0])
-                else:
-                    for authformat in authformats:                        
-                        match = re.search(authformat, line)
+                        break
+                if not author_on_line:
+                    for lineformat in authcompanyformats:
+                        match = re.search(lineformat, line)
                         if match:
-                            #_debug("Auth format: '%s'" % authformat)
-                            author = match.group(1)
-                            authors += [ author ]
+                            _debug("Line format: '%s'" % lineformat)
+                            author = match.group("author")
+                            company = match.group("company")
+                            authors += [ author, '']
+                            companies += [ None, company ]
                             #_debug("\nLine:   " + line)
                             #_debug("Format: " + authformat)
                             _debug("Author: '%s'" % author)
+                            _debug("Company: '%s'" % company)
+                            author_on_line = True
+                            break
+                if not author_on_line:
+                    for authformat in authformats:
+                        match = re.search(authformat, line)
+                        if match:
+                            _debug("Auth format: '%s'" % authformat)
+                            author = match.group(1)
+                            authors += [ author ]
+                            companies += [ None ]
+                            #_debug("\nLine:   " + line)
+                            #_debug("Format: " + authformat)
+                            _debug("Author: '%s'" % author)
+                            author_on_line = True
+                            break
+                if not author_on_line:
+                    for authformat in companyformats:
+                        match = re.search(authformat, line)
+                        if match:
+                            _debug("Auth format: '%s'" % authformat)
+                            company = match.group(1)
+                            authors += [ "" ]
+                            companies += [ company ]
+                            #_debug("\nLine:   " + line)
+                            #_debug("Format: " + authformat)
+                            _debug("Company: '%s'" % company)
+                            break
+            if authors and not author_on_line:
+                # Retain information about blank lines in author list
+                authors += [""]
+                companies += [ "" ]
             if line.strip() == "":
                 if prev_blankline and authors:
+                    _debug("Breaking for having found consecutive blank lines after author name")
                     break
-                have_blankline = True
-                prev_blankline = True
+                if authors:
+                    have_blankline = True
+                    prev_blankline = True
             else:
                 prev_blankline = False
             if "draft-" in line:
                 have_draftline = True
             if have_blankline and have_draftline:
+                _debug("Breaking for having found both blank line and draft-name line")
                 break
 
+        # remove trailing blank entries in the author list:
+        for i in range(len(authors)-1,-1,-1):
+            if authors[i] == "" and companies[i] == "":
+                del authors[i]
+                del companies[i]
+            else:
+                break
+
+        _debug("A:companies : %s" % str(companies))
+        #companies = [ None if a else '' for a in authors ]
+        #_debug("B:companies : %s" % str(companies))
         #find authors' addresses section if it exists
         last_line = len(self.lines)-1
         address_section_pos = last_line/2
@@ -499,8 +621,9 @@ class Draft():
         found_pos = []
         for i in range(len(authors)):
             _debug("1: authors[%s]: %s" % (i, authors[i]))
+            _debug("   company[%s]: %s" % (i, companies[i]))
             author = authors[i]
-            if author == None:
+            if author in [ None, '', ]:
                 continue
             suffix_match = re.search(" %(suffix)s$" % aux, author)
             if suffix_match:
@@ -537,7 +660,6 @@ class Draft():
                 start = 0
                 col = None
                 # Find start of author info for this author (if any).
-                # Scan from the end of the file, looking for a match to  authpath
                 # Scan towards the front from the end of the file, looking for a match to authpath
                 for j in range(last_line, address_section_pos, -1):
                     line = self.lines[j]
@@ -552,12 +674,12 @@ class Draft():
                                 found_pos += [ start ]
                                 _debug( " ==> start %s, normalized '%s'" % (start, form.strip()))
                                 # The author info could be formatted in multiple columns...
-                                columns = re.split("(    +| and )", form)
+                                columns = re.split("(    +|  and  )", form)
                                 # _debug( "Columns:" + str(columns))
                                 # Find which column:
                                 # _debug( "Col range:" + str(range(len(columns))))
 
-                                cols = [ c for c in range(len(columns)) if re.search(authpat+r"( and |, |$)", columns[c].strip()) ]
+                                cols = [ c for c in range(len(columns)) if re.search(authpat+r"(  and  |, |$)", columns[c].strip()) ]
                                 if cols:
                                     col = cols[0]
                                     if not (start, col) in found_pos:
@@ -575,7 +697,8 @@ class Draft():
                                         _debug( "Cut:   '%s'" % form[beg:end])
                                         author_match = re.search(authpat, columns[col].strip()).group(1)
                                         _debug( "AuthMatch: '%s'" % (author_match,))
-                                        if author_match in companies:
+                                        if author_match in companies_seen:
+                                            companies[i] = authors[i]
                                             authors[i] = None
                                         else:
                                             if casefixname in author_match:
@@ -595,6 +718,7 @@ class Draft():
                                             if not " ".join([ n for n in names if n ]) == fullname:
                                                 _err("Author tuple doesn't match text in draft: %s, %s" % (authors[i], fullname))
                                             authors[i] = (fullname, first, middle, surname, suffix)
+                                            companies[i] = None
                                         #_debug( "Author: %s: %s" % (author_match, authors[author_match]))
                                         break
                         except AssertionError, e:
@@ -631,20 +755,21 @@ class Draft():
                     # Maybe break on author name
     #                 _debug("Line: %s"%line.strip())
     #                 for a in authors:
-    #                     if a and a not in companies:
+    #                     if a and a not in companies_seen:
     #                         _debug("Search for: %s"%(r"(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"))
-                    authmatch = [ a for a in authors[i+1:] if a and not a.lower() in companies and (re.search((r"(?i)(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"), line.strip()) or acronym_match(a, line.strip()) )]
+                    authmatch = [ a for a in authors[i+1:] if a and not a.lower() in companies_seen and (re.search((r"(?i)(^|\W)"+re.sub("\.? ", ".* ", a)+"(\W|$)"), line.strip()) or acronym_match(a, line.strip()) )]
                     if authmatch:
                         _debug("     ? Other author or company ?  : %s" % authmatch)
                         _debug("     Line: "+line.strip())
                         if nonblank_count == 1 or (nonblank_count == 2 and not blanklines):
                             # First line after an author -- this is a company
-                            companies += [ c.lower() for c in authmatch ]
-                            companies += [ line.strip().lower() ] # XXX fix this for columnized author list
-                            companies = list(set(companies))
-                            _debug("       -- Companies: " + ", ".join(companies))
+                            companies_seen += [ c.lower() for c in authmatch ]
+                            companies_seen += [ line.strip().lower() ] # XXX fix this for columnized author list
+                            companies_seen = list(set(companies_seen))
+                            _debug("       -- Companies: " + ", ".join(companies_seen))
                             for k in range(i+1, len(authors)):
-                                if authors[k] and authors[k].lower() in companies:
+                                if authors[k] and authors[k].lower() in companies_seen:
+                                    companies[k] = authors[k]
                                     authors[k] = None
                         elif blanklines and not "@" in line:
                             # Break on an author name
@@ -661,6 +786,7 @@ class Draft():
                     column = re.sub(" *\(dot\) *", ".", column)
                     column = re.sub(" +at +", "@", column)
                     column = re.sub(" +dot +", ".", column)
+                    column = re.sub("&cisco.com", "@cisco.com", column)
 
     #                 if re.search("^\w+: \w+", column):
     #                     keyword = True
@@ -679,14 +805,32 @@ class Draft():
                         break
                 authors[i] = authors[i] + ( email, )
             else:
-                authors[i] = None
                 if not author in ignore:
+                    companies[i] = authors[i]
                     _debug("Not an author? '%s'" % (author))
+                authors[i] = None
 
-        authors = [ a for a in authors if a != None ]
+        assert(len(authors) == len(companies))        
+        _debug('Author list: %s' % authors)
+        _debug('Company list: %s' % companies)
+        for i in range(len(authors)):
+            if authors[i]:
+                _debug('authors[%s]: %s' % (i, authors[i]))
+                company = ''
+                for k in range(i+1, len(companies)):
+                    _debug('companies[%s]: %s' % (k, companies[k]))
+                    if companies[k] != None:
+                        company = companies[k]
+                        break
+                authors[i] = authors[i] + ( company, )
+
+        authors = [ a for a in authors if a ]
         _debug(" * Final author tuples: %s" % (authors,))
+        _debug(" * Final company list: %s" % (companies,))
+        _debug(" * Final companies_seen: %s" % (companies_seen,))
         self._author_info = authors        
-        self._authors = [ "%s <%s>"%(full,email) if email else full for full,first,middle,last,suffix,email in authors ]
+        self._authors_with_firm = [ "%s <%s> (%s)"%(full,email,company) for full,first,middle,last,suffix,email,company in authors ]
+        self._authors = [ "%s <%s>"%(full,email) if email else full for full,first,middle,last,suffix,email,company in authors ]
         self._authors.sort()
         _debug(" * Final author list: " + ", ".join(self._authors))
         _debug("-"*72)
@@ -764,17 +908,35 @@ def getmeta(fn):
     if os.path.exists(fn):
         filename = fn
         fn = os.path.basename(fn)
-    elif fn.lower().startswith('rfc'):
-        filename = os.path.join("/www/tools.ietf.org/rfc", fn)
     else:
-        filename = os.path.join("/www/tools.ietf.org/id", fn)
+        if fn.lower().startswith('rfc'):
+            filename = os.path.join("/www/tools.ietf.org/rfc", fn)
+        elif not "/" in fn:
+            filename = os.path.join("/www/tools.ietf.org/id", fn)
+            if not os.path.exists(filename):
+                fn = filename
+                while not "-00." in fn:
+                    revmatch = re.search("-(\d\d)\.", fn)
+                    if revmatch:
+                        rev = revmatch.group(1)
+                        prev = "%02d" % (int(rev)-1)
+                        fn = fn.replace("-%s."%rev, "-%s."%prev)
+                        if os.path.exists(fn):
+                            _warn("Using rev %s instead: '%s'" % (prev, filename))
+                            filename = fn
+                            fn = os.path.basename(fn)
+                            break
+                    else:
+                        break
+        else:
+            filename = fn
     if not os.path.exists(filename):
-        _warn("Could not find file: '%s'" % (filename))
-        return None
+        _warn("Could not find file:  '%s'" % (filename))
+        return
 
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(filename)[stat.ST_MTIME]))
     text = _gettext(filename)
-    draft = Draft(text)
+    draft = Draft(text, filename)
     #_debug("\n".join(draft.lines))
 
     fields["eventdate"] = timestamp
@@ -785,7 +947,10 @@ def getmeta(fn):
     fields["doctitle"] = draft.get_title()
     fields["docpages"] = str(draft.get_pagecount())
     fields["docauthors"] = ", ".join(draft.get_authors())
-#    fields["docauthinfo"] = str(draft.get_author_info())
+    fields["_authorlist"] = draft.get_author_list()
+    fields["docaffiliations"] = ", ".join(draft.get_authors_with_firm())
+    if opt_debug:
+        fields["docheader"] = draft._docheader
     normrefs, rfcrefs, refs = draft.get_refs()
     fields["docrfcrefs"] = ", ".join(rfcrefs)
     fields["doccreationdate"] = str(draft.get_creation_date())
@@ -801,22 +966,50 @@ def getmeta(fn):
 
 # ----------------------------------------------------------------------
 def _output(docname, fields, outfile=sys.stdout):
-    if opt_timestamp:
-        outfile.write("%s " % (fields["eventdate"]))
-    outfile.write("%s" % (os.path.basename(docname.strip())))
+    if opt_getauthors:
+        # Output an (incomplete!) getauthors-compatible format.  Country
+        # information is always UNKNOWN, and information about security and
+        # iana sections presence is missing.
+        for full,first,middle,last,suffix,email,company in fields["_authorlist"]:
+            if company in company_domain:
+                company = company_domain[company]
+            else:
+                if email and '@' in email:
+                    company = email.split('@')[1]
+            if company.endswith(".com"):
+                company = company[:-4]
+            fields["name"] = full
+            fields["email"] = email
+            fields["company"] = company
+            fields["country"] = "UNKNOWN"
+            try:
+                year, month, day = fields["doccreationdate"].split("-")
+            except ValueError:
+                year, month, day = "UNKNOWN", "UNKNOWN", "UNKNOWN"
+            fields["day"] = day
+            fields["month"] = month_names[int(month)] if month != "UNKNOWN" else "UNKNOWN"
+            fields["year"] = year
+            print "%(doctag)s:%(name)s:%(company)s:%(email)s:%(country)s:%(docpages)s:%(month)s:%(year)s:%(day)s:" % fields
+    else:
+        if opt_attributes:
+            def outputkey(key, fields):
+                outfile.write("%-24s: %s\n" % ( key, fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" )))
+        else:
+            def outputkey(key, fields):
+                outfile.write(" %s='%s'" % ( key.lower(), fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" ).replace("\n", "\\n")))
+            if opt_timestamp:
+                outfile.write("%s " % (fields["eventdate"]))
+            outfile.write("%s" % (os.path.basename(docname.strip())))
 
-    def outputkey(key, fields):
-        outfile.write(" %s='%s'" % ( key.lower(), fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" ).replace("\n", "\\n")))
-
-    keys = fields.keys()
-    keys.sort()
-    for key in keys:
-        if fields[key] and not key in ["eventdate", ]:
-            outputkey(key, fields)
-    outfile.write("\n")
+        keys = fields.keys()
+        keys.sort()
+        for key in keys:
+            if fields[key] and not key in ["eventdate", ] and not key.startswith("_"):
+                outputkey(key, fields)
+        outfile.write("\n")
 
 # ----------------------------------------------------------------------
-def _printmeta(timestamp, fn, outfile=sys.stdout):
+def _printmeta(fn, outfile=sys.stdout):
     if opt_trace:
         t = time.time()
         sys.stderr.write("%-58s" % fn[:-4])
@@ -828,13 +1021,12 @@ def _printmeta(timestamp, fn, outfile=sys.stdout):
     if opt_trace:
         sys.stderr.write("%5.1f\n" % ((time.time() - t)))
 
-
 # ----------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------
 
 def _main(outfile=sys.stdout):
-    global opt_debug, opt_timestamp, opt_trace, files
+    global opt_debug, opt_timestamp, opt_trace, opt_authorinfo, opt_getauthors, files, company_domain, opt_attributes
     # set default values, if any
     # ----------------------------------------------------------------------
     # Option processing
@@ -854,14 +1046,14 @@ def _main(outfile=sys.stdout):
         sys.exit(1)
 
     try:
-        opts, files = getopt.gnu_getopt(sys.argv[1:], "dhtTv", ["debug", "help", "timestamp", "trace", "version",])
+        opts, files = getopt.gnu_getopt(sys.argv[1:], "dhatTv", ["debug", "getauthors", "attribs", "attributes", "help", "timestamp", "notimestamp", "trace", "version",])
     except Exception, e:
         print "%s: %s" % (program, e)
         sys.exit(1)
 
     # parse options
     for opt, value in opts:
-        if   opt in ["-d", "--debug"]:  # Output debug information
+        if opt in ["-d", "--debug"]:  # Output debug information
             opt_debug = True
         elif opt in ["-h", "--help"]:   # Output this help text, then exit
             vars = globals()
@@ -871,11 +1063,29 @@ def _main(outfile=sys.stdout):
         elif opt in ["-v", "--version"]: # Output version information, then exit
             print program, version
             sys.exit(0)
-        elif opt in ["-t", "--timestamp"]: # Emit leading timestamp information 
+        elif opt in ["--getauthors"]:  # Output an (incomplete) getauthors-compatible format
+            opt_getauthors = True
+        elif opt in ["-a", "--attribs"]: # Output key-value attribute pairs 
+            opt_attributes = True
+        elif opt in ["-t", ]: # Toggle leading timestamp information 
+            opt_timestamp = not opt_timestamp
+        elif opt in ["--timestamp"]: # Emit leading timestamp information 
             opt_timestamp = True
+        elif opt in ["--notimestamp"]: # Omit leading timestamp information 
+            opt_timestamp = False
         elif opt in ["-T", "--trace"]: # Emit trace information while working
             opt_trace = True
 
+    company_domain = {}
+    if opt_getauthors:
+        gadata = open("/www/tools.ietf.org/tools/getauthors/getauthors.data")
+        for line in gadata:
+            if line.startswith("company:"):
+                try:
+                    kword, name, abbrev = line.strip().split(':')
+                    company_domain[name] = abbrev
+                except ValueError:
+                    pass
     if not files:
         files = [ "-" ]
 
@@ -888,16 +1098,11 @@ def _main(outfile=sys.stdout):
         else:
             file = open(file)
 
-        if os.path.exists(file.name):
-            timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(file.name)[stat.ST_MTIME]))
-        else:
-            timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime())
-
         basename = os.path.basename(file.name)
         if basename.startswith("draft-"):
             draft = basename
             _debug( "** Processing '%s'" % draft)
-            _printmeta(timestamp, file.name, outfile)
+            _printmeta(file.name, outfile)
         else:
             for line in file:
                 draft = line.strip()
@@ -905,7 +1110,7 @@ def _main(outfile=sys.stdout):
                     continue
                 if draft:
                     _debug( "** Processing '%s'" % draft)
-                    _printmeta(timestamp, draft, outfile)
+                    _printmeta(draft, outfile)
 
 if __name__ == "__main__":
     try:

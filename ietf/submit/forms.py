@@ -200,7 +200,7 @@ class UploadForm(forms.Form):
             return self.draft
         txt_file = self.cleaned_data['txt']
         txt_file.seek(0)
-        self.draft = Draft(txt_file.read())
+        self.draft = Draft(txt_file.read(), txt_file.name)
         txt_file.seek(0)
         return self.draft
     
@@ -274,8 +274,8 @@ class UploadForm(forms.Form):
             file_type=','.join(self.file_type),
             )
         order = 0
-        for author in draft.get_author_info():
-            full_name, first_name, middle_initial, last_name, name_suffix, email = author
+        for author in draft.get_author_list():
+            full_name, first_name, middle_initial, last_name, name_suffix, email, company = author
             order += 1
             if settings.USE_DB_REDESIGN_PROXY_CLASSES:
                 # save full name
