@@ -36,9 +36,9 @@ def create_blue_sheets(meeting, groups):
  \\pard \\s15\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright
  {\\b\\fs24
  \\par
- \\par \\tab The NOTE WELL statement included in your registration packet applies to this meeting.  Participants acknowledge that these attendance records will be made available to the public.
+ \\par \\tab The NOTE WELL statement applies to this meeting.  Participants acknowledge that these attendance records will be made available to the public.
  \\par
- \\par                               NAME                                 ORGANIZATIONAL AFFILIATION
+ \\par                               NAME                                 ORGANIZATION AFFILIATION
  \\par \\tab
  \\par }}
  {\\footer \\pard\\plain \\s16\\qc\\nowidctlpar\\widctlpar\\tqc\\tx4320\\tqr\\tx8640\\adjustright \\fs20\\cgrid {\\cs17 Page }
@@ -54,8 +54,8 @@ def create_blue_sheets(meeting, groups):
   {\\fs28 \\par Working Group Session: %s \\par \\par }
 {\\b \\fs24 Mailing List: %s \\tx5300\\tab Actual Start Time: __________     \\par \\par Chairperson:_______________________________     Actual End Time: __________ \\par \\par }
  {\\tab \\tab      }
-{\\par \\tab The NOTE WELL statement included in your registration packet applies to this meeting.  Participants acknowledge that these attendance records will be made available to the public. \\par 
-\\par \\b \\tab \\tab \\tab NAME \\tab \\tab \\tab \\tab ORGANIZATIONAL AFFILIATION
+{\\par \\tab The NOTE WELL statement applies to this meeting.  Participants acknowledge that these attendance records will be made available to the public. \\par 
+\\par \\b \\tab \\tab \\tab NAME \\tab \\tab \\tab \\tab ORGANIZATION AFFILIATION
 \\par }
   \\pard \\fi-90\\li90\\nowidctlpar\\widctlpar\\adjustright
  {\\fs16
