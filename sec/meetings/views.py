@@ -760,6 +760,14 @@ def times(request, meeting_id):
             
             t = meeting.date + datetime.timedelta(days=int(day))
             new_time = datetime.datetime(t.year,t.month,t.day,time.hour,time.minute)
+            
+            # don't allow creation of timeslots with same start time as existing timeslots
+            # assert False, (new_time, time_seen)
+            if new_time in time_seen:
+                messages.error(request, 'There is already a timeslot for %s.  To change you must delete the old one first.' % new_time.strftime('%a %H:%M'))
+                url = reverse('meetings_times', kwargs={'meeting_id':meeting_id})
+                return HttpResponseRedirect(url)
+            
             for room in meeting.room_set.all():
                 TimeSlot.objects.create(type_id='session',
                                         meeting=meeting,

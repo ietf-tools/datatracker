@@ -179,7 +179,7 @@ class TimeSlotForm(forms.Form):
     time = forms.TimeField()
     duration = TimedeltaFormField(widget=TimedeltaWidget(attrs={'inputs':['hours','minutes']}))
     name = forms.CharField(help_text='Name that appears on the agenda')
-
+    
 class NonSessionForm(TimeSlotForm):
     # inherit TimeSlot and add extra fields
     short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)')
