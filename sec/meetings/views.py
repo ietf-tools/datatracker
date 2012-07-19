@@ -648,7 +648,7 @@ def schedule(request, meeting_id, acronym):
                         if combine:
                             next_slot.session = session
                         else:
-                            next.slot.session = None
+                            next_slot.session = None
                         next_slot.modified = now
                         next_slot.save()
                     # ---------------------------------------
