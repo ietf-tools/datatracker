@@ -105,7 +105,7 @@ class IETFWG(Group):
                                       areagroup__area__status=lambda v: ("parent__state", { 1: "active" }[v]),
                                       start_date__isnull=lambda v: None if v else ("groupevent__changestategroupevent__state__slug", "active"),
                                       ),
-                                 always_filter=dict(type__in=("wg", "individ")))
+                                 always_filter=dict(type__in=("wg", "individ", "area")))
 
     def from_object(self, base):
         for f in base._meta.fields:

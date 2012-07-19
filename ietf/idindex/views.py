@@ -41,6 +41,8 @@ from ietf.idtracker.models import Acronym, IETFWG, InternetDraft, IDInternal,Per
 from ietf.idtracker.templatetags.ietf_filters import clean_whitespace
 import re
 import sys
+from datetime import datetime as Datetime
+import pytz
 
 def all_id_txt():
     # we need a distinct to prevent the queries below from multiplying the result
@@ -144,7 +146,7 @@ def id_index_txt():
 
 def id_abstracts_txt():
     groups = IETFWG.objects.all()
-    return loader.render_to_string("idindex/id_abstracts.txt", {'groups':groups})
+    return loader.render_to_string("idindex/id_abstracts.txt", {'groups':groups, 'time':Datetime.now(pytz.UTC).strftime("%Y-%m-%d %H:%M:%S %Z")})
 
 def test_all_id_txt(request):
     return HttpResponse(all_id_txt(), mimetype='text/plain')
