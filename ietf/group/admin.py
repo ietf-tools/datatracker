@@ -131,3 +131,12 @@ class RoleAdmin(admin.ModelAdmin):
     raw_id_fields = ["email", "person", "group"]
 admin.site.register(Role, RoleAdmin)
 admin.site.register(RoleHistory, RoleAdmin)
+
+class GroupEventAdmin(admin.ModelAdmin):
+    list_display = ["id", "group", "time", "type", "by", ]
+admin.site.register(GroupEvent, GroupEventAdmin)
+
+class ChangeStateGroupEventAdmin(admin.ModelAdmin):
+    list_display = ["id", "group", "state", "time", "type", "by", ]
+admin.site.register(ChangeStateGroupEvent, ChangeStateGroupEventAdmin)
+
