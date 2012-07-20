@@ -49,8 +49,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <tr><td>Intended RFC status:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.intended_maturity_level|default:"-"  }}{% else %}-{%endif%}</td></tr> 
 
+<tr><td>Other versions:</td>
 {% ifequal doc.draft_status "Active" %}
-<tr><td>Other versions:</td><td>
+<td>
 <a href="http://www.ietf.org/id/{{doc.draft_name_and_revision}}.txt">plain text</a>,
 {% for ext in doc.file_types %}
 {% ifnotequal ext ".txt" %}
@@ -61,9 +62,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <a href="http://tools.ietf.org/pdf/{{doc.draft_name_and_revision}}.pdf">pdf</a>,
 {% endif %}
 <a href="http://tools.ietf.org/html/{{doc.draft_name_and_revision}}">html</a>
-</td></tr>
+</td>
+{% else %}
+<td>
+(expired, archived):
+<a href="http://tools.ietf.org/id/{{doc.draft_name_and_revision}}.txt">plain text</a>,
+{% for ext in doc.file_types %}
+{% ifnotequal ext ".txt" %}
+<a href="http://tools.ietf.org/id/{{doc.draft_name_and_revision}}{{ext}}">{{ext|cut:"."}}</a>,
+{% endifnotequal %}
+{% endfor %}
+{% if not info.has_pdf %}
+<a href="http://tools.ietf.org/pdf/{{doc.draft_name_and_revision}}.pdf">pdf</a>,
+{% endif %}
+<a href="http://tools.ietf.org/html/{{doc.draft_name_and_revision}}">html</a>
+</td>
+</tr>
 {% endifequal %}
-
 
 <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
