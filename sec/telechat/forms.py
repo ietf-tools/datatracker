@@ -18,7 +18,7 @@ TELECHAT_TAGS = ('point','ad-f-up','extpty','need-rev')
 class BallotForm(forms.Form):
     name = forms.CharField(max_length=50,widget=forms.HiddenInput)
     id = forms.IntegerField(widget=forms.HiddenInput)
-    position = forms.ModelChoiceField(queryset=BallotPositionName.objects.all().order_by('order'), widget=forms.RadioSelect, initial="norecord", required=True)
+    position = forms.ModelChoiceField(queryset=BallotPositionName.objects.exclude(slug='block').order_by('order'), widget=forms.RadioSelect, initial="norecord", required=True)
     
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label=None, required=True)

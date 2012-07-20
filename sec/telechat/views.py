@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
-from ietf.doc.models import DocEvent, Document, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
+from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
 from ietf.doc.proxy import InternetDraft
 from ietf.doc.utils import active_ballot_positions
 from ietf.group.models import Group
@@ -232,7 +232,6 @@ def doc_detail(request, date, name):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         
-        
         # logic from idrfc/views_ballot.py EditPositionRedesign
         if button_text == 'update_ballot':
             formset = BallotFormset(request.POST, initial=initial_ballot)
@@ -240,11 +239,13 @@ def doc_detail(request, date, name):
             has_changed = False
             for form in formset.forms:
                 if form.is_valid() and form.changed_data:
+                    # create new BallotPositionDocEvent
                     clean = form.cleaned_data
                     ad = Person.objects.get(id=clean['id'])
                     pos = BallotPositionDocEvent(doc=doc,by=login)
                     pos.type = "changed_ballot_position"
                     pos.ad = ad
+                    pos.ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
                     pos.pos = clean['position']
                     if form.initial['position'] == None:
                         pos.desc = '[Ballot Position Update] New position, %s, has been recorded for %s by %s' % (pos.pos.name, ad.name, login.name)
