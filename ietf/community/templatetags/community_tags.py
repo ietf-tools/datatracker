@@ -16,7 +16,7 @@ class CommunityListNode(template.Node):
 
     def render(self, context):
         user = self.user.resolve(context)
-        if not user or not user.is_authenticated():
+        if not (user and hasattr(user, "is_authenticated") and user.is_authenticated() ):
             return ''
         lists = {'personal': CommunityList.objects.get_or_create(user=user)[0]}
         try:
