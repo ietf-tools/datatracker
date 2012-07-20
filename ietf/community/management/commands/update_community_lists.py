@@ -13,7 +13,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         now = datetime.datetime.now()
         
-        rules = Rule.objects.filter(last_updated__lt=now - datetime.timedelta(hours=12))
+        rules = Rule.objects.filter(last_updated__lt=now - datetime.timedelta(hours=1))
         count = rules.count()
         index = 1
         for rule in rules:
