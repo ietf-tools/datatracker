@@ -11,6 +11,8 @@ IESG = {'name': u'The IESG', 'address': u'iesg@ietf.org'}
 IAB = {'name': u'The IAB', 'address': u'iab@iab.org'}
 IABCHAIR = {'name': u'The IAB Chair', 'address': u'iab-chair@iab.org'}
 IABEXECUTIVEDIRECTOR = {'name': u'The IAB Executive Director', 'address': u'execd@iab.org'}
+IRTFCHAIR = {'name': u'The IRTF Chair', 'address': u'irtf-chair@irtf.org'}
+IESGANDIAB = {'name': u'The IESG and IAB', 'address': u'iesg-iab@ietf.org'}
 
 
 class FakePerson(object):
@@ -124,10 +126,31 @@ class IABEntity(Entity):
         return result
 
 
+class IRTFEntity(Entity):
+    chair = FakePerson(**IRTFCHAIR)
+    poc = [chair,]
+
+    def get_from_cc(self, person):
+        result = []
+        return result
+
+    def needs_approval(self, person=None):
+        if is_irtfchair(person):
+            return False
+        return True
+
+    def can_approve(self):
+        return [self.chair]
+
+    def full_user_list(self):
+        result = [get_irtf_chair()]
+        return result
+
+
 class IAB_IESG_Entity(Entity):
 
-    poc = [IABEntity.chair, IABEntity.director, FakePerson(**IETFCHAIR)]
-    cc = [FakePerson(**IAB), FakePerson(**IESG)]
+    poc = [IABEntity.chair, IABEntity.director, FakePerson(**IETFCHAIR), FakePerson(**IESGANDIAB), ]
+    cc = [FakePerson(**IAB), FakePerson(**IESG), FakePerson(**IESGANDIAB)]
 
     def __init__(self, name, obj=None):
         self.name = name
@@ -149,9 +172,8 @@ class IAB_IESG_Entity(Entity):
         return list(set(self.iab.can_approve() + self.iesg.can_approve()))
 
     def full_user_list(self):
-        return list(set(self.iab.full_user_list() + self.iesg.full_user_list()))
-
-
+        return [get_ietf_chair(), get_iab_chair(), get_iab_executive_director()]
+        
 class AreaEntity(Entity):
 
     def get_poc(self):
@@ -298,6 +320,26 @@ class IABEntityManager(EntityManager):
     def can_approve_list(self, person):
         if (is_iabchair(person) or
             is_iab_executive_director(person)):
+            return self.get_managed_list()
+        return []
+
+
+class IRTFEntityManager(EntityManager):
+
+    def __init__(self, *args, **kwargs):
+        super(IRTFEntityManager, self).__init__(*args, **kwargs)
+        self.entity = IRTFEntity(name=self.name)
+
+    def get_entity(self, pk=None):
+        return self.entity
+
+    def can_send_on_behalf(self, person):
+        if is_irtfchair(person):
+            return self.get_managed_list()
+        return []
+
+    def can_approve_list(self, person):
+        if is_irtfchair(person):
             return self.get_managed_list()
         return []
 

@@ -23,6 +23,13 @@ def get_iab_chair():
         return None
 
 
+def get_irtf_chair():
+    try:
+        return proxy_personify_role(Role.objects.get(name="chair", group__acronym="irtf"))
+    except Role.DoesNotExist:
+        return None
+
+
 def get_iab_executive_director():
     try:
         return proxy_personify_role(Role.objects.get(name="execdir", group__acronym="iab"))
@@ -62,6 +69,10 @@ def is_iabchair(person):
 
 def is_iab_executive_director(person):
     return bool(Role.objects.filter(person=person, name="execdir", group__acronym="iab"))
+
+
+def is_irtfchair(person):
+    return bool(Role.objects.filter(person=person, name="chair", group__acronym="irtf"))
 
 
 def can_add_outgoing_liaison(user):

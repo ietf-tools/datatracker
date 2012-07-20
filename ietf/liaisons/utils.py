@@ -2,7 +2,7 @@ from django.conf import settings
 
 from ietf.idtracker.models import Area, IETFWG
 from ietf.liaisons.models import SDOs, LiaisonManagers
-from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director,
+from ietf.liaisons.accounts import (is_ietfchair, is_iabchair, is_iab_executive_director, is_irtfchair,
                                     get_ietf_chair, get_iab_chair, get_iab_executive_director,
                                     is_secretariat)
 
@@ -11,6 +11,7 @@ IESG = {'name': u'The IESG', 'address': u'iesg@ietf.org'}
 IAB = {'name': u'The IAB', 'address': u'iab@iab.org'}
 IABCHAIR = {'name': u'The IAB Chair', 'address': u'iab-chair@iab.org'}
 IABEXECUTIVEDIRECTOR = {'name': u'The IAB Executive Director', 'address': u'execd@iab.org'}
+IRTFCHAIR = {'name': u'The IRTF Chair', 'address': u'irtf-chair@irtf.org'}
 
 
 def get_all_sdo_managers():
@@ -85,6 +86,29 @@ class IETFEntity(Entity):
     def full_user_list(self):
         result = get_all_sdo_managers()
         result.append(get_ietf_chair())
+        return result
+
+
+class IRTFEntity(Entity):
+
+    poc = FakePerson(**IRTFCHAIR)
+
+    def get_from_cc(self, person):
+        result = []
+        if not is_irtfchair(person):
+            result.append(self.poc)
+        return result
+
+    def needs_approval(self, person=None):
+        if is_irtfchair(person):
+            return False
+        return True
+
+    def can_approve(self):
+        return [self.poc]
+
+    def full_user_list(self):
+        result.append(get_irtf_chair())
         return result
 
 
@@ -270,6 +294,26 @@ class IABEntityManager(EntityManager):
         return []
 
 
+class IRTFEntityManager(EntityManager):
+
+    def __init__(self, *args, **kwargs):
+        super(IRTFEntityManager, self).__init__(*args, **kwargs)
+        self.entity = IRTFEntity(name=self.name)
+
+    def get_entity(self, pk=None):
+        return self.entity
+
+    def can_send_on_behalf(self, person):
+        if is_irtfchair(person):
+            return self.get_managed_list()
+        return []
+
+    def can_approve_list(self, person):
+        if is_irtfchair(person):
+            return self.get_managed_list()
+        return []
+
+
 class AreaEntityManager(EntityManager):
 
     def __init__(self, pk=None, name=None, queryset=None):
@@ -358,6 +402,7 @@ class IETFHierarchyManager(object):
         self.managers = {'ietf': IETFEntityManager(pk='ietf', name=u'The IETF'),
                          'iesg': IETFEntityManager(pk='iesg', name=u'The IESG'),
                          'iab': IABEntityManager(pk='iab', name=u'The IAB'),
+                         'irtf': IRTFEntityManager(pk='irtf', name=u'The IAB'),
                          'area': AreaEntityManager(pk='area', name=u'IETF Areas'),
                          'wg': WGEntityManager(pk='wg', name=u'IETF Working Groups'),
                          'sdo': SDOEntityManager(pk='sdo', name=u'Standards Development Organizations'),
