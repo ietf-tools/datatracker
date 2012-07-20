@@ -21,50 +21,41 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 {% load cache %}
 {% cache 900 ietf_meeting_materials meeting_num cache_version %}
 
-{% regroup object_list|dictsort:"area" by area_name as areas %}
-  {% for wgs in areas %}
-   <h2 class="ietf-divider">{{ wgs.grouper }}</h2>
-    {% ifequal wgs.grouper "Plenary Sessions" %}
-    {% for wg in wgs.list|dictsortreversed:"acronym" %}
-      {% include "meeting/list_group.html" %}
+<!-- Plenaries -->
+{% if plenaries %}
+    <h2 class="ietf-divider">Plenaries</h2>
+    {% for session in plenaries %}
+       {% include "meeting/list_group.html" %}
     {% endfor %}
-  {% else %}
-    {% for wg in wgs.list|dictsort:"acronym" %}
-      {% include "meeting/list_group.html" %}
-    {% endfor %}
-  {% endifequal %}
-  {% endfor %}
-<!-- Training Sessions -->
-{% if training_list %}
-<h2 class="ietf-divider">Training</h2>
-{% for wg in training_list|dictsort:"acronym" %}
+{% endif %}
 
-<table cellpadding="0" cellspacing="0" border="0" width="99%" style="border-bottom:1px solid #cbcbcb;">
-<tr>
-<td style="width:12em;"><a name="wg-{{ wg.acronym }}"></a><b>{{ wg.acronym|upper }}{% ifequal wg.group_type_str "BOF" %} <font color="red">({{ wg.group_type_str }})</font> {% endifequal %}</b><br/>
-{% for slide in wg.slides %}
-<a href="http://www.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name|clean_whitespace }}</a><br/>
+<!-- Working groups -->
+{% regroup ietf|dictsort:"group.parent.id" by group.parent.name as areas %}
+{% for sessions in areas %}
+   <h2 class="ietf-divider">{{ sessions.grouper }}</h2>
+   {% for session in sessions.list|dictsort:"group.acronym" %}
+      {% include "meeting/list_group.html" %}
+   {% endfor %}
 {% endfor %}
-</td></tr></table>
-{% endfor %}  
+
+<!-- Training Sessions -->
+{% if training %}
+    <h2 class="ietf-divider">Training</h2>
+    {% for session in training %}
+       {% include "meeting/list_group.html" %}
+    {% endfor %}
 {% endif %}
 <!-- End of Training Sessions -->
+
+
 <!-- IRTF Sessions -->
-{% if irtf_list %}
+{% if irtf %}
 <h2 class="ietf-divider">IRTF</h2>
-{% for wg in irtf_list|dictsort:"acronym_lower" %}
-   {% include "meeting/list_group.html" %}
-{% endfor %}
+    {% for session in irtf|dictsort:"group.acronym" %}
+       {% include "meeting/list_group.html" %}
+    {% endfor %}
 {% endif %}
 <!-- End of IRTF Sessions -->
-<!-- Interim Meetings -->
-{% if interim_list %}
-<h2 class="ietf-divider">Interim Meetings</h2>
-{% for wg in interim_list|dictsort:"acronym" %}
-  {% include "meeting/list_group.html" %}
-{% endfor %}
-{% endif %}
-<!-- End of Imterim Meetings -->
 
 {% endcache %}
 

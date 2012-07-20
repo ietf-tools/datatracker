@@ -1,14 +1,24 @@
-{% load ietf_filters %}<table class="ietf-materials">
-<tr>
-<td style="width:12em;"><a name="wg-{{ wg.acronym }}"></a><b>{% ifequal wg.acronym "plenaryw" %}Operations and Administration<br/>Plenary{%else%}{% ifequal wg.acronym "plenaryt" %}Technical<br/>Plenary{%else%}{{ wg.acronym|upper }}{%endifequal%}{%endifequal%}
-{% ifequal wg.group_type_str "BOF" %} <font color="red">({{ wg.group_type_str }})</font> {% endifequal %}</b><br/>
-</td>
-<td>
-{% if wg.agenda_file %}<a href="http://www.ietf.org/proceedings/{{ wg.agenda_file }}">Agenda</a>{% else %}<span style="background:#ff8888;padding:0 2px;">No agenda received</span> {% endif %}<br/>
-{% if wg.minute_file %} <a href="http://www.ietf.org/proceedings/{{ wg.minute_file }}">Minutes</a>{% else %}No minutes received{% endif %}<br/>
-{% for slide in wg.slides %}
-<a href="http://www.ietf.org/proceedings/{{ slide.file_loc }}">{{ slide.slide_name|clean_whitespace }}</a><br/>
-{% endfor %}
-</td></tr>
+{% load ietf_filters %}
+<table class="ietf-materials">
+  <tr>
+     <td style="width:12em;">
+	<a name="session.group-{{ session.group.acronym }}"></a>
+	<b>
+	{% if session.name %}
+	{{ session.name }}
+	{% else %}
+	{{session.group.acronym.upper}}
+	{% ifequal session.group.state.slug "bof" %} <font color="red">({{ session.group.state.slug }})</font>{% endifequal %}
+	{% endif %}
+	</b>
+     </td>
+     <td>
+	{% if session.agenda %}<a href="http://www.ietf.org/proceedings/{{meeting_num}}/{{ session.agenda }}">Agenda</a>{% else %}<span style="background:#ff8888;padding:0 2px;">No agenda received</span> {% endif %}<br/>
+	{% if session.minutes %}<a href="http://www.ietf.org/proceedings/{{ session.group.minute_file }}">Minutes</a>{% else %}No minutes received{% endif %}<br/>
+	{% for slide in session.slides %}
+	<a href="http://www.ietf.org/proceedings/{{meeting_num}}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a><br/>
+	{% endfor %}
+     </td>
+  </tr>
 </table>
 

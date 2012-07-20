@@ -166,8 +166,20 @@ class Session(models.Model):
     def agenda(self):
         try:
             return self.materials.get(type="agenda",states__type="agenda",states__slug="active")
-        except Exception, e:
+        except Exception:
             return None
+
+    def minutes(self):
+        try:
+            return self.materials.get(type="minutes",states__type="minutes",states__slug="active")
+        except Exception:
+            return None
+
+    def slides(self):
+        try:
+            return self.materials.filter(type="slides",states__type="slides",states__slug="active")
+        except Exception:
+            return []
 
     def __unicode__(self):
         if self.meeting.type_id == "interim":

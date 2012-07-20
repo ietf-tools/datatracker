@@ -5,13 +5,11 @@ import datetime
 import os
 import re
 import tarfile
-import pytz
 
 from tempfile import mkstemp
 
 from django.shortcuts import render_to_response, get_object_or_404
 from ietf.idtracker.models import IETFWG, IRTF, Area
-from django.views.generic.list_detail import object_list
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.core.urlresolvers import reverse
 from django.db.models import Q
@@ -20,20 +18,19 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
-from django.db.models import Count, Max
-from ietf.idtracker.models import InternetDraft
-from ietf.idrfc.idrfc_wrapper import IdWrapper
-from ietf.utils.pipe import pipe
+from django.db.models import Max
 
+from ietf.idtracker.models import InternetDraft
+from ietf.utils.pipe import pipe
 from ietf.utils.history import find_history_active_at
 from ietf.doc.models import Document, State
 
 # Old model -- needs to be removed
-from ietf.proceedings.models import Meeting as OldMeeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches, WgProceedingsActivities, SessionConflict
+from ietf.proceedings.models import Meeting as OldMeeting, MeetingTime, WgMeetingSession, MeetingVenue, IESGHistory, Proceeding, Switches
 
 # New models
-from ietf.meeting.models import Meeting, Room, TimeSlot, Constraint, Session
-from ietf.group.models import Group, GroupManager
+from ietf.meeting.models import Meeting, TimeSlot, Session
+from ietf.group.models import Group
 
 
 @decorator_from_middleware(GZipMiddleware)
@@ -50,49 +47,20 @@ def show_html_materials(request, meeting_num=None):
     sub_began = 0
     if now > begin_date:
         sub_began = 1
-    # List of WG sessions and Plenary sessions
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        seen_materials = set()
+    sessions  = Session.objects.filter(meeting__number=meeting_num, timeslot__isnull=False)
+    plenaries = sessions.filter(name__icontains='plenary')
+    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
+    irtf      = sessions.filter(group__parent__acronym = 'irtf')
+    training  = sessions.filter(group__acronym='edu')
 
-        queryset_list = []
-        queryset_irtf = []
-        queryset_interim = []   # currently ignored, have no way of handling interim here
-        queryset_training = []
-        for item in WgMeetingSession.objects.filter(meeting=meeting_num):
-            if not item.session or not item.session.group:
-                continue
-
-            if item.session.group.type_id == "rg":
-                queryset_irtf.append(item)
-            elif item.session.group.acronym == "edu":
-                if item.slides():
-                    queryset_training.append(item)
-            else:
-                if item.session.name and not item.slides():
-                    continue
-                t = tuple(x.pk for x in item.session.materials.all())
-                if t and t in seen_materials:
-                    continue
-                seen_materials.add(t)
-                queryset_list.append(item)
-
-        from ietf.doc.models import Document
-        cache_version = Document.objects.filter(session__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
-    else:
-        queryset_list = WgMeetingSession.objects.filter(Q(meeting=meeting_num, group_acronym_id__gte = -2, status__id=4), Q(irtf__isnull=True) | Q(irtf=0))
-        queryset_irtf = WgMeetingSession.objects.filter(meeting=meeting_num, group_acronym_id__gte = -2, status__id=4, irtf__gt=0)
-        queryset_interim = []
-        queryset_training = []
-        for item in list(WgMeetingSession.objects.filter(meeting=meeting_num)):
-            if item.interim_meeting():
-                item.interim=1
-                queryset_interim.append(item)
-            if item.group_acronym_id < -2:
-                if item.slides():
-                    queryset_training.append(item)
-        cache_version = WgProceedingsActivities.objects.aggregate(Count('id'))
+    cache_version = Document.objects.filter(session__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
+    #
     return render_to_response("meeting/list.html",
-                              {'meeting_num':meeting_num,'object_list': queryset_list, 'irtf_list':queryset_irtf, 'interim_list':queryset_interim, 'training_list':queryset_training, 'begin_date':begin_date, 'cut_off_date':cut_off_date, 'cor_cut_off_date':cor_cut_off_date,'sub_began':sub_began,'cache_version':cache_version},
+                              {'meeting_num':meeting_num,
+                               'plenaries': plenaries, 'ietf':ietf, 'training':training, 'irtf': irtf,
+                               'begin_date':begin_date, 'cut_off_date':cut_off_date,
+                               'cor_cut_off_date':cor_cut_off_date,'sub_began':sub_began,
+                               'cache_version':cache_version},
                               context_instance=RequestContext(request))
 
 def current_materials(request):
@@ -185,7 +153,7 @@ def agenda_infoREDESIGN(num=None):
             except IOError:
                  s = "THE AGENDA HAS NOT BEEN UPLOADED YET"
 
-            if "technical" in agenda.name.lower():
+            if "tech" in agenda.name.lower():
                 plenaryt_agenda = s
             else:
                 plenaryw_agenda = s
@@ -278,13 +246,12 @@ def session_agenda(request, num, session):
     raise Http404("No agenda for the %s session of IETF %s is available" % (session, num))
 
 def convert_to_pdf(doc_name):
-    import subprocess
     inpath = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, doc_name + ".txt")
     outpath = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, doc_name + ".pdf")
 
     try:
         infile = open(inpath, "r")
-    except Exception, e:
+    except IOError:
         return
 
     t,tempname = mkstemp()
@@ -336,7 +303,7 @@ def read_agenda_file(num, doc):
         return None
 
 def session_draft_list(num, session):
-    extensions = ["html", "htm", "txt", "HTML", "HTM", "TXT", ]
+    #extensions = ["html", "htm", "txt", "HTML", "HTM", "TXT", ]
     result = []
     found = False
 
@@ -357,7 +324,7 @@ def session_draft_list(num, session):
                 doc_name = draft
             else:
                 id = InternetDraft.objects.get(filename=draft)
-                doc = IdWrapper(id)
+                #doc = IdWrapper(id)
                 doc_name = draft + "-" + id.revision
             result.append(doc_name)
         except InternetDraft.DoesNotExist:
@@ -398,7 +365,7 @@ def session_draft_tarfile(request, num, session):
 def pdf_pages(file):
     try:
         infile = open(file, "r")
-    except Exception, e:
+    except IOError:
         return 0
     for line in infile:
         m = re.match('\] /Count ([0-9]+)',line)
@@ -491,9 +458,9 @@ def ical_agenda(request, num=None):
 
 def csv_agenda(request, num=None):
     timeslots, update, meeting, venue, ads, plenaryw_agenda, plenaryt_agenda = agenda_info(num)
-    wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
-    rgs = IRTF.objects.all().order_by('acronym')
-    areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
+    #wgs = IETFWG.objects.filter(status=IETFWG.ACTIVE).order_by('group_acronym__acronym')
+    #rgs = IRTF.objects.all().order_by('acronym')
+    #areas = Area.objects.filter(status=Area.ACTIVE).order_by('area_acronym__acronym')
 
     # we should really use the Python csv module or something similar
     # rather than a template file which is one big mess
