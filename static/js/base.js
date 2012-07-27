@@ -65,58 +65,13 @@ function showBallot(draftName, editPositionUrl) {
     el = document.getElementById("ballot_dialog_body");
     el.innerHTML = "Loading...";
     YAHOO.util.Connect.asyncRequest('GET', 
-          "/doc/"+draftName+"/_ballot.data",
+          "/doc/"+draftName+"/ballotpopup/",
           { success: function(o) { el.innerHTML = (o.responseText !== undefined) ? o.responseText : "?"; }, 
             failure: function(o) { el.innerHTML = "Error: "+o.status+" "+o.statusText; },
             argument: null
    	  }, null);
 }
 function editBallot(editPositionUrl) {
-    window.open(editPositionUrl);
-}
-
-function showWGBallot(acronym, editPositionUrl) {
-    var handleEditPosition = function() {
-        IETF.ballotDialog.hide();
-        window.location = IETF.editPositionUrl;
-    }; 
-    var handleClose = function() {
-        IETF.ballotDialog.hide();
-    };
-    var el;
-
-    if (!IETF.ballotDialog) {
-        el = document.createElement("div");
-        el.innerHTML = '<div id="ballot_dialog" style="visibility:hidden;"><div class="hd">Positions for <span id="ballot_dialog_name">wgacronym</span></span></div><div class="bd">  <div id="ballot_dialog_body" style="overflow-y:scroll; height:400px;"></div>   </div></div>';
-        document.getElementById("ietf-extras").appendChild(el);
-
-        var buttons = [{text:"Close", handler:handleClose, isDefault:true}];
-	if (("Area_Director" in IETF.user_groups) ||
-	    ("Secretariat" in IETF.user_groups)) {
-	    buttons.unshift({text:"Edit Position", handler:handleEditPosition});
-	}
-	var kl = [new YAHOO.util.KeyListener(document, {keys:27}, handleClose)]						 
-        IETF.ballotDialog = new YAHOO.widget.Dialog("ballot_dialog", {
-            visible:false, draggable:false, close:true, modal:true,
-            width:"860px", fixedcenter:true, constraintoviewport:true,
-            buttons: buttons, keylisteners:kl});
-        IETF.ballotDialog.render();
-    }
-    document.getElementById("ballot_dialog_name").innerHTML = acronym;
-    IETF.editPositionUrl = editPositionUrl;
-
-    IETF.ballotDialog.show();
-
-    el = document.getElementById("ballot_dialog_body");
-    el.innerHTML = "Loading...";
-    YAHOO.util.Connect.asyncRequest('GET', 
-          "/wgcharter/"+acronym+"/_ballot.data",
-          { success: function(o) { el.innerHTML = (o.responseText !== undefined) ? o.responseText : "?"; }, 
-            failure: function(o) { el.innerHTML = "Error: "+o.status+" "+o.statusText; },
-            argument: null
-   	  }, null);
-}
-function editWGBallot(editPositionUrl) {
     window.open(editPositionUrl);
 }
 
