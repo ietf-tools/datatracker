@@ -50,7 +50,7 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot/(?P<ballot_id>[0-9]+)/$', views_doc.document_ballot, name="doc_ballot"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot/$', views_doc.document_ballot, name="doc_ballot"),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/doc.json$', views_doc.document_debug),
-    (r'^(?P<name>[A-Za-z0-9._+-]+)/_ballot.data$', views_doc.ballot_html), # why is this url so weird instead of just ballot.html?
+    (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/$', views_doc.ballot_for_popup),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/ballot.tsv$', views_doc.ballot_tsv),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/ballot.json$', views_doc.ballot_json),
 

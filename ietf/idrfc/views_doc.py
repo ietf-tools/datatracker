@@ -574,9 +574,9 @@ def get_ballot(name):
 
     return (bw, dw, b, d)
 
-def ballot_html(request, name):
-    bw, dw, ballot, doc = get_ballot(name)
-    return render_to_response('idrfc/doc_ballot.html', {'bw':bw, 'dw':dw, 'ballot':ballot, 'doc':doc}, context_instance=RequestContext(request))
+def ballot_for_popup(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    return HttpResponse(document_ballot_content(request, doc, ballot_id=None, editable=False))
 
 def ballot_tsv(request, name):
     ballot, doc, b, d = get_ballot(name)
