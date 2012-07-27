@@ -466,13 +466,6 @@ def user_roles_json(user):
                 roles[g.name] = True
     return mark_safe(simplejson.dumps(roles))
 
-@register.filter
-def textify(text):
-    text = re.sub("</?b>", "*", text)
-    text = re.sub("</?i>", "/", text)
-    # There are probably additional conversions we should apply here
-    return text
-    
 def _test():
     import doctest
     doctest.testmod()

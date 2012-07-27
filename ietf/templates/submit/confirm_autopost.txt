@@ -1,18 +1,8 @@
-{% autoescape off %}
-Hi,
+{% autoescape off %}Follow this link to confirm your Auto-Post of
+{{ draft.filename }}-{{ draft.revision }}:
 
-The IETF datatracker draft submission service has received your draft
-{{ draft.filename }}-{{ draft.revision }}, and requires a
-confirmation step in order to be able to complete the posting of
-the draft.
+I-D Submission Tool URL: {{ confirm_url|safe }}
 
-Please follow this link to the page where you can confirm the posting:
-   {{ confirm_url|safe }}
-
-
-Best regards,
-
-	The IETF Secretariat
-	through the draft submission service
-
+Remember that you can cancel the submission from:
+{{ status_url|safe }}
 {% endautoescape %}

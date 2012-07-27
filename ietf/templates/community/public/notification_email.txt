@@ -1,16 +1,15 @@
-{% autoescape off %}{% load ietf_filters %}
+{% autoescape off %}
 Hello,
 
-This is a notification from the {{ clist.long_name }}.
+This is a notification from {{ clist.long_name }}.
 
-Document: {{ notification.doc }},
-https://datatracker.ietf.org/doc/{{ notification.doc }}
+Document: {{ notification.doc }}
 
 Change:
-{{ notification.desc|textify|striptags }}
+{{ notification.desc }}
 
 Best regards,
 
-        The datatracker draft tracking service
+        The datatracker login manager service
         (for the IETF Secretariat)
 {% endautoescape %}

@@ -1,33 +1,24 @@
-{% autoescape off %}
-Hi,
+{% autoescape off %}WG chair approval is needed for posting of {{ draft.filename }}-{{ draft.revision }}.
 
-WG chair approval is needed for posting of {{ draft.filename }}-{{ draft.revision }}.
+Go to this URL to approve the draft (note: you need to login to be
+able to approve):
 
-To approve the draft, go to this URL (note: you need to login to be able to approve):
-  https://{{ domain }}/submit/status/{{ draft.submission_id }}/{{ draft.submission_hash }}/
+https://{{ domain }}/submit/status/{{ draft.submission_id }}/{{ draft.submission_hash }}/
 
-  File name       : {{ draft.filename }}
-  Version         : {{ draft.revision }}
-  Submission date : {{ draft.submission_date }}
-  WG              : {{ draft.group_acronym|default:"Individual Submission" }}
+File name: {{ draft.filename }}
+Version: {{ draft.revision }}
+Submission date: {{ draft.submission_date }}
+WG: {{ draft.group_acronym|default:"Individual Submission" }}
 
-  Title           : {{ draft.id_document_name }}
-  Document date   : {{ draft.creation_date }}
-  Pages           : {{ draft.txt_page_count }}
-  File size       : {{ draft.filesize|filesizeformat }}
+Title: {{ draft.id_document_name }}
+Document date: {{ draft.creation_date }}
+Abstract: {{ draft.abstract }}
+Pages: {{ draft.txt_page_count }}
+File size: {{ draft.filesize|filesizeformat }}
 
-  Submitter       : {{ submitter.get_full_name }} <{{ submitter.email_address }}>
+Submitter: {{ submitter.get_full_name }} <{{ submitter.email_address }}>
 
-  Abstract        : {{ draft.abstract }}
-
-
-  Authors:
-{% for author in authors %}    {{ author.get_full_name }} <{{ author.email.1 }}>
+Authors:
+{% for author in authors %}{{ author.get_full_name }} <{{ author.email.1 }}>
 {% endfor %}
 {% endautoescape %}
-
-
-Best regards,
-
-	The IETF Secretariat
-	through the draft submission service
