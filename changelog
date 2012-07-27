@@ -1,3 +1,96 @@
+ietfdb (4.31)
+
+  This is primarily a bugfix-release, catching a lot of issues related to the
+  most recent few releases.  
+
+  A few features have also been included, liste first:
+
+  * Added support for IRTF liaisons.
+
+  * Improved I-D submission author extraction code, adding support for 
+    extraction of affiliation, improved date format extraction, support
+    for additional (unusual) name abbreviation patterns, and more.
+
+  Bugfixes.  Not all fixes are mentioned here; for a complete list please see
+  the commitlog.
+
+  * Fixed a language typo in the registration confirmation page.
+
+  * Tweaked the community tracker notification email.
+
+  * Changed and tweaked various I-D submission emails in order to 1) make it 
+    less likely that they would be classified as spam (better ratio of English 
+    text to hash urls) and 2) provide better consistency in formatting of 
+    key/value information.
+
+  * From adam@nostrum.com: Fixed an URL in the agenda.csv file which hadn't 
+    been updated to match current naming conventions and code.
+
+  * Added new RFC-Editor state tag 'AUTH48-DONE' to the rfc-ed-queue mirror 
+    script.
+
+  * Tweaked the meeting materials list to avoid duplicate rows for WGs with 
+    more than one slot, as long as the materials list is the same (which is the 
+    only thing supported by other parts of the system at this time).
+
+  * Applied ballot popup patch from olau@iola.dk.
+
+  * Made links to other versions available also for expired documents.
+
+  * Changed community I-D tracking rule update frequency to every hour.
+
+  * Rewrote the view and template code for the meeting materials list, 
+    which was showing nothing.  Better to do the rewrite for the new models 
+    than trying to dig into why the proxy models doesn't work any more.
+
+  * Fixed id_abstracts to include drafts assigned directly to areas, not 
+    only individual and WG drafts.
+
+  * Fixed 1wg-charters.txt (and friends) to not list the areas as if they were 
+    WGs.
+
+  * Updated utils/draft.py and modified the submit app code accordingly.
+
+  * Merged in [4604] from adam@nostrum.com, which fixes problems with the 
+    html agenda code related to the schema transition.
+
+  * Ballot ids are limited to integers, rather than being descriptive as 
+    intended at one point.  Adjusted the url regexes accordingly.  Patch from 
+    olau@iola.dk.
+
+  * Introduced a line break to clean up the state display for tracked drafts 
+    a bit.
+
+  * Make the link to the search form more prominent in the community list 
+    explicitly added documents page.
+
+  * Sorted WGs in the community rules drop-down list by acronym rather than 
+    WG name.
+
+  * Provided a more comprehensive document state indication.  May need 
+    further refinement.
+
+  * Tweaked the community tracker links in the lefthand menubar to avoid 
+    line breaking for the WG documents link visible to WG chairs.
+
+  * Enabled the check for existing account, disabled when we started using 
+    self-service http password reset, but hadn't started creating accounts yet. 
+
+  * Refactored the two confirm*() methods in ietfauth/views.py; they need the 
+    same processing, only the templates to use differ.
+
+  * Fixed the back-link on personal list email subscription confirmation page -- 
+    it just lead to the confirmation page itself, now leads to read-only list 
+    view.
+
+  * When logged in as secretariat, at /iesg/agenda/ or 
+    /iesg/agenda/documents/, and clicking on the position matrix for a 
+    document, the overlay window would give a code 500 error, because of a 
+    missing ballot id in the templates' url lookup.  Fix this by providing the 
+    ballot id.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2012 01:51:44 +0200
+
 ietfdb (4.30)
 
   This is a feature release which provides the community document tracking
