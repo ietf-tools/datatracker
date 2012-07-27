@@ -177,7 +177,7 @@ form table .help {
 .position-recuse   { background-color: #c0c0c0;}
 .position-norecord { background-color: #ffffff;}
 
-.ballot-sidebar { width: 13em; float: left; margin-top: 0.4em; margin-right: 1em; padding: 0.5em; background: #edf5ff; }
+.ballot-sidebar { width: 160px; float: left; margin-top: 0.4em; margin-right: 1em; padding: 0.5em; background: #edf5ff; }
 .ballot-sidebar .action { margin-bottom: 1em; }
 .ballot-sidebar .position-group { margin-bottom: 1em; }
 .ballot-sidebar .position-group .heading { font-weight: bold; }
@@ -185,9 +185,12 @@ form table .help {
 .ballot-sidebar .position-group .was { padding-left: 10px; font-size:85%; }
 .ballot-sidebar .position-group:last-child { margin-bottom: 0; }
 
-.ballot-content { margin-left: 15em; }
+.ballot-content { margin-left: 180px; }
 .ballot-content .other-ballots { margin: 1em 0 2em 0; }
 .ballot-content .other-ballots a { display: inline-block; margin-right: 0.5em; }
+
+#ballot_dialog_body { background-color: #fff; }
+#ballot_dialog_body .ballot-sidebar { margin-top: 0; }
 
 .ballot-content h2.ad-ballot-comment { background: #2647A0; color: #fff; padding: 2px 4px; font-size: 108%; margin-top: 0;}
 
