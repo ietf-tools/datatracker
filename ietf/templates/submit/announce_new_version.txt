@@ -1,4 +1,5 @@
-{% autoescape off %}New version (-{{ submission.revision }}) has been submitted for {{ submission.filename }}-{{ submission.revision }}.txt:
+{% autoescape off %}
+A new version (-{{ submission.revision }}) has been submitted for {{ submission.filename }}:
 http://www.ietf.org/internet-drafts/{{ submission.filename }}-{{ submission.revision }}.txt
 {% if msg %}
 {{ msg|striptags }}

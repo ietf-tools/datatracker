@@ -213,6 +213,7 @@ def get_rfc_state_mapping():
     return {
         'AUTH': State.objects.get_or_create(type=t, slug='auth', name='AUTH', desc="Awaiting author action")[0],
         'AUTH48': State.objects.get_or_create(type=t, slug='auth48', name="AUTH48", desc="Awaiting final author approval")[0],
+        'AUTH48-DONE': State.objects.get_or_create(type=t, slug='auth48done', name="AUTH48-DONE", desc="Final approvals are complete")[0],
         'EDIT': State.objects.get_or_create(type=t, slug='edit', name='EDIT', desc="Approved by the stream manager (e.g., IESG, IAB, IRSG, ISE), awaiting processing and publishing")[0],
         'IANA': State.objects.get_or_create(type=t, slug='iana-crd', name='IANA', desc="RFC-Editor/IANA Registration Coordination")[0],
         'IESG': State.objects.get_or_create(type=t, slug='iesg', name='IESG', desc="Holding for IESG action")[0],
