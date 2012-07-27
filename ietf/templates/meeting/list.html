@@ -30,11 +30,13 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 {% endif %}
 
 <!-- Working groups -->
-{% regroup ietf|dictsort:"group.parent.id" by group.parent.name as areas %}
+{% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
 {% for sessions in areas %}
    <h2 class="ietf-divider">{{ sessions.grouper }}</h2>
    {% for session in sessions.list|dictsort:"group.acronym" %}
-      {% include "meeting/list_group.html" %}
+      {% ifchanged %}
+	 {% include "meeting/list_group.html" %}
+      {% endifchanged %}
    {% endfor %}
 {% endfor %}
 
@@ -42,7 +44,9 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 {% if training %}
     <h2 class="ietf-divider">Training</h2>
     {% for session in training %}
-       {% include "meeting/list_group.html" %}
+      {% ifchanged %}
+	 {% include "meeting/list_group.html" %}
+      {% endifchanged %}
     {% endfor %}
 {% endif %}
 <!-- End of Training Sessions -->
@@ -52,7 +56,9 @@ Corrections to submissions cutoff date: {{ cor_cut_off_date|date:"F j, Y" }}</p>
 {% if irtf %}
 <h2 class="ietf-divider">IRTF</h2>
     {% for session in irtf|dictsort:"group.acronym" %}
-       {% include "meeting/list_group.html" %}
+      {% ifchanged %}
+	 {% include "meeting/list_group.html" %}
+      {% endifchanged %}
     {% endfor %}
 {% endif %}
 <!-- End of IRTF Sessions -->
