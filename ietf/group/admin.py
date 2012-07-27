@@ -134,9 +134,11 @@ admin.site.register(RoleHistory, RoleAdmin)
 
 class GroupEventAdmin(admin.ModelAdmin):
     list_display = ["id", "group", "time", "type", "by", ]
+    search_fields = ["group__name", "group__acronym"]
 admin.site.register(GroupEvent, GroupEventAdmin)
 
 class ChangeStateGroupEventAdmin(admin.ModelAdmin):
     list_display = ["id", "group", "state", "time", "type", "by", ]
+    search_fields = ["group__name", "group__acronym"]
 admin.site.register(ChangeStateGroupEvent, ChangeStateGroupEventAdmin)
 
