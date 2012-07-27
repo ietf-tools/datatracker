@@ -259,9 +259,9 @@ Updated {{ modified|date:"Y-m-d H:i:s T" }}</p>
 <p><strong>IETF agendas are subject to change, up to and during the meeting.</strong></p>
 
 {# cache this part for 15 minutes -- it takes 3-6 seconds to generate #}
-{% load cache %}{% cache 1 ietf_meeting_agenda meeting.number %}
+{% load cache %}{% cache 900 ietf_meeting_agenda meeting.number %}
 
-You can customize the agenda below to show only selected working group sessions.  To be able to return to the customized view later, bookmark the resulting URL:
+You can customize the agenda below to show only selected working group sessions.  To be able to return to the customized view later, bookmark the resulting URL.
 <div class="noprint" onclick="toggle_wg_selector()">
    <img id="wg-selector-triangle-right" src="/images/triangle-right.png" />
    <img id="wg-selector-triangle-down" src="/images/triangle-down.png" class="hidden" />
@@ -284,7 +284,7 @@ You can customize the agenda below to show only selected working group sessions.
   <tr><td align="center" colspan="{{area_list.count}}"><i>Groups displayed in italics are BOFs</i></td></tr>
 </table>
 
-<div id="ical-link" class="hidden"><span style="font-size:150%">Week View</span><br/><a id="ical-href" href="{% url ietf.meeting.views.ical_agenda num=meeting.number %}"><em>Download as an ical file</em></a></div>
+<div id="ical-link" class="hidden"><span style="font-size:150%">Week View</span><br/><a id="ical-href" href="{% url ietf.meeting.views.ical_agenda num=meeting.number %}"><em>Download as an .ical file</em></a></div>
 
 <iframe id="weekview" class="hidden" width="100%" height="600px" src="about:blank"></iframe>
 

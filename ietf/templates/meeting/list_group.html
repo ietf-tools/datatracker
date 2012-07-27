@@ -13,8 +13,8 @@
 	</b>
      </td>
      <td>
-	{% if session.agenda %}<a href="http://www.ietf.org/proceedings/{{meeting_num}}/{{ session.agenda }}">Agenda</a>{% else %}<span style="background:#ff8888;padding:0 2px;">No agenda received</span> {% endif %}<br/>
-	{% if session.minutes %}<a href="http://www.ietf.org/proceedings/{{ session.group.minute_file }}">Minutes</a>{% else %}No minutes received{% endif %}<br/>
+	{% if session.agenda %}<a href="http://www.ietf.org/proceedings/{{meeting_num}}/agenda/{{ session.agenda }}">Agenda</a>{% else %}<span style="background:#ff8888;padding:0 2px;">No agenda received</span> {% endif %}<br/>
+	{% if session.minutes %}<a href="http://www.ietf.org/proceedings/{{ meeting_num }}/minutes/{{ session.minutes }}">Minutes</a>{% else %}No minutes received{% endif %}<br/>
 	{% for slide in session.slides %}
 	<a href="http://www.ietf.org/proceedings/{{meeting_num}}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a><br/>
 	{% endfor %}
