@@ -37,7 +37,9 @@ EXPECTED CHANGES:
 active_ballot_positions: takes one argument, doc.  returns a dictionary with a key for each ad Person
 object
 
-_agenda_data: takes a request object and a date string
+_agenda_data: takes a request object and a date string 
+    - 2012-07-28 this function was changed to return Document objects instead
+      of old InternetDraft wrappers
 '''
 
 # -------------------------------------------------
@@ -78,7 +80,10 @@ def get_section_header(file,agenda):
     h2b = {'1':'WG Submissions','2':'Individual Submissions via AD','3':'IRTF and Independent Submission Stream Documents'}
     h3 = {'1':'New Item','2':'Returning Item','3':'For Action'}
     
-    doc = InternetDraft.objects.get(filename=file)
+    # Robert updated _agenda_data to return a Document objects instead of the wrapper
+    #doc = InternetDraft.objects.get(filename=file)
+    doc = Document.objects.get(name=file)
+    
     test = {'obj':doc}
     for k,v in agenda['docs'].iteritems():
         if test in v:
