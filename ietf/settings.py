@@ -121,7 +121,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.i18n',
     'django.core.context_processors.request',
     'ietf.context_processors.server_mode',
-    'ietf.context_processors.revision_info'
+    'ietf.context_processors.revision_info',
+    'ietf.context_processors.rfcdiff_prefix', 
 )
 
 INSTALLED_APPS = (
@@ -173,6 +174,7 @@ INTERNAL_IPS = (
 
 # no slash at end
 IDTRACKER_BASE_URL = "http://datatracker.ietf.org"
+RFCDIFF_PREFIX = "//www.ietf.org/rfcdiff"
 
 # Valid values:
 # 'production', 'test', 'development'

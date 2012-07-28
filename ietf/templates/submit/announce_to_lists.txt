@@ -18,8 +18,8 @@ https://datatracker.ietf.org/doc/{{ submission.filename }}
 There's also a htmlized version available at:
 http://tools.ietf.org/html/{{ submission.filename }}-{{ submission.revision }}
 {% if submission.revision != "00" %}
-A diff from previous version is available at:
-http://tools.ietf.org/rfcdiff?url2={{ submission.filename }}-{{ submission.revision }}
+A diff from the previous version is available at:
+http:{{settings.RFCDIFF_PREFIX}}?url2={{ submission.filename }}-{{ submission.revision }}
 {% endif %}
 
 Internet-Drafts are also available by anonymous FTP at:

@@ -15,7 +15,7 @@
 <div class="ietf-box diffTool">
   <h2>Diffs</h2>
 
-  <form action="http{% if request.is_secure %}s{% endif %}://tools.ietf.org/rfcdiff" method="get" target="_blank">
+  <form action="http{% if request.is_secure %}s{% endif %}:{{rfcdiff_prefix}}" method="get" target="_blank">
     <table>
       <tr>
         <td>
