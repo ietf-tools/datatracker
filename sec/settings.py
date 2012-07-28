@@ -271,13 +271,14 @@ CHARTER_TXT_URL = 'http://www.ietf.org/charters/'
 
 # AMS additions
 # for meetings materials upload
-MAX_UPLOAD_SIZE = 40960000
-PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
-INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
-GROUP_DESCRIPTION_DIR = '/a/www/www6s/wg-descriptions'
-DEVELOPMENT = False
+AMS_STATICFILES = BASE_DIR + '/../static/'
 BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
 BLUE_SHEET_URL = 'https://datatracker.ietf.org/documents/blue_sheet.rtf'
+DEVELOPMENT = False
+GROUP_DESCRIPTION_DIR = '/a/www/www6s/wg-descriptions'
+INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
+MAX_UPLOAD_SIZE = 40960000
+PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

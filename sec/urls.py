@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.conf.urls.defaults import *
 from django.contrib import admin
 from django.views.generic.simple import direct_to_template
@@ -30,3 +31,9 @@ urlpatterns = patterns('',
     (r'^sreq/', include('sec.sreq.urls')),
     (r'^telechat/', include('sec.telechat.urls')),
 )
+
+if settings.SERVER_MODE in ('development', 'test'):
+    urlpatterns += patterns('',
+        (r'^(?P<path>(?:img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.AMS_STATICFILES}),
+        (r'^(?P<path>robots\.txt)$', 'django.views.static.serve', {'document_root': settings.AMS_STATICFILES}),
+        )
