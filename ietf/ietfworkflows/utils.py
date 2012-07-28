@@ -258,6 +258,26 @@ def get_notification_receivers(doc, extra_notify):
 
     return res
 
+def get_pubreq_receivers(doc, extra_notify):
+    res = []
+
+    for r in Role.objects.filter(person=doc.group.ad,name__slug='ad'):
+        res.append(u'"%s" <%s>' % (r.person.plain_name(), r.email.address))
+
+    for x in extra_notify:
+        if not x in res:
+            res.append(x)
+
+    return res
+
+def get_pubreq_cc_receivers(doc):
+    res = []
+
+    for r in Role.objects.filter(group=doc.group, name__in=("chair", "delegate")):
+        res.append(u'"%s" <%s>' % (r.person.plain_name(), r.email.address))
+
+    return res
+
 def update_tags(request, obj, comment, person, set_tags=[], reset_tags=[], extra_notify=[]):
     if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         doc = Document.objects.get(pk=obj.pk)
@@ -360,6 +380,20 @@ def update_state(request, doc, comment, person, to_state, estimated_date=None, e
                                   transition_date=doc.time,
                                   person=person,
                                   comment=comment)))
+
+        if (to_state.slug=='sub-pub'):
+            receivers = get_pubreq_receivers(doc, extra_notify)
+            cc_receivers = get_pubreq_cc_receivers(doc)
+
+            send_mail(request, receivers, settings.DEFAULT_FROM_EMAIL,
+                      u"Publication has been requested for draft %s" % doc.name,
+                      'ietfworkflows/state_updated_mail.txt',
+                      dict(doc=doc,
+                           entry=dict(from_state=from_state,
+                                      to_state=to_state,
+                                      transition_date=doc.time,
+                                      person=person,
+                                      comment=comment)), cc=cc_receivers)
 
         return
 
