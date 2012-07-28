@@ -79,24 +79,87 @@ def ietf_loggedin(request):
 
 @login_required
 def profile(request):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from ietf.person.models import Person
-        from ietf.group.models import Role
+    from ietf.person.models import Person, Email, Alias
+    from ietf.group.models import Role
+    from ietf.ietfauth.forms import PersonForm
 
-        roles = []
-        person = None
+    roles = []
+    person = None
+    try:
+        person = request.user.get_profile()
+    except Person.DoesNotExist:
+        pass
+
+    if request.method == 'POST':
+        form = PersonForm(request.POST, instance=person)
+        success = False
+        new_emails = None
+        error = None
+        if form.is_valid():
+            try:
+                form.save()
+                success = True
+                new_emails = form.new_emails
+            except Exception as e:
+                error = e
+            
+        return render_to_response('registration/confirm_profile_update.html',
+            { 'success': success, 'new_emails': new_emails, 'error': error} ,
+                              context_instance=RequestContext(request))
+    else:
+        roles = Role.objects.filter(person=person).order_by('name__name','group__name')
+        emails = Email.objects.filter(person=person).order_by('-active','-time')
+        aliases = Alias.objects.filter(person=person)
+
+        person_form = PersonForm(instance=person)
+
+        return render_to_response('registration/edit_profile.html',
+            { 'user': request.user, 'emails': emails, 'person': person, 
+              'roles': roles, 'person_form': person_form } ,
+                              context_instance=RequestContext(request))
+
+def confirm_new_email(request, username, date, email, hash):
+    from ietf.person.models import Person, Email, Alias
+    from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+    valid = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, date, email, username)).hexdigest() == hash
+    if not valid:
+        raise Http404
+    request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
+    if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK)):
+        raise Http404
+    success = False
+
+    person = None
+    error = None
+    new_email = None
+
+    try:
+        # First, check whether this address exists (to give a more sensible
+        # error when a duplicate is created).
+        existing_email = Email.objects.get(address=email)
+        print existing_email
+        existing_person = existing_email.person 
+        print existing_person
+        error = {'address': ["Email address '%s' is already assigned to user '%s' (%s)" %
+            (email, existing_person.user, existing_person.name)]}
+    except Exception:
         try:
-            person = request.user.get_profile()
-            roles = Role.objects.filter(person=person)
+            person = Person.objects.get(user__username=username)
+            new_email = Email(address=email, person=person, active=True, time=datetime.datetime.now())
+            new_email.full_clean()
+            new_email.save()
+            success = True
         except Person.DoesNotExist:
-            pass
+            error = {'person': ["No such user: %s" % (username)]}
+        except ValidationError as e:
+            error = e.message_dict
 
-        return render_to_response('registration/profileREDESIGN.html',
-                                  dict(roles=roles,
-                                       person=person),
-                                  context_instance=RequestContext(request))
+    return render_to_response('registration/confirm_new_email.html',
+                              { 'username': username, 'email': email,
+                                'success': success, 'error': error,
+                                'record': new_email},
+                              context_instance=RequestContext(request))
 
-    return render_to_response('registration/profile.html', context_instance=RequestContext(request))
 
 def create_account(request):
     success = False

@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% load ietf_filters community_tags %}
 <ul>
 <li class="sect first">Accounts</li>
-  <li><a href="{% url account_index %}">New Account</a></li>
+  <li><a href="{% url account_index %}">{% if request.user.is_authenticated %}Manage Account{% else %}New Account{% endif %}</a></li>
 {% if user|in_group:"Area_Director" %}
 <li class="sect first">AD Dashboard</li>
   <li><a href="{% url doc_search_by_ad name=user.get_profile.person.full_name_as_key %}">My Documents</a></li>

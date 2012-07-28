@@ -1,0 +1,20 @@
+{% autoescape off %}
+Hello,
+
+We have received a request to add the email address '{{ email }}'
+to the user account '{{ user }}' at '{{ domain }}'. 
+If you requested this change, please confirm that this is your email
+address by clicking on following link:
+
+   http://{{ domain }}{% url confirm_new_email user today email auth %}
+
+This link will expire in {{ expire }} days.
+
+If you did not request this change, you may safely ignore this email,
+as no actions have been taken.
+
+Best regards,
+
+	The datatracker login manager service
+	(for the IETF Secretariat)
+{% endautoescape %}
