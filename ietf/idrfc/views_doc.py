@@ -468,7 +468,7 @@ def _get_history(doc, versions):
                 filename = u"%s-%s" % (e.doc.name, e.newrevisiondocevent.rev)
                 e.desc = 'New version available: <a href="http://tools.ietf.org/id/%s.txt">%s</a>' % (filename, filename)
                 if int(e.newrevisiondocevent.rev) != 0:
-                    e.desc += ' (<a href="http://tools.ietf.org/rfcdiff?url2=%s">diff from -%02d</a>)' % (filename, int(e.newrevisiondocevent.rev) - 1)
+                    e.desc += ' (<a href="http:{{rfcdiff_prefix}}?url2=%s">diff from -%02d</a>)' % (filename, int(e.newrevisiondocevent.rev) - 1)
                 info["dontmolest"] = True
 
             multiset_ballot_text = "This was part of a ballot set with: "

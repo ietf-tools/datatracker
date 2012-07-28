@@ -136,8 +136,9 @@ if [ "$ARG_COMMIT" ]; then
     svn commit -m "Merged [$rev] from $who: $comment $fix"
 else
     echo "This merge has not been committed yet."
-    echo "To commit it, run this commit command:"
+    echo "To commit it, run this commit command: ../commit-$rev-merge.sh"
     echo ""
-    echo "svn commit -m \"Merged [$rev] from $who: $comment $fix\""
+    echo "svn commit -m \"Merged [$rev] from $who: $comment $fix\"" > ../commit-$rev-merge.sh
+    chmod +x ../commit-$rev-merge.sh
 fi
 

@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if c.is_rev %}
 <td>{{ c.revision }}</td>
 <td>(System)</td>
-<td>New version available: <a href="http://tools.ietf.org/id/{{c.draft_name}}-{{c.revision}}.txt">{{c.draft_name}}-{{c.revision}}</a> {% ifnotequal c.revision "00" %}(<a href="http://tools.ietf.org/rfcdiff?url2={{c.draft_name}}-{{c.revision}}">diff from -{{c.revision|add:"-1"|stringformat:"02d"}}</a>){% endifnotequal %}</td>
+<td>New version available: <a href="http://tools.ietf.org/id/{{c.draft_name}}-{{c.revision}}.txt">{{c.draft_name}}-{{c.revision}}</a> {% ifnotequal c.revision "00" %}(<a href="http:{{rfcdiff_prefix}}?url2={{c.draft_name}}-{{c.revision}}">diff from -{{c.revision|add:"-1"|stringformat:"02d"}}</a>){% endifnotequal %}</td>
 {% endif %}
 
 {% if c.is_text %}

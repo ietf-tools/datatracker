@@ -215,7 +215,8 @@ def announce_to_lists(request, submission):
         if submission.group_acronym:
             m.cc = submission.group_acronym.email_address
         m.body = render_to_string('submit/announce_to_lists.txt', dict(submission=submission,
-                                                                       authors=authors))
+                                                                       authors=authors,
+                                                                       settings=settings,))
         m.save()
         m.related_docs.add(Document.objects.get(name=submission.filename))
 
