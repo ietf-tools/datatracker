@@ -46,8 +46,9 @@ function showBallot(draftName, editPositionUrl) {
         document.getElementById("ietf-extras").appendChild(el);
 
         var buttons = [{text:"Close", handler:handleClose, isDefault:true}];
-	if (("Area_Director" in IETF.user_groups) ||
-	    ("Secretariat" in IETF.user_groups)) {
+//	if (("Area_Director" in IETF.user_groups) ||
+//	    ("Secretariat" in IETF.user_groups)) {
+	if ("Area_Director" in IETF.user_groups) {
 	    buttons.unshift({text:"Edit Position", handler:handleEditPosition});
 	}
 	var kl = [new YAHOO.util.KeyListener(document, {keys:27}, handleClose)]						 

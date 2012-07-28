@@ -54,11 +54,19 @@ urlpatterns = patterns('',
     (r'^(?P<name>[A-Za-z0-9._+-]+)/ballot.tsv$', views_doc.ballot_tsv),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/ballot.json$', views_doc.ballot_json),
 
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_edit.change_state, name='doc_change_state'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/state/$', views_edit.change_state, name='doc_change_state'), # IESG state
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/info/$', views_edit.edit_info, name='doc_edit_info'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/requestresurrect/$', views_edit.request_resurrect, name='doc_request_resurrect'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/resurrect/$', views_edit.resurrect, name='doc_resurrect'),                       
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/addcomment/$', views_edit.add_comment, name='doc_add_comment'),
+
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/stream/$', views_edit.change_stream, name='doc_change_stream'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/notify/$', views_edit.edit_notices, name='doc_change_notify'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/status/$', views_edit.change_intention, name='doc_change_intended_status'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/telechat/$', views_edit.telechat_date, name='doc_change_telechat_date'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/iesgnote/$', views_edit.edit_iesg_note, name='doc_change_iesg_note'),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/ad/$', views_edit.edit_ad, name='doc_change_ad'),
+
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/clearballot/$', views_ballot.clear_ballot, name='doc_clear_ballot'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/deferballot/$', views_ballot.defer_ballot, name='doc_defer_ballot'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/undeferballot/$', views_ballot.undefer_ballot, name='doc_undefer_ballot'),
@@ -68,11 +76,13 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/approveballot/$', views_ballot.approve_ballot, name='doc_approve_ballot'),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/edit/makelastcall/$', views_ballot.make_last_call, name='doc_make_last_call'),
 
-    (r'^(?P<name>charter-[A-Za-z0-9.-]+)/', include('ietf.wgcharter.urls')),
+    (r'^(?P<name>charter-[A-Za-z0-9._+-]+)/', include('ietf.wgcharter.urls')),
+    (r'^(?P<name>[A-Za-z0-9._+-]+)/conflict-review/', include('ietf.doc.urls_conflict_review')),
 )
 
 urlpatterns += patterns('django.views.generic.simple',
-    url(r'^help/state/charter/$', 'direct_to_template', { 'template': 'wgcharter/states.html', 'extra_context': { 'states': State.objects.filter(type="charter") } }, name='help_charter_states'),
+    url(r'^help/state/charter/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(type="charter"),'title':"Charter" } }, name='help_charter_states'),
+    url(r'^help/state/conflict-review/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(type="conflrev").order_by("order"),'title':"Conflict Review" } }, name='help_conflict_review_states'),
 )
 
 

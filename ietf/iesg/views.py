@@ -52,7 +52,7 @@ from ietf.idrfc.models import RfcIndex
 from ietf.idrfc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
-from ietf.ipr.models import IprRfc, IprDraft, IprDetail
+from ietf.ipr.models import IprDocAlias 
 from ietf.doc.models import Document, TelechatDocEvent
 from ietf.group.models import Group
 
@@ -136,26 +136,37 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 def get_doc_section(id):
     pass
 
-def get_doc_sectionREDESIGN(id):
-    states = [16,17,18,19,20,21]
-    if id.intended_std_level_id in ["bcp", "ds", "ps", "std"]:
-        s = "2"
-    else:
-        s = "3"
+def get_doc_sectionREDESIGN(doc):
+    if doc.type_id == 'draft':
+        states = [16,17,18,19,20,21]
+        if doc.intended_std_level_id in ["bcp", "ds", "ps", "std"]:
+            s = "2"
+        else:
+            s = "3"
 
-    g = id.document().group_acronym()
-    if g and str(g) != 'none':
-        s = s + "1"
-    elif (s == "3") and id.stream in ("ISE","IRTF"):
-        s = s + "3"
-    else:
-        s = s + "2"
-    if not id.rfc_flag and id.cur_state.document_state_id not in states:
-        s = s + "3"
-    elif id.returning_item:
-        s = s + "2"
-    else:
-        s = s + "1"
+        g = doc.group_acronym()
+        if g and str(g) != 'none':
+            s = s + "1"
+        elif (s == "3") and doc.stream_id in ("ise","irtf"):
+            s = s + "3"
+        else:
+            s = s + "2"
+        if not doc.get_state_slug=="rfc" and doc.get_state('draft-iesg').order not in states:
+            s = s + "3"
+        elif doc.returning_item():
+            s = s + "2"
+        else:
+            s = s + "1"
+    elif doc.type_id == 'charter':
+        s = get_wg_section(doc.group)
+    elif doc.type_id == 'conflrev':
+        if doc.get_state('conflrev').slug not in ('adrev','iesgeval','appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent','defer'):
+             s = "333"
+        elif doc.returning_item():
+             s = "332"
+        else:
+             s = "331"
+
     return s
 
 def get_wg_section(wg):
@@ -179,42 +190,28 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     get_doc_section = get_doc_sectionREDESIGN
     
 def agenda_docs(date, next_agenda):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from ietf.doc.models import TelechatDocEvent
+    from ietf.doc.models import TelechatDocEvent
         
-        matches = IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct()
+    matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct()
 
-        idmatches = []
-        rfcmatches = []
+    docmatches = []
         
-        for m in matches:
-            if m.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
-                continue
+    for m in matches:
+        if m.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
+            continue
 
-            e = m.latest_event(type="started_iesg_process")
-            m.balloting_started = e.time if e else datetime.datetime.min
+        e = m.latest_event(type="started_iesg_process")
+        m.balloting_started = e.time if e else datetime.datetime.min
 
-            if m.docalias_set.filter(name__startswith="rfc"):
-                rfcmatches.append(m)
-            else:
-                idmatches.append(m)
-
-        idmatches.sort(key=lambda d: d.balloting_started)
-        rfcmatches.sort(key=lambda d: d.balloting_started)
-    else:
-        if next_agenda:
-            matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1)
-        else:
-            matches = IDInternal.objects.filter(telechat_date=date, primary_flag=1)
-        idmatches = matches.filter(rfc_flag=0).order_by('ballot')
-        rfcmatches = matches.filter(rfc_flag=1).order_by('ballot')
+        docmatches.append(m)
     
     res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
-    for id in list(idmatches)+list(rfcmatches):
+    for id in docmatches:
         section_key = "s"+get_doc_section(id)
         if section_key not in res:
             res[section_key] = []
         if id.note:
+            # TODO: Find out why this is _here_
             id.note = id.note.replace(u"\240",u"&nbsp;")
         res[section_key].append({'obj':id})
     return res
@@ -311,15 +308,12 @@ def agenda_documents_txt(request):
     dates = TelechatDates.objects.all()[0].dates()
     docs = []
     for date in dates:
-        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            from ietf.doc.models import TelechatDocEvent
-            for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
-                if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
-                    docs.append(d)
-        else:
-            docs.extend(IDInternal.objects.filter(telechat_date=date, primary_flag=1, agenda=1))
+        from ietf.doc.models import TelechatDocEvent
+        for d in Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
+            if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
+                docs.append(d)
     t = loader.get_template('iesg/agenda_documents.txt')
-    c = Context({'docs':docs,'special_stream_list':['ISE','IRTF']})
+    c = Context({'docs':docs,'special_stream_list':['ise','irtf']})
     return HttpResponse(t.render(c), mimetype='text/plain')
 
 class RescheduleForm(forms.Form):
@@ -342,83 +336,62 @@ class RescheduleForm(forms.Form):
 
         self.fields['telechat_date'].choices = choices
 
-def handle_reschedule_form(request, idinternal, dates):
+def handle_reschedule_form(request, doc, dates):
     initial = dict(
-        telechat_date=idinternal.telechat_date if idinternal.agenda else None)
+        telechat_date=doc.telechat_date if doc.on_upcoming_agenda() else None)
 
     formargs = dict(telechat_dates=dates,
-                    prefix="%s" % idinternal.draft_id,
+                    prefix="%s" % doc.name,
                     initial=initial)
     if request.method == 'POST':
         form = RescheduleForm(request.POST, **formargs)
         if form.is_valid():
-            if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                login = request.user.get_profile()
-                update_telechat(request, idinternal, login,
-                                form.cleaned_data['telechat_date'],
-                                False if form.cleaned_data['clear_returning_item'] else None)
-                idinternal.time = datetime.datetime.now()
-                idinternal.save()
-            else:
-                update_telechat(request, idinternal,
-                                form.cleaned_data['telechat_date'])
-                if form.cleaned_data['clear_returning_item']:
-                    idinternal.returning_item = False
-                idinternal.event_date = datetime.date.today()
-                idinternal.save()
+            login = request.user.get_profile()
+            update_telechat(request, doc, login,
+                            form.cleaned_data['telechat_date'],
+                            False if form.cleaned_data['clear_returning_item'] else None)
+            doc.time = datetime.datetime.now()
+            doc.save()
     else:
         form = RescheduleForm(**formargs)
 
-    form.show_clear = idinternal.returning_item
+    form.show_clear = doc.returning_item()
     return form
 
 def agenda_documents(request):
     dates = TelechatDates.objects.all()[0].dates()
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from ietf.doc.models import TelechatDocEvent
-        idinternals = []
-        for d in IDInternal.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct():
-            if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date in dates:
-                idinternals.append(d)
+    from ietf.doc.models import TelechatDocEvent
+    docs = []
+    for d in Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct():
+        if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date in dates:
+            docs.append(d)
 
-                e = d.latest_event(type="started_iesg_process")
-                d.balloting_started = e.time if e else datetime.datetime.min
-        idinternals.sort(key=lambda d: d.balloting_started)
-    else:
-        idinternals = list(IDInternal.objects.filter(telechat_date__in=dates,primary_flag=1,agenda=1).order_by('rfc_flag', 'ballot'))
-    for i in idinternals:
+            e = d.latest_event(type="started_iesg_process")
+            d.balloting_started = e.time if e else datetime.datetime.min
+    docs.sort(key=lambda d: d.balloting_started)
+    for i in docs:
         i.reschedule_form = handle_reschedule_form(request, i, dates)
 
     # some may have been taken off the schedule by the reschedule form
-    idinternals = filter(lambda x: x.agenda, idinternals)
+    docs = filter(lambda x: x.on_upcoming_agenda(), docs)
         
     telechats = []
     for date in dates:
-        matches = filter(lambda x: x.telechat_date == date, idinternals)
+        matches = filter(lambda x: x.telechat_date == date, docs)
         res = {}
         for i in matches:
             section_key = "s" + get_doc_section(i)
             if section_key not in res:
                 res[section_key] = []
-            # PM - add code to fill in IPR details. (Would be better to use IdRfc_Wrapper - but this breaks other code
-            if not i.rfc_flag:
-                w = IdWrapper(draft=i)
-                w.iprUrl = "/ipr/search?option=document_search&id_document_tag=" + str(w.id.tracker_id)
-                iprs = IprDraft.objects.filter(document=w.id.tracker_id)
-            else:
-                if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-                    ri = i
+            if i.type_id=='draft':
+                if i.get_state_slug()!="rfc":
+                    i.iprUrl = "/ipr/search?option=document_search&id_document_tag=" + str(i.name)
                 else:
-                    ri = RfcIndex.objects.get(rfc_number=i.draft_id)
-                w = RfcWrapper(ri)
-                w.iprUrl = "/ipr/search?option=rfc_search&rfc_search=" + str(w.rfc.rfc_number)
-                iprs = IprRfc.objects.filter(document=w.rfc.rfc_number) 
-            w.iprCount = len(iprs)
-            w.reschedule_form = i.reschedule_form
-            w.pages = i.pages
-            res[section_key].append(w)
+                    i.iprUrl = "/ipr/search?option=rfc_search&rfc_search=" + str(i.rfc_number())
+                i.iprCount = len(i.ipr())
+            res[section_key].append(i)
         telechats.append({'date':date, 'docs':res})
-    return direct_to_template(request, 'iesg/agenda_documents.html', {'telechats':telechats, 'hide_telechat_date':True})
+    return direct_to_template(request, 'iesg/agenda_documents_redesign.html', {'telechats':telechats, 'hide_telechat_date':True})
 
 def telechat_docs_tarfile(request,year,month,day):
     from tempfile import mkstemp

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Change State: {{doc.title}}{% endblock %}
+
+{% block morecss %}
+form.change-state select {
+  width: 22em;
+}
+
+#id_message, #id_comment {
+  width: 40em;
+}
+
+form.change-state .actions {
+  text-align: right;
+  padding-top: 10px;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Change State: {{doc.title}}</h1>
+
+<p class="helptext">For help on the states, see the <a href="{% url help_conflict_review_states %}">state table</a>.</p>
+
+<form class="change-state" action="" method="post">
+  <table>
+    {% for field in form.visible_fields %}
+    <tr>
+      <th>{{ field.label_tag }}:</th>
+      <td>{{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+
+      {{ field.errors }}
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td colspan="2" class="actions">
+        <a href="{% url doc_view name=doc.name %}">Back</a>
+        <input type="submit" value="Submit"/>
+      </td>
+    </tr>
+  </table>
+</form>
+
+{% endblock %}

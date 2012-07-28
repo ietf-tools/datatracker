@@ -166,7 +166,7 @@ changes=$( sed -n "/^ietfdb ($VER.*)/,/^ -- /p" changelog | awk '{ if (line) pri
 [ "$changes" ] || die "No changelog information for $VER found"
 note "$changes"
 
-contributors=$(echo "$changes" | sed 's/\.[ \t\n]/ /'| tr -c "a-z0-9.@-" "\n" | sort | uniq | grep '@' | sed 's/^/-c /' || true)
+contributors=$(echo "$changes" | sed 's/\.[ \t\n]/ /'| tr -c "a-z0-9.@-" "\n" | sort | uniq | grep '@' | sed -r -e 's/^\.+//' -e 's/\.+$//' -e 's/^/-c /' || true)
 
 note "Set the current time on the release notes in the changelog file"
 sed -r -i -e "1,/^ -- /s/([A-Za-z-]+ <[a-z0-9.-]+@[a-z0-9.-]+>  ).*$/\1$(date +'%d %b %Y %H:%M:%S %z')/" changelog
@@ -230,7 +230,8 @@ Regards,
 
 	Henrik
 	(via the mkrelease script)
-" | tee /tmp/release.mail | $do mail -s "New datatracker release: v$VER" -c henrik@levkowetz.com  -c glen@amsl.com -c fenner@fenron.net -c rjs@nostrum.com -c housley@vigilsec.com -c cmorgan@amsl.com -c avezza@amsl.com -c amorris@amsl.com -c smccammon@amsl.com -c kmoreland@amsl.com -c stevey@amsl.com -c olau@iola.dk $contributors codesprints@ietf.org
+" > ~/src/db/release-mail-v$VER.txt
+cat ~/src/db/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VER" -c henrik@levkowetz.com  -c glen@amsl.com -c fenner@fenron.net -c rjs@nostrum.com -c housley@vigilsec.com -c cmorgan@amsl.com -c avezza@amsl.com -c amorris@amsl.com -c smccammon@amsl.com -c kmoreland@amsl.com -c stevey@amsl.com -c olau@iola.dk $contributors codesprints@ietf.org
 
 $do toolsfeed control changelog /www/tools.ietf.org/tools/atomfeed.xml
 $do toolpush /www/tools.ietf.org/tools/atomfeed.xml

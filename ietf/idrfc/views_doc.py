@@ -60,15 +60,17 @@ def render_document_top(request, doc, tab, name):
     tabs.append(("Document", "document", urlreverse("ietf.idrfc.views_doc.document_main", kwargs=dict(name=name)), True))
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    if doc.type_id == "draft":
+    if doc.type_id in ("draft","conflrev"):
         # if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
         tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=name)), ballot))
     elif doc.type_id == "charter":
         tabs.append(("IESG Review", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=name)), ballot))
 
     # FIXME: if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
-    tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=name)), True))
-    tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=name)), True))
+    if doc.type_id != "conflrev":
+        tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=doc.name)), True))
+
+    tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=doc.name)), True))
 
     name = doc.canonical_name()
     if name.startswith("rfc"):
@@ -91,6 +93,8 @@ def document_main(request, name, rev=None):
 
     doc = get_object_or_404(Document, docalias__name=name)
     group = doc.group
+    if doc.type_id == 'conflrev':
+        conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
     
     revisions = []
     for h in doc.history_set.order_by("time", "id"):
@@ -115,17 +119,22 @@ def document_main(request, name, rev=None):
         if not snapshot:
             return redirect('doc_view', name=name)
 
-        # find old group, too
-        gh = find_history_active_at(doc.group, doc.time)
-        if gh:
-            group = gh
+        if doc.type_id == "charter":
+            # find old group, too
+            gh = find_history_active_at(doc.group, doc.time)
+            if gh:
+                group = gh
 
     top = render_document_top(request, doc, "document", name)
 
 
+
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+    if telechat and not telechat.telechat_date:
+       telechat = None
     if telechat and telechat.telechat_date < datetime.date.today():
         telechat = None
+
 
     if doc.type_id == "charter":
         filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
@@ -147,6 +156,33 @@ def document_main(request, name, rev=None):
                                        telechat=telechat,
                                        ballot_summary=ballot_summary,
                                        group=group,
+                                       ),
+                                  context_instance=RequestContext(request))
+
+    if doc.type_id == "conflrev":
+        filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
+        pathname = os.path.join(settings.CONFLICT_REVIEW_PATH,filename)
+
+        if doc.rev == "00" and not os.path.isfile(pathname):
+            # This could move to a template
+            content = "A conflict review response has not yet been proposed."
+        else:     
+            content = _get_html(filename, pathname, split=False)
+
+        ballot_summary = None
+        if doc.get_state_slug() in ("iesgeval"):
+            ballot_summary = needed_ballot_positions(doc, active_ballot_positions(doc).values())
+
+        return render_to_response("idrfc/document_conflict_review.html",
+                                  dict(doc=doc,
+                                       top=top,
+                                       content=content,
+                                       revisions=revisions,
+                                       snapshot=snapshot,
+                                       telechat=telechat,
+                                       conflictdoc=conflictdoc,
+                                       ballot_summary=ballot_summary,
+                                       approved_states=('appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent')
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -254,10 +290,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     if not ballot:
         raise Http404
 
-    deferred = None
-    if doc.type_id == "draft" and doc.get_state_slug("draft-iesg") == "defer":
-        # FIXME: fragile
-        deferred = doc.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
+    deferred = doc.active_defer_event()
 
     # collect positions
     active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active").distinct())
@@ -351,20 +384,7 @@ def document_debug(request, name):
     return HttpResponse(doc.to_json(), mimetype='text/plain')
 
 def _get_html(key, filename, split=True):
-    f = None
-    try:
-        f = open(filename, 'rb')
-        raw_content = f.read()
-    except IOError:
-        error = "Error; cannot read '%s'" % key
-        if split:
-            return (error, "")
-        else:
-            return error
-    finally:
-        if f:
-            f.close()
-    return markup_txt.markup(raw_content, split)
+    return get_document_content(key, filename, split=split, markup=True)
 
 def include_text(request):
     include_text = request.GET.get( 'include_text' )
@@ -415,6 +435,8 @@ def document_main_idrfc(request, name, tab):
     info = {}
     info['has_pdf'] = (".pdf" in doc.file_types())
     info['is_rfc'] = False
+
+    info['conflict_reviews'] = [ rel.source for alias in id.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='conflrev') ]
     
     (content1, content2) = _get_html(
         str(name)+","+str(id.revision)+",html",
@@ -547,36 +569,44 @@ def get_ballot(name):
     from ietf.doc.models import DocAlias
     alias = get_object_or_404(DocAlias, name=name)
     d = alias.document
-    id = get_object_or_404(InternetDraft, name=d.name)
-    try:
-        if not id.ballot.ballot_issued:
+    id = None
+    bw = None
+    dw = None
+    if (d.type_id=='draft'):
+        id = get_object_or_404(InternetDraft, name=d.name)
+        try:
+            if not id.ballot.ballot_issued:
+                raise Http404
+        except BallotInfo.DoesNotExist:
             raise Http404
-    except BallotInfo.DoesNotExist:
-        raise Http404
+
+        bw = BallotWrapper(id)               # XXX Fixme: Eliminate this as we go forward
+        # Python caches ~100 regex'es -- explicitly compiling it inside a method
+        # (where you then throw away the compiled version!) doesn't make sense at
+        # all.
+        if re.search("^rfc([1-9][0-9]*)$", name):
+            id.viewing_as_rfc = True
+            dw = RfcWrapper(id)
+        else:
+            dw = IdWrapper(id)
+        # XXX Fixme: Eliminate 'dw' as we go forward
 
     try:
         b = d.latest_event(BallotDocEvent, type="created_ballot")
     except BallotDocEvent.DoesNotExist:
         raise Http404
 
-    bw = BallotWrapper(id)               # XXX Fixme: Eliminate this as we go forward
-
-    # Python caches ~100 regex'es -- explicitly compiling it inside a method
-    # (where you then throw away the compiled version!) doesn't make sense at
-    # all.
-    if re.search("^rfc([1-9][0-9]*)$", name):
-        id.viewing_as_rfc = True
-        dw = RfcWrapper(id)
-    else:
-        dw = IdWrapper(id)
-    # XXX Fixme: Eliminate 'dw' as we go forward
-
-
     return (bw, dw, b, d)
+
 
 def ballot_for_popup(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
     return HttpResponse(document_ballot_content(request, doc, ballot_id=None, editable=False))
+
+def ballot_html(request, name):
+    bw, dw, ballot, doc = get_ballot(name)
+    content = document_ballot_content(request, doc, ballot.pk, editable=True)
+    return HttpResponse(content)
 
 def ballot_tsv(request, name):
     ballot, doc, b, d = get_ballot(name)

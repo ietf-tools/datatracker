@@ -43,7 +43,7 @@ from ietf.idrfc.idrfc_wrapper import IdRfcWrapper
 from ietf.ipr.models import IprDetail
 from ietf.group.models import Group
 from ietf.doc.models import State
-from ietf.doc.utils import get_chartering_type, augment_with_telechat_date
+from ietf.doc.utils import get_chartering_type
 
 
 def fill_in_charter_info(wg, include_drafts=False):
@@ -126,7 +126,6 @@ def chartering_wgs(request):
     charter_states = State.objects.filter(type="charter").exclude(slug__in=("approved", "notrev"))
     groups = Group.objects.filter(type="wg", charter__states__in=charter_states).select_related("state", "charter")
 
-    augment_with_telechat_date([g.charter for g in groups])
 
     for g in groups:
         g.chartering_type = get_chartering_type(g.charter)

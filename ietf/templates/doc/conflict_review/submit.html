@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block morecss %}
+form #id_content {
+  width: 40em;
+  height: 450px;
+}
+{% endblock %}
+
+{% block title %}
+Edit conflict review for {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}
+{% endblock %}
+
+{% block content %}
+<h1>Edit conflict review for {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}</h1>
+
+<p>The text will be submitted as <strong>{{ review.canonical_name }}-{{ next_rev }}</strong></p>
+<form class="edit-info" action="" enctype="multipart/form-data" method="POST">
+  <table>
+    {% for field in form.visible_fields %}
+    <tr>
+      <th>{{ field.label_tag }}:</th>
+      <td>
+        {{ field }}
+	{% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td></td>
+      <td class="actions">
+        <a href="{% url doc_view name=review.canonical_name %}">Back</a>
+        <input type="submit" name="reset_text" value="Reset to Template Text"/>
+        <input type="submit" name="submit_response" value="Submit"/>
+      </td>
+    </tr>
+  </table>
+</form>
+
+{% endblock %}

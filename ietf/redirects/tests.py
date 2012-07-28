@@ -161,17 +161,19 @@ class MainUrlTestCase(SimpleUrlTestCase):
 
 def get_templates():
     templates = set()
-    for root, dirs, files in os.walk(os.path.join(settings.BASE_DIR,"templates")):
+    # Shoud we teach this to use TEMPLATE_DIRS?
+    templatepath = os.path.join(settings.BASE_DIR,"templates")
+    for root, dirs, files in os.walk(templatepath):
         if ".svn" in dirs:
             dirs.remove(".svn")
-        last_dir = os.path.split(root)[1]
+        relative_path = root[len(templatepath)+1:]
         for file in files:
             if file.endswith("~") or file.startswith("#"):
                 continue
-            if last_dir == "templates":
+            if relative_path == "":
                 templates.add(file)
             else:
-                templates.add(os.path.join(last_dir, file))
+                templates.add(os.path.join(relative_path, file))
     return templates
 
 class TemplateCoverageTestCase(unittest.TestCase):
