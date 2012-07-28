@@ -1,3 +1,51 @@
+ietfdb (4.32)
+
+  This is a feature release that provides support for a new document type,
+  Conflict Review documents (conflrev-*.txt).
+
+  From rjsparks@nostrum.com:
+
+  * Adds a new document type for conflict reviews, with a ballot for the IESG
+    5742 response to a review request
+
+  * Integrated the new document type into the iESG agenda views (including RSS
+    feeds)
+
+  * Removed the Edit and Add buttons from the document main view.
+
+  * Replaced Add with actions appropriate for the document type, such as
+    "Begin IESG Processing" or "Begin IETF Conflict Review", and made most data
+    directly editable on the document's main page, depending on access
+    permissions.
+
+  * Removed a manual editing step that the secretariat had to perform when
+    sending conflict review messages. The view now composes the message
+    correctly given the stream.
+
+  * Added a pencil icon motif to differentiate fields that are editable.
+
+  * Generalized several views and helper functions to use Document instead of
+    (e.g.) IdWrapper
+
+  * Generalized reading documents from the repository
+
+  * Added a way to get from IdWrapper to the underlying Document to facilitate
+    migrating way from the Wrapper classes
+
+  * Added many helpers to Document to assist with migrating off IdWrapper
+
+  * Minor fixes and other changes
+    - Fixes to document main view to avoid (silent) template failures. 
+    - Began removing some of the code that is no longer reachable post-migration
+    - Corrected the behavior of the undefer code and added test cases for it
+    - Improved initial population of notification lists and added the ability
+      to regenerate the initial list
+
+  * Made the test code that scans for template coverage more robust.
+
+  Deployment notes:
+    * new setting: CONFLICT_REVIEW_PATH. The associated directory will need to be created
+
 ietfdb (4.31)
 
   This is primarily a bugfix-release, catching a lot of issues related to the
@@ -89,7 +137,7 @@ ietfdb (4.31)
     missing ballot id in the templates' url lookup.  Fix this by providing the 
     ballot id.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2012 01:51:44 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2012 18:25:57 +0200
 
 ietfdb (4.30)
 
