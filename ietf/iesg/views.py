@@ -32,11 +32,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Modified by Russ Housley on 6 July 2012 to add agenda_json and _agenda_json.
+
 import codecs, re, os, glob
 import datetime
 import tarfile
 
-from ietf.idtracker.models import IDInternal, InternetDraft,AreaGroup, Position, IESGLogin, Acronym
+from ietf.idtracker.models import IDInternal, InternetDraft, AreaGroup, Position, IESGLogin, Acronym
 from django.views.generic.list_detail import object_list
 from django.views.generic.simple import direct_to_template
 from django.views.decorators.vary import vary_on_cookie
@@ -45,6 +47,7 @@ from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpRespon
 from django.template import RequestContext, Context, loader
 from django.shortcuts import render_to_response, get_object_or_404
 from django.conf import settings
+from django.utils import simplejson as json
 from django import forms
 from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
@@ -193,6 +196,7 @@ def agenda_docs(date, next_agenda):
     from ietf.doc.models import TelechatDocEvent
         
     matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct()
+    matches = matches.filter(type__slug='draft')
 
     docmatches = []
         
@@ -219,6 +223,7 @@ def agenda_docs(date, next_agenda):
 def agenda_wg_actions(date):
     res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
     charters = Document.objects.filter(type="charter", docevent__telechatdocevent__telechat_date=date).select_related("group").distinct()
+    charters = charters.filter(group__state__slug__in=["proposed","active"])
     for c in charters:
         if c.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
             continue
@@ -233,6 +238,109 @@ def agenda_wg_actions(date):
 
 def agenda_management_issues(date):
     return TelechatAgendaItem.objects.filter(type=3).order_by('id')
+
+def _agenda_json(request, date=None):
+    if not date:
+        date = TelechatDates.objects.all()[0].date1
+        next_agenda = True
+    else:
+        y,m,d = date.split("-")
+        date = datetime.date(int(y), int(m), int(d))
+        next_agenda = None
+
+    data = {'telechat-date':str(date),
+            'as-of':str(datetime.datetime.utcnow()),
+            'sections':{}}
+    data['sections']['1'] = {'title':"Administrivia"}
+    data['sections']['1.1'] = {'title':"Roll Call"}
+    data['sections']['1.2'] = {'title':"Bash the Agenda"}
+    data['sections']['1.3'] = {'title':"Approval of the Minutes of Past Telechats"}
+    data['sections']['1.4'] = {'title':"head List of Remaining Action Items from Last Telechat"}
+    data['sections']['2'] = {'title':"Protocol Actions"}
+    data['sections']['2.1'] = {'title':"WG Submissions"}
+    data['sections']['2.1.1'] = {'title':"New Items", 'docs':[]}
+    data['sections']['2.1.2'] = {'title':"Returning Items", 'docs':[]}
+    data['sections']['2.2'] = {'title':"Individual Submissions"}
+    data['sections']['2.2.1'] = {'title':"New Items", 'docs':[]}
+    data['sections']['2.2.2'] = {'title':"Returning Items", 'docs':[]}
+    data['sections']['3'] = {'title':"Document Actions"}
+    data['sections']['3.1'] = {'title':"WG Submissions"}
+    data['sections']['3.1.1'] = {'title':"New Items", 'docs':[]}
+    data['sections']['3.1.2'] = {'title':"Returning Items", 'docs':[]}
+    data['sections']['3.2'] = {'title':"Individual Submissions Via AD"}
+    data['sections']['3.2.1'] = {'title':"New Items", 'docs':[]}
+    data['sections']['3.2.2'] = {'title':"Returning Items", 'docs':[]}
+    data['sections']['3.3'] = {'title':"IRTF and Independent Submission Stream Documents"}
+    data['sections']['3.3.1'] = {'title':"New Items", 'docs':[]}
+    data['sections']['3.3.2'] = {'title':"Returning Items", 'docs':[]}
+    data['sections']['4'] = {'title':"Working Group Actions"}
+    data['sections']['4.1'] = {'title':"WG Creation"}
+    data['sections']['4.1.1'] = {'title':"Proposed for IETF Review", 'wgs':[]}
+    data['sections']['4.1.2'] = {'title':"Proposed for Approval", 'wgs':[]}
+    data['sections']['4.2'] = {'title':"WG Rechartering"}
+    data['sections']['4.2.1'] = {'title':"Under Evaluation for IETF Review", 'wgs':[]}
+    data['sections']['4.2.2'] = {'title':"Proposed for Approval", 'wgs':[]}
+    data['sections']['5'] = {'title':"IAB News We Can Use"}
+    data['sections']['6'] = {'title':"Management Issues"}
+    data['sections']['7'] = {'title':"Working Group News"}
+
+    docs = agenda_docs(date, next_agenda)
+    for section in docs.keys():
+        # in case the document is in a state that does not have an agenda section
+        if section != 's':
+            s = str(".".join(list(section)[1:]))
+            if s[0:1] == '4':
+                # ignore these; not sure why they are included by agenda_docs
+                pass
+            else:
+                if len(docs[section]) != 0:
+                    # If needed, add a "For Action" section to agenda
+                    if s[4:5] == '3':
+                        data['sections'][s] = {'title':"For Action", 'docs':[]}
+
+                    for obj in docs[section]:
+                        d = obj['obj']
+                        docinfo = {'docname':d.canonical_name(),
+                                   'rev':d.rev,
+                                   'title':d.title,
+                                   'intended-std-level':str(d.intended_std_level),
+                                   'ad':d.ad.name}
+                        if d.rfc_number():
+                            docinfo['rfc-number'] = d.rfc_number()
+                        else:
+                            docinfo['rev'] = d.rev
+                        if d.note:
+                            docinfo['note'] = d.note
+                        defer = d.active_defer_event()
+                        if defer:
+                            docinfo['defer-by'] = defer.by.name
+                            docinfo['defer-at'] = str(defer.time)
+                        data['sections'][s]['docs'] += [docinfo, ]
+
+    wgs = agenda_wg_actions(date)
+    for section in wgs.keys():
+        # in case the charter is in a state that does not have an agenda section
+        if section != 's':
+            s = str(".".join(list(section)[1:]))
+            if s[0:1] != '4':
+                # ignore these; not sure why they are included by agenda_wg_actions
+                pass
+            else:
+                if len(wgs[section]) != 0:
+                    for obj in wgs[section]:
+                        wg = obj['obj']
+                        wginfo = {'wgname':wg.name,
+                                  'acronym':wg.acronym,
+                                  'ad':wg.ad.name}
+                        data['sections'][s]['wgs'] += [wginfo, ]
+
+    mgmt = agenda_management_issues(date)
+    num = 0
+    for m in mgmt:
+        num += 1
+        data['sections']["6.%d" % num] = {'title':m.title}
+
+    return data
 
 def _agenda_data(request, date=None):
     if not date:
@@ -268,6 +376,11 @@ def agenda(request, date=None):
 def agenda_txt(request):
     data = _agenda_data(request)
     return render_to_response("iesg/agenda.txt", data, context_instance=RequestContext(request), mimetype="text/plain")
+
+def agenda_json(request):
+    response = HttpResponse(mimetype='text/plain')
+    response.write(json.dumps(_agenda_json(request), indent=2))
+    return response
 
 def agenda_scribe_template(request):
     date = TelechatDates.objects.all()[0].date1
