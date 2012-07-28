@@ -14,7 +14,7 @@ import sys
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
 sys.path.append(os.path.abspath(BASE_DIR + "/../redesign"))
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 # Domain name of the IETF
@@ -177,7 +177,7 @@ IDTRACKER_BASE_URL = "http://datatracker.ietf.org"
 # Valid values:
 # 'production', 'test', 'development'
 # Override this in settings_local.py if it's not true
-SERVER_MODE = 'production'
+SERVER_MODE = 'development'
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.run_tests'
