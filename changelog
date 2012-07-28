@@ -137,7 +137,7 @@ ietfdb (4.31)
     missing ballot id in the templates' url lookup.  Fix this by providing the 
     ballot id.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2012 18:25:57 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2012 18:28:41 +0200
 
 ietfdb (4.30)
 
