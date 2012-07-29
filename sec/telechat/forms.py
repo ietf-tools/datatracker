@@ -21,13 +21,18 @@ class BallotForm(forms.Form):
     position = forms.ModelChoiceField(queryset=BallotPositionName.objects.exclude(slug='block').order_by('order'), widget=forms.RadioSelect, initial="norecord", required=True)
     
 class ChangeStateForm(forms.Form):
-    state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label=None, required=True)
+    '''
+    This form needs to handle documents of different types (draft, and conflrev for now).
+    Start with all document states in the state ModelChoice query, on init restrict the
+    query to be the same type as the initial doc_state.
+    '''
+    state = forms.ModelChoiceField(State.objects.all(), empty_label=None, required=True)
     substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=(TELECHAT_TAGS)), required=False)
-    #comment = forms.CharField(widget=forms.Textarea, required=False)
     
     def __init__(self,*args,**kwargs):
         super(ChangeStateForm, self).__init__(*args,**kwargs)
-        assert False, self.initial['state']
+        state = State.objects.get(id=self.initial['state'])
+        self.fields['state'].queryset = State.objects.filter(type=state.type)
         
 class DateSelectForm(forms.Form):
     date = forms.ChoiceField()

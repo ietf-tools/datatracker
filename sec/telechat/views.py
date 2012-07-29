@@ -9,7 +9,7 @@ from django.template import RequestContext
 
 from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
 from ietf.doc.proxy import InternetDraft
-from ietf.doc.utils import active_ballot_positions
+from ietf.doc.utils import active_ballot_positions, get_document_content
 from ietf.group.models import Group
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
@@ -56,6 +56,24 @@ def get_doc_list(agenda):
     
     return [x['obj'].name for x in docs]
 
+def get_doc_writeup(doc):
+    '''
+    This function takes a Document object and returns the ballot writeup for display
+    in the detail view.  In the case of Conflict Review documents we actually
+    want to display the contents of the document
+    '''
+    writeup = 'This document has no writeup'
+    if doc.type_id in ('draft','charter'):
+        latest = doc.latest_event(WriteupDocEvent, type='changed_ballot_writeup_text')
+        if latest:
+            writeup = latest.text
+    elif doc.type_id = 'conflrev':
+        try:
+            writeup = get_document_content(None,doc.get_file_path())
+        except:
+            pass
+        
+        
 def get_last_telechat_date():
     '''
     This function returns the date of the last telechat
@@ -220,12 +238,9 @@ def doc_detail(request, date, name):
     
     tags = doc.tags.filter(slug__in=TELECHAT_TAGS)
     tag = tags[0].pk if tags else None
-    latest = doc.latest_event(WriteupDocEvent, type='changed_ballot_writeup_text')
-    if latest:
-        writeup = latest.text
-    else:
-        writeup = 'This document has no writeup'
-        
+    
+    writeup = get_doc_writeup(doc)
+    
     initial_state = {'state':doc.get_state(state_type).pk,
                      'substate':tag}
     
