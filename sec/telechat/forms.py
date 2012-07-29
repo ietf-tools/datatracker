@@ -25,6 +25,10 @@ class ChangeStateForm(forms.Form):
     substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=(TELECHAT_TAGS)), required=False)
     #comment = forms.CharField(widget=forms.Textarea, required=False)
     
+    def __init__(self,*args,**kwargs):
+        super(ChangeStateForm, self).__init__(*args,**kwargs)
+        assert False, self.initial['state']
+        
 class DateSelectForm(forms.Form):
     date = forms.ChoiceField()
     

@@ -80,7 +80,7 @@ def get_section_header(file,agenda):
     h2b = {'1':'WG Submissions','2':'Individual Submissions via AD','3':'IRTF and Independent Submission Stream Documents'}
     h3 = {'1':'New Item','2':'Returning Item','3':'For Action'}
     
-    # Robert updated _agenda_data to return a Document objects instead of the wrapper
+    # Robert updated _agenda_data to return Document objects instead of the ID wrapper
     #doc = InternetDraft.objects.get(filename=file)
     doc = Document.objects.get(name=file)
     
@@ -190,6 +190,14 @@ def doc_detail(request, date, name):
     changes to ballot positions and document state.
     '''
     doc = get_object_or_404(Document, docalias__name=name)
+    
+    # As of Datatracker v4.32, Conflict Review (conflrev) Document Types can 
+    # be added to the Telechat agenda.  We need to check the document type here
+    # and set the state_type for use later in the view
+    if doc.type_id == 'draft':
+        state_type = 'draft-iesg'
+    elif doc.type_id == 'conflrev':
+        state_type = 'conflrev'
         
     started_process = doc.latest_event(type="started_iesg_process")
     login = request.user.get_profile()
@@ -218,7 +226,7 @@ def doc_detail(request, date, name):
     else:
         writeup = 'This document has no writeup'
         
-    initial_state = {'state':doc.get_state('draft-iesg').pk,
+    initial_state = {'state':doc.get_state(state_type).pk,
                      'substate':tag}
     
     BallotFormset = formset_factory(BallotForm, extra=0)
@@ -271,7 +279,7 @@ def doc_detail(request, date, name):
             if state_form.is_valid():
                 state = state_form.cleaned_data['state']
                 tag = state_form.cleaned_data['substate']
-                prev = doc.get_state("draft-iesg")
+                prev = doc.get_state(state_type)
 
                 # tag handling is a bit awkward since the UI still works
                 # as if IESG tags are a substate
