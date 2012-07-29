@@ -138,7 +138,7 @@ else
     echo "This merge has not been committed yet."
     echo "To commit it, run this commit command: ../commit-$rev-merge.sh"
     echo ""
-    echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/'} ${fix/\"/'}\"" > ../commit-$rev-merge.sh
+    echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'} ${fix/\"/\'}\"" > ../commit-$rev-merge.sh
     chmod +x ../commit-$rev-merge.sh
 fi
 
