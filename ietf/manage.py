@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import sys 
+sys.path.insert(0, '../')
+
 # Don't complain about these DeprecationWarnings (we still
 # want to see others, though)
 import warnings

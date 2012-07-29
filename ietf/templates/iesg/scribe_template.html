@@ -32,11 +32,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}{% comment %}
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
-{% endcomment %}<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+{% endcomment %}<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <title>IESG Agenda - Scribe Template</title>
 </head>
 <body>
 {% load ietf_filters %}{% filter compress_empty_lines %}
@@ -46,7 +48,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% include "iesg/agenda_outline_23.html" %}
 {% endwith %}
 
-<hr>
+<hr/>
 <h2>Appendix: Snapshot of discusses/comments</h2>
 
 <p>(at {% now "Y-m-d H:i:s T" %})</p>

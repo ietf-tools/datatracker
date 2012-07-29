@@ -32,45 +32,68 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}{% comment %}
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
-{% endcomment %}{% load ietf_filters %}
-{% if title2_first %}{% if title1_first %}<p><b>{{ title1 }}</b></p>{% endif %}
-<p><b>{{ title2 }}</b></p>
-{% endif %}<p><b>{{ title3 }}</b></p>
+{% endcomment %}
+{% load ietf_filters %}
+{% if title2_first %}
+    {% if title1_first %}
+        <p><b>{{ title1 }}</b></p>
+    {% endif %}
+    <p><b>{{ title2 }}</b></p>
+    {% endif %}<p><b>{{ title3 }}</b></p>
+    
+    <ul>
+    {% for doc in section_docs %}
+        <li>
+        {{ doc.obj.title|escape }} ({{ doc.obj.intended_std_level }})
+        <br/><a href="{% url doc_view name=doc.obj.canonical_name %}">{{doc.obj.canonical_name}}</a>
+        {% with doc.obj.rfc_number as rfc_number %}
+            {% if rfc_number %}
+                <a href="http://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">[txt]</a>
+            {% else %}
+                <a href="http://www.ietf.org/id/{{doc.obj.canonical_name}}-{{doc.obj.rev}}.txt">[txt]</a>
+            {% endif %}
+        {% endwith %}
+        <br/>Token: {{ doc.obj.ad|escape }} ({{doc.obj.area_acronym}} area)   
+        {% if doc.obj.note %}{# note: note is not escaped #}  
+            <br/>Note: {{ doc.obj.note|safe }}
+        {% endif %}
+        {% for ipr in doc.obj.ipr %}
+            {% ifequal ipr.ipr.status 1 %}
+                <br/>IPR: <a href="http://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a>
+            {% endifequal %}
+        {% endfor %} 
+        {% if doc.obj.active_ballot %}
+            <br/><b>Discusses/comments</b> <a href="http://datatracker.ietf.org/idtracker/ballot/{{doc.obj.canonical_name}}/">[ballot]</a>:
+            <ul>
+            {% for p in doc.obj.active_ballot_positions %}
+                {% if p.pos %}
+                    {% if p.discuss %}
+                        <li>
+                        <a href="#{{doc.obj.name}}+{{p.ad|slugify}}+discuss">{{ p.ad }}: Discuss [{{ p.discuss_time }}]</a>:
+                        <br/>{{ p.discuss }}
+                        </li>
+                    {% endif %}
+                    {% if p.comment %}
+                        <li>
+                        <a href="#{{doc.obj.name}}+{{p.ad|slugify}}+comment">{{ p.ad }}: Comment [{{ p.comment_time }}]</a>:
+                        <br/>{{ p.comment }}
+                        </li>
+                    {% endif %}
+                {% endif %}            
+            {% endfor %}
+            </ul>
+        {% endif %}
 
-<ol>
-{% for doc in section_docs %}
-  <li>{{ doc.obj.document.title|escape }} ({{ doc.obj.document.intended_status }}){% if doc.obj.rfc_flag %}
-  <br><a href="http://tools.ietf.org/html/rfc{{doc.obj.document.rfc_number }}">{{ doc.obj.document.filename }}</a>
-{% else %}
-  <br><a href="http://tools.ietf.org/html/{{doc.obj.document.filename}}-{{doc.obj.document.revision}}.html">{{doc.obj.document.filename}}-{{doc.obj.document.revision}}</a>
-{% endif %}  <br>Token: {{ doc.obj.token_name|escape }}    
-{% if doc.obj.note %}{# note: note is not escaped #}  <br>Note: {{ doc.obj.note|safe }}
-{% endif %}{% for ipr in doc.obj.draft.ipr.all %}{% ifequal ipr.ipr.status 1 %}  <br>IPR: <a href="http://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a>{% endifequal %}
-{% endfor %}  {% if doc.obj.ballot.active %}<br><b>Discusses/comments</b> (from <a href="http://datatracker.ietf.org/idtracker/ballot/{{ doc.obj.ballot.ballot}}/">ballot {{doc.obj.ballot.ballot }})</a>:
-  <ol>
-{% if USE_DB_REDESIGN_PROXY_CLASSES %}
-{% for p in doc.obj.active_positions|dictsort:"ad.last_name" %}{% if p.pos %}{% ifequal p.pos.pos_id "discuss" %}<li><a href="#{{doc.obj.document.filename}}+{{p.pos.ad|slugify}}+discuss">{{ p.pos.ad.plain_name }}: Discuss [{{ p.pos.discuss_time.date }}]</a>:
-        <br>...
-{% endifequal %}{% if p.pos.comment %}    <li><a href="#{{doc.obj.document.filename}}+{{p.ad.plain_name|slugify}}+comment">{{ p.pos.ad.plain_name }}: Comment [{{ p.pos.comment_time.date }}]</a>:
-        <br>...
-{% endif %}{% endif %}{% endfor %}
-{% else %}
-{% for position in doc.obj.ballot.positions.all|dictsort:"ad.last_name" %}{% ifequal position.discuss 1 %}    <li><a href="#{{doc.obj.document.filename}}+{{position.ad|slugify}}+discuss">{{ position.ad }}:{% for item in doc.obj.ballot.discusses.all %}{% ifequal position.ad item.ad %} Discuss [{{ item.date }}]</a>:
-        <br>...
-{% endifequal %}{% endfor %}{% endifequal %}{% for item in doc.obj.ballot.comments.all %}{% ifequal position.ad item.ad %}    <li><a href="#{{doc.obj.document.filename}}+{{position.ad|slugify}}+comment">{{ position.ad }}: Comment [{{ item.date }}]</a>:
-        <br>...
-{% endifequal %}{% endfor %}{% endfor %}
-{% endif%}
-  </ol>
-{%endif %}  <p><b>Telechat</b>:
-  <ul>
-    <li>...
-    <li>...
-    <li>...
-    <li>...
-    <li>...
-  </ul><p>
+        <p><b>Telechat:</b></p>
+        <ul>
+            <li>...</li>
+            <li>...</li>
+            <li>...</li>
+            <li>...</li>
+            <li>...</li>
+        </ul>
+    </li>
 {% empty %}
-<li>(none)</li>
+    <li>(none)</li>
 {% endfor %}
-</ol>
+</ul>

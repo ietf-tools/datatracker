@@ -8,6 +8,7 @@ from ietf.group.models import *
 from ietf.name.models import *
 from ietf.person.models import Email, Person
 from ietf.utils.admin import admin_link
+from ietf.doc.utils import active_ballot
 
 import datetime, os
 
@@ -247,6 +248,30 @@ class Document(DocumentInfo):
         elif self.type_id == "conflrev" and self.get_state_slug("conflrev") == "defer":
             return self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
         return None
+
+    def active_ballot(self):
+        ballot = self.latest_event(BallotDocEvent, type="created_ballot")
+        e = self.latest_event(BallotDocEvent, ballot_type__slug=ballot.ballot_type.slug) if ballot else None
+        open = e and not e.type == "closed_ballot"
+        return ballot.ballot_type if open else None
+
+    def active_ballot_positions(self):
+        """Return dict mapping each active AD to a current ballot position (or None if they haven't voted)."""
+        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active"))
+        res = {}
+    
+        ballot = self.latest_event(BallotDocEvent, type="created_ballot")
+        positions = BallotPositionDocEvent.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads, ballot=ballot).select_related('ad', 'pos').order_by("-time", "-id")
+   
+        for pos in positions:
+            if pos.ad not in res:
+                res[pos.ad] = pos
+    
+        for ad in active_ads:
+            if ad not in res:
+                res[ad] = None
+    
+        return res.values()
 
     def displayname_with_link(self):
         return '<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev)
