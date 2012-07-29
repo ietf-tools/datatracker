@@ -3,6 +3,7 @@ import hashlib
 import subprocess
 
 from django import forms
+from django.forms import ModelForm
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
@@ -155,3 +156,61 @@ class PasswordForm(forms.Form):
 
 class TestEmailForm(forms.Form):
     email = forms.EmailField(required=False)
+
+class PersonForm(ModelForm):
+    request = None
+    new_emails = []
+    class Meta:
+        from ietf.person.models import Person
+        model = Person
+        exclude = ('time','user')
+
+    def confirm_address(self,email):
+        person = self.instance
+        domain = Site.objects.get_current().domain
+        user = person.user
+        if len(email) == 0:
+            return
+        subject = 'Confirm email address for %s' % person.name
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to_email = email
+        today = datetime.date.today().strftime('%Y%m%d')
+        auth = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, today, to_email, user)).hexdigest()
+        context = {
+            'today': today,
+            'domain': domain,
+            'user': user,
+            'email': email,
+            'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+            'auth': auth,
+        }
+        send_mail(self.request, to_email, from_email, subject, 'registration/add_email_email.txt', context)
+
+    def save(self, force_insert=False, force_update=False, commit=True):
+        from ietf.group.models import Role
+        m = super(PersonForm, self).save(commit=False)
+        self.new_emails = [v for k,v in self.data.items() if k[:10] == u'new_email_' and u'@' in v]
+
+        for email in self.new_emails:
+            self.confirm_address(email)
+
+        # Process email active flags
+        emails = Email.objects.filter(person=self.instance)
+        for email in emails:
+            email.active = self.data.__contains__(email.address)
+            if commit:
+                email.save()
+
+        # Process email for roles
+        for k,v in self.data.items():
+            if k[:11] == u'role_email_':
+                role = Role.objects.get(id=k[11:])
+                email = Email.objects.get(address = v)
+                role.email = email
+                if commit:
+                    role.save()
+
+        if commit:
+            m.save()
+        return m
+

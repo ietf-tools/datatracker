@@ -1,0 +1,147 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% extends "base.html" %}
+
+{% block morecss %}
+table.userProfile {
+  text-align: left;
+}
+th {
+  vertical-align: top;
+  text-align: right !important;
+  font-weight: bold !important;
+}
+.active {
+  color: #008000;
+  color: #008000;
+}
+.inactive {
+  color: #800000;
+  text-decoration: line-through;
+}
+.even {
+  background-color: #e0e0ff;
+}
+.odd {
+  background-color: #ffffff;
+}
+{% endblock %}
+
+{% block pagehead %}
+<script type="text/javascript">
+  function init_form()
+  {
+    // Make sure emails are styled correctly
+    var inputs = document.getElementsByTagName("input");
+    for (var input in inputs)
+    {
+      if (inputs[input].type=="checkbox")
+      {
+        style_email(inputs[input]);
+      }
+    }
+  }
+
+  function style_email(e)
+  {
+    var span = document.getElementById(e.id.replace("controller_","span_"));
+    if (!span) { return; }
+    if (e.checked)
+    {
+      span.className = 'active';
+    }
+    else
+    {
+      span.className = 'inactive';
+    }
+  }
+
+  function add_email()
+  {
+    var button_row = document.getElementById("add_email_row");
+    var tr = document.createElement("tr");
+    tr.appendChild(document.createElement("th"));
+    tr.appendChild(document.createElement("td"));
+    var td = document.createElement("td");
+    var input = document.createElement("input");
+    input.style.width="100%";
+    var date = new Date;
+    input.name = "new_email_"+date.getTime();
+    td.appendChild(input);
+    tr.appendChild(td);
+    button_row.parentNode.insertBefore(tr,button_row);
+  }
+</script>
+{% endblock %}
+
+{% block bodyAttrs %}onload='init_form();'{% endblock %}
+
+{% block title %}Profile for {{ user }}{% endblock %}
+
+{% block content %}
+<h1>User information for {{ user.username }}</h1>
+
+<form method="post"> {% csrf_token %}
+<table class="userProfile">
+  <tr>
+    <th>User name:</th>
+    <td></td>
+    <td>{{ user.username }}</td>
+  </tr>
+  {% for role in roles %}
+  <tr>
+    <th>{% if forloop.first %}Roles:{% endif %}</th>
+    <td></td>
+    <td class='{% cycle 'even' 'odd'%}'>{{ role.name }} in {{ role.group.acronym|upper }} ({{ role.group.type }})</td>
+    <td class='{% cycle 'even' 'odd'%}'>
+      <select name="role_email_{{role.id}}">
+        {% for email in emails %}<option value="{{email.address}}"{% ifequal email.address role.email.address %} selected="selected"{% endifequal %} class='{% if email.active %}active{% else %}inactive{% endif %}'>{{email}}</option>
+     {% endfor %}</select></td>
+  </tr>
+  {% endfor %}
+  {% for email in emails %}
+  <tr>
+    <th>{% if forloop.first %}Email:{% endif %}</th>
+    <td></td>
+    <td colspan="2">
+    <input type="checkbox" id="controller_{{email.address}}" name="{{email.address}}" {% if email.active %}checked="checked"{% else %}{% endif %} onchange="style_email(this)"/>
+    <span id="span_{{email.address}}">{{email}}</span></td>
+  </tr>
+  {% endfor %}
+  <tr id="add_email_row">
+    <th></th>
+    <td></td>
+    <td colspan='2'><input type="button" value="Add Email Address" onclick="add_email()"/></td>
+  </tr>
+  <tr><td colspan="2"></td><td colspan="2"><i>Note: Email addresses cannot be deleted, only deactivated.</i></td></tr>
+  <tr>
+    <th>{{person_form.name.label}}:</th>
+    <td></td>
+    <td colspan='2'>{{person_form.name}} - The preferred form of your name</td>
+  </tr>
+  <tr>
+    <th>{{person_form.ascii.label}}:</th>
+    <td></td>
+    <td colspan='2'>{{person_form.ascii}} - Your name as rendered in ASCII (Latin, unaccented) characters</td>
+  </tr>
+  <tr>
+    <th>{{person_form.ascii_short.label}}:</th>
+    <td></td>
+    <td colspan='2'>{{person_form.ascii_short}} - Short form, if any, of your name as renedered in ASCII (blank is okay)</td>
+  </tr>
+  <tr>
+    <th>{{person_form.affiliation.label}}:</th>
+    <td></td>
+    <td colspan='2'>{{person_form.affiliation}} - Employer, university, sponsor, etc.</td>
+  </tr>
+  <tr>
+    <th>Mailing Address:</th>
+    <td></td>
+    <td colspan='2'>{{person_form.address}}</td>
+  </tr>
+
+<td colspan="4"><div width='100%' align='right'><input type="submit" value="Commit Changes" /></div></td></tr>
+</table>
+
+
+</form>
+{% endblock %}
