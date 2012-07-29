@@ -210,6 +210,22 @@ IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
 
+# Ideally, more of these would be local -- but since we don't support
+# versions right now, we'll point to external websites
+DOC_HREFS = {
+    "agenda": "/meeting/{meeting}/agenda/{doc.group.acronym}/",
+    #"charter": "/doc/{doc.name}-{doc.rev}/",
+    "charter": "http://www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
+    #"draft": "/doc/{doc.name}-{doc.rev}/",
+    "draft": "http://tools.ietf.org/html/{doc.name}-{doc.rev}",
+    # I can't figure out the liaison maze. Hopefully someone
+    # who understands this better can take care of it.
+    #"liai-att": None
+    #"liaison": None
+    "minutes": "http://www.ietf.org/proceedings/{meeting}/minutes/{doc.name}",
+    "slides": "http://www.ietf.org/proceedings/{meeting}/slides/{doc.name}",
+}
+
 # Override this in settings_local.py if needed
 CACHE_MIDDLEWARE_SECONDS = 300
 CACHE_MIDDLEWARE_KEY_PREFIX = ''
