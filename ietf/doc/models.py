@@ -75,6 +75,18 @@ class DocumentInfo(models.Model):
         else:
             raise NotImplemented
 
+    def href(self):
+        try:
+            format = settings.DOC_HREFS[self.type_id]
+        except KeyError:
+            if len(self.external_url):
+                return self.external_url
+            return None
+        meeting = None
+        if self.type_id in ("agenda", "minutes", "slides"):
+            meeting = self.name.split("-")[1]
+        return format.format(doc=self,meeting=meeting)
+
     def set_state(self, state):
         """Switch state type implicit in state to state. This just
         sets the state, doesn't log the change."""
@@ -171,7 +183,6 @@ class Document(DocumentInfo):
                     filename)
             return url
         return urlreverse('doc_view', kwargs={ 'name': name }, urlconf="ietf.urls")
-
 
 
     def file_tag(self):
