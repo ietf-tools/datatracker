@@ -1,0 +1,20 @@
+{% extends "registration/base.html" %}
+
+{% block title %}Confirm new email address{% endblock %}
+
+{% block content %}
+<div id="confirm_email_page">
+<h1>Confirm new email address</h1>
+{% if success %}
+<p>Your account with login name '{{ username }}' has been updated to include the email address '{{ email }}'.</p>
+<p>You may now wish to <a href="{% url ietfauth.views.profile %}">edit your profile</a>.</p>
+{% else %}
+<p>An error has occured when attempting to add the email address '{{ email }}' to your account '{{ username }}'.<p>
+<ul>
+{% for field,msgs in error.items %}
+{% for msg in msgs %}<li><b>{{field}}</b>: {{msg}}
+{% endfor %}{% endfor %}</ul>
+
+{% endif %}
+</div>
+{% endblock %}
