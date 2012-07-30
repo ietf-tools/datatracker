@@ -406,7 +406,13 @@ def gen_plenaries(context):
     path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'technical-plenary.html')
     write_html(path,tech.content)
 
-def gen_progress(context):
+def gen_progress(context, final=True):
+    '''
+    This function generates the Progress Report.  This report is actually produced twice.  First
+    for inclusion in the Admin Plenary, then for the final proceedings.  When produced the first
+    time we want to exclude the headers because they are broken links until all the proceedings 
+    are generated.
+    '''
     meeting = context['meeting']
     
     # proceedings are run sometime after the meeting, so end date = the previous meeting
@@ -417,6 +423,7 @@ def gen_progress(context):
     end_date = meetings[0].date
     data = get_progress_stats(start_date,end_date)
     data['meeting'] = meeting
+    data['final'] = final
     
     html = render_to_response('proceedings/progress.html',data)
     
