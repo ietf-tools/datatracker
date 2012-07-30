@@ -1,3 +1,39 @@
+ietfdb (4.33)
+
+  This is the IETF-84 codesprint release:
+
+  * Changeset [4724] from rbarnes@bbn.com:
+    Adjusted the scribe template to make it XHTML compliant and fix what 
+    Robert broke 
+
+  * Changeset [4721] from adam@nostrum.com: 
+    Adding an 'href' method to documents. It doesn't work for documents 
+    of type 'liai-att' or 'liaison', but it's a good start. 
+
+  * Changeset [4709] from housley@vigilsec.com: 
+    Ability to fetch the IESG Telechat Agenda as a JSON object 
+    (agenda.json). 
+
+  * Changesets [4720], [4706], and [4705] from adam@nostrum.com: 
+    Adding self-management page for user profile information 
+
+  * Changeset [4704] from suresh.krishnan@ericsson.com: 
+    - When the state changes from whatever to Publication Requested, the 
+      regular state change mail will go out.
+    - The regular state change mail will be sent to the authors and the wg 
+      chairs (this is the current behavior).
+    - Now, in addition to this regular state change mail, another mail will 
+      be sent with the title 'Publication has been requested for draft 
+      <draft-name>' and this mail will be sent to the AD responsible for the WG. 
+      I considered sending the mail to both the ADs but decided not to bother the 
+      other AD :-).  
+
+  * Changeset [4701] from rjsparks@nostrum.com: 
+    Moved the prefix for the URI to use for rfcdiff into settings.py.
+    Fixes bug #808 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Jul 2012 23:54:19 +0200
+
 ietfdb (4.32)
 
   This is a feature release that provides support for a new document type,
