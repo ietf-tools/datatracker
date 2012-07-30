@@ -44,12 +44,18 @@ def build_timeslots(meeting,room=None):
     else:
         rooms = meeting.room_set.all()
     if not slots or room:
-        last_meeting = get_last_meeting(meeting)
-        delta = meeting.date - last_meeting.date
+        # if we are just building timeslots for a new room, the room argument was passed,
+        # then we need to use current meeting times as a template, not the last meeting times
+        if room:
+            source_meeting = meeting
+        else:
+            source_meeting = get_last_meeting(meeting)
+            
+        delta = meeting.date - source_meeting.date
         initial = []
         timeslots = []
         time_seen = set()
-        for t in last_meeting.timeslot_set.filter(type='session'):
+        for t in source_meeting.timeslot_set.filter(type='session'):
             if not t.time in time_seen:
                 time_seen.add(t.time)
                 timeslots.append(t)
