@@ -32,27 +32,28 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->{% endcomment %}{% comment %}
 Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
-{% endcomment %}{% load ietf_filters %}
+{% endcomment %}
+{% load ietf_filters %}
 
 <!-- ============================================================ -->
-<p><b>{{ doc.obj.document.filename }}</b></p>
-{% if doc.obj.ballot.active %}
-  <ol>
-{% for p in doc.obj.active_positions|dictsort:"ad.last_name" %}
+<p><b>{{ doc.obj.name }}</b></p>
 
-{% if p.pos and p.pos.pos_id == "discuss" %}
-<li><a name="{{doc.obj.document.filename}}+{{p.ad.plain_name|slugify}}+discuss">{{ p.ad.plain_name }}</a>: Discuss [{{ p.pos.discuss_time|date:"Y-m-d" }}]:<br>
-<pre>{{ p.pos.orig.discuss|wrap_text:80|escape }}</pre>
-</li>
-{% endif %}
+{% if doc.obj.active_ballot %}
+    <ul>
+    {% for p in doc.obj.active_ballot_positions %}
+        {% if p.pos and p.discuss %}
+            <li>
+            <a name="{{doc.obj.name}}+{{p.ad|slugify}}+discuss">{{ p.ad }}: Discuss [{{ p.discuss_time }}]</a>:
+            <br/>{{ p.discuss }}
+            </li>
+        {% endif %}
 
-{% if p.pos and p.pos.comment %}
-<li><a name="{{doc.obj.document.filename}}+{{p.ad.plain_name|slugify}}+comment">{{ p.ad.plain_name }}</a>: Comment [{{ p.pos.comment_time|date:"Y-m-d" }}]:<br>
-    <pre>{{ p.pos.comment|wrap_text:80|escape }}</pre>
-</li>
-{% endif %}
-{% endfor %}
-
-</ol>
-
+        {% if p.pos and p.comment %}
+            <li>
+            <a name="{{doc.obj.name}}+{{p.ad|slugify}}+comment">{{ p.ad }}: Comment [{{ p.comment_time }}]</a>:
+            <br/>{{ p.comment }}
+            </li>
+        {% endif %}
+    {% endfor %}
+    </ul>
 {% endif%}
