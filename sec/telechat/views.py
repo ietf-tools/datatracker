@@ -9,13 +9,13 @@ from django.template import RequestContext
 
 from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
 from ietf.doc.proxy import InternetDraft
-from ietf.doc.utils import active_ballot_positions, get_document_content
+from ietf.doc.utils import active_ballot_positions, get_document_content, log_state_changed
 from ietf.group.models import Group
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.idrfc.lastcall import request_last_call
 from ietf.idrfc.mails import email_owner, email_state_changed
-from ietf.idrfc.utils import log_state_changed, add_document_comment
+from ietf.idrfc.utils import add_document_comment
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem, WGAction
 from ietf.iesg.views import _agenda_data
 
@@ -67,7 +67,7 @@ def get_doc_writeup(doc):
         latest = doc.latest_event(WriteupDocEvent, type='changed_ballot_writeup_text')
         if latest:
             writeup = latest.text
-    elif doc.type_id = 'conflrev':
+    elif doc.type_id == 'conflrev':
         try:
             writeup = get_document_content(None,doc.get_file_path())
         except:
@@ -301,23 +301,25 @@ def doc_detail(request, date, name):
                 prev_tag = doc.tags.filter(slug__in=(TELECHAT_TAGS))
                 prev_tag = prev_tag[0] if prev_tag else None
     
-                #if state != prev or tag != prev_tag:                
+                #if state != prev or tag != prev_tag:
                 if state_form.changed_data:
                     save_document_in_history(doc)
+                    old_description = doc.friendly_state()
                     
                     if 'state' in state_form.changed_data:
                         doc.set_state(state)
-                    
+                        
                     if 'substate' in state_form.changed_data:
                         if prev_tag:
                             doc.tags.remove(prev_tag)
                         if tag:
                             doc.tags.add(tag)
-    
-                    e = log_state_changed(request, doc, login, prev, prev_tag)
+                    
+                    new_description = doc.friendly_state()
+                    e = log_state_changed(request, doc, login, new_description, old_description)
                     doc.time = e.time
                     doc.save()
-    
+                    
                     email_state_changed(request, doc, e.desc)
                     email_owner(request, doc, doc.ad, login, e.desc)
     

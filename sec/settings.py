@@ -190,6 +190,7 @@ MAX_WG_DELEGATES = 3
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
+CONFLICT_REVIEW_PATH = '/a/www/ietf-ftp/conflict_reviews/'
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
