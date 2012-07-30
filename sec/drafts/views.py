@@ -121,7 +121,7 @@ def process_files(request,draft):
         file_type_list.append(extension)
         if extension == '.txt':
             txt_size = file.size
-            wrapper = Draft(file.read())
+            wrapper = Draft(file.read(),file.name)
         handle_uploaded_file(file)
     
     # create IdSubmissionDetail record, leaved unsaved
