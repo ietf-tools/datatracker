@@ -379,7 +379,7 @@ class OutgoingLiaisonForm(LiaisonForm):
     def set_organization_field(self):
         # If the user is a liaison manager and is nothing more, reduce the To field to his SDOs
         if not self.hm.get_entities_for_person(self.person) and is_sdo_liaison_manager(self.person):
-            self.fields['organization'].choices = [('sdo_%s' % i.pk, i.name) for i in liaison_manager_sdos()]
+            self.fields['organization'].choices = [('sdo_%s' % i.pk, i.name) for i in liaison_manager_sdos(self.person)]
         else:
             self.fields['organization'].choices = self.hm.get_all_outgoing_entities()
         self.fieldsets[1] = ('To', ('organization', 'other_organization', 'to_poc'))
