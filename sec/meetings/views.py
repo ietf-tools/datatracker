@@ -17,7 +17,7 @@ from ietf.group.models import Group
 from ietf.name.models import SessionStatusName, TimeSlotTypeName
 from ietf.person.models import Person
 from sec.meetings.blue_sheets import create_blue_sheets
-from sec.proceedings.views import build_choices
+from sec.proceedings.views import build_choices, handle_upload_file
 from sec.sreq.forms import GroupSelectForm
 from sec.sreq.views import get_initial_session, session_conflicts_as_string
 from sec.utils.mail import get_cc_list
@@ -258,21 +258,43 @@ def add(request):
 
 def blue_sheet(request, meeting_id):
     '''
-    A function to create the blue sheets for the specified Meeting
+    Blue Sheet view.  The user can generate blue sheets or upload scanned bluesheets
+    '''
+    meeting = get_object_or_404(Meeting, number=meeting_id)
+    
+    url = settings.BLUE_SHEET_URL
+    
+    if request.method == 'POST':
+        form = UploadBlueSheetForm(request.POST,request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            handle_upload_file(file,file.name,meeting,'bluesheets')
+            messages.success(request, 'File Uploaded')
+            url = reverse('meetings_blue_sheet', kwargs={'meeting_id':meeting.number})
+            return HttpResponseRedirect(url)
+    
+    else:
+        form = UploadBlueSheetForm()
+        
+    return render_to_response('meetings/blue_sheet.html', {
+        'meeting': meeting,
+        'url': url,
+        'form': form},
+        RequestContext(request, {}),
+    )
+    
+def blue_sheet_generate(request, meeting_id):
+    '''
+    Generate bluesheets
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
     groups = Group.objects.filter(session__meeting=meeting).order_by('acronym')
     create_blue_sheets(meeting, groups)
     
-    url = settings.BLUE_SHEET_URL
-    
-    messages.success(request, 'Blue Sheet Doc created')
-    return render_to_response('meetings/blue_sheet.html', {
-        'meeting': meeting,
-        'url': url,},
-        RequestContext(request, {}),
-    )
+    messages.success(request, 'Blue Sheets generated')
+    url = reverse('meetings_blue_sheet', kwargs={'meeting_id':meeting.number})
+    return HttpResponseRedirect(url)
 
 def blue_sheet_redirect(request):
     '''
@@ -280,7 +302,11 @@ def blue_sheet_redirect(request):
     to the meeting specific URL.
     '''
     today = datetime.date.today()
-    meeting = Meeting.objects.filter(date__gt=today,type='ietf').order_by('date')[0]
+    qs = Meeting.objects.filter(date__gt=today,type='ietf').order_by('date')
+    if qs:
+        meeting = qs[0]
+    else:
+        meeting = Meeting.objects.filter(type='ietf').order_by('-date')[0]
     url = reverse('meetings_blue_sheet', kwargs={'meeting_id':meeting.number})
     return HttpResponseRedirect(url)
 

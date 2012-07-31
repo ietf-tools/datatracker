@@ -87,7 +87,6 @@ class TimeChoiceField(forms.ChoiceField):
 #----------------------------------------------------------
 # Forms
 #----------------------------------------------------------
-
 class MeetingModelForm(forms.ModelForm):
     class Meta:
         model = Meeting
@@ -181,8 +180,7 @@ class TimeSlotForm(forms.Form):
     name = forms.CharField(help_text='Name that appears on the agenda')
     
 class NonSessionForm(TimeSlotForm):
-    # inherit TimeSlot and add extra fields
-    short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)')
+    short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)',required=False)
     type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(slug__in=('other','reg','break','plenary')),empty_label=None)
     group = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__in=('edu','ietf','iepg','tools','iesg','iab','iaoc')),help_text='Required for Session types: other, plenary',required=False)
     show_location = forms.BooleanField(required=False)
@@ -194,7 +192,19 @@ class NonSessionForm(TimeSlotForm):
         cleaned_data = self.cleaned_data
         group = cleaned_data['group']
         type = cleaned_data['type']
+        short = cleaned_data['short']
         if type.slug in ('other','plenary') and not group:
             raise forms.ValidationError('ERROR: a group selection is required')
-        
+        if type.slug in ('other','plenary') and not short:
+            raise forms.ValidationError('ERROR: a short name is required')
+            
         return cleaned_data
+        
+class UploadBlueSheetForm(forms.Form):
+    file = forms.FileField(help_text='example: bluesheets-84-ancp-01.pdf')
+    
+    def clean_file(self):
+        file = self.cleaned_data['file']
+        if not re.match(r'bluesheets-\d+',file.name):
+            raise forms.ValidationError('Incorrect filename format')
+        return file

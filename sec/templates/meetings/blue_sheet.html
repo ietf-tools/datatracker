@@ -16,16 +16,29 @@
 
 <div  class="module">
   <h2>Blue Sheet</h2>
+  <h1> Meeting {{ meeting.number }}</h1>
   
   <p>
+  <a href="{% url meetings_blue_sheet_generate meeting_id=meeting.number%}">Generate Blue Sheets</a><br />
   <a href="{{ url }}">Download</a> latest Blue Sheets.
   </p>
-
+  <hr />
+  <p>
+  Use the form below to upload individual scanned blue sheet documents.
+  </p>
+  <form id="rolodex-add-form" enctype="multipart/form-data" action="" method="post">
+    <table class="full-width amstable">
+      <col width="200">
+      {{ form.as_table }}
+    </table>
+    <input type="submit" value="Submit" />
+  </form>
+  
     <div class="button-group">
-       <ul>
-             <li><button onclick="window.location='../../'">Back</button></li>
-        </ul>
-      </div> <!-- button-group -->
+      <ul>
+        <li><button onclick="window.location='../../'">Back</button></li>
+      </ul>
+    </div> <!-- button-group -->
 
 </div> <!-- module -->
 
