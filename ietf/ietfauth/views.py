@@ -107,7 +107,7 @@ def profile(request):
             { 'success': success, 'new_emails': new_emails, 'error': error} ,
                               context_instance=RequestContext(request))
     else:
-        roles = Role.objects.filter(person=person).order_by('name__name','group__name')
+        roles = Role.objects.filter(person=person,group__state='active').order_by('name__name','group__name')
         emails = Email.objects.filter(person=person).order_by('-active','-time')
         aliases = Alias.objects.filter(person=person)
 
