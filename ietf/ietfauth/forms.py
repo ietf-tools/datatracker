@@ -72,6 +72,10 @@ class RecoverPasswordForm(RegistrationForm):
         }
         send_mail(self.request, to_email, from_email, subject, 'registration/password_reset_email.txt', context)
 
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '')
+        return email
+
 
 class PasswordForm(forms.Form):
 
