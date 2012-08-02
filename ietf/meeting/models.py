@@ -177,7 +177,7 @@ class Session(models.Model):
 
     def slides(self):
         try:
-            return self.materials.filter(type="slides",states__type="slides",states__slug="active")
+            return self.materials.filter(type="slides",states__type="slides",states__slug="active").order_by("order")
         except Exception:
             return []
 
