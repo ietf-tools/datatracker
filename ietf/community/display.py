@@ -53,18 +53,18 @@ class StatusField(DisplayField):
     def get_value(self, document, raw=False):
         draft_state = document.get_state('draft')
         stream_state = document.get_state('draft-stream-%s' % (document.stream.slug)) if document.stream else None
-        iesg_state = document.get_state('draft-iesg')
+        iesg_state = document.get_state('draft-iesg') or ''
         rfceditor_state = document.get_state('draft-rfceditor')
         if draft_state.slug == 'rfc':
             state = draft_state.name
-        elif rfceditor_state:
-            state = "%s<br/>%s<br/>%s" % (stream_state.name, iesg_state.name, rfceditor_state.name)
-        elif iesg_state:
-            state = "%s<br/>%s" % (stream_state.name, iesg_state.name)
-        elif stream_state:
-            state = stream_state.name
         else:
             state = ""
+            if stream_state:
+                state = state + ("%s<br/>" % stream_state.name)
+            if iesg_state:
+                state = state + ("%s<br/>" % iesg_state.name)
+            if rfceditor_state:
+                state = state + ("%s<br/>" % rfceditor_state.name)
         #
         if draft_state.slug == 'rfc':
             tags = ""
