@@ -550,10 +550,9 @@ class InternetDraft(Document):
     def active_positions(self):
         """Returns a list of dicts, with AD and Position tuples"""
         from ietf.person.proxy import IESGLogin as IESGLoginProxy
-        from ietf.doc.utils import active_ballot_positions
 
         res = []
-        for ad, pos in active_ballot_positions(self).iteritems():
+        for ad, pos in self.active_ballot_positions().iteritems():
             res.append(dict(ad=IESGLoginProxy().from_object(ad), pos=Position().from_object(pos) if pos else None))
 
         res.sort(key=lambda x: x["ad"].last_name)

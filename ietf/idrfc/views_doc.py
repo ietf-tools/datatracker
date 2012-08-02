@@ -143,7 +143,7 @@ def document_main(request, name, rev=None):
 
         ballot_summary = None
         if doc.get_state_slug() in ("intrev", "iesgrev"):
-            ballot_summary = needed_ballot_positions(doc, active_ballot_positions(doc).values())
+            ballot_summary = needed_ballot_positions(doc, doc.active_ballot_positions().values())
 
         return render_to_response("idrfc/document_charter.html",
                                   dict(doc=doc,
@@ -171,7 +171,7 @@ def document_main(request, name, rev=None):
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval"):
-            ballot_summary = needed_ballot_positions(doc, active_ballot_positions(doc).values())
+            ballot_summary = needed_ballot_positions(doc, doc.active_ballot_positions().values())
 
         return render_to_response("idrfc/document_conflict_review.html",
                                   dict(doc=doc,
