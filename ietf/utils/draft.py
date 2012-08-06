@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.26"
+version = "0.27"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -142,24 +142,8 @@ class Draft():
             for pagestart in range(0, len(self.lines), 58):
                 self.pages += [ "\n".join(self.lines[pagestart:pagestart+54]) ]
 
-        try:
-            self.filename, self.revision = self._parse_draftname()
-        except ValueError, e:
-            _warn("While processing '%s': %s" % (self.source, e))
-            try:
-                path, base = self.source.rsplit("/", 1)
-            except ValueError:
-                path, base = "", self.source
-            if base.startswith("draft-"):
-                name, ext = base.split(".", 1)
-                revmatch = re.search("\d\d$", name)
-                if revmatch:
-                    self.filename = name[:-3]
-                    self.revision = name[-2:]
-                else:
-                    raise ValueError(e+"\n"+self.source)
-            else:
-                raise ValueError(e+"\n"+self.source)
+
+        self.filename, self.revision = self._parse_draftname()
 
         self._authors = None
         self._authors_with_firm = None
@@ -179,11 +163,24 @@ class Draft():
         if draftname_match:
             return (draftname_match.group(1), draftname_match.group(2) )
         elif rfcnum_match:
-            return ("rfc"+rfcnum_match.group(2), None )
+            return ("rfc"+rfcnum_match.group(2), "")
         else:
             self.errors["draftname"] = "Could not find the draft name and revision on the first page."
-            raise ValueError, self.errors["draftname"] + "\n'"+self.text.strip()[:240] + "'..."
-            return ("", "")
+            filename = ""
+            revision = ""
+            try:
+                path, base = self.source.rsplit("/", 1)
+            except ValueError:
+                path, base = "", self.source
+            if base.startswith("draft-"):
+                name, ext = base.split(".", 1)
+                revmatch = re.search("\d\d$", name)
+                if revmatch:
+                    filename = name[:-3]
+                    revision = name[-2:]
+                else:
+                    filename = name
+            return filename, revision
 
     # ----------------------------------------------------------------------
     def _stripheaders(self):
