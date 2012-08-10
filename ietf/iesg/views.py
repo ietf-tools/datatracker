@@ -196,7 +196,6 @@ def agenda_docs(date, next_agenda):
     from ietf.doc.models import TelechatDocEvent
         
     matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct()
-    matches = matches.filter(type__slug='draft')
 
     docmatches = []
         
