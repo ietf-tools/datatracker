@@ -259,11 +259,17 @@ class Document(DocumentInfo):
             return self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
         return None
 
+# This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
+# If that assumption is violated, they will only expose the most recently created ballot
+    def ballot_open(self, ballot_type_slug):
+        e = self.latest_event(BallotDocEvent, ballot_type__slug=ballot_type_slug)
+        return e and not e.type == "closed_ballot"
+
     def active_ballot(self):
+        """Returns the most recently created ballot if it isn't closed."""
         ballot = self.latest_event(BallotDocEvent, type="created_ballot")
-        e = self.latest_event(BallotDocEvent, ballot_type__slug=ballot.ballot_type.slug) if ballot else None
-        open = e and not e.type == "closed_ballot"
-        return ballot.ballot_type if open else None
+        open = self.ballot_open(ballot.ballot_type.slug) if ballot else False
+        return ballot if open else None
 
     def active_ballot_positions(self):
         """Return dict mapping each active AD to a current ballot position (or None if they haven't voted)."""
@@ -281,7 +287,7 @@ class Document(DocumentInfo):
             if ad not in res:
                 res[ad] = None
     
-        return res.values()
+        return res
 
     def displayname_with_link(self):
         return '<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev)

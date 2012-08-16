@@ -36,34 +36,6 @@ def get_tags_for_stream_id(stream_id):
     else:
         return []
 
-# This, and several other utilities here, assume that there is only one active ballot for a document at any point in time.
-# If that assumption is violated, they will only expose the most recently created ballot
-def active_ballot(doc):
-    """Returns the most recently created ballot if it isn't closed."""
-    ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    open = ballot_open(doc,ballot.ballot_type.slug) if ballot else False
-    return ballot if open else None
-     
-
-def active_ballot_positions(doc, ballot=None):
-    """Return dict mapping each active AD to a current ballot position (or None if they haven't voted)."""
-    active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active"))
-    res = {}
-
-    if not ballot:
-        ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    positions = BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ad__in=active_ads, ballot=ballot).select_related('ad', 'pos').order_by("-time", "-id")
-
-    for pos in positions:
-        if pos.ad not in res:
-            res[pos.ad] = pos
-
-    for ad in active_ads:
-        if ad not in res:
-            res[ad] = None
-
-    return res
-
 def needed_ballot_positions(doc, active_positions):
     '''Returns text answering the question "what does this document
     need to pass?".  The return value is only useful if the document
@@ -102,12 +74,8 @@ def needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
     
-def ballot_open(doc, ballot_type_slug):
-    e = doc.latest_event(BallotDocEvent, ballot_type__slug=ballot_type_slug)
-    return e and not e.type == "closed_ballot"
-
 def create_ballot_if_not_open(doc, by, ballot_type_slug):
-    if not ballot_open(doc, ballot_type_slug):
+    if not doc.ballot_open(ballot_type_slug):
         e = BallotDocEvent(type="created_ballot", by=by, doc=doc)
         e.ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_type_slug)
         e.desc = u'Created "%s" ballot' % e.ballot_type.name
@@ -115,7 +83,7 @@ def create_ballot_if_not_open(doc, by, ballot_type_slug):
 
 def close_open_ballots(doc, by):
     for t in BallotType.objects.filter(doc_type=doc.type_id):
-        if ballot_open(doc, t.slug):
+        if doc.ballot_open(t.slug):
             e = BallotDocEvent(type="closed_ballot", doc=doc, by=by)
             e.ballot_type = t
             e.desc = 'Closed "%s" ballot' % t.name

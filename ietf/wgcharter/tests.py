@@ -224,7 +224,7 @@ class CharterApproveBallotTestCase(django.test.TestCase):
 
         charter = Document.objects.get(name=charter.name)
         self.assertEquals(charter.get_state_slug(), "approved")
-        self.assertTrue(not ballot_open(charter, "approve"))
+        self.assertTrue(not charter.ballot_open("approve"))
 
         self.assertEquals(charter.rev, "01")
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))))
