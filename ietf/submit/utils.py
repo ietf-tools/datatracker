@@ -261,7 +261,7 @@ def announce_new_versionREDESIGN(request, submission, draft, state_change_msg):
     if draft.ad:
         to_email.append(draft.ad.role_email("ad").address)
 
-    for ad, pos in draft.active_ballot_positions().iteritems():
+    for ad, pos in draft.active_ballot().active_ad_positions().iteritems():
         if pos and pos.pos_id == "discuss":
             to_email.append(ad.role_email("ad").address)
 

@@ -35,7 +35,8 @@ from ietf.name.models import BallotPositionName
 from ietf.message.utils import infer_message
 from ietf.person.models import Person
 
-from ietf.doc.utils import log_state_changed
+from ietf.doc.utils import log_state_changed as docutil_log_state_changed
+from ietf.idrfc.utils import log_state_changed as idrfcutil_log_state_changed
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -431,7 +432,7 @@ def defer_ballotREDESIGN(request, name):
         elif doc.type_id == 'conflrev':
             doc.set_state(State.objects.get(type='conflrev', slug='defer'))
 
-        e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
+        e = docutil_log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
         
         doc.time = e.time
         doc.save()
@@ -481,7 +482,7 @@ def undefer_ballotREDESIGN(request, name):
         elif doc.type_id == 'conflrev':
             doc.set_state(State.objects.get(type='conflrev',slug='iesgeval'))
 
-        e = log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
+        e = docutil_log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
         
         doc.time = e.time
         doc.save()
@@ -557,7 +558,7 @@ def lastcalltext(request, name):
                 if "send_last_call_request" in request.POST:
                     doc.idinternal.change_state(IDState.objects.get(document_state_id=IDState.LAST_CALL_REQUESTED), None)
                     
-                    change = log_state_changed(request, doc, login)
+                    change = idrfcutil_log_state_changed(request, doc, login)
                     email_owner(request, doc, doc.idinternal.job_owner, login, change)
                     request_last_call(request, doc)
 
@@ -646,7 +647,7 @@ def lastcalltextREDESIGN(request, name):
                     if prev_tag:
                         doc.tags.remove(prev_tag)
 
-                    e = log_state_changed(request, doc, login, prev, prev_tag)
+                    e = idrfcutil_log_state_changed(request, doc, login, prev, prev_tag)
                     
                     doc.time = e.time
                     doc.save()
@@ -1093,7 +1094,7 @@ def approve_ballotREDESIGN(request, name):
         
         change_description = e.desc + " and state has been changed to %s" % doc.get_state("draft-iesg").name
         
-        e = log_state_changed(request, doc, login, prev, prev_tag)
+        e = idrfcutil_log_state_changed(request, doc, login, prev, prev_tag)
                     
         doc.time = e.time
         doc.save()
@@ -1153,7 +1154,7 @@ def make_last_call(request, name):
             doc.idinternal.event_date = date.today()
             doc.idinternal.save()
                 
-            log_state_changed(request, doc, login)
+            idrfcutil_log_state_changed(request, doc, login)
             
             doc.lc_sent_date = form.cleaned_data['last_call_sent_date']
             doc.lc_expiration_date = form.cleaned_data['last_call_expiration_date']
@@ -1216,7 +1217,7 @@ def make_last_callREDESIGN(request, name):
             if prev_tag:
                 doc.tags.remove(prev_tag)
 
-            e = log_state_changed(request, doc, login, prev, prev_tag)
+            e = idrfcutil_log_state_changed(request, doc, login, prev, prev_tag)
                     
             doc.time = e.time
             doc.save()

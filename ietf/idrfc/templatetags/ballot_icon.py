@@ -82,7 +82,7 @@ def render_ballot_icon(user, doc):
         else:
             return (1, pos.pos.order)
 
-    positions = list(doc.active_ballot_positions().items())
+    positions = list(doc.active_ballot().active_ad_positions().items())
     positions.sort(key=sort_key)
 
     cm = ""
