@@ -37,7 +37,6 @@ from ietf.idtracker.models import IDInternal, BallotInfo
 from ietf.idrfc.idrfc_wrapper import position_to_string, BALLOT_ACTIVE_STATES
 from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
 from ietf.ietfauth.decorators import has_role
-from ietf.doc.utils import active_ballot_positions
 from ietf.doc.models import BallotDocEvent
 
 register = template.Library()
@@ -83,7 +82,7 @@ def render_ballot_icon(user, doc):
         else:
             return (1, pos.pos.order)
 
-    positions = list(active_ballot_positions(doc, ballot).items())
+    positions = list(doc.active_ballot().active_ad_positions().items())
     positions.sort(key=sort_key)
 
     cm = ""

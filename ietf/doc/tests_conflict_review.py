@@ -13,7 +13,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_data  import make_test_data
 from ietf.utils.mail import outbox
-from ietf.doc.utils import active_ballot, create_ballot_if_not_open, ballot_open
+from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_conflict_review import default_approval_text
 
 from ietf.doc.models import Document,DocEvent,NewRevisionDocEvent,BallotPositionDocEvent,TelechatDocEvent,DocAlias,State
@@ -105,7 +105,7 @@ class ConflictReviewTestCase(django.test.TestCase):
         review_doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEquals(review_doc.get_state('conflrev').slug,'adrev')
         self.assertTrue(review_doc.latest_event(DocEvent,type="added_comment").desc.startswith('RDNK84ZD'))
-        self.assertFalse(active_ballot(review_doc))
+        self.assertFalse(review_doc.active_ballot())
 
         # successful change to IESG Evaluation 
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='conflrev').pk)
@@ -114,7 +114,7 @@ class ConflictReviewTestCase(django.test.TestCase):
         review_doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEquals(review_doc.get_state('conflrev').slug,'iesgeval')
         self.assertTrue(review_doc.latest_event(DocEvent,type="added_comment").desc.startswith('TGmZtEjt'))
-        self.assertTrue(active_ballot(review_doc))
+        self.assertTrue(review_doc.active_ballot())
         self.assertEquals(review_doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position").pos_id,'yes')
 
 
@@ -234,7 +234,7 @@ class ConflictReviewTestCase(django.test.TestCase):
 
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
         self.assertEquals(doc.get_state_slug(),approve_type+'-sent')
-        self.assertFalse(ballot_open(doc, "conflrev"))
+        self.assertFalse(doc.ballot_open("conflrev"))
         
         self.assertEquals(len(outbox), messages_before + 1)
         self.assertTrue('Results of IETF-conflict review' in outbox[-1]['Subject'])

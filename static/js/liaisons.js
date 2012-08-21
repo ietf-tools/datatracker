@@ -209,7 +209,7 @@
                 updateReplyTo();
             };
 
-            var updateInfo = function(first_time) {
+            var updateInfo = function(first_time, sender) {
                 var entity = organization;
                 var to_entity = from;
                 if (!entity.is('select') || !to_entity.is('select')) {
@@ -232,7 +232,9 @@
                             render_mails_into(poc, response.poc, true);
                             toggleApproval(response.needs_approval);
                             checkPostOnly(response.post_only);
-                            userSelect(response.full_list);
+                            if (sender == 'from') {
+                                userSelect(response.full_list);
+                            }
                         }
                     }
                 });
@@ -330,7 +332,7 @@
             var checkFrom = function(first_time) {
                 var reduce_options = form.find('.reducedToOptions');
                 if (!reduce_options.length) {
-                    updateInfo(first_time);
+                    updateInfo(first_time, 'from');
                     return;
                 }
                 var to_select = organization;
@@ -351,7 +353,7 @@
                     to_select.find('optgroup').show();
                     to_select.find('option').show();
                 }
-                updateInfo(first_time);
+                updateInfo(first_time, 'from');
             };
 
             var checkSubmissionDate = function() {
@@ -366,7 +368,7 @@
             };
 
             var initTriggers = function() {
-                organization.change(function() {updateInfo(false);});
+                organization.change(function() {updateInfo(false, 'to');});
                 organization.change(checkOtherSDO);
                 from.change(function() {checkFrom(false);});
                 reply.keyup(updateFrom);

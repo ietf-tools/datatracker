@@ -38,7 +38,6 @@ from ietf.idtracker.models import IDInternal, BallotInfo
 from ietf.idrfc.idrfc_wrapper import position_to_string, BALLOT_ACTIVE_STATES
 from ietf.idtracker.templatetags.ietf_filters import in_group, timesince_days
 from ietf.ietfauth.decorators import has_role
-from ietf.doc.utils import active_ballot_positions, active_ballot
 from ietf.doc.models import BallotDocEvent, BallotPositionDocEvent
 
 from datetime import date
@@ -90,7 +89,7 @@ def render_ballot_icon(user, doc):
         else:
             return (1, pos.pos.order)
 
-    positions = list(active_ballot_positions(doc, ballot).items())
+    positions = list(doc.active_ballot().active_ad_positions().items())
     positions.sort(key=sort_key)
 
     cm = ""
@@ -144,7 +143,7 @@ def my_position(doc, user):
         return None
     if not in_group(user, "Area_Director"):
         return None
-    ballot = active_ballot(doc)
+    ballot = doc.active_ballot()
     pos = "No Record"
     if ballot:
       changed_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad__name=user_name, ballot=ballot)

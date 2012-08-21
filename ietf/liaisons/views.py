@@ -33,10 +33,7 @@ def add_liaison(request, liaison=None):
         if form.is_valid():
             liaison = form.save()
             if request.POST.get('send', None):
-                if not settings.DEBUG:
-                    liaison.send_by_email()
-                else:
-                    return _fake_email_view(request, liaison)
+                liaison.send_by_email()
             return HttpResponseRedirect(reverse('liaison_list'))
     else:
         form = liaison_form_factory(request, liaison=liaison)
@@ -88,14 +85,6 @@ def get_info(request):
     json_result = simplejson.dumps(result)
     return HttpResponse(json_result, mimetype='text/javascript')
 
-
-def _fake_email_view(request, liaison):
-    mail = liaison.send_by_email(fake=True)
-    return render_to_response('liaisons/liaison_mail_detail.html',
-                              {'mail': mail,
-                               'message': mail.message(),
-                               'liaison': liaison},
-                              context_instance=RequestContext(request))
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     def approvable_liaison_statements(group_codes):
@@ -160,12 +149,15 @@ def liaison_list(request):
 
 @can_submit_liaison
 def liaison_approval_list(request):
-    person = get_person_for_user(request.user)
-    approval_codes = IETFHM.get_all_can_approve_codes(person)
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        to_approve = approvable_liaison_statements(approval_codes).order_by("-submitted")
+    if is_secretariat(request.user):
+        to_approve = LiaisonDetail.objects.filter(approved=None).order_by("-submitted")
     else:
-        to_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).order_by("-submitted_date")
+        person = get_person_for_user(request.user)
+        approval_codes = IETFHM.get_all_can_approve_codes(person)
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            to_approve = approvable_liaison_statements(approval_codes).order_by("-submitted")
+        else:
+            to_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).order_by("-submitted_date")
 
     return object_list(request, to_approve,
                        allow_empty=True,
@@ -175,12 +167,15 @@ def liaison_approval_list(request):
 
 @can_submit_liaison
 def liaison_approval_detail(request, object_id):
-    person = get_person_for_user(request.user)
-    approval_codes = IETFHM.get_all_can_approve_codes(person)
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        to_approve = approvable_liaison_statements(approval_codes).order_by("-submitted")
+    if is_secretariat(request.user):
+        to_approve = LiaisonDetail.objects.filter(approved=None).order_by("-submitted")
     else:
-        to_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).order_by("-submitted_date")
+        person = get_person_for_user(request.user)
+        approval_codes = IETFHM.get_all_can_approve_codes(person)
+        if settings.USE_DB_REDESIGN_PROXY_CLASSES:
+            to_approve = approvable_liaison_statements(approval_codes).order_by("-submitted")
+        else:
+            to_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).order_by("-submitted_date")
 
     if request.method=='POST' and request.POST.get('do_approval', False):
         try:
@@ -197,10 +192,7 @@ def liaison_approval_detail(request, object_id):
                 else:
                     approval.approved=True
                     approval.save()
-            if not settings.DEBUG:
-                liaison.send_by_email()
-            else:
-                return _fake_email_view(request, liaison)
+            liaison.send_by_email()
         except LiaisonDetail.DoesNotExist:
             pass
         return HttpResponseRedirect(reverse('liaison_list'))

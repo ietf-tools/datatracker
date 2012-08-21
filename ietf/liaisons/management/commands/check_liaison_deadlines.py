@@ -6,7 +6,8 @@ from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.liaisons.models import LiaisonDetail
-from ietf.liaisons.mail import IETFEmailMessage
+#from ietf.liaisons.mail import IETFEmailMessage
+from ietf.utils.mail import send_mail_text
 
 
 PREVIOUS_DAYS = {
@@ -44,17 +45,20 @@ class Command(BaseCommand):
                                  'url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=liaison.pk)),
                                  'referenced_url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.related_to.pk)) if liaison.related_to else None,
                                 })
-        mail = IETFEmailMessage(subject=subject,
-                                to=to_email,
-                                from_email=from_email,
-                                cc=cc,
-                                bcc=bcc,
-                                body=body)
-        if not settings.DEBUG:
-            mail.send()
-            print 'Liaison %05s#: Deadline reminder Sent!' % liaison.pk
-        else:
-            print 'Liaison %05s#: Deadline reminder Not Sent because in DEBUG mode!' % liaison.pk
+        send_mail_text(context=None,to=to_email,frm=from_email,cc=cc,subject=subject,bcc=bcc,txt=body)
+        print 'Liaison %05s#: Deadline reminder Sent!' % liaison.pk
+
+        #mail = IETFEmailMessage(subject=subject,
+        #                        to=to_email,
+        #                        from_email=from_email,
+        #                        cc=cc,
+        #                        bcc=bcc,
+        #                        body=body)
+        #if not settings.DEBUG:
+        #    mail.send()
+        #    print 'Liaison %05s#: Deadline reminder Sent!' % liaison.pk
+        #else:
+        #    print 'Liaison %05s#: Deadline reminder Not Sent because in DEBUG mode!' % liaison.pk
 
     def handle(self, *args, **options):
         today = datetime.date.today()

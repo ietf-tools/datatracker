@@ -7,7 +7,8 @@ from django.template.loader import render_to_string
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse as urlreverse
 from ietf.idtracker.models import Acronym, PersonOrOrgInfo, Area, IESGLogin
-from ietf.liaisons.mail import IETFEmailMessage
+#from ietf.liaisons.mail import IETFEmailMessage
+from ietf.utils.mail import send_mail_text
 from ietf.ietfauth.models import LegacyLiaisonUser
 from ietf.utils.admin import admin_link
 
@@ -147,13 +148,14 @@ class LiaisonDetail(models.Model):
                 'url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=self.pk)),
                 'referenced_url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=self.related_to.pk)) if self.related_to else None,
                 })
-        mail = IETFEmailMessage(subject=subject,
-                                to=to_email,
-                                from_email=from_email,
-                                body = body)
-        if not fake:
-            mail.send()         
-        return mail                                                     
+        send_mail_text(context=None, to=to_email, frm=from_email, subject=subject, txt = body)
+        #mail = IETFEmailMessage(subject=subject,
+        #                        to=to_email,
+        #                        from_email=from_email,
+        #                        body = body)
+        #if not fake:
+        #    mail.send()         
+        #return mail                                                     
 
     def send_by_email(self, fake=False):
         if self.is_pending():
@@ -172,15 +174,16 @@ class LiaisonDetail(models.Model):
                 'url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=self.pk)),
                 'referenced_url': settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=self.related_to.pk)) if self.related_to else None,
                 })
-        mail = IETFEmailMessage(subject=subject,
-                                to=to_email,
-                                from_email=from_email,
-                                cc = cc,
-                                bcc = bcc,
-                                body = body)
-        if not fake:
-            mail.send()         
-        return mail                                                     
+        send_mail_text(context=None,to=to_email,frm=from_email,subject=subject,txt=body,cc=cc,bcc=bcc)
+        #mail = IETFEmailMessage(subject=subject,
+        #                        to=to_email,
+        #                        from_email=from_email,
+        #                        cc = cc,
+        #                        bcc = bcc,
+        #                        body = body)
+        #if not fake:
+        #    mail.send()         
+        #return mail                                                     
 
     def is_pending(self):
         return bool(self.approval and not self.approval.approved)

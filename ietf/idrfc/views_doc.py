@@ -143,7 +143,7 @@ def document_main(request, name, rev=None):
 
         ballot_summary = None
         if doc.get_state_slug() in ("intrev", "iesgrev"):
-            ballot_summary = needed_ballot_positions(doc, active_ballot_positions(doc).values())
+            ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
 
         return render_to_response("idrfc/document_charter.html",
                                   dict(doc=doc,
@@ -171,7 +171,7 @@ def document_main(request, name, rev=None):
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval"):
-            ballot_summary = needed_ballot_positions(doc, active_ballot_positions(doc).values())
+            ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
 
         return render_to_response("idrfc/document_conflict_review.html",
                                   dict(doc=doc,
@@ -292,36 +292,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
 
     deferred = doc.active_defer_event()
 
-    # collect positions
-    active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active").distinct())
-
-    positions = []
-    seen = {}
-    for e in BallotPositionDocEvent.objects.filter(doc=doc, type="changed_ballot_position", ballot=ballot).select_related('ad', 'pos').order_by("-time", '-id'):
-        if e.ad not in seen:
-            e.old_ad = e.ad not in active_ads
-            e.old_positions = []
-            positions.append(e)
-            seen[e.ad] = e
-        else:
-            latest = seen[e.ad]
-            if latest.old_positions:
-                prev = latest.old_positions[-1]
-            else:
-                prev = latest.pos.name
-
-            if e.pos.name != prev:
-                latest.old_positions.append(e.pos.name)
-
-    # add any missing ADs through fake No Record events
-    norecord = BallotPositionName.objects.get(slug="norecord")
-    for ad in active_ads:
-        if ad not in seen:
-            e = BallotPositionDocEvent(type="changed_ballot_position", doc=doc, ad=ad)
-            e.pos = norecord
-            e.old_ad = False
-            e.old_positions = []
-            positions.append(e)
+    positions = doc.active_ballot().all_positions() if doc.active_ballot() else []
 
     # put into position groups
     position_groups = []

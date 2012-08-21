@@ -40,7 +40,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 
 {% if doc.obj.active_ballot %}
     <ul>
-    {% for p in doc.obj.active_ballot_positions %}
+    {% for p in doc.obj.active_ballot.active_ad_positions.values %}
         {% if p.pos and p.discuss %}
             <li>
             <a name="{{doc.obj.name}}+{{p.ad|slugify}}+discuss">{{ p.ad }}: Discuss [{{ p.discuss_time }}]</a>:
