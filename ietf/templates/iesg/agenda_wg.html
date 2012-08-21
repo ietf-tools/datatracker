@@ -31,30 +31,24 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endcomment %}
+{% load ballot_icon_redesign %}
 {% if title2_first %}{% if title1_first %}<h2>{{ title1 }}</h2>
 {% endif %}
 <h3>{{ title2 }}</h3>
 {% endif %}<h4>{{ title3 }}</h4>
 
 {% for wg in section_wgs %}
-{% if forloop.first %}
-<table>
-<tr><th>Area</th><th>Date</th><th></th></tr>
-{% endif %}
 
-<tr>
-<td>{{ wg.obj.parent.acronym|upper }}</td>
-<td>{{ wg.obj.time|date:"M d"}}</td>
-<td>
-<a href="{{ wg.obj.txt_link }}">
-{{ wg.obj.name|escape }} ({{wg.obj.acronym}})
-</a>
-</td>
-</tr>
-
-{% if forloop.last %}
-</table>
-{% endif %}
+<div class="agenda-wg">
+<span width="30%" style="float:right;">
+{% ballot_icon wg.doc %}
+</span>
+<span width="30%">
+  <div> <a href="{{ wg.doc.get_absolute_url }}">{{ wg.doc.name}}-({{wg.doc.rev}})</a> <a href="{{ settings.CHARTER_TXT_URL }}{{ wg.doc.filename_with_rev }}">[txt]</a> </div>
+  <div>{{ wg.doc.group.name|escape }} ({{wg.doc.group.acronym}})</div>
+  <div>Area: {{ wg.doc.group.parent.acronym|upper }}  ({{ wg.doc.ad|default:"Sponsoring AD not assigned" }})</div>
+</span>
+</div>
 
 {% empty %}
 <p>NONE</p>

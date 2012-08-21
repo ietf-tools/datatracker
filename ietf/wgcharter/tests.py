@@ -132,6 +132,29 @@ class EditCharterTestCase(django.test.TestCase):
         charter = Document.objects.get(name=charter.name)
         self.assertEquals(charter.notify, "someone@example.com, someoneelse@example.com")
 
+    def test_edit_ad(self):
+        make_test_data()
+
+        charter = Group.objects.get(acronym="mars").charter
+
+        url = urlreverse('charter_edit_ad', kwargs=dict(name=charter.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('select[name=ad]')),1)
+
+        # post
+        self.assertTrue(not charter.ad)
+        ad2 = Person.objects.get(name='Ad No2')
+        r = self.client.post(url,dict(ad=str(ad2.pk)))
+        self.assertEquals(r.status_code, 302)
+
+        charter = Document.objects.get(name=charter.name)
+        self.assertEquals(charter.ad, ad2)
+
     def test_submit_charter(self):
         make_test_data()
 

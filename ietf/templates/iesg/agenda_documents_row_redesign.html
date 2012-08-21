@@ -39,6 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr 
 {% if user|in_group:"Area_Director" %}
 {% if doc|my_position:user|equal:"Discuss" %}style="background:#ffa0a0;"{% endif %}
+{% if doc|my_position:user|equal:"Block" %}style="background:#ffa0a0;"{% endif %}
 {% if doc|my_position:user|equal:"Abstain" %}style="background:#ffff00;"{% endif %}
 {% if doc|my_position:user|equal:"Yes"  or  doc|my_position:user|slugify|equal:"no-objection" %}style="background:#a0ffa0;"{% endif %}
 {% if doc|my_position:user|equal:"Recuse" %}style="background:#c0c0c0;"{% endif %}
