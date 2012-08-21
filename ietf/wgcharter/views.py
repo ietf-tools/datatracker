@@ -284,7 +284,7 @@ class UploadForm(forms.Form):
             if self.cleaned_data['txt']:
                 destination.write(self.cleaned_data['txt'])
             else:
-                destination.write(self.cleaned_data['content'])
+                destination.write(self.cleaned_data['content'].encode("utf-8"))
 
 @role_required('Area Director','Secretariat')
 def submit(request, name, option=None):
