@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ietf_filters %}
 {# Copyright The IETF Trust 2007, All Rights Reserved #}
 {% load humanize %}
 {% block title %}IETF {{ meeting.number }} Meeting Agenda{% endblock %}
@@ -332,12 +333,21 @@ You can customize the agenda below to show only selected working group sessions.
        <td colspan="5">
           {% if slot.session.agenda %}
           {% if slot.session.agenda.file_extension in show_inline%}
-          <iframe width="100%" height="1px" src="about:blank" xsrc="/meeting/{{ meeting.number }}/agenda/{{ slot.session.group.acronym }}/" onload="r(this)"></iframe>
+          <iframe width="100%" height="1px" src="about:blank" xsrc="{{slot.session.agenda.href}}" onload="r(this)"></iframe>
           {% else %}
           <b><i>Agenda submitted in {{slot.session.agenda.file_extension|upper}} format</i></b>
           {% endif %}
           {% else %}
           <b><i>No Agenda Submitted</i></b>
+          {% endif %}
+          {% if slot.session.slides %}
+          <h3>Slides:</h3>
+          <ol>{% for slide in slot.session.slides %}
+            <li>
+              <img src="/images/{{slide.file_extension|upper}}_icon.png">
+              <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>
+            </li>
+          {% endfor %}</ol>
           {% endif %}
        </td>
      </tr>
@@ -347,7 +357,16 @@ You can customize the agenda below to show only selected working group sessions.
      <tr>
        <td></td>
        <td colspan="5">
-         <iframe width="100%" height="1px" src="/meeting/{{ meeting.number }}/agenda/{{ slot.session.group.acronym }}/" onload="r(this)"></iframe>
+         <iframe width="100%" height="1px" src="{{slot.session.agenda.href}}" onload="r(this)"></iframe>
+          {% if slot.session.slides %}
+          <h3>Slides:</h3>
+          <ol>{% for slide in slot.session.slides %}
+            <li>
+              <img src="/images/{{slide.file_extension|upper}}_icon.png">
+              <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>
+            </li>
+          {% endfor %}</ol>
+          {% endif %}
        </td>
      </tr>
    {% endif %}
