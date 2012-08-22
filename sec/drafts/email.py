@@ -4,7 +4,6 @@ from django.template.loader import render_to_string
 
 from ietf.message.models import Message, SendQueue
 from ietf.announcements.send_scheduled import send_scheduled_announcement
-#from ietf.doc.utils import active_ballot_positions
 from ietf.doc.models import DocumentAuthor
 from ietf.person.models import Person
 from sec.utils.document import get_start_date
@@ -133,7 +132,7 @@ def get_revision_emails(draft):
     if draft.ad:
         emails.append(draft.ad.role_email("ad").address)
 
-    for ad, pos in active_ballot_positions(draft).iteritems():
+    for ad, pos in draft.active_ballot().active_ad_positions().iteritems():
         if pos and pos.pos_id == "discuss":
             emails.append(ad.role_email("ad").address)
 

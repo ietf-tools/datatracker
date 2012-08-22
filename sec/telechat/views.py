@@ -34,8 +34,9 @@ EXPECTED CHANGES:
 # Notes on external helpers
 # -------------------------------------------------
 '''
-active_ballot_positions: takes one argument, doc.  returns a dictionary with a key for each ad Person
-object
+active_ballot_positions: takes one argument, doc.  returns a dictionary with a key for each ad Person object
+NOTE: this function has been deprecated as of Datatracker 4.34.  Should now use methods on the Document.
+For example: doc.active_ballot().active_ad_positions()
 
 _agenda_data: takes a request object and a date string 
     - 2012-07-28 this function was changed to return Document objects instead
@@ -224,7 +225,7 @@ def doc_detail(request, date, name):
     #if not doc.get_state(state_type='draft-iesg') or not started_process:
     #    raise Http404()
     
-    ballots = active_ballot_positions(doc) # returns dict of ad:ballotpositiondocevent
+    ballots = doc.active_ballot().active_ad_positions()  # returns dict of ad:ballotpositiondocevent
     
     # setup form initials
     initial_ballot = []
