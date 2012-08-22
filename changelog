@@ -1,3 +1,96 @@
+ietfdb (4.34)
+
+  * Merged in [4772] from rjsparks@nostrum.com, a big chunk which in itself
+    combines a number of separate fixes: 
+
+    Liasion Manager:
+    * Patch from Yaco to avoid resetting the From field when changing other 
+      items on the form
+    * Gave the secretariat the ability to find/approve any unapproved 
+      liaisons
+    * Changed all the email code to use ietf.mail.utils (and removed the 
+      fake-mail concept)
+
+    Charter documents and the Agenda pages:
+    * Added charter documents to iesg/agenda and iesg/agenda/documents
+    * Synced the ordering of drafts on iesg/agenda and iesg/agenda/documents
+    * Allow setting a responsible AD for charter documents
+    * Changed the UI of the charter page to use editlink for changing 
+      attributes and buttons for actions (to align with drafts and 
+      conflict-reviews)
+
+    Moderator package:
+    * Refactor: Simplified access to the current BallotDocEvent from a 
+      Document
+    * Added functions to BallotDocEvents? to faciliate access to 
+      BallotPositionDocEvents?, both for all positions, and current AD postions.
+    * Updated the moderator package to use the Documents from _agenda_data.
+    * Added a filter to assist with rendering the moderator package.
+    * Fixed a bug where different functions in idrfc/views_ballot were 
+      using log_state_changed expecting different implementations (a cleanup task 
+      should reconcile the _three_ implementations in the codebase of that 
+      function).
+
+    Cleanup from codesprint:
+    * Removed some duplication between doc/util and doc/models by moving 
+      things into doc/models
+    * Do not show non-empty discuss text when the ballot position is not 
+      blocking
+    * Added a migration to update non-blocking ballot positions that have 
+      non-empty discuss text
+
+    DEPLOYMENT NOTES
+    Please be aware that migration step will take a few minutes to complete.
+    Fixes issue #865 
+
+  * Tweaked the author extraction code to handle company names in the author
+    list on the first page, when the company names contain a comma, such as
+    for instance 'Foo Bar, Inc'.
+
+  * Added support for get_file_path() for conflrev documents based on branch 
+    /personal/rcross/v4.32@4722, but tweaked to return only the directory, not 
+    the full directory+name+ext path, in order to behave the same way as for 
+    other document types.
+
+  * Merged in [4746] from adam@nostrum.com: 
+    Adding slides to agenda page 
+
+  * Merged in [4738] from adam@nostrum.com: 
+    Added a link to the cookie page, at Robert's request 
+
+  * Merged in [4737] from adam@nostrum.com: 
+    Fixed profile update page to keep Alias table up to date. Also, roles 
+    for inactive groups are no longer displayed on the profile page. 
+
+  * Applied fix from rjsparks@nostrum.com: Remove old document filtering 
+    which is now to strict, letting conflict review documents show in the iesg 
+    agenda.
+
+  * Applied fix from adam@nostrum.com: Display meeting materials with 
+    correct ordering.
+
+  * Removed the ValueError exceptions introduced in the previous revision 
+    of the draft author extraction code.  Fixes issue #858.
+
+  * Fixed problem with diff links which erroneously included a template 
+    variable interpolation.
+
+  * Fixed problem with displaying ISE stream documents.
+
+  * Fixed the update password request form to *not* give an error for 
+    existing accounts ,:-)
+
+  * Fixed some parameter names in the ietfauth urlconf which had reverted to 
+    an old form in a recent merge.
+
+  * Used the .plain_name Person attribute in the agenda documents form 
+    instead of the full .name attribute.
+
+  * The call to liaison_manager_sdos() in set_organization_field was 
+    missing a Person parameter -- added it.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Aug 2012 14:57:33 +0200
+
 ietfdb (4.33)
 
   This is the IETF-84 codesprint release:
