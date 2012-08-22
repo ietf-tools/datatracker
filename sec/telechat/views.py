@@ -9,7 +9,7 @@ from django.template import RequestContext
 
 from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent, WriteupDocEvent, save_document_in_history
 from ietf.doc.proxy import InternetDraft
-from ietf.doc.utils import active_ballot_positions, get_document_content, log_state_changed
+from ietf.doc.utils import get_document_content, log_state_changed
 from ietf.group.models import Group
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
@@ -72,7 +72,7 @@ def get_doc_writeup(doc):
             writeup = get_document_content(None,doc.get_file_path())
         except:
             pass
-        
+    return writeup
         
 def get_last_telechat_date():
     '''

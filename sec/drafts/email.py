@@ -4,7 +4,7 @@ from django.template.loader import render_to_string
 
 from ietf.message.models import Message, SendQueue
 from ietf.announcements.send_scheduled import send_scheduled_announcement
-from ietf.doc.utils import active_ballot_positions
+#from ietf.doc.utils import active_ballot_positions
 from ietf.doc.models import DocumentAuthor
 from ietf.person.models import Person
 from sec.utils.document import get_start_date
