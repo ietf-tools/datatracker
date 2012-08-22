@@ -26,17 +26,6 @@ def send_liaison_by_email(request, liaison, fake=False):
             url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.pk)),
             referenced_url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.related_to.pk)) if liaison.related_to else None,
             ))
-    if fake:
-        # rather than this fake stuff, it's probably better to start a
-        # debug SMTP server as explained in the Django docs
-        from ietf.liaisons.mail import IETFEmailMessage
-        mail = IETFEmailMessage(subject=subject,
-                            to=to_email,
-                            from_email=from_email,
-                            cc = cc,
-                            bcc = bcc,
-                            body = body)
-        return mail
 
     send_mail_text(request, to_email, from_email, subject, body, cc=", ".join(cc), bcc=", ".join(bcc))
 
@@ -56,12 +45,6 @@ def notify_pending_by_email(request, liaison, fake):
             url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_approval_detail", kwargs=dict(object_id=liaison.pk)),
             referenced_url=settings.IDTRACKER_BASE_URL + urlreverse("liaison_detail", kwargs=dict(object_id=liaison.related_to.pk)) if liaison.related_to else None,
             ))
-    if fake:
-        mail = IETFEmailMessage(subject=subject,
-                                to=to_email,
-                                from_email=from_email,
-                                body = body)
-        return mail
     send_mail_text(request, to_email, from_email, subject, body)
 
 def send_sdo_reminder(sdo):

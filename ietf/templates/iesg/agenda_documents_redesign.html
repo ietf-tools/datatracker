@@ -131,6 +131,22 @@ font-size:80%; font-style:italic;
     {% if t.docs.s333 %}<tr class="header"><td colspan="6">3.3.3 For Action</td></tr>{% endif %}
     {% for doc in t.docs.s333 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
 
+<tr class="header"><td colspan="6">4. Working Group Actions</td></tr>
+
+    {% if t.docs.s411 or t.docs.s412%}<tr class="header"><td colspan="6">4.1 WG Creation</td></tr>{% endif %}
+
+    {% if t.docs.s411 %}<tr class="header"><td colspan="6">4.1.1 Proposed for IETF Review</td></tr>{% endif %}
+    {% for doc in t.docs.s411 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% if t.docs.s412 %}<tr class="header"><td colspan="6">4.1.2 Proposed for Approval</td></tr>{% endif %}
+    {% for doc in t.docs.s412 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+
+    {% if t.docs.s421 or t.docs.s422 %}<tr class="header"><td colspan="6">4.2 WG Rechartering</td></tr>{% endif %}
+
+    {% if t.docs.s421 %}<tr class="header"><td colspan="6">4.2.1 Under Evaluation for IETF Review</td></tr>{% endif %}
+    {% for doc in t.docs.s421 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+    {% if t.docs.s422 %}<tr class="header"><td colspan="6">4.2.2 Proposed for Approval</td></tr>{% endif %}
+    {% for doc in t.docs.s422 %}{% include "iesg/agenda_documents_row_redesign.html" %}{%endfor%}
+
 {% endfor %}
 
 </table>

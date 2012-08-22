@@ -261,29 +261,21 @@ class Document(DocumentInfo):
             return self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
         return None
 
-    def active_ballot(self):
-        ballot = self.latest_event(BallotDocEvent, type="created_ballot")
-        e = self.latest_event(BallotDocEvent, ballot_type__slug=ballot.ballot_type.slug) if ballot else None
-        open = e and not e.type == "closed_ballot"
-        return ballot.ballot_type if open else None
+# This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
+# If that assumption is violated, they will only expose the most recently created ballot
+    def ballot_open(self, ballot_type_slug):
+        e = self.latest_event(BallotDocEvent, ballot_type__slug=ballot_type_slug)
+        return e and not e.type == "closed_ballot"
 
-    def active_ballot_positions(self):
-        """Return dict mapping each active AD to a current ballot position (or None if they haven't voted)."""
-        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active"))
-        res = {}
-    
+    def active_ballot(self):
+        """Returns the most recently created ballot if it isn't closed."""
         ballot = self.latest_event(BallotDocEvent, type="created_ballot")
-        positions = BallotPositionDocEvent.objects.filter(doc=self, type="changed_ballot_position", ad__in=active_ads, ballot=ballot).select_related('ad', 'pos').order_by("-time", "-id")
-   
-        for pos in positions:
-            if pos.ad not in res:
-                res[pos.ad] = pos
-    
-        for ad in active_ads:
-            if ad not in res:
-                res[ad] = None
-    
-        return res.values()
+        open = self.ballot_open(ballot.ballot_type.slug) if ballot else False
+        return ballot if open else None
+
+    def most_recent_ietflc(self):
+        """Returns the most recent IETF LastCallDocEvent for this document"""
+        return self.latest_event(LastCallDocEvent,type="sent_last_call")
 
     def displayname_with_link(self):
         return '<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev)
@@ -527,6 +519,59 @@ class BallotType(models.Model):
 
 class BallotDocEvent(DocEvent):
     ballot_type = models.ForeignKey(BallotType)
+
+    def active_ad_positions(self):
+        """Return dict mapping each active AD to a current ballot position (or None if they haven't voted)."""
+        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active"))
+        res = {}
+    
+        if self.doc.latest_event(BallotDocEvent, type="created_ballot") == self:
+        
+            positions = BallotPositionDocEvent.objects.filter(type="changed_ballot_position",ad__in=active_ads, ballot=self).select_related('ad', 'pos').order_by("-time", "-id")
+   
+            for pos in positions:
+                if pos.ad not in res:
+                    res[pos.ad] = pos
+    
+            for ad in active_ads:
+                if ad not in res:
+                    res[ad] = None
+        return res
+
+    def all_positions(self):
+        """Return array holding the current and past positions per AD"""
+
+        positions = []
+        seen = {}
+        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active").distinct())
+        for e in BallotPositionDocEvent.objects.filter(type="changed_ballot_position", ballot=self).select_related('ad', 'pos').order_by("-time", '-id'):
+            if e.ad not in seen:
+                e.old_ad = e.ad not in active_ads
+                e.old_positions = []
+                positions.append(e)
+                seen[e.ad] = e
+            else:
+                latest = seen[e.ad]
+                if latest.old_positions:
+                    prev = latest.old_positions[-1]
+                else:
+                    prev = latest.pos
+    
+                if e.pos != prev:
+                    latest.old_positions.append(e.pos)
+    
+        # add any missing ADs through fake No Record events
+        norecord = BallotPositionName.objects.get(slug="norecord")
+        for ad in active_ads:
+            if ad not in seen:
+                e = BallotPositionDocEvent(type="changed_ballot_position", doc=self.doc, ad=ad)
+                e.pos = norecord
+                e.old_ad = False
+                e.old_positions = []
+                positions.append(e)
+
+        positions.sort(key=lambda p: (p.old_ad, p.ad.last_name()))
+        return positions
 
 class BallotPositionDocEvent(DocEvent):
     ballot = models.ForeignKey(BallotDocEvent, null=True, default=None) # default=None is a temporary migration period fix, should be removed when charter branch is live

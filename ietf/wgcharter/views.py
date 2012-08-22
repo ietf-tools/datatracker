@@ -267,6 +267,53 @@ def edit_notify(request, name):
                                    login=login),
                               context_instance=RequestContext(request))
 
+class AdForm(forms.Form):
+    ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'),
+                                label="Responsible AD", empty_label="(None)", required=True)
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+        # if previous AD is now ex-AD, append that person to the list
+        ad_pk = self.initial.get('ad')
+        choices = self.fields['ad'].choices
+        if ad_pk and ad_pk not in [pk for pk, name in choices]:
+            self.fields['ad'].choices = list(choices) + [("", "-------"), (ad_pk, Person.objects.get(pk=ad_pk).plain_name())]
+
+@role_required("Area Director", "Secretariat")
+def edit_ad(request, name):
+    """Change the responsible Area Director for this charter."""
+
+    charter = get_object_or_404(Document, type="charter", name=name)
+    login = request.user.get_profile()
+
+    if request.method == 'POST':
+        form = AdForm(request.POST)
+        if form.is_valid():
+            new_ad = form.cleaned_data['ad']
+            if new_ad != charter.ad:
+                save_document_in_history(charter)
+                e = DocEvent(doc=charter, by=login)
+                e.desc = "Responsible AD changed to %s" % new_ad.plain_name()
+                if charter.ad:
+                   e.desc += " from %s" % charter.ad.plain_name()
+                e.type = "changed_document"
+                e.save()
+                charter.ad = new_ad
+                charter.time = e.time
+                charter.save()
+
+            return HttpResponseRedirect(reverse('doc_view', kwargs={'name': charter.name}))
+    else:
+        init = { "ad" : charter.ad_id }
+        form = AdForm(initial=init)
+
+    return render_to_response('wgcharter/change_ad.html',
+                              {'form':   form,
+                               'charter': charter,
+                              },
+                              context_instance = RequestContext(request))
+
 
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Charter text", help_text="Edit the charter text", required=False)

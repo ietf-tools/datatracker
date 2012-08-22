@@ -207,6 +207,9 @@ def agenda_docs(date, next_agenda):
         m.balloting_started = e.time if e else datetime.datetime.min
 
         docmatches.append(m)
+
+    # Be careful to keep this the same as what's used in agenda_documents
+    docmatches.sort(key=lambda d: d.balloting_started)
     
     res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
     for id in docmatches:
@@ -232,7 +235,8 @@ def agenda_wg_actions(date):
         section_key = "s" + get_wg_section(c.group)
         if section_key not in res:
             res[section_key] = []
-        res[section_key].append({'obj': c.group})
+        # Cleanup - Older view code wants obj, newer wants doc. Older code should be moved forward
+        res[section_key].append({'obj': c.group, 'doc': c})
     return res
 
 def agenda_management_issues(date):
@@ -370,6 +374,7 @@ def _agenda_data(request, date=None):
 def agenda(request, date=None):
     data = _agenda_data(request, date)
     data['private'] = 'private' in request.REQUEST
+    data['settings'] = settings
     return render_to_response("iesg/agenda.html", data, context_instance=RequestContext(request))
 
 def agenda_txt(request):

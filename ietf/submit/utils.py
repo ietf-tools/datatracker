@@ -17,7 +17,6 @@ from ietf.ietfauth.decorators import has_role
 
 from ietf.doc.models import *
 from ietf.person.models import Person, Alias, Email
-from ietf.doc.utils import active_ballot_positions
 from ietf.message.models import Message
 
 # Some useful states
@@ -262,7 +261,7 @@ def announce_new_versionREDESIGN(request, submission, draft, state_change_msg):
     if draft.ad:
         to_email.append(draft.ad.role_email("ad").address)
 
-    for ad, pos in active_ballot_positions(draft).iteritems():
+    for ad, pos in draft.active_ballot().active_ad_positions().iteritems():
         if pos and pos.pos_id == "discuss":
             to_email.append(ad.role_email("ad").address)
 

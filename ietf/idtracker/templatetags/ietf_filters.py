@@ -146,6 +146,15 @@ def square_brackets(value):
     else:
         return "[   ]"
 
+@register.filter(name='bracketpos')
+def bracketpos(pos,posslug):
+    if pos.pos.slug==posslug:
+        return "[ X ]"
+    elif posslug in [x.slug for x in pos.old_positions]:
+        return "[ . ]"
+    else:
+        return "[   ]"
+
 @register.filter(name='fill')
 def fill(text, width):
     """Wraps each paragraph in text (a string) so every line

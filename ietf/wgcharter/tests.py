@@ -132,6 +132,29 @@ class EditCharterTestCase(django.test.TestCase):
         charter = Document.objects.get(name=charter.name)
         self.assertEquals(charter.notify, "someone@example.com, someoneelse@example.com")
 
+    def test_edit_ad(self):
+        make_test_data()
+
+        charter = Group.objects.get(acronym="mars").charter
+
+        url = urlreverse('charter_edit_ad', kwargs=dict(name=charter.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('select[name=ad]')),1)
+
+        # post
+        self.assertTrue(not charter.ad)
+        ad2 = Person.objects.get(name='Ad No2')
+        r = self.client.post(url,dict(ad=str(ad2.pk)))
+        self.assertEquals(r.status_code, 302)
+
+        charter = Document.objects.get(name=charter.name)
+        self.assertEquals(charter.ad, ad2)
+
     def test_submit_charter(self):
         make_test_data()
 
@@ -224,7 +247,7 @@ class CharterApproveBallotTestCase(django.test.TestCase):
 
         charter = Document.objects.get(name=charter.name)
         self.assertEquals(charter.get_state_slug(), "approved")
-        self.assertTrue(not ballot_open(charter, "approve"))
+        self.assertTrue(not charter.ballot_open("approve"))
 
         self.assertEquals(charter.rev, "01")
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))))

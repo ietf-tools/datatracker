@@ -1,4 +1,6 @@
-{% extends "base.html" %}
+{% extends "idrfc/doc_main.html" %}
+{% comment extends "base.html" %}
+{% endcomment %}
 
 {% load ietf_filters %}
 
@@ -37,37 +39,25 @@
       <td><a href="/doc/help/state/charter/">Charter State</a>:</td>
       <td>
         <div>
-        <a title="{{ doc.get_state.desc }}"{% if not snapshot and user|has_role:"Area Director,Secretariat" %} href="{% url charter_change_state name=doc.name %}"{% endif %}>{{ doc.get_state.name }}</a>
-        {% if chartering == "initial" %}(Initial Chartering){% endif %}
-        {% if chartering == "rechartering" %}(Rechartering){% endif %}
+        <a title="{{ doc.get_state.desc }}"
+            {% if not snapshot and user|has_role:"Area Director,Secretariat" %} 
+               class="editlink" href="{% url charter_change_state name=doc.name %}"
+            {% endif %}>
+            {{ doc.get_state.name }}
+        </a>
+        {% if chartering == "initial" %} - (Initial Chartering){% endif %}
+        {% if chartering == "rechartering" %} - (Rechartering){% endif %}
 
-        {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
-
-
-        {% if chartering  %}
-        - <a href="{% url charter_startstop_process name=doc.name option='abandon' %}">Abandon effort</a>
-
-        {% if request.user|has_role:"Secretariat" %}
-        - <a href="{% url charter_approve name=doc.name %}">Approve charter</a>
-        {% endif %}
-
-        {% else %}
-          {% if group.state_id == "proposed" or group.state_id == "bof" %}
-          - <a href="{% url charter_submit name=doc.name option='initcharter' %}">Start chartering</a>
-          {% else %}
-          - <a href="{% url charter_submit name=doc.name option='recharter' %}">Recharter</a>
-          {% endif %}
-        {% endif %}
-
-        {% endif %}
         </div>
 
         {% if not snapshot and chartering %}
         <div class="telechat">
-          {% if not telechat %}Not on agenda of IESG telechat{% else %}On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat{% endif %}
-          {% if user|has_role:"Area Director,Secretariat" %}
-          - <a href="{% url charter_telechat_date name=doc.name %}">Change</a>
-          {% endif %}
+          <a 
+            {% if user|has_role:"Area Director,Secretariat" %}
+              class="editlink" href="{% url charter_telechat_date name=doc.name %}"
+            {% endif %}>
+            {% if not telechat %}Not on agenda of IESG telechat{% else %}On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat{% endif %}
+          </a>
         </div>
 
         {% if ballot_summary %}
@@ -88,14 +78,20 @@
     </tr>
     {% endif %}
 
+   <tr>
+    <td>Responsible AD:</td>
+    <td><a {% if request.user|has_role:"Area Director,Secretariat" %}class="editlink" href="{% url charter_edit_ad name=doc.name %}"{% endif %}>{{ doc.ad|default:"none" }}</a> </td>
+   </tr>
+
     <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
     <tr>
       <td>Send notices to:</td>
-      <td>{{ doc.notify|default:"none" }}
-          {% if user|has_role:"Area Director,Secretariat" %}
-          - <a href="{% url charter_edit_notify name=doc.name %}">Change</a>
-          {% endif %}
+      <td><a {% if user|has_role:"Area Director,Secretariat" %} 
+                  class="editlink" href="{% url charter_edit_notify name=doc.name %}"
+             {% endif %}>
+             {{ doc.notify|default:"none" }}
+          </a>
       </td>
     </tr>
 
@@ -106,6 +102,26 @@
 
   <div class="actions">
     <a href="/feed/group-changes/{{ group.acronym }}/">Atom feed</a>
+  </div>
+
+  <div>
+    {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
+    {% if chartering  %}
+        <span id="charter_abandon_effort_button" class="yui-button yui-link-button" style="margin-left:2px;margin-top:2px">{% url charter_startstop_process name=doc.name option='abandon' as abandon_url %}{% if abandon_url %}<span class="first-child"><a href="{{abandon_url}}">Abandon Effort</a></span>{% endif %}</span>
+
+    {% if request.user|has_role:"Secretariat" %}
+        <span id="charter_approve_button" class="yui-button yui-link-button" style="margin-left:2px;margin-top:2px">{% url charter_approve name=doc.name as approve_url %}{% if approve_url %}<span class="first-child"><a href="{{approve_url}}">Approve Charter</a></span>{% endif %}</span>
+    {% endif %}
+
+    {% else %}
+      {% if group.state_id == "proposed" or group.state_id == "bof" %}
+        <span id="charter_start_button" class="yui-button yui-link-button" style="margin-left:2px;margin-top:2px">{% url charter_submit name=doc.name option='initcharter' as start_url %}{% if start_url %}<span class="first-child"><a href="{{start_url}}">Start Chartering</a></span>{% endif %}</span>
+      {% else %}
+        <span id="charter_recharter_button" class="yui-button yui-link-button" style="margin-left:2px;margin-top:2px">{% url charter_submit name=doc.name option='recharter' as recharter_url %}{% if recharter_url %}<span class="first-child"><a href="{{recharter_url}}">Recharter</a></span>{% endif %}</span>
+      {% endif %}
+    {% endif %}
+
+    {% endif %}
   </div>
 </div>
 
