@@ -450,8 +450,7 @@ class Draft():
             r"(?:, | )([Ee]d\.?|\([Ee]d\.?\)|[Ee]ditor)$",
         ]
         companyformats = [
-            r" {6}(([A-Za-z'][-A-Za-z0-9.& ']+)(,? ?Inc\.?))$",
-            r" {6}(([A-Za-z'][-A-Za-z0-9.& ']+)(,? ?Ltd\.?))$",
+            r" {6}(([A-Za-z'][-A-Za-z0-9.& ']+)(,? ?(Inc|Ltd|AB|S\.A)\.?))$",
             r" {6}(([A-Za-z'][-A-Za-z0-9.& ']+)(/([A-Za-z'][-A-Za-z0-9.& ']+))+)$",
             r" {6}([a-z0-9.-]+)$",
             r" {6}(([A-Za-z'][-A-Za-z0-9.&']+)( [A-Za-z'][-A-Za-z0-9.&']+)*)$",
@@ -503,6 +502,7 @@ class Draft():
         for line in self.lines[:30]:
             self._docheader += line+"\n"
             author_on_line = False
+            company_on_line = False
             _debug( "**" + line)
             leading_space = len(re.findall("^ *", line)[0])
             line_len = len(line.rstrip())
@@ -526,7 +526,7 @@ class Draft():
                 for lineformat, authformat in multiauthformats:
                     match = re.search(lineformat, line)
                     if match:
-                        _debug("Multiauth format: '%s'" % lineformat)
+                        _debug("a. Multiauth format: '%s'" % lineformat)
                         author_list = re.findall(authformat, line)
                         authors += [ a[0] for a in author_list ]
                         companies += [ None for a in author_list ]
@@ -540,22 +540,28 @@ class Draft():
                     for lineformat in authcompanyformats:
                         match = re.search(lineformat, line)
                         if match:
-                            _debug("Line format: '%s'" % lineformat)
-                            author = match.group("author")
-                            company = match.group("company")
-                            authors += [ author, '']
-                            companies += [ None, company ]
-                            #_debug("\nLine:   " + line)
-                            #_debug("Format: " + authformat)
-                            _debug("Author: '%s'" % author)
-                            _debug("Company: '%s'" % company)
-                            author_on_line = True
-                            break
+                            _debug("b. Line format: '%s'" % lineformat)
+                            maybe_company = match.group("company").strip(" ,.")
+                            # is the putative company name just a partial name, i.e., a part
+                            # that commonly occurs after a comma as part of a company name,
+                            # as in "Foo Bar, Inc."?  If so, skip; else assume there's a
+                            # company name after the comma.
+                            if not maybe_company in ["Inc", "Ltd", "S.A", "AG", "AB", "N.V", ]:
+                                author = match.group("author")
+                                company = match.group("company")
+                                authors += [ author, '']
+                                companies += [ None, company ]
+                                #_debug("\nLine:   " + line)
+                                #_debug("Format: " + authformat)
+                                _debug("Author: '%s'" % author)
+                                _debug("Company: '%s'" % company)
+                                author_on_line = True
+                                break
                 if not author_on_line:
                     for authformat in authformats:
                         match = re.search(authformat, line)
                         if match:
-                            _debug("Auth format: '%s'" % authformat)
+                            _debug("c. Auth format: '%s'" % authformat)
                             author = match.group(1)
                             authors += [ author ]
                             companies += [ None ]
@@ -568,10 +574,11 @@ class Draft():
                     for authformat in companyformats:
                         match = re.search(authformat, line)
                         if match:
-                            _debug("Auth format: '%s'" % authformat)
+                            _debug("d. Company format: '%s'" % authformat)
                             company = match.group(1)
                             authors += [ "" ]
                             companies += [ company ]
+                            company_on_line = True
                             #_debug("\nLine:   " + line)
                             #_debug("Format: " + authformat)
                             _debug("Company: '%s'" % company)
@@ -582,7 +589,7 @@ class Draft():
                 companies += [ "" ]
             if line.strip() == "":
                 if prev_blankline and authors:
-                    _debug("Breaking for having found consecutive blank lines after author name")
+                    _debug("Breaking, having found consecutive blank lines after author name")
                     break
                 if authors:
                     have_blankline = True
@@ -592,7 +599,7 @@ class Draft():
             if "draft-" in line:
                 have_draftline = True
             if have_blankline and have_draftline:
-                _debug("Breaking for having found both blank line and draft-name line")
+                _debug("Breaking, having found both blank line and draft-name line")
                 break
 
         # remove trailing blank entries in the author list:
@@ -607,6 +614,8 @@ class Draft():
         #companies = [ None if a else '' for a in authors ]
         #_debug("B:companies : %s" % str(companies))
         #find authors' addresses section if it exists
+        _debug("B:authors   : %s" % str(authors))
+
         last_line = len(self.lines)-1
         address_section_pos = last_line/2
         for i in range(last_line/2,last_line):
@@ -990,7 +999,12 @@ def _output(docname, fields, outfile=sys.stdout):
     else:
         if opt_attributes:
             def outputkey(key, fields):
-                outfile.write("%-24s: %s\n" % ( key, fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" )))
+                field = fields[key]
+                if "\n" in field:
+                    field = "\n" + field.rstrip()
+                else:
+                    field = field.strip()
+                outfile.write("%-24s: %s\n" % ( key, field.replace("\\", "\\\\" ).replace("'", "\\x27" )))
         else:
             def outputkey(key, fields):
                 outfile.write(" %s='%s'" % ( key.lower(), fields[key].strip().replace("\\", "\\\\" ).replace("'", "\\x27" ).replace("\n", "\\n")))
