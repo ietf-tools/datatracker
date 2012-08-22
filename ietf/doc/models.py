@@ -72,6 +72,8 @@ class DocumentInfo(models.Model):
             return os.path.join(settings.AGENDA_PATH, meeting, self.type_id) + "/"
         elif self.type_id == "charter":
             return settings.CHARTER_PATH
+        elif self.type_id == "conflrev": 
+            return settings.CONFLICT_REVIEW_PATH
         else:
             raise NotImplemented
 
