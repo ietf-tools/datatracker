@@ -191,7 +191,8 @@ class PersonForm(ModelForm):
         send_mail(self.request, to_email, from_email, subject, 'registration/add_email_email.txt', context)
 
     def save(self, force_insert=False, force_update=False, commit=True):
-        from ietf.group.models import Role
+        from ietf.group.models import Role 
+        from ietf.person.models import Alias
         m = super(PersonForm, self).save(commit=False)
         self.new_emails = [v for k,v in self.data.items() if k[:10] == u'new_email_' and u'@' in v]
 
@@ -213,6 +214,20 @@ class PersonForm(ModelForm):
                 role.email = email
                 if commit:
                     role.save()
+
+        # Make sure the alias table contains any new and/or old names.
+        old_names = set([x.name for x in Alias.objects.filter(person=self.instance)])
+        curr_names = set([x for x in [self.instance.name, 
+                 self.instance.ascii,
+                 self.instance.ascii_short,
+                 self.data['name'],
+                 self.data['ascii'],
+                 self.data['ascii_short']] if len(x)])
+        new_names = curr_names - old_names
+        for name in new_names:
+            alias = Alias(person=self.instance,name=name)
+            if commit:
+                alias.save()
 
         if commit:
             m.save()
