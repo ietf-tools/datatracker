@@ -143,7 +143,11 @@ def document_main(request, name, rev=None):
 
         ballot_summary = None
         if doc.get_state_slug() in ("intrev", "iesgrev"):
-            ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
+            active_ballot = doc.active_ballot()
+            if active_ballot:
+                ballot_summary = needed_ballot_positions(doc, active_ballot.active_ad_positions().values())
+            else:
+                ballot_summary = "No active ballot found."
 
         return render_to_response("idrfc/document_charter.html",
                                   dict(doc=doc,
