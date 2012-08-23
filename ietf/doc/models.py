@@ -127,6 +127,12 @@ class DocumentInfo(models.Model):
     def author_list(self):
         return ", ".join(email.address for email in self.authors.all())
 
+    def active_ballot(self):
+        """Returns the most recently created ballot if it isn't closed."""
+        ballot = self.latest_event(BallotDocEvent, type="created_ballot")
+        open = self.ballot_open(ballot.ballot_type.slug) if ballot else False
+        return ballot if open else None
+
     class Meta:
         abstract = True
 
@@ -266,12 +272,6 @@ class Document(DocumentInfo):
     def ballot_open(self, ballot_type_slug):
         e = self.latest_event(BallotDocEvent, ballot_type__slug=ballot_type_slug)
         return e and not e.type == "closed_ballot"
-
-    def active_ballot(self):
-        """Returns the most recently created ballot if it isn't closed."""
-        ballot = self.latest_event(BallotDocEvent, type="created_ballot")
-        open = self.ballot_open(ballot.ballot_type.slug) if ballot else False
-        return ballot if open else None
 
     def most_recent_ietflc(self):
         """Returns the most recent IETF LastCallDocEvent for this document"""
