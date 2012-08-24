@@ -1,19 +1,22 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
+import datetime
+
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse as urlreverse
 from django.contrib.sites.models import Site
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.core.exceptions import ObjectDoesNotExist
 
-from ietf.submit.models import IdSubmissionDetail, Preapproval
-from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm, PreapprovalForm
-from ietf.submit.utils import *
+from ietf.group.models import Group
 from ietf.utils.mail import send_mail
 from ietf.ietfauth.decorators import has_role, role_required
-
+from ietf.submit.models import IdSubmissionDetail, Preapproval
+from ietf.submit.forms import UploadForm, AutoPostForm, MetaDataForm, PreapprovalForm
+from ietf.submit.utils import UPLOADED, AWAITING_AUTHENTICATION, MANUAL_POST_REQUESTED, CANCELLED, POSTED, INITIAL_VERSION_APPROVAL_REQUESTED
+from ietf.submit.utils import is_secretariat, get_approvable_submissions, get_preapprovals, get_recently_approved, get_person_for_user, perform_post, remove_docs, request_full_url
+from ietf.submit.utils import DraftValidation
 
 def submit_index(request):
     if request.method == 'POST':
@@ -21,7 +24,7 @@ def submit_index(request):
             form = UploadForm(request=request, data=request.POST, files=request.FILES)
             if form.is_valid():
                 submit = form.save()
-                return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submit.submission_id, 'submission_hash': submit.get_hash()}))
+                return HttpResponseRedirect(urlreverse(draft_status, None, kwargs={'submission_id': submit.submission_id, 'submission_hash': submit.get_hash()}))
         except IOError, e:
             if "Client read error" in str(e): # The server got an IOError when trying to read POST data
                 form = UploadForm(request=request)
@@ -44,7 +47,7 @@ def submit_status(request):
         filename = request.POST.get('filename', '')
         detail = IdSubmissionDetail.objects.filter(filename=filename).order_by('-pk')
         if detail:
-            return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail[0].submission_id}))
+            return HttpResponseRedirect(urlreverse(draft_status, None, kwargs={'submission_id': detail[0].submission_id}))
         error = 'No valid history found for %s' % filename
     return render_to_response('submit/submit_status.html',
                               {'selected': 'status',
@@ -64,14 +67,14 @@ def _can_approve(user, detail):
 
 def _can_force_post(user, detail):
     if detail.status_id not in [MANUAL_POST_REQUESTED,
-            WAITING_AUTHENTICATION, INITIAL_VERSION_APPROVAL_REQUESTED]:
+            AWAITING_AUTHENTICATION, INITIAL_VERSION_APPROVAL_REQUESTED]:
         return None
     if is_secretariat(user):
         return True
     return False
 
 def _can_cancel(user, detail, submission_hash):
-    if detail.status_id in [CANCELED, POSTED]:
+    if detail.status_id in [CANCELLED, POSTED]:
         return None
     if is_secretariat(user):
         return True
@@ -100,8 +103,8 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
     can_approve = _can_approve(request.user, detail)
     can_cancel = _can_cancel(request.user, detail, submission_hash)
     if detail.status_id != UPLOADED:
-        if detail.status_id == CANCELED:
-            message = ('error', 'This submission has been canceled, modification is no longer possible')
+        if detail.status_id == CANCELLED:
+            message = ('error', 'This submission has been cancelled, modification is no longer possible')
         status = detail.status
         allow_edit = None
 
@@ -127,7 +130,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                         send_mail(request, to_email, from_email, subject, 'submit/submission_approval.txt',
                                   {'submitter': submitter, 'authors': authors,
                                    'draft': detail, 'domain': Site.objects.get_current().domain})
-                    return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
+                    return HttpResponseRedirect(urlreverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
                 else:
                     auto_post_form.save(request)
                     detail = get_object_or_404(IdSubmissionDetail, submission_id=submission_id)
@@ -142,9 +145,9 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
         else:
             submission_hash = detail.get_hash()
             if submission_hash:
-                return HttpResponseRedirect(reverse('draft_edit_by_hash', None, kwargs={'submission_id': detail.submission_id, 'submission_hash': submission_hash}))
+                return HttpResponseRedirect(urlreverse('draft_edit_by_hash', None, kwargs={'submission_id': detail.submission_id, 'submission_hash': submission_hash}))
             else:
-                return HttpResponseRedirect(reverse(draft_edit, None, kwargs={'submission_id': detail.submission_id }))
+                return HttpResponseRedirect(urlreverse(draft_edit, None, kwargs={'submission_id': detail.submission_id }))
     else:
         auto_post_form = AutoPostForm(draft=detail, validation=validation)
 
@@ -180,10 +183,10 @@ def draft_cancel(request, submission_id, submission_hash=None):
         if can_cancel == None:
             raise Http404
         return HttpResponseForbidden('You have no permission to perform this action')
-    detail.status_id = CANCELED
+    detail.status_id = CANCELLED
     detail.save()
     remove_docs(detail)
-    return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submission_id}))
+    return HttpResponseRedirect(urlreverse(draft_status, None, kwargs={'submission_id': submission_id}))
 
 
 def draft_edit(request, submission_id, submission_hash=None):
@@ -199,7 +202,7 @@ def draft_edit(request, submission_id, submission_hash=None):
         form = MetaDataForm(draft=detail, validation=validation, data=request.POST)
         if form.is_valid():
             form.save(request)
-            return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
+            return HttpResponseRedirect(urlreverse(draft_status, None, kwargs={'submission_id': detail.submission_id}))
     else:
         form = MetaDataForm(draft=detail, validation=validation)
     return render_to_response('submit/draft_edit.html',
@@ -217,7 +220,7 @@ def draft_confirm(request, submission_id, auth_key):
     message = None
     if auth_key != detail.auth_key:
         message = ('error', 'Incorrect authorization key')
-    elif detail.status_id != WAITING_AUTHENTICATION:
+    elif detail.status_id != AWAITING_AUTHENTICATION:
         message = ('error', 'The submission can not be autoposted because it is in state: %s' % detail.status.status_value)
     else:
         if request.method=='POST':
@@ -240,7 +243,7 @@ def draft_approve(request, submission_id, check_function=_can_approve):
             raise Http404
         return HttpResponseForbidden('You have no permission to perform this action')
     perform_post(request, detail)
-    return HttpResponseRedirect(reverse(draft_status, None, kwargs={'submission_id': submission_id}))
+    return HttpResponseRedirect(urlreverse(draft_status, None, kwargs={'submission_id': submission_id}))
 
 
 def draft_force(request, submission_id):

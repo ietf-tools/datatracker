@@ -21,11 +21,11 @@ from ietf.message.models import Message
 
 # Some useful states
 UPLOADED = 1
-WAITING_AUTHENTICATION = 4
+AWAITING_AUTHENTICATION = 4
 MANUAL_POST_REQUESTED = 5
 POSTED = -1
 POSTED_BY_SECRETARIAT = -2
-CANCELED = -4
+CANCELLED = -4
 INITIAL_VERSION_APPROVAL_REQUESTED = 10
 
 
@@ -261,9 +261,11 @@ def announce_new_versionREDESIGN(request, submission, draft, state_change_msg):
     if draft.ad:
         to_email.append(draft.ad.role_email("ad").address)
 
-    for ad, pos in draft.active_ballot().active_ad_positions().iteritems():
-        if pos and pos.pos_id == "discuss":
-            to_email.append(ad.role_email("ad").address)
+    active_ballot = draft.active_ballot()
+    if active_ballot:
+        for ad, pos in active_ballot.active_ad_positions().iteritems():
+            if pos and pos.pos_id == "discuss":
+                to_email.append(ad.role_email("ad").address)
 
     subject = 'New Version Notification - %s-%s.txt' % (submission.filename, submission.revision)
     from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
