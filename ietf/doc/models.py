@@ -127,6 +127,12 @@ class DocumentInfo(models.Model):
     def author_list(self):
         return ", ".join(email.address for email in self.authors.all())
 
+    # This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
+    # If that assumption is violated, they will only expose the most recently created ballot
+    def ballot_open(self, ballot_type_slug):
+        e = self.latest_event(BallotDocEvent, ballot_type__slug=ballot_type_slug)
+        return e and not e.type == "closed_ballot"
+
     def active_ballot(self):
         """Returns the most recently created ballot if it isn't closed."""
         ballot = self.latest_event(BallotDocEvent, type="created_ballot")
@@ -266,12 +272,6 @@ class Document(DocumentInfo):
         elif self.type_id == "conflrev" and self.get_state_slug("conflrev") == "defer":
             return self.latest_event(type="changed_document", desc__startswith="State changed to <b>IESG Evaluation - Defer</b>")
         return None
-
-# This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
-# If that assumption is violated, they will only expose the most recently created ballot
-    def ballot_open(self, ballot_type_slug):
-        e = self.latest_event(BallotDocEvent, ballot_type__slug=ballot_type_slug)
-        return e and not e.type == "closed_ballot"
 
     def most_recent_ietflc(self):
         """Returns the most recent IETF LastCallDocEvent for this document"""
