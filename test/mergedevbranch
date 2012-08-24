@@ -108,14 +108,28 @@ branch=$1
 rev=$2
 fix=$3
 
+note "Identify the branch:"
+if   svn info http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$branch > /dev/null 2>&1; then
+    branch="personal/$branch"
+elif svn info http://svn.tools.ietf.org/svn/tools/ietfdb/branch/$branch > /dev/null 2>&1; then
+    branch="branch/$branch"
+elif svn info http://svn.tools.ietf.org/svn/tools/ietfdb/$branch > /dev/null 2>&1; then
+    true
+else
+    die "Could not find a branch matching '$branch'"
+fi
+note "Merging from $branch@$rev"
+
 note "Extract who and what:"
 info=$(svn log http://svn.tools.ietf.org/svn/tools/ietfdb/ -r $rev --incremental)
 set $(echo "$info" | tail -n +2 | head -n 1 | tr "|" "\t")
 who=$2; echo -e "\n$who"
 comment=$(echo "$info" | tail -n +3); echo -e "$comment\n"
 
+
+
 note "Do the merge:"
-svn merge -c $rev http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$branch .
+svn merge -c $rev http://svn.tools.ietf.org/svn/tools/ietfdb/$branch .
 
 mail -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c henrik@levkowetz.com <<-EOF
 Hi,
