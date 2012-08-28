@@ -15,7 +15,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.idtracker.models import InternetDraft, IETFWG
 from ietf.proceedings.models import Meeting
 from ietf.submit.models import IdSubmissionDetail, TempIdAuthors, Preapproval
-from ietf.submit.utils import MANUAL_POST_REQUESTED, NONE_WG, UPLOADED, WAITING_AUTHENTICATION, POSTED, POSTED_BY_SECRETARIAT
+from ietf.submit.utils import MANUAL_POST_REQUESTED, NONE_WG, UPLOADED, AWAITING_AUTHENTICATION, POSTED, POSTED_BY_SECRETARIAT
 from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
