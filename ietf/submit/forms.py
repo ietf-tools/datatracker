@@ -370,7 +370,7 @@ class AutoPostForm(forms.Form):
     def save_new_draft_info(self):
         salt = hashlib.sha1(str(random.random())).hexdigest()[:5]
         self.draft.auth_key = hashlib.sha1(salt+self.cleaned_data['email']).hexdigest()
-        self.draft.status_id = WAITING_AUTHENTICATION
+        self.draft.status_id = AWAITING_AUTHENTICATION
         self.draft.save()
 
 
