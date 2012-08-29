@@ -53,7 +53,7 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
                 <a href="http://www.ietf.org/id/{{doc.obj.canonical_name}}-{{doc.obj.rev}}.txt">[txt]</a>
             {% endif %}
         {% endwith %}
-        <br/>Token: {{ doc.obj.ad|escape }} ({{doc.obj.area_acronym}} area)   
+        <br/>Token: {{ doc.obj.ad.plain_name|escape }} ({{doc.obj.area_acronym}} area)   
         {% if doc.obj.note %}{# note: note is not escaped #}  
             <br/>Note: {{ doc.obj.note|safe }}
         {% endif %}
