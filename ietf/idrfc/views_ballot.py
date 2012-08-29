@@ -88,7 +88,7 @@ class EditPositionFormREDESIGN(forms.Form):
     def clean_discuss(self):
        entered_discuss = self.cleaned_data["discuss"]
        entered_pos = self.cleaned_data["position"]
-       if entered_pos.slug == "discuss" and not entered_discuss:
+       if entered_pos.blocking and not entered_discuss:
            raise forms.ValidationError("You must enter a non-empty discuss")
        return entered_discuss
 
@@ -135,10 +135,8 @@ def edit_positionREDESIGN(request, name, ballot_id):
             pos.comment = clean["comment"].rstrip()
             pos.comment_time = old_pos.comment_time if old_pos else None
             pos.discuss = clean["discuss"].rstrip()
-            if not pos.pos_id == "discuss":
+            if not pos.pos.blocking:
                 pos.discuss = ""
-#            if not pos.pos.blocking:
-#                pos.discuss = ""
             pos.discuss_time = old_pos.discuss_time if old_pos else None
 
             changes = []
@@ -162,7 +160,7 @@ def edit_positionREDESIGN(request, name, ballot_id):
                 pos.discuss_time = pos.time
                 changes.append("discuss")
 
-                if pos.discuss:
+                if pos.pos.blocking:
                     e = DocEvent(doc=doc, by=login)
                     e.by = ad # otherwise we can't see who's saying it
                     e.type = "added_comment"
@@ -224,7 +222,7 @@ def edit_positionREDESIGN(request, name, ballot_id):
                                    old_pos=old_pos,
                                    ballot_deferred=ballot_deferred,
                                    ballot = ballot,
-                                   show_discuss_text=old_pos and old_pos.pos_id=="discuss",
+                                   show_discuss_text=old_pos and old_pos.pos.blocking,
                                    blocking_positions=simplejson.dumps(blocking_positions),
                                    ),
                               context_instance=RequestContext(request))
@@ -337,7 +335,7 @@ def send_ballot_commentREDESIGN(request, name, ballot_id):
     subj = []
     d = ""
     blocking_name = "DISCUSS"
-    if pos.pos_id == "discuss" and pos.discuss:
+    if pos.pos.blocking and pos.discuss:
         d = pos.discuss
         blocking_name = pos.pos.name.upper()
         subj.append(blocking_name)
