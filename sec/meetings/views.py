@@ -125,7 +125,7 @@ def make_directories(meeting):
 
 def send_notification(request, sessions):
     '''
-    This view generates email notifications for schedule sessions
+    This view generates notifications for schedule sessions
     '''
     session_info_template = '''{0} Session {1} ({2})
     {3}, {4} {5}
@@ -133,10 +133,7 @@ def send_notification(request, sessions):
     ---------------------------------------------
     '''
     group = sessions[0].group
-    try:
-        to_email = sessions[0].requested_by.email_address()
-    except ObjectDoesNotExist:
-        to_email = '[requested_by not found]'
+    to_email = sessions[0].requested_by.role_email('chair')
     cc_list = get_cc_list(group, request.user.get_profile())
     from_email = ('"IETF Secretariat"','agenda@ietf.org')
     if sessions.count() == 1:
