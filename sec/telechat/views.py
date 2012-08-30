@@ -217,6 +217,8 @@ def doc_detail(request, date, name):
         state_type = 'draft-iesg'
     elif doc.type_id == 'conflrev':
         state_type = 'conflrev'
+    elif doc.type_id == 'charter':
+        state_type = 'charter'
         
     started_process = doc.latest_event(type="started_iesg_process")
     login = request.user.get_profile()
