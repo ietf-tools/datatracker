@@ -227,7 +227,10 @@ def doc_detail(request, date, name):
     #if not doc.get_state(state_type='draft-iesg') or not started_process:
     #    raise Http404()
     
-    ballots = doc.active_ballot().active_ad_positions()  # returns dict of ad:ballotpositiondocevent
+    if doc.active_ballot():
+        ballots = doc.active_ballot().active_ad_positions()  # returns dict of ad:ballotpositiondocevent
+    else:
+        ballots = []
     
     # setup form initials
     initial_ballot = []
