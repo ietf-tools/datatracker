@@ -88,7 +88,12 @@ def confirm(request):
         url = reverse('announcement')
         return HttpResponseRedirect(url)
     
-    data = request.session['data']
+    if request.session.get('data',None):
+        data = request.session['data']
+    else:
+        messages.error(request, 'No session data.  Your session may have expired or cookies are disallowed.')
+        redirect_url = reverse('announcement')
+        return HttpResponseRedirect(redirect_url)
     
     if data['to'] == 'Other...':
         to = ','.join(data['to_custom'])

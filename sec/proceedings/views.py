@@ -593,8 +593,12 @@ def select(request, meeting_num):
     we'll use the session id.
     '''
     if request.method == 'POST':
-        redirect_url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':request.POST['group']})
-        return HttpResponseRedirect(redirect_url)
+        if request.POST.get('group',None):
+            redirect_url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting_num,'acronym':request.POST['group']})
+            return HttpResponseRedirect(redirect_url)
+        else:
+            messages.error(request, 'No Group selected')
+
         
     meeting = get_object_or_404(Meeting, number=meeting_num)
     user = request.user
