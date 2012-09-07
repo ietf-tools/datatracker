@@ -1,0 +1,8 @@
+{% load mail_filters %}{% autoescape off %}To: Internet Engineering Steering Group <iesg@ietf.org>
+From: IESG Secretary <iesg-secretary@ietf.org>
+Reply-To: IESG Secretary <iesg-secretary@ietf.org>
+Subject: Evaluation: {{review.title}}
+
+Evaluation for {{ review.title }} can be found at <{{ review_url }}>
+
+{% endautoescape%}

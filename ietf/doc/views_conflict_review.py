@@ -17,6 +17,7 @@ from ietf.doc.utils import create_ballot_if_not_open, close_open_ballots, get_do
 from ietf.ietfauth.decorators import has_role, role_required
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail_preformatted
+from ietf.idrfc.mails import email_iana
 
 from ietf.doc.models import State, Document, DocHistory, DocAlias
 from ietf.doc.models import DocEvent, NewRevisionDocEvent, WriteupDocEvent, TelechatDocEvent, BallotDocEvent, BallotPositionDocEvent
@@ -80,6 +81,7 @@ def change_state(request, name, option=None):
                         pos.pos_id = "yes"
                         pos.desc = "[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
                         pos.save()
+                    send_conflict_eval_email(request,review)
 
 
             return redirect('doc_view', name=review.name)
@@ -95,6 +97,18 @@ def change_state(request, name, option=None):
                                    login=login,
                                    ),
                               context_instance=RequestContext(request))
+
+def send_conflict_eval_email(request,review):
+    msg = render_to_string("doc/conflict_review/eval_email.txt",
+                            dict(review=review,
+                                 review_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
+                                 )
+                           )
+    send_mail_preformatted(request,msg)
+    email_iana(request, 
+               review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+               'draft-eval@icann.org',
+                msg)
 
 class UploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Conflict review response", help_text="Edit the conflict review response", required=False)
