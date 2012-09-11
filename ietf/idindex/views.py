@@ -95,7 +95,6 @@ def all_id2_entry(id):
     if group_acronym == "none":
         group_acronym = ""
     fields.append(group_acronym)
-
     # 8
     area = ""
     if id.group.type_id == "area":
@@ -131,7 +130,16 @@ def all_id2_entry(id):
         except PersonOrOrgInfo.DoesNotExist:
             pass
     fields.append(u", ".join(authors))
-
+    # 15
+    if id.shepherd:
+        shepherd = id.shepherd
+        realname = unicode(shepherd)
+        email = shepherd.email_address()
+        name = re.sub(u"[<>@,]", u"", realname) + u" <"+re.sub(u"[<>,]", u"", email).strip()+u">"
+    else:
+        name = u""
+    fields.append(name)
+    #
     return "\t".join([unicode(x) for x in fields])
     
 def all_id2_txt():

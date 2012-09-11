@@ -25,6 +25,7 @@
 # 13  draft title
 # 14  draft authors (often quite inaccurate, especially the email
 #     addresses...)
+# 15  draft shepherd
 #
 # new fields can be added to the end in the future, so remember to
 # ignore those in your code
