@@ -191,8 +191,7 @@ returned to the submitter.
   {% if validation.submitter %} 
     <h3>Submitter information</h3> 
     <table class="metadata-table"> 
-    <tr><th>First name</th><td>{{ validation.submitter.first_name }}</td></tr> 
-    <tr><th>Last name</th><td>{{ validation.submitter.last_name }}</td></tr> 
+    <tr><th>Name</th><td>{{ validation.submitter.first_name }}</td></tr> 
     <tr><th>Email address</th><td>{{ validation.submitter.email_address|default:validation.submitter.email.1 }}</td></tr> 
     </table> 
   {% endif %} 
