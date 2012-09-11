@@ -77,7 +77,9 @@ div.agenda-wg { margin-left: 30px; margin-top:0.5em; margin-bottom: 0.5em; width
 
 <div id="section23">
 {% with "iesg/agenda_doc.html" as doc_template %}
+{% with "iesg/agenda_conflict_doc.html" as doc_conflict_template %}
 {% include "iesg/agenda_outline_23.html" %}
+{% endwith %}
 {% endwith %}
 </div>
 

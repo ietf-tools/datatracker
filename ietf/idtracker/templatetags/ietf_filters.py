@@ -31,8 +31,8 @@ def format_charter(value):
     return value.replace("\n\n", "</p><p>").replace("\n","<br/>\n")
 
 @register.filter(name='indent')
-def indent(value):
-    return value.replace("\n", "\n  ");
+def indent(value,numspaces=2):
+    return value.replace("\n", "\n"+" "*int(numspaces));
 
 @register.filter(name='parse_email_list')
 def parse_email_list(value):

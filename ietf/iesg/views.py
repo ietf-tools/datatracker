@@ -206,6 +206,9 @@ def agenda_docs(date, next_agenda):
         e = m.latest_event(type="started_iesg_process")
         m.balloting_started = e.time if e else datetime.datetime.min
 
+        if m.type_id=='conflrev':
+            m.conflictdoc = m.relateddocument_set.get(relationship__slug='conflrev').target.document
+
         docmatches.append(m)
 
     # Be careful to keep this the same as what's used in agenda_documents

@@ -123,17 +123,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% with 1 as title2_first %}
 
 {% with "3.3.1 New Items" as title3 %}
-{% with docs.s331 as section_docs %}{% include doc_template %}{% endwith %}
+{% with docs.s331 as section_docs %}{% include doc_conflict_template %}{% endwith %}
 {% endwith %}
 {% endwith %}{# title2_first #}
 
 {% with "3.3.2 Returning Items" as title3 %}
-{% with docs.s332 as section_docs %}{% include doc_template %}{% endwith %}
+{% with docs.s332 as section_docs %}{% include doc_conflict_template %}{% endwith %}
 {% endwith %}
 
 {% if docs.s333 %}
 {% with "3.3.3 For Action" as title3 %}
-{% with docs.s333 as section_docs %}{% include doc_template %}{% endwith %}
+{% with docs.s333 as section_docs %}{% include doc_conflict_template %}{% endwith %}
 {% endwith %}
 {% endif %}
 

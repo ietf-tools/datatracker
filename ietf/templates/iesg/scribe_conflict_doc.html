@@ -1,0 +1,98 @@
+{% comment %} 
+Copyright (C) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions 
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+
+ * Neither the name of the Nokia Corporation and/or its
+   subsidiary(-ies) nor the names of its contributors may be used
+   to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+{% endcomment %}{% comment %}
+Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
+{% endcomment %}
+{% load ietf_filters %}
+{% if title2_first %}
+    {% if title1_first %}
+        <p><b>{{ title1 }}</b></p>
+    {% endif %}
+    <p><b>{{ title2 }}</b></p>
+    {% endif %}<p><b>{{ title3 }}</b></p>
+    
+    <ul>
+    {% for doc in section_docs %}
+        <li>
+        {{ doc.obj.title|escape }} 
+        <br/><a href="{% url doc_view name=doc.obj.canonical_name %}">{{doc.obj.canonical_name}}</a>
+                <a href="http://www.ietf.org/id/{{doc.obj.canonical_name}}-{{doc.obj.rev}}.txt">[txt]</a>
+        <div style="padding-left:20px">
+            {{ doc.obj.conflictdoc.title|escape }} ({{doc.obj.conflictdoc.stream}}: {{ doc.obj.conflictdoc.intended_std_level }})
+            <br/><a href="{% url doc_view name=doc.obj.conflictdoc.canonical_name %}">{{doc.obj.conflictdoc.canonical_name}}</a>
+                    <a href="http://www.ietf.org/id/{{doc.obj.conflictdoc.canonical_name}}-{{doc.obj.conflictdoc.rev}}.txt">[txt]</a>
+            {% if doc.obj.conflictdoc.note %}{# note: note is not escaped #}  
+                <br/>Note: {{ doc.obj.conflictdoc.note|safe }}
+            {% endif %}
+            {% for ipr in doc.obj.conflictdoc.ipr %}
+                {% ifequal ipr.ipr.status 1 %}
+                    <br/>IPR: <a href="http://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a>
+                {% endifequal %}
+            {% endfor %} 
+        </div>
+        Token: {{ doc.obj.ad.plain_name|escape }} 
+        {% if doc.obj.active_ballot %}
+            <br/><b>Discusses/comments</b> <a href="http://datatracker.ietf.org/idtracker/ballot/{{doc.obj.canonical_name}}/">[ballot]</a>:
+            <ul>
+            {% for p in doc.obj.active_ballot.active_ad_positions.values %}
+                {% if p.pos %}
+                    {% if p.discuss %}
+                        <li>
+                        <a href="#{{doc.obj.name}}+{{p.ad|slugify}}+discuss">{{ p.ad }}: Discuss [{{ p.discuss_time }}]</a>:
+                        <br/>{{ p.discuss }}
+                        </li>
+                    {% endif %}
+                    {% if p.comment %}
+                        <li>
+                        <a href="#{{doc.obj.name}}+{{p.ad|slugify}}+comment">{{ p.ad }}: Comment [{{ p.comment_time }}]</a>:
+                        <br/>{{ p.comment }}
+                        </li>
+                    {% endif %}
+                {% endif %}            
+            {% endfor %}
+            </ul>
+        {% endif %}
+
+        <p><b>Telechat:</b></p>
+        <ul>
+            <li>...</li>
+            <li>...</li>
+            <li>...</li>
+            <li>...</li>
+            <li>...</li>
+        </ul>
+    </li>
+{% empty %}
+    <li>(none)</li>
+{% endfor %}
+</ul>

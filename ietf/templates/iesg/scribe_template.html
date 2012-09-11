@@ -44,7 +44,9 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <h1>Scribe template for IESG Narrative Minutes, {{date}}</h1>
 
 {% with "iesg/scribe_doc.html" as doc_template %}
+{% with "iesg/scribe_conflict_doc.html" as doc_conflict_template %}
 {% include "iesg/agenda_outline_23.html" %}
+{% endwith %}
 {% endwith %}
 
 <hr/>
