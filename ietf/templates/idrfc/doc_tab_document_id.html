@@ -146,14 +146,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% if add_link %}</a>{% endif %}
 {% endwith %}
 </td></tr>
-{% if doc.in_ietf_process and doc.ietf_process.iesg_note %}<tr><td>
-IESG Note:</td><td>
 {% with user|in_group:"Area_Director,Secretariat" as add_link %}
+{% if doc.in_ietf_process %}{% if doc.ietf_process.iesg_note or add_link %}<tr><td>
+IESG Note:</td><td>
 {% if add_link %}<a class="editlink" href="{% url doc_change_iesg_note name=doc.draft_name %}">{% endif %}
 {{ doc.ietf_process.iesg_note|format_textarea|safe }}
 {% if add_link %}</a>{% endif %}
+</td></tr>{% endif %}{% endif %}
 {% endwith %}
-</td></tr>{% endif %}
 <tr><td>Send notices to:</td><td>
 {% with user|in_group:"Area_Director,Secretariat" as add_link %} 
 {% if add_link %}<a class="editlink" href="{% url doc_change_notify name=doc.draft_name %}">{% endif %}
