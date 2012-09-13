@@ -20,10 +20,10 @@ def check_access(user):
     '''
     This function takes a Django User object and returns true if the user has access to the
     Announcement app.  Accepted roles are:
-    Secretariat, IAD, IAB Chair, IETF Chair, RSOC Chair, IAOC Chair, NomCom Chair
+    Secretariat, IAD, IAB Chair, IETF Chair, RSOC Chair, IAOC Chair, NomCom Chair, RSE Chair
     '''
     person = user.get_profile()
-    groups_with_access = ("iab", "rsoc", "ietf", "iaoc")
+    groups_with_access = ("iab", "rsoc", "ietf", "iaoc", "rse")
     if Role.objects.filter(person=person,
                            group__acronym__in=groups_with_access,
                            name="chair") or has_role(user, ["Secretariat","IAD"]):
@@ -49,7 +49,7 @@ def main(request):
     and send.
     '''
     if not check_access(request.user):
-        return HttpResponseForbidden('Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, IAOC, NomCom.')
+        return HttpResponseForbidden('Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, NomCom.')
     
     form = AnnounceForm(request.POST or None,user=request.user)
     
