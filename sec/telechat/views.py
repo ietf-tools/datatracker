@@ -20,13 +20,14 @@ from ietf.iesg.models import TelechatDate, TelechatAgendaItem, WGAction
 from ietf.iesg.views import _agenda_data
 
 from forms import *
-
+import os
 import datetime
+
 '''
 EXPECTED CHANGES:
 - group pages will be just another doc, charter doc
 - charter docs to discuss will be passed in the 'docs' section of agenda
-- expand get_section_header to include section 4
+X expand get_section_header to include section 4
 - consolidate views (get rid of get_group_header,group,group_navigate)
 
 '''
@@ -69,10 +70,8 @@ def get_doc_writeup(doc):
         if latest:
             writeup = latest.text
     elif doc.type_id == 'conflrev':
-        try:
-            writeup = get_document_content(None,doc.get_file_path())
-        except:
-            pass
+        path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
+        writeup = get_document_content(None,path)
     return writeup
         
 def get_last_telechat_date():
@@ -94,10 +93,13 @@ def get_section_header(file,agenda):
     This function takes a filename and an agenda dictionary and returns the 
     agenda section header as a string for use in the doc template
     '''
-    h1 = {'2':'Protocol Actions','3':'Document Actions'}
+    h1 = {'2':'Protocol Actions','3':'Document Actions','4':'Working Group Actions'}
     h2a = {'1':'WG Submissions','2':'Individual Submissions'}
     h2b = {'1':'WG Submissions','2':'Individual Submissions via AD','3':'IRTF and Independent Submission Stream Documents'}
-    h3 = {'1':'New Item','2':'Returning Item','3':'For Action'}
+    h2c = {'1':'WG Creation','2':'WG Chartering'}
+    h3a = {'1':'New Item','2':'Returning Item','3':'For Action'}
+    h3b = {'1':'Proposed for IETF Review','2':'Proposed for Approval'}
+    h3c = {'1':'Under evaluation for IETF Review','2':'Proposed for Approval'}
     
     # Robert updated _agenda_data to return Document objects instead of the ID wrapper
     #doc = InternetDraft.objects.get(filename=file)
@@ -111,8 +113,19 @@ def get_section_header(file,agenda):
             break
     
     header = [ '%s %s' % (section[1], h1[section[1]]) ]
-    header.append('%s.%s %s' % (section[1], section[2], h2a[section[2]] if section[1] == '2' else h2b[section[2]]))
-    header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3[section[3]]))
+    if section[1] == '2':
+        header.append('%s.%s %s' % (section[1], section[2], h2a[section[2]]))
+    elif section[1] == '4':
+        header.append('%s.%s %s' % (section[1], section[2], h2c[section[2]]))
+    else:
+        header.append('%s.%s %s' % (section[1], section[2], h2b[section[2]]))
+    if section[1] == '4':
+        if section[2] == '1':
+            header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3b[section[3]]))
+        elif section[2] == '2':
+            header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3c[section[3]]))
+    else:
+        header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3a[section[3]]))
     header.append(count)
     
     return header
