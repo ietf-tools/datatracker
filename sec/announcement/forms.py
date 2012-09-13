@@ -31,7 +31,8 @@ FROM_LIST = ('IETF Secretariat <ietf-secretariat@ietf.org>',
              'The IAOC <bob.hinden@gmail.com>',
              'The IETF Trust <tme@multicasttech.com>',
              'RSOC Chair <rsoc-chair@iab.org>',
-             'ISOC Board of Trustees <eburger@standardstrack.com>')
+             'ISOC Board of Trustees <eburger@standardstrack.com>',
+             'RFC Series Editor <rse@rfc-editor.org>')
              
 TO_LIST = ('IETF Announcement List <ietf-announce@ietf.org>',
            'I-D Announcement List <i-d-announce@ietf.org>',
@@ -101,6 +102,10 @@ def get_from_choices(user):
                              group__acronym='iaoc',
                              name="chair"):
         f = (FROM_LIST[11],)
+    elif Role.objects.filter(person=person,
+                             group__acronym='rse',
+                             name="chair"):
+        f = (FROM_LIST[15],)
     return zip(f,f)
     
 def get_to_choices():
