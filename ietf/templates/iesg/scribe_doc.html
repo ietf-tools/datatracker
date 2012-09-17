@@ -53,9 +53,18 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
                 <a href="http://www.ietf.org/id/{{doc.obj.canonical_name}}-{{doc.obj.rev}}.txt">[txt]</a>
             {% endif %}
         {% endwith %}
+
+        <span class="stream">{% if doc.obj.stream %} - {{ doc.obj.stream }} stream{% endif %}</span>
+
         <br/>Token: {{ doc.obj.ad|escape }} ({{doc.obj.area_acronym}} area)   
-        {% if doc.obj.note %}{# note: note is not escaped #}  
+        {% if doc.obj.note %}{# note: note is not escaped #}
             <br/>Note: {{ doc.obj.note|safe }}
+        {% endif %}
+        {% if doc.obj.iana_review_state %}
+             <br/>IANA Review: {{ doc.obj.iana_review_state }}
+        {% endif %}
+        {% if doc.obj.consensus %}
+             <br/>Consensus: {{ doc.obj.consensus }}
         {% endif %}
         {% for ipr in doc.obj.ipr %}
             {% ifequal ipr.ipr.status 1 %}

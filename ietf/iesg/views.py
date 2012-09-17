@@ -56,7 +56,7 @@ from ietf.idrfc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
 from ietf.ipr.models import IprDocAlias 
-from ietf.doc.models import Document, TelechatDocEvent
+from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent
 from ietf.group.models import Group
 
 def date_threshold():
@@ -193,20 +193,33 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     get_doc_section = get_doc_sectionREDESIGN
     
 def agenda_docs(date, next_agenda):
-    from ietf.doc.models import TelechatDocEvent
-        
-    matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct()
+    matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).select_related("stream").distinct()
 
     docmatches = []
         
-    for m in matches:
-        if m.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
+    for doc in matches:
+        if doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
             continue
 
-        e = m.latest_event(type="started_iesg_process")
-        m.balloting_started = e.time if e else datetime.datetime.min
+        e = doc.latest_event(type="started_iesg_process")
+        doc.balloting_started = e.time if e else datetime.datetime.min
 
-        docmatches.append(m)
+        if doc.type_id == "draft":
+            s = doc.get_state("draft-iana-review")
+            if s and s.slug in ("not-ok", "changed", "need-rev"):
+                doc.iana_review_state = str(s)
+
+            if doc.get_state_slug("draft-iesg") == "lc":
+                e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
+                if e:
+                    doc.lastcall_expires = e.expires
+
+            doc.consensus = "Unknown"
+            e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+            if e:
+                doc.consensus = "Yes" if e.consensus else "No"
+
+        docmatches.append(doc)
     
     res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
     for id in docmatches:
@@ -314,6 +327,22 @@ def _agenda_json(request, date=None):
                         if defer:
                             docinfo['defer-by'] = defer.by.name
                             docinfo['defer-at'] = str(defer.time)
+
+                        if doc.type_id == "draft":
+                            iana_state = doc.get_state("draft-iana-review")
+                            if iana_state.slug in ("not-ok", "changed", "need-rev"):
+                                docinfo['iana_review_state'] = str(iana_state)
+
+                            if doc.get_state_slug("draft-iesg") == "lc":
+                                e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
+                                if e:
+                                    docinfo['lastcall_expires'] = e.expires
+
+                            docinfo['consensus'] = None
+                            e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+                            if e:
+                                docinfo['consensus'] = e.consensus
+
                         data['sections'][s]['docs'] += [docinfo, ]
 
     wgs = agenda_wg_actions(date)

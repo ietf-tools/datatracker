@@ -106,6 +106,8 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% endif %}
 {% endwith %}
 
+<span class="stream">{% if doc.obj.stream %} - {{ doc.obj.stream }} stream{% endif %}</span>
+
 <br/>{{ doc.obj.title|escape }} ({{ doc.obj.intended_std_level }})
 
 
@@ -132,6 +134,19 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <br/>Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}
 {% endif %}
 {% endwith %}
+
+{% if doc.obj.iana_review_state %}
+<br/>IANA Review: {{ doc.obj.iana_review_state }}
+{% endif %}
+
+{% if doc.obj.consensus %}
+<br/>Consensus: {{ doc.obj.consensus }}
+{% endif %}
+
+{% if doc.obj.lastcall_expires %}
+<br/>Last call expires: {{ doc.obj.lastcall_expires|date:"Y-m-d" }}
+{% endif %}
+
 </td><td style="padding-left:20px; width: 50px;">
 {% ballot_icon doc.obj %}
 </td></tr></tbody></table>
