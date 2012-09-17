@@ -74,6 +74,8 @@ def edit_actions(context, wrapper):
 
     if can_edit_state(user, draft):
         actions.append(("Change stream state", urlreverse('edit_state', kwargs=dict(name=doc.draft_name))))
+        if draft.stream_id in ("iab", "ise", "irtf"):
+            actions.append(("Request publication", urlreverse('doc_request_publication', kwargs=dict(name=doc.draft_name))))
 
     if can_manage_shepherd_of_a_document(user, draft):
         actions.append(("Change shepherd", urlreverse('doc_managing_shepherd', kwargs=dict(acronym=draft.group.acronym, name=draft.filename))))

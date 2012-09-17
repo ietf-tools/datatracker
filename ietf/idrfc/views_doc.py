@@ -46,6 +46,7 @@ from django.conf import settings
 from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, DocumentComment
 from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
 from ietf.idrfc import markup_txt
+from ietf.idrfc.utils import *
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.ietfworkflows.utils import get_full_info_for_draft
@@ -371,7 +372,8 @@ def document_ballot(request, name, ballot_id=None):
                                    ),
                               context_instance=RequestContext(request))
 
-def document_debug(request, name):
+def document_json(request, name):
+    # old interface
     r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
     if m:
@@ -381,7 +383,36 @@ def document_debug(request, name):
     else:
         id = get_object_or_404(InternetDraft, filename=name)
         doc = IdWrapper(draft=id)
-    return HttpResponse(doc.to_json(), mimetype='text/plain')
+
+    from idrfc_wrapper import jsonify_helper
+
+    if isinstance(doc, RfcWrapper):
+        data = jsonify_helper(doc, ['rfc_number', 'title', 'publication_date', 'maturity_level', 'obsoleted_by','obsoletes','updated_by','updates','also','has_errata','stream_name','file_types','in_ietf_process', 'friendly_state'])
+    else:
+        data = jsonify_helper(doc, ['draft_name', 'draft_status', 'latest_revision', 'rfc_number', 'title', 'tracker_id', 'publication_date','rfc_editor_state', 'replaced_by', 'replaces', 'in_ietf_process', 'file_types', 'group_acronym', 'stream_id','friendly_state', 'abstract', 'ad_name'])
+    if doc.in_ietf_process():
+        data['ietf_process'] = doc.ietf_process.dict()
+
+    # add some more fields using the new interface
+    d = get_object_or_404(Document, docalias__name=name)
+    data["authors"] = [
+        dict(name=e.person.name,
+             email=e.address,
+             affiliation=e.person.affiliation)
+        for e in Email.objects.filter(documentauthor__document=d).select_related("person").order_by("documentauthor__order")
+        ]
+    e = d.latest_event(ConsensusDocEvent, type="changed_consensus")
+    data["consensus"] = e.consensus if e else None
+    data["stream"] = d.stream.name if d.stream else None
+    data["shepherd"] = d.shepherd.formatted_email() if d.shepherd else None
+
+    def state_name(s):
+        return s.name if s else None
+
+    data["iana_review_state"] = state_name(d.get_state("draft-iana-review"))
+    data["iana_action_state"] = state_name(d.get_state("draft-iana-action"))
+
+    return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
 
 def _get_html(key, filename, split=True):
     return get_document_content(key, filename, split=split, markup=True)
@@ -437,7 +468,14 @@ def document_main_idrfc(request, name, tab):
     info['is_rfc'] = False
 
     info['conflict_reviews'] = [ rel.source for alias in id.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='conflrev') ]
-    
+    info['rfc_editor_state'] = id.get_state("draft-rfceditor")
+    info['iana_review_state'] = id.get_state("draft-iana-review")
+    info['iana_action_state'] = id.get_state("draft-iana-action")
+    e = id.latest_event(ConsensusDocEvent, type="changed_consensus")
+    info["consensus"] = nice_consensus(e and e.consensus)
+    info["can_edit_consensus"] = can_edit_consensus(id, request.user)
+    info["can_edit_intended_std_level"] = can_edit_intended_std_level(id, request.user)
+
     (content1, content2) = _get_html(
         str(name)+","+str(id.revision)+",html",
         os.path.join(settings.INTERNET_DRAFT_PATH, name+"-"+id.revision+".txt"))

@@ -26,7 +26,7 @@ test_mode = False
 outbox = []
 
 def empty_outbox():
-     outbox[:] = []
+    outbox[:] = []
 
 def add_headers(msg):
     if not(msg.has_key('Message-ID')):
@@ -187,16 +187,34 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
             msg['X-Tracker-Bcc']=bcc
         copy_email(msg, copy_to)
 
-def send_mail_preformatted(request, preformatted):
+def send_mail_preformatted(request, preformatted, extra={}, override={}):
     """Parse preformatted string containing mail with From:, To:, ...,
     and send it through the standard IETF mail interface (inserting
     extra headers as needed)."""
     msg = message_from_string(preformatted.encode("utf-8"))
-    extra = copy.copy(msg)
-    for key in ['To', 'From', 'Subject', ]:
-        del extra[key]
-    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], msg.get_payload(), extra=extra)
 
-def send_mail_message(request, message):
+    for k, v in override.iteritems():
+         if k in msg:
+              del msg[k]
+         msg[k] = v
+
+    headers = copy.copy(msg)
+    for key in ['To', 'From', 'Subject']:
+        del headers[key]
+    for k, v in extra.iteritems():
+         if k in headers:
+              del headers[k]
+         headers[k] = v
+
+    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], msg.get_payload(), extra=headers)
+
+def send_mail_message(request, message, extra={}):
+    """Send a Message object."""
     # note that this doesn't handle MIME messages at the moment
-    send_mail_text(request, message.to, message.frm, message.subject, message.body, cc=message.cc, bcc=message.bcc, extra={ 'Reply-to': message.reply_to })
+
+    e = extra.copy()
+    if message.reply_to:
+        e['Reply-to'] = message.reply_to
+
+    send_mail_text(request, message.to, message.frm, message.subject,
+                   message.body, cc=message.cc, bcc=message.bcc, extra=e)

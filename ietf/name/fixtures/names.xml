@@ -97,7 +97,7 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
-    <object pk="iana-crd" model="name.doctagname">
+    <object pk="iana" model="name.doctagname">
         <field type="CharField" name="name">IANA coordination</field>
         <field type="TextField" name="desc">RFC-Editor/IANA Registration Coordination</field>
         <field type="BooleanField" name="used">True</field>
@@ -321,36 +321,6 @@
     </object>
     <object pk="conflrev" model="name.doctypename">
         <field type="CharField" name="name">Conflict Review</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="no" model="name.groupballotpositionname">
-        <field type="CharField" name="name">No</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="yes" model="name.groupballotpositionname">
-        <field type="CharField" name="name">Yes</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="abstain" model="name.groupballotpositionname">
-        <field type="CharField" name="name">Abstain</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="block" model="name.groupballotpositionname">
-        <field type="CharField" name="name">Block</field>
-        <field type="TextField" name="desc"></field>
-        <field type="BooleanField" name="used">True</field>
-        <field type="IntegerField" name="order">0</field>
-    </object>
-    <object pk="norecord" model="name.groupballotpositionname">
-        <field type="CharField" name="name">No record</field>
         <field type="TextField" name="desc"></field>
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
@@ -751,8 +721,11 @@
     <object pk="draft-iesg" model="doc.statetype">
         <field type="CharField" name="label">IESG state</field>
     </object>
-    <object pk="draft-iana" model="doc.statetype">
-        <field type="CharField" name="label">IANA state</field>
+    <object pk="draft-iana-action" model="doc.statetype">
+        <field type="CharField" name="label">IANA Action state</field>
+    </object>
+    <object pk="draft-iana-review" model="doc.statetype">
+        <field type="CharField" name="label">IANA Review state</field>
     </object>
     <object pk="draft-rfceditor" model="doc.statetype">
         <field type="CharField" name="label">RFC Editor state</field>
@@ -1003,6 +976,141 @@
         <field type="IntegerField" name="order">6</field>
         <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
     </object>
+    <object pk="104" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-action</field>
+        <field type="SlugField" name="slug">rfcedack</field>
+        <field type="CharField" name="name">RFC-Ed-Ack</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">Request completed. The RFC Editor has acknowledged receipt of IANA's message that the actions have been completed</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="103" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-action</field>
+        <field type="SlugField" name="slug">waitrfc</field>
+        <field type="CharField" name="name">Waiting on RFC Editor</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">IANA has notified the RFC Editor that the actions have been completed</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="102" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-action</field>
+        <field type="SlugField" name="slug">waitwgc</field>
+        <field type="CharField" name="name">Waiting on WGC</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">IANA is waiting on the IETF Working Group Chairs to respond</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="101" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-action</field>
+        <field type="SlugField" name="slug">waitad</field>
+        <field type="CharField" name="name">Waiting on ADs</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">IANA is waiting on the IETF Area Directors to respond</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="100" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-action</field>
+        <field type="SlugField" name="slug">waitauth</field>
+        <field type="CharField" name="name">Waiting on Authors</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">IANA is waiting on the document's authors to respond</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="99" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-action</field>
+        <field type="SlugField" name="slug">inprog</field>
+        <field type="CharField" name="name">In Progress</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">IANA is currently processing the actions for this document</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="98" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-action</field>
+        <field type="SlugField" name="slug">newdoc</field>
+        <field type="CharField" name="name">New Document</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">A new document has been received by IANA, but no actions have been taken</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="105" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-action</field>
+        <field type="SlugField" name="slug">onhold</field>
+        <field type="CharField" name="name">On Hold</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">IANA has suspended work on the document</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="106" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-action</field>
+        <field type="SlugField" name="slug">noic</field>
+        <field type="CharField" name="name">No IC</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">Request completed. There were no IANA actions for this document</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="107" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-review</field>
+        <field type="SlugField" name="slug">need-rev</field>
+        <field type="CharField" name="name">IANA Review Needed</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc"></field>
+        <field type="IntegerField" name="order">1</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="108" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-review</field>
+        <field type="SlugField" name="slug">ok-act</field>
+        <field type="CharField" name="name">IANA OK - Actions Needed</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">Document requires IANA actions, and the IANA Considerations section indicates the details of the actions correctly.</field>
+        <field type="IntegerField" name="order">2</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="109" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-review</field>
+        <field type="SlugField" name="slug">ok-noact</field>
+        <field type="CharField" name="name">IANA OK - No Actions Needed</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">Document requires no IANA action, and the IANA Considerations section indicates this correctly.</field>
+        <field type="IntegerField" name="order">3</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="110" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-review</field>
+        <field type="SlugField" name="slug">not-ok</field>
+        <field type="CharField" name="name">IANA Not OK</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">IANA has issues with the text of the IANA Considerations section of the document.</field>
+        <field type="IntegerField" name="order">4</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="111" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iana-review</field>
+        <field type="SlugField" name="slug">changed</field>
+        <field type="CharField" name="name">Version Changed - Review Needed</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">Document revision has changed after review by IANA.</field>
+        <field type="IntegerField" name="order">5</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
+    <object pk="112" model="doc.state">
+        <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
+        <field type="SlugField" name="slug">auth48-done</field>
+        <field type="CharField" name="name">AUTH48-DONE</field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="TextField" name="desc">Final approvals are complete</field>
+        <field type="IntegerField" name="order">0</field>
+        <field to="doc.state" name="next_states" rel="ManyToManyRel"></field>
+    </object>
     <object pk="16" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-iesg</field>
         <field type="SlugField" name="slug">pub-req</field>
@@ -1185,7 +1293,7 @@
     </object>
     <object pk="27" model="doc.state">
         <field to="doc.statetype" name="type" rel="ManyToOneRel">draft-rfceditor</field>
-        <field type="SlugField" name="slug">iana-crd</field>
+        <field type="SlugField" name="slug">iana</field>
         <field type="CharField" name="name">IANA</field>
         <field type="BooleanField" name="used">True</field>
         <field type="TextField" name="desc">RFC-Editor/IANA Registration Coordination</field>

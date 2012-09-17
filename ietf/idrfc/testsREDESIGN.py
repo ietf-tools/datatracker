@@ -119,7 +119,61 @@ class ChangeStateTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertEquals(len(q('.prev-state form input[name="state"]')), 1)
 
+    def test_pull_from_rfc_queue(self):
+        draft = make_test_data()
+        draft.set_state(State.objects.get(type="draft-iesg", slug="rfcqueue"))
+
+        url = urlreverse('doc_change_state', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # change state
+        mailbox_before = len(outbox)
+
+        r = self.client.post(url,
+                             dict(state=State.objects.get(type="draft-iesg", slug="review-e").pk,
+                                  substate="",
+                                  comment="Test comment"))
+        self.assertEquals(r.status_code, 302)
+
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.get_state_slug("draft-iesg"), "review-e")
+        self.assertEquals(len(outbox), mailbox_before + 2 + 1)
+        self.assertTrue(draft.name in outbox[-1]['Subject'])
+        self.assertTrue("changed state" in outbox[-1]['Subject'])
+        self.assertTrue("is no longer" in str(outbox[-1]))
+        self.assertTrue("Test comment" in str(outbox[-1]))
+
+    def test_change_iana_state(self):
+        draft = make_test_data()
+
+        first_state = State.objects.get(type="draft-iana-review", slug="need-rev")
+        next_state = State.objects.get(type="draft-iana-review", slug="ok-noact")
+        draft.set_state(first_state)
+
+        url = urlreverse('doc_change_iana_state', kwargs=dict(name=draft.name, state_type="iana-review"))
+        login_testing_unauthorized(self, "iana", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form select[name=state]')), 1)
         
+        # faulty post
+        r = self.client.post(url, dict(state="foobarbaz"))
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q('form ul.errorlist')) > 0)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.get_state("draft-iana-review"), first_state)
+
+        # change state
+        r = self.client.post(url, dict(state=next_state.pk))
+        self.assertEquals(r.status_code, 302)
+
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.get_state("draft-iana-review"), next_state)
+
     def test_request_last_call(self):
         draft = make_test_data()
         draft.set_state(State.objects.get(type="draft-iesg", slug="ad-eval"))
@@ -202,7 +256,7 @@ class EditInfoTestCase(django.test.TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEquals(draft.ad, new_ad)
         self.assertEquals(draft.note, "New note")
-        self.assertTrue(not draft.latest_event(TelechatDocEvent, type="telechat_date"))
+        self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
         self.assertEquals(draft.docevent_set.count(), events_before + 3)
         self.assertEquals(len(outbox), mailbox_before + 1)
         self.assertTrue(draft.name in outbox[-1]['Subject'])
@@ -221,14 +275,14 @@ class EditInfoTestCase(django.test.TestCase):
                     )
 
         # add to telechat
-        self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
+        self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
         data["telechat_date"] = TelechatDate.objects.active()[0].date.isoformat()
         r = self.client.post(url, data)
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
-        self.assertEquals(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, TelechatDate.objects.active()[0].date)
+        self.assertTrue(draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
+        self.assertEqual(draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date, TelechatDate.objects.active()[0].date)
 
         # change telechat
         data["telechat_date"] = TelechatDate.objects.active()[1].date.isoformat()
@@ -236,7 +290,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEquals(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, TelechatDate.objects.active()[1].date)
+        self.assertEqual(draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date, TelechatDate.objects.active()[1].date)
 
         # remove from agenda
         data["telechat_date"] = ""
@@ -244,7 +298,7 @@ class EditInfoTestCase(django.test.TestCase):
         self.assertEquals(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date)
+        self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date)
 
     def test_start_iesg_process_on_draft(self):
         make_test_data()
@@ -310,6 +364,18 @@ class EditInfoTestCase(django.test.TestCase):
         events = list(draft.docevent_set.order_by('time', 'id'))
         self.assertEquals(events[-3].type, "started_iesg_process")
         self.assertEquals(len(outbox), mailbox_before)
+
+    def test_edit_consensus(self):
+        draft = make_test_data()
+        
+        url = urlreverse('doc_edit_consensus', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        self.assertTrue(not draft.latest_event(ConsensusDocEvent, type="changed_consensus"))
+        r = self.client.post(url, dict(consensus="Yes"))
+        self.assertEquals(r.status_code, 302)
+
+        self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, True)
 
 
 class ResurrectTestCase(django.test.TestCase):
@@ -405,6 +471,16 @@ class AddCommentTestCase(django.test.TestCase):
         self.assertEquals(len(outbox), mailbox_before + 1)
         self.assertTrue("updated" in outbox[-1]['Subject'])
         self.assertTrue(draft.name in outbox[-1]['Subject'])
+
+        # Make sure we can also do it as IANA
+        self.client.login(remote_user="iana")
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEquals(len(q('form textarea[name=comment]')), 1)
+
 
 class EditPositionTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -670,12 +746,21 @@ class BallotWriteupsTestCase(django.test.TestCase):
         url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
+        # add a IANA review note
+        draft.set_state(State.objects.get(type="draft-iana-review", slug="not-ok"))
+        DocEvent.objects.create(type="iana_review",
+                                doc=draft,
+                                by=Person.objects.get(user__username="iana"),
+                                desc="IANA does not approve of this document, it does not make sense.",
+                                )
+
         # normal get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEquals(len(q('textarea[name=ballot_writeup]')), 1)
         self.assertEquals(len(q('input[type=submit][value*="Save Ballot Writeup"]')), 1)
+        self.assertTrue("IANA does not" in r.content)
 
         # save
         r = self.client.post(url, dict(
@@ -868,6 +953,44 @@ class MakeLastCallTestCase(django.test.TestCase):
         # the IANA copy
         self.assertTrue("Last Call" in outbox[-3]['Subject'])
         self.assertTrue("Last Call" in draft.message_set.order_by("-time")[0].subject)
+
+class RequestPublicationTestCase(django.test.TestCase):
+    fixtures = ['names']
+
+    def test_request_publication(self):
+        draft = make_test_data()
+        draft.stream = StreamName.objects.get(slug="iab")
+        draft.group = Group.objects.get(acronym="iab")
+        draft.intended_std_level = IntendedStdLevelName.objects.get(slug="inf")
+        draft.save()
+        draft.set_state(State.objects.get(type="draft-stream-iab", slug="approved"))
+
+        url = urlreverse('doc_request_publication', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "iabchair", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEquals(r.status_code, 200)
+        q = PyQuery(r.content)
+        subject = q('input#id_subject')[0].get("value")
+        self.assertTrue("Document Action" in subject)
+        body = q('.request-publication #id_body').text()
+        self.assertTrue("Informational" in body)
+        self.assertTrue("IAB" in body)
+
+        # approve
+        mailbox_before = len(outbox)
+
+        r = self.client.post(url, dict(subject=subject, body=body))
+        self.assertEquals(r.status_code, 302)
+
+        draft = Document.objects.get(name=draft.name)
+        self.assertEquals(draft.get_state_slug("draft-stream-iab"), "rfc-edit")
+        self.assertEquals(len(outbox), mailbox_before + 2)
+        self.assertTrue("Document Action" in outbox[-2]['Subject'])
+        self.assertTrue("Document Action" in draft.message_set.order_by("-time")[0].subject)
+        # the IANA copy
+        self.assertTrue("Document Action" in outbox[-1]['Subject'])
 
 class ExpireIDsTestCase(django.test.TestCase):
     fixtures = ['names']
@@ -1099,341 +1222,6 @@ class ExpireLastCallTestCase(django.test.TestCase):
         self.assertEquals(draft.docevent_set.count(), events_before + 1)
         self.assertEquals(len(outbox), mailbox_before + 1)
         self.assertTrue("Last Call Expired" in outbox[-1]["Subject"])
-        
-
-        
-TEST_RFC_INDEX = '''<?xml version="1.0" encoding="UTF-8"?>
-<rfc-index xmlns="http://www.rfc-editor.org/rfc-index" 
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-           xsi:schemaLocation="http://www.rfc-editor.org/rfc-index 
-                               http://www.rfc-editor.org/rfc-index.xsd">
-    <bcp-entry>
-        <doc-id>BCP0110</doc-id>
-        <is-also>
-            <doc-id>RFC4170</doc-id>
-        </is-also>
-    </bcp-entry>
-    <bcp-entry>
-        <doc-id>BCP0111</doc-id>
-        <is-also>
-            <doc-id>RFC4181</doc-id>
-            <doc-id>RFC4841</doc-id>
-        </is-also>
-    </bcp-entry>
-    <fyi-entry>
-        <doc-id>FYI0038</doc-id>
-        <is-also>
-            <doc-id>RFC3098</doc-id>
-        </is-also>
-    </fyi-entry>
-    <rfc-entry>
-        <doc-id>RFC1938</doc-id>
-        <title>A One-Time Password System</title>
-        <author>
-            <name>N. Haller</name>
-        </author>
-        <author>
-            <name>C. Metz</name>
-        </author>
-        <date>
-            <month>May</month>
-            <year>1996</year>
-        </date>
-        <format>
-            <file-format>ASCII</file-format>
-            <char-count>44844</char-count>
-            <page-count>18</page-count>
-        </format>
-        <keywords>
-            <kw>OTP</kw>
-            <kw>authentication</kw>
-            <kw>S/KEY</kw>
-        </keywords>
-        <abstract><p>This document describes a one-time password authentication system (OTP). [STANDARDS-TRACK]</p></abstract>
-        <obsoleted-by>
-            <doc-id>RFC2289</doc-id>
-        </obsoleted-by>
-        <current-status>PROPOSED STANDARD</current-status>
-        <publication-status>PROPOSED STANDARD</publication-status>
-        <stream>Legacy</stream>
-    </rfc-entry>
-    <rfc-entry>
-        <doc-id>RFC2289</doc-id>
-        <title>A One-Time Password System</title>
-        <author>
-            <name>N. Haller</name>
-        </author>
-        <author>
-            <name>C. Metz</name>
-        </author>
-        <author>
-            <name>P. Nesser</name>
-        </author>
-        <author>
-            <name>M. Straw</name>
-        </author>
-        <date>
-            <month>February</month>
-            <year>1998</year>
-        </date>
-        <format>
-            <file-format>ASCII</file-format>
-            <char-count>56495</char-count>
-            <page-count>25</page-count>
-        </format>
-        <keywords>
-            <kw>ONE-PASS</kw>
-            <kw>authentication</kw>
-            <kw>OTP</kw>
-            <kw>replay</kw>
-            <kw>attach</kw>
-        </keywords>
-        <abstract><p>This document describes a one-time password authentication system (OTP).  The system provides authentication for system access (login) and other applications requiring authentication that is secure against passive attacks based on replaying captured reusable passwords. [STANDARDS- TRACK]</p></abstract>
-        <obsoletes>
-            <doc-id>RFC1938</doc-id>
-        </obsoletes>
-        <is-also>
-            <doc-id>STD0061</doc-id>
-        </is-also>
-        <current-status>STANDARD</current-status>
-        <publication-status>DRAFT STANDARD</publication-status>
-        <stream>Legacy</stream>
-    </rfc-entry>
-    <rfc-entry>
-        <doc-id>RFC3098</doc-id>
-        <title>How to Advertise Responsibly Using E-Mail and Newsgroups or - how NOT to $$$$$  MAKE ENEMIES FAST!  $$$$$</title>
-        <author>
-            <name>T. Gavin</name>
-        </author>
-        <author>
-            <name>D. Eastlake 3rd</name>
-        </author>
-        <author>
-            <name>S. Hambridge</name>
-        </author>
-        <date>
-            <month>April</month>
-            <year>2001</year>
-        </date>
-        <format>
-            <file-format>ASCII</file-format>
-            <char-count>64687</char-count>
-            <page-count>28</page-count>
-        </format>
-        <keywords>
-            <kw>internet</kw>
-            <kw>marketing</kw>
-            <kw>users</kw>
-            <kw>service</kw>
-            <kw>providers</kw>
-            <kw>isps</kw>
-        </keywords>
-        <abstract><p>This memo offers useful suggestions for responsible advertising techniques that can be used via the internet in an environment where the advertiser, recipients, and the Internet Community can coexist in a productive and mutually respectful fashion.  This memo provides information for the Internet community.</p></abstract>
-        <draft>draft-ietf-run-adverts-02</draft>
-        <is-also>
-            <doc-id>FYI0038</doc-id>
-        </is-also>
-        <current-status>INFORMATIONAL</current-status>
-        <publication-status>INFORMATIONAL</publication-status>
-        <stream>Legacy</stream>
-    </rfc-entry>
-    <rfc-entry>
-        <doc-id>RFC4170</doc-id>
-        <title>Tunneling Multiplexed Compressed RTP (TCRTP)</title>
-        <author>
-            <name>B. Thompson</name>
-        </author>
-        <author>
-            <name>T. Koren</name>
-        </author>
-        <author>
-            <name>D. Wing</name>
-        </author>
-        <date>
-            <month>November</month>
-            <year>2005</year>
-        </date>
-        <format>
-            <file-format>ASCII</file-format>
-            <char-count>48990</char-count>
-            <page-count>24</page-count>
-        </format>
-        <keywords>
-            <kw>real-time transport protocol</kw>
-        </keywords>
-        <abstract><p>This document describes a method to improve the bandwidth utilization of RTP streams over network paths that carry multiple Real-time Transport Protocol (RTP) streams in parallel between two endpoints, as in voice trunking.  The method combines standard protocols that provide compression, multiplexing, and tunneling over a network path for the purpose of reducing the bandwidth used when multiple RTP streams are carried over that path.  This document specifies an Internet Best Current Practices for the Internet Community, and requests discussion and suggestions for improvements.</p></abstract>
-        <draft>draft-ietf-avt-tcrtp-08</draft>
-        <is-also>
-            <doc-id>BCP0110</doc-id>
-        </is-also>
-        <current-status>BEST CURRENT PRACTICE</current-status>
-        <publication-status>BEST CURRENT PRACTICE</publication-status>
-        <stream>IETF</stream>
-        <area>rai</area>
-        <wg_acronym>avt</wg_acronym>
-    </rfc-entry>
-    <rfc-entry>
-        <doc-id>RFC4181</doc-id>
-        <title>Guidelines for Authors and Reviewers of MIB Documents</title>
-        <author>
-            <name>C. Heard</name>
-            <title>Editor</title>
-        </author>
-        <date>
-            <month>September</month>
-            <year>2005</year>
-        </date>
-        <format>
-            <file-format>ASCII</file-format>
-            <char-count>102521</char-count>
-            <page-count>42</page-count>
-        </format>
-        <keywords>
-            <kw>standards-track specifications</kw>
-            <kw>management information base</kw>
-            <kw>review</kw>
-        </keywords>
-        <abstract><p>This memo provides guidelines for authors and reviewers of IETF standards-track specifications containing MIB modules.  Applicable portions may be used as a basis for reviews of other MIB documents.  This document specifies an Internet Best Current Practices for the Internet Community, and requests discussion and suggestions for improvements.</p></abstract>
-        <draft>draft-ietf-ops-mib-review-guidelines-04</draft>
-        <updated-by>
-            <doc-id>RFC4841</doc-id>
-        </updated-by>
-        <is-also>
-            <doc-id>BCP0111</doc-id>
-        </is-also>
-        <current-status>BEST CURRENT PRACTICE</current-status>
-        <publication-status>BEST CURRENT PRACTICE</publication-status>
-        <stream>IETF</stream>
-        <area>rtg</area>
-        <wg_acronym>ospf</wg_acronym>
-        <errata-url>http://www.rfc-editor.org/errata_search.php?rfc=4181</errata-url>
-    </rfc-entry>
-    <rfc-entry>
-        <doc-id>RFC4841</doc-id>
-        <title>RFC 4181 Update to Recognize the IETF Trust</title>
-        <author>
-            <name>C. Heard</name>
-            <title>Editor</title>
-        </author>
-        <date>
-            <month>March</month>
-            <year>2007</year>
-        </date>
-        <format>
-            <file-format>ASCII</file-format>
-            <char-count>4414</char-count>
-            <page-count>3</page-count>
-        </format>
-        <keywords>
-            <kw>management information base</kw>
-            <kw> standards-track specifications</kw>
-            <kw>mib review</kw>
-        </keywords>
-        <abstract><p>This document updates RFC 4181, "Guidelines for Authors and Reviewers of MIB Documents", to recognize the creation of the IETF Trust.  This document specifies an Internet Best Current Practices for the Internet Community, and requests discussion and suggestions for improvements.</p></abstract>
-        <draft>draft-heard-rfc4181-update-00</draft>
-        <updates>
-            <doc-id>RFC4181</doc-id>
-        </updates>
-        <is-also>
-            <doc-id>BCP0111</doc-id>
-        </is-also>
-        <current-status>BEST CURRENT PRACTICE</current-status>
-        <publication-status>BEST CURRENT PRACTICE</publication-status>
-        <stream>IETF</stream>
-        <wg_acronym>NON WORKING GROUP</wg_acronym>
-    </rfc-entry>
-    <std-entry>
-        <doc-id>STD0061</doc-id>
-        <title>A One-Time Password System</title>
-        <is-also>
-            <doc-id>RFC2289</doc-id>
-        </is-also>
-    </std-entry>
-</rfc-index>
-'''
-
-TEST_QUEUE = '''<rfc-editor-queue xmlns="http://www.rfc-editor.org/rfc-editor-queue">
-<section name="IETF STREAM: WORKING GROUP STANDARDS TRACK">
-<entry xml:id="draft-ietf-sipping-app-interaction-framework">
-<draft>draft-ietf-sipping-app-interaction-framework-05.txt</draft>
-<date-received>2005-10-17</date-received>
-<state>EDIT</state>
-<normRef>
-<ref-name>draft-ietf-sip-gruu</ref-name>
-<ref-state>IN-QUEUE</ref-state>
-</normRef>
-<authors>J. Rosenberg</authors>
-<title>
-A Framework for Application Interaction in the Session Initiation Protocol (SIP)
-</title>
-<bytes>94672</bytes>
-<source>Session Initiation Proposal Investigation</source>
-</entry>
-</section>
-<section name="IETF STREAM: NON-WORKING GROUP STANDARDS TRACK">
-<entry xml:id="draft-ietf-sip-gruu">
-<draft>draft-ietf-sip-gruu-15.txt</draft>
-<date-received>2007-10-15</date-received>
-<state>MISSREF</state>
-<normRef>
-<ref-name>draft-ietf-sip-outbound</ref-name>
-<ref-state>NOT-RECEIVED</ref-state>
-</normRef>
-<authors>J. Rosenberg</authors>
-<title>
-Obtaining and Using Globally Routable User Agent (UA) URIs (GRUU) in the Session Initiation Protocol (SIP)
-</title>
-<bytes>95501</bytes>
-<source>Session Initiation Protocol</source>
-</entry>
-</section>
-<section name="IETF STREAM: WORKING GROUP INFORMATIONAL/EXPERIMENTAL/BCP">
-</section>
-<section name="IETF STREAM: NON-WORKING GROUP INFORMATIONAL/EXPERIMENTAL/BCP">
-<entry xml:id="draft-thomson-beep-async">
-<draft>draft-thomson-beep-async-02.txt</draft>
-<date-received>2009-05-12</date-received>
-<state>EDIT</state>
-<state>IANA</state>
-<authors>M. Thomson</authors>
-<title>
-Asynchronous Channels for the Blocks Extensible Exchange Protocol (BEEP)
-</title>
-<bytes>17237</bytes>
-<source>IETF - NON WORKING GROUP</source>
-</entry>
-</section>
-<section name="IAB STREAM">
-</section>
-<section name="IRTF STREAM">
-</section>
-<section name="INDEPENDENT SUBMISSIONS">
-</section>
-</rfc-editor-queue>
-'''
-
-class MirrorScriptTestCases(unittest.TestCase,RealDatabaseTest):
-
-    def setUp(self):
-        self.setUpRealDatabase()
-    def tearDown(self):
-        self.tearDownRealDatabase()
-
-    def testRfcIndex(self):
-        print "     Testing rfc-index.xml parsing"
-        from ietf.idrfc.mirror_rfc_index import parse
-        data = parse(StringIO.StringIO(TEST_RFC_INDEX))
-        self.assertEquals(len(data), 6)
-        print "OK"
-
-    def testRfcEditorQueue(self):
-        print "     Testing queue2.xml parsing"
-        from ietf.idrfc.mirror_rfc_editor_queue import parse_all
-        (drafts,refs) = parse_all(StringIO.StringIO(TEST_QUEUE))
-        self.assertEquals(len(drafts), 3)
-        self.assertEquals(len(refs), 3)
-        print "OK"
-
 
 class IndividualInfoFormsTestCase(django.test.TestCase):
 

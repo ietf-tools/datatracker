@@ -818,8 +818,8 @@ def ballot_writeupnotesREDESIGN(request, name):
 
                 msg = generate_issue_ballot_mail(request, doc, ballot)
                 send_mail_preformatted(request, msg)
-
-                email_iana(request, doc, 'drafts-eval@icann.org', msg)
+                send_mail_preformatted(request, msg, extra=extra_automation_headers(doc),
+                                       override={ "To": "IANA <drafts-eval@icann.org>" })
 
                 e = DocEvent(doc=doc, by=login)
                 e.by = login
@@ -1106,7 +1106,8 @@ def approve_ballotREDESIGN(request, name):
         send_mail_preformatted(request, announcement)
 
         if action == "to_announcement_list":
-            email_iana(request, doc, "drafts-approval@icann.org", announcement)
+            send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
+                                   override={ "To": "IANA <drafts-approval@icann.org>" })
 
         msg = infer_message(announcement)
         msg.by = login
@@ -1132,61 +1133,9 @@ class MakeLastCallForm(forms.Form):
 @group_required('Secretariat')
 def make_last_call(request, name):
     """Make last call for Internet Draft, sending out announcement."""
-    doc = get_object_or_404(InternetDraft, filename=name)
-    if not doc.idinternal:
-        raise Http404()
-
-    login = IESGLogin.objects.get(login_name=request.user.username)
-
-    ballot = doc.idinternal.ballot
-    docs = [i.document() for i in doc.idinternal.ballot_set()]
-    
-    announcement = ballot.last_call_text
-
-    if request.method == 'POST':
-        form = MakeLastCallForm(request.POST)
-        if form.is_valid():
-            send_mail_preformatted(request, announcement)
-            email_iana(request, doc, "drafts-lastcall@icann.org", announcement)
-
-            doc.idinternal.change_state(IDState.objects.get(document_state_id=IDState.IN_LAST_CALL), None)
-            doc.idinternal.event_date = date.today()
-            doc.idinternal.save()
-                
-            log_state_changed(request, doc, login)
-            
-            doc.lc_sent_date = form.cleaned_data['last_call_sent_date']
-            doc.lc_expiration_date = form.cleaned_data['last_call_expiration_date']
-            doc.save()
-            
-            comment = "Last call has been made for %s ballot and state has been changed to %s" % (doc.filename, doc.idinternal.cur_state.state)
-            email_owner(request, doc, doc.idinternal.job_owner, login, comment)
-            
-            return HttpResponseRedirect(doc.idinternal.get_absolute_url())
-    else:
-        initial = {}
-        initial["last_call_sent_date"] = date.today()
-        expire_days = 14
-        if doc.group_id == Acronym.INDIVIDUAL_SUBMITTER:
-            expire_days = 28
-
-        initial["last_call_expiration_date"] = date.today() + timedelta(days=expire_days)
-        
-        form = MakeLastCallForm(initial=initial)
-  
-    return render_to_response('idrfc/make_last_call.html',
-                              dict(doc=doc,
-                                   docs=docs,
-                                   form=form),
-                              context_instance=RequestContext(request))
-
-
-@group_required('Secretariat')
-def make_last_callREDESIGN(request, name):
-    """Make last call for Internet Draft, sending out announcement."""
     doc = get_object_or_404(Document, docalias__name=name)
     if not doc.get_state("draft-iesg"):
-        raise Http404()
+        raise Http404
 
     login = request.user.get_profile()
 
@@ -1199,7 +1148,8 @@ def make_last_callREDESIGN(request, name):
         form = MakeLastCallForm(request.POST)
         if form.is_valid():
             send_mail_preformatted(request, announcement)
-            email_iana(request, doc, "drafts-lastcall@icann.org", announcement)
+            send_mail_preformatted(request, announcement, extra=extra_automation_headers(doc),
+                                   override={ "To": "IANA <drafts-lastcall@icann.org>" })
 
             msg = infer_message(announcement)
             msg.by = login
@@ -1234,7 +1184,14 @@ def make_last_callREDESIGN(request, name):
                 e.time = datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time())
             e.expires = form.cleaned_data['last_call_expiration_date']
             e.save()
-            
+
+            # update IANA Review state
+            prev_state = doc.get_state("draft-iana-review")
+            if not prev_state:
+                next_state = State.objects.get(type="draft-iana-review", slug="need-rev")
+                doc.set_state(next_state)
+                add_state_change_event(doc, login, prev_state, next_state)
+
             return HttpResponseRedirect(doc.get_absolute_url())
     else:
         initial = {}
@@ -1251,7 +1208,3 @@ def make_last_callREDESIGN(request, name):
                               dict(doc=doc,
                                    form=form),
                               context_instance=RequestContext(request))
-
-
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    make_last_call = make_last_callREDESIGN

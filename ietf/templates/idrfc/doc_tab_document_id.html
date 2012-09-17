@@ -56,12 +56,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% with info.conflict_reviews as r %}{% if r %}<tr><td>IETF Conflict Review:</td><td> {% filter urlize_ietf_docs %}{{ r|join:","}}{% endfilter %}</td></tr>{% endif %} {% endwith %}
 
 <tr><td>Intended RFC status:</td><td>
-{% with user|in_group:"Area_Director,Secretariat" as add_link %}
-{% if add_link %}<a class="editlink" href="{% url doc_change_intended_status name=doc.draft_name %}">{% endif %}
+<a{% if info.can_edit_intended_std_level %} class="editlink" href="{% url doc_change_intended_status name=doc.draft_name %}"{% endif %}>
 {{ doc.underlying_document.intended_std_level|default:"-"  }}
-{% if add_link %}</a>{% endif %}
-{% endwith %}
-</td></tr> 
+</a>
+</td></tr>
 
 <tr><td>Other versions:</td>
 {% ifequal doc.draft_status "Active" %}
@@ -118,6 +116,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endif %}
 <tr><td>Document shepherd:</td><td>{{ stream_info.shepherd|default:"" }}</td></tr>
 
+<tr><td>Consensus:</td><td><a title="Whether the document is the result of a community consensus process as defined in RFC 5741" {% if info.can_edit_consensus %}class="editlink" href="{% url doc_edit_consensus name=doc.draft_name %}"{% endif %}>{{ info.consensus }}</a></td></tr>
+
 <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
 
@@ -127,7 +127,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% else %}
  {{ doc.friendly_state|safe }} 
 {% endif %}
-{% if doc.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.draft_name}}">{{ doc.rfc_editor_state|escape }}</a>{% endif %}
+{% if info.iana_review_state %}<br />IANA Review State: <a class="editlink" {% if user|in_group:"Secretariat,IANA" %}href="{% url doc_change_iana_state name=doc.draft_name state_type="iana-review" %}"{% endif %}>{{ info.iana_review_state.name|escape }}</a>{% endif %}
+{% if info.iana_action_state %}<br />IANA Action State: <a class="editlink" {% if user|in_group:"Secretariat,IANA" %}href="{% url doc_change_iana_state name=doc.draft_name state_type="iana-action" %}"{% endif %}>{{ info.iana_action_state.name|escape }}</a>{% endif %}
+{% if info.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{ doc.draft_name }}">{{ info.rfc_editor_state|escape }}</a>{% endif %}
 {% ifequal doc.draft_status "Expired" %}
 {% if doc.resurrect_requested_by %}(resurrect requested by {{ doc.resurrect_requested_by }}){% endif %}
 {% endifequal %}

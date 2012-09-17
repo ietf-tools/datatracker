@@ -53,7 +53,7 @@
 {% endif %}
 
 <h2>Document history</h2>
-{% if user|has_role:"Area Director,Secretariat,IANA" %}
+{% if user|has_role:"Area Director,Secretariat,IANA,RFC Editor" %}
 <div class="history-actions">
   <a href="{% url doc_add_comment name=doc.name %}">Add comment</a>
 </div>

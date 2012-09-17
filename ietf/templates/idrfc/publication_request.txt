@@ -1,0 +1,16 @@
+{% load mail_filters %}{% autoescape off %}{% filter wordwrap:73 %}
+The document "{{ doc.title }}" <{{ doc.name }}> from the {{ doc.stream }} stream is ready for publication as {{ doc|std_level_prompt }}.{% if group_description %}
+
+This document is the product of the {{ group_description }}.{% endif %}{% endfilter %}
+
+URL: {{ doc_url }}
+
+No IANA allocation in the document requires IETF Consensus or Standards Action.
+
+
+[OPTIONAL: include summary of related discussion of this document in an IETF WG or in the IESG.]
+
+[OPTIONAL: include statement of the purpose of publishing this document, its intended audience, its merits and significance.]
+
+[OPTIONAL: include suggested names and contact information for one or more competent and independent potential reviewers for the document (this can speed the review and approval process).]
+{% endautoescape %}
