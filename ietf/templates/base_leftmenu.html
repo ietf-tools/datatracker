@@ -44,14 +44,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <li><a href="{% url ietf.iesg.views.agenda_documents %}">Next Telechat</a></li>
   <li><a href="{% url ietf.iesg.views.discusses %}">Discusses</a></li>
   <li><a href="{% url ietf.iesg.views.working_group_actions %}">Working Groups</a></li>
-  {# FIXME: wgcharter <li><a href="{% url wg_search_by_area name=user|ad_area %}">Working Groups</a></li> #}
 {% endif %}
 {% if user|in_group:"Secretariat" %}
 <li class="sect first">Secretariat</li>
   <li><a href="{% url ietf.iesg.views.telechat_dates %}">Telechat Dates</a></li>
   <li><a href="/admin/iesg/telechatagendaitem/">Management Items</a></li>
   <li><a href="{% url ietf.iesg.views.working_group_actions %}">Working Groups</a></li>
-  {# FIXME: wgcharter <li><a href="{% url wg_search_in_process %}">Working Groups</a></li> #}
+  <li><a href="{% url ietf.sync.views.discrepancies %}">Sync discrepancies</a>
 {% endif %}
 {% if user %}
 {% get_user_managed_streams user as stream_list %}
@@ -61,6 +60,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <li{% if forloop.last %} style="margin-bottom: 2px;"{% endif %}><a href="{% url stream_delegates stream.name %}">{{ stream.name }} stream</a></li>
   {% endfor %}
 {% endif %}
+{% endif %}
+{% if user|has_role:"IANA" %}
+<li class="sect first">IANA</li>
+  <li><a href="{% url ietf.sync.views.discrepancies %}">Sync discrepancies</a></li>
+{% endif %}
+{% if user|has_role:"RFC Editor" %}
+<li class="sect first">RFC Editor</li>
+  <li><a href="{% url ietf.sync.views.discrepancies %}">Sync discrepancies</a></li>
 {% endif %}
 <li class="sect{% if not user|in_group:"Area_Director,Secretariat" %} first{% endif %}">Working Groups</li>
 
