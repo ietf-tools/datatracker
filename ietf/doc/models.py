@@ -450,12 +450,15 @@ EVENT_TYPES = [
 
     ("deleted", "Deleted document"),
 
+    ("changed_state", "Changed state"),
+
     # misc draft/RFC events
     ("changed_stream", "Changed document stream"),
     ("expired_document", "Expired document"),
     ("extended_expiry", "Extended expiry of document"),
     ("requested_resurrect", "Requested resurrect"),
     ("completed_resurrect", "Completed resurrect"),
+    ("changed_consensus", "Changed consensus"),
     ("published_rfc", "Published RFC"),
 
     # WG events
@@ -481,13 +484,21 @@ EVENT_TYPES = [
     ("changed_last_call_text", "Changed last call text"),
     ("requested_last_call", "Requested last call"),
     ("sent_last_call", "Sent last call"),
-    
+
     ("scheduled_for_telechat", "Scheduled for telechat"),
 
     ("iesg_approved", "IESG approved document (no problem)"),
     ("iesg_disapproved", "IESG disapproved document (do not publish)"),
     
     ("approved_in_minute", "Approved in minute"),
+
+    # IANA events
+    ("iana_review", "IANA review comment"),
+    ("rfc_in_iana_registry", "RFC is in IANA registry"),
+
+    # RFC Editor
+    ("rfc_editor_received_announcement", "Announcement was received by RFC Editor"),
+    ("requested_publication", "Publication at RFC Editor requested")
     ]
 
 class DocEvent(models.Model):
@@ -506,7 +517,14 @@ class DocEvent(models.Model):
         
 class NewRevisionDocEvent(DocEvent):
     rev = models.CharField(max_length=16)
-   
+
+class StateDocEvent(DocEvent):
+    state_type = models.ForeignKey(StateType)
+    state = models.ForeignKey(State, blank=True, null=True)
+
+class ConsensusDocEvent(DocEvent):
+    consensus = models.BooleanField()
+
 # IESG events
 class BallotType(models.Model):
     doc_type = models.ForeignKey(DocTypeName, blank=True, null=True)
@@ -534,7 +552,7 @@ class BallotPositionDocEvent(DocEvent):
     discuss_time = models.DateTimeField(help_text="Time discuss text was written", blank=True, null=True)
     comment = models.TextField(help_text="Optional comment", blank=True)
     comment_time = models.DateTimeField(help_text="Time optional comment was written", blank=True, null=True)
-    
+
 class WriteupDocEvent(DocEvent):
     text = models.TextField(blank=True)
 

@@ -19,7 +19,8 @@ def get_state_types(doc):
             res.append("draft-stream-%s" % doc.stream_id)
 
         res.append("draft-iesg")
-        res.append("draft-iana")
+        res.append("draft-iana-review")
+        res.append("draft-iana-action")
         res.append("draft-rfceditor")
         
     return res
@@ -137,8 +138,6 @@ def augment_with_start_time(docs):
         if e.doc_id in seen:
             continue
 
-        print e.time, e.doc_id
-
         docs_dict[e.doc_id].start_time = e.time
         seen.add(e.doc_id)
 
@@ -196,11 +195,26 @@ def get_document_content(key, filename, split=True, markup=True):
         return raw_content
 
 def log_state_changed(request, doc, by, new_description, old_description):
-    from ietf.doc.models import DocEvent
-
     e = DocEvent(doc=doc, by=by)
     e.type = "changed_document"
     e.desc = u"State changed to <b>%s</b> from %s" % (new_description, old_description)
     e.save()
     return e
 
+def add_state_change_event(doc, by, prev_state, new_state, timestamp=None):
+    """Add doc event to explain that state change just happened."""
+    if prev_state == new_state:
+        return
+
+    e = StateDocEvent(doc=doc, by=by)
+    e.type = "changed_state"
+    e.state_type = (prev_state or new_state).type
+    e.state = new_state
+    e.desc = "%s changed to <b>%s</b>" % (e.state_type.label, new_state.name)
+    if prev_state:
+        e.desc += " from %s" % prev_state.name
+    if timestamp:
+        e.time = timestamp
+    e.save()
+    return e
+    
