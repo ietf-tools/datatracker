@@ -159,6 +159,7 @@ INSTALLED_APPS = (
     'ietf.ietfworkflows',
     'ietf.wgchairs',
     'ietf.wgcharter',
+    'ietf.sync',
     'ietf.community',
 )
 

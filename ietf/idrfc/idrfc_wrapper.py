@@ -125,9 +125,9 @@ class IdWrapper:
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             s = self._draft.get_state("draft-rfceditor")
             if s:
-                # extract possible extra states
-                tags = self._draft.tags.filter(slug__in=("iana-crd", "ref", "missref"))
-                return " ".join([s.name] + [t.slug.replace("-crd", "").upper() for t in tags])
+                # extract possible extra annotations
+                tags = self._draft.tags.filter(slug__in=("iana", "ref"))
+                return "*".join([s.name] + [t.slug.upper() for t in tags])
             else:
                 return None
         
