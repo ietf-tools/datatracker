@@ -1,0 +1,18 @@
+{% autoescape off %}
+This is an automated report of current Datatracker sync discrepancies,
+also available at:
+
+{{ url }}
+{% for title, docs in sections %}
+
+{{ title|wordwrap:73 }}
+{% if docs %}{% for d in docs %}
+  {{ d.name }}
+  IESG: {{ d.iesg_state|default:"-" }}
+  RFC Ed: {{ d.rfc_state|default:"-" }}
+  IANA: {{ d.iana_action_state|default:"-" }}
+  {{ base_url }}{{ d.get_absolute_url }}
+{% endfor %}{% else %}
+None found.
+{% endif %}{% endfor %}
+{% endautoescape %}

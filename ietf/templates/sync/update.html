@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Trigger sync for {{ org }}{% endblock %}
+
+{% block morecss %}
+.sync-form .help { font-style: italic; padding-left: 2em; }
+.sync-form input[type=submit] { margin-top: 1em; }
+{% endblock %}
+
+
+{% block content %}
+<h1>Trigger sync for {{ org }}</h1>
+
+<p>Update the Datatracker with information from {{ org }}. Select
+which parts to trigger a sync for:</p>
+
+<form class="sync-form" action="" method="post">
+{% for field in form %}
+<div>
+  {{ field }}
+  {{ field.label_tag }}
+  {% if field.help_text %}<span class="help">{{ field.help_text|safe }}</span>{% endif %}
+</div>
+{% endfor %}
+<input type="submit" value="Trigger sync"/>
+</form>
+{% endblock %}
