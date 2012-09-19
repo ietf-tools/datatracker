@@ -177,16 +177,16 @@ def get_wg_section(wg):
     charter_slug = None
     if wg.charter:
         charter_slug = wg.charter.get_state_slug()
-    if wg.state_id == "proposed":
-        if charter_slug == "intrev":
-            s = '411'
-        elif charter_slug == "iesgrev":
-            s = '412'
-    elif wg.state_id == "active":
-        if charter_slug == "intrev":
-            s = '421'
-        elif charter_slug == "iesgrev":
+    if wg.state_id in ['active','dormant']:
+        if charter_slug in ['extrev','iesgrev']:
             s = '422'
+        else:
+            s = '421'
+    else:
+        if charter_slug in ['extrev','iesgrev']:
+            s = '412'
+        else:
+            s = '411'
     return s
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
