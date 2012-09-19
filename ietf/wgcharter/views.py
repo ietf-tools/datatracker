@@ -222,7 +222,9 @@ def telechat_date(request, name):
                               dict(doc=doc,
                                    form=form,
                                    user=request.user,
-                                   login=login),
+                                   login=login,
+                                   okstates=['intrev','extrev','iesgrev'],
+                                   ),
                               context_instance=RequestContext(request))
 
 class NotifyForm(forms.Form):
