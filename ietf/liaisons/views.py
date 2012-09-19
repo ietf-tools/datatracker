@@ -111,7 +111,10 @@ def liaison_list(request):
     if person:
         approval_codes = IETFHM.get_all_can_approve_codes(person)
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-            can_approve = approvable_liaison_statements(approval_codes).count()
+            if is_secretariat(request.user):
+                can_approve = LiaisonDetail.objects.filter(approved=None).order_by("-submitted").count()
+            else:
+                can_approve = approvable_liaison_statements(approval_codes).count()
         else:
             can_approve = LiaisonDetail.objects.filter(approval__isnull=False, approval__approved=False, from_raw_code__in=approval_codes).count()
 
