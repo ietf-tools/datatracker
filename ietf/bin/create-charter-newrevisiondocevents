@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+version = "0.10"
+program = os.path.basename(sys.argv[0])
+progdir = os.path.dirname(sys.argv[0])
+
+# assume we're placed in ietf/bin/:
+sys.path = [progdir+"/../../"] + sys.path
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+# ----------------------------------------------------------------------
+def note(string):
+    sys.stdout.write("%s\n" % (string))
+    
+# ----------------------------------------------------------------------
+def warn(string):
+    sys.stderr.write(" * %s\n" % (string))
+    
+# ------------------------------------------------------------------------------
+
+import re
+from datetime import datetime as Datetime
+
+from django.conf import settings
+
+from ietf.utils.path import path as Path
+from ietf.doc.models import Document, NewRevisionDocEvent
+from ietf.person.models import Person
+
+system_entity = Person.objects.get(name="(System)")
+
+charterdir = Path(settings.CHARTER_PATH)
+for file in charterdir.files("charter-ietf-*.txt"):
+    fname = file.name
+    ftime = Datetime.fromtimestamp(file.mtime)
+    match = re.search("^(?P<name>[a-z0-9-]+)-(?P<rev>\d\d-\d\d)\.txt$", fname)
+    if match:
+        name = match.group("name")
+        rev = match.group("rev")
+    else:
+        match = re.search("^(?P<name>[a-z0-9-]+)-(?P<rev>\d\d)\.txt$", fname)
+        if match:
+            name = match.group("name")
+            rev = match.group("rev")
+        else:
+            warn("Failed extracting revision from filename: '%s'" % fname)
+    try:
+        doc = Document.objects.get(type="charter", name=name)
+        try:
+            event = NewRevisionDocEvent.objects.get(doc=doc, type='new_revision', rev=rev)
+            note(".")
+        except NewRevisionDocEvent.MultipleObjectsReturned, e:
+            warn("Multiple NewRevisionDocEvent exists for '%s'" % fname)
+        except NewRevisionDocEvent.DoesNotExist:
+            event = NewRevisionDocEvent(doc=doc, type='new_revision', rev=rev, by=system_entity, time=ftime, desc="")
+            event.save()
+            note("Created new NewRevisionDocEvent for %s-%s" % (name, rev))
+    except Document.DoesNotExist:
+        warn("Document not found: '%s'; no NewRevisionDocEvent created for '%s'" % (name, fname))
+    
