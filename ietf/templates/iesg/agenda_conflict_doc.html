@@ -37,20 +37,32 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 {% load ietf_filters %}{% load ballot_icon_redesign %}
 
 {% if title2_first %}{% if title1_first %}<h2>{{ title1 }}</h2>
-{% if title1|startswith:"2." %}
-    <blockquote>
-    Reviews should focus on these questions: "Is this document a
-    reasonable basis on which to build the salient part of the Internet
-    infrastructure? If not, what changes would make it so?"
-    </blockquote>
-{% endif %}
 {% endif %}
 <h3>{{ title2 }}</h3>
-{% if title2|startswith:"3.1" or title2|startswith:"3.2" %}
+{% if title2|startswith:"3.3" %}
     <blockquote>
-    Reviews should focus on these questions: "Is this document a
-    reasonable contribution to the area of Internet engineering
-    which it covers? If not, what changes would make it so?"
+    The IESG will use RFC 5742 responses: 1) The IESG has concluded
+    that there is no conflict between this document and IETF work; 2)
+    The IESG has concluded that this work is related to IETF work done
+    in WG &lt;X&gt;, but this relationship does not prevent
+    publishing; 3) The IESG has concluded that publication could
+    potentially disrupt the IETF work done in WG &lt;X&gt; and
+    recommends not publishing the document at this time; 4) The IESG
+    has concluded that this document violates IETF procedures for
+    &lt;Y&gt; and should therefore not be published without IETF
+    review and IESG approval; or 5) The IESG has concluded that this
+    document extends an IETF protocol in a way that requires IETF
+    review and should therefore not be published without IETF review
+    and IESG approval.<br/>
+    <br />
+    The document shepherd must propose one of these responses in the
+    conflict-review document, and the document shepherd may supply text 
+    for an IESG Note in that document. The Area Director ballot positions 
+    indicate consensus with the response proposed by the document shepherd 
+    and agreement that the IESG should request inclusion of the IESG Note.<br/>
+    <br />
+    Other matters may be recorded in comments, and the comments will
+    be passed on to the RFC Editor as community review of the document.
     </blockquote>
 {% endif %}
 {% endif %}<h4>{{ title3 }}</h4>
@@ -62,27 +74,23 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
 <table class="agenda-doc">
 <tbody>
 <tr><td>
-<a href="{% url doc_view name=doc.obj.canonical_name %}">{{doc.obj.canonical_name}}</a>
-{% with doc.obj.rfc_number as rfc_number %}
-{% if rfc_number %}
-<a href="http://www.rfc-editor.org/rfc/rfc{{rfc_number}}/">[txt]</a>
-{% else %}
+<a href="{% url doc_view name=doc.obj.name %}">{{doc.obj.name}}-{{doc.obj.rev}}</a>
 <a href="http://www.ietf.org/id/{{doc.obj.name}}-{{doc.obj.rev}}.txt">[txt]</a>
+
+<br/>{{ doc.obj.title|escape }} 
+<div style="padding-left:30px;">
+<a href="{% url doc_view name=doc.obj.conflictdoc.name %}">{{doc.obj.conflictdoc.name}}-{{doc.obj.conflictdoc.rev}}</a>
+<a href="http://www.ietf.org/id/{{doc.obj.conflictdoc.name}}-{{doc.obj.conflictdoc.rev}}.txt">[txt]</a>
+<br/>{{ doc.obj.conflictdoc.title|escape }} ({{doc.obj.conflictdoc.stream}}: {{ doc.obj.conflictdoc.intended_std_level }})
+{% if doc.obj.conflictdoc.note %}
+<br/>Note: {{ doc.obj.conflictdoc.note|unescape }}
 {% endif %}
-{% endwith %}
 
-<br/>{{ doc.obj.title|escape }} ({{ doc.obj.intended_std_level }})
-
-
-{% if doc.obj.note %}
-<br/>Note: {{ doc.obj.note|unescape }}
-{% endif %}
-
-{% if doc.obj.ipr %}
+{% if doc.obj.conflictdoc.ipr %}
 <br />
 <h5>IPR:</h5>
    <ul>
-   {% for ipr in doc.obj.ipr %}
+   {% for ipr in doc.obj.conflictdoc.ipr %}
       {% ifequal ipr.ipr.status 1 %}
       <li><a href="/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a></li>
       {% endifequal %}
@@ -90,8 +98,9 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
    </ul>
 
 {% endif %}
+</div>
 
-<br/>Token: {{ doc.obj.ad }} ({{doc.obj.area_acronym}} area)
+Token: {{ doc.obj.ad }} 
 {% with doc.obj.active_defer_event as defer %}
 {% if defer %}
 <br/>Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}
