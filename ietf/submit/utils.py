@@ -268,7 +268,7 @@ def announce_new_versionREDESIGN(request, submission, draft, state_change_msg):
         to_email.append(draft.ad.role_email("ad").address)
 
     if draft.stream_id == "iab":
-        to_email.append("IAB Chair <iab-chair@ietf.org>")
+        to_email.append("IAB <iab@iab.org>")
     elif draft.stream_id == "ise":
         to_email.append("Independent Submission Editor <rfc-ise@rfc-editor.org>")
     elif draft.stream_id == "irtf":
