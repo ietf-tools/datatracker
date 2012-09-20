@@ -272,10 +272,8 @@ def edit_ad(request, name):
 
 def default_approval_text(review):
 
-    # Leaving these commented out lines for current_text to make it easy to put the actual review result into the approval email
-    # message should the stream owners decide that is a good thing.
-    #filename = "%s-%s.txt" % (review.canonical_name(), review.rev)
-    #current_text = get_document_content(filename, os.path.join(settings.CONFLICT_REVIEW_PATH, filename), split=False, markup=False)
+    filename = "%s-%s.txt" % (review.canonical_name(), review.rev)
+    current_text = get_document_content(filename, os.path.join(settings.CONFLICT_REVIEW_PATH, filename), split=False, markup=False)
 
     conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
     if conflictdoc.stream_id=='ise':
@@ -290,7 +288,7 @@ def default_approval_text(review):
                                     conflictdoc = conflictdoc,
                                     conflictdoc_url = settings.IDTRACKER_BASE_URL+conflictdoc.get_absolute_url(),
                                     receiver=receiver,
-                                    #approved_review = current_text
+                                    approved_review = current_text
                                    )
                               )
 

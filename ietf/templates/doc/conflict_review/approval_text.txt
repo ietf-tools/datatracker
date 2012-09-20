@@ -11,6 +11,8 @@ The IESG recommends that '{{ conflictdoc.title }}' {{ conflictdoc.file_tag|safe 
 The IESG has no problem with the publication of '{{ conflictdoc.title }}' {{ conflictdoc.file_tag|safe }} as {{ conflictdoc|std_level_prompt_with_article }}.
 {% endif %}
 
+{{ approved_review }}
+
 The IESG would also like the {{receiver}} to review the comments in the datatracker related to this document and determine whether or not they merit incorporation into the document. Comments may exist in both the ballot and the history log.
 
 The IESG review is documented at:
