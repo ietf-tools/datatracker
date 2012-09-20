@@ -55,7 +55,6 @@ from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
 
-
 def render_document_top(request, doc, tab, name):
     tabs = []
     tabs.append(("Document", "document", urlreverse("ietf.idrfc.views_doc.document_main", kwargs=dict(name=name)), True))
@@ -373,44 +372,47 @@ def document_ballot(request, name, ballot_id=None):
                               context_instance=RequestContext(request))
 
 def document_json(request, name):
-    # old interface
-    r = re.compile("^rfc([1-9][0-9]*)$")
-    m = r.match(name)
-    if m:
-        rfc_number = int(m.group(1))
-        rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
-        doc = RfcWrapper(rfci)
-    else:
-        id = get_object_or_404(InternetDraft, filename=name)
-        doc = IdWrapper(draft=id)
+    doc = get_object_or_404(Document, docalias__name=name)
 
-    from idrfc_wrapper import jsonify_helper
+    def extract_name(s):
+        return s.name if s else None
 
-    if isinstance(doc, RfcWrapper):
-        data = jsonify_helper(doc, ['rfc_number', 'title', 'publication_date', 'maturity_level', 'obsoleted_by','obsoletes','updated_by','updates','also','has_errata','stream_name','file_types','in_ietf_process', 'friendly_state'])
-    else:
-        data = jsonify_helper(doc, ['draft_name', 'draft_status', 'latest_revision', 'rfc_number', 'title', 'tracker_id', 'publication_date','rfc_editor_state', 'replaced_by', 'replaces', 'in_ietf_process', 'file_types', 'group_acronym', 'stream_id','friendly_state', 'abstract', 'ad_name'])
-    if doc.in_ietf_process():
-        data['ietf_process'] = doc.ietf_process.dict()
+    data = {}
 
-    # add some more fields using the new interface
-    d = get_object_or_404(Document, docalias__name=name)
+    data["name"] = doc.name
+    data["rev"] = doc.rev
+    data["time"] = doc.time.strftime("%Y-%m-%d %H:%M:%S")
+    data["group"] = None
+    if doc.group:
+        data["group"] = dict(
+            name=doc.group.name,
+            type=extract_name(doc.group.type),
+            acronym=doc.group.acronym)
+    data["expires"] = doc.expires.strftime("%Y-%m-%d %H:%M:%S")
+    data["title"] = doc.title
+    data["abstract"] = doc.abstract
+    data["aliases"] = list(doc.docalias_set.values_list("name", flat=True))
+    data["state"] = extract_name(doc.get_state())
+    data["intended_std_level"] = extract_name(doc.intended_std_level)
+    data["std_level"] = extract_name(doc.std_level)
     data["authors"] = [
         dict(name=e.person.name,
              email=e.address,
              affiliation=e.person.affiliation)
-        for e in Email.objects.filter(documentauthor__document=d).select_related("person").order_by("documentauthor__order")
+        for e in Email.objects.filter(documentauthor__document=doc).select_related("person").order_by("documentauthor__order")
         ]
-    e = d.latest_event(ConsensusDocEvent, type="changed_consensus")
-    data["consensus"] = e.consensus if e else None
-    data["stream"] = d.stream.name if d.stream else None
-    data["shepherd"] = d.shepherd.formatted_email() if d.shepherd else None
+    data["shepherd"] = doc.shepherd.formatted_email() if doc.shepherd else None
+    data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None
 
-    def state_name(s):
-        return s.name if s else None
+    if doc.type_id == "draft":
+        data["iesg_state"] = extract_name(doc.get_state("draft-iesg"))
+        data["rfceditor_state"] = extract_name(doc.get_state("draft-rfceditor"))
+        data["iana_review_state"] = extract_name(doc.get_state("draft-iana-review"))
+        data["iana_action_state"] = extract_name(doc.get_state("draft-iana-action"))
 
-    data["iana_review_state"] = state_name(d.get_state("draft-iana-review"))
-    data["iana_action_state"] = state_name(d.get_state("draft-iana-action"))
+        e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+        data["consensus"] = e.consensus if e else None
+        data["stream"] = extract_name(doc.stream)
 
     return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
 

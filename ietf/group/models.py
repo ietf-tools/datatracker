@@ -24,6 +24,12 @@ class GroupInfo(models.Model):
     def __unicode__(self):
         return self.name
 
+    def name_with_acronym(self):
+        res = self.name
+        if self.type_id in ("wg", "rg", "area"):
+            res += " %s (%s)" % (self.type, self.acronym)
+        return res
+
     class Meta:
         abstract = True
 

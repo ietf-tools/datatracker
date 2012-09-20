@@ -287,10 +287,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 def generate_publication_request(request, doc):
     group_description = ""
     if doc.group and doc.group.acronym != "none":
-        group_description = doc.group.name
-        if doc.group.type_id in ("wg", "rg", "area"):
-            group_description += " %s (%s)" % (doc.group.type, doc.group.acronym)
-
+        group_description = doc.group.name_with_acronym()
 
     return render_to_string("idrfc/publication_request.txt",
                             dict(doc=doc,
