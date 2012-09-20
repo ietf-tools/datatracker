@@ -8,15 +8,15 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         t = orm.StateType.objects.get_or_create(slug="draft-iana-action", label="IANA Action state")[0]
-        orm.State.objects.get_or_create(type=t, slug='newdoc', name='New Document', desc="A new document has been received by IANA, but no actions have been taken")
-        orm.State.objects.get_or_create(type=t, slug='inprog', name='In Progress', desc="IANA is currently processing the actions for this document")
-        orm.State.objects.get_or_create(type=t, slug='waitauth', name='Waiting on Authors', desc="IANA is waiting on the document's authors to respond")
-        orm.State.objects.get_or_create(type=t, slug='waitad', name='Waiting on ADs', desc="IANA is waiting on the IETF Area Directors to respond")
-        orm.State.objects.get_or_create(type=t, slug='waitwgc', name='Waiting on WGC', desc="IANA is waiting on the IETF Working Group Chairs to respond")
-        orm.State.objects.get_or_create(type=t, slug='waitrfc', name='Waiting on RFC Editor', desc="IANA has notified the RFC Editor that the actions have been completed")
-        orm.State.objects.get_or_create(type=t, slug='rfcedack', name='RFC-Ed-Ack', desc="Request completed. The RFC Editor has acknowledged receipt of IANA's message that the actions have been completed")
-        orm.State.objects.get_or_create(type=t, slug='onhold', name='On Hold', desc="IANA has suspended work on the document")
-        orm.State.objects.get_or_create(type=t, slug='noic', name='No IC', desc="Request completed. There were no IANA actions for this document")
+        orm.State.objects.get_or_create(type=t, slug='newdoc', name='New Document', desc="A new document has been received by IANA, but no actions have been taken", order=1)
+        orm.State.objects.get_or_create(type=t, slug='inprog', name='In Progress', desc="IANA is currently processing the actions for this document", order=2)
+        orm.State.objects.get_or_create(type=t, slug='waitauth', name='Waiting on Authors', desc="IANA is waiting on the document's authors to respond", order=3)
+        orm.State.objects.get_or_create(type=t, slug='waitad', name='Waiting on ADs', desc="IANA is waiting on the IETF Area Directors to respond", order=4)
+        orm.State.objects.get_or_create(type=t, slug='waitwgc', name='Waiting on WGC', desc="IANA is waiting on the IETF Working Group Chairs to respond", order=5)
+        orm.State.objects.get_or_create(type=t, slug='waitrfc', name='Waiting on RFC Editor', desc="IANA has notified the RFC Editor that the actions have been completed", order=6)
+        orm.State.objects.get_or_create(type=t, slug='rfcedack', name='RFC-Ed-Ack', desc="Request completed. The RFC Editor has acknowledged receipt of IANA's message that the actions have been completed", order=7)
+        orm.State.objects.get_or_create(type=t, slug='onhold', name='On Hold', desc="IANA has suspended work on the document", order=8)
+        orm.State.objects.get_or_create(type=t, slug='noic', name='No IC', desc="Request completed. There were no IANA actions for this document", order=9)
 
         t = orm.StateType.objects.get_or_create(slug="draft-iana-review", label="IANA Review state")[0]
         orm.State.objects.get_or_create(type=t, slug="need-rev", name='IANA Review Needed', desc="Document has not yet been reviewed by IANA.", order=1)
