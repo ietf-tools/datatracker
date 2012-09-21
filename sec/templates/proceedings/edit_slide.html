@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }}
-  {% ifequal meeting.type "interim" %}
+  {% if meeting.type_id == "interim" %}
     &raquo; <a href="{% url proceedings %}">Proceedings</a>
     &raquo; <a href="{% url proceedings_select_interim %}">Interim Select Group</a>
     &raquo; <a href="{% url proceedings_interim acronym=group.acronym %}">{{ group.acronym }}</a>
@@ -18,7 +18,7 @@
     &raquo; <a href="{% url proceedings_select meeting_num=meeting.number %}">Select</a>
     &raquo; <a href="{% url proceedings_upload_unified meeting_num=meeting.number acronym=group.acronym%}">{{ group.acronym }}</a>
     &raquo; {{ slide.title }}
-  {% endifequal %}
+  {% endif %}
 
 {% endblock %}
 

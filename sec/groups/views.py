@@ -236,6 +236,7 @@ def edit(request, acronym):
         awp_formset = AWPFormSet(request.POST, instance=group)
         if form.is_valid() and awp_formset.is_valid():
             
+            awp_formset.save()
             if form.changed_data:
                 state = form.cleaned_data['state']
                 
@@ -243,7 +244,6 @@ def edit(request, acronym):
                 save_group_in_history(group)
                 
                 form.save()
-                awp_formset.save()
                 
                 # create appropriate GroupEvent
                 if 'state' in form.changed_data:
