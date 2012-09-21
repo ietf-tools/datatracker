@@ -410,8 +410,9 @@ def document_json(request, name):
         data["iana_review_state"] = extract_name(doc.get_state("draft-iana-review"))
         data["iana_action_state"] = extract_name(doc.get_state("draft-iana-action"))
 
-        e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-        data["consensus"] = e.consensus if e else None
+        if doc.stream_id in ("ietf", "irtf"):
+            e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+            data["consensus"] = e.consensus if e else None
         data["stream"] = extract_name(doc.stream)
 
     return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
@@ -473,9 +474,11 @@ def document_main_idrfc(request, name, tab):
     info['rfc_editor_state'] = id.get_state("draft-rfceditor")
     info['iana_review_state'] = id.get_state("draft-iana-review")
     info['iana_action_state'] = id.get_state("draft-iana-action")
-    e = id.latest_event(ConsensusDocEvent, type="changed_consensus")
-    info["consensus"] = nice_consensus(e and e.consensus)
-    info["can_edit_consensus"] = can_edit_consensus(id, request.user)
+    info["consensus"] = None
+    if id.stream_id in ("ietf", "irtf"):
+        e = id.latest_event(ConsensusDocEvent, type="changed_consensus")
+        info["consensus"] = nice_consensus(e and e.consensus)
+        info["can_edit_consensus"] = can_edit_consensus(id, request.user)
     info["can_edit_intended_std_level"] = can_edit_intended_std_level(id, request.user)
 
     (content1, content2) = _get_html(

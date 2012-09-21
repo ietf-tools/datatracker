@@ -141,7 +141,6 @@ def get_doc_section(id):
 
 def get_doc_sectionREDESIGN(doc):
     if doc.type_id == 'draft':
-        states = [16,17,18,19,20,21]
         if doc.intended_std_level_id in ["bcp", "ds", "ps", "std"]:
             s = "2"
         else:
@@ -154,7 +153,7 @@ def get_doc_sectionREDESIGN(doc):
             s = s + "3"
         else:
             s = s + "2"
-        if not doc.get_state_slug=="rfc" and doc.get_state('draft-iesg').order not in states:
+        if not doc.get_state_slug=="rfc" and doc.get_state_slug('draft-iesg') not in ("lc", "writeupw", "goaheadw", "iesg-eva", "defer"):
             s = s + "3"
         elif doc.returning_item():
             s = s + "2"
@@ -214,10 +213,11 @@ def agenda_docs(date, next_agenda):
                 if e:
                     doc.lastcall_expires = e.expires
 
-            doc.consensus = "Unknown"
-            e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
-            if e:
-                doc.consensus = "Yes" if e.consensus else "No"
+            if doc.stream_id in ("ietf", "irtf"):
+                doc.consensus = "Unknown"
+                e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+                if e:
+                    doc.consensus = "Yes" if e.consensus else "No"
 
         docmatches.append(doc)
     

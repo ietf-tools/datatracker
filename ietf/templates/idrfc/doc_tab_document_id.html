@@ -116,7 +116,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% endif %}
 <tr><td>Document shepherd:</td><td>{{ stream_info.shepherd|default:"" }}</td></tr>
 
+{% if info.consensus %}
 <tr><td>Consensus:</td><td><a title="Whether the document is the result of a community consensus process as defined in RFC 5741" {% if info.can_edit_consensus %}class="editlink" href="{% url doc_edit_consensus name=doc.draft_name %}"{% endif %}>{{ info.consensus }}</a></td></tr>
+{% endif %}
 
 <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
