@@ -44,7 +44,7 @@ def notify(request, org, notification):
     username = request.POST.get("username") or request.GET.get("username")
     password = request.POST.get("password") or request.GET.get("password")
 
-    if username and password:
+    if username != None and password != None:
         if settings.SERVER_MODE == "production" and not request.is_secure():
             return HttpResponseForbidden("You must use HTTPS when sending username/password")
 
