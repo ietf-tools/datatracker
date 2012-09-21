@@ -1,6 +1,6 @@
 import subprocess, os
 
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.loader import render_to_string
@@ -90,7 +90,7 @@ def notify(request, org, notification):
             failed, out = runscript("rfc-editor-index-updates")
 
         if failed:
-            return HttpResponse("FAIL\n\n" + out, content_type="text/plain")
+            return HttpResponseServerError("FAIL\n\n" + out, content_type="text/plain")
         else:
             return HttpResponse("OK", content_type="text/plain")
 
