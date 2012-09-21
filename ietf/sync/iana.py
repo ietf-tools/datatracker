@@ -1,6 +1,7 @@
-import re, urllib2, json, email
+import re, urllib2, json, email, base64
 
 from django.utils.http import urlquote
+from django.conf import settings
 
 from ietf.doc.models import *
 from ietf.doc.utils import add_state_change_event
@@ -56,7 +57,12 @@ def update_rfc_log_from_protocol_page(rfc_names, rfc_must_published_later_than):
 def fetch_changes_json(url, start, end):
     url += "?start=%s&end=%s" % (urlquote(local_timezone_to_utc(start).strftime("%Y-%m-%d %H:%M:%S")),
                                  urlquote(local_timezone_to_utc(end).strftime("%Y-%m-%d %H:%M:%S")))
-    f = urllib2.urlopen(url)
+    request = urllib2.Request(url)
+    # HTTP basic auth
+    username = "ietfsync"
+    password = settings.IANA_SYNC_PASSWORD
+    request.add_header("Authorization", "Basic %s" % base64.encodestring("%s:%s" % (username, password)).replace("\n", ""))
+    f = urllib2.urlopen(request)
     text = f.read()
     f.close()
     return text
