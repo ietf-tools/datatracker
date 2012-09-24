@@ -93,8 +93,8 @@ def parse_changes_json(text):
 
 def update_history_with_changes(changes, send_email=True):
     """Take parsed changes from IANA and apply them. Note that we
-    expect to get these in chronologically sorted, otherwise the
-    change descriptions generated may not be right."""
+    expect to get these chronologically sorted, otherwise the change
+    descriptions generated may not be right."""
 
     # build up state lookup
     states = {}
@@ -162,7 +162,6 @@ def update_history_with_changes(changes, send_email=True):
 
             if c["state"] not in states[kind]:
                 warnings.append("Unknown IANA %s state %s (%s)" % (kind, c["state"], timestamp))
-                print "Unknown IANA %s state %s" % (kind, c["state"])
                 continue
 
             state = states[kind][c["state"]]
@@ -183,7 +182,8 @@ def update_history_with_changes(changes, send_email=True):
                 prev_state = doc.get_state(state_type)
                 e = add_state_change_event(doc, system, prev_state, state, timestamp)
 
-                added_events.append(e)
+                if e:
+                    added_events.append(e)
 
                 if not StateDocEvent.objects.filter(doc=doc, time__gt=timestamp, state_type=state_type):
                     save_document_in_history(doc)
