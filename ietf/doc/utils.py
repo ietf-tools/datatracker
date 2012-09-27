@@ -74,20 +74,23 @@ def needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
     
-def create_ballot_if_not_open(doc, by, ballot_type_slug):
-    if not doc.ballot_open(ballot_type_slug):
+def create_ballot_if_not_open(doc, by, ballot_slug):
+    if not doc.ballot_open(ballot_slug):
         e = BallotDocEvent(type="created_ballot", by=by, doc=doc)
-        e.ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_type_slug)
+        e.ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
         e.desc = u'Created "%s" ballot' % e.ballot_type.name
+        e.save()
+
+def close_ballot(doc, by, ballot_slug):
+    if doc.ballot_open(ballot_slug):
+        e = BallotDocEvent(type="closed_ballot", doc=doc, by=by)
+        e.ballot_type = BallotType.objects.get(doc_type=doc.type,slug=ballot_slug)
+        e.desc = 'Closed "%s" ballot' % e.ballot_type.name
         e.save()
 
 def close_open_ballots(doc, by):
     for t in BallotType.objects.filter(doc_type=doc.type_id):
-        if doc.ballot_open(t.slug):
-            e = BallotDocEvent(type="closed_ballot", doc=doc, by=by)
-            e.ballot_type = t
-            e.desc = 'Closed "%s" ballot' % t.name
-            e.save()
+        close_ballot(doc, by, t.slug )
 
 def augment_with_start_time(docs):
     """Add a started_time attribute to each document with the time of
