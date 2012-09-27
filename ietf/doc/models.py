@@ -379,6 +379,12 @@ class DocHistory(DocumentInfo):
         verbose_name_plural = "document histories"
 
 def save_document_in_history(doc):
+    """This should be called before saving changes to a Document instance,
+    so that the DocHistory entries contain all previous states, while
+    the Group entry contain the current state.  XXX TODO: Call this
+    directly from Document.save(), and add event listeners for save()
+    on related objects so we can save as needed when they change, too.
+    """
     def get_model_fields_as_dict(obj):
         return dict((field.name, getattr(obj, field.name))
                     for field in obj._meta.fields

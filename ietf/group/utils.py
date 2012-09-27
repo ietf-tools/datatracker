@@ -6,6 +6,11 @@ from ietf.group.models import *
 
 
 def save_group_in_history(group):
+    """This should be called before saving changes to a Group instance,
+    so that the GroupHistory entries contain all previous states, while
+    the Group entry contain the current state.  XXX TODO: Call this
+    directly from Group.save()
+    """
     def get_model_fields_as_dict(obj):
         return dict((field.name, getattr(obj, field.name))
                     for field in obj._meta.fields
