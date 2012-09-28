@@ -25,10 +25,10 @@ import datetime
 
 '''
 EXPECTED CHANGES:
-- group pages will be just another doc, charter doc
-- charter docs to discuss will be passed in the 'docs' section of agenda
-X expand get_section_header to include section 4
-- consolidate views (get rid of get_group_header,group,group_navigate)
+x group pages will be just another doc, charter doc
+x charter docs to discuss will be passed in the 'docs' section of agenda
+x expand get_section_header to include section 4
+x consolidate views (get rid of get_group_header,group,group_navigate)
 
 '''
 # -------------------------------------------------
@@ -71,7 +71,7 @@ def get_doc_writeup(doc):
             writeup = latest.text
     elif doc.type_id == 'conflrev':
         path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
-        writeup = get_document_content(None,path)
+        writeup = get_document_content(doc.name,path,split=False,markup=False)
     return writeup
         
 def get_last_telechat_date():
@@ -99,7 +99,7 @@ def get_section_header(file,agenda):
     h2c = {'1':'WG Creation','2':'WG Chartering'}
     h3a = {'1':'New Item','2':'Returning Item','3':'For Action'}
     h3b = {'1':'Proposed for IETF Review','2':'Proposed for Approval'}
-    h3c = {'1':'Under evaluation for IETF Review','2':'Proposed for Approval'}
+    h3c = {'1':'Under Evaluation for IETF Review','2':'Proposed for Approval'}
     
     # Robert updated _agenda_data to return Document objects instead of the ID wrapper
     #doc = InternetDraft.objects.get(filename=file)
@@ -129,54 +129,10 @@ def get_section_header(file,agenda):
     header.append(count)
     
     return header
-    
-def get_group_info(group,agenda):
-    '''
-    This function takes a group name and an agenda dictionary and returns the 
-    agenda section header as a string.
-    '''
-    h1 = {'4':'Working Group Actions'}
-    h2 = {'1':'WG Creation','2':'WG Rechartering'}
-    h3a = {'1':'Proposed for IETF Review','2':'Proposed for Approval'}
-    h3b = {'1':'Under Evalutaion for IETF Review','2':'Proposed for Approval'}
-    
-    for k,v in agenda['wgs'].iteritems():
-        c = 0
-        for g in v:
-            c += 1
-            if g['obj'] == group:            
-                section = k
-                count = '%s of %s' % (c, len(v))
-                break
-    
-    header = [ '%s %s' % (section[1], h1[section[1]]) ]
-    header.append('%s.%s %s' % (section[1], section[2], h2[section[2]]))
-    header.append('%s.%s.%s %s' % (section[1], section[2], section[3], h3a[section[3]] if section[2] == '1' else h3b[section[3]]))
-    header.append(count)
-    
-    return header
 
-def get_group_list(agenda):
-    '''
-    This function takes an agenda object and returns a list of group names, in order,
-    for those groups that show in section 4 of the agenda
-    '''
-    entries = []
-    for key in sorted(agenda['wgs']):
-        entries.extend(agenda['wgs'][key])
-    """
-    group_ids = [x['obj'].group_acronym_id for x in entries]
-    groups = [ Group.objects.get(id=id) for id in group_ids ]
-    acronyms = [ g.acronym for g in groups ]
-    return acronyms
-    """
-    acronyms = [x['obj'].acronym for x in entries]
-    return acronyms
-    
 def get_first_doc(agenda):
     '''
     This function takes an agenda dictionary and returns the first document in the agenda
-    TODO should handle group
     '''
     for k,v in sorted(agenda['docs'].iteritems()):
         if v:
@@ -269,11 +225,10 @@ def doc_detail(request, date, name):
     
     # nav button logic
     doc_list = get_doc_list(agenda)
-    group_list = get_group_list(agenda)
     nav_start = nav_end = False
     if name == doc_list[0]:
         nav_start = True
-    if name == doc_list[-1] and not group_list:
+    if name == doc_list[-1]:
         nav_end = True
     
     if request.method == 'POST':
@@ -382,66 +337,15 @@ def doc_navigate(request, date, name, nav):
     
     if nav == 'next' and index < len(names) - 1:
         target = names[index + 1]
-    elif nav == 'next' and index == len(names) - 1:
-        # go to first group doc if there is one
-        groups = get_group_list(agenda)
-        if groups:
-            url = reverse('telechat_group', kwargs={'date':date,'acronym':groups[0]})
-            return HttpResponseRedirect(url)
     elif nav == 'previous' and index != 0:
         target = names[index - 1]
-        
     
     url = reverse('telechat_doc_detail', kwargs={'date':date,'name':target})
-    return HttpResponseRedirect(url)
-        
-def group(request, date, acronym):
-    '''
-    This view takes a date and a Group acronym and displays group information for section 4, WG Actions
-    '''
-    group = get_object_or_404(Group, acronym=acronym)
-    agenda = _agenda_data(request, date=date)
-    header = get_group_info(group,agenda)
-        
-    # nav button logic, we're assuming there'll always be regular docs
-    group_list = get_group_list(agenda)
-    nav_end = False
-    if acronym == group_list[-1]:
-        nav_end = True
-        
-    return render_to_response('telechat/group.html', {
-        'date':date,
-        'group': group,
-        'agenda': agenda,
-        'header': header,
-        'nav_end': nav_end},
-        RequestContext(request, {}),
-    )
-    
-def group_navigate(request, date, acronym, nav):
-    '''
-    This view facilitates navigation among WG Actions for the agenda
-    '''
-    agenda = _agenda_data(request, date=date)
-    target = acronym
-    groups = get_group_list(agenda)
-    index = groups.index(acronym)
-    
-    if nav == 'next' and index < len(groups) -1:
-        target = groups[index + 1]
-    elif nav == 'previous' and index != 0:
-        target = groups[index - 1]
-    elif nav == 'previous' and index == 0:
-        docs = get_doc_list(agenda)
-        url = reverse('telechat_doc_detail', kwargs={'date':date,'name':docs[-1]})
-        return HttpResponseRedirect(url)
-        
-    url = reverse('telechat_group', kwargs={'date':date,'acronym':target})
     return HttpResponseRedirect(url)
 
 def main(request):
     '''
-    The is the main view where the user selects an old telechat or creates a new one.
+    The is the main view where the user selects an existing telechat or creates a new one.
     
     NOTES ON EXTERNAL HELPER FUNCTIONS:
     _agenda_data():     returns dictionary of agenda sections
@@ -461,6 +365,7 @@ def main(request):
         'form': form},
         RequestContext(request, {}),
     )
+    
 def management(request, date):
     '''
     This view displays management issues and lets the user update the status
@@ -510,11 +415,6 @@ def new(request):
         date = request.POST['date']
         # create legacy telechat record
         Telechat.objects.create(telechat_date=date)
-        
-        # get new agenda
-        # redirect
-        
-        # get first Document
         
         messages.success(request,'New Telechat Agenda created')
         url = reverse('telechat_doc', kwargs={'date':date,'name':name})

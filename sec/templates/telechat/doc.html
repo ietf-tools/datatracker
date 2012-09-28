@@ -55,6 +55,11 @@
     </form>
     
     <hr /><br />
+    
+    {% if document.type_id == "charter" %}
+    {% include "telechat/group.html" %}  
+    <br /><hr /><br />
+    {% endif %}
        
     <a name="writeup"><h2>Ballot Writeup</h2></a>
     <pre>

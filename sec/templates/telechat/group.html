@@ -1,25 +1,3 @@
-{% extends "telechat/base_telechat.html" %}
-
-{% block breadcrumbs %}{{ block.super }} 
-  &raquo; {{ date }}
-{% endblock %}
-
-{% block subsection %}
-<div id="telechat_main">
-    {% if not nav_start %}<a href="./previous/"><< Previous</a>{% endif %}
-    {% if not nav_end %}<span class="right-nav"><a href="./next/">Next >></a></span>{% endif %}
-    <br />
-    <h3>
-      {% for line in header %}
-        {{ line }}<br />
-      {% endfor %}
-    </h3>
-    <br />
-
-    <h3>WG Name: {{ group }} ({{ group.acronym }})</h3>
-    Token: {{ group.ad }}<br />
-    <br /><hr /><br />
-    
     <form id="dummy" action="" method="post">
     {% if header.2 == "4.1.1 Proposed for IETF Review" %}
       <b>Does anyone have an objection to the creation of this working group being sent for EXTERNAL REVIEW?</b><br><br>
@@ -53,5 +31,3 @@
     {% endif %}
     
     </form>    
-</div>
-{% endblock %}

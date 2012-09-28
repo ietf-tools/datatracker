@@ -62,15 +62,15 @@
       <li class="level1">4 Working Group Actions</li>
       <li>4.1 WG Creation</li>
       <li>4.1.1 Proposed for IETF Review</li>
-      {% with agenda.wgs.s411 as groups %}{% include "telechat/group_template.html" %}{% endwith %}
+      {% with agenda.docs.s411 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
       <li>4.1.2 Proposed for Approval</li>
-      {% with agenda.wgs.s412 as groups %}{% include "telechat/group_template.html" %}{% endwith %}
+      {% with agenda.docs.s412 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
       <li></li>
       <li>4.2 WG Rechartering</li>
       <li>4.2.1 Under evaluation for IETF Review</li>
-      {% with agenda.wgs.s421 as groups %}{% include "telechat/group_template.html" %}{% endwith %}
+      {% with agenda.docs.s421 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
       <li>4.2.2 Proposed for Approval</li>
-      {% with agenda.wgs.s422 as groups %}{% include "telechat/group_template.html" %}{% endwith %}
+      {% with agenda.docs.s422 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
     </ul>
     {% else %}
     Please select a telechat to display the agenda.

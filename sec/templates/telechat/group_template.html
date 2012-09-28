@@ -1,9 +1,0 @@
-{% if groups %}
-  <ul class="doc-list">
-  {% for group in groups %}
-    <li><a href="{% url telechat_group date=date acronym=group.obj.acronym %}">{{ group.obj.acronym }}</a></li>
-  {% endfor %}
-  </ul>
-{% else %}
-None
-{% endif %}
