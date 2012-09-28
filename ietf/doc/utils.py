@@ -204,7 +204,7 @@ def log_state_changed(request, doc, by, new_description, old_description):
 def add_state_change_event(doc, by, prev_state, new_state, timestamp=None):
     """Add doc event to explain that state change just happened."""
     if prev_state == new_state:
-        return
+        return None
 
     e = StateDocEvent(doc=doc, by=by)
     e.type = "changed_state"
