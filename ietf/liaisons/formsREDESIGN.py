@@ -15,7 +15,7 @@ from ietf.liaisons.widgets import (FromWidget, ReadOnlyWidget, ButtonWidget,
                                    ShowAttachmentsWidget, RelatedLiaisonWidget)
 from ietf.liaisons.models import LiaisonStatement, LiaisonStatementPurposeName
 from ietf.liaisons.proxy import LiaisonDetailProxy
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.person.models import Person, Email
 from ietf.doc.models import Document
 
