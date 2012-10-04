@@ -743,7 +743,7 @@ def select_group(request, meeting_id):
     bof_form = GroupSelectForm(choices=build_choices(bofs))
     
     # prep IRTF form
-    irtfs = filter(lambda a: a.type_id=='rg' and a.state_id=='active', unscheduled_groups)
+    irtfs = filter(lambda a: a.type_id=='rg' and a.state_id in ('active','proposed'), unscheduled_groups)
     irtf_form = GroupSelectForm(choices=build_choices(irtfs))
     
     return render_to_response('meetings/select_group.html', {
