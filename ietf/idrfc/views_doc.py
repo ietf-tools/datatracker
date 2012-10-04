@@ -410,7 +410,7 @@ def document_json(request, name):
         data["iana_review_state"] = extract_name(doc.get_state("draft-iana-review"))
         data["iana_action_state"] = extract_name(doc.get_state("draft-iana-action"))
 
-        if doc.stream_id in ("ietf", "irtf"):
+        if doc.stream_id in ("ietf", "irtf", "iab"):
             e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
             data["consensus"] = e.consensus if e else None
         data["stream"] = extract_name(doc.stream)
@@ -475,7 +475,7 @@ def document_main_idrfc(request, name, tab):
     info['iana_review_state'] = id.get_state("draft-iana-review")
     info['iana_action_state'] = id.get_state("draft-iana-action")
     info["consensus"] = None
-    if id.stream_id in ("ietf", "irtf"):
+    if id.stream_id in ("ietf", "irtf", "iab"):
         e = id.latest_event(ConsensusDocEvent, type="changed_consensus")
         info["consensus"] = nice_consensus(e and e.consensus)
         info["can_edit_consensus"] = can_edit_consensus(id, request.user)

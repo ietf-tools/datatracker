@@ -213,7 +213,7 @@ def agenda_docs(date, next_agenda):
                 if e:
                     doc.lastcall_expires = e.expires
 
-            if doc.stream_id in ("ietf", "irtf"):
+            if doc.stream_id in ("ietf", "irtf", "iab"):
                 doc.consensus = "Unknown"
                 e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
                 if e:
