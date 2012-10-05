@@ -11,7 +11,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
 from ietf.ipr.search import iprs_from_docs
-from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias
+from ietf.doc.models import *
 from ietf.person.models import Person
 from ietf.group.models import Group
 
@@ -289,10 +289,14 @@ def generate_publication_request(request, doc):
     if doc.group and doc.group.acronym != "none":
         group_description = doc.group.name_with_acronym()
 
+    e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+    consensus = e.consensus if e else None
+        
     return render_to_string("idrfc/publication_request.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  group_description=group_description,
+                                 consensus=consensus,
                                  )
                             )
 
