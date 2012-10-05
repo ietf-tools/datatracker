@@ -14,6 +14,7 @@ from django.template.loader import get_template
 from django.utils import simplejson
 from django.db.models import Max,Count,get_model
 
+from sec.lib import jsonapi
 from sec.proceedings.proc_utils import *
 from sec.sreq.forms import GroupSelectForm
 from sec.utils.decorators import check_permissions, sec_only
@@ -243,6 +244,39 @@ def ajax_generate_proceedings(request, meeting_num):
         'proceedings_url':proceedings_url},
         RequestContext(request,{}), 
     )
+
+@jsonapi
+def ajax_order_slide(request):
+    '''
+    Ajax function to change the order of presentation slides.
+    This function expects a POST request with the following parameters
+    order: new order of slide, 0 based
+    slide_name: slide primary key (name)
+    '''
+    if request.method != 'POST' or not request.POST:
+        return { 'success' : False, 'error' : 'No data submitted or not POST' }
+    slide_name = request.POST.get('slide_name',None)
+    order = request.POST.get('order',None)
+    slide = get_object_or_404(Document, name=slide_name)
+    
+    # get all the slides for this session
+    session = slide.session_set.all()[0]
+    meeting = session.meeting
+    group = session.group
+    qs = session.materials.exclude(states__slug='deleted').filter(type='slides').order_by('order')
+    
+    # move slide and reorder list
+    slides = list(qs)
+    index = slides.index(slide)
+    slides.pop(index)
+    slides.insert(int(order),slide)
+    for ord,item in enumerate(slides,start=1):
+        if item.order != ord:
+            item.order = ord
+            item.save()
+    
+    return {'success':True,'order':order,'slide':slide_name}
+    
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
@@ -442,7 +476,7 @@ def main(request):
         return HttpResponseForbidden('ACCESS DENIED: user=%s' % request.META['REMOTE_USER'])
         
     if has_role(request.user,'Secretariat'):
-        meetings = Meeting.objects.filter(type='ietf').order_by('number')
+        meetings = Meeting.objects.filter(type='ietf').order_by('-number')
     else:
         # select meetings still within the cutoff period
         meetings = Meeting.objects.filter(type='ietf',date__gt=datetime.datetime.today() - datetime.timedelta(days=settings.SUBMISSION_CORRECTION_DAYS)).order_by('number')

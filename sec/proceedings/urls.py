@@ -3,7 +3,8 @@ from django.contrib import admin
 
 urlpatterns = patterns('sec.proceedings.views',
     url(r'^$', 'main', name='proceedings'),
-     url(r'^ajax/generate-proceedings/(?P<meeting_num>\d{1,3})/$', 'ajax_generate_proceedings', name='proceedings_ajax_generate_proceedings'),
+    url(r'^ajax/generate-proceedings/(?P<meeting_num>\d{1,3})/$', 'ajax_generate_proceedings', name='proceedings_ajax_generate_proceedings'),
+    url(r'^ajax/order-slide/$', 'ajax_order_slide', name='proceedings_ajax_order_slide'),
     # special offline URL for testing proceedings build
     url(r'^build/(?P<meeting_num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',
         'build', name='proceedings_build'),

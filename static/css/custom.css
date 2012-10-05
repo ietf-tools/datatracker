@@ -466,6 +466,10 @@ input.draft-file-input {
     width: 90%;
 }
 
+#meetings-schedule-form input[type="text"] {
+    width: 30em;
+}
+
 #timeslot-form #id_time,#id_duration {
     width: 5em;
 }
@@ -561,6 +565,10 @@ div.interim-scroll {
     margin: 0;
     border-right: 1px solid #CCCCCC;
     border-left: 1px solid #CCCCCC;
+}
+
+td.hidden {
+    display: none;
 }
 
 /* ==========================================================================

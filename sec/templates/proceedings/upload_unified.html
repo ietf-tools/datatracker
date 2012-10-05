@@ -2,7 +2,12 @@
 
 {% block title %}Proceedings{% endblock %}
 
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" type="text/css" href="/css/jquery-ui-modified.css" />
+{% endblock %}
+
 {% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/js/jquery-ui-1.8.9.min.js"></script>
   <script type="text/javascript" src="/js/utils.js"></script>
 {% endblock %}
 
@@ -73,7 +78,7 @@
      <div class="inline-related">
        <h2>Slides</h2>
          {% include "includes/slides.html" %}
-         <p>(<span class="required"> *</span> - Waiting to be converted to PDF format.)</p>
+         <p>Drag and Drop to re-order slides. (<span class="required"> *</span> - Waiting to be converted to PDF format.)</p>
      </div> <!-- inline-group -->
      
      <div class="inline-related">

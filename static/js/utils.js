@@ -54,6 +54,7 @@ function change_material_type(obj) {
 }
 
 function init_proceedings_upload() {
+  // dynamic help message
   $('#id_material_type').change(function() {
     if(this.value == "slides") {
       //alert('Presentation handler called');
@@ -73,6 +74,21 @@ function init_proceedings_upload() {
       $('#id_slide_name').val('');
     }
   });
+
+  // handle slide sorting
+  $('#slides.sortable tbody').sortable({
+     axis:'y',
+     containment:'parent',
+     update: function(event, ui){  
+         var data = $(this).sortable("toArray");
+         var element_id = ui.item.attr("id");
+         var slide_name = $("tr#"+element_id+" td.hidden").text();
+         var order = $.inArray(element_id,data);
+         $.post('/proceedings/ajax/order-slide/',{'slide_name':slide_name,'order':order});
+         // restripe the table
+        restripe('#slides.sortable');
+     }
+  }).disableSelection();
 }
 
 function init_proceedings_table() {
