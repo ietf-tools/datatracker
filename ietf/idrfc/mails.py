@@ -291,11 +291,20 @@ def generate_publication_request(request, doc):
 
     e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
     consensus = e.consensus if e else None
-        
+
+    if doc.stream_id == "irtf":
+        approving_body = "IRSG"
+        consensus_body = doc.group.acronym.upper()
+    else:
+        approving_body = str(doc.stream)
+        consensus_body = approving_body
+
     return render_to_string("idrfc/publication_request.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  group_description=group_description,
+                                 approving_body=approving_body,
+                                 consensus_body=consensus_body,
                                  consensus=consensus,
                                  )
                             )
