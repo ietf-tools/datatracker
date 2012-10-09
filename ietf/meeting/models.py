@@ -189,4 +189,7 @@ class Session(models.Model):
         return u"%s: %s %s" % (self.meeting, self.group.acronym, timeslots[0].time.strftime("%H%M") if timeslots else "(unscheduled)")
 
     def constraints(self):
+        return Constraint.objects.filter(source=self.group, meeting=self.meeting).order_by('name__name')
+
+    def reverse_constraints(self):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
