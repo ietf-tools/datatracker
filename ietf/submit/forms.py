@@ -12,6 +12,7 @@ from django.template.loader import render_to_string
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse as urlreverse
 
+from ietf.group.models import Group
 from ietf.idtracker.models import InternetDraft, IETFWG
 from ietf.proceedings.models import Meeting
 from ietf.submit.models import IdSubmissionDetail, TempIdAuthors, Preapproval
@@ -224,27 +225,36 @@ class UploadForm(forms.Form):
         self.idnits_message = p.stdout.read()
 
     def get_working_group(self):
-        filename = self.draft.filename
-        existing_draft = InternetDraft.objects.filter(filename=filename)
+        name = self.draft.filename
+        existing_draft = InternetDraft.objects.filter(filename=name)
         if existing_draft:
             group = existing_draft[0].group and existing_draft[0].group.ietfwg or None
-            if group and group.pk != NONE_WG:
-                if settings.USE_DB_REDESIGN_PROXY_CLASSES and group.type_id == "area":
-                    return None
+            if group and group.pk != NONE_WG and group.type_id != "area":
                 return group
             else:
                 return None
         else:
-            if filename.startswith('draft-ietf-'):
-                # Extra check for WG that contains dashes
-                for group in IETFWG.objects.filter(group_acronym__acronym__contains='-'):
-                    if filename.startswith('draft-ietf-%s-' % group.group_acronym.acronym):
-                        return group
-                group_acronym = filename.split('-')[2]
+            if name.startswith('draft-ietf-') or name.startswith("draft-irtf-"):
+                components = name.split("-")
+                if len(components) < 3:
+                    raise forms.ValidationError("The draft name \"%s\" is missing a third part, please rename it")
+
+                if components[1] == "ietf":
+                    group_type = "wg"
+                else:
+                    group_type = "rg"
+
+                # first check groups with dashes
+                for g in Group.objects.filter(acronym__contains="-", type=group_type):
+                    if name.startswith('draft-%s-%s-' % (components[1], g.acronym)):
+                        return IETFWG().from_object(g)
+
                 try:
-                    return IETFWG.objects.get(group_acronym__acronym=group_acronym)
-                except IETFWG.DoesNotExist:
-                    raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % group_acronym)
+                    return IETFWG().from_object(Group.objects.get(acronym=components[2], type=group_type))
+                except Group.DoesNotExist:
+                    raise forms.ValidationError('There is no active group with acronym \'%s\', please rename your draft' % components[2])
+            elif name.startswith("draft-iab-"):
+                return IETFWG().from_object(Group.objects.get(acronym="iab"))
             else:
                 return None
 

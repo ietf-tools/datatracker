@@ -75,7 +75,6 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
         self.assertEquals(IdSubmissionDetail.objects.filter(filename=name).count(), 1)
         submission = IdSubmissionDetail.objects.get(filename=name)
-        self.assertEquals(submission.group_acronym.acronym, "mars")
         self.assertEquals(submission.tempidauthors_set.count(), 1)
         self.assertTrue(re.search('\s+Summary:\s+0\s+errors|No nits found', submission.idnits_message))
         author = submission.tempidauthors_set.all()[0]
@@ -139,6 +138,7 @@ class SubmitTestCase(django.test.TestCase):
         draft = Document.objects.get(docalias__name=name)
         self.assertEquals(draft.rev, rev)
         new_revision = draft.latest_event()
+        self.assertEquals(draft.group.acronym, "mars")
         self.assertEquals(new_revision.type, "new_revision")
         self.assertEquals(new_revision.by.name, "Test Name")
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
@@ -224,6 +224,7 @@ class SubmitTestCase(django.test.TestCase):
 
         draft = Document.objects.get(docalias__name=name)
         self.assertEquals(draft.rev, rev)
+        self.assertEquals(draft.group.acronym, name.split("-")[2])
         self.assertEquals(draft.docevent_set.all()[1].type, "new_revision")
         self.assertEquals(draft.docevent_set.all()[1].by.name, "Test Name")
         self.assertTrue(not os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev))))
@@ -249,6 +250,38 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
         self.assertTrue(name in unicode(outbox[-1]))
         self.assertTrue("mars" in unicode(outbox[-1]))
+
+    def test_submit_new_wg_with_dash(self):
+        draft = make_test_data()
+
+        group = Group.objects.create(acronym="mars-special", name="Mars Special", type_id="wg", state_id="active")
+
+        name = "draft-ietf-%s-testing-tests" % group.acronym
+
+        self.do_submission(name, "00")
+
+        self.assertEquals(IdSubmissionDetail.objects.get(filename=name).group_acronym.acronym, group.acronym)
+
+    def test_submit_new_irtf(self):
+        draft = make_test_data()
+
+        group = Group.objects.create(acronym="saturnrg", name="Saturn", type_id="rg", state_id="active")
+
+        name = "draft-irtf-%s-testing-tests" % group.acronym
+
+        self.do_submission(name, "00")
+
+        self.assertEquals(IdSubmissionDetail.objects.get(filename=name).group_acronym.acronym, group.acronym)
+        self.assertEquals(IdSubmissionDetail.objects.get(filename=name).group_acronym.type_id, group.type_id)
+
+    def test_submit_new_iab(self):
+        draft = make_test_data()
+
+        name = "draft-iab-testing-tests"
+
+        self.do_submission(name, "00")
+
+        self.assertEquals(IdSubmissionDetail.objects.get(filename=name).group_acronym.acronym, "iab")
 
     def test_cancel_submission(self):
         # submit -> cancel

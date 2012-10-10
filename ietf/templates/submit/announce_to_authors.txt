@@ -7,7 +7,7 @@ Filename:	 {{ submission.filename }}
 Revision:	 {{ submission.revision }}
 Title:		 {{ submission.id_document_name }}
 Creation date:	 {{ submission.creation_date|date:"Y-m-d" }}
-WG ID:		 {{ wg }}
+Group:		 {{ wg }}
 Number of pages: {{ submission.txt_page_count }}
 URL:             http://www.ietf.org/internet-drafts/{{ submission.filename }}-{{ submission.revision }}.txt
 Status:          http://datatracker.ietf.org/doc/{{ submission.filename }}

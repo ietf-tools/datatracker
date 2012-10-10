@@ -9,7 +9,7 @@ I-D Submission Tool URL:
   File name       : {{ draft.filename }}
   Version         : {{ draft.revision }}
   Submission date : {{ draft.submission_date }}
-  WG              : {{ draft.group_acronym|default:"Individual Submission" }} {% if form.validation.warnings.group %}*Please note that this WG is not an active one*{% endif %}
+  Group           : {{ draft.group_acronym|default:"Individual Submission" }} {% if form.validation.warnings.group %}*Please note that this group is not an active one*{% endif %}
 
   Title           : {{ draft.id_document_name }}
   Document date   : {{ draft.creation_date }}

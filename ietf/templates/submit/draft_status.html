@@ -149,7 +149,7 @@ returned to the submitter.
    </td>
 </tr>
 <tr{% if validation.warnings.revision %} class="warning"{% endif %}><th>Revision</th><td>{{ detail.revision }}<div class="warn_message">{{ validation.warnings.revision }}{% if validation.warnings.revision %}<br /><a class="twopages_trigger" href="#">[View error]</a>{% endif %}</div></td></tr>
-<tr{% if validation.warnings.group %} class="warning"{% endif %}><th>WG</th><td>{{ validation.wg|default:"Individual Submission" }}<div class="warn_message">{{ validation.warnings.group }}</div></td></tr>
+<tr{% if validation.warnings.group %} class="warning"{% endif %}><th>Group</th><td>{{ validation.wg|default:"Individual Submission" }}<div class="warn_message">{{ validation.warnings.group }}</div></td></tr>
 <tr{% if validation.warnings.creation_date %} class="warning"{% endif %}><th>Document date</th><td>{{ detail.creation_date }}<div class="warn_message">{{ validation.warnings.creation_date }}</div></td></tr>
 <tr><th>Submission date</th><td>{{ detail.submission_date }}</td></tr>
 <tr{% if validation.warnings.title %} class="warning"{% endif %}><th>Title</th><td>{{ detail.id_document_name|default:"" }}<div class="warn_message">{{ validation.warnings.title }}</div></td></tr>

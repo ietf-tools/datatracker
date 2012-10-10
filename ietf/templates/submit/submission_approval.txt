@@ -9,7 +9,7 @@ To approve the draft, go to this URL (note: you need to login to be able to appr
   File name       : {{ draft.filename }}
   Version         : {{ draft.revision }}
   Submission date : {{ draft.submission_date }}
-  WG              : {{ draft.group_acronym|default:"Individual Submission" }}
+  Group           : {{ draft.group_acronym|default:"Individual Submission" }}
 
   Title           : {{ draft.id_document_name }}
   Document date   : {{ draft.creation_date }}

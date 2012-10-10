@@ -114,7 +114,7 @@ def draft_status(request, submission_id, submission_hash=None, message=None):
                 except Preapproval.DoesNotExist:
                     preapproval = None
 
-                if detail.revision == '00' and detail.group_acronym and not preapproval:
+                if detail.revision == '00' and detail.group_acronym and detail.group_acronym.type_id == "wg" and not preapproval:
                     detail.status_id = INITIAL_VERSION_APPROVAL_REQUESTED
                     detail.save()
 

@@ -579,7 +579,7 @@ class DraftValidation(object):
 
     def validate_wg(self):
         if self.wg and not self.wg.status_id == IETFWG.ACTIVE:
-            self.add_warning('group', 'Working Group exists but is not an active WG')
+            self.add_warning('group', 'Group exists but is not an active group')
 
     def validate_abstract(self):
         if not self.draft.abstract:
