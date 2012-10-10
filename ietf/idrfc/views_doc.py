@@ -296,7 +296,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
 
     deferred = doc.active_defer_event()
 
-    positions = doc.active_ballot().all_positions() if doc.active_ballot() else ballot.all_positions()
+    positions = ballot.all_positions()
 
     # put into position groups
     position_groups = []

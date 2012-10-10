@@ -567,14 +567,16 @@ class BallotDocEvent(DocEvent):
                     latest.old_positions.append(e.pos)
     
         # add any missing ADs through fake No Record events
-        norecord = BallotPositionName.objects.get(slug="norecord")
-        for ad in active_ads:
-            if ad not in seen:
-                e = BallotPositionDocEvent(type="changed_ballot_position", doc=self.doc, ad=ad)
-                e.pos = norecord
-                e.old_ad = False
-                e.old_positions = []
-                positions.append(e)
+        if self.doc.active_ballot() == self:
+            norecord = BallotPositionName.objects.get(slug="norecord")
+            for ad in active_ads:
+                if ad not in seen:
+                    e = BallotPositionDocEvent(type="changed_ballot_position", doc=self.doc, ad=ad)
+                    e.by = ad
+                    e.pos = norecord
+                    e.old_ad = False
+                    e.old_positions = []
+                    positions.append(e)
 
         positions.sort(key=lambda p: (p.old_ad, p.ad.last_name()))
         return positions
