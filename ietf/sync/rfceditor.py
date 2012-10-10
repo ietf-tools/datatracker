@@ -273,7 +273,6 @@ def parse_index(response):
     return data
 
 
-    #skip_older_than_date = date.today() - timedelta(days=365)
 def update_docs_from_rfc_index(data, skip_older_than_date=None):
     std_level_mapping = {
         "Standard": StdLevelName.objects.get(slug="std"),
@@ -347,7 +346,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
         if abstract and abstract != doc.abstract:
             changed_attributes["abstract"] = abstract
 
-        if int(pages) != doc.pages:
+        if pages and int(pages) != doc.pages:
             changed_attributes["pages"] = int(pages)
 
         if std_level_mapping[current_status] != doc.std_level:
