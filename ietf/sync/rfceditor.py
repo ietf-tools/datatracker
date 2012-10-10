@@ -383,7 +383,8 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
             results.append("Added RFC published event: %s" % e.time.strftime("%Y-%m-%d"))
 
         for t in ("draft-iesg", "draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"):
-            if doc.get_state_slug(t) != "pub":
+            slug = doc.get_state_slug(t)
+            if slug and slug != "pub":
                 changed_states.append(State.objects.get(type=t, slug="pub"))
 
         def parse_relation_list(l):
