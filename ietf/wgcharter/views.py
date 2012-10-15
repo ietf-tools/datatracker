@@ -588,13 +588,23 @@ def approve(request, name):
 
         new_state = GroupStateName.objects.get(slug="active")
         if wg.state != new_state:
+            # update history with current state
             save_group_in_history(wg)
+            # change wg state and save the wg
             prev_state = wg.state
             wg.state = new_state
             wg.time = e.time
             wg.save()
+            # create an event for the wg state change, too
+            e = ChangeStateGroupEvent(group=wg, type="changed_state")
+            e.time = wg.time
+            e.by = login
+            e.state_id = "proposed"
+            e.desc = "Proposed group"
+            e.save()
+            # update the change description for the email
             change_description += " and WG state has been changed to %s" % new_state.name
-        
+
         e = log_state_changed(request, charter, login, prev_charter_state)
 
         # according to spec, 00-02 becomes 01, so copy file and record new revision
