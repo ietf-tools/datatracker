@@ -397,10 +397,6 @@ class RfcWrapper:
             # TODO: get AD name of the draft
             return None
     def filename(self):
-        debug.show('self')
-        debug.show('self._rfc')
-        debug.show('self._rfcindex')
-        debug.show('self._rfcindex.filename')
         return self._rfcindex.filename
 
     @models.permalink
