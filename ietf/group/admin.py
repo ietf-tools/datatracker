@@ -106,7 +106,7 @@ class GroupAdmin(admin.ModelAdmin):
 admin.site.register(Group, GroupAdmin)
 
 class GroupHistoryAdmin(admin.ModelAdmin):
-    list_display = ["acronym", "name", "type"]
+    list_display = ["time", "acronym", "name", "type"]
     list_display_links = ["acronym", "name"]
     list_filter = ["type"]
     search_fields = ["acronym", "name"]
