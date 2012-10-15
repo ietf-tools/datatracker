@@ -73,7 +73,7 @@ def change_state(request, name, option=None):
                 if "-" not in charter_rev:
                     charter_rev = charter_rev + "-00"
             elif option == "abandon":
-                if wg.state_id == "proposed":
+                if wg.state_id in ("proposed","bof","unknown"):
                     charter_state = State.objects.get(type="charter", slug="notrev")
                 else:
                     charter_state = State.objects.get(type="charter", slug="approved")
