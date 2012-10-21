@@ -24,6 +24,7 @@ urlpatterns = patterns('',
      (r'^(?P<acronym>[A-Za-z0-9-]+)/charter/', include('ietf.wgcharter.urls')),
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/history/', views.history),
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/edit/', edit.edit, {'action': "edit"}, "wg_edit"),
+     (r'^(?P<acronym>[a-zA-Z0-9-]+)/init-charter/', edit.submit_initial_charter, None, "wg_init_charter"),
      (r'^(?P<acronym>[a-zA-Z0-9-]+)/conclude/', edit.conclude, None, "wg_conclude"),
      (r'^(?P<acronym>[^/]+)/management/', include('ietf.wgchairs.urls')),
 

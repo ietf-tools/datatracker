@@ -104,6 +104,37 @@ def format_urls(urls, fs="\n"):
         else:
             res.append(u.url)
     return fs.join(res)
+
+def get_or_create_initial_charter(wg):
+    try:
+        charter = Document.objects.get(docalias__name="charter-ietf-%s" % wg.acronym)
+    except Document.DoesNotExist:
+        charter = Document(
+            name="charter-ietf-" + wg.acronym,
+            type_id="charter",
+            title=wg.name,
+            group=wg,
+            abstract=wg.name,
+            rev="00-00",
+        )
+        charter.save()
+        charter.set_state(State.objects.get(type="charter", slug="notrev"))
+                
+       # Create an alias as well
+        DocAlias.objects.create(
+            name=charter.name,
+            document=charter
+        )
+
+    return charter
+
+@role_required('Area Director', 'Secretariat')
+def submit_initial_charter(request, acronym=None):
+    wg = get_object_or_404(Group, acronym=acronym)
+    if not wg.charter:
+        wg.charter = get_or_create_initial_charter(wg)
+        wg.save()
+    return redirect('charter_submit', name=wg.charter.name, option="initcharter")
         
 @role_required('Area Director', 'Secretariat')
 def edit(request, acronym=None, action="edit"):
@@ -141,34 +172,14 @@ def edit(request, acronym=None, action="edit"):
                 e.time = wg.time
                 e.by = login
                 e.state_id = clean["state"].slug
-                e.desc = clean["state"].name
+                e.desc = "Group created in state %s" % clean["state"].name
                 e.save()
             else:
                 save_group_in_history(wg)
 
 
             if action=="charter" and not wg.charter:  # make sure we have a charter
-                try:
-                    charter = Document.objects.get(docalias__name="charter-ietf-%s" % wg.acronym)
-                except Document.DoesNotExist:
-                    charter = Document(
-                        name="charter-ietf-" + wg.acronym,
-                        type_id="charter",
-                        title=wg.name,
-                        group=wg,
-                        abstract=wg.name,
-                        rev="00-00",
-                        )
-                    charter.save()
-                    charter.set_state(State.objects.get(type="charter", slug="notrev"))
-                
-                   # Create an alias as well
-                    DocAlias.objects.create(
-                        name=charter.name,
-                        document=charter
-                        )
-
-                wg.charter = charter
+                wg.charter = get_or_create_initial_charter(wg)
 
             changes = []
                 
