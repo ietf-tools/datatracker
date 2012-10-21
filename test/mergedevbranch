@@ -101,19 +101,24 @@ done
 # ----------------------------------------------------------------------
 # The program itself
 
+# Argument validation
 [[ $1 =~ @ ]] && set ${1/@/ }
 [ $# -ge 2 ] || die "Expected branch and repository revision on the command line"
 [ ${PWD##*/} = trunk ] || die "Expected this script to be run in trunk"
+
+# Global settings
+cwd=${PWD##*/}
 branch=$1
 rev=$2
 fix=$3
+repo=$(echo -n "$(svn info | grep "^Repository Root: " | sed 's/Repository Root: //')")
 
 note "Identify the branch:"
-if   svn info http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$branch > /dev/null 2>&1; then
+if   svn info ${repo}/personal/$branch > /dev/null 2>&1; then
     branch="personal/$branch"
-elif svn info http://svn.tools.ietf.org/svn/tools/ietfdb/branch/$branch > /dev/null 2>&1; then
+elif svn info ${repo}/branch/$branch > /dev/null 2>&1; then
     branch="branch/$branch"
-elif svn info http://svn.tools.ietf.org/svn/tools/ietfdb/$branch > /dev/null 2>&1; then
+elif svn info ${repo}/$branch > /dev/null 2>&1; then
     true
 else
     die "Could not find a branch matching '$branch'"
@@ -121,15 +126,30 @@ fi
 note "Merging from $branch@$rev"
 
 note "Extract who and what:"
-info=$(svn log http://svn.tools.ietf.org/svn/tools/ietfdb/ -r $rev --incremental)
+info=$(svn log ${repo}/ -r $rev --incremental)
 set $(echo "$info" | tail -n +2 | head -n 1 | tr "|" "\t")
 who=$2; echo -e "\n$who"
 comment=$(echo "$info" | tail -n +3); echo -e "$comment\n"
+files=$(svn diff ${repo}/ -c $rev --summarize | awk '{$1=""; print;}' | while read file; do echo "${file/$repo\/$branch\//}"; done)
 
-
+echo -n "Files: \n$files"
 
 note "Do the merge:"
-svn merge -c $rev http://svn.tools.ietf.org/svn/tools/ietfdb/$branch .
+svn merge -c $rev ${repo}/$branch . || die "Merge of $branch @$rev failed"
+
+C=$(svn st | cut -c 1-7 | grep -oh 'C' | head -n 1)
+G=$(svn st | cut -c 1-7 | grep -oh 'G' | head -n 1)
+
+date +"%Y-%m-%d %H:%M:%S	$C$G	@$rev $branch" >> $progdir/../mergelog
+
+cd ../
+rsync -av $cwd/ $cwd@$rev/
+cd $cwd@$rev/
+
+echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'} ${fix/\"/\'}\"" > commit
+chmod +x commit
+
+PYTHONPATH=$PWD ietf/manage.py test || die "Testing of $branch@$rev merged to trunk failed -- not sending email, not committing."
 
 mail -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c henrik@levkowetz.com <<-EOF
 Hi,
@@ -144,6 +164,7 @@ Regards,
 	(via the mergesprintbranch script)
 EOF
 
+
 if [ "$ARG_COMMIT" ]; then
     echo "Committing the merge:"
     echo ""
@@ -151,8 +172,7 @@ if [ "$ARG_COMMIT" ]; then
 else
     echo "This merge has not been committed yet."
     echo "To commit it, run this commit command: ../commit-$rev-merge.sh"
-    echo ""
-    echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'} ${fix/\"/\'}\"" > ../commit-$rev-merge.sh
-    chmod +x ../commit-$rev-merge.sh
 fi
+
+
 
