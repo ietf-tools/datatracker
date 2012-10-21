@@ -321,6 +321,19 @@ def _agenda_json(request, date=None):
                         if defer:
                             docinfo['defer-by'] = defer.by.name
                             docinfo['defer-at'] = str(defer.time)
+                        if d.type_id == 'conflrev':
+                            td = d.relateddocument_set.get(relationship__slug='conflrev').target.document
+                            docinfo['target-docname'] = td.canonical_name()
+                            docinfo['target-title'] = td.title
+                            docinfo['target-rev'] = td.rev
+                            docinfo['intended-std-level'] = str(td.intended_std_level)
+                            docinfo['stream'] = str(td.stream)
+                        else:
+                            docinfo['intended-std-level'] = str(d.intended_std_level)
+                            if d.rfc_number():
+                                docinfo['rfc-number'] = d.rfc_number()
+                            else:
+                                docinfo['rev'] = d.rev
                         data['sections'][s]['docs'] += [docinfo, ]
 
     wgs = agenda_wg_actions(date)

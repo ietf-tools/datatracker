@@ -123,7 +123,10 @@ elif svn info ${repo}/$branch > /dev/null 2>&1; then
 else
     die "Could not find a branch matching '$branch'"
 fi
-note "Merging from $branch@$rev"
+
+if grep "@rev $branch" mergelog; then die "Changeset $branch@rev is already in the merge log"; fi
+
+note "Will attempt merge from $branch@$rev"
 
 note "Extract who and what:"
 info=$(svn log ${repo}/ -r $rev --incremental)
@@ -134,23 +137,32 @@ files=$(svn diff ${repo}/ -c $rev --summarize | awk '{$1=""; print;}' | while re
 
 echo -n "Files: \n$files"
 
-note "Do the merge:"
-svn merge -c $rev ${repo}/$branch . || die "Merge of $branch @$rev failed"
+note "Writing commit script"
+echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'} ${fix/\"/\'}\" && rm $0" > ../commit-${rev}-merge.sh
+chmod +x ../commit-${rev}-merge.sh
+cp ../commit-${rev}-merge.sh ./commit
 
+note "Do the merge:"
+svn merge -c $rev ${repo}/$branch . || die "Merge of $branch @$rev failed.  The merge command was:
+ svn merge -c $rev ${repo}/$branch ."
+
+M=$(svn st | cut -c 1-7 | grep -oh 'M' | head -n 1)
 C=$(svn st | cut -c 1-7 | grep -oh 'C' | head -n 1)
 G=$(svn st | cut -c 1-7 | grep -oh 'G' | head -n 1)
 
-date +"%Y-%m-%d %H:%M:%S	$C$G	@$rev $branch" >> $progdir/../mergelog
+
+date +"%Y-%m-%d %H:%M:%S	$G$C$M	@$rev $branch" >> mergelog
 
 cd ../
-rsync -av $cwd/ $cwd@$rev/
-cd $cwd@$rev/
+rsync -a $cwd/ merged@$rev/
+cd merged@$rev/
+cp ../commit-${rev}-merge.sh commit 
+note "Now in $PWD"
 
-echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'} ${fix/\"/\'}\"" > commit
-chmod +x commit
+note "Running tests..."
+{ PYTHONPATH=$PWD ietf/manage.py test || die "Testing of $branch@$rev merged to trunk failed -- not sending email, not committing."; } 2>&1 | tee testlog
 
-PYTHONPATH=$PWD ietf/manage.py test || die "Testing of $branch@$rev merged to trunk failed -- not sending email, not committing."
-
+note "Sending email to changeset author: <$who>"
 mail -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c henrik@levkowetz.com <<-EOF
 Hi,
 
