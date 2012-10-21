@@ -130,5 +130,8 @@ def profile(fn):
         retval = prof.runcall(fn, *args, **kwargs)
         prof.dump_stats(datafn)
         return retval
-    return wrapper
+    if debug:
+        return decorator(wrapper, fn)
+    else:
+        return fn
     
