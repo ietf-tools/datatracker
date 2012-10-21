@@ -26,11 +26,16 @@ ul.errorlist li { color: #a00; margin: 0px; padding: 0px; list-style: none; }
 
 {% block content %}
 {% load ietf_filters %}
-<h1>{% if wg %}
+<h1>
+{% ifequal action "edit" %}
 Edit WG {{ wg.acronym }}
-{% else %}
+{% else %} 
+  {% ifequal action "charter" %}
 Start chartering new WG
-{% endif %}
+  {% else %}
+Create new WG or BoF
+  {% endifequal %}
+{% endifequal %}
 </h1>
 
 <form class="edit" action="" method="POST">
@@ -60,12 +65,16 @@ Start chartering new WG
     <tr>
       <td></td>
       <td class="actions">
-	{% if wg %}
+	{% ifequal action "edit" %}
           <a href="{% url wg_charter acronym=wg.acronym %}">Back</a>
           <input type="submit" value="Save"/>
-        {% else %}
-          <input type="submit" value="Start chartering"/>
-	{% endif %}
+        {% else %} 
+           {% ifequal action "charter" %}
+              <input type="submit" value="Start chartering"/>
+           {% else %}
+              <input type="submit" value="Create group or bof"/>
+           {% endifequal %}
+	{% endifequal %}
       </td>
     </tr>
   </table>

@@ -17,7 +17,7 @@ class NameModel(models.Model):
         ordering = ['order']
 
 class GroupStateName(NameModel):
-    """BOF, Proposed, Active, Dormant, Concluded"""
+    """BOF, Proposed, Active, Dormant, Concluded, Abandoned"""
 class GroupTypeName(NameModel):
     """IETF, Area, WG, RG, Team, etc."""
 class RoleName(NameModel):

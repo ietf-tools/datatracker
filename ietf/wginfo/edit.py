@@ -9,6 +9,8 @@ from django import forms
 from django.utils import simplejson
 from django.utils.html import mark_safe
 
+import debug
+
 from ietf.ietfauth.decorators import role_required, has_role
 
 from ietf.doc.models import *
@@ -23,6 +25,7 @@ from ietf.person.forms import EmailsField
 class WGForm(forms.Form):
     name = forms.CharField(max_length=255, label="WG Name", required=True)
     acronym = forms.CharField(max_length=10, label="WG Acronym", required=True)
+    state = forms.ModelChoiceField(GroupStateName.objects.all(), label="WG State", required=True)
     chairs = EmailsField(label="WG Chairs", required=False)
     secretaries = EmailsField(label="WG Secretaries", required=False)
     techadv = EmailsField(label="WG Technical Advisors", required=False)
@@ -109,7 +112,7 @@ def edit(request, acronym=None, action="edit"):
     if action == "edit":
         wg = get_object_or_404(Group, acronym=acronym)
         new_wg = False
-    elif action == "create":
+    elif action in ("create","charter"):
         wg = None
         new_wg = True
     else:
@@ -122,30 +125,29 @@ def edit(request, acronym=None, action="edit"):
         if form.is_valid():
             clean = form.cleaned_data
             if new_wg:
-                # get ourselves a proposed WG
                 try:
                     wg = Group.objects.get(acronym=clean["acronym"])
-
                     save_group_in_history(wg)
-                    wg.state = GroupStateName.objects.get(slug="proposed")
                     wg.time = datetime.datetime.now()
                     wg.save()
                 except Group.DoesNotExist:
                     wg = Group.objects.create(name=clean["name"],
                                               acronym=clean["acronym"],
                                               type=GroupTypeName.objects.get(slug="wg"),
-                                              state=GroupStateName.objects.get(slug="proposed"))
+                                              state=clean["state"]
+                                              )
 
                 e = ChangeStateGroupEvent(group=wg, type="changed_state")
                 e.time = wg.time
                 e.by = login
-                e.state_id = "proposed"
-                e.desc = "Proposed group"
+                e.state_id = clean["state"].slug
+                e.desc = clean["state"].name
                 e.save()
             else:
                 save_group_in_history(wg)
 
-            if not wg.charter:  # make sure we have a charter
+
+            if action=="charter" and not wg.charter:  # make sure we have a charter
                 try:
                     charter = Document.objects.get(docalias__name="charter-ietf-%s" % wg.acronym)
                 except Document.DoesNotExist:
@@ -159,8 +161,8 @@ def edit(request, acronym=None, action="edit"):
                         )
                     charter.save()
                     charter.set_state(State.objects.get(type="charter", slug="notrev"))
-
-                    # Create an alias as well
+                
+                   # Create an alias as well
                     DocAlias.objects.create(
                         name=charter.name,
                         document=charter
@@ -188,13 +190,14 @@ def edit(request, acronym=None, action="edit"):
             # update the attributes, keeping track of what we're doing
             diff('name', "Name")
             diff('acronym', "Acronym")
+            diff('state', "State")
             diff('ad', "Shepherding AD")
             diff('parent', "IETF Area")
             diff('list_email', "Mailing list email")
             diff('list_subscribe', "Mailing list subscribe address")
             diff('list_archive', "Mailing list archive")
 
-            if not new_wg and wg.acronym != prev_acronym:
+            if not new_wg and wg.acronym != prev_acronym and wg.charter:
                 save_document_in_history(wg.charter)
                 DocAlias.objects.get_or_create(
                     name="charter-ietf-%s" % wg.acronym,
@@ -241,7 +244,7 @@ def edit(request, acronym=None, action="edit"):
 
             wg.save()
 
-            if new_wg:
+            if action=="charter":
                 return redirect('charter_submit', name=wg.charter.name, option="initcharter")
 
             return redirect('wg_charter', acronym=wg.acronym)
@@ -250,6 +253,7 @@ def edit(request, acronym=None, action="edit"):
             from ietf.person.forms import json_emails
             init = dict(name=wg.name,
                         acronym=wg.acronym,
+                        state=wg.state,
                         chairs=Email.objects.filter(role__group=wg, role__name="chair"),
                         secretaries=Email.objects.filter(role__group=wg, role__name="secr"),
                         techadv=Email.objects.filter(role__group=wg, role__name="techadv"),
@@ -268,6 +272,7 @@ def edit(request, acronym=None, action="edit"):
     return render_to_response('wginfo/edit.html',
                               dict(wg=wg,
                                    form=form,
+                                   action=action,
                                    user=request.user,
                                    login=login),
                               context_instance=RequestContext(request))

@@ -75,6 +75,7 @@ def change_state(request, name, option=None):
             elif option == "abandon":
                 if wg.state_id in ("proposed","bof","unknown"):
                     charter_state = State.objects.get(type="charter", slug="notrev")
+                    #TODO : set an abandoned state and leave some comments here
                 else:
                     charter_state = State.objects.get(type="charter", slug="approved")
                     charter_rev = approved_revision(charter.rev)
@@ -160,7 +161,7 @@ def change_state(request, name, option=None):
         "abandon": "Abandon effort on WG %s" % wg.acronym,
         }.get(option)
     if not title:
-        title = "Change state of WG %s" % wg.acronym
+        title = "Change chartering state of WG %s" % wg.acronym
 
     def state_pk(slug):
         return State.objects.get(type="charter", slug=slug).pk

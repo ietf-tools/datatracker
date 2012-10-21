@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}BoFs{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+{% load ballot_icon %}
+
+<h1>Bofs</h1>
+
+<p>Groups in the BoF state</p>
+
+{% if user|has_role:"Area Director,Secretariat" %}
+<p><a href="{% url bof_create %}">Create a new BoF</a></p>
+{% endif %}
+
+{% if not groups %}
+<p><b>No groups found.</b></p>
+{% else %}
+<table class="ietf-table ietf-doctable">
+<tr>
+  <th>Group</th>
+  <th>Name</th>
+  <th>Date</th>
+</tr>
+{% for g in groups %}
+<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+  <td class="acronym">
+    <a href="{% url wg_charter acronym=g.acronym %}">{{ g.acronym }}</a>
+  </td>
+  <td class="title">
+    <a {%comment%}href="{% url doc_view name=g.charter.name %}"{%endcomment%}>{{ g.name }}</a>
+  </td>
+  <td class="date">{{ g.time|date:"Y-m-d" }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}

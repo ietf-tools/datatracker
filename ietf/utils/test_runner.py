@@ -38,6 +38,8 @@ from django.conf import settings
 from django.template import TemplateDoesNotExist
 from django.test.simple import run_tests as django_run_tests
 
+import debug
+
 import ietf.utils.mail
 
 loaded_templates = set()
