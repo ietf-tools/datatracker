@@ -40,6 +40,7 @@ from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 
 from pyquery import PyQuery
+import debug
 
 from ietf.utils.test_utils import SimpleUrlTestCase
 from ietf.doc.models import *
@@ -112,7 +113,7 @@ class WgEditTestCase(django.test.TestCase):
         self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs)
 
         # creation
-        r = self.client.post(url, dict(acronym="testwg", name="Testing WG"))
+        r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state="proposed"))
         self.assertEquals(r.status_code, 302)
         self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs + 1)
         group = Group.objects.get(acronym="testwg")
@@ -148,14 +149,13 @@ class WgEditTestCase(django.test.TestCase):
         self.assertEquals(Group.objects.get(acronym=group.acronym).state_id, "bof")
 
         # confirm elevation
-        r = self.client.post(url, dict(name="Test", acronym=group.acronym, confirmed="1"))
+        r = self.client.post(url, dict(name="Test", acronym=group.acronym, confirmed="1", state="proposed"))
         self.assertEquals(r.status_code, 302)
         self.assertEquals(Group.objects.get(acronym=group.acronym).state_id, "proposed")
         self.assertEquals(Group.objects.get(acronym=group.acronym).name, "Test")
 
     def test_edit_info(self):
         make_test_data()
-
         group = Group.objects.get(acronym="mars")
 
         url = urlreverse('wg_edit', kwargs=dict(acronym=group.acronym))
@@ -198,6 +198,7 @@ class WgEditTestCase(django.test.TestCase):
                                   acronym="mnsig",
                                   parent=area.pk,
                                   ad=ad.pk,
+                                  state=group.state.pk,
                                   chairs="aread@ietf.org, ad1@ietf.org",
                                   secretaries="aread@ietf.org, ad1@ietf.org, ad2@ietf.org",
                                   techadv="aread@ietf.org",
@@ -206,6 +207,15 @@ class WgEditTestCase(django.test.TestCase):
                                   list_archive="archive.mars",
                                   urls="http://mars.mars (MARS site)"
                                   ))
+        if not r.status_code == 302:
+            for line in r.content.splitlines():
+                label = ""
+                if "label" in line:
+                    label = line
+                if 'class="errorlist"' in line:
+                    debug.show('label')
+                    debug.show('line')
+                    label = ""
         self.assertEquals(r.status_code, 302)
 
         group = Group.objects.get(acronym="mnsig")
