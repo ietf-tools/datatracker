@@ -4,9 +4,13 @@ from django.utils.functional import lazy
 from django import forms
 from django.core.urlresolvers import reverse as urlreverse
 
+import debug
+
 from ietf.person.models import *
 
 def json_emails(emails):
+    if isinstance(emails, basestring):
+        emails = Email.objects.filter(address__in=[x.strip() for x in emails.split(",") if x.strip()]).select_related("person")
     return simplejson.dumps([{"id": e.address + "", "name": escape(u"%s <%s>" % (e.person.name, e.address))} for e in emails])
 
 class EmailsField(forms.CharField):
