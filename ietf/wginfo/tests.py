@@ -113,7 +113,8 @@ class WgEditTestCase(django.test.TestCase):
         self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs)
 
         # creation
-        r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state="proposed"))
+        state = GroupStateName.objects.get(slug="bof")
+        r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state=state.pk))
         self.assertEquals(r.status_code, 302)
         self.assertEquals(len(Group.objects.filter(type="wg")), num_wgs + 1)
         group = Group.objects.get(acronym="testwg")
@@ -149,7 +150,8 @@ class WgEditTestCase(django.test.TestCase):
         self.assertEquals(Group.objects.get(acronym=group.acronym).state_id, "bof")
 
         # confirm elevation
-        r = self.client.post(url, dict(name="Test", acronym=group.acronym, confirmed="1", state="proposed"))
+        state = GroupStateName.objects.get(slug="proposed")
+        r = self.client.post(url, dict(name="Test", acronym=group.acronym, confirmed="1",state=state.pk))
         self.assertEquals(r.status_code, 302)
         self.assertEquals(Group.objects.get(acronym=group.acronym).state_id, "proposed")
         self.assertEquals(Group.objects.get(acronym=group.acronym).name, "Test")
@@ -193,12 +195,13 @@ class WgEditTestCase(django.test.TestCase):
             f.write("This is a charter.")
         area = group.parent
         ad = Person.objects.get(name="Aread Irector")
+        state = GroupStateName.objects.get(slug="bof")
         r = self.client.post(url,
                              dict(name="Mars Not Special Interest Group",
                                   acronym="mnsig",
                                   parent=area.pk,
                                   ad=ad.pk,
-                                  state=group.state.pk,
+                                  state=state.pk,
                                   chairs="aread@ietf.org, ad1@ietf.org",
                                   secretaries="aread@ietf.org, ad1@ietf.org, ad2@ietf.org",
                                   techadv="aread@ietf.org",
