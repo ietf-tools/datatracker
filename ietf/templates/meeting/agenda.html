@@ -252,6 +252,7 @@ img.hidden { display: none; }
 {% block bodyAttrs %}onload='setGroupState();updateAgendaColors()'{% endblock %}
 {% block content %}
 <h1>IETF {{ meeting.number }} Meeting Agenda</h1>
+{% if meeting.agenda_note %}<h2 style="margin: 2em;">{{ meeting.agenda_note|safe }}</h2>{% endif %}
 <p>{{ meeting.city }}, {{ meeting.date|date:"F j" }} &#8211; {% ifnotequal meeting.date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}<br />
 Updated {{ modified|date:"Y-m-d H:i:s T" }}</p>
 <div class="noprint">

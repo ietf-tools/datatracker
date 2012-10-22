@@ -36,6 +36,7 @@ class Meeting(models.Model):
     venue_addr = models.TextField(blank=True)
     break_area = models.CharField(blank=True, max_length=255)
     reg_area = models.CharField(blank=True, max_length=255)
+    agenda_note = models.TextField(blank=True, help_text="Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not validated.")
 
     def __unicode__(self):
         if self.type_id == "ietf":

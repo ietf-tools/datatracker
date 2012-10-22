@@ -1,6 +1,9 @@
 {% load humanize %}{% autoescape off %}
 {% load ietf_filters %}
 {% filter center:72 %}Agenda of the {{ meeting.num|ordinal }} IETF Meeting{% endfilter %}
+{% if meeting.agenda_note %}
+{% filter center:72 %}{{ meeting.agenda_note|striptags|wrap_text:72|safe }}{% endfilter %}
+{% endif %}
 {% filter center:72 %}{{ meeting.start_date|date:"F j" }}-{% ifnotequal meeting.start_date.month meeting.end_date.month %}{{ meeting.end_date|date:"F " }}{% endifnotequal %}{{ meeting.end_date|date:"j, Y" }}{% endfilter %}
 {% filter center:72 %}Updated {{ update.updated|date:"Y-m-d H:i:s T" }}{% endfilter %}
 
