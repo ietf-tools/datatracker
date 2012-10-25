@@ -5,7 +5,7 @@ import datetime
 from django.db import models
 from django.contrib.auth.models import User
 
-from ietf.person.name import name_parts
+from ietf.person.name import name_parts, initials
 
 class PersonInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
@@ -33,6 +33,8 @@ class PersonInfo(models.Model):
             return self.ascii_short
         prefix, first, middle, last, suffix = name_parts(self.name)
         return u" ".join([first, last])
+    def initials(self):
+        return initials(self.ascii or self.name)
     def last_name(self):
         return name_parts(self.name)[3]
     def role_email(self, role_name, group=None):
