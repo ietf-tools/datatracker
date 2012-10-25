@@ -29,6 +29,9 @@ def name_parts(name):
     if len(parts) > 2:
         first = parts[0]
         last = parts[-1]
+        # Handle reverse-order names with uppercase surname correctly
+        if re.search("^[A-Z-]+$", first):
+            first, last = last, first
         middle = " ".join(parts[1:-1])
     elif len(parts) == 2:
         first, last = parts
@@ -36,8 +39,17 @@ def name_parts(name):
         last = parts[0]
     return prefix, first, middle, last, suffix
     
+def initials(name):
+    prefix, first, middle, last, suffix = name_parts(name)
+    given = first
+    if middle:
+        given += " "+middle
+    initials = " ".join([ n[0]+'.' for n in given.split() ])
+    return initials
 
 if __name__ == "__main__":
     import sys
-
-    print name_parts(" ".join(sys.argv[1:]))
+    name = " ".join(sys.argv[1:])
+    print name_parts(name)
+    print initials(name)
+    
