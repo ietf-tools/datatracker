@@ -20,6 +20,8 @@ from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 from django.db.models import Max
 
+import debug
+
 from ietf.idtracker.models import InternetDraft
 from ietf.utils.pipe import pipe
 from ietf.utils.history import find_history_active_at
@@ -452,8 +454,19 @@ def ical_agenda(request, num=None):
         #Q(session__group__acronym__in = exclude) | 
         #Q(session__group__parent__acronym__in = exclude))
 
+    if meeting.time_zone:
+        tzfn = os.path.join(settings.TZDATA_ICS_PATH, meeting.time_zone + ".ics")
+        tzf = open(tzfn)
+        icstext = tzf.read()
+        debug.show('icstext[:128]')
+        vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
+        debug.show('vtimezone[:128]')
+        tzf.close()
+    else:
+        vtimezone = None
+
     return HttpResponse(render_to_string("meeting/agendaREDESIGN.ics",
-        {"timeslots":timeslots, "meeting":meeting },
+        {"timeslots":timeslots, "meeting":meeting, "vtimezone": vtimezone },
         RequestContext(request)), mimetype="text/calendar")
 
 def csv_agenda(request, num=None):
