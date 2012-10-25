@@ -1,15 +1,7 @@
 {% load humanize %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
 VERSION:2.0
-METHOD:PUBLISH
-{% if meeting.time_zone %}BEGIN:VTIMEZONE
-TZID:{{meeting.time_zone}}
-BEGIN:STANDARD
-TZOFFSETFROM:{{meeting.time_zone_offset}}
-TZOFFSETTO:{{meeting.time_zone_offset}}
-TZNAME:{{meeting.time_zone}}
-DTSTART:19700101T000000
-END:STANDARD
-END:VTIMEZONE{% endif %}{% for slot in timeslots %}
+METHOD:PUBLISH{% if vtimezone %}
+{{vtimezone}}{% endif %}{% for slot in timeslots %}
 BEGIN:VEVENT
 UID:ietf-{{slot.meeting.number}}-{{slot.pk}}
 SUMMARY:{% if slot.session.name %}{{slot.session.name}}{% else %}{% if slot.type.name == "Break" %}{{slot.name}}{% else %}{{slot.session.group.acronym|upper}} - {{slot.session.group.name}}{% endif%}{%endif%}
