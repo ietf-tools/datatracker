@@ -294,6 +294,12 @@ USE_DB_REDESIGN_PROXY_CLASSES = True
 
 SOUTH_TESTS_MIGRATE = False 
 
+# Generation of bibxml files for xml2rfc
+BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
+
+# Timezone files for iCalendar
+TZDATA_ICS_PATH = '/www/ietf-datatracker/tz/ics/'
+
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *

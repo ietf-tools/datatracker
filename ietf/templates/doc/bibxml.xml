@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<reference anchor='{{doc_bibtype}}.{{doc.name|slice:"6:"}}'>
+   <front>
+      <title>{{doc.title}}</title>
+      {% for entry in doc.authors.all %}{% with entry.address as email %}{% with entry.person as author %}
+      <author initials='{{author.initials}}' surname='{{author.last_name}}' fullname='{{author.name}}'>
+	 <organization>{{author.affiliation}}</organization>
+      </author>
+      {% endwith %}{% endwith %}{% endfor %}
+      <date month='{{doc.time|date:"F"}}' day='{{doc.time.day}}' year='{{doc.time.year}}' />
+      <abstract><t>{{doc.abstract}}</t></abstract>
+   </front>
+   <seriesInfo name='Internet-Draft' value='{{doc.name}}-{{doc.rev}}' />
+   <format type='TXT' target='http://www.ietf.org/internet-drafts/{{doc.name}}-{{doc.rev}}.txt' />
+</reference>
