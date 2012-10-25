@@ -13,7 +13,10 @@ from decorator import decorator
 
 # A debug decorator, written by Paul Butler, taken from
 # http://paulbutler.org/archives/python-debugging-with-decorators/
+# Additional functions and decorator functionality added by
+# Henrik Levkowetz
 
+__version__ = "0.15"
 
 increment = 2
 
