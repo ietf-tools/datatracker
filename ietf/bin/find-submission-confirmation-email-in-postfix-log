@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+version = "0.10"
+program = os.path.basename(sys.argv[0])
+progdir = os.path.dirname(sys.argv[0])
+
+# assume we're placed in ietf/bin/:
+sys.path = [progdir+"/../../"] + sys.path
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+# ----------------------------------------------------------------------
+def note(string):
+    sys.stdout.write("%s\n" % (string))
+    
+# ----------------------------------------------------------------------
+def warn(string):
+    sys.stderr.write(" * %s\n" % (string))
+    
+# ------------------------------------------------------------------------------
+
+import re
+from datetime import datetime as Datetime
+import time
+import warnings
+warnings.filterwarnings('ignore', message='the sets module is deprecated', append=True)
+
+from django.conf import settings
+
+from ietf.utils.path import path as Path
+
+from ietf.submit.models import IdSubmissionDetail
+from ietf.doc.models import Document
+
+
+
+args = sys.argv[1:]
+if len(args) < 1:
+    warn("Expected '$ %s DRAFTNAME', but found no arguments -- exiting" % program)
+    sys.exit(1)
+
+draft = args[0]
+if re.search("\.txt$", draft):
+    draft = draft[:-4]
+if re.search("-\d\d$", draft):
+    draft = draft[:-3]
+
+if len(args) == 1:
+    logfiles = [ arg[1] ]
+else:
+    logfiles = args[1:]
+
+from_email = settings.IDSUBMIT_FROM_EMAIL
+if "<" in from_email:
+    from_email = from_email.split("<")[1].split(">")[0]
+
+submission = IdSubmissionDetail.objects.filter(filename=draft).order_by('-pk')[0]
+document = Document.objects.get(name=draft)
+emails = [ author.address for author in document.authors.all() ]
+
+file = Path(settings.INTERNET_DRAFT_PATH) / ("%s-%s.txt"%(draft, submission.revision))
+
+upload_time = time.localtime(file.mtime)
+timestr1 = time.strftime("%b %d %H:%M", upload_time)
+timestr2 = timestr1[:-1] + chr(((ord(timestr1[-1])-ord('0')+1)%10)+ord('0'))
+note("Looking for mail log lines timestamped %s, also checking %s ..." % (timestr1, timestr2))
+
+for log in logfiles:
+    note("\n  Checking %s ...\n" % log)
+    if log.endswith('.gz'):
+        import gzip
+        logfile = gzip.open(log)
+    else:
+        logfile = open(log)
+    queue_ids = []
+    for line in logfile:
+        if line.startswith(timestr1) or line.startswith(timestr2):
+            if from_email in line:
+                for to_email in emails:
+                    if to_email in line:
+                        sys.stdout.write(line)
+                        if "queued_as:" in line:
+                            queue_ids += [ line.split("queued_as:")[1].split(",")[0] ]
+            elif queue_ids:
+                for qi in queue_ids:
+                    if qi in line:
+                        sys.stdout.write(line)
+        
