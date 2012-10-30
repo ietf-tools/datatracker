@@ -193,7 +193,7 @@ ietfdb (4.35) ietf; urgency=medium
     Encode uploaded charter text with UTF-8 to avoid crashing on Unicode 
     content 
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  30 Oct 2012 15:16:22 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Oct 2012 15:19:09 +0100
 
 ietfdb (4.34) ietf; urgency=medium
 
