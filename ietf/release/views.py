@@ -21,7 +21,7 @@ def release(request, version=None):
         entry.next = next
         next = entry
     entries = dict([ (entry.version, entry) for entry in log_entries])
-    if version == None:
+    if version == None or version not in entries:
         version = log_entries[0].version        
     return render_to_response('release/release.html', { 'entry': entries[version], }, context_instance=RequestContext(request))
 
