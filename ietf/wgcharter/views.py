@@ -12,6 +12,7 @@ from django.utils import simplejson
 from django.utils.html import strip_tags, escape
 from django.utils.safestring import mark_safe
 from django.conf import settings
+from django.contrib import messages
 
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
@@ -482,6 +483,7 @@ def announcement_text(request, name, ann):
             send_mail_text(request, parsed_msg["To"],
                            parsed_msg["From"], parsed_msg["Subject"],
                            parsed_msg.get_payload())
+            messages.success(request, "The email To: '%s' with Subjet: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
             return redirect('doc_writeup', name=charter.name)
 
     return render_to_response('wgcharter/announcement_text.html',
