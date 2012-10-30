@@ -385,15 +385,13 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
 @group_required('Secretariat')
 def clear_ballot(request, name):
-    """Clear all positions and discusses.  This is actually accomplished by creating a new
-    started_iesg_process DocEvent."""
+    """Clear all positions and discusses on every open ballot for a document."""
     doc = get_object_or_404(Document, name=name)
     if request.method == 'POST':
-        DocEvent.objects.create(type='started_iesg_process',
-                                doc=doc,
-                                by=request.user.get_profile(),
-                                desc='cleared_ballot')
-
+        by = request.user.get_profile()
+        for t in BallotType.objects.filter(doc_type=doc.type_id):
+            close_ballot(doc, by, t.slug)
+            create_ballot_if_not_open(doc, by, t.slug)
         return HttpResponseRedirect(urlreverse("doc_view", kwargs=dict(name=doc.name)))
 
     return render_to_response('idrfc/clear_ballot.html',

@@ -124,7 +124,7 @@ else
     die "Could not find a branch matching '$branch'"
 fi
 
-if grep "@rev $branch" mergelog; then die "Changeset $branch@rev is already in the merge log"; fi
+if grep "@$rev $branch" mergelog; then die "Changeset $branch@$rev is already in the merge log"; fi
 
 note "Will attempt merge from $branch@$rev"
 
@@ -135,12 +135,11 @@ who=$2; echo -e "\n$who"
 comment=$(echo "$info" | tail -n +3); echo -e "$comment\n"
 files=$(svn diff ${repo}/ -c $rev --summarize | awk '{$1=""; print;}' | while read file; do echo "${file/$repo\/$branch\//}"; done)
 
-echo -n "Files: \n$files"
+echo -e "Files: \n$files"
 
 note "Writing commit script"
-echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'} ${fix/\"/\'}\" && rm $0" > ../commit-${rev}-merge.sh
-chmod +x ../commit-${rev}-merge.sh
-cp ../commit-${rev}-merge.sh ./commit
+echo -e "#!/bin/bash\n\nsvn commit -m \"Merged [$rev] from $who: ${comment/\"/\'} ${fix/\"/\'}\"" > ../cicmd/commit-${rev}-merge.sh
+chmod +x ../cicmd/commit-${rev}-merge.sh
 
 note "Do the merge:"
 svn merge -c $rev ${repo}/$branch . || die "Merge of $branch @$rev failed.  The merge command was:
@@ -155,14 +154,11 @@ date +"%Y-%m-%d %H:%M:%S	$G$C$M	@$rev $branch" >> mergelog
 
 cd ../
 rsync -a $cwd/ merged@$rev/
-cd merged@$rev/
-cp ../commit-${rev}-merge.sh commit 
-note "Now in $PWD"
-
-note "Running tests..."
-{ PYTHONPATH=$PWD ietf/manage.py test || die "Testing of $branch@$rev merged to trunk failed -- not sending email, not committing."; } 2>&1 | tee testlog
+cp cicmd/commit-${rev}-merge.sh merged@$rev/commit
+cd -
 
 note "Sending email to changeset author: <$who>"
+
 mail -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c henrik@levkowetz.com <<-EOF
 Hi,
 
@@ -183,7 +179,7 @@ if [ "$ARG_COMMIT" ]; then
     svn commit -m "Merged [$rev] from $who: $comment $fix"
 else
     echo "This merge has not been committed yet."
-    echo "To commit it, run this commit command: ../commit-$rev-merge.sh"
+    echo "To commit it, run this commit command: ../cicmd/commit-$rev-merge.sh"
 fi
 
 
