@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-{% comment %}
+{% comment %}<!--
 
 Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -33,7 +33,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 
-{% endcomment %}
+-->{% endcomment %}
 {% load ietf_filters %}
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
@@ -85,7 +85,13 @@ Version {{ version_num }}, {{revision_date}}
 </td>
 <td>
 
-<div style="padding:0 8px 0 8px;">
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
 {% block content %}
 {% endblock %}
 

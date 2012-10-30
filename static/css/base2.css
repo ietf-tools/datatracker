@@ -194,3 +194,10 @@ form table .help {
 
 .ballot-content h2.ad-ballot-comment { background: #2647A0; color: #fff; padding: 2px 4px; font-size: 108%; margin-top: 0;}
 
+ul.messages	{ border: solid black 1px; margin: 0.4em 0; padding: 1em; }
+li.debug	{ margin: 0.5em; background-color: #ccf; }
+li.info		{ margin: 0.5em; background-color: #ff8; }
+li.success	{ margin: 0.5em; background-color: #4f4; }
+li.warning	{ margin: 0.5em; background-color: #fc8; color: black;}
+li.error	{ margin: 0.5em; background-color: #f44; }
+	
