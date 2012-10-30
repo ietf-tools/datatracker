@@ -4,7 +4,7 @@
 
 {% block content %}
 <div id="release">
-<h2>Release {{ entry.version }}, released {{ entry.date }}</h2>
+<h2>Version {{ entry.version }}, released {{ entry.date }}</h2>
 <p style="font-size: 90%">
       {% if entry.prev %}&larr;&nbsp;<a href="/release/{{entry.prev.version}}/">previous release</a>{% else %}<span style="color: grey">&larr; previous release</span>{% endif %}
       |
