@@ -5,8 +5,11 @@
 # http://code.djangoproject.com/wiki/SplitSettings
 
 import os
-import syslog
-syslog.openlog("datatracker", syslog.LOG_PID, syslog.LOG_USER)
+try:
+    import syslog
+    syslog.openlog("datatracker", syslog.LOG_PID, syslog.LOG_USER)
+except ImportError:
+    pass
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 

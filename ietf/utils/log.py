@@ -1,6 +1,12 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import syslog
+try:
+    import syslog
+    write = syslog.syslog
+except ImportError:                     # import syslog will fail on Windows boxes
+    import sys
+    write = lambda x: sys.stderr.write(x+"\n")
+
 import inspect
 import os.path
 import ietf
@@ -33,6 +39,6 @@ def log(msg):
             where = " in " + func + "()"
     except IndexError:
         file, line, where = "/<UNKNOWN>", 0, ""
-    syslog.syslog("ietf%s(%d)%s: %s" % (file, line, where, msg))
+    write("ietf%s(%d)%s: %s" % (file, line, where, msg))
 
 log("IETFdb v%s started" % ietf.__version__)
