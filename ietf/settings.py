@@ -302,6 +302,7 @@ BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
 
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = '/www/ietf-datatracker/tz/ics/'
+CHANGELOG_PATH = '/www/ietf-datatracker/web/changelog'
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

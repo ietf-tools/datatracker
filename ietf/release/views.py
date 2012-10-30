@@ -3,12 +3,17 @@ import os
 
 from django.template import RequestContext
 from django.shortcuts import render_to_response
+from django.conf import settings
+from django.http import Http404
 
 import changelog
 
 def release(request, version=None):
     entries = {}
-    log_entries = changelog.parse("changelog")
+    if os.path.exists(settings.CHANGELOG_PATH):
+        log_entries = changelog.parse(settings.CHANGELOG_PATH)
+    else:
+        raise Http404()
     next = None
     for entry in log_entries:
         if next:
