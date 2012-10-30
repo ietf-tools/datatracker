@@ -1,3 +1,200 @@
+ietfdb (4.35) ietf; urgency=medium
+
+  This release provides a long list of fixes and minor enhancements, covering
+  more than 50 different items found through feedback from users.  Major
+  contributors were Robert Sparks, Adam Roach, and Henrik.  The changelog will
+  be available at http://datatracker.ietf.org/release/4.35 after deployment.
+  The commit log is at http://trac.tools.ietf.org/tools/ietfdb/log/trunk
+
+  Details:
+
+  * Added an 'email sent' success message after sending out a WG review 
+    announcement.  Todo: Add equivalent messages in all other situations 
+    where email is sent out, for consistency.
+
+  * Added various things which lets us use Django's messages framework to 
+    give feedback to users.  This includes adding the messages middleware in 
+    settings.py, adding a message display are at the top of the page base 
+    template, and adding style setting for message display.
+
+  * Tweaked test/mergedevbranch in a number of places in order to simplify 
+    handling (merging and testing) of multiple merges.
+
+  * Merged [4909] from rjsparks@nostrum.com: 
+    Reimplemented clear_ballot to close the existing ballot and create a 
+    new one. Changed the all_positions code to only return synthetic 
+    no-positions for current ADs when a ballot is actually open 
+
+  * Merged [4904] from adam@nostrum.com: 
+    Fixing conflict list; adding AD column. 
+
+  * Merged [4885] from rjsparks@nostrum.com: 
+    Refactored close_open_ballots, creating a way to close one abllot at a 
+    time. rewrote the clear ballot code to close each open ballot and open a 
+    new one 
+
+  * Modified the format of the changelog to confirm fully to the debian 
+    changelog format.
+
+  * Added a simple page to show release information parsed from a release's 
+    changelog file.
+
+  * Improved the handling of iCalendar timezone information -- instead of 
+    simplified VTIMEZONE information generated from a template, the VTIMEZONE 
+    information for a meeting's timezone is read from file (where it presumably 
+    has been generated from the Olson timezone database, for instance using 
+    vzic.
+
+  * Added an utility script to extract information about the outgoing 
+    confirmation request email related to a draft submission.
+
+  * Added a management command to generate bibxml files for drafts.  It's 
+    not fully cooked yet, as it needs to differentiate between documents which 
+    are currently drafts, and those that have been published as RFCs, but the 
+    basics are there.
+
+  * Add an name utility function to return a name's initials. Handle names 
+    with an uppercase surname to the left of the given name correctly.
+
+  * Added support for reverse-order (i.e., Japanese, Chinese, and other) 
+    names with uppercase family name in the draft submission author extraction.
+
+  * Added an 'agenda_note' field to meeting.models.Meeting, and added 
+    display of content (if any) in html and txt agendas.  
+
+  * Fixed a misleading error message given when disallowed character occurs 
+    in a draft filename.
+
+  * Merged [4879] from rjsparks@nostrum.com: 
+    Changed 'protocol writeup' to 'shepherd writeup' in several templates.
+    Fixes bug #885 
+
+  * Merged [4873] from rjsparks@nostrum.com: 
+    Includes the conflict-review document contents in the email sent with 
+    the results of the conflict review.
+    Fixes bug #883 
+
+  * Merged [4866] from rjsparks@nostrum.com: 
+    Show link to pending liaison statements to approve to the secretariat.
+    This fixes bug #878 
+
+  * Merged [4836] from housley@vigilsec.com: 
+    Add stream to conflict-review documents in the agenda.json object for 
+    the IESG telechat agenda 
+
+  * Merged [4825] from rjsparks@nostrum.com: 
+    Updated tests to deal with the mandatory state field
+
+  * Merged [4811] from rjsparks@nostrum.com: 
+    Cleaned up setting wg state, leaving events, and facilitated creating 
+    an initial charter for an existing unchartered group 
+
+  * Merged [4806] from rjsparks@nostrum.com: 
+    Better handling for BoFs, particularly those that won't create WGs 
+
+  * Updated wginfo/tests.py to work with the merged wginfo/edit.py which 
+    requires the wg state to be set.
+
+  * Fixed a problem with the spiffy ajax handling of email fields when test 
+    cases submit a textual list of email addresses instead of a python list.
+
+  * Use decorator.decorator consistenly in debug wrappers.
+
+  * Updated version of debug.py, which adds timing and profiling support 
+    functions.
+
+  * Added Michele Simionato's decorator module, for use in debug.py
+
+  * Merged [4805] from rjsparks@nostrum.com: 
+    When abandoning a chartering effort, only revert to approved charters 
+    if there's a chance one is there.
+    Fixes bug #868 
+
+  * Merged [4805] from rjsparks@nostrum.com: 
+    When abandoning a chartering effort, only revert to approved charters 
+    if there's a chance one is there.
+    Fixes bug #868 
+
+  * Removed debug statements
+
+  * Added the creation of a WG state change event for WG state changes.
+
+  * Tweak the GroupHistoryAdmin list_display.
+
+  * Fixed missing import of Role.
+
+  * Added a docstring note about the convention for when 
+    save_*_in_history() shoudl be called.
+
+  * Merged [4842] from rjsparks@nostrum.com: 
+    Warn when putting a charter in an unusual state onto a telechat agenda 
+
+  * Merged [4841] from rjsparks@nostrum.com: 
+    Allows the IESG Note field to be edited even when empty. 
+
+  * Merged [4840] from rjsparks@nostrum.com: 
+    Added more information about RFC5742 conflict review documents to the 
+    /agenda, moderator, and scribe pages.
+    Fixes bug #874 
+
+  * Merged [4858] from rcross@amsl.com: 
+    The IPR notification email was still referring to the old CGI admin 
+    script; fixed. 
+
+  * Merged [4835] from rjsparks@nostrum.com: 
+    Improve the robustness of get_wg_section 
+
+  * Merged [4833] from rjsparks@nostrum.com: 
+    Send email to IANA and the IESG when entering IESG evaluation of an 
+    RFC5742 conflict review 
+
+  * Added a script to create NewRevisionDocEvent entries for charter files.
+
+  * Fixed an instance of old use of first_name, last_name in submission 
+    tool code.
+
+  * Fix up scribe template to suite John, undoing a number of fixes from 
+    the sprint.
+
+  * Add shepherd field to all_id2.txt
+
+  * Reverted a number of changes to the scribe template which made life 
+    more difficult for the scribe.
+
+  * Fixed a problem with blocking comments on charter documents pointed out 
+    by rjsparks@nostrum.com.
+
+  * Fixed another typo.
+
+  * Show ballot positions also for documents without an active ballot.
+
+  * Fix typo in import.
+
+  * Fixed a password reset url which didn't work due to a wrong keyword 
+    name in the urlpattern.
+
+  * Don't try to add a ballot's AD email addresses to a new version 
+    notification email if there's no ballot.  Also did some linguistic fixes, 
+    and got rid of a wildcard import.
+
+  * Make the mergedevbranch script more flexible in accepting different 
+    partial repository paths on the command line.
+
+  * Make .ballot_open() available on DocumentInfo instead of on Document, 
+    too.
+
+  * Fixed a crash for the case where we're looking at a historic charter 
+    page and there's no active ballot for the histoic charter.
+
+  * Make .active_ballot() available on DocumentInfo instead of on Document, 
+    to make charter history snapshots work.
+
+  * Merged [4773] from olau@iola.dk:
+    Encode uploaded charter text with UTF-8 to avoid crashing on Unicode 
+    content 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Oct 2012 15:16:22 +0100
+
 ietfdb (4.34) ietf; urgency=medium
 
   * Merged in [4772] from rjsparks@nostrum.com, a big chunk which in itself
@@ -175,6 +372,8 @@ ietfdb (4.32) ietf; urgency=medium
   Deployment notes:
     * new setting: CONFLICT_REVIEW_PATH. The associated directory will need to be created
 
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2012 18:29:34 +0200
+
 ietfdb (4.31) ietf; urgency=medium
 
   This is primarily a bugfix-release, catching a lot of issues related to the
@@ -266,7 +465,7 @@ ietfdb (4.31) ietf; urgency=medium
     missing ballot id in the templates' url lookup.  Fix this by providing the 
     ballot id.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2012 18:29:34 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jul 2012 01:51:26 +0200
 
 ietfdb (4.30) ietf; urgency=medium
 
