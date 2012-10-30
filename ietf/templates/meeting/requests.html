@@ -38,21 +38,25 @@ th { text-align: right; vertical-align: text-top; }
   <th class="h">Duration</th>
   <th class="h">Size</th>
   <th class="h">Requested By</th>
+  <th class="h">Area Director</th>
   <th class="h">Conflicts</th>
   <th class="h">Special Requests</th>
 {% endifchanged %}
 {%ifchanged%}
-<tr><td class="status" colspan="6"><!-- {{session.group.parent.id}} -->{{session.status}}</td></tr>
+<tr><td class="status" colspan="7"><!-- {{session.group.parent.id}} -->{{session.status}}</td></tr>
 {%endifchanged%}
 <tr class="{% if forloop.counter|divisibleby:2 %}even{% else %}odd{% endif %}">
   <th valign="top">{{session.group.acronym|upper}}</th>
   <td valign="top" align="center">{% if not session.requested_duration %}<i>{{session.status}}</i>{%else%} {{session.requested_duration|stringformat:"s"|slice:"0:4"}} {% endif %}</td>
   <td valign="top" align="center">{{session.attendees}}</td>
   <td valign="top">
-    <a href="mailto:{{session.requested_by.email_address}}">{{session.requested_by}}</a>
+    <a href="mailto:{{session.requested_by.chair_email}}">{{session.requested_by}}</a>
   </td>
-  <td width="35%" valign="top">{%if session.requested_duration%}<span>{% for constraint in session.constraints %}{%ifchanged%}</span><span class="{{constraint.name.slug}}">{%endifchanged%} {{constraint.source.acronym}}{%ifnotequal constraint.source.parent.id constraint.target.parent.id%} ({{constraint.source.parent.acronym}}){%endifnotequal%}{%if not forloop.last %},{%endif%} {% endfor %}</span>{%endif%}</td>
-  <td width="35%" valign="top">{% if session.comments %}<i><font color="#800000">{{session.comments|linebreaksbr}}</font></i>{% endif %}</td>
+  <td valign="top">
+    {% if session.group.ad %}<a href="mailto:{{session.group.ad.ad_email}}">{{session.group.ad}}</a> {%endif%}
+  </td>
+  <td width="30%" valign="top">{%if session.requested_duration%}<span>{% for constraint in session.constraints %}{%ifchanged%}</span><span class="{{constraint.name.slug}}">{%endifchanged%} {{constraint.target.acronym}}{%ifnotequal constraint.target.parent.id constraint.source.parent.id%} ({{constraint.target.parent.acronym}}){%endifnotequal%}{%if not forloop.last %},{%endif%} {% endfor %}</span>{%endif%}</td>
+  <td width="30%" valign="top">{% if session.comments %}<i><font color="#800000">{{session.comments|linebreaksbr}}</font></i>{% endif %}</td>
 </tr>
 {% endif %}
 {% endfor %}
