@@ -519,14 +519,6 @@ class BallotWriteupForm(forms.ModelForm):
     def clean_ballot_writeup(self):
         return self.cleaned_data["ballot_writeup"].replace("\r", "")
         
-class ApprovalTextForm(forms.ModelForm):
-    class Meta:
-        model = BallotInfo
-        fields = ["approval_text"]
-
-    def clean_approval_text(self):
-        return self.cleaned_data["approval_text"].replace("\r", "")
-
 @group_required('Area_Director','Secretariat')
 def lastcalltext(request, name):
     """Editing of the last call text"""
@@ -848,64 +840,15 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     ballot_writeupnotes = ballot_writeupnotesREDESIGN
 
 
-@group_required('Area_Director','Secretariat')
-def ballot_approvaltext(request, name):
-    """Editing of approval text"""
-    doc = get_object_or_404(InternetDraft, filename=name)
-    if not doc.idinternal:
-        raise Http404()
 
-    login = IESGLogin.objects.get(login_name=request.user.username)
-
-    try:
-        ballot = doc.idinternal.ballot
-    except BallotInfo.DoesNotExist:
-        ballot = generate_ballot(request, doc)
-
-    approval_text_form = ApprovalTextForm(instance=ballot)
-
-    if request.method == 'POST':
-
-        if "save_approval_text" in request.POST:
-            approval_text_form = ApprovalTextForm(request.POST, instance=ballot)            
-            if approval_text_form.is_valid():
-                ballot.approval_text = approval_text_form.cleaned_data["approval_text"]
-		add_document_comment(request, doc, "Approval announcement text changed")
-                ballot.save()
-                
-        if "regenerate_approval_text" in request.POST:
-            ballot.approval_text = generate_approval_mail(request, doc)
-	    add_document_comment(request, doc, "Approval announcement text regenerated")
-            ballot.save()
-
-            # make sure form has the updated text
-            approval_text_form = ApprovalTextForm(instance=ballot)
-            
-        doc.idinternal.event_date = date.today()
-        doc.idinternal.save()
-
-    can_announce = doc.idinternal.cur_state_id > 19
-    docs_with_invalid_status = [d.document().file_tag() for d in doc.idinternal.ballot_set() if "None" in d.document().intended_status.intended_status or "Request" in d.document().intended_status.intended_status]
-    need_intended_status = ", ".join(docs_with_invalid_status)
-
-    return render_to_response('idrfc/ballot_approvaltext.html',
-                              dict(doc=doc,
-                                   back_url=doc.idinternal.get_absolute_url(),
-                                   ballot=ballot,
-                                   approval_text_form=approval_text_form,
-                                   can_announce=can_announce,
-                                   need_intended_status=need_intended_status,
-                                   ),
-                              context_instance=RequestContext(request))
-
-class ApprovalTextFormREDESIGN(forms.Form):
+class ApprovalTextForm(forms.Form):
     approval_text = forms.CharField(widget=forms.Textarea, required=True)
 
     def clean_approval_text(self):
         return self.cleaned_data["approval_text"].replace("\r", "")
 
 @group_required('Area_Director','Secretariat')
-def ballot_approvaltextREDESIGN(request, name):
+def ballot_approvaltext(request, name):
     """Editing of approval text"""
     doc = get_object_or_404(Document, docalias__name=name)
     if not doc.get_state("draft-iesg"):
@@ -936,7 +879,7 @@ def ballot_approvaltextREDESIGN(request, name):
             e = generate_approval_mail(request, doc)
 
             # make sure form has the updated text
-            form = ApprovalTextForm(initial=dict(approval_text=existing.text))
+            form = ApprovalTextForm(initial=dict(approval_text=e.text))
 
     can_announce = doc.get_state("draft-iesg").order > 19
     need_intended_status = ""
@@ -952,9 +895,6 @@ def ballot_approvaltextREDESIGN(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    ApprovalTextForm = ApprovalTextFormREDESIGN
-    ballot_approvaltext = ballot_approvaltextREDESIGN
 
 @group_required('Secretariat')
 def approve_ballot(request, name):
