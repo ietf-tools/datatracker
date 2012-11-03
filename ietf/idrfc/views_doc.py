@@ -209,7 +209,7 @@ def document_history(request, name):
     diff_revisions = []
     seen = set()
 
-    diffable = name.startswith("draft") or name.startswith("charter")
+    diffable = name.startswith("draft") or name.startswith("charter") or name.startswith("conflict-review")
 
     if diffable:
         for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents).select_related('doc').order_by("-time", "-id"):
@@ -220,6 +220,9 @@ def document_history(request, name):
                 if name.startswith("charter"):
                     h = find_history_active_at(e.doc, e.time)
                     url = settings.CHARTER_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
+                elif name.startswith("conflict-review"):
+                    h = find_history_active_at(e.doc, e.time)
+                    url = settings.CONFLICT_REVIEW_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
                 elif name.startswith("draft"):
                     # rfcdiff tool has special support for IDs
                     url = e.doc.name + "-" + e.rev
