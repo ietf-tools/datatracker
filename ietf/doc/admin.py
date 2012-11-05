@@ -142,6 +142,8 @@ class DocEventAdmin(admin.ModelAdmin):
 admin.site.register(DocEvent, DocEventAdmin)
 
 admin.site.register(NewRevisionDocEvent, DocEventAdmin)
+admin.site.register(StateDocEvent, DocEventAdmin)
+admin.site.register(ConsensusDocEvent, DocEventAdmin)
 admin.site.register(BallotDocEvent, DocEventAdmin)
 admin.site.register(WriteupDocEvent, DocEventAdmin)
 admin.site.register(LastCallDocEvent, DocEventAdmin)
