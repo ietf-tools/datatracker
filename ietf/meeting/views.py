@@ -422,18 +422,10 @@ def week_view(request, num=None):
             {"timeslots":timeslots,"render_types":["Session","Other","Break","Plenary"]}, context_instance=RequestContext(request))
 
 def ical_agenda(request, num=None):
-    # The timezone situation here remains tragic, but I've burned
-    # hours trying to figure out how to get the information I need
-    # in python. I can do this trivially in perl with its Ical module,
-    # but the icalendar module in python seems staggeringly less
-    # capable. There might be a path to success here, but I'm not
-    # completely convinced. So I'm going to spend some time
-    # working on more urgent matters for now. -Adam
-
     meeting = get_meeting(num)
 
     q = request.META.get('QUERY_STRING','') or ""
-    filter = q.lower().split(',');
+    filter = q.lower().replace('%2c',',').split(',');
     include = set(filter)
     include_types = ["Plenary","Other"]
     exclude = []
@@ -455,13 +447,16 @@ def ical_agenda(request, num=None):
         #Q(session__group__parent__acronym__in = exclude))
 
     if meeting.time_zone:
-        tzfn = os.path.join(settings.TZDATA_ICS_PATH, meeting.time_zone + ".ics")
-        tzf = open(tzfn)
-        icstext = tzf.read()
-        debug.show('icstext[:128]')
-        vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
-        debug.show('vtimezone[:128]')
-        tzf.close()
+        try:
+            tzfn = os.path.join(settings.TZDATA_ICS_PATH, meeting.time_zone + ".ics")
+            tzf = open(tzfn)
+            icstext = tzf.read()
+            debug.show('icstext[:128]')
+            vtimezone = re.search("(?sm)(\nBEGIN:VTIMEZONE.*\nEND:VTIMEZONE\n)", icstext).group(1).strip()
+            debug.show('vtimezone[:128]')
+            tzf.close()
+        except IOError:
+            vtimezone = None
     else:
         vtimezone = None
 
