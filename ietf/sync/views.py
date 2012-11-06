@@ -1,6 +1,6 @@
 import subprocess, os
 
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.loader import render_to_string
@@ -98,5 +98,35 @@ def notify(request, org, notification):
                               dict(org=known_orgs[org],
                                    notification=notification,
                                    help_text=known_notifications[notification],
+                                   ),
+                              context_instance=RequestContext(request))
+
+def rfceditor_undo(request):
+    """Undo a DocEvent."""
+
+    if not request.user.is_authenticated() or not has_role(request.user, ("Secretariat", "RFC Editor")):
+        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+
+    events = StateDocEvent.objects.filter(state_type="draft-rfceditor",
+                                          time__gte=datetime.datetime.now() - datetime.timedelta(weeks=1)
+                                          ).order_by("-time", "-id")
+
+    if request.method == "POST":
+        try:
+            eid = int(request.POST.get("event", ""))
+        except ValueError:
+            return HttpResponse("Could not parse event id")
+
+        try:
+            e = events.get(id=eid)
+        except StateDocEvent.DoesNotExist:
+            return HttpResponse("Event does not exist")
+
+        e.delete()
+
+        return HttpResponseRedirect(urlreverse("ietf.sync.views.rfceditor_undo"))
+
+    return render_to_response('sync/rfceditor_undo.html',
+                              dict(events=events,
                                    ),
                               context_instance=RequestContext(request))
