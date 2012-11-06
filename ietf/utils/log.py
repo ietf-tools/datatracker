@@ -4,8 +4,10 @@ try:
     import syslog
     write = syslog.syslog
 except ImportError:                     # import syslog will fail on Windows boxes
-    import sys
-    write = lambda x: sys.stderr.write(x+"\n")
+    pass
+    
+import sys
+write = lambda x: sys.stderr.write(x+"\n")
 
 import inspect
 import os.path

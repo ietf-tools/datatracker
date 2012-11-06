@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=0.21
+version=0.22
 program=${0##*/}
 progdir=${0%/*}
 if [ "$progdir" = "$program" ]; then progdir="."; fi
@@ -28,7 +28,7 @@ function version() {
 #[ $1 -gt 70 ]  || die "Expected the ietf number as argument on the command line, but found '$1'"
 
 #if [ "$1" ]; then arg=$1; else arg=$(svn info http://svn.tools.ietf.org/svn/tools/ietfdb/trunk/ | egrep "^Last Changed Rev" | awk '{print $4}'); fi
-if [ "$1" ]; then arg=$1; else arg=$(svn ls http://svn.tools.ietf.org/svn/tools/ietfdb/tags/ | egrep '^[0-9]' | tail -n 1 | sed -r 's/^(.*)\/$/v\1/' ); fi
+if [ "$1" ]; then arg=$1; else arg=$(svn ls http://svn.tools.ietf.org/svn/tools/ietfdb/tags/ | grep '^[1-9]' | tail -n 1 | sed -r 's/^(.*)\/$/v\1/' ); fi
 
 if [ "${arg:0:1}" = "v" ]; then
     source="tags/${arg:1}"
@@ -52,16 +52,18 @@ function mksvndir() {
 }
 
 num=$( < /www/tools.ietf.org/meta/current-ietf-number.txt)
-trac-admin /www/tools.ietf.org/tools/ietfdb wiki export IETF${num}SprintSignUp	\
+for n in $(seq $((num-5)) $num); do
+    trac-admin /www/tools.ietf.org/tools/ietfdb wiki export IETF${n}SprintSignUp	\
 	| egrep "^\|\|" | tail -n +2 | python -c '
 import sys, re
 for line in sys.stdin:
     blank, name, email, rest = line.strip().split("||", 3)
     login, dummy  = re.split("[@.]", email, 1)
     print "\t".join((login.strip().lower(), email.strip().lower(), name.strip())) ' \
-	| $progdir/update $progdir/sprint$num.txt
+	| update $progdir/sprint$n.txt
+done
 
-cat $(ls $progdir/sprint*.txt | tail -n 4) | sed 's/[ \t]*$//' | sort | uniq | while read login email name; do 
+cat $(ls $progdir/sprint*.txt | tail -n 2) | sed 's/[ \t]*$//' | sort | uniq | while read login email name; do 
     echo ""
     echo "$login ($name <$email>):"
     mksvndir $login
@@ -75,14 +77,14 @@ cat $(ls $progdir/sprint*.txt | tail -n 4) | sed 's/[ \t]*$//' | sort | uniq | w
 
 	    A new SVN branch has been set up for you for IETF datatracker coding, at
 	      http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$login/$target
-	    ${rev:+This branch is based on $rev.  }You can check it out by doing
+	      ${rev:+This branch is based on $rev.  }You can check it out by doing
 	      svn co http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$login/$target
 
 	    (More instructions about setup is available at
 	      http://trac.tools.ietf.org/tools/ietfdb/wiki/SprintCoderSetup)
 
 
-	    Best,
+	    Best regards,
 
 	           Henrik (via the $program script)
 

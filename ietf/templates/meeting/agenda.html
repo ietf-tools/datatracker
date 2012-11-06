@@ -68,6 +68,8 @@ img.hidden { display: none; }
 .bgblack, .bgblack a { background-color: black; color: white; }
 .groupagenda { display:none; }
 
+.timecolumn { white-space:nowrap; }
+
 {% endblock morecss %}
 
 {% block pagehead %}
@@ -303,7 +305,7 @@ You can customize the agenda below to show only selected working group sessions.
    {% endifchanged %}
    {% ifchanged %}
       <tr class="time-title">
-         <td colspan="1">
+         <td colspan="1" class="timecolumn">
            {{slot.time|date:"Hi"}}-{{slot.end_time|date:"Hi"}}
          </td>
          <td colspan="5">

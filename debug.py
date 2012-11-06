@@ -5,9 +5,9 @@ try:
     import syslog
     write = syslog.syslog
 except ImportError:                     # import syslog will fail on Windows boxes
-    import sys
-    write = lambda x: sys.stderr.write(x+"\n")
-except ImportError:
+    pass
+import sys
+write = lambda x: sys.stderr.write(x+"\n")
     
 from pprint import pformat
 import cProfile
@@ -116,7 +116,7 @@ def log(name):
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        syslog.syslog("%s%s: %s" % (indent, name, value))
+        write("%s%s: %s" % (indent, name, value))
 
 def pprint(name):
     if debug:
