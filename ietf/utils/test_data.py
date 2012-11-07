@@ -125,7 +125,7 @@ def make_test_data():
         )
     rfc_editor = Group.objects.create(
         name="RFC Editor",
-        acronym="rfc-edit",
+        acronym="rfceditor",
         state_id="active",
         type_id="ietf",
         parent=None,
