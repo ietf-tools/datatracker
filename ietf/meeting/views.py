@@ -426,7 +426,7 @@ def ical_agenda(request, num=None):
     meeting = get_meeting(num)
 
     q = request.META.get('QUERY_STRING','') or ""
-    filter = q.lower().replace('%2c',',').split(',');
+    filter = urllib.unquote(q).lower().split(',');
     include = set(filter)
     include_types = set(["Plenary","Other"])
     exclude = []
