@@ -51,7 +51,7 @@ class StreamDraftForm(forms.Form):
 
 
 class NoWorkflowStateForm(StreamDraftForm):
-    comment = forms.CharField(widget=forms.Textarea)
+    comment = forms.CharField(widget=forms.Textarea, required=False)
     weeks = forms.IntegerField(required=False)
     wg = forms.ChoiceField(required=False)
 
@@ -150,7 +150,7 @@ class NoWorkflowStateForm(StreamDraftForm):
 
 class DraftTagsStateForm(StreamDraftForm):
 
-    comment = forms.CharField(widget=forms.Textarea)
+    comment = forms.CharField(widget=forms.Textarea, required=False)
     new_state = forms.ChoiceField()
     weeks = forms.IntegerField(required=False)
     tags = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple, required=False)

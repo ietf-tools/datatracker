@@ -7,8 +7,8 @@ shane	shane@time-travellers.org	Shane Kerr
 kivinen	kivinen@iki.fi	Tero Kivinen
 adam	adam@nostrum.com	Adam Roach
 peter	peter.musgrave@magorcorp.com	Peter Musgrave
-julian	julian.reschke@greenbytes.de	Julian Reschke
+julian	julian.reschke@gmx.de	Julian Reschke
 warren	warren@kumari.net	Warren Kumari
 jelte	jelte@isc.org	Jelte Jansen
 bmheight	bmheight@gmail.com	Brandon Height
-lars	lars.eggert@gmail.com	Lars Eggert
+lars	lars.eggert@nokia.com	Lars Eggert
