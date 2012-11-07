@@ -1,4 +1,4 @@
-import subprocess, os
+import subprocess, os, json
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError, HttpResponseRedirect
 from django.shortcuts import render_to_response
@@ -13,6 +13,7 @@ from ietf.ietfauth.decorators import role_required, has_role
 from ietf.doc.models import *
 from ietf.sync import iana, rfceditor
 from ietf.sync.discrepancies import find_discrepancies
+from ietf.utils.serialize import object_as_shallow_dict
 
 SYNC_BIN_PATH = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../bin"))
 
@@ -101,12 +102,9 @@ def notify(request, org, notification):
                                    ),
                               context_instance=RequestContext(request))
 
+@role_required('Secretariat', 'RFC Editor')
 def rfceditor_undo(request):
     """Undo a DocEvent."""
-
-    if not request.user.is_authenticated() or not has_role(request.user, ("Secretariat", "RFC Editor")):
-        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
-
     events = StateDocEvent.objects.filter(state_type="draft-rfceditor",
                                           time__gte=datetime.datetime.now() - datetime.timedelta(weeks=1)
                                           ).order_by("-time", "-id")
@@ -121,6 +119,12 @@ def rfceditor_undo(request):
             e = events.get(id=eid)
         except StateDocEvent.DoesNotExist:
             return HttpResponse("Event does not exist")
+
+        dump = DeletedEvent()
+        dump.content_type = ContentType.objects.get_for_model(type(e))
+        dump.json = json.dumps(object_as_shallow_dict(e), indent=2)
+        dump.by = request.user.person
+        dump.save()
 
         e.delete()
 
