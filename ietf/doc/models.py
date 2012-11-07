@@ -27,7 +27,7 @@ class State(models.Model):
     desc = models.TextField(blank=True)
     order = models.IntegerField(default=0)
 
-    next_states = models.ManyToManyField('State', related_name="previous_states")
+    next_states = models.ManyToManyField('State', related_name="previous_states", blank=True)
 
     def __unicode__(self):
         return self.name
