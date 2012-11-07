@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr><td>Last updated:</td><td> {{ doc.publication_date|default:"(data missing)" }}</td></tr>
 
 {% with doc.replaces as r %}{% if r %}<tr><td>Replaces:</td><td> {% filter urlize_ietf_docs %}{{ r|join:", "}}{% endfilter %}</td></tr>{% endif %}{% endwith %}
+{% with doc.replaced_by as r %}{% if r %}<tr><td>Replaced by:</td><td> {% filter urlize_ietf_docs %}{{ r|join:", "}}{% endfilter %}</td></tr>{% endif %}{% endwith %}
 
 {% with info.conflict_reviews as r %}{% if r %}<tr><td>IETF Conflict Review:</td><td> {% filter urlize_ietf_docs %}{{ r|join:","}}{% endfilter %}</td></tr>{% endif %} {% endwith %}
 

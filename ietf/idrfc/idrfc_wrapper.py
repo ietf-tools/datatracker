@@ -223,12 +223,6 @@ class IdWrapper:
     def friendly_state(self):
         if self.draft_status == "RFC":
             return "<a href=\"%s\">RFC %d</a>" % (reverse('doc_view', args=['rfc%d' % self.rfc_number]), self.rfc_number)
-        elif self.draft_status == "Replaced":
-            rs = self.replaced_by()
-            if rs:
-                return "Replaced by <a href=\"%s\">%s</a>" % (reverse('doc_view', args=[rs[0]]),rs[0], ) 
-            else:
-                return "Replaced"
         elif self.draft_status == "Active":
             if self.in_ietf_process():
                 if self.ietf_process.main_state == "Dead":
