@@ -58,7 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr><td>Intended RFC status:</td><td>
 {% with user|in_group:"Area_Director,Secretariat" as add_link %}
 {% if add_link %}<a class="editlink" href="{% url doc_change_intended_status name=doc.draft_name %}">{% endif %}
-{{ doc.underlying_document.intended_std_level|default:"-"  }}
+{{ doc.underlying_document.intended_std_level|default:"(None)"  }}
 {% if add_link %}</a>{% endif %}
 {% endwith %}
 </td></tr> 
@@ -142,7 +142,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <tr><td>Responsible AD:</td><td>
 {% with user|in_group:"Area_Director,Secretariat" as add_link %}
 {% if add_link %}<a class="editlink" href="{% url doc_change_ad name=doc.draft_name %}">{% endif %}
-{% if doc.in_ietf_process %}{{ doc.ietf_process.ad_name|default:"-"|escape }}{%else%}-{%endif%}
+{% if doc.in_ietf_process %}{{ doc.ietf_process.ad_name|default:"(None)"|escape }}{%else%}(None){%endif%}
 {% if add_link %}</a>{% endif %}
 {% endwith %}
 </td></tr>

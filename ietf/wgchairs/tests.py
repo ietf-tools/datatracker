@@ -287,13 +287,13 @@ class ManageWriteupTestCase(django.test.TestCase):
                                   confirm="1",
                                   followup="1",
                                   comment="Starting on write up",
-                                  modify_tag="Modify"))
+                                  complete_tag="Modify"))
         self.assertEquals(r.status_code, 200)
         e = draft.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
         self.assertTrue(e)
         self.assertEquals(e.text, "New writeup")
         self.assertEquals(e.by.user.username, "secretary")
-        self.assertTrue(draft.tags.filter(slug="sheph-u"))
+        self.assertFalse(draft.tags.filter(slug="sheph-u"))
 
 
 if not settings.USE_DB_REDESIGN_PROXY_CLASSES:

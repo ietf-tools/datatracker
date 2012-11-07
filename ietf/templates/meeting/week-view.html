@@ -9,7 +9,7 @@ var items = new Array();
 {% autoescape off %}
 
 {% for slot in timeslots %} {% if slot.type.name in render_types %}
-items.push({day:{{slot.time|date:"w"}}, time:"{{slot.time|date:"Hi"}}-{{slot.end_time|date:"Hi"}}", duration:{{slot.duration.seconds}}, time_id:"{{slot.time|date:"mdHi"}}", type:"{{slot.type}}", {% if slot.session.name %}name:"{{slot.session.name}}",{% else %}{% if slot.type.name == "Break" %}name:"{{slot.name}}", area:"break", wg:"break",{% else %}name:"{{slot.session.group.name}}{%if slot.session.group.state.name = "BOF"%} BOF{%endif%}",wg:"{{slot.session.group.acronym}}",area:"{{slot.session.group.parent.acronym}}",{% endif %}{% endif %} {% if slot.show_location %}room:"{{slot.get_location}}",{% endif %} dayname:"{{ slot.time|date:"l"|upper }}, {{ slot.time|date:"F j, Y" }}"{% if slot.session.agenda %}, agenda:"http://www.ietf.org{{slot.session.agenda.get_absolute_url}}"{% endif %} });{% endif %}{% endfor %}
+items.push({key:"{{slot.pk}}",day:{{slot.time|date:"w"}}, time:"{{slot.time|date:"Hi"}}-{{slot.end_time|date:"Hi"}}", duration:{{slot.duration.seconds}}, time_id:"{{slot.time|date:"mdHi"}}", type:"{{slot.type}}", {% if slot.session.name %}name:"{{slot.session.name}}",{% if slot.session.group.acronym %} wg:"{{slot.session.group.acronym}}",{%endif%}{% else %}{% if slot.type.name == "Break" %}name:"{{slot.name}}", area:"break", wg:"break",{% else %}name:"{{slot.session.group.name}}{%if slot.session.group.state.name = "BOF"%} BOF{%endif%}",wg:"{{slot.session.group.acronym}}",state:"{{slot.session.group.state}}",area:"{{slot.session.group.parent.acronym}}",{% endif %}{% endif %} {% if slot.show_location %}room:"{{slot.get_location}}",{% endif %} dayname:"{{ slot.time|date:"l"|upper }}, {{ slot.time|date:"F j, Y" }}"{% if slot.session.agenda %}, agenda:"http://www.ietf.org{{slot.session.agenda.get_absolute_url}}"{% endif %} });{% endif %}{% endfor %}
 {% endautoescape %}
 
 /* Saturday events need to be moved to the day -1 */
@@ -63,7 +63,39 @@ var lastwidth;
 var padding = 2;
 var border = 1;
 
+var include = Array();
+
 setInterval("animate()",50);
+
+function is_visible(item)
+{
+   //   "-wgname" will remove a working group from the output.
+   //   "~Type" will add that type to the output. 
+   //   "-~Type" will remove that type from the output
+   //   "@bof" will include all BOFs
+   // Current types are:
+   //   Session, Other, Break, Plenary
+
+  if ("wg" in item)
+  {
+    if (include[(item.wg).toLowerCase()]) { return true; }
+    if (include["-"+(item.wg).toLowerCase()]) { return false; }
+  }
+  if ("state" in item)
+  {
+    if (include["@"+(item.state).toLowerCase()]) { return true; }
+  }
+  if (include["~"+(item.type).toLowerCase()]) { return true; }
+  if (include["-~"+(item.type).toLowerCase()]) { return false; }
+  if ("area" in item)
+  {
+    if (include[(item.area).toLowerCase()]) { return true; }
+  }
+  if (item.type === "Plenary") { return true; }
+  if (item.type === "Other") { return true; }
+ 
+  return false;
+}
 
 function draw_calendar()
 {
@@ -88,7 +120,7 @@ function draw_calendar()
 
   var day_start = 0;
   var day_end = 0;
-  var include = Array();
+  include = [];
 
   var frag = window.location.hash.replace("#",'').split(',');
   for (i = 0; i < frag.length; i++)
@@ -99,8 +131,11 @@ function draw_calendar()
   /* Find our boundaries */
   for (i = 0; i < items.length; i++)
   {
+    if (is_visible(items[i]))
+  /*
     if (!("wg" in items[i]) || (include[(items[i].wg).toLowerCase()] 
         || include[(items[i].area).toLowerCase()]))
+  */
     {
       var start_time = parseInt(items[i].time.substr(0,2),10) * 60 +
                        parseInt(items[i].time.substr(2,2),10);
@@ -207,8 +242,11 @@ function draw_calendar()
 
   for (i = 0; i < items.length; i++)
   {
-    if (!("wg" in items[i])|| (include[(items[i].wg).toLowerCase()] 
+    if (is_visible(items[i]))
+  /*
+    if (!("wg" in items[i]) || (include[(items[i].wg).toLowerCase()] 
         || include[(items[i].area).toLowerCase()]))
+  */
     {
       var start_time = parseInt(items[i].time.substr(0,2),10) * 60 +
                        parseInt(items[i].time.substr(2,2),10);

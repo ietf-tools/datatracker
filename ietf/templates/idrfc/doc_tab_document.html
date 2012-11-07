@@ -58,7 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% else %}
 {% if stream_info.stream.name == 'ISE' or stream_info.stream.name == 'IRTF' %}
 {% if user|in_group:"Secretariat" and not info.conflict_reviews %}
-<span id="doc_conflict_review_button" class="yui-button yui-link-button" style="margin-left:2px;">{% url conflict_review_start name=doc.draft_name as start_review_url %}{% if start_review_url %}<span class="first-child"><a href="{{start_review_url}}">Begin IETF Conflict Review</a></span>{% endif %}</span>
+<span id="doc_conflict_review_button" class="yui-button yui-link-button" style="margin-left:2px;">{% url conflict_review_start name=doc.draft_name as start_review_url %}{% if start_review_url %}<span class="first-child"><a href="{{start_review_url}}">Begin IETF Conflict Review {% if not doc.underlying_document.intended_std_level %}(note that intended status is not set){% endif %}</a></span>{% endif %}</span>
 {% endif %}
 {% else %}
  {% if stream_info.stream.name == 'IETF'%}{%if not doc.in_ietf_process %}

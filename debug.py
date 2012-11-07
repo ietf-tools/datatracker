@@ -5,11 +5,13 @@ try:
     import syslog
     write = syslog.syslog
 except ImportError:                     # import syslog will fail on Windows boxes
-    pass
-import sys
-write = lambda x: sys.stderr.write(x+"\n")
-    
-from pprint import pformat
+    import sys
+    write = lambda x: sys.stderr.write(x+"\n")
+try:
+    from pprint import pformat
+except ImportError:
+    pformat = lambda x: x
+
 import cProfile
 try:
     from django.conf import settings

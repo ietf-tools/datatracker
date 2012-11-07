@@ -21,6 +21,7 @@ from django.middleware.gzip import GZipMiddleware
 from django.db.models import Max
 
 import debug
+import urllib
 
 from ietf.idtracker.models import InternetDraft
 from ietf.utils.pipe import pipe
@@ -427,22 +428,33 @@ def ical_agenda(request, num=None):
     q = request.META.get('QUERY_STRING','') or ""
     filter = q.lower().replace('%2c',',').split(',');
     include = set(filter)
-    include_types = ["Plenary","Other"]
+    include_types = set(["Plenary","Other"])
     exclude = []
 
     # Process the special flags.
+    #   "-wgname" will remove a working group from the output.
+    #   "~Type" will add that type to the output. 
+    #   "-~Type" will remove that type from the output
+    # Current types are:
+    #   Session, Other (default on), Break, Plenary (default on)
+    # Non-Working Group "wg names" include:
+    #   edu, ietf, tools, iesg, iab
+
     for item in include:
         if item:
-            if item[0] == '-':
+            if item[0] == '-' and item[1] == '~':
+                include_types -= set([item[2:3].upper()+item[3:]])
+            elif item[0] == '-':
                 exclude.append(item[1:])
-            if item[0] == '~':
-                include_types.append(item[1:2].upper()+item[2:])
+            elif item[0] == '~':
+                include_types |= set([item[1:2].upper()+item[2:]])
 
     timeslots = TimeSlot.objects.filter(Q(meeting__id = meeting.id),
         Q(type__name__in = include_types) |
         Q(session__group__acronym__in = filter) |
         Q(session__group__parent__acronym__in = filter)
-        )#.exclude(Q(session__group__isnull = False),
+        ).exclude(Q(session__group__acronym__in = exclude))
+        #.exclude(Q(session__group__isnull = False),
         #Q(session__group__acronym__in = exclude) | 
         #Q(session__group__parent__acronym__in = exclude))
 
