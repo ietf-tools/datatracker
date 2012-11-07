@@ -7,6 +7,7 @@
 
 <p>
 <a href="{% url manage_shepherds wg.group_acronym.acronym %}">Return to shepherd list</a>
+<a href="{{ doc.get_absolute_url }}">Return to {{ doc }}</a>
 </p>
 
 <h1>Change shepherd for {{ doc }}</h1>
