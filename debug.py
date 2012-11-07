@@ -3,15 +3,17 @@ import time as timeutils
 import inspect
 try:
     import syslog
-    write = syslog.syslog
+    logger = syslog.syslog
 except ImportError:                     # import syslog will fail on Windows boxes
-    import sys
-    write = lambda x: sys.stderr.write(x+"\n")
+    import logging
+    logging.basicConfig(filename='tracker.log',level=logging.INFO)
+    logger = logging.info
+
 try:
     from pprint import pformat
 except ImportError:
     pformat = lambda x: x
-    
+
 import cProfile
 try:
     from django.conf import settings
@@ -118,7 +120,7 @@ def log(name):
         frame = inspect.stack()[1][0]
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
-        write("%s%s: %s" % (indent, name, value))
+        logger("%s%s: %s" % (indent, name, value))
 
 def pprint(name):
     if debug:

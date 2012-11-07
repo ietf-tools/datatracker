@@ -2,8 +2,12 @@
 
 try:
     import syslog
-    write = syslog.syslog
+    logger = syslog.syslog
 except ImportError:                     # import syslog will fail on Windows boxes
+    import logging
+    logging.basicConfig(filename='tracker.log',level=logging.INFO)
+    logger = logging.info
+
     pass
     
 import inspect
@@ -38,6 +42,6 @@ def log(msg):
             where = " in " + func + "()"
     except IndexError:
         file, line, where = "/<UNKNOWN>", 0, ""
-    write("ietf%s(%d)%s: %s" % (file, line, where, msg))
+    logger("ietf%s(%d)%s: %s" % (file, line, where, msg))
 
 log("IETFdb v%s started" % ietf.__version__)
