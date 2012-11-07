@@ -2,6 +2,7 @@
 
 from django.db import models
 from django.core.urlresolvers import reverse as urlreverse
+from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 
 from ietf.group.models import *
@@ -566,3 +567,14 @@ class TelechatDocEvent(DocEvent):
 # charter events
 class InitialReviewDocEvent(DocEvent):
     expires = models.DateTimeField(blank=True, null=True)
+
+
+# dumping store for removed events
+class DeletedEvent(models.Model):
+    content_type = models.ForeignKey(ContentType)
+    json = models.TextField(help_text="Deleted object in JSON format, with attribute names chosen to be suitable for passing into the relevant create method.")
+    by = models.ForeignKey(Person)
+    time = models.DateTimeField(default=datetime.datetime.now)
+
+    def __unicode__(self):
+        return u"%s by %s %s" % (self.content_type, self.by, self.time)
