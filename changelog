@@ -1,3 +1,47 @@
+ietfdb (4.36) ietf; urgency=medium
+
+  This release contains the features and bugfixes from the IETF-85 code
+  sprint, providing improved WG chair document handling, improved document and
+  agenda display.  The code in this release has been contributed by Robert
+  Sparks, Joel Halpern, Ryan Cross, Adam Roach, and Henrik Levkowetz.  
+
+  From rjsparks@nostrum.com:
+  * Enabled diff on the conflict review history tab.  Fixes bug #882 
+
+  * Made it more obvious when an intended status or shepherding AD is not set
+    Removed an unused template Show reset approval text immediately.  Fixes
+    bug #900 
+
+  From jmh@joelhalpern.com:
+  * Moved the Replaced By: line in docent headers up to main header with
+    Replaces: 
+
+  * Added a link to the Shepherd update page to get back to the document 
+    manipulatin page. 
+
+  * Made comments optional on WG adoption and WG state changes. 
+
+  * Corrected the test of final shepherd update flag. 
+
+  From rcross@amsl.com: 
+  * Changed CONFLICT_REVIEW_PATH from conflict_reviews to conflict-reviews 
+
+  From adam@nostrum.com: 
+  * Fixed '%2C' bug introducted (exposed?) by Apple's iCloud handling of 
+    URLs 
+
+  * Fixed time column wrapping problem that exhibits in (at least) Safari. 
+
+  From henrik@levkowetz.com:
+  * Tweaked the changelog presentation to work irrespective of current 
+    directory, and give a sensible 404 if the changelog can't be found.
+
+  * Tweaked the html agenda a little bit by adding a day indication for 
+    each timeslot, to make it easier to see which day you're actually seeing 
+    when the day separator is outside the window.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Nov 2012 20:41:36 +0100
+
 ietfdb (4.35) ietf; urgency=medium
 
   This release provides a long list of fixes and minor enhancements, covering
