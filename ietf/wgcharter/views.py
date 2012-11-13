@@ -186,17 +186,6 @@ def change_state(request, name, option=None):
 
     states_for_ballot_wo_extern = State.objects.filter(type="charter", slug="intrev").values_list("pk", flat=True)
 
-
-    debug.show('repr(form)')
-    debug.show('wg.charter')
-    debug.show('login')
-    debug.show('option')
-    debug.show('prev_charter_state')
-    debug.show('title')
-    debug.show('initial_review')
-    debug.show('chartering_type')
-    debug.show('simplejson.dumps(info_msg)')
-
     return render_to_response('wgcharter/change_state.html',
                               dict(form=form,
                                    doc=wg.charter,
