@@ -27,6 +27,7 @@ from ietf.group.utils import save_group_in_history
 from ietf.wgcharter.mails import *
 from ietf.wgcharter.utils import *
 
+import debug
 
 class ChangeStateForm(forms.Form):
     charter_state = forms.ModelChoiceField(State.objects.filter(type="charter", slug__in=["infrev", "intrev", "extrev", "iesgrev"]), label="Charter state", empty_label=None, required=False)
@@ -177,13 +178,24 @@ def change_state(request, name, option=None):
     def state_pk(slug):
         return State.objects.get(type="charter", slug=slug).pk
 
-    messages = {
+    info_msg = {
         state_pk("infrev"): 'The WG "%s" (%s) has been set to Informal IESG review by %s.' % (wg.name, wg.acronym, login.plain_name()),
         state_pk("intrev"): 'The WG "%s" (%s) has been set to Internal review by %s.\nPlease place it on the next IESG telechat and inform the IAB.' % (wg.name, wg.acronym, login.plain_name()),
         state_pk("extrev"): 'The WG "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (wg.name, wg.acronym, login.plain_name()),
         }
 
     states_for_ballot_wo_extern = State.objects.filter(type="charter", slug="intrev").values_list("pk", flat=True)
+
+
+    debug.show('repr(form)')
+    debug.show('wg.charter')
+    debug.show('login')
+    debug.show('option')
+    debug.show('prev_charter_state')
+    debug.show('title')
+    debug.show('initial_review')
+    debug.show('chartering_type')
+    debug.show('simplejson.dumps(info_msg)')
 
     return render_to_response('wgcharter/change_state.html',
                               dict(form=form,
@@ -194,7 +206,7 @@ def change_state(request, name, option=None):
                                    title=title,
                                    initial_review=initial_review,
                                    chartering_type=chartering_type,
-                                   messages=simplejson.dumps(messages),
+                                   info_msg=simplejson.dumps(info_msg),
                                    states_for_ballot_wo_extern=simplejson.dumps(list(states_for_ballot_wo_extern)),
                                    ),
                               context_instance=RequestContext(request))
