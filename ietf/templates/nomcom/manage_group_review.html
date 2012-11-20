@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Preview group {{ state.group.acronym }} {% endblock %}
+
+{% block content %}
+<h1>Preview group {{ state.group.acronym }}</h1>
+
+<h2>Chair info </h2>
+{% if state.chair_info.person.name %}
+  <ul>
+    <li><strong>Email:</strong> {{ state.chair_info.email }}</li>
+    <li><strong>Person name:</strong> {{ state.chair_info.person.name }}</li>
+  </ul>
+{% else %}
+  email {{ state.chair_info.email }} not found
+{% endif %}
+
+{% if state.members_info %}
+  <h2>Members info </h2>
+  <ul>
+  {% for member in state.members_info %}
+    <li><strong>Email:</strong> {{ member.email }}. <strong>Person Name</strong>: {{ member.person.name }}</li>
+  {% endfor %}
+  </ul>
+{% endif %}
+
+{% if state.emails_not_found %}
+<h2>Members not found </h2>
+<ul>
+{% for email in state.emails_not_found %}
+  <li>{{ email }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+
+<table>
+<form action="" method="post">{% csrf_token %}
+{% for field in form %}{{ field.as_hidden }}
+{% endfor %}
+<input type="hidden" name="{{ stage_field }}" value="2" />
+<input type="hidden" name="{{ hash_field }}" value="{{ hash_value }}" />
+<p><input type="submit" value="Submit" /></p>
+</form>
+
+<h1>Or edit it again</h1>
+
+<form action="" method="post">{% csrf_token %}
+<table>
+{{ form }}
+</table>
+<input type="hidden" name="{{ stage_field }}" value="1" />
+<p><input type="submit" value="Preview" /></p>
+</form>
+
+
+{% endblock %}
