@@ -66,7 +66,7 @@ urlpatterns = patterns('',
     (r'^submit/', include('ietf.submit.urls')),
     (r'^streams/', include('ietf.ietfworkflows.urls')),
     (r'^community/', include('ietf.community.urls')),
-    (r'^nocom/', include('ietf.nomcom.urls')),
+    (r'^nomcom/', include('ietf.nomcom.urls')),
 
     (r'^$', 'ietf.idrfc.views.main'),
     (r'^admin/doc/', include('django.contrib.admindocs.urls')),
