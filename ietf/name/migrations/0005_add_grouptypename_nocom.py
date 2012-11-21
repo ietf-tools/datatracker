@@ -1,13 +1,13 @@
 # encoding: utf-8
 from south.v2 import DataMigration
 
-from name.models import RoleName
+from name.models import GroupTypeName
 
 
 class Migration(DataMigration):
 
     def forwards(self, orm):
-        RoleName.objects.get_or_create(slug='member', name='Member', used=True)
+        GroupTypeName.objects.get_or_create(slug='nomcom', name='NomCom', used=True)
 
     def backwards(self, orm):
         pass
