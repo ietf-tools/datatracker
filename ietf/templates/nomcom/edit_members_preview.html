@@ -1,19 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Preview group {{ state.group.acronym }} {% endblock %}
+{% block title %}Edit {{ state.group.acronym }} members{% endblock %}
 
 {% block content %}
-<h1>Preview group {{ state.group.acronym }}</h1>
-
-<h2>Chair info </h2>
-{% if state.chair_info.person.name %}
-  <ul>
-    <li><strong>Email:</strong> {{ state.chair_info.email }}</li>
-    <li><strong>Person name:</strong> {{ state.chair_info.person.name }}</li>
-  </ul>
-{% else %}
-  email {{ state.chair_info.email }} not found
-{% endif %}
+<h1>Edit {{ state.group.acronym }} members</h1>
 
 {% if state.members_info %}
   <h2>Members info </h2>
@@ -25,12 +15,13 @@
 {% endif %}
 
 {% if state.emails_not_found %}
-<h2>Members not found </h2>
-<ul>
-{% for email in state.emails_not_found %}
-  <li>{{ email }}</li>
-{% endfor %}
-</ul>
+  <h2>Members not found </h2>
+  <ul>
+  {% for email in state.emails_not_found %}
+    <li>{{ email }}</li>
+  {% endfor %}
+  </ul>
+  {% if state.rolodex_url %}Please go to <a href="{{ state.rolodex_url }}">{{ state.rolodex_url }}</a> to add these people.{% endif %}
 {% endif %}
 
 

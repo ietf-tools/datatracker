@@ -84,7 +84,7 @@ MEDIA_URL = ''
 ADMIN_MEDIA_PREFIX = '/media/'
 
 AUTH_PROFILE_MODULE = 'person.Person'
-AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
+#AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.RemoteUserBackend', )
 
 #DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
 
@@ -160,6 +160,7 @@ INSTALLED_APPS = (
     'ietf.wgchairs',
     'ietf.wgcharter',
     'ietf.community',
+    'ietf.nomcom',
 )
 
 INTERNAL_IPS = (
@@ -255,6 +256,9 @@ IDSUBMIT_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
 IDSUBMIT_TO_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
+
+# NomCom Tool settings
+ROLODEX_URL = ""
 
 # Days from meeting to cut off dates on submit
 FIRST_CUTOFF_DAYS = 19

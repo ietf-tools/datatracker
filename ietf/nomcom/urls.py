@@ -1,7 +1,8 @@
 from django.conf.urls.defaults import patterns, url
-from ietf.nomcom.forms import ManageGroupForm, ManageGroupFormPreview
+from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, \
+                              EditMembersForm, EditMembersFormPreview
 
 urlpatterns = patterns('ietf.nomcom.views',
-
-    url(r'^group/(?P<acronym>[\w.@+-]+)/$', ManageGroupFormPreview(ManageGroupForm), name='manage_group'),
+    url(r'^(?P<year>\d{4})/edit-chair/$', EditChairFormPreview(EditChairForm), name='edit_chair'),
+    url(r'^(?P<year>\d{4})/edit-members/$', EditMembersFormPreview(EditMembersForm), name='edit_members'),
 )

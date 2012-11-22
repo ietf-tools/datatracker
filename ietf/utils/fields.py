@@ -9,6 +9,8 @@ class MultiEmailField(forms.CharField):
     def clean(self, value):
         super(MultiEmailField, self).clean(value)
         if value:
+            if value.endswith(','):
+                value = value[:-1]
             emails = map(unicode.strip, value.split(','))
         else:
             return value
