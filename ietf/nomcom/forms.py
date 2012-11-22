@@ -139,3 +139,40 @@ class EditChairFormPreview(FormPreview):
                                       email=chair_info['email_obj'])
 
         return HttpResponseRedirect(reverse('edit_chair', kwargs={'year': self.year}))
+
+
+class EditPublicKeyForm(forms.Form):
+
+    public_key = forms.CharField(label="Public Key", widget=forms.Textarea)
+
+
+class EditPublicKeyFormPreview(FormPreview):
+    form_template = 'nomcom/edit_publickey.html'
+    preview_template = 'nomcom/edit_publickey_preview.html'
+
+    def __call__(self, request, *args, **kwargs):
+        year = kwargs['year']
+        group = get_object_or_404(NomComGroup,
+                                  acronym__icontains=year,
+                                  state__slug='active')
+        is_group_chair = group.is_chair(request.user)
+        if not is_group_chair:
+            return HttpResponseForbidden("Must be group chair")
+
+        self.state['group'] = group
+        self.group = group
+        self.year = year
+
+        return super(EditPublicKeyFormPreview, self).__call__(request, *args, **kwargs)
+
+    def parse_params(self, *args, **kwargs):
+
+        if self.group.public_key:
+            self.form.base_fields['public_key'].initial = self.group.public_key
+
+    def done(self, request, cleaned_data):
+        public_key = cleaned_data['public_key']
+        if public_key:
+            self.group.public_key = public_key
+            self.group.save()
+        return HttpResponseRedirect(reverse('edit_publickey', kwargs={'year': self.year}))
