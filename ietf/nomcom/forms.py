@@ -30,7 +30,7 @@ class EditMembersFormPreview(FormPreview):
         group = get_object_or_404(NomComGroup,
                                   acronym__icontains=year,
                                   state__slug='active')
-        is_group_chair = bool(group.role_set.filter(person__user=request.user, name__slug='chair')[:1])
+        is_group_chair = group.is_chair(request.user)
         is_secretariat = has_role(request.user, "Secretariat")
         if not is_secretariat and not is_group_chair:
             return HttpResponseForbidden("Must be a secretariat or group chair")
@@ -110,9 +110,9 @@ class EditChairFormPreview(FormPreview):
         return super(EditChairFormPreview, self).__call__(request, *args, **kwargs)
 
     def parse_params(self, *args, **kwargs):
-        chairs = self.group.role_set.filter(name__slug='chair')
-        if chairs:
-            self.form.base_fields['chair'].initial = chairs[0].email.address
+        chair = self.group.get_chair()
+        if chair:
+            self.form.base_fields['chair'].initial = chair.email.address
 
     def process_preview(self, request, form, context):
         chair_email = form.cleaned_data['chair']

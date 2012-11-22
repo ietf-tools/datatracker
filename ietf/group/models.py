@@ -36,7 +36,7 @@ class Group(GroupInfo):
 
     acronym = models.SlugField(max_length=40, unique=True, db_index=True)
     charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
-    
+
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter
         arguments, e.g. g.latest_event(type="xyz") returns a GroupEvent
@@ -45,6 +45,17 @@ class Group(GroupInfo):
         model = args[0] if args else GroupEvent
         e = model.objects.filter(group=self).filter(**filter_args).order_by('-time', '-id')[:1]
         return e[0] if e else None
+
+    def is_chair(self, user):
+        chair = self.get_chair()
+        if chair:
+            return self.get_chair().person.user == user
+        else:
+            return False
+
+    def get_chair(self):
+        chair = self.role_set.filter(name__slug='chair')[:1]
+        return chair and chair[0] or None
 
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')
