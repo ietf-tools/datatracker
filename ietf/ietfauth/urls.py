@@ -5,10 +5,10 @@ from ietf.ietfauth import views
 
 urlpatterns = patterns('',
         (r'^$', views.index, None, 'account_index'),
-        (r'^login/$', views.ietf_login),
+#        (r'^login/$', views.ietf_login),
         (r'^loggedin/$', views.ietf_loggedin),
 	(r'^profile/$', views.profile),
-#        (r'^login/(?P<user>[a-z0-9.@]+)/(?P<passwd>.+)$', views.url_login),
+        (r'^login/(?P<user>[a-z0-9.@]+)/(?P<passwd>.+)$', views.url_login),
 	(r'^testemail/$', views.test_email),
 )
 

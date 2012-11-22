@@ -57,7 +57,7 @@ def url_login(request, user, passwd):
     if user is not None:
         if user.is_active:
             login(request, user)
-            return HttpResponseRedirect('/accounts/loggedin/?%s=%s' % (REDIRECT_FIELD_NAME, urlquote(redirect_to)))
+            return HttpResponseRedirect('/admin')
     return HttpResponse("Not authenticated?", status=500)
 
 def ietf_login(request):
