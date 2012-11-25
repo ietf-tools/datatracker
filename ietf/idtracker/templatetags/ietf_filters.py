@@ -71,6 +71,12 @@ def parse_email_list(value):
     else:
         return value
     
+@register.filter(name='fix_angle_quotes')
+def fix_angle_quotes(value):
+    if "<" in value:
+        value = re.sub("<([\w\-\.]+@[\w\-\.]+)>", "&lt;\1&gt;", value)
+    return value
+    
 # there's an "ahref -> a href" in GEN_UTIL
 # but let's wait until we understand what that's for.
 @register.filter(name='make_one_per_line')
