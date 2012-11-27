@@ -388,7 +388,7 @@ def document_json(request, name):
             name=doc.group.name,
             type=extract_name(doc.group.type),
             acronym=doc.group.acronym)
-    data["expires"] = doc.expires.strftime("%Y-%m-%d %H:%M:%S")
+    data["expires"] = doc.expires.strftime("%Y-%m-%d %H:%M:%S") if doc.expires else None
     data["title"] = doc.title
     data["abstract"] = doc.abstract
     data["aliases"] = list(doc.docalias_set.values_list("name", flat=True))
