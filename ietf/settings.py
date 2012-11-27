@@ -94,6 +94,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.load_template_source',
     'django.template.loaders.app_directories.load_template_source',
+    'ietf.dbtemplate.template.load_template_source',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -161,6 +162,7 @@ INSTALLED_APPS = (
     'ietf.wgcharter',
     'ietf.community',
     'ietf.nomcom',
+    'ietf.dbtemplate',
 )
 
 INTERNAL_IPS = (
