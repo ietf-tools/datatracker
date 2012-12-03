@@ -55,7 +55,7 @@ def fill_in_charter_info(wg, include_drafts=False):
     wg.techadvisors = Email.objects.filter(role__group=wg, role__name="techadv")
     wg.editors = Email.objects.filter(role__group=wg, role__name="editor")
     wg.secretaries = Email.objects.filter(role__group=wg, role__name="secr")
-    wg.milestones = wg.groupmilestone_set.all().order_by('expected_due_date')
+    wg.milestones = wg.groupmilestone_set.filter(state="active").order_by('due')
 
     if include_drafts:
         aliases = DocAlias.objects.filter(document__type="draft", document__group=wg).select_related('document').order_by("name")
@@ -194,29 +194,28 @@ def wg_charter(request, acronym):
     concluded = wg.status_id in [ 2, 3, ]
     proposed = (wg.status_id == 4)
 
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        fill_in_charter_info(wg)
-        actions = []
+    fill_in_charter_info(wg)
+    actions = []
+    if wg.state_id != "conclude":
+        actions.append(("Edit WG", urlreverse("wg_edit", kwargs=dict(acronym=wg.acronym))))
 
-        e = wg.latest_event(type__in=("changed_state", "requested_close",))
-        requested_close = wg.state_id != "conclude" and e and e.type == "requested_close"
+    e = wg.latest_event(type__in=("changed_state", "requested_close",))
+    requested_close = wg.state_id != "conclude" and e and e.type == "requested_close"
 
-        if wg.state_id != "conclude":
-            actions.append(("Edit WG", urlreverse("wg_edit", kwargs=dict(acronym=wg.acronym))))
-        if wg.state_id in ("active", "dormant"):
-            actions.append(("Request closing WG", urlreverse("wg_conclude", kwargs=dict(acronym=wg.acronym))))
+    if wg.state_id in ("active", "dormant"):
+        actions.append(("Request closing WG", urlreverse("wg_conclude", kwargs=dict(acronym=wg.acronym))))
 
-        context = get_wg_menu_context(wg, "charter")
-        context.update(dict(
-                actions=actions,
-                requested_close=requested_close,
-                ))
+    context = get_wg_menu_context(wg, "charter")
+    context.update(dict(
+            actions=actions,
+            is_chair=request.user.is_authenticated() and wg.role_set.filter(name="chair", person__user=request.user),
+            milestones_in_review=wg.groupmilestone_set.filter(state="review"),
+            requested_close=requested_close,
+            ))
 
-        return render_to_response('wginfo/wg_charterREDESIGN.html',
-                                  context,
-                                  RequestContext(request))
-        
-    return render_to_response('wginfo/wg_charter.html', {'wg': wg, 'concluded':concluded, 'proposed': proposed, 'selected':'charter'}, RequestContext(request))
+    return render_to_response('wginfo/wg_charter.html',
+                              context,
+                              RequestContext(request))
 
 def get_wg_menu_context(wg, selected):
     # it would probably be better to refactor wginfo into rendering

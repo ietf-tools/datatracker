@@ -8,13 +8,13 @@ form #id_content {
 {% endblock %}
 
 {% block title %}
-Charter submission for {{ wg.acronym }}
+Charter submission for {{ group.acronym }} {{ group.type.name }}
 {% endblock %}
 
 {% block content %}
-<h1>Charter submission for {{ wg.acronym }}</h1>
+<h1>Charter submission for {{ group.acronym }} {{ group.type.name }}</h1>
 
-<p>The text will be submitted as <strong>charter-ietf-{{ wg.acronym }}-{{ next_rev }}</strong></p>
+<p>The text will be submitted as <strong>charter-ietf-{{ group.acronym }}-{{ next_rev }}</strong></p>
 <form class="edit-info" action="" enctype="multipart/form-data" method="POST">
   <table>
     {% for field in form.visible_fields %}
@@ -30,7 +30,7 @@ Charter submission for {{ wg.acronym }}
     <tr>
       <td></td>
       <td class="actions">
-        <a href="{% url doc_view name=wg.charter.name %}">Back</a>
+        <a href="{% url doc_view name=group.charter.name %}">Back</a>
         <input type="submit" value="Submit"/>
       </td>
     </tr>

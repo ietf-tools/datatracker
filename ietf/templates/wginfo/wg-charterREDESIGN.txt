@@ -34,7 +34,7 @@ Description of Working Group:
   {{ wg.charter_text|indent|safe }}
 
 Goals and Milestones:
-{% for milestone in wg.milestones %}  {% if milestone.done %}Done    {% else %}{{ milestone.expected_due_date|date:"M Y" }}{% endif %} - {{ milestone.desc|safe }}
+{% for milestone in wg.milestones %}  {% if milestone.resolved %}{{ milestone.resolved }}    {% else %}{{ milestone.due|date:"M Y" }}{% endif %} - {{ milestone.desc|safe }}
 {% endfor %}
 Internet-Drafts:
 {% for alias in wg.drafts %}  - {{alias.document.title|safe}} [{{alias.name}}-{{alias.document.rev}}] ({{ alias.document.pages }} pages)

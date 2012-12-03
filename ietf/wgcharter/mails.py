@@ -13,7 +13,7 @@ from ietf.doc.models import WriteupDocEvent, DocAlias, BallotPositionDocEvent
 from ietf.person.models import Person
 from ietf.wgcharter.utils import *
 
-def email_secretariat(request, wg, type, text):
+def email_secretariat(request, group, type, text):
     to = ["iesg-secretary@ietf.org"]
 
     types = {}
@@ -24,16 +24,17 @@ def email_secretariat(request, wg, type, text):
     types['state-extrev'] = "State changed to External review"
     types['state-iesgrev'] = "State changed to IESG review"
     types['state-approved'] = "Charter approved"
-    types['conclude'] = "Request closing of WG"
+    types['conclude'] = "Request closing of group"
 
-    subject = u"Regarding WG %s: %s" % (wg.acronym, types[type])
+    subject = u"Regarding %s %s: %s" % (group.type.name, group.acronym, types[type])
     
     text = strip_tags(text)
     send_mail(request, to, None, subject,
               "wgcharter/email_secretariat.txt",
               dict(text=text,
-                   wg_url=settings.IDTRACKER_BASE_URL + urlreverse('wg_charter', kwargs=dict(acronym=wg.acronym)),
-                   charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=wg.charter.name)),
+                   group=group,
+                   group_url=settings.IDTRACKER_BASE_URL + urlreverse('wg_charter', kwargs=dict(acronym=group.acronym)),
+                   charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=group.charter.name)),
                    )
               )
 
@@ -62,8 +63,8 @@ def generate_ballot_writeup(request, doc):
     
     return e
 
-def default_action_text(wg, charter, user):
-    if next_approved_revision(wg.charter.rev) == "01":
+def default_action_text(group, charter, user):
+    if next_approved_revision(group.charter.rev) == "01":
         action = "Formed"
     else:
         action = "Rechartered"
@@ -71,38 +72,38 @@ def default_action_text(wg, charter, user):
     e = WriteupDocEvent(doc=charter, by=user)
     e.by = user
     e.type = "changed_action_announcement"
-    e.desc = "WG action text was changed"
+    e.desc = "%s action text was changed" % group.type.name
     e.text = render_to_string("wgcharter/action_text.txt",
-                              dict(wg=wg,
+                              dict(group=group,
                                    charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
                                    charter_text=read_charter_text(charter),
-                                   chairs=wg.role_set.filter(name="chair"),
-                                   secr=wg.role_set.filter(name="secr"),
-                                   techadv=wg.role_set.filter(name="techadv"),
-                                   milestones=wg.groupmilestone_set.all(),
-                                   ad_email=wg.ad.role_email("ad") if wg.ad else None,
+                                   chairs=group.role_set.filter(name="chair"),
+                                   secr=group.role_set.filter(name="secr"),
+                                   techadv=group.role_set.filter(name="techadv"),
+                                   milestones=group.groupmilestone_set.filter(state="charter"),
+                                   ad_email=group.ad.role_email("ad") if group.ad else None,
                                    action_type=action,
                                    ))
 
     e.save()
     return e
 
-def default_review_text(wg, charter, user):
+def default_review_text(group, charter, user):
     e = WriteupDocEvent(doc=charter, by=user)
     e.by = user
     e.type = "changed_review_announcement"
-    e.desc = "WG review text was changed"
+    e.desc = "%s review text was changed" % group.type.name
     e.text = render_to_string("wgcharter/review_text.txt",
-                              dict(wg=wg,
+                              dict(group=group,
                                    charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
                                    charter_text=read_charter_text(charter),
-                                   chairs=wg.role_set.filter(name="chair"),
-                                   secr=wg.role_set.filter(name="secr"),
-                                   techadv=wg.role_set.filter(name="techadv"),
-                                   milestones=wg.groupmilestone_set.all(),
-                                   ad_email=wg.ad.role_email("ad") if wg.ad else None,
+                                   chairs=group.role_set.filter(name="chair"),
+                                   secr=group.role_set.filter(name="secr"),
+                                   techadv=group.role_set.filter(name="techadv"),
+                                   milestones=group.groupmilestone_set.filter(state="charter"),
+                                   ad_email=group.ad.role_email("ad") if group.ad else None,
                                    review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
-                                   review_type="new" if wg.state_id == "proposed" else "recharter",
+                                   review_type="new" if group.state_id == "proposed" else "recharter",
                                    )
                               )
     e.save()

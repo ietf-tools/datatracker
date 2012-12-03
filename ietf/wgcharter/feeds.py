@@ -9,7 +9,6 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.utils.html import strip_tags
 from django.utils.text import truncate_words
 
-from ietf.utils.history import find_history_active_at
 from ietf.group.models import Group, GroupEvent
 from ietf.doc.models import DocEvent
 

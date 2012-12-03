@@ -20,6 +20,8 @@ class GroupStateName(NameModel):
     """BOF, Proposed, Active, Dormant, Concluded, Abandoned"""
 class GroupTypeName(NameModel):
     """IETF, Area, WG, RG, Team, etc."""
+class GroupMilestoneStateName(NameModel):
+    """Active, Deleted, For Review, Chartering"""
 class RoleName(NameModel):
     """AD, Chair"""
 class StreamName(NameModel):
@@ -44,8 +46,6 @@ class DocReminderTypeName(NameModel):
 class BallotPositionName(NameModel):
     """ Yes, No Objection, Abstain, Discuss, Block, Recuse """
     blocking = models.BooleanField(default=False)
-class GroupBallotPositionName(NameModel):
-    """ Yes, No, Block, Abstain """
 class MeetingTypeName(NameModel):
     """IETF, Interim"""
 class SessionStatusName(NameModel):

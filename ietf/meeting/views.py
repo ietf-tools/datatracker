@@ -134,7 +134,7 @@ def agenda_infoREDESIGN(num=None):
     meeting_time = datetime.datetime.combine(meeting.date, datetime.time(0, 0, 0))
     for g in Group.objects.filter(type="area").order_by("acronym"):
         history = find_history_active_at(g, meeting_time)
-        if history:
+        if history and history != g:
             if history.state_id == "active":
                 ads.extend(IESGHistory().from_role(x, meeting_time) for x in history.rolehistory_set.filter(name="ad").select_related())
         else:

@@ -200,4 +200,8 @@ li.info		{ margin: 0.5em; background-color: #ff8; }
 li.success	{ margin: 0.5em; background-color: #4f4; }
 li.warning	{ margin: 0.5em; background-color: #fc8; color: black;}
 li.error	{ margin: 0.5em; background-color: #f44; }
-	
+
+table.milestones td.due { vertical-align: top; width: 80px; }
+table.milestones .doc { display: block; padding-left: 1em; }
+
+.stream-state .milestone { display: inline-block; font-size: smaller; background-color: #d5dde6; padding: 0 0.2em; margin-left: 0.3em; }

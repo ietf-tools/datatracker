@@ -12,5 +12,6 @@ urlpatterns = patterns('',
     url(r'^ballotwriteupnotes/$', "ietf.wgcharter.views.ballot_writeupnotes"),
     url(r'^approve/$', "ietf.wgcharter.views.approve", name='charter_approve'),
     url(r'^submit/$', "ietf.wgcharter.views.submit", name='charter_submit'),
-    url(r'^submit/(?P<option>initcharter|recharter)/$', "ietf.wgcharter.views.submit", name='charter_submit'),
+    url(r'^submit/(?P<option>initcharter|recharter)/$', "ietf.wgcharter.views.submit", name='charter_submit'), # shouldn't be here
+    url(r'^withmilestones-(?P<rev>[0-9-]+).txt$', "ietf.wgcharter.views.charter_with_milestones_txt", name='charter_with_milestones_txt'),
 )

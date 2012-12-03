@@ -53,11 +53,11 @@ from ietf.iesg.models import TelechatDates, TelechatAgendaItem, WGAction
 from ietf.idrfc.idrfc_wrapper import IdWrapper, RfcWrapper
 from ietf.idrfc.models import RfcIndex
 from ietf.idrfc.utils import update_telechat
-from ietf.ietfauth.decorators import group_required
+from ietf.ietfauth.decorators import group_required, role_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
 from ietf.ipr.models import IprDocAlias 
 from ietf.doc.models import Document, TelechatDocEvent
-from ietf.group.models import Group
+from ietf.group.models import Group, GroupMilestone
 
 def date_threshold():
     """Return the first day of the month that is 185 days ago."""
@@ -615,43 +615,25 @@ def discusses(request):
     return direct_to_template(request, 'iesg/discusses.html', {'docs':res})
 
 
-if not settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    class TelechatDatesForm(forms.ModelForm):
-        class Meta:
-            model = TelechatDates
-            fields = ['date1', 'date2', 'date3', 'date4']
+@role_required('Area Director', 'Secretariat')
+def milestones_needing_review(request):
+    # collect milestones, grouped on AD and group
+    ads = {}
+    for m in GroupMilestone.objects.filter(state="review").exclude(group__state="concluded", group__ad=None).distinct().select_related("group", "group__ad"):
+        groups = ads.setdefault(m.group.ad, {})
+        milestones = groups.setdefault(m.group, [])
+        milestones.append(m)
 
-@group_required('Secretariat')
-def telechat_dates(request):
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        return HttpResponseRedirect("/admin/iesg/telechatdate/")
+    ad_list = []
+    for ad, groups in ads.iteritems():
+        ad_list.append(ad)
+        ad.groups_needing_review = sorted(groups, key=lambda g: g.acronym)
+        for g, milestones in groups.iteritems():
+            g.milestones_needing_review = sorted(milestones, key=lambda m: m.due)
 
-    dates = TelechatDates.objects.all()[0]
-
-    if request.method == 'POST':
-        if request.POST.get('rollup_dates'):
-            TelechatDates.objects.all().update(
-                date1=dates.date2, date2=dates.date3, date3=dates.date4,
-                date4=dates.date4 + datetime.timedelta(days=14))
-            form = TelechatDatesForm(instance=dates)
-        else:
-            form = TelechatDatesForm(request.POST, instance=dates)
-            if form.is_valid():
-                form.save(commit=False)
-                TelechatDates.objects.all().update(date1 = dates.date1,
-                                                  date2 = dates.date2,
-                                                  date3 = dates.date3,
-                                                  date4 = dates.date4)
-    else:
-        form = TelechatDatesForm(instance=dates)
-
-    from django.contrib.humanize.templatetags import humanize
-    for f in form.fields:
-        form.fields[f].label = "Date " + humanize.ordinal(form.fields[f].label[4])
-        form.fields[f].thursday = getattr(dates, f).isoweekday() == 4
-        
-    return render_to_response("iesg/telechat_dates.html",
-                              dict(form=form),
+    return render_to_response('iesg/milestones_needing_review.html',
+                              dict(ads=sorted(ad_list, key=lambda ad: ad.plain_name()),
+                                   ),
                               context_instance=RequestContext(request))
 
 def parse_wg_action_file(path):

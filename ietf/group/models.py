@@ -60,17 +60,31 @@ class GroupURL(models.Model):
     def __unicode__(self):
 	return u"%s (%s)" % (self.url, self.name)
 
-class GroupMilestone(models.Model):
+class GroupMilestoneInfo(models.Model):
     group = models.ForeignKey(Group)
-    desc = models.TextField(verbose_name="Description")
-    expected_due_date = models.DateField()
-    done = models.BooleanField()
-    done_date = models.DateField(null=True, blank=True)
-    time = models.DateTimeField(auto_now=True)
+    # a group has two sets of milestones, current milestones
+    # (active/under review/deleted) and charter milestones (active
+    # during a charter/recharter event), events for charter milestones
+    # are stored on the charter document
+    state = models.ForeignKey(GroupMilestoneStateName)
+    desc = models.CharField(verbose_name="Description", max_length=500)
+    due = models.DateField()
+    resolved = models.CharField(max_length=50, blank=True, help_text="Explanation of why milestone is resolved (usually \"Done\"), or empty if still due")
+
+    docs = models.ManyToManyField('doc.Document', blank=True)
+
     def __unicode__(self):
 	return self.desc[:20] + "..."
     class Meta:
-	ordering = ['expected_due_date']
+        abstract = True
+	ordering = ['due', 'id']
+
+class GroupMilestone(GroupMilestoneInfo):
+    time = models.DateTimeField(auto_now=True)
+
+class GroupMilestoneHistory(GroupMilestoneInfo):
+    time = models.DateTimeField()
+    milestone = models.ForeignKey(GroupMilestone, related_name="history_set")
 
 class GroupStateTransitions(models.Model):
     """Captures that a group has overriden the default available
@@ -87,6 +101,7 @@ GROUP_EVENT_CHOICES = [
     ("added_comment", "Added comment"),
     ("info_changed", "Changed metadata"),
     ("requested_close", "Requested closing group"),
+    ("changed_milestone", "Changed milestone"),
     ]
 
 class GroupEvent(models.Model):
@@ -105,6 +120,9 @@ class GroupEvent(models.Model):
 
 class ChangeStateGroupEvent(GroupEvent):
     state = models.ForeignKey(GroupStateName)
+
+class MilestoneGroupEvent(GroupEvent):
+    milestone = models.ForeignKey(GroupMilestone)
 
 class Role(models.Model):
     name = models.ForeignKey(RoleName)
