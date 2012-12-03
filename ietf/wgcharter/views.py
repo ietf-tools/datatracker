@@ -76,17 +76,17 @@ def change_state(request, name, option=None):
                 if "-" not in charter_rev:
                     charter_rev = charter_rev + "-00"
             elif option == "abandon":
-                oldstate = group.state_id
-                if oldstate in ("proposed", "bof", "unknown"):
+                oldstate = group.state
+                if oldstate.slug in ("proposed", "bof", "unknown"):
                     charter_state = State.objects.get(type="charter", slug="notrev")
                     #TODO : set an abandoned state and leave some comments here
                     group.state = GroupStateName.objects.get(slug='abandon')
                     group.save()
-                    e = ChangeStateGroupEvent(group=wg, type="changed_state")
-                    e.time = wg.time
+                    e = ChangeStateGroupEvent(group=group, type="changed_state")
+                    e.time = group.time
                     e.by = login
-                    e.state_id = clean["state"].slug
-                    e.desc = "Group state changed to %s from %s" % (clean["state"].name, oldstate)
+                    e.state_id = group.state.slug
+                    e.desc = "Group state changed to %s from %s" % (group.state, oldstate)
                     e.save()
                     
                 else:
