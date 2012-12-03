@@ -90,7 +90,7 @@ class IprDetail(models.Model):
     # Patent Information fieldset
     patents = models.TextField("Patent Applications", db_column="p_applications", max_length=255)
     date_applied = models.CharField(max_length=255)
-    country = models.CharField(max_length=100)
+    country = models.CharField(max_length=255)
     notes = models.TextField("Additional notes", db_column="p_notes", blank=True)
     is_pending = models.IntegerField("Unpublished Pending Patent Application", blank=True, null=True, choices=SELECT_CHOICES, db_column="selecttype")
     applies_to_all = models.IntegerField("Applies to all IPR owned by Submitter", blank=True, null=True, choices=SELECT_CHOICES, db_column="selectowned")
