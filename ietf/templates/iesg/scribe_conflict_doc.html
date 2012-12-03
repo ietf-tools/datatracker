@@ -45,37 +45,37 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
     {% for doc in section_docs %}
         <li>
         {{ doc.obj.title|escape }} 
-        <br/><a href="{% url doc_view name=doc.obj.canonical_name %}">{{doc.obj.canonical_name}}</a>
+        <br><a href="{% url doc_view name=doc.obj.canonical_name %}">{{doc.obj.canonical_name}}</a>
                 <a href="http://www.ietf.org/id/{{doc.obj.canonical_name}}-{{doc.obj.rev}}.txt">[txt]</a>
         <div style="padding-left:20px">
             {{ doc.obj.conflictdoc.title|escape }} ({{doc.obj.conflictdoc.stream}}: {{ doc.obj.conflictdoc.intended_std_level }})
-            <br/><a href="{% url doc_view name=doc.obj.conflictdoc.canonical_name %}">{{doc.obj.conflictdoc.canonical_name}}</a>
+            <br><a href="{% url doc_view name=doc.obj.conflictdoc.canonical_name %}">{{doc.obj.conflictdoc.canonical_name}}</a>
                     <a href="http://www.ietf.org/id/{{doc.obj.conflictdoc.canonical_name}}-{{doc.obj.conflictdoc.rev}}.txt">[txt]</a>
             {% if doc.obj.conflictdoc.note %}{# note: note is not escaped #}  
-                <br/>Note: {{ doc.obj.conflictdoc.note|safe }}
+                <br>Note: {{ doc.obj.conflictdoc.note|safe }}
             {% endif %}
             {% for ipr in doc.obj.conflictdoc.ipr %}
                 {% ifequal ipr.ipr.status 1 %}
-                    <br/>IPR: <a href="http://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a>
+                    <br>IPR: <a href="http://datatracker.ietf.org/ipr/{{ ipr.ipr.ipr_id }}/">{{ ipr.ipr.title|escape }}</a>
                 {% endifequal %}
             {% endfor %} 
         </div>
         Token: {{ doc.obj.ad.plain_name|escape }} 
         {% if doc.obj.active_ballot %}
-            <br/><b>Discusses/comments</b> <a href="http://datatracker.ietf.org/idtracker/ballot/{{doc.obj.canonical_name}}/">[ballot]</a>:
+            <br><b>Discusses/comments</b> <a href="http://datatracker.ietf.org/idtracker/ballot/{{doc.obj.canonical_name}}/">[ballot]</a>:
             <ul>
             {% for p in doc.obj.active_ballot.active_ad_positions.values %}
                 {% if p.pos %}
                     {% if p.discuss %}
                         <li>
                         <a href="#{{doc.obj.name}}+{{p.ad|slugify}}+discuss">{{ p.ad }}: Discuss [{{ p.discuss_time }}]</a>:
-                        <br/>{{ p.discuss }}
+                        <br>{{ p.discuss }}
                         </li>
                     {% endif %}
                     {% if p.comment %}
                         <li>
                         <a href="#{{doc.obj.name}}+{{p.ad|slugify}}+comment">{{ p.ad }}: Comment [{{ p.comment_time }}]</a>:
-                        <br/>{{ p.comment }}
+                        <br>{{ p.comment }}
                         </li>
                     {% endif %}
                 {% endif %}            
