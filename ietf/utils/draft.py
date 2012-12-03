@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.28"
+version = "0.29"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -480,6 +480,11 @@ class Draft():
                 # if there's a middle part, let it be optional
                 first, middle = first.split(" ", 1)
                 first = "%s( +%s)?" % (first, middle)
+
+            # Double names (e.g., Jean-Michel) are abbreviated as two letter
+            # connected by a dash -- let this expand appropriately
+            first = re.sub("^([A-Z])-([A-Z])\.\*", r"\1.*-\2.*", first) 
+
             # Some chinese names are shown with double-letter(latin) abbreviated given names, rather than
             # a single-letter(latin) abbreviation:
             first = re.sub("^([A-Z])[A-Z]+\.\*", r"\1[-\w]+", first) 
