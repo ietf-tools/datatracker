@@ -11,7 +11,7 @@ class NameModel(models.Model):
 
     def __unicode__(self):
         return self.name
-    
+
     class Meta:
         abstract = True
         ordering = ['order']
@@ -56,3 +56,7 @@ class ConstraintName(NameModel):
     """Conflict"""
 class LiaisonStatementPurposeName(NameModel):
     """For action, For comment, For information, In response, Other"""
+class NomineePositionState(NameModel):
+    """Status of a candidate for a position: None, Accepted, Declined"""
+class FeedbackType(NameModel):
+    """Type of feedback: questionnaires, nominations, comments"""
