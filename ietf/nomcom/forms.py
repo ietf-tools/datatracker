@@ -10,6 +10,7 @@ from ietf.utils import fields as custom_fields
 from ietf.group.models import Group, Role
 from ietf.name.models import RoleName
 from ietf.person.models import Email
+from ietf.nomcom.models import NomCom
 
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -141,3 +142,9 @@ class EditChairFormPreview(FormPreview):
                                       email=chair_info['email_obj'])
 
         return HttpResponseRedirect(reverse('edit_chair', kwargs={'year': self.year}))
+
+
+class EditPublicKeyForm(forms.ModelForm):
+    class Meta:
+        model = NomCom
+        fields = ('public_key',)

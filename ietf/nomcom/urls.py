@@ -5,4 +5,5 @@ from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, \
 urlpatterns = patterns('ietf.nomcom.views',
     url(r'^(?P<year>\d{4})/edit-chair/$', EditChairFormPreview(EditChairForm), name='edit_chair'),
     url(r'^(?P<year>\d{4})/edit-members/$', EditMembersFormPreview(EditMembersForm), name='edit_members'),
+    url(r'^(?P<year>\d{4})/edit-publickey/$', 'edit_publickey', name='edit_publickey'),
 )
