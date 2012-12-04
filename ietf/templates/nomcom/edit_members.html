@@ -5,7 +5,7 @@
 {% block content %}
 <h1>Edit {{ state.group.acronym }} members</h1>
 
-{% if form.errors %}<h3>Please correct the following errors</h3>{% endif %}
+{% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
 
 <form action="" method="post">{% csrf_token %}
 <table>
