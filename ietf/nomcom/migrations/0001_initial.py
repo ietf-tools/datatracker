@@ -11,7 +11,7 @@ class Migration(SchemaMigration):
         # Adding model 'NomCom'
         db.create_table('nomcom_nomcom', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('public_key', self.gf('django.db.models.fields.files.FileField')(max_length=100)),
+            ('public_key', self.gf('django.db.models.fields.files.FileField')(max_length=100, null=True, blank=True)),
             ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'])),
             ('send_questionnaire', self.gf('django.db.models.fields.BooleanField')(default=False)),
         ))
@@ -65,8 +65,8 @@ class Migration(SchemaMigration):
             ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('description', self.gf('django.db.models.fields.TextField')()),
             ('initial_text', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('requirement', self.gf('django.db.models.fields.related.ForeignKey')(related_name='requirement', to=orm['dbtemplate.DBTemplate'])),
-            ('questionnaire', self.gf('django.db.models.fields.related.ForeignKey')(related_name='questionnaire', to=orm['dbtemplate.DBTemplate'])),
+            ('requirement', self.gf('django.db.models.fields.related.ForeignKey')(related_name='requirement', null=True, to=orm['dbtemplate.DBTemplate'])),
+            ('questionnaire', self.gf('django.db.models.fields.related.ForeignKey')(related_name='questionnaire', null=True, to=orm['dbtemplate.DBTemplate'])),
             ('is_open', self.gf('django.db.models.fields.BooleanField')(default=False)),
             ('incumbent', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['person.Email'])),
         ))
@@ -151,11 +151,11 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'DBTemplate'},
             'content': ('django.db.models.fields.TextField', [], {}),
             'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']", 'null': 'True', 'blank': 'True'}),
-            'help_text': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'path': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'}),
-            'template_type': ('django.db.models.fields.CharField', [], {'default': "'rst'", 'max_length': '10'}),
-            'title': ('django.db.models.fields.CharField', [], {'max_length': '255'})
+            'title': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.DBTemplateTypeName']"}),
+            'variables': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'})
         },
         'doc.docalias': {
             'Meta': {'object_name': 'DocAlias'},
@@ -236,6 +236,14 @@ class Migration(SchemaMigration):
             'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.GroupTypeName']", 'null': 'True'}),
             'unused_states': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['doc.State']", 'symmetrical': 'False', 'blank': 'True'}),
             'unused_tags': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['name.DocTagName']", 'symmetrical': 'False', 'blank': 'True'})
+        },
+        'name.dbtemplatetypename': {
+            'Meta': {'ordering': "['order']", 'object_name': 'DBTemplateTypeName'},
+            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
+            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
         'name.docrelationshipname': {
             'Meta': {'ordering': "['order']", 'object_name': 'DocRelationshipName'},
@@ -331,7 +339,7 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'NomCom'},
             'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'public_key': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
+            'public_key': ('django.db.models.fields.files.FileField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'send_questionnaire': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
         },
         'nomcom.nomination': {
@@ -369,8 +377,8 @@ class Migration(SchemaMigration):
             'is_open': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'nomcom': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.NomCom']"}),
-            'questionnaire': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'questionnaire'", 'to': "orm['dbtemplate.DBTemplate']"}),
-            'requirement': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'requirement'", 'to': "orm['dbtemplate.DBTemplate']"})
+            'questionnaire': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'questionnaire'", 'null': 'True', 'to': "orm['dbtemplate.DBTemplate']"}),
+            'requirement': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'requirement'", 'null': 'True', 'to': "orm['dbtemplate.DBTemplate']"})
         },
         'person.email': {
             'Meta': {'object_name': 'Email'},

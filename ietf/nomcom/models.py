@@ -12,6 +12,10 @@ from ietf.group.models import Group
 from ietf.name.models import NomineePositionState, FeedbackType
 from ietf.dbtemplate.models import DBTemplate
 
+from ietf.nomcom.utils import (initialize_templates_for_group,
+                               initialize_questionnaire_for_position,
+                               initialize_requirements_for_position)
+
 
 def upload_path_handler(instance, filename):
     return os.path.join(instance.group.acronym, filename)
@@ -19,7 +23,7 @@ def upload_path_handler(instance, filename):
 
 class NomCom(models.Model):
     public_key = models.FileField(storage=FileSystemStorage(location=settings.PUBLIC_KEYS_URL),
-                                  upload_to=upload_path_handler)
+                                  upload_to=upload_path_handler, blank=True, null=True)
 
     group = models.ForeignKey(Group)
     send_questionnaire = models.BooleanField(verbose_name='Send automatically questionnaires"',
@@ -32,6 +36,11 @@ class NomCom(models.Model):
     def __unicode__(self):
         return self.group.acronym
 
+    def save(self, *args, **kwargs):
+        created = not self.id
+        super(NomCom, self).save(*args, **kwargs)
+        if created:
+            initialize_templates_for_group(self)
 
 class Nomination(models.Model):
     position = models.ForeignKey('Position')
@@ -86,8 +95,8 @@ class Position(models.Model):
     description = models.TextField(verbose_name='Despcription')
     initial_text = models.TextField(verbose_name='Initial text for nominations',
                                     blank=True)
-    requirement = models.ForeignKey(DBTemplate, related_name='requirement')
-    questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire')
+    requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True)
+    questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True)
     is_open = models.BooleanField(verbose_name='Is open')
     incumbent = models.ForeignKey(Email)
 
@@ -96,6 +105,19 @@ class Position(models.Model):
 
     def __unicode__(self):
         return u"%s: %s" % (self.nomcom, self.name)
+
+    def save(self, *args, **kwargs):
+        created = not self.id
+        super(Position, self).save(*args, **kwargs)
+        changed = False
+        if created and self.id and not self.requirement_id:
+            self.requirement = initialize_requirements_for_position(self)
+            changed = True
+        if created and self.id and not self.questionnaire_id:
+            self.questionnaire = initialize_questionnaire_for_position(self)
+            changed = True
+        if changed:
+            self.save()
 
 
 class Feedback(models.Model):
