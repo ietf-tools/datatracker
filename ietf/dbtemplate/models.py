@@ -1,6 +1,7 @@
 from django.db import models
 
 from ietf.group.models import Group
+from ietf.name.models import DBTemplateTypeName
 
 
 TEMPLATE_TYPES = (
@@ -22,14 +23,12 @@ class DBTemplate(models.Model):
         blank=False,
         null=False,
         )
-    help_text = models.TextField(
+    variables = models.TextField(
         blank=True,
         null=True,
         )
-    template_type = models.CharField(
-        max_length=10,
-        choices=TEMPLATE_TYPES,
-        default='rst',
+    type = models.ForeignKey(
+        DBTemplateTypeName,
         )
     content = models.TextField(
         blank=False,

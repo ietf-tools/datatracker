@@ -1,28 +1,31 @@
 # encoding: utf-8
+import datetime
 from south.db import db
 from south.v2 import SchemaMigration
-
+from django.db import models
 
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-
+        
         # Adding model 'DBTemplate'
         db.create_table('dbtemplate_dbtemplate', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('path', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
             ('title', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('help_text', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            ('template_type', self.gf('django.db.models.fields.CharField')(default='rst', max_length=10)),
+            ('variables', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+            ('type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.DBTemplateTypeName'])),
             ('content', self.gf('django.db.models.fields.TextField')()),
             ('group', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['group.Group'], null=True, blank=True)),
         ))
         db.send_create_signal('dbtemplate', ['DBTemplate'])
 
-    def backwards(self, orm):
 
+    def backwards(self, orm):
+        
         # Deleting model 'DBTemplate'
         db.delete_table('dbtemplate_dbtemplate')
+
 
     models = {
         'auth.group': {
@@ -65,11 +68,11 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'DBTemplate'},
             'content': ('django.db.models.fields.TextField', [], {}),
             'group': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['group.Group']", 'null': 'True', 'blank': 'True'}),
-            'help_text': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'path': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'}),
-            'template_type': ('django.db.models.fields.CharField', [], {'default': "'rst'", 'max_length': '10'}),
-            'title': ('django.db.models.fields.CharField', [], {'max_length': '255'})
+            'title': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.DBTemplateTypeName']"}),
+            'variables': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'})
         },
         'doc.docalias': {
             'Meta': {'object_name': 'DocAlias'},
@@ -150,6 +153,14 @@ class Migration(SchemaMigration):
             'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['name.GroupTypeName']", 'null': 'True'}),
             'unused_states': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['doc.State']", 'symmetrical': 'False', 'blank': 'True'}),
             'unused_tags': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['name.DocTagName']", 'symmetrical': 'False', 'blank': 'True'})
+        },
+        'name.dbtemplatetypename': {
+            'Meta': {'ordering': "['order']", 'object_name': 'DBTemplateTypeName'},
+            'desc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'order': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'slug': ('django.db.models.fields.CharField', [], {'max_length': '8', 'primary_key': 'True'}),
+            'used': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
         },
         'name.docrelationshipname': {
             'Meta': {'ordering': "['order']", 'object_name': 'DocRelationshipName'},

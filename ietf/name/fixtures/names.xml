@@ -745,6 +745,27 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="rst" model="name.dbtemplatetypename">
+        <field type="CharField" name="name">reStructuredText</field>
+        <field type="CharField" name="slug">rst</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="plain" model="name.dbtemplatetypename">
+        <field type="CharField" name="name">Plain</field>
+        <field type="CharField" name="slug">plain</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="django" model="name.dbtemplatetypename">
+        <field type="CharField" name="name">Django</field>
+        <field type="CharField" name="slug">django</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="draft" model="doc.statetype">
         <field type="CharField" name="label">State</field>
     </object>

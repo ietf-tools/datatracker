@@ -56,9 +56,9 @@ class Loader(BaseLoader):
     def load_template_source(self, template_name, template_dirs=None):
         try:
             template = DBTemplate.objects.get(path=template_name)
-            if template.template_type == 'rst':
+            if template.type.slug == 'rst':
                 return (RSTTemplate(template.content), template)
-            elif template.template_type == 'django':
+            elif template.type.slug == 'django':
                 return (DjangoTemplate(template.content), template)
             return (PlainTemplate(template.content), template)
         except DBTemplate.DoesNotExist:
