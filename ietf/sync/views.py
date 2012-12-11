@@ -120,6 +120,16 @@ def rfceditor_undo(request):
         except StateDocEvent.DoesNotExist:
             return HttpResponse("Event does not exist")
 
+        doc = e.doc
+
+        # possibly reset the state of the document
+        all_events = StateDocEvent.objects.filter(doc=doc, state_type="draft-rfceditor").order_by("-time", "-id")
+        if all_events and all_events[0] == e:
+            if len(all_events) > 1:
+                doc.set_state(all_events[1].state)
+            else:
+                doc.unset_state("draft-rfceditor")
+
         dump = DeletedEvent()
         dump.content_type = ContentType.objects.get_for_model(type(e))
         dump.json = json.dumps(object_as_shallow_dict(e), indent=2)

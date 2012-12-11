@@ -407,30 +407,40 @@ class RFCEditorUndoTestCase(django.test.TestCase):
     def test_rfceditor_undo(self):
         draft = make_test_data()
 
-        e = add_state_change_event(draft, Person.objects.get(name="(System)"), None,
+        e1 = add_state_change_event(draft, Person.objects.get(name="(System)"), None,
                                    State.objects.get(type="draft-rfceditor", slug="auth"))
-        e.desc = "Test"
-        e.save()
+        e1.desc = "First"
+        e1.save()
 
+        e2 = add_state_change_event(draft, Person.objects.get(name="(System)"), None,
+                                   State.objects.get(type="draft-rfceditor", slug="edit"))
+        e2.desc = "Second"
+        e2.save()
+        
         url = urlreverse('ietf.sync.views.rfceditor_undo')
         login_testing_unauthorized(self, "rfc", url)
 
         # get
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
-        self.assertTrue(e.doc_id in r.content)
+        self.assertTrue(e2.doc_id in r.content)
 
-        # delete
+        # delete e2
         deleted_before = DeletedEvent.objects.count()
 
-        r = self.client.post(url, dict(event=e.id))
+        r = self.client.post(url, dict(event=e2.id))
         self.assertEquals(r.status_code, 302)
 
-        self.assertEquals(StateDocEvent.objects.filter(id=e.id).count(), 0)
+        self.assertEquals(StateDocEvent.objects.filter(id=e2.id).count(), 0)
+        self.assertEquals(draft.get_state("draft-rfceditor").slug, "auth")
         self.assertEquals(DeletedEvent.objects.count(), deleted_before + 1)
+
+        # delete e1
+        r = self.client.post(url, dict(event=e1.id))
+        self.assertEquals(draft.get_state("draft-rfceditor"), None)
 
         # let's just test we can recover
         e = DeletedEvent.objects.all().order_by("-time")[0]
 
         e.content_type.model_class().objects.create(**json.loads(e.json))
-        self.assertEquals(draft.latest_event(type="changed_state").desc, "Test")
+        self.assertTrue(StateDocEvent.objects.filter(desc="First", doc=draft))
