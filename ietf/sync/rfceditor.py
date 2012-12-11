@@ -167,7 +167,7 @@ def update_drafts_from_queue(drafts):
             e = add_state_change_event(d, system, prev_state, next_state)
 
             if auth48:
-                e.desc = re.sub(r"(<b>.*</b>)", r"<a href=\"%s\">\1</a>" % auth48, e.desc)
+                e.desc = re.sub(r"(<b>.*</b>)", "<a href=\"%s\">\\1</a>" % auth48, e.desc)
                 e.save()
 
             changed.add(name)
