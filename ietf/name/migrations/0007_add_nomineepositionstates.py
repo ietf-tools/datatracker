@@ -7,7 +7,7 @@ from name.models import NomineePositionState
 class Migration(DataMigration):
 
     def forwards(self, orm):
-        types = ['Accepted', 'Declined']
+        types = ['Pending', 'Accepted', 'Declined']
         for type in types:
             NomineePositionState.objects.get_or_create(slug=type.lower(), name=type, used=True)
 

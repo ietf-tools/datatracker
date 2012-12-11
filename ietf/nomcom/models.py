@@ -42,6 +42,7 @@ class NomCom(models.Model):
         if created:
             initialize_templates_for_group(self)
 
+
 class Nomination(models.Model):
     position = models.ForeignKey('Position')
     candidate_name = models.CharField(verbose_name='Candidate name', max_length=255)
@@ -70,11 +71,18 @@ class Nominee(models.Model):
         return u'%s' % self.email
 
 
+def get_state_default():
+    try:
+        return NomineePositionState.objects.get(slug='pending').slug
+    except NomineePositionState.DoesNotExist:
+        return None
+
+
 class NomineePosition(models.Model):
 
     position = models.ForeignKey('Position')
     nominee = models.ForeignKey('Nominee')
-    state = models.ForeignKey(NomineePositionState)
+    state = models.ForeignKey(NomineePositionState, default=get_state_default())
     questionnaire = models.ForeignKey('Feedback',
                                       related_name='questionnaire',
                                       blank=True, null=True)
@@ -121,7 +129,7 @@ class Position(models.Model):
 
 
 class Feedback(models.Model):
-    author = models.EmailField(verbose_name='Author')
+    author = models.EmailField(verbose_name='Author', blank=True)
     position = models.ForeignKey('Position')
     nominee = models.ForeignKey('Nominee')
     comments = EncriptedTextField(verbose_name='Comments')
@@ -134,4 +142,3 @@ class Feedback(models.Model):
 # ----- adding south rules to help introspection -----
 
 add_introspection_rules([], ["^ietf\.nomcom\.fields\.EncriptedTextField"])
-

@@ -5,12 +5,14 @@ from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.conf import settings
 
+from ietf.utils import unaccent
 from ietf.ietfauth.decorators import has_role
 from ietf.utils import fields as custom_fields
 from ietf.group.models import Group, Role
-from ietf.name.models import RoleName
-from ietf.person.models import Email
-from ietf.nomcom.models import NomCom
+from ietf.name.models import RoleName, FeedbackType
+from ietf.person.models import Email, Person
+from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
+                               Position, Feedback
 
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -148,3 +150,59 @@ class EditPublicKeyForm(forms.ModelForm):
     class Meta:
         model = NomCom
         fields = ('public_key',)
+
+
+class NominateForm(forms.ModelForm):
+    comments = forms.CharField(label='Comments', widget=forms.Textarea())
+
+    def __init__(self, *args, **kwargs):
+        self.nomcom = kwargs.pop('nomcom', None)
+        self.user = kwargs.pop('user', None)
+        super(NominateForm, self).__init__(*args, **kwargs)
+        if self.nomcom:
+            self.fields['position'].queryset = Position.objects.filter(nomcom=self.nomcom)
+
+    def save(self, commit=True):
+        # Create nomination
+        nomination = super(NominateForm, self).save(commit=False)
+        candidate_email = self.cleaned_data['candidate_email']
+        candidate_name = self.cleaned_data['candidate_name']
+        position = self.cleaned_data['position']
+        comments = self.cleaned_data['comments']
+
+        # Create person and email if candidate email does't exist and send email
+        email, created = Email.objects.get_or_create(address=candidate_email)
+        if created:
+            email.person = Person.objects.create(name=candidate_name,
+                                                 ascii=unaccent.asciify(candidate_name),
+                                                 address=candidate_email)
+            email.save()
+
+        # Add the nomination for a particular position
+        nominee, created = Nominee.objects.get_or_create(email=email)
+        NomineePosition.objects.get_or_create(position=position, nominee=nominee)
+
+        # Complete nomination data
+        author_emails = Email.objects.filter(person__user=self.user)
+        author = author_emails and author_emails[0] or None
+        feedback = Feedback.objects.create(position=position,
+                                           nominee=nominee,
+                                           comments=comments,
+                                           type=FeedbackType.objects.get(slug='nomina'))
+        if author:
+            feedback.author = author
+            feedback.save()
+
+        nomination.nominee = nominee
+        nomination.comments = feedback
+
+        if commit:
+            nomination.save()
+
+        # TODO: send mail to chair and secretariat with the new person
+        # TODO: send mails about nominations
+        return nomination
+
+    class Meta:
+        model = Nomination
+        fields = ('position', 'candidate_name', 'candidate_email', 'candidate_phone')

@@ -9,23 +9,27 @@ class NomComAdmin(admin.ModelAdmin):
 
 
 class NominationAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('candidate_email', 'nominator_email', 'position')
 
 
 class NomineeAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('email',)
 
 
 class NomineePositionAdmin(admin.ModelAdmin):
     pass
+    list_display = ('nominee', 'position', 'state')
+    list_filter = ('state',)
 
 
 class PositionAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('name', 'nomcom', 'is_open', 'incumbent')
+    list_filter = ('nomcom',)
 
 
 class FeedbackAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('nominee', 'author', 'position', 'type')
+    list_filter = ('type',)
 
 admin.site.register(NomCom, NomComAdmin)
 admin.site.register(Nomination, NominationAdmin)
