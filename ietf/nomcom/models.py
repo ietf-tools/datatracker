@@ -18,7 +18,7 @@ from ietf.nomcom.utils import (initialize_templates_for_group,
 
 
 def upload_path_handler(instance, filename):
-    return os.path.join(instance.group.acronym, filename)
+    return os.path.join(instance.group.acronym, 'public.cert')
 
 
 class NomCom(models.Model):
@@ -71,18 +71,11 @@ class Nominee(models.Model):
         return u'%s' % self.email
 
 
-def get_state_default():
-    try:
-        return NomineePositionState.objects.get(slug='pending').slug
-    except NomineePositionState.DoesNotExist:
-        return None
-
-
 class NomineePosition(models.Model):
 
     position = models.ForeignKey('Position')
     nominee = models.ForeignKey('Nominee')
-    state = models.ForeignKey(NomineePositionState, default=get_state_default())
+    state = models.ForeignKey(NomineePositionState)
     questionnaire = models.ForeignKey('Feedback',
                                       related_name='questionnaire',
                                       blank=True, null=True)
