@@ -445,6 +445,12 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">0</field>
     </object>
+    <object pk="nomcom" model="name.grouptypename">
+        <field type="CharField" name="name">NomCom</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
     <object pk="ps" model="name.intendedstdlevelname">
         <field type="CharField" name="name">Proposed Standard</field>
         <field type="TextField" name="desc"></field>
@@ -511,6 +517,60 @@
         <field type="BooleanField" name="used">True</field>
         <field type="IntegerField" name="order">4</field>
     </object>
+    <object pk="pending" model="name.nomineepositionstate">
+        <field type="CharField" name="name">Pending</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="accepted" model="name.nomineepositionstate">
+        <field type="CharField" name="name">Accepted</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="declined" model="name.nomineepositionstate">
+        <field type="CharField" name="name">Declined</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="comment" model="name.feedbacktype">
+        <field type="CharField" name="name">Comment</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="questio" model="name.feedbacktype">
+        <field type="CharField" name="name">Questionnaire</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="nomina" model="name.feedbacktype">
+        <field type="CharField" name="name">Nomination</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="rst" model="name.dbtemplatetypename">
+        <field type="CharField" name="name">reStructuredText</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="plain" model="name.dbtemplatetypename">
+        <field type="CharField" name="name">Plain</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>
+    <object pk="django" model="name.dbtemplatetypename">
+        <field type="CharField" name="name">Django</field>
+        <field type="TextField" name="desc"></field>
+        <field type="BooleanField" name="used">True</field>
+        <field type="IntegerField" name="order">0</field>
+    </object>    
     <object pk="ietf" model="name.meetingtypename">
         <field type="CharField" name="name">IETF</field>
         <field type="TextField" name="desc"></field>

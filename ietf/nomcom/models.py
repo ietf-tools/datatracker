@@ -86,6 +86,11 @@ class NomineePosition(models.Model):
         verbose_name_plural = 'Nominee positions'
         unique_together = ('position', 'nominee')
 
+    def save(self, **kwargs):
+        if not self.pk and not self.state_id:
+            self.state = NomineePositionState.objects.get(slug='pending')
+        super(NomineePosition, self).save(**kwargs)
+
     def __unicode__(self):
         return u"%s - %s" % (self.nominee, self.position)
 
