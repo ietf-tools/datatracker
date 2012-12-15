@@ -32,8 +32,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Modified by Russ Housley on 6 July 2012 to add agenda_json and _agenda_json.
-
 import codecs, re, os, glob
 import datetime
 import tarfile
@@ -261,7 +259,7 @@ def _agenda_json(request, date=None):
     data['sections']['1.1'] = {'title':"Roll Call"}
     data['sections']['1.2'] = {'title':"Bash the Agenda"}
     data['sections']['1.3'] = {'title':"Approval of the Minutes of Past Telechats"}
-    data['sections']['1.4'] = {'title':"head List of Remaining Action Items from Last Telechat"}
+    data['sections']['1.4'] = {'title':"List of Remaining Action Items from Last Telechat"}
     data['sections']['2'] = {'title':"Protocol Actions"}
     data['sections']['2.1'] = {'title':"WG Submissions"}
     data['sections']['2.1.1'] = {'title':"New Items", 'docs':[]}
@@ -307,14 +305,8 @@ def _agenda_json(request, date=None):
                     for obj in docs[section]:
                         d = obj['obj']
                         docinfo = {'docname':d.canonical_name(),
-                                   'rev':d.rev,
                                    'title':d.title,
-                                   'intended-std-level':str(d.intended_std_level),
                                    'ad':d.ad.name}
-                        if d.rfc_number():
-                            docinfo['rfc-number'] = d.rfc_number()
-                        else:
-                            docinfo['rev'] = d.rev
                         if d.note:
                             docinfo['note'] = d.note
                         defer = d.active_defer_event()
