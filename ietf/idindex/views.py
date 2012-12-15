@@ -102,7 +102,7 @@ def all_id2_entry(id):
     elif id.group.type_id == "wg" and id.group.parent:
         area = id.group.parent.acronym
     fields.append(area)
-    # 9
+    # 9 responsible AD name
     fields.append(id.idinternal.job_owner if id.idinternal else "")
     # 10
     s = id.intended_status
@@ -135,6 +135,15 @@ def all_id2_entry(id):
         shepherd = id.shepherd
         realname = unicode(shepherd)
         email = shepherd.email_address()
+        name = re.sub(u"[<>@,]", u"", realname) + u" <"+re.sub(u"[<>,]", u"", email).strip()+u">"
+    else:
+        name = u""
+    fields.append(name)
+    # 16 Responsible AD name and email
+    if id.ad:
+        ad = id.ad
+        realname = unicode(ad)
+        email = ad.email_address()
         name = re.sub(u"[<>@,]", u"", realname) + u" <"+re.sub(u"[<>,]", u"", email).strip()+u">"
     else:
         name = u""
