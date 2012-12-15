@@ -206,7 +206,6 @@ class UploadForm(forms.Form):
         txt_file.seek(0)
         return self.draft
     
-    @debug.trace
     def save(self):
         for ext in ['txt', 'pdf', 'xml', 'ps']:
             fd = self.cleaned_data[ext]
@@ -337,13 +336,11 @@ class AutoPostForm(forms.Form):
                                               'full_name': full_name})
         return ''.join(buttons)
 
-    @debug.trace
     def save(self, request):
         self.save_submitter_info()
         self.save_new_draft_info()
         self.send_confirmation_mail(request)
 
-    @debug.trace
     def send_confirmation_mail(self, request):
         subject = 'Confirmation for Auto-Post of I-D %s' % self.draft.filename
         from_email = settings.IDSUBMIT_FROM_EMAIL
@@ -531,12 +528,10 @@ class MetaDataForm(AutoPostForm):
                     author_order=i + 1,
                     submission=draft)
 
-    @debug.trace
     def save(self, request):
         self.save_new_draft_info()
         self.send_mail_to_secretariat(request)
 
-    @debug.trace
     def send_mail_to_secretariat(self, request):
         subject = 'Manual Post Requested for %s' % self.draft.filename
         from_email = settings.IDSUBMIT_FROM_EMAIL
