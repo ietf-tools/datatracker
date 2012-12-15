@@ -84,7 +84,7 @@ def run_tests_1(test_labels, *args, **kwargs):
         settings.SITE_ID = 1
     assert(not settings.IDTRACKER_BASE_URL.endswith('/'))
     kwargs["verbosity"] = 0
-    django_run_tests(test_labels, *args, **kwargs)
+    return django_run_tests(test_labels, *args, **kwargs)
 
 def run_tests(*args, **kwargs):
     # Tests that involve switching back and forth between the real
@@ -93,5 +93,20 @@ def run_tests(*args, **kwargs):
     if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
         raise EnvironmentError("Refusing to run tests on production server")
     ietf.utils.mail.test_mode = True
-    run_tests_1(*args, **kwargs)
-    
+    failures = run_tests_1(*args, **kwargs)
+    # Record the test result in a file, in order to be able to check the
+    # results and avoid re-running tests if we've alread run them with OK
+    # result after the latest code changes:
+    import os, time, ietf.settings as config
+    topdir = os.path.dirname(os.path.dirname(config.__file__))
+    tfile = open(os.path.join(topdir,"testresult"), "a")
+    timestr = time.strftime("%Y-%m-%d %H:%M:%S")
+    if failures:
+        tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
+    else:
+        if args:
+            tfile.write("%s SUCCESS (tests=%s)\n" % (timestr, repr(list(*args))))
+        else:
+            tfile.write("%s OK\n" % (timestr, ))
+    tfile.close()
+    return failures
