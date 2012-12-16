@@ -1,3 +1,44 @@
+ietfdb (4.37) ietf; urgency=low
+
+  This is a minor bug-fix release of the datatracker.  It fixes issues with
+  presentation of IESG discusses and comments, anchor names in the materials
+  list page, details of the 1wg-summary.txt page, and some other minor issues.
+
+  * Merged in a patch from housley@vigilsec.com to handle different 
+    documents better in the agenda JSON output.
+
+  * Added simple logging of test runs, to make it easier to be sure that 
+    tests has been run successfully on the latest code.
+
+  * Added a new field, #16: draft AD (name and email) to all_id2.txt
+
+  * Made the IPR country field wider to accomodate IPR disclosures 
+    referencing many patent instances in many countries.
+
+  * Updated draft submission author extraction module to handle dash-separated
+    double given names.
+
+  * Tweaks and fixes to the IESG scribe template templates.
+
+  * Added a filter for use in displaying document comments and discusses 
+    which unfortunately sometimes use html <br> markup, which should give line 
+    breaks, and sometimes contain <email@domain> which should *not* be 
+    interpreted as html, but rendered as &lt;...
+
+  * Limited the 1wg-summary list and friends to WGs, (excluding the 'iesg' 
+    area which lists the areas as subgroups, for instance).
+
+  * Resolved a naming conflict between the builtin messages framework and a 
+    variable named messages in wgcharter.views.change_state.  Fixes issue #901.
+
+  * Tweaked the handling of the syslog module not being available on 
+    windows.
+
+  * Fixed what may have been a regression in the form of the anchors in the 
+    materials list page.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Dec 2012 19:29:15 +0100
+
 ietfdb (4.36) ietf; urgency=medium
 
   This release contains the features and bugfixes from the IETF-85 code
