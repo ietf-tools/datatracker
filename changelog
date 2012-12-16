@@ -37,7 +37,7 @@ ietfdb (4.37) ietf; urgency=low
   * Fixed what may have been a regression in the form of the anchors in the 
     materials list page.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  16 Dec 2012 19:29:15 +0100
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Dec 2012 19:30:30 +0100
 
 ietfdb (4.36) ietf; urgency=medium
 
