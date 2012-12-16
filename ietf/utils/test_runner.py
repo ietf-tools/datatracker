@@ -104,7 +104,7 @@ def run_tests(*args, **kwargs):
     if failures:
         tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
     else:
-        if args:
+        if list(*args):
             tfile.write("%s SUCCESS (tests=%s)\n" % (timestr, repr(list(*args))))
         else:
             tfile.write("%s OK\n" % (timestr, ))
