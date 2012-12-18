@@ -44,7 +44,7 @@ def nominate(request, year):
         form = NominateForm(data=request.POST, nomcom=nomcom, user=request.user)
         if form.is_valid():
             form.save()
-            message = ('success', 'The nomination has been successfully done')
+            message = ('success', 'Your nomination has been registered. Thank you for the nomination.')
     else:
         form = NominateForm(nomcom=nomcom, user=request.user)
 

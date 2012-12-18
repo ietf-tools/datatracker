@@ -1,11 +1,12 @@
+from django.conf import settings
 from django import forms
 from django.contrib.formtools.preview import FormPreview
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
-from django.conf import settings
 
 from ietf.utils import unaccent
+from ietf.utils.mail import send_mail
 from ietf.ietfauth.decorators import has_role
 from ietf.utils import fields as custom_fields
 from ietf.group.models import Group, Role
@@ -16,6 +17,10 @@ from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
 
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
+INEXISTENT_PERSON_TEMPLATE = "email/inexistent_person.txt"
+NOMINEE_TEMPLATE = "email/new_nominee.txt"
+NOMINATION_TEMPLATE = "email/new_nomination.txt"
+QUESTIONNAIRE_TEMPLATE = "position/questionnaire.txt"
 
 
 def get_group_or_404(year):
@@ -169,10 +174,13 @@ class NominateForm(forms.ModelForm):
         candidate_name = self.cleaned_data['candidate_name']
         position = self.cleaned_data['position']
         comments = self.cleaned_data['comments']
+        nomcom_template_path = '/nomcom/%s/' % self.nomcom.group.acronym
+        nomcom_chair = self.nomcom.group.get_chair()
+        nomcom_chair_mail = nomcom_chair and nomcom_chair.email.address or None
 
         # Create person and email if candidate email does't exist and send email
-        email, created = Email.objects.get_or_create(address=candidate_email)
-        if created:
+        email, created_email = Email.objects.get_or_create(address=candidate_email)
+        if created_email:
             email.person = Person.objects.create(name=candidate_name,
                                                  ascii=unaccent.asciify(candidate_name),
                                                  address=candidate_email)
@@ -180,7 +188,7 @@ class NominateForm(forms.ModelForm):
 
         # Add the nomination for a particular position
         nominee, created = Nominee.objects.get_or_create(email=email)
-        NomineePosition.objects.get_or_create(position=position, nominee=nominee)
+        nominee_position, nominee_position_created = NomineePosition.objects.get_or_create(position=position, nominee=nominee)
 
         # Complete nomination data
         author_emails = Email.objects.filter(person__user=self.user)
@@ -199,8 +207,53 @@ class NominateForm(forms.ModelForm):
         if commit:
             nomination.save()
 
-        # TODO: send mail to chair and secretariat with the new person
-        # TODO: send mails about nominations
+        if created_email:
+            # send email to secretariat and nomcomchair to warn about the new person
+            subject = 'New person is created'
+            from_email = settings.NOMCOM_FROM_EMAIL
+            to_email = [settings.NOMCOM_ADMIN_EMAIL]
+            context = {'email': email.address,
+                       'fullname': email.person.name,
+                       'person_id': email.person.id}
+            path = nomcom_template_path + INEXISTENT_PERSON_TEMPLATE
+            if nomcom_chair_mail:
+                to_email.append(nomcom_chair_mail)
+            send_mail(None, to_email, from_email, subject, path, context)
+
+        # send email to nominee
+        if nominee_position_created:
+            subject = 'IETF Nomination Information'
+            from_email = settings.NOMCOM_FROM_EMAIL
+            to_email = email.address
+            context = {'nominee': email.person.name,
+                      'position': position}
+            path = nomcom_template_path + NOMINEE_TEMPLATE
+            send_mail(None, to_email, from_email, subject, path, context)
+
+        # send email to nominee with questionnaire
+        if nominee_position_created:
+            if self.nomcom.send_questionnaire:
+                subject = '%s Questionnaire' % position
+                from_email = settings.NOMCOM_FROM_EMAIL
+                to_email = email.address
+                context = {'nominee': email.person.name,
+                          'position': position}
+                path = '%s%d/%s' % (nomcom_template_path, position.id, QUESTIONNAIRE_TEMPLATE)
+                send_mail(None, to_email, from_email, subject, path, context)
+
+        # send emails to nomcom chair
+        subject = 'Nomination Information'
+        from_email = settings.NOMCOM_FROM_EMAIL
+        to_email = nomcom_chair_mail
+        context = {'nominee': email.person.name,
+                   'nominee_email': email.address,
+                   'position': position}
+        if author:
+            context.update({'nominator': author.person.name,
+                            'nominator_email': author.address})
+        path = nomcom_template_path + NOMINATION_TEMPLATE
+        send_mail(None, to_email, from_email, subject, path, context)
+
         return nomination
 
     class Meta:

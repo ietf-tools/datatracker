@@ -32,24 +32,31 @@ Please, check if there is some more action nedeed.</field>
         <field type="TextField" name="variables">$nominee: Full name of the nominee
 $position: Name of the position</field>
         <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
-        <field type="TextField" name="content">Hello $nominee.
+        <field type="TextField" name="content">Hi,
 
-You have been nominated for $position.</field>
+You have been nominated for the position of $position.
+
+The NomCom would appreciate receiving an indication of whether or not you accept this nomination to stand for consideration as a candidate for this position.
+
+If you accept, you will need to fill out a questionnaire.  You will receive the questionnaire by email.
+
+Best regards,
+</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
     <object pk="4" model="dbtemplate.dbtemplate">
         <field type="CharField" name="path">/nomcom/defaults/email/new_nomination.txt</field>
         <field type="CharField" name="title">Email sent to nominators and secretariat when the nominators make the nominations</field>
         <field type="TextField" name="variables">$nominator: Full name of the nominator
-$email: Email of the nominator
+$nominator_email: Email of the nominator
 $nominee: Full name of the nominee
 $nominee_email: Email of the nominee
 $position: Nomination position</field>
         <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
         <field type="TextField" name="content">A new nomination have been received.
 
-Nominator: $nominator &lt;$email&gt;
-Nominee: $nominee &lt;$email&gt;
+Nominator: $nominator <$nominator_email>
+Nominee: $nominee <$nominee_email>
 Position: $position</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
@@ -59,7 +66,7 @@ Position: $position</field>
         <field type="TextField" name="variables">$nominee: Full name of the nomine
 $position: Position</field>
         <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
-        <field type="TextField" name="content">Hi $nominee, please fill this questionnaire for the position $position:
+        <field type="TextField" name="content">Hi $nominee, this is the questionnaire for the position $position:
 
 Questionnaire</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
