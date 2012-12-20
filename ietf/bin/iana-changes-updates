@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+import os, sys, re, json, datetime, optparse
+import syslog
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+
+from ietf import settings
+from django.core import management
+management.setup_environ(settings)
+
+
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option("-f", "--from", dest="start",
+                  help="Start time, defaults to a little less than 23 hours ago", metavar="YYYY-MM-DD HH:MM:SS")
+parser.add_option("-t", "--to", dest="end",
+                  help="End time, defaults to 23 hours later than from", metavar="YYYY-MM-DD HH:MM:SS")
+parser.add_option("", "--no-email", dest="send_email", default=True, action="store_false",
+                  help="Skip sending emails")
+
+options, args = parser.parse_args()
+
+# compensate to avoid we ask for something that happened now and then
+# don't get it back because our request interval is slightly off
+CLOCK_SKEW_COMPENSATION = 5 # seconds
+
+# actually the interface accepts 24 hours, but then we get into
+# trouble with daylights savings - meh
+MAX_INTERVAL_ACCEPTED_BY_IANA = datetime.timedelta(hours=23)
+
+
+start = datetime.datetime.now() - datetime.timedelta(hours=23) + datetime.timedelta(seconds=CLOCK_SKEW_COMPENSATION)
+if options.start:
+    start = datetime.datetime.strptime(options.start, "%Y-%m-%d %H:%M:%S")
+
+end = start + datetime.timedelta(hours=23)
+if options.end:
+    end = datetime.datetime.strptime(options.end, "%Y-%m-%d %H:%M:%S")
+
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
+
+
+from ietf.sync.iana import *
+
+syslog.syslog("Updating history log with new changes from IANA from %s, period %s - %s" % (CHANGES_URL, start, end))
+
+t = start
+while t < end:
+    # the IANA server doesn't allow us to fetch more than a certain
+    # period, so loop over the requested period and make multiple
+    # requests if necessary
+
+    text = fetch_changes_json(CHANGES_URL, t, min(end, t + MAX_INTERVAL_ACCEPTED_BY_IANA))
+    changes = parse_changes_json(text)
+    added_events, warnings = update_history_with_changes(changes, send_email=options.send_email)
+
+    for e in added_events:
+        syslog.syslog("Added event for %s %s: %s" % (e.doc_id, e.time, e.desc))
+
+    for w in warnings:
+        syslog.syslog("WARNING: %s" % w)
+
+    t += MAX_INTERVAL_ACCEPTED_BY_IANA

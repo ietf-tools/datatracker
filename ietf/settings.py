@@ -165,6 +165,7 @@ INSTALLED_APPS = (
     'ietf.ietfworkflows',
     'ietf.wgchairs',
     'ietf.wgcharter',
+    'ietf.sync',
     'ietf.community',
 )
 
@@ -250,7 +251,8 @@ else:
 IPR_EMAIL_TO = ['ietf-ipr@ietf.org', ]
 DOC_APPROVAL_EMAIL_CC = ["RFC Editor <rfc-editor@rfc-editor.org>", ]
 
-
+# Put real password in settings_local.py
+IANA_SYNC_PASSWORD = "secret"
 
 # Liaison Statement Tool settings
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'

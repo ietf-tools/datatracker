@@ -54,7 +54,7 @@ from ietf.idrfc.utils import update_telechat
 from ietf.ietfauth.decorators import group_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
 from ietf.ipr.models import IprDocAlias 
-from ietf.doc.models import Document, TelechatDocEvent
+from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent
 from ietf.group.models import Group
 
 def date_threshold():
@@ -139,7 +139,6 @@ def get_doc_section(id):
 
 def get_doc_sectionREDESIGN(doc):
     if doc.type_id == 'draft':
-        states = [16,17,18,19,20,21]
         if doc.intended_std_level_id in ["bcp", "ds", "ps", "std"]:
             s = "2"
         else:
@@ -152,7 +151,7 @@ def get_doc_sectionREDESIGN(doc):
             s = s + "3"
         else:
             s = s + "2"
-        if not doc.get_state_slug=="rfc" and doc.get_state('draft-iesg').order not in states:
+        if not doc.get_state_slug=="rfc" and doc.get_state_slug('draft-iesg') not in ("lc", "writeupw", "goaheadw", "iesg-eva", "defer"):
             s = s + "3"
         elif doc.returning_item():
             s = s + "2"
@@ -191,23 +190,36 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     get_doc_section = get_doc_sectionREDESIGN
     
 def agenda_docs(date, next_agenda):
-    from ietf.doc.models import TelechatDocEvent
-        
-    matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct()
+    matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).select_related("stream").distinct()
 
     docmatches = []
         
-    for m in matches:
-        if m.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
+    for doc in matches:
+        if doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
             continue
 
-        e = m.latest_event(type="started_iesg_process")
-        m.balloting_started = e.time if e else datetime.datetime.min
+        e = doc.latest_event(type="started_iesg_process")
+        doc.balloting_started = e.time if e else datetime.datetime.min
 
-        if m.type_id=='conflrev':
-            m.conflictdoc = m.relateddocument_set.get(relationship__slug='conflrev').target.document
+        if doc.type_id == "draft":
+            s = doc.get_state("draft-iana-review")
+            if s and s.slug in ("not-ok", "changed", "need-rev"):
+                doc.iana_review_state = str(s)
 
-        docmatches.append(m)
+            if doc.get_state_slug("draft-iesg") == "lc":
+                e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
+                if e:
+                    doc.lastcall_expires = e.expires
+
+            if doc.stream_id in ("ietf", "irtf", "iab"):
+                doc.consensus = "Unknown"
+                e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+                if e:
+                    doc.consensus = "Yes" if e.consensus else "No"
+        elif doc.type_id=='conflrev':
+            doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+
+        docmatches.append(doc)
 
     # Be careful to keep this the same as what's used in agenda_documents
     docmatches.sort(key=lambda d: d.balloting_started)
@@ -313,19 +325,37 @@ def _agenda_json(request, date=None):
                         if defer:
                             docinfo['defer-by'] = defer.by.name
                             docinfo['defer-at'] = str(defer.time)
-                        if d.type_id == 'conflrev':
-                            td = d.relateddocument_set.get(relationship__slug='conflrev').target.document
+			if doc.type_id == "draft":
+                            docinfo['intended-std-level'] = str(doc.intended_std_level)
+                            if doc.rfc_number():
+                                docinfo['rfc-number'] = doc.rfc_number()
+                            else:
+                                docinfo['rev'] = doc.rev
+
+                            iana_state = doc.get_state("draft-iana-review")
+                            if iana_state.slug in ("not-ok", "changed", "need-rev"):
+                                docinfo['iana_review_state'] = str(iana_state)
+
+                            if doc.get_state_slug("draft-iesg") == "lc":
+                                e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
+                                if e:
+                                    docinfo['lastcall_expires'] = e.expires
+
+                            docinfo['consensus'] = None
+                            e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+                            if e:
+                                docinfo['consensus'] = e.consensus
+                        elif doc.type_id == 'conflrev':
+                            td = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
                             docinfo['target-docname'] = td.canonical_name()
                             docinfo['target-title'] = td.title
                             docinfo['target-rev'] = td.rev
                             docinfo['intended-std-level'] = str(td.intended_std_level)
                             docinfo['stream'] = str(td.stream)
-                        else:
-                            docinfo['intended-std-level'] = str(d.intended_std_level)
-                            if d.rfc_number():
-                                docinfo['rfc-number'] = d.rfc_number()
-                            else:
-                                docinfo['rev'] = d.rev
+			else:
+			    # XXX check this -- is there nothing to set for
+			    # all other documents here?
+			    pass
                         data['sections'][s]['docs'] += [docinfo, ]
 
     wgs = agenda_wg_actions(date)

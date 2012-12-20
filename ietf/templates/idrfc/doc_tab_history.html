@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% include "idrfc/doc_diffs.html" %}
 {% endif %}
 <h2 style="margin-top:1em;">Document history</h2>
-{% if user|in_group:"Area_Director,Secretariat,IANA" and doc.in_ietf_process %}
+{% if user|in_group:"Area_Director,Secretariat,IANA,RFC Editor" and doc.in_ietf_process %}
 <div style="margin-bottom:8px" id="history_actions">
   <span id="doc_add_comment_button" class="yui-button yui-link-button" style="margin-left:2px;"><span class="first-child"><a href="{% url doc_add_comment name=doc.draft_name %}">Add comment</a></span></span>
 </div>

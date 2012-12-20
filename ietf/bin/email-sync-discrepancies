@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+import sys, os
+import syslog
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+
+from ietf import settings
+from django.core import management
+management.setup_environ(settings)
+
+
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option("-t", "--to", dest="to",
+                  help="Email address to send report to", metavar="EMAIL")
+
+options, args = parser.parse_args()
+
+
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
+
+from ietf.sync.mails import email_discrepancies
+
+receivers = ["iesg-secretary@ietf.org"]
+
+if options.to:
+    receivers = [options.to]
+
+email_discrepancies(receivers)
+
+syslog.syslog("Emailed sync discrepancies to %s" % receivers)

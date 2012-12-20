@@ -112,7 +112,7 @@ class SimpleUrlTestCase(TestCase,RealDatabaseTest):
         self.ref_prefix = os.environ.get("IETFDB_REF_PREFIX", "")
         if self.ref_prefix.endswith("/"):
             self.ref_prefix = self.ref_prefix[:-1]
-        self.skip_heavy_tests = os.environ.get("IETFDB_SKIP_HEAVY", False)
+        self.skip_heavy_tests = os.environ.get("IETFDB_SKIP_HEAVY", True)
 
     def tearDown(self):
         self.tearDownRealDatabase()

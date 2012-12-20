@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Sync discrepancies{% endblock %}
+
+{% block morecss %}
+table.discrepancies td { padding-right: 0.2em; }
+{% endblock %}
+
+{% block content %}
+<h1>Sync discrepancies</h1>
+
+{% for title, docs in sections %}
+<h3>{{ title }}</h3>
+
+{% if docs %}
+<table class="discrepancies">
+<tr>
+  <td>Draft Name</td>
+  <td>IESG state</td>
+  <td>RFC Editor state</td>
+  <td>IANA Action state</td>
+</tr>
+{% for d in docs %}
+<tr id="d{{ d.pk }}">
+  <td><a href="{{ d.get_absolute_url }}">{{ d.name }}</a></td>
+  <td>{{ d.iesg_state|default:"-" }}</td>
+  <td>{{ d.rfc_state|default:"-" }}</td>
+  <td>{{ d.iana_action_state|default:"-" }}</td>
+</tr>
+{% endfor %}
+</table>
+{% else %}
+<p>None found.</p>
+{% endif %}
+
+{% endfor %}
+{% endblock %}

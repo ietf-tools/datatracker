@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+
+import os, sys, re, json, datetime, optparse
+import syslog
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+
+from ietf import settings
+from django.core import management
+management.setup_environ(settings)
+
+
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
+
+from ietf.sync.iana import *
+from ietf.doc.models import Document
+
+msg = sys.stdin.read()
+
+doc_name, review_time, by, comment = parse_review_email(msg)
+
+syslog.syslog(u"Read IANA review email for %s at %s by %s" % (doc_name, review_time, by))
+
+if by.name == "(System)":
+    syslog.syslog("WARNING: person responsible for email does not have a IANA role")
+
+try:
+    add_review_comment(doc_name, review_time, by, comment)
+except Document.DoesNotExist:
+    syslog.syslog("ERROR: unknown document %s" % doc_name)
+

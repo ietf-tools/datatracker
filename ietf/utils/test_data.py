@@ -114,6 +114,22 @@ def make_test_data():
         ascii="(System)",
         address="",
         )
+
+    # IANA and RFC Editor groups
+    iana = Group.objects.create(
+        name="IANA",
+        acronym="iana",
+        state_id="active",
+        type_id="ietf",
+        parent=None,
+        )
+    rfc_editor = Group.objects.create(
+        name="RFC Editor",
+        acronym="rfceditor",
+        state_id="active",
+        type_id="ietf",
+        parent=None,
+        )
     
     if system_person.id != 0: # work around bug in Django
         Person.objects.filter(id=system_person.id).update(id=0)
@@ -248,6 +264,42 @@ def make_test_data():
         email=email,
         )
 
+    # IANA user
+    u = User.objects.create(username="iana")
+    p = Person.objects.create(
+        name="Ina Iana",
+        ascii="Ina Iana",
+        user=u)
+    Alias.objects.create(
+        name=p.name,
+        person=p)
+    email = Email.objects.create(
+        address="iana@ia.na",
+        person=p)
+    Role.objects.create(
+        name_id="auth",
+        group=iana,
+        email=email,
+        person=p,
+        )
+
+    # RFC Editor user
+    u = User.objects.create(username="rfc")
+    p = Person.objects.create(
+        name="Rfc Editor",
+        ascii="Rfc Editor",
+        user=u)
+    email = Email.objects.create(
+        address="rfc@edit.or",
+        person=p)
+    Role.objects.create(
+        name_id="auth",
+        group=rfc_editor,
+        email=email,
+        person=p,
+        )
+
+    
     # draft
     draft = Document.objects.create(
         name="draft-ietf-mars-test",

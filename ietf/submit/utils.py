@@ -17,6 +17,7 @@ from ietf.ietfauth.decorators import has_role
 
 from ietf.doc.models import *
 from ietf.person.models import Person, Alias, Email
+from ietf.doc.utils import add_state_change_event
 from ietf.message.models import Message
 
 # Some useful states
@@ -132,27 +133,33 @@ def perform_postREDESIGN(request, submission):
     draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
     draft.save()
 
-    draft.set_state(State.objects.get(type="draft", slug="active"))
-    if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
-        # automatically set state "WG Document"
-        draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
-
-    DocAlias.objects.get_or_create(name=submission.filename, document=draft)
-
-    update_authors(draft, submission)
-
-    # new revision event
     a = submission.tempidauthors_set.filter(author_order=0)
     if a:
         submitter = ensure_person_email_info_exists(a[0]).person
     else:
         submitter = system
 
+    draft.set_state(State.objects.get(type="draft", slug="active"))
+    DocAlias.objects.get_or_create(name=submission.filename, document=draft)
+
+    update_authors(draft, submission)
+
+    # new revision event
     e = NewRevisionDocEvent(type="new_revision", doc=draft, rev=draft.rev)
     e.time = draft.time #submission.submission_date
     e.by = submitter
     e.desc = "New revision available"
     e.save()
+
+    if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
+        # automatically set state "WG Document"
+        draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
+
+    if draft.get_state_slug("draft-iana-review") in ("ok-act", "ok-noact", "not-ok"):
+        prev_state = draft.get_state("draft-iana-review")
+        next_state = State.objects.get(type="draft-iana-review", slug="changed")
+        draft.set_state(next_state)
+        add_state_change_event(draft, submitter, prev_state, next_state)
 
     # clean up old files
     if prev_rev != draft.rev:
@@ -177,8 +184,7 @@ def perform_postREDESIGN(request, submission):
     submission.status_id = POSTED
 
     announce_to_lists(request, submission)
-    if draft.get_state("draft-iesg") != None and not was_rfc:
-        announce_new_version(request, submission, draft, state_change_msg)
+    announce_new_version(request, submission, draft, state_change_msg)
     announce_to_authors(request, submission)
 
     submission.save()
@@ -261,17 +267,29 @@ def announce_new_versionREDESIGN(request, submission, draft, state_change_msg):
     if draft.ad:
         to_email.append(draft.ad.role_email("ad").address)
 
+    if draft.stream_id == "iab":
+        to_email.append("IAB Stream <iab-stream@iab.org>")
+    elif draft.stream_id == "ise":
+        to_email.append("Independent Submission Editor <rfc-ise@rfc-editor.org>")
+    elif draft.stream_id == "irtf":
+        to_email.append("IRSG <irsg@irtf.org>")
+
+    # if it has been sent to the RFC Editor, keep them in the loop
+    if draft.get_state_slug("draft-iesg") in ("ann", "rfcqueue"):
+        to_email.append("RFC Editor <rfc-editor@rfc-editor.org>")
+
     active_ballot = draft.active_ballot()
     if active_ballot:
         for ad, pos in active_ballot.active_ad_positions().iteritems():
             if pos and pos.pos_id == "discuss":
                 to_email.append(ad.role_email("ad").address)
 
-    subject = 'New Version Notification - %s-%s.txt' % (submission.filename, submission.revision)
-    from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
-    send_mail(request, to_email, from_email, subject, 'submit/announce_new_version.txt',
-              {'submission': submission,
-               'msg': state_change_msg})
+    if to_email:
+        subject = 'New Version Notification - %s-%s.txt' % (submission.filename, submission.revision)
+        from_email = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
+        send_mail(request, to_email, from_email, subject, 'submit/announce_new_version.txt',
+                  {'submission': submission,
+                   'msg': state_change_msg})
 
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     announce_new_version = announce_new_versionREDESIGN
@@ -563,7 +581,7 @@ class DraftValidation(object):
 
     def validate_wg(self):
         if self.wg and not self.wg.status_id == IETFWG.ACTIVE:
-            self.add_warning('group', 'Working Group exists but is not an active WG')
+            self.add_warning('group', 'Group exists but is not an active group')
 
     def validate_abstract(self):
         if not self.draft.abstract:

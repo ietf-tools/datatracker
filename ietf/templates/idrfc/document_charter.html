@@ -136,7 +136,7 @@
 
 {% if doc.rev %}
 <div class="markup_draft">
-  {{ content|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
+  {{ content|safe|keep_spacing|sanitize_html|wordwrap:80|safe }}
 </div>
 {% endif %}
 

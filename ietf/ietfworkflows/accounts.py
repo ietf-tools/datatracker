@@ -108,14 +108,6 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
 
 def can_edit_state(user, draft):
-    streamed = get_streamed_draft(draft)
-    if not settings.USE_DB_REDESIGN_PROXY_CLASSES and (not streamed or not streamed.stream):
-        person = get_person_for_user(user)
-        if not person:
-            return False
-        return (is_secretariat(user) or
-                is_wgchair(person) or
-                is_wgdelegate(person))
     return (is_secretariat(user) or
             is_authorized_in_draft_stream(user, draft))
 

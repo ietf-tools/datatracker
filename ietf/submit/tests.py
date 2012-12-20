@@ -16,7 +16,7 @@ from ietf.utils.mail import outbox
 
 from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role
-from ietf.doc.models import Document, BallotDocEvent, BallotPositionDocEvent
+from ietf.doc.models import *
 from ietf.submit.models import IdSubmissionDetail, Preapproval
 
 class SubmitTestCase(django.test.TestCase):
@@ -75,7 +75,6 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
         self.assertEquals(IdSubmissionDetail.objects.filter(filename=name).count(), 1)
         submission = IdSubmissionDetail.objects.get(filename=name)
-        self.assertEquals(submission.group_acronym.acronym, "mars")
         self.assertEquals(submission.tempidauthors_set.count(), 1)
         self.assertTrue(re.search('\s+Summary:\s+0\s+errors|No nits found', submission.idnits_message))
         author = submission.tempidauthors_set.all()[0]
@@ -139,6 +138,7 @@ class SubmitTestCase(django.test.TestCase):
         draft = Document.objects.get(docalias__name=name)
         self.assertEquals(draft.rev, rev)
         new_revision = draft.latest_event()
+        self.assertEquals(draft.group.acronym, "mars")
         self.assertEquals(new_revision.type, "new_revision")
         self.assertEquals(new_revision.by.name, "Test Name")
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
@@ -160,6 +160,16 @@ class SubmitTestCase(django.test.TestCase):
     def test_submit_existing(self):
         # submit new revision of existing -> supply submitter info -> confirm
         draft = make_test_data()
+
+        # pretend IANA reviewed it
+        draft.set_state(State.objects.get(type="draft-iana-review", slug="not-ok"))
+
+        # pretend it was approved to check that we notify the RFC Editor
+        e = DocEvent(type="iesg_approved", doc=draft)
+        e.time = draft.time
+        e.by = Person.objects.get(name="(System)")
+        e.desc = "The IESG approved the document"
+        e.save()
 
         # make a discuss to see if the AD gets an email
         ballot_position = BallotPositionDocEvent()
@@ -214,16 +224,17 @@ class SubmitTestCase(django.test.TestCase):
 
         draft = Document.objects.get(docalias__name=name)
         self.assertEquals(draft.rev, rev)
-        new_revision = draft.latest_event()
-        self.assertEquals(new_revision.type, "new_revision")
-        self.assertEquals(new_revision.by.name, "Test Name")
+        self.assertEquals(draft.group.acronym, name.split("-")[2])
+        self.assertEquals(draft.docevent_set.all()[1].type, "new_revision")
+        self.assertEquals(draft.docevent_set.all()[1].by.name, "Test Name")
         self.assertTrue(not os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, u"%s-%s.txt" % (name, rev))))
         self.assertEquals(draft.type_id, "draft")
         self.assertEquals(draft.stream_id, "ietf")
-        self.assertEquals(draft.get_state("draft-stream-%s" % draft.stream_id).slug, "wg-doc")
+        self.assertEquals(draft.get_state_slug("draft-stream-%s" % draft.stream_id), "wg-doc")
+        self.assertEquals(draft.get_state_slug("draft-iana-review"), "changed")
         self.assertEquals(draft.authors.count(), 1)
         self.assertEquals(draft.authors.all()[0].get_name(), "Test Name")
         self.assertEquals(draft.authors.all()[0].address, "testname@example.com")
@@ -239,6 +250,38 @@ class SubmitTestCase(django.test.TestCase):
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
         self.assertTrue(name in unicode(outbox[-1]))
         self.assertTrue("mars" in unicode(outbox[-1]))
+
+    def test_submit_new_wg_with_dash(self):
+        draft = make_test_data()
+
+        group = Group.objects.create(acronym="mars-special", name="Mars Special", type_id="wg", state_id="active")
+
+        name = "draft-ietf-%s-testing-tests" % group.acronym
+
+        self.do_submission(name, "00")
+
+        self.assertEquals(IdSubmissionDetail.objects.get(filename=name).group_acronym.acronym, group.acronym)
+
+    def test_submit_new_irtf(self):
+        draft = make_test_data()
+
+        group = Group.objects.create(acronym="saturnrg", name="Saturn", type_id="rg", state_id="active")
+
+        name = "draft-irtf-%s-testing-tests" % group.acronym
+
+        self.do_submission(name, "00")
+
+        self.assertEquals(IdSubmissionDetail.objects.get(filename=name).group_acronym.acronym, group.acronym)
+        self.assertEquals(IdSubmissionDetail.objects.get(filename=name).group_acronym.type_id, group.type_id)
+
+    def test_submit_new_iab(self):
+        draft = make_test_data()
+
+        name = "draft-iab-testing-tests"
+
+        self.do_submission(name, "00")
+
+        self.assertEquals(IdSubmissionDetail.objects.get(filename=name).group_acronym.acronym, "iab")
 
     def test_cancel_submission(self):
         # submit -> cancel

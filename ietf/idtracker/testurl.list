@@ -22,4 +22,4 @@
 # Test case for missing comment time (bug fixed in changeset 1733)
 200     /feed/comments/draft-ietf-msec-newtype-keyid/
 
-200,heavy	/sitemap-idtracker.xml
+#200,heavy	/sitemap-idtracker.xml

@@ -3,9 +3,9 @@
 {% block title %}Change state of {{ doc }}{% endblock %}
 
 {% block morecss %}
-form.change-state select {
-  width: 22em;
-}
+form.change-state select { width: 22em; }
+form.change-state #id_comment { width: 30em; }
+form.change-state .cancel-pub-note { width: 30em; color: #a00; }
 form.change-state .actions {
   text-align: right;
   padding-top: 10px;
@@ -29,6 +29,14 @@ form.change-state .actions {
 <form class="change-state" action="" method="post">
   <table>
     {{ form.as_table }}
+    {% if state and state.slug == "rfcqueue" %}
+    <tr>
+      <td></td>
+      <td class="cancel-pub-note">Note: if you pull the draft out of the
+      {{ state.name }} state, the RFC Editor and IANA will be notified
+      by email with this comment so they can update their queues.</td>
+    </tr>
+    {% endif %}
     <tr>
       <td colspan="2" class="actions">
         <a href="{{ doc.get_absolute_url }}">Back</a>

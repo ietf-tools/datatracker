@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Request publication for {{ doc }}{% endblock %}
+
+{% block morecss %}
+form.request-publication #id_subject,
+form.request-publication #id_body { width: 50em; }
+
+form.request-publication #id_body { height: 30em; }
+{% endblock %}
+
+{% block content %}
+<h1>Request publication for {{ doc }}</h1>
+
+<p>Send a publication request to the RFC Editor for {{ doc }} and move
+it to the <em>{{ next_state.name }}</em> stream state.</p>
+
+<p>Please edit the message and remove any parts in brackets you do not
+fill in. For independent submissions, see the <a
+href="http://www.rfc-editor.org/indsubs.html">guidelines</a>.</p>
+
+<form class="request-publication" action="" method="POST">
+<table>
+  <tr><td>From:</td> <td>{{ message.frm }}</td></tr>
+  <tr><td>To:</td> <td>{{ message.to }}</td></tr>
+  <tr><td>Subject:</td> <td>{{ form.subject }} {{ form.subject.errors }}</td></tr>
+  <tr><td style="vertical-align: top">Message:</td> <td>{{ form.body }} {{ form.body.errors }}</td></tr>
+  <tr class="actions"><td></td>
+    <td>
+      <a href="{% url doc_view name=doc.name %}">Back</a>
+      <input name="reset" type="submit" value="Reset"/>
+      <input type="submit" value="Send request to the RFC Editor"/>
+    </td>
+  </tr>
+</table>
+</form>
+{% endblock %}

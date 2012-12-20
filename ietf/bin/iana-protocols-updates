@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+import os, sys, re, json, datetime
+import syslog
+
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+
+from ietf import settings
+from django.core import management
+management.setup_environ(settings)
+
+
+from ietf.sync.iana import *
+
+def chunks(l, n):
+    """Split list l up in chunks of max size n."""
+    return (l[i:i+n] for i in xrange(0, len(l), n))
+
+syslog.syslog("Updating history log with new RFC entries from IANA protocols page %s" % PROTOCOLS_URL)
+
+# FIXME: this needs to be the date where this tool is first deployed
+rfc_must_published_later_than = datetime.datetime(2012, 11, 26, 0, 0, 0)
+
+text = fetch_protocol_page(PROTOCOLS_URL)
+rfc_numbers = parse_protocol_page(text)
+for chunk in chunks(rfc_numbers, 100):
+    updated = update_rfc_log_from_protocol_page(chunk, rfc_must_published_later_than)
+
+    for d in updated:
+        syslog.syslog("Added history entry for %s" % d.display_name())

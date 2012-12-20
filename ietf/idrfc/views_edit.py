@@ -3,7 +3,7 @@
 
 import re, os
 from datetime import datetime, date, time, timedelta
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
@@ -13,10 +13,10 @@ from django.utils.html import strip_tags
 from django.db.models import Max
 from django.conf import settings
 
-from ietf.utils.mail import send_mail_text
+from ietf.utils.mail import send_mail_text, send_mail_message
 from ietf.ietfauth.decorators import group_required
 from ietf.idtracker.templatetags.ietf_filters import in_group
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.decorators import has_role, role_required
 from ietf.idtracker.models import *
 from ietf.iesg.models import *
 from ietf.idrfc.mails import *
@@ -26,10 +26,13 @@ from ietf.idrfc.lastcall import request_last_call
 from ietf.ietfworkflows.models import Stream
 from ietf.ietfworkflows.utils import update_stream
 from ietf.ietfworkflows.streams import get_stream_from_draft
+from ietf.ietfworkflows.accounts import can_edit_state
 
 from ietf.doc.models import *
+from ietf.doc.utils import *
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
 from ietf.person.models import Person, Email
+from ietf.message.models import Message
 
 class ChangeStateForm(forms.Form):
     pass
@@ -58,20 +61,21 @@ def change_stateREDESIGN(request, name):
     if request.method == 'POST':
         form = ChangeStateForm(request.POST)
         if form.is_valid():
-            state = form.cleaned_data['state']
+            next_state = form.cleaned_data['state']
+            prev_state = doc.get_state("draft-iesg")
+
             tag = form.cleaned_data['substate']
             comment = form.cleaned_data['comment'].strip()
-            prev = doc.get_state("draft-iesg")
 
             # tag handling is a bit awkward since the UI still works
             # as if IESG tags are a substate
             prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
             prev_tag = prev_tag[0] if prev_tag else None
 
-            if state != prev or tag != prev_tag:
+            if next_state != prev_state or tag != prev_tag:
                 save_document_in_history(doc)
                 
-                doc.set_state(state)
+                doc.set_state(next_state)
 
                 if prev_tag:
                     doc.tags.remove(prev_tag)
@@ -79,7 +83,7 @@ def change_stateREDESIGN(request, name):
                 if tag:
                     doc.tags.add(tag)
 
-                e = log_state_changed(request, doc, login, prev, prev_tag)
+                e = log_state_changed(request, doc, login, prev_state, prev_tag)
 
                 if comment:
                     c = DocEvent(type="added_comment")
@@ -96,7 +100,15 @@ def change_stateREDESIGN(request, name):
                 email_state_changed(request, doc, e.desc)
                 email_owner(request, doc, doc.ad, login, e.desc)
 
-                if state.slug == "lc-req":
+
+                if prev_state and prev_state.slug in ("ann", "rfcqueue") and next_state.slug not in ("rfcqueue", "pub"):
+                    email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state)
+
+                if next_state.slug in ("iesg-eva", "lc"):
+                    if not doc.get_state_slug("draft-iana-review"):
+                        doc.set_state(State.objects.get(type="draft-iana-review", slug="rev-need"))
+
+                if next_state.slug == "lc-req":
                     request_last_call(request, doc)
 
                     return render_to_response('idrfc/last_call_requested.html',
@@ -129,6 +141,7 @@ def change_stateREDESIGN(request, name):
     return render_to_response('idrfc/change_stateREDESIGN.html',
                               dict(form=form,
                                    doc=doc,
+                                   state=state,
                                    prev_state=prev_state,
                                    next_states=next_states,
                                    to_iesg_eval=to_iesg_eval),
@@ -138,6 +151,52 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     change_state = change_stateREDESIGN
     ChangeStateForm = ChangeStateFormREDESIGN
 
+class ChangeIanaStateForm(forms.Form):
+    state = forms.ModelChoiceField(State.objects.all(), required=False)
+
+    def __init__(self, state_type, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+        choices = State.objects.filter(type=state_type).order_by("order").values_list("pk", "name")
+        self.fields['state'].choices = [("", "-------")] + list(choices)
+
+@role_required('Secretariat', 'IANA')
+def change_iana_state(request, name, state_type):
+    """Change IANA review state of Internet Draft. Normally, this is done via
+    automatic sync, but this form allows one to set it manually."""
+    doc = get_object_or_404(Document, docalias__name=name)
+
+    state_type = doc.type_id + "-" + state_type
+
+    prev_state = doc.get_state(state_type)
+
+    if request.method == 'POST':
+        form = ChangeIanaStateForm(state_type, request.POST)
+        if form.is_valid():
+            next_state = form.cleaned_data['state']
+
+            if next_state != prev_state:
+                save_document_in_history(doc)
+                
+                doc.set_state(next_state)
+
+                e = add_state_change_event(doc, request.user.get_profile(), prev_state, next_state)
+
+                doc.time = e.time
+                doc.save()
+
+            return HttpResponseRedirect(doc.get_absolute_url())
+
+    else:
+        form = ChangeIanaStateForm(state_type, initial=dict(state=prev_state.pk if prev_state else None))
+
+    return render_to_response('idrfc/change_iana_state.html',
+                              dict(form=form,
+                                   doc=doc),
+                              context_instance=RequestContext(request))
+
+
+    
 class ChangeStreamForm(forms.Form):
     stream = forms.ModelChoiceField(StreamName.objects.exclude(slug="legacy"), required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
@@ -197,13 +256,15 @@ class ChangeIntentionForm(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.filter(used=True), empty_label="(None)", required=True, label="Intended RFC status")
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
-@group_required('Area_Director','Secretariat')
 def change_intention(request, name):
     """Change the intended publication status of a Document of type 'draft' , notifying parties 
        as necessary and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
-    if not doc.type_id=='draft':
-        raise Http404()
+    if doc.type_id != 'draft':
+        raise Http404
+
+    if not can_edit_intended_std_level(doc, request.user):
+        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     login = request.user.get_profile()
 
@@ -617,7 +678,7 @@ def add_comment(request, name):
                                    back_url=doc.idinternal.get_absolute_url()),
                               context_instance=RequestContext(request))
 
-@group_required('Area_Director', 'Secretariat', 'IANA')
+@group_required('Area_Director', 'Secretariat', 'IANA', 'RFC Editor')
 def add_commentREDESIGN(request, name):
     """Add comment to history of document."""
     doc = get_object_or_404(Document, docalias__name=name)
@@ -825,5 +886,118 @@ def edit_ad(request, name):
                               {'form':   form,
                                'doc': doc,
                               },
+                              context_instance = RequestContext(request))
+
+class ConsensusForm(forms.Form):
+    consensus = forms.ChoiceField(choices=(("", "Unknown"), ("Yes", "Yes"), ("No", "No")), required=True)
+
+def edit_consensus(request, name):
+    """Change whether the draft is a consensus document or not."""
+
+    doc = get_object_or_404(Document, type="draft", name=name)
+
+    if not can_edit_consensus(doc, request.user):
+        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+
+    e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+    prev_consensus = e and e.consensus
+
+    if request.method == 'POST':
+        form = ConsensusForm(request.POST)
+        if form.is_valid():
+            if form.cleaned_data["consensus"] != bool(prev_consensus):
+                e = ConsensusDocEvent(doc=doc, type="changed_consensus", by=request.user.get_profile())
+                e.consensus = form.cleaned_data["consensus"] == "Yes"
+
+                e.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(e.consensus),
+                                                                     nice_consensus(prev_consensus))
+
+                e.save()
+
+            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+
+    else:
+        form = ConsensusForm(initial=dict(consensus=nice_consensus(prev_consensus).replace("Unknown", "")))
+
+    return render_to_response('idrfc/change_consensus.html',
+                              {'form': form,
+                               'doc': doc,
+                              },
+                              context_instance = RequestContext(request))
+
+class PublicationForm(forms.Form):
+    subject = forms.CharField(max_length=200, required=True)
+    body = forms.CharField(widget=forms.Textarea, required=True)
+
+def request_publication(request, name):
+    """Request publication by RFC Editor for a document which hasn't
+    been through the IESG ballot process."""
+
+    doc = get_object_or_404(Document, type="draft", name=name, stream__in=("iab", "ise", "irtf"))
+
+    if not can_edit_state(request.user, doc):
+        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+
+    m = Message()
+    m.frm = request.user.get_profile().formatted_email()
+    m.to = "RFC Editor <rfc-editor@rfc-editor.org>"
+    m.by = request.user.get_profile()
+
+    next_state = State.objects.get(type="draft-stream-%s" % doc.stream.slug, slug="rfc-edit")
+
+    if request.method == 'POST' and not request.POST.get("reset"):
+        form = PublicationForm(request.POST)
+        if form.is_valid():
+            m.subject = form.cleaned_data["subject"]
+            m.body = form.cleaned_data["body"]
+            m.save()
+
+            if doc.group.acronym != "none":
+                m.related_groups = [doc.group]
+            m.related_docs = [doc]
+
+            send_mail_message(request, m)
+
+            # IANA copy
+            m.to = "IANA <drafts-approval@icann.org>"
+            send_mail_message(request, m, extra=extra_automation_headers(doc))
+
+            e = DocEvent(doc=doc, type="requested_publication", by=request.user.get_profile())
+            e.desc = "Sent request for publication to the RFC Editor"
+            e.save()
+
+            # change state
+            prev_state = doc.get_state(next_state.type)
+
+            doc.set_state(next_state)
+
+            e = add_state_change_event(doc, request.user.get_profile(), prev_state, next_state)
+
+            doc.time = e.time
+            doc.save()
+
+            return HttpResponseRedirect(urlreverse('doc_view', kwargs={'name': doc.name}))
+
+    else:
+        if doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
+            action = "Protocol Action"
+        else:
+            action = "Document Action"
+
+        from ietf.idrfc.templatetags.mail_filters import std_level_prompt
+
+        subject = "%s: '%s' to %s (%s-%s.txt)" % (action, doc.title, std_level_prompt(doc), doc.name, doc.rev)
+
+        body = generate_publication_request(request, doc)
+
+        form = PublicationForm(initial=dict(subject=subject,
+                                            body=body))
+
+    return render_to_response('idrfc/request_publication.html',
+                              dict(form=form,
+                                   doc=doc,
+                                   message=m,
+                                   next_state=next_state,
+                                   ),
                               context_instance = RequestContext(request))
 

@@ -46,6 +46,7 @@ from django.conf import settings
 from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, DocumentComment
 from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
 from ietf.idrfc import markup_txt
+from ietf.idrfc.utils import *
 from ietf.idrfc.models import RfcIndex, DraftVersions
 from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
 from ietf.ietfworkflows.utils import get_full_info_for_draft
@@ -53,7 +54,6 @@ from ietf.doc.models import *
 from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
-
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -349,17 +349,51 @@ def document_ballot(request, name, ballot_id=None):
                                    ),
                               context_instance=RequestContext(request))
 
-def document_debug(request, name):
-    r = re.compile("^rfc([1-9][0-9]*)$")
-    m = r.match(name)
-    if m:
-        rfc_number = int(m.group(1))
-        rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number)
-        doc = RfcWrapper(rfci)
-    else:
-        id = get_object_or_404(InternetDraft, filename=name)
-        doc = IdWrapper(draft=id)
-    return HttpResponse(doc.to_json(), mimetype='text/plain')
+def document_json(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+
+    def extract_name(s):
+        return s.name if s else None
+
+    data = {}
+
+    data["name"] = doc.name
+    data["rev"] = doc.rev
+    data["time"] = doc.time.strftime("%Y-%m-%d %H:%M:%S")
+    data["group"] = None
+    if doc.group:
+        data["group"] = dict(
+            name=doc.group.name,
+            type=extract_name(doc.group.type),
+            acronym=doc.group.acronym)
+    data["expires"] = doc.expires.strftime("%Y-%m-%d %H:%M:%S") if doc.expires else None
+    data["title"] = doc.title
+    data["abstract"] = doc.abstract
+    data["aliases"] = list(doc.docalias_set.values_list("name", flat=True))
+    data["state"] = extract_name(doc.get_state())
+    data["intended_std_level"] = extract_name(doc.intended_std_level)
+    data["std_level"] = extract_name(doc.std_level)
+    data["authors"] = [
+        dict(name=e.person.name,
+             email=e.address,
+             affiliation=e.person.affiliation)
+        for e in Email.objects.filter(documentauthor__document=doc).select_related("person").order_by("documentauthor__order")
+        ]
+    data["shepherd"] = doc.shepherd.formatted_email() if doc.shepherd else None
+    data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None
+
+    if doc.type_id == "draft":
+        data["iesg_state"] = extract_name(doc.get_state("draft-iesg"))
+        data["rfceditor_state"] = extract_name(doc.get_state("draft-rfceditor"))
+        data["iana_review_state"] = extract_name(doc.get_state("draft-iana-review"))
+        data["iana_action_state"] = extract_name(doc.get_state("draft-iana-action"))
+
+        if doc.stream_id in ("ietf", "irtf", "iab"):
+            e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+            data["consensus"] = e.consensus if e else None
+        data["stream"] = extract_name(doc.stream)
+
+    return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
 
 def _get_html(key, filename, split=True):
     return get_document_content(key, filename, split=split, markup=True)
@@ -415,7 +449,16 @@ def document_main_idrfc(request, name, tab):
     info['is_rfc'] = False
 
     info['conflict_reviews'] = [ rel.source for alias in id.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='conflrev') ]
-    
+    info['rfc_editor_state'] = id.get_state("draft-rfceditor")
+    info['iana_review_state'] = id.get_state("draft-iana-review")
+    info['iana_action_state'] = id.get_state("draft-iana-action")
+    info["consensus"] = None
+    if id.stream_id in ("ietf", "irtf", "iab"):
+        e = id.latest_event(ConsensusDocEvent, type="changed_consensus")
+        info["consensus"] = nice_consensus(e and e.consensus)
+        info["can_edit_consensus"] = can_edit_consensus(id, request.user)
+    info["can_edit_intended_std_level"] = can_edit_intended_std_level(id, request.user)
+
     (content1, content2) = _get_html(
         str(name)+","+str(id.revision)+",html",
         os.path.join(settings.INTERNET_DRAFT_PATH, name+"-"+id.revision+".txt"))

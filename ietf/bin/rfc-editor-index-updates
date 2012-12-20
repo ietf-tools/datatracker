@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+import os, sys, re, json, datetime
+import syslog
+
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+
+from ietf import settings
+from django.core import management
+management.setup_environ(settings)
+
+
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option("-d", dest="skip_date",
+                  help="To speed up processing skip RFCs published before this date (default is one year ago)", metavar="YYYY-MM-DD")
+
+options, args = parser.parse_args()
+
+skip_date = datetime.date.today() - datetime.timedelta(days=365)
+if options.skip_date:
+    skip_date = datetime.datetime.strptime(options.skip_date, "%Y-%m-%d").date()
+
+from ietf.sync.rfceditor import *
+
+syslog.syslog("Updating document metadata from RFC index from %s" % QUEUE_URL)
+
+response = fetch_index_xml(INDEX_URL)
+data = parse_index(response)
+
+if len(data) < MIN_INDEX_RESULTS:
+    syslog.syslog("Not enough results, only %s" % len(data))
+    sys.exit(1)
+
+changed = update_docs_from_rfc_index(data, skip_older_than_date=skip_date)
+for c in changed:
+    syslog.syslog(c)

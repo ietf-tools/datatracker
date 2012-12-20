@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Undo RFC Editor state events{% endblock %}
+
+{% block content %}
+<h1>Undo RFC Editor state events</h1>
+
+<table class="ietf-table">
+  <tr>
+    <th>Time</th>
+    <th>Document</th>
+    <th>Text</th>
+    <th>Undo</th>
+  </tr>
+  {% for e in events %}
+  <tr class="{% if forloop.counter|divisibleby:2 %}evenrow{% else %}oddrow{% endif %}">
+    <td>{{ e.time|date:"Y-m-d H:i:s"}}</td>
+    <td><a href="{% url doc_history e.doc_id %}">{{ e.doc_id }}</a></td>
+    <td>{{ e.desc|safe }}</td>
+    <td>
+      <form method="post">
+        <input type="hidden" name="event" value="{{ e.id }}"/>
+        <input type="submit" value="Remove"/>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

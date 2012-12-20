@@ -11,7 +11,8 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.idtracker.models import *
 from ietf.ipr.search import iprs_from_docs
-from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias
+#from ietf.doc.models import *
+from ietf.doc.models import WriteupDocEvent, BallotPositionDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
 from ietf.person.models import Person
 from ietf.group.models import Group
 
@@ -62,8 +63,26 @@ def email_stream_changed(request, doc, old_stream, new_stream, text=""):
               "idrfc/stream_changed_email.txt",
               dict(text=text,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()))
+
+def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
+    send_mail(request, ["IANA <iana@iana.org>", "RFC Editor <rfc-editor@rfc-editor.org>"], None,
+              "%s changed state from %s to %s" % (doc.name, prev_state.name, next_state.name),
+              "idrfc/pulled_from_rfc_queue_email.txt",
+              dict(doc=doc,
+                   prev_state=prev_state,
+                   next_state=next_state,
+                   comment=comment,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              extra=extra_automation_headers(doc))
+
+
+def email_authors(request, doc, subject, text):
+    to = [x.strip() for x in doc.author_list().split(',')]
+    if not to:
+        return
     
-    
+    send_mail_text(request, to, None, subject, text)
+
 def html_to_text(html):
     return strip_tags(html.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("<br>", "\n"))
     
@@ -98,12 +117,15 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
 
 
 def generate_ballot_writeup(request, doc):
+    e = doc.latest_event(type="iana_review")
+    iana = e.desc if e else ""
+
     e = WriteupDocEvent()
     e.type = "changed_ballot_writeup_text"
     e.by = request.user.get_profile()
     e.doc = doc
     e.desc = u"Ballot writeup was generated"
-    e.text = unicode(render_to_string("idrfc/ballot_writeup.txt"))
+    e.text = unicode(render_to_string("idrfc/ballot_writeup.txt", {'iana': iana}))
     e.save()
     
     return e
@@ -263,6 +285,30 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     generate_approval_mail = generate_approval_mailREDESIGN
     generate_approval_mail_rfc_editor = generate_approval_mail_rfc_editorREDESIGN
 
+def generate_publication_request(request, doc):
+    group_description = ""
+    if doc.group and doc.group.acronym != "none":
+        group_description = doc.group.name_with_acronym()
+
+    e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+    consensus = e.consensus if e else None
+
+    if doc.stream_id == "irtf":
+        approving_body = "IRSG"
+        consensus_body = doc.group.acronym.upper()
+    else:
+        approving_body = str(doc.stream)
+        consensus_body = approving_body
+
+    return render_to_string("idrfc/publication_request.txt",
+                            dict(doc=doc,
+                                 doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
+                                 group_description=group_description,
+                                 approving_body=approving_body,
+                                 consensus_body=consensus_body,
+                                 consensus=consensus,
+                                 )
+                            )
 
 def send_last_call_request(request, doc, ballot):
     to = "iesg-secretary@ietf.org"
@@ -426,22 +472,6 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     generate_issue_ballot_mail = generate_issue_ballot_mailREDESIGN
 
 def email_iana(request, doc, to, msg):
-    # fix up message and send message to IANA for each in ballot set
-    import email
-    parsed_msg = email.message_from_string(msg.encode("utf-8"))
-
-    for i in doc.idinternal.ballot_set():
-        extra = {}
-        extra["Reply-To"] = "noreply@ietf.org"
-        extra["X-IETF-Draft-string"] = i.document().filename
-        extra["X-IETF-Draft-revision"] = i.document().revision_display()
-    
-        send_mail_text(request, "To: IANA <%s>" % to,
-                       parsed_msg["From"], parsed_msg["Subject"],
-                       parsed_msg.get_payload(),
-                       extra=extra)
-
-def email_ianaREDESIGN(request, doc, to, msg):
     # fix up message and send it with extra info on doc in headers
     import email
     parsed_msg = email.message_from_string(msg.encode("utf-8"))
@@ -456,8 +486,13 @@ def email_ianaREDESIGN(request, doc, to, msg):
                    parsed_msg.get_payload(),
                    extra=extra)
 
-if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-    email_iana = email_ianaREDESIGN
+def extra_automation_headers(doc):
+    extra = {}
+    extra["Reply-To"] = "noreply@ietf.org"
+    extra["X-IETF-Draft-string"] = doc.name
+    extra["X-IETF-Draft-revision"] = doc.rev
+
+    return extra
 
 def email_last_call_expired(doc):
     text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.idinternal.cur_state.state

@@ -34,11 +34,19 @@ def in_id_expire_freeze(when=None):
     return second_cut_off <= when < ietf_monday
 
 def expirable_documents():
+    # the general rule is that each active draft is expirable, unless
+    # it's in a state where we shouldn't touch it
+
     d = Document.objects.filter(states__type="draft", states__slug="active").exclude(tags="rfc-rev")
-    # we need to get those that either don't have a state or have a
-    # state >= 42 (AD watching), unfortunately that doesn't appear to
-    # be possible to get to work directly in Django 1.1
-    return itertools.chain(d.exclude(states__type="draft-iesg").distinct(), d.filter(states__type="draft-iesg", states__slug__in=("watching", "dead")).distinct())
+
+    nonexpirable_states = []
+    # all IESG states except AD Watching and Dead block expiry
+    nonexpirable_states += list(State.objects.filter(type="draft-iesg").exclude(slug__in=("watching", "dead")))
+    # Sent to RFC Editor and RFC Published block expiry (the latter
+    # shouldn't be possible for an active draft, though)
+    nonexpirable_states += list(State.objects.filter(type__in=("draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"), slug__in=("rfc-edit", "pub")))
+
+    return d.exclude(states__in=nonexpirable_states).distinct()
 
 def get_soon_to_expire_ids(days):
     start_date = datetime.date.today() - datetime.timedelta(InternetDraft.DAYS_TO_EXPIRE - 1)

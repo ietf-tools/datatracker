@@ -1,0 +1,20 @@
+{% load mail_filters %}{% autoescape off %}{% filter wordwrap:73 %}
+The {{ approving_body }} has approved the following document in the {{ doc.stream }} stream:
+
+- "{{ doc.title }}" ({{ doc.name }}) as {{ doc|std_level_prompt }}.{% if group_description %}
+
+This document is the product of the {{ group_description }}.{% endif %}{% endfilter %}
+
+URL: {{ doc_url }}
+
+{% filter wordwrap:73 %}{% if consensus != None %}The document {% if consensus %}represents{% else %}does not necessarily represent{% endif%} the consensus of the {{ consensus_body }}.
+
+{% endif %}No IANA allocation in the document requires IETF Consensus or Standards Action.{% endfilter %}
+
+
+[OPTIONAL: Include summary of related discussion of this document in an IETF WG or in the IESG.]
+
+[OPTIONAL: Include statement of the purpose of publishing this document, its intended audience, its merits and significance.]
+
+[OPTIONAL: Include suggested names and contact information for one or more competent and independent potential reviewers for the document (this can speed the review and approval process).]
+{% endautoescape %}

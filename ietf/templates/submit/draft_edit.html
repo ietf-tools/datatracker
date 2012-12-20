@@ -93,7 +93,7 @@ table.ietf-table span.field-error { display: block; color: red; }
 {% show_submission_files detail %}
 </td></tr>
 <tr><th>Submission date</th><td>{{ detail.submission_date }}</td></tr>
-<tr{% if validation.warnings.group %} class="warning"{% endif %}><th>WG</th><td>{{ validation.wg|default:"Individual Submission" }}
+<tr{% if validation.warnings.group %} class="warning"{% endif %}><th>Group</th><td>{{ validation.wg|default:"Individual Submission" }}
 {% if validation.warnings.group %}
 <div class="warn_message">The secretariat will be notified that the working group is not active</div>
 {% endif %}
