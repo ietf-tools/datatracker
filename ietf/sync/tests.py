@@ -127,6 +127,7 @@ class IANASyncTestCase(django.test.TestCase):
         msg = """From: "%(person)s via RT" <drafts-lastcall@iana.org>
 Date: Thu, 10 May 2012 12:00:00 +0000
 Subject: [IANA #12345] Last Call: <%(draft)s-%(rev)s.txt> (Long text) to Informational RFC
+
 (BEGIN IANA LAST CALL COMMENTS)
 
 IESG:

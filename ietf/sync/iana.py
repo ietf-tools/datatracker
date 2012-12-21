@@ -201,7 +201,7 @@ def update_history_with_changes(changes, send_email=True):
 
 
 def parse_review_email(text):
-    msg = email.message_from_string(text)
+    msg = email.message_from_string(text.encode("utf-8"))
 
     # doc
     doc_name = ""
