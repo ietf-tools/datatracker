@@ -55,8 +55,8 @@ $position: Nomination position</field>
         <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
         <field type="TextField" name="content">A new nomination have been received.
 
-Nominator: $nominator <$nominator_email>
-Nominee: $nominee <$nominee_email>
+Nominator: $nominator ($nominator_email)
+Nominee: $nominee ($nominee_email)
 Position: $position</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>

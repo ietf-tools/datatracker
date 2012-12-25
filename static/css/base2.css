@@ -64,6 +64,16 @@ body { margin: 0; }
 .ietf-navbar #wgs .bd { background-color: #edf5ff; }
 .ietf-navbar #wgs > .bd { border: 0;}
 
+.ietf-navset {
+    background:#214197 url(/images/yui/sprite.png) repeat-x left -1400px;
+    color:white;
+    border:1px solid black;
+    padding:4px;
+}
+.ietf-navset .selected { font-weight:bold; padding: 0 3px; }
+.ietf-navset a, .ietf-navset a:visited { color: white; padding:0 3px; }
+
+
 .ietf-ballot .left { background: #edf5ff; width:160px; padding-left: 10px; }
 .ietf-ballot .right { padding-left: 15px; padding-right:15px; width:610px;padding-top:0px;}
 .ietf-ballot h2.ballot_ad { background: #2647A0; color:white; padding: 2px 4px; font-size: 108%; margin-top: 0;}

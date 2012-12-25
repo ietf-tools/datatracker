@@ -14,13 +14,10 @@ from ietf.name.models import RoleName, FeedbackType
 from ietf.person.models import Email, Person
 from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
                                Position, Feedback
-
+from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE, \
+                              INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
-INEXISTENT_PERSON_TEMPLATE = "email/inexistent_person.txt"
-NOMINEE_TEMPLATE = "email/new_nominee.txt"
-NOMINATION_TEMPLATE = "email/new_nomination.txt"
-QUESTIONNAIRE_TEMPLATE = "position/questionnaire.txt"
 
 
 def get_group_or_404(year):
@@ -227,7 +224,7 @@ class NominateForm(forms.ModelForm):
             to_email = email.address
             context = {'nominee': email.person.name,
                       'position': position}
-            path = nomcom_template_path + NOMINEE_TEMPLATE
+            path = nomcom_template_path + NOMINEE_EMAIL_TEMPLATE
             send_mail(None, to_email, from_email, subject, path, context)
 
         # send email to nominee with questionnaire
@@ -251,7 +248,7 @@ class NominateForm(forms.ModelForm):
         if author:
             context.update({'nominator': author.person.name,
                             'nominator_email': author.address})
-        path = nomcom_template_path + NOMINATION_TEMPLATE
+        path = nomcom_template_path + NOMINATION_EMAIL_TEMPLATE
         send_mail(None, to_email, from_email, subject, path, context)
 
         return nomination

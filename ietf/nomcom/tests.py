@@ -1,8 +1,50 @@
 from django.test import TestCase
 from django.db import IntegrityError
+from django.core.urlresolvers import reverse
 
+from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.nomcom.test_data import nomcom_test_data
 from ietf.nomcom.models import NomineePosition, Position, Nominee, NomineePositionState
+
+
+class NomcomTest(TestCase):
+    """Tests to create a new nomcom"""
+    fixtures = ['names', 'nomcom_templates']
+
+    def check_url_status(self, url, status):
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status)
+
+    def setUp(self):
+        nomcom_test_data()
+        self.year = 2013
+
+    def test_home_view(self):
+        """Verify home view"""
+        url = reverse('nomcom_index', kwargs={'year': self.year})
+        self.check_url_status(url, 200)
+
+    def test_nominate_view(self):
+        """Verify nominate view"""
+        url = reverse('nomcom_nominate', kwargs={'year': self.year})
+        login_testing_unauthorized(self, 'kaligula', url)
+        self.check_url_status(url, 200)
+
+    def test_requirements_view(self):
+        """Verify requirements view"""
+        url = reverse('nomcom_requirements', kwargs={'year': self.year})
+        self.check_url_status(url, 200)
+
+    def test_questionnaires_view(self):
+        """Verify questionnaires view"""
+        url = reverse('nomcom_questionnaires', kwargs={'year': self.year})
+        self.check_url_status(url, 200)
+
+    def test_comments_view(self):
+        """Verify comments view"""
+        url = reverse('nomcom_comments', kwargs={'year': self.year})
+        login_testing_unauthorized(self, 'plain', url)
+        self.check_url_status(url, 200)
 
 
 class NomineePositionStateSaveTest(TestCase):

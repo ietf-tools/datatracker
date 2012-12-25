@@ -22,11 +22,11 @@ POSITIONS = {
 
 def nomcom_test_data():
     group, created = Group.objects.get_or_create(name='IAB/IESG Nominating Committee 2013/2014',
-                                        state=GroupStateName.objects.get(='active'),
+                                        state=GroupStateName.objects.get(slug='active'),
                                         type=GroupTypeName.objects.get(slug='nomcom'),
                                         acronym='nomcom2013')
     nomcom, created = NomCom.objects.get_or_create(group=group)
-    u, created = User.objects.get_or_create(username="plain")
+    u, created = User.objects.get_or_create(username="plain", password="plain")
     plainman, created = Person.objects.get_or_create(
         name="Plain Man",
         ascii="Plain Man",
