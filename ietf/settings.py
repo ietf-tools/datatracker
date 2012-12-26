@@ -261,9 +261,10 @@ IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
 
 # NomCom Tool settings
 ROLODEX_URL = ""
-PUBLIC_KEYS_URL = BASE_DIR + "/public_keys/"
+PUBLIC_KEYS_URL = BASE_DIR + '/public_keys/'
 NOMCOM_FROM_EMAIL = DEFAULT_FROM_EMAIL
 NOMCOM_ADMIN_EMAIL = DEFAULT_FROM_EMAIL
+OPENSSL_COMMAND = '/usr/bin/openssl'
 
 # Days from meeting to cut off dates on submit
 FIRST_CUTOFF_DAYS = 19
