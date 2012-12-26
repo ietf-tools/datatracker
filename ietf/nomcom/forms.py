@@ -4,6 +4,7 @@ from django.contrib.formtools.preview import FormPreview
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
+from django.template.loader import render_to_string
 
 from ietf.utils import unaccent
 from ietf.utils.mail import send_mail
@@ -28,6 +29,12 @@ def get_group_or_404(year):
 
 
 class BaseNomcomForm(forms.ModelForm):
+    def __unicode__(self):
+        return self.as_div()
+
+    def as_div(self):
+        return render_to_string('nomcom/nomcomform.html', {'form': self})
+
     def get_fieldsets(self):
         if not self.fieldsets:
             yield dict(name=None, fields=self)
@@ -274,3 +281,7 @@ class NominateForm(BaseNomcomForm):
     class Meta:
         model = Nomination
         fields = ('position', 'candidate_name', 'candidate_email', 'candidate_phone')
+
+    class Media:
+        js = ("/js/jquery-1.5.1.min.js",
+              "/js/nomcom.js", )

@@ -1,11 +1,15 @@
+ # -*- coding: utf-8 -*-
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
+from django.utils import simplejson
+
 
 from ietf.nomcom.utils import get_nomcom_by_year, HOME_TEMPLATE
 from ietf.nomcom.forms import EditPublicKeyForm, NominateForm
+from ietf.nomcom.models import Position
 
 
 def index(request, year):
@@ -103,3 +107,15 @@ def edit_publickey(request, year):
                               {'form': form,
                                'group': nomcom.group,
                                'message': message}, RequestContext(request))
+
+
+def ajax_position_text(request, position_id):
+    try:
+        position_text = Position.objects.get(id=position_id).initial_text
+    except Position.DoesNotExist:
+        position_text = ""
+
+    result = {'text': position_text}
+
+    json_result = simplejson.dumps(result)
+    return HttpResponse(json_result, mimetype='application/json')

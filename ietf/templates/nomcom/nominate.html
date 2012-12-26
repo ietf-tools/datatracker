@@ -2,51 +2,29 @@
 
 {% block subtitle %} - Nominate{% endblock %}
 
+{% block pagehead %}
+{{ form.media }}
+{% endblock %}
+
 {% block nomcom_content %}
+<div class="js-info">
+Your browser has Javascript disabled. Please enable javascript and reload the page.
+<script type="text/javascript">
+(function ($) {
+   $(".js-info").hide();
+})(jQuery);
+</script>
+</div>
+
+
 {% if message %}
 <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
 {% endif %}
 
 {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
 
-<form action="" method="post">{% csrf_token %}
-
-    <div class="baseform">
-
-      {% for fieldset in form.get_fieldsets %}
-        {% if fieldset.name %}
-          <div class="fieldset">
-          <h2>{{ fieldset.name }}</h2>
-        {% endif %}
-
-        {% for field in fieldset.fields %}
-          <div id="baseform-fieldname-{{ field.html_name }}"
-              class="{% if field.errors %}fieldError {% endif %}field BaseFormStringWidget{% if field.field.column_style %} {{ field.field.column_style }}{% endif %}">
-            <label for="id_{{ field.html_name }}">{{ field.label }}
-            {% if field.field.required %}
-              <span class="fieldRequired" title="Required">*</span>
-            {% endif %}
-            </label>
-            <div class="fieldWidget">
-            <div id="{{ field.html_name }}_help" class="formHelp"> {{ field.help_text }}</div>
-            {{ field }}
-            {{ field.errors }}
-            </div>
-            <div class="endfield"></div>
-          </div>
-        {% endfor %}
-
-        {% if fieldset.name %}
-          </div>
-        {% endif %}
-      {% endfor %}
-
-      <div class="submitrow">
-        <input type="submit" value="Save" name="save" />
-      </div>
-
-    </div>
+<form id="nominateform" action="" method="post">{% csrf_token %}
+  {{ form }}
 </form>
-
 
 {% endblock %}

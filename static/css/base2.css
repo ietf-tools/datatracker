@@ -275,4 +275,10 @@ span.fieldRequired {
     color: red;
 }
 
-
+/* js styles */
+.js-info {
+    background-color: #FFDD88;
+    border: 1px dashed red;
+    font-size: 1.2em;
+    padding: 1em 2em;
+}
