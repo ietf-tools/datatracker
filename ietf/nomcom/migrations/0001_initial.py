@@ -78,7 +78,7 @@ class Migration(SchemaMigration):
             ('author', self.gf('django.db.models.fields.EmailField')(max_length=75)),
             ('position', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.Position'])),
             ('nominee', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['nomcom.Nominee'])),
-            ('comments', self.gf('ietf.nomcom.fields.EncriptedTextField')()),
+            ('comments', self.gf('ietf.nomcom.fields.EncryptedTextField')()),
             ('type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['name.FeedbackType'])),
             ('time', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
         ))
@@ -328,7 +328,7 @@ class Migration(SchemaMigration):
         'nomcom.feedback': {
             'Meta': {'object_name': 'Feedback'},
             'author': ('django.db.models.fields.EmailField', [], {'max_length': '75'}),
-            'comments': ('ietf.nomcom.fields.EncriptedTextField', [], {}),
+            'comments': ('ietf.nomcom.fields.EncryptedTextField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'nominee': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Nominee']"}),
             'position': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['nomcom.Position']"}),

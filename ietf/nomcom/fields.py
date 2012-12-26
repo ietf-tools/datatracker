@@ -5,11 +5,11 @@ from django.db import models
 from ietf.utils.pipe import pipe
 
 
-class EncriptedException(Exception):
+class EncryptedException(Exception):
     pass
 
 
-class EncriptedTextField(models.TextField):
+class EncryptedTextField(models.TextField):
     def pre_save(self, instance, add):
         if add:
             comments = getattr(instance, 'comments')
@@ -26,6 +26,6 @@ class EncriptedTextField(models.TextField):
                 instance.comments = out
                 return out
             else:
-                raise EncriptedException(error)
+                raise EncryptedException(error)
         else:
             return instance.comments

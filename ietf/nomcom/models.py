@@ -6,7 +6,7 @@ from django.core.files.storage import FileSystemStorage
 
 from south.modelsinspector import add_introspection_rules
 
-from ietf.nomcom.fields import EncriptedTextField
+from ietf.nomcom.fields import EncryptedTextField
 from ietf.person.models import Email
 from ietf.group.models import Group
 from ietf.name.models import NomineePositionState, FeedbackType
@@ -130,7 +130,7 @@ class Feedback(models.Model):
     author = models.EmailField(verbose_name='Author', blank=True)
     position = models.ForeignKey('Position')
     nominee = models.ForeignKey('Nominee')
-    comments = EncriptedTextField(verbose_name='Comments')
+    comments = EncryptedTextField(verbose_name='Comments')
     type = models.ForeignKey(FeedbackType)
     time = models.DateTimeField(auto_now_add=True)
 
@@ -139,4 +139,4 @@ class Feedback(models.Model):
 
 # ----- adding south rules to help introspection -----
 
-add_introspection_rules([], ["^ietf\.nomcom\.fields\.EncriptedTextField"])
+add_introspection_rules([], ["^ietf\.nomcom\.fields\.EncryptedTextField"])
