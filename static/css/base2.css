@@ -208,3 +208,71 @@ form table .help {
 div.info-message-success { border: 1px solid green; background-color: #eeffbb; padding: 5px 10px; margin: 1em 0px; color: green; }
 div.info-message-warning { border: 1px dashed red; background-color: #ffeeaa; padding: 1em 2em; margin: 1em 0px; }
 div.info-message-error { border: 1px solid red; background-color: #ffeebb; padding: 5px 10px; margin: 1em 0px; color: red; }
+
+
+/* Form styles */
+.baseform {
+    font-size: 12px;
+}
+
+.baseform .fieldset {
+    margin: 1em 0px;
+    border: none;
+    border: 1px solid #8899dd;
+    background-color: #edf5ff;
+}
+
+.baseform .fieldset h2 {
+    background-color: #2647a0;
+    color: white;
+    font-size: 14px;
+    padding: 5px 10px;
+    margin: 0px;
+}
+
+.baseform .field {
+    padding: 0.5em 10px;
+}
+
+.baseform .field label {
+    display: block;
+    width: 150px;
+    float: left;
+    clear: left;
+}
+
+.baseform .field .endfield {
+    clear: left;
+}
+
+.baseform .fieldWidget {
+    margin-left: 150px;
+}
+
+.baseform select,
+.baseform textarea,
+.baseform input {
+    border: 1px solid #cccccc;
+}
+
+.baseform input {
+    font-size: 12px;
+}
+
+span.fieldRequired {
+    color: red;
+}
+
+.fieldError {
+    background-color: #ffcc66;
+}
+
+.errorlist li,
+.errorlist {
+    padding: 0px;
+    margin: 0px;
+    list-style: none;
+    color: red;
+}
+
+

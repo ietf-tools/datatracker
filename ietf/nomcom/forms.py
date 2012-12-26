@@ -27,6 +27,22 @@ def get_group_or_404(year):
                              nomcom__isnull=False)
 
 
+class BaseNomcomForm(forms.ModelForm):
+    def get_fieldsets(self):
+        if not self.fieldsets:
+            yield dict(name=None, fields=self)
+        else:
+            for fieldset, fields in self.fieldsets:
+                fieldset_dict = dict(name=fieldset, fields=[])
+                for field_name in fields:
+                    if field_name in self.fields.keyOrder:
+                        fieldset_dict['fields'].append(self[field_name])
+                    if not fieldset_dict['fields']:
+                        # if there is no fields in this fieldset, we continue to next fieldset
+                        continue
+                yield fieldset_dict
+
+
 class EditMembersForm(forms.Form):
 
     members = custom_fields.MultiEmailField(label="Members email", required=False)
@@ -154,8 +170,10 @@ class EditPublicKeyForm(forms.ModelForm):
         fields = ('public_key',)
 
 
-class NominateForm(forms.ModelForm):
+class NominateForm(BaseNomcomForm):
     comments = forms.CharField(label='Comments', widget=forms.Textarea())
+
+    fieldsets = [('Candidate Nomination', ('position', 'candidate_name', 'candidate_email', 'candidate_phone', 'comments'))]
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
