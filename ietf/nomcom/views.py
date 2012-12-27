@@ -25,34 +25,22 @@ def index(request, year):
 
 def requirements(request, year):
     nomcom = get_nomcom_by_year(year)
+    positions = nomcom.position_set.all()
     return render_to_response('nomcom/requirements.html',
                               {'nomcom': nomcom,
+                               'positions': positions,
                                'year': year,
                                'selected': 'requirements'}, RequestContext(request))
 
 
 def questionnaires(request, year):
     nomcom = get_nomcom_by_year(year)
+    positions = nomcom.position_set.all()
     return render_to_response('nomcom/questionnaires.html',
                               {'nomcom': nomcom,
+                               'positions': positions,
                                'year': year,
                                'selected': 'questionnaires'}, RequestContext(request))
-
-
-def questionnaire_detail(request, year, name):
-    nomcom = get_nomcom_by_year(year)
-    return render_to_response('nomcom/questionnaire_detail.html',
-                              {'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'questionnaires'}, RequestContext(request))
-
-
-def requirement_detail(request, year, name):
-    nomcom = get_nomcom_by_year(year)
-    return render_to_response('nomcom/requirement_detail.html',
-                              {'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'requirements'}, RequestContext(request))
 
 
 @login_required
