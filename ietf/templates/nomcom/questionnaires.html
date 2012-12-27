@@ -21,6 +21,8 @@
   <div class="yui-content">
     {% for position in positions %}
       <div id="{{ position.name }}">
+          <h3>{{ position.description }}</h3>
+          {{ position.description }}
           {% include position.questionnaire.path %}
       </div>
     {% endfor %}
