@@ -28,7 +28,7 @@ def get_group_or_404(year):
                              nomcom__isnull=False)
 
 
-class BaseNomcomForm(forms.ModelForm):
+class BaseNomcomForm(object):
     def __unicode__(self):
         return self.as_div()
 
@@ -172,12 +172,13 @@ class EditChairFormPreview(FormPreview):
 
 
 class EditPublicKeyForm(forms.ModelForm):
+    fieldsets = [('Edit the public key of NomCom', ('public_key',))]
+
     class Meta:
         model = NomCom
-        fields = ('public_key',)
 
 
-class NominateForm(BaseNomcomForm):
+class NominateForm(BaseNomcomForm, forms.ModelForm):
     comments = forms.CharField(label='Comments', widget=forms.Textarea())
 
     fieldsets = [('Candidate Nomination', ('position', 'candidate_name', 'candidate_email', 'candidate_phone', 'comments'))]
