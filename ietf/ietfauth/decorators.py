@@ -47,7 +47,7 @@ def passes_test_decorator(test_func, message):
         def inner(request, *args, **kwargs):
             if not request.user.is_authenticated():
                 return HttpResponseRedirect('%s?%s=%s' % (settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
-            elif test_func(request.user):
+            elif test_func(request.user, *args, **kwargs):
                 return view_func(request, *args, **kwargs)
             else:
                 return HttpResponseForbidden(message)
@@ -109,7 +109,7 @@ def role_required(*role_names):
     has one of the listed roles."""
     return passes_test_decorator(lambda u: has_role(u, role_names),
                                  "Restricted to role%s %s" % ("s" if len(role_names) != 1 else "", ", ".join(role_names)))
-    
+
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     # overwrite group_required
     group_required = lambda *group_names: role_required(*[n.replace("Area_Director", "Area Director") for n in group_names])

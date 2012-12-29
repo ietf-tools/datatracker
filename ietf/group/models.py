@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import models
+from django.db.models import Q
+
 from ietf.name.models import *
 from ietf.person.models import Email, Person
 
@@ -53,9 +55,18 @@ class Group(GroupInfo):
         else:
             return False
 
+    def is_member(self, user):
+        members = self.get_members()
+        users = [member.person.user for member in members]
+        return user in users
+
     def get_chair(self):
         chair = self.role_set.filter(name__slug='chair')[:1]
         return chair and chair[0] or None
+
+    def get_members(self):
+        members = self.role_set.filter(Q(name__slug='member') | Q(name__slug='chair'))
+        return members
 
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')
@@ -68,8 +79,9 @@ class GroupURL(models.Model):
     group = models.ForeignKey(Group)
     name = models.CharField(max_length=255)
     url = models.URLField(verify_exists=False)
+
     def __unicode__(self):
-	return u"%s (%s)" % (self.url, self.name)
+        return u"%s (%s)" % (self.url, self.name)
 
 class GroupMilestone(models.Model):
     group = models.ForeignKey(Group)
