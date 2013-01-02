@@ -25,6 +25,11 @@ Your browser has Javascript disabled. Please enable javascript and reload the pa
 
 <form id="nominateform" action="" method="post">{% csrf_token %}
   {{ form }}
+
+<div class="submitrow">
+  <input type="submit" value="Save" name="save" />
+</div>
+
 </form>
 
 {% endblock %}

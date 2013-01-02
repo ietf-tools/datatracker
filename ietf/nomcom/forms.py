@@ -1,14 +1,15 @@
 from django.conf import settings
 from django import forms
 from django.contrib.formtools.preview import FormPreview
-from django.http import HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
+from django.utils.decorators import method_decorator
 
 from ietf.utils import unaccent
 from ietf.utils.mail import send_mail
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.decorators import role_required
 from ietf.utils import fields as custom_fields
 from ietf.group.models import Group, Role
 from ietf.name.models import RoleName, FeedbackType
@@ -17,6 +18,7 @@ from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
                                Position, Feedback
 from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE, \
                               INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE
+from ietf.nomcom.decorators import member_required
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
 
@@ -50,23 +52,21 @@ class BaseNomcomForm(object):
                 yield fieldset_dict
 
 
-class EditMembersForm(forms.Form):
+class EditMembersForm(BaseNomcomForm, forms.Form):
 
     members = custom_fields.MultiEmailField(label="Members email", required=False)
+
+    fieldsets = [('Members', ('members',))]
 
 
 class EditMembersFormPreview(FormPreview):
     form_template = 'nomcom/edit_members.html'
     preview_template = 'nomcom/edit_members_preview.html'
 
+    @method_decorator(member_required(role='chair'))
     def __call__(self, request, *args, **kwargs):
         year = kwargs['year']
         group = get_group_or_404(year)
-        is_group_chair = group.is_chair(request.user)
-        is_secretariat = has_role(request.user, "Secretariat")
-        if not is_secretariat and not is_group_chair:
-            return HttpResponseForbidden("Must be a secretariat or group chair")
-
         self.state['group'] = group
         self.state['rolodex_url'] = ROLODEX_URL
         self.group = group
@@ -115,23 +115,22 @@ class EditMembersFormPreview(FormPreview):
         return HttpResponseRedirect(reverse('edit_members', kwargs={'year': self.year}))
 
 
-class EditChairForm(forms.Form):
+class EditChairForm(BaseNomcomForm, forms.Form):
 
     chair = forms.EmailField(label="Chair email", required=False,
                              widget=forms.TextInput(attrs={'size': '40'}))
+
+    fieldsets = [('Chair info', ('chair',))]
 
 
 class EditChairFormPreview(FormPreview):
     form_template = 'nomcom/edit_chair.html'
     preview_template = 'nomcom/edit_chair_preview.html'
 
+    @method_decorator(role_required("Secretariat"))
     def __call__(self, request, *args, **kwargs):
         year = kwargs['year']
         group = get_group_or_404(year)
-        is_secretariat = has_role(request.user, "Secretariat")
-        if not is_secretariat:
-            return HttpResponseForbidden("Must be a secretariat")
-
         self.state['group'] = group
         self.state['rolodex_url'] = ROLODEX_URL
         self.group = group
@@ -171,11 +170,16 @@ class EditChairFormPreview(FormPreview):
         return HttpResponseRedirect(reverse('edit_chair', kwargs={'year': self.year}))
 
 
-class EditPublicKeyForm(forms.ModelForm):
-    fieldsets = [('Edit the public key of NomCom', ('public_key',))]
+class EditPublicKeyForm(BaseNomcomForm, forms.ModelForm):
+
+    fieldsets = [('Public Key', ('public_key',))]
 
     class Meta:
         model = NomCom
+
+    def __init__(self, *args, **kwargs):
+        super(EditPublicKeyForm, self).__init__(*args, **kwargs)
+        self.fields['public_key'].required = True
 
 
 class NominateForm(BaseNomcomForm, forms.ModelForm):

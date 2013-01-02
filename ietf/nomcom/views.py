@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
 from django.utils import simplejson
 
-
 from ietf.nomcom.utils import get_nomcom_by_year, is_nomcom_member, \
                               is_nomcom_chair, HOME_TEMPLATE
 from ietf.nomcom.decorators import member_required
