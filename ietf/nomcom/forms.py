@@ -225,6 +225,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                                            comments=comments,
                                            type=FeedbackType.objects.get(slug='nomina'))
         if author:
+            nomination.nominator_email = author.address
             feedback.author = author
             feedback.save()
 

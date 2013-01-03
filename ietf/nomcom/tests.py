@@ -1,7 +1,6 @@
 import os
 import tempfile
 
-from django.conf import settings
 from django.test import TestCase
 from django.db import IntegrityError
 from django.core.urlresolvers import reverse
@@ -9,11 +8,12 @@ from django.core.files import File
 from django.contrib.formtools.preview import security_hash
 
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.utils.pipe import pipe
+
 
 from ietf.person.models import Email, Person
 
-from ietf.nomcom.test_data import nomcom_test_data, COMMUNITY_USER, CHAIR_USER, \
+from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
+                                  COMMUNITY_USER, CHAIR_USER, \
                                   MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionState, Feedback, FeedbackType, \
@@ -32,6 +32,7 @@ class NomcomViewsTest(TestCase):
 
     def setUp(self):
         nomcom_test_data()
+        self.cert_file, self.privatekey_file = generate_cert()
         self.year = 2013
 
         # private urls
@@ -169,17 +170,22 @@ class NomcomViewsTest(TestCase):
         response = self.client.get(self.nominate_url)
         self.assertEqual(response.status_code, 200)
         nomcom = get_nomcom_by_year(self.year)
-        has_publickey = nomcom.public_key and True or False
-        self.assertEqual(response.context['has_publickey'], has_publickey)
+        if not nomcom.public_key:
+            self.assertNotContains(response, "nominateform")
 
-        if not has_publickey:
-            return
+        # save the cert file in tmp
+        nomcom.public_key.storage.location = tempfile.gettempdir()
+        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+
+        response = self.client.get(self.nominate_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "nominateform")
 
         position = Position.objects.get(name='IAOC')
-        candidate_email = 'nominee@example.com',
-        candidate_name = 'nominee'
+        candidate_email = u'nominee@example.com'
+        candidate_name = u'nominee'
         comments = 'test nominate view'
-        candidate_phone = '123456'
+        candidate_phone = u'123456'
 
         test_data = {'candidate_name': candidate_name,
                      'candidate_email': candidate_email,
@@ -198,17 +204,19 @@ class NomcomViewsTest(TestCase):
         feedback = Feedback.objects.get(position=position,
                                         nominee=nominee,
                                         type=FeedbackType.objects.get(slug='nomina'),
-                                        author__person__name=COMMUNITY_USER)
+                                        author="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+
         # to check feedback comments are saved like enrypted data
         self.assertNotEqual(feedback.comments, comments)
 
+        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
         Nomination.objects.get(position=position,
-                              candidate_name=candidate_name,
-                              candidate_mail=candidate_email,
-                              candidate_phone=candidate_phone,
-                              nominee=nominee,
-                              comments=feedback,
-                              nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+                               candidate_name=candidate_name,
+                               candidate_email=candidate_email,
+                               candidate_phone=candidate_phone,
+                               nominee=nominee,
+                               comments=feedback,
+                               nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
         self.client.logout()
 
 
@@ -224,7 +232,7 @@ class NomineePositionStateSaveTest(TestCase):
         """Verify state is autoset correctly"""
         position = Position.objects.get(name='APP')
         nominee_position = NomineePosition.objects.create(position=position,
-                                           nominee=self.nominee)
+                                                          nominee=self.nominee)
         self.assertEqual(nominee_position.state.slug, 'pending')
 
     def test_state_specified(self):
@@ -250,43 +258,7 @@ class FeedbackTest(TestCase):
 
     def setUp(self):
         nomcom_test_data()
-        self.generate_cert()
-
-    def generate_cert(self):
-        """Function to generate cert"""
-        config = """
-                [ req ]
-                distinguished_name = req_distinguished_name
-                string_mask        = utf8only
-                x509_extensions    = ss_v3_ca
-
-                [ req_distinguished_name ]
-                commonName           = Common Name (e.g., NomComYY)
-                commonName_default  = NomCom12
-
-                [ ss_v3_ca ]
-
-                subjectKeyIdentifier = hash
-                keyUsage = critical, digitalSignature, keyEncipherment, dataEncipherment
-                basicConstraints = critical, CA:true
-                subjectAltName = email:nomcom12@ietf.org
-                extendedKeyUsage= emailProtection"""
-
-        self.config_file = tempfile.NamedTemporaryFile(delete=False)
-        self.privatekey_file = tempfile.NamedTemporaryFile(delete=False)
-        self.cert_file = tempfile.NamedTemporaryFile(delete=False)
-
-        self.config_file.write(config)
-        self.config_file.close()
-
-        command = "%s req -config %s -x509 -new -newkey rsa:2048 -sha256 -days 730 -nodes \
-                   -keyout %s -out %s -batch"
-        code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                           self.config_file.name,
-                                           self.privatekey_file.name,
-                                           self.cert_file.name))
-        self.privatekey_file.close()
-        self.cert_file.close()
+        self.cert_file, self.privatekey_file = generate_cert()
 
     def test_encrypted_comments(self):
 
@@ -307,26 +279,9 @@ class FeedbackTest(TestCase):
         # to check feedback comments are saved like enrypted data
         self.assertNotEqual(feedback.comments, comments)
 
-        encrypted_file = tempfile.NamedTemporaryFile(delete=False)
-        encrypted_file.write(feedback.comments)
-        encrypted_file.close()
+        self.assertEqual(check_comments(feedback.comments,
+                                        comments,
+                                        self.privatekey_file), True)
 
-        # to decrypt comments was encryped and check they are equal to the plain comments
-        decrypted_file = tempfile.NamedTemporaryFile(delete=False)
-        command = "%s smime -decrypt -in %s -out %s -inkey %s"
-        code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
-                                           encrypted_file.name,
-                                           decrypted_file.name,
-                                           self.privatekey_file.name))
-
-        decrypted_file.close()
-        encrypted_file.close()
-
-        self.assertEqual(open(decrypted_file.name, 'r').read(), comments)
-
-        # delete tmps
-        os.unlink(self.config_file.name)
         os.unlink(self.privatekey_file.name)
         os.unlink(self.cert_file.name)
-        os.unlink(encrypted_file.name)
-        os.unlink(decrypted_file.name)
