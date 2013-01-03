@@ -176,6 +176,7 @@ class EditPublicKeyForm(BaseNomcomForm, forms.ModelForm):
 
     class Meta:
         model = NomCom
+        fields = ('public_key',)
 
     def __init__(self, *args, **kwargs):
         super(EditPublicKeyForm, self).__init__(*args, **kwargs)

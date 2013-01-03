@@ -143,6 +143,27 @@ class NomcomViewsTest(TestCase):
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_key_url)
         login_testing_unauthorized(self, CHAIR_USER, self.public_key_url)
         self.check_url_status(self.public_key_url, 200)
+        f = open(self.cert_file.name)
+        response = self.client.post(self.public_key_url, {'public_key': f})
+        f.close()
+        self.assertEqual(response.status_code, 200)
+
+        nominee = Nominee.objects.get(email__person__name=COMMUNITY_USER)
+        position = Position.objects.get(name='OAM')
+
+        comments = 'plain text'
+        feedback = Feedback.objects.create(position=position,
+                                           nominee=nominee,
+                                           comments=comments,
+                                           type=FeedbackType.objects.get(slug='nomina'))
+
+        # to check feedback comments are saved like enrypted data
+        self.assertNotEqual(feedback.comments, comments)
+
+        self.assertEqual(check_comments(feedback.comments,
+                                        comments,
+                                        self.privatekey_file), True)
+
         self.client.logout()
 
     def test_index_view(self):
@@ -272,9 +293,9 @@ class FeedbackTest(TestCase):
 
         comments = 'plain text'
         feedback = Feedback.objects.create(position=position,
-                                            nominee=nominee,
-                                            comments=comments,
-                                            type=FeedbackType.objects.get(slug='nomina'))
+                                           nominee=nominee,
+                                           comments=comments,
+                                           type=FeedbackType.objects.get(slug='nomina'))
 
         # to check feedback comments are saved like enrypted data
         self.assertNotEqual(feedback.comments, comments)
