@@ -139,7 +139,6 @@ class NomcomViewsTest(TestCase):
 
     def test_edit_publickey_view(self):
         """Verify edit publickey view"""
-        # TODO: complete chage edit public key
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_key_url)
         login_testing_unauthorized(self, CHAIR_USER, self.public_key_url)
         self.check_url_status(self.public_key_url, 200)
