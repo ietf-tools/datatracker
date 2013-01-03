@@ -15,7 +15,7 @@ from ietf.nomcom.test_data import nomcom_test_data, COMMUNITY_USER, CHAIR_USER, 
                                   MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionState, Feedback, FeedbackType
-from ietf.nomcom.forms import EditChairForm
+from ietf.nomcom.forms import EditChairForm, EditMembersForm
 
 
 class NomcomViewsTest(TestCase):
@@ -58,6 +58,12 @@ class NomcomViewsTest(TestCase):
         login_testing_unauthorized(self, CHAIR_USER, url)
         self.check_url_status(url, 200)
 
+    def access_secretariat_url(self, url):
+        login_testing_unauthorized(self, COMMUNITY_USER, url)
+        login_testing_unauthorized(self, CHAIR_USER, url)
+        login_testing_unauthorized(self, SECRETARIAT_USER, url)
+        self.check_url_status(url, 200)
+
     def test_private_index_view(self):
         """Verify private home view"""
         self.access_member_url(self.private_index_url)
@@ -69,10 +75,34 @@ class NomcomViewsTest(TestCase):
         self.access_chair_url(self.private_merge_url)
         self.client.logout()
 
+    def change_members(self, members):
+        members_emails = u','.join(['%s%s' % (member, EMAIL_DOMAIN) for member in members])
+        test_data = {'members': members_emails,
+                     'stage': 1}
+        # preview
+        self.client.post(self.edit_members_url, test_data)
+
+        hash = security_hash(None, EditMembersForm(test_data))
+        test_data.update({'hash': hash, 'stage': 2})
+
+        # submit
+        self.client.post(self.edit_members_url, test_data)
+
     def test_edit_members_view(self):
         """Verify edit member view"""
-        # TODO: complete chage edit memebers
         self.access_chair_url(self.edit_members_url)
+        self.change_members([CHAIR_USER, COMMUNITY_USER])
+
+        # check member actions
+        self.client.login(remote_user=COMMUNITY_USER)
+        self.check_url_status(self.private_index_url, 200)
+
+        # revert edit nomcom members
+        login_testing_unauthorized(self, CHAIR_USER, self.edit_members_url)
+        self.change_members([CHAIR_USER])
+        self.client.login(remote_user=COMMUNITY_USER)
+        self.check_url_status(self.private_index_url, 403)
+
         self.client.logout()
 
     def change_chair(self, user):
@@ -89,19 +119,13 @@ class NomcomViewsTest(TestCase):
 
     def test_edit_chair_view(self):
         """Verify edit chair view"""
-        login_testing_unauthorized(self, COMMUNITY_USER, self.edit_chair_url)
-        login_testing_unauthorized(self, CHAIR_USER, self.edit_chair_url)
-        login_testing_unauthorized(self, SECRETARIAT_USER, self.edit_chair_url)
-        self.check_url_status(self.edit_chair_url, 200)
-
+        self.access_secretariat_url(self.edit_chair_url)
         self.change_chair(COMMUNITY_USER)
 
         # check chair actions
         self.client.login(remote_user=COMMUNITY_USER)
-        url = reverse('nomcom_edit_members', kwargs={'year': self.year})
-        self.check_url_status(url, 200)
-        url = reverse('nomcom_edit_publickey', kwargs={'year': self.year})
-        self.check_url_status(url, 200)
+        self.check_url_status(self.edit_members_url, 200)
+        self.check_url_status(self.public_key_url, 200)
 
         # revert edit nomcom chair
         login_testing_unauthorized(self, SECRETARIAT_USER, self.edit_chair_url)
