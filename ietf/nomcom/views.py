@@ -68,6 +68,16 @@ def questionnaires(request, year):
 @login_required
 def nominate(request, year):
     nomcom = get_nomcom_by_year(year)
+    has_publickey = nomcom.public_key and True or False
+    if not has_publickey:
+            message = ('warning', "Nomcom don't have public key to ecrypt data, please contact with nomcom chair")
+            return render_to_response('nomcom/nominate.html',
+                              {'has_publickey': has_publickey,
+                               'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'selected': 'nominate'}, RequestContext(request))
+
     message = None
     if request.method == 'POST':
         form = NominateForm(data=request.POST, nomcom=nomcom, user=request.user)
@@ -78,7 +88,8 @@ def nominate(request, year):
         form = NominateForm(nomcom=nomcom, user=request.user)
 
     return render_to_response('nomcom/nominate.html',
-                              {'form': form,
+                              {'has_publickey': has_publickey,
+                               'form': form,
                                'message': message,
                                'nomcom': nomcom,
                                'year': year,

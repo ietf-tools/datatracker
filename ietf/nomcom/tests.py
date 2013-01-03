@@ -11,11 +11,15 @@ from django.contrib.formtools.preview import security_hash
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.pipe import pipe
 
+from ietf.person.models import Email, Person
+
 from ietf.nomcom.test_data import nomcom_test_data, COMMUNITY_USER, CHAIR_USER, \
                                   MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
-                               NomineePositionState, Feedback, FeedbackType
+                               NomineePositionState, Feedback, FeedbackType, \
+                               Nomination
 from ietf.nomcom.forms import EditChairForm, EditMembersForm
+from ietf.nomcom.utils import get_nomcom_by_year
 
 
 class NomcomViewsTest(TestCase):
@@ -161,9 +165,50 @@ class NomcomViewsTest(TestCase):
 
     def test_nominate_view(self):
         """Verify nominate view"""
-        # TODO: complete to do a nomination
         login_testing_unauthorized(self, COMMUNITY_USER, self.nominate_url)
-        self.check_url_status(self.nominate_url, 200)
+        response = self.client.get(self.nominate_url)
+        self.assertEqual(response.status_code, 200)
+        nomcom = get_nomcom_by_year(self.year)
+        has_publickey = nomcom.public_key and True or False
+        self.assertEqual(response.context['has_publickey'], has_publickey)
+
+        if not has_publickey:
+            return
+
+        position = Position.objects.get(name='IAOC')
+        candidate_email = 'nominee@example.com',
+        candidate_name = 'nominee'
+        comments = 'test nominate view'
+        candidate_phone = '123456'
+
+        test_data = {'candidate_name': candidate_name,
+                     'candidate_email': candidate_email,
+                     'candidate_phone': candidate_phone,
+                     'position': position.id,
+                     'comments': comments}
+
+        response = self.client.post(self.nominate_url, test_data)
+        self.assertEqual(response.status_code, 200)
+
+        # check objects
+        email = Email.objects.get(address=candidate_email)
+        Person.objects.get(name=candidate_name, address=candidate_email)
+        nominee = Nominee.objects.get(email=email)
+        NomineePosition.objects.get(position=position, nominee=nominee)
+        feedback = Feedback.objects.get(position=position,
+                                        nominee=nominee,
+                                        type=FeedbackType.objects.get(slug='nomina'),
+                                        author__person__name=COMMUNITY_USER)
+        # to check feedback comments are saved like enrypted data
+        self.assertNotEqual(feedback.comments, comments)
+
+        Nomination.objects.get(position=position,
+                              candidate_name=candidate_name,
+                              candidate_mail=candidate_email,
+                              candidate_phone=candidate_phone,
+                              nominee=nominee,
+                              comments=feedback,
+                              nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
         self.client.logout()
 
 
