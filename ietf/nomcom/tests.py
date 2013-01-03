@@ -6,12 +6,16 @@ from django.test import TestCase
 from django.db import IntegrityError
 from django.core.urlresolvers import reverse
 from django.core.files import File
+from django.contrib.formtools.preview import security_hash
 
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.pipe import pipe
-from ietf.nomcom.test_data import nomcom_test_data
+
+from ietf.nomcom.test_data import nomcom_test_data, COMMUNITY_USER, CHAIR_USER, \
+                                  MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionState, Feedback, FeedbackType
+from ietf.nomcom.forms import EditChairForm
 
 
 class NomcomViewsTest(TestCase):
@@ -26,32 +30,117 @@ class NomcomViewsTest(TestCase):
         nomcom_test_data()
         self.year = 2013
 
-    def test_home_view(self):
-        """Verify home view"""
-        url = reverse('nomcom_index', kwargs={'year': self.year})
+        # private urls
+        self.private_index_url = reverse('nomcom_private_index', kwargs={'year': self.year})
+        self.private_merge_url = reverse('nomcom_private_merge', kwargs={'year': self.year})
+        self.edit_members_url = reverse('nomcom_edit_members', kwargs={'year': self.year})
+        self.edit_chair_url = reverse('nomcom_edit_chair', kwargs={'year': self.year})
+        self.public_key_url = reverse('nomcom_edit_publickey', kwargs={'year': self.year})
+
+        # public urls
+        self.index_url = reverse('nomcom_index', kwargs={'year': self.year})
+        self.requirements_url = reverse('nomcom_requirements', kwargs={'year': self.year})
+        self.questionnaires_url = reverse('nomcom_questionnaires', kwargs={'year': self.year})
+        self.comments_url = reverse('nomcom_comments', kwargs={'year': self.year})
+        self.nominate_url = reverse('nomcom_nominate', kwargs={'year': self.year})
+
+    def access_member_url(self, url):
+        login_testing_unauthorized(self, COMMUNITY_USER, url)
+        login_testing_unauthorized(self, CHAIR_USER, url)
+        self.check_url_status(url, 200)
+        self.client.logout()
+        login_testing_unauthorized(self, MEMBER_USER, url)
         self.check_url_status(url, 200)
 
-    def test_nominate_view(self):
-        """Verify nominate view"""
-        url = reverse('nomcom_nominate', kwargs={'year': self.year})
-        login_testing_unauthorized(self, 'kaligula', url)
+    def access_chair_url(self, url):
+        login_testing_unauthorized(self, COMMUNITY_USER, url)
+        login_testing_unauthorized(self, MEMBER_USER, url)
+        login_testing_unauthorized(self, CHAIR_USER, url)
         self.check_url_status(url, 200)
+
+    def test_private_index_view(self):
+        """Verify private home view"""
+        self.access_member_url(self.private_index_url)
+        self.client.logout()
+
+    def test_private_merge_view(self):
+        """Verify private merge view"""
+        # TODO: complete merge nominations
+        self.access_chair_url(self.private_merge_url)
+        self.client.logout()
+
+    def test_edit_members_view(self):
+        """Verify edit member view"""
+        # TODO: complete chage edit memebers
+        self.access_chair_url(self.edit_members_url)
+        self.client.logout()
+
+    def change_chair(self, user):
+        test_data = {'chair': '%s%s' % (user, EMAIL_DOMAIN),
+                     'stage': 1}
+        # preview
+        self.client.post(self.edit_chair_url, test_data)
+
+        hash = security_hash(None, EditChairForm(test_data))
+        test_data.update({'hash': hash, 'stage': 2})
+
+        # submit
+        self.client.post(self.edit_chair_url, test_data)
+
+    def test_edit_chair_view(self):
+        """Verify edit chair view"""
+        login_testing_unauthorized(self, COMMUNITY_USER, self.edit_chair_url)
+        login_testing_unauthorized(self, CHAIR_USER, self.edit_chair_url)
+        login_testing_unauthorized(self, SECRETARIAT_USER, self.edit_chair_url)
+        self.check_url_status(self.edit_chair_url, 200)
+
+        self.change_chair(COMMUNITY_USER)
+
+        # check chair actions
+        self.client.login(remote_user=COMMUNITY_USER)
+        url = reverse('nomcom_edit_members', kwargs={'year': self.year})
+        self.check_url_status(url, 200)
+        url = reverse('nomcom_edit_publickey', kwargs={'year': self.year})
+        self.check_url_status(url, 200)
+
+        # revert edit nomcom chair
+        login_testing_unauthorized(self, SECRETARIAT_USER, self.edit_chair_url)
+        self.change_chair(CHAIR_USER)
+        self.client.logout()
+
+    def test_edit_publickey_view(self):
+        """Verify edit publickey view"""
+        # TODO: complete chage edit public key
+        login_testing_unauthorized(self, COMMUNITY_USER, self.public_key_url)
+        login_testing_unauthorized(self, CHAIR_USER, self.public_key_url)
+        self.check_url_status(self.public_key_url, 200)
+        self.client.logout()
+
+    def test_index_view(self):
+        """Verify home view"""
+        self.check_url_status(self.index_url, 200)
 
     def test_requirements_view(self):
         """Verify requirements view"""
-        url = reverse('nomcom_requirements', kwargs={'year': self.year})
-        self.check_url_status(url, 200)
+        self.check_url_status(self.requirements_url, 200)
 
     def test_questionnaires_view(self):
         """Verify questionnaires view"""
-        url = reverse('nomcom_questionnaires', kwargs={'year': self.year})
-        self.check_url_status(url, 200)
+        self.check_url_status(self.questionnaires_url, 200)
 
     def test_comments_view(self):
         """Verify comments view"""
-        url = reverse('nomcom_comments', kwargs={'year': self.year})
-        login_testing_unauthorized(self, 'plain', url)
-        self.check_url_status(url, 200)
+        # TODO: comments view
+        login_testing_unauthorized(self, COMMUNITY_USER, self.comments_url)
+        self.check_url_status(self.comments_url, 200)
+        self.client.logout()
+
+    def test_nominate_view(self):
+        """Verify nominate view"""
+        # TODO: complete to do a nomination
+        login_testing_unauthorized(self, COMMUNITY_USER, self.nominate_url)
+        self.check_url_status(self.nominate_url, 200)
+        self.client.logout()
 
 
 class NomineePositionStateSaveTest(TestCase):
@@ -60,7 +149,7 @@ class NomineePositionStateSaveTest(TestCase):
 
     def setUp(self):
         nomcom_test_data()
-        self.nominee = Nominee.objects.get(email__address="plain@example.com")
+        self.nominee = Nominee.objects.get(email__person__name=COMMUNITY_USER)
 
     def test_state_autoset(self):
         """Verify state is autoset correctly"""
@@ -132,7 +221,7 @@ class FeedbackTest(TestCase):
 
     def test_encrypted_comments(self):
 
-        nominee = Nominee.objects.get(email__address="plain@example.com")
+        nominee = Nominee.objects.get(email__person__name=COMMUNITY_USER)
         position = Position.objects.get(name='OAM')
         nomcom = position.nomcom
 

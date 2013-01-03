@@ -112,7 +112,7 @@ class EditMembersFormPreview(FormPreview):
                                        person=member['person'],
                                        email=member['email_obj'])
 
-        return HttpResponseRedirect(reverse('edit_members', kwargs={'year': self.year}))
+        return HttpResponseRedirect(reverse('nomcom_edit_members', kwargs={'year': self.year}))
 
 
 class EditChairForm(BaseNomcomForm, forms.Form):
@@ -167,7 +167,7 @@ class EditChairFormPreview(FormPreview):
                                       person=chair_info['person'],
                                       email=chair_info['email_obj'])
 
-        return HttpResponseRedirect(reverse('edit_chair', kwargs={'year': self.year}))
+        return HttpResponseRedirect(reverse('nomcom_edit_chair', kwargs={'year': self.year}))
 
 
 class EditPublicKeyForm(BaseNomcomForm, forms.ModelForm):

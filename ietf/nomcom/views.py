@@ -24,7 +24,7 @@ def index(request, year):
                                'template': template}, RequestContext(request))
 
 
-@member_required(role='chair')
+@member_required(role='member')
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
     is_nomcom_member(request.user, nomcom)
@@ -34,8 +34,9 @@ def private_index(request, year):
                                'selected': 'index'}, RequestContext(request))
 
 
-@member_required(role='member')
+@member_required(role='chair')
 def private_merge(request, year):
+    # TODO: complete merge nominations
     nomcom = get_nomcom_by_year(year)
     is_nomcom_member(request.user, nomcom)
     return render_to_response('nomcom/private_merge.html',
@@ -86,6 +87,7 @@ def nominate(request, year):
 
 @login_required
 def comments(request, year):
+    # TODO: complete to do comments
     nomcom = get_nomcom_by_year(year)
     return render_to_response('nomcom/comments.html',
                               {'nomcom': nomcom,
