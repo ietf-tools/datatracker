@@ -1,0 +1,4 @@
+{% load ams_filters %}
+
+A request to cancel a meeting session has just been submitted by {{ login|smart_login }} {{ group.acronym }} working group.
+

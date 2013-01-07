@@ -1,0 +1,793 @@
+/*
+   Overrides (override existing properties from Django admin css)
+*/
+
+#container {
+    margin: 0 auto;
+    width: 760px;
+}
+
+#content {
+    margin: 10px auto;
+}
+
+#footer {
+    /* background-color: #DDDDDD; 
+    background-color: #EEEEFF; */
+    color: #888888;
+    margin-top: 8px;
+    padding: 6px 0;
+    text-align: left;
+    font-size: 10px;
+}
+
+#footer-logo {
+    border-top: 1px solid #DDDDDD;
+    padding-top: 9px;
+}
+
+#footer-version {
+    float: left;
+    border-top: 1px solid #DDDDDD;
+    padding-top: 9px;
+}
+
+#footer ul {
+    margin: 0;
+    padding: 0 0 9px;
+}
+
+#footer li {
+    list-style-type: none;
+    font-size: 10px;
+}
+
+/*.inline-group th, td {
+    padding: 3px;
+}*/
+
+.object-tools {
+    float: left;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.errorlist li {
+    background: #FF8080 url(../img/admin/icon_alert.gif) no-repeat scroll 5px 0.3em;
+    border: 1px solid #FF8080;
+}
+
+/* ==========================================================================
+   General Styles
+   ========================================================================== */
+
+.alert {
+    color: red;
+}
+
+.breadcrumbs td {
+    border-bottom: none;
+}
+
+.internal-form { 
+    padding: 1em;
+}
+
+.message-right {
+    float: right;
+    color: Red;
+}
+
+.locked {
+    float: right;
+}
+
+.locked a {
+    color: Red;
+    text-decoration: underline;
+}
+
+.locked a:hover {
+    color: Blue;
+    text-decoration: underline;
+}
+    
+.unlocked {
+    float: right;
+}
+
+.unlocked a {
+    color: White;
+    text-decoration: underline;
+}
+
+.unlocked a:hover {
+    color: Blue;
+    text-decoration: underline;
+}
+
+.login {
+    float: right;
+    color: white;
+    font-size: 12px;
+    vertical-align: bottom;
+    padding-right: 10px;
+}
+
+.menu li {
+    list-style-type: none;
+}
+
+ul.none li {
+    list-style-type: none;
+}
+
+.required {
+    color: red;
+}
+
+.loading {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 10px;
+}
+
+td.border-right {
+    border-right: #ccc 1px solid;
+    padding: 0;
+}
+
+tr.green-row {
+    background-color: #A5EEAA;
+}
+
+tr.red-row {
+    background-color: #FF66FF;
+}
+
+table.full-width {
+    width: 100%;
+}
+
+table.center {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
+
+.new-style th {
+    text-align: right;
+}
+
+/* Buttons
+   ========================================================================== */
+
+.action-group ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 7px;
+    text-align: center;
+}
+
+.action-group li {
+    list-style-type: none;
+    padding: 4px;}
+
+.button.standard, input.standard[type="submit"] {
+    background: none;
+}
+
+.button-group { 
+    clear: both;
+    width: auto;
+    height: 2.5em;
+    padding: 4px 7px;
+    background: white url(../img/admin/nav-bg.gif) 0 100% repeat-x;
+    border: 0 solid #ccc;
+    border-top: 1px solid #ccc;
+    margin: 5px 0 0 0;
+    overflow: hidden;
+}
+
+.button-group ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 7px;
+    text-align: center;
+}
+
+.button-group li {
+    display: inline;
+    padding: 5px;
+}
+
+button.fancy:hover {
+    background-color: #ffc; 
+}
+
+/* Navigation Bar
+   ========================================================================== */
+
+#nav {
+    padding: 0;
+}
+
+ul#list-nav {
+    padding-left: 0;
+    margin-left: 0;
+    background-color: #36648B;
+    color: White;
+    /* float: left; */
+    width: 100%;
+    /* font-family: arial, helvetica, sans-serif; */
+    overflow: auto;
+}
+
+ul#list-nav li { display: inline; }
+
+
+ul#list-nav li a {
+    /*padding: 0.2em 1em; */
+    padding: 0.2em;
+    /*width: 19.1%; */
+    width: 23%;
+    background-color: #36648B;
+    color: White;
+    text-decoration: none;
+    text-align: center;
+    float: left;
+    border-left: 1px solid #fff;
+}
+
+ul#list-nav li.leftmost a {
+    border-left: none;
+}
+
+ul#list-nav li a:hover {
+    background-color: #4F94CD;
+    color: #fff;
+}
+
+ul#list-nav a.current {
+    background-color: #7CA0C7;
+}
+
+/* ==========================================================================
+   Announcement Tool
+   ========================================================================== */
+   
+#announce-table input[type="text"] {
+    width: 40em;
+}
+
+#announce-table #id_body {
+    width: 40em;
+}
+
+#announce-table td {
+    border-bottom: none;
+}
+
+#announce-table th {
+    border-bottom: none;
+}
+
+#announce-confirm {
+    color: black;
+    font-family: "Courier New",Courier,monospace;
+}
+
+/* ==========================================================================
+   Area Tool
+   ========================================================================== */
+
+#areas-list-table td {
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+#area-awp-table input[type="text"] {
+    width: 40em;
+}
+
+#area-add-table #id_comments {
+    width: 40em;
+}
+
+#area-add-table #id_name {
+    width: 40em;
+}
+
+/* ==========================================================================
+   Draft Tool
+   ========================================================================== */
+   
+input.draft-file-input {
+    width: 40em;
+}
+
+.draft-container #id_title {
+    height: 4em;
+    width: 40em;
+}
+
+.draft-container #id_pages {
+    width: 4em;
+}
+
+.draft-container #id_internal_comments {
+    height: 4em;
+    width: 40em;
+}
+
+.draft-container #id_abstract {
+    height: 15em;
+    width: 40em;
+}
+
+#draft-confirm-email th {
+    text-align: right;
+    font-weight: normal;
+    padding-right: 2em;
+}
+
+#draft-file-table label {
+    width: 12em;
+    /* text-align: right;
+    margin-right: 0.5em; */
+    margin-left: 1em;
+    display: block;
+}
+
+#draft-search-table th {
+    width: 15em;
+}
+
+#draft-view-col1 {
+    float: left;
+    width: 600px;
+    margin: 0;
+    border-right: 1px solid #CCCCCC;
+}
+
+#draft-view-col2 {
+    float: left;
+    width: 157px;
+    margin: 0;
+    padding: 0;
+}
+
+#draft-edit-col1 {
+    float: left;
+    width: 620px;
+    margin: 0;
+    border-right: 1px solid #CCCCCC;
+}
+
+#draft-edit-col2 {
+    float: left;
+    width: 137px;
+    margin: 0;
+    padding: 0;
+}
+
+#draft-edit-table #id_name {
+    width: 30em;
+}
+
+#draft-email-table #id_cc {
+    width: 60em;
+}
+
+#draft-email-table #id_subject {
+    width: 60em;
+}
+
+#draft-email-table #id_to {
+    width: 60em;
+}
+
+#draft-email-table #id_body {
+    width: 60em;
+}
+
+#draft-search-form #id_document_title {
+    width: 40em;
+}
+
+#draft-search-form #id_group {
+    width: 40em;
+}
+
+#draft-search-form #id_filename {
+    width: 40em;
+}
+
+#draft-obsoletes-table input[type="text"] {
+    width: 3.5em;
+}
+
+/* ==========================================================================
+   Group Tool
+   ========================================================================== */
+   
+.awp-form input {
+    width: 30em;
+}
+
+#groups-table #id_name,#id_list_email,#id_list_subscribe,#id_list_archive {
+    width: 40em;
+}
+
+#groups-table #id_comments {
+    width: 40em;
+}
+
+#group-description-form #id_description {
+    width: 90%;
+}
+
+#group-search-results td {
+    font-size: xx-small;
+}
+
+#groups-people-col1 {
+    width: 75%;
+}
+
+#groups-people-col2 {
+    width: 25%;
+}
+
+#groups-view-col1 {
+    float: left;
+    width: 620px;
+    margin: 0;
+    border-right: 1px solid #CCCCCC;
+}
+
+#groups-view-col2 {
+    float: left;
+    width: 137px;
+    margin: 0;
+    padding: 0;
+}
+
+/* ==========================================================================
+   Meeting Tool
+   ========================================================================== */
+
+#non-session-edit-form input[type="text"] {
+    width: 30em;
+}
+
+#additional-info-form #id_text {
+    width: 90%;
+}
+
+#meetings-schedule-form input[type="text"] {
+    width: 30em;
+}
+
+#timeslot-form #id_time,#id_duration {
+    width: 5em;
+}
+
+#timeslot-form #id_name {
+    width: 30em;
+}
+
+#timeslot-form th {
+    width: 60px;
+}
+
+#id_duration input {
+    width: 5em;
+}
+
+tr.break td {
+    border-top: 2px solid black;
+}
+
+/* ==========================================================================
+   Proceedings Tool
+   ========================================================================== */
+
+input#id_slide_name {
+    width: 30em;
+}
+
+input#id_title {
+    width: 30em;
+}
+
+div.interim-scroll {
+    height: 300px;
+    overflow: auto;
+}
+
+.highlight {
+    color: #FF0000;
+}
+
+.internal-form label {
+    float: left;
+    width: 100px;
+    text-align: right;
+    padding-right: 10px;
+}
+
+.internal-form select {
+    min-width: 100px;
+}
+
+#interim-directory-table td {
+    padding-left: 2em;
+    padding-right: 2em;
+}
+
+#proceedings-interim-table td {
+    white-space:pre-wrap;
+    padding-left: 1em;
+    padding-right: 1em;
+    /* font-family: "Courier",monospace; */
+}
+
+#proceedings-list-table td {
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+#proceedings-add-table th {
+    width: 25%; 
+}
+
+#proceedings-edit-table th {
+    width: 25%; 
+}
+
+#proceedings-upload-table th {
+    text-align: right;
+    width: 30%;
+}
+
+#proceedings-view-first-col {
+    width: 30%;
+}
+
+#proceedings-left-col {
+    float: left;
+    width: 378px; 
+    margin: 0;
+    border-right: 1px solid #CCCCCC;
+}
+
+#proceedings-right-col {
+    float: left;
+    width: 377px; 
+    margin: 0;
+    border-right: 1px solid #CCCCCC;
+    border-left: 1px solid #CCCCCC;
+}
+
+td.hidden {
+    display: none;
+}
+
+/* ==========================================================================
+   Role Tool
+   ========================================================================== */
+
+.name-autocomplete {
+    width: 300px;
+}
+
+/* ==========================================================================
+   Rolodex Tool
+   ========================================================================== */
+
+form[id^="rolodex-"] input[type=text] {
+    width: 30em;
+}
+
+form[id^="rolodex-"] #id_address {
+    width: 30em;
+    height: 7em;
+}
+
+/* ==========================================================================
+   Session Request Tool
+   ========================================================================== */
+
+tr.bg1 {
+    background: #CCCCCC;
+}
+
+tr.bg2 {
+    background: #EEEEEE;
+}
+
+/*
+table#sessions-new-table td {
+    padding: 2px;
+    border-spacing: 2px; 
+    border: 1;
+
+}
+*/
+
+#id_number_attendee {
+    width: 3em;
+}
+
+#id_conflict1 { width: 37em; }
+#id_conflict2 { width: 37em; }
+#id_conflict3 { width: 37em; }
+
+ul.session-buttons {
+    padding-left: 2px;
+    margin-left: 0;
+}
+
+.session-buttons li {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+/* ==========================================================================
+   Telechat Tool
+   ========================================================================== */
+
+#telechat-sidebar {
+    float: left;
+    width: 294px;
+    background: url("../img/admin/default-bg.gif") repeat-x scroll left top #7CA0C7;
+    color: white;
+    min-height: 500px; 
+    padding: 0 0 0 6px;
+}
+
+#telechat-sidebar h2 {
+    text-align: center;
+}
+
+#telechat-sidebar ul {
+    /*list-style-type: none;*/
+    padding: 0;
+}
+
+#telechat-sidebar ul.doc-list {
+    list-style-type: circle;
+}
+
+ul.doc-list li {
+    list-style-type: circle;
+}
+
+#telechat-sidebar ul ul {
+    list-style-type: circle;
+}
+
+#telechat-sidebar a:link {
+    color: #FFFF99;
+}
+
+#telechat-sidebar a:visited {
+    color: #FFFF99;
+}
+
+#telechat-sidebar a:hover {
+    color: #FF0000;
+}
+
+#telechat-sidebar li.level1 {
+    font-size: 110%;
+}
+
+#telechat-positions-table td {
+    text-align: center;
+}
+
+/* 
+#telechat-sidebar ol {
+    list-style-position: outside;
+    counter-reset: item;
+    padding: 0px;
+}
+
+#telechat-sidebar li { display: block }
+#telechat-sidebar li li { display: block; padding: 3px 3px 3px 3px; }
+#telechat-sidebar li:before { content: counters(item, ".") " "; counter-increment: item }
+*/
+
+#telechat-main {
+    float: left;
+    padding-left: 20px;
+    width: 640px;
+}
+
+#telechat-main pre {
+    white-space: pre-wrap;       /* css-3 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+
+.right-nav {
+    float: right;
+}
+
+.telechat-warn h3 { 
+    color: white;
+    text-align: center;
+    background-color: #FF66FF;
+}
+
+.telechat-button {
+    height: 2.5em;
+    padding: 4px 7px;
+    width: auto;
+    margin: 0 auto;
+}
+
+.telechat-button ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 7px;
+    text-align: center;
+}
+
+.telechat-button li {
+    list-style-type: none;
+    text-align: center;
+}
+
+/* ==========================================================================
+   Redesign Section
+   ========================================================================== */
+   
+table.amstable {
+    background-color: #F2F2E6;
+}
+
+table.amstable th {
+    color: #666666;
+    font-size: 12px;
+    font-weight: normal !important;
+    padding-left: 1em;
+    padding-right: 1em;
+    text-align: right;
+}
+
+table.amsview th {
+    border-bottom: none;
+    color: #666666;
+    font-size: 13px;
+    padding: 4px 10px 4px 4px;
+    text-align: right;
+    vertical-align: middle;
+}
+
+table.amsview td {
+    border-bottom: none;
+    vertical-align: middle;
+    padding: 4px 10px 4px 4px;
+}
+
+.button-group { 
+    background: #F2F2E6;
+}
+
+td, th, li, h2 {
+    font-size: 12px;
+}
+
+.module h2 {
+    font-size: 12px;
+}
+
+thead th {
+    font-size: 12px;
+}

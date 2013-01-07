@@ -1,0 +1,53 @@
+{% extends "base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+
+{% if request.user_is_secretariat %}
+
+<table class="menu" width="100%" cellpadding="5" cellspacing="5" border="0">
+  <tr valign="top">
+    <td>
+      <h3>IESG</h3>
+   </td>
+   <td>
+     <h3>IDs and WGs Process</h3>
+    </td>
+  </tr>
+  <tr valign="top">
+    <td>
+      <h3>Meetings and Proceedings</h3>
+       <li> <a href="{% url sessions %}"><b>Session Requests</b></a></li><br>
+    </td>
+    <td>
+      <h3>IPR</h3>
+    </td>
+  </tr>
+</table>
+
+{% else %}
+
+<table class="menu" width="100%" cellpadding="5" cellspacing="5" border="0">
+  <tr valign="top">
+    <td>
+      <h3>Section 1</h3>
+        <li> <a href="{% url sessions %}"><b>Session Requests</b></a></li><br>
+   </td>
+   <td>
+     <h3>Section 2</h3>
+    </td>
+  </tr>
+  <tr valign="top">
+    <td>
+      <h3>Section 3</h3>
+    </td>
+    <td>
+      <h3>Section 4</h3>
+    </td>
+  </tr>
+</table>
+
+{% endif %}
+
+</div>
+{% endblock %}

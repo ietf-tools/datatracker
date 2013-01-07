@@ -116,7 +116,8 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'ietf.urls'
 
 TEMPLATE_DIRS = (
-    BASE_DIR + "/templates"
+    BASE_DIR + "/templates",
+    BASE_DIR + "/secr/templates",
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -127,6 +128,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'ietf.context_processors.server_mode',
     'ietf.context_processors.revision_info',
+    'ietf.secr.context_processors.secr_revision_info',
     'ietf.context_processors.rfcdiff_prefix', 
 )
 
@@ -307,6 +309,16 @@ BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = '/www/ietf-datatracker/tz/ics/'
 CHANGELOG_PATH = '/www/ietf-datatracker/web/changelog'
+
+# Secretariat Tool
+# this is a tuple of regular expressions.  if the incoming URL matches one of
+# these, than non secretariat access is allowed.
+SEC_AUTH_UNRESTRICTED_URLS = (
+    #(r'^/$'),
+    #(r'^/announcement/'),
+    #(r'^/proceedings/'),
+    (r'^/secr/sreq/'),
+)
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
