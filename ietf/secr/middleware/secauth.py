@@ -39,13 +39,20 @@ class SecAuthMiddleware(object):
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         # need to initialize user, it doesn't get set when running tests for example
-        user = ''
-        request.user_is_secretariat = False
 
-        if 'REMOTE_USER' in request.META:
-            # do custom auth
-            if has_role(request.user,'Secretariat'):
-                request.user_is_secretariat = True
-                
+        if request.path.startswith('/secr/'):
+            user = ''
+            request.user_is_secretariat = False
+            
+            if request.user.is_anonymous(): 
+                return render_to_response('401.html', {'user':user})
+            
+            if 'REMOTE_USER' in request.META:
+                # do custom auth
+                if has_role(request.user,'Secretariat'):
+                    request.user_is_secretariat = True
+                    
+            return None
+
         return None
-
+        

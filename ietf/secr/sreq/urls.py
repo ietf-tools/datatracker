@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import *
 
-urlpatterns = patterns('sec.sreq.views',
+urlpatterns = patterns('ietf.secr.sreq.views',
     url(r'^$', 'main', name='sessions'),
     url(r'^status/$', 'tool_status', name='sessions_tool_status'),
     url(r'^(?P<acronym>[A-Za-z0-9_\-\+]+)/$', 'view', name='sessions_view'),

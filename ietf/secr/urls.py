@@ -5,5 +5,5 @@ from django.views.generic.simple import direct_to_template
 
 urlpatterns = patterns('',
     url(r'^$', direct_to_template, {'template': 'main.html'}, name="home"),
-    (r'^sreq/', include('sec.sreq.urls')),
+    (r'^sreq/', include('ietf.secr.sreq.urls')),
 )
