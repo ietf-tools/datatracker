@@ -1,0 +1,20 @@
+<table class="full-width">
+  <thead>
+    <tr> 
+      <th>Name</th>
+      <th>Company</th>
+      <th>Email</th>
+      <th>ID</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in results %}
+       <tr class="{% cycle 'row1' 'row2' %}">
+         <td><a href="{% url rolodex_view id=item.person.id %}">{{item.name}}</a></td>
+         <td>{{item.person.affiliation}}</td>
+         <td>{{item.person.email_address}}</td>
+         <td>{{item.person.id}}</a></td>
+       </tr>
+    {% endfor %}
+  </tbody>
+</table>

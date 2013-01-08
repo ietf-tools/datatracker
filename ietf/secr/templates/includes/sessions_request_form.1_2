@@ -1,0 +1,61 @@
+         <span class="required">*</span> Required Field 
+         <form id="session-request-form" action="." method="POST" name="form_post">
+         {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+         <table id="sessions-new-table" cellspacing="1" cellpadding="1" border="0">
+           <col width="150">
+           <tr class="bg1"><td>Working Group Name:</td><td>{{ group.group_name }} ({{ group.group_acronym }})</td></tr>
+           <tr class="bg2"><td>Area Name:</td><td>{% if group.area_name %}{{ group.area_name }} ({{ group.area_acronym }}){% endif %}</td></tr>
+           <tr class="bg1"><td>Number of Sessions:<span class="required">*</span></td><td>{{ form.num_session.errors }}{{ form.num_session }}</td></tr>
+           <tr class="bg2"><td>Length of Session 1:<span class="required">*</span></td><td>{{ form.length_session1.errors }}{{ form.length_session1 }}</td></tr>
+           <tr class="bg2"><td>Length of Session 2:<span class="required">*</span></td><td>{{ form.length_session2.errors }}{{ form.length_session2 }}</td></tr>
+           {% if not group.irtf_id and group.group_type.pk != 4 %}
+             <tr class="bg2"><td>Additional Session Request:</td><td>{{ form.third_session }} Check this box to request an additional session.<br>
+             Additional slot may be available after agenda scheduling has closed and with the approval of an Area Director.<br>
+             Length of Third Session: {{ form.length_session3.errors }}{{ form.length_session3 }}</td></tr>
+           {% endif %}
+           <tr class="bg1"><td>Number of Attendees:<span class="required">*</span></td><td>{{ form.number_attendee.errors }}{{ form.number_attendee }}</td></tr>
+           <tr class="bg2"><td>Conflicts to Avoid:</td>
+           <td>
+             <table>
+               <tr>
+                 <td colspan="2">Other WGs that included {{ group_name }} in their conflict lists:</td>
+                 <td>{{ session_conflicts }}</td>
+               </tr>
+               <tr class="bg1">
+                 <td rowspan="3" valign="top" width="220">WG Sessions:<br>You may select multiple WGs within each priority</td>
+                 <td width="320">First Priority:</td>
+                 <td>{{ form.wg_selector1 }}
+                     <input type="button" value="Delete the last entry" onClick="delete_last1(); return handleconflictfield(1);"><br>
+                     {{ form.conflict1.errors }}{{ form.conflict1 }}
+                 </td>
+               </tr>
+               <tr class="bg1">
+                 <td>Second Priority:</td>
+                 <td>{{ form.wg_selector2 }}
+                     <input type="button" value="Delete the last entry" onClick="delete_last2(); return handleconflictfield(2);"><br>
+                     {{ form.conflict2.errors }}{{ form.conflict2 }}
+                 </td>
+               </tr>
+               <tr class="bg1">
+                 <td>Third Priority:</td>
+                 <td>{{ form.wg_selector3 }}
+                     <input type="button" value="Delete the last entry" onClick="delete_last3(); return handleconflictfield(3);"><br>
+                     {{ form.conflict3.errors }}{{ form.conflict3 }}
+                 </td>
+               </tr>
+               <tr>
+                 <td colspan="2">BOF or IRTF Sessions:<br>(Please enter free-form text)</td>
+                 <td>{{ form.conflict_other.errors }}{{ form.conflict_other }}</td>
+               </tr>
+             </table>
+           </td>
+           </tr>
+           <tr bgcolor="#cccccc">
+             <td valign="top">Special Requests:<br />&nbsp;<br />i.e. WebEx (state reason needed), restrictions on meeting times/days, etc.</td>
+             <td>{{ form.special_req.errors }}{{ form.special_req }}</td>
+           </tr>
+         </table>
+         
+         {% include "includes/buttons_save_cancel.html" %}
+      
+         </form>

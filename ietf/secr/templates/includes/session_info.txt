@@ -1,0 +1,18 @@
+{% load ams_filters %}
+---------------------------------------------------------
+Working Group Name: {{ group.name }}
+Area Name: {{ group.parent }}
+Session Requester: {{ login }}
+
+Number of Sessions: {{ session.num_session }}
+Length of Session(s):  {{ session.length_session1|display_duration }}{% if session.length_session2 %}, {{ session.length_session2|display_duration }}{% endif %}{% if session.length_session3 %}, {{ session.length_session3|display_duration }}{% endif %}
+Number of Attendees: {{ session.attendees }}
+Conflicts to Avoid: 
+{% if session.conflict1 %} First Priority: {{ session.conflict1 }}{% endif %}
+{% if session.conflict2 %} Second Priority: {{ session.conflict2 }}{% endif %}
+{% if session.conflict3 %} Third Priority: {{ session.conflict3 }}{% endif %}
+
+
+Special Requests:
+  {{ session.comments }}
+---------------------------------------------------------
