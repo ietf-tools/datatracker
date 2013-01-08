@@ -1,12 +1,22 @@
+import unittest
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from django.contrib.auth.models import User
-
+from django.test.client import Client
 from ietf.group.models import Group
 from ietf.ietfauth.decorators import has_role
+from ietf.utils.test_utils import SimpleUrlTestCase, RealDatabaseTest
+from ietf.idtracker.models import Role
 
+from urlparse import urlsplit
 from pyquery import PyQuery
 
+class SreqUrlTestCase(SimpleUrlTestCase):
+    def testUrls(self):
+        self.doTestUrls(__file__)
+
+"""
 SEC_USER='rcross'
 WG_USER=''
 AD_USER=''
@@ -80,3 +90,4 @@ class RetrievePreviousCase(TestCase):
     # test get previous exists/doesn't exist
     # test that groups scheduled and unscheduled add up to total groups
     # test locking function, access by unauthorized
+"""
