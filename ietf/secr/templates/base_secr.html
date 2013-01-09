@@ -5,7 +5,7 @@
 <link rel="stylesheet" type="text/css" href="{% block stylesheet %}/secr/css/base.css{% endblock %}" />
 <link rel="stylesheet" type="text/css" href="/secr/css/forms.css" />
 <link rel="stylesheet" type="text/css" href="/secr/css/custom.css" />
-{% if server_mode == "test" %}
+{% if not server_mode == "production" %}
 <link rel="stylesheet" type="text/css" href="/secr/css/test.css" />
 {% endif %}
 {% block extrastyle %}{% endblock %}
@@ -38,7 +38,7 @@
       <table width="100%">
         <tr>
           <td align="left">
-            {% block breadcrumbs %}<a href="/">Home</a>{% endblock %}
+            {% block breadcrumbs %}<a href="/secr/">Home</a>{% endblock %}
           </td>
           <td align="right">
             {% block instructions %}{% endblock %}

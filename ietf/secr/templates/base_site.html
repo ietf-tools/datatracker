@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_secr.html" %}
 {% load i18n %}
 
 {% block title %}{{ title }}{% if request.user_is_secretariat %} Secretariat Dashboard {% else %} WG Chair Dashboard {% endif %}{% endblock %}
