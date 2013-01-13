@@ -66,12 +66,26 @@ def questionnaires(request, year):
 
 
 @login_required
-def nominate(request, year):
+def public_nominate(request, year):
+    return nominate(request, year, True)
+
+
+@member_required(role='member')
+def private_nominate(request, year):
+    return nominate(request, year, False)
+
+
+def nominate(request, year, public):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
+    if public:
+        template = 'nomcom/public_nominate.html'
+    else:
+        template = 'nomcom/private_nominate.html'
+
     if not has_publickey:
             message = ('warning', "Nomcom don't have public key to ecrypt data, please contact with nomcom chair")
-            return render_to_response('nomcom/nominate.html',
+            return render_to_response(template,
                               {'has_publickey': has_publickey,
                                'message': message,
                                'nomcom': nomcom,
@@ -80,14 +94,14 @@ def nominate(request, year):
 
     message = None
     if request.method == 'POST':
-        form = NominateForm(data=request.POST, nomcom=nomcom, user=request.user)
+        form = NominateForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
         if form.is_valid():
             form.save()
             message = ('success', 'Your nomination has been registered. Thank you for the nomination.')
     else:
-        form = NominateForm(nomcom=nomcom, user=request.user)
+        form = NominateForm(nomcom=nomcom, user=request.user, public=public)
 
-    return render_to_response('nomcom/nominate.html',
+    return render_to_response(template,
                               {'has_publickey': has_publickey,
                                'form': form,
                                'message': message,

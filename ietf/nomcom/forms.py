@@ -17,7 +17,8 @@ from ietf.person.models import Email, Person
 from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
                                Position, Feedback
 from ietf.nomcom.utils import QUESTIONNAIRE_TEMPLATE, NOMINATION_EMAIL_TEMPLATE, \
-                              INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE
+                              INEXISTENT_PERSON_TEMPLATE, NOMINEE_EMAIL_TEMPLATE, \
+                              get_user_email
 from ietf.nomcom.decorators import member_required
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -186,18 +187,30 @@ class EditPublicKeyForm(BaseNomcomForm, forms.ModelForm):
 class NominateForm(BaseNomcomForm, forms.ModelForm):
     comments = forms.CharField(label='Comments', widget=forms.Textarea())
 
-    fieldsets = [('Candidate Nomination', ('position', 'candidate_name', 'candidate_email', 'candidate_phone', 'comments'))]
+    fieldsets = [('Candidate Nomination', ('position', 'candidate_name',
+                  'candidate_email', 'candidate_phone', 'comments'))]
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
         self.user = kwargs.pop('user', None)
+        self.public = kwargs.pop('public', None)
+
         super(NominateForm, self).__init__(*args, **kwargs)
         if self.nomcom:
             self.fields['position'].queryset = Position.objects.filter(nomcom=self.nomcom)
+        if not self.public:
+            author = get_user_email(self.user)
+            if author:
+                self.fields['nominator_email'].initial = author.address
+            self.fieldsets = [('Candidate Nomination', ('position',
+                              'nominator_email', 'candidate_name',
+                              'candidate_email', 'candidate_phone',
+                              'comments'))]
 
     def save(self, commit=True):
         # Create nomination
         nomination = super(NominateForm, self).save(commit=False)
+        nominator_email = self.cleaned_data.get('nominator_email', None)
         candidate_email = self.cleaned_data['candidate_email']
         candidate_name = self.cleaned_data['candidate_name']
         position = self.cleaned_data['position']
@@ -219,12 +232,18 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
         nominee_position, nominee_position_created = NomineePosition.objects.get_or_create(position=position, nominee=nominee)
 
         # Complete nomination data
-        author_emails = Email.objects.filter(person__user=self.user)
-        author = author_emails and author_emails[0] or None
         feedback = Feedback.objects.create(position=position,
                                            nominee=nominee,
                                            comments=comments,
                                            type=FeedbackType.objects.get(slug='nomina'))
+        author = None
+        if self.public:
+            author = get_user_email(self.user)
+        else:
+            if nominator_email:
+                emails = Email.objects.filter(address=nominator_email)
+                author = emails and emails[0] or None
+
         if author:
             nomination.nominator_email = author.address
             feedback.author = author
@@ -287,7 +306,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
     class Meta:
         model = Nomination
-        fields = ('position', 'candidate_name', 'candidate_email', 'candidate_phone')
+        fields = ('position', 'nominator_email', 'candidate_name', 'candidate_email', 'candidate_phone')
 
     class Media:
         js = ("/js/jquery-1.5.1.min.js",

@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied
 
+from ietf.person.models import Email
 from ietf.dbtemplate.models import DBTemplate
 
 MAIN_NOMCOM_TEMPLATE_PATH = '/nomcom/defaults/'
@@ -18,6 +19,10 @@ def get_nomcom_by_year(year):
     return get_object_or_404(NomCom,
                              group__acronym__icontains=year,
                              group__state__slug='active')
+
+
+def get_user_email(user):
+    emails = Email.objects.filter(person__user=user)
 
 
 def is_nomcom_member(user, nomcom):

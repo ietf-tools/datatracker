@@ -41,13 +41,14 @@ class NomcomViewsTest(TestCase):
         self.edit_members_url = reverse('nomcom_edit_members', kwargs={'year': self.year})
         self.edit_chair_url = reverse('nomcom_edit_chair', kwargs={'year': self.year})
         self.public_key_url = reverse('nomcom_edit_publickey', kwargs={'year': self.year})
+        self.private_nominate_url = reverse('nomcom_private_nominate', kwargs={'year': self.year})
 
         # public urls
         self.index_url = reverse('nomcom_index', kwargs={'year': self.year})
         self.requirements_url = reverse('nomcom_requirements', kwargs={'year': self.year})
         self.questionnaires_url = reverse('nomcom_questionnaires', kwargs={'year': self.year})
         self.comments_url = reverse('nomcom_comments', kwargs={'year': self.year})
-        self.nominate_url = reverse('nomcom_nominate', kwargs={'year': self.year})
+        self.public_nominate_url = reverse('nomcom_public_nominate', kwargs={'year': self.year})
 
     def access_member_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
@@ -184,11 +185,23 @@ class NomcomViewsTest(TestCase):
         self.check_url_status(self.comments_url, 200)
         self.client.logout()
 
-    def test_nominate_view(self):
+    def test_public_nominate(self):
+        login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
+        return self.nominate_view(public=True)
+
+    def test_private_nominate(self):
+        self.access_member_url(self.private_nominate_url)
+        return self.nominate_view(public=False)
+
+    def nominate_view(self, public=True):
         """Verify nominate view"""
-        login_testing_unauthorized(self, COMMUNITY_USER, self.nominate_url)
-        response = self.client.get(self.nominate_url)
+        if public:
+            nominate_url = self.public_nominate_url
+        else:
+            nominate_url = self.private_nominate_url
+        response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
+
         nomcom = get_nomcom_by_year(self.year)
         if not nomcom.public_key:
             self.assertNotContains(response, "nominateform")
@@ -197,7 +210,7 @@ class NomcomViewsTest(TestCase):
         nomcom.public_key.storage.location = tempfile.gettempdir()
         nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
-        response = self.client.get(self.nominate_url)
+        response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "nominateform")
 
@@ -212,8 +225,10 @@ class NomcomViewsTest(TestCase):
                      'candidate_phone': candidate_phone,
                      'position': position.id,
                      'comments': comments}
+        if not public:
+            test_data['nominator_email'] = "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN)
 
-        response = self.client.post(self.nominate_url, test_data)
+        response = self.client.post(nominate_url, test_data)
         self.assertEqual(response.status_code, 200)
 
         # check objects
