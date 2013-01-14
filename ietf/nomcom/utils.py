@@ -23,6 +23,8 @@ def get_nomcom_by_year(year):
 
 def get_user_email(user):
     emails = Email.objects.filter(person__user=user)
+    email = emails and emails[0] or None
+    return email
 
 
 def is_nomcom_member(user, nomcom):

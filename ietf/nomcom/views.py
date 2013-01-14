@@ -1,13 +1,12 @@
  # -*- coding: utf-8 -*-
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.http import HttpResponseForbidden, HttpResponse
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
 from django.utils import simplejson
 
-from ietf.nomcom.utils import get_nomcom_by_year, is_nomcom_member, \
-                              is_nomcom_chair, HOME_TEMPLATE
+from ietf.nomcom.utils import get_nomcom_by_year, HOME_TEMPLATE
 from ietf.nomcom.decorators import member_required
 from ietf.nomcom.forms import EditPublicKeyForm, NominateForm
 from ietf.nomcom.models import Position
@@ -27,7 +26,6 @@ def index(request, year):
 @member_required(role='member')
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
-    is_nomcom_member(request.user, nomcom)
     return render_to_response('nomcom/private_index.html',
                               {'nomcom': nomcom,
                                'year': year,
@@ -38,7 +36,6 @@ def private_index(request, year):
 def private_merge(request, year):
     # TODO: complete merge nominations
     nomcom = get_nomcom_by_year(year)
-    is_nomcom_member(request.user, nomcom)
     return render_to_response('nomcom/private_merge.html',
                               {'nomcom': nomcom,
                                'year': year,
@@ -123,10 +120,6 @@ def comments(request, year):
 @member_required(role='chair')
 def edit_publickey(request, year):
     nomcom = get_nomcom_by_year(year)
-    is_nomcom_chair(request.user, nomcom)
-    is_group_chair = nomcom.group.is_chair(request.user)
-    if not is_group_chair:
-        return HttpResponseForbidden("Must be group chair")
 
     message = ('warning', 'Previous data will remain encrypted with the old key')
     if request.method == 'POST':
