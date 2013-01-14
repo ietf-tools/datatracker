@@ -82,7 +82,8 @@ class EditMembersFormPreview(FormPreview):
             self.form.base_fields['members'].initial = ',\r\n'.join([role.email.address for role in members])
 
     def process_preview(self, request, form, context):
-        members_email = form.cleaned_data['members'].replace('\r\n', '').replace(' ', '').split(',')
+        emails = form.cleaned_data['members'].replace('\r\n', '')
+        members_email = map(unicode.strip, emails.split(','))
 
         members_info = []
         emails_not_found = []
@@ -182,6 +183,50 @@ class EditPublicKeyForm(BaseNomcomForm, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(EditPublicKeyForm, self).__init__(*args, **kwargs)
         self.fields['public_key'].required = True
+
+
+class MergeForm(BaseNomcomForm, forms.Form):
+
+    secondary_emails = custom_fields.MultiEmailField(label="Secondary email address (remove this):")
+    primary_email = forms.EmailField(label="Primary email address",
+                                     widget=forms.TextInput(attrs={'size': '40'}))
+
+    fieldsets = [('Emails', ('primary_email', 'secondary_emails'))]
+
+    def __init__(self, *args, **kwargs):
+        self.nomcom = kwargs.pop('nomcom', None)
+        super(MergeForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        primary_email = self.cleaned_data.get("primary_email")
+        secondary_emails = self.cleaned_data.get("secondary_emails")
+        if primary_email and secondary_emails:
+            if primary_email in secondary_emails:
+                msg = "Primary and secondary email address must be differents"
+                self._errors["primary_email"] = self.error_class([msg])
+        return self.cleaned_data
+
+    def save(self):
+        primary_email = self.cleaned_data.get("primary_email")
+        secondary_emails = self.cleaned_data.get("secondary_emails").replace('\r\n', '')
+        secondary_emails = map(unicode.strip, secondary_emails.split(','))
+
+        primary_nominee = Nominee.objects.get(email__address=primary_email)
+        secondary_nominees = Nominee.objects.filter(email__address__in=secondary_emails)
+        for nominee in secondary_nominees:
+            # move nominations
+            nominee.nomination_set.all().update(nominee=primary_nominee)
+            # move feedback
+            nominee.feedback_set.all().update(nominee=primary_nominee)
+            # move nomineepositions
+            for nominee_position in nominee.nomineeposition_set.all():
+                if not NomineePosition.objects.filter(position=nominee_position.position,
+                                                      nominee=primary_nominee):
+
+                    nominee_position.nominee = primary_nominee
+                    nominee_position.save()
+
+        secondary_nominees.delete()
 
 
 class NominateForm(BaseNomcomForm, forms.ModelForm):

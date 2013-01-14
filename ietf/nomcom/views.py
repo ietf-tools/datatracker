@@ -8,7 +8,7 @@ from django.utils import simplejson
 
 from ietf.nomcom.utils import get_nomcom_by_year, HOME_TEMPLATE
 from ietf.nomcom.decorators import member_required
-from ietf.nomcom.forms import EditPublicKeyForm, NominateForm
+from ietf.nomcom.forms import EditPublicKeyForm, NominateForm, MergeForm
 from ietf.nomcom.models import Position
 
 
@@ -34,11 +34,21 @@ def private_index(request, year):
 
 @member_required(role='chair')
 def private_merge(request, year):
-    # TODO: complete merge nominations
     nomcom = get_nomcom_by_year(year)
+    message = None
+    if request.method == 'POST':
+        form = MergeForm(request.POST, nomcom=nomcom)
+        if form.is_valid():
+            form.save()
+            message = ('success', 'The emails has been unified')
+    else:
+        form = MergeForm(nomcom=nomcom)
+
     return render_to_response('nomcom/private_merge.html',
                               {'nomcom': nomcom,
                                'year': year,
+                               'form': form,
+                               'message': message,
                                'selected': 'merge'}, RequestContext(request))
 
 

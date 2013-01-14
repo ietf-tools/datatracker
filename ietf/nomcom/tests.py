@@ -77,8 +77,59 @@ class NomcomViewsTest(TestCase):
 
     def test_private_merge_view(self):
         """Verify private merge view"""
-        # TODO: complete merge nominations
+
+        # do nominations
+        login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
+        self.nominate_view(public=True, nominee_email=u'nominee@example.com',
+                           position='IAOC')
+        self.nominate_view(public=True, nominee_email=u'nominee2@example.com',
+                           position='IAOC')
+        self.nominate_view(public=True, nominee_email=u'nominee3@example.com',
+                           position='IAB')
+        self.nominate_view(public=True, nominee_email=u'nominee4@example.com',
+                           position='TSV')
+
+        self.client.logout()
+
+        # merge nominations
         self.access_chair_url(self.private_merge_url)
+
+        test_data = {"secondary_emails": "nominee@example.com, nominee2@example.com",
+                     "primary_email": "nominee@example.com"}
+        response = self.client.post(self.private_merge_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "info-message-error")
+
+        test_data = {"primary_email": "nominee@example.com",
+                     "secondary_emails": ""}
+        response = self.client.post(self.private_merge_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "info-message-error")
+
+        test_data = {"primary_email": "",
+                     "secondary_emails": "nominee@example.com"}
+        response = self.client.post(self.private_merge_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "info-message-error")
+
+        test_data = {"secondary_emails": """nominee2@example.com,
+                                            nominee3@example.com,
+                                            nominee4@example.com""",
+                     "primary_email": "nominee@example.com"}
+
+        response = self.client.post(self.private_merge_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "info-message-success")
+
+        self.assertEqual(Nominee.objects.filter(email__address='nominee2@example.com').count(), 0)
+        self.assertEqual(Nominee.objects.filter(email__address='nominee3@example.com').count(), 0)
+        self.assertEqual(Nominee.objects.filter(email__address='nominee4@example.com').count(), 0)
+
+        nominee = Nominee.objects.get(email__address='nominee@example.com')
+        self.assertEqual(Nomination.objects.filter(nominee=nominee).count(), 4)
+        self.assertEqual(Feedback.objects.filter(nominee=nominee).count(), 4)
+        self.assertEqual(NomineePosition.objects.filter(nominee=nominee).count(), 3)
+
         self.client.logout()
 
     def change_members(self, members):
@@ -188,13 +239,18 @@ class NomcomViewsTest(TestCase):
     def test_public_nominate(self):
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
         return self.nominate_view(public=True)
+        self.client.logout()
 
     def test_private_nominate(self):
         self.access_member_url(self.private_nominate_url)
         return self.nominate_view(public=False)
+        self.client.logout()
 
-    def nominate_view(self, public=True):
-        """Verify nominate view"""
+    def nominate_view(self, *args, **kwargs):
+        public = kwargs.pop('public', True)
+        nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
+        position_name = kwargs.pop('position', 'IAOC')
+
         if public:
             nominate_url = self.public_nominate_url
         else:
@@ -214,8 +270,8 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "nominateform")
 
-        position = Position.objects.get(name='IAOC')
-        candidate_email = u'nominee@example.com'
+        position = Position.objects.get(name=position_name)
+        candidate_email = nominee_email
         candidate_name = u'nominee'
         comments = 'test nominate view'
         candidate_phone = u'123456'
@@ -252,7 +308,6 @@ class NomcomViewsTest(TestCase):
                                nominee=nominee,
                                comments=feedback,
                                nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
-        self.client.logout()
 
 
 class NomineePositionStateSaveTest(TestCase):
