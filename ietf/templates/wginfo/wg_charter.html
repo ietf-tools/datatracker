@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% block morecss %}
 {{ block.super }}
-h2 a.edit { font-weight: normal; font-size: 13px; display: inline-block; margin-left: 0.5em; }
+h2 a.button { margin-left: 0.5em; font-size: 13px; }
 {% endblock %}
 
 {% block wg_content %}
@@ -167,7 +167,7 @@ is occasionally incorrect.</span>
 
 <h2>Milestones
 {% if user|has_role:"Area Director,Secretariat" or is_chair %}
-<a class="edit" href="{% url wg_edit_milestones acronym=wg.acronym %}">Add or edit milestones</a>
+<a class="button" href="{% url wg_edit_milestones acronym=wg.acronym %}">Add or edit milestones</a>
 {% endif %}
 </h2>
 

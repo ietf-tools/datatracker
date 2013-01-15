@@ -45,22 +45,25 @@ class MilestoneForm(forms.Form):
         m = self.milestone = kwargs.pop("instance", None)
 
         self.needs_review = kwargs.pop("needs_review", False)
+        can_review = not self.needs_review
 
         if m:
+            self.needs_review = m.state_id == "review"
+
             if not "initial" in kwargs:
                 kwargs["initial"] = {}
             kwargs["initial"].update(dict(id=m.pk,
                                           desc=m.desc,
                                           due_month=m.due.month,
                                           due_year=m.due.year,
-                                          resolved_checkbox=bool(m.resolved),
+                                          resolved_checkbox="on" if m.resolved else False,
                                           resolved=m.resolved,
                                           docs=",".join(m.docs.values_list("pk", flat=True)),
+                                          delete=False,
+                                          accept="noaction" if can_review and self.needs_review else None,
                                           ))
 
             kwargs["prefix"] = "m%s" % m.pk
-
-            self.needs_review = m.state_id == "review"
 
         super(MilestoneForm, self).__init__(*args, **kwargs)
 
@@ -77,7 +80,6 @@ class MilestoneForm(forms.Form):
 
         self.fields["due_year"].choices = zip(years, map(str, years))
 
-
         # figure out what to prepopulate many-to-many field with
         pre = ""
         if not self.is_bound:
@@ -89,6 +91,9 @@ class MilestoneForm(forms.Form):
         # bound/unbound form in Django 1.2
         self.docs_names = parse_doc_names(pre)
         self.docs_prepopulate = json_doc_names(self.docs_names)
+
+        # calculate whether we've changed
+        self.changed = self.is_bound and (not self.milestone or any(str(self[f].data) != str(self.initial[f]) for f in self.fields.iterkeys()))
 
     def clean_docs(self):
         s = self.cleaned_data["docs"]

@@ -205,3 +205,7 @@ table.milestones td.due { vertical-align: top; width: 80px; }
 table.milestones .doc { display: block; padding-left: 1em; }
 
 .stream-state .milestone { display: inline-block; font-size: smaller; background-color: #d5dde6; padding: 0 0.2em; margin-left: 0.3em; }
+
+.button { display: inline-block; font-weight: normal; background: #eee; border: 1px solid #bbb; border-radius: 3px; color: #333; padding: 2px 8px; text-align: center; text-decoration: none; outline: none; transition-duration: 0.2s; cursor: pointer }
+.button:hover { background: #ddd; color: #222; }
+.button:active { background: #ccc; color: #000; }

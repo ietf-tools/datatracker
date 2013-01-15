@@ -8,6 +8,13 @@ jQuery(function () {
             idCounter = v - 1;
     });
 
+    function setChanged() {
+        $(this).closest(".edit-milestone").addClass("changed");
+    }
+
+    jQuery('#milestones-form .edit-milestone select,#milestones-form .edit-milestone input,#milestones-form .edit-milestone textarea').live("change", setChanged);
+    jQuery('#milestones-form .edit-milestone .token-input-list input').live("click", setChanged);
+
     function setSubmitButtonState() {
         var action, label;
         if (jQuery("#milestones-form input[name$=delete]:visible").length > 0)
@@ -15,9 +22,14 @@ jQuery(function () {
         else
             action = "save";
 
+        jQuery("#milestones-form input[name=action]").val(action);
+
         var submit = jQuery("#milestones-form input[type=submit]");
         submit.val(submit.data("label" + action));
-        jQuery("#milestones-form input[name=action]").val(action);
+        if (jQuery("#milestones-form .edit-milestone.changed").length > 0 || action == "review")
+            submit.show();
+        else
+            submit.hide();
     }
 
     jQuery("#milestones-form tr.milestone").click(function () {
@@ -53,10 +65,18 @@ jQuery(function () {
             editRow.show();
         }
 
-        editRow.find('input[name$="expanded_for_editing"]').val("True");
         editRow.find('input[name$="desc"]').focus();
 
         setSubmitButtonState();
+
+        // collapse unchanged rows
+        jQuery("#milestones-form tr.milestone").not(this).each(function () {
+            var e = jQuery(this).next('tr.edit-milestone');
+            if (e.is(":visible") && !e.hasClass("changed")) {
+                jQuery(this).show();
+                e.hide();
+            }
+        });
     });
 
     function setResolvedState() {
@@ -83,18 +103,22 @@ jQuery(function () {
         .live("change", setResolvedState);
 
     function setDeleteState() {
-        var top = jQuery(this).closest(".edit-milestone");
+        var edit = jQuery(this).closest(".edit-milestone"), row = edit.prev("tr.milestone");
 
         if (jQuery(this).is(":checked")) {
-            if (+top.find('input[name$="id"]').val() < 0) {
-                top.remove();
+            if (+edit.find('input[name$="id"]').val() < 0) {
+                edit.remove();
                 setSubmitButtonState();
             }
-            else
-                top.addClass("delete")
+            else {
+                row.addClass("delete");
+                edit.addClass("delete");
+            }
         }
-        else
-            top.removeClass("delete")
+        else {
+            row.removeClass("delete");
+            edit.removeClass("delete");
+        }
     }
 
     jQuery("#milestones-form .edit-milestone .delete input[type=checkbox]")
@@ -104,4 +128,6 @@ jQuery(function () {
     jQuery('#milestones-form .edit-milestone .errorlist').each(function () {
         jQuery(this).closest(".edit-milestone").prev().click();
     });
+
+    setSubmitButtonState();
 });
