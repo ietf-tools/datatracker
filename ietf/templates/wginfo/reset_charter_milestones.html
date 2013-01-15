@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Reset Charter Milestones for {{ group.acronym }} {{ group.type.name }}{% endblock %}
+
+{% block morecss %}
+#reset-form .date { display: inline-block; min-width: 5em; }
+{% endblock %}
+
+{% block content %}
+{% load ietf_filters %}
+<h1>Reset Charter Milestones for {{ group.acronym }} {{ group.type.name }}</h1>
+
+<p>Select which of the current {{ group.type.name }} milestones you would like to copy to the charter.
+
+{% if charter_milestones %}This will discard {{ charter_milestones|length }} existing charter milestone{{ charter_milestones|pluralize }}{% endif %}
+</p>
+
+<form action="" method="post" id="reset-form">
+{% for milestone in current_milestones %}
+<div>
+  <label>
+  <input type="checkbox" name="milestone" value="{{ milestone.id }}" {% if not milestone.resolved %}checked="checked"{% endif %} />
+
+  <span class="date">{% if milestone.resolved %}{{ milestone.resolved }}{% else %}{{ milestone.due|date:"M Y" }}{% endif %}</span>
+
+  {{ milestone.desc }}
+  </label>
+</div>
+{% endfor %}
+
+<div class="actions">
+  <a href="{% url wg_edit_charter_milestones acronym=group.acronym %}">Back</a>
+  <input type="submit" value="Reset charter milestones"/>
+</div>
+</form>
+{% endblock %}

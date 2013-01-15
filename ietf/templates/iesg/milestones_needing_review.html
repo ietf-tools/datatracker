@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Milestones Needing Review{% endblock %}
+
+{% block morecss %}
+h3.ad { margin-bottom: 0.5em; }
+div.milestones-for-group { margin: 0.5em 0; }
+{% endblock %}
+
+{% block content %}
+<h1>Milestones Needing Review</h1>
+
+{% for ad in ads %}
+<h3 class="ad">{{ ad.plain_name }}</h4>
+
+{% for g in ad.groups_needing_review %}
+
+<div class="milestones-for-group">{{ g.name }} ({{ g.acronym }}) <a href="{% url wg_edit_milestones acronym=g.acronym %}">has new milestones</a>:</div>
+
+{% with g.milestones_needing_review as milestones %}
+{% include "wginfo/milestones.html" %}
+{% endwith %}
+
+{% endfor %}
+{% endfor %}
+
+{% endblock %}

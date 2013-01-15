@@ -47,7 +47,6 @@
         </a>
         {% if chartering == "initial" %} - (Initial Chartering){% endif %}
         {% if chartering == "rechartering" %} - (Rechartering){% endif %}
-
         </div>
 
         {% if not snapshot and chartering %}
@@ -134,10 +133,24 @@
 {% endif %}
 </h3>
 
-{% if doc.rev %}
+{% if doc.rev != "" %}
 <div class="markup_draft">
   {{ content|safe|keep_spacing|sanitize_html|wordwrap:80|safe }}
 </div>
+{% endif %}
+
+{% if not snapshot and chartering %}
+<h3>Proposed Milestones
+{% if user|has_role:"Area Director,Secretariat" %}
+<a class="edit" href="{% url wg_edit_charter_milestones acronym=doc.group.acronym %}">Edit charter milestones</a>
+{% endif %}
+</h3>
+
+{% if milestones %}
+{% include "wginfo/milestones.html" %}
+{% else %}
+<p>No milestones for charter found.</p>
+{% endif %}
 {% endif %}
 
 {% endblock %}

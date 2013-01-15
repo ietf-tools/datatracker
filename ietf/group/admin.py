@@ -116,9 +116,9 @@ class GroupHistoryAdmin(admin.ModelAdmin):
 admin.site.register(GroupHistory, GroupHistoryAdmin)
 
 class GroupMilestoneAdmin(admin.ModelAdmin):
-    list_display = ["group", "desc", "expected_due_date", "time"]
-    search_fields = ["group__name", "group__acronym", "desc"]
-    raw_id_fields = ["group"]
+    list_display = ["group", "desc", "due", "resolved", "time"]
+    search_fields = ["group__name", "group__acronym", "desc", "resolved"]
+    raw_id_fields = ["group", "docs"]
 
 admin.site.register(GroupMilestone, GroupMilestoneAdmin)
 

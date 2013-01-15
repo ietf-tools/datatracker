@@ -465,6 +465,7 @@ EVENT_TYPES = [
     # WG events
     ("changed_group", "Changed group"),
     ("changed_protocol_writeup", "Changed protocol writeup"),
+    ("changed_charter_milestone", "Changed charter milestone"),
 
     # charter events
     ("initial_review", "Set initial review time"),
