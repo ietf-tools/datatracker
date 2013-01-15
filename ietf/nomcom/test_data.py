@@ -2,6 +2,7 @@ import tempfile
 import os
 
 from django.contrib.auth.models import User
+from django.core.files import File
 from django.conf import settings
 
 from ietf.utils.pipe import pipe
@@ -15,6 +16,7 @@ CHAIR_USER = 'chair'
 MEMBER_USER = 'member'
 SECRETARIAT_USER = 'secretariat'
 EMAIL_DOMAIN = '@example.com'
+NOMCOM_YEAR = "2013"
 
 USERS = [COMMUNITY_USER, CHAIR_USER, MEMBER_USER, SECRETARIAT_USER]
 
@@ -98,10 +100,13 @@ def nomcom_test_data():
     group, created = Group.objects.get_or_create(name='IAB/IESG Nominating Committee 2013/2014',
                                         state_id='active',
                                         type_id='nomcom',
-                                        acronym='nomcom2013')
+                                        acronym='nomcom%s' % NOMCOM_YEAR)
     nomcom, created = NomCom.objects.get_or_create(group=group)
 
-    secretariat, created = Group.objects.get_or_create(name="Secretariat",
+    cert_file, privatekey_file = generate_cert()
+    nomcom.public_key.save('cert', File(open(cert_file.name, 'r')))
+
+    secretariat, created = Group.objects.get_or_create(name=u'IETF Secretariat',
                                                        acronym="secretariat",
                                                        state_id="active",
                                                        type_id="ietf",

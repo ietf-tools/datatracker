@@ -203,7 +203,7 @@ class MergeForm(BaseNomcomForm, forms.Form):
     def clean_primary_email(self):
         email = self.cleaned_data['primary_email']
         nominees = Nominee.objects.filter(email__address=email,
-                                         nomine_position__nomcom=self.nomcom)
+                                         nominee_position__nomcom=self.nomcom)
         if not nominees:
             msg = "Does not exist a nomiee with this email"
             self._errors["primary_email"] = self.error_class([msg])
@@ -215,7 +215,7 @@ class MergeForm(BaseNomcomForm, forms.Form):
         emails = get_list(data)
         for email in emails:
             nominees = Nominee.objects.filter(email__address=email,
-                                         nomine_position__nomcom=self.nomcom)
+                                         nominee_position__nomcom=self.nomcom)
             if not nominees:
                 msg = "Does not exist a nomiee with email %s" % email
                 self._errors["primary_email"] = self.error_class([msg])
@@ -237,9 +237,9 @@ class MergeForm(BaseNomcomForm, forms.Form):
         secondary_emails = get_list(self.cleaned_data.get("secondary_emails"))
 
         primary_nominee = Nominee.objects.get(email__address=primary_email,
-                                              nomine_position__nomcom=self.nomcom)
+                                              nominee_position__nomcom=self.nomcom)
         secondary_nominees = Nominee.objects.filter(email__address__in=secondary_emails,
-                                                    nomine_position__nomcom=self.nomcom)
+                                                    nominee_position__nomcom=self.nomcom)
         for nominee in secondary_nominees:
             # move nominations
             nominee.nomination_set.all().update(nominee=primary_nominee)
@@ -247,13 +247,30 @@ class MergeForm(BaseNomcomForm, forms.Form):
             nominee.feedback_set.all().update(nominee=primary_nominee)
             # move nomineepositions
             for nominee_position in nominee.nomineeposition_set.all():
-                if not NomineePosition.objects.filter(position=nominee_position.position,
-                                                      nominee=primary_nominee):
+                primary_nominee_positions = NomineePosition.objects.filter(position=nominee_position.position,
+                                                                           nominee=primary_nominee)
+                primary_nominee_position = primary_nominee_positions and primary_nominee_positions[0] or None
 
+                if primary_nominee_position:
+                    # if already a nomineeposition object for a position and nominee,
+                    # update the nomineepostion of primary nominee with the state and questionnaire
+                    if nominee_position.time > primary_nominee_position.time:
+                        primary_nominee_position.state = nominee_position.state
+                        primary_nominee_position.save()
+                    questionnaires = nominee_position.questionnaires.all()
+                    if questionnaires:
+                        primary_nominee_position.questionnaires.add(*questionnaires)
+
+                else:
+                    # It is not allowed two or more nomineeposition objects with same position and nominee
+                    # move nominee_position object to primary nominee
                     nominee_position.nominee = primary_nominee
                     nominee_position.save()
 
-        secondary_nominees.delete()
+            nominee.duplicated = primary_nominee
+            nominee.save()
+
+        secondary_nominees.update(duplicated=primary_nominee)
 
 
 class NominateForm(BaseNomcomForm, forms.ModelForm):

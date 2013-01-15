@@ -62,7 +62,8 @@ class Nomination(models.Model):
 class Nominee(models.Model):
 
     email = models.ForeignKey(Email)
-    nomine_position = models.ManyToManyField('Position', through='NomineePosition')
+    nominee_position = models.ManyToManyField('Position', through='NomineePosition')
+    duplicated = models.ForeignKey('Nominee', blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Nominees'
@@ -76,10 +77,11 @@ class NomineePosition(models.Model):
     position = models.ForeignKey('Position')
     nominee = models.ForeignKey('Nominee')
     state = models.ForeignKey(NomineePositionState)
-    questionnaire = models.ForeignKey('Feedback',
-                                      related_name='questionnaire',
-                                      blank=True, null=True)
+    questionnaires = models.ManyToManyField('Feedback',
+                                           related_name='questionnaires',
+                                           blank=True, null=True)
     feedback = models.ManyToManyField('Feedback', blank=True, null=True)
+    time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Nominee position'

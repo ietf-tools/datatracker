@@ -14,7 +14,7 @@ from ietf.person.models import Email, Person
 
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
                                   COMMUNITY_USER, CHAIR_USER, \
-                                  MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN
+                                  MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN, NOMCOM_YEAR
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionState, Feedback, FeedbackType, \
                                Nomination
@@ -33,7 +33,7 @@ class NomcomViewsTest(TestCase):
     def setUp(self):
         nomcom_test_data()
         self.cert_file, self.privatekey_file = generate_cert()
-        self.year = 2013
+        self.year = NOMCOM_YEAR
 
         # private urls
         self.private_index_url = reverse('nomcom_private_index', kwargs={'year': self.year})
@@ -133,9 +133,12 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "info-message-success")
 
-        self.assertEqual(Nominee.objects.filter(email__address='nominee2@example.com').count(), 0)
-        self.assertEqual(Nominee.objects.filter(email__address='nominee3@example.com').count(), 0)
-        self.assertEqual(Nominee.objects.filter(email__address='nominee4@example.com').count(), 0)
+        self.assertEqual(Nominee.objects.filter(email__address='nominee2@example.com',
+                                                duplicated__isnull=False).count(), 1)
+        self.assertEqual(Nominee.objects.filter(email__address='nominee3@example.com',
+                                                duplicated__isnull=False).count(), 1)
+        self.assertEqual(Nominee.objects.filter(email__address='nominee4@example.com',
+                                                duplicated__isnull=False).count(), 1)
 
         nominee = Nominee.objects.get(email__address='nominee@example.com')
         self.assertEqual(Nomination.objects.filter(nominee=nominee).count(), 4)
