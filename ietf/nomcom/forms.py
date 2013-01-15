@@ -31,6 +31,10 @@ def get_group_or_404(year):
                              nomcom__isnull=False)
 
 
+def get_list(string):
+        return map(unicode.strip, string.replace('\r\n', '').split(','))
+
+
 class BaseNomcomForm(object):
     def __unicode__(self):
         return self.as_div()
@@ -82,8 +86,7 @@ class EditMembersFormPreview(FormPreview):
             self.form.base_fields['members'].initial = ',\r\n'.join([role.email.address for role in members])
 
     def process_preview(self, request, form, context):
-        emails = form.cleaned_data['members'].replace('\r\n', '')
-        members_email = map(unicode.strip, emails.split(','))
+        members_email = get_list(form.cleaned_data['members'])
 
         members_info = []
         emails_not_found = []
@@ -197,6 +200,29 @@ class MergeForm(BaseNomcomForm, forms.Form):
         self.nomcom = kwargs.pop('nomcom', None)
         super(MergeForm, self).__init__(*args, **kwargs)
 
+    def clean_primary_email(self):
+        email = self.cleaned_data['primary_email']
+        nominees = Nominee.objects.filter(email__address=email,
+                                         nomine_position__nomcom=self.nomcom)
+        if not nominees:
+            msg = "Does not exist a nomiee with this email"
+            self._errors["primary_email"] = self.error_class([msg])
+
+        return email
+
+    def clean_secondary_emails(self):
+        data = self.cleaned_data['secondary_emails']
+        emails = get_list(data)
+        for email in emails:
+            nominees = Nominee.objects.filter(email__address=email,
+                                         nomine_position__nomcom=self.nomcom)
+            if not nominees:
+                msg = "Does not exist a nomiee with email %s" % email
+                self._errors["primary_email"] = self.error_class([msg])
+            break
+
+        return data
+
     def clean(self):
         primary_email = self.cleaned_data.get("primary_email")
         secondary_emails = self.cleaned_data.get("secondary_emails")
@@ -208,11 +234,12 @@ class MergeForm(BaseNomcomForm, forms.Form):
 
     def save(self):
         primary_email = self.cleaned_data.get("primary_email")
-        secondary_emails = self.cleaned_data.get("secondary_emails").replace('\r\n', '')
-        secondary_emails = map(unicode.strip, secondary_emails.split(','))
+        secondary_emails = get_list(self.cleaned_data.get("secondary_emails"))
 
-        primary_nominee = Nominee.objects.get(email__address=primary_email)
-        secondary_nominees = Nominee.objects.filter(email__address__in=secondary_emails)
+        primary_nominee = Nominee.objects.get(email__address=primary_email,
+                                              nomine_position__nomcom=self.nomcom)
+        secondary_nominees = Nominee.objects.filter(email__address__in=secondary_emails,
+                                                    nomine_position__nomcom=self.nomcom)
         for nominee in secondary_nominees:
             # move nominations
             nominee.nomination_set.all().update(nominee=primary_nominee)
@@ -331,7 +358,8 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                 to_email = email.address
                 context = {'nominee': email.person.name,
                           'position': position}
-                path = '%s%d/%s' % (nomcom_template_path, position.id, QUESTIONNAIRE_TEMPLATE)
+                path = '%s%d/%s' % (nomcom_template_path,
+                                    position.id, QUESTIONNAIRE_TEMPLATE)
                 send_mail(None, to_email, from_email, subject, path, context)
 
         # send emails to nomcom chair
@@ -351,7 +379,8 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
     class Meta:
         model = Nomination
-        fields = ('position', 'nominator_email', 'candidate_name', 'candidate_email', 'candidate_phone')
+        fields = ('position', 'nominator_email', 'candidate_name',
+                  'candidate_email', 'candidate_phone')
 
     class Media:
         js = ("/js/jquery-1.5.1.min.js",

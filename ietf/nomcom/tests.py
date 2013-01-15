@@ -112,6 +112,18 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "info-message-error")
 
+        test_data = {"primary_email": "unknown@example.com",
+                     "secondary_emails": "nominee@example.com"}
+        response = self.client.post(self.private_merge_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "info-message-error")
+
+        test_data = {"primary_email": "nominee@example.com",
+                     "secondary_emails": "unknown@example.com"}
+        response = self.client.post(self.private_merge_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "info-message-error")
+
         test_data = {"secondary_emails": """nominee2@example.com,
                                             nominee3@example.com,
                                             nominee4@example.com""",
