@@ -103,8 +103,8 @@ class Position(models.Model):
     description = models.TextField(verbose_name='Despcription')
     initial_text = models.TextField(verbose_name='Initial text for nominations',
                                     blank=True)
-    requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True)
-    questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True)
+    requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True, editable=False)
+    questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True, editable=False)
     is_open = models.BooleanField(verbose_name='Is open')
     incumbent = models.ForeignKey(Email)
 

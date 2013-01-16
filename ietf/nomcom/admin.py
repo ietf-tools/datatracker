@@ -5,7 +5,7 @@ from ietf.nomcom.models import NomCom, Nomination, Nominee, NomineePosition, \
 
 
 class NomComAdmin(admin.ModelAdmin):
-    pass
+    raw_id_fields = ('group', )
 
 
 class NominationAdmin(admin.ModelAdmin):

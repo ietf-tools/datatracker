@@ -63,10 +63,9 @@ Position: $position</field>
     <object pk="5" model="dbtemplate.dbtemplate">
         <field type="CharField" name="path">/nomcom/defaults/position/questionnaire.txt</field>
         <field type="CharField" name="title">Questionnaire sent to the nomine</field>
-        <field type="TextField" name="variables">$nominee: Full name of the nomine
-$position: Position</field>
+        <field type="TextField" name="variables">$position: Position</field>
         <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
-        <field type="TextField" name="content">Hi $nominee, this is the questionnaire for the position $position:
+        <field type="TextField" name="content">Enter here the questionnaire for the position $position:
 
 Questionnaire</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
@@ -79,6 +78,17 @@ Questionnaire</field>
         <field type="TextField" name="content">These are the requirements for the position $position:
 
 Requirements.</field>
+        <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
+    </object>
+    <object pk="7" model="dbtemplate.dbtemplate">
+        <field type="CharField" name="path">/nomcom/defaults/position/header_questionnaire.txt</field>
+        <field type="CharField" name="title">Header of the email that contains the questionnaire sent to the nomine</field>
+        <field type="TextField" name="variables">$nominee: Full name of the nomine
+$position: Position</field>
+        <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
+        <field type="TextField" name="content">Hi $nominee, this is the questionnaire for the position $position:
+
+</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
 </django-objects>

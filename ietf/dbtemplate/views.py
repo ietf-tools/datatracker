@@ -11,8 +11,7 @@ from ietf.ietfauth.decorators import has_role
 def template_list(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
     chairs = group.role_set.filter(name__slug='chair')
-
-    if not has_role(request.user, "Secretariat") or not chairs.filter(person__user=request.user).count():
+    if not has_role(request.user, "Secretariat") and not chairs.filter(person__user=request.user).count():
         return HttpResponseForbidden("You are not authorized to access this view")
 
     template_list = DBTemplate.objects.filter(group=group)
@@ -26,7 +25,7 @@ def template_edit(request, acronym, template_id):
     group = get_object_or_404(Group, acronym=acronym)
     chairs = group.role_set.filter(name__slug='chair')
 
-    if not has_role(request.user, "Secretariat") or not chairs.filter(person__user=request.user).count():
+    if not has_role(request.user, "Secretariat") and not chairs.filter(person__user=request.user).count():
         return HttpResponseForbidden("You are not authorized to access this view")
 
     template = get_object_or_404(DBTemplate, id=template_id, group=group)

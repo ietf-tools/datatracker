@@ -6,6 +6,7 @@ from ietf.dbtemplate.models import DBTemplate
 
 MAIN_NOMCOM_TEMPLATE_PATH = '/nomcom/defaults/'
 QUESTIONNAIRE_TEMPLATE = 'position/questionnaire.txt'
+HEADER_QUESTIONNAIRE_TEMPLATE = 'position/header_questionnaire.txt'
 REQUIREMENTS_TEMPLATE = 'position/requirements.txt'
 HOME_TEMPLATE = 'home.rst'
 INEXISTENT_PERSON_TEMPLATE = 'email/inexistent_person.txt'
@@ -54,14 +55,24 @@ def initialize_templates_for_group(group):
 
 def initialize_questionnaire_for_position(position):
     questionnaire_path = MAIN_NOMCOM_TEMPLATE_PATH + QUESTIONNAIRE_TEMPLATE
+    header_questionnaire_path = MAIN_NOMCOM_TEMPLATE_PATH + HEADER_QUESTIONNAIRE_TEMPLATE
     template = DBTemplate.objects.get(path=questionnaire_path)
-    return DBTemplate.objects.create(
-            group=position.nomcom.group,
-            title=template.title + '[%s]' % position.name,
-            path='/nomcom/' + position.nomcom.group.acronym + '/' + str(position.id) + '/' + QUESTIONNAIRE_TEMPLATE,
-            variables=template.variables,
-            type_id=template.type_id,
-            content=template.content)
+    header_template = DBTemplate.objects.get(path=header_questionnaire_path)
+    DBTemplate.objects.create(
+        group=position.nomcom.group,
+        title=header_template.title + ' [%s]' % position.name,
+        path='/nomcom/' + position.nomcom.group.acronym + '/' + str(position.id) + '/' + HEADER_QUESTIONNAIRE_TEMPLATE,
+        variables=header_template.variables,
+        type_id=header_template.type_id,
+        content=header_template.content)
+    questionnaire = DBTemplate.objects.create(
+        group=position.nomcom.group,
+        title=template.title + '[%s]' % position.name,
+        path='/nomcom/' + position.nomcom.group.acronym + '/' + str(position.id) + '/' + QUESTIONNAIRE_TEMPLATE,
+        variables=template.variables,
+        type_id=template.type_id,
+        content=template.content)
+    return questionnaire
 
 
 def initialize_requirements_for_position(position):
@@ -69,7 +80,7 @@ def initialize_requirements_for_position(position):
     template = DBTemplate.objects.get(path=requirements_path)
     return DBTemplate.objects.create(
             group=position.nomcom.group,
-            title=template.title + '[%s]' % position.name,
+            title=template.title + ' [%s]' % position.name,
             path='/nomcom/' + position.nomcom.group.acronym + '/' + str(position.id) + '/' + REQUIREMENTS_TEMPLATE,
             variables=template.variables,
             type_id=template.type_id,
