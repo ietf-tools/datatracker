@@ -111,4 +111,7 @@ class Email(models.Model):
             return u'"%s" <%s>' % (self.person.plain_name(), self.address)
         else:
             return self.address
-            
+
+    def invalid_address(self):
+        # we have some legacy authors with unknown email addresses
+        return self.address.startswith("unknown-email") and "@" not in self.address
