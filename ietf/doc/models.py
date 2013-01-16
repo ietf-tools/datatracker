@@ -4,6 +4,7 @@ from django.db import models
 from django.core.urlresolvers import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
+from django.utils.html import mark_safe
 
 from ietf.group.models import *
 from ietf.name.models import *
@@ -168,7 +169,7 @@ class DocumentAuthor(models.Model):
     
 class Document(DocumentInfo):
     name = models.CharField(max_length=255, primary_key=True)           # immutable
-    related = models.ManyToManyField('DocAlias', through=RelatedDocument, blank=True, related_name="reversely_related_document_set")
+    #related = models.ManyToManyField('DocAlias', through=RelatedDocument, blank=True, related_name="reversely_related_document_set")
     authors = models.ManyToManyField(Email, through=DocumentAuthor, blank=True)
 
     def __unicode__(self):
@@ -231,6 +232,14 @@ class Document(DocumentInfo):
             name = name.upper()
         return name
 
+    def related_that(self, relationship):
+        """Return the documents that are source of relationship targeting self."""
+        return Document.objects.filter(relateddocument__target__document=self, relateddocument__relationship=relationship)
+
+    def related_that_doc(self, relationship):
+        """Return the doc aliases that are target of relationship originating from self."""
+        return DocAlias.objects.filter(relateddocument__source=self, relateddocument__relationship=relationship)
+
     #TODO can/should this be a function instead of a property? Currently a view uses it as a property
     @property
     def telechat_date(self):
@@ -285,9 +294,6 @@ class Document(DocumentInfo):
         qs = self.docalias_set.filter(name__startswith='rfc')
         return qs[0].name[3:] if qs else None
 
-    def replaced_by(self):
-        return [ rel.source for alias in self.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='replaces') ]
-
     def friendly_state(self):
         """ Return a concise text description of the document's current state """
         if self.type_id=='draft':
@@ -306,11 +312,12 @@ class Document(DocumentInfo):
                      iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
              
             if self.get_state_slug() == "rfc":
-                return "<a href=\"%s\">RFC %d</a>" % (urlreverse('doc_view', args=['rfc%d' % self.rfc_number]), self.rfc_number)
+                n = self.rfc_number()
+                return "<a href=\"%s\">RFC %s</a>" % (urlreverse('doc_view', kwargs=dict(name='rfc%s' % n)), n)
             elif self.get_state_slug() == "repl":
-                rs = self.replaced_by()
+                rs = self.related_that("replaces")
                 if rs:
-                    return "Replaced by "+", ".join("<a href=\"%s\">%s</a>" % (urlreverse('doc_view', args=[name]),name) for name in rs)
+                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('doc_view', args=[name]), name) for name in rs))
                 else:
                     return "Replaced"
             elif self.get_state_slug() == "active":
