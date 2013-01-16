@@ -12,6 +12,7 @@ from django import forms
 from django.utils.html import strip_tags
 from django.db.models import Max
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 
 from ietf.utils.mail import send_mail_text, send_mail_message
 from ietf.ietfauth.decorators import group_required
@@ -201,13 +202,20 @@ class ChangeStreamForm(forms.Form):
     stream = forms.ModelChoiceField(StreamName.objects.exclude(slug="legacy"), required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
-@group_required('Area_Director','Secretariat')
+@login_required
 def change_stream(request, name):
     """Change the stream of a Document of type 'draft' , notifying parties as necessary
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
     if not doc.type_id=='draft':
         raise Http404()
+
+    if not (has_role(request.user, ("Area Director", "Secretariat")) or
+            (request.user.is_authenticated() and
+             Role.objects.filter(name="chair",
+                                 group__acronym__in=StreamName.objects.values_list("slug", flat=True),
+                                 person__user=request.user))):
+        return HttpResponseForbidden("You do not have permission to view this page")
 
     login = request.user.get_profile()
 
@@ -224,7 +232,7 @@ def change_stream(request, name):
                 doc.stream = new_stream
 
                 e = DocEvent(doc=doc,by=login,type='changed_document')
-                e.desc = u"Stream changed to <b>%s</b> from %s"% (new_stream,old_stream) 
+                e.desc = u"Stream changed to <b>%s</b> from %s"% (new_stream, old_stream or "None")
                 e.save()
 
                 email_desc = e.desc
