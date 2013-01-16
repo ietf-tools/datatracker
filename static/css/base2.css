@@ -206,6 +206,6 @@ table.milestones .doc { display: block; padding-left: 1em; }
 
 .stream-state .milestone { display: inline-block; font-size: smaller; background-color: #d5dde6; padding: 0 0.2em; margin-left: 0.3em; }
 
-.button { display: inline-block; font-weight: normal; background: #eee; border: 1px solid #bbb; border-radius: 3px; color: #333; padding: 2px 8px; text-align: center; text-decoration: none; outline: none; transition-duration: 0.2s; cursor: pointer }
-.button:hover { background: #ddd; color: #222; }
-.button:active { background: #ccc; color: #000; }
+.button { display: inline-block; font-weight: normal; background: #eee; background: linear-gradient(#fff, #ddd); border: 1px solid #666; border-radius: 3px; color: #222; padding: 4px 12px; text-align: center; text-decoration: none; outline: none; transition-duration: 0.2s; cursor: pointer; margin-right: 0.3em; }
+.button:hover { background: #ddd; background: linear-gradient(#eee, #ccc); color: #111; }
+.button:active { background: #ccc; background: linear-gradient(#ddd, #bbb); color: #000; }
