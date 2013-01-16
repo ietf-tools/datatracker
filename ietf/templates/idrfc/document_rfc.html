@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% load ietf_filters %}
+
+{% block title %}RFC {{ rfc_number }}{% endblock %}
+
+{% block pagehead %}
+<link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
+<meta name="description" content="{{ doc.title }} (RFC {{ rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %})" />
+{% endblock %}
+
+{% block content %}
+{{ top|safe }}
+
+<div class="ietf-box metabox">
+  <table id="metatable" width="100%">
+    <tr>
+      <td>Document type:</td>
+      <td>
+        RFC - {{ doc.std_level }} {% if doc.stream %}({{ doc.stream.name }} stream){% endif %}
+
+        {% if obsoleted_by %}<br />Obsoleted by {{ obsoleted_by|join:", "|urlize_ietf_docs }}{% endif %}
+        {% if updated_by %}<br />Updated by {{ updated_by|join:", "|urlize_ietf_docs }}{% endif %}
+        {% if obsoletes %}<br />Obsoletes {{ obsoletes|join:", "|urlize_ietf_docs }}{% endif %}
+        {% if updates %}<br />Updates {{ updates|join:", "|urlize_ietf_docs }}{% endif %}
+        {% if aliases %}<br />Also Known As {{ aliases|join:", "|urlize_ietf_docs }}{% endif %}
+        {% if draft_name %}<br />Was <a href="/doc/{{ draft_name}}/">{{ draft_name }}</a>{% endif %}
+        {% if has_errata %}<br /><a href="http://www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}" rel="nofollow">Errata</a>{% endif %}
+      </td>
+    </tr>
+
+    <tr>
+      <td>Published:</td>
+      <td>{% if published %}{{ published.time|date:"F Y" }}{% else %}Unknown{% endif %}</td>
+    </tr>
+
+    {% comment %}
+{% if doc.in_ietf_process %}
+<tr class="post-rfc"><td colspan="2">* This information refers to IESG processing after the RFC was initially published</td></tr>
+<tr class="post-rfc"><td><a href="/idtracker/help/state/">State</a>:</td><td> 
+{{ doc.friendly_state|safe }} (IESG: {{ doc.ietf_process.state}})
+{% if doc.ietf_process.telechat_date %}<br/>On agenda of {{ doc.ietf_process.telechat_date }} IESG telechat {% if doc.ietf_process.telechat_returning_item %} (returning item){%endif%}{%endif%}
+</td></tr>
+<tr class="post-rfc"><td>Intended status:</td><td>{% if doc.in_ietf_process %}{{ doc.ietf_process.intended_maturity_level|default:"-"  }}{% else %}-{%endif%}</td></tr>
+<tr class="post-rfc"><td>Responsible AD:</td><td>{{ doc.ietf_process.ad_name|default:"-"|escape }}</td></tr>
+{% if doc.ietf_process.iesg_note %}<tr class="post-rfc"><td>IESG Note:</td><td>{{ doc.ietf_process.iesg_note|escape }}</td></tr>{% endif %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+<tr class="post-rfc"><td>Send notices to:</td><td>{{ doc.ietf_process.state_change_notice_to}}</td></tr>
+{% endif %}{# if user|in_group:... #}
+
+{% endif %}
+    {% endcomment %}
+
+    <tr>
+      <td>Other versions:</td>
+      <td>
+        {% if file_urls %}
+          {% for label, url in file_urls %}<a href="{{ url }}">{{ label}}</a>{% if not forloop.last%}, {% endif %}{% endfor %}
+        {% else %}
+          (not online)
+        {% endif %}
+      </td>
+    </tr>
+
+    <tr><td colspan='2'><hr size='1' noshade /></td></tr>
+  </table>
+
+  <div class="links">
+    <a href="/ipr/search/?option=rfc_search&amp;rfc_search={{ rfc_number }}" rel="nofollow">IPR Disclosures</a>
+  | <a href="http://www.fenron.net/~fenner/ietf/deps/index.cgi?dep={{ name }}" rel="nofollow">Dependencies to this RFC</a>
+  </div>
+
+  {% if can_edit and iesg_state %}
+  <div class="links">
+    <a href="{% url doc_ballot_lastcall name=doc.name %}">Last Call Text</a>
+  | <a href="{% url doc_ballot_writeupnotes name=doc.name %}">Ballot Text</a>
+  | <a href="{% url doc_ballot_approvaltext name=doc.name %}">Announcement Text</a>
+  </div>
+  {% endif %}
+</div>
+
+
+<div class="document-markup">
+{{ content|safe }}
+</div>
+
+{% if split_content %}
+<p><a style="display:inline-block;margin-left:17em;" href="?include_text=1">[include full document text]</a></p>
+{% endif %}
+
+{% endblock %}
+

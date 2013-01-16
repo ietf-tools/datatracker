@@ -30,7 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re, os, datetime
+import re, os, datetime, urllib
 
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
@@ -53,7 +53,7 @@ from ietf.ietfworkflows.utils import get_full_info_for_draft
 from ietf.doc.models import *
 from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
-from ietf.ietfauth.decorators import has_role
+from ietf.ietfauth.utils import user_is_person, has_role, role_required, is_authorized_in_doc_stream
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -72,7 +72,6 @@ def render_document_top(request, doc, tab, name):
 
     tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=doc.name)), True))
 
-    name = doc.canonical_name()
     if name.startswith("rfc"):
         name = "RFC %s" % name[3:]
     else:
@@ -86,10 +85,12 @@ def render_document_top(request, doc, tab, name):
 
 
 def document_main(request, name, rev=None):
-    if name.lower().startswith("draft") or name.lower().startswith("rfc"):
+    if "old" in request.GET and (name.lower().startswith("draft") or name.lower().startswith("rfc")):
         if rev != None: # no support for old revisions at the moment
             raise Http404()
         return document_main_idrfc(request, name, tab="document")
+
+    # generic part
 
     doc = get_object_or_404(Document, docalias__name=name)
     group = doc.group
@@ -128,18 +129,246 @@ def document_main(request, name, rev=None):
     top = render_document_top(request, doc, "document", name)
 
 
-
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
-    if telechat and not telechat.telechat_date:
+    if telechat and (not telechat.telechat_date or telechat.telechat_date < datetime.date.today()):
        telechat = None
-    if telechat and telechat.telechat_date < datetime.date.today():
-        telechat = None
 
+
+    # specific document types
+
+    if doc.type_id == "draft":
+        filename = "%s-%s.txt" % (doc.name, doc.rev)
+
+        split_content = not request.GET.get('include_text')
+        if request.COOKIES.get("full_draft", "") == "on":
+            split = False
+
+        iesg_state = doc.get_state("draft-iesg")
+
+        can_edit = has_role(request.user, ("Area Director", "Secretariat"))
+        stream_slugs = StreamName.objects.values_list("slug", flat=True)
+        can_change_stream = bool(can_edit or (request.user.is_authenticated() and
+                                              Role.objects.filter(name__in=("chair", "auth"),
+                                                                  group__acronym__in=stream_slugs,
+                                                                  person__user=request.user)))
+        can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
+
+        if name.startswith("rfc"):
+            # RFC tab
+
+            rfc_number = name[3:]
+            filename = name + ".txt"
+
+            content = get_document_content(filename, os.path.join(settings.RFC_PATH, filename),
+                                           split_content, markup=True)
+
+            draft_name = doc.name if doc.name.startswith("draft") else None
+
+            def prettify_std_name(n):
+                if re.match(r"(rfc|bcp|fyi)[0-9]{4}", n):
+                    return n[:3].upper() + " " + n[3:]
+                else:
+                    return n
+
+            aliases = [prettify_std_name(a.name) for a in doc.docalias_set.filter(
+                    models.Q(name__startswith="fyi") |
+                    models.Q(name__startswith="std"))]
+
+            # file types
+            base_path = os.path.join(settings.RFC_PATH, name + ".")
+            possible_types = ["txt", "pdf", "ps"]
+            found_types = [t for t in possible_types if os.path.exists(base_path + t)]
+
+            base = "http://www.rfc-editor.org/rfc/"
+
+            file_urls = []
+            for t in found_types:
+                label = "plain text" if t == "txt" else t
+                file_urls.append((label, base + name + "." + t))
+
+            if "pdf" not in found_types and "txt" in found_types:
+                file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
+
+            if "txt" in found_types:
+                file_urls.append(("html", "http://tools.ietf.org/html/" + name))
+
+            if not found_types:
+                content = "This RFC is not currently available online."
+                split_content = False
+            elif "txt" not in found_types:
+                content = "This RFC is not available in plain text format."
+                split_content = False
+
+            return render_to_response("idrfc/document_rfc.html",
+                                      dict(doc=doc,
+                                           top=top,
+                                           name=name,
+                                           content=content,
+                                           split_content=split_content,
+                                           rfc_number=rfc_number,
+                                           updates=[prettify_std_name(d.name) for d in doc.related_that_doc("updates")],
+                                           updated_by=[prettify_std_name(d.canonical_name()) for d in doc.related_that("updates")],
+                                           obsoletes=[prettify_std_name(d.name) for d in doc.related_that_doc("obs")],
+                                           obsoleted_by=[prettify_std_name(d.canonical_name()) for d in doc.related_that("obs")],
+                                           draft_name=draft_name,
+                                           aliases=aliases,
+                                           has_errata=doc.tags.filter(slug="errata"),
+                                           published=doc.latest_event(type="published_rfc"),
+                                           file_urls=file_urls,
+                                           # can_edit=can_edit,
+                                           # can_change_stream=can_change_stream,
+                                           # can_edit_stream_info=can_edit_stream_info,
+                                           # telechat=telechat,
+                                           # ballot_summary=ballot_summary,
+                                           # iesg_state=iesg_state,
+                                           ),
+                                      context_instance=RequestContext(request))
+
+        content = get_document_content(filename, os.path.join(settings.INTERNET_DRAFT_PATH, filename),
+                                       split_content, markup=True)
+
+        # ballot
+        ballot_summary = None
+        if iesg_state and iesg_state.slug in ("lc", "writeupw", "goaheadw", "iesg-eva", "defer"):
+            active_ballot = doc.active_ballot()
+            if active_ballot:
+                ballot_summary = needed_ballot_positions(doc, active_ballot.active_ad_positions().values())
+
+        # submission
+        submission = ""
+        if group.type_id == "individ":
+            if doc.stream_id and doc.stream_id != "ietf":
+                submission = doc.stream.name
+            else:
+                submission = "individual"
+        elif group.type_id == "area" and doc.stream_id == "ietf":
+            submission = "individual in %s area" % group.acronym
+        else:
+            submission = "%s %s" % (group.acronym, group.type)
+            if group.type_id == "wg":
+                submission = "<a href=\"%s\">%s</a>" % (urlreverse("wg_docs", kwargs=dict(acronym=doc.group.acronym)), submission)
+            if doc.get_state_slug("draft-stream-%s" % doc.stream_id) == "c-adopt":
+                submission = "candidate for %s" % submission
+
+        # resurrection
+        resurrected_by = None
+        if doc.get_state_slug() == "expired":
+            e = doc.latest_event(type__in=("requested_resurrect", "completed_resurrect"))
+            if e and e.type == "requested_resurrect":
+                resurrected_by = e.by
+
+        # file types
+        base_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".")
+        possible_types = ["pdf", "xml", "ps"]
+        found_types = ["txt"] + [t for t in possible_types if os.path.exists(base_path + t)]
+
+        tools_base = "http://tools.ietf.org/"
+
+        if doc.get_state_slug() == "active":
+            base = "http://www.ietf.org/id/"
+        else:
+            base = tools_base + "id/"
+
+        file_urls = []
+        for t in found_types:
+            label = "plain text" if t == "txt" else t
+            file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
+
+        if "pdf" not in found_types:
+            file_urls.append(("pdf", tools_base + "pdf/" + doc.name + "-" + doc.rev + ".pdf"))
+        file_urls.append(("html", tools_base + "html/" + doc.name + "-" + doc.rev))
+
+        # stream info
+        stream_state = None
+        if doc.stream:
+            stream_state = doc.get_state("draft-stream-%s" % doc.stream_id)
+        stream_tags = get_tags_for_stream_id(doc.stream_id)
+
+        shepherd_writeup = doc.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
+
+        can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
+        can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd) or has_role(request.user, ["Area Director"])
+
+        consensus = None
+        if doc.stream_id in ("ietf", "irtf", "iab"):
+            e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+            consensus = nice_consensus(e and e.consensus)
+
+        # mailing list search archive
+        search_archive = "www.ietf.org/mail-archive/web/"
+        if doc.stream_id == "ietf" and group.type_id == "wg" and group.list_archive:
+            search_archive = group.list_archive
+
+        search_archive = urllib.quote(search_archive, safe="~")
+
+        # conflict reviews
+        conflict_reviews = [d.name for d in doc.related_that("conflrev")]
+
+        # remaining actions
+        actions = []
+
+        if ((not doc.stream_id or doc.stream_id in ("ietf", "irtf")) and group.type_id == "individ" and
+            (Role.objects.filter(person__user=request.user, name__in=("chair", "delegate"), group__type__in=("wg",), group__state="active")
+             or has_role(request.user, "Secretariat"))):
+            actions.append(("Adopt in Group", urlreverse('edit_adopt', kwargs=dict(name=doc.name))))
+
+        if doc.get_state_slug() == "expired" and not resurrected_by and can_edit:
+            actions.append(("Request Resurrect", urlreverse('doc_request_resurrect', kwargs=dict(name=doc.name))))
+
+        if doc.get_state_slug() == "expired" and has_role(request.user, ("Secretariat",)):
+            actions.append(("Resurrect", urlreverse('doc_resurrect', kwargs=dict(name=doc.name))))
+
+        if doc.get_state_slug() != "expired" and doc.stream_id in ("ise", "irtf") and has_role(request.user, ("Secretariat",)) and not conflict_reviews:
+            label = "Begin IETF Conflict Review"
+            if not doc.intended_std_level:
+                label += " (note that intended status is not set)"
+            actions.append((label, urlreverse('conflict_review_start', kwargs=dict(name=doc.name))))
+
+        if doc.get_state_slug() != "expired" and doc.stream_id in ("ietf",) and can_edit and not iesg_state:
+            actions.append(("Begin IESG Processing", urlreverse('doc_edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
+
+        return render_to_response("idrfc/document_draft.html",
+                                  dict(doc=doc,
+                                       top=top,
+                                       name=name,
+                                       content=content,
+                                       split_content=split_content,
+                                       revisions=revisions,
+                                       snapshot=snapshot,
+                                       can_edit=can_edit,
+                                       can_change_stream=can_change_stream,
+                                       can_edit_stream_info=can_edit_stream_info,
+                                       can_edit_shepherd_writeup=can_edit_shepherd_writeup,
+                                       can_edit_intended_std_level=can_edit_intended_std_level(request.user, doc),
+                                       can_edit_consensus=can_edit_consensus(request.user, doc),
+                                       can_edit_iana_state=can_edit_iana_state,
+                                       telechat=telechat,
+                                       ballot_summary=ballot_summary,
+                                       group=group,
+                                       submission=submission,
+                                       resurrected_by=resurrected_by,
+                                       replaces=[d.name for d in doc.related_that_doc("replaces")],
+                                       replaced_by=[d.name for d in doc.related_that("replaces")],
+                                       conflict_reviews=conflict_reviews,
+                                       file_urls=file_urls,
+                                       stream_state=stream_state,
+                                       stream_tags=stream_tags,
+                                       milestones=doc.groupmilestone_set.filter(state="active"),
+                                       consensus=consensus,
+                                       iesg_state=iesg_state,
+                                       rfc_editor_state=doc.get_state("draft-rfceditor"),
+                                       iana_review_state=doc.get_state("draft-iana-review"),
+                                       iana_action_state=doc.get_state("draft-iana-action"),
+                                       shepherd_writeup=shepherd_writeup,
+                                       search_archive=search_archive,
+                                       actions=actions,
+                                       ),
+                                  context_instance=RequestContext(request))
 
     if doc.type_id == "charter":
         filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
 
-        content = _get_html(filename, os.path.join(settings.CHARTER_PATH, filename), split=False)
+        content = get_document_content(filename, os.path.join(settings.CHARTER_PATH, filename), split=False, markup=True)
 
         ballot_summary = None
         if doc.get_state_slug() in ("intrev", "iesgrev"):
@@ -179,7 +408,7 @@ def document_main(request, name, rev=None):
             # This could move to a template
             content = "A conflict review response has not yet been proposed."
         else:     
-            content = _get_html(filename, pathname, split=False)
+            content = get_document_content(filename, pathname, split=False, markup=True)
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval"):
@@ -198,15 +427,10 @@ def document_main(request, name, rev=None):
                                        ),
                                   context_instance=RequestContext(request))
 
-    raise Http404()
+    raise Http404
 
 
 def document_history(request, name):
-    # todo: remove need for specific handling of drafts by porting the
-    # two event text hacks
-    if name.lower().startswith("draft") or name.lower().startswith("rfc"):
-        return document_main_idrfc(request, name, "history")
-
     doc = get_object_or_404(Document, docalias__name=name)
     top = render_document_top(request, doc, "history", name)
 
@@ -241,6 +465,7 @@ def document_history(request, name):
     events = doc.docevent_set.all().order_by("-time", "-id").select_related("by")
 
     augment_events_with_revision(doc, events)
+    add_links_in_new_revision_events(doc, events, diff_revisions)
 
     return render_to_response("idrfc/document_history.html",
                               dict(doc=doc,
@@ -251,38 +476,61 @@ def document_history(request, name):
                               context_instance=RequestContext(request))
 
 def document_writeup(request, name):
-    if name.lower().startswith("draft") or name.lower().startswith("rfc"):
-        # todo: migrate idrfc to pattern below
-        return document_main_idrfc(request, name, "writeup")
-
     doc = get_object_or_404(Document, docalias__name=name)
     top = render_document_top(request, doc, "writeup", name)
 
-    writeups = []
-    if doc.type_id == "charter":
-        e = doc.latest_event(WriteupDocEvent, type="changed_review_announcement")
-        writeups.append(("WG Review Announcement",
-                         e.text if e else "",
-                         urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="review"))))
+    def text_from_writeup(event_type):
+        e = doc.latest_event(WriteupDocEvent, type=event_type)
+        if e:
+            return e.text
+        else:
+            return ""
 
-        e = doc.latest_event(WriteupDocEvent, type="changed_action_announcement")
-        writeups.append(("WG Action Announcement",
-                         e.text if e else "",
-                         urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="action"))))
+    sections = []
+    if doc.type_id == "draft":
+        writeups = []
+        sections.append(("Approval Announcement",
+                         "<em>Draft</em> of message to be sent <em>after</em> approval:",
+                         writeups))
+
+        writeups.append(("Announcement",
+                         text_from_writeup("changed_ballot_approval_text"),
+                         urlreverse("doc_ballot_approvaltext", kwargs=dict(name=doc.name))))
+
+        writeups.append(("Ballot Text",
+                         text_from_writeup("changed_ballot_writeup_text"),
+                         urlreverse("doc_ballot_writeupnotes", kwargs=dict(name=doc.name))))
+
+    elif doc.type_id == "charter":
+        sections.append(("WG Review Announcement",
+                         "",
+                         [("WG Review Announcement",
+                           text_from_writeup("changed_review_announcement"),
+                           urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="review")))]
+                         ))
+
+        sections.append(("WG Action Announcement",
+                         "",
+                         [("WG Action Announcement",
+                           text_from_writeup("changed_action_announcement"),
+                           urlreverse("ietf.wgcharter.views.announcement_text", kwargs=dict(name=doc.name, ann="action")))]
+                         ))
 
         if doc.latest_event(BallotDocEvent, type="created_ballot"):
-            e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
-            writeups.append(("Ballot Announcement",
-                             e.text if e else "",
-                             urlreverse("ietf.wgcharter.views.ballot_writeupnotes", kwargs=dict(name=doc.name))))
+            sections.append(("Ballot Announcement",
+                             "",
+                             [("Ballot Announcement",
+                               text_from_writeup("changed_ballot_writeup_text"),
+                               urlreverse("ietf.wgcharter.views.ballot_writeupnotes", kwargs=dict(name=doc.name)))]
+                             ))
 
-    if not writeups:
+    if not sections:
         raise Http404()
 
     return render_to_response("idrfc/document_writeup.html",
                               dict(doc=doc,
                                    top=top,
-                                   writeups=writeups,
+                                   sections=sections,
                                    can_edit=has_role(request.user, ("Area Director", "Secretariat")),
                                    ),
                               context_instance=RequestContext(request))
@@ -404,9 +652,11 @@ def document_json(request, name):
     return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
 
 def _get_html(key, filename, split=True):
-    return get_document_content(key, filename, split=split, markup=True)
+    # FIXME
+    return get_document_content(key, filename, split=split, markup=True), ""
 
 def include_text(request):
+    # FIXME
     include_text = request.GET.get( 'include_text' )
     if "full_draft" in request.COOKIES:
         if request.COOKIES["full_draft"] == "on":
@@ -414,6 +664,7 @@ def include_text(request):
     return include_text
 
 def document_main_rfc(request, rfc_number, tab):
+    # FIXME
     rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number, states__type="draft", states__slug="rfc")
     rfci.viewing_as_rfc = True
     doc = RfcWrapper(rfci)
@@ -445,6 +696,7 @@ def document_main_rfc(request, rfc_number, tab):
 
 @decorator_from_middleware(GZipMiddleware)
 def document_main_idrfc(request, name, tab):
+    # FIXME
     r = re.compile("^rfc([1-9][0-9]*)$")
     m = r.match(name)
     if m:
@@ -464,8 +716,8 @@ def document_main_idrfc(request, name, tab):
     if id.stream_id in ("ietf", "irtf", "iab"):
         e = id.latest_event(ConsensusDocEvent, type="changed_consensus")
         info["consensus"] = nice_consensus(e and e.consensus)
-        info["can_edit_consensus"] = can_edit_consensus(id, request.user)
-    info["can_edit_intended_std_level"] = can_edit_intended_std_level(id, request.user)
+        info["can_edit_consensus"] = can_edit_consensus(request.user, id)
+    info["can_edit_intended_std_level"] = can_edit_intended_std_level(request.user, id)
 
     (content1, content2) = _get_html(
         str(name)+","+str(id.revision)+",html",

@@ -66,7 +66,8 @@ def markup(content, split=True):
     if split:
         n = content.find("\n", 5000)
         content1 = "<pre>"+content[:n+1]+"</pre>\n"
-        content2 = "<pre>"+content[n+1:]+"</pre>\n"
-        return (content1, content2)
+        return content1
+        #content2 = "<pre>"+content[n+1:]+"</pre>\n"
+        #return (content1, content2)
     else:
         return "<pre>" + content + "</pre>\n"

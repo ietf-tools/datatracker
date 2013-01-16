@@ -6,13 +6,14 @@
 
 {% block pagehead %}
 <link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
+<link rel="alternate" type="application/atom+xml" href="/feed/comments/{{ doc.canonical_name }}/" />
 {% endblock %}
 
 {% block content %}
 {{ top|safe }}
 
 {% if diff_revisions and diff_revisions|length > 1 %}
-<div class="ietf-box diffTool">
+<div class="ietf-box diff-tool">
   <h2>Diffs</h2>
 
   <form action="http{% if request.is_secure %}s{% endif %}:{{rfcdiff_prefix}}" method="get" target="_blank">
@@ -55,7 +56,7 @@
 <h2>Document history</h2>
 {% if user|has_role:"Area Director,Secretariat,IANA,RFC Editor" %}
 <div class="history-actions">
-  <a href="{% url doc_add_comment name=doc.name %}">Add comment</a>
+  <a class="button" href="{% url doc_add_comment name=doc.name %}">Add comment</a>
 </div>
 {% endif %}
 

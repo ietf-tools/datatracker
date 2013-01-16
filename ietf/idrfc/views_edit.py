@@ -204,7 +204,7 @@ class ChangeStreamForm(forms.Form):
 
 @login_required
 def change_stream(request, name):
-    """Change the stream of a Document of type 'draft' , notifying parties as necessary
+    """Change the stream of a Document of type 'draft', notifying parties as necessary
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
     if not doc.type_id=='draft':
@@ -271,7 +271,7 @@ def change_intention(request, name):
     if doc.type_id != 'draft':
         raise Http404
 
-    if not can_edit_intended_std_level(doc, request.user):
+    if not can_edit_intended_std_level(request.user, doc):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     login = request.user.get_profile()
@@ -904,7 +904,7 @@ def edit_consensus(request, name):
 
     doc = get_object_or_404(Document, type="draft", name=name)
 
-    if not can_edit_consensus(doc, request.user):
+    if not can_edit_consensus(request.user, doc):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
