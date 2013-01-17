@@ -350,6 +350,7 @@ def document_main(request, name, rev=None):
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
+                                       started_iesg_process=doc.latest_event(type="started_iesg_process"),
                                        shepherd_writeup=shepherd_writeup,
                                        search_archive=search_archive,
                                        actions=actions,

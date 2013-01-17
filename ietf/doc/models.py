@@ -138,8 +138,10 @@ class DocumentInfo(models.Model):
     def active_ballot(self):
         """Returns the most recently created ballot if it isn't closed."""
         ballot = self.latest_event(BallotDocEvent, type="created_ballot")
-        open = self.ballot_open(ballot.ballot_type.slug) if ballot else False
-        return ballot if open else None
+        if ballot and self.ballot_open(ballot.ballot_type.slug):
+            return ballot
+        else:
+            return None
 
     class Meta:
         abstract = True
