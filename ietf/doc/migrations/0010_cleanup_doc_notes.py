@@ -7,14 +7,24 @@ from django.db import models
 class Migration(DataMigration):
 
     def forwards(self, orm):
-        # whack obsolete RFC 1234 notes (obsolete now that we got RFC alias links set up properly)
         for d in orm.Document.objects.filter(type="draft").exclude(note="").iterator():
-            if re.match("^RFC\s*\d+$", d.note):
-                # there are a couple that match without a
-                # corresponding RFC DocAlias, but upon manual
-                # inspection these all turn out to be mistakes in the
-                # note (most are off-by-one in the RFC number)
-                note = re.sub("^RFC\s*\d+$", "", d.note).strip()
+            note = d.note
+
+            # get rid of HTML garbage
+            note = note.replace("\r", "")
+            note = note.replace("<br>", "\n")
+            note = note.replace("&nbsp;", " ")
+            note = note.strip()
+
+            # whack obsolete RFC/BCP/STD 1234 notes (obsolete now that
+            # we got RFC alias links set up properly),
+            # there are a couple that match without a
+            # corresponding RFC DocAlias, but upon manual
+            # inspection these all turn out to be mistakes in the
+            # note (most are off-by-one in the RFC number)
+            note = re.sub("^((STD|BCP|RFC)\s*#?\d+[\s,;]*)+", "", note).strip()
+
+            if note != d.note:
                 orm.Document.objects.filter(name=d.name).update(note=note)
 
     def backwards(self, orm):

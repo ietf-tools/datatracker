@@ -380,8 +380,7 @@ class EditInfoFormREDESIGN(forms.Form):
         self.standard_fields = [x for x in self.visible_fields() if x.name not in ('returning_item',)]
 
     def clean_note(self):
-        # note is stored munged in the database
-        return self.cleaned_data['note'].replace('\n', '<br>').replace('\r', '').replace('  ', '&nbsp; ')
+        return self.cleaned_data['note'].replace('\r', '').strip()
 
 
 def get_initial_notify(doc):
@@ -516,7 +515,7 @@ def edit_infoREDESIGN(request, name):
                     area=doc.group_id,
                     ad=doc.ad_id,
                     notify=doc.notify,
-                    note=dehtmlify_textarea_text(doc.note),
+                    note=doc.note,
                     telechat_date=initial_telechat_date,
                     returning_item=initial_returning_item,
                     )
@@ -811,15 +810,14 @@ class IESGNoteForm(forms.Form):
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
 
     def clean_note(self):
-        # note is stored munged in the database
-        return self.cleaned_data['note'].replace('\n', '<br>').replace('\r', '').replace('  ', '&nbsp; ')
+        return self.cleaned_data['note'].replace('\r', '').strip()
 
 @group_required("Area Director", "Secretariat")
 def edit_iesg_note(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
     login = request.user.get_profile()
 
-    initial = dict(note=dehtmlify_textarea_text(doc.note))
+    initial = dict(note=doc.note)
 
     if request.method == "POST":
         form = IESGNoteForm(request.POST, initial=initial)

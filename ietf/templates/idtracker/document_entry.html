@@ -20,6 +20,6 @@
 {% if doc.primary_flag %}
 <tr><td></td><td>Token:</td><td><a href="mailto:{{ doc.token_email|urlencode }}">{{ doc.token_name }}</a></td></tr>
 {% if doc.note %}
-<tr><td></td><td>Note:</td><td>{{ doc.note|safe|urlize }}</td></tr>
+<tr><td></td><td>Note:</td><td>{{ doc.note|linebreaksbr|urlize }}</td></tr>
 {% endif %}
 {% endif %}

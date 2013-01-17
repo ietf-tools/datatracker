@@ -203,7 +203,7 @@
       <td>IESG Note:</td>
       <td>
         <a {% if can_edit %}class="editlink" href="{% url doc_change_iesg_note name=doc.name %}"{% endif %}>
-          {{ doc.note|default:"(None)"|format_textarea|safe }}
+          {{ doc.note|default:"(None)"|linebreaksbr }}
         </a>
       </td>
     </tr>

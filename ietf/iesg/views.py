@@ -229,9 +229,6 @@ def agenda_docs(date, next_agenda):
         section_key = "s"+get_doc_section(id)
         if section_key not in res:
             res[section_key] = []
-        if id.note:
-            # TODO: Find out why this is _here_
-            id.note = id.note.replace(u"\240",u"&nbsp;")
         res[section_key].append({'obj':id})
     return res
 
