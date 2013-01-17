@@ -327,7 +327,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
 
             if not doc:
                 results.append("created document %s" % name)
-                doc = Document.objects.get_or_create(name=name)[0]
+                doc = Document.objects.create(name=name, type=DocTypeName.objects.get(slug="draft"))
 
             # add alias
             DocAlias.objects.get_or_create(name=name, document=doc)
@@ -358,8 +358,11 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
         if doc.stream != stream_mapping[stream]:
             changed_attributes["stream"] = stream_mapping[stream]
 
-        if not doc.group and wg:
-            changed_attributes["group"] = Group.objects.get(acronym=wg)
+        if not doc.group: # if we have no group assigned, check if RFC Editor has a suggestion
+            if wg:
+                changed_attributes["group"] = Group.objects.get(acronym=wg)
+            else:
+                changed_attributes["group"] = Group.objects.get(type="individ")
 
         if not doc.latest_event(type="published_rfc"):
             e = DocEvent(doc=doc, type="published_rfc")
