@@ -2,60 +2,83 @@
 
 {% load ietf_filters %}
 
-{% block title %}{{ name }}-{{ doc.rev }}{% endblock %}
+{% block title %}{% if doc.get_state_slug == "rfc" %}RFC {{ rfc_number }}{% else %}{{ name }}-{{ doc.rev }}{% endif %}{% endblock %}
 
 {% block pagehead %}
 <link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
-<meta name="description" content="{{ doc.title }} (Internet-Draft, {{ doc.time|date:"Y" }})" />
+<meta name="description" content="{{ doc.title }} {% if doc.get_state_slug == "rfc" %}(RFC {{ rfc_number }}{% if published %}, {{ published.time|date:"F Y" }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:", " }}{% endif %}){% else %}(Internet-Draft, {{ doc.time|date:"Y" }}){% endif %}" />
 {% endblock %}
 
 {% block content %}
 {{ top|safe }}
 
-{% comment %}
-<div class="snapshots">
-  Snapshots:
-  <span class="revisions">
-    {% for rev in revisions %}
-    <a {% if rev != doc.rev %}href="{% url doc_view name=doc.name %}{% if not forloop.last %}{{ rev }}/{% endif %}"{% endif %}>{{ rev }}</a>
-    {% endfor %}
-  </span>
-</div>
-{% endcomment %}
-
 <div class="ietf-box metabox">
-  <div>
-    {{ doc.get_state }} {% if not doc.get_state_slug == "rfc" %}Internet-Draft{% endif %}
-    ({{ submission|safe }})
-
-    {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
-  </div>
-
   <table id="metatable" width="100%">
     <tr>
-      <td>Document Stream:</td>
-      <td><a {% if can_change_stream %} class="editlink" href="{% url doc_change_stream name=doc.name %}"{% endif %}>
-      {{ doc.stream|default:"No stream defined" }}</a></td>
+      <td>Document type:</td>
+      <td>
+        {% if doc.get_state_slug == "rfc" %}
+          RFC - {{ doc.std_level }}
+          ({% if published %}{{ published.time|date:"F Y" }}{% else %}publication date unknown{% endif %}{% if has_errata %}; <a href="http://www.rfc-editor.org/errata_search.php?rfc={{ rfc_number }}" rel="nofollow">Errata</a>{% endif %})
+
+          {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
+          {% if updated_by %}<div>Updated by {{ updated_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
+          {% if obsoletes %}<div>Obsoletes {{ obsoletes|join:", "|urlize_ietf_docs }}</div>{% endif %}
+          {% if updates %}<div>Updates {{ updates|join:", "|urlize_ietf_docs }}</div>{% endif %}
+          {% if rfc_aliases %}<div>Also Known As {{ rfc_aliases|join:", "|urlize_ietf_docs }}</div>{% endif %}
+          {% if draft_name %}<div>Was <a href="/doc/{{ draft_name}}/">{{ draft_name }}</a> {% if submission %}({{ submission|safe }}){% endif %}</div>{% endif %}
+        {% else %}
+          {{ doc.get_state }} Internet-Draft {% if submission %}({{ submission|safe }}){% endif %}
+
+          {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
+        {% endif %}
+
+
+        {% if replaces %}<div>Replaces: {{ replaces|join:", "|urlize_ietf_docs }}</div>{% endif %}
+        {% if replaced_by %}<div>Replaced by: {{ replaced_by|join:", "|urlize_ietf_docs }}</div>{% endif %}
+      </td>
+    </tr>
+
+    <tr>
+      <td>Document stream:</td>
+      <td>
+        <a {% if can_change_stream %} class="editlink" href="{% url doc_change_stream name=doc.name %}"{% endif %}>
+        {{ doc.stream|default:"No stream defined" }}
+        </a>
+      </td>
     </tr>
 
     <tr>
       <td>Last updated:</td>
-      <td>{{ doc.time|date:"Y-m-d" }}</td>
+      <td>
+        {{ doc.time|date:"Y-m-d" }}
+        {% if latest_revision and latest_revision.time.date != doc.time.date %}
+        (latest revision {{ latest_revision.time|date:"Y-m-d" }})
+        {% endif %}
+      </td>
     </tr>
 
-    {% if replaces %}
+    {% if doc.get_state_slug != "rfc" %}
     <tr>
-      <td>Replaces:</td>
-      <td>{{ replaces|join:", "|urlize_ietf_docs }}</td>
+      <td>Intended RFC status:</td>
+      <td>
+        <a {% if can_edit %}class="editlink" href="{% url doc_change_intended_status name=doc.name %}"{% endif %}>
+        {{ doc.intended_std_level|default:"Unknown" }}</a>
+      </td>
     </tr>
     {% endif %}
 
-    {% if replaced_by %}
     <tr>
-      <td>Replaced by:</td>
-      <td>{{ replaced_by|join:", "|urlize_ietf_docs }}</td>
+      <td>Other versions:</td>
+      <td>
+        {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}(expired, archived):{% endif %}
+        {% if file_urls %}
+          {% for label, url in file_urls %}<a href="{{ url }}">{{ label}}</a>{% if not forloop.last%}, {% endif %}{% endfor %}
+        {% else %}
+          (not online)
+        {% endif %}
+      </td>
     </tr>
-    {% endif %}
 
     {% if conflict_reviews %}
     <tr>
@@ -63,22 +86,6 @@
       <td>{{ conflict_reviews|join:", "|urlize_ietf_docs }}</td>
     </tr>
     {% endif %}
-
-    <tr>
-      <td>Intended RFC status:</td>
-      <td>
-        <a {% if can_edit %}class="editlink" href="{% url doc_change_intended_status name=doc.name %}"{% endif %}>
-        {{ doc.intended_std_level|default:"(None)" }}</a>
-      </td>
-    </tr>
-
-    <tr>
-      <td>Other versions:</td>
-      <td>
-        {% if doc.get_state_slug != "active" %}(expired, archived):{% endif %}
-        {% for label, url in file_urls %}<a href="{{ url }}">{{ label}}</a>{% if not forloop.last%}, {% endif %}{% endfor %}
-      </td>
-    </tr>
 
     <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
@@ -89,11 +96,13 @@
            {{ stream_state|default:"(None)" }}
          </a>
 
-       {% if stream_tags %}<br /><i>{% for tag in tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</i>{% endif %}
-
        {% for m in milestones %}
-         <span title="In {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>
+         <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)" class="milestone">{{ m.due|date:"M Y" }}</span>
        {% endfor %}
+
+       {% if stream_tags %}
+       <div class="stream-tags">{% for tag in stream_tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+       {% endif %}
        </td>
     </tr>
 
@@ -113,7 +122,7 @@
       <td>
         {# the shepherd edit page only works for WGs at the moment ... #}
         <a {% if can_edit_stream_info and group.type_id == "wg" %}class="editlink" href="{% url doc_managing_shepherd acronym=group.acronym,name=doc.name %}"{% endif %}>
-        {{ doc.shepherd|default:"(None)" }}
+        {{ doc.shepherd|default:"No shepherd assigned" }}
         </a>
       </td>
     </tr>
@@ -210,9 +219,9 @@
   <div class="links">
     <a href="mailto:{{ doc.name }}@tools.ietf.org?subject=Mail%20regarding%20{{ doc.name }}" rel="nofollow">Email Authors</a>
   | <a href="/ipr/search/?option=document_search&amp;id={{ doc.name }}" rel="nofollow">IPR Disclosures</a>
-  | <a href="http://www.fenron.net/~fenner/ietf/deps/index.cgi?dep={{ doc.name }}" rel="nofollow">Dependencies to this draft</a>
+  | <a href="http://www.fenron.net/~fenner/ietf/deps/index.cgi?dep={{ name }}" rel="nofollow">Dependencies to this document</a>
   | <a href="http://tools.ietf.org/idnits?url=http://tools.ietf.org/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank">Check nits</a>
-  | <a href="/feed/comments/{{ doc.name }}/">History feed</a>
+  | <a href="/feed/comments/{{ name }}/">History feed</a>
   | <a href="http://www.google.com/search?as_q={{ doc.name }}&as_sitesearch={{ search_archive }}" rel="nofollow" target="_blank">Search Mailing Lists</a>
   {% if user|has_role:"Area Director" %}
   | <a href="https://www.iesg.org/bin/c5i?mid=6&rid=77&target={{ doc.name }}" rel="nofollow" target="_blank">Search Mailing Lists (ARO)</a>
@@ -234,7 +243,7 @@
   {% endif %}
 </div>
 
-{% if doc.get_state_slug == "active" %}
+{% if doc.get_state_slug == "active" or doc.get_state_slug == "rfc" %}
 
 <div class="document-markup">
 {{ content|safe }}

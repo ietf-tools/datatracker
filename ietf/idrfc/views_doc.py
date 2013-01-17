@@ -53,7 +53,7 @@ from ietf.ietfworkflows.utils import get_full_info_for_draft
 from ietf.doc.models import *
 from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
-from ietf.ietfauth.utils import user_is_person, has_role, role_required, is_authorized_in_doc_stream
+from ietf.ietfauth.utils import *
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -89,13 +89,20 @@ def document_main(request, name, rev=None):
         if rev != None: # no support for old revisions at the moment
             raise Http404()
         return document_main_idrfc(request, name, tab="document")
-
     # generic part
 
     doc = get_object_or_404(Document, docalias__name=name)
+
+    # take care of possible redirections
+    aliases = DocAlias.objects.filter(document=doc).values_list("name", flat=True)
+    if doc.type_id == "draft" and not name.startswith("rfc"):
+        for a in aliases:
+            if a.startswith("rfc"):
+                return redirect("doc_view", name=a)
+
     group = doc.group
     if doc.type_id == 'conflrev':
-        conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+        conflictdoc = doc.related_that_doc('conflrev').get().document
     
     revisions = []
     for h in doc.history_set.order_by("time", "id"):
@@ -135,10 +142,7 @@ def document_main(request, name, rev=None):
 
 
     # specific document types
-
     if doc.type_id == "draft":
-        filename = "%s-%s.txt" % (doc.name, doc.rev)
-
         split_content = not request.GET.get('include_text')
         if request.COOKIES.get("full_draft", "") == "on":
             split = False
@@ -153,26 +157,23 @@ def document_main(request, name, rev=None):
                                                                   person__user=request.user)))
         can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
 
-        if name.startswith("rfc"):
-            # RFC tab
+        rfc_number = name[3:] if name.startswith("") else None
+        draft_name = None
+        for a in aliases:
+            if a.startswith("draft"):
+                draft_name = a
 
-            rfc_number = name[3:]
+        rfc_aliases = [prettify_std_name(a) for a in aliases
+                       if a.startswith("fyi") or a.startswith("std") or a.startswith("bcp")]
+
+        latest_revision = None
+
+        if doc.get_state_slug() == "rfc":
+            # content
             filename = name + ".txt"
 
             content = get_document_content(filename, os.path.join(settings.RFC_PATH, filename),
                                            split_content, markup=True)
-
-            draft_name = doc.name if doc.name.startswith("draft") else None
-
-            def prettify_std_name(n):
-                if re.match(r"(rfc|bcp|fyi)[0-9]{4}", n):
-                    return n[:3].upper() + " " + n[3:]
-                else:
-                    return n
-
-            aliases = [prettify_std_name(a.name) for a in doc.docalias_set.filter(
-                    models.Q(name__startswith="fyi") |
-                    models.Q(name__startswith="std"))]
 
             # file types
             base_path = os.path.join(settings.RFC_PATH, name + ".")
@@ -198,34 +199,35 @@ def document_main(request, name, rev=None):
             elif "txt" not in found_types:
                 content = "This RFC is not available in plain text format."
                 split_content = False
+        else:
+            filename = "%s-%s.txt" % (draft_name, doc.rev)
 
-            return render_to_response("idrfc/document_rfc.html",
-                                      dict(doc=doc,
-                                           top=top,
-                                           name=name,
-                                           content=content,
-                                           split_content=split_content,
-                                           rfc_number=rfc_number,
-                                           updates=[prettify_std_name(d.name) for d in doc.related_that_doc("updates")],
-                                           updated_by=[prettify_std_name(d.canonical_name()) for d in doc.related_that("updates")],
-                                           obsoletes=[prettify_std_name(d.name) for d in doc.related_that_doc("obs")],
-                                           obsoleted_by=[prettify_std_name(d.canonical_name()) for d in doc.related_that("obs")],
-                                           draft_name=draft_name,
-                                           aliases=aliases,
-                                           has_errata=doc.tags.filter(slug="errata"),
-                                           published=doc.latest_event(type="published_rfc"),
-                                           file_urls=file_urls,
-                                           # can_edit=can_edit,
-                                           # can_change_stream=can_change_stream,
-                                           # can_edit_stream_info=can_edit_stream_info,
-                                           # telechat=telechat,
-                                           # ballot_summary=ballot_summary,
-                                           # iesg_state=iesg_state,
-                                           ),
-                                      context_instance=RequestContext(request))
+            content = get_document_content(filename, os.path.join(settings.INTERNET_DRAFT_PATH, filename),
+                                           split_content, markup=True)
 
-        content = get_document_content(filename, os.path.join(settings.INTERNET_DRAFT_PATH, filename),
-                                       split_content, markup=True)
+            # file types
+            base_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".")
+            possible_types = ["pdf", "xml", "ps"]
+            found_types = ["txt"] + [t for t in possible_types if os.path.exists(base_path + t)]
+
+            tools_base = "http://tools.ietf.org/"
+
+            if doc.get_state_slug() == "active":
+                base = "http://www.ietf.org/id/"
+            else:
+                base = tools_base + "id/"
+
+            file_urls = []
+            for t in found_types:
+                label = "plain text" if t == "txt" else t
+                file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
+
+            if "pdf" not in found_types:
+                file_urls.append(("pdf", tools_base + "pdf/" + doc.name + "-" + doc.rev + ".pdf"))
+            file_urls.append(("html", tools_base + "html/" + doc.name + "-" + doc.rev))
+
+            # latest revision
+            latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
 
         # ballot
         ballot_summary = None
@@ -237,17 +239,14 @@ def document_main(request, name, rev=None):
         # submission
         submission = ""
         if group.type_id == "individ":
-            if doc.stream_id and doc.stream_id != "ietf":
-                submission = doc.stream.name
-            else:
-                submission = "individual"
+            submission = "individual"
         elif group.type_id == "area" and doc.stream_id == "ietf":
             submission = "individual in %s area" % group.acronym
-        else:
+        elif group.type_id in ("rg", "wg"):
             submission = "%s %s" % (group.acronym, group.type)
             if group.type_id == "wg":
                 submission = "<a href=\"%s\">%s</a>" % (urlreverse("wg_docs", kwargs=dict(acronym=doc.group.acronym)), submission)
-            if doc.get_state_slug("draft-stream-%s" % doc.stream_id) == "c-adopt":
+            if doc.stream_id and doc.get_state_slug("draft-stream-%s" % doc.stream_id) == "c-adopt":
                 submission = "candidate for %s" % submission
 
         # resurrection
@@ -257,32 +256,11 @@ def document_main(request, name, rev=None):
             if e and e.type == "requested_resurrect":
                 resurrected_by = e.by
 
-        # file types
-        base_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".")
-        possible_types = ["pdf", "xml", "ps"]
-        found_types = ["txt"] + [t for t in possible_types if os.path.exists(base_path + t)]
-
-        tools_base = "http://tools.ietf.org/"
-
-        if doc.get_state_slug() == "active":
-            base = "http://www.ietf.org/id/"
-        else:
-            base = tools_base + "id/"
-
-        file_urls = []
-        for t in found_types:
-            label = "plain text" if t == "txt" else t
-            file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
-
-        if "pdf" not in found_types:
-            file_urls.append(("pdf", tools_base + "pdf/" + doc.name + "-" + doc.rev + ".pdf"))
-        file_urls.append(("html", tools_base + "html/" + doc.name + "-" + doc.rev))
-
         # stream info
         stream_state = None
         if doc.stream:
             stream_state = doc.get_state("draft-stream-%s" % doc.stream_id)
-        stream_tags = get_tags_for_stream_id(doc.stream_id)
+        stream_tags = doc.tags.filter(slug__in=get_tags_for_stream_id(doc.stream_id))
 
         shepherd_writeup = doc.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
 
@@ -329,12 +307,15 @@ def document_main(request, name, rev=None):
 
         return render_to_response("idrfc/document_draft.html",
                                   dict(doc=doc,
+                                       group=group,
                                        top=top,
                                        name=name,
                                        content=content,
                                        split_content=split_content,
                                        revisions=revisions,
                                        snapshot=snapshot,
+                                       latest_revision=latest_revision,
+
                                        can_edit=can_edit,
                                        can_change_stream=can_change_stream,
                                        can_edit_stream_info=can_edit_stream_info,
@@ -342,14 +323,24 @@ def document_main(request, name, rev=None):
                                        can_edit_intended_std_level=can_edit_intended_std_level(request.user, doc),
                                        can_edit_consensus=can_edit_consensus(request.user, doc),
                                        can_edit_iana_state=can_edit_iana_state,
+
+                                       rfc_number=rfc_number,
+                                       draft_name=draft_name,
                                        telechat=telechat,
                                        ballot_summary=ballot_summary,
-                                       group=group,
                                        submission=submission,
                                        resurrected_by=resurrected_by,
+
                                        replaces=[d.name for d in doc.related_that_doc("replaces")],
                                        replaced_by=[d.name for d in doc.related_that("replaces")],
+                                       updates=[prettify_std_name(d.name) for d in doc.related_that_doc("updates")],
+                                       updated_by=[prettify_std_name(d.canonical_name()) for d in doc.related_that("updates")],
+                                       obsoletes=[prettify_std_name(d.name) for d in doc.related_that_doc("obs")],
+                                       obsoleted_by=[prettify_std_name(d.canonical_name()) for d in doc.related_that("obs")],
                                        conflict_reviews=conflict_reviews,
+                                       rfc_aliases=rfc_aliases,
+                                       has_errata=doc.tags.filter(slug="errata"),
+                                       published=doc.latest_event(type="published_rfc"),
                                        file_urls=file_urls,
                                        stream_state=stream_state,
                                        stream_tags=stream_tags,

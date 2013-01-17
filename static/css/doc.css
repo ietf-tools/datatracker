@@ -3,6 +3,8 @@
 #metatable tr { vertical-align: top; }
 #metatable tr:first-child td:first-child { width: 15em; }
 
+.stream-tags { font-style: italic; }
+
 .document-markup pre { line-height: 1.2em; margin: 0; }
 .document-markup .m_hdr, .m_ftr { color: #808080; }
 .document-markup .m_ftr { border-bottom: 1px solid #a0a0a0; }
@@ -39,8 +41,6 @@ a.editlink:link {text-decoration:none; color:inherit;}
 a.editlink:visited {text-decoration:none; color:inherit;}
 a.editlink:hover {text-decoration:underline;}
 a.editlink:active {text-decoration:underline;}
-
-
 
 h3 a.edit { font-weight: normal; font-size: 13px; display: inline-block; margin-left: 0.5em;}
 
