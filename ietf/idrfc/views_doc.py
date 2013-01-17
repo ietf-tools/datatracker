@@ -68,9 +68,9 @@ def render_document_top(request, doc, tab, name):
 
     # FIXME: if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
     if doc.type_id != "conflrev":
-        tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=doc.name)), True))
+        tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=name)), True))
 
-    tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=doc.name)), True))
+    tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=name)), True))
 
     if name.startswith("rfc"):
         name = "RFC %s" % name[3:]
