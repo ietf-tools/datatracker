@@ -130,9 +130,12 @@ def augment_events_with_revision(doc, events):
 
     event_revisions = list(NewRevisionDocEvent.objects.filter(doc=doc).order_by('time', 'id').values('id', 'rev', 'time'))
 
-    cur_rev = doc.rev
-    if doc.get_state_slug() == "rfc":
-        cur_rev = "RFC"
+    if doc.type_id == "draft" and doc.get_state_slug() == "rfc":
+        # add fake "RFC" revision
+        e = doc.latest_event(type="published_rfc")
+        if e:
+            event_revisions.append(dict(id=e.id, time=e.time, rev="RFC"))
+            event_revisions.sort(key=lambda x: (x["time"], x["id"]))
 
     for e in sorted(events, key=lambda e: (e.time, e.id), reverse=True):
         while event_revisions and (e.time, e.id) < (event_revisions[-1]["time"], event_revisions[-1]["id"]):
