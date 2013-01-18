@@ -262,7 +262,7 @@ class RFCSyncTestCase(django.test.TestCase):
         self.assertEqual(rfc_published_date.month, today.month)
         self.assertEqual(current_status, "Proposed Standard")
         self.assertEqual(updates, ["RFC123"])
-        self.assertEqual(set(also), set(["BCP0001", "FYI0001", "STD0001"]))
+        self.assertEqual(set(also), set(["BCP1", "FYI1", "STD1"]))
         self.assertEqual(draft, doc.name)
         self.assertEqual(wg, doc.group.acronym)
         self.assertEqual(has_errata, True)
