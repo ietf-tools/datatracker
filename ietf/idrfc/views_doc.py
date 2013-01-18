@@ -43,7 +43,6 @@ from django.middleware.gzip import GZipMiddleware
 from django.core.urlresolvers import reverse as urlreverse, NoReverseMatch
 from django.conf import settings
 
-from ietf.idrfc.utils import *
 from ietf.doc.models import *
 from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
@@ -140,10 +139,11 @@ def document_main(request, name, rev=None):
 
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
-        can_change_stream = bool(can_edit or (request.user.is_authenticated() and
-                                              Role.objects.filter(name__in=("chair", "auth"),
-                                                                  group__acronym__in=stream_slugs,
-                                                                  person__user=request.user)))
+        can_change_stream = bool(can_edit or (
+                request.user.is_authenticated() and
+                Role.objects.filter(name__in=("chair", "auth"),
+                                    group__acronym__in=stream_slugs,
+                                    person__user=request.user)))
         can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
 
         rfc_number = name[3:] if name.startswith("") else None
@@ -313,8 +313,6 @@ def document_main(request, name, rev=None):
                                        can_change_stream=can_change_stream,
                                        can_edit_stream_info=can_edit_stream_info,
                                        can_edit_shepherd_writeup=can_edit_shepherd_writeup,
-                                       can_edit_intended_std_level=can_edit_intended_std_level(request.user, doc),
-                                       can_edit_consensus=can_edit_consensus(request.user, doc),
                                        can_edit_iana_state=can_edit_iana_state,
 
                                        rfc_number=rfc_number,
@@ -644,7 +642,7 @@ def get_ballot(name):
     from ietf.doc.models import DocAlias
     alias = get_object_or_404(DocAlias, name=name)
     d = alias.document
-    from ietf.idtracker.models import InternetDraft
+    from ietf.idtracker.models import InternetDraft, BallotInfo
     from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
     id = None
     bw = None

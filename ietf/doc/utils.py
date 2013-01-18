@@ -220,10 +220,16 @@ def add_state_change_event(doc, by, prev_state, new_state, timestamp=None):
     e.save()
     return e
     
-
 def prettify_std_name(n):
     if re.match(r"(rfc|bcp|fyi|std)[0-9]{4}", n):
         return n[:3].upper() + " " + n[3:]
     else:
         return n
 
+def nice_consensus(consensus):
+    mapping = {
+        None: "Unknown",
+        True: "Yes",
+        False: "No"
+        }
+    return mapping[consensus]

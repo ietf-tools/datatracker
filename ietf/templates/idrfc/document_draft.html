@@ -62,7 +62,7 @@
     <tr>
       <td>Intended RFC status:</td>
       <td>
-        <a {% if can_edit %}class="editlink" href="{% url doc_change_intended_status name=doc.name %}"{% endif %}>
+        <a {% if can_edit or can_edit_stream_info %}class="editlink" href="{% url doc_change_intended_status name=doc.name %}"{% endif %}>
         {{ doc.intended_std_level|default:"Unknown" }}</a>
       </td>
     </tr>
@@ -110,7 +110,7 @@
     <tr>
       <td>Consensus:</td>
       <td>
-        <a title="Whether the document is the result of a community consensus process as defined in RFC 5741" {% if can_edit_consensus %}class="editlink" href="{% url doc_edit_consensus name=doc.name %}"{% endif %}>
+        <a title="Whether the document is the result of a community consensus process as defined in RFC 5741" {% if can_edit or can_edit_stream_info %}class="editlink" href="{% url doc_edit_consensus name=doc.name %}"{% endif %}>
           {{ consensus }}
         </a>
       </td>

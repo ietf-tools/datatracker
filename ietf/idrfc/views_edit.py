@@ -271,7 +271,8 @@ def change_intention(request, name):
     if doc.type_id != 'draft':
         raise Http404
 
-    if not can_edit_intended_std_level(request.user, doc):
+    if not (has_role(request.user, ("Secretariat", "Area Director"))
+            or is_authorized_in_doc_stream(request.user, doc)):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     login = request.user.get_profile()
@@ -902,7 +903,8 @@ def edit_consensus(request, name):
 
     doc = get_object_or_404(Document, type="draft", name=name)
 
-    if not can_edit_consensus(request.user, doc):
+    if not (has_role(request.user, ("Secretariat", "Area Director"))
+            or is_authorized_in_doc_stream(request.user, doc)):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
