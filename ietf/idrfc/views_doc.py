@@ -43,13 +43,7 @@ from django.middleware.gzip import GZipMiddleware
 from django.core.urlresolvers import reverse as urlreverse, NoReverseMatch
 from django.conf import settings
 
-from ietf.idtracker.models import InternetDraft, IDInternal, BallotInfo, DocumentComment
-from ietf.idtracker.templatetags.ietf_filters import format_textarea, fill
-from ietf.idrfc import markup_txt
 from ietf.idrfc.utils import *
-from ietf.idrfc.models import RfcIndex, DraftVersions
-from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
-from ietf.ietfworkflows.utils import get_full_info_for_draft
 from ietf.doc.models import *
 from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
@@ -84,13 +78,8 @@ def render_document_top(request, doc, tab, name):
                                  name=name))
 
 
+@decorator_from_middleware(GZipMiddleware)
 def document_main(request, name, rev=None):
-    if "old" in request.GET and (name.lower().startswith("draft") or name.lower().startswith("rfc")):
-        if rev != None: # no support for old revisions at the moment
-            raise Http404()
-        return document_main_idrfc(request, name, tab="document")
-    # generic part
-
     doc = get_object_or_404(Document, docalias__name=name)
 
     # take care of possible redirections
@@ -643,206 +632,16 @@ def document_json(request, name):
 
     return HttpResponse(json.dumps(data, indent=2), mimetype='text/plain')
 
-def _get_html(key, filename, split=True):
-    # FIXME
-    return get_document_content(key, filename, split=split, markup=True), ""
-
-def include_text(request):
-    # FIXME
-    include_text = request.GET.get( 'include_text' )
-    if "full_draft" in request.COOKIES:
-        if request.COOKIES["full_draft"] == "on":
-            include_text = 1
-    return include_text
-
-def document_main_rfc(request, rfc_number, tab):
-    # FIXME
-    rfci = get_object_or_404(RfcIndex, rfc_number=rfc_number, states__type="draft", states__slug="rfc")
-    rfci.viewing_as_rfc = True
-    doc = RfcWrapper(rfci)
-
-    info = {}
-    info['is_rfc'] = True
-    info['has_pdf'] = (".pdf" in doc.file_types())
-    info['has_txt'] = (".txt" in doc.file_types())
-    info['has_ps'] = (".ps" in doc.file_types())
-    if info['has_txt']:
-        (content1, content2) = _get_html(
-            "rfc"+str(rfc_number)+",html", 
-            os.path.join(settings.RFC_PATH, "rfc"+str(rfc_number)+".txt"))
-    else:
-        content1 = ""
-        content2 = ""
-
-    history = _get_history(doc, None)
-            
-    template = "idrfc/doc_tab_%s" % tab
-    if tab == "document":
-	template += "_rfc"
-    return render_to_response(template + ".html",
-                              {'content1':content1, 'content2':content2,
-                               'doc':doc, 'info':info, 'tab':tab,
-			       'include_text':include_text(request),
-                               'history':history},
-                              context_instance=RequestContext(request));
-
-@decorator_from_middleware(GZipMiddleware)
-def document_main_idrfc(request, name, tab):
-    # FIXME
-    r = re.compile("^rfc([1-9][0-9]*)$")
-    m = r.match(name)
-    if m:
-        return document_main_rfc(request, int(m.group(1)), tab)
-    id = get_object_or_404(InternetDraft, filename=name)
-    doc = IdWrapper(id) 
-
-    info = {}
-    info['has_pdf'] = (".pdf" in doc.file_types())
-    info['is_rfc'] = False
-
-    info['conflict_reviews'] = [ rel.source for alias in id.docalias_set.all() for rel in alias.relateddocument_set.filter(relationship='conflrev') ]
-    info['rfc_editor_state'] = id.get_state("draft-rfceditor")
-    info['iana_review_state'] = id.get_state("draft-iana-review")
-    info['iana_action_state'] = id.get_state("draft-iana-action")
-    info["consensus"] = None
-    if id.stream_id in ("ietf", "irtf", "iab"):
-        e = id.latest_event(ConsensusDocEvent, type="changed_consensus")
-        info["consensus"] = nice_consensus(e and e.consensus)
-        info["can_edit_consensus"] = can_edit_consensus(request.user, id)
-    info["can_edit_intended_std_level"] = can_edit_intended_std_level(request.user, id)
-
-    (content1, content2) = _get_html(
-        str(name)+","+str(id.revision)+",html",
-        os.path.join(settings.INTERNET_DRAFT_PATH, name+"-"+id.revision+".txt"))
-
-    versions = _get_versions(id)
-    history = _get_history(doc, versions)
-            
-    template = "idrfc/doc_tab_%s" % tab
-    if tab == "document":
-	template += "_id"
-    return render_to_response(template + ".html",
-                              {'content1':content1, 'content2':content2,
-                               'doc':doc, 'info':info, 'tab':tab,
-			       'include_text':include_text(request),
-                               'stream_info': get_full_info_for_draft(id),
-                               'milestones': id.groupmilestone_set.filter(state="active"),
-                               'versions':versions, 'history':history},
-                              context_instance=RequestContext(request));
-
-# doc is either IdWrapper or RfcWrapper
-def _get_history(doc, versions):
-    results = []
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        versions = [] # clear versions
-        event_holder = doc._draft if hasattr(doc, "_draft") else doc._rfcindex
-        for e in event_holder.docevent_set.all().select_related('by').order_by('-time', 'id'):
-            info = {}
-            if e.type == "new_revision":
-                filename = u"%s-%s" % (e.doc.name, e.newrevisiondocevent.rev)
-                e.desc = 'New version available: <a href="http://tools.ietf.org/id/%s.txt">%s</a>' % (filename, filename)
-                if int(e.newrevisiondocevent.rev) != 0:
-                    e.desc += ' (<a href="http:%s?url2=%s">diff from -%02d</a>)' % (settings.RFCDIFF_PREFIX, filename, int(e.newrevisiondocevent.rev) - 1)
-                info["dontmolest"] = True
-
-            multiset_ballot_text = "This was part of a ballot set with: "
-            if e.desc.startswith(multiset_ballot_text):
-                names = [ n.strip() for n in e.desc[len(multiset_ballot_text):].split(",") ]
-                e.desc = multiset_ballot_text + ", ".join(u'<a href="%s">%s</a>' % (urlreverse("doc_view", kwargs={'name': n }), n) for n in names)
-                info["dontmolest"] = True
-                    
-            info['text'] = e.desc
-            info['by'] = e.by.plain_name()
-            info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
-            info['snipped'] = info['textSnippet'][-3:] == "..." and e.type != "new_revision"
-            results.append({'comment':e, 'info':info, 'date':e.time, 'is_com':True})
-
-        prev_rev = "00"
-        # actually, we're already sorted and this ruins the sort from
-        # the ids which is sometimes needed, so the function should be
-        # rewritten to not rely on a resort
-        results.sort(key=lambda x: x['date'])
-        for o in results:
-            e = o["comment"]
-            if e.type == "new_revision":
-                e.version = e.newrevisiondocevent.rev
-            else:
-                e.version = prev_rev
-            prev_rev = e.version
-    else:
-        if doc.is_id_wrapper:
-            comments = DocumentComment.objects.filter(document=doc.tracker_id).exclude(rfc_flag=1)
-        else:
-            comments = DocumentComment.objects.filter(document=doc.rfc_number,rfc_flag=1)
-            if len(comments) > 0:
-                # also include rfc_flag=NULL, but only if at least one
-                # comment with rfc_flag=1 exists (usually NULL means same as 0)
-                comments = DocumentComment.objects.filter(document=doc.rfc_number).exclude(rfc_flag=0)
-        for comment in comments.order_by('-date','-time','-id').filter(public_flag=1).select_related('created_by'):
-            info = {}
-            info['text'] = comment.comment_text
-            info['by'] = comment.get_fullname()
-            info['textSnippet'] = truncatewords_html(format_textarea(fill(info['text'], 80)), 25)
-            info['snipped'] = info['textSnippet'][-3:] == "..."
-            results.append({'comment':comment, 'info':info, 'date':comment.datetime(), 'is_com':True})
-    
-    if doc.is_id_wrapper and versions:
-        for v in versions:
-            if v['draft_name'] == doc.draft_name:
-                v = dict(v) # copy it, since we're modifying datetimes later
-                v['is_rev'] = True
-                results.insert(0, v)    
-    if not settings.USE_DB_REDESIGN_PROXY_CLASSES and doc.is_id_wrapper and doc.draft_status == "Expired" and doc._draft.expiration_date:
-        results.append({'is_text':True, 'date':doc._draft.expiration_date, 'text':'Draft expired'})
-    if not settings.USE_DB_REDESIGN_PROXY_CLASSES and doc.is_rfc_wrapper:
-        text = 'RFC Published'
-        if doc.draft_name:
-            try:
-                text = 'RFC Published (see <a href="%s">%s</a> for earlier history)' % (urlreverse('doc_view', args=[doc.draft_name]),doc.draft_name)
-            except NoReverseMatch:
-                pass
-        results.append({'is_text':True, 'date':doc.publication_date, 'text':text})
-
-    # convert plain dates to datetimes (required for sorting)
-    for x in results:
-        if not isinstance(x['date'], datetime.datetime):
-            if x['date']:
-                x['date'] = datetime.datetime.combine(x['date'], datetime.time(0,0,0))
-            else:
-                x['date'] = datetime.datetime(1970,1,1)
-
-    results.sort(key=lambda x: x['date'])
-    results.reverse()
-    return results
-
-# takes InternetDraft instance
-def _get_versions(draft, include_replaced=True):
-    ov = []
-    ov.append({"draft_name":draft.filename, "revision":draft.revision_display(), "date":draft.revision_date})
-    if include_replaced:
-        draft_list = [draft]+list(draft.replaces_set.all())
-    else:
-        draft_list = [draft]
-
-    if settings.USE_DB_REDESIGN_PROXY_CLASSES:
-        from ietf.doc.models import NewRevisionDocEvent
-        for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=draft_list).select_related('doc').order_by("-time", "-id"):
-            if not (e.doc.name == draft.name and e.rev == draft.rev):
-                ov.append(dict(draft_name=e.doc.name, revision=e.rev, date=e.time.date()))
-                
-        return ov
-        
-    for d in draft_list:
-        for v in DraftVersions.objects.filter(filename=d.filename).order_by('-revision'):
-            if (d.filename == draft.filename) and (draft.revision_display() == v.revision):
-                continue
-            ov.append({"draft_name":d.filename, "revision":v.revision, "date":v.revision_date})
-    return ov
+def ballot_for_popup(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    return HttpResponse(document_ballot_content(request, doc, ballot_id=None, editable=False))
 
 def get_ballot(name):
     from ietf.doc.models import DocAlias
     alias = get_object_or_404(DocAlias, name=name)
     d = alias.document
+    from ietf.idtracker.models import InternetDraft
+    from ietf.idrfc.idrfc_wrapper import BallotWrapper, IdWrapper, RfcWrapper
     id = None
     bw = None
     dw = None
@@ -872,15 +671,6 @@ def get_ballot(name):
 
     return (bw, dw, b, d)
 
-
-def ballot_for_popup(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
-    return HttpResponse(document_ballot_content(request, doc, ballot_id=None, editable=False))
-
-def ballot_html(request, name):
-    bw, dw, ballot, doc = get_ballot(name)
-    content = document_ballot_content(request, doc, ballot.pk, editable=True)
-    return HttpResponse(content)
 
 def ballot_tsv(request, name):
     ballot, doc, b, d = get_ballot(name)
