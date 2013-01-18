@@ -1339,13 +1339,11 @@ class IndividualInfoFormsTestCase(django.test.TestCase):
         q = PyQuery(r.content)
         self.assertEquals(len(q('form.edit-iesg-note')),1)
 
-        # No validation code to test
-
-        # post - testing that the munge code exists in note.clean...
-        r = self.client.post(url,dict(note='ZpyQFGmA\nZpyQFGmA'))
+        # post
+        r = self.client.post(url,dict(note='ZpyQFGmA\r\nZpyQFGmA'))
         self.assertEquals(r.status_code,302)
         self.doc = Document.objects.get(name=self.docname)
-        self.assertEquals(self.doc.note,'ZpyQFGmA<br>ZpyQFGmA')
+        self.assertEquals(self.doc.note,'ZpyQFGmA\nZpyQFGmA')
         self.assertTrue('ZpyQFGmA' in self.doc.latest_event(DocEvent,type='added_comment').desc)
 
     def test_doc_change_ad(self):
