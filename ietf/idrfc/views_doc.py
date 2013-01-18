@@ -275,7 +275,10 @@ def document_main(request, name, rev=None):
         actions = []
 
         if ((not doc.stream_id or doc.stream_id in ("ietf", "irtf")) and group.type_id == "individ" and
-            (Role.objects.filter(person__user=request.user, name__in=("chair", "delegate"), group__type__in=("wg",), group__state="active")
+            (request.user.is_authenticated() and
+             Role.objects.filter(person__user=request.user, name__in=("chair", "delegate"),
+                                 group__type__in=("wg",),
+                                 group__state="active")
              or has_role(request.user, "Secretariat"))):
             actions.append(("Adopt in Group", urlreverse('edit_adopt', kwargs=dict(name=doc.name))))
 
@@ -285,7 +288,8 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() == "expired" and has_role(request.user, ("Secretariat",)):
             actions.append(("Resurrect", urlreverse('doc_resurrect', kwargs=dict(name=doc.name))))
 
-        if doc.get_state_slug() != "expired" and doc.stream_id in ("ise", "irtf") and has_role(request.user, ("Secretariat",)) and not conflict_reviews:
+        if (doc.get_state_slug() != "expired" and doc.stream_id in ("ise", "irtf")
+            and has_role(request.user, ("Secretariat",)) and not conflict_reviews):
             label = "Begin IETF Conflict Review"
             if not doc.intended_std_level:
                 label += " (note that intended status is not set)"
