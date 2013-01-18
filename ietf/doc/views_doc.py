@@ -50,27 +50,27 @@ from ietf.ietfauth.utils import *
 
 def render_document_top(request, doc, tab, name):
     tabs = []
-    tabs.append(("Document", "document", urlreverse("ietf.idrfc.views_doc.document_main", kwargs=dict(name=name)), True))
+    tabs.append(("Document", "document", urlreverse("doc_view", kwargs=dict(name=name)), True))
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id in ("draft","conflrev"):
         # if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
-        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=name)), ballot))
+        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot))
     elif doc.type_id == "charter":
-        tabs.append(("IESG Review", "ballot", urlreverse("ietf.idrfc.views_doc.document_ballot", kwargs=dict(name=name)), ballot))
+        tabs.append(("IESG Review", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot))
 
     # FIXME: if doc.in_ietf_process and doc.ietf_process.has_iesg_ballot:
     if doc.type_id != "conflrev":
-        tabs.append(("IESG Writeups", "writeup", urlreverse("ietf.idrfc.views_doc.document_writeup", kwargs=dict(name=name)), True))
+        tabs.append(("IESG Writeups", "writeup", urlreverse("doc_writeup", kwargs=dict(name=name)), True))
 
-    tabs.append(("History", "history", urlreverse("ietf.idrfc.views_doc.document_history", kwargs=dict(name=name)), True))
+    tabs.append(("History", "history", urlreverse("doc_history", kwargs=dict(name=name)), True))
 
     if name.startswith("rfc"):
         name = "RFC %s" % name[3:]
     else:
         name += "-" + doc.rev
 
-    return render_to_string("idrfc/document_top.html",
+    return render_to_string("doc/document_top.html",
                             dict(doc=doc,
                                  tabs=tabs,
                                  selected=tab,
@@ -298,7 +298,7 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() != "expired" and doc.stream_id in ("ietf",) and can_edit and not iesg_state:
             actions.append(("Begin IESG Processing", urlreverse('doc_edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
 
-        return render_to_response("idrfc/document_draft.html",
+        return render_to_response("doc/document_draft.html",
                                   dict(doc=doc,
                                        group=group,
                                        top=top,
@@ -368,7 +368,7 @@ def document_main(request, name, rev=None):
         if chartering and not snapshot:
             milestones = doc.group.groupmilestone_set.filter(state="charter")
 
-        return render_to_response("idrfc/document_charter.html",
+        return render_to_response("doc/document_charter.html",
                                   dict(doc=doc,
                                        top=top,
                                        chartering=chartering,
@@ -397,7 +397,7 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() in ("iesgeval"):
             ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
 
-        return render_to_response("idrfc/document_conflict_review.html",
+        return render_to_response("doc/document_conflict_review.html",
                                   dict(doc=doc,
                                        top=top,
                                        content=content,
@@ -450,7 +450,7 @@ def document_history(request, name):
     augment_events_with_revision(doc, events)
     add_links_in_new_revision_events(doc, events, diff_revisions)
 
-    return render_to_response("idrfc/document_history.html",
+    return render_to_response("doc/document_history.html",
                               dict(doc=doc,
                                    top=top,
                                    diff_revisions=diff_revisions,
@@ -510,7 +510,7 @@ def document_writeup(request, name):
     if not sections:
         raise Http404()
 
-    return render_to_response("idrfc/document_writeup.html",
+    return render_to_response("doc/document_writeup.html",
                               dict(doc=doc,
                                    top=top,
                                    sections=sections,
@@ -562,7 +562,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     if not ballot_open:
         editable = False
 
-    return render_to_string("idrfc/document_ballot_content.html",
+    return render_to_string("doc/document_ballot_content.html",
                               dict(doc=doc,
                                    ballot=ballot,
                                    position_groups=position_groups,
@@ -581,7 +581,7 @@ def document_ballot(request, name, ballot_id=None):
 
     c = document_ballot_content(request, doc, ballot_id, editable=True)
 
-    return render_to_response("idrfc/document_ballot.html",
+    return render_to_response("doc/document_ballot.html",
                               dict(doc=doc,
                                    top=top,
                                    ballot_content=c,

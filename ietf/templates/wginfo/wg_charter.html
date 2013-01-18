@@ -77,7 +77,7 @@ is occasionally incorrect.</span>
       {% else %}
       none
       {% if user|has_role:"Area Director,Secretariat" %}
-      - <a href="{% url wginfo.edit.submit_initial_charter acronym=wg.acronym %}">Submit Charter</a>
+      - <a href="{% url ietf.wginfo.edit.submit_initial_charter acronym=wg.acronym %}">Submit Charter</a>
       {% endif %}
       {% endif %}
     </td>

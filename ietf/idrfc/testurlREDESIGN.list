@@ -3,70 +3,11 @@
 200,heavy /doc/all/
 200,heavy /doc/active/
 
-# draft that's now RFC
-200	/doc/draft-ietf-avt-rtp-atrac-family/
-200	/doc/draft-ietf-avt-rtp-atrac-family/doc.json
-200	/doc/draft-ietf-avt-rtp-atrac-family/ballot.json
-200	/doc/draft-ietf-avt-rtp-atrac-family/ballotpopup/
-
-# replaced draft, never went to IESG
-200	/doc/draft-eronen-mobike-mopo/
-404	/doc/draft-eronen-mobike-mopo/ballot.json
-404	/doc/draft-eronen-mobike-mopo/ballotpopup/
-
-# expired draft
-200 	/doc/draft-eronen-eap-sim-aka-80211/
-
-# Normal RFC 
-200	/doc/rfc4739/
-200	/doc/rfc4739/doc.json
-200	/doc/rfc4739/ballot.json # has ballot from I-D
-200	/doc/rfc4739/ballotpopup/
-
-# RFC that's evaluated in IESG
-200	/doc/rfc3852/
-200	/doc/rfc3852/doc.json
-200	/doc/rfc3852/ballot.json
-200	/doc/rfc3852/ballotpopup/
-
-# old RFC
-200     /doc/rfc822/
-200     /doc/rfc822/doc.json
-
-# ballot sets
-200	 /doc/rfc3550/ballot.json
-200	 /doc/rfc3550/ballotpopup/
-200	 /doc/rfc3551/ballot.json
-200	 /doc/rfc3551/ballotpopup/
-200	 /doc/draft-irtf-dtnrg-ltp/ballot.json
-200	 /doc/draft-irtf-dtnrg-ltp/ballotpopup/
-
-# file formats
-200     /doc/rfc9/ # PDF only
-200	/doc/rfc2490/ # TXT+PDF+PS
-200	/doc/rfc500/ # not online
-
-404	/doc/draft-no-such-draft/
-404	/doc/rfc4637/
-
-200	/doc/rfc2444/doc.json   # foreignkey problem with Django 1.x
-
 # current AD -- needs to be updated at some point
 200	/doc/ad/robert.sparks/
 # former AD
 200	/doc/ad/sam.hartman/
 404	/doc/ad/no.body/
-
-# ballot exists, but it's not issued
-404	/doc/draft-ietf-aaa-diameter-api/ballot.json
-404	/doc/draft-ietf-aaa-diameter-api/ballotpopup/
-# ballot does not exist
-404	/doc/draft-zeilenga-cldap/ballot.json
-404	/doc/draft-zeilenga-cldap/ballotpopup/
-# comment with created_by=999
-200	/doc/draft-ietf-l3vpn-2547bis-mcast-bgp/
-# comment with created_by=0 (and no idinternal entry)
-200	/doc/draft-ietf-proto-wgdocument-states/
 
 200	/doc/search/
 200	/doc/search/?rfcs=on&name=snmp

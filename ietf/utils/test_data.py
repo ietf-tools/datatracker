@@ -391,18 +391,17 @@ def make_test_data():
         )
 
     # an independent submission before review
-    doc = Document.objects.create(name='draft-imaginary-independent-submission',type_id='draft')
-    DocAlias.objects.create(      name='draft-imaginary-independent-submission',document=doc)
+    doc = Document.objects.create(name='draft-imaginary-independent-submission', type_id='draft')
+    DocAlias.objects.create(name=doc.name, document=doc)
 
     # an irtf submission mid review
-    doc = Document.objects.create(     name='draft-imaginary-irtf-submission',type_id='draft')
-    docalias = DocAlias.objects.create(name='draft-imaginary-irtf-submission',document=doc)
+    doc = Document.objects.create(name='draft-imaginary-irtf-submission', type_id='draft')
+    docalias = DocAlias.objects.create(name=doc.name, document=doc)
     doc.stream = StreamName.objects.get(slug='irtf')
     doc.save()
-    crdoc = Document.objects.create(name='conflict-review-imaginary-irtf-submission',type_id='conflrev',rev='00',notify="fsm@ietf.org")
-    DocAlias.objects.create(        name='conflict-review-imaginary-irtf-submission',document=crdoc)
-    crdoc.set_state(State.objects.get(name='Needs Shepherd',type__slug='conflrev'))
-    crdoc.save()
+    crdoc = Document.objects.create(name='conflict-review-imaginary-irtf-submission', type_id='conflrev', rev='00', notify="fsm@ietf.org")
+    DocAlias.objects.create(name=crdoc.name, document=crdoc)
+    crdoc.set_state(State.objects.get(name='Needs Shepherd', type__slug='conflrev'))
     crdoc.relateddocument_set.create(target=docalias,relationship_id='conflrev')
     
     return draft
