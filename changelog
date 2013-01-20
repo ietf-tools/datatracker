@@ -1,3 +1,30 @@
+ietfdb (4.40) ietf; urgency=high
+
+  This release is a major feature release, which provides the means to do
+  state synchronization to and from the RFC-Editor and IANA, so that relevant
+  state changes to drafts and RFCs at any of the 3 organizations can be
+  picked up and reflected automatically in the tracking system used by the
+  others.  
+
+  This release is the last piece of a multi-year effort to make the tracker
+  provide seamless tracking of state information from the very first beginnngs
+  of a document (which is provided through the community tracker part of the
+  IETD datatracker, which lets anyone in the community set up tracking
+  notifications for their specific set of documents) all the way through the
+  working group process, IESG processing, to the final IANA and REF-Editor
+  processing and publication.
+
+  There isn't a lot of eye-candy associated with the current release, but
+  as we get the RFC-Editor and IANA ends set up to use the notification
+  interfaces provided in this release, the state shown in the datatracker
+  should faithfully and timely reflect the state changes in the RFC-Editor
+  and IANA parts of the process.
+
+  For detailed commit messages, please see:
+    http://wiki.tools.ietf.org/tools/ietfdb/log/branch/iola/statesync
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Jan 2013 16:38:22 +0100
+
 ietfdb (4.37) ietf; urgency=low
 
   This is a minor bug-fix release of the datatracker.  It fixes issues with
