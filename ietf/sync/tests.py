@@ -127,6 +127,7 @@ class IANASyncTestCase(django.test.TestCase):
         msg = """From: "%(person)s via RT" <drafts-lastcall@iana.org>
 Date: Thu, 10 May 2012 12:00:00 +0000
 Subject: [IANA #12345] Last Call: <%(draft)s-%(rev)s.txt> (Long text) to Informational RFC
+
 (BEGIN IANA LAST CALL COMMENTS)
 
 IESG:
@@ -440,7 +441,7 @@ class RFCEditorUndoTestCase(django.test.TestCase):
         self.assertEquals(draft.get_state("draft-rfceditor"), None)
 
         # let's just test we can recover
-        e = DeletedEvent.objects.all().order_by("-time")[0]
+        e = DeletedEvent.objects.all().order_by("-time", "-id")[0]
 
         e.content_type.model_class().objects.create(**json.loads(e.json))
         self.assertTrue(StateDocEvent.objects.filter(desc="First", doc=draft))

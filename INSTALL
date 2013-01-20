@@ -1,0 +1,158 @@
+=====================================
+Datatracker Installation Instructions
+=====================================
+
+
+General Instructions for Deployment of a New Release
+====================================================
+
+
+In order to fetch a new release of the django datatracker code, simply
+check out the appropriate tag from svn::
+
+  svn co http://svn.tools.ietf.org/svn/tools/ietfdb/tags/$releasenumber
+
+Don't forget to copy $releasenumber/ietf/settings_local.py from the
+old release to the new one; otherwise things won't work!
+::
+
+  cp $oldreleasenumber/ietf/settings_local.py $releasenumber/ietf/
+
+Change into the directory of the new release and run migrations::
+
+  cd $releasenumber
+  PYTHONPATH=$PWD ietf/manage.py migrate
+  cd ..
+
+and then re-point the 'web' symlink::
+
+  rm ./web; ln -s $releasenumber web
+
+and finally restart apache::
+
+  sudo /etc/init.d/apache2 restart
+
+
+Installing from Scratch
+=======================
+
+In addition to the new release deployment instructions above, the settings_local.py
+file has to be set up properly, and Apache has to be configured.  Since the IETF
+datatracker is only intended to be deployed from scratch once, these instructions
+don't cover this.  The general Django depoloyment instructions are relevant, however.
+
+
+Additional Version-Specific Instructions
+========================================
+
+Version 4.40
+------------
+
+- (DONE) Add ianasync user with an auth role in the "iana" group and an
+  rfceditorsync user with an auth role in the "rfceditor" group (don't
+  think Group(acronym="rfceditor") exists yet); IANA and RFC Editor need
+  to know the passwords for the poke mechanism
+  
+
+- (DONE) Make sure mailing list for iab-stream@iab.org is up (since we're now
+  emailing that)
+
+- Set rfc_must_published_later_than date in bin/iana-protocols-updates to today
+
+- Run the 3 new doc South migrations
+
+- New polling scripts, to be run every hour::
+
+    web/ietf/bin/iana-changes-updates
+    web/ietf/bin/iana-protocols-updates
+    web/ietf/bin/rfc-editor-index-updates (replaces mirror_rfc_index)
+    web/ietf/bin/rfc-editor-queue-updates (replaces mirror_rfc_queue)
+
+- Import old events from IANA::
+
+    bin/iana-changes-updates --from="2005-01-01 00:00:00" --to="2013-01-31 00:00:00" --no-email
+
+- Pipe IANA review emails to the datatracker.  There used to be an action to pipe
+  such mails to henrik@levkowetz.com, for testing this feature, but I haven't seen
+  any in a little while, so I don't know if this has broken.  Anyway, the iana review
+  emails should be piped into::
+
+    /www/ietf-datatracker/web/ietf/bin/iana-review-email
+
+
+- Tell IANA we're doing this for real now:
+
+  * Probably need another URL in sync/iana.py instead of the :8080 test one
+
+  * Need them to provide a real IANA sync password for auth with their
+    server (put that in settings_local.py)
+
+  * They need to poke the live server rather than my test server
+
+  * Tell Michelle Cotton that we are now processing emails so they don't
+     have to enter comments manually
+
+  * Also, they never explained what to do about the review states (IANA
+    OK/not OK). So it's not automatically updated (no source to update
+    from) and I didn't disable it. But they can set it manually for the
+    time being, e.g.::
+
+	http://statesync.ietf.beta.iola.dk/doc/draft-ietf-geopriv-policy-uri/edit/state/iana-review/
+
+  * Once a draft has a IANA review state, it turns into an edit link (if
+    you're in IANA or the Secretariat), so it should merely be a question
+    of going to the draft page, clicking the link and saving the new
+    state. Drafts automatically get a IANA Review Needed state in the
+    future.
+
+
+Version 4.34
+------------
+
+The migration step you do as a part of the release sequence is going to take
+quite some time -- probably minutes.  It will generate some output while it's
+working, too.  As long as it doesn't halt and say that something failed or
+gave an error, this is as expected, and when it terminates, you should be OK
+to continue.
+
+Version 4.21
+------------
+
+This release will you to run migrations before moving the link to the new
+version and doing the apache reload.  I know you have a routine for the steps
+needed to deploy a new release by now, but thought I'd mention it, anyway.
+
+If there is any problem at all doing the migrations, then you'll need to
+do a fake initial migration, as follows::
+
+  web $ PYTHONPATH=PWD ietf/manage.py migrate --fake meeting 0001
+
+and then to the regular migration again.
+
+Version 4.20
+------------
+
+Some one-time actions that need to be taken are as follows::
+
+    Assuming that the release has been checked out in /a/www/ietf-datatracker/4.20:
+
+      cd /a/www/ietf-datatracker/4.20
+
+      PYTHONPATH=$PWD ietf/manage.py migrate --fake doc 0001
+      PYTHONPATH=$PWD ietf/manage.py migrate --fake name 0001
+
+      PYTHONPATH=$PWD ietf/manage.py dbshell <<< "delete from django_content_type where app_label='doc' and model='groupballotpositiondocevent';"
+
+      PYTHONPATH=$PWD ietf/manage.py migrate doc || { \
+	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'CREATE TABLE `doc_groupballotpositiondocevent` (`block_comment` longtext NOT NULL, `comment` longtext NOT NULL, `ad_id` integer NOT NULL, `comment_time` datetime NULL, `block_comment_time` datetime NULL, `pos_id` varchar(8) NOT NULL DEFAULT "norecord", `docevent_ptr_id` integer NOT NULL PRIMARY KEY);'
+	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'DROP TABLE `doc_ballottype` CASCADE;'
+	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'DROP TABLE `doc_ballottype_positions` CASCADE;'
+	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'DROP TABLE `doc_ballotdocevent` CASCADE;'
+	PYTHONPATH=$PWD ietf/manage.py dbshell <<< 'ALTER TABLE `doc_ballotpositiondocevent` DROP COLUMN `ballot_id` CASCADE;'
+      }
+
+      PYTHONPATH=$PWD ietf/manage.py migrate doc
+      PYTHONPATH=$PWD ietf/manage.py migrate name
+      PYTHONPATH=$PWD python ietf/wgcharter/migrate.py | tee -a ~/charter-migration.log
+
+
