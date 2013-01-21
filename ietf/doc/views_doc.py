@@ -79,7 +79,7 @@ def render_document_top(request, doc, tab, name):
 
 @decorator_from_middleware(GZipMiddleware)
 def document_main(request, name, rev=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
     aliases = DocAlias.objects.filter(document=doc).values_list("name", flat=True)
