@@ -100,20 +100,26 @@ class DocumentInfo(models.Model):
             self.states.remove(*others)
         if state not in already_set:
             self.states.add(state)
+        self.state_cache = None # invalidate cache
 
     def unset_state(self, state_type):
         """Unset state of type so no state of that type is any longer set."""
         self.states.remove(*self.states.filter(type=state_type))
+        self.state_cache = None # invalidate cache
 
     def get_state(self, state_type=None):
-        """Get state of type, or default state for document type if not specified."""
+        """Get state of type, or default state for document type if
+        not specified. Uses a local cache to speed multiple state
+        reads up."""
         if state_type == None:
             state_type = self.type_id
 
-        try:
-            return self.states.get(type=state_type)
-        except State.DoesNotExist:
-            return None
+        if not hasattr(self, "state_cache") or self.state_cache == None:
+            self.state_cache = {}
+            for s in self.states.all().select_related():
+                self.state_cache[s.type_id] = s
+
+        return self.state_cache.get(state_type, None)
 
     def get_state_slug(self, state_type=None):
         """Get state of type, or default if not specified, returning

@@ -436,6 +436,7 @@ class RFCEditorUndoTestCase(django.test.TestCase):
         self.assertEquals(DeletedEvent.objects.count(), deleted_before + 1)
 
         # delete e1
+        draft.state_cache = None
         r = self.client.post(url, dict(event=e1.id))
         self.assertEquals(draft.get_state("draft-rfceditor"), None)
 
