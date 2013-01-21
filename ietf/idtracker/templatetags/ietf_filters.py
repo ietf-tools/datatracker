@@ -466,7 +466,7 @@ def format_history_text(text):
     if text.startswith("This was part of a ballot set with:"):
         full = urlize_ietf_docs(full)
 
-    full = mark_safe(sanitize_html(keep_spacing(linebreaksbr(urlize(full)))))
+    full = mark_safe(keep_spacing(linebreaksbr(urlize(sanitize_html(full)))))
     snippet = truncate_html_words(full, 25)
     if snippet != full:
         return mark_safe(u'<div class="snippet">%s<span class="showAll">[show all]</span></div><div style="display:none" class="full">%s</div>' % (snippet, full))
