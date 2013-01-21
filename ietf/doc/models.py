@@ -594,7 +594,13 @@ class BallotDocEvent(DocEvent):
     
                 if e.pos != prev:
                     latest.old_positions.append(e.pos)
-    
+
+        # get rid of trailling "No record" positions, some old ballots
+        # have plenty of these
+        for p in positions:
+            while p.old_positions and p.old_positions[-1].slug == "norecord":
+                p.old_positions.pop()
+
         # add any missing ADs through fake No Record events
         if self.doc.active_ballot() == self:
             norecord = BallotPositionName.objects.get(slug="norecord")
