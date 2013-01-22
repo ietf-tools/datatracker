@@ -1,11 +1,13 @@
 from django.conf import settings
 from django import forms
-from django.contrib.formtools.preview import FormPreview
+from django.contrib.formtools.preview import FormPreview, AUTO_ID
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
+from django.shortcuts import render_to_response
+from django.template.context import RequestContext
 
 from ietf.utils import unaccent
 from ietf.utils.mail import send_mail
@@ -78,6 +80,17 @@ class EditMembersFormPreview(FormPreview):
         self.year = year
 
         return super(EditMembersFormPreview, self).__call__(request, *args, **kwargs)
+
+    def preview_get(self, request):
+        "Displays the form"
+        f = self.form(auto_id=AUTO_ID)
+        return render_to_response(self.form_template,
+                                  {'form': f,
+                                  'stage_field': self.unused_name('stage'),
+                                  'state': self.state,
+                                  'year': self.year,
+                                  'selected': 'edit_members'},
+                                  context_instance=RequestContext(request))
 
     def parse_params(self, *args, **kwargs):
         members = self.group.role_set.filter(name__slug='member')

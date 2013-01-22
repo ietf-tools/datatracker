@@ -113,7 +113,10 @@ def nomcom_test_data():
                                                        parent=None)
     # users
     for user in USERS:
-        u, created = User.objects.get_or_create(username=user, password=user)
+        u, created = User.objects.get_or_create(username=user)
+        if created:
+            u.set_password(user)
+            u.save()
         person, created = Person.objects.get_or_create(
             name=user,
             ascii=user,

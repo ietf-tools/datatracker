@@ -146,7 +146,9 @@ def edit_publickey(request, year):
     return render_to_response('nomcom/edit_publickey.html',
                               {'form': form,
                                'group': nomcom.group,
-                               'message': message}, RequestContext(request))
+                               'message': message,
+                               'year': year,
+                               'selected': 'edit_publickey'}, RequestContext(request))
 
 
 def ajax_position_text(request, position_id):

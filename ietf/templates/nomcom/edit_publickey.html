@@ -1,9 +1,9 @@
-{% extends "base.html" %}
+{% extends "nomcom/nomcom_private_base.html" %}
 
-{% block title %}Edit {{ group.acronym }} public key{% endblock %}
+{% block subtitle %}- Edit public key{% endblock %}
 
-{% block content %}
-<h1>Edit {{ group.acronym }} public key</h1>
+{% block nomcom_content %}
+<h2>Edit public key</h2>
 
 {% if message %}
 <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>

@@ -1,9 +1,9 @@
-{% extends "base.html" %}
+{% extends "nomcom/nomcom_private_base.html" %}
 
-{% block title %}Edit {{ state.group.acronym }} members{% endblock %}
+{% block subtitle %} - Edit members{% endblock %}
 
-{% block content %}
-<h1>Edit {{ state.group.acronym }} members</h1>
+{% block nomcom_content %}
+<h2>Edit members</h2>
 
 {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
 
