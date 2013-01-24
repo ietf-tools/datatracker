@@ -150,8 +150,7 @@ class RelatedDocument(models.Model):
     def action(self):
         return self.relationship.name
     def inverse_action():
-        infinitive = self.relationship.name[:-1]
-        return u"%sd by" % infinitive
+        return self.relationship.revname
     def __unicode__(self):
         return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 

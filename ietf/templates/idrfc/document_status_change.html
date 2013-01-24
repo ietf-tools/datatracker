@@ -24,50 +24,59 @@
   <div>
     {% if snapshot %}Snapshot of{% endif %}
     {% if doc.get_state_slug not in approved_states %}Proposed{% endif %}
-    IESG Conflict Review for the {{conflictdoc.stream}} document: <a href="{% url doc_view name=conflictdoc.canonical_name %}">{{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}</a>
+    Status change : {{ doc.title }} </a>
   </div>
 
   <table id="metatable" width="100%">
+    {% regroup sorted_relations by relationship.name as relation_groups %}
+    {% for relation_group in relation_groups %}
     <tr>
-      <td><a href="/doc/help/state/conflict-review/">Conflict Review State</a>:</td>
+      <td>{{relation_group.grouper}}:</td>
+      <td>{% for rel in relation_group.list %}{{rel.target.document.canonical_name|upper|urlize_ietf_docs}}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td><a href="/doc/help/state/status-change/">Review State</a>:</td>
       <td>
         <div>
-        <a title="{{ doc.get_state.desc }}"{% if not snapshot and user|has_role:"Area Director,Secretariat" %} class="editlink" href="{% url conflict_review_change_state name=doc.name %}"{% endif %}>{{ doc.get_state.name }}</a>
+        <a title="{{ doc.get_state.desc }}"{% if not snapshot and user|has_role:"Area Director,Secretariat" %} class="editlink" href="{% url status_change_change_state name=doc.name %}"{% endif %}>{{ doc.get_state.name }}</a>
 
         {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
 
-          {% if request.user|has_role:"Secretariat" %}{% if doc.get_state_slug = 'appr-reqnopub-pend' or doc.get_state_slug = 'appr-noprob-pend' %}
-          - <a href="{% url conflict_review_approve name=doc.name %}">Approve conflict review</a>
+          {% if request.user|has_role:"Secretariat" %}{% if doc.get_state_slug = 'appr-pend' %}
+          - <a href="{% url status_change_approve name=doc.name %}">Approve RFC status changes</a>
           {% endif %}{% endif %}
 
         {% endif %}
         </div>
       </td>
     </tr>
-    {% if not snapshot %}
+
     <tr>
       <td>Telechat Date:</td>
       <td>
+        {% if not snapshot %}
           <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-                class="editlink" href="{% url conflict_review_telechat_date name=doc.name %}"
+                class="editlink" href="{% url status_change_telechat_date name=doc.name %}"
              {%endif%} >
           {% if not telechat %}Not on agenda of an IESG telechat{% else %}On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat{% if doc.returning_item %} (returning item){% endif %}{% endif %}
           </a>
+
         {% if ballot_summary %}
         <div class="ballot-summary">
           ({{ ballot_summary }})
         </div>
         {% endif %}
 
+        {% endif %}
       </td>
     </tr>
-    {% endif %}
 
     <tr>
        <td>Shepherding AD:</td>
        <td>
            <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-               class="editlink" href="{% url conflict_review_ad name=doc.name %}"
+               class="editlink" href="{% url status_change_ad name=doc.name %}"
               {% endif %}
            >
            {{doc.ad}}
@@ -79,7 +88,7 @@
        <td>Send notices to:</td>
        <td>
            <a {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-               class="editlink" href="{% url conflict_review_notices name=doc.name %}"
+               class="editlink" href="{% url status_change_notices name=doc.name %}"
               {% endif %}
            >
            {{doc.notify}}
@@ -91,6 +100,15 @@
     <tr><td colspan='2'><hr size='1' noshade /></td></tr>
 
     <tr><td>Last updated:</td><td> {{ doc.time|date:"Y-m-d" }}</td></tr>
+    {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
+    <tr><td colspan="2">
+       <span id="doc_request_resurrect_button" class="yui-button yui-link-button" style="margin-left:2px;">
+          <span class="first-child">
+            <a href="{% url status_change_relations name=doc.name %}">Edit Affected RFC List</a>
+          </span>
+       </span>
+    </td><tr/>
+    {% endif %}
 
     {% comment %}
     <tr><td colspan='2'><hr size='1' noshade /></td></tr>
@@ -100,10 +118,10 @@
 
 </div>
 
-<h3>Conflict Review for {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}
+<h3>RFC Status Change : {{ doc.title }}
 
 {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug != 'apprsent' %}
-<a class="edit" href="{% url conflict_review_submit name=doc.name %}">Change conflict review text</a>
+<a class="edit" href="{% url status_change_submit name=doc.name %}">Change status change text</a>
 {% endif %}
 </h3>
 

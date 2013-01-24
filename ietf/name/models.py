@@ -24,9 +24,12 @@ class RoleName(NameModel):
     """AD, Chair"""
 class StreamName(NameModel):
     """IETF, IAB, IRTF, ISE, Legacy"""
+
 class DocRelationshipName(NameModel):
     """Updates, Replaces, Obsoletes, Reviews, ... The relationship is
     always recorded in one direction."""
+    revname = models.CharField(max_length=255)
+    
 class DocTypeName(NameModel):
     """Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email,
     Review, Issue, Wiki"""

@@ -11,11 +11,11 @@ form.edit-info #id_notify {
 {% endblock %}
 
 {% block title %}
-Edit notification addresses for the conflict review of {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}
+Edit notification addresses for {{titletext}}
 {% endblock %}
 
 {% block content %}
-<h1>Edit notification addresses for the conflict review of {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}</h1>
+<h1>Edit notification addresses for {{titletext}}</h1>
 
 <form class="edit-info" action="" enctype="multipart/form-data" method="POST">
   <table>
@@ -32,7 +32,7 @@ Edit notification addresses for the conflict review of {{ conflictdoc.canonical_
     <tr>
       <td></td>
       <td class="actions">
-        <a href="{% url doc_view name=review.canonical_name %}">Back</a>
+        <a href="{% url doc_view name=doc.canonical_name %}">Back</a>
         <input type="submit" value="Submit"/>
       </td>
     </tr>

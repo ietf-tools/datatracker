@@ -4,12 +4,15 @@ from models import *
 class NameAdmin(admin.ModelAdmin):
     list_display = ["slug", "name", "desc", "used"]
     prepopulate_from = { "slug": ("name",) }
+
+class DocRelationshipNameAdmin(NameAdmin):
+    list_display = ["slug", "name", "revname", "desc", "used"]
     
 admin.site.register(GroupTypeName, NameAdmin)
 admin.site.register(GroupStateName, NameAdmin)
 admin.site.register(RoleName, NameAdmin)
 admin.site.register(StreamName, NameAdmin)
-admin.site.register(DocRelationshipName, NameAdmin)
+admin.site.register(DocRelationshipName, DocRelationshipNameAdmin)
 admin.site.register(DocTypeName, NameAdmin)
 admin.site.register(DocTagName, NameAdmin)
 admin.site.register(StdLevelName, NameAdmin)

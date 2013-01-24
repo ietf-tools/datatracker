@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load ietf_filters %}
+{% block title %}RFC Status Changes{% endblock %}
+{% block content %}
+<h1>RFC Status Changes</h1>
+
+{% if user|in_group:"Area_Director,Secretariat" %}
+<p><a href="{% url start_rfc_status_change %}">Start new RFC status change document</a></p>
+{% endif %}
+{% regroup docs by get_state as state_groups %}
+<table class="ietf-table ietf-doctable">
+<tr><th class="doc">Document</th><th class="title">Title</th></tr>
+{% for state in state_groups %}
+<tr class="header"><td colspan="2">{{state.grouper}}</td></tr>
+{% for doc in state.list %}
+<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+<td>{{ doc.displayname_with_link|safe }}</td>
+<td>{{ doc.title }}</td>
+</tr>
+{% endfor %}
+{% endfor %}
+{% endblock content %}
+
