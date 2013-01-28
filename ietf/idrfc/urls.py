@@ -42,7 +42,7 @@ urlpatterns = patterns('',
     (r'^active/$', views_search.active),
     (r'^in-last-call/$', views_search.in_last_call),
     url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'),
-    url(r'^start-rfc-status-change/$', views_status_change.start_rfc_status_change, name='start_rfc_status_change'),
+    url(r'^start-rfc-status-change/(?P<name>[A-Za-z0-9._+-]*)$', views_status_change.start_rfc_status_change, name='start_rfc_status_change'),
     url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad, name="doc_search_by_ad"),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/((?P<rev>[0-9-]+)/)?$', views_doc.document_main, name="doc_view"),

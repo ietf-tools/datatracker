@@ -6,6 +6,9 @@
 form.start-rfc-status-change-review #id_notify {
   width: 600px;
 }
+form.start-rfc-status-change-review #id_title {
+  width: 600px;
+}
 form.start-rfc-status-change-review #id_document_name {
   width: 510px;
 }
@@ -29,18 +32,6 @@ form.start-rfc-status-change-review .actions {
 
 <form class="start-rfc-status-change-review" action="" method="post">
   <table>
-    {% for field in form.visible_fields %}
-    <tr>
-      <th>{{ field.label_tag }}:</th>
-      <td>
-      {% if field.label == "Document name" %}status-change-{% endif %}
-      {{ field }}
-      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
-
-      {{ field.errors }}
-      </td>
-    </tr>
-    {% if field.label == "Document name" %}
     <tr>
     <th>Affects RFCs:</th>
     <td><table><tbody id="relations_table">
@@ -77,7 +68,17 @@ form.start-rfc-status-change-review .actions {
     {{ form.non_field_errors }}
     </td>
     </tr>
-    {% endif %}
+    {% for field in form.visible_fields %}
+    <tr>
+      <th>{{ field.label_tag }}:</th>
+      <td>
+      {% if field.label == "Document name" %}status-change-{% endif %}
+      {{ field }}
+      {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+
+      {{ field.errors }}
+      </td>
+    </tr>
     {% endfor %}
     <tr>
       <td colspan="2" class="actions">

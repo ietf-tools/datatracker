@@ -54,6 +54,7 @@ from ietf.doc.models import *
 from ietf.doc.utils import *
 from ietf.utils.history import find_history_active_at
 from ietf.ietfauth.decorators import has_role
+from ietf.doc.views_status_change import RELATION_SLUGS as status_change_relationships
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -236,7 +237,7 @@ def document_history(request, name):
     diff_revisions = []
     seen = set()
 
-    diffable = name.startswith("draft") or name.startswith("charter") or name.startswith("conflict-review")
+    diffable = name.startswith("draft") or name.startswith("charter") or name.startswith("conflict-review") or name.startswith("status-change")
 
     if diffable:
         for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents).select_related('doc').order_by("-time", "-id"):
@@ -250,6 +251,9 @@ def document_history(request, name):
                 elif name.startswith("conflict-review"):
                     h = find_history_active_at(e.doc, e.time)
                     url = settings.CONFLICT_REVIEW_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
+                elif name.startswith("status-change"):
+                    h = find_history_active_at(e.doc, e.time)
+                    url = settings.STATUS_CHANGE_TXT_URL + ("%s-%s.txt" % ((h or doc).canonical_name(), e.rev))
                 elif name.startswith("draft"):
                     # rfcdiff tool has special support for IDs
                     url = e.doc.name + "-" + e.rev
@@ -449,6 +453,14 @@ def document_main_rfc(request, rfc_number, tab):
     else:
         content1 = ""
         content2 = ""
+
+    info['status_changes'] = ', '.join([ rel.source.canonical_name() for rel in RelatedDocument.objects.filter(relationship__in=status_change_relationships,target__document=doc.underlying_document()) if rel.source.get_state_slug() in ('appr-sent','appr-pend')])
+    info['proposed_status_changes'] = ', '.join([ rel.source.canonical_name() for rel in RelatedDocument.objects.filter(relationship__in=status_change_relationships,target__document=doc.underlying_document()) if rel.source.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')])
+
+    print "DEBUGGING"
+    print doc.underlying_document()
+    print "status_changes",info['status_changes']
+    print "proposed_status_changes",info['proposed_status_changes']
 
     history = _get_history(doc, None)
             

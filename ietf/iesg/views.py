@@ -166,6 +166,14 @@ def get_doc_sectionREDESIGN(doc):
              s = "332"
         else:
              s = "331"
+    elif doc.type_id == 'statchg':
+       # TODO This is WRONG
+           s="211"
+       #protocol_action = False
+       #for relation in doc.relateddocument_set.filter(relationship__in="('tops','tois','tohist','toinf','tobcp,'toexp')"):
+       #    if relation.relationship.slug in ('tops','tois') or relation.target.document.std_level.slug in ('std','ds','ps'):
+       #        protocol_action = True
+       #if protocol_action:
 
     return s
 

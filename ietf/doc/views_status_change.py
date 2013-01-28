@@ -438,6 +438,7 @@ class StartStatusChangeForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
+        self.relations = self.initial.get('relations')
 
         # telechat choices
         dates = [d.date for d in TelechatDate.objects.active().order_by('date')]
@@ -445,14 +446,36 @@ class StartStatusChangeForm(forms.Form):
 
     def clean_document_name(self):
         name = self.cleaned_data['document_name']
+        errors=[]
+        if re.search("[^a-z0-9-]", name):
+            errors.append("The name of the document may only contain digits, lowercase letters and dashes")
+        if re.search("--", name):
+            errors.append("Please do not put more than one hyphen between any two words in the name")
+        if name.startswith('status-change'):
+            errors.append("status-change- will be added automatically as a prefix")
+        if name.startswith('-'):
+            errors.append("status-change- will be added automatically as a prefix, starting with a - will result in status-change-%s"%name)
+        if re.search("-[0-9]{2}$", name):
+            errors.append("This name looks like ends in a version number. -00 will be added automatically. Please adjust the end of the name.")
         if Document.objects.filter(name='status-change-%s'%name):
-            raise forms.ValidationError("status-change-%s already exists"%name)
+            errors.append("status-change-%s already exists"%name)
+        if name.endswith('CHANGETHIS'):
+            errors.append("Please change CHANGETHIS to reflect the intent of this status change")
+        if errors:
+            raise forms.ValidationError(errors)
         return name
+
+    def clean_title(self):
+       title = self.cleaned_data['title']
+       errors=[]
+       if title.endswith('CHANGETHIS'):
+            errors.append("Please change CHANGETHIS to reflect the intent of this status change")
+       if errors:
+            raise forms.ValidationError(errors)
+       return title
 
     def clean(self):
         return clean_helper(self,StartStatusChangeForm)
-
-#TODO - cleaned data, especially on document_name
 
 def rfc_status_changes(request):
     """Show the rfc status changes that are under consideration, and those that are completed."""
@@ -466,8 +489,13 @@ def rfc_status_changes(request):
                               context_instance = RequestContext(request))
 
 @role_required("Area Director","Secretariat")
-def start_rfc_status_change(request):
+def start_rfc_status_change(request,name):
     """Start the RFC status change review process, setting the initial shepherding AD, and possibly putting the review on a telechat."""
+
+    if name:
+       if not re.match("(?i)rfc[0-9]{4}",name):
+           raise Http404
+       seed_rfc = get_object_or_404(Document, type="draft", docalias__name=name)
 
     login = request.user.get_profile()
 
@@ -505,8 +533,13 @@ def start_rfc_status_change(request):
 
             return HttpResponseRedirect(status_change.get_absolute_url())
     else: 
-        init = { 
-               }
+        init = {}
+        if name:
+           init['title'] = "%s to CHANGETHIS" % seed_rfc.title
+           init['document_name'] = "%s-to-CHANGETHIS" % seed_rfc.canonical_name()
+           relations={}
+           relations[seed_rfc.canonical_name()]=None
+           init['relations'] = relations
         form = StartStatusChangeForm(initial=init)
 
     return render_to_response('doc/status_change/start.html',

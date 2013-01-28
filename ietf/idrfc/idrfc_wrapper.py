@@ -405,6 +405,11 @@ class RfcWrapper:
             result['ietf_process'] = self.ietf_process.dict()
         return json.dumps(result, indent=2)
 
+    def underlying_document(self):
+        """ Expose the Document object underneath the proxy """
+        from ietf.doc.models import Document
+        return Document.objects.get(docalias__name='rfc%04d'%self.rfc_number)
+
 # ---------------------------------------------------------------------------
 
 class IetfProcessData:
