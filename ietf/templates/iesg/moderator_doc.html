@@ -102,6 +102,16 @@ Sub State: </p>
   AD].</p>
 {% endif %}
 
+{% if title3|startswith:"2.3.1" or title3|startswith:"2.3.2" %}
+  <p>If APPROVED - The Secretariat will send the associated status change
+  Protocol Action Announcements.</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send the
+  associated status change Protocol Action Announcements that includes the
+  [RFC Editor Note, IESG Note, etc.] to be drafted by [Name that
+  AD].</p>
+{% endif %}
+
 {% if title3|startswith:"3.1.1" or title3|startswith:"3.1.2" %}
   <p>If APPROVED - The Secretariat will send a working group submission
   Document Action Announcement.</p>
@@ -121,6 +131,15 @@ Sub State: </p>
 {% endif %}
 
 {% if title3|startswith:"3.3.1" or title3|startswith:"3.3.2" %}
+  <p>If APPROVED - The Secretariat will send the associated status change
+  Document Action Announcements.</p>
+
+  <p>If APPROVED with caveats - The Secretariat will send the associated
+  status change Document Action announcements that includes the [RFC
+  Ed. Note, IESG, note, etc.] from [Name that AD].</p>
+{% endif %}
+
+{% if title3|startswith:"3.4.1" or title3|startswith:"3.4.2" %}
   <p>If APPROVED - The Secretariat will send a standard no problem
   message to the RFC Editor. [Name of AD] will you supply the text for
   the IESG Note?</p>
