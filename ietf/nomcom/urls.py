@@ -4,6 +4,7 @@ from ietf.nomcom.forms import EditChairForm, EditChairFormPreview, \
 
 urlpatterns = patterns('ietf.nomcom.views',
     url(r'^(?P<year>\d{4})/private/$', 'private_index', name='nomcom_private_index'),
+    url(r'^(?P<year>\d{4})/private/key/$', 'private_key', name='nomcom_private_key'),
     url(r'^(?P<year>\d{4})/private/nominate/$', 'private_nominate', name='nomcom_private_nominate'),
     url(r'^(?P<year>\d{4})/private/merge/$', 'private_merge', name='nomcom_private_merge'),
     url(r'^(?P<year>\d{4})/private/edit-members/$', EditMembersFormPreview(EditMembersForm), name='nomcom_edit_members'),

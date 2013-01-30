@@ -440,3 +440,10 @@ class PositionForm(BaseNomcomForm, forms.ModelForm):
     def save(self, *args, **kwargs):
         self.instance.nomcom = self.nomcom
         super(PositionForm, self).save(*args, **kwargs)
+
+
+class PrivateKeyForm(BaseNomcomForm, forms.Form):
+
+    key = forms.CharField(label='Private key', widget=forms.Textarea(), required=False)
+
+    fieldsets = [('Private key', ('key',))]

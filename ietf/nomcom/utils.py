@@ -1,8 +1,10 @@
-from django.shortcuts import get_object_or_404
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
 
-from ietf.person.models import Email
 from ietf.dbtemplate.models import DBTemplate
+from ietf.person.models import Email
+from ietf.utils.pipe import pipe
 
 MAIN_NOMCOM_TEMPLATE_PATH = '/nomcom/defaults/'
 QUESTIONNAIRE_TEMPLATE = 'position/questionnaire.txt'
@@ -85,3 +87,27 @@ def initialize_requirements_for_position(position):
             variables=template.variables,
             type_id=template.type_id,
             content=template.content)
+
+
+def retrieve_nomcom_private_key(request, year):
+    private_key = request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None)
+
+    if not private_key:
+        return private_key
+
+    command = "%s bf -d -in /dev/stdin -k \"%s\" -a"
+    code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
+                                       settings.SECRET_KEY), private_key)
+    return out
+
+
+def store_nomcom_private_key(request, year, private_key):
+    if not private_key:
+        request.session['NOMCOM_PRIVATE_KEY_%s' % year] = ''
+    else:
+        command = "%s bf -e -in /dev/stdin -k \"%s\" -a"
+        code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
+                                           settings.SECRET_KEY), private_key)
+        if error:
+            out = ''
+        request.session['NOMCOM_PRIVATE_KEY_%s' % year] = out

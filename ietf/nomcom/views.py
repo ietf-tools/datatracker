@@ -9,11 +9,13 @@ from django.utils import simplejson
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
-from ietf.nomcom.decorators import member_required
+from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, MergeForm,
-                               NomComTemplateForm, PositionForm)
+                               NomComTemplateForm, PositionForm, PrivateKeyForm)
 from ietf.nomcom.models import Position
-from ietf.nomcom.utils import get_nomcom_by_year, HOME_TEMPLATE
+from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
+                               retrieve_nomcom_private_key,
+                               store_nomcom_private_key)
 
 
 def index(request, year):
@@ -25,6 +27,28 @@ def index(request, year):
                                'year': year,
                                'selected': 'index',
                                'template': template}, RequestContext(request))
+
+
+@member_required(role='member')
+def private_key(request, year):
+    nomcom = get_nomcom_by_year(year)
+    private_key = retrieve_nomcom_private_key(request, year)
+
+    back_url = request.GET.get('back_to', reverse('nomcom_private_index', None, args=(year, )))
+    if request.method == 'POST':
+        form = PrivateKeyForm(data=request.POST)
+        if form.is_valid():
+            store_nomcom_private_key(request, year, form.cleaned_data.get('key', ''))
+            return HttpResponseRedirect(back_url)
+    else:
+        form = PrivateKeyForm(initial={'key': private_key})
+    return render_to_response('nomcom/private_key.html',
+                              {'nomcom': nomcom,
+                               'year': year,
+                               'back_url': back_url,
+                               'form': form,
+                               'private_key': private_key,
+                               'selected': 'private_key'}, RequestContext(request))
 
 
 @member_required(role='member')
