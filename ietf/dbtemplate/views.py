@@ -21,23 +21,26 @@ def template_list(request, acronym):
         }, RequestContext(request))
 
 
-def template_edit(request, acronym, template_id):
+def template_edit(request, acronym, template_id, base_template='dbtemplate/template_edit.html', formclass=DBTemplateForm, extra_context=None):
     group = get_object_or_404(Group, acronym=acronym)
     chairs = group.role_set.filter(name__slug='chair')
+    extra_context = extra_context or {}
 
     if not has_role(request.user, "Secretariat") and not chairs.filter(person__user=request.user).count():
         return HttpResponseForbidden("You are not authorized to access this view")
 
     template = get_object_or_404(DBTemplate, id=template_id, group=group)
     if request.method == 'POST':
-        form = DBTemplateForm(instance=template, data=request.POST)
+        form = formclass(instance=template, data=request.POST)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect('..')
     else:
-        form = DBTemplateForm(instance=template)
-    return render_to_response('dbtemplate/template_edit.html',
-        {'template': template,
-         'group': group,
-         'form': form,
-        }, RequestContext(request))
+        form = formclass(instance=template)
+
+    context = {'template': template,
+        'group': group,
+        'form': form,
+    }
+    context.update(extra_context)
+    return render_to_response(base_template, context, RequestContext(request))

@@ -9,6 +9,7 @@ from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 
+from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.utils import unaccent
 from ietf.utils.mail import send_mail
 from ietf.ietfauth.decorators import role_required
@@ -415,3 +416,27 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
     class Media:
         js = ("/js/jquery-1.5.1.min.js",
               "/js/nomcom.js", )
+
+
+class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
+
+    fieldsets = [('Template content', ('content', )),
+                ]
+
+
+class PositionForm(BaseNomcomForm, forms.ModelForm):
+
+    fieldsets = [('Position', ('name', 'description',
+                               'is_open', 'incumbent'))]
+
+    class Meta:
+        model = Position
+        fields = ('name', 'description', 'is_open', 'incumbent')
+
+    def __init__(self, *args, **kwargs):
+        self.nomcom = kwargs.pop('nomcom', None)
+        super(PositionForm, self).__init__(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        self.instance.nomcom = self.nomcom
+        super(PositionForm, self).save(*args, **kwargs)

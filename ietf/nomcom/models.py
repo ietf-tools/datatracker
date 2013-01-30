@@ -100,7 +100,7 @@ class NomineePosition(models.Model):
 class Position(models.Model):
     nomcom = models.ForeignKey('NomCom')
     name = models.CharField(verbose_name='Name', max_length=255)
-    description = models.TextField(verbose_name='Despcription')
+    description = models.TextField(verbose_name='Description')
     initial_text = models.TextField(verbose_name='Initial text for nominations',
                                     blank=True)
     requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True, editable=False)
@@ -126,6 +126,13 @@ class Position(models.Model):
             changed = True
         if changed:
             self.save()
+
+    def get_templates(self):
+        if hasattr(self, '_templates'):
+            return self._templates
+        from ietf.dbtemplate.models import DBTemplate
+        self._templates = DBTemplate.objects.filter(group=self.nomcom.group).filter(path__contains='/%s/position/' % self.id).order_by('title')
+        return self._templates
 
 
 class Feedback(models.Model):
