@@ -325,28 +325,28 @@ def _agenda_json(request, date=None):
                         if defer:
                             docinfo['defer-by'] = defer.by.name
                             docinfo['defer-at'] = str(defer.time)
-			if doc.type_id == "draft":
-                            docinfo['intended-std-level'] = str(doc.intended_std_level)
-                            if doc.rfc_number():
-                                docinfo['rfc-number'] = doc.rfc_number()
-                            else:
-                                docinfo['rev'] = doc.rev
+			if d.type_id == "draft":
+                            docinfo['rev'] = d.rev
+                            docinfo['intended-std-level'] = str(d.intended_std_level)
+                            if d.rfc_number():
+                                docinfo['rfc-number'] = d.rfc_number()
 
-                            iana_state = doc.get_state("draft-iana-review")
-                            if iana_state.slug in ("not-ok", "changed", "need-rev"):
-                                docinfo['iana_review_state'] = str(iana_state)
+                            iana_state = d.get_state("draft-iana-review")
+                            if iana_state and iana_state.slug in ("not-ok", "changed", "need-rev"):
+                                docinfo['iana-review-state'] = str(iana_state)
 
-                            if doc.get_state_slug("draft-iesg") == "lc":
-                                e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
+                            if d.get_state_slug("draft-iesg") == "lc":
+                                e = d.latest_event(LastCallDocEvent, type="sent_last_call")
                                 if e:
-                                    docinfo['lastcall_expires'] = e.expires
+                                    docinfo['lastcall-expires'] = e.expires.strftime("%Y-%m-%d")
 
                             docinfo['consensus'] = None
-                            e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+                            e = d.latest_event(ConsensusDocEvent, type="changed_consensus")
                             if e:
                                 docinfo['consensus'] = e.consensus
-                        elif doc.type_id == 'conflrev':
-                            td = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+                        elif d.type_id == 'conflrev':
+                            docinfo['rev'] = d.rev
+                            td = d.relateddocument_set.get(relationship__slug='conflrev').target.document
                             docinfo['target-docname'] = td.canonical_name()
                             docinfo['target-title'] = td.title
                             docinfo['target-rev'] = td.rev
@@ -370,9 +370,12 @@ def _agenda_json(request, date=None):
                 if len(wgs[section]) != 0:
                     for obj in wgs[section]:
                         wg = obj['obj']
-                        wginfo = {'wgname':wg.name,
-                                  'acronym':wg.acronym,
-                                  'ad':wg.ad.name}
+                        doc = obj['doc']
+                        wginfo = {'docname': doc.canonical_name(),
+                                  'rev': doc.rev,
+                                  'wgname': doc.group.name,
+                                  'acronym': doc.group.acronym,
+                                  'ad': doc.group.ad.name}
                         data['sections'][s]['wgs'] += [wginfo, ]
 
     mgmt = agenda_management_issues(date)
