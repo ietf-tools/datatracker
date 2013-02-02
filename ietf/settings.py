@@ -167,6 +167,7 @@ INSTALLED_APPS = (
     'ietf.wgcharter',
     'ietf.sync',
     'ietf.community',
+    'ietf.release',
 )
 
 INTERNAL_IPS = (
