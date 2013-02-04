@@ -3,7 +3,7 @@
     <title type="text">{{ title }}</title>
     <subtitle type="text">{{ subtitle }}</subtitle>
     <id>{{ id }}</id>
-    <updated>{{ updated|date:"Y-m-d\TH:i:s" }}Z</updated>
+    <updated>{{ updated|date:"Y-m-d\TH:i:sO" }}</updated>
     <link rel="alternate" type="text/html" hreflang="en" href="http://{{ request.get_host }}/"/>
     <link rel="self" type="application/atom+xml" href="http://{{ request.get_host }}{{ request.get_full_path }}"/>
 
@@ -15,16 +15,16 @@
 
         <id>{{ entry.id }}</id>
         
-        <updated>{{ entry.time|date:"Y-m-d\TH:i:s" }}Z</updated>
+        <updated>{{ entry.time|date:"Y-m-d\TH:i:sO" }}</updated>
         
-        <published>{{ entry.time|date:"Y-m-d\TH:i:s" }}</published>
+        <published>{{ entry.time|date:"Y-m-d\TH:i:sO" }}</published>
         
         <author>
             <name>{{ entry.by }}</name>
         </author>
-
-        <summary>{{ entry.desc|striptags }}</summary>
-
+{%autoescape off %}
+        <content type="html">{{ entry.desc|linebreaksbr|force_escape }}</content>
+{%endautoescape %}
     </entry>
     {% endfor %}
     
