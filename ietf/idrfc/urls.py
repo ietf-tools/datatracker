@@ -44,6 +44,7 @@ urlpatterns = patterns('',
     url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'),
     url(r'^start-rfc-status-change/(?P<name>[A-Za-z0-9._+-]*)$', views_status_change.start_rfc_status_change, name='start_rfc_status_change'),
     url(r'^ad/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad, name="doc_search_by_ad"),
+    url(r'^ad2/(?P<name>[A-Za-z0-9.-]+)/$', views_search.by_ad2, name="doc_search_by_ad2"),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/((?P<rev>[0-9-]+)/)?$', views_doc.document_main, name="doc_view"),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/history/$', views_doc.document_history, name="doc_history"),

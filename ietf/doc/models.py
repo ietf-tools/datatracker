@@ -305,7 +305,8 @@ class Document(DocumentInfo):
                      iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
              
             if self.get_state_slug() == "rfc":
-                return "<a href=\"%s\">RFC %d</a>" % (urlreverse('doc_view', args=['rfc%d' % self.rfc_number]), self.rfc_number)
+                #return "<a href=\"%s\">RFC %d</a>" % (urlreverse('doc_view', args=['rfc%d' % int(self.rfc_number())]), int(self.rfc_number()))
+                return "RFC %d (%s)" % (int(self.rfc_number()), self.std_level) 
             elif self.get_state_slug() == "repl":
                 rs = self.replaced_by()
                 if rs:
