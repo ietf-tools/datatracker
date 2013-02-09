@@ -126,6 +126,9 @@ class Rule(models.Model):
     value = models.CharField(
         max_length=255)
 
+    class Meta:
+        unique_together= ("community_list", "rule_type", "value")
+
     last_updated = models.DateTimeField(
         auto_now=True)
 
