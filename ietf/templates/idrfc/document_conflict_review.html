@@ -2,7 +2,7 @@
 
 {% load ietf_filters %}
 
-{% block title %}{{ doc.canonical_name }}-{{ doc.rev }}{% endblock %}
+{% block title %}{{ doc.name }}-{{ doc.rev }}{% endblock %}
 
 {% block pagehead %}
 <link rel="stylesheet" type="text/css" href="/css/doc.css"></link>
@@ -24,7 +24,7 @@
   <div>
     {% if snapshot %}Snapshot of{% endif %}
     {% if doc.get_state_slug not in approved_states %}Proposed{% endif %}
-    IESG Conflict Review for the {{conflictdoc.stream}} document: <a href="{% url doc_view name=conflictdoc.canonical_name %}">{{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}</a>
+    IESG Conflict Review for the {{conflictdoc.stream}} document: <a href="{% url doc_view name=conflictdoc.canonical_name %}">{{ conflictdoc.canonical_name }}{% if conflictdoc.get_state_slug != 'rfc' %}-{{ conflictdoc.rev }}{% endif %}</a>
   </div>
 
   <table id="metatable" width="100%">
@@ -100,7 +100,7 @@
 
 </div>
 
-<h3>Conflict Review for {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}
+<h3>Conflict Review for {{ conflictdoc.name }}-{{ conflictdoc.rev }}
 
 {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug != 'apprsent' %}
 <a class="edit" href="{% url conflict_review_submit name=doc.name %}">Change conflict review text</a>

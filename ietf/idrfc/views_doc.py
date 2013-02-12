@@ -204,6 +204,13 @@ def document_main(request, name, rev=None):
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval"):
             ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
+     
+        if isinstance(doc,Document):
+            sorted_relations=doc.relateddocument_set.all().order_by('relationship__name')
+        elif isinstance(doc,DocHistory):
+            sorted_relations=doc.relateddochistory_set.all().order_by('relationship__name')
+        else:
+            sorted_relations=None
 
         return render_to_response("idrfc/document_status_change.html",
                                   dict(doc=doc,
@@ -214,7 +221,7 @@ def document_main(request, name, rev=None):
                                        telechat=telechat,
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-pend','appr-sent'),
-                                       sorted_relations=doc.relateddocument_set.all().order_by('relationship__name'),
+                                       sorted_relations=sorted_relations,
                                        ),
                                   context_instance=RequestContext(request))
 
