@@ -13,7 +13,7 @@ from ietf.wgchairs.accounts import get_person_for_user
 # Globals
 # ---------------------------------------------
 
-ANNOUNCE_FROM_GROUPS = ['ietf','rsoc','iab',current_nomcom().acronym]
+#ANNOUNCE_FROM_GROUPS = ['ietf','rsoc','iab',current_nomcom().acronym]
 ANNOUNCE_TO_GROUPS= ['ietf']
 
 # this list isn't currently available as a Role query so it's hardcoded
