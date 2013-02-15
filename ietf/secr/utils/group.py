@@ -23,7 +23,7 @@ def get_charter_text(group):
     
     return text
     
-def get_my_groups(user):
+def get_my_groups(user,conclude=False):
     '''
     Takes a Django user object (from request)
     Returns a list of groups the user has access to.  Rules are as follows
@@ -33,9 +33,14 @@ def get_my_groups(user):
     chair of irtf has access to all irtf groups
     
     If user=None than all groups are returned.
+    concluded=True means include concluded groups.  Need this to upload materials for groups
+    after they've been concluded.  it happens.
     '''
     my_groups = set()
-    all_groups = Group.objects.filter(type__in=('wg','rg','ag','team'),state__in=('bof','proposed','active')).order_by('acronym')
+    states = ['bof','proposed','active']
+    if conclude: 
+        states.append('conclude')
+    all_groups = Group.objects.filter(type__in=('wg','rg','ag','team'),state__in=states).order_by('acronym')
     if user == None:
         return all_groups
     else:
@@ -60,16 +65,22 @@ def groups_by_session(user, meeting):
     Returns a tuple scheduled_groups, unscheduled groups.  sorted lists of those groups that 
     the user has access to, secretariat defaults to all groups
     If user=None than all groups are returned.
+    
+    For groups with a session, we must include "concluded" groups because we still want to know
+    who had a session at a particular meeting even if they are concluded after.  This is not true
+    for groups without a session because this function is often used to build select lists (ie.
+    Session Request Tool) and you don't want concluded groups appearing as options.
     '''
     groups_session = []
     groups_no_session = []
-    my_groups = get_my_groups(user)
+    my_groups = get_my_groups(user,conclude=True)
     sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched'))
     groups_with_sessions = [ s.group for s in sessions ]
     for group in my_groups:
-            if group in groups_with_sessions:
-                groups_session.append(group)
-            else:
+        if group in groups_with_sessions:
+            groups_session.append(group)
+        else:
+            if group.state_id != 'conclude':
                 groups_no_session.append(group)
             
     return groups_session, groups_no_session

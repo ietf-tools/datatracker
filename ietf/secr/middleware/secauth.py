@@ -40,7 +40,7 @@ class SecAuthMiddleware(object):
     def process_view(self, request, view_func, view_args, view_kwargs):
         # need to initialize user, it doesn't get set when running tests for example
 
-        if request.path.startswith('/secr/'):
+        if request.path.startswith('/secret/'):
             user = ''
             request.user_is_secretariat = False
             

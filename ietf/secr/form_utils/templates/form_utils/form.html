@@ -1,0 +1,13 @@
+{% block errors %}
+{% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+{% endblock %}
+
+{% block fields %}
+<fieldset class="fieldset_main">
+<ul>
+{% with form as fields %}
+{% include "form_utils/fields_as_lis.html" %}
+{% endwith %}
+</ul>
+</fieldset>
+{% endblock %}

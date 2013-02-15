@@ -1,0 +1,164 @@
+[
+  {
+    "pk": 486,
+    "model": "auth.user",
+    "fields": {
+      "username": "rcross",
+      "first_name": "",
+      "last_name": "",
+      "is_active": true,
+      "is_superuser": true,
+      "is_staff": true,
+      "last_login": "2012-01-25 08:56:54",
+      "groups": [],
+      "user_permissions": [],
+      "password": "nopass",
+      "email": "",
+      "date_joined": "2010-07-27 01:32:02"
+    }
+  },
+  {
+    "pk": 454,
+    "model": "auth.user",
+    "fields": {
+      "username": "fluffy@cisco.com",
+      "first_name": "",
+      "last_name": "",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false,
+      "last_login": "2012-01-23 17:27:39",
+      "groups": [],
+      "user_permissions": [],
+      "password": "",
+      "email": "",
+      "date_joined": "2010-03-10 16:04:51"
+    }
+  },
+  {
+    "pk": 1128,
+    "model": "auth.user",
+    "fields": {
+      "username": "cabo@tzi.org",
+      "first_name": "",
+      "last_name": "",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false,
+      "last_login": "2012-01-10 05:07:13",
+      "groups": [],
+      "user_permissions": [],
+      "password": "",
+      "email": "",
+      "date_joined": "2011-12-20 03:37:01"
+    }
+  },
+  {
+    "pk": 1016,
+    "model": "auth.user",
+    "fields": {
+      "username": "br@brianrosen.net",
+      "first_name": "",
+      "last_name": "",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false,
+      "last_login": "2011-11-16 17:55:41",
+      "groups": [],
+      "user_permissions": [],
+      "password": "",
+      "email": "",
+      "date_joined": "2011-11-16 17:55:41"
+    }
+  },
+  {
+    "pk": 700,
+    "model": "auth.user",
+    "fields": {
+      "username": "gabor.bajko@nokia.com",
+      "first_name": "",
+      "last_name": "",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false,
+      "last_login": "2011-09-09 10:07:39",
+      "groups": [],
+      "user_permissions": [],
+      "password": "",
+      "email": "",
+      "date_joined": "2011-09-09 10:07:39"
+    }
+  },
+  {
+    "pk": 1395,
+    "model": "auth.user",
+    "fields": {
+      "username": "wdec@cisco.com",
+      "first_name": "",
+      "last_name": "",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false,
+      "last_login": "2012-01-24 13:00:19",
+      "groups": [],
+      "user_permissions": [],
+      "password": "",
+      "email": "",
+      "date_joined": "2012-01-24 13:00:19"
+    }
+  },
+  {
+    "pk": 483,
+    "model": "auth.user",
+    "fields": {
+      "username": "matthew.bocci@alcatel.co.uk",
+      "first_name": "",
+      "last_name": "",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false,
+      "last_login": "2012-01-13 09:12:04",
+      "groups": [],
+      "user_permissions": [],
+      "password": "",
+      "email": "",
+      "date_joined": "2010-07-19 07:16:42"
+    }
+  },
+  {
+    "pk": 986,
+    "model": "auth.user",
+    "fields": {
+      "username": "bob.hinden@nokia.com",
+      "first_name": "",
+      "last_name": "",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false,
+      "last_login": "2011-11-14 03:19:35",
+      "groups": [],
+      "user_permissions": [],
+      "password": "",
+      "email": "",
+      "date_joined": "2011-11-14 03:08:01"
+    }
+  },
+  {
+    "pk": 1066,
+    "model": "auth.user",
+    "fields": {
+      "username": "brian@innovationslab.net",
+      "first_name": "",
+      "last_name": "",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false,
+      "last_login": "2011-11-28 11:00:16",
+      "groups": [],
+      "user_permissions": [],
+      "password": "",
+      "email": "",
+      "date_joined": "2011-11-28 11:00:16"
+    }
+  }
+]

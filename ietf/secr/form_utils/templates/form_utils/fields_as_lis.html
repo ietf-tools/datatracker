@@ -1,0 +1,11 @@
+{% for field in fields %}
+{% if field.is_hidden %}
+{{ field }}
+{% else %}
+<li{{ field.row_attrs }}>
+  {{ field.errors }}
+  {{ field.label_tag }}
+  {{ field }}
+</li>
+{% endif %}
+{% endfor %}
