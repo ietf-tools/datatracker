@@ -1,0 +1,67 @@
+{% extends "proceedings/proceedings_template.html" %}
+
+{% block content %}
+
+{% include "includes/proceeding_title.html" %}
+
+<h2>IRTF Mission</h2>
+
+	  <p><em>To promote research of importance to the evolution of the future Internet by
+	  creating focused, long-term and small Research Groups working on topics related to
+	  Internet protocols, applications, architecture and technology.</em></p>
+<p><img src="http://www.irtf.org/images/div.gif" alt="[Dividing Line Image]" WIDTH="465" HEIGHT="7"> </p>
+<H2>IRTF Research Groups</H2>
+<p>The Internet Research Task Force is composed of a number
+of small <a href="http://www.irtf.org/groups">Research Groups</a>. Research Groups are usually focussed and long term, though short lived "task force" like Research Groups are possible.<p>  
+<hr />
+ </p>
+	  <h2>IRTF Overview</h2>
+
+	  <p>
+	  The <a href="http://www.irtf.org/groups">Research Groups</a> work on topics related to
+	  Internet protocols, applications, architecture and technology. Research Groups are
+	  expected to have the stable long term (with respect to the lifetime of the Research Group) membership needed to promote the development of
+	  research collaboration and teamwork in exploring research issues. Participation is by
+	  individual contributors, rather than by representatives of organizations. </p>
+
+	  <p>The IRTF is managed by the IRTF Chair in consultation with the Internet Research
+	  Steering Group (IRSG). The IRSG membership includes the IRTF Chair, the chairs of the
+	  various Research Group and possibly other individuals ("members at large") from
+	  the research community. </p>
+
+	  <p>The IRTF Chair is appointed by the <a href="http://www.iab.org/">Internet
+	  Architecture Board (IAB)</a>, the Research Group chairs are appointed as part of the
+	  formation of Research Groups and the IRSG members at large are chosen by the IRTF Chair in
+	  consultation with the rest of the IRSG and on approval of the IAB. In addition to managing
+	  the Research Groups, the IRSG may from time to time hold topical workshops focusing on
+	  research areas of importance to the evolution of the Internet, or more general workshops
+	  to, for example, discuss research priorities from an Internet perspective. </p>
+
+	  <p>The IRTF Research Groups guidelines and procedures are described more fully in 
+	  <a href="ftp://ftp.isi.edu/in-notes/rfc2014.txt">RFC 2014 (BCP 8)</a>.</p>
+<hr />
+	  <h2>Mail Lists</h2>
+	  <p>Each IRTF Research Group maintains one or more open mailing lists.
+	    Information on these lists is available on the individual research
+	    group's pages.</p>
+
+	  <p>The <a
+	    href="https://www1.ietf.org/mailman/listinfo/irtf-announce">IRTF
+	    Announce</a> list receive notices of IRTF Research Group creation
+	    and termination, document publication, invitations for feedback and
+	    participation, and other IRTF activities.</p>
+
+<hr />
+	  <h2>Sponsors</h2>
+	  <p>The IRTF gratefully acknowledges support from the following organizations:<br>
+	  <ul>
+	  <li><a href="http://www.ietf.org/">The Internet Engineering Task Force (IETF)</a>
+	  <li><a href="http://www.isoc.org/">The Internet Society (ISOC)</a>
+	  </UL>
+<hr />
+	  <h2>IRTF Chair</h2>
+	    <p>{{ irtf_chair.person }} currently serves as IRTF Chair; he can
+	    be reached at <a
+	  href="mailto:irtf-chair@irtf.org"><em>irtf-chair@irtf.org</em></a>.</p>
+
+{% endblock %}

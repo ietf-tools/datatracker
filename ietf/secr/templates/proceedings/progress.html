@@ -1,0 +1,51 @@
+{% extends "proceedings/proceedings_template.html" %}
+{% load ams_filters %}
+
+{% block content %}
+
+{% if final %}
+{% include "includes/proceeding_title.html" %}
+{% endif %}
+
+<h2>IETF Progress Report</h2>
+
+<h4>{{ sdate|date:"d-F-y" }} to {{ edate|date:"d-F-y" }}</h4>
+
+&nbsp;&nbsp;&nbsp;{{ action_events.count }} IESG Protocol and Document Actions this period<br />
+&nbsp;&nbsp;&nbsp;{{ lc_events.count }} IESG Last Calls issued to the IETF this period<br />
+{# &nbsp;&nbsp;&nbsp;{{ new_docs.count }} new or revised Internet-Drafts this period<br /> #}
+<br />
+&nbsp;&nbsp;&nbsp;{{ new|stringformat:"3s" }}    New I-Ds   ({{ updated }} of which were updated, some ({{ updated_more }}) more than once)<br />
+&nbsp;&nbsp;&nbsp;{{ total_updated|stringformat:"3s" }}    I-Ds were updated   (Some more than once)<br />
+<br />
+&nbsp;&nbsp;&nbsp;In the final 4 weeks before meeting<br />
+&nbsp;&nbsp;&nbsp;{{ ff_new_count|stringformat:"3s" }}    New I-Ds were received - {{ ff_new_percent }} of total newbies since last meeting<br />
+&nbsp;&nbsp;&nbsp;{{ ff_update_count|stringformat:"3s" }}    I-Ds were updated - {{ ff_update_percent }} of total updated since last meeting<br />
+<br />
+<h4>{{ new_groups.count }} New Working Group(s) formed this period</h4>
+{% for group in new_groups %}
+&nbsp;&nbsp;&nbsp;{{ group.name }} ({{ group.acronym }})<br />
+{% endfor %}
+
+<h4>{{ concluded_groups.count }} Working Group(s) concluded this period</h4>
+{% for group in concluded_groups %}
+&nbsp;&nbsp;&nbsp;{{ group.name }} ({{ group.acronym }})<br />
+{% endfor %}
+
+<h4>{{ rfcs.count }} RFCs published this period</h4>
+{{ counts.std }} Standards Track; {{ counts.bcp }} BCP; {{ counts.exp }} Experimental; {{ counts.inf }} Informational<br />
+<br />
+
+<table cellpadding="3" cellspacing="2">
+  {% for rfc in rfcs %}
+    <tr>
+      <td><a href="{{ rfc.ftp_url }}">{{ rfc.doc.canonical_name|upper }}</a></td>
+      <td>{{ rfc.doc.intended_std_level.name|abbr_status }}</td>
+      <td>({{ rfc.doc.group.acronym }})</td>
+      <td>{{ rfc.time|date:"F Y" }}</td>
+      <td>{{ rfc.doc.title }}</td>
+    </tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

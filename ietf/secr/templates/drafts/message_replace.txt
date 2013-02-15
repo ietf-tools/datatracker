@@ -1,0 +1,4 @@
+As you requested, {{ doc }} has been marked as replaced by 
+{{ replaced_by }} in the IETF Internet-Drafts database.
+
+IETF Secretariat.

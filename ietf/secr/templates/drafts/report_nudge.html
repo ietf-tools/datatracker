@@ -1,0 +1,26 @@
+{% extends "base_site.html" %}
+{% load ams_filters %}
+
+{% block title %}Drafts{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Drafts</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>Nudge Report</h2>
+    <table>
+      {% for doc in docs %}
+      <tr>
+        <td><a href="{{ doc.get_absolute_url }}">{{ doc.name }}</a></td>
+        <td>{{ doc|get_published_date|date:"Y-m-d" }}</td>
+        <td></td>
+        <td>{% if doc.ad_name %}{{ doc.ad_name }}{% else %}&nbsp;{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+</div> <!-- module -->
+
+{% endblock %}

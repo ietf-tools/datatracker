@@ -1,0 +1,56 @@
+{% extends "meetings/base_rooms_times.html" %}
+
+{% block subsection %}
+
+<div class="module">
+    <h2>Times</h2>
+
+    {% if times %}
+    <table class="full-width">
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>Time</th>
+          <th>Name</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in times %}
+          <tr class="{% cycle row1,row2 %}">
+            <td>{{ item.time|date:"D" }}</td>
+            <td>{{ item.time|date:"H:i" }} - {{ item.end_time|date:"H:i" }}</td>
+            <td>{{ item.name }}</td>
+            <td><a href="{% url meetings_times_delete meeting_id=meeting.number time=item.time|date:"Y:m:d:H:i" %}">Delete</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <h3>No timeslots exist for this meeting.  First add the rooms and then the app will create timeslots based on the schedule from the last meeting.</h3>
+    {% endif %}
+    <br /><hr />
+    
+    <form action="" method="post">
+        {{ form.non_field_errors }}
+        <table id="timeslot-form" class="full-width">
+          <tr>
+            <td>Day<br>{{ form.day.errors }}{{ form.day }}</td>
+            <td>Time<br>{{ form.time.errors }}{{ form.time }}</td>
+            <td>Duration<br>{{ form.duration.errors }}{{ form.duration }}</td>
+            <td>Name<br>{{ form.name.errors }}{{ form.name }}</td>
+            <td><input type="submit" name="submit" value="Add" /></td>
+          </tr>
+        </table>    
+      </form>
+    
+    <div class="button-group">
+      <ul>
+        <li><button onclick="window.location='../'">Back</button></li>
+      </ul>
+    </div> <!-- button-group -->
+      
+      </form>
+</div> <!-- module -->
+
+{% endblock %}

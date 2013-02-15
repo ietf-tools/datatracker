@@ -1,0 +1,15 @@
+{% extends "proceedings/proceedings_template.html" %}
+
+{% block content %}
+
+{% include "includes/proceeding_title.html" %}
+
+<h2>5.2 Research Groups</h2>
+
+<ul>
+  {% for group in groups %}
+    <li><a href="{{ group.proceedings_url }}">{{ group.name }} ({{ group.acronym }})</a></li>
+  {% endfor %}
+</ul>
+
+{% endblock %}

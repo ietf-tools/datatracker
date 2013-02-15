@@ -1,0 +1,47 @@
+{% extends "proceedings/proceedings_template.html" %}
+
+{% block content %}
+
+<p class="ptitle">IETF {{ meeting.number }} Proceedings</p>
+<h2>{{ meeting.city }}, {{ meeting.country }}<br />{{ meeting.date }}</h2>
+<h3>Table of Contents</h3>
+<p><a href="index.html#intro">Introduction</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#wgreports">Area, Working Goup &amp; BoF Reports</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#plenary">Plenaries</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#training">Training</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#irtf">Internet Research Task Force</a></p>
+
+<hr />
+<h3><a name="intro" id="intro"></a>1. Introduction </h3>
+<ul>
+  <li><a href="acknowledgement.html">1.1. Acknowledgements</a></li>
+  <li><a href="overview.html">1.2. IETF Overview</a></li>
+  <li><a href="progress-report.html">1.3. Progress Report</a></li>
+  <li><a href="agenda.html">1.4. Agenda</a></li>
+  <li><a href="attendee.html">1.5. Attendees</a></li>
+</ul>
+<hr />
+<h3><a name="wgreports" id="wgreports"></a>2. Area, Working Group and BoF Reports </h3>
+<ul>
+  {% for area in areas %}
+    <li><a href="{{ area.acronym }}.html">2.{{ forloop.counter }} {{ area.name }}</a></li>
+  {% endfor %}
+</ul>
+<hr />
+<h3><a name="plenary" id="plenary"></a>3. Plenaries</h3>
+<ul>
+  <li><a href ="administrative-plenary.html">3.1.  Administrative Plenary</a></li>
+  <li><a href="technical-plenary.html">3.2.  Technical Plenary</a></li>
+</ul>
+<hr />
+<h3><a name="training" id="training">4. Training</h3>
+<ul>
+  {% for other in others %}
+    <li><a href="train-{{ forloop.counter }}.html">4.{{ forloop.counter }} {{ other.name }}</a></li>
+  {% endfor %}
+</ul>
+<hr />
+<h3><a name="irtf" id="irtf">5. Internet Research Task Force </h3>
+<ul>
+  <li><a href="irtf.html">5.1. IRTF introduction</a></li>
+  <li><a href="rg_irtf.html">5.2. Research Groups</a></li>
+</ul>
+<hr />
+
+{% endblock %}

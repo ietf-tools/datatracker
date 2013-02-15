@@ -1,0 +1,23 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Drafts</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="module group-container">
+    <h2>Drafts - Error Message</h2>
+      An ERROR has occured:
+      <h3>{{ error }}</h3>
+      <div class="button-group">
+	<ul>
+	  <li><button onClick="window.location='../../'">Continue</button></li>
+	</ul>
+      </div> <!-- button-group -->
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

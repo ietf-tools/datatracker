@@ -1,0 +1,77 @@
+{% extends "telechat/base_telechat.html" %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; {{ date }}
+{% endblock %}
+
+{% block subsection %}
+<div id="telechat-content">
+{% if document %}
+    {% if not nav_start %}<a href="./previous/"><< Previous</a>{% endif %}
+    {% if not nav_end %}<span class="right-nav"><a href="./next/">Next >></a></span>{% endif %}
+    <br />
+    <h3>
+      {% for line in header %}
+        {{ line }}<br />
+      {% endfor %}
+    </h3>
+    <br />
+    <h3>{{ document.name }}-{{ document.rev }} ({{ document.intended_std_level }})</h3>
+    {% if conflictdoc %}References: <a href="{{ conflictdoc.get_absolute_url }}">{{ conflictdoc }}</a><br />{% endif %}
+    <a href="#writeup">Ballot Writeup</a><br />
+    Token: {{ document.ad.name }}<br />
+    Number of Open Positions: {{ open_positions }}<br />
+    <br />
+    <div>
+    <form action="" method="post">
+    {{ formset.management_form }}
+    <table id="telechat-positions-table">
+    <tr><th>Area Director</th><th>Yes</th><th>No Objections</th><th>Discuss</th><th>Abstain</th><th>Recuse</th><th>No Position</th></tr>
+    {% for form in formset.forms %}
+    <tr{% if form.initial.position == 'norecord' or form.initial.position == None %} class="green-row"{% endif %}{% ifequal form.initial.position 'discuss' %} class="red-row"{% endifequal %}><td>{{ form.initial.name }}{{ form.name }}{{ form.id }}</td>
+    {% with form.position as field %}
+    {% for choice in field.field.choices %}
+    <td><input type="radio" {% ifequal form.initial.position choice.0 %}checked="checked" {% endifequal %}id="id_{{ field.html_name }}_{{ forloop.counter0 }}" value="{{ choice.0 }}" name="{{ field.html_name }}" /></td>
+    {% endfor %}
+    {% endwith %}
+    </tr>
+    {% endfor %}
+    </tr>
+    </table>
+    <div class="telechat-button">
+      <ul><li><button type="submit" name="submit" value="update_ballot">Update Ballot</button></li></ul>
+    </div>
+    </form>
+    </div>
+    
+    <hr /><br />
+    
+    <form action="" method="post">
+      <table>
+      {{ state_form.as_table }}
+      </table>
+      <div class="telechat-button">
+        <ul><li><button type="submit" name="submit" value="update_state">Update State</button></li></ul>
+      </div>
+    </form>
+    
+    <hr /><br />
+    
+    {% if document.type_id == "charter" %}
+    {% include "telechat/group.html" %}  
+    <br /><hr /><br />
+    {% endif %}
+       
+    <a name="writeup"><h2>Ballot Writeup</h2></a>
+    <pre>
+    {{ writeup }}
+    </pre>
+    
+
+{% else %}
+    <h3>No Documents on the Agenda</h3>
+{% endif %}
+
+</div>
+
+{% endblock %}

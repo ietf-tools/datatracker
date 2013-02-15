@@ -1,0 +1,33 @@
+    <form id="dummy" action="" method="post">
+    {% if header.2 == "4.1.1 Proposed for IETF Review" %}
+      <b>Does anyone have an objection to the creation of this working group being sent for EXTERNAL REVIEW?</b><br><br>
+      <input type="radio" name="wg_action_status" value="1"> External Review APPROVED; "The Secretariat will send a Working Group Review announcement with a copy to new-work and place it back on the agenda for the next telechat."<br><br>
+      <input type="radio" name="wg_action_status" value="2"> External Review NOT APPROVED;
+      <blockquote>
+      <input type="radio" name="wg_action_status_sub" value="1"> The Secretariat will wait for instructions from <select name="note_draft_by"></select><br>
+      <input type="radio" name="wg_action_status_sub" value="2"> The IESG decides the document needs more thime in INTERNAL REVIEW.  The Secreatriat will put it back on the agenda for the next teleconference in the same category.<br>
+      <input type="radio" name="wg_action_status_sub" value="3"> The IESG has made changes since the charter was seen in INTERNAL REVIEW, and decides to send it back to INTERNAL REVIEW the charter again.
+      </blockquote>
+    {% endif %}
+    
+    {% if header.2 == "4.1.2 Proposed for Approval" %}
+      <b>Does anyone have an objection to the creation of this working group?</b><br><br>
+      <input type="radio" name="wg_action_status" value="1"> No, charter for the new working group is APPROVED, "The Secretariat will send a Working Group Action announcement."<br><br>
+      <input type="radio" name="wg_action_status" value="2"> Yes, the charter is NOT APPROVED; The charter needs more work, or the IESG decides to shelve formation of the working group.  "The Secretariat will await further instruction from <select name="note_draft_by"></select> regarding the creation of the new working group."
+      <br><br>
+    {% endif %}
+    
+    {% if header.2 == "4.2.1 Under Evaluation for IETF Review" %}
+      <b>Does anyone have an objection with just making the changed to the charter?</b><br><br>
+      <input type="radio" name="wg_action_status" value="1"> No Objection; "The Secretariat will send a Working Group Action: RECHARTER announcement."<br>
+      <input type="radio" name="wg_action_status" value="2"> Yes; Charter must go for EXTERNAL REVIEW; "The Secretariat will send a Working Group Review: RECHARTER announcement, with a copy to new-work. The Secretariat will place it back on the agenda for the next telechat."<br>
+      <input type="radio" name="wg_action_status" value="3"> Yes; the IESG decides not to go forward with rechartering the working group; "The Secretariat will await further instruction regarding the charter of {{ group.acronym }}<br>
+    {% endif %}
+    
+    {% if header.2 == "4.2.2 Proposed for Approval" %}
+      <b>Does anyone have an objection to the rechartering of this working group?</b><br><br>
+      <input type="radio" name="wg_action_status" value="1"> No, recharter for the working group is APPROVED, "The Secretariat will send a Working Group Action: RECHARTER announcement."<br><br>
+      <input type="radio" name="wg_action_status" value="2"> Yes, the charter is NOT APPROVED; The charter needs more work, or the IESG decides to shelve formation of the working group.  "The Secretariat will await further instruction from <select name="note_draft_by"></select> regarding the rechartering of this working group."<br><br>
+    {% endif %}
+    
+    </form>    

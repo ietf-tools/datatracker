@@ -1,0 +1,138 @@
+{% extends "proceedings/proceedings_template.html" %}
+
+{% block content %}
+
+{% include "includes/proceeding_title.html" %}
+
+<h2>IETF Overview</h2>
+
+<p>The Internet Engineering Task Force (IETF) provides a forum for working groups to coordinate
+technical development of new protocols. Its most important function is the development and selection
+of standards within the Internet protocol suite.</p><p>The IETF began in January 1986 as a forum for
+technical coordination by contractors for the then US Defense Advanced Research Projects Agency
+(DARPA), working on the ARPANET, US Defense Data Network (DDN), and the Internet core gateway
+system. Since that time, the IETF has grown into a large open international community of network
+designers, operators, vendors, and researchers concerned with the evolution of the Internet
+architecture and the smooth operation of the Internet.</p>
+
+<p>The IETF mission includes:</p>
+
+<ul>
+  <li>Identifying and proposing solutions to pressing operational and technical problems in the Internet </li>
+  <li>Specifying the development or usage of protocols and the near-term architecture, to solve technical problems for the Internet </li>
+  <li>Facilitating technology transfer from the Internet Research Task Force (IRTF) to the wider Internet community;and</li>
+  <li>Providing a forum for the exchange of relevant information within the Internet community between vendors, users, researchers, agency contractors, and network managers.</li>
+</ul>
+
+<p>Technical activities in the IETF are addressed within working groups. All working groups are
+organized roughly by function into seven areas. Each area is led by one or more Area Directors who
+have primary responsibility for that one area of IETF activity. Together with the Chair of the
+IETF/IESG, these Area Directors comprise the Internet Engineering Steering Group (IESG).</p>
+
+<p>
+<table cellspacing="1" cellpadding="1" border="1">
+  <tbody>
+    <tr>
+      <td valign="Top" width="191">Name</td>
+      <td valign="Top" width="204">Area</td>
+      <td valign="Top" width="216">Email</td>
+    </tr>
+    <tr>
+      <td valign="Top" width="191">{{ ietf_chair.person }}</td>
+      <td valign="Top" width="204">IETF Chair</td>
+      <td valign="Top" width="216">chair@ietf.org</td>
+    </tr>
+    {% for ad in ads %}
+    <tr>
+      <td valign="Top" width="191">{{ ad.person }}</td>
+      <td valign="Top" width="204">{{ ad.group }}</td>
+      <td valign="Top" width="216">{{ ad.email }}</td>
+      </tr>
+    {% endfor %}
+</table>
+
+<p>Liaison and ex-officio members include: </p>
+<p>
+<table border="1">
+  <tbody>
+    <tr>
+      <td valign="Top" width="216">Olaf Kolkman</td>
+      <td valign="Top" width="216">IAB Chair</td>
+      <td valign="Top" width="216">iab-chair@iab.org</td>
+    </tr>
+    <tr>
+      <td valign="Top" width="216">Danny McPherson</td>
+      <td valign="Top" width="216">IAB Liaison</td>
+      <td valign="Top" width="216">danny@tcb.net</td>
+    </tr>
+    <tr>
+      <td valign="Top" width="216">Michelle Cotton</td>
+      <td valign="Top" width="216">IANA Liaison</td>
+      <td valign="Top" width="216">iana@iana.org</td>
+    </tr>
+    <tr>
+      <td valign="Top" width="216">Sandy Ginoza</td>
+      <td valign="Top" width="216">RFC Editor Liaison</td>
+      <td valign="Top" width="216">rfc-editor@rfc-editor.org</td>
+    </tr>
+    <tr>
+      <td valign="Top" width="216">Alexa Morris</td>
+      <td valign="Top" width="216">IETF Secretariat Liaison</td>
+      <td valign="Top" width="216">exec-director@ietf.org</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The IETF has a Secretariat, which is managed by Association Management Solutions, LLC (AMS) in
+Fremont, California.The IETF Executive Director is Alexa Morris
+<a href="mailto:exec-director@ietf.org">(exec-director@ietf.org)</a>.</p>
+<br>Other personnel that provide full-time support to the Secretariat include:<br><br>
+
+<table border="1">
+<tbody>
+  <tr>
+    <td valign="Top" width="264">Senior Meeting Planner</td>
+    <td valign="Top" width="180">Marcia Beaulieu</td>
+  </tr>
+  <tr>
+    <td valign="Top" width="264">Project Manager</td>
+    <td valign="Top" width="180">Wanda Lo </td>
+  </tr>
+  <tr>
+    <td valign="Top" width="264">Meeting Registrar</td>
+    <td valign="Top" width="180">Stephanie McCammon</td>
+  </tr>
+  <tr>
+    <td valign="Top" width="264">Project Manager</td>
+    <td valign="Top" width="180">Cindy Morgan</td>
+  </tr>
+  <tr>
+    <td valign="Top" width="264">Project Manager</td>
+    <td valign="Top" width="180">Amy Vezza</td>
+  </tr>
+</tbody>
+</table>
+
+<p>To contact the Secretariat, please refer to the addresses and URLs provided on the
+<a href="http://www.ietf.org/secretariat.html">IETF Secretariat</a> Web page. </p>
+
+<p>The IETF also has a general Administrative Support Activity headed by the IETF Administrative
+Director, Ray Pelletier <a href="mailto:iad@ietf.org">iad@ietf.org</a></p>
+
+<p>The working groups conduct their business during the tri-annual IETF meetings, at interim working
+group meetings, and via electronic mail on mailing lists established for each group. The tri-annual
+IETF meetings are 4.5 days in duration, and consist of working group sessions, training sessions,
+and plenary sessions.  The plenary sessions include technical presentations, status reports, and an
+open IESG meeting.</p>
+
+<p>Following each meeting, the IETF Secretariat publishes meeting proceedings,
+which contain reports from all of the groups that met, as well as presentation slides, where
+available.  The proceedings also include a summary of the standards-related activities that took
+place since the previous IETF meeting.</p>
+
+<p>Meeting minutes, working group charters (including
+information about the working group mailing lists), and general information on current IETF
+activities are available on the IETF Web site at
+<a href="http://www.ietf.org">http://www.ietf.org</a>.</p>
+
+{% endblock %}
