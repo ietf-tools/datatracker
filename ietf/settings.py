@@ -111,6 +111,7 @@ MIDDLEWARE_CLASSES = (
     'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.transaction.TransactionMiddleware',
     'ietf.middleware.UnicodeNfkcNormalization',
+    'ietf.secr.middleware.secauth.SecAuthMiddleware'
 )
 
 ROOT_URLCONF = 'ietf.urls'
@@ -203,7 +204,7 @@ DATETIME_FORMAT = "Y-m-d H:i"
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
-CHARTER_PATH = '/a/www/ietf-ftp/charters/'
+CHARTER_PATH = '/a/www/ietf-ftp/charter/'
 CHARTER_TXT_URL = 'http://www.ietf.org/charter/'
 CONFLICT_REVIEW_PATH = '/a/www/ietf-ftp/conflict-reviews'
 CONFLICT_REVIEW_TXT_URL = 'http://www.ietf.org/cr/'
@@ -311,6 +312,11 @@ TZDATA_ICS_PATH = '/www/ietf-datatracker/tz/ics/'
 CHANGELOG_PATH = '/www/ietf-datatracker/web/changelog'
 
 # Secretariat Tool
+BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
+BLUE_SHEET_URL = 'https://datatracker.ietf.org/documents/blue_sheet.rtf'
+INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
+MAX_UPLOAD_SIZE = 40960000
+PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 # this is a tuple of regular expressions.  if the incoming URL matches one of
 # these, than non secretariat access is allowed.
 SEC_AUTH_UNRESTRICTED_URLS = (
