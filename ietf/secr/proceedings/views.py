@@ -544,8 +544,9 @@ def process_pdfs(request, meeting_num):
     '''
     warn_count = 0
     count = 0
-    ppt = Document.objects.filter(session__meeting=meeting_num,type='slides',external_url__endswith='.ppt').exclude(states__slug='deleted')
-    pptx = Document.objects.filter(session__meeting=meeting_num,type='slides',external_url__endswith='.pptx').exclude(states__slug='deleted')
+    meeting = get_object_or_404(Meeting, number=meeting_num)
+    ppt = Document.objects.filter(session__meeting=meeting,type='slides',external_url__endswith='.ppt').exclude(states__slug='deleted')
+    pptx = Document.objects.filter(session__meeting=meeting,type='slides',external_url__endswith='.pptx').exclude(states__slug='deleted')
     for doc in itertools.chain(ppt,pptx):
         base,ext = os.path.splitext(doc.external_url)
         pdf_file = base + '.pdf'
@@ -693,8 +694,8 @@ def select(request, meeting_num):
         
     # count PowerPoint files waiting to be converted
     if has_role(user,'Secretariat'):
-        ppt = Document.objects.filter(session__meeting=meeting_num,type='slides',external_url__endswith='.ppt').exclude(states__slug='deleted')
-        pptx = Document.objects.filter(session__meeting=meeting_num,type='slides',external_url__endswith='.pptx').exclude(states__slug='deleted')
+        ppt = Document.objects.filter(session__meeting=meeting,type='slides',external_url__endswith='.ppt').exclude(states__slug='deleted')
+        pptx = Document.objects.filter(session__meeting=meeting,type='slides',external_url__endswith='.pptx').exclude(states__slug='deleted')
         ppt_count = ppt.count() + pptx.count()
     else:
         ppt_count = 0
