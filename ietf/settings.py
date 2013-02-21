@@ -174,6 +174,7 @@ INSTALLED_APPS = (
     'ietf.secr.announcement',
     'ietf.secr.areas',
     'ietf.secr.drafts',
+    'ietf.secr.form_utils',
     'ietf.secr.groups',
     'ietf.secr.ipradmin',
     'ietf.secr.meetings',
@@ -338,7 +339,7 @@ SEC_AUTH_UNRESTRICTED_URLS = (
     #(r'^/proceedings/'),
     (r'^/secr/sreq/'),
 )
-SECR_STATIC_URL = '/secr/static/'
+SECR_STATIC_URL = '/secr-static/'
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
