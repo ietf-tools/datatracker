@@ -161,7 +161,7 @@ INSTALLED_APPS = (
     'ietf.liaisons',
     'ietf.mailinglists',
     'ietf.meeting',
-    'ietf.proceedings',
+    #'ietf.proceedings',
     'ietf.redirects',
     'ietf.idrfc',
     'ietf.wginfo',
@@ -178,7 +178,7 @@ INSTALLED_APPS = (
     'ietf.secr.groups',
     'ietf.secr.ipradmin',
     'ietf.secr.meetings',
-    #'ietf.secr.proceedings',
+    'ietf.secr.proceedings',
     'ietf.secr.roles',
     'ietf.secr.rolodex',
     'ietf.secr.telechat',
@@ -326,19 +326,19 @@ TZDATA_ICS_PATH = '/www/ietf-datatracker/tz/ics/'
 CHANGELOG_PATH = '/www/ietf-datatracker/web/changelog'
 
 # Secretariat Tool
-BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
-BLUE_SHEET_URL = 'https://datatracker.ietf.org/documents/blue_sheet.rtf'
-INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
-MAX_UPLOAD_SIZE = 40960000
-PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 # this is a tuple of regular expressions.  if the incoming URL matches one of
 # these, than non secretariat access is allowed.
-SEC_AUTH_UNRESTRICTED_URLS = (
+SECR_AUTH_UNRESTRICTED_URLS = (
     #(r'^/$'),
-    #(r'^/announcement/'),
-    #(r'^/proceedings/'),
+    (r'^/secr/announcement/'),
+    (r'^/secr/proceedings/'),
     (r'^/secr/sreq/'),
 )
+SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
+SECR_BLUE_SHEET_URL = 'https://datatracker.ietf.org/documents/blue_sheet.rtf'
+SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
+SECR_MAX_UPLOAD_SIZE = 40960000
+SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 SECR_STATIC_URL = '/secr-static/'
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific

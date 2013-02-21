@@ -53,8 +53,8 @@ class ReplaceSlideForm(forms.ModelForm):
         ext = os.path.splitext(file.name)[1].lower()
         if ext not in VALID_SLIDE_EXTENSIONS:
             raise forms.ValidationError('Only these file types supported for presentation slides: %s' % ','.join(VALID_SLIDE_EXTENSIONS))
-        if file._size > settings.MAX_UPLOAD_SIZE:
-            raise forms.ValidationError('Please keep filesize under %s. Current filesize %s' % (filesizeformat(settings.MAX_UPLOAD_SIZE), filesizeformat(file._size)))
+        if file._size > settings.SECR_MAX_UPLOAD_SIZE:
+            raise forms.ValidationError('Please keep filesize under %s. Current filesize %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(file._size)))
         return file
 
 class UnifiedUploadForm(forms.Form):
@@ -66,8 +66,8 @@ class UnifiedUploadForm(forms.Form):
     
     def clean_file(self):
         file = self.cleaned_data['file']
-        if file._size > settings.MAX_UPLOAD_SIZE:
-            raise forms.ValidationError('Please keep filesize under %s. Current filesize %s' % (filesizeformat(settings.MAX_UPLOAD_SIZE), filesizeformat(file._size)))
+        if file._size > settings.SECR_MAX_UPLOAD_SIZE:
+            raise forms.ValidationError('Please keep filesize under %s. Current filesize %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(file._size)))
         return file
         
     def clean(self):

@@ -219,7 +219,7 @@ def ajax_generate_proceedings(request, meeting_num):
     proceedings_url = get_proceedings_url(meeting)
     
     # the acknowledgement page can be edited manually so only produce if it doesn't already exist
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'acknowledgement.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'acknowledgement.html')
     if not os.path.exists(path):
         gen_acknowledgement(context)
     gen_overview(context)
@@ -235,7 +235,7 @@ def ajax_generate_proceedings(request, meeting_num):
     gen_group_pages(context)
     
     # get the time proceedings were generated
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'index.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'index.html')
     last_run = datetime.datetime.fromtimestamp(os.path.getmtime(path))
         
     return render_to_response('includes/proceedings_functions.html',{
@@ -550,7 +550,7 @@ def process_pdfs(request, meeting_num):
     for doc in itertools.chain(ppt,pptx):
         base,ext = os.path.splitext(doc.external_url)
         pdf_file = base + '.pdf'
-        path = os.path.join(settings.PROCEEDINGS_DIR,meeting_num,'slides',pdf_file)
+        path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting_num,'slides',pdf_file)
         if os.path.exists(path):
             doc.external_url = pdf_file
             doc.save()
@@ -653,7 +653,7 @@ def select(request, meeting_num):
     proceedings_url = get_proceedings_url(meeting)
     
     # get the time proceedings were generated
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'index.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'index.html')
     if os.path.exists(path):
         last_run = datetime.datetime.fromtimestamp(os.path.getmtime(path))
     else:

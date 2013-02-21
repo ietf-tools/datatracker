@@ -9,7 +9,7 @@ import re
 class SecAuthMiddleware(object):
     """
     Middleware component that performs custom auth check for every
-    request except those excluded by SEC_AUTH_UNRESTRICTED_URLS.
+    request except those excluded by SECR_AUTH_UNRESTRICTED_URLS.
 
     Since authentication is performed externally at the apache level
     REMOTE_USER should contain the name of the authenticated
@@ -17,12 +17,12 @@ class SecAuthMiddleware(object):
     Otherwise return a 401 error page.
 
     To use, add the class to MIDDLEWARE_CLASSES and define
-    SEC_AUTH_UNRESTRCITED_URLS in your settings.py.
+    SECR_AUTH_UNRESTRICTED_URLS in your settings.py.
 
     The following example allows access to anything under "/interim/"
     to non-secretariat users:
 
-    SEC_AUTH_UNRESTRCITED_URLS = (
+    SECR_AUTH_UNRESTRICTED_URLS = (
         (r'^/interim/'),
 
     Also sets custom request attributes:
@@ -35,7 +35,7 @@ class SecAuthMiddleware(object):
  
     def __init__(self):
         self.unrestricted = [re.compile(pattern) for pattern in
-            settings.SEC_AUTH_UNRESTRICTED_URLS]
+            settings.SECR_AUTH_UNRESTRICTED_URLS]
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         # need to initialize user, it doesn't get set when running tests for example

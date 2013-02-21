@@ -259,7 +259,7 @@ def blue_sheet(request, meeting_id):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
-    url = settings.BLUE_SHEET_URL
+    url = settings.SECR_BLUE_SHEET_URL
     
     if request.method == 'POST':
         form = UploadBlueSheetForm(request.POST,request.FILES)

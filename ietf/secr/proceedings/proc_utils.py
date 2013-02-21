@@ -161,7 +161,7 @@ def create_interim_directory():
     page = 'proceedings.html'
     meetings = InterimMeeting.objects.order_by('-date')
     response = render_to_response('proceedings/interim_directory.html',{'meetings': meetings})
-    path = os.path.join(settings.INTERIM_LISTING_DIR, page)
+    path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
     f = open(path,'w')
     f.write(response.content)
     f.close()
@@ -171,7 +171,7 @@ def create_interim_directory():
     qs = InterimMeeting.objects.all()
     meetings = sorted(qs, key=lambda a: a.group().acronym)
     response = render_to_response('proceedings/interim_directory.html',{'meetings': meetings})
-    path = os.path.join(settings.INTERIM_LISTING_DIR, page)
+    path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
     f = open(path,'w')
     f.write(response.content)
     f.close()
@@ -357,7 +357,7 @@ def gen_areas(context):
             'index': counter}
         )
         
-        path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'%s.html' % area.acronym)
+        path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'%s.html' % area.acronym)
         write_html(path,html.content)
 
 def gen_acknowledgement(context):
@@ -367,7 +367,7 @@ def gen_acknowledgement(context):
         'meeting': meeting}
     )
     
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'acknowledgement.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'acknowledgement.html')
     write_html(path,html.content)
     
 def gen_agenda(context):
@@ -385,13 +385,13 @@ def gen_agenda(context):
         'timeslots': sort2}
     )
     
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'agenda.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'agenda.html')
     write_html(path,html.content)
     
     # get the text agenda from datatracker
     url = 'https://datatracker.ietf.org/meeting/%s/agenda.txt' % meeting.number
     text = urlopen(url).read()
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'agenda.txt')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'agenda.txt')
     write_html(path,text)
     
 def gen_attendees(context):
@@ -404,7 +404,7 @@ def gen_attendees(context):
         'attendees': attendees}
     )
     
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'attendee.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'attendee.html')
     write_html(path,html.content)
     
 def gen_group_pages(context):
@@ -415,7 +415,7 @@ def gen_group_pages(context):
         
 def gen_index(context):
     index = render_to_response('proceedings/index.html',context)
-    path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'index.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,context['meeting'].number,'index.html')
     write_html(path,index.content)
 
 def gen_irtf(context):
@@ -425,7 +425,7 @@ def gen_irtf(context):
     html = render_to_response('proceedings/irtf.html',{
         'irtf_chair':irtf_chair}
     )
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'irtf.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'irtf.html')
     write_html(path,html.content)
     
 def gen_overview(context):
@@ -441,7 +441,7 @@ def gen_overview(context):
         'ads': sorted_ads}
     )
     
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'overview.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'overview.html')
     write_html(path,html.content)
     
 def gen_plenaries(context):
@@ -462,7 +462,7 @@ def gen_plenaries(context):
             'slides': admin_slides,
             'minutes': admin_minutes}
         )
-        path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'administrative-plenary.html')
+        path = os.path.join(settings.SECR_PROCEEDINGS_DIR,context['meeting'].number,'administrative-plenary.html')
         write_html(path,admin.content)
     except Session.DoesNotExist:
         pass
@@ -478,7 +478,7 @@ def gen_plenaries(context):
             'slides': tech_slides,
             'minutes': tech_minutes}
         )
-        path = os.path.join(settings.PROCEEDINGS_DIR,context['meeting'].number,'technical-plenary.html')
+        path = os.path.join(settings.SECR_PROCEEDINGS_DIR,context['meeting'].number,'technical-plenary.html')
         write_html(path,tech.content)
     except Session.DoesNotExist:
         pass
@@ -504,7 +504,7 @@ def gen_progress(context, final=True):
     
     html = render_to_response('proceedings/progress.html',data)
     
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'progress-report.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'progress-report.html')
     write_html(path,html.content)
     
 def gen_research(context):
@@ -522,7 +522,7 @@ def gen_research(context):
         'groups': groups}
     )
     
-    path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'rg_irtf.html')
+    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'rg_irtf.html')
     write_html(path,html.content)
         
 def gen_training(context):
@@ -538,6 +538,6 @@ def gen_training(context):
             'slides': slides,
             'minutes': minutes}
         )
-        path = os.path.join(settings.PROCEEDINGS_DIR,meeting.number,'train-%s.html' % counter )
+        path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'train-%s.html' % counter )
         write_html(path,html.content)
     
