@@ -84,7 +84,7 @@ function init_proceedings_upload() {
          var element_id = ui.item.attr("id");
          var slide_name = $("tr#"+element_id+" td.hidden").text();
          var order = $.inArray(element_id,data);
-         $.post('/proceedings/ajax/order-slide/',{'slide_name':slide_name,'order':order});
+         $.post('/secr/proceedings/ajax/order-slide/',{'slide_name':slide_name,'order':order});
          // restripe the table
         restripe('#slides.sortable');
      }
@@ -158,7 +158,7 @@ $(document).ready(function() {
   // Setup autocomplete for adding names 
   if ($('input.name-autocomplete').length) {
       $('input.name-autocomplete').autocomplete({
-          source: "/areas/getpeople/",
+          source: "/secr/areas/getpeople/",
           minLength: 3,
           select: function(event, ui) {
               //match number inside paren and then strip paren
@@ -166,7 +166,7 @@ $(document).ready(function() {
               val = id[0].replace(/[\(\)]/g, "");
               //alert(id,val);
               //alert(id.match(/\d+/));
-              $.getJSON('/areas/getemails/',{"id":val},function(data) {
+              $.getJSON('/secr/areas/getemails/',{"id":val},function(data) {
                   $('#id_email option').remove();
                   $.each(data,function(i,item) {
                       $('#id_email').append('<option value="'+item.id+'">'+item.value+'</option>');
@@ -183,7 +183,7 @@ $(document).ready(function() {
 
   // auto populate Area Director List when primary area selected (add form)
   $('#id_primary_area').change(function(){
-      $.getJSON('/groups/get_ads/',{"area":$(this).val()},function(data) {
+      $.getJSON('/secr/groups/get_ads/',{"area":$(this).val()},function(data) {
           $('#id_primary_area_director option').remove();
           $.each(data,function(i,item) {
               $('#id_primary_area_director').append('<option value="'+item.id+'">'+item.value+'</option>');
@@ -193,7 +193,7 @@ $(document).ready(function() {
 
   // auto populate Area Director List when area selected (edit form)
   $('#id_ietfwg-0-primary_area').change(function(){
-      $.getJSON('/groups/get_ads/',{"area":$(this).val()},function(data) {
+      $.getJSON('/secr/groups/get_ads/',{"area":$(this).val()},function(data) {
           $('#id_ietfwg-0-area_director option').remove();
           $.each(data,function(i,item) {
               $('#id_ietfwg-0-area_director').append('<option value="'+item.id+'">'+item.value+'</option>');
