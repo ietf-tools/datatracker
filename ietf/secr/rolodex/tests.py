@@ -1,23 +1,28 @@
-"""
-This file demonstrates two different styles of tests (one doctest and one
-unittest). These will both pass when you run "manage.py test".
-
-Replace these with more appropriate tests for your application.
-"""
-
+from django.core.urlresolvers import reverse
 from django.test import TestCase
 
-class SimpleTest(TestCase):
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.failUnlessEqual(1 + 1, 2)
+from ietf.person.models import Person
+from ietf.utils.test_data import make_test_data
 
-__test__ = {"doctest": """
-Another way to test that 1 + 1 is equal to 2.
+from pyquery import PyQuery
 
->>> 1 + 1 == 2
-True
-"""}
+SEC_USER='secretary'
+
+class MainTestCase(TestCase):
+    fixtures = ['names']
+                
+    def test_main(self):
+        "Main Test"
+        url = reverse('rolodex')
+        response = self.client.get(url,REMOTE_USER=SEC_USER)
+        self.assertEquals(response.status_code, 200)
+
+    def test_view(self):
+        "View Test"
+        draft = make_test_data()
+        person = Person.objects.all()[0]
+        url = reverse('rolodex_view', kwargs={'id':person.id})
+        response = self.client.get(url,REMOTE_USER=SEC_USER)
+        self.assertEquals(response.status_code, 200)
+
 

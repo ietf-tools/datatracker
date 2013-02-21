@@ -169,6 +169,18 @@ INSTALLED_APPS = (
     'ietf.wgchairs',
     'ietf.wgcharter',
     'ietf.community',
+    # secretariat apps
+    'ietf.secr.announcement',
+    'ietf.secr.areas',
+    'ietf.secr.drafts',
+    'ietf.secr.groups',
+    #'ietf.secr.ipr',
+    'ietf.secr.meetings',
+    #'ietf.secr.proceedings',
+    'ietf.secr.roles',
+    'ietf.secr.rolodex',
+    'ietf.secr.telechat',
+    'ietf.secr.sreq',
 )
 
 INTERNAL_IPS = (

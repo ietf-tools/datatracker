@@ -1,14 +1,27 @@
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from ietf.secr.drafts.models import *
 
-class DraftsTest(TestCase):
+from ietf.doc.models import Document
+from ietf.utils.test_data import make_test_data
 
-    # ------- Test View -------- #
-    def test_search(self):
-        url = reverse('drafts_search')
-        response = self.client.get(url)
+from pyquery import PyQuery
+
+SEC_USER='secretary'
+
+class MainTestCase(TestCase):
+    fixtures = ['names']
+                
+    def test_main(self):
+        "Main Test"
+        draft = make_test_data()
+        url = reverse('drafts')
+        response = self.client.get(url,REMOTE_USER=SEC_USER)
         self.assertEquals(response.status_code, 200)
 
-    # test draft revision wrong basename
-    # test draft revision wrong rev number
+    def test_view(self):
+        "View Test"
+        draft = make_test_data()
+        drafts = Document.objects.filter(type='draft')
+        url = reverse('drafts_view', kwargs={'id':drafts[0].name})
+        response = self.client.get(url,REMOTE_USER=SEC_USER)
+        self.assertEquals(response.status_code, 200)
