@@ -171,10 +171,10 @@ INSTALLED_APPS = (
     'ietf.wgcharter',
     'ietf.community',
     # secretariat apps
+    'form_utils',
     'ietf.secr.announcement',
     'ietf.secr.areas',
     'ietf.secr.drafts',
-    'ietf.secr.form_utils',
     'ietf.secr.groups',
     'ietf.secr.ipradmin',
     'ietf.secr.meetings',

@@ -1,5 +1,5 @@
 from copy import deepcopy
-from ietf.secr.form_utils.forms import BetterModelForm
+from form_utils.forms import BetterModelForm
 from django import forms
 from django.utils.safestring import mark_safe
 from django.forms.formsets import formset_factory
