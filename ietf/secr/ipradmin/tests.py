@@ -14,7 +14,7 @@ class MainTestCase(TestCase):
     def test_main(self):
         "Main Test"
         draft = make_test_data()
-        url = reverse('ipr')
+        url = reverse('ipradmin')
         response = self.client.get(url,REMOTE_USER=SEC_USER)
         self.assertEquals(response.status_code, 200)
 """

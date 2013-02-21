@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 from django.forms.formsets import formset_factory
 from django.utils import simplejson
 
-from ietf.ipr.models import IprDetail, IprContact, LICENSE_CHOICES, IprRfc, IprDraft, IprUpdate, SELECT_CHOICES, IprDocAlias
+from ietf.ipradmin.models import IprDetail, IprContact, LICENSE_CHOICES, IprRfc, IprDraft, IprUpdate, SELECT_CHOICES, IprDocAlias
 
 from ietf.doc.models import DocAlias
 from ietf.secr.utils.document import get_rfc_num

@@ -10,18 +10,18 @@ from django.core.urlresolvers import reverse
 from django.utils.safestring import mark_safe
 
 from ietf.secr.lib import template, jsonapi
-from ietf.secr.ipr.managers import IprDetailManager
-from ietf.secr.ipr.forms import IprDetailForm, IPRContactFormset
+from ietf.secr.ipradmin.managers import IprDetailManager
+from ietf.secr.ipradmin.forms import IprDetailForm, IPRContactFormset
 from ietf.secr.utils.document import get_rfc_num, is_draft
 import ietf.settings as settings
 
-from ietf.ipr.models import IprDetail, IprUpdate, IprRfc, IprDraft, IprContact, LICENSE_CHOICES, STDONLY_CHOICES, IprNotification
+from ietf.ipradmin.models import IprDetail, IprUpdate, IprRfc, IprDraft, IprContact, LICENSE_CHOICES, STDONLY_CHOICES, IprNotification
 from ietf.utils.mail import send_mail_text
 
 from ietf.doc.models import DocAlias
 from ietf.group.models import Role
 
-@template('ipr/list.html')
+@template('ipradmin/list.html')
 def admin_list(request):
     queue_ipr = IprDetailManager.queue_ipr()
     generic_ipr = IprDetailManager.generic_ipr()
@@ -67,7 +67,7 @@ def admin_post(request, ipr_id, from_page, command):
         ipr_dtl.save()
 
     #assert False, (ipr_dtl.ipr_id, ipr_dtl.is_pending)
-    redirect_url = '/ipr/admin/notify/%s?from=%s' % (ipr_id, from_page)
+    redirect_url = '/ipradmin/admin/notify/%s?from=%s' % (ipr_id, from_page)
 
     return HttpResponseRedirect(redirect_url)
 # end admin_post
@@ -111,7 +111,7 @@ def send_notifications(post_data, ipr_id, update=False):
     return None 
 
 
-@template('ipr/notify.html')
+@template('ipradmin/notify.html')
 def admin_notify(request, ipr_id):
     if request.POST and 'command' in request.POST and 'do_send_notifications' == request.POST['command']:
         send_result = send_notifications(request.POST, ipr_id) 
@@ -346,14 +346,14 @@ def get_wg_email_list(group):
     
     return ', '.join(result)
 
-@template('ipr/delete.html')
+@template('ipradmin/delete.html')
 def admin_delete(request, ipr_id):
     ipr_dtl = IprDetail.objects.get(ipr_id=ipr_id)
     ipr_dtl.status = 2
     ipr_dtl.save()
     return HttpResponseRedirect(reverse('ipr_admin_list'))
 
-@template('ipr/notify.html')
+@template('ipradmin/notify.html')
 def old_submitter_notify(request, ipr_id):
     if request.POST and 'command' in request.POST \
        and 'do_send_update_notification' == request.POST['command']:
@@ -418,7 +418,7 @@ def old_submitter_notify(request, ipr_id):
     )
 # end old_submitter_notify
 
-@template('ipr/detail.html')
+@template('ipradmin/detail.html')
 def admin_detail(request, ipr_id):
     if request.POST and request.POST['command']:
         command = request.POST['command']
@@ -678,7 +678,7 @@ def admin_detail(request, ipr_id):
     )
 # end admin_detail
 
-@template('ipr/create.html')
+@template('ipradmin/create.html')
 def admin_create(request):
     if request.method == 'POST':
         ipr_detail_form = IprDetailForm(request.POST, request.FILES, formtype='create')
@@ -703,7 +703,7 @@ def admin_create(request):
                 ipr_contact_formset = ipr_contact_formset)
 # end admin_create
 
-@template('ipr/update.html')
+@template('ipradmin/update.html')
 def admin_update(request, ipr_id):
     if request.method == 'POST':
         ipr_detail_form = IprDetailForm(
@@ -720,7 +720,7 @@ def admin_update(request, ipr_id):
             ipr_detail = ipr_detail_form.save(commit=False)
             if 'update_ipr' in request.POST:
                 if ipr_detail.third_party:
-                    return HttpResponseRedirect('/ipr/admin/notify/%s?from=update' % ipr_id)
+                    return HttpResponseRedirect('/ipradmin/admin/notify/%s?from=update' % ipr_id)
                 else:
                     redirect_url = ''
             else: # remove

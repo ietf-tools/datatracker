@@ -55,15 +55,15 @@ $(function() {
         });
     }
 
-    setup_ajax($("#id_rfc_num"), $("#rfc_num_list"), $("#id_rfc_num_search"), "{% url ipr_ajax_rfc_num %}");
-    setup_ajax($("#id_id_filename"), $("#id_filename_list"), $("#id_id_filename_search"), "{% url ipr_ajax_internet_draft %}");
+    setup_ajax($("#id_rfc_num"), $("#rfc_num_list"), $("#id_rfc_num_search"), "{% url ipradmin_ajax_rfc_num %}");
+    setup_ajax($("#id_id_filename"), $("#id_filename_list"), $("#id_id_filename_search"), "{% url ipradmin_ajax_internet_draft %}");
     
 });
 </script>
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }}
-  &raquo; <a href="{% url ipr_admin_list %}">IPR Admin</a>
+  &raquo; <a href="{% url ipradmin_admin_list %}">IPR Admin</a>
   &raquo; Create
   {% endblock %}
 
