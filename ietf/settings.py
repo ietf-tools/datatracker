@@ -130,6 +130,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'ietf.context_processors.server_mode',
     'ietf.context_processors.revision_info',
     'ietf.secr.context_processors.secr_revision_info',
+    'ietf.secr.context_processors.static',
     'ietf.context_processors.rfcdiff_prefix', 
 )
 

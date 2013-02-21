@@ -2,16 +2,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>{% block title %}{% endblock %}</title>
-<link rel="stylesheet" type="text/css" href="{% block stylesheet %}/secr/css/base.css{% endblock %}" />
-<link rel="stylesheet" type="text/css" href="/secr/css/forms.css" />
-<link rel="stylesheet" type="text/css" href="/secr/css/custom.css" />
+<link rel="stylesheet" type="text/css" href="{% block stylesheet %}{{ SECR_STATIC_URL }}css/base.css{% endblock %}" />
+<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/forms.css" />
+<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/custom.css" />
 {% if not server_mode == "production" %}
-<link rel="stylesheet" type="text/css" href="/secr/css/test.css" />
+<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/test.css" />
 {% endif %}
 {% block extrastyle %}{% endblock %}
 
 {% block extrahead %}
-<script type="text/javascript" src="/secr/js/jquery-1.5.1.min.js"></script>
+<script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-1.5.1.min.js"></script>
 {% endblock %}
 
 {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}

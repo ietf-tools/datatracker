@@ -5,11 +5,11 @@ IPR Admin Update Page
 {% endblock %}
 
 {% block extrahead %}
-	<script type="text/javascript" src="/secr/js/jquery-1.5.1.min.js"></script>
-	<script type="text/javascript" src="/secr/js/jquery-ui-1.8.9.min.js"></script>
-    <script type="text/javascript" src="/secr/js/jquery.json-2.2.min.js"></script>
-    <link rel="stylesheet" href="/secr/css/redmond/jquery-ui-1.8.9.custom.css" type="text/css" media="screen" charset="utf-8" />
-    <link rel="stylesheet" href="/secr/css/ipr.css" type="text/css" media="screen" charset="utf-8" />
+	<script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-1.5.1.min.js"></script>
+	<script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.8.9.min.js"></script>
+    <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery.json-2.2.min.js"></script>
+    <link rel="stylesheet" href="{{ SECR_STATIC_URL }}css/redmond/jquery-ui-1.8.9.custom.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="{{ SECR_STATIC_URL }}css/ipr.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript">
 $(function() {
@@ -21,7 +21,7 @@ $(function() {
     });
 
     function add_to_list(list, id, label) {
-        list.append('<li><a href="' + id + '"><img src="/secr/img/delete.png" alt="delete"></a> ' + label + '</li>');
+        list.append('<li><a href="' + id + '"><img src="{{ SECR_STATIC_URL }}img/delete.png" alt="delete"></a> ' + label + '</li>');
     }
 
     function setup_ajax(field, list, searchfield, url) {
