@@ -131,7 +131,7 @@ class IETFWG(Group):
     #status = models.ForeignKey(WGStatus)
     @property
     def status_id(self):
-        return { "active": 1, "dormant": 2, "conclude": 3, "proposed": 4, "bof": 4, "abandon": 4 }[self.state_id]
+        return { "active": 1, "dormant": 2, "conclude": 3, "bof-conc": 3, "proposed": 4, "bof": 4, "abandon": 4 }[self.state_id]
     #area_director = models.ForeignKey(AreaDirector, null=True)
     #meeting_scheduled = models.CharField(blank=True, max_length=3)
     @property
