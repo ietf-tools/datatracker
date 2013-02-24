@@ -12,7 +12,7 @@ from django.core import management
 management.setup_environ(settings)
 
 
-syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
 from ietf.sync.iana import *
 from ietf.doc.models import Document

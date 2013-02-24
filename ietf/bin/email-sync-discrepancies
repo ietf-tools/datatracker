@@ -21,7 +21,7 @@ parser.add_option("-t", "--to", dest="to",
 options, args = parser.parse_args()
 
 
-syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
 from ietf.sync.mails import email_discrepancies
 

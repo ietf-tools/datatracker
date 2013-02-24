@@ -3,7 +3,7 @@
 import os, sys, re, json, datetime
 import syslog
 
-syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_LOCAL0)
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
 
 # boilerplate
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
