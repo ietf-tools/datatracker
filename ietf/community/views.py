@@ -3,6 +3,7 @@ import uuid
 import datetime
 import hashlib
 from datetime import timedelta
+from django.db import IntegrityError
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -25,7 +26,10 @@ def _manage_list(request, clist):
         rule_form = RuleForm(request.POST, clist=clist)
         display_form = DisplayForm(instance=display_config)
         if rule_form.is_valid():
-            rule_form.save()
+            try:
+                rule_form.save()
+            except IntegrityError:
+                pass;
             rule_form = RuleForm(clist=clist)
             display_form = DisplayForm(instance=display_config)
     elif request.method == 'POST' and request.POST.get('save_display', None):
