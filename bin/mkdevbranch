@@ -56,9 +56,14 @@ for n in $(seq $((num-5)) $num); do
     trac-admin /www/tools.ietf.org/tools/ietfdb wiki export IETF${n}SprintSignUp	\
 	| egrep "^\|\|" | tail -n +2 | python -c '
 import sys, re
+altlogin = {
+  "ietf@augustcellars.com": "schaad",
+}
 for line in sys.stdin:
     blank, name, email, rest = line.strip().split("||", 3)
     login, dummy  = re.split("[@.]", email, 1)
+    if email in altlogin:
+	login = altlogin[email]
     print "\t".join((login.strip().lower(), email.strip().lower(), name.strip())) ' \
 	| update $progdir/sprint$n.txt
 done

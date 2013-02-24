@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# assume we're in bin/, sibling to ietf/
+
+cd ${0%/*}/../ietf || { echo "CD to ietf directory failed, bailing out"; exit; }
+
+trap 'echo "$program($LINENO): Command failed with error code $? ($0 $*)"; exit 1' ERR
+
+if [ "$*" ]; then apps="$@"; graph="${1%.*}"; else apps=$(ls */models.py | sed 's!/models.py!!'); graph="models"; fi
+
+newapps="doc group meeting message person name"
+legacyapps="announcements idindex idrfc idtracker iesg ietfauth ietfworkflows ipr liaisons mailinglists proceedings redirects submit wgchairs wgcharter wginfo"
+
+proxy="$(grep ^class */proxy.py | tr '()' '  ' | awk '{printf $2 ","}')"
+names="$(grep ^class name/models.py | tr '()' '  ' | awk '{printf $2 ","}')"
+legacy="$(for app in $legacyapps; do grep ^class $app/models.py | tr '()' '  '; done | grep -v ' Meeting\\(' | awk '{printf $2 ","}')"
+events="$(egrep '^class .+DocEvent' doc/models.py | tr '()' '  ' | awk '{printf $2 ","}')"
+
+echo -e "proxy: $proxy\n"
+echo -e "names: $names\n"
+echo -e "legacy:$legacy\n"
+echo -e "events:$events\n"
+
+exclude="--exclude=$proxy,$names,$legacy"
+
+export PYTHONPATH="$PWD/.."
+
+echo "Validating..."
+./manage.py validate
+
+echo "Dump tables"
+./manage.py sql $apps > tables.sql
+export PYTHONPATH=`dirname $PWD`
+module=${PWD##*/}
+export DJANGO_SETTINGS_MODULE=$module.settings
+export graph
+export title
+echo "Generate model graph"
+graph="models-with-names-and-events"
+title="New IETF Database schema"
+modelviz.py --exclude="$proxy,$legacy" --title "$title" $apps > $graph.dot && dot -Tpng $graph.dot > $graph.png
+
+echo "Generate new model without names"
+graph="models-with-names"
+title="New IETF Database schema, without name tables"
+modelviz.py --exclude="$proxy,$legacy,$names" --title "$title" $apps > $graph.dot && dot -Tpng $graph.dot > $graph.png
+
+echo "Generate new model without names and subevents"
+graph="models"
+title="New IETF Database schema, without name tables and subevents"
+modelviz.py --exclude="$proxy,$legacy,$names,$events" --title "$title" $apps > $graph.dot && dot -Tpng $graph.dot > $graph.png

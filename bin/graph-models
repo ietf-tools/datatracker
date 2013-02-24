@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# Copyright The IETF Trust 2007, All Rights Reserved
+#
+# Requires modelviz.py from
+#  http://code.djangoproject.com/wiki/DjangoGraphviz
+#
+PYTHONPATH=`dirname $PWD`
+export PYTHONPATH
+module=${PWD##*/}
+DJANGO_SETTINGS_MODULE=$module.settings
+export DJANGO_SETTINGS_MODULE
+for d in *
+do
+	if grep models.Model $d/models.py > /dev/null 2>&1
+	then
+		models="$models $d"
+	fi
+done
+modelviz.py $* $models > models.dot
+dot -Tpng models.dot
