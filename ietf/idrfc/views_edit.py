@@ -106,7 +106,7 @@ def change_stateREDESIGN(request, name):
 
                 if next_state.slug in ("iesg-eva", "lc"):
                     if not doc.get_state_slug("draft-iana-review"):
-                        doc.set_state(State.objects.get(type="draft-iana-review", slug="rev-need"))
+                        doc.set_state(State.objects.get(type="draft-iana-review", slug="need-rev"))
 
                 if next_state.slug == "lc-req":
                     request_last_call(request, doc)
