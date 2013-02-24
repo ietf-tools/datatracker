@@ -1,6 +1,6 @@
 import subprocess, os, json
 
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.loader import render_to_string
