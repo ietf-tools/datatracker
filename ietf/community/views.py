@@ -2,6 +2,7 @@ import csv
 import uuid
 import datetime
 import hashlib
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -137,7 +138,9 @@ def view_group_list(request, acronym):
 
 def _atom_view(request, clist, significant=False):
     documents = [i['pk'] for i in clist.get_documents().values('pk')]
-    notifications = DocEvent.objects.filter(doc__pk__in=documents)\
+    startDate = datetime.datetime.now() - datetime.timedelta(days=14)
+
+    notifications = DocEvent.objects.filter(doc__pk__in=documents, time__gte=startDate)\
                                             .distinct()\
                                             .order_by('-time', '-id')
     if significant:
@@ -154,7 +157,7 @@ def _atom_view(request, clist, significant=False):
 
     return render_to_response('community/public/atom.xml',
                               {'cl': clist,
-                               'entries': notifications[:20],
+                               'entries': notifications,
                                'title': title,
                                'subtitle': subtitle,
                                'id': feed_id.get_urn(),
