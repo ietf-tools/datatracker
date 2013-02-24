@@ -119,12 +119,8 @@ class Rule(models.Model):
 
     community_list = models.ForeignKey(CommunityList)
     cached_ids = models.ManyToManyField(Document)
-
-    rule_type = models.CharField(
-        max_length=30,
-        choices=TYPES_OF_RULES)
-    value = models.CharField(
-        max_length=255)
+    rule_type = models.CharField(max_length=30, choices=TYPES_OF_RULES)
+    value = models.CharField(max_length=255)
 
     class Meta:
         unique_together= ("community_list", "rule_type", "value")
