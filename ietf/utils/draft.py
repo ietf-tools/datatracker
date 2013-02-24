@@ -40,7 +40,7 @@ import stat
 import sys
 import time
 
-version = "0.29"
+version = "0.30"
 program = os.path.basename(sys.argv[0])
 progdir = os.path.dirname(sys.argv[0])
 
@@ -280,12 +280,12 @@ class Draft():
         if self._creation_date:
             return self._creation_date
         date_regexes = [
-            r'^(?P<month>\w+)\s+(?P<day>\d{1,2}),?\s+(?P<year>\d{4})',
-            r'^(?P<day>\d{1,2}),?\s+(?P<month>\w+)\s+(?P<year>\d{4})',
+            r'^(?P<month>\w+)\s+(?P<day>\d{1,2})(,|\s)+(?P<year>\d{4})',
+            r'^(?P<day>\d{1,2})(,|\s)+(?P<month>\w+)\s+(?P<year>\d{4})',
             r'^(?P<day>\d{1,2})-(?P<month>\w+)-(?P<year>\d{4})',
             r'^(?P<month>\w+)\s+(?P<year>\d{4})',
-            r'\s{3,}(?P<month>\w+)\s+(?P<day>\d{1,2}),?\s+(?P<year>\d{4})',
-            r'\s{3,}(?P<day>\d{1,2}),?\s+(?P<month>\w+)\s+(?P<year>\d{4})',
+            r'\s{3,}(?P<month>\w+)\s+(?P<day>\d{1,2})(,|\s)+(?P<year>\d{4})',
+            r'\s{3,}(?P<day>\d{1,2})(,|\s)+(?P<month>\w+)\s+(?P<year>\d{4})',
             r'\s{3,}(?P<day>\d{1,2})-(?P<month>\w+)-(?P<year>\d{4})',
             # 'October 2008' - default day to today's.
             r'\s{3,}(?P<month>\w+)\s+(?P<year>\d{4})',
@@ -886,6 +886,7 @@ class Draft():
         refs = []
         normrefs = []
         rfcrefs = []
+        draftrefs = []
         refline = None
         for i in range(len(self.lines)-1, 15, -1):
             if re.search(r"(?i)^ *[0-9.]+ *(((normative|informative|informational|non-normative) )?references|references\W+(normative|informative))", self.lines[i]):
@@ -910,15 +911,17 @@ class Draft():
                     refs += [ para ]
                     rfc_match = re.search("(?i)rfc ?\d+", para)
                     if rfc_match:
-                        rfc = rfc_match.group(0).replace(" ","").lower()
-                        rfcrefs += [ rfc ]
+                        rfcrefs += [ rfc_match.group(0).replace(" ","").lower() ]
+                    draft_match = re.search("draft-[a-z0-9-]+", para)
+                    if draft_match:
+                        draftrefs += [ draft_match.group(0).lower() ]
         normrefs = list(set(normrefs))
         normrefs.sort()
         rfcrefs = list(set(rfcrefs))
         rfcrefs.sort()
         refs = list(set(refs))
         refs.sort()
-        return normrefs, rfcrefs, refs
+        return normrefs, rfcrefs, draftrefs, refs
 
 # ----------------------------------------------------------------------
 
@@ -977,8 +980,9 @@ def getmeta(fn):
     fields["docaffiliations"] = ", ".join(draft.get_authors_with_firm())
     if opt_debug:
         fields["docheader"] = draft._docheader
-    normrefs, rfcrefs, refs = draft.get_refs()
+    normrefs, rfcrefs, draftrefs, refs = draft.get_refs()
     fields["docrfcrefs"] = ", ".join(rfcrefs)
+    fields["docdraftrefs"] = ", ".join(draftrefs)
     fields["doccreationdate"] = str(draft.get_creation_date())
     deststatus = draft.get_status()
     if deststatus:
