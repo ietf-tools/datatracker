@@ -82,13 +82,16 @@ body { margin: 0; }
 .ietf-stream .entry-title .entry-date { float: right; }
 .ietf-stream .entry-comment { background: #eeeeee; margin: 1em 0px; padding: 1em; }
 
-.search_form_box {width: 99.5%; margin-top:8px; padding:4px; margin-bottom:1em; padding-left:8px;}
+.search-form-box { width: 99.5%; margin-top:8px; padding:4px; margin-bottom:1em; padding-left:8px; }
 form#search_form { padding-top: 4px; padding-bottom: 4px; }
+#search_form .submit { padding-top: 0.5em; }
+#search_form .submit .button { padding: 0.2em 0.5em; border: 1px solid #999; }
 #search_form input { padding: 0; padding-left: 2px; border: 1px solid #89d;}
-#search_form input.radio { padding-left: 0; border: 0; }
+#search_form input.radio { padding-left: 0; border: 0; }
 #search_form select {  border: 1px solid #89d; }
 #search_form div.search_field { margin-top:2px; clear:both;}
-#search_form label { width: 170px; float: left; }
+#search_form .search_field > label { width: 170px; float: left; }
+#search_form #search_advanced { margin-top: 1em; }
 /* checkboxes for document types */
 #search_form table#search_types { border-collapse:collapse;}
 #search_form #search_types td { padding:0; }
@@ -106,12 +109,13 @@ table.ietf-table { border-collapse:collapse; border:1px solid #7f7f7f; }
 .ietf-table tr.evenrow { background-color: #EDF5FF; }
 .ietf-table tr.oddrow { background-color: white; }
 .ietf-table td { border-right: 1px solid #cbcbcb; padding:3px 6px; vertical-align: top; }
-.ietf-table th { color:white; background: #2647A0; text-align:left; padding:3px 6px; border-right: 1px solid #7f7f7f; }
+.ietf-table th { color: #fff; background: #2647A0; text-align: left; padding:3px 6px; border-right: 1px solid #7f7f7f; }
 
 .ietf-doctable tr.header { border-top: 1px solid #7f7f7f; border-bottom: 1px solid #7f7f7f; border-left: 1px solid white; border-right:2px solid white;}
 .ietf-doctable tr.header td {padding: 6px 6px; font-weight: bold; }
 .ietf-doctable table { max-width: 1200px; }
-.ietf-doctable th { cursor: pointer }
+.ietf-doctable th { cursor: pointer; white-space: nowrap; }
+.ietf-doctable th img { border-style: none; vertical-align: top; }
 .ietf-doctable th.doc, .ietf-doctable td.doc { min-width:20em; max-width: 35em; }
 .ietf-doctable th.title, .ietf-doctable td.title { min-width: 20em; max-width: 35em; }
 .ietf-doctable th.date, .ietf-doctable td.date { white-space:nowrap; min-width: 6em;}
@@ -206,12 +210,13 @@ table.milestones .doc { display: block; padding-left: 1em; }
 
 .stream-state .milestone { display: inline-block; font-size: smaller; background-color: #d5dde6; padding: 0 0.2em; margin-left: 0.3em; }
 
-.button {
+.button, .button:hover:disabled {
   display: inline-block; padding: 4px 12px; margin-right: 0.3em;
   color: #222; font-weight: normal; text-align: center; text-decoration: none; outline: none; cursor: pointer;
-  background: #eee; background: linear-gradient(#fff, #ddd); background: -webkit-linear-gradient(#fff, #ddd); background: -moz-linear-gradient(#fff, #ddd);
+  background: #eee; background: linear-gradient(#fff, #e0e0e0); background: -webkit-linear-gradient(#fff, #e0e0e0); background: -moz-linear-gradient(#fff, #e0e0e0);
   border: 1px solid #666; border-radius: 3px;
   transition-duration: 0.2s;
 }
 .button:hover { color: #111; background: #ddd; background: linear-gradient(#eee, #ccc); background: -webkit-linear-gradient(#eee, #ccc); background: -moz-linear-gradient(#eee, #ccc); }
 .button:active { color: #000; background: #ccc; }
+.button:disabled, .button:hover:disabled { color: #999; cursor: default; }

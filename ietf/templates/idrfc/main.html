@@ -77,11 +77,6 @@ about:
 {% endif %}
 </div>
 {% endblock content %}
-{% block scripts %}
-YAHOO.util.Event.onContentReady("search_submit_button", function () {
-    var oButton = new YAHOO.widget.Button("search_submit_button", {});
-});      
-{% endblock scripts %}
 
 {% block js %}
 <script type="text/javascript" src="/js/doc-search.js"></script>
