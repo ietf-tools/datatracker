@@ -26,7 +26,6 @@ from ietf.ipr.search import iprs_from_docs
 from ietf.idrfc.mails import *
 from ietf.idrfc.utils import *
 from ietf.idrfc.lastcall import request_last_call
-from ietf.idrfc.idrfc_wrapper import BallotWrapper
 
 from ietf.doc.utils import *
 from ietf.doc.models import *
