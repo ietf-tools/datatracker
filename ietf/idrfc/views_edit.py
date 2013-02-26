@@ -33,6 +33,7 @@ from ietf.doc.utils import *
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
 from ietf.person.models import Person, Email
 from ietf.message.models import Message
+from ietf.idrfc.utils import log_state_changed
 
 class ChangeStateForm(forms.Form):
     pass
