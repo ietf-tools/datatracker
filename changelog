@@ -1,3 +1,45 @@
+ietfdb (4.41) ietf; urgency=low
+
+  This release is a minor release, with bugfixes and some enhancements
+  to the community draft-tracking feeds.
+
+  For detailed commit messages, please see:
+    http://wiki.tools.ietf.org/tools/ietfdb/log/trunk
+
+  * Added a set of help pages for document states, and dded links from the
+    new IANA states to help pages describing the different states.
+
+  * From rjsparks@nostrum.com:
+    Fixed a bug in the state change logging which caused the wrong document
+    state log entries in some cases.
+
+  * Merged [5426] from ietf@augustcellars.com: 
+    Make sure that the same rule cannot be entered twice in a community 
+    list.
+
+  * Merged [5425] from ietf@augustcellars.com: 
+    Modify atom change feed so that 
+    1.  It returns the last 14 days of changes rather than the last 20
+    2.  Change the atom template so that it has correct time offsets rather 
+    than saying that PST and UTC are the same
+    3.  Change the atom template so that it uses content rather than 
+    summary and return HTML content with line breaks as needed. 
+
+  * Merged [5424] from ietf@augustcellars.com: 
+    Close the image tag.  An empty image tag displays on IE although it 
+    does not display on Firefox. 
+
+  * Added variations on the recognized date formats during submitted draft 
+    parsing, such that comma need not be followed by whitespace in the formats 
+    using comma as a separator between some of the fields.  Added extraction of 
+    drafts referenced by a document, in addition to RFCs referenced.
+
+  * Modified the set of permissible parents for session groups, in order to 
+    permit an IAB-sponsored BoF to appear on the agenda.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Feb 2013 23:24:53 +0100
+
+
 ietfdb (4.40) ietf; urgency=high
 
   This release is a major feature release, which provides the means to do
