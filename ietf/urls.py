@@ -69,6 +69,7 @@ urlpatterns = patterns('',
     (r'^(?P<path>public)/', include('ietf.redirects.urls')),
     (r'^wg/', include('ietf.wginfo.urls')),
     (r'^sync/', include('ietf.sync.urls')),
+    (r'^help/', include('ietf.help.urls')),
 
     # Google webmaster tools verification url
     (r'^googlea30ad1dacffb5e5b.html', 'django.views.generic.simple.direct_to_template', { 'template': 'googlea30ad1dacffb5e5b.html' }),
