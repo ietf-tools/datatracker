@@ -1,5 +1,5 @@
 {% extends "idrfc/doc_tab_document.html" %}
-{% comment %}
+{% comment %}<!--
 Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com> 
 
@@ -31,7 +31,7 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-{% endcomment %}
+-->{% endcomment %}
 
 {% load ietf_filters ietf_streams %}
 
@@ -130,8 +130,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 {% else %}
  {{ doc.friendly_state|safe }} 
 {% endif %}
-{% if info.iana_review_state %}<br />IANA Review State: <a class="editlink" {% if user|in_group:"Secretariat,IANA" %}href="{% url doc_change_iana_state name=doc.draft_name state_type="iana-review" %}"{% endif %}>{{ info.iana_review_state.name|escape }}</a>{% endif %}
-{% if info.iana_action_state %}<br />IANA Action State: <a class="editlink" {% if user|in_group:"Secretariat,IANA" %}href="{% url doc_change_iana_state name=doc.draft_name state_type="iana-action" %}"{% endif %}>{{ info.iana_action_state.name|escape }}</a>{% endif %}
+{% if info.iana_review_state %}<br />IANA Review State: <a href="/help/state/draft/iana-review/">{{ info.iana_review_state.name|escape }}</a><a class="editlink" {% if user|in_group:"Secretariat,IANA" %}href="{% url doc_change_iana_state name=doc.draft_name state_type="iana-review" %}"{% endif %}>&nbsp;</a>{% endif %}
+{% if info.iana_action_state %}<br />IANA Action State: <a href="/help/state/draft/iana-action/">{{ info.iana_action_state.name|escape }}</a><a class="editlink" {% if user|in_group:"Secretariat,IANA" %}href="{% url doc_change_iana_state name=doc.draft_name state_type="iana-action" %}"{% endif %}>&nbsp;</a>{% endif %}
 {% if info.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{ doc.draft_name }}">{{ info.rfc_editor_state|escape }}</a>{% endif %}
 {% ifequal doc.draft_status "Expired" %}
 {% if doc.resurrect_requested_by %}(resurrect requested by {{ doc.resurrect_requested_by }}){% endif %}
