@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, render_to_response
 
 import debug
 
-from doc.models import State, StateType
+from ietf.doc.models import State, StateType
 
 
 def state(request, doc, type=None):
