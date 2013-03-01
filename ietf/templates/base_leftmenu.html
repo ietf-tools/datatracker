@@ -40,7 +40,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <li><a href="{% url account_index %}">{% if request.user.is_authenticated %}Manage Account{% else %}New Account{% endif %}</a></li>
 {% if user|in_group:"Area_Director" %}
 <li class="sect first">AD Dashboard</li>
-  <li><a href="{% url doc_search_by_ad name=user.get_profile.person.full_name_as_key %}">My Documents</a></li>
+  <li><a href="{% url doc_search_by_ad name=user.get_profile.person.full_name_as_key %}">My Documents (old)</a></li>
+  <li><a href="{% url doc_search_by_ad2 name=user.get_profile.person.full_name_as_key %}">My Documents (new)</a></li>
   <li><a href="{% url ietf.iesg.views.agenda_documents %}">Next Telechat</a></li>
   <li><a href="{% url ietf.iesg.views.discusses %}">Discusses</a></li>
   <li><a href="{% url ietf.iesg.views.working_group_actions %}">Working Groups</a></li>
@@ -101,6 +102,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    {% endfor %}
 {% else %}
    <li><a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in to track drafts</a></li>
+{% endif %}
+{% if user|in_group:"Area_Director,Secretariat" %}
+  <li><a href="{% url rfc_status_changes %}">RFC status changes</a></li>
 {% endif %}
 
 

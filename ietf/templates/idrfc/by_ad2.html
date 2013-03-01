@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% load ietf_filters %}
+{% load ietf_streams_redesign %}
+{% load ballot_icon_redesign %}
+
+{% block title %}Documents for {{ ad_name }}{% endblock %}
+
+{% block content %}
+<h1>Documents for {{ ad_name }}</h1>
+
+{% regroup docs by ad_dashboard_group as grouped_docs %}
+
+<table class="ietf-table ietf-doctable">
+<tr><th class="doc">Document</th><th class="title">Title</th><th class="date">Date</th><th class="status" colspan="2">Status</th><th class="ipr">ipr</th></tr> 
+{% for doc_group in grouped_docs %} 
+<tr class="header"><td colspan="7">{{doc_group.grouper}}s</td></tr>
+
+{% for doc in doc_group.list %}
+
+
+<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+
+<td class="doc">
+{#{{doc.ad_dashboard_sort_key}}<br/>#}
+{% if doc.get_state_slug == 'rfc' %}
+{{ doc.canonical_name|upper|rfcspace|urlize_ietf_docs }}<br/>{{ doc.name|urlize_ietf_docs }}
+{% else %}
+{{ doc.name|urlize_ietf_docs }}
+{% endif %}
+</td>
+
+<td class="title">{{ doc.title }}</td>
+
+
+<td class="date">
+{% if doc.display_date %}
+  {% if doc.get_state_slug == 'rfc' %}
+    {{ doc.display_date|date:"Y-m"}}
+  {% else %}
+    {{ doc.display_date|date:"Y-m-d" }} 
+  {% endif %}
+  {% if doc.display_date|timesince_days|new_enough:request %}
+      <br/><span class="ietf-small ietf-highlight-y">
+      {% if not doc.type.slug == 'draft' or doc.get_state_slug == 'rfc' %}
+         new
+      {% else %}
+         <a href="http:{{rfcdiff_prefix}}?url2={{doc.filename_with_rev}}">new</a>
+      {% endif %}
+      </span>
+  {% endif %}
+  {% if doc.can_expire and doc.expires and doc.expires|timesince_days|expires_soon:request %}
+      <br/><span class="ietf-small ietf-highlight-y">expires soon</span>
+  {%endif%}
+{% endif %}
+</td>
+
+<td class="status">
+{{ doc.friendly_state|safe }} {% if not doc.get_state_slug == 'rfc' %}{{ doc|state_age_colored|safe }}{% endif %}
+{% if doc.on_upcoming_agenda %}<br/>IESG Telechat: {{ doc.telechat_date }}{% endif %}
+{% if doc.get_state_slug == 'rfc' %}
+{% if doc.obsoleted_by %}<br />Obsoleted by {{ doc.obsoleted_by|urlize_ietf_docs }}{%endif %}
+{% if doc.updated_by %}<br />Updated by {{ doc.updated_by|urlize_ietf_docs }}{%endif %}
+{% if doc.has_errata %}<br /><a href="http://www.rfc-editor.org/errata_search.php?rfc={{doc.rfc_number}}" rel="nofollow">Errata</a>{% endif %}
+{% else %}{# not rfc #}
+{% if doc.rfc_editor_state %}<br />RFC Editor State: <a href="http://www.rfc-editor.org/queue2.html#{{doc.name}}">{{ doc.rfc_editor_state|escape }}</a>{% endif %}
+{% stream_state doc %} 
+{% endif %}
+</td>
+<td class="ballot">
+{% ballot_icon doc %}
+</td>
+
+
+<td class="ipr"> 
+{% if doc.iprCount %}<a href="{{ doc.iprUrl }}"  rel="nofollow"> {{ doc.iprCount }} </a>{% endif %}
+</td>
+
+{% comment %}
+{% include "idrfc/ipr_column.html" %}
+{% endcomment %}
+</tr>
+
+{% endfor %}
+
+{% endfor %}
+</table>
+{% endblock content %}

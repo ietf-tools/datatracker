@@ -73,7 +73,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% endwith %}{# title2 #}
 
+{% with "2.3 Status Changes" as title2 %}
+{% with 1 as title2_first %}
+
+{% with "2.3.1 New Items" as title3 %}
+{% with docs.s231 as section_docs %}{% include doc_template %}{% endwith %}
+{% endwith %}
+{% endwith %}{# title2_first #}
+
+{% with "2.3.2 Returning Items" as title3 %}
+{% with docs.s232 as section_docs %}{% include doc_template %}{% endwith %}
+{% endwith %}
+
+{% if docs.s233 %}
+{% with "2.3.3 For Action" as title3 %}
+{% with docs.s233 as section_docs %}{% include doc_template %}{% endwith %}
+{% endwith %}
+{% endif %}
+
+{% endwith %}{# title2 #}
+
 {% endwith %}{# title1 #}
+
 
 {% with "3. Document Actions" as title1 %}{% with 1 as title1_first %}
 
@@ -119,21 +140,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {% endwith %}{# title2 #}
 
-{% with "3.3 IRTF and Independent Submission Stream Documents" as title2 %}
+{% with "3.3 Status Changes" as title2 %}
 {% with 1 as title2_first %}
 
 {% with "3.3.1 New Items" as title3 %}
-{% with docs.s331 as section_docs %}{% include doc_conflict_template %}{% endwith %}
+{% with docs.s331 as section_docs %}{% include doc_template %}{% endwith %}
 {% endwith %}
 {% endwith %}{# title2_first #}
 
 {% with "3.3.2 Returning Items" as title3 %}
-{% with docs.s332 as section_docs %}{% include doc_conflict_template %}{% endwith %}
+{% with docs.s332 as section_docs %}{% include doc_template %}{% endwith %}
 {% endwith %}
 
 {% if docs.s333 %}
 {% with "3.3.3 For Action" as title3 %}
-{% with docs.s333 as section_docs %}{% include doc_conflict_template %}{% endwith %}
+{% with docs.s333 as section_docs %}{% include doc_template %}{% endwith %}
+{% endwith %}
+{% endif %}
+
+{% endwith %} {# title2 #}
+
+{% with "3.4 IRTF and Independent Submission Stream Documents" as title2 %}
+{% with 1 as title2_first %}
+
+{% with "3.4.1 New Items" as title3 %}
+{% with docs.s341 as section_docs %}{% include doc_conflict_template %}{% endwith %}
+{% endwith %}
+{% endwith %}{# title2_first #}
+
+{% with "3.4.2 Returning Items" as title3 %}
+{% with docs.s342 as section_docs %}{% include doc_conflict_template %}{% endwith %}
+{% endwith %}
+
+{% if docs.s343 %}
+{% with "3.4.3 For Action" as title3 %}
+{% with docs.s343 as section_docs %}{% include doc_conflict_template %}{% endwith %}
 {% endwith %}
 {% endif %}
 

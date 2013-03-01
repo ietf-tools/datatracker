@@ -159,13 +159,28 @@ def get_doc_sectionREDESIGN(doc):
             s = s + "1"
     elif doc.type_id == 'charter':
         s = get_wg_section(doc.group)
+    elif doc.type_id == 'statchg':
+        protocol_action = False
+        for relation in doc.relateddocument_set.filter(relationship__slug__in=('tops','tois','tohist','toinf','tobcp','toexp')):
+            if relation.relationship.slug in ('tops','tois') or relation.target.document.std_level.slug in ('std','ds','ps'):
+                protocol_action = True
+        if protocol_action:
+            s="23"
+        else:
+            s="33"
+        if doc.get_state_slug() not in ("iesgeval", "defer", "appr-pr", "appr-pend", "appr-sent"):
+            s = s + "3"
+        elif doc.returning_item():
+            s = s + "2"
+        else:
+            s = s + "1"
     elif doc.type_id == 'conflrev':
         if doc.get_state('conflrev').slug not in ('adrev','iesgeval','appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent','defer'):
-             s = "333"
+             s = "343"
         elif doc.returning_item():
-             s = "332"
+             s = "342"
         else:
-             s = "331"
+             s = "341"
 
     return s
 
@@ -225,6 +240,8 @@ def agenda_docs(date, next_agenda):
     docmatches.sort(key=lambda d: d.balloting_started)
     
     res = dict(("s%s%s%s" % (i, j, k), []) for i in range(2, 5) for j in range (1, 4) for k in range(1, 4))
+    for k in range(1,4):
+        res['s34%d'%k]=[]
     for id in docmatches:
         section_key = "s"+get_doc_section(id)
         if section_key not in res:
@@ -279,6 +296,9 @@ def _agenda_json(request, date=None):
     data['sections']['2.2'] = {'title':"Individual Submissions"}
     data['sections']['2.2.1'] = {'title':"New Items", 'docs':[]}
     data['sections']['2.2.2'] = {'title':"Returning Items", 'docs':[]}
+    data['sections']['2.3'] = {'title':"Individual Submissions"}
+    data['sections']['2.3.1'] = {'title':"New Items", 'docs':[]}
+    data['sections']['2.3.2'] = {'title':"Returning Items", 'docs':[]}
     data['sections']['3'] = {'title':"Document Actions"}
     data['sections']['3.1'] = {'title':"WG Submissions"}
     data['sections']['3.1.1'] = {'title':"New Items", 'docs':[]}
@@ -286,9 +306,12 @@ def _agenda_json(request, date=None):
     data['sections']['3.2'] = {'title':"Individual Submissions Via AD"}
     data['sections']['3.2.1'] = {'title':"New Items", 'docs':[]}
     data['sections']['3.2.2'] = {'title':"Returning Items", 'docs':[]}
-    data['sections']['3.3'] = {'title':"IRTF and Independent Submission Stream Documents"}
+    data['sections']['3.3'] = {'title':"Status Changes"}
     data['sections']['3.3.1'] = {'title':"New Items", 'docs':[]}
     data['sections']['3.3.2'] = {'title':"Returning Items", 'docs':[]}
+    data['sections']['3.4'] = {'title':"IRTF and Independent Submission Stream Documents"}
+    data['sections']['3.4.1'] = {'title':"New Items", 'docs':[]}
+    data['sections']['3.4.2'] = {'title':"Returning Items", 'docs':[]}
     data['sections']['4'] = {'title':"Working Group Actions"}
     data['sections']['4.1'] = {'title':"WG Creation"}
     data['sections']['4.1.1'] = {'title':"Proposed for IETF Review", 'wgs':[]}
