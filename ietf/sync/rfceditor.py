@@ -276,6 +276,7 @@ def parse_index(response):
 def update_docs_from_rfc_index(data, skip_older_than_date=None):
     std_level_mapping = {
         "Standard": StdLevelName.objects.get(slug="std"),
+        "Internet Standard": StdLevelName.objects.get(slug="std"),
         "Draft Standard": StdLevelName.objects.get(slug="ds"),
         "Proposed Standard": StdLevelName.objects.get(slug="ps"),
         "Informational": StdLevelName.objects.get(slug="inf"),
