@@ -127,7 +127,7 @@ class ManageShepherdsTestCase(django.test.TestCase):
                                 shepherd=Person.objects.get(user__username="plain"),
                                 **common)
         for d in Document.objects.filter(name__startswith="test-shepherd"):
-            d.set_state(State.objects.get(type="draft", slug="active"))
+            d.set_state(State.objects.get(used=True, type="draft", slug="active"))
         
         # get and make sure they are divided correctly
         r = self.client.get(url)
@@ -197,7 +197,7 @@ class ManageWorkflowTestCase(django.test.TestCase):
         url = urlreverse('manage_workflow', kwargs=dict(acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
-        state = State.objects.get(type="draft-stream-ietf", slug="wg-lc")
+        state = State.objects.get(used=True, type="draft-stream-ietf", slug="wg-lc")
         self.assertTrue(state not in group.unused_states.all())
 
         # get
@@ -218,8 +218,8 @@ class ManageWorkflowTestCase(django.test.TestCase):
         self.assertTrue(state in group.unused_states.all())
 
         # change next states
-        state = State.objects.get(type="draft-stream-ietf", slug="wg-doc")
-        next_states = State.objects.filter(type=b"draft-stream-ietf", slug__in=["parked", "dead", "wait-wgw", 'sub-pub']).values_list('pk', flat=True)
+        state = State.objects.get(used=True, type="draft-stream-ietf", slug="wg-doc")
+        next_states = State.objects.filter(used=True, type=b"draft-stream-ietf", slug__in=["parked", "dead", "wait-wgw", 'sub-pub']).values_list('pk', flat=True)
         r = self.client.post(url,
                              dict(action="setnextstates",
                                   state=state.pk,

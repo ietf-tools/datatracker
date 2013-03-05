@@ -116,7 +116,7 @@ class EditStreamInfoTestCase(django.test.TestCase):
         self.assertEquals(len(q('select[name=new_state]')), 1)
 
         # set state
-        new_state = State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="parked")
+        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="parked")
         mailbox_before = len(outbox)
         events_before = draft.docevent_set.count()
         r = self.client.post(url,

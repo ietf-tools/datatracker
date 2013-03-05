@@ -420,13 +420,13 @@ def defer_ballotREDESIGN(request, name):
 
         prev_state = doc.friendly_state()
         if doc.type_id == 'draft':
-            doc.set_state(State.objects.get(type="draft-iesg", slug='defer'))
+            doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='defer'))
             prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
             prev_tag = prev_tag[0] if prev_tag else None
             if prev_tag:
                 doc.tags.remove(prev_tag)
         elif doc.type_id == 'conflrev':
-            doc.set_state(State.objects.get(type='conflrev', slug='defer'))
+            doc.set_state(State.objects.get(used=True, type='conflrev', slug='defer'))
 
         e = docutil_log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
         
@@ -470,13 +470,13 @@ def undefer_ballotREDESIGN(request, name):
 
         prev_state = doc.friendly_state()
         if doc.type_id == 'draft':
-            doc.set_state(State.objects.get(type="draft-iesg", slug='iesg-eva'))
+            doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='iesg-eva'))
             prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
             prev_tag = prev_tag[0] if prev_tag else None
             if prev_tag:
                 doc.tags.remove(prev_tag)
         elif doc.type_id == 'conflrev':
-            doc.set_state(State.objects.get(type='conflrev',slug='iesgeval'))
+            doc.set_state(State.objects.get(used=True, type='conflrev',slug='iesgeval'))
 
         e = docutil_log_state_changed(request, doc, login, doc.friendly_state(), prev_state)
         
@@ -628,7 +628,7 @@ def lastcalltextREDESIGN(request, name):
                     save_document_in_history(doc)
 
                     prev = doc.get_state("draft-iesg")
-                    doc.set_state(State.objects.get(type="draft-iesg", slug='lc-req'))
+                    doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='lc-req'))
 
                     prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
                     prev_tag = prev_tag[0] if prev_tag else None
@@ -1001,9 +1001,9 @@ def approve_ballotREDESIGN(request, name):
         
     if request.method == 'POST':
         if action == "do_not_publish":
-            new_state = State.objects.get(type="draft-iesg", slug="dead")
+            new_state = State.objects.get(used=True, type="draft-iesg", slug="dead")
         else:
-            new_state = State.objects.get(type="draft-iesg", slug="ann")
+            new_state = State.objects.get(used=True, type="draft-iesg", slug="ann")
 
         # fixup document
         close_open_ballots(doc, login)
@@ -1096,7 +1096,7 @@ def make_last_call(request, name):
             save_document_in_history(doc)
 
             prev = doc.get_state("draft-iesg")
-            doc.set_state(State.objects.get(type="draft-iesg", slug='lc'))
+            doc.set_state(State.objects.get(used=True, type="draft-iesg", slug='lc'))
 
             prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
             prev_tag = prev_tag[0] if prev_tag else None
@@ -1125,7 +1125,7 @@ def make_last_call(request, name):
             # update IANA Review state
             prev_state = doc.get_state("draft-iana-review")
             if not prev_state:
-                next_state = State.objects.get(type="draft-iana-review", slug="need-rev")
+                next_state = State.objects.get(used=True, type="draft-iana-review", slug="need-rev")
                 doc.set_state(next_state)
                 add_state_change_event(doc, login, prev_state, next_state)
 

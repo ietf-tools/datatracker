@@ -274,7 +274,7 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
         group = forms.CharField(required=False)
         area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active").order_by('name'), empty_label="any area", required=False)
         ad = forms.ChoiceField(choices=(), required=False)
-        state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label="any state", required=False)
+        state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label="any state", required=False)
         subState = forms.ChoiceField(choices=(), required=False)
 
         def __init__(self, *args, **kwargs):

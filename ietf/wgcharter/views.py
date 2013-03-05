@@ -30,7 +30,7 @@ from ietf.wgcharter.utils import *
 import debug
 
 class ChangeStateForm(forms.Form):
-    charter_state = forms.ModelChoiceField(State.objects.filter(type="charter", slug__in=["infrev", "intrev", "extrev", "iesgrev"]), label="Charter state", empty_label=None, required=False)
+    charter_state = forms.ModelChoiceField(State.objects.filter(used=True, type="charter", slug__in=["infrev", "intrev", "extrev", "iesgrev"]), label="Charter state", empty_label=None, required=False)
     initial_time = forms.IntegerField(initial=0, label="Review time", help_text="(in weeks)", required=False)
     message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change state without notifying the Secretariat", required=False, label=mark_safe("Message to<br> Secretariat"))
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history", required=False)
@@ -64,7 +64,7 @@ def change_state(request, name, option=None):
             charter_rev = charter.rev
 
             if option in ("initcharter", "recharter"):
-                charter_state = State.objects.get(type="charter", slug="infrev")
+                charter_state = State.objects.get(used=True, type="charter", slug="infrev")
                 # make sure we have the latest revision set, if we
                 # abandoned a charter before, we could have reset the
                 # revision to latest approved
@@ -77,7 +77,7 @@ def change_state(request, name, option=None):
             elif option == "abandon":
                 oldstate = wg.state_id
                 if oldstate in ("proposed","bof","unknown"):
-                    charter_state = State.objects.get(type="charter", slug="notrev")
+                    charter_state = State.objects.get(used=True, type="charter", slug="notrev")
                     #TODO : set an abandoned state and leave some comments here
                     wg.state=GroupStateName.objects.get(slug='abandon')
                     wg.save()
@@ -89,7 +89,7 @@ def change_state(request, name, option=None):
                     e.save()
                     
                 else:
-                    charter_state = State.objects.get(type="charter", slug="approved")
+                    charter_state = State.objects.get(used=True, type="charter", slug="approved")
                     charter_rev = approved_revision(charter.rev)
             else:
                 charter_state = clean['charter_state']
@@ -176,7 +176,7 @@ def change_state(request, name, option=None):
         title = "Change chartering state of WG %s" % wg.acronym
 
     def state_pk(slug):
-        return State.objects.get(type="charter", slug=slug).pk
+        return State.objects.get(used=True, type="charter", slug=slug).pk
 
     info_msg = {
         state_pk("infrev"): 'The WG "%s" (%s) has been set to Informal IESG review by %s.' % (wg.name, wg.acronym, login.plain_name()),
@@ -184,7 +184,7 @@ def change_state(request, name, option=None):
         state_pk("extrev"): 'The WG "%s" (%s) has been set to External review by %s.\nPlease send out the external review announcement to the appropriate lists.\n\nSend the announcement to other SDOs: Yes\nAdditional recipients of the announcement: ' % (wg.name, wg.acronym, login.plain_name()),
         }
 
-    states_for_ballot_wo_extern = State.objects.filter(type="charter", slug="intrev").values_list("pk", flat=True)
+    states_for_ballot_wo_extern = State.objects.filter(used=True, type="charter", slug="intrev").values_list("pk", flat=True)
 
     return render_to_response('wgcharter/change_state.html',
                               dict(form=form,
@@ -584,7 +584,7 @@ def approve(request, name):
         announcement = e.text
 
     if request.method == 'POST':
-        new_charter_state = State.objects.get(type="charter", slug="approved")
+        new_charter_state = State.objects.get(used=True, type="charter", slug="approved")
         prev_charter_state = charter.get_state()
 
         save_document_in_history(charter)

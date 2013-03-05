@@ -127,7 +127,7 @@ def bofs(request):
     return render_to_response('wginfo/bofs.html',dict(groups=groups),RequestContext(request))
 
 def chartering_wgs(request):
-    charter_states = State.objects.filter(type="charter").exclude(slug__in=("approved", "notrev"))
+    charter_states = State.objects.filter(used=True, type="charter").exclude(slug__in=("approved", "notrev"))
     groups = Group.objects.filter(type="wg", charter__states__in=charter_states).select_related("state", "charter")
 
 

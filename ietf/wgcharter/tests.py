@@ -58,7 +58,7 @@ class EditCharterTestCase(django.test.TestCase):
         
         # change state
         for slug in ("intrev", "extrev", "iesgrev"):
-            s = State.objects.get(type="charter", slug=slug)
+            s = State.objects.get(used=True, type="charter", slug=slug)
             events_before = charter.docevent_set.count()
             mailbox_before = len(outbox)
         
@@ -230,7 +230,7 @@ class CharterApproveBallotTestCase(django.test.TestCase):
             desc="Created ballot",
             )
 
-        charter.set_state(State.objects.get(type="charter", slug="iesgrev"))
+        charter.set_state(State.objects.get(used=True, type="charter", slug="iesgrev"))
 
         # normal get
         r = self.client.get(url)

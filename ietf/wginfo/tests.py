@@ -71,7 +71,7 @@ class WgOverviewTestCase(django.test.TestCase):
         make_test_data()
 
         wg = Group.objects.get(acronym="mars")
-        wg.charter.set_state(State.objects.get(type="charter", slug="intrev"))
+        wg.charter.set_state(State.objects.get(used=True, type="charter", slug="intrev"))
 
         url = urlreverse('ietf.wginfo.views.chartering_wgs')
         r = self.client.get(url)

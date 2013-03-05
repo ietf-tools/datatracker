@@ -26,7 +26,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.group.models import Role, Group
 
 class ChangeStateForm(forms.Form):
-    review_state = forms.ModelChoiceField(State.objects.filter(type="conflrev", used=True), label="Conflict review state", empty_label=None, required=True)
+    review_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev"), label="Conflict review state", empty_label=None, required=True)
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history", required=False)
     def __init__(self, *args, **kwargs):
         self.hide = kwargs.pop('hide', None)
@@ -329,7 +329,7 @@ def approve(request, name):
         if form.is_valid():
 
             new_state_slug = 'appr-reqnopub-sent' if review.get_state('conflrev').slug=='appr-reqnopub-pend' else 'appr-noprob-sent'
-            new_review_state = State.objects.get(type="conflrev", slug=new_state_slug)
+            new_review_state = State.objects.get(used=True, type="conflrev", slug=new_state_slug)
             save_document_in_history(review)
             old_description = review.friendly_state()
             review.set_state(new_review_state)
@@ -372,7 +372,7 @@ def approve(request, name):
 class StartReviewForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), 
                                 label="Shepherding AD", empty_label="(None)", required=True)
-    create_in_state = forms.ModelChoiceField(State.objects.filter(type="conflrev", slug__in=("needshep", "adrev")), empty_label=None, required=False)
+    create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev", slug__in=("needshep", "adrev")), empty_label=None, required=False)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
 

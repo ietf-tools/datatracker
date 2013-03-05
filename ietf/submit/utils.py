@@ -139,7 +139,7 @@ def perform_postREDESIGN(request, submission):
     else:
         submitter = system
 
-    draft.set_state(State.objects.get(type="draft", slug="active"))
+    draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
     DocAlias.objects.get_or_create(name=submission.filename, document=draft)
 
     update_authors(draft, submission)
@@ -153,11 +153,11 @@ def perform_postREDESIGN(request, submission):
 
     if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
         # automatically set state "WG Document"
-        draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
+        draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
     if draft.get_state_slug("draft-iana-review") in ("ok-act", "ok-noact", "not-ok"):
         prev_state = draft.get_state("draft-iana-review")
-        next_state = State.objects.get(type="draft-iana-review", slug="changed")
+        next_state = State.objects.get(used=True, type="draft-iana-review", slug="changed")
         draft.set_state(next_state)
         add_state_change_event(draft, submitter, prev_state, next_state)
 

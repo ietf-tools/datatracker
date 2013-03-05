@@ -61,7 +61,7 @@ class ConflictReviewTestCase(django.test.TestCase):
       
         # successful review start
         ad_strpk = str(Person.objects.get(name='Aread Irector').pk)
-        state_strpk = str(State.objects.get(slug='needshep',type__slug='conflrev').pk)        
+        state_strpk = str(State.objects.get(used=True, slug='needshep',type__slug='conflrev').pk)        
         r = self.client.post(url,dict(ad=ad_strpk,create_in_state=state_strpk,notify='ipu@ietf.org'))
         self.assertEquals(r.status_code, 302)
         review_doc = Document.objects.get(name='conflict-review-imaginary-independent-submission')
@@ -99,7 +99,7 @@ class ConflictReviewTestCase(django.test.TestCase):
         self.assertTrue(len(q('form ul.errorlist')) > 0)
 
         # successful change to AD Review
-        adrev_pk = str(State.objects.get(slug='adrev',type__slug='conflrev').pk)
+        adrev_pk = str(State.objects.get(used=True, slug='adrev',type__slug='conflrev').pk)
         r = self.client.post(url,dict(review_state=adrev_pk,comment='RDNK84ZD'))
         self.assertEquals(r.status_code, 302)
         review_doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
@@ -108,7 +108,7 @@ class ConflictReviewTestCase(django.test.TestCase):
         self.assertFalse(review_doc.active_ballot())
 
         # successful change to IESG Evaluation 
-        iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='conflrev').pk)
+        iesgeval_pk = str(State.objects.get(used=True, slug='iesgeval',type__slug='conflrev').pk)
         r = self.client.post(url,dict(review_state=iesgeval_pk,comment='TGmZtEjt'))
         self.assertEquals(r.status_code, 302)
         review_doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
@@ -214,7 +214,7 @@ class ConflictReviewTestCase(django.test.TestCase):
         
         # Some additional setup
         create_ballot_if_not_open(doc,Person.objects.get(name="Sec Retary"),"conflrev")
-        doc.set_state(State.objects.get(slug=approve_type+'-pend',type='conflrev'))
+        doc.set_state(State.objects.get(used=True, slug=approve_type+'-pend',type='conflrev'))
         doc.save()
 
         # get

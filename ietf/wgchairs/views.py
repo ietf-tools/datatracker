@@ -124,7 +124,7 @@ def manage_workflowREDESIGN(request, acronym):
             except State.DoesNotExist:
                 return HttpResponse("Invalid state %s" % request.POST.get("state"))
 
-            next_states = State.objects.filter(type='draft-stream-ietf', pk__in=request.POST.getlist("next_states"))
+            next_states = State.objects.filter(used=True, type='draft-stream-ietf', pk__in=request.POST.getlist("next_states"))
             unused = wg.unused_states.all()
             if set(next_states.exclude(pk__in=unused)) == set(state.next_states.exclude(pk__in=unused)):
                 # just use the default
@@ -153,7 +153,7 @@ def manage_workflowREDESIGN(request, acronym):
         t.used = t.slug not in unused_tags
 
     unused_states = wg.unused_states.all().values_list('slug', flat=True)
-    states = State.objects.filter(type="draft-stream-ietf")
+    states = State.objects.filter(used=True, type="draft-stream-ietf")
     transitions = dict((o.state, o) for o in wg.groupstatetransitions_set.all())
     for s in states:
         s.used = s.slug not in unused_states

@@ -130,7 +130,7 @@ class NoWorkflowStateForm(StreamDraftForm):
 
         if settings.USE_DB_REDESIGN_PROXY_CLASSES:
             from ietf.doc.models import State
-            to_state = State.objects.get(slug="c-adopt", type="draft-stream-%s" % self.draft.stream_id)
+            to_state = State.objects.get(used=True, slug="c-adopt", type="draft-stream-%s" % self.draft.stream_id)
         else:
             to_state = get_state_by_name(CALL_FOR_ADOPTION)
         update_state(self.request, self.draft,
@@ -215,7 +215,7 @@ class DraftTagsStateForm(StreamDraftForm):
                         next_states = transitions[0].next_states.all()
             else:
                 # return the initial state
-                states = State.objects.filter(type=state_type).order_by('order')
+                states = State.objects.filter(used=True, type=state_type).order_by('order')
                 if states:
                     next_states = states[:1]
 
@@ -233,7 +233,7 @@ class DraftTagsStateForm(StreamDraftForm):
                 return []
 
             from ietf.doc.models import State
-            states = State.objects.filter(type="draft-stream-%s" % self.draft.stream_id)
+            states = State.objects.filter(used=True, type="draft-stream-%s" % self.draft.stream_id)
             if self.draft.stream_id == "ietf" and self.draft.group:
                 unused_states = self.draft.group.unused_states.values_list("pk", flat=True)
                 states = [s for s in states if s.pk not in unused_states]

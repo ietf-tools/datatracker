@@ -118,7 +118,7 @@ def get_or_create_initial_charter(wg):
             rev="00-00",
         )
         charter.save()
-        charter.set_state(State.objects.get(type="charter", slug="notrev"))
+        charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
                 
        # Create an alias as well
         DocAlias.objects.create(

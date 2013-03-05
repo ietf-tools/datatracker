@@ -41,10 +41,10 @@ def expirable_documents():
 
     nonexpirable_states = []
     # all IESG states except AD Watching and Dead block expiry
-    nonexpirable_states += list(State.objects.filter(type="draft-iesg").exclude(slug__in=("watching", "dead")))
+    nonexpirable_states += list(State.objects.filter(used=True, type="draft-iesg").exclude(slug__in=("watching", "dead")))
     # Sent to RFC Editor and RFC Published block expiry (the latter
     # shouldn't be possible for an active draft, though)
-    nonexpirable_states += list(State.objects.filter(type__in=("draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"), slug__in=("rfc-edit", "pub")))
+    nonexpirable_states += list(State.objects.filter(used=True, type__in=("draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"), slug__in=("rfc-edit", "pub")))
 
     return d.exclude(states__in=nonexpirable_states).distinct()
 
@@ -220,7 +220,7 @@ def expire_idREDESIGN(doc):
 
     save_document_in_history(doc)
     if doc.latest_event(type='started_iesg_process'):
-        dead_state = State.objects.get(type="draft-iesg", slug="dead")
+        dead_state = State.objects.get(used=True, type="draft-iesg", slug="dead")
         prev = doc.get_state("draft-iesg")
         prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
         prev_tag = prev_tag[0] if prev_tag else None
@@ -235,7 +235,7 @@ def expire_idREDESIGN(doc):
         e.desc = "Document has expired"
         e.save()
 
-    doc.set_state(State.objects.get(type="draft", slug="expired"))
+    doc.set_state(State.objects.get(used=True, type="draft", slug="expired"))
     doc.time = datetime.datetime.now()
     doc.save()
 

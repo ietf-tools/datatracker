@@ -100,7 +100,7 @@ def update_history_with_changes(changes, send_email=True):
     states = {}
 
     slookup = dict((s.slug, s)
-                   for s in State.objects.filter(type=StateType.objects.get(slug="draft-iana-action")))
+                   for s in State.objects.filter(used=True, type=StateType.objects.get(slug="draft-iana-action")))
     states["action"] = {
         "": slookup["newdoc"],
         "In Progress": slookup["inprog"],
@@ -124,7 +124,7 @@ def update_history_with_changes(changes, send_email=True):
     }
 
     slookup = dict((s.slug, s)
-                  for s in State.objects.filter(type=StateType.objects.get(slug="draft-iana-review")))
+                  for s in State.objects.filter(used=True, type=StateType.objects.get(slug="draft-iana-review")))
     states["review"] = {
         "IANA Review Needed": slookup["need-rev"],
         "IANA OK - Actions Needed": slookup["ok-act"],

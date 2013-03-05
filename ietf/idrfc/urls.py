@@ -84,8 +84,8 @@ urlpatterns = patterns('',
 )
 
 urlpatterns += patterns('django.views.generic.simple',
-    url(r'^help/state/charter/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(type="charter"),'title':"Charter" } }, name='help_charter_states'),
-    url(r'^help/state/conflict-review/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(type="conflrev").order_by("order"),'title':"Conflict Review" } }, name='help_conflict_review_states'),
+    url(r'^help/state/charter/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(used=True, type="charter"),'title':"Charter" } }, name='help_charter_states'),
+    url(r'^help/state/conflict-review/$', 'direct_to_template', { 'template': 'doc/states.html', 'extra_context': { 'states': State.objects.filter(used=True, type="conflrev").order_by("order"),'title':"Conflict Review" } }, name='help_conflict_review_states'),
 )
 
 

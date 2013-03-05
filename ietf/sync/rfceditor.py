@@ -108,7 +108,7 @@ def update_drafts_from_queue(drafts):
     }
 
     slookup = dict((s.slug, s)
-                   for s in State.objects.filter(type=StateType.objects.get(slug="draft-rfceditor")))
+                   for s in State.objects.filter(used=True, type=StateType.objects.get(slug="draft-rfceditor")))
     state_mapping = {
         'AUTH': slookup['auth'],
         'AUTH48': slookup['auth48'],
@@ -354,7 +354,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
             changed_attributes["std_level"] = std_level_mapping[current_status]
 
         if doc.get_state_slug() != "rfc":
-            changed_states.append(State.objects.get(type="draft", slug="rfc"))
+            changed_states.append(State.objects.get(used=True, type="draft", slug="rfc"))
 
         if doc.stream != stream_mapping[stream]:
             changed_attributes["stream"] = stream_mapping[stream]
@@ -386,7 +386,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
         for t in ("draft-iesg", "draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"):
             slug = doc.get_state_slug(t)
             if slug and slug != "pub":
-                changed_states.append(State.objects.get(type=t, slug="pub"))
+                changed_states.append(State.objects.get(used=True, type=t, slug="pub"))
 
         def parse_relation_list(l):
             res = []

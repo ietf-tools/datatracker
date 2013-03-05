@@ -45,7 +45,7 @@ def change_state(request, name):
 IESG_SUBSTATE_TAGS = ('point', 'ad-f-up', 'need-rev', 'extpty')
 
 class ChangeStateFormREDESIGN(forms.Form):
-    state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label=None, required=True)
+    state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
     substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=IESG_SUBSTATE_TAGS), required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
@@ -107,7 +107,7 @@ def change_stateREDESIGN(request, name):
 
                 if next_state.slug in ("iesg-eva", "lc"):
                     if not doc.get_state_slug("draft-iana-review"):
-                        doc.set_state(State.objects.get(type="draft-iana-review", slug="need-rev"))
+                        doc.set_state(State.objects.get(used=True, type="draft-iana-review", slug="need-rev"))
 
                 if next_state.slug == "lc-req":
                     request_last_call(request, doc)
@@ -136,7 +136,7 @@ def change_stateREDESIGN(request, name):
     to_iesg_eval = None
     if not doc.latest_event(type="sent_ballot_announcement"):
         if next_states and next_states.filter(slug="iesg-eva"):
-            to_iesg_eval = State.objects.get(type="draft-iesg", slug="iesg-eva")
+            to_iesg_eval = State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")
             next_states = next_states.exclude(slug="iesg-eva")
 
     return render_to_response('idrfc/change_stateREDESIGN.html',
@@ -158,7 +158,7 @@ class ChangeIanaStateForm(forms.Form):
     def __init__(self, state_type, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
 
-        choices = State.objects.filter(type=state_type).order_by("order").values_list("pk", "name")
+        choices = State.objects.filter(used=True, type=state_type).order_by("order").values_list("pk", "name")
         self.fields['state'].choices = [("", "-------")] + list(choices)
 
 @role_required('Secretariat', 'IANA')
@@ -346,7 +346,7 @@ class EditInfoFormREDESIGN(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.filter(used=True), empty_label="(None)", required=True, label="Intended RFC status")
     area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active"), empty_label="(None - individual submission)", required=False, label="Assigned to area")
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active").order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
-    create_in_state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
+    create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas", required=False)
     note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
@@ -635,7 +635,7 @@ def resurrectREDESIGN(request, name):
         e.desc = "Resurrection was completed"
         e.save()
         
-        doc.set_state(State.objects.get(type="draft", slug="active"))
+        doc.set_state(State.objects.get(used=True, type="draft", slug="active"))
         doc.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
         doc.time = datetime.datetime.now()
         doc.save()
@@ -944,7 +944,7 @@ def request_publication(request, name):
     m.to = "RFC Editor <rfc-editor@rfc-editor.org>"
     m.by = request.user.get_profile()
 
-    next_state = State.objects.get(type="draft-stream-%s" % doc.stream.slug, slug="rfc-edit")
+    next_state = State.objects.get(used=True, type="draft-stream-%s" % doc.stream.slug, slug="rfc-edit")
 
     if request.method == 'POST' and not request.POST.get("reset"):
         form = PublicationForm(request.POST)

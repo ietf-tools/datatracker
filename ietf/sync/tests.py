@@ -175,10 +175,10 @@ class RFCSyncTestCase(django.test.TestCase):
 
     def test_rfc_index(self):
         doc = make_test_data()
-        doc.set_state(State.objects.get(type="draft-iesg", slug="rfcqueue"))
+        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
         # it's a bit strange to have this set when draft-iesg is set
         # too, but for testing purposes ...
-        doc.set_state(State.objects.get(type="draft-stream-ise", slug="rfc-edit"))
+        doc.set_state(State.objects.get(used=True, type="draft-stream-ise", slug="rfc-edit"))
 
         updated_doc = Document.objects.create(name="draft-ietf-something")
         DocAlias.objects.create(name=updated_doc.name, document=updated_doc)
@@ -302,7 +302,7 @@ class RFCSyncTestCase(django.test.TestCase):
     def test_rfc_queue(self):
         draft = make_test_data()
 
-        draft.set_state(State.objects.get(type="draft-iesg", slug="ann"))
+        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="ann"))
 
         t = '''<rfc-editor-queue xmlns="http://www.rfc-editor.org/rfc-editor-queue">
 <section name="IETF STREAM: WORKING GROUP STANDARDS TRACK">
@@ -369,16 +369,16 @@ class DiscrepanciesTestCase(django.test.TestCase):
 
         # draft approved but no RFC Editor state
         doc = Document.objects.create(name="draft-ietf-test1", type_id="draft")
-        doc.set_state(State.objects.get(type="draft-iesg", slug="ann"))
+        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="ann"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
         self.assertTrue(doc.name in r.content)
 
         # draft with IANA state "In Progress" but RFC Editor state not IANA
         doc = Document.objects.create(name="draft-ietf-test2", type_id="draft")
-        doc.set_state(State.objects.get(type="draft-iesg", slug="rfcqueue"))
-        doc.set_state(State.objects.get(type="draft-iana-action", slug="inprog"))
-        doc.set_state(State.objects.get(type="draft-rfceditor", slug="auth"))
+        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
+        doc.set_state(State.objects.get(used=True, type="draft-iana-action", slug="inprog"))
+        doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="auth"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
         self.assertTrue(doc.name in r.content)
@@ -386,9 +386,9 @@ class DiscrepanciesTestCase(django.test.TestCase):
         # draft with IANA state "Waiting on RFC Editor" or "RFC-Ed-Ack"
         # but RFC Editor state is IANA
         doc = Document.objects.create(name="draft-ietf-test3", type_id="draft")
-        doc.set_state(State.objects.get(type="draft-iesg", slug="rfcqueue"))
-        doc.set_state(State.objects.get(type="draft-iana-action", slug="waitrfc"))
-        doc.set_state(State.objects.get(type="draft-rfceditor", slug="iana"))
+        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
+        doc.set_state(State.objects.get(used=True, type="draft-iana-action", slug="waitrfc"))
+        doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="iana"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
         self.assertTrue(doc.name in r.content)
@@ -396,8 +396,8 @@ class DiscrepanciesTestCase(django.test.TestCase):
         # draft with state other than "RFC Ed Queue" or "RFC Published"
         # that are in RFC Editor or IANA queues
         doc = Document.objects.create(name="draft-ietf-test4", type_id="draft")
-        doc.set_state(State.objects.get(type="draft-iesg", slug="ann"))
-        doc.set_state(State.objects.get(type="draft-rfceditor", slug="auth"))
+        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="ann"))
+        doc.set_state(State.objects.get(used=True, type="draft-rfceditor", slug="auth"))
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
         self.assertTrue(doc.name in r.content)
@@ -409,12 +409,12 @@ class RFCEditorUndoTestCase(django.test.TestCase):
         draft = make_test_data()
 
         e1 = add_state_change_event(draft, Person.objects.get(name="(System)"), None,
-                                   State.objects.get(type="draft-rfceditor", slug="auth"))
+                                   State.objects.get(used=True, type="draft-rfceditor", slug="auth"))
         e1.desc = "First"
         e1.save()
 
         e2 = add_state_change_event(draft, Person.objects.get(name="(System)"), None,
-                                   State.objects.get(type="draft-rfceditor", slug="edit"))
+                                   State.objects.get(used=True, type="draft-rfceditor", slug="edit"))
         e2.desc = "Second"
         e2.save()
         

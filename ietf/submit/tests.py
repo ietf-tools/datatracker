@@ -162,7 +162,7 @@ class SubmitTestCase(django.test.TestCase):
         draft = make_test_data()
 
         # pretend IANA reviewed it
-        draft.set_state(State.objects.get(type="draft-iana-review", slug="not-ok"))
+        draft.set_state(State.objects.get(used=True, type="draft-iana-review", slug="not-ok"))
 
         # pretend it was approved to check that we notify the RFC Editor
         e = DocEvent(type="iesg_approved", doc=draft)

@@ -66,7 +66,7 @@ def make_test_data():
         group=group,
         rev="00",
         )
-    charter.set_state(State.objects.get(slug="approved", type="charter"))
+    charter.set_state(State.objects.get(used=True, slug="approved", type="charter"))
     group.charter = charter
     group.save()
     DocAlias.objects.create(
@@ -88,7 +88,7 @@ def make_test_data():
         group=group,
         rev="00",
         )
-    charter.set_state(State.objects.get(slug="infrev", type="charter"))
+    charter.set_state(State.objects.get(used=True, slug="infrev", type="charter"))
     DocAlias.objects.create(
         name=charter.name,
         document=charter
@@ -319,9 +319,9 @@ def make_test_data():
         note="",
         )
 
-    draft.set_state(State.objects.get(type="draft", slug="active"))
-    draft.set_state(State.objects.get(type="draft-iesg", slug="pub-req"))
-    draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
+    draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
+    draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub-req"))
+    draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
     doc_alias = DocAlias.objects.create(
         document=draft,
@@ -396,7 +396,7 @@ def make_test_data():
     doc.save()
     crdoc = Document.objects.create(name='conflict-review-imaginary-irtf-submission',type_id='conflrev',rev='00',notify="fsm@ietf.org")
     DocAlias.objects.create(        name='conflict-review-imaginary-irtf-submission',document=crdoc)
-    crdoc.set_state(State.objects.get(name='Needs Shepherd',type__slug='conflrev'))
+    crdoc.set_state(State.objects.get(used=True, name='Needs Shepherd',type__slug='conflrev'))
     crdoc.save()
     crdoc.relateddocument_set.create(target=docalias,relationship_id='conflrev')
     

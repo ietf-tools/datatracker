@@ -70,13 +70,13 @@ def expire_last_call(doc):
     email_last_call_expired(doc)
 
 def expire_last_callREDESIGN(doc):
-    state = State.objects.get(type="draft-iesg", slug="writeupw")
+    state = State.objects.get(used=True, type="draft-iesg", slug="writeupw")
 
     e = doc.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text")
     if e and "What does this protocol do and why" not in e.text:
         # if boiler-plate text has been removed, we assume the
         # write-up has been written
-        state = State.objects.get(type="draft-iesg", slug="goaheadw")
+        state = State.objects.get(used=True, type="draft-iesg", slug="goaheadw")
 
     save_document_in_history(doc)
 

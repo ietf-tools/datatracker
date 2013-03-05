@@ -141,7 +141,7 @@ def get_state_for_draft(draft):
 
 def get_state_by_name(state_name):
     try:
-        return State.objects.get(name=state_name)
+        return State.objects.get(used=True, name=state_name)
     except State.DoesNotExist:
         return None
 

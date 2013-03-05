@@ -537,7 +537,7 @@ class DeferUndeferTestCase(django.test.TestCase):
         e.save()
         defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'])
         if doc.type_id in defer_states:
-            doc.set_state(State.objects.get(type=defer_states[doc.type_id][0],slug=defer_states[doc.type_id][1]))
+            doc.set_state(State.objects.get(used=True, type=defer_states[doc.type_id][0],slug=defer_states[doc.type_id][1]))
             doc.save()
 
         # get

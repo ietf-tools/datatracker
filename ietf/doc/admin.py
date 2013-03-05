@@ -42,7 +42,7 @@ class StatesWidget(forms.SelectMultiple):
         
         categorized_choices = []
         for t in types:
-            states = State.objects.filter(type=t).select_related()
+            states = State.objects.filter(used=True, type=t).select_related()
             if states:
                 categorized_choices.append((t.label, states))
 
