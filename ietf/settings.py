@@ -111,12 +111,14 @@ MIDDLEWARE_CLASSES = (
     'ietf.middleware.RedirectTrailingPeriod',
     'django.middleware.transaction.TransactionMiddleware',
     'ietf.middleware.UnicodeNfkcNormalization',
+    'ietf.secr.middleware.secauth.SecAuthMiddleware'
 )
 
 ROOT_URLCONF = 'ietf.urls'
 
 TEMPLATE_DIRS = (
-    BASE_DIR + "/templates"
+    BASE_DIR + "/templates",
+    BASE_DIR + "/secr/templates",
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -127,6 +129,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'ietf.context_processors.server_mode',
     'ietf.context_processors.revision_info',
+    'ietf.secr.context_processors.secr_revision_info',
+    'ietf.secr.context_processors.static',
     'ietf.context_processors.rfcdiff_prefix', 
 )
 
@@ -157,7 +161,7 @@ INSTALLED_APPS = (
     'ietf.liaisons',
     'ietf.mailinglists',
     'ietf.meeting',
-    'ietf.proceedings',
+    #'ietf.proceedings',
     'ietf.redirects',
     'ietf.idrfc',
     'ietf.wginfo',
@@ -168,6 +172,19 @@ INSTALLED_APPS = (
     'ietf.sync',
     'ietf.community',
     'ietf.release',
+    # secretariat apps
+    'form_utils',
+    'ietf.secr.announcement',
+    'ietf.secr.areas',
+    'ietf.secr.drafts',
+    'ietf.secr.groups',
+    'ietf.secr.ipradmin',
+    'ietf.secr.meetings',
+    'ietf.secr.proceedings',
+    'ietf.secr.roles',
+    'ietf.secr.rolodex',
+    'ietf.secr.telechat',
+    'ietf.secr.sreq',
 )
 
 INTERNAL_IPS = (
@@ -203,7 +220,7 @@ DATETIME_FORMAT = "Y-m-d H:i"
 INTERNET_DRAFT_PATH = '/a/www/ietf-ftp/internet-drafts/'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
-CHARTER_PATH = '/a/www/ietf-ftp/charters/'
+CHARTER_PATH = '/a/www/ietf-ftp/charter/'
 CHARTER_TXT_URL = 'http://www.ietf.org/charter/'
 CONFLICT_REVIEW_PATH = '/a/www/ietf-ftp/conflict-reviews'
 CONFLICT_REVIEW_TXT_URL = 'http://www.ietf.org/cr/'
@@ -310,6 +327,22 @@ BIBXML_BASE_PATH = '/a/www/ietf-ftp/xml2rfc'
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = '/www/ietf-datatracker/tz/ics/'
 CHANGELOG_PATH = '/www/ietf-datatracker/web/changelog'
+
+# Secretariat Tool
+# this is a tuple of regular expressions.  if the incoming URL matches one of
+# these, than non secretariat access is allowed.
+SECR_AUTH_UNRESTRICTED_URLS = (
+    #(r'^/$'),
+    (r'^/secr/announcement/'),
+    (r'^/secr/proceedings/'),
+    (r'^/secr/sreq/'),
+)
+SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
+SECR_BLUE_SHEET_URL = 'https://datatracker.ietf.org/documents/blue_sheet.rtf'
+SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
+SECR_MAX_UPLOAD_SIZE = 40960000
+SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
+SECR_STATIC_URL = '/secr/'
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.
