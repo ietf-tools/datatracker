@@ -10,6 +10,7 @@ from django.db.models import Count
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
+from ietf.name.models import NomineePositionState
 from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, MergeForm,
                                NomComTemplateForm, PositionForm, PrivateKeyForm)
@@ -55,20 +56,43 @@ def private_key(request, year):
 @member_required(role='member')
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
+
+    filters = {}
+    selected_state = request.GET.get('state')
+    selected_position = request.GET.get('position')
+
+    if selected_state:
+        if selected_state == 'questionnaire':
+            filters['questionnaires__isnull'] = False
+        else:
+            filters['state__slug'] = selected_state
+
+    if selected_position:
+            filters['position__id'] = selected_position
+
     nominee_positions = NomineePosition.objects.all()
+    if filters:
+        nominee_positions = nominee_positions.filter(**filters)
+
     stats = NomineePosition.objects.values('position__name').annotate(total=Count('position'))
+    states = list(NomineePositionState.objects.values('slug', 'name')) + [{'slug': u'questionnaire', 'name': u'Questionnaire'}]
+    positions = NomineePosition.objects.values('position__name', 'position__id').distinct()
     for s in stats:
-        for state in ['pending', 'accepted', 'declined', 'questionnaire', 'pending']:
-            if state == 'questionnaire':
-                s[state] = NomineePosition.objects.filter(position__name=s['position__name'], questionnaires__isnull=False).count()
+        for state in states:
+            if state['slug'] == 'questionnaire':
+                s[state['slug']] = NomineePosition.objects.filter(position__name=s['position__name'], questionnaires__isnull=False).count()
             else:
-                s[state] = NomineePosition.objects.filter(position__name=s['position__name'], state=state).count()
+                s[state['slug']] = NomineePosition.objects.filter(position__name=s['position__name'], state=state['slug']).count()
 
     return render_to_response('nomcom/private_index.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'nominee_positions': nominee_positions,
                                'stats': stats,
+                               'states': states,
+                               'positions': positions,
+                               'selected_state': selected_state,
+                               'selected_position': selected_position and int(selected_position) or None,
                                'selected': 'index'}, RequestContext(request))
 
 
