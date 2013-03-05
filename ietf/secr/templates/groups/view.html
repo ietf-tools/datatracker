@@ -1,0 +1,110 @@
+{% extends "base_site.html" %}
+
+{% block title %}Groups - View{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Groups</a>
+  &raquo; {{ group.acronym }}
+{% endblock %}
+
+{% block content %}
+
+<div class="module group-container">
+  <div id="groups-view-col1">
+    <h2>Groups - View</h2>
+      <table >
+        <col width="150">
+        <tr><td>Group Acronym:</td><td>{{ group.acronym }}</td></tr>
+        <tr><td>Group Name:</td><td>{{ group.name }}</td></tr>
+        <tr><td>Status:</td><td>{{ group.state }}</td></tr>
+        <tr><td>Type:</td><td>{{ group.type }}</td></tr>
+        <tr><td>Proposed Date:</td><td>{{ group.proposed_date|date:"Y-m-d" }}</td></tr>
+        <tr><td>Start Date:</td><td>{{ group.start_date|date:"Y-m-d" }}</td></tr>
+        <tr><td>Concluded Date:</td><td>{{ group.concluded_date|date:"Y-m-d" }}</td></tr>
+        {% comment %}
+        Here we need to check that group.area_director and group.area_director.area are defined before referencing.
+        Otherwise the template would raise errors if the group area director record didn't exist or
+        in the case of Area Director = TBD, the area field is NULL
+        {% endcomment %}
+        <tr><td>Primary Area:</td>
+            <td>{% if not group.parent %}(No Data){% else %}
+                  <a href="{% url areas_view name=group.parent.acronym %}">{{ group.parent }}</a>
+                {% endif %}
+            </td>
+        </tr>
+        <tr><td>Primary Area Director:</td>
+            <td>{% if group.ad %}
+                  <a href="{% url rolodex_view id=group.ad.id %}">{{ group.ad }}</a>
+                {% endif %} 
+            </td></tr>
+        <tr><td>Meeting Scheduled:</td><td>{{ group.meeting_scheduled}}</td></tr>
+        <tr><td>Email Address:</td><td>{{ group.list_email }}</td></tr>
+        <tr><td>Email Subscription:</td><td>{{ group.list_subscribe }}</td></tr>
+        <tr><td>Email Archive:</td><td>{{ group.list_archive }}</td></tr>
+        <tr><td>Charter:</td><td><a href="{% url groups_charter acronym=group.acronym %}">View Charter</a></td></tr>
+        <tr><td>Comments:</td><td>{{ group.comments }}</td></tr>
+        <tr><td>Last Modified Date:</td><td>{{ group.time }}</td></tr>
+      </table>
+      
+      {% with group.groupurl_set.all as awps %}
+          {% include "includes/awp_view.html" %}
+      {% endwith %}
+
+  </div> <!-- groups-view-col1 -->
+  <div id="groups-view-col2">
+      <div class="inline-related">
+        <h2>Chairperson(s)</h2>
+        <table>
+        {% for role in group.chairs %}
+          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
+        {% endfor %}
+        </table>
+      </div> <!-- inline-related -->
+
+      <div class="inline-related">
+        <h2>Document Editor(s)</h2>
+        <table>
+        {% for role in group.editors %}
+          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
+        {% endfor %}
+        </table>
+      </div> <!-- inline-related -->
+
+      <div class="inline-related">
+        <h2>Technical Advisor(s)</h2>
+        <table>
+        {% for role in group.techadvisors %}
+          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
+        {% endfor %}
+        </table>
+      </div> <!-- inline-related -->
+
+      <div class="inline-related">
+        <h2>Secretary(ies)</h2>
+        <table>
+        {% for role in group.secretaries %}
+          <tr><td><a href="{% url rolodex_view id=role.person.id %}">{{ role.person }}</a></td></tr>
+        {% endfor %}
+        </table>
+      </div> <!-- inline-related -->
+      
+    </div> <!-- groups-view-col2 -->
+
+      <div class="button-group">
+	<ul>
+          <li><button onclick="window.location='edit/'">Edit</button></li>
+          <li><button onclick="window.location='people/'">People</button></li>
+          <li><button onclick="window.location='gm/'">G + M</button></li>
+          {% comment %}
+          <li><button onclick="window.location='{% url sec.ids.views.search id=group.group_acronym.acronym_id %}'">Drafts</button></li>
+          <li><button onclick="window.location='{% url sec.rfcs.views.search id=group.group_acronym.acronym_id %}'">RFCs</button></li>
+          {% endcomment %}
+	</ul>
+      </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}

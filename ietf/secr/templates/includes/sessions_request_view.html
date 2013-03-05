@@ -1,0 +1,32 @@
+      {% load ams_filters %}
+      <table class="full-width">
+        <col width="200">
+        <tr class="row1"><td>Working Group Name:</td><td>{{ group.name }} ({{ group.acronym }})</td></tr>
+        <tr class="row2"><td>Area Name:</td><td>{{ group.parent }}</td></tr>
+        <tr class="row1"><td>Number of Sessions Requested:</td><td>{% if session.length_session3 %}3{% else %}{{ session.num_session }}{% endif %}</td></tr>
+        <tr class="row2"><td>Length of Session 1:</td><td>{{ session.length_session1|display_duration }}</td></tr>
+        {% if session.length_session2 %}
+          <tr class="row2"><td>Length of Session 2:</td><td>{{ session.length_session2|display_duration }}</td></tr>
+        {% endif %}
+        {% if session.length_session3 %}
+          <tr class="row2"><td>Length of Session 3:</td><td>{{ session.length_session3|display_duration }}</td></tr>
+        {% endif %}
+        <tr class="row1"><td>Number of Attendees:</td><td>{{ session.attendees }}</td></tr>
+        <tr class="row2">
+          <td>Conflicts to Avoid:</td>
+          <td>
+            <table>
+              {% if session.conflict1 %}<tr><td>First Priority: </td><td>{{ session.conflict1 }}</td></tr>{% endif %}
+              {% if session.conflict2 %}<tr><td>Second Priority: </td><td>{{ session.conflict2 }}</td></tr>{% endif %}
+              {% if session.conflict3 %}<tr><td>Third Priority: </td><td>{{ session.conflict3 }}</td></tr>{% endif %}
+            </table>
+          </td>
+        </tr>
+        <tr class="row1">
+          <td>Other WGs that included {{ group }} in their conflict list:</td>
+          <td>{% if session_conflicts %}{{ session_conflicts }}{% else %}<i>None so far</i>{% endif %}</td>
+        </tr>
+        {% autoescape off %}
+        <tr class="row2"><td>Special Requests:</td><td>{{ session.comments }}</td></tr>
+        {% endautoescape %}
+      </table>

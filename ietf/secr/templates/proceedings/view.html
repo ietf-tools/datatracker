@@ -1,0 +1,80 @@
+{% extends "base_site.html" %}
+
+{% block title %}Proceedings - View{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../">Proceedings</a>
+  &raquo; {{ meeting.number }} 
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>IETF  {{meeting.number}} Meeting - View</h2>
+     {% ifequal meeting.frozen 1 %}
+      <ul class="errorlist"><li> THIS IS A FROZEN PROCEEDING</li></ul> 
+     {% endifequal %}
+      <table class="full-width">
+        <col id="proceedings-view-first-col" />
+        <tr><td>Meeting Start Date:</td><td> {{ meeting.date }}</td></tr>
+        <tr><td>Meeting End Date:</td><td> {{ meeting.end_date }} </td></tr>
+        <tr><td>Meeting City:</td><td> {{ meeting.city }} </td></tr>
+        <tr><td>Meeting Country:</td><td> {{ meeting.country }} </td></tr>
+      </table>
+      
+      <div class="inline-related">
+       <h2>Dates</h2>
+	<table class="full-width">
+	      <col id="proceedings-view-first-col" />
+          <tr><td>Submission Start Date:</td><td> {{ meeting.get_submission_start_date }} </td></tr>
+          <tr><td>Submission Cut Off Date:</td><td> {{ meeting.get_submission_cut_off_date }} </td></tr>
+          <tr><td>Submission Correction Cut Off Date:</td><td> {{ meeting.get_submission_correction_date }} </td></tr>
+          <tr><td>Progress Report Start:</td><td> {{ meeting.pr_from_date }}  </td></tr>
+          <tr><td>Progress Report End:</td><td> {{ meeting.pr_to_date }} </td></tr>
+       </table>
+      </div><!-- inline-related-->
+
+      <div class="button-group">
+     {% ifequal meeting.frozen 0 %}
+       <ul>
+             <li><button onclick="window.location='{% url proceedings_select meeting_num=meeting.number %}'">Upload Materials</button></li>
+             <li><button onclick="window.location='convert/'">Convert Materials</button></li>
+             <li><button onclick="window.location='status/'">Proceedings {{ meeting.number }} Status</button></li>
+        </ul>
+     {% endifequal %}
+     {% ifequal meeting.frozen 1 %}
+        <ul>
+             <li><button onclick="window.location='status/'">Proceedings {{ meeting.number }} Status</button></li>
+        </ul>
+    {% endifequal %}
+      </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

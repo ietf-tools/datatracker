@@ -1,0 +1,24 @@
+{% extends "base_site.html" %}
+
+{% block title %}Groups - Charter{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Groups</a>
+  &raquo; <a href="../">{{ group.acronym }}</a>
+  &raquo; Charter
+{% endblock %}
+
+{% block content %}
+
+<div class="module group-container">
+    <h2>Groups - Charter</h2>
+    <pre>
+    {% if charter_txt %}{{ charter_text }}{% else %}Charter not found.{% endif %}
+    </pre>
+</div> <!-- module -->
+
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base_site.html" %}
+
+{% block title %}Meetings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery-ui-1.8.1.custom.css" />
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery.ui.autocomplete.css" />
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.8.1.custom.min.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/dynamic_inlines.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Meetings</a>
+  &raquo; <a href="../">{{ meeting.number }}</a>
+  &raquo; Rooms and Times
+{% endblock %}
+
+
+{% block content %}
+
+<div id="nav" class="rooms-times-nav">
+  <ul id="list-nav">
+    <li id="nav-room" class="leftmost"><a href="{% url meetings_rooms meeting_id=meeting.number %}">Rooms</a></li>
+    <li id="nav-time"><a href="{% url meetings_times meeting_id=meeting.number %}">Times</a></li>
+    <li id="nav-non-session"><a href="{% url meetings_non_session meeting_id=meeting.number %}">Non-Session</a></li>
+  </ul>
+</div>
+
+{% block subsection %}{% endblock %}
+
+{% endblock %}

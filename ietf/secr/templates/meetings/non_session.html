@@ -1,0 +1,68 @@
+{% extends "meetings/base_rooms_times.html" %}
+
+{% block subsection %}
+
+<div class="module">
+    <h2>TimeSlots</h2>
+
+    {% if slots %}
+    <table class="full-width">
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>Time</th>
+          <th>Name</th>
+          <th>Short Name</th>
+          <th>Group</th>
+          <th>Location</th>
+          <th>Show Loc.</th>
+          <th>Type</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in slots %}
+          <tr class="{% cycle row1,row2 %}{% ifchanged item.type %} break{% endifchanged %}">
+            <td>{{ item.time|date:"D" }}</td>
+            <td>{{ item.time|date:"H:i" }}-{{ item.end_time|date:"H:i" }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.session.short }}</td>
+            <td>{{ item.session.group.acronym }}</td>
+            {% if item.type.slug == 'other' or item.type.slug == 'plenary' %}
+              <td><a href="{% url meetings_non_session_edit meeting_id=meeting.number slot_id=item.id %}">{{ item.location }}</a></td>
+            {% else %}
+              <td>{{ item.location }}</td>
+            {% endif %}
+            <td>{{ item.show_location }}</td>
+            <td>{{ item.type }}</td>
+            <td><a href="{% url meetings_non_session_delete meeting_id=meeting.number slot_id=item.id %}">Delete</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <h3>No timeslots exist for this meeting.  First add the rooms and then the app will create timeslots based on the schedule from the last meeting.</h3>
+    {% endif %}
+    <br /><hr />
+    
+    <div>
+    <form id="timeslot-form" action="" method="post">
+        <table id="timeslot-form" class="full-width amstable">
+          <col width="150">
+          {{ form.as_table }}
+          <tr><td colspan="2" align="center"><input type="submit" name="submit" value="Add" /></td></tr>
+        </table>
+     </form>
+     </div>
+    
+    <div class="button-group">
+      <ul>
+        <li><button onclick="window.location='../'">Back</button></li>
+      </ul>
+    </div> <!-- button-group -->
+      
+      </form>
+</div> <!-- module -->
+
+
+{% endblock %}

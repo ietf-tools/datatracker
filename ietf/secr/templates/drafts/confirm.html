@@ -1,0 +1,46 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - Confirm{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Drafts</a>
+  &raquo; <a href="../">{{ draft.name }}</a>
+  &raquo; Confirm
+{% endblock %}
+
+{% block content %}
+
+<div class="module draft-container">
+    <h2>Draft - Confirm</h2>
+    <form enctype="multipart/form-data" action="" method="post">
+      
+      <table>
+        <tr><th>Action Selected:</th><td>{{ action }}</td></tr>
+        <tr><th>Draft:</th><td>{{ draft.name }}</td></tr>
+        {% for detail in details %}
+          <tr><th>{{ detail.label }}</th><td>{{ detail.value }}</td></tr>
+        {% endfor %}
+      </table>
+      
+      {% if email %}
+        <div class="inline-group">
+          <h2>Scheduled Email</h2>
+          <table id="draft-confirm-email">
+            <tr><th>To:</th><td>{{ email.to }}</td></tr>
+            <tr><th>CC:</th><td>{{ email.cc }}</td></tr>
+            <tr><th>Subject:</th><td>{{ email.subject }}</td></tr>
+            <tr><th>Body:</th><td>{{ email.body }}</td></tr>
+          </table>
+        </div>
+      {% endif %}
+      
+      {% include "includes/buttons_save_cancel.html" %}
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

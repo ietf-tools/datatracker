@@ -1,0 +1,46 @@
+{% extends "base_site.html" %}
+
+{% block title %}Groups - View G+M{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Groups</a>
+  &raquo; <a href="../">{{ group.acronym }}</a>
+  &raquo;  Goals and Milestones
+{% endblock %}
+
+{% block content %}
+
+<div class="module group-container">
+    <h2>Groups - View Goals and Milestones</h2>
+      <table class="full-width">
+        <thead>
+          <tr>
+          <th>Description</th>
+          <th>Expected Due Date</th>
+          <th>Done Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for gm in group.groupmilestone_set.all %}
+          <tr class="{% cycle row1,row2 %}">
+            <td>{{ gm.desc }}</td>
+            <td>{{ gm.expected_due_date|date:"Y-m-d" }}</td>
+            <td>{{ gm.done_date|date:"Y-m-d" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="button-group">
+	<ul>
+          <!-- <li><button onclick="window.location='../../'">Back</button></li> -->
+          <li><button onclick="window.location='edit/'">Edit</button></li>
+	</ul>
+      </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}

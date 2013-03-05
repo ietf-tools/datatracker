@@ -1,0 +1,89 @@
+{% extends "base_site.html" %}
+
+{% block title %}Roles{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery-ui-1.8.1.custom.css" />
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery.ui.autocomplete.css" />
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.8.1.custom.min.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+  
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $.ajaxSetup ({  
+        cache: false  
+      });
+      
+      $('#id_group').change(function(){
+        var loadUrl = "/roles/ajax/get-roles/" + $(this).val() + "/";
+        var ajax_load = "<img class='loading' src='{{ SECR_STATIC_URL }}img/ajax-loader.gif' alt='loading...' />";
+        var text = $(this).val();
+        $("#id_group_acronym").val(text);
+        $("#roles-list").html(ajax_load).load(loadUrl);  
+      });
+      
+      var sel = $('#id_group').val();
+      if (sel != '') { $('#id_group').change(); }
+    
+    });
+    
+  </script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Roles
+{% endblock %}
+{% block instructions %}
+  <a href="" target="_blank">Instructions</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Role Tool</h2>
+         <div class="inline-related">
+           <h3><b>Select Group</b></h3>
+           <p>Select a Group to change roles.</p>
+           <form id="roles-form".>
+             {{ group_form.as_p }}
+           </form>
+           <p><a href="{% url groups_add %}">Add a new group...</a></p>
+         </div> <!-- inline-related -->
+         <br>
+         
+         <div class="inline-related">
+           <h2></h2>
+           <h3><b>Role Details</b></h3>
+           <div id="roles-list"></div>
+           <p></p>
+         </div> <!-- inline-related -->
+         
+         <div class="inline-related">
+          <h2></h2>
+          <h3>Add Role</h3>
+          {% with role_form as form %}
+          <form id="roles-form" action="" method="post">
+            {{ role_form.non_field_errors }}
+            <table class="full-width">
+              <tr>
+                {{ form.group_acronym.errors }}{{ form.group_acronym }}
+                <td>{{ form.name.errors }}{{ form.name }}</td>
+                <td>{{ form.person.errors }}{{ form.person }}{% if form.person.help_text %}<br>{{ form.person.help_text }}{% endif %}</td>
+                <td>{{ form.email.errors }}{{ form.email }}{% if form.email.help_text %}<br>{{ form.email.help_text }}{% endif %}</td>
+                <td><input type="submit" name="submit" value="Add" /></td>
+              </tr>
+            </table>    
+          </form>
+          {% endwith %}
+        </div> <!-- inline-related -->
+    
+    <div class="button-group">
+      <ul>
+        <li><button onclick="window.location='../'">Back</button></li>
+      </ul>
+    </div> <!-- button-group -->
+
+</div> <!-- module -->
+
+{% endblock %}
+

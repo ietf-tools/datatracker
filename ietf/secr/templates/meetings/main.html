@@ -1,0 +1,36 @@
+{% extends "base_site.html" %}
+
+{% block title %}Meetings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Meetings 
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>Meeting Manager</h2>
+         <div class="inline-related">
+           <h3><b>Select a meeting to manage</b></h3>
+            
+            <br>
+            <form action="" method="post">
+            <p>
+            {{ form }}
+            <input type="submit" value="Select" />
+            </p>
+            </form>
+
+         </div> <!-- inline-related -->
+         <div class="button-group">
+           <ul id="proceedings-interim-buttons">
+             <li><button onclick="window.location='{% url meetings_add %}'">Create New Meeting</button></li>
+           </ul>
+         </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}

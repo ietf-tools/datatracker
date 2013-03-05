@@ -1,0 +1,30 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - Abstract{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Drafts</a>
+  &raquo; <a href="../">{{ draft.canonical_name }}</a>
+  &raquo; Abstract
+{% endblock %}
+
+{% block content %}
+
+<div class="module draft-container">
+    <h2>View Abstract - {{ draft.canonical_name }}</h2>
+    <p>
+      {{ draft.abstract }}
+    </p> 
+      <div class="button-group">
+        <ul>
+          <li><button onclick="window.location='../'">Back to View</button></li>
+        </ul>
+      </div> <!-- button-group -->
+
+</div> <!-- module -->
+
+{% endblock %}

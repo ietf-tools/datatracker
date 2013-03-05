@@ -1,0 +1,35 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - Submission Dates{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Drafts</a>
+  &raquo; Submission Dates
+{% endblock %}
+
+{% block content %}
+
+<div class="module draft-container">
+    <h2>Draft - Submission Dates</h2>
+      <table class="full-width">
+        <tr><td>First Cut Off (Initial Version)</td><td>{{ meeting.get_first_cut_off }}</td></tr>
+        <tr><td>Second Cut Off (Update Version)</td><td>{{ meeting.get_second_cut_off }}</td></tr>
+        <tr><td>IETF Monday</td><td>{{ meeting.get_ietf_monday }}</td></tr>
+        <tr><td>All I-Ds will be processed by</td><td></td></tr>
+        <tr><td>Monday after IETF</td><td></td></tr>
+        <tr><td>Date for list of approved V-00 submissions from WG Chairs</td><td></td></tr>
+      </table>
+      
+      <div class="button-group">
+      <ul>
+        <li><button onclick="history.go(-1);return true">Back</button></li>
+      </ul>
+      </div> <!-- button-group -->
+  
+</div> <!-- module -->
+
+{% endblock %}

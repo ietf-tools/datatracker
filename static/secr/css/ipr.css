@@ -1,0 +1,132 @@
+form ul {
+    list-style-type:none;
+    padding-left:0;
+    }
+    form li {
+        overflow:auto;
+        margin-top:15px;
+        }
+        form li label {
+            width:200px;
+            float:left;
+            text-align:right;
+            margin:2px 10px 0 0;
+            clear:left;
+            }
+        .errorlist li {
+            background:red;
+            color:white;
+            font-weight:bold;
+            padding:5px;
+            margin:0 0 5px 0;
+            }
+    form ol label {
+        width:auto;
+        }
+        form ol li li {
+            clear:left;
+            margin:5px 0 0 40px;
+            }
+            form ol li label {
+                float:none;
+                }
+
+.autocompletes a img {
+    border:1px solid white;
+    }
+    .autocompletes a:hover img {
+        border:1px solid gray;
+        }
+
+.ui-autocomplete {
+    width:500px;
+    }
+body {
+    font-family: verdana, arial, sans-serif;
+}
+.alert {
+    color: red;
+}
+
+#content form fieldset#update_license_declaration input[type=checkbox] {
+    margin-left: 55px;
+}
+#content form input[type=text] {
+    width: 500px;
+}
+#content form {
+    width: 900px;
+}
+#content fieldset {
+    width: 860px;
+}
+#content form label[for=id_document_sections_0] {
+    height: 60px;
+}
+#content fieldset ol input {
+    /* TODO */
+}
+
+#id_notes {
+    vertical-align: top;
+}
+
+.ui-autocomplete {
+    width: 500px;
+}
+form ul {
+    list-style-type: none;
+}
+form li {
+    overflow: auto;
+    margin-top: 15px;
+}
+form li label {
+    width: 250px;
+    /* text-align: right; */
+    margin: 2px 10px 0 0;
+    /* clear: both; */
+}
+form li input {
+    margin-left: 15px;
+    text-align: top;
+}
+form li label input {
+    margin: 0;
+}
+form li textarea {
+    margin-left: 15px;
+}
+.autocompletes a img {
+    border: 1px solid white;
+}
+.autocompletes a:hover img {
+    border: 1px solid gray;
+}
+
+/*
+#id_update_ipr {
+    text-align: center;
+    display: block;
+}
+*/
+
+/* AMS Changes follow */
+.button-group li {
+    margin-top: 0;
+}
+
+.ipr-container {
+    width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#rfc_num_list {
+    list-style-type: none;
+}
+
+/* override main content div width */
+#content {
+    margin: 10px auto;
+    width: 900px;
+}

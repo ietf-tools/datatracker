@@ -1,0 +1,32 @@
+{% extends "base_site.html" %}
+
+{% block title %}Areas - Edit{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Areas</a>
+  &raquo; <a href="../">{{ area.acronym }}</a>
+  &raquo; Edit
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <form action="." method="post">
+    <h2>Area - Edit</h2>
+      <table class="full-width amstable">
+        <col width="150">
+        {{ form.as_table }}
+      </table>
+
+      {% include "includes/awp_edit_form.html" %}
+
+      {% include "includes/buttons_save_cancel.html" %}
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

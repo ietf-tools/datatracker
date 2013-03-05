@@ -1,0 +1,36 @@
+{% extends "ietf_base.html" %}
+
+{% block content %}
+
+<h2>Interim Meeting Proceedings</h2>
+<table id="interim-directory-table">
+    <tr>
+      <td><a href="http://www.ietf.org/meeting/interim/proceedings.html">Date</a></td>
+      <td><a href="http://www.ietf.org/meeting/interim/proceedings-bygroup.html">Group</a></td>
+      <td></td>
+      <td></td>
+    </tr>
+  {% for meeting in meetings %}
+    <tr class="{% cycle row1,row2 %}">
+      <td align="left" style="white-space: nowrap">{{ meeting.date }}</td>
+      <td><a href="http://datatracker.ietf.org/wg/{{ meeting.group.acronym }}">{{ meeting.group.acronym }}</a></td>
+      {% if meeting.agenda %}
+        <td width="70" align="center"><a href="{{ meeting.agenda.get_absolute_url }}">Agenda</a></td>
+      {% else %}
+        <td width="70" align="center">Agenda</td>
+      {% endif %}
+      {% if meeting.minutes %}
+        <td width="70" align="center"><a href="{{ meeting.minutes.get_absolute_url }}">Minutes</a></td>
+      {% else %}
+        <td width="70" align="center">Minutes</td>
+      {% endif %}
+      {% if meeting.get_proceedings_url %}
+        <td><a href="{{ meeting.get_proceedings_url }}">Proceedings</a></td>
+      {% else %}
+        <td>Proceedings</td>
+      {% endif %}
+    </tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - View{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Drafts</a>
+  &raquo; {{ draft.name }}
+{% endblock %}
+
+{% block content %}
+
+{% comment %}{{ request.user }}{% endcomment %}
+
+<div class="module draft-container">
+  <div id="draft-view-col1">
+    <h2>Draft - View</h2>
+      <table class="full-width">
+        <tr><td>Document Name:</td><td>{{ draft.title }}</td></tr>
+        <tr><td>Area:</td><td>{% if draft.group.parent %}<a href="{% url areas_view name=draft.group.parent.acronym %}">{{ draft.group.parent }}{% endif %}</td></tr>
+        <tr><td>Group:</td><td>{% if draft.group %}<a href="{% url groups_view acronym=draft.group.acronym %}">{{ draft.group.acronym }}{% endif %}</td></tr>
+        <tr><td>Area Director:</td><td>{{ draft.ad }}</td></tr>
+        <tr><td>Shepherd:</td><td>{{ draft.shepherd }}</td></tr>
+        <tr><td>Notify:</td><td>{{ draft.notify }}</td></tr>
+        <tr><td>Document State:</td><td>{{ draft.get_state }}</td></tr>
+        <tr><td>IESG State:</td><td>{{ draft.iesg_state }}</td></tr>
+        <tr><td>Stream:</td><td>{{ draft.stream }}</td></tr>
+        <tr><td>Under Review by RFC Editor:</td><td>{% if draft.review_by_rfc_editor %}YES{% else %}NO{% endif %}</td></tr>
+        <tr><td>File Name:</td>
+          <td>{% if draft.expired_tombstone %}
+                {{ draft.filename }}
+                <div class=alert>This is a last active version - the tombstone was expired.</div>
+              {% else %}<a href="{% if is_development %}http://devr.amsl.com/ftp/{% else %}http://www.ietf.org/internet-drafts/{% endif %}{{ draft.name }}-{{ draft.rev }}.txt">{{ draft.name }}</a>
+              {% endif %}
+          </td></tr>
+        <tr><td>Document Aliases:</td>
+            <td>{% for alias in draft.docalias_set.all %}
+                  {% if not forloop.first %}, {% endif %}
+                  {{ alias.name }}
+                {% endfor %}
+            </td>
+        </tr>
+        <tr><td>Revision:</td><td>{{ draft.rev }}</td></tr>
+        <tr><td>Revision Date:</td><td>{{ draft.revision_date }}</td></tr>
+        <tr><td>Start Date:</td><td>{{ draft.start_date }}</td></tr>
+        <tr><td>Number of Pages:</td><td>{{ draft.pages }}</td></tr>
+        {% comment %}<tr><td>Local Path:</td><td>/ftp/internet-drafts/{{ draft.local_path|default_if_none:"" }}</td></tr>{% endcomment %}
+        <tr><td>Abstract:</td><td><a href="{% url drafts_abstract id=draft.name %}">Click here to view the abstract</td></tr>
+        <tr><td>Expiration Date:</td><td>{{ draft.expires|date:"M. d, Y" }}</td></tr>
+        <tr><td>Intended Status:</td><td>{{ draft.intended_std_level|default_if_none:"" }}</td></tr>
+        <tr><td>RFC Number:</td><td>{{ draft.rfc_number|default_if_none:"" }}</td></tr>
+        <tr><td>Comments:</td><td>{{ draft.internal_comments|default_if_none:"" }}</td></tr>
+        <tr><td>Last Modified Date:</td><td>{{ draft.time }}</td></tr>
+        <tr><td>Replaced by:</td><td>{% if draft.replaced_by %}<a href="{% url drafts_view id=draft.replaced_by.name %}">{{ draft.replaced_by.name }}{% endif %}</td></tr>
+        <tr><td>Related Documents:</td><td>{% for item in draft.relateddocument_set.all %}{% if not forloop.first %}, {% endif %}{{ item.relationship }} <a href="{% url drafts_view id=item.target.document.pk %}">{{ item.target.name }}</a>{% endfor %}</td></tr>
+        <tr><td>Tags:</td>
+            <td>{% for tag in draft.tags.all %}
+                  {% if not forloop.first %}, {% endif %}
+                  {{ tag }}
+                {% endfor %}
+            </td>
+        </tr>
+      </table>
+
+  </div> <!-- draft-view-col1 -->
+  <div id="draft-view-col2">
+      <div class="inline-related">
+        <h2>Author(s)</h2>
+        <table class="full-width">
+        {% for author in draft.documentauthor_set.all %}
+          <tr><td><a href="{% url rolodex_view id=author.author.person.id %}">{{ author.author.person.name }}</a></td></tr>
+        {% endfor %}
+        </table>
+      </div> <!-- inline-related -->
+      <div class="inline-related action-group">
+        <h2>Actions</h2>
+          <ul>
+            <li><button {% if is_active %}{% else %}disabled="disabled"{% endif %}onclick="window.location='revision/'">New Revision</button></li>
+            <li><button {% if is_expired %}{% else %}disabled="disabled"{% endif %}onclick="window.location='update/'">Update Expired</button></li>
+            <li><button {% if is_expired or is_withdrawn %}{% else %}disabled="disabled"{% endif %}onclick="window.location='resurrect/'">Resurrect</button></li>
+            <li><button {% if is_active or is_expired %}{% else %}disabled="disabled"{% endif %}onclick="window.location='replace/'">Replace</button></li>
+            <li><button {% if is_active %}{% else %}disabled="disabled"{% endif %}onclick="window.location='extend/'">Extend Expiry</button></li>
+            <li><button {% if is_active %}{% else %}disabled="disabled"{% endif %}onclick="window.location='withdraw/'">Withdraw</button></li>
+            <li><button {% if is_active %}{% else %}disabled="disabled"{% endif %}onclick="window.location='announce/'">Announcement</button></li>
+            <li><button {% if is_active %}{% else %}disabled="disabled"{% endif %}onclick="window.location='makerfc/'">Make RFC</button></li>
+          </ul>
+      </div> <!-- inline-related -->
+  </div> <!-- draft-view-col2 -->
+
+      <div class="button-group">
+	<ul>
+          <li><button onclick="window.location='edit/'">Edit</button></li>
+          <li><button onclick="window.location='authors/'">Authors</button></li>
+          {% comment %}
+          <li><button onclick="window.location='{% url sec.ids.views.search id=group.group_acronym.acronym_id %}'">Drafts</button></li>
+          <li><button onclick="window.location='{% url sec.rfcs.views.search id=group.group_acronym.acronym_id %}'">RFCs</button></li>
+          {% endcomment %}
+	</ul>
+      </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}

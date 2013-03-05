@@ -1,0 +1,42 @@
+{% extends "base_site.html" %}
+
+{% block title %}Areas{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Areas
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>Areas <span class="unlocked"><a href="add/" class="addlink">Add</a></span></h2>
+    <table id="areas-list-table" class="full-width">
+      <thead>
+	<tr>
+	  <th>Name</th>
+	  <th>Acronym</th>
+	  <th>Status</th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for item in results %}
+	   <tr class="{% cycle 'row1' 'row2' %} {{ item.state|lower }}">
+	     <td><a href="{% url areas_view name=item.acronym %}">{{ item.name }}</a></td>
+             <td>{{ item.acronym }}</td>
+             <td>{{ item.state }}</td>
+	   </tr>
+	{% endfor %}
+      </tbody>
+    </table>
+
+    <div class="button-group">
+      <ul id="areas-button-list">
+      </ul>
+    </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}

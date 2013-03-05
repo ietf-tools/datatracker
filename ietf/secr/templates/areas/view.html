@@ -1,0 +1,52 @@
+{% extends "base_site.html" %}
+
+{% block title %}Areas - View{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Areas</a>
+  &raquo; {{ area.acronym }}
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>Area - View</h2>
+      <table class="full-width">
+        <col width="150">
+        <tr><td>Area Acronym:</td><td>{{ area.acronym }}</td></tr>
+        <tr><td>Area Name:</td><td>{{ area.name }}</td></tr>
+        <tr><td>Status:</td><td>{{ area.state }}</td></tr>
+        <tr><td>Start Date:</td><td>{{ area.start_date|date:"Y-m-d" }}</td></tr>
+        <tr><td>Concluded Date:</td><td>{{ area.concluded_date|date:"Y-m-d" }}</td></tr>
+        <tr><td>Last Modified Date:</td><td>{{ area.time|date:"Y-m-d" }}</td></tr>
+        <tr><td>Comments:</td><td>{{ area.comments}}</td></tr>
+      </table>
+
+      <div class="inline-related">
+        <h2>Directors</h2>
+        <table  class="full-width">
+	{% for director in directors %}
+          <tr><td><a href="{% url rolodex_view id=director.person.id %}">{{ director.person.name }}</a>{% if director.name.slug == "pre-ad" %} (Incoming){% endif %}</td></tr>
+        {% endfor %}
+        </table>
+      </div> <!-- inline-group -->
+
+      {% with area.groupurl_set.all as awps %}
+          {% include "includes/awp_view.html" %}
+      {% endwith %}
+
+      <div class="button-group">
+	<ul>
+          <!-- <li><button onclick="window.location='../../'">Back</button></li> -->
+          <li><button onclick="window.location='edit/'">Edit</button></li>
+          <li><button onclick="window.location='people/'">People</button></li>
+          <li><button onclick="window.location='{% url groups_search %}?primary_area={{ area.id }}'">Groups</button></li>
+	</ul>
+      </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - Make RFC{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/add_form.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Drafts</a>
+  &raquo; <a href="../">{{ draft.name }}</a>
+  &raquo; Make RFC
+{% endblock %}
+
+{% block content %}
+
+<div class="module draft-container">
+  <div id="draft-view-col1">
+    <h2>Draft - Make RFC</h2>
+    <form enctype="multipart/form-data" action="" method="post">
+      <table id="draft-makerfc-table" class="full-width">
+        {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+        <tr><th><label for="id_title">RFC Name</label></th><td colspan="3">{{ form.title.errors }}{{ form.title }}</td></tr>
+        <tr>
+          <th><label for="id_rfc_number">RFC Number</label></th><td>{{ form.rfc_number.errors }}{{ form.rfc_number }}</td>
+          <th><label for="id_txt_page_count">No. of Pages</label></th><td>{{ form.pages.errors }}{{ form.pages }}</td>
+        </tr>
+        <tr><th><label for="id_rfc_published_date">RFC Published Date</label></th><td>{{ form.rfc_published_date.errors }}{{ form.rfc_published_date }}</td></tr>
+        <tr>
+          <th><label for="id_status">RFC Std Level</label></th><td>{{ form.std_level.errors }}{{ form.std_level }}</td>
+          <th><label for="id_group_acronym">Group</label></th><td>{{ form.group.errors }}{{ form.group }}</td>
+        </tr>
+        {% comment %}
+        <tr>
+          <th><label for="id_proposed_date">Proposed Date</label></th><td>{{ form.proposed_date.errors }}{{ form.proposed_date }}</td>
+          <th><label for="id_draft_date">Draft Date</label></th><td>{{ form.draft_date.errors }}{{ form.draft_date }}</td>
+        </tr>
+        <tr>
+          <th><label for="id_standard_date">Standard Date</label></th><td>{{ form.standard_date.errors }}{{ form.standard_date }}</td>
+          <th><label for="id_historic_date">Historic Date</label></th><td>{{ form.historic_date.errors }}{{ form.historic_date }}</td>
+        </tr>
+        <tr>
+          <th><label for="id_fyi_number">FYI Number</label></th><td>{{ form.fyi_number.errors }}{{ form.fyi_number }}</td>
+          <th><label for="id_std_number">STD Number</label></th><td>{{ form.std_number.errors }}{{ form.std_number }}</td>
+        </tr>
+        {% endcomment %}
+        <tr><th><label for="id_comments">Comments</label></th><td colspan="3">{{ form.internal_comments.errors }}{{ form.internal_comments }}</td></tr>
+      </table>
+  </div> <!-- draft-view-col1 -->
+  <div id="draft-view-col2">
+    <div class="inline-related">
+      <h2>Author(s)</h2>
+        <table>
+        {% for author in draft.authors.all %}
+          <tr><td><a href="{% url sec.rolodex.views.view id=author.person.pk %}">{{ author.person.name }}</a></td></tr>
+        {% endfor %}
+        </table>
+    </div> <!-- inline-related -->
+    <div class="inline-related add-form action-group">
+        <h2>Obsolete and Update Relationships</h2>
+          {{ obs_formset.management_form }}
+          {{ obs_formset.non_form_errors }}
+          <table id="draft-obsoletes-table" class="full-width">
+            {% for form in obs_formset.forms %}
+              
+              {% comment %}<tr><td colspan="2">{{ form.relation.errors }}{{ form.rfc.errors }}</td></tr>{% endcomment %}
+              <tr>
+                <td>{% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+                {{ form.relation.errors }}{{ form.relation }}</td><td>{{ form.rfc.errors }}{{ form.rfc }}</td>
+              </tr>
+            {% endfor %}
+          </table>
+    </div> <!-- inline-related -->
+  </div> <!-- draft-view-col2 -->
+  
+   {% include "includes/buttons_save_cancel.html" %}
+  </form>
+</div> <!-- module -->
+
+{% endblock %}

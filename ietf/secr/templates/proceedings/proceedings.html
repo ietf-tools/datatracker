@@ -1,0 +1,151 @@
+{% include "includes/proceeding_header.html" %}
+{% load ams_filters %}
+{% comment %}
+This is a unique template in the Secretariat Django project in that it does not extend
+the standard base templates.  Instead we include proceedings_header.html and
+proceedings_footer.html which are used in the PHP apps.
+Note this section should begin with
+<td id="content1"><div id="content2">
+and end with
+</div></td></tr>
+{% endcomment %}
+
+<td id="content1"><div id="content2">
+
+{% if meeting.type.slug == "ietf" %}
+   <p class="ptitle">{{ meeting }} Proceedings</p>
+   <p><a href="index.html#intro">Introduction</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#wgreports">Area, Working Goup &amp; BoF Reports</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#plenary">Plenaries</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#training">Training</a>&nbsp;&nbsp;|&nbsp; <a href="index.html#irtf">Internet Research Task Force</a></p>
+   <h2>{{ group.name }} ({{ group.acronym }}) ({{ group.type }})</h2>
+{% else %}
+   <h2>{{ group.name }} ({{ group.acronym }})</h2>
+   <h3>Interim Meeting of {{ meeting.date }}</h3>
+{% endif %}
+
+<h3>
+{% if minutes %}
+  <a href="{{ minutes.get_absolute_url }}">Minutes</a>
+{% else %}
+  Minutes
+{% endif %}&nbsp;&nbsp;|&nbsp;&nbsp;
+{% if meeting.type.slug == "ietf" %}
+  <a href="/audio/ietf{{ meeting.number }}/">Audio Archives</a>&nbsp;&nbsp;|&nbsp;&nbsp;
+{% else %}
+  {% if agenda %}
+    <a href="{{ agenda.get_absolute_url }}">Agenda</a>
+  {% else %}
+    Agenda
+  {% endif %}&nbsp;&nbsp;|&nbsp;&nbsp;
+{% endif %}
+<a href="http://jabber.ietf.org/logs/{{ group.acronym }}/">Jabber Logs</a>&nbsp;&nbsp;|&nbsp;&nbsp;
+{% if group.list_archive %}
+  <a href="{{ group.list_archive }}">Mailing List Archives</a>
+{% endif %}
+</h3>
+
+<p>Additional information is available at <a href="http://tools.ietf.org/wg/{{ group.acronym }}">tools.ietf.org/wg/{{ group.acronym }}</a>
+
+<table width="60%" border="0" cellspacing="2" cellpadding="2">
+  <tr><td bgcolor="#EEEEFF">
+      <h3>Chair(s):</h3>
+      <ul>
+      {% for chair in chairs %}
+        <li><a href="mailto:{{ chair.email.address }}">{{ chair.person.name }}</a></li>
+      {% endfor %}
+      </ul>
+      {% if secretaries %}
+          {% if secretaries.count > 1 %}<h3>Secretaries</h3>{% else %}<h3>Secretary</h3>{% endif %}
+          <ul>
+            {% for secretary in secretaries %}
+              <li><a href="mailto:{{ secretary.email.address }}">{{ secretary.person.name }}</a></li>
+            {% endfor %}
+          </ul>
+      {% endif %}
+      <h3>{{ group.parent.name }} Area Director(s):</h3>
+      <ul>
+      {% for ad in ads %}
+        <li><a href="mailto:{{ ad.email.address }}">{{ ad.person.name }}</a></li>
+      {% endfor %}
+      </ul>
+      {% if group.ad %}
+          <h3>{{ group.parent.name }} Advisor</h3>
+          <ul>
+              <li><a href="mailto:{{ group.ad.email_address }}">{{ group.ad }}</a></li>
+          </ul>
+      {% endif %}
+      {% if tas %}
+          <h3>Technical Advisor(s)</h3>
+          <ul>
+            {% for advisor in tas %}
+              <li><a href="mailto:{{ advisor.email.address }}">{{ advisor.person.name }}</a></li>
+            {% endfor %}
+          </ul>
+      {% endif %}
+<br /><br /></td></tr></table>
+
+<h3>Meeting Slides:</h3>
+{% if slides %}
+<ul>
+  {% for slide in slides %}
+  <li><a href="{{ slide.get_absolute_url }}" target="_blank">{{ slide.title }}</a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No Slides Present</p>
+{% endif %}
+
+{% if bluesheets %}
+  <h3>Blue Sheets:</h3>
+  <ul>
+    {% for item in bluesheets %}
+      <li><a href="{{ item.url }}" target="_blank">{{ item.name }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if drafts %}
+<h3>Internet-Drafts:</h3>
+<ul>
+  {% for draft in drafts %}
+  <li><a href="{{ draft.url }}" target="_blank">{{ draft.title}}</a> ({{ draft.bytes }} bytes)</li>
+  {% endfor %}
+</ul>
+{% else %}
+<h3>No Current Internet-Drafts</h3>
+{% endif %}
+
+{% if rfcs %}
+<h3>Request for Comments:</h3>
+<ul>
+  {% for rfc in rfcs %}
+    <li><a href="{{ rfc.url }}" target="_blank">{{ rfc.title }} ({{ rfc.num }})</a> ({{ rfc.bytes }} bytes)
+      {% if rfc.rmsg %}<font color="red"> {{rfc.rmsg }}</font>{% endif %}
+      {% if rfc.msg %}<font color="orange"> {{ rfc.msg }}</font>{% endif %}
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+<h3>No Request for Comments</h3>
+{% endif %}
+
+<h3>Charter{% if ctime %} (as of {{ ctime|date:"Y-m-d" }}){% endif %}:</h3>
+<p>{% if charter %}{{ charter|safe }}{% else %}Charter not found{% endif %}</p>
+
+{% if group.milestones %}
+<h3>Goals and Milestones:</h3>
+<table>
+  {% for milestone in group.milestone_set.all %}
+  <tr align="left" valign="top">
+    <td width="70" valign="top">
+    {% if milestone.done %}Done{% else %}{{ milestone.expected_due_date|date:"m-Y" }}{% endif %}
+    </td>
+    <td>&nbsp;&nbsp;</td><td>{{ milestone.desc }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+
+
+</div></td></tr>
+
+{% include "includes/proceeding_footer.html" %}

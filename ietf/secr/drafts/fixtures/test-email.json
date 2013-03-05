@@ -1,0 +1,56 @@
+[
+  {
+    "pk": "rcross@amsl.com",
+    "model": "person.email",
+    "fields": {
+      "active": true,
+      "person": 111252,
+      "time": "1970-01-01 23:59:59"
+    }
+  },
+  {
+    "pk": "fluffy@cisco.com",
+    "model": "person.email",
+    "fields": {
+      "active": true,
+      "person": 105791,
+      "time": "1970-01-01 23:59:59"
+    }
+  },
+  {
+    "pk": "cabo@tzi.org",
+    "model": "person.email",
+    "fields": {
+      "active": true,
+      "person": 11843,
+      "time": "1970-01-01 23:59:59"
+    }
+  },
+  {
+    "pk": "br@brianrosen.net",
+    "model": "person.email",
+    "fields": {
+      "active": true,
+      "person": 106987,
+      "time": "1970-01-01 23:59:59"
+    }
+  },
+  {
+    "pk": "gaborbajko@yahoo.com",
+    "model": "person.email",
+    "fields": {
+      "active": true,
+      "person": 108123,
+      "time": "1970-01-01 23:59:59"
+    }
+  },
+  {
+    "pk": "wdec@cisco.com",
+    "model": "person.email",
+    "fields": {
+      "active": true,
+      "person": 106526,
+      "time": "1970-01-01 23:59:59"
+    }
+  }
+]

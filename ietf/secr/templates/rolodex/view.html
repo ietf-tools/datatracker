@@ -1,0 +1,75 @@
+{% extends "base_site.html" %}
+
+{% block title %}Rolodex - View{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Rolodex</a>
+  &raquo; {{ person.name }} 
+{% endblock %}
+
+{% block content %}
+<div class="module">
+  <h2>{{ person.name }} ({{ person.id }})</h2>
+  
+
+  <table id="rolodex-view-table" class="full-width">
+    <col width="150">
+    <tr><td>Name:</td><td>{{ person.name }}</td></tr>
+    <tr><td>Ascii Name:</td><td>{{ person.ascii }}</td></tr>
+    <tr><td>Short Name:</td><td>{{ person.ascii_short }}</td></tr>
+    <tr><td>Aliases:</td><td>{% for alias in person.alias_set.all %}{% if not forloop.first %}, {% endif %}{{ alias.name }}{% endfor %}
+    <tr><td>Address:</td><td>{{ person.address }}</td></tr>
+    <tr><td>Affiliation:</td><td>{{ person.affiliation }}</td></tr>
+    <tr><td>User:</td><td>{{ person.user }}</td></tr>
+    <tr></tr>
+    {% for email in person.emails %}
+      <tr><td>Email {{ forloop.counter }}:</td><td>{{ email }}</td></tr>
+    {% endfor %}
+  </table>
+  <br />
+  
+  <div class="inline-related">
+    <h2><b>Roles</b></h2>
+      <table id="rolodex-role-table" class="full-width">
+        <thead>
+          <tr> 
+            <th>Role Name</th>
+            <th>Group / Area</th>
+            <th>Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for role in person.role_set.all %}
+            <tr>
+                <td>{{ role.name }} </td>
+                <td>
+                  {% ifequal role.group.type.slug "wg" %}
+                    <a href="{% url groups_view acronym=role.group.acronym %}">{{ role.group.acronym }}</a>
+                  {% else %}
+                    {% ifequal role.group.type.slug "area" %}
+                      <a href="{% url areas_view name=role.group.acronym %}">{{ role.group.acronym }}</a>
+                    {% else %}
+                      {{ role.group }}
+                    {% endifequal %}
+                  {% endifequal %}
+                </td>
+                <td>{{ role.email }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </div> <!-- iniline-related -->
+
+<div class="button-group">
+  <ul>
+    <li><button onclick="window.location='../'">Search</button></li>
+    <li><button onclick="window.location='edit/'">Edit</button></li>
+    {% comment %} 
+    Removed per Glen
+    <li><button onclick="window.location='../../delete/{{ person.person_or_org_tag }}'">Delete</button></li>
+    {% endcomment %} 
+  </ul>
+</div> <!-- view-buttons -->
+
+</div> <!-- view-container -->
+{% endblock %}

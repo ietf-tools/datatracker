@@ -1,0 +1,111 @@
+{% extends "base_site.html" %}
+
+{% block title %}Meetings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+  
+   <script type="text/javascript">
+    $(document).ready(function() {
+      $.ajaxSetup ({  
+        cache: false  
+      });
+      
+      $("select[id$='day']").change(function(){
+          var loadUrl = "/meetings/ajax/get-times/";
+          var url = window.location.pathname;
+          var parts = url.split("/");
+          var id = this.id;
+          var new_id = id.replace('day','time');
+          var sel = "#"+new_id;
+          var day = $(this).val();
+          loadUrl = loadUrl+parts[2]+"/"+day+"/";
+          $.getJSON(loadUrl,function(data) {
+            $(sel+" option").remove();
+            $.each(data,function(i,item) {
+              $(sel).append('<option value="'+item.id+'">'+item.value+'</option>');
+            });
+          });
+      });
+      
+    
+    });
+    
+  </script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../../">Meetings</a>
+  &raquo; <a href="{% url meetings_view meeting_id=meeting.number %}">{{ meeting }}</a>
+  &raquo; <a href="{% url meetings_select_group meeting_id=meeting.number %}">Select</a>
+  &raquo; {{ group.acronym }}
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>Requested Information</h2>
+    
+    {% if show_request %}
+       {% include "includes/sessions_request_view.html" %}
+    {% endif %}
+    
+    <div class="inline-group">
+    <h2>Sessions</h2>
+
+        <form id="meetings-schedule-form" method="post" action="">
+        {{ formset.management_form }}
+          {% for form in formset.forms %}
+            <div class="inline-related{% if forloop.last %} last-related{% endif %}">
+              <h3><b>Session:</b>&nbsp; #{{ forloop.counter }}{% if form.session_object.status.slug == 'apprw' %}<span class="message-right">Waiting for Approval</span>{% endif %}</h3>
+              <table class="full-width amstable">
+                <col width="200">
+                {{ form }}
+              </table>
+            </div> <!-- inline-related -->
+          {% endfor %}
+    </div> <!-- inline-group -->
+    
+    <table class="full-width amstable">
+      <col width="200">
+      {{ extra_form }}
+    </table>
+    
+      <div class="button-group">
+       <ul>
+         <li><button type="submit" name="submit" value="Save">Save</button></li>
+         <li><button type="button" onclick="if (window.confirm('This group will be permanently removed from the agenda and scheduling tool')) { window.location='{% url meetings_remove_session meeting_id=meeting.number acronym=group.acronym %}' };">Remove this group from agenda</button></li>
+         <li><button type="button" onclick="window.location='{% url meetings_select_group meeting_id=meeting.number %}'">Back</button></li>
+        </ul>
+      </div> <!-- button-group -->
+      
+      </form>
+      
+</div> <!-- module -->
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/meetings_footer.html" %}
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>{% block title %}{% endblock %}</title>
+<link rel="stylesheet" type="text/css" href="{% block stylesheet %}{{ SECR_STATIC_URL }}css/base.css{% endblock %}" />
+<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/forms.css" />
+<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/custom.css" />
+{% if not server_mode == "production" %}
+<link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/test.css" />
+{% endif %}
+{% block extrastyle %}{% endblock %}
+
+{% block extrahead %}
+<script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-1.5.1.min.js"></script>
+{% endblock %}
+
+{% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+</head>
+
+<body class="{% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %}">
+
+<!-- Container -->
+<div id="container">
+
+    {% if not is_popup %}
+    <!-- Header -->
+    <div id="header">
+        <div id="branding">
+        {% block branding %}{% endblock %}
+        </div>
+        {% block nav-global %}{% endblock %}
+    </div>
+    <!-- END Header -->
+
+    <!-- Breadcrumbs -->
+    <div class="breadcrumbs">
+      <table width="100%">
+        <tr>
+          <td align="left">
+            {% block breadcrumbs %}<a href="/secr/">Home</a>{% endblock %}
+          </td>
+          <td align="right">
+            {% block instructions %}{% endblock %}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <!-- END Breadcrumbs -->
+    {% endif %}
+
+    {% comment %}
+    <!-- Removed per Glen 08-04-2010 -->
+    <!-- Javascript Warning -->
+    <noscript class="errornote"> You have Javascript disabled.  Javascript is required for this application.</noscript>
+    {% endcomment %}
+
+    <!-- Django Messages -->
+    {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    <!-- Content -->
+    <div id="content" class="{% block coltype %}colM{% endblock %}">
+        {% block pretitle %}{% endblock %}
+        {% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}{% endblock %}
+        {% block content %}
+        {% block object-tools %}{% endblock %}
+        {{ content }}
+        {% endblock %}
+        {% block sidebar %}{% endblock %}
+        <br class="clear" />
+    </div>
+    <!-- END Content -->
+
+    {% block footer %}<div id="footer"></div>{% endblock %}
+</div>
+<!-- END Container -->
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+    <table class="full-width">
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for role in roles %}
+          <tr class="{% cycle row1,row2 %}">
+            <td>{{ role.name }}</td>
+            <td>{{ role.person }}</td>
+            <td>{{ role.email }}</td>
+            <td><a href="{% url roles_delete_role acronym=group.acronym id=role.id %}">Delete</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>

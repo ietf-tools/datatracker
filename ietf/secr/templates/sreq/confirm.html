@@ -1,0 +1,36 @@
+{% extends "base_site.html" %}
+
+{% block title %}Sessions - View{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="{% url sessions %}">Sessions</a>
+  &raquo; <a href="../">New</a>
+  &raquo; Session Request Confirmation 
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Sessions - Confirm</h2>
+
+    {% include "includes/sessions_request_view.html" %}
+    
+    {% if session.length_session3 %}
+      <br>
+            <span class="alert"><p><b>Note: Your request for a third session must be approved by an area director before
+            being submitted to agenda@ietf.org.  Click "Submit" below to email an approval
+            request to the area directors.</b></p></span>
+      <br>
+    {% endif %}
+    
+    <form action="" method="post">
+      {% include "includes/buttons_submit_cancel.html" %}
+    </form>
+
+</div> <!-- module -->
+
+{% endblock %}

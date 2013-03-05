@@ -1,0 +1,40 @@
+{% extends "base_site.html" %}
+
+{% block title %}Replace Slide{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  {% if meeting.type_id == "interim" %}
+    &raquo; <a href="{% url proceedings %}">Proceedings</a>
+    &raquo; <a href="{% url proceedings_select_interim %}">Interim Select Group</a>
+    &raquo; <a href="{% url proceedings_interim acronym=group.acronym %}">{{ group.acronym }}</a>
+    &raquo; <a href="{% url proceedings_upload_unified meeting_num=meeting.number acronym=group.acronym %}">{{ meeting }}</a>
+    &raquo; {{ slide.title }}
+  {% else %}
+    &raquo; <a href="{% url proceedings %}">Proceedings</a>
+    &raquo; <a href="{% url proceedings_select meeting_num=meeting.number %}">Select</a>
+    &raquo; <a href="{% url proceedings_upload_unified meeting_num=meeting.number acronym=group.acronym %}">{{ group.acronym }}</a>
+    &raquo; {{ slide.title }}
+  {% endif %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Working Group - {{ group.acronym }}</h2>
+         <p><h3>Replace Slide:</h3></p>
+         <form enctype="multipart/form-data" action="." method="post">
+           <table>
+             {{ form.as_table }}
+           </table>
+
+             {% include "includes/buttons_save_cancel.html" %}
+
+         </form>
+</div> <!-- module -->
+
+{% endblock %}

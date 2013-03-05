@@ -1,0 +1,31 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - Extend{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Drafts</a>
+  &raquo; <a href="../">{{ draft.name }}</a>
+  &raquo; Extend
+{% endblock %}
+
+{% block content %}
+
+<div class="module draft-container">
+    <h2>Draft - Extend Expiry</h2>
+    
+    <form enctype="multipart/form-data" action="" method="post">
+      <table class="full-width">
+        <tr><th><label>Current Expiration Date:</label></th><td>{{ draft.expires|date:"Y-m-d" }}</td></tr>
+        {{ form.as_table }}
+      </table>
+
+      {% include "includes/buttons_save_cancel.html" %}
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

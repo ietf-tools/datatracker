@@ -1,0 +1,22 @@
+{% extends "telechat/base_telechat.html" %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; {{ date }}
+{% endblock %}
+
+
+{% block subsection %}
+<div id="telechat-content">
+  <span class="telechat-warn"><h3>This feature is pending</h3></span>
+  <h3>Roll Call</h3>
+    <br />
+    <form action="" method="post">
+    {% for person in people %}
+      <input type="checkbox" name="attendee" value="{{ person.id }}" checked="checked" /> {{ person.name }}<br />
+    {% endfor %}
+    <input type="submit" value="Update" />
+    </form>
+    
+</div>
+
+{% endblock %}

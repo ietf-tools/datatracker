@@ -1,0 +1,25 @@
+{% load ams_filters %}
+
+<table id="slides" class="center sortable" cellspacing="0">
+  <thead>
+    <tr> 
+      <th>Slide</th>
+      <th>Filename</th>
+      <th>Edit</th>
+      <th>Replace</th>
+      <th>Delete</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for slide in slides %}
+       <tr id="slide_{{ forloop.counter }}" class="{% cycle 'row1' 'row2' %}">
+         <td><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><a href="{{ slide.get_absolute_url }}" target="_blank">{{ slide.title }}</a></td>
+         <td>{{ slide.external_url }}{% if slide.external_url|is_ppt %}<span class="required"> *</span>{% endif %}</td>
+         <td><a href="{% url proceedings_edit_slide slide_id=slide.pk %}">Edit</a></td>
+         <td><a href="{% url proceedings_replace_slide slide_id=slide.pk %}">Replace</a></td>
+         <td><a href="{% url proceedings_delete_material slide_id=slide.name %}">Delete</a></td>
+         <td class="hidden">{{ slide.pk }}</td>
+       </tr>
+    {% endfor %}
+  </tbody>
+</table>

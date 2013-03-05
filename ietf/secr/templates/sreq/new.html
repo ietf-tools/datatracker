@@ -1,0 +1,38 @@
+{% extends "base_site.html" %}
+
+{% block title %}Sessions- New{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/sessions.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Sessions</a>
+  &raquo; New Session Request
+{% endblock %}
+
+{% block instructions %}
+  <a href="http://www.ietf.org/wg/request-tool-instructions.html" target="_blank">Instructions</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>IETF {{ meeting.number }}: New Session Request</h2>
+         <div class="inline-related">
+         <br>
+         <ul class="session-buttons">
+             <li><button onclick="if (window.confirm('A message will be sent to agenda@ietf.com as well as to the area director(s).\n\nContinue?')) { window.location='{% url sessions_no_session acronym=group.acronym %}'};">Send a notification that the group does not plan to hold a session at IETF {{ meeting.number }}</button></li>
+             <li><button onclick="window.location='{% url sessions_new acronym=group.acronym %}?previous'">Retrieve all information from previous meeting</button></li>
+         </ul>
+        
+         {% include "includes/sessions_request_form.html" %}
+
+</div> <!-- module -->
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/sessions_footer.html" %}
+{% endblock %}

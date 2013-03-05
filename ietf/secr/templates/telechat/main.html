@@ -1,0 +1,12 @@
+{% extends "telechat/base_telechat.html" %}
+
+{% block subsection %}
+<div id="telechat-main">
+  <h3>Select a Telechat</h3>
+  <form action="" method="post">
+    {{ form.date.label_tag }}: {{ form.date }}&nbsp;&nbsp;<button type="submit" name="submit" value="Select">Select</button>
+  </form>
+  <br>
+  <a href="/admin/iesg/telechatdate/" target="_blank">Add a new Telechat Date</a>
+</div>
+{% endblock %}

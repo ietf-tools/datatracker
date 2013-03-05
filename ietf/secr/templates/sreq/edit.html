@@ -1,0 +1,36 @@
+{% extends "base_site.html" %}
+
+{% block title %}Sessions - Edit{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/sessions.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Sessions</a>
+  &raquo; <a href="../">{{ group.acronym }}</a>
+  &raquo; Edit 
+{% endblock %}
+
+{% block instructions %}
+  <a href="http://www.ietf.org/wg/request-tool-instructions.html" target="_blank">Instructions</a>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>IETF {{ meeting.number }}: Edit Session Request</h2>
+         <div class="inline-related">
+         <br>
+
+         {% include "includes/sessions_request_form.html" %}
+
+</div> <!-- module -->
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/sessions_footer.html" %}
+{% endblock %}

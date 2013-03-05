@@ -1,0 +1,60 @@
+{% extends "base_site.html" %}
+
+{% block title %}Areas - People{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery-ui-1.8.1.custom.css" />
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery.ui.autocomplete.css" />
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.8.1.custom.min.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Areas</a>
+  &raquo; <a href="../">{{ area.acronym }}</a>
+  &raquo; People
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>Area Directors ({{ area.acronym }})</h2>
+      <table class="center">
+        {% for director in directors %}
+          <form action="modify/" method="post">
+            <input type="hidden" name="tag" value="{{ director.person.id }}" />
+            <tr>
+              <td id="id-ad-name"><a href="">{{ director.person.name }}</a></td>
+              <td>{% if director.name.slug == "ad" %}
+                    Voting Enabled
+                  {% else %}
+                    <input type="submit" name="submit" value="Enable Voting" /></td>
+                  {% endif %}
+              <td><input type="submit" name="submit" value="Retire" /></td>
+            </tr>
+          </form>
+        {% endfor %}
+      </table>
+
+      <div class="inline-related">
+        <h3><b>Add new Director</b></h3>
+        <p>
+        <form action="." method="post">
+          <table class="center">
+            {{ form.as_table }}
+            <tr>
+              <td></td>
+              <td><input type="submit" name="submit" value="Add" /></td>
+            </tr>
+          </table>
+        </form>
+      </div> <!-- iniline-related -->
+
+      <div class="button-group">
+        <ul>
+          <li><button onclick="history.go(-1);return true">Back</button></li>
+        </ul>
+      </div> <!-- button-group -->
+</div> <!-- module -->
+
+{% endblock %}

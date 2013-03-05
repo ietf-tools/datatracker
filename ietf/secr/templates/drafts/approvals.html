@@ -1,0 +1,46 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - Approvals{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Drafts Approvals
+{% endblock %}
+
+{% block content %}
+
+<div class="module draft-container">
+    <h2>Draft - Approvals</h2>
+    <form id="drafts-approvals-form" enctype="multipart/form-data" action="" method="post">
+      <table class="full-width">
+	{{ form.as_table }}
+      </table>
+    </form>
+
+  <div class="inline-group">
+    <h2>Approved Drafts</h2>
+<table id="drafts-approved" class="center" cellspacing="0">
+  <thead>
+    <tr> 
+      <th>Filename</th>
+      <th>Approved Date</th>
+      <th>Approved by</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for doc in approved %}
+       <tr class="{% cycle 'row1' 'row2' %}">
+         <td>{{ doc.name }}</a></td>
+         <td>{{ doc.time|date:"Y-m-d" }}</td>
+         <td>{{ doc.by }}</td>
+       </tr>
+    {% endfor %}
+  </tbody>
+</table>
+  </div> <!-- inline-group -->
+</div> <!-- module -->
+
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base_site.html" %}
+
+{% block title %}Groups - People{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery-ui-1.8.1.custom.css" />
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery.ui.autocomplete.css" />
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.8.1.custom.min.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Groups</a>
+  &raquo; <a href="../">{{ group.acronym }}</a>
+  &raquo; People
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+  <h2>People</h2>   
+    <table class="full-width">
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for role in group.role_set.all %}
+          <tr class="{% cycle row1,row2 %}">
+            <td>{{ role.name }}</td>
+            <td>{{ role.person }}</td>
+            <td>{{ role.email }}</td>
+            <td><a href="{% url groups_delete_role acronym=group.acronym id=role.id %}">Delete</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  
+    <div class="inline-related">
+      <!-- <hr><br> -->
+      <h3>Add Role</h3>
+      <form id="groups-people" action="" method="post">
+        {{ form.non_field_errors }}
+        <table class="full-width">
+          <tr>
+            <td>{{ form.name.errors }}{{ form.name }}</td>
+            <td>{{ form.person.errors }}{{ form.person }}{% if form.person.help_text %}<br>{{ form.person.help_text }}{% endif %}</td>
+            <td>{{ form.email.errors }}{{ form.email }}{% if form.email.help_text %}<br>{{ form.email.help_text }}{% endif %}</td>
+            <td><input type="submit" name="submit" value="Add" /></td>
+          </tr>
+        </table>    
+      </form>
+    </div> <!-- inline-related -->
+
+    <div class="button-group">
+      <ul>
+        <li><button onclick="window.location='../'">Back</button></li>
+      </ul>
+    </div> <!-- button-group -->
+    
+</div> <!-- module -->
+
+{% endblock %}

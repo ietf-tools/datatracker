@@ -1,0 +1,98 @@
+{% extends "base_site.html" %}
+
+{% block title %}Telechat{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/telechat.css" />
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="{% url telechat %}">Telechat</a> 
+{% endblock %}
+
+{% block content %}
+
+<div id="telechat-sidebar">
+    <h2>Agenda {{ date }}</h2>
+    {% if agenda %}
+    <ul>
+      <li class="level1">2 Protocol Actions</li>
+      <li>2.1 WG Submissions</li>
+      <li>2.1.1 New Item</li>
+      {% with agenda.docs.s211 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>2.1.2 Returning Item</li>
+      {% with agenda.docs.s212 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>2.1.3 For Action</li>
+      {% with agenda.docs.s213 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li></li>
+      <li>2.2 Individual Submissions</li>
+      <li>2.2.1 New Item</li>
+       {% with agenda.docs.s221 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>2.2.2 Returning Item</li>
+      {% with agenda.docs.s222 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>2.2.3 For Action</li>
+      {% with agenda.docs.s223 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li></li>
+      <li class="level1">3 Document Actions</li>
+      <li>3.1 WG Submissions</li>
+      <li>3.1.1 New Item</li>
+      {% with agenda.docs.s311 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>3.1.2 Returning Item</li>
+      {% with agenda.docs.s312 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>3.1.3 For Action</li>
+      {% with agenda.docs.s313 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li></li>
+      <li>3.2 Individual Submissions via AD</li>
+      <li>3.2.1 New Item</li>
+      {% with agenda.docs.s321 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>3.2.2 Returning Item</li>
+      {% with agenda.docs.s322 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>3.2.3 For Action</li>
+      {% with agenda.docs.s323 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li></li>
+      <li>3.3 Independent Submissions via RFC Editor</li>
+      <li>3.3.1 New Item</li>
+      {% with agenda.docs.s331 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>3.3.2 Returning Item</li>
+      {% with agenda.docs.s332 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>3.3.3 For Action</li>
+      {% with agenda.docs.s333 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li></li>
+      <li class="level1">4 Working Group Actions</li>
+      <li>4.1 WG Creation</li>
+      <li>4.1.1 Proposed for IETF Review</li>
+      {% with agenda.docs.s411 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>4.1.2 Proposed for Approval</li>
+      {% with agenda.docs.s412 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li></li>
+      <li>4.2 WG Rechartering</li>
+      <li>4.2.1 Under evaluation for IETF Review</li>
+      {% with agenda.docs.s421 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+      <li>4.2.2 Proposed for Approval</li>
+      {% with agenda.docs.s422 as section_docs %}{% include "telechat/doc_template.html" %}{% endwith %}
+    </ul>
+    {% else %}
+    Please select a telechat to display the agenda.
+    {% endif %}
+</div>
+
+
+<div id="telechat-main">
+  {% if date %}
+  <div id="telechat-nav">
+    <ul id="list-nav">
+      <li><a href="{% url telechat_roll_call date=date %}">Roll Call</a></li>
+      <li><a href="{% url telechat_bash date=date %}">Bash Agenda</a></li>
+      <li><a href="{% url telechat_minutes date=date %}">Minute Approval</a></li>
+      <li><a href="{% url telechat_doc date=date %}">Main Agenda</a></li>
+      <li><a href="{% url telechat_management date=date %}">Management Issues</a></li>
+    </ul>
+  </div>
+  {% endif %}
+  
+  {% block subsection %}<div id="telechat-content"></div>{% endblock %}
+
+</div>
+
+{% endblock %}

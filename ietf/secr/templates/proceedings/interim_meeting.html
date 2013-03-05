@@ -1,0 +1,47 @@
+{% extends "base_site.html" %}
+
+{% block title %}Interim Meetings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Proceedings</a>
+  &raquo; <a href="../">Interim Select Group</a>
+  &raquo; {{ group.acronym }}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Working Group - {{ group_name }}</h2>
+       <p><h3>Scheduled / Completed {{group.acronym}} Interim Meetings:</h3></p>
+       {% if meetings %}
+       <ul>
+         {% for meeting in meetings %}
+         <li><a href="{% url proceedings_upload_unified meeting_num=meeting.number acronym=group.acronym %}">{{meeting.date}}</a>
+           {% if request.user_is_secretariat %}
+             &nbsp;-&nbsp;<a href="{% url proceedings_delete_interim_meeting meeting_num=meeting.number %}" onClick="javascript:return confirm('Are you sure you want to delete this meeting?  Any uploaded material will be removed.')">[Delete]</a>
+           {% endif %}
+         </li>
+         {% endfor %}
+       </ul>
+       {% else %}
+         <p>No meetings.</p>
+       {% endif %}
+
+     <div class="inline-related">
+       <h2>New Meeting</h2>
+       <h3>Create a new {{ group.acronym }} Interim Meeting:</h3>
+       <form action="." method="post">
+       {{ form.as_p }}
+
+       {% include "includes/buttons_submit_back.html" %}
+ 
+       </form>
+      </div> <!-- inline-group -->
+</div> <!-- module -->
+
+{% endblock %}

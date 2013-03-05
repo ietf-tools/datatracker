@@ -1,0 +1,33 @@
+{% extends "base_site.html" %}
+
+{% block title %}Groups - Search{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Groups
+{% endblock %}
+
+{% block content %}
+
+<div class="module group-container">
+    <h2>Groups - Search <span class="unlocked"><a href="add/" class="addlink">Add</a></span></h2>
+    <form enctype="multipart/form-data" action="" method="post">
+      <table class="full-width amstable">
+        {{ form.as_table }}
+      </table>
+
+      {% include "includes/buttons_search.html" %}
+
+    </form>
+
+  <div class="inline-related">
+    <h2>Search Results</h2>
+    {% include "includes/group_search_results.html" %}
+    {% if not_found %}{{ not_found }}{% endif %}
+  </div> <!-- inline-group -->
+</div> <!-- module -->
+
+{% endblock %}

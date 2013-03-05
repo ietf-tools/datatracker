@@ -1,0 +1,20 @@
+{% extends "proceedings/proceedings_template.html" %}
+
+{% block content %}
+
+{% include "includes/proceeding_title.html" %}
+
+<h2>{{ title }} Plenary</h2>
+
+{% if minutes %}
+  <h3><a href="{{ minutes.0.get_absolute_url }}">Minutes</a></h3>
+{% endif %}
+
+<h3>Slides</h3>
+<ul>
+  {% for slide in slides %}
+    <li><a href="{{ slide.get_absolute_url }}">{{ slide.title }}</a></li>
+  {% endfor %}
+</ul>
+
+{% endblock %}

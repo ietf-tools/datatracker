@@ -1,0 +1,15 @@
+Dear {{ group.parent }} Director(s):
+
+{{ header }} meeting session request has just been
+submitted by {{ login }}, a working group chair of {{ group.name }}.
+The third session requires your approval.
+
+To approve the session go to the session request view here:
+https://pub.ietf.org{% url sessions_view acronym=group.acronym %}
+and click "Approve Third Session".
+
+Regards,
+
+The IETF Secretariat.
+
+{% include "includes/session_info.txt" %}

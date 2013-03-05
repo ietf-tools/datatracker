@@ -1,0 +1,41 @@
+{% extends "base_site.html" %}
+
+{% block title %}Announcement{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Announcement
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+    <h2>Announcement</h2>
+    
+    <form action="" method="POST">
+    
+<pre id="announce-confirm">
+To: {{ to }}
+From: {{ message.frm }}
+Cc: {{ message.cc }}
+Bcc: {{ message.bccc }}
+Reply To: {{ message.reply_to }}
+Subject: {{ message.subject }}
+
+{{ message.body }}
+</pre>
+    
+    <div class="button-group">
+      <ul id="announcement-button-list">
+        <li><button type="submit" name="submit" value="Send">Send</button></li>
+        <li><button type="submit" name="submit" value="Cancel">Cancel</button></li>
+      </ul>
+    </div> <!-- button-group -->
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

@@ -1,0 +1,25 @@
+  <h2>Activies Log</h2>
+    <div class="inline-related last-related">
+    <table class="full-width">
+      <thead>
+        <tr> 
+          <th>Date</th>
+          <th>Time</th>
+          <th>Document</th>
+          <th>Action</th>
+          <th>Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in docevents %}
+           <tr class="{% cycle 'row1' 'row2' %}">
+             <td>{{ entry.time|date:"M d, Y" }}</td>
+             <td>{{ entry.time|date:"H:i" }}</td>
+             <td>{{ entry.doc }}</td>
+             <td>{{ entry.type }}</td>
+             <td>{{ entry.by }}</td>
+           </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div> <!-- inline-related -->

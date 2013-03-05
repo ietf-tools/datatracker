@@ -1,0 +1,37 @@
+{% extends "base_secr.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }}{% if request.user_is_secretariat %} Secretariat Dashboard {% else %} WG Chair Dashboard {% endif %}{% endblock %}
+
+{% block branding %}
+<table width="100%">
+  <tr>
+    <td align="left">
+      <h1 id="site-name">{% if request.user_is_secretariat %} Secretariat Dashboard {% else %} WG Chair Dashboard {% endif %}</h1>
+    </td>
+    <td align="right">
+      <br>
+      <span class="login">{% if request.user_is_secretariat %}Secretariat {% endif %}Logged in: {{ request.META.REMOTE_USER }}</span>
+    </td>
+  </tr>
+</table>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block footer %}
+  <div id="footer">
+    <div id="footer-extras">
+        <ul>
+          {% block footer-extras %}{% endblock %}
+        </ul>
+    </div>
+    <div id="footer-version">
+      <p>IETF Secretariat Tools v. {{ secr_version_num }}</p>
+        
+    </div>
+    <div id="footer-logo">
+      <a href="http://www.amsl.com/"><img src="{{ SECR_STATIC_URL }}img/ams_logo.png" alt="AMS" align="right" border="0" hspace="5" /></a>
+    </div>
+</div>
+{% endblock %}

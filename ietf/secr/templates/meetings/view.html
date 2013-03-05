@@ -1,0 +1,67 @@
+{% extends "base_site.html" %}
+
+{% block title %}Meetings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../">Meetings</a>
+  &raquo; {{ meeting.number }} 
+{% endblock %}
+
+{% block content %}
+
+<div class="module">
+     <h2>IETF  {{ meeting.number }} - View</h2>
+     {% ifequal meeting.frozen 1 %}
+      <ul class="errorlist"><li> THIS IS A FROZEN PROCEEDING</li></ul> 
+     {% endifequal %}
+      <table class="full-width">
+        <col id="proceedings-view-first-col" />
+        <tr><td>Start Date:</td><td> {{ meeting.date }}</td></tr>
+        <tr><td>City:</td><td> {{ meeting.city }} </td></tr>
+        <tr><td>Country:</td><td> {{ meeting.country }} </td></tr>
+        <tr><td>Time Zone:</td><td> {{ meeting.time_zone }} </td></tr>
+        <tr><td>Venue Name:</td><td> {{ meeting.venue_name }} </td></tr>
+        <tr><td>Venue Address:</td><td> {{ meeting.venue_addr }} </td></tr>
+        <tr><td>Break Area:</td><td> {{ meeting.break_area }} </td></tr>
+        <tr><td>Registration Area:</td><td> {{ meeting.reg_area }} </td></tr>
+      </table>
+    
+    
+    <div class="button-group">
+       <ul>
+         <li><button onclick="window.location='{% url meetings_edit_meeting meeting_id=meeting.number %}'">Edit</button></li>
+         <li><button onclick="window.location='{% url meetings_rooms meeting_id=meeting.number %}'">Rooms and Times</button></li>
+         <li><button onclick="window.location='{% url meetings_select_group meeting_id=meeting.number %}'">Schedule WG Sessions</button></li>
+       </ul>
+      </div> <!-- button-group -->
+      
+</div> <!-- module -->
+
+{% endblock %}
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

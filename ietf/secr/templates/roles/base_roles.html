@@ -1,0 +1,31 @@
+{% extends "base_site.html" %}
+
+{% block title %}Roles{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery-ui-1.8.1.custom.css" />
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery.ui.autocomplete.css" />
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.8.1.custom.min.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Roles</a>
+{% endblock %}
+
+
+{% block content %}
+
+<div id="nav" class="role-nav">
+  <ul id="list-nav">
+    <li id="nav-ietf" class="leftmost"><a href="{% url roles_chair type='ietf' %}">IETF</a></li>
+    <li id="nav-iab"><a href="{% url roles_chair type='iab' %}">IAB</a></li>
+    <li id="nav-nomcom"><a href="{% url roles_chair type='nomcom' %}">NOMCOM</a></li>
+    <li id="nav-liaisons"><a href="{% url roles_liaisons %}">Liaisons Members</a></li>
+  </ul>
+</div>
+
+{% block subsection %}{% endblock %}
+
+{% endblock %}

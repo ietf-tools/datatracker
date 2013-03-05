@@ -1,0 +1,18 @@
+{% extends "meetings/base_rooms_times.html" %}
+
+{% block subsection %}
+
+<div class="module interim-container">
+    <h2>Meeting - {{ meeting }}</h2>
+         <p><h3>Session: {{ slot.name }}</h3></p>
+         <form id="non-session-edit-form" enctype="multipart/form-data" action="." method="post">
+           <table class="full-width amstable">
+             {{ form.as_table }}
+           </table>
+
+             {% include "includes/buttons_save_cancel.html" %}
+
+         </form>
+</div> <!-- module -->
+
+{% endblock %}

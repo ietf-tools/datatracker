@@ -1,0 +1,103 @@
+{% extends 'base_secr.html' %}
+
+{% block title %}
+IPR Admin Notify Page
+{% endblock %}
+ 
+{% block extrahead %}
+    <link rel="stylesheet" href="{{ SECR_STATIC_URL }}css/ipr.css" type="text/css" media="screen" charset="utf-8" />
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="{% url ipradmin_admin_list %}">IPR Admin</a>
+  &raquo; Notify
+{% endblock %}
+
+{% block content %}
+
+{% ifequal page_id 'send_result' %}
+  <div class="module">
+    {% if result %}
+        {{ result }}
+    {% else %}
+        <span class="errormsg">{{ result }}</span>
+    {% endif %}
+    <div class="button-group">
+      <ul>
+        <li><button onClick="window.location='../../'">Continue</button></li>
+      </ul>
+    </div> <!-- button-group -->
+  </div> <!-- module -->
+{% endifequal %}
+
+{% ifequal page_id 'detail_notify' %}
+  <form action="" method="post">
+    <input type="hidden" name="command" value="do_send_update_notification">
+    <input type="hidden" name="ipr_id" value="{{ ipr_id }}"> 
+    <h4>Notification to the submitter of IPR that's being updated</h4>
+    <textarea name="notify_original_submitter" rows=25 cols=74>
+To: {{ to_email }}
+From: IETF Secretariat <ietf-ipr@ietf.org>
+Subject: IPR update notification 
+                                                                               
+Dear {{ to_name }}:
+
+We have just received a request to update the IPR disclosure, 
+{{ updated_document_title }} (https://datatracker.ietf.org/public/ipr_detail_show.cgi?ipr_id={{ updated_ipr_id }}), 
+which was submitted by you on {{ orig_submitted_date }}. The name and email 
+address of the person who submitted the update to your IPR disclosure are:
+{{ submitter_name }}, {{ submitter_email }}.
+
+If the person who submitted the update to your IPR disclosure is *not*
+authorized to do so, then please let us know by sending a message to
+ietf-action@ietf.org within the next seven days. Otherwise, we will post
+the new IPR disclosure and mark it as an update to the IPR disclosure
+that you submitted.
+
+Thank you
+
+IETF Secretariat
+
+    </textarea>
+    <br><br>
+    <input type="submit" value=" Send notifications NOW "> 
+    </form>
+    <br><br>
+{% endifequal %}
+
+{% ifequal page_id 'detail_post' %}
+    <form action="" method="post">
+    <input type="hidden" name="command" value="do_send_notifications">
+    <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
+    <h4>Notification to Submitter(s)</h4>
+    <textarea name="notify_submitter" rows=25 cols=80>
+{{ submitter_text }}
+    </textarea>
+    <br><br>
+    {{ document_relatives|safe }}
+    {{ generic_ad|safe }}
+    <input type="submit" value=" Send notifications NOW ">
+    </form>
+    <br><br>
+{% endifequal %}
+
+{% ifequal page_id 'update_post' %}
+    <form action="" method="post">
+    <input type="hidden" name="command" value="do_send_notifications">
+    <input type="hidden" name="ipr_id" value="{{ ipr_id }}">
+    <h4> Notification to the submitter of IPR that's being updated</h4>
+    <h4> Please change the DATE and UPDATE NAME<h4>
+    
+    <textarea name="notify_submitter" rows=25 cols=80>
+{{ submitter_text }}
+    </textarea>
+    <br><br>
+    {{ document_relatives|safe }}
+    {{ notify_wg|safe }}
+    <input type="submit" value=" Send notifications NOW ">
+    </form>
+    <br><br>
+    </form>
+{% endifequal %}
+
+{% endblock content %}

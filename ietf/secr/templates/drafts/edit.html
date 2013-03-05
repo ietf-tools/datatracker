@@ -1,0 +1,55 @@
+{% extends "base_site.html" %}
+
+{% block title %}Drafts - Edit{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery-ui-1.8.1.custom.css" />
+  <link rel="stylesheet" type="text/css" href="{{ SECR_STATIC_URL }}css/jquery.ui.autocomplete.css" />
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/jquery-ui-1.8.1.custom.min.js"></script>
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Drafts</a>
+  &raquo; <a href="../">{{ draft.name }}</a>
+  &raquo; Edit 
+{% endblock %}
+
+{% block content %}
+
+<div class="module draft-container">
+    <h2>Draft - Edit</h2>
+    {{ form.non_field_errors }}
+    <form enctype="multipart/form-data" action="" method="post">
+      <table id="draft-edit-table" class="full-width amstable">
+        <tr><th>Document Name:</th><td>{{ form.title.errors }}{{ form.title }}</td></tr>
+        <tr><th>Group:</th><td>{{ form.group.errors }}{{ form.group }}</td></tr>
+        <tr><th>Area Director:</th><td>{{ form.ad.errors }}{{ form.ad }}</td></tr>
+        <tr><th>Shepherd:</th><td>{{ form.shepherd.errors }}{{ form.shepherd }}</td></tr>
+        <tr><th>Notify:</th><td>{{ form.notify.errors }}{{ form.notify }}</td></tr>
+        <tr><th>State:</th><td>{{ form.state.errors }}{{ form.state }}</td></tr>
+        <tr><th>IESG State:</th><td>{{ form.iesg_state.errors }}{{ form.iesg_state }}</td></tr>
+        <tr><th>Stream:</th><td>{{ form.stream.errors }}{{ form.stream }}</td></tr>
+        <tr><th>Under Review by RFC Editor:</th><td>{{ form.review_by_rfc_editor.errors }}{{ form.review_by_rfc_editor }}</td></tr>
+        <tr><th>File Name:</th><td>{{ form.name.errors }}{{ form.name }} - {{ form.rev.errors }}{{ form.rev }}</td></tr>
+        <tr><th>Number of Pages:</th><td>{{ form.pages.errors }}{{ form.pages }}</td></tr>
+        <tr><th>Abstract:</th><td>{{ form.abstract.errors }}{{ form.abstract }}</td></tr>
+        <tr><th>Expiration Date:</th><td>{{ draft.expires|date:"M. d, Y" }}</td></tr>
+        <tr><th>Intended Std Level:</th><td>{{ form.intended_std_level.errors }}{{ form.intended_std_level }}</td></tr>
+        <tr><th>RFC Number:</th><td>{{ draft.rfc_number }}</td></tr>
+        <tr><th>Comments:</th><td>{{ form.internal_comments.errors }}{{ form.internal_comments }}</td></tr>
+        <tr><th>Replaced by:</th><td>{{ form.replaced_by.errors }}{{ form.replaced_by }}</td></tr>
+        <tr><th>Last Modified Date:</th><td>{{ draft.time }}</td></tr>
+      </table>
+      
+  <div class="button-group">
+    <ul>
+      <li><button type="submit" name="submit" value="Save">Save</button></li>
+      <li><button type="submit" name="submit" value="Cancel">Cancel</button></li>
+    </ul>
+  </div> <!-- button-group -->
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

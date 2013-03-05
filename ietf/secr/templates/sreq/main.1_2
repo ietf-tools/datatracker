@@ -1,0 +1,66 @@
+{% extends "base_site.html" %}
+
+{% block title %}Sessions{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="/static/js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; Sessions
+{% endblock %}
+{% block instructions %}
+  <a href="http://www.ietf.org/wg/request-tool-instructions.html" target="_blank">Instructions</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>
+      Sessions Request Tool: IETF {{ meeting.meeting_num }}
+      {% if request.user_is_secretariat %}
+          {% if is_locked %}
+          <span class="locked"><a href="{% url sessions_tool_status %}">Tool Status: Locked</a></span>
+          {% else %}
+          <span class="unlocked"><a href="{% url sessions_tool_status %}">Tool Status: Unlocked</a></span>
+          {% endif %}
+      {% endif %}
+    </h2>
+         <div class="inline-related">
+           <h3><b>Request New Session</b></h3>
+           <p>The list below includes those working groups that you currently chair which do not already have a session scheduled. You can click on an acronym to initiate a request for a new session at the upcoming IETF meeting.  Click "Group will not meet" to send a notification that the group does not plan to meet.</p>
+           <ul>
+           {% for group in unscheduled_groups %}
+             <li>
+               <a href="{% url sessions_new acronym=group.acronym %}">{{ group.acronym }}</a>
+               {% if meeting in group.meetings_not_scheduled.all %}
+                 <span class="required"> (Currently, this group does not plan to hold a session at IETF {{ meeting.meeting_num }})</span>
+               {% else %}
+               <!--
+                 &nbsp;&nbsp;<a href="{% url sessions_no_session acronym=group.acronym %}"> - [ Group will not meet ]</a>
+               -->
+               {% endif %}
+             </li>
+           {% endfor %}
+           </ul>
+         </div> <!-- inline-related -->
+         <br>
+         <div class="inline-related">
+         <h2></h2>
+         <h3><b>Edit / Cancel Previously Requested Sessions</b></h3>
+         <p>The list below includes those working groups for which you or your co-chair has requested sessions at the upcoming IETF meeting. You can click on an acronym to initiate changes to a session, or cancel a session.</p>
+           <ul>
+           {% for session in scheduled_sessions %}
+             <li><a href="{% url sessions_view session_id=session.session_id %}">{{ session.group }} - {% if not session.ts_status_id %}{{ session.status }}{% else %}First Two Sessions:{{ session.status }}, Third Session:{{ session.ts_status }}{% endif %}</a></li>
+           {% empty %}
+             <i>NONE</i>
+           {% endfor %}
+           </ul>
+         </div> <!-- inline-related -->
+</div> <!-- module -->
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/sessions_footer.html" %}
+{% endblock %}

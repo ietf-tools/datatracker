@@ -1,0 +1,29 @@
+{% extends "base_site.html" %}
+
+{% block title %}Rolodex - Delete{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../../">Rolodex</a>
+  &raquo; <a href="../">{{ person }}</a>
+  &raquo; Delete
+{% endblock %}
+
+{% block content %}
+<h1>Are you sure?</h1>
+
+<p>Are you sure you want to delete the Rolodex Entry "{{ person.name }} ({{ person.id }})"?  All of the following related items will be deleted:</p>
+<ul><li>Rolodex Entry: <a href="{% url rolodex_view id=person.id %}">{{ person.name }} ({{ person.id }})</a>
+  <ul>
+    {% for email in person.email_set.all %}
+        <li>Email Address: {{ email.address }}</li>
+    {% endfor %}
+    {% for role in person.role_set.all %}
+        <li>{{ role }}</li>
+    {% endfor %}
+  </ul>
+</li></ul>
+<form action="" method="post">
+  <input type="hidden" name="post" value="yes" />
+  <input type="submit" value="Yes, I'm sure" />
+</form>
+{% endblock %}

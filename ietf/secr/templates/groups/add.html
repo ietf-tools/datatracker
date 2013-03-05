@@ -1,0 +1,31 @@
+{% extends "base_site.html" %}
+
+{% block title %}Groups - Add{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Groups</a>
+  &raquo; Add 
+{% endblock %}
+
+{% block content %}
+
+<div class="module group-container">
+    <h2>Groups - Add</h2>
+    <form enctype="multipart/form-data" action="" method="post">
+      <table id="groups-table" class="full-width amstable">
+        <col width="150">
+        {{ form.as_table }}
+      </table>
+
+      {% include "includes/awp_add_form.html" %}
+
+      {% include "includes/buttons_save_cancel.html" %}
+
+    </form>
+</div> <!-- module -->
+
+{% endblock %}

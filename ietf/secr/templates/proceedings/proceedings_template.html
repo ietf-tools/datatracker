@@ -1,0 +1,21 @@
+{% include "includes/proceeding_header.html" %}
+{% load ams_filters %}
+
+{% comment %}
+This is a unique template in the Secretariat Django project in that it does not extend
+the standard base templates.  Instead we include proceedings_header.html and
+proceedings_footer.html which are used in the PHP apps.
+Note this section should begin with
+<td id="content1"><div id="content2">
+and end with
+</div></td></tr>
+{% endcomment %}
+
+<td id="content1"><div id="content2">
+
+{% block content %}{% endblock %}
+
+
+</div></td></tr>
+
+{% include "includes/proceeding_footer.html" %}

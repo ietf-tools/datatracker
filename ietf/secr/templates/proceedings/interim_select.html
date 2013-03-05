@@ -1,0 +1,53 @@
+{% extends "base_site.html" %}
+
+{% block title %}Proceedings{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{{ SECR_STATIC_URL }}js/utils.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  &raquo; <a href="../">Proceedings</a>
+  &raquo; Interim Select Group
+{% endblock %}
+
+{% block instructions %}
+  <a href="http://www.ietf.org/instructions/meeting_materials_tool.html" target="_blank">Instructions</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Create or Manage Interim Meeting</h2>
+         <div class="inline-related">
+           <h3><b>Select Group</b></h3>
+           <p>You are authorized to manage interim meetings and meeting materials for the groups below.</p>
+           
+           <form class="internal-form" action="" method="post">
+             <label for="id_group">Working Groups</label>
+             {{ group_form.group }}
+             <input type="submit" name="submit" value="Select" />
+           </form>
+           {% comment %}
+           {% if request.user_is_secretariat %}
+             <form class="internal-form" action="" method="post">
+               <label for="id_group">IRTF Groups</label>
+               {{ irtf_form.group }}
+               <input type="submit" name="submit" value="Select" />
+             </form>
+             <form class="internal-form" action="" method="post">
+               <label for="id_group">Training</label>
+               {{ training_form.group }}
+               <input type="submit" name="submit" value="Select" />
+             </form>
+           {% endif %}
+           {% endcomment %}
+             
+        </div> <!-- inline-related -->
+</div> <!-- module -->
+
+{% endblock %}
+
+{% block footer-extras %}
+  {% include "includes/upload_footer.html" %}
+{% endblock %}
