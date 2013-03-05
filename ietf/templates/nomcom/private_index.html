@@ -7,4 +7,63 @@
   <h2>Nomine administration</h2>
   <p>The following is a list of registered nominees. (You can <a href="#"> request confirmation<a> from nominees if they haven't
 replied to the nomination notification they have received.)</p>
+
+<h2>Nominations stats</h2>
+
+<table class="ietf-table ietf-doctable">
+<tr>
+  <th>Position</th>
+  <th>Accepted</th>
+  <th>Declined</th>
+  <th>Questionnaire</th>
+  <th>Pending</th>
+  <th>Total</th>
+</tr>
+{% for item in stats %}
+<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+  <td>
+    {{ item.position__name }}
+  </td>
+  <td>
+    {{ item.accepted }}
+  </td>
+  <td>
+    {{ item.declined }}
+  </td>
+  <td>
+    {{ item.questionnaire }}
+  </td>
+  <td>
+    {{ item.pending }}
+  </td>
+  <td>
+    {{ item.total }}
+  </td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>List of nominees</h2>
+
+<table class="ietf-table ietf-doctable">
+<tr>
+  <th>Nominees</th>
+  <th>Position</th>
+  <th>State</th>
+</tr>
+{% for np in nominee_positions %}
+<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+  <td>
+    {{ np.nominee }}
+  </td>
+  <td>
+    {{ np.position }}
+  </td>
+  <td class="status">
+    {{ np.state }}
+  </td>
+</tr>
+{% endfor %}
+</table>
+
 {% endblock %}

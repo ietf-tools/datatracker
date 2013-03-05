@@ -6,13 +6,14 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils import simplejson
+from django.db.models import Count
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
 from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, MergeForm,
                                NomComTemplateForm, PositionForm, PrivateKeyForm)
-from ietf.nomcom.models import Position
+from ietf.nomcom.models import Position, NomineePosition
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
                                retrieve_nomcom_private_key,
                                store_nomcom_private_key)
@@ -54,9 +55,20 @@ def private_key(request, year):
 @member_required(role='member')
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
+    nominee_positions = NomineePosition.objects.all()
+    stats = NomineePosition.objects.values('position__name').annotate(total=Count('position'))
+    for s in stats:
+        for state in ['pending', 'accepted', 'declined', 'questionnaire', 'pending']:
+            if state == 'questionnaire':
+                s[state] = NomineePosition.objects.filter(position__name=s['position__name'], questionnaires__isnull=False).count()
+            else:
+                s[state] = NomineePosition.objects.filter(position__name=s['position__name'], state=state).count()
+
     return render_to_response('nomcom/private_index.html',
                               {'nomcom': nomcom,
                                'year': year,
+                               'nominee_positions': nominee_positions,
+                               'stats': stats,
                                'selected': 'index'}, RequestContext(request))
 
 
