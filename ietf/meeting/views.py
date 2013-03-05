@@ -167,17 +167,6 @@ if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     agenda_info = agenda_infoREDESIGN
 
 def get_agenda_info(request, num=None):
-    if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
-        user_agent = "iPhone"
-    elif 'user_agent' in request.REQUEST:
-        user_agent = request.REQUEST['user_agent']
-    elif 'HTTP_USER_AGENT' in request.META:
-        user_agent = request.META["HTTP_USER_AGENT"]
-    else:
-        user_agent = ""
-    if "iPhone" in user_agent:
-        return iphone_agenda(request, num)
-
     meeting = get_meeting(num)
     timeslots = TimeSlot.objects.filter(Q(meeting__id = meeting.id)).order_by('time','name')
     modified = timeslots.aggregate(Max('modified'))['modified__max']
@@ -192,6 +181,17 @@ def get_agenda_info(request, num=None):
 
 @decorator_from_middleware(GZipMiddleware)
 def html_agenda(request, num=None):
+    if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
+        user_agent = "iPhone"
+    elif 'user_agent' in request.REQUEST:
+        user_agent = request.REQUEST['user_agent']
+    elif 'HTTP_USER_AGENT' in request.META:
+        user_agent = request.META["HTTP_USER_AGENT"]
+    else:
+        user_agent = ""
+    if "iPhone" in user_agent:
+        return iphone_agenda(request, num)
+
     timeslots, modified, meeting, area_list, wg_list = get_agenda_info(request, num)
     return HttpResponse(render_to_string("meeting/agenda.html",
         {"timeslots":timeslots, "modified": modified, "meeting":meeting,
@@ -201,6 +201,17 @@ def html_agenda(request, num=None):
 
 @decorator_from_middleware(GZipMiddleware)
 def html_agenda_utc(request, num=None):
+    if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
+        user_agent = "iPhone"
+    elif 'user_agent' in request.REQUEST:
+        user_agent = request.REQUEST['user_agent']
+    elif 'HTTP_USER_AGENT' in request.META:
+        user_agent = request.META["HTTP_USER_AGENT"]
+    else:
+        user_agent = ""
+    if "iPhone" in user_agent:
+        return iphone_agenda(request, num)
+
     timeslots, modified, meeting, area_list, wg_list = get_agenda_info(request, num)
     return HttpResponse(render_to_string("meeting/agenda_utc.html",
         {"timeslots":timeslots, "modified": modified, "meeting":meeting,
