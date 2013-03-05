@@ -1,7 +1,7 @@
 jQuery(document).ready(function () {
     function stateChanged() {
         var v = $(this).val();
-        jQuery("#id_message").val(messages[v] || "");
+        jQuery("#id_message").val(info_msg[v] || "");
 
         if (jQuery.inArray(+v, statesForBallotWoExtern) != -1)
             jQuery("tr.ballot-wo-extern").show();
