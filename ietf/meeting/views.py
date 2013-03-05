@@ -141,7 +141,7 @@ def agenda_infoREDESIGN(num=None):
             if g.state_id == "active":
                 ads.extend(IESGHistory().from_role(x, meeting_time) for x in g.role_set.filter(name="ad").select_related('group', 'person'))
     
-    active_agenda = State.objects.get(type='agenda', slug='active')
+    active_agenda = State.objects.get(used=True, type='agenda', slug='active')
     plenary_agendas = Document.objects.filter(session__meeting=meeting, session__timeslot__type="plenary", type="agenda", ).distinct()
     plenaryw_agenda = plenaryt_agenda = "The Plenary has not been scheduled"
     for agenda in plenary_agendas:
@@ -166,8 +166,7 @@ def agenda_infoREDESIGN(num=None):
 if settings.USE_DB_REDESIGN_PROXY_CLASSES:
     agenda_info = agenda_infoREDESIGN
 
-@decorator_from_middleware(GZipMiddleware)
-def html_agenda(request, num=None):
+def get_agenda_info(request, num=None):
     if  settings.SERVER_MODE != 'production' and '_testiphone' in request.REQUEST:
         user_agent = "iPhone"
     elif 'user_agent' in request.REQUEST:
@@ -189,7 +188,21 @@ def html_agenda(request, num=None):
 
     wg_list = Group.objects.filter(acronym__in = set(wg_name_list)).order_by('parent__acronym','acronym')
 
+    return timeslots, modified, meeting, area_list, wg_list
+
+@decorator_from_middleware(GZipMiddleware)
+def html_agenda(request, num=None):
+    timeslots, modified, meeting, area_list, wg_list = get_agenda_info(request, num)
     return HttpResponse(render_to_string("meeting/agenda.html",
+        {"timeslots":timeslots, "modified": modified, "meeting":meeting,
+         "area_list": area_list, "wg_list": wg_list ,
+         "show_inline": set(["txt","htm","html"]) },
+        RequestContext(request)), mimetype="text/html")
+
+@decorator_from_middleware(GZipMiddleware)
+def html_agenda_utc(request, num=None):
+    timeslots, modified, meeting, area_list, wg_list = get_agenda_info(request, num)
+    return HttpResponse(render_to_string("meeting/agenda_utc.html",
         {"timeslots":timeslots, "modified": modified, "meeting":meeting,
          "area_list": area_list, "wg_list": wg_list ,
          "show_inline": set(["txt","htm","html"]) },

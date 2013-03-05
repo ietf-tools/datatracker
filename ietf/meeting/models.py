@@ -104,17 +104,15 @@ class TimeSlot(models.Model):
     show_location = models.BooleanField(default=True, help_text="Show location in agenda")
     session = models.ForeignKey('Session', null=True, blank=True, help_text=u"Scheduled session, if any")
     modified = models.DateTimeField(default=datetime.datetime.now)
-
+    #
     def __unicode__(self):
         location = self.get_location()
         if not location:
             location = "(no location)"
             
         return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
-
     def end_time(self):
         return self.time + self.duration
-
     def get_location(self):
         location = self.location
         if location:
@@ -123,14 +121,21 @@ class TimeSlot(models.Model):
             location = self.meeting.reg_area
         elif self.type_id == "break":
             location = self.meeting.break_area
-                
         if not self.show_location:
             location = ""
-            
         return location
+    @property
+    def tz(self):
+        return pytz.timezone(self.meeting.time_zone)        
+    def tzname(self):
+        return self.tz.tzname(self.time)
+    def utc_start_time(self):
+        local_start_time = self.tz.localize(self.time)
+        return local_start_time.astimezone(pytz.utc)
+    def utc_end_time(self):
+        local_end_time = self.tz.localize(self.end_time())
+        return local_end_time.astimezone(pytz.utc)
 
-        
-    
 class Constraint(models.Model):
     """Specifies a constraint on the scheduling between source and
     target, e.g. some kind of conflict."""

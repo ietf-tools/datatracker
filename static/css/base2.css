@@ -125,6 +125,7 @@ table.ballot_icon td { border: 1px solid black; height: 7px; width: 6px; padding
 table.ballot_icon td.my { border: 3px outset black;}
 
 .ietf-small { font-size:85%; }
+.ietf-tiny { font-size:70%; }
 .ietf-highlight-y { padding:0 2px;background:yellow;}
 .ietf-highlight-r { padding:0 2px;background:#ffa0a0;}
 .ietf-divider { background: #2647a0; color: white; font-size:116%; padding:0.5em 1em; }

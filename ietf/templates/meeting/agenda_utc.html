@@ -1,0 +1,6 @@
+{# Copyright The IETF Trust 2012, All Rights Reserved #}
+{% extends "meeting/agenda.html" %}
+{% block slottime %}
+{{slot.utc_start_time|date:"Hi"}}-{{slot.utc_end_time|date:"Hi"}}&nbsp;<span class="ietf-tiny">UTC</span>
+{% endblock %}
+
