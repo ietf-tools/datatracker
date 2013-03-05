@@ -56,6 +56,23 @@ def private_key(request, year):
 @member_required(role='member')
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
+    is_chair = nomcom.group.is_chair(request.user)
+    message = None
+    if is_chair and request.method == 'POST':
+        action = request.POST.get('action')
+        nominations_to_modify = request.POST.getlist('selected')
+        if nominations_to_modify:
+            if action == "set_as_accepted":
+                NomineePosition.objects.filter(id__in=nominations_to_modify).update(state='accepted')
+                message = ('success', 'The selected nominations has been set as accepted')
+            elif action == "set_as_declined":
+                NomineePosition.objects.filter(id__in=nominations_to_modify).update(state='declined')
+                message = ('success', 'The selected nominations has been set as declined')
+            elif action == "set_as_pending":
+                NomineePosition.objects.filter(id__in=nominations_to_modify).update(state='pending')
+                message = ('success', 'The selected nominations has been set as pending')
+        else:
+            message = ('warning', "Please, select some nominations to work with")
 
     filters = {}
     selected_state = request.GET.get('state')
@@ -80,9 +97,11 @@ def private_index(request, year):
     for s in stats:
         for state in states:
             if state['slug'] == 'questionnaire':
-                s[state['slug']] = NomineePosition.objects.filter(position__name=s['position__name'], questionnaires__isnull=False).count()
+                s[state['slug']] = NomineePosition.objects.filter(position__name=s['position__name'],
+                                                                  questionnaires__isnull=False).count()
             else:
-                s[state['slug']] = NomineePosition.objects.filter(position__name=s['position__name'], state=state['slug']).count()
+                s[state['slug']] = NomineePosition.objects.filter(position__name=s['position__name'],
+                                                                  state=state['slug']).count()
 
     return render_to_response('nomcom/private_index.html',
                               {'nomcom': nomcom,
@@ -93,7 +112,9 @@ def private_index(request, year):
                                'positions': positions,
                                'selected_state': selected_state,
                                'selected_position': selected_position and int(selected_position) or None,
-                               'selected': 'index'}, RequestContext(request))
+                               'selected': 'index',
+                               'is_chair': is_chair,
+                               'message': message}, RequestContext(request))
 
 
 @member_required(role='chair')

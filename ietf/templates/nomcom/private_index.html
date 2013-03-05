@@ -4,10 +4,6 @@
 
 {% block nomcom_content %}
 
-  <h2>Nomine administration</h2>
-  <p>The following is a list of registered nominees. (You can <a href="#"> request confirmation<a> from nominees if they haven't
-replied to the nomination notification they have received.)</p>
-
 <h2>Nominations stats</h2>
 
 <table class="ietf-table ietf-doctable">
@@ -15,55 +11,103 @@ replied to the nomination notification they have received.)</p>
   <th>Position</th>
   <th>Accepted</th>
   <th>Declined</th>
-  <th>Questionnaire</th>
   <th>Pending</th>
+  <th>Questionnaire</th>
   <th>Total</th>
 </tr>
 {% for item in stats %}
 <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-  <td>
-    {{ item.position__name }}
-  </td>
-  <td>
-    {{ item.accepted }}
-  </td>
-  <td>
-    {{ item.declined }}
-  </td>
-  <td>
-    {{ item.questionnaire }}
-  </td>
-  <td>
-    {{ item.pending }}
-  </td>
-  <td>
-    {{ item.total }}
-  </td>
+  <td>{{ item.position__name }}</td>
+  <td>{{ item.accepted }}</td>
+  <td>{{ item.declined }}</td>
+  <td>{{ item.pending }}</td>
+  <td>{{ item.questionnaire }}</td>
+  <td>{{ item.total }}</td>
 </tr>
 {% endfor %}
 </table>
+
+<div style="padding: 8px 0 8px 0;"></div>
+
+<div class="ietf-box diffTool">
+  <h2>Select Filters</h2>
+
+  <form action="" method="get">
+    <table>
+      <tr>
+        <td>
+          <label>State</label>
+          <select name="state">
+            <option value="">All</option>
+            {% for state in states %}
+              <option value="{{ state.slug }}"
+                {% ifequal state.slug  selected_state %}selected="selected"{% endifequal%}>
+                {{ state.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </td>
+        <td rowspan="2" valign="top">
+          <label>Position:</label>
+          <select name="position">
+            <option value="">All</option>
+            {% for position in positions %}
+                <option value="{{ position.position__id }}"
+                  {% ifequal position.position__id  selected_position %}selected="selected"{% endifequal%}>
+                  {{ position.position__name }}
+                </option>
+            {% endfor %}
+          </select>
+          <input name="submit" value="Go!" type="submit" />
+        </td>
+      </tr>
+    </table>
+  </form>
+</div>
 
 <h2>List of nominees</h2>
 
-<table class="ietf-table ietf-doctable">
-<tr>
-  <th>Nominees</th>
-  <th>Position</th>
-  <th>State</th>
-</tr>
-{% for np in nominee_positions %}
-<tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
-  <td>
-    {{ np.nominee }}
-  </td>
-  <td>
-    {{ np.position }}
-  </td>
-  <td class="status">
-    {{ np.state }}
-  </td>
-</tr>
-{% endfor %}
-</table>
+{% if is_chair %}
+<form id="batch-action-form" method="post" action="">
+  {% if message %}
+    <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+  {% endif %}
+  <div class="actions">
+    <label>Action:
+      <select name="action">
+        <option value="" selected="selected">---------</option>
+        <option value="set_as_accepted">Set as accepted</option>
+        <option value="set_as_pending">Set as pending</option>
+        <option value="set_as_declined">Set as declined</option>
+      </select>
+    </label>
+    <button type="submit" title="Run action">Go</button>
+  </div>
+{% endif %}
+
+  <table class="ietf-table ietf-doctable">
+  <tr>
+    {% if is_chair %}<th>&#x2713;</th>{% endif %}
+    <th>Nominees</th>
+    <th>Position</th>
+    <th>State</th>
+    <th>Questionnaire</th>
+  </tr>
+  {% for np in nominee_positions %}
+  <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
+    {% if is_chair %}
+      <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"{% if charge.is_selected %} checked="checked"{% endif %} /></td>
+    {% endif %}
+    <td>{{ np.nominee }}</td>
+    <td>{{ np.position }}</td>
+    <td>{{ np.state }}</td>
+    <td>{{ np.questionnaires.all|yesno:">&#x2713;,No,No" }}
+  </tr>
+  {% endfor %}
+  </table>
+
+{% if is_chair %}
+  </form>
+{% endif %}
 
 {% endblock %}

@@ -19,7 +19,7 @@ class NomineeAdmin(admin.ModelAdmin):
 class NomineePositionAdmin(admin.ModelAdmin):
     pass
     list_display = ('nominee', 'position', 'state')
-    list_filter = ('state',)
+    list_filter = ('state', 'position')
 
 
 class PositionAdmin(admin.ModelAdmin):
