@@ -1,3 +1,38 @@
+ietfdb (4.42) ietf; urgency=high
+
+  This release brings only minor new functionality to the datatracker
+  (timezone indications on the html agenda, and an UTC version of the
+  html agenda), but it's important because it includes the secretariat
+  tools as part of the datatracker release and source repository, and
+  makes the test suite also run secretariat app tests.
+  
+  Details:
+
+  * Provides the html agenda for IETF meetings with local timezone indications,
+    and adds a new html agenda with UTC timezone indications.
+
+  * Merged in branch/amsl/trunkmerge@5449 from rcross@amsl.com, with some 
+    tweaks.  This provides the secretariat apps.
+
+  * In order that document states (which may be used by old documents) 
+    should not need to be removed when state machines change and states go out 
+    of use, all document states have a 'used' field.  The code which accesses 
+    the state fields have not been requiring that used=True for the states 
+    returned, which is an error.  Fixed this by adding 'used=True' to all 
+    State.objects.get() and State.objects.filter() call where it's relevant.
+
+  * Applied patch from olau@iola.dk for some email problems, see issues
+    #949 and #877.
+
+  * With RFC6410, there are only two RFC maturity levels, 'Proposed 
+    Standard' and 'Internet Standard'. Added a mapping between 'Internet 
+    Standard' and slug 'std', to be able to process newer RFC info from the RFC 
+    Editor.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Mar 2013 20:37:14 +0100
+
+
 ietfdb (4.41) ietf; urgency=low
 
   This release is a minor release, with bugfixes and some enhancements
