@@ -414,6 +414,46 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
               "/js/nomcom.js", )
 
 
+class FeedbackForm(BaseNomcomForm, forms.ModelForm):
+    position = forms.CharField(label='position')
+    nominee_name = forms.CharField(label='nominee name')
+    nominee_email = forms.CharField(label='nominee email')
+    nominator_name = forms.CharField(label='nominator name')
+    nominator_email = forms.CharField(label='nominator email')
+
+    comments = forms.CharField(label='Comments on this candidate', widget=forms.Textarea())
+
+    fieldsets = [('Provide comments', ('position',
+                                       'nominee_name',
+                                       'nominee_email',
+                                       'nominator_name',
+                                       'nominator_email',
+                                       'comments'))]
+
+    def __init__(self, *args, **kwargs):
+        self.nomcom = kwargs.pop('nomcom', None)
+        self.user = kwargs.pop('user', None)
+        self.public = kwargs.pop('public', None)
+
+        super(FeedbackForm, self).__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        pass
+
+    class Meta:
+        model = Feedback
+        fields = ('position',
+                  'nominee_name',
+                  'nominee_email',
+                  'nominator_name',
+                  'nominator_email',
+                  'comments')
+
+    class Media:
+        js = ("/js/jquery-1.5.1.min.js",
+              "/js/nomcom.js", )
+
+
 class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
 
     fieldsets = [('Template content', ('content', )),

@@ -15,7 +15,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
 from ietf.name.models import NomineePositionState
 from ietf.nomcom.decorators import member_required, private_key_required
-from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, MergeForm,
+from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, FeedbackForm, MergeForm,
                                NomComTemplateForm, PositionForm, PrivateKeyForm)
 from ietf.nomcom.models import Position, NomineePosition, Nominee
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
@@ -241,13 +241,48 @@ def nominate(request, year, public):
 
 
 @login_required
-def comments(request, year):
-    # TODO: complete to do comments
+def public_feedback(request, year):
+    return feedback(request, year, True)
+
+
+@member_required(role='member')
+def private_feedback(request, year):
+    return feedback(request, year, False)
+
+
+def feedback(request, year, public):
     nomcom = get_nomcom_by_year(year)
-    return render_to_response('nomcom/comments.html',
-                              {'nomcom': nomcom,
+    has_publickey = nomcom.public_key and True or False
+    if public:
+        template = 'nomcom/public_feedback.html'
+    else:
+        template = 'nomcom/private_feedback.html'
+
+    if not has_publickey:
+            message = ('warning', "Nomcom don't have public key to ecrypt data, please contact with nomcom chair")
+            return render_to_response(template,
+                              {'has_publickey': has_publickey,
+                               'message': message,
+                               'nomcom': nomcom,
                                'year': year,
-                               'selected': 'comments'}, RequestContext(request))
+                               'selected': 'feedback'}, RequestContext(request))
+
+    message = None
+    if request.method == 'POST':
+        form = FeedbackForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
+        if form.is_valid():
+            form.save()
+            message = ('success', 'Your nomination has been registered. Thank you for the nomination.')
+    else:
+        form = FeedbackForm(nomcom=nomcom, user=request.user, public=public)
+
+    return render_to_response(template,
+                              {'has_publickey': has_publickey,
+                               'form': form,
+                               'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'selected': 'feedback'}, RequestContext(request))
 
 
 @member_required(role='chair')

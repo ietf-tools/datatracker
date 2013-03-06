@@ -1,6 +1,6 @@
 {% extends "nomcom/nomcom_public_base.html" %}
 
-{% block subtitle %} - Nominate{% endblock %}
+{% block subtitle %} - Feedback{% endblock %}
 
 {% block pagehead %}
 {{ form.media }}
@@ -27,7 +27,7 @@
 
   {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
 
-  <form id="nominateform" action="" method="post">{% csrf_token %}
+  <form id="feedbackform" action="" method="post">{% csrf_token %}
     {{ form }}
 
   <div class="submitrow">

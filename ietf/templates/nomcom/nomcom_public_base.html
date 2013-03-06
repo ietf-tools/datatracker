@@ -7,9 +7,9 @@
   <div class="ietf-navset">
     {% if selected == "index" %}<span class="selected">Home</span>{% else %}<a href="{% url nomcom_index year %}">Home</a>{% endif %} |
     {% if selected == "nominate" %}<span class="selected">Nominate</span>{% else %}<a href="{% url nomcom_public_nominate year %}">Nominate</a>{% endif %} |
+    {% if selected == "feedback" %}<span class="selected">Provide Comments</span>{% else %}<a href="{% url nomcom_public_feedback year %}">Provide Comments</a>{% endif %} |
     {% if selected == "requirements" %}<span class="selected">Requirements</span>{% else %}<a href="{% url nomcom_requirements year %}">Requirements</a>{% endif %} |
     {% if selected == "questionnaires" %}<span class="selected">Questionnaires</span>{% else %}<a href="{% url nomcom_questionnaires year %}">Questionnaires</a>{% endif %} |
-    {% if selected == "comments" %}<span class="selected">Provide Comments</span>{% else %}<a href="{% url nomcom_comments year %}">Provide Comments</a>{% endif %}
   </div>
 
   {% block nomcom_content %}

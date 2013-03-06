@@ -1,6 +1,6 @@
-{% extends "nomcom/nomcom_public_base.html" %}
+{% extends "nomcom/nomcom_private_base.html" %}
 
-{% block subtitle %} - Nominate{% endblock %}
+{% block subtitle %} - Feedback{% endblock %}
 
 {% block pagehead %}
 {{ form.media }}
@@ -10,7 +10,7 @@
 
 
 {% if message %}
-  <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
+<div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
 {% endif %}
 
 {% if has_publickey %}
@@ -27,12 +27,12 @@
 
   {% if form.errors %}<div class="info-message-error">Please correct the following errors</div>{% endif %}
 
-  <form id="nominateform" action="" method="post">{% csrf_token %}
+  <form id="privateform" action="" method="post">{% csrf_token %}
     {{ form }}
 
-  <div class="submitrow">
-    <input type="submit" value="Save" name="save" />
-  </div>
+    <div class="submitrow">
+      <input type="submit" value="Save" name="save" />
+    </div>
 
   </form>
 {% endif %}
