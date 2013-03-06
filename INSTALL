@@ -32,6 +32,15 @@ and finally restart apache::
 
   sudo /etc/init.d/apache2 restart
 
+It's now also a good idea to go to the datatracker front page:
+
+  http://datatracker.ietf.org/
+
+to check that it's alive and kicking, and displaying the new release
+number at the bottom of the left-side menubar :-) -- if not, revert the
+symlink step, re-pointing the symlink to the release that was running
+before the new release, and restart apache again to roll back to that.
+
 
 Installing from Scratch
 =======================
@@ -45,6 +54,49 @@ don't cover this.  The general Django depoloyment instructions are relevant, how
 Additional Version-Specific Instructions
 ========================================
 
+Version 4.42
+------------
+
+- In order to serve the secretariat tools static pages (such as image, css and js
+  files) the exceptions to which urls need to be handled by the python-handler
+  must be updated.
+
+  In the datatracker test server, the following configuration has been used to
+  make apache handle the static files, and Django the dynamic pages.  The new
+  part is the <LocationMatch/> which mentions /secr/.  Adapt as needed for ietfa.
+
+  ----------------
+  # Logging and document root settings omitted
+
+      <Location "/">
+	  PythonPath "['/srv/www/ietfdb'] + sys.path"
+	  SetHandler python-program
+	  PythonHandler django.core.handlers.modpython
+	  SetEnv DJANGO_SETTINGS_MODULE ietf.settings 
+	  PythonDebug On
+      </Location>
+
+      <LocationMatch "^/(robots.txt|favicon.ico|images|css|js|media|error)(/|$)"> 
+	  SetHandler None
+      </LocationMatch> 
+
+      # New for secretariat tools:
+      <LocationMatch "^/secr/(img|css|js|error)"> 
+	  SetHandler None
+      </LocationMatch> 
+
+      <Location "/accounts/login/">
+	  AuthType Digest
+	  AuthName "IETF"
+	  AuthUserFile /var/local/loginmgr/digest
+	  AuthGroupFile /var/local/loginmgr/groups
+	  AuthDigestDomain http://tools.ietf.org/
+	  Require valid-user
+      </Location>
+
+  # Caching and compression settings omitted
+  ----------------
+
 Version 4.40
 ------------
 
@@ -57,22 +109,22 @@ Version 4.40
 - (DONE) Make sure mailing list for iab-stream@iab.org is up (since we're now
   emailing that)
 
-- Set rfc_must_published_later_than date in bin/iana-protocols-updates to today
+- (DONE) Set rfc_must_published_later_than date in bin/iana-protocols-updates to today
 
-- Run the 3 new doc South migrations
+- (DONE) Run the 3 new doc South migrations
 
-- New polling scripts, to be run every hour::
+- (DONE) New polling scripts, to be run every hour::
 
     web/ietf/bin/iana-changes-updates
     web/ietf/bin/iana-protocols-updates
     web/ietf/bin/rfc-editor-index-updates (replaces mirror_rfc_index)
     web/ietf/bin/rfc-editor-queue-updates (replaces mirror_rfc_queue)
 
-- Import old events from IANA::
+- (DONE) Import old events from IANA::
 
     bin/iana-changes-updates --from="2005-01-01 00:00:00" --to="2013-01-31 00:00:00" --no-email
 
-- Pipe IANA review emails to the datatracker.  There used to be an action to pipe
+- (DONE) Pipe IANA review emails to the datatracker.  There used to be an action to pipe
   such mails to henrik@levkowetz.com, for testing this feature, but I haven't seen
   any in a little while, so I don't know if this has broken.  Anyway, the iana review
   emails should be piped into::
@@ -80,30 +132,7 @@ Version 4.40
     /www/ietf-datatracker/web/ietf/bin/iana-review-email
 
 
-- Tell IANA we're doing this for real now:
-
-  * Probably need another URL in sync/iana.py instead of the :8080 test one
-
-  * Need them to provide a real IANA sync password for auth with their
-    server (put that in settings_local.py)
-
-  * They need to poke the live server rather than my test server
-
-  * Tell Michelle Cotton that we are now processing emails so they don't
-     have to enter comments manually
-
-  * Also, they never explained what to do about the review states (IANA
-    OK/not OK). So it's not automatically updated (no source to update
-    from) and I didn't disable it. But they can set it manually for the
-    time being, e.g.::
-
-	http://statesync.ietf.beta.iola.dk/doc/draft-ietf-geopriv-policy-uri/edit/state/iana-review/
-
-  * Once a draft has a IANA review state, it turns into an edit link (if
-    you're in IANA or the Secretariat), so it should merely be a question
-    of going to the draft page, clicking the link and saving the new
-    state. Drafts automatically get a IANA Review Needed state in the
-    future.
+- (DONE) Tell IANA we're doing this for real now.
 
 
 Version 4.34
