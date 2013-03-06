@@ -31,6 +31,9 @@ class SMTPExceptionMiddleware(object):
 		value = orig['value']
 	    else:
 		tb = traceback.format_tb(sys.exc_info()[2])
+            log("SMTP Exception: %s" % type)
+            log("SMTP Exception: args: %s" % value)
+            log("SMTP Exception: tb: %s" % tb)
 	    return render_to_response('email_failed.html', {'exception': type, 'args': value, 'traceback': "".join(tb)},
 		context_instance=RequestContext(request))
 	return None

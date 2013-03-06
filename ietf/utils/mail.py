@@ -62,9 +62,11 @@ def send_smtp(msg, bcc=None):
         server = None
         try:
             server = smtplib.SMTP()
+            log("SMTP server: %s" % repr(server))
             #if settings.DEBUG:
             #    server.set_debuglevel(1)
-            server.connect(settings.EMAIL_HOST, settings.EMAIL_PORT)
+            code, msg = server.connect(settings.EMAIL_HOST, settings.EMAIL_PORT)
+            log("SMTP connect: code: %s; msg: %s" % (code, msg))
             if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
                 server.ehlo()
                 if 'starttls' not in server.esmtp_features:
