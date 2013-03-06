@@ -59,17 +59,29 @@ class Nomination(models.Model):
         return u"%s (%s)" % (self.candidate_name, self.candidate_email)
 
 
+class NomineeManager(models.Manager):
+    def get_by_nomcom(self, nomcom):
+        return self.filter(nominee_position__nomcom=nomcom)
+
+
 class Nominee(models.Model):
 
     email = models.ForeignKey(Email)
     nominee_position = models.ManyToManyField('Position', through='NomineePosition')
     duplicated = models.ForeignKey('Nominee', blank=True, null=True)
 
+    objects = NomineeManager()
+
     class Meta:
         verbose_name_plural = 'Nominees'
 
     def __unicode__(self):
         return u'%s' % self.email
+
+
+class NomineePositionManager(models.Manager):
+    def get_by_nomcom(self, nomcom):
+        return self.filter(position__nomcom=nomcom)
 
 
 class NomineePosition(models.Model):
@@ -83,10 +95,13 @@ class NomineePosition(models.Model):
     feedback = models.ManyToManyField('Feedback', blank=True, null=True)
     time = models.DateTimeField(auto_now_add=True)
 
+    objects = NomineePositionManager()
+
     class Meta:
         verbose_name = 'Nominee position'
         verbose_name_plural = 'Nominee positions'
         unique_together = ('position', 'nominee')
+        ordering = ['nominee']
 
     def save(self, **kwargs):
         if not self.pk and not self.state_id:

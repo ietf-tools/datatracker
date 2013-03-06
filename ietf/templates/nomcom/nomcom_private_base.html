@@ -12,6 +12,7 @@
     {% if selected == "private_key" %}<span class="selected">Private key</span>{% else %}<a href="{% url nomcom_private_key year %}">Private key</a>{% endif %}
     {% if user|is_chair:year %} |
       {% if selected == "merge" %}<span class="selected">Merge nominee email addr</span>{% else %}<a href="{% url nomcom_private_merge year %}">Merge nominee email addr</a>{% endif %} |
+      {% if selected == "send_reminder_mail" %}<span class="selected">Send Reminder Mail</span>{% else %}<a href="{% url nomcom_send_reminder_mail year %}">Send reminder mail</a>{% endif %} |
       {% if selected == "edit_members" %}<span class="selected">Nomcom members</span>{% else %}<a href="{% url nomcom_edit_members year %}">Nomcom members</a>{% endif %} |
       {% if selected == "edit_publickey" %}<span class="selected">Public key</span>{% else %}<a href="{% url nomcom_edit_publickey year %}">Public key</a>{% endif %} |
       {% if selected == "edit_templates" %}<span class="selected">Templates</span>{% else %}<a href="{% url nomcom_list_templates year %}">Templates</a>{% endif %} |

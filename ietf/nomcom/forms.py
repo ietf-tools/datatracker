@@ -216,8 +216,7 @@ class MergeForm(BaseNomcomForm, forms.Form):
 
     def clean_primary_email(self):
         email = self.cleaned_data['primary_email']
-        nominees = Nominee.objects.filter(email__address=email,
-                                         nominee_position__nomcom=self.nomcom)
+        nominees = Nominee.objects.get_by_nomcom(self.nomcom).filter(email__address=email)
         if not nominees:
             msg = "Does not exist a nomiee with this email"
             self._errors["primary_email"] = self.error_class([msg])
@@ -228,8 +227,7 @@ class MergeForm(BaseNomcomForm, forms.Form):
         data = self.cleaned_data['secondary_emails']
         emails = get_list(data)
         for email in emails:
-            nominees = Nominee.objects.filter(email__address=email,
-                                         nominee_position__nomcom=self.nomcom)
+            nominees = Nominee.objects.get_by_nomcom(self.nomcom).filter(email__address=email)
             if not nominees:
                 msg = "Does not exist a nomiee with email %s" % email
                 self._errors["primary_email"] = self.error_class([msg])
@@ -250,10 +248,8 @@ class MergeForm(BaseNomcomForm, forms.Form):
         primary_email = self.cleaned_data.get("primary_email")
         secondary_emails = get_list(self.cleaned_data.get("secondary_emails"))
 
-        primary_nominee = Nominee.objects.get(email__address=primary_email,
-                                              nominee_position__nomcom=self.nomcom)
-        secondary_nominees = Nominee.objects.filter(email__address__in=secondary_emails,
-                                                    nominee_position__nomcom=self.nomcom)
+        primary_nominee = Nominee.objects.get_by_nomcom(self.nomcom).get(email__address=primary_email)
+        secondary_nominees = Nominee.objects.get_by_nomcom(self.nomcom).filter(email__address__in=secondary_emails)
         for nominee in secondary_nominees:
             # move nominations
             nominee.nomination_set.all().update(nominee=primary_nominee)

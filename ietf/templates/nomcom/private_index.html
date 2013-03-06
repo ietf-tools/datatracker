@@ -67,8 +67,12 @@
 
 <h2>List of nominees</h2>
 
+<p>The following is a list of registered nominees.
+{% if is_chair %}(You can <a href="{% url nomcom_send_reminder_mail year %}">request confirmation</a> from nominees if they haven't
+replied to the nomination notification they have received.){% endif %}</p>
+
 {% if is_chair %}
-<form id="batch-action-form" method="post" action="">
+<form id="batch-action-form" method="post" action="">{% csrf_token %}
   {% if message %}
     <div class="info-message-{{ message.0 }}">{{ message.1 }}</div>
   {% endif %}
@@ -96,10 +100,10 @@
   {% for np in nominee_positions %}
   <tr class="{{ forloop.counter|divisibleby:2|yesno:"oddrow,evenrow" }}">
     {% if is_chair %}
-      <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"{% if charge.is_selected %} checked="checked"{% endif %} /></td>
+      <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"/></td>
     {% endif %}
     <td>{{ np.nominee }}</td>
-    <td>{{ np.position }}</td>
+    <td>{{ np.position.name }}</td>
     <td>{{ np.state }}</td>
     <td>{{ np.questionnaires.all|yesno:">&#x2713;,No,No" }}
   </tr>

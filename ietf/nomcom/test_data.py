@@ -106,11 +106,16 @@ def nomcom_test_data():
     cert_file, privatekey_file = generate_cert()
     nomcom.public_key.save('cert', File(open(cert_file.name, 'r')))
 
-    secretariat, created = Group.objects.get_or_create(name=u'IETF Secretariat',
-                                                       acronym="secretariat",
-                                                       state_id="active",
-                                                       type_id="ietf",
-                                                       parent=None)
+    try:
+        secretariat = Group.objects.get(acronym="secretariat")
+        secretariat.name = u'Secretariat'
+        secretariat.save()
+    except Group.DoesNotExist:
+        secretariat, created = Group.objects.get_or_create(name=u'Secretariat',
+                                                            acronym="secretariat",
+                                                            state_id="active",
+                                                            type_id="ietf",
+                                                            parent=None)
     # users
     for user in USERS:
         u, created = User.objects.get_or_create(username=user)

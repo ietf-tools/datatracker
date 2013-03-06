@@ -1,4 +1,5 @@
  # -*- coding: utf-8 -*-
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404, HttpResponseRedirect
@@ -8,16 +9,18 @@ from django.template.loader import render_to_string
 from django.utils import simplejson
 from django.db.models import Count
 
+from ietf.utils.mail import send_mail
+
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit
 from ietf.name.models import NomineePositionState
 from ietf.nomcom.decorators import member_required, private_key_required
 from ietf.nomcom.forms import (EditPublicKeyForm, NominateForm, MergeForm,
                                NomComTemplateForm, PositionForm, PrivateKeyForm)
-from ietf.nomcom.models import Position, NomineePosition
+from ietf.nomcom.models import Position, NomineePosition, Nominee
 from ietf.nomcom.utils import (get_nomcom_by_year, HOME_TEMPLATE,
                                retrieve_nomcom_private_key,
-                               store_nomcom_private_key)
+                               store_nomcom_private_key, NOMINEE_REMINDER_TEMPLATE)
 
 
 def index(request, year):
@@ -56,20 +59,22 @@ def private_key(request, year):
 @member_required(role='member')
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
+    all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom)
     is_chair = nomcom.group.is_chair(request.user)
     message = None
     if is_chair and request.method == 'POST':
         action = request.POST.get('action')
         nominations_to_modify = request.POST.getlist('selected')
         if nominations_to_modify:
+            nominations = all_nominee_positions.filter(id__in=nominations_to_modify)
             if action == "set_as_accepted":
-                NomineePosition.objects.filter(id__in=nominations_to_modify).update(state='accepted')
+                nominations.update(state='accepted')
                 message = ('success', 'The selected nominations has been set as accepted')
             elif action == "set_as_declined":
-                NomineePosition.objects.filter(id__in=nominations_to_modify).update(state='declined')
+                nominations.update(state='declined')
                 message = ('success', 'The selected nominations has been set as declined')
             elif action == "set_as_pending":
-                NomineePosition.objects.filter(id__in=nominations_to_modify).update(state='pending')
+                nominations.update(state='pending')
                 message = ('success', 'The selected nominations has been set as pending')
         else:
             message = ('warning', "Please, select some nominations to work with")
@@ -87,21 +92,21 @@ def private_index(request, year):
     if selected_position:
             filters['position__id'] = selected_position
 
-    nominee_positions = NomineePosition.objects.all()
+    nominee_positions = all_nominee_positions
     if filters:
         nominee_positions = nominee_positions.filter(**filters)
 
-    stats = NomineePosition.objects.values('position__name').annotate(total=Count('position'))
+    stats = all_nominee_positions.values('position__name').annotate(total=Count('position'))
     states = list(NomineePositionState.objects.values('slug', 'name')) + [{'slug': u'questionnaire', 'name': u'Questionnaire'}]
-    positions = NomineePosition.objects.values('position__name', 'position__id').distinct()
+    positions = all_nominee_positions.values('position__name', 'position__id').distinct()
     for s in stats:
         for state in states:
             if state['slug'] == 'questionnaire':
-                s[state['slug']] = NomineePosition.objects.filter(position__name=s['position__name'],
-                                                                  questionnaires__isnull=False).count()
+                s[state['slug']] = all_nominee_positions.filter(position__name=s['position__name'],
+                                                                questionnaires__isnull=False).count()
             else:
-                s[state['slug']] = NomineePosition.objects.filter(position__name=s['position__name'],
-                                                                  state=state['slug']).count()
+                s[state['slug']] = all_nominee_positions.filter(position__name=s['position__name'],
+                                                                state=state['slug']).count()
 
     return render_to_response('nomcom/private_index.html',
                               {'nomcom': nomcom,
@@ -114,6 +119,39 @@ def private_index(request, year):
                                'selected_position': selected_position and int(selected_position) or None,
                                'selected': 'index',
                                'is_chair': is_chair,
+                               'message': message}, RequestContext(request))
+
+
+@member_required(role='chair')
+def send_reminder_mail(request, year):
+    nomcom = get_nomcom_by_year(year)
+    nominees = Nominee.objects.get_by_nomcom(nomcom).filter(nomineeposition__state='pending').distinct()
+    nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
+    mail_path = nomcom_template_path + NOMINEE_REMINDER_TEMPLATE
+    mail_template = DBTemplate.objects.filter(group=nomcom.group, path=mail_path)
+    mail_template = mail_template and mail_template[0] or None
+    message = None
+
+    if request.method == 'POST':
+        selected_nominees = request.POST.getlist('selected')
+        selected_nominees = nominees.filter(id__in=selected_nominees)
+        if selected_nominees:
+            subject = 'IETF Nomination Information'
+            from_email = settings.NOMCOM_FROM_EMAIL
+            for nominee in nominees:
+                to_email = nominee.email.address
+                positions = ', '.join([nominee_position.position.name for nominee_position in nominee.nomineeposition_set.all()
+                                      if nominee_position.state.slug == "pending"])
+                context = {'positions': positions}
+                send_mail(None, to_email, from_email, subject, mail_path, context)
+            message = ('success', 'An query has been sent to each person, asking them to accept (or decline) the nominations')
+        else:
+            message = ('warning', "Please, select some nominee")
+    return render_to_response('nomcom/send_reminder_mail.html',
+                              {'nomcom': nomcom,
+                               'year': year,
+                               'nominees': nominees,
+                               'mail_template': mail_template,
                                'message': message}, RequestContext(request))
 
 

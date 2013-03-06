@@ -91,4 +91,20 @@ $position: Position</field>
 </field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
+        <object pk="8" model="dbtemplate.dbtemplate">
+        <field type="CharField" name="path">/nomcom/defaults/email/nomination_reminder.txt</field>
+        <field type="CharField" name="title">Email sent to nominees asking them to accept (or decline) the nominations.</field>
+        <field type="TextField" name="variables">$positions: Nomination positions</field>
+        <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
+        <field type="TextField" name="content">Hi,
+
+You have been nominated for the positions: $positions
+
+The NomCom would appreciate receiving an indication of whether or not you accept this nomination to stand for consideration as a candidate for these positions.
+
+If you accept, you will need to fill out a questionnaire.  You will receive the questionnaire by email
+
+Best regards,</field>
+        <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
+    </object>
 </django-objects>
