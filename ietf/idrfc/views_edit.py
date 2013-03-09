@@ -12,6 +12,7 @@ from django import forms
 from django.utils.html import strip_tags
 from django.db.models import Max
 from django.conf import settings
+from django.forms.util import ErrorList
 
 from ietf.utils.mail import send_mail_text, send_mail_message
 from ietf.ietfauth.decorators import group_required
@@ -49,6 +50,23 @@ class ChangeStateFormREDESIGN(forms.Form):
     substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=IESG_SUBSTATE_TAGS), required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
+    def clean(self):
+        retclean = self.cleaned_data
+        state = self.cleaned_data['state']
+        tag = self.cleaned_data['substate']
+        comment = self.cleaned_data['comment'].strip()
+        doc = get_object_or_404(Document, docalias__name=self.docname)
+        prev = doc.get_state("draft-iesg")
+    
+        # tag handling is a bit awkward since the UI still works
+        # as if IESG tags are a substate
+        prev_tag = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
+        prev_tag = prev_tag[0] if prev_tag else None
+
+        if state == prev and tag == prev_tag:
+            self._errors['comment'] = ErrorList([u'State not changed. Comments entered will be lost with no state change. Please go back and use the Add Comment feature on the history tab to add comments without changing state.'])
+        return retclean
+
 @group_required('Area_Director','Secretariat')
 def change_stateREDESIGN(request, name):
     """Change state of Internet Draft, notifying parties as necessary
@@ -61,6 +79,7 @@ def change_stateREDESIGN(request, name):
 
     if request.method == 'POST':
         form = ChangeStateForm(request.POST)
+        form.docname=name
         if form.is_valid():
             next_state = form.cleaned_data['state']
             prev_state = doc.get_state("draft-iesg")
@@ -124,6 +143,7 @@ def change_stateREDESIGN(request, name):
         t = doc.tags.filter(slug__in=('point', 'ad-f-up', 'need-rev', 'extpty'))
         form = ChangeStateForm(initial=dict(state=state.pk if state else None,
                                             substate=t[0].pk if t else None))
+        form.docname=name
 
     state = doc.get_state("draft-iesg")
     next_states = state.next_states.all() if state else None
