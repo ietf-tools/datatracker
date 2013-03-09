@@ -220,12 +220,11 @@ class ListNotification(models.Model):
             subject = '%s notification: Changes on %s' % (l.long_name(), self.event.doc.name)
             context = {'notification': self.event,
                        'clist': l}
-            to_email = ''
             filter_subscription = {'community_list': l}
             if not self.significant:
                 filter_subscription['significant'] = False
-            bcc = ','.join(list(set([i.email for i in EmailSubscription.objects.filter(**filter_subscription)])))
-            send_mail(None, to_email, from_email, subject, 'community/public/notification_email.txt', context, bcc=bcc)
+            for to_email in list(set([i.email for i in EmailSubscription.objects.filter(**filter_subscription)])):
+                send_mail(None, to_email, from_email, subject, 'community/public/notification_email.txt', context)
 
 
 def notify_events(sender, instance, **kwargs):
