@@ -25,6 +25,23 @@
 {%autoescape off %}
         <content type="html">{{ entry.desc|linebreaksbr|force_escape }}</content>
 {%endautoescape %}
+        <ietf xmlns="http://ietf.org/atom/datatracker/community">
+          <type>{{ entry.type }}</type>
+          {% if entry.doc.stream.slug %}<stream>{{ entry.doc.stream.slug }}</stream>{% endif %}
+          <group>{{ entry.doc.group.acronym }}</group>
+          {% if entry.doc.shepherd.name %}<shepherd>{{entry.doc.shepherd.name }}</shepherd>{% endif %}
+	  {% if entry.doc.ad.name %}<ad>{{entry.doc.ad.name}}</ad>{% endif %}
+          {% for state in entry.doc.states.all %}
+          <state type="{{ state.type }}">{{ state.slug }}</state>
+          {% endfor %}
+          {% for tag in entry.doc.tags.objects %}
+          <tag>{{ tag.slug }}</tag>
+          {% endfor %}
+	  {% if entry.type == "new_revision" %}
+	  <abstract>{{entry.doc.abstract}}</abstract>
+	  <version>{{entry.doc.rev}}</version>
+	  {% endif %}
+        </ietf>
     </entry>
     {% endfor %}
     
